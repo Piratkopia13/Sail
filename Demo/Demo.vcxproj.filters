@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\game\states\GameState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\Game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\game\states\GameState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\Game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="res\models\box.fbx" />
+    <None Include="res\models\capture_point.fbx" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="res\shaders\deferred\DirectionalLightShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\DynBlockInstancedGeometryShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\GeometryShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\InstancedGeometryShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\PointLightShader.hlsl" />
+    <FxCompile Include="res\shaders\instanced\ParticleShader.hlsl" />
+    <FxCompile Include="res\shaders\CubeMapShader.hlsl" />
+    <FxCompile Include="res\shaders\DepthShader.hlsl" />
+    <FxCompile Include="res\shaders\DirectionalLightShader.hlsl" />
+    <FxCompile Include="res\shaders\MaterialShader.hlsl" />
+    <FxCompile Include="res\shaders\Phong.hlsl" />
+    <FxCompile Include="res\shaders\SimpleColorShader.hlsl" />
+    <FxCompile Include="res\shaders\SimpleTextureShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\BlendShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\BrightnessCutoffShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\DepthOfField.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\FXAAShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurPS.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurWithDepthCheck.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\PostProcessFlushShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\SimpleDepthOfField.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\ToneMapHack.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="res\sounds\ambient\ambient_capture.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\ambient\battle_sound.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\ambient\loop1.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\ambient\loop2.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\ambient\theme.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\ambient\windows95.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\death\goblin_death.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\death\male_death.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\explosion.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\explosion2.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\hook_hit.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\hook_shot.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\implosion.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\laser.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\pickup.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\sounds\effect\shock.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+  </ItemGroup>
+</Project>

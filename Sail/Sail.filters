@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <FxCompile Include="res\shaders\CubeMapShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\DirectionalLightShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\DynBlockInstancedGeometryShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\GeometryShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\InstancedGeometryShader.hlsl" />
+    <FxCompile Include="res\shaders\deferred\PointLightShader.hlsl" />
+    <FxCompile Include="res\shaders\DepthShader.hlsl" />
+    <FxCompile Include="res\shaders\DirectionalLightShader.hlsl" />
+    <FxCompile Include="res\shaders\instanced\ParticleShader.hlsl" />
+    <FxCompile Include="res\shaders\MaterialShader.hlsl" />
+    <FxCompile Include="res\shaders\Phong.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\BrightnessCutoffShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\DepthOfField.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\FXAAShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurCS.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurPS.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurWithDepthCheck.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\PostProcessFlushShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\SimpleDepthOfField.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\ToneMapHack.hlsl" />
+    <FxCompile Include="res\shaders\SimpleColorShader.hlsl" />
+    <FxCompile Include="res\shaders\SimpleTextureShader.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\BlendShader.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="res\sounds\ambient\loop1.wav" />
+    <Media Include="res\sounds\ambient\loop2.wav" />
+    <Media Include="res\sounds\ambient\theme.wav" />
+    <Media Include="res\sounds\effect\death\male_death.wav" />
+    <Media Include="res\sounds\effect\death\goblin_death.wav" />
+    <Media Include="res\sounds\effect\explosion2.wav" />
+    <Media Include="res\sounds\effect\laser.wav" />
+    <Media Include="res\sounds\effect\pickup.wav" />
+    <Media Include="res\sounds\effect\shock.wav" />
+    <Media Include="res\sounds\effect\explosion.wav" />
+    <Media Include="res\sounds\ambient\windows95.wav" />
+    <Media Include="res\sounds\effect\hook_hit.wav" />
+    <Media Include="res\sounds\effect\hook_shot.wav" />
+    <Media Include="res\sounds\ambient\ambient_capture.wav" />
+    <Media Include="res\sounds\ambient\battle_sound.wav" />
+    <Media Include="res\sounds\effect\implosion.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="res\levels\speedrun.level" />
+    <None Include="res\levels\sprint_demo.level" />
+    <None Include="res\levels\symmetric.level" />
+    <None Include="res\levels\the_void.level" />
+    <None Include="res\models\box.fbx" />
+    <None Include="res\models\capture_point.fbx" />
+    <None Include="res\models\monkey.fbx" />
+  </ItemGroup>
+</Project>
