@@ -30,8 +30,6 @@ class StateStack {
 
 		// Passes input to the states in the stack
 		virtual void processInput(float dt);
-		// Process window resizing for the states in the stack
-		virtual void resize(int width, int height);
 		// Updates the states in the stack
 		virtual void update(float dt);
 		// Renders the states in the stack
@@ -71,6 +69,8 @@ class StateStack {
 		std::map<States::ID, std::function<State::Ptr()>> m_factories;
 
 
+public:
+	void onEvent(Event& event);
 };
 
 template <typename T>

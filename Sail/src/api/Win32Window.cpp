@@ -124,9 +124,7 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 }
 
 bool Win32Window::hasBeenResized() {
-	bool ret = false;
-	if (m_resized)
-		ret = true;
+	bool ret = m_resized;
 	m_resized = false;
 	return ret;
 }

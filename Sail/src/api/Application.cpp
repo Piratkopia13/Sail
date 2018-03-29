@@ -1,4 +1,5 @@
 #include "Application.h"
+#include "../events/WindowResizeEvent.h"
 
 using namespace DirectX;
 
@@ -68,8 +69,10 @@ int Application::startGameLoop() {
 			if (m_window.hasBeenResized()) {
 				UINT newWidth = m_window.getWindowWidth();
 				UINT newHeight = m_window.getWindowHeight();
+				// Resize graphics api
 				m_dxAPI.resize(newWidth, newHeight);
-				resize(newWidth, newHeight);
+				// Send resize event
+				onEvent(WindowResizeEvent(newWidth, newHeight));
 			}
 			
 			// Get delta time from last frame
@@ -154,4 +157,8 @@ const UINT Application::getFPS() const {
 
 Input& Application::getInput() {
 	return m_input;
+}
+
+void Application::onEvent(Event& event) {
+	
 }

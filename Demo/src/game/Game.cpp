@@ -2,7 +2,7 @@
 #include "states/GameState.h"
 
 Game::Game(HINSTANCE hInstance)
-	: Application(1280, 720, "SPASM v1.0", hInstance)
+	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
 	, m_stateStack()
 	
 {
@@ -27,8 +27,8 @@ void Game::registerStates() {
 	m_stateStack.registerState<GameState>(States::Game);
 }
 
-void Game::resize(int width, int height) {
-	m_stateStack.resize(width, height);
+void Game::onEvent(Event& event) {
+	m_stateStack.onEvent(event);
 }
 
 void Game::processInput(float dt) {

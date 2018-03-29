@@ -8,13 +8,16 @@ public:
 	~GameState();
 
 	// Process input for the state
-	virtual bool processInput(float dt);
-	// Process window resizing for the state
-	virtual bool resize(int width, int height);
+	virtual bool processInput(float dt) override;
+	// Sends events to the state
+	virtual void onEvent(Event& event) override;
 	// Updates the state
-	virtual bool update(float dt);
+	virtual bool update(float dt) override;
 	// Renders the state
-	virtual bool render(float dt);
+	virtual bool render(float dt) override;
+
+private:
+	bool onResize(WindowResizeEvent& event);
 
 private:
 	Application* m_app;

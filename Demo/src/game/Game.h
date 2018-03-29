@@ -8,11 +8,11 @@ public:
 	Game(HINSTANCE hInstance);
 	~Game();
 
-	virtual int run();
-	virtual void processInput(float dt);
-	virtual void update(float dt);
-	virtual void render(float dt);
-	virtual void resize(int width, int height);
+	virtual int run() override;
+	virtual void processInput(float dt) override;
+	virtual void update(float dt) override;
+	virtual void render(float dt) override;
+	virtual void onEvent(Event& event) override;
 
 private:
 	// Register the different states

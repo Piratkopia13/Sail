@@ -53,3 +53,6 @@
 #include "resources/DXCubeMap.h"
 #include "resources/audio/SoundManager.h"
 #include "states/StateStack.h"
+#include "events/Events.h"
+#include "entities/Entity.h"
+#include "entities/components/Components.h"

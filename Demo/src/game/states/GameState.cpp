@@ -43,6 +43,14 @@ GameState::GameState(StateStack& stack)
 	m_cubeModel->getMaterial()->setDiffuseTexture("missing.tga");
 	//m_cubeModel = ModelFactory::PlaneModel::Create(Vector2(.5f), &m_app->getResourceManager().getShaderSet<MaterialShader>());
 
+	Entity e;
+	e.addComponent<TestComponent>(13.37f);
+	e.addComponent<TestTwoComponent>(13.f, 37.f);
+	/*TestComponent c1(1);
+	TestTwoComponent c2(2, 3);*/
+	Logger::Log("c1 id: " + std::to_string(e.getComponent<TestComponent>()->getStaticID()));
+	Logger::Log("c2 id: " + std::to_string(e.getComponent<TestTwoComponent>()->getStaticID()));
+
 }
 
 GameState::~GameState() {
@@ -80,20 +88,25 @@ bool GameState::processInput(float dt) {
 	// Reload shaders
 	if (kbState.R) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
+		Event e(Event::POTATO);
+		m_app->onEvent(e);
 	}
 
 
 	return true;
 }
 
-// Process window resizing for the state
-bool GameState::resize(int width, int height) {
-	m_cam.resize(width, height);
-	//m_scene->resize(width, height);
+void GameState::onEvent(Event& event) {
+	Logger::Log("Recieved event: " + std::to_string(event.getType()));
 
-	return true;
+	EventDispatcher::dispatch<WindowResizeEvent>(event, FUNC(&GameState::onResize));
 }
 
+bool GameState::onResize(WindowResizeEvent& event) {
+	m_cam.resize(event.getWidth(), event.getHeight());
+	////m_scene->resize(width, height);
+	return true;
+}
 
 // Updates the state
 bool GameState::update(float dt) {

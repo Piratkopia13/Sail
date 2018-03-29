@@ -34,23 +34,6 @@ void StateStack::processInput(float dt) {
 
 }
 
-void StateStack::resize(int width, int height) {
-
-	// Loop through the stack reversed
-	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
-
-		// Return if a state returns false
-		// This allows states to stop underlying states from handling events
-		if (!(*itr)->resize(width, height))
-			break;
-
-	}
-
-	// Loop done, we can now modify the stack
-	applyPendingChanges();
-
-}
-
 void StateStack::update(float dt) {
 
 	// Loop through the stack reversed
@@ -62,8 +45,6 @@ void StateStack::update(float dt) {
 			break;
 
 	}
-
-	// Loop done, we can now modify the stack
 	applyPendingChanges();
 
 }
@@ -78,6 +59,17 @@ void StateStack::render(float dt) {
 		state->render(dt);
 
 	Application::getInstance()->getAPI()->present(false);
+}
+
+void StateStack::onEvent(Event& event) {
+	// Loop through the stack reversed
+	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
+
+		// Return if a state returns false
+		// This allows states to stop underlying states from updating
+		(*itr)->onEvent(event);
+
+	}
 }
 
 void StateStack::pushState(States::ID stateID) {

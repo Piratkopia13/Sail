@@ -2,12 +2,13 @@
 
 #include <memory>
 #include "StateIdentifiers.h"
+#include "../events/IEventListener.h"
 
 // Forward declare the StateStack
 class StateStack;
 
 // Base class for all states
-class State {
+class State : public IEventListener {
 
 	public:
 		typedef std::unique_ptr<State> Ptr;
@@ -18,12 +19,12 @@ class State {
 
 		// Process input for the state
 		virtual bool processInput(float dt) = 0;
-		// Process window resizing for the state
-		virtual bool resize(int width, int height) = 0;
 		// Updates the state
 		virtual bool update(float dt) = 0;
 		// Renders the state
 		virtual bool render(float dt) = 0;
+		// Sends events to the state
+		virtual void onEvent(Event& event) { }
 
 	protected:
 		// Request the push of a new state to the stack next update

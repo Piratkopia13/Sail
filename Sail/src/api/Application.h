@@ -6,8 +6,9 @@
 #include "DXAPI.h"
 #include "../resources/ResourceManager.h"
 #include "Input.h"
+#include "../events/IEventListener.h"
 
-class Application {
+class Application : public IEventListener {
 
 public:
 	Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance);
@@ -20,10 +21,7 @@ public:
 	virtual void processInput(float dt) = 0;
 	virtual void update(float dt) = 0;
 	virtual void render(float dt) = 0;
-
-	// Optional methods
-	// resize() is called when the window is resized
-	virtual void resize(int width, int height) {};
+	virtual void onEvent(Event& event) override;
 
 	static Application* getInstance();
 	DXAPI* const getAPI();

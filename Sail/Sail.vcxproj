@@ -157,6 +157,8 @@
   <ItemGroup>
     <ClCompile Include="src\api\Application.cpp" />
     <ClCompile Include="src\api\DXAPI.cpp" />
+    <ClCompile Include="src\entities\Entity.cpp" />
+    <ClCompile Include="src\entities\components\TestTwoComponent.h" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\graphics\camera\FlyingCameraController.cpp" />
     <ClCompile Include="src\graphics\geometry\IndexBuffer.cpp" />
@@ -212,8 +214,17 @@
     <ClInclude Include="src\api\Application.h" />
     <ClInclude Include="src\api\DXAPI.h" />
     <ClInclude Include="src\api\GraphicsAPI.h" />
+    <ClInclude Include="src\entities\components\Component.h" />
+    <ClInclude Include="src\entities\components\Components.h" />
+    <ClInclude Include="src\entities\components\ModelComponent.h" />
+    <ClInclude Include="src\entities\components\TransformComponent.h" />
+    <ClInclude Include="src\entities\Entity.h" />
+    <ClInclude Include="src\entities\components\TestComponent.h" />
     <ClInclude Include="src\events\Event.h" />
+    <ClInclude Include="src\events\EventDispatcher.h" />
+    <ClInclude Include="src\events\Events.h" />
     <ClInclude Include="src\events\IEventListener.h" />
+    <ClInclude Include="src\events\WindowResizeEvent.h" />
     <ClInclude Include="src\graphics\camera\Camera.h" />
     <ClInclude Include="src\graphics\camera\CameraController.h" />
     <ClInclude Include="src\graphics\camera\FlyingCameraController.h" />

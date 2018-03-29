@@ -3,7 +3,8 @@
 class Event {
 public:
 	enum Type {
-		WINDOW_RESIZE
+		WINDOW_RESIZE,
+		POTATO
 	};
 public:
 	Event(Type type);

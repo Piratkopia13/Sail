@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Event.h"
+
 class IEventListener{
 public:
-	virtual void onEvent() = 0;
+	virtual void onEvent(Event& event) = 0;
 };
