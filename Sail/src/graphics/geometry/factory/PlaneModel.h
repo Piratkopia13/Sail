@@ -40,7 +40,7 @@ namespace ModelFactory {
 				Vector3(0.f, 1.f, 0.f)
 			};
 
-			Model::Data buildData;
+			Mesh::Data buildData;
 			buildData.numVertices = numVerts;
 			buildData.positions = positions;
 			buildData.texCoords = texCoords;

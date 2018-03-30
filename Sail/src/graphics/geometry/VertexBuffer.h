@@ -2,11 +2,11 @@
 #include <d3d11.h>
 #include "../shader/InputLayout.h"
 #include "../../utils/Utils.h"
-#include "Model.h"
+#include "Mesh.h"
 
 class VertexBuffer {
 public:
-	VertexBuffer(const InputLayout& inputLayout, Model::Data& modelData);
+	VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData);
 	~VertexBuffer();
 
 	ID3D11Buffer* const* getBuffer() const;

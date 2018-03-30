@@ -31,7 +31,7 @@ private:
 private:
 	FbxScene* m_scene;
 	std::unique_ptr<Model> m_model;
-	Model::Data m_buildData;
+	Mesh::Data m_buildData;
 
 	struct Bone {
 		Bone* parent;

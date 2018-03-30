@@ -3,11 +3,13 @@
 #include <string>
 #include <d3d11.h>
 #include <SimpleMath.h>
+#include <memory>
 #include "../../resources/DXTexture.h"
 #include "../../api/Application.h"
 
 class Material {
-
+public:
+	typedef std::shared_ptr<Material> SPtr;
 public:
 	// Matching shader struct
 	struct PhongSettings {

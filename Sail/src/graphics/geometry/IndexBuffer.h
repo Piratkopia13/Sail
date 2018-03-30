@@ -2,11 +2,11 @@
 #include <d3d11.h>
 #include "../shader/InputLayout.h"
 #include "../../utils/Utils.h"
-#include "Model.h"
+#include "Mesh.h"
 
 class IndexBuffer {
 public:
-	IndexBuffer(Model::Data& modelData);
+	IndexBuffer(Mesh::Data& modelData);
 	~IndexBuffer();
 
 	ID3D11Buffer* const* getBuffer() const;

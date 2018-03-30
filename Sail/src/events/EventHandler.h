@@ -5,7 +5,7 @@
 
 #define FUNC(x) std::bind(x, this, std::placeholders::_1)
 
-class EventDispatcher {
+class EventHandler {
 public:
 
 	template <typename T>

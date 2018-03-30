@@ -3,7 +3,7 @@
 
 using namespace DirectX::SimpleMath;
 
-VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Model::Data& modelData)
+VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData)
 	: m_instanceBuffer(nullptr)
 	, m_inputLayout(inputLayout)
 {

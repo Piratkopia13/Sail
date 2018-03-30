@@ -27,7 +27,7 @@ void Game::registerStates() {
 	m_stateStack.registerState<GameState>(States::Game);
 }
 
-void Game::onEvent(Event& event) {
+void Game::dispatchEvent(Event& event) {
 	m_stateStack.onEvent(event);
 }
 

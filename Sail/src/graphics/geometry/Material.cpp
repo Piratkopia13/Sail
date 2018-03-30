@@ -18,15 +18,22 @@ Material::Material(ShaderSet* shaderSet)
 	m_phongSettings.hasNormalTexture = 0;
 	m_phongSettings.hasSpecularTexture = 0;
 
+	m_srvs[0] = nullptr;
+	m_srvs[1] = nullptr;
+	m_srvs[2] = nullptr;
+
 }
 Material::~Material() { }
 
 void Material::bind() {
 	m_shader->setCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
-	m_shader->setTexture2D("sys_texDiffuse", m_srvs[0]);
-	m_shader->setTexture2D("sys_texNormal", m_srvs[1]);
-	m_shader->setTexture2D("sys_texSpecular", m_srvs[2]);
-	m_shader->bind();
+	if (m_phongSettings.hasDiffuseTexture)
+		m_shader->setTexture2D("sys_texDiffuse", m_srvs[0]);
+	if (m_phongSettings.hasNormalTexture)
+		m_shader->setTexture2D("sys_texNormal", m_srvs[1]);
+	if (m_phongSettings.hasSpecularTexture)
+		m_shader->setTexture2D("sys_texSpecular", m_srvs[2]);
+	//m_shader->bind();
 }
 
 void Material::setKa(float ka) {

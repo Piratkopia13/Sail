@@ -11,7 +11,7 @@ class Renderer {
 public:
 	struct RenderCommand {
 		Model* model;
-		const DirectX::SimpleMath::Matrix* modelMatrix;
+		DirectX::SimpleMath::Matrix modelMatrix; // TODO: find out why having a const ptr here doesnt work
 	};
 public:
 	Renderer() {};

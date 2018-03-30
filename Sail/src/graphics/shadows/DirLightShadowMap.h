@@ -2,7 +2,6 @@
 
 #include "ShadowMap.h"
 #include "../RenderableTexture.h"
-#include "../geometry/spatial/Quadtree.h"
 #include "../../api/Application.h"
 #include "../camera/OrthographicCamera.h"
 #include "../shader/deferred/DeferredDirectionalLightShader.h"

@@ -6,9 +6,9 @@
 #include "DXAPI.h"
 #include "../resources/ResourceManager.h"
 #include "Input.h"
-#include "../events/IEventListener.h"
+#include "../events/IEventDispatcher.h"
 
-class Application : public IEventListener {
+class Application : public IEventDispatcher {
 
 public:
 	Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance);
@@ -21,7 +21,7 @@ public:
 	virtual void processInput(float dt) = 0;
 	virtual void update(float dt) = 0;
 	virtual void render(float dt) = 0;
-	virtual void onEvent(Event& event) override;
+	virtual void dispatchEvent(Event& event) override { }
 
 	static Application* getInstance();
 	DXAPI* const getAPI();

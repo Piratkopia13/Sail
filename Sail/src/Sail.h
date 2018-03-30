@@ -56,3 +56,5 @@
 #include "events/Events.h"
 #include "entities/Entity.h"
 #include "entities/components/Components.h"
+#include "graphics/Scene.h"
+#include "graphics/geometry/Transform.h"

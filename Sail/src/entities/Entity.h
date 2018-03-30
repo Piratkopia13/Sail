@@ -8,24 +8,30 @@
 
 class Entity {
 public:
-	typedef std::unique_ptr<Component> ComponentPtr;
+	typedef std::unique_ptr<Entity> Ptr;
+	static Ptr Create();
 public:
 	Entity();
 	virtual ~Entity();
 
 	template<typename T, typename... Targs>
-	void addComponent(Targs... args);
+	T* addComponent(Targs... args);
 	template<typename T>
 	T* getComponent();
 	
 
 private:
-	std::unordered_map<int, ComponentPtr> m_components;
+	std::unordered_map<int, Component::Ptr> m_components;
 };
 
 template<typename T, typename... Targs>
-void Entity::addComponent(Targs... args) {
-	m_components.insert({ T::getStaticID(), std::make_unique<T>(args...) });
+T* Entity::addComponent(Targs... args) {
+	auto res = m_components.insert({ T::getStaticID(), std::make_unique<T>(args...) });
+	if (!res.second) {
+		Logger::Warning("Tried to add a duplicate component to an entity");
+	}
+	// Return pointer to the inserted component
+	return static_cast<T*>(res.first->second.get());
 }
 
 template<typename T>

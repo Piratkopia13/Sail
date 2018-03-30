@@ -1,7 +1,7 @@
 #include "IndexBuffer.h"
 #include "../../api/Application.h"
 
-IndexBuffer::IndexBuffer(Model::Data& modelData) {
+IndexBuffer::IndexBuffer(Mesh::Data& modelData) {
 
 	ULONG* indices = new ULONG[modelData.numIndices];
 

@@ -72,7 +72,7 @@ int Application::startGameLoop() {
 				// Resize graphics api
 				m_dxAPI.resize(newWidth, newHeight);
 				// Send resize event
-				onEvent(WindowResizeEvent(newWidth, newHeight));
+				dispatchEvent(WindowResizeEvent(newWidth, newHeight));
 			}
 			
 			// Get delta time from last frame
@@ -157,8 +157,4 @@ const UINT Application::getFPS() const {
 
 Input& Application::getInput() {
 	return m_input;
-}
-
-void Application::onEvent(Event& event) {
-	
 }

@@ -43,13 +43,17 @@ GameState::GameState(StateStack& stack)
 	m_cubeModel->getMaterial()->setDiffuseTexture("missing.tga");
 	//m_cubeModel = ModelFactory::PlaneModel::Create(Vector2(.5f), &m_app->getResourceManager().getShaderSet<MaterialShader>());
 
-	Entity e;
-	e.addComponent<TestComponent>(13.37f);
-	e.addComponent<TestTwoComponent>(13.f, 37.f);
-	/*TestComponent c1(1);
-	TestTwoComponent c2(2, 3);*/
-	Logger::Log("c1 id: " + std::to_string(e.getComponent<TestComponent>()->getStaticID()));
-	Logger::Log("c2 id: " + std::to_string(e.getComponent<TestTwoComponent>()->getStaticID()));
+	m_scene.setLightSetup(&m_lights);
+
+	auto e = Entity::Create();
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	e->addComponent<TransformComponent>()->getTransform().setRotations(Vector3(0.f, 0.f, 1.07f));
+	m_scene.addEntity(MOVE(e));
+
+	e = Entity::Create();
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 1.f, 0.f));
+	m_scene.addEntity(MOVE(e));
 
 }
 
@@ -89,7 +93,7 @@ bool GameState::processInput(float dt) {
 	if (kbState.R) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
 		Event e(Event::POTATO);
-		m_app->onEvent(e);
+		m_app->dispatchEvent(e);
 	}
 
 
@@ -99,7 +103,7 @@ bool GameState::processInput(float dt) {
 void GameState::onEvent(Event& event) {
 	Logger::Log("Recieved event: " + std::to_string(event.getType()));
 
-	EventDispatcher::dispatch<WindowResizeEvent>(event, FUNC(&GameState::onResize));
+	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&GameState::onResize));
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
@@ -117,10 +121,6 @@ bool GameState::update(float dt) {
 	auto& camPos = m_cam.getPosition();
 	m_debugCamText.setText(L"Camera @ " + Utils::vec3ToWStr(camPos));
 
-	// Update camera in shaders
-	m_app->getResourceManager().getShaderSet<MaterialShader>().updateCamera(m_cam);
-	//m_app->getResourceManager().getShaderSet<MaterialShader>().updateLights(m_lights);
-
 	return true;
 }
 
@@ -130,15 +130,8 @@ bool GameState::render(float dt) {
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
 
-	// Draw the scene using deferred rendering
-// 	m_scene->draw(dt, m_cam, m_level.get(), m_projHandler.get(), m_gamemode.get(), m_particleHandler.get());
-	m_renderer.begin(&m_cam);
-	m_renderer.setLightSetup(&m_lights);
-	m_renderer.submit(m_cubeModel.get(), Matrix::Identity);
-	m_renderer.submit(m_cubeModel.get(), Matrix::CreateTranslation(1.5f, 0.f, 0.f));
-	m_renderer.submit(m_cubeModel.get(), Matrix::CreateTranslation(0.f, 1.5f, 0.f));
-	m_renderer.end();
-	m_renderer.present();
+	// Draw the scene
+	m_scene.draw(m_cam);
 
 	// Draw HUD
 	//m_scene->drawHUD();
