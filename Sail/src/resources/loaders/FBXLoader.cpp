@@ -331,6 +331,26 @@ void FBXLoader::getMaterial(FbxNode* pNode, Material* material) {
 	if (pNode->GetSrcObjectCount<FbxSurfacePhong>() > 0) {
 
 		auto phong = pNode->GetSrcObject<FbxSurfacePhong>();
+		auto& resman = Application::getInstance()->getResourceManager();
+
+		FbxFileTexture* diffTex = phong->Diffuse.GetSrcObject<FbxFileTexture>();
+		if (diffTex) {
+			std::string filename = diffTex->GetRelativeFileName();
+			resman.loadDXTexture(filename);
+			material->setDiffuseTexture(filename);
+		}
+		FbxFileTexture* specTex = phong->Specular.GetSrcObject<FbxFileTexture>();
+		if (specTex) {
+			std::string filename = specTex->GetRelativeFileName();
+			resman.loadDXTexture(filename);
+			material->setSpecularTexture(specTex->GetRelativeFileName());
+		}
+		FbxFileTexture* normTex = phong->NormalMap.GetSrcObject<FbxFileTexture>();
+		if (normTex) {
+			std::string filename = normTex->GetRelativeFileName();
+			resman.loadDXTexture(filename);
+			material->setNormalTexture(normTex->GetRelativeFileName());
+		}
 
 		material->setKa(static_cast<float>(phong->AmbientFactor.Get()));
 		material->setKs(static_cast<float>(phong->SpecularFactor.Get()));
@@ -339,68 +359,4 @@ void FBXLoader::getMaterial(FbxNode* pNode, Material* material) {
 
 	}
 
-	auto storeTextureNames = [&](const std::string& filename) {
-		if (filename.find("specular") != std::string::npos) {
-			Application::getInstance()->getResourceManager().loadDXTexture(filename);
-			material->setSpecularTexture(filename);
-		}
-
-		if (filename.find("diffuse") != std::string::npos) {
-			Application::getInstance()->getResourceManager().loadDXTexture(filename);
-			material->setDiffuseTexture(filename);
-		}
-
-		if (filename.find("normal") != std::string::npos) {
-			Application::getInstance()->getResourceManager().loadDXTexture(filename);
-			material->setNormalTexture(filename);
-		}
-	};
-
-	int materialIndex;
-	FbxProperty fbxProperty;
-	int materialCount = pNode->GetSrcObjectCount<FbxSurfaceMaterial>();
-
-	// Loops through all materials to find the textures of the model
-	for (materialIndex = 0; materialIndex < materialCount; materialIndex++) {
-		FbxSurfaceMaterial* material = pNode->GetSrcObject<FbxSurfaceMaterial>(materialIndex);
-		if (material) {
-			int textureIndex;
-			FBXSDK_FOR_EACH_TEXTURE(textureIndex) {
-				fbxProperty = material->FindProperty(FbxLayerElement::sTextureChannelNames[textureIndex]);
-				if (fbxProperty.IsValid()) {
-					int textureCount = fbxProperty.GetSrcObjectCount<FbxTexture>();
-					for (int i = 0; i < textureCount; ++i) {
-						FbxLayeredTexture* layeredTexture = fbxProperty.GetSrcObject<FbxLayeredTexture>(i);
-						// Checks if there's multiple layers to the texture
-						if (layeredTexture) {
-							int numTextures = layeredTexture->GetSrcObjectCount<FbxTexture>();
-
-							// Loops through all the textures of the material (Engine currently only supports one texture per spec/diff/norm.)
-							for (int j = 0; j < numTextures; j++) {
-
-								FbxTexture* texture = layeredTexture->GetSrcObject<FbxTexture>(j);
-								FbxFileTexture* fileTexture = FbxCast<FbxFileTexture>(texture);
-								std::string filename = fileTexture->GetRelativeFileName();
-
-								storeTextureNames(filename);
-
-							}
-						}
-						// If it isn't a layered texture, just load the textures right away.
-						else {
-
-							FbxTexture* texture = fbxProperty.GetSrcObject<FbxTexture>(i);
-							FbxFileTexture* fileTexture = FbxCast<FbxFileTexture>(texture);
-							std::string filename = fileTexture->GetRelativeFileName();
-
-							Logger::Log(filename + " is of texture use: " + std::string(texture->GetTextureType()));
-
-							storeTextureNames(filename);
-
-						}
-					}
-				}
-			}
-		}
-	}
 }

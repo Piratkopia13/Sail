@@ -49,6 +49,7 @@ namespace FileLoader {
 
 		// Check that it is 32 bit and not 24 bit.
 		if (bpp != 32) {
+			Logger::Warning("Tried to load texture with " + std::to_string(bpp) + " bpp, requires 32 bpp");
 			return false;
 		}
 

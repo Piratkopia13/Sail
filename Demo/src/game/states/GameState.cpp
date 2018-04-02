@@ -48,7 +48,7 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 1.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
-	Model* fbxModel = &m_app->getResourceManager().getModel("bb8.fbx", &m_app->getResourceManager().getShaderSet<MaterialShader>());
+	Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", &m_app->getResourceManager().getShaderSet<MaterialShader>());
 
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(fbxModel);
