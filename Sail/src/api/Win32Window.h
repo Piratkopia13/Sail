@@ -18,6 +18,7 @@ public:
 	// after the last call of this method
 	bool hasBeenResized();
 
+	void setWindowTitle(const std::wstring& title);
 	const HWND* getHwnd() const;
 	UINT getWindowWidth() const;
 	UINT getWindowHeight() const;

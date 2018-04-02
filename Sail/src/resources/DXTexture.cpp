@@ -5,7 +5,7 @@ DXTexture::DXTexture(const std::string& filename) {
 
 	// Load the texture file it if is not loaded already
 	if (!Application::getInstance()->getResourceManager().hasTextureData(filename)) {
-		Application::getInstance()->getResourceManager().LoadTextureData(filename);
+		Application::getInstance()->getResourceManager().loadTextureData(filename);
 	}
 	auto& data = Application::getInstance()->getResourceManager().getTextureData(filename);
 

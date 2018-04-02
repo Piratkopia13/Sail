@@ -1,7 +1,7 @@
 #pragma once
 
 // Settings
-#define _SAIL_BREAK_ON_WARNING
+//#define _SAIL_BREAK_ON_WARNING
 #define _SAIL_BREAK_ON_ERROR
 
 // Exclude some less used APIs to speed up the build process
@@ -43,7 +43,6 @@
 #include "graphics/geometry/factory/CubeModel.h"
 #include "graphics/geometry/factory/ConeModel.h"
 #include "graphics/geometry/factory/PlaneModel.h"
-#include "graphics/models/FbxModel.h"
 #include "graphics/RenderableTexture.h"
 //#include "graphics/Skybox.h"
 //#include "graphics/renderer/DeferredRenderer.h"

@@ -129,6 +129,10 @@ bool Win32Window::hasBeenResized() {
 	return ret;
 }
 
+void Win32Window::setWindowTitle(const std::wstring& title) {
+	SetWindowText(m_hWnd, title.c_str());
+}
+
 const HWND* Win32Window::getHwnd() const {
 	return &m_hWnd;
 }

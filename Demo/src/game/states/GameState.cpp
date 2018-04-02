@@ -9,9 +9,9 @@ GameState::GameState(StateStack& stack)
 : State(stack)
 , m_cam(30.f, 1280.f / 720.f, 0.1f, 5000.f)
 , m_camController(&m_cam)
-, m_fpsText(&m_font, L"")
-, m_debugCamText(&m_font, L"")
 , m_flyCam(true)
+, m_fpsText(nullptr)
+, m_debugCamText(nullptr)
 {
 
 	// Get the Application instance
@@ -29,18 +29,11 @@ GameState::GameState(StateStack& stack)
 	direction.Normalize();
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 
-	// Set up HUD texts
-	m_debugCamText.setPosition(Vector2(0.f, 20.f));
-	// Add texts to the scene
-	//m_scene->addText(&m_fpsText);
-#ifdef _DEBUG
-	//m_scene->addText(&m_debugCamText);
-#endif
 
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
 	m_cubeModel = ModelFactory::CubeModel::Create(Vector3(.5f), &m_app->getResourceManager().getShaderSet<MaterialShader>());
-	m_cubeModel->getMaterial()->setDiffuseTexture("missing.tga");
+	m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
 	//m_cubeModel = ModelFactory::PlaneModel::Create(Vector2(.5f), &m_app->getResourceManager().getShaderSet<MaterialShader>());
 
 	m_scene.setLightSetup(&m_lights);
@@ -54,6 +47,28 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 1.f, 0.f));
 	m_scene.addEntity(MOVE(e));
+
+	Model* fbxModel = &m_app->getResourceManager().getModel("bb8.fbx", &m_app->getResourceManager().getShaderSet<MaterialShader>());
+
+	e = Entity::Create();
+	e->addComponent<ModelComponent>(fbxModel);
+	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 3.f, 0.f));
+	m_scene.addEntity(MOVE(e));
+
+	e = Entity::Create();
+	auto* textComp = e->addComponent<TextComponent>();
+	m_fpsText = textComp->addText(Text::Create(L"FPSText"));
+	m_debugCamText = textComp->addText(Text::Create(L"CamText"));
+	m_scene.addEntity(MOVE(e));
+
+	// Set up HUD texts
+	if (m_debugCamText)
+		m_debugCamText->setPosition(Vector2(0.f, 20.f));
+	// Add texts to the scene
+	//m_scene->addText(&m_fpsText);
+#ifdef _DEBUG
+	//m_scene->addText(&m_debugCamText);
+#endif
 
 }
 
@@ -115,11 +130,16 @@ bool GameState::onResize(WindowResizeEvent& event) {
 // Updates the state
 bool GameState::update(float dt) {
 
+	std::wstring fps = std::to_wstring(m_app->getFPS());
 	// Update HUD texts
-	m_fpsText.setText(L"FPS: " + std::to_wstring(m_app->getFPS()));
+	if (m_fpsText)
+		m_fpsText->setText(L"FPS: " + fps);
 
 	auto& camPos = m_cam.getPosition();
-	m_debugCamText.setText(L"Camera @ " + Utils::vec3ToWStr(camPos));
+	if (m_debugCamText)
+		m_debugCamText->setText(L"Camera @ " + Utils::vec3ToWStr(camPos));
+
+	m_app->getWindow()->setWindowTitle(L"Sail | Game Engine Demo | FPS: " + fps);
 
 	return true;
 }

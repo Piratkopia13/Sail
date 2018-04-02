@@ -9,8 +9,8 @@ namespace FileLoader {
 		// Load the targa image data into memory.
 		result = loadTarga(filename, textureData);
 		if (!result) {
-			Logger::Error("Texture file \"" + filename + "\" could not be read!");
-			return;
+			Logger::Warning("Texture file \"" + filename + "\" could not be read!");
+			result = loadTarga("res/textures/missing.tga", textureData); // TODO: make this more general, dont load it every time
 		}
 
 	}

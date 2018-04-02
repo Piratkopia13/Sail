@@ -8,6 +8,7 @@
 Mesh::Mesh(Data& buildData, ShaderSet* shaderSet) 
 	: m_data(buildData)
 {
+	m_material = std::make_shared<Material>(shaderSet);
 	// Create vertex buffer
 	m_vertexBuffer = std::make_unique<VertexBuffer>(shaderSet->getInputLayout(), buildData);
 	// Create index buffer is indices are set
@@ -26,7 +27,9 @@ Mesh::~Mesh() {
 	Memory::safeDeleteArr(m_data.texCoords);
 }
 
-void Mesh::draw() {
+void Mesh::draw(Renderer& renderer) {
+	m_material->bind();
+
 	m_vertexBuffer->bind();
 	if (m_indexBuffer)
 		m_indexBuffer->bind();
@@ -41,6 +44,10 @@ void Mesh::draw() {
 		devCon->DrawIndexed(getNumIndices(), 0U, 0U);
 	else
 		devCon->Draw(getNumVertices(), 0);
+}
+
+Material* Mesh::getMaterial() {
+	return m_material.get();
 }
 
 UINT Mesh::getNumVertices() const {

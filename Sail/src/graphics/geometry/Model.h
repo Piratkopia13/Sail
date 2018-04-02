@@ -2,22 +2,22 @@
 
 #include <d3d11.h>
 #include <SimpleMath.h>
-#include <limits>
-#include "../../utils/Utils.h"
-#include "Transform.h"
-#include "spatial/AABB.h"
 #include "../renderer/Renderer.h"
 #include "Mesh.h"
-#include "Material.h"
 
 // Forward declarations
 class ShaderSet;
+class Material;
 
 class Model {
 public: 
+	//Model(std::vector<Mesh::Data>& data, ShaderSet* shaderSet);
+	Model();
 	Model(Mesh::Data& data, ShaderSet* shaderSet);
-	Model(const std::string& path, ShaderSet* shaderSet);
+	//Model(const std::string& path, ShaderSet* shaderSet);
 	~Model();
+
+	Mesh* addMesh(std::unique_ptr<Mesh> mesh);
 
 	//void setBuildData(Data& buildData);
 	//void buildBufferForShader(ShaderSet* shader);
@@ -25,8 +25,10 @@ public:
 	// Draws the model using its material
 	void draw(Renderer& renderer);
 
-	ShaderSet* getShader() const;
-	Material* getMaterial();
+	Mesh* getMesh(unsigned int index);
+	unsigned int getNumberOfMeshes() const;
+	/*ShaderSet* getShader() const;
+	Material* getMaterial();*/
 	//const AABB& getAABB() const;
 	//void updateAABB();
 
@@ -34,9 +36,9 @@ private:
 	//void calculateAABB();
 
 private:
-	Mesh::SPtr m_mesh;
+	std::vector<Mesh::Ptr> m_meshes;
 
-	Material::SPtr m_material;
+	//Material::SPtr m_material;
 
 	//AABB m_aabb;
 

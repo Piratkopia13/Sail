@@ -5,20 +5,22 @@
 
 class Camera;
 class Model;
+class Mesh;
 class LightSetup;
 
 class Renderer {
 public:
 	struct RenderCommand {
-		Model* model;
-		DirectX::SimpleMath::Matrix modelMatrix; // TODO: find out why having a const ptr here doesnt work
+		Mesh* mesh;
+		DirectX::SimpleMath::Matrix transform; // TODO: find out why having a const ptr here doesnt work
 	};
 public:
-	Renderer() {};
-	~Renderer() {};
+	Renderer();
+	~Renderer();
 
 	virtual void begin(Camera* camera) = 0;
-	virtual void submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix) = 0;
+	void submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix);
+	virtual void submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) = 0;
 	virtual void setLightSetup(LightSetup* lightSetup) = 0;
 	virtual void end() = 0;
 	virtual void present() = 0;

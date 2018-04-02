@@ -33,7 +33,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	m_instance = this;
 
 	// Load the missing texture texture
-	m_resourceManager.LoadDXTexture("missing.tga");
+	m_resourceManager.loadDXTexture("missing.tga");
 
 }
 

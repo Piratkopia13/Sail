@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "../shader/ShaderSet.h"
+#include "../../api/Application.h"
 
 using namespace DirectX;
 using namespace SimpleMath;

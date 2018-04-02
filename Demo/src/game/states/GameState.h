@@ -34,9 +34,8 @@ private:
 	LightSetup m_lights;
 
 	// Texts
-	SailFont m_font;
-	Text m_fpsText;
-	Text m_debugCamText;
+	Text* m_fpsText;
+	Text* m_debugCamText;
 
 	std::unique_ptr<Model> m_cubeModel;
 

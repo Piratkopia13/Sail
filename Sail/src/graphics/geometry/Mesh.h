@@ -3,6 +3,8 @@
 #include <d3d11.h>
 #include <SimpleMath.h>
 #include <memory>
+#include "Material.h"
+#include "../renderer/Renderer.h"
 
 class VertexBuffer;
 class IndexBuffer;
@@ -10,6 +12,7 @@ class ShaderSet;
 
 class Mesh {
 public:
+	typedef std::unique_ptr<Mesh> Ptr;
 	typedef std::shared_ptr<Mesh> SPtr;
 public:
 	struct Data {
@@ -31,9 +34,10 @@ public:
 	Mesh(Data& buildData, ShaderSet* shaderSet);
 	~Mesh();
 
-	void draw();
+	void draw(Renderer& renderer);
 
 	//const Data& getBuildData() const;
+	Material* getMaterial();
 
 	UINT getNumVertices() const;
 	UINT getNumIndices() const;
@@ -42,6 +46,8 @@ public:
 	const IndexBuffer& getIndexBuffer() const;
 
 private:
+	Material::SPtr m_material;
+
 	std::unique_ptr<VertexBuffer> m_vertexBuffer;
 	std::unique_ptr<IndexBuffer> m_indexBuffer;
 	Data m_data;

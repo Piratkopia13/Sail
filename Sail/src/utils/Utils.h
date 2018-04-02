@@ -82,7 +82,7 @@ public:
 		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 #ifdef _SAIL_BREAK_ON_WARNING
-		__debugbreak();
+ 		__debugbreak();
 #endif
 	}
 

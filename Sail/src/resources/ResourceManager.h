@@ -4,10 +4,9 @@
 #include <memory>
 #include "TextureData.h"
 #include "DXTexture.h"
-#include "parsers/FBXParser.h"
+#include "ParsedScene.h"
 
 class DeferredGeometryShader;
-class FbxModel;
 class ShaderSet;
 class SoundManager;
 
@@ -17,37 +16,30 @@ public:
 	~ResourceManager();
 
 	// TextureData
-	void LoadTextureData(const std::string& filename);
+	void loadTextureData(const std::string& filename);
 	TextureData& getTextureData(const std::string& filename);
 	bool hasTextureData(const std::string& filename);
 
 	// DXTexture
-	void LoadDXTexture(const std::string& filename);
+	void loadDXTexture(const std::string& filename);
 	DXTexture& getDXTexture(const std::string& filename);
 	bool hasDXTexture(const std::string& filename);
 
-	// FBXParser
-	FBXParser& getFBXParser();
-
-	// FBXModels
-	void LoadFBXModel(const std::string& filename);
-	FbxModel& getFBXModel(const std::string& filename);
-	bool hasFBXModel(const std::string& filename);
+	// Models
+	void loadModel(const std::string& filename, ShaderSet* shaderSet);
+	Model& getModel(const std::string& filename, ShaderSet* shaderSet);
+	bool hasModel(const std::string& filename);
 
 	// ShaderSets
 	template <typename T>
-	void LoadShaderSet() {
-		// Insert and get the new ShaderSet
-		//m_shaderSets.insert({ typeid(T).name(), std::make_unique<T>() });
-		m_shaderSets.insert({ typeid(T).name(), new T() });
-	}
+	void loadShaderSet();
 
 	template <typename T>
 	T& getShaderSet() {
 		auto pos = m_shaderSets.find(typeid(T).name());
 		if (pos == m_shaderSets.end()) {
 			// ShaderSet was not yet loaded, load it and return
-			LoadShaderSet<T>();
+			loadShaderSet<T>();
 			return dynamic_cast<T&>(*(m_shaderSets.find(typeid(T).name())->second));
 		}
 
@@ -72,17 +64,21 @@ public:
 	SoundManager* getSoundManager();
 
 private:
-	// DONT MOVE THE NEXT LINE, WILL CAUSE CRASHES
-	FBXParser m_fbxParser;
-
 	// Textures mapped to their filenames
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
 	std::map<std::string, std::unique_ptr<DXTexture>> m_dxTextures;
 	// Models mapped to their filenames
-	std::map<std::string, std::unique_ptr<FbxModel>> m_fbxModels;
+	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, ShaderSet*> m_shaderSets;
 	// SoundManager containing all sounds
 	std::unique_ptr<SoundManager> m_soundManager;
 
 };
+
+template <typename T>
+void ResourceManager::loadShaderSet() {
+	// Insert and get the new ShaderSet
+	//m_shaderSets.insert({ typeid(T).name(), std::make_unique<T>() });
+	m_shaderSets.insert({ typeid(T).name(), new T() });
+}

@@ -157,8 +157,8 @@
   <ItemGroup>
     <ClCompile Include="src\api\Application.cpp" />
     <ClCompile Include="src\api\DXAPI.cpp" />
+    <ClCompile Include="src\entities\components\TextComponent.cpp" />
     <ClCompile Include="src\entities\Entity.cpp" />
-    <ClCompile Include="src\entities\components\TestTwoComponent.h" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\graphics\camera\FlyingCameraController.cpp" />
     <ClCompile Include="src\graphics\geometry\IndexBuffer.cpp" />
@@ -167,7 +167,9 @@
     <ClCompile Include="src\graphics\geometry\Model.cpp" />
     <ClCompile Include="src\graphics\geometry\spatial\AABB.cpp" />
     <ClCompile Include="src\graphics\light\LightSetup.cpp" />
-    <ClCompile Include="src\graphics\models\FbxModel.cpp" />
+    <ClCompile Include="src\graphics\renderer\Renderer.cpp" />
+    <ClCompile Include="src\resources\loaders\FBXLoader.cpp" />
+    <ClCompile Include="src\resources\ParsedScene.cpp" />
     <ClCompile Include="src\graphics\Particle.cpp" />
     <ClCompile Include="src\graphics\RenderableTexture.cpp" />
     <ClCompile Include="src\graphics\renderer\ForwardRenderer.cpp" />
@@ -194,7 +196,6 @@
     <ClCompile Include="src\resources\DXCubeMap.cpp" />
     <ClCompile Include="src\resources\DXTexture.cpp" />
     <ClCompile Include="src\resources\loaders\TGALoader.cpp" />
-    <ClCompile Include="src\resources\parsers\FBXParser.cpp" />
     <ClCompile Include="src\resources\ResourceManager.cpp" />
     <ClCompile Include="src\resources\TextureData.cpp" />
     <ClCompile Include="src\states\State.cpp" />
@@ -218,9 +219,9 @@
     <ClInclude Include="src\entities\components\Component.h" />
     <ClInclude Include="src\entities\components\Components.h" />
     <ClInclude Include="src\entities\components\ModelComponent.h" />
+    <ClInclude Include="src\entities\components\TextComponent.h" />
     <ClInclude Include="src\entities\components\TransformComponent.h" />
     <ClInclude Include="src\entities\Entity.h" />
-    <ClInclude Include="src\entities\components\TestComponent.h" />
     <ClInclude Include="src\events\Event.h" />
     <ClInclude Include="src\events\EventHandler.h" />
     <ClInclude Include="src\events\Events.h" />
@@ -246,7 +247,8 @@
     <ClInclude Include="src\graphics\light\DirectionalLight.h" />
     <ClInclude Include="src\graphics\light\LightSetup.h" />
     <ClInclude Include="src\graphics\light\PointLight.h" />
-    <ClInclude Include="src\graphics\models\FbxModel.h" />
+    <ClInclude Include="src\resources\loaders\FBXLoader.h" />
+    <ClInclude Include="src\resources\ParsedScene.h" />
     <ClInclude Include="src\graphics\Particle.h" />
     <ClInclude Include="src\graphics\RenderableTexture.h" />
     <ClInclude Include="src\graphics\renderer\ForwardRenderer.h" />
@@ -277,7 +279,6 @@
     <ClInclude Include="src\resources\DXCubeMap.h" />
     <ClInclude Include="src\resources\DXTexture.h" />
     <ClInclude Include="src\resources\loaders\TGALoader.h" />
-    <ClInclude Include="src\resources\parsers\FBXParser.h" />
     <ClInclude Include="src\resources\ResourceFormat.h" />
     <ClInclude Include="src\resources\ResourceManager.h" />
     <ClInclude Include="src\resources\TextureData.h" />

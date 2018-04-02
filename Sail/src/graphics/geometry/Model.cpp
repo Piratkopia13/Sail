@@ -5,25 +5,40 @@
 #include "Material.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "Material.h"
 
 using namespace DirectX::SimpleMath;
 
 Model::Model(Mesh::Data& buildData, ShaderSet* shaderSet) {
 
-	m_mesh = std::make_shared<Mesh>(buildData, shaderSet);
+	m_meshes.push_back(std::make_unique<Mesh>(buildData, shaderSet));
 
 	// TODO: reuse materials (?)
-	m_material = std::make_shared<Material>(shaderSet);
+	//m_material = std::make_shared<Material>(shaderSet);
 }
 
-Model::Model(const std::string& path, ShaderSet* shaderSet) {
-	// TODO: reuse mesh if it has already been loaded
-	// TODO: load mesh from FBX model specified by path
-	//m_mesh = std::make_shared<Mesh>(buildData, shaderSet);
+Model::Model() {
 
-	// TODO: reuse materials (?)
-	m_material = std::make_shared<Material>(shaderSet);
 }
+
+//Model::Model(const std::string& path, ShaderSet* shaderSet) {
+//	// TODO: reuse mesh if it has already been loaded
+//	// TODO: load mesh from FBX model specified by path
+//	//m_mesh = std::make_shared<Mesh>(buildData, shaderSet);
+//
+//	// TODO: reuse materials (?)
+//	m_material = std::make_shared<Material>(shaderSet);
+//}
+
+//Model::Model(std::vector<Mesh::Data>& data, ShaderSet* shaderSet) {
+//
+//	for (auto& meshData : data) {
+//		m_meshes.push_back(std::make_shared<Mesh>(meshData, shaderSet));
+//	}
+//
+//	//m_material = std::make_shared<Material>(shaderSet);
+//
+//}
 
 //Model::Model(ShaderSet* shaderSet)
 //	: m_aabb(Vector3::Zero, Vector3(.2f, .2f, .2f))
@@ -36,6 +51,11 @@ Model::Model(const std::string& path, ShaderSet* shaderSet) {
 //	m_transformChanged = false;
 //}
 Model::~Model() {
+}
+
+Mesh* Model::addMesh(std::unique_ptr<Mesh> mesh) {
+	m_meshes.push_back(std::move(mesh));
+	return m_meshes.back().get();
 }
 
 //void Model::setBuildData(Data& buildData) {
@@ -54,18 +74,30 @@ Model::~Model() {
 
 void Model::draw(Renderer& renderer) {
 
-	m_material->bind();
-	m_mesh->draw();
+	//m_material->bind();
+	for (auto& mesh : m_meshes)
+		mesh->draw(renderer);
 
 }
 
-ShaderSet* Model::getShader() const {
-	return m_material->getShader();
+Mesh* Model::getMesh(unsigned int index) {
+	assert(m_meshes.size() > index);
+	return m_meshes[index].get();
 }
 
-Material* Model::getMaterial() {
-	return m_material.get();
+unsigned int Model::getNumberOfMeshes() const {
+	return m_meshes.size();
 }
+
+//ShaderSet* Model::getShader() const {
+//	//return m_material->getShader();
+//	return nullptr;
+//}
+//
+//Material* Model::getMaterial() {
+//	//return m_material.get();
+//	return nullptr;
+//}
 
 //const AABB& Model::getAABB() const {
 //	return m_aabb;

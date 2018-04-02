@@ -5,7 +5,7 @@ using namespace DirectX;
 
 SailFont::SailFont(LPCWSTR fontFilename) {
 
-	m_font = std::make_unique<SpriteFont>(Application::getInstance()->getAPI()->getDevice(), (DEFAULT_SPRITEFONT_LOCATION+fontFilename).c_str());
+	m_font = std::make_unique<SpriteFont>(Application::getInstance()->getAPI()->getDevice(), (DEFAULT_SPRITEFONT_LOCATION + fontFilename).c_str());
 
 }
 SailFont::~SailFont() {}

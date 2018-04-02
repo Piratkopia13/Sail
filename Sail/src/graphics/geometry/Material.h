@@ -1,11 +1,11 @@
 #pragma once
 
-#include <string>
 #include <d3d11.h>
 #include <SimpleMath.h>
+#include <string>
 #include <memory>
-#include "../../resources/DXTexture.h"
-#include "../../api/Application.h"
+
+class ShaderSet;
 
 class Material {
 public:

@@ -18,13 +18,17 @@ void ForwardRenderer::begin(Camera* camera) {
 	commandQueue.clear();
 }
 
-void ForwardRenderer::submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix) {
+void ForwardRenderer::submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) {
 	RenderCommand cmd;
-	cmd.model = model;
-	cmd.modelMatrix = modelMatrix.Transpose();
+	cmd.mesh = mesh;
+	cmd.transform = modelMatrix.Transpose();
 	commandQueue.push_back(cmd);
 	//Logger::Log("Submitted model at: " + Utils::vec3ToStr(commandQueue.back().modelMatrix.Transpose().Translation()));
 
+}
+
+void ForwardRenderer::submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix) {
+	Renderer::submit(model, modelMatrix);
 }
 
 void ForwardRenderer::setLightSetup(LightSetup* lightSetup) {
@@ -40,10 +44,10 @@ void ForwardRenderer::end() {
 void ForwardRenderer::present() {
 
 	for (RenderCommand& command : commandQueue) {
-		ShaderSet* shader = command.model->getShader();
+		ShaderSet* shader = command.mesh->getMaterial()->getShader();
 		shader->bind();
 
-		shader->setCBufferVar("sys_mWorld", &command.modelMatrix, sizeof(Matrix));
+		shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(Matrix));
 		shader->setCBufferVar("sys_mVP", &m_camera->getViewProjection().Transpose(), sizeof(Matrix));
 		shader->setCBufferVar("sys_cameraPos", &m_camera->getPosition(), sizeof(Vector3));
 
@@ -54,6 +58,6 @@ void ForwardRenderer::present() {
 			shader->setCBufferVar("pointLights", &plData, sizeof(plData));
 		}
 
-		command.model->draw(*this);
+		command.mesh->draw(*this);
 	}
 }

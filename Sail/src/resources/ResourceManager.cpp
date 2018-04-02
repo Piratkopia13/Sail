@@ -1,5 +1,4 @@
 #include "ResourceManager.h"
-#include "../graphics/models/FbxModel.h"
 #include "../graphics/shader/deferred/DeferredGeometryShader.h"
 #include "audio/SoundManager.h"
 #include "../graphics/shader/ShaderSet.h"
@@ -17,7 +16,7 @@ ResourceManager::~ResourceManager() {
 // TextureData
 //
 
-void ResourceManager::LoadTextureData(const std::string& filename) {
+void ResourceManager::loadTextureData(const std::string& filename) {
 	m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
 }
 TextureData& ResourceManager::getTextureData(const std::string& filename) {
@@ -35,7 +34,7 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 // DXTexture
 //
 
-void ResourceManager::LoadDXTexture(const std::string& filename) {
+void ResourceManager::loadDXTexture(const std::string& filename) {
 
 	m_dxTextures.insert({ filename, std::make_unique<DXTexture>(filename) });
 }
@@ -51,36 +50,27 @@ bool ResourceManager::hasDXTexture(const std::string& filename) {
 }
 
 
-// 
-// FBXParser
+//
+// Model
 //
 
-FBXParser& ResourceManager::getFBXParser() {
-	return m_fbxParser;
+void ResourceManager::loadModel(const std::string& filename, ShaderSet* shaderSet) {
+	// Insert the new model
+	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shaderSet) }).first->second.get();
 }
-
-//
-// FBXModels
-//
-
-void ResourceManager::LoadFBXModel(const std::string& filename) {
-	// Insert and get the new model
-	FbxModel* model = m_fbxModels.insert({ filename, std::make_unique<FbxModel>(filename + ".fbx") }).first->second.get();
-	//model->getModel()->buildBufferForShader(&getShaderSet<DeferredGeometryShader>()); // TODO: FIX
-}
-FbxModel& ResourceManager::getFBXModel(const std::string& filename) {
+Model& ResourceManager::getModel(const std::string& filename, ShaderSet* shaderSet) {
 	auto pos = m_fbxModels.find(filename);
 	if (pos == m_fbxModels.end()) {
 		// Model was not yet loaded, load it and return
-		LoadFBXModel(filename);
+		loadModel(filename, shaderSet);
 		
-		return *m_fbxModels.find(filename)->second;
+		return *m_fbxModels.find(filename)->second->getModel();
 		//Logger::Error("Tried to access an fbx model that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadFBXModel(" + filename + ") before accessing it.");
 	}
 
-	return *pos->second;
+	return *pos->second->getModel();
 }
-bool ResourceManager::hasFBXModel(const std::string& filename) {
+bool ResourceManager::hasModel(const std::string& filename) {
 	return m_fbxModels.find(filename) != m_fbxModels.end();
 }
 
