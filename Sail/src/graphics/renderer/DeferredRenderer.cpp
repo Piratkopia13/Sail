@@ -1,215 +1,194 @@
 #include "DeferredRenderer.h"
-#include "../../Application.h"
+#include "../shader/ShaderSet.h"
+#include "../light/LightSetup.h"
+#include "../geometry/Model.h"
+#include "../geometry/factory/ScreenQuadModel.h"
+#include "../../api/Application.h"
+#include "../shader/deferred/DeferredPointLightShader.h"
+#include "../shader/deferred/DeferredDirectionalLightShader.h"
+#include "../shader/deferred/DeferredGeometryShader.h"
 
-using namespace DirectX;
-using namespace SimpleMath;
+using namespace DirectX::SimpleMath;
 
-DeferredRenderer::DeferredRenderer(){
+DeferredRenderer::DeferredRenderer() {
 
-	// Create light volumes
-	// TODO: fix
-	/*m_pointLightVolume = std::make_unique<FbxModel>("normalizedSphere.fbx");
-	m_pointLightVolume->getModel()->buildBufferForShader(&Application::getInstance()->getResourceManager().getShaderSet<DeferredPointLightShader>());*/
+	auto& resman = Application::getInstance()->getResourceManager();
+	m_pointLightShader = &resman.getShaderSet<DeferredPointLightShader>();
+	m_dirLightShader = &resman.getShaderSet<DeferredDirectionalLightShader>();
 
-	// Create full screen quad model for directional light
-	createFullscreenQuad();
+	// Create light volume model
+	m_pointLightVolumeModel = &resman.getModel("normalizedSphere.fbx", m_pointLightShader);
 
-	auto window = Application::getInstance()->getWindow();
+	// Create the fullscreen quad model used for light pass
+	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create(m_dirLightShader);
+
+	auto* window = Application::getInstance()->getWindow();
 	UINT width = window->getWindowWidth();
 	UINT height = window->getWindowHeight();
 
 	// Init renderable textures
-	m_gBuffers[0] = std::unique_ptr<RenderableTexture>(new RenderableTexture(1, width, height, true));
-	for (int i = 1; i < NUM_GBUFFERS - 1; i++) {
-		m_gBuffers[i] = std::unique_ptr<RenderableTexture>(new RenderableTexture(1, width, height, false));
-	}
-
-	// Set up render target view array, shader resource view array and the depth stencil view
 	for (int i = 0; i < NUM_GBUFFERS - 1; i++) {
-		m_rtvs[i] = *m_gBuffers[i]->getRenderTargetView();
-		m_srvs[i] = *m_gBuffers[i]->getColorSRV();
+		m_gBuffers[i] = std::unique_ptr<RenderableTexture>(new RenderableTexture(1, width, height, (i == 0))); // Create a dsv for the diffuse gbuffer(0)
+		//m_gBufferSRVs[i] = *m_gBuffers[i]->getColorSRV(); // Store color srv of texture
+		m_gBufferRTVs[i] = *m_gBuffers[i]->getRenderTargetView(); // Store depth srv of texture
 	}
-	// Last SRV is the depth buffer
-	m_srvs[DEPTH_GBUFFER] = *m_gBuffers[0]->getDepthSRV();
-	m_dsv = *m_gBuffers[0]->getDepthStencilView();
-	m_dsvSrv = *m_gBuffers[0]->getDepthSRV();
-	
-	//m_fullScreenPlane->getMaterial()->setTextures(m_srvs, NUM_GBUFFERS); // TODO: FIX
-	//m_pointLightVolume->getModel()->getMaterial()->setTextures(m_srvs, NUM_GBUFFERS); // TODO: FIX
 
-	/*ID3D11Texture2D* depthTextures[2];
-	depthTextures[0] = m_gBuffers[0]->getDepthTexture2D();
-	depthTextures[1] = ;
-
-	m_dirLightShader.createTextureArray(width, height, depthTextures);*/
+	// Bind gbuffer textures to the models
+	/*m_screenQuadModel->getMesh(0)->getMaterial()->setTextures(m_gBufferSRVs, NUM_GBUFFERS);
+	m_pointLightVolumeModel->getMesh(0)->getMaterial()->setTextures(m_gBufferSRVs, NUM_GBUFFERS);*/
 
 }
+
 DeferredRenderer::~DeferredRenderer() {
 
 }
 
-void DeferredRenderer::beginGeometryPass(Camera& camera, ID3D11RenderTargetView* const lightPassRTV, ID3D11DepthStencilView* const dsv) {
+void DeferredRenderer::begin(Camera* camera) {
+	m_camera = camera;
+	commandQueue.clear();
+}
 
-	// The last RTV is the light pass RTV used to write ambient light without having an extra pass
-	m_rtvs[NUM_GBUFFERS - 1] = lightPassRTV;
-
-	Application::getInstance()->getDXManager()->getDeviceContext()->RSSetViewports(1, m_gBuffers[0]->getViewPort());
-
-	auto dxm = Application::getInstance()->getDXManager();
-	dxm->disableAlphaBlending();
-
-	// Set render targets to all the gbuffers, except depth which is written to anyway
-	dxm->getDeviceContext()->OMSetRenderTargets(NUM_GBUFFERS, m_rtvs, (dsv) ? dsv : m_dsv );
-
-	// Clear all gbuffers
-	for (int i = 0; i < NUM_GBUFFERS - 1; i++)
-		m_gBuffers[i]->clear({0.f, 0.f, 0.0f, 0.0f});
-
-	// Update the camera in the shaders
-	Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>().updateCamera(camera);
-	Application::getInstance()->getResourceManager().getShaderSet<DeferredDirectionalLightShader>().updateCamera(camera);
-	Application::getInstance()->getResourceManager().getShaderSet<DeferredPointLightShader>().updateCamera(camera);
-
-	// Bind the geometry shader
-	Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>().bind();
+void DeferredRenderer::submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) {
+	RenderCommand cmd;
+	cmd.mesh = mesh;
+	cmd.transform = modelMatrix.Transpose();
+	commandQueue.push_back(cmd);
+	//Logger::Log("Submitted model at: " + Utils::vec3ToStr(commandQueue.back().modelMatrix.Transpose().Translation()));
 
 }
 
-void DeferredRenderer::beginLightDepthPass(ID3D11DepthStencilView* const dsv) {
-	auto dxm = Application::getInstance()->getDXManager();
-
-	dxm->getDeviceContext()->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1.0f, 0);
-	dxm->getDeviceContext()->OMSetRenderTargets(0, nullptr, dsv);
-
+void DeferredRenderer::submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix) {
+	Renderer::submit(model, modelMatrix);
 }
 
-void DeferredRenderer::doLightPass(LightSetup& lights, Camera& cam, DirLightShadowMap* dlShadowMap) {
+void DeferredRenderer::setLightSetup(LightSetup* lightSetup) {
+	m_lightSetup = lightSetup;
+}
 
-	auto devCon = Application::getInstance()->getDXManager()->getDeviceContext();
+void DeferredRenderer::end() {
+	/*for (RenderCommand& command : commandQueue) {
+	Logger::Log("Preparing model at: " + Utils::vec3ToStr(command.modelMatrix.Transpose().Translation()));
+	}*/
+}
 
-	DeferredDirectionalLightShader& dirLightShader = Application::getInstance()->getResourceManager().getShaderSet<DeferredDirectionalLightShader>();
-	DeferredPointLightShader& pointLightShader = Application::getInstance()->getResourceManager().getShaderSet<DeferredPointLightShader>();
+void DeferredRenderer::present() {
 
-	if (dlShadowMap)
-		devCon->PSSetShaderResources(10, 1, dlShadowMap->getSRV());
-	dirLightShader.updateCameraBuffer(cam, lights.getDirectionalLightCamera());
+	beginGeometryPass();
+	// loop and draw -- assert shader == geometryShader
+	for (RenderCommand& command : commandQueue) {
+		ShaderSet* shader = command.mesh->getMaterial()->getShader();
 
-	auto* dxm = Application::getInstance()->getDXManager();	
-	dxm->disableDepthBuffer();
-	dxm->enableAdditiveBlending();
+		DeferredGeometryShader* geometryShader = &Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>();
+		assert((int)shader == (int)geometryShader);
 
-	// Bind for dir light rendering pass
-	dirLightShader.bind();
-	// Do the directional light
-	dirLightShader.setLight(lights.getDL());
+		// TODO: sort by shader and update the following once per shader
 
-	// Draw all pixels on the screen since the directional light affects them all
-	//dirLightShader.draw(*m_fullScreenPlane, false); // TODO: FIX
-// 	m_fullScreenPlane.draw(false);
+		shader->bind();
+		shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(Matrix));
+		shader->setCBufferVar("sys_mView", &m_camera->getViewMatrix().Transpose(), sizeof(Matrix));
+		shader->setCBufferVar("sys_mProj", &m_camera->getProjMatrix().Transpose(), sizeof(Matrix));
 
-	// Bind for point light rendering pass
-	pointLightShader.bind();
-
-	for (const LightSetup::PointLight& pl : lights.getPLs()) {
-		pointLightShader.setLight(pl);
-
-		// TODO: FIX
-		/*m_pointLightVolume->getModel()->getTransform().setTranslation(pl.getPosition());
-		m_pointLightVolume->getModel()->getTransform().setScale(pl.getRadius());
-		m_pointLightVolume->getModel()->draw(false);*/
-
+		command.mesh->draw(*this);
 	}
-
-	dxm->enableDepthBuffer();
-	dxm->disableAlphaBlending();
-
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	devCon->PSSetShaderResources(10, 1, &nullSRV);
-}
-
-void DeferredRenderer::resize(int width, int height) {
-
-	// Update texture sizes
-	for (int i = 0; i < NUM_GBUFFERS - 1; i++) {
-		m_gBuffers[i]->resize(width, height);
-	}
-
-	// Update render target view array, shader resource view array and the depth stencil view
-	for (int i = 0; i < NUM_GBUFFERS - 1; i++) {
-		m_rtvs[i] = *m_gBuffers[i]->getRenderTargetView();
-		m_srvs[i] = *m_gBuffers[i]->getColorSRV();
-	}
-	// Last SRV is the depth buffer
-	m_srvs[DEPTH_GBUFFER] = *m_gBuffers[0]->getDepthSRV();
-	m_dsv = *m_gBuffers[0]->getDepthStencilView();
-	m_dsvSrv = *m_gBuffers[0]->getDepthSRV();
-
-	// Update the texture array in the directional light shader
-	/*ID3D11Texture2D* gbufferTextures[NUM_GBUFFERS];
-	for (int i = 0; i < NUM_GBUFFERS - 1; i++) {
-		gbufferTextures[i] = m_gBuffers[i]->getTexture2D();
-	}
-	dirLightShader.createTextureArray(width, height, gbufferTextures);*/
-
-}
-
-//DeferredGeometryShader& DeferredRenderer::getGeometryShader() {
-//	return m_geometryShader;
-//}
-//DeferredDirectionalLightShader& DeferredRenderer::getDirLightShader() {
-//	return m_dirLightShader;
-//}
-//DeferredPointLightShader& DeferredRenderer::getPointLightShader() {
-//	return m_pointLightShader;
-//}
-
-ID3D11ShaderResourceView** DeferredRenderer::getGBufferSRV(UINT index) {
-	if (index > NUM_GBUFFERS) return nullptr;
-	return &m_srvs[index];
-}
-
-RenderableTexture* DeferredRenderer::getGBufferRenderableTexture(UINT index)
-{
-	if (index > NUM_GBUFFERS) return nullptr;
-	return m_gBuffers[index].get();
-}
-
-void DeferredRenderer::createFullscreenQuad() {
-
-	Vector2 halfSizes(1.f, 1.f);
-
-	const int numVerts = 4;
-	Vector3* positions = new Vector3[numVerts]{
-		Vector3(-halfSizes.x, -halfSizes.y, 0.f),
-		Vector3(-halfSizes.x, halfSizes.y, 0.f),
-		Vector3(halfSizes.x, -halfSizes.y, 0.f),
-		Vector3(halfSizes.x, halfSizes.y, 0.f),
-	};
-
-	const int numIndices = 6;
-	ULONG* indices = new ULONG[numIndices]{
-		0, 1, 2, 2, 1, 3
-	};
-
-	Vector2* texCoords = new Vector2[numVerts]{
-		Vector2(0.f, 1.f),
-		Vector2(0.f, 0.f),
-		Vector2(1.f, 1.f),
-		Vector2(1.f, 0.f)
-	};
-
-	Model::Data data;
-	data.numVertices = numVerts;
-	data.numIndices = numIndices;
-	data.positions = positions;
-	data.indices = indices;
-	data.texCoords = texCoords;
-
-	//m_fullScreenPlane = std::make_unique<Model>(data, &Application::getInstance()->getResourceManager().getShaderSet<DeferredPointLightShader>());
-	//m_fullScreenPlane.buildBufferForShader(&Application::getInstance()->getResourceManager().getShaderSet<DeferredPointLightShader>());
+	
+	
+	doLightPass();
 	
 }
 
-ID3D11DepthStencilView* const DeferredRenderer::getDSV() const {
-	return m_dsv;
+void DeferredRenderer::beginGeometryPass() const {
+
+	// The last RTV is the light pass RTV used to write ambient light without having an extra pass
+	//m_rtvs[NUM_GBUFFERS - 1] = lightPassRTV;
+
+	Application::getInstance()->getAPI()->getDeviceContext()->RSSetViewports(1, m_gBuffers[0]->getViewPort());
+
+	auto dxm = Application::getInstance()->getAPI();
+	dxm->setBlending(GraphicsAPI::NO_BLENDING);
+
+	// Set render targets to all the gbuffers, except depth which is written to anyway
+	dxm->getDeviceContext()->OMSetRenderTargets(NUM_GBUFFERS, m_gBufferRTVs, *m_gBuffers[DIFFUSE_GBUFFER]->getDepthStencilView());
+
+	// Clear all gbuffers
+	for (int i = 0; i < NUM_GBUFFERS - 1; i++)
+		m_gBuffers[i]->clear({ 0.f, 0.f, 0.0f, 0.0f });
+
+	// Update the camera in the shaders
+	//shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(Matrix));
+	m_pointLightShader->bind();
+	m_pointLightShader->setCBufferVar("sys_mView", &m_camera->getViewMatrix().Transpose(), sizeof(Matrix));
+	m_pointLightShader->setCBufferVar("sys_mProj", &m_camera->getProjMatrix().Transpose(), sizeof(Matrix));
+
+	m_dirLightShader->bind();
+	m_dirLightShader->setCBufferVar("sys_mInvProj", &m_camera->getProjMatrix().Transpose().Invert(), sizeof(Matrix));
+
+	/*Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>().updateCamera(camera);
+	Application::getInstance()->getResourceManager().getShaderSet<DeferredDirectionalLightShader>().updateCamera(camera);
+	Application::getInstance()->getResourceManager().getShaderSet<DeferredPointLightShader>().updateCamera(camera);*/
+
+	// Bind the geometry shader
+	//Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>().bind();
+}
+
+void DeferredRenderer::doLightPass() {
+
+	auto* dxm = Application::getInstance()->getAPI();
+	auto* devCon = dxm->getDeviceContext();
+
+	dxm->renderToBackBuffer();
+
+	/*if (dlShadowMap)
+		devCon->PSSetShaderResources(10, 1, dlShadowMap->getSRV());*/
+	//m_dirLightShader.updateCameraBuffer(cam, lights.getDirectionalLightCamera());
+
+	dxm->setDepthMask(GraphicsAPI::BUFFER_DISABLED);
+
+	// Bind for dir light rendering pass
+	m_dirLightShader->bind();
+	// Do the directional light
+	m_dirLightShader->setLight(m_lightSetup->getDL(), m_camera);
+
+	/*
+	Texture2D def_texDiffuse : register(t0);
+	Texture2D def_texNormal : register(t1);
+	Texture2D def_texSpecular : register(t2);
+	Texture2D def_texDepth : register(t3);
+	*/
+	m_dirLightShader->setTexture2D("def_texDiffuse", *m_gBuffers[DIFFUSE_GBUFFER]->getColorSRV());
+	m_dirLightShader->setTexture2D("def_texNormal", *m_gBuffers[NORMAL_GBUFFER]->getColorSRV());
+	m_dirLightShader->setTexture2D("def_texSpecular", *m_gBuffers[SPECULAR_GBUFFER]->getColorSRV());
+	m_dirLightShader->setTexture2D("def_texDepth", *m_gBuffers[DIFFUSE_GBUFFER]->getDepthSRV());
+
+	// Draw all pixels on the screen since the directional light affects them all
+	m_screenQuadModel->draw(*this);
+
+	dxm->setBlending(GraphicsAPI::ADDITIVE);
+
+	// Bind for point light rendering pass
+	m_pointLightShader->bind();
+
+	m_pointLightShader->setTexture2D("def_texDiffuse", *m_gBuffers[DIFFUSE_GBUFFER]->getColorSRV());
+	m_pointLightShader->setTexture2D("def_texNormal", *m_gBuffers[NORMAL_GBUFFER]->getColorSRV());
+	m_pointLightShader->setTexture2D("def_texSpecular", *m_gBuffers[SPECULAR_GBUFFER]->getColorSRV());
+	m_pointLightShader->setTexture2D("def_texDepth", *m_gBuffers[DIFFUSE_GBUFFER]->getDepthSRV());
+
+	for (const PointLight& pl : m_lightSetup->getPLs()) {
+
+		m_pointLightShader->setLight(pl, m_camera);
+
+		Matrix transform;
+		transform *= Matrix::CreateScale(pl.getRadius());
+		transform *= Matrix::CreateTranslation(pl.getPosition());
+
+		m_pointLightShader->setCBufferVar("sys_mWorld", &transform.Transpose(), sizeof(Matrix));
+		m_pointLightVolumeModel->draw(*this);
+
+	}
+
+	dxm->setDepthMask(GraphicsAPI::NO_MASK);
+	dxm->setBlending(GraphicsAPI::NO_BLENDING);
+
+	ID3D11ShaderResourceView* nullSRVs[4] = { nullptr, nullptr, nullptr, nullptr };
+	devCon->PSSetShaderResources(0, 4, nullSRVs);
+
 }

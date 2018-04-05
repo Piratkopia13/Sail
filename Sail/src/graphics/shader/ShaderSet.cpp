@@ -31,20 +31,21 @@ ShaderSet::ShaderSet(const std::string& filename)
 	}
 	if (m_parsedData.hasGS) {
 		ID3D10Blob* blob = compileShader(source, "GSMain", "gs_5_0");
-		setPixelShader(blob);
+		setGeometryShader(blob);
 		Memory::safeRelease(blob);
 	}
 	if (m_parsedData.hasDS) {
 		ID3D10Blob* blob = compileShader(source, "DSMain", "ds_5_0");
-		setPixelShader(blob);
+		setDomainShader(blob);
 		Memory::safeRelease(blob);
 	}
 	if (m_parsedData.hasHS) {
 		ID3D10Blob* blob = compileShader(source, "HSMain", "hs_5_0");
-		setPixelShader(blob);
+		setHullShader(blob);
 		Memory::safeRelease(blob);
 	}
 }
+
 ShaderSet::~ShaderSet() {
 	Memory::safeRelease(VSBlob);
 }
@@ -63,14 +64,20 @@ void ShaderSet::parse(const std::string& source) {
 
 	const char* src;
 
-	// Count and reserve memory for the vector of cbuffer data
-	// This is needed to avoid copying/destructor calling on ConstantBuffers
-	int numCBuffers = 0;
-	src = cleanSource.c_str();
-	while (src = findToken("cbuffer", src)) {
-		numCBuffers++;
+	// Count and reserve memory for the vector of parsed data
+	// This is needed to avoid copying/destructor calling
+	{
+		int numCBuffers = 0;
+		src = cleanSource.c_str();
+		while (src = findToken("cbuffer", src))	numCBuffers++;
+		m_parsedData.cBuffers.reserve(numCBuffers);
 	}
-	m_parsedData.cBuffers.reserve(numCBuffers);
+	{
+		int numSamplers = 0;
+		src = cleanSource.c_str();
+		while (src = findToken("SamplerState", src)) numSamplers++;
+		m_parsedData.samplers.reserve(numSamplers);
+	}
 	
 	// Process all CBuffers
 	src = cleanSource.c_str();
@@ -186,7 +193,7 @@ ShaderComponent::BIND_SHADER ShaderSet::getBindShaderFromName(const std::string&
 	if (startsWith(name.c_str(), "DS")) return ShaderComponent::DS;
 	if (startsWith(name.c_str(), "HS")) return ShaderComponent::HS;
 	if (startsWith(name.c_str(), "CS")) return ShaderComponent::CS;
-	Logger::Warning("Shader resource with name \"" + name + "\" not starting with VS/PS etc, using VS as default");
+	Logger::Warning("Shader resource with name \"" + name + "\" not starting with VS/PS etc, using VS as default in shader: \"" + filename + "\"");
 	return ShaderComponent::VS; // Default to binding to VertexShader
 }
 
@@ -216,6 +223,9 @@ void ShaderSet::bind() {
 	for (auto& it : m_parsedData.samplers) {
 		it.sampler.bind();
 	}
+
+	// Set input layout as active
+	inputLayout.bind();
 
 	// Set this shader as bound
 	CurrentlyBoundShader = this;
@@ -255,18 +265,22 @@ const InputLayout& ShaderSet::getInputLayout() const {
 
 // TODO: size isnt really needed, can be read from the byteOffset of the next var
 void ShaderSet::setCBufferVar(const std::string& name, const void* data, UINT size) {
+	bool success = trySetCBufferVar(name, data, size);
+	if (!success)
+		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+}
 
+bool ShaderSet::trySetCBufferVar(const std::string& name, const void* data, UINT size) {
 	for (auto& it : m_parsedData.cBuffers) {
 		for (auto& var : it.vars) {
 			if (var.name == name) {
 				ShaderComponent::ConstantBuffer& cbuffer = it.cBuffer;
 				cbuffer.updateData(data, size, var.byteOffset);
-				return;
+				return true;
 			}
 		}
 	}
-
-	Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+	return false;
 }
 
 void ShaderSet::setTexture2D(const std::string& name, ID3D11ShaderResourceView* srv) {
@@ -322,6 +336,9 @@ UINT ShaderSet::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "DirectionalLight") return 32;
 	if (typeName == "PointLight") return 32;
 	if (typeName == "PointLightInput") return 272;
+	if (typeName == "DeferredPointLightData") return 48;
+	if (typeName == "DeferredDirLightData") return 32;
+	//if (typeName == "DeferredPointLightData") return 48;
 	//if (typeName == "PointLightInput") return 384;
 
 

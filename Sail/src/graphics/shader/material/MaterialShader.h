@@ -16,12 +16,6 @@ public:
 
 	void bind() override;
 
-	//virtual void draw(Model& model, bool bindFirst = true);
-
-	virtual void createBufferFromModelData(ID3D11Buffer** vertexBuffer, ID3D11Buffer** indexBuffer, ID3D11Buffer** instanceBuffer, const void* data);
-
-	//virtual void updateCamera(Camera& cam);
-
 	virtual void setClippingPlane(const DirectX::SimpleMath::Vector4& clippingPlane);
 	//void updateLights(const Lights& lights);
 

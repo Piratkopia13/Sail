@@ -1,124 +1,127 @@
 struct VSIn {
-  float4 position : POSITION0;
+    float4 position : POSITION0;
 };
 
 struct PSIn {
-  float4 position : SV_Position;
-  float3 viewRay : VIEWRAY;
-  float4 clipSpace : CLIPSPACE;
+    float4 position : SV_Position;
+    float3 viewRay : VIEWRAY;
+    float4 clipSpace : CLIPSPACE;
 };
 
-cbuffer ModelData : register(b0) {
-  matrix mInvP;
+cbuffer VSModelData : register(b0) {
+    matrix sys_mInvProj;
 }
 
 PSIn VSMain(VSIn input) {
-  PSIn output;
+    PSIn output;
 
-  input.position.w = 1.f;
+    input.position.w = 1.f;
 	// input position is already in clip space coordinates
-  output.position = input.position;
-  output.clipSpace = output.position;
+    output.position = input.position;
+    output.clipSpace = output.position;
   
-  float3 positionVS = mul(input.position, mInvP).xyz;
-  output.viewRay = float3(positionVS.xy / positionVS.z, 1.f);
+    float3 positionVS = mul(input.position, sys_mInvProj).xyz;
+    output.viewRay = float3(positionVS.xy / positionVS.z, 1.f);
 
-  return output;
+    return output;
 
 }
 
-Texture2D tex[4] : register(t0);
+Texture2D def_texDiffuse : register(t0);
+Texture2D def_texNormal : register(t1);
+Texture2D def_texSpecular : register(t2);
+Texture2D def_texDepth : register(t3);
+SamplerState PSss;
 
-Texture2D lightDepthTex : register(t10);
+Texture2D shdw_lightDepthTex : register(t10);
 //Texture2DArray depthTextures : register(t5);
-SamplerState ss : register(s0);
 
 //Texture2D playerCamDepthTex : register(t9);
 //Texture2D lightDepthTex : register(t10);
 
-struct LightData {
-  float3 directionVS; // View space direction of directional light
-  float3 color;
+struct DeferredDirLightData {
+    float3 directionVS; // View space direction of directional light
+    float3 color;
 };
 
-cbuffer Light : register(b0) {
-  LightData lightInput;
+cbuffer PSLight : register(b0) {
+    DeferredDirLightData def_dirLightInput;
 }
 
-SamplerState shadowSS : register(s1);
+SamplerState PSshadowSS : register(s1);
 
-cbuffer ShadowLightBuffer : register(b1) {
-  matrix mInvV;
-  matrix mLightV;
-  matrix mLightP;
+cbuffer PSShadowLightBuffer : register(b1) {
+    matrix shdw_mInvView;
+    matrix shdw_mLightView;
+    matrix shdw_mLightProj;
 }
 
-float3 deferredPhongShading(LightData light, float3 fragToCam, float3 diffuse, float3 specular, float3 normal) {
+float3 deferredPhongShading(DeferredDirLightData light, float3 fragToCam, float3 diffuse, float3 specular, float3 normal) {
 
-  float3 totalColor = float3(0.f, 0.f, 0.f);
-  fragToCam = normalize(fragToCam);
+    float3 totalColor = float3(0.f, 0.f, 0.f);
+    fragToCam = normalize(fragToCam);
 
 	// Directional light
-  light.directionVS = normalize(light.directionVS);
+    light.directionVS = normalize(light.directionVS);
 
-  float diffuseCoefficient = saturate(dot(normal, -light.directionVS));
+    float diffuseCoefficient = saturate(dot(normal, -light.directionVS));
 
-  float3 specularCoefficient = float3(0.f, 0.f, 0.f);
-  if (diffuseCoefficient > 0.f) {
+    float3 specularCoefficient = float3(0.f, 0.f, 0.f);
+    if (diffuseCoefficient > 0.f) {
 
-    float3 r = reflect(light.directionVS, normal);
-    r = normalize(r);
-    specularCoefficient = pow(saturate(dot(fragToCam, r)), specular.y) * specular.x;
+        float3 r = reflect(light.directionVS, normal);
+        r = normalize(r);
+        specularCoefficient = pow(saturate(dot(fragToCam, r)), specular.y) * specular.x;
 
-  }
-  totalColor += (diffuseCoefficient + specularCoefficient) * diffuse * light.color;
+    }
+    totalColor += (diffuseCoefficient + specularCoefficient) * diffuse * light.color;
 	
-  return saturate(totalColor);
+    return saturate(totalColor);
 }
 
 float calcLightValue(float3 camToFrag) {
     // The camToFrag position transformed to world space
-  float4 projectedCamToFrag = mul(float4(camToFrag, 1.f), mInvV);
+    float4 projectedCamToFrag = mul(float4(camToFrag, 1.f), shdw_mInvView);
     //float4 projectedCamToFrag = float4(camToFrag, 1.f);
     // The camToFrag position transformed to the light's view space
-  projectedCamToFrag = mul(projectedCamToFrag, mLightV);
+    projectedCamToFrag = mul(projectedCamToFrag, shdw_mLightView);
     // The camToFrag position transformed to the light's clip space
-  projectedCamToFrag = mul(projectedCamToFrag, mLightP);
+    projectedCamToFrag = mul(projectedCamToFrag, shdw_mLightProj);
     // Diving by W to go to NDC
-  projectedCamToFrag.xyz /= projectedCamToFrag.w;
+    projectedCamToFrag.xyz /= projectedCamToFrag.w;
 
 
     // The texture coordinates ranging from 0 to 1
-  float2 texCoords = projectedCamToFrag.xy * float2(0.5f, 0.5f) + float2(0.5f, 0.5f);
+    float2 texCoords = projectedCamToFrag.xy * float2(0.5f, 0.5f) + float2(0.5f, 0.5f);
 
     // Flipping the y coordinate
-  texCoords.y = 1 - texCoords.y;
+    texCoords.y = 1 - texCoords.y;
 
     /*
         Loop index MUST be >= 1.
         loopIndex:  1 2  3  4  5   6 
         numSamples: 4 16 36 64 100 144
     */
-  const int loopIndex = 2;
-  const int numSamples = 4 * pow(loopIndex, 2);
+    const int loopIndex = 2;
+    const int numSamples = 4 * pow(loopIndex, 2);
     // Resolution of the texture
     //float2 smapSize = float2(16384.f, 8640.f);
   //float2 smapSize = float2(8192.f, 4320.f);
-  float2 smapSize = float2(4096.f, 2160.f);
+    float2 smapSize = float2(4096.f, 2160.f);
     // Size of each pixel on the texture
-  float dx = 1.f / smapSize.x;
-  float dy = 1.f / smapSize.y;
-  float bias = 0.0001f;
+    float dx = 1.f / smapSize.x;
+    float dy = 1.f / smapSize.y;
+    float bias = 0.0001f;
 
     // The light coefficient to return (how lit the fragment should be, range [0,1])
-  float lightCoeff = 0.f;
+    float lightCoeff = 0.f;
     // Loops through and samples points around the current 'main' point
     // The loop returns 0 if the point is occluded, 1 if it's not.
-  for (float i = -loopIndex + 0.5f; i < loopIndex + 0.5f; i++)
-    for (float j = -loopIndex + 0.5f; j < loopIndex + 0.5f; j++)
-      lightCoeff += lightDepthTex.Sample(shadowSS, float2(texCoords.x + dx * i, texCoords.y + dy * j)).x + bias < projectedCamToFrag.z ? 0.0f : 1.0f;
+    for (float i = -loopIndex + 0.5f; i < loopIndex + 0.5f; i++)
+        for (float j = -loopIndex + 0.5f; j < loopIndex + 0.5f; j++)
+            lightCoeff += shdw_lightDepthTex.Sample(PSshadowSS, float2(texCoords.x + dx * i, texCoords.y + dy * j)).x + bias < projectedCamToFrag.z ? 0.0f : 1.0f;
     //Divide the value by how many samples were made
-  lightCoeff = lightCoeff / float(numSamples);
+    lightCoeff = lightCoeff / float(numSamples);
     
     //for (float i = -1.5; i <= 0.5; i+=2)
     //    for (float j = -0.5; j <= 1.5; j+=2)
@@ -139,7 +142,7 @@ float calcLightValue(float3 camToFrag) {
     //    lightCoeff = 1.f;
 
     // Clamps the value so the shadows don't get too dark.
-  lightCoeff = clamp(lightCoeff, 0.5f, 1.f);
+    lightCoeff = clamp(lightCoeff, 0.5f, 1.f);
 
 
     // Lecture PCF
@@ -188,46 +191,46 @@ float calcLightValue(float3 camToFrag) {
     //--------------------
     
 
-  return lightCoeff;
+    return lightCoeff;
 }
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
-  float2 texCoords;
-  texCoords.x = input.clipSpace.x / input.clipSpace.w / 2.f + 0.5f;
-  texCoords.y = -input.clipSpace.y / input.clipSpace.w / 2.f + 0.5f;
+    float2 texCoords;
+    texCoords.x = input.clipSpace.x / input.clipSpace.w / 2.f + 0.5f;
+    texCoords.y = -input.clipSpace.y / input.clipSpace.w / 2.f + 0.5f;
 
 	// Calculate projection constants (TODO: do this on the CPU)
-  float nearClipDistance = 0.1f;
-  float farClipDistance = 1000.f;
-  float projectionA = farClipDistance / (farClipDistance - nearClipDistance);
-  float projectionB = (-farClipDistance * nearClipDistance) / (farClipDistance - nearClipDistance);
+    float nearClipDistance = 0.1f;
+    float farClipDistance = 1000.f;
+    float projectionA = farClipDistance / (farClipDistance - nearClipDistance);
+    float projectionB = (-farClipDistance * nearClipDistance) / (farClipDistance - nearClipDistance);
 
 	// Sample the depth and convert to linear view space Z (assume it gets sampled as a floating point value of the range [0,1])
-  float depth = tex[3].Sample(ss, texCoords).x;
-  float linearDepth = projectionB / (depth - projectionA);
-  float3 positionVS = input.viewRay * linearDepth;
+    float depth = def_texDepth.Sample(PSss, texCoords).x;
+    float linearDepth = projectionB / (depth - projectionA);
+    float3 positionVS = input.viewRay * linearDepth;
 
-  float3 fragToCam = -positionVS;
+    float3 fragToCam = -positionVS;
 
-  float shadow = calcLightValue(positionVS);
+    float shadow = calcLightValue(positionVS);
 
-  float4 diffuseColor = tex[0].Sample(ss, texCoords);
+    float4 diffuseColor = def_texDiffuse.Sample(PSss, texCoords);
 
   // Dont perform lighting on bright pixels to get the "tron" glow
-  if (diffuseColor.a < 1.f)
-    return float4(diffuseColor.rgb, 1.f);
+    if (diffuseColor.a < 1.f)
+        return float4(diffuseColor.rgb, 1.f);
 
-  if (shadow > 0.f) {
+    if (shadow > 0.f) {
 
-    float3 normal = (tex[1].Sample(ss, texCoords).rgb * 2.f - 1.f);
+        float3 normal = (def_texNormal.Sample(PSss, texCoords).rgb * 2.f - 1.f);
 
-    float3 specular = tex[2].Sample(ss, texCoords).rgb;
+        float3 specular = def_texSpecular.Sample(PSss, texCoords).rgb;
 
-    return float4(deferredPhongShading(lightInput, fragToCam, diffuseColor.rgb, specular, normal) * shadow, 1.f);
-  } else {
-    return float4(0.f, 0.f, 0.f, 1.f);
-  }
+        return float4(deferredPhongShading(def_dirLightInput, fragToCam, diffuseColor.rgb, specular, normal) * shadow, 1.f);
+    } else {
+        return float4(0.f, 0.f, 0.f, 1.f);
+    }
 	//return float4(fragToCam, 1.0f);
 	//return float4(diffuseColor + float3(0.1f, 0.1f, 0.1f), 1.f);
 	//return float4(tex[0].Sample(ss, texCoords).rgb, 1.0f);

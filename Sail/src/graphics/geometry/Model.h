@@ -10,6 +10,9 @@ class ShaderSet;
 class Material;
 
 class Model {
+public:
+	typedef std::unique_ptr<Model> Ptr;
+
 public: 
 	//Model(std::vector<Mesh::Data>& data, ShaderSet* shaderSet);
 	Model();

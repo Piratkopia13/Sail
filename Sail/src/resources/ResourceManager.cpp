@@ -56,7 +56,7 @@ bool ResourceManager::hasDXTexture(const std::string& filename) {
 
 void ResourceManager::loadModel(const std::string& filename, ShaderSet* shaderSet) {
 	// Insert the new model
-	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shaderSet) }).first->second.get();
+	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shaderSet) });
 }
 Model& ResourceManager::getModel(const std::string& filename, ShaderSet* shaderSet) {
 	auto pos = m_fbxModels.find(filename);

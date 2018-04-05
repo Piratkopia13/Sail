@@ -18,6 +18,8 @@ Text* TextComponent::addText(Text::Ptr text) {
 void TextComponent::draw() {
 	auto* dxm = Application::getInstance()->getAPI();
 
+	//dxm->setDepthMask(GraphicsAPI::BUFFER_DISABLED);
+
 	// 2D text rendering
 	// Beginning the spritebatch will disable depth testing
 	if (!m_texts.empty()) {

@@ -27,7 +27,8 @@ Material::Material(ShaderSet* shaderSet)
 Material::~Material() { }
 
 void Material::bind() {
-	m_shader->setCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
+	m_shader->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
+
 	if (m_phongSettings.hasDiffuseTexture)
 		m_shader->setTexture2D("sys_texDiffuse", m_srvs[0]);
 	if (m_phongSettings.hasNormalTexture)

@@ -32,9 +32,12 @@ GameState::GameState(StateStack& stack)
 
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	m_cubeModel = ModelFactory::CubeModel::Create(Vector3(.5f), &m_app->getResourceManager().getShaderSet<MaterialShader>());
+	auto* shader = &m_app->getResourceManager().getShaderSet<DeferredGeometryShader>();
+	//auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+
+	m_cubeModel = ModelFactory::CubeModel::Create(Vector3(.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
-	//m_cubeModel = ModelFactory::PlaneModel::Create(Vector2(.5f), &m_app->getResourceManager().getShaderSet<MaterialShader>());
+	//m_cubeModel = ModelFactory::PlaneModel::Create(Vector2(.5f), shader);
 
 	m_scene.setLightSetup(&m_lights);
 
@@ -48,11 +51,10 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 1.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
-	Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", &m_app->getResourceManager().getShaderSet<MaterialShader>());
-
+	Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader);
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(fbxModel);
-	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 3.f, 0.f));
+	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 0.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
 	e = Entity::Create();

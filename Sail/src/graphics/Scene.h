@@ -2,6 +2,7 @@
 
 #include "../entities/Entity.h"
 #include "renderer/ForwardRenderer.h"
+#include "renderer/DeferredRenderer.h"
 #include "camera/Camera.h"
 
 class LightSetup;
@@ -19,6 +20,7 @@ public:
 
 private:
 	std::vector<Entity::Ptr> m_entities;
-	ForwardRenderer m_renderer;
+	//ForwardRenderer m_renderer;
+	DeferredRenderer m_renderer;
 
 };

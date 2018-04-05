@@ -37,11 +37,11 @@ public:
 	virtual void bindCS(UINT csIndex = 0);
 
 	// TODO: remove these from all shaders
-	virtual void draw(Model& model, bool bindFirst = true) {}
-	virtual void draw(bool bindFirst = true) {}
+	// virtual void draw(Model& model, bool bindFirst = true) {}
+	// virtual void draw(bool bindFirst = true) {}
 
 	// TODO: remove this from all shaders
-	virtual void createBufferFromModelData(ID3D11Buffer** vertexBuffer, ID3D11Buffer** indexBuffer, ID3D11Buffer** instanceBuffer, const void* data) = 0;
+	// virtual void createBufferFromModelData(ID3D11Buffer** vertexBuffer, ID3D11Buffer** indexBuffer, ID3D11Buffer** instanceBuffer, const void* data) = 0;
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const DirectX::SimpleMath::Vector4& clippingPlane) {};
@@ -50,6 +50,7 @@ public:
 	const InputLayout& getInputLayout() const;
 
 	void setCBufferVar(const std::string& name, const void* data, UINT size);
+	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
 	void setTexture2D(const std::string& name, ID3D11ShaderResourceView* srv);
 
 protected:

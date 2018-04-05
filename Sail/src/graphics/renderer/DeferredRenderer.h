@@ -1,20 +1,13 @@
 #pragma once
 
-#include <d3d11.h>
-#include <SimpleMath.h>
-#include <memory>
+#include "Renderer.h"
 #include "../RenderableTexture.h"
-#include "../geometry/Model.h"
-#include "../models/FbxModel.h"
-#include "../shader/basic/SimpleTextureShader.h"
-#include "../shader/deferred/DeferredGeometryShader.h"
-#include "../shader/deferred/DeferredDirectionalLightShader.h"
-#include "../shader/deferred/DeferredPointLightShader.h"
-#include "../camera/PerspectiveCamera.h"
-#include "../shadows/DirLightShadowMap.h"
 
-class DeferredRenderer {
+class Model;
+class DeferredPointLightShader;
+class DeferredDirectionalLightShader;
 
+class DeferredRenderer : public Renderer {
 public:
 	// Dont change, used as array indices
 	enum GBuffers {
@@ -29,27 +22,32 @@ public:
 	DeferredRenderer();
 	~DeferredRenderer();
 
-	void beginGeometryPass(Camera& camera, ID3D11RenderTargetView* const lightPassRTV, ID3D11DepthStencilView* const dsv = nullptr);
-	void beginLightDepthPass(ID3D11DepthStencilView* const dsv);
-	void doLightPass(LightSetup& lights, Camera& cam, DirLightShadowMap* dlShadowMap = nullptr);
-	void resize(int width, int height);
-	ID3D11ShaderResourceView** getGBufferSRV(UINT index);
-	RenderableTexture* getGBufferRenderableTexture(UINT index);
-	ID3D11DepthStencilView* const getDSV() const;
+	void begin(Camera* camera) override;
+
+	void submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix);
+	void submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) override;
+	void setLightSetup(LightSetup* lightSetup) override;
+	void end() override;
+	void present() override;
 
 private:
-	void createFullscreenQuad();
+	void beginGeometryPass() const;
+	void doLightPass();
 
 private:
+	Camera* m_camera;
+	LightSetup* m_lightSetup;
 
 	std::unique_ptr<RenderableTexture> m_gBuffers[NUM_GBUFFERS - 1];
-	ID3D11RenderTargetView* m_rtvs[NUM_GBUFFERS];
-	ID3D11ShaderResourceView* m_srvs[NUM_GBUFFERS];
-	ID3D11ShaderResourceView* m_dsvSrv;
-	ID3D11DepthStencilView* m_dsv;
-	std::unique_ptr<Model> m_fullScreenPlane;
 
-	// Light volumes
-	std::unique_ptr<FbxModel> m_pointLightVolume;
+	std::unique_ptr<Model> m_screenQuadModel;
+	Model* m_pointLightVolumeModel;
+	DeferredPointLightShader* m_pointLightShader;
+	DeferredDirectionalLightShader* m_dirLightShader;
+
+	// Pointers to the shader resource views used as gbuffers
+	//ID3D11ShaderResourceView* m_gBufferSRVs[NUM_GBUFFERS];
+	ID3D11RenderTargetView* m_gBufferRTVs[NUM_GBUFFERS];
+
 
 };

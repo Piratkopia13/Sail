@@ -94,8 +94,8 @@ void MaterialShader::bind() {
 	// Call parent to bind shaders
 	ShaderSet::bind();
 
-	// Set input layout as active
-	inputLayout.bind();
+	//// Set input layout as active
+	//inputLayout.bind();
 
 	// Bind cbuffers
 	/*m_modelDataBuffer->bind(ShaderComponent::VS, 0);
@@ -116,7 +116,7 @@ void MaterialShader::bind() {
 
 }
 
-void MaterialShader::createBufferFromModelData(ID3D11Buffer** vertexBuffer, ID3D11Buffer** indexBuffer, ID3D11Buffer** instanceBuffer, const void* data) {
+//void MaterialShader::createBufferFromModelData(ID3D11Buffer** vertexBuffer, ID3D11Buffer** indexBuffer, ID3D11Buffer** instanceBuffer, const void* data) {
 
 	//Model::Data modelData = *(Model::Data*)data;
 
@@ -199,7 +199,7 @@ void MaterialShader::createBufferFromModelData(ID3D11Buffer** vertexBuffer, ID3D
 	//	Memory::safeDeleteArr(indices);
 	//}
 
-}
+//}
 
 // TODO: remove
 //void MaterialShader::draw(Model& model, bool bindFirst) {

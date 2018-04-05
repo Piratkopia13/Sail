@@ -4,35 +4,44 @@ struct VSIn {
 
 struct PSIn {
 	float4 position : SV_Position;
-	float2 texCoords : TEXCOORD0;
 	float4 clipSpace : CLIPSPACE;
 	float3 positionVS : POSVS;
 };
 
-cbuffer ModelData : register(b0) {
-	matrix mWV;
-	matrix mP;
+cbuffer VSSystemCBuffer : register(b0) {
+    matrix sys_mWorld;
+    matrix sys_mView;
+    matrix sys_mProj;
 }
+
+//cbuffer ModelData : register(b0) {
+//	matrix mWV;
+//	matrix mP;
+//}
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
 	input.position.w = 1.f;
 	output.position = input.position;
-	output.position = mul(input.position, mWV);
-	output.position = mul(output.position, mP);
+    matrix wv = mul(sys_mWorld, sys_mView);
+	output.position = mul(input.position, wv);
+	output.position = mul(output.position, sys_mProj);
 	output.clipSpace = output.position;
 
-	output.positionVS = mul(input.position.xyz, (float3x3)mWV);
+	output.positionVS = mul(input.position.xyz, (float3x3)wv);
 
 	return output;
 
 }
 
-Texture2D tex[4];
-SamplerState ss;
+Texture2D def_texDiffuse : register(t0);
+Texture2D def_texNormal : register(t1);
+Texture2D def_texSpecular : register(t2);
+Texture2D def_texDepth : register(t3);
+SamplerState PSss;
 
-struct LightData {
+struct DeferredPointLightData {
 	float3 color;
 	float attConstant;
 	float attLinear;
@@ -40,11 +49,11 @@ struct LightData {
 	float3 positionVS; // View space position of pointlight
 };
 
-cbuffer Light : register(b0) {
-	LightData lightInput;
+cbuffer PSLight : register(b0) {
+	DeferredPointLightData def_pointLightInput;
 }
 
-float3 deferredPhongShading(LightData light, float3 fragPosVS, float3 diffuse, float3 specular, float3 normal) {
+float3 deferredPhongShading(DeferredPointLightData light, float3 fragPosVS, float3 diffuse, float3 specular, float3 normal) {
 
 	// View space vector poiting from the fragment position to the point light pos
 	float3 fragToLight = light.positionVS - fragPosVS;
@@ -98,21 +107,21 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	float projectionA = farClipDistance / (farClipDistance - nearClipDistance);
 	float projectionB = (-farClipDistance * nearClipDistance) / (farClipDistance - nearClipDistance);
 
-	// Sample the depth and convert to linear view space Z (assume it gets sampled as a floating point value of the range [0,1])
-	float depth = tex[3].Sample(ss, texCoords).x;
+	// Sample the depth and convert to linear view space Z (aPSssume it gets sampled as a floating point value of the range [0,1])
+	float depth = def_texDepth.Sample(PSss, texCoords).x;
 	float linearDepth = projectionB / (depth - projectionA);
 	float3 positionVS = viewRay * linearDepth;
 	
-	float3 diffuseColor = tex[0].Sample(ss, texCoords).rgb;
+    float3 diffuseColor = def_texDiffuse.Sample(PSss, texCoords).rgb;
 
-	float3 normal = tex[1].Sample(ss, texCoords).rgb * 2.f - 1.f;
+    float3 normal = def_texNormal.Sample(PSss, texCoords).rgb * 2.f - 1.f;
 
-	float3 specular = tex[2].Sample(ss, texCoords).rgb;
+    float3 specular = def_texSpecular.Sample(PSss, texCoords).rgb;
 
-	return float4(deferredPhongShading(lightInput, positionVS, diffuseColor, specular, normal), 1.0f);
+    return float4(deferredPhongShading(def_pointLightInput, positionVS, diffuseColor, specular, normal), 1.0f);
 	//return float4(fragToCam, 1.0f);
 	//return float4(diffuseColor + float3(0.1f, 0.1f, 0.1f), 1.f);
-	//return float4(tex[0].Sample(ss, texCoords).rgb, 1.0f);
+	//return float4(tex[0].Sample(PSss, texCoords).rgb, 1.0f);
 	//return float4(linearDepth / 100.f, linearDepth / 100.f, linearDepth / 100.f, 1.f);
 	//return float4(1.f, 0.f, 0.f, 1.f);
 }

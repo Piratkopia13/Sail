@@ -167,7 +167,11 @@
     <ClCompile Include="src\graphics\geometry\Model.cpp" />
     <ClCompile Include="src\graphics\geometry\spatial\AABB.cpp" />
     <ClCompile Include="src\graphics\light\LightSetup.cpp" />
+    <ClCompile Include="src\graphics\renderer\DeferredRenderer.cpp" />
     <ClCompile Include="src\graphics\renderer\Renderer.cpp" />
+    <ClCompile Include="src\graphics\shader\deferred\DeferredDirectionalLightShader.cpp" />
+    <ClCompile Include="src\graphics\shader\deferred\DeferredGeometryShader.cpp" />
+    <ClCompile Include="src\graphics\shader\deferred\DeferredPointLightShader.cpp" />
     <ClCompile Include="src\resources\loaders\FBXLoader.cpp" />
     <ClCompile Include="src\resources\ParsedScene.cpp" />
     <ClCompile Include="src\graphics\Particle.cpp" />
@@ -237,6 +241,7 @@
     <ClInclude Include="src\graphics\geometry\factory\CubeModel.h" />
     <ClInclude Include="src\graphics\geometry\factory\InstancedParticleModel.h" />
     <ClInclude Include="src\graphics\geometry\factory\PlaneModel.h" />
+    <ClInclude Include="src\graphics\geometry\factory\ScreenQuadModel.h" />
     <ClInclude Include="src\graphics\geometry\factory\SphereModel.h" />
     <ClInclude Include="src\graphics\geometry\IndexBuffer.h" />
     <ClInclude Include="src\graphics\geometry\Material.h" />
@@ -247,6 +252,10 @@
     <ClInclude Include="src\graphics\light\DirectionalLight.h" />
     <ClInclude Include="src\graphics\light\LightSetup.h" />
     <ClInclude Include="src\graphics\light\PointLight.h" />
+    <ClInclude Include="src\graphics\renderer\DeferredRenderer.h" />
+    <ClInclude Include="src\graphics\shader\deferred\DeferredDirectionalLightShader.h" />
+    <ClInclude Include="src\graphics\shader\deferred\DeferredGeometryShader.h" />
+    <ClInclude Include="src\graphics\shader\deferred\DeferredPointLightShader.h" />
     <ClInclude Include="src\resources\loaders\FBXLoader.h" />
     <ClInclude Include="src\resources\ParsedScene.h" />
     <ClInclude Include="src\graphics\Particle.h" />
