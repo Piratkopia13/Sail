@@ -121,6 +121,9 @@ void GameState::onEvent(Event& event) {
 	Logger::Log("Recieved event: " + std::to_string(event.getType()));
 
 	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&GameState::onResize));
+
+	// Forward events
+	m_scene.onEvent(event);
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
@@ -129,7 +132,6 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
-// Updates the state
 bool GameState::update(float dt) {
 
 	std::wstring fps = std::to_wstring(m_app->getFPS());
@@ -139,7 +141,8 @@ bool GameState::update(float dt) {
 
 	auto& camPos = m_cam.getPosition();
 	if (m_debugCamText)
-		m_debugCamText->setText(L"Camera @ " + Utils::vec3ToWStr(camPos));
+		m_debugCamText->setText(L"Camera @ " + Utils::vec3ToWStr(camPos) + L"\n" + 
+			L"GPU memory usage: " + std::to_wstring(m_app->getAPI()->getMemoryUsage()) + L"/" + std::to_wstring(m_app->getAPI()->getMemoryBudget()) + L"mb");
 
 	m_app->getWindow()->setWindowTitle(L"Sail | Game Engine Demo | FPS: " + fps);
 

@@ -4,10 +4,11 @@
 #include "renderer/ForwardRenderer.h"
 #include "renderer/DeferredRenderer.h"
 #include "camera/Camera.h"
+#include "../events/Events.h"
 
 class LightSetup;
 
-class Scene {
+class Scene : public IEventListener {
 public:
 	Scene();
 	~Scene();
@@ -17,6 +18,8 @@ public:
 	void addEntity(Entity::Ptr entity);
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
+
+	virtual void onEvent(Event& event) override;
 
 private:
 	std::vector<Entity::Ptr> m_entities;

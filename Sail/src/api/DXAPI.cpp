@@ -17,6 +17,8 @@ DXAPI::~DXAPI() {
 	Memory::safeRelease(m_deviceContext);
 	Memory::safeRelease(m_device);
 	Memory::safeRelease(m_device3);
+	Memory::safeRelease(m_dxgiDevice);
+	Memory::safeRelease(m_adapter3);
 	Memory::safeRelease(m_depthStencilBuffer);
 	Memory::safeRelease(m_depthStencilStateEnabled);
 	Memory::safeRelease(m_depthStencilStateWriteMask);
@@ -85,6 +87,11 @@ bool DXAPI::init(Win32Window* window) {
 		if (SUCCEEDED(result)) {
 			m_driverType = driverTypes[i];
 			ThrowIfFailed(m_device->QueryInterface(__uuidof (ID3D11Device3), (void **)&m_device3));
+			
+			ThrowIfFailed(m_device->QueryInterface(__uuidof(IDXGIDevice3), (void **)&m_dxgiDevice));
+			ThrowIfFailed(m_dxgiDevice->GetAdapter((IDXGIAdapter**)&m_adapter3));
+			//ThrowIfFailed(m_device->QueryInterface(__uuidof (IDXGIAdapter3), (void **)&m_adapter3));
+
 			break;
 		}
 	}
@@ -395,6 +402,19 @@ ID3D11DepthStencilView* DXAPI::getDepthStencilView() const {
 UINT DXAPI::getAASamples() {
 	return m_aaSamples;
 }
+
+UINT64 DXAPI::getMemoryUsage() {
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
+	return info.CurrentUsage / 1000000;
+}
+
+UINT64 DXAPI::getMemoryBudget() {
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
+	return info.Budget / 1000000;
+}
+
 ID3D11RenderTargetView* const* DXAPI::getBackBufferRTV() const {
 	return &m_renderTargetView;
 }

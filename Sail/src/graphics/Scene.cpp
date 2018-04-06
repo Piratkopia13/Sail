@@ -32,13 +32,22 @@ void Scene::draw(Camera& camera) {
 
 			m_renderer.submit(model->getModel(), transform->getTransform().getMatrix());
 		}
-		TextComponent* text = entity->getComponent<TextComponent>();
-		if (text) {
-			text->draw();
-		}
 	}
 
 	m_renderer.end();
 	m_renderer.present();
 
+	// Draw text last
+	// TODO: sort entity list instead of iterating entire list twice
+	for (Entity::Ptr& entity : m_entities) {
+		TextComponent* text = entity->getComponent<TextComponent>();
+		if (text) {
+			text->draw();
+		}
+	}
+}
+
+void Scene::onEvent(Event& event) {
+	// Forward events
+	m_renderer.onEvent(event);
 }

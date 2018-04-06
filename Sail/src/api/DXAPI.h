@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include <d3d11_3.h>
+#include <dxgi1_4.h>
 
 #include "GraphicsAPI.h"
 
@@ -21,6 +22,8 @@ public:
 	ID3D11DeviceContext* getDeviceContext() const;
 	ID3D11DepthStencilView* getDepthStencilView() const;
 	UINT getAASamples();
+	UINT64 getMemoryUsage();
+	UINT64 getMemoryBudget();
 	ID3D11RenderTargetView* const* getBackBufferRTV() const;
 	ID3DUserDefinedAnnotation* getPerfProfiler();
 	void renderToBackBuffer() const;
@@ -34,6 +37,8 @@ private:
 	// DirectX attributes
 	ID3D11Device* m_device;
 	ID3D11Device3* m_device3;
+	IDXGIDevice3* m_dxgiDevice;
+	IDXGIAdapter3* m_adapter3;
 	ID3D11DeviceContext* m_deviceContext;
 	IDXGISwapChain* m_swapChain;
 	ID3D11RenderTargetView* m_renderTargetView;

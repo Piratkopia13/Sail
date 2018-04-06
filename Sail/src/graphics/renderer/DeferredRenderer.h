@@ -29,8 +29,11 @@ public:
 	void setLightSetup(LightSetup* lightSetup) override;
 	void end() override;
 	void present() override;
+	virtual void onEvent(Event& event) override;
 
 private:
+	bool onResize(WindowResizeEvent& event);
+
 	void beginGeometryPass() const;
 	void doLightPass();
 
@@ -46,7 +49,6 @@ private:
 	DeferredDirectionalLightShader* m_dirLightShader;
 
 	// Pointers to the shader resource views used as gbuffers
-	//ID3D11ShaderResourceView* m_gBufferSRVs[NUM_GBUFFERS];
 	ID3D11RenderTargetView* m_gBufferRTVs[NUM_GBUFFERS];
 
 

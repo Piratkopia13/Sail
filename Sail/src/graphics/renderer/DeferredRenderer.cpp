@@ -29,13 +29,8 @@ DeferredRenderer::DeferredRenderer() {
 	// Init renderable textures
 	for (int i = 0; i < NUM_GBUFFERS - 1; i++) {
 		m_gBuffers[i] = std::unique_ptr<RenderableTexture>(new RenderableTexture(1, width, height, (i == 0))); // Create a dsv for the diffuse gbuffer(0)
-		//m_gBufferSRVs[i] = *m_gBuffers[i]->getColorSRV(); // Store color srv of texture
-		m_gBufferRTVs[i] = *m_gBuffers[i]->getRenderTargetView(); // Store depth srv of texture
+		m_gBufferRTVs[i] = *m_gBuffers[i]->getRenderTargetView(); // Store pointer to render target views
 	}
-
-	// Bind gbuffer textures to the models
-	/*m_screenQuadModel->getMesh(0)->getMaterial()->setTextures(m_gBufferSRVs, NUM_GBUFFERS);
-	m_pointLightVolumeModel->getMesh(0)->getMaterial()->setTextures(m_gBufferSRVs, NUM_GBUFFERS);*/
 
 }
 
@@ -66,9 +61,6 @@ void DeferredRenderer::setLightSetup(LightSetup* lightSetup) {
 }
 
 void DeferredRenderer::end() {
-	/*for (RenderCommand& command : commandQueue) {
-	Logger::Log("Preparing model at: " + Utils::vec3ToStr(command.modelMatrix.Transpose().Translation()));
-	}*/
 }
 
 void DeferredRenderer::present() {
@@ -111,7 +103,7 @@ void DeferredRenderer::beginGeometryPass() const {
 
 	// Clear all gbuffers
 	for (int i = 0; i < NUM_GBUFFERS - 1; i++)
-		m_gBuffers[i]->clear({ 0.f, 0.f, 0.0f, 0.0f });
+		m_gBuffers[i]->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
 
 	// Update the camera in the shaders
 	//shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(Matrix));
@@ -121,10 +113,6 @@ void DeferredRenderer::beginGeometryPass() const {
 
 	m_dirLightShader->bind();
 	m_dirLightShader->setCBufferVar("sys_mInvProj", &m_camera->getProjMatrix().Transpose().Invert(), sizeof(Matrix));
-
-	/*Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>().updateCamera(camera);
-	Application::getInstance()->getResourceManager().getShaderSet<DeferredDirectionalLightShader>().updateCamera(camera);
-	Application::getInstance()->getResourceManager().getShaderSet<DeferredPointLightShader>().updateCamera(camera);*/
 
 	// Bind the geometry shader
 	//Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>().bind();
@@ -148,12 +136,6 @@ void DeferredRenderer::doLightPass() {
 	// Do the directional light
 	m_dirLightShader->setLight(m_lightSetup->getDL(), m_camera);
 
-	/*
-	Texture2D def_texDiffuse : register(t0);
-	Texture2D def_texNormal : register(t1);
-	Texture2D def_texSpecular : register(t2);
-	Texture2D def_texDepth : register(t3);
-	*/
 	m_dirLightShader->setTexture2D("def_texDiffuse", *m_gBuffers[DIFFUSE_GBUFFER]->getColorSRV());
 	m_dirLightShader->setTexture2D("def_texNormal", *m_gBuffers[NORMAL_GBUFFER]->getColorSRV());
 	m_dirLightShader->setTexture2D("def_texSpecular", *m_gBuffers[SPECULAR_GBUFFER]->getColorSRV());
@@ -192,3 +174,22 @@ void DeferredRenderer::doLightPass() {
 	devCon->PSSetShaderResources(0, 4, nullSRVs);
 
 }
+
+void DeferredRenderer::onEvent(Event& event) {
+	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&DeferredRenderer::onResize));
+}
+
+bool DeferredRenderer::onResize(WindowResizeEvent& event) {
+
+	unsigned int width = event.getWidth();
+	unsigned int height = event.getHeight();
+
+	// Update texture sizes
+	for (int i = 0; i < NUM_GBUFFERS - 1; i++) {
+		m_gBuffers[i]->resize(width, height);
+		m_gBufferRTVs[i] = *m_gBuffers[i]->getRenderTargetView(); // Store new rtv pointer
+	}
+
+	return false;
+}
+

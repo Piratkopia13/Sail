@@ -178,7 +178,7 @@ void RenderableTexture::clear(const DirectX::XMVECTORF32& color) {
 	auto dxManager = Application::getInstance()->getAPI();
 	dxManager->getDeviceContext()->ClearRenderTargetView(m_renderTargetView, color);
 	if (m_hasDepthStencilView)
-		dxManager->getDeviceContext()->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+		dxManager->getDeviceContext()->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 }
 
