@@ -23,6 +23,10 @@ Win32Window::Win32Window(HINSTANCE hInstance, int windowWidth, int windowHeight,
 , m_resized(false)
 {
 	g_pApp = this;
+
+#ifdef _DEBUG
+	m_windowTitle += " | Debug build";
+#endif
 }
 
 Win32Window::~Win32Window() {
@@ -130,7 +134,11 @@ bool Win32Window::hasBeenResized() {
 }
 
 void Win32Window::setWindowTitle(const std::wstring& title) {
-	SetWindowText(m_hWnd, title.c_str());
+	std::wstring newTitle = title;
+#ifdef _DEBUG
+	newTitle += L" | Debug build";
+#endif
+	SetWindowText(m_hWnd, newTitle.c_str());
 }
 
 const HWND* Win32Window::getHwnd() const {

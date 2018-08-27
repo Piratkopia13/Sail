@@ -6,6 +6,9 @@
 class TransformComponent : public Component {
 public:
 	SAIL_COMPONENT
+	/*static int getStaticID() {
+		return 3;
+	}*/
 	TransformComponent() { }
 	~TransformComponent() { }
 

@@ -6,6 +6,9 @@ class Model;
 class ModelComponent : public Component {
 public:
 	SAIL_COMPONENT
+	/*static int getStaticID() {
+		return 1;
+	}*/
 	ModelComponent(Model* model)
 		: m_model(model)
 	{ }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "Component.h"
 #include "../../graphics/text/SailFont.h"
 #include "../../graphics/text/Text.h"
@@ -7,6 +8,9 @@
 class TextComponent : public Component/*, public IDrawable*/ {
 public:
 	SAIL_COMPONENT
+	/*static int getStaticID() {
+		return 2;
+	}*/
 	TextComponent();
 	~TextComponent();
 

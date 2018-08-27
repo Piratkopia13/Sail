@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include <SimpleMath.h>
+#include <vector>
 #include "../renderer/Renderer.h"
 #include "Mesh.h"
 

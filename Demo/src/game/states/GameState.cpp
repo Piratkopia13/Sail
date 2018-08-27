@@ -107,8 +107,8 @@ bool GameState::processInput(float dt) {
 		m_camController.update(dt);
 
 	// Reload shaders
-	if (kbState.R) {
-		m_app->getResourceManager().reloadShader<MaterialShader>();
+	if (kbTracker.pressed.R) {
+		m_app->getResourceManager().reloadShader<DeferredGeometryShader>();
 		Event e(Event::POTATO);
 		m_app->dispatchEvent(e);
 	}
