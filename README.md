@@ -1,8 +1,8 @@
-# Sail game engine
+# Sail game engine :sailboat:
 
 [![Build status](https://ci.appveyor.com/api/projects/status/aqy3xsricje3cv28?svg=true)](https://ci.appveyor.com/project/Piratkopia13/sail)
 
-Sail is a small game engine developed and maintained as a hobby project
+Sail is a small c++ game engine developed and maintained as a hobby project
 
 Current features include
   - DirectX 11
