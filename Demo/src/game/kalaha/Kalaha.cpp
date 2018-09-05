@@ -69,7 +69,15 @@ bool Kalaha::play(int houseNumber) {
 
 		} else {
 
-			m_houses[turn][house]++;
+			if (turn == m_currentTurn && m_houses[turn][house] == 0 && seedsInHouse == 1) {
+				// Capture opponents seeds
+				int otherPlayer = (turn == 0) ? 1 : 0;;
+				m_stores[turn] += m_houses[otherPlayer][5 - house] + 1;
+				m_houses[otherPlayer][5 - house] = 0;
+			} else {
+				// Add seed to house
+				m_houses[turn][house]++;
+			}
 
 		}
 
