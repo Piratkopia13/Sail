@@ -15,7 +15,7 @@ public:
 
 	// Adds an entity to later be drawn
 	// This takes ownership of the entity
-	void addEntity(Entity::Ptr entity);
+	Entity* addEntity(Entity::Ptr entity);
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
 

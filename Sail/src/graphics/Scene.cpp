@@ -12,8 +12,9 @@ Scene::~Scene() {
 
 }
 
-void Scene::addEntity(Entity::Ptr entity) {
+Entity* Scene::addEntity(Entity::Ptr entity) {
 	m_entities.push_back(MOVE(entity));
+	return m_entities.back().get();
 }
 
 void Scene::setLightSetup(LightSetup* lights) {

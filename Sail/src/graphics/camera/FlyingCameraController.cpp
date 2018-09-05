@@ -4,12 +4,12 @@
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-FlyingCameraController::FlyingCameraController(Camera* cam)
+FlyingCameraController::FlyingCameraController(Camera* cam, float yaw, float pitch, float roll)
 	: CameraController(cam)
 {
-	m_yaw = 90.f;
-	m_pitch = 0.f;
-	m_roll = 0.f;
+	m_yaw = yaw;
+	m_pitch = pitch;
+	m_roll = roll;
 };
 
 void FlyingCameraController::update(float dt) {

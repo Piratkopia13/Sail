@@ -166,7 +166,7 @@ bool DXAPI::init(Win32Window* window) {
 	ThrowIfFailed(m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilStateWriteMask));
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 
-	// Create the depth stencil state with disbled depth testing
+	// Create the depth stencil state with disabled depth testing
 	depthStencilDesc.DepthEnable = false;
 	ThrowIfFailed(m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilStateDisabled));
 

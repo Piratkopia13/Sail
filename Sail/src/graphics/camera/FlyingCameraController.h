@@ -6,7 +6,7 @@
 class FlyingCameraController : public CameraController {
 public:
 
-	FlyingCameraController(Camera* cam);
+	FlyingCameraController(Camera* cam, float yaw = 90.f, float pitch = 0.f, float roll = 0.f);
 
 	virtual void update(float dt);
 

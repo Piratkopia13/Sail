@@ -1,6 +1,8 @@
 #pragma once
 
+#include <CommonStates.h>
 #include "Sail.h"
+#include "../kalaha/Kalaha.h"
 
 class GameState : public State {
 public:
@@ -38,5 +40,16 @@ private:
 	Text* m_debugCamText;
 
 	std::unique_ptr<Model> m_cubeModel;
+	std::unique_ptr<Model> m_planeModel;
+
+	// Kalaha
+	Kalaha m_kalahaGame;
+	Entity* m_turnIndicatorEntity;
+
+	// TEST
+
+	SailFont m_font;
+	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
+	std::unique_ptr<DirectX::CommonStates> m_states;
 
 };

@@ -145,11 +145,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\game\Game.cpp" />
+    <ClCompile Include="src\game\kalaha\Kalaha.cpp" />
     <ClCompile Include="src\game\states\GameState.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game\Game.h" />
+    <ClInclude Include="src\game\kalaha\Kalaha.h" />
     <ClInclude Include="src\game\states\GameState.h" />
   </ItemGroup>
   <ItemGroup>
