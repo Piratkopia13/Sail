@@ -36,7 +36,6 @@ private:
 private:
 	// DirectX attributes
 	ID3D11Device* m_device;
-	ID3D11Device3* m_device3;
 	IDXGIDevice3* m_dxgiDevice;
 	IDXGIAdapter3* m_adapter3;
 	ID3D11DeviceContext* m_deviceContext;
@@ -53,10 +52,9 @@ private:
 	ID3D11DepthStencilState* m_depthStencilStateDisabled;
 	ID3D11DepthStencilState* m_depthStencilStateWriteMask;
 
-	ID3D11RasterizerState2* m_rasterStateBackfaceCulling;
-	ID3D11RasterizerState2* m_rasterStateBackfaceCullingNoConservative;
-	ID3D11RasterizerState2* m_rasterStateFrontfaceCulling;
-	ID3D11RasterizerState2* m_rasterStateNoCulling;
+	ID3D11RasterizerState* m_rasterStateBackfaceCulling;
+	ID3D11RasterizerState* m_rasterStateFrontfaceCulling;
+	ID3D11RasterizerState* m_rasterStateNoCulling;
 
 	ID3D11BlendState* m_blendStateAlpha;
 	ID3D11BlendState* m_blendStateDisabled;
@@ -66,7 +64,5 @@ private:
 	ID3DUserDefinedAnnotation* m_perf;
 
 	UINT m_aaSamples;
-
-	bool m_CW;
 
 };

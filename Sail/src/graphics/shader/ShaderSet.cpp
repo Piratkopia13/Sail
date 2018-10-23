@@ -154,7 +154,7 @@ void ShaderSet::parseSampler(const char* source) {
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
 
 	ShaderResource res(name, static_cast<UINT>(slot));
-	m_parsedData.samplers.emplace_back(res, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_FILTER_MIN_MAG_MIP_LINEAR, bindShader, slot);
+	m_parsedData.samplers.emplace_back(res, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_FILTER_MIN_MAG_MIP_POINT, bindShader, slot);
 }
 
 void ShaderSet::parseTexture(const char* source) {

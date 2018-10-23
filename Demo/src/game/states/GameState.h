@@ -38,5 +38,6 @@ private:
 	Text* m_debugCamText;
 
 	std::unique_ptr<Model> m_cubeModel;
+	std::unique_ptr<Model> m_planeModel;
 
 };

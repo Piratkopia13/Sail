@@ -1,7 +1,6 @@
 #pragma once
 #include <d3d11.h>
 #include "../shader/InputLayout.h"
-#include "../../utils/Utils.h"
 #include "Mesh.h"
 
 class VertexBuffer {

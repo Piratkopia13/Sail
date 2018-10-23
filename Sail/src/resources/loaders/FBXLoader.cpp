@@ -1,7 +1,5 @@
 #include "FBXLoader.h"
 
-#include <d3d11.h>
-#include <SimpleMath.h>
 #include "../../utils/Utils.h"
 #include "../../graphics/geometry/factory/CubeModel.h"
 #include "../../api/Application.h"
@@ -21,22 +19,12 @@ FBXLoader::FBXLoader(const std::string& filepath, ShaderSet* shaderSet)
 	m_scene = parseFBX(filepath);
 	
 	// Triangulate all meshes in the scene
-	FbxGeometryConverter geoConverter(s_manager);
-	geoConverter.Triangulate(m_scene, true);
+	/*FbxGeometryConverter geoConverter(s_manager);
+	geoConverter.Triangulate(m_scene, true);*/
 
 	if (m_scene != nullptr) {
 
 		loadNode(m_scene->GetRootNode());
-		/*m_model->getMaterial()->setKa(m_matSettings.ka);
-		m_model->getMaterial()->setKd(m_matSettings.kd);
-		m_model->getMaterial()->setKs(m_matSettings.ks);
-		m_model->getMaterial()->setShininess(m_matSettings.shininess);
-		if (m_matDiffuseTex != "")
-			m_model->getMaterial()->setDiffuseTexture(m_matDiffuseTex);
-		if (m_matNormalTex != "")
-			m_model->getMaterial()->setDiffuseTexture(m_matNormalTex);
-		if (m_matSpecularTex != "")
-			m_model->getMaterial()->setDiffuseTexture(m_matSpecularTex);*/
 
 	} else {
 		Logger::Warning("Failed to load fbx file '" + filepath + "', using default cube.");
@@ -78,7 +66,7 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 
 		FbxMesh* mesh;
 		if (attributeType == FbxNodeAttribute::eMesh) {
-			// Gets the mesh (only one mesh per model is supported)
+			// Get the mesh
 			mesh = (FbxMesh*)nodeAttributeFbx;
 
 			Mesh::Data meshData;
@@ -139,189 +127,186 @@ FbxVector2 FBXLoader::getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMe
 	return texCoord;
 }
 
+bool FBXLoader::findIndex(const Mesh::Data& buildData, unsigned int numVertices, const VertexData& vertexData, unsigned int& foundIndex) {
+	
+	for (unsigned int i = 0; i < numVertices; i++) {
+		if (buildData.positions[i] == vertexData.position &&
+			(!buildData.normals || buildData.normals[i] == vertexData.normal) &&
+			(!buildData.tangents || buildData.tangents[i] == vertexData.tangent) &&
+			(!buildData.bitangents || buildData.bitangents[i] == vertexData.bitangent) &&
+			(!buildData.texCoords || buildData.texCoords[i] == vertexData.texCoord)) {
+			foundIndex = i;
+			return true;
+		}
+	}
+	return false;
+}
+
 void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 	// Number of polygon vertices 
-	buildData.numVertices = mesh->GetPolygonVertexCount();
-	int* indices = mesh->GetPolygonVertices();
+	//buildData.numIndices = mesh->GetPolygonVertexCount(); // A polygon vertex is an index to a control point
+	//buildData.numVertices = mesh->GetControlPointsCount(); // A control point is an XYZ coordinate, it is synonym of vertex.
+	buildData.numIndices = 0;
+	buildData.numVertices = 0;
 
-	if (int(buildData.numVertices / 3) != mesh->GetPolygonCount()) {
+	unsigned int maxVertices = mesh->GetPolygonVertexCount();
+	//maxVertices = mesh->GetPolygonVertexCount();
+
+	Logger::Log(std::string(mesh->GetName()) + " # verts: " + std::to_string(maxVertices));
+
+	if (maxVertices / 3 != mesh->GetPolygonCount()) {
 		Logger::Error("The mesh in '" + m_filepath + "' has to be triangulated.");
 		return;
 	}
 
-	buildData.positions = new Vector3[buildData.numVertices];
-	buildData.normals = new Vector3[buildData.numVertices];
-	buildData.texCoords = new Vector2[buildData.numVertices];
-	buildData.tangents = new Vector3[buildData.numVertices];
-	buildData.bitangents = new Vector3[buildData.numVertices];
+	buildData.positions = new Vector3[maxVertices];
+	buildData.indices = new ULONG[maxVertices]; // Allocate the max memory we might need
 
-	bool norms = true, uvs = true, tangs = true, bitangs = true;
+	FbxLayerElementNormal* vertexNormal = mesh->GetLayer(0)->GetNormals();
+	if (vertexNormal)	buildData.normals = new Vector3[maxVertices];
+	else				Logger::Warning("Couldn't find any normals in the mesh in the file " + m_filepath);
 
-	int vertexIndex = 0;
+	FbxGeometryElementTangent* vertexTangent = mesh->GetElementTangent(0);
+	if (vertexTangent)	buildData.tangents = new Vector3[maxVertices];
+	else				Logger::Warning("Couldn't find any tangents in the mesh in the file " + m_filepath);
+	
+	FbxGeometryElementBinormal* vertexBinormal = mesh->GetElementBinormal(0);
+	if (vertexBinormal)	buildData.bitangents = new Vector3[maxVertices];
+	else				Logger::Warning("Couldn't find any binormals in the mesh in the file " + m_filepath);
+	
+	FbxGeometryElementUV* vertexUV = mesh->GetElementUV(0);
+	if (vertexUV)		buildData.texCoords = new Vector2[maxVertices];
+	else				Logger::Warning("Couldn't find any texture coordinates in the mesh in the file " + m_filepath);
+	
+
 	FbxVector4* cp = mesh->GetControlPoints();
 	if (cp == nullptr) {
 		Logger::Error("Couldn't find any vertices in the mesh in the file " + m_filepath);
 		return;
 	}
+
+	int* indices = mesh->GetPolygonVertices();
+	/*for (unsigned int i = 0; i < buildData.numIndices; i+=3) {
+		buildData.indices[i] = indices[i];
+		buildData.indices[i + 1] = indices[i + 2];
+		buildData.indices[i + 2] = indices[i + 1];
+	}*/
+
+
 	for (int polyIndex = 0; polyIndex < mesh->GetPolygonCount(); polyIndex++) {
 		int numVertices = mesh->GetPolygonSize(polyIndex);
 
-		for (int vertIndex = 0; vertIndex < numVertices; vertIndex += 3) {
+		for (int vertIndex = 0; vertIndex < numVertices; vertIndex++) {
+
+			unsigned int vertexIndex = mesh->GetPolygonVertexIndex(polyIndex) + vertIndex;
+
+			VertexData vertexData;
+
 
 			/*
 			--	Positions
 			*/
-			buildData.positions[vertexIndex].x = -(float)cp[indices[vertexIndex]][0];
-			buildData.positions[vertexIndex].y = (float)cp[indices[vertexIndex]][1];
-			buildData.positions[vertexIndex].z = (float)cp[indices[vertexIndex]][2];
-
-			buildData.positions[vertexIndex + 1].x = -(float)cp[indices[vertexIndex + 2]][0];
-			buildData.positions[vertexIndex + 1].y = (float)cp[indices[vertexIndex + 2]][1];
-			buildData.positions[vertexIndex + 1].z = (float)cp[indices[vertexIndex + 2]][2];
-
-			buildData.positions[vertexIndex + 2].x = -(float)cp[indices[vertexIndex + 1]][0];
-			buildData.positions[vertexIndex + 2].y = (float)cp[indices[vertexIndex + 1]][1];
-			buildData.positions[vertexIndex + 2].z = (float)cp[indices[vertexIndex + 1]][2];
-
+			vertexData.position.x = static_cast<float>(cp[indices[vertexIndex]][0]);
+			vertexData.position.y = static_cast<float>(cp[indices[vertexIndex]][1]);
+			vertexData.position.z = static_cast<float>(cp[indices[vertexIndex]][2]);
 
 			/*
 			--	Normals
 			*/
-			FbxLayerElementNormal* leNormal = mesh->GetLayer(0)->GetNormals();
-			if (leNormal == nullptr && norms) {
-				Logger::Warning("Couldn't find any normals in the mesh in the file " + m_filepath);
-				norms = false;
-			} else if (norms) {
-				if (leNormal->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
+			if (buildData.normals) {
+				if (vertexNormal->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
+
 					int normIndex = 0;
-
-					if (leNormal->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (vertexNormal->GetReferenceMode() == FbxLayerElement::eDirect)
 						normIndex = vertexIndex;
+					if (vertexNormal->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+						normIndex = vertexNormal->GetIndexArray().GetAt(vertexIndex);
 
+					FbxVector4& norm = vertexNormal->GetDirectArray().GetAt(normIndex);
+					vertexData.normal.x = static_cast<float>(norm[0]);
+					vertexData.normal.y = static_cast<float>(norm[1]);
+					vertexData.normal.z = static_cast<float>(norm[2]);
 
-					if (leNormal->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
-						normIndex = leNormal->GetIndexArray().GetAt(vertexIndex);
-
-
-					FbxVector4 norm = leNormal->GetDirectArray().GetAt(normIndex);
-					buildData.normals[vertexIndex].x = -(float)norm[0];
-					buildData.normals[vertexIndex].y = (float)norm[1];
-					buildData.normals[vertexIndex].z = (float)norm[2];
-
-					norm = leNormal->GetDirectArray().GetAt(normIndex + 2);
-					buildData.normals[vertexIndex + 1].x = -(float)norm[0];
-					buildData.normals[vertexIndex + 1].y = (float)norm[1];
-					buildData.normals[vertexIndex + 1].z = (float)norm[2];
-
-					norm = leNormal->GetDirectArray().GetAt(normIndex + 1);
-					buildData.normals[vertexIndex + 2].x = -(float)norm[0];
-					buildData.normals[vertexIndex + 2].y = (float)norm[1];
-					buildData.normals[vertexIndex + 2].z = (float)norm[2];
 				}
 			}
 
 			/*
 			--	Tangents
 			*/
-			FbxGeometryElementTangent *geTang = mesh->GetElementTangent(0);
-			if (geTang == nullptr && tangs) {
-				Logger::Warning("Couldn't find any tangents in the mesh in the file " + m_filepath);
-				tangs = false;
-			} else if (tangs) {
-				if (geTang->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
+			if (buildData.tangents) {
+				if (vertexTangent->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
+
 					int tangIndex = 0;
-
-					if (geTang->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (vertexTangent->GetReferenceMode() == FbxLayerElement::eDirect)
 						tangIndex = vertexIndex;
+					if (vertexTangent->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+						tangIndex = vertexTangent->GetIndexArray().GetAt(vertexIndex);
 
+					FbxVector4 tangent = vertexTangent->GetDirectArray().GetAt(tangIndex);
+					vertexData.tangent.x = static_cast<float>(tangent[0]);
+					vertexData.tangent.y = static_cast<float>(tangent[1]);
+					vertexData.tangent.z = static_cast<float>(tangent[2]);
 
-					if (geTang->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
-						tangIndex = geTang->GetIndexArray().GetAt(vertexIndex);
-
-					FbxVector4 tangent = geTang->GetDirectArray().GetAt(tangIndex);
-					buildData.tangents[vertexIndex].x = (float)tangent[0];
-					buildData.tangents[vertexIndex].y = (float)tangent[1];
-					buildData.tangents[vertexIndex].z = (float)tangent[2];
-
-					tangent = geTang->GetDirectArray().GetAt(tangIndex + 2);
-					buildData.tangents[vertexIndex + 1].x = (float)tangent[0];
-					buildData.tangents[vertexIndex + 1].y = (float)tangent[1];
-					buildData.tangents[vertexIndex + 1].z = (float)tangent[2];
-
-					tangent = geTang->GetDirectArray().GetAt(tangIndex + 1);
-					buildData.tangents[vertexIndex + 2].x = (float)tangent[0];
-					buildData.tangents[vertexIndex + 2].y = (float)tangent[1];
-					buildData.tangents[vertexIndex + 2].z = (float)tangent[2];
 				}
 			}
 
 			/*
 			--	Binormals
 			*/
-			FbxGeometryElementBinormal *geBN = mesh->GetElementBinormal(0);
-			if (geBN == nullptr && bitangs) {
-				Logger::Warning("Couldn't find any binormals in the mesh in the file " + m_filepath);
-				bitangs = false;
-			} else if (bitangs) {
-				if (geBN->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
+			if (buildData.bitangents) {
+				if (vertexBinormal->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
+
 					int biNormIndex = 0;
-
-					if (geBN->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (vertexBinormal->GetReferenceMode() == FbxLayerElement::eDirect)
 						biNormIndex = vertexIndex;
+					if (vertexBinormal->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+						biNormIndex = vertexBinormal->GetIndexArray().GetAt(vertexIndex);
 
+					FbxVector4 biNorm = vertexBinormal->GetDirectArray().GetAt(biNormIndex);
+					vertexData.bitangent.x = static_cast<float>(biNorm[0]);
+					vertexData.bitangent.y = static_cast<float>(biNorm[1]);
+					vertexData.bitangent.z = static_cast<float>(biNorm[2]);
 
-					if (geBN->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
-						biNormIndex = geBN->GetIndexArray().GetAt(vertexIndex);
-
-					FbxVector4 biNorm = geBN->GetDirectArray().GetAt(biNormIndex);
-					buildData.bitangents[vertexIndex].x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex].y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex].z = (float)biNorm[2];
-
-					biNorm = geBN->GetDirectArray().GetAt(biNormIndex + 2);
-					buildData.bitangents[vertexIndex + 1].x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex + 1].y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex + 1].z = (float)biNorm[2];
-
-					biNorm = geBN->GetDirectArray().GetAt(biNormIndex + 1);
-					buildData.bitangents[vertexIndex + 2].x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex + 2].y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex + 2].z = (float)biNorm[2];
 				}
 			}
 
 			/*
 			--	UV Coords
 			*/
-			FbxGeometryElementUV* geUV = mesh->GetElementUV(0);
-			if (geUV == nullptr && uvs) {
-				Logger::Warning("Couldn't find any texture coordinates in the mesh in the file " + m_filepath);
-				uvs = false;
-			} else if (uvs) {
+			if (buildData.texCoords) {
 				FbxVector2 texCoord;
 				int cpIndex;
 
 				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex);
-				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex);
-				buildData.texCoords[vertexIndex].x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex].y = -static_cast<float>(texCoord[1]);
+				texCoord = getTexCoord(cpIndex, vertexUV, mesh, polyIndex, vertIndex);
+				vertexData.texCoord.x = static_cast<float>(texCoord[0]);
+				vertexData.texCoord.y = -static_cast<float>(texCoord[1]);
 
-				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex + 2);
-				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex + 2);
-				buildData.texCoords[vertexIndex + 1].x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex + 1].y = -static_cast<float>(texCoord[1]);
-
-				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex + 1);
-				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex + 1);
-				buildData.texCoords[vertexIndex + 2].x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex + 2].y = -static_cast<float>(texCoord[1]);
 			}
 
-			vertexIndex += 3;
-		}
+			unsigned int foundIndex = 0;
+			if (findIndex(buildData, buildData.numVertices, vertexData, foundIndex)) {
+				// add foundIndex to buildData indices, but no vertex data
+				buildData.indices[buildData.numIndices++] = foundIndex;
+			} else {
+				// add vertex data and index
+				buildData.positions[buildData.numVertices] = vertexData.position;
+				if (buildData.normals) buildData.normals[buildData.numVertices] = vertexData.normal;
+				if (buildData.tangents) buildData.tangents[buildData.numVertices] = vertexData.tangent;
+				if (buildData.bitangents) buildData.bitangents[buildData.numVertices] = vertexData.bitangent;
+				if (buildData.texCoords) buildData.texCoords[buildData.numVertices] = vertexData.texCoord;
+				buildData.indices[buildData.numIndices++] = buildData.numVertices++;
+			}
 
+		}
 	}
+
+	/*for (unsigned int i = 0; i < buildData.numIndices; i+=3) {
+		UINT temp = buildData.indices[i + 1];
+		buildData.indices[i + 1] = buildData.indices[i + 2];
+		buildData.indices[i + 2] = temp;
+	}*/
 
 }
 

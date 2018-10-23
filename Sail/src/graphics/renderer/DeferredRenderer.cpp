@@ -66,19 +66,21 @@ void DeferredRenderer::end() {
 void DeferredRenderer::present() {
 
 	beginGeometryPass();
-	// loop and draw -- assert shader == geometryShader
+
+	// Bind the deferred geometry shader and update camera variables
+	DeferredGeometryShader* geometryShader = &Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>();
+	geometryShader->bind();
+	geometryShader->setCBufferVar("sys_mView", &m_camera->getViewMatrix().Transpose(), sizeof(Matrix));
+	geometryShader->setCBufferVar("sys_mProj", &m_camera->getProjMatrix().Transpose(), sizeof(Matrix));
+
+	// loop and draw
 	for (RenderCommand& command : commandQueue) {
 		ShaderSet* shader = command.mesh->getMaterial()->getShader();
-
-		DeferredGeometryShader* geometryShader = &Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>();
+		// Make sure the mesh being rendered is set up to use the deferred geometry shader 
 		assert((int)shader == (int)geometryShader);
 
-		// TODO: sort by shader and update the following once per shader
-
-		shader->bind();
-		shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(Matrix));
-		shader->setCBufferVar("sys_mView", &m_camera->getViewMatrix().Transpose(), sizeof(Matrix));
-		shader->setCBufferVar("sys_mProj", &m_camera->getProjMatrix().Transpose(), sizeof(Matrix));
+		// Update world matrix
+		geometryShader->setCBufferVar("sys_mWorld", &command.transform, sizeof(Matrix));
 
 		command.mesh->draw(*this);
 	}

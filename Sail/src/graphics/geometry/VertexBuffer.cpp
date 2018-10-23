@@ -1,5 +1,6 @@
 #include "VertexBuffer.h"
 #include "../../api/Application.h"
+#include "../../utils/Utils.h"
 
 using namespace DirectX::SimpleMath;
 
@@ -11,7 +12,7 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData
 	m_stride = inputLayout.getVertexSize();
 	
 	if (m_stride == 0) {
-		Logger::Error("Input layout to set up properly for shader");
+		Logger::Error("Input layout not set up properly for shader");
 		__debugbreak();
 	}
 

@@ -32,7 +32,7 @@ void TextComponent::draw() {
 
 	// Re-enable the depth buffer and rasterizer state after 2D rendering
 	dxm->setDepthMask(GraphicsAPI::NO_MASK);
-	//dxm->setFaceCulling(GraphicsAPI::BACKFACE);
+	dxm->setFaceCulling(GraphicsAPI::BACKFACE);
 
 	ShaderSet::CurrentlyBoundShader = nullptr;
 }

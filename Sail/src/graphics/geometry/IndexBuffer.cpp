@@ -3,13 +3,6 @@
 
 IndexBuffer::IndexBuffer(Mesh::Data& modelData) {
 
-	ULONG* indices = new ULONG[modelData.numIndices];
-
-	// Fill the array with the model indices
-	for (UINT i = 0; i < modelData.numIndices; i++) {
-		indices[i] = modelData.indices[i];
-	}
-
 	// Set up index buffer description
 	D3D11_BUFFER_DESC ibd;
 	ZeroMemory(&ibd, sizeof(ibd));
@@ -20,12 +13,12 @@ IndexBuffer::IndexBuffer(Mesh::Data& modelData) {
 
 	D3D11_SUBRESOURCE_DATA indexData;
 	ZeroMemory(&indexData, sizeof(indexData));
-	indexData.pSysMem = indices;
+	indexData.pSysMem = modelData.indices;
 
 	// Create the index buffer
 	ThrowIfFailed(Application::getInstance()->getAPI()->getDevice()->CreateBuffer(&ibd, &indexData, &m_buffer));
 	// Delete indices from cpu memory
-	Memory::safeDeleteArr(indices);
+	//Memory::safeDeleteArr(indices);
 
 }
 

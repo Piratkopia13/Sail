@@ -24,6 +24,8 @@ void Scene::draw(Camera& camera) {
 
 	m_renderer.begin(&camera);
 
+	unsigned int vertexCount = 0;
+
 	for (Entity::Ptr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
 		if (model) {
@@ -31,8 +33,17 @@ void Scene::draw(Camera& camera) {
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
 			m_renderer.submit(model->getModel(), transform->getTransform().getMatrix());
+
+			// Count vertices
+			for (unsigned int i = 0; i < model->getModel()->getNumberOfMeshes(); i++) {
+				vertexCount += model->getModel()->getMesh(i)->getNumVertices();
+			}
 		}
 	}
+
+	OutputDebugString(L"Number of vertices draw: ");
+	OutputDebugString(std::to_wstring(vertexCount).c_str());
+	OutputDebugString(L"\n");
 
 	m_renderer.end();
 	m_renderer.present();

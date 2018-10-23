@@ -16,7 +16,6 @@ DXAPI::~DXAPI() {
 	Memory::safeRelease(m_swapChain);
 	Memory::safeRelease(m_deviceContext);
 	Memory::safeRelease(m_device);
-	Memory::safeRelease(m_device3);
 	Memory::safeRelease(m_dxgiDevice);
 	Memory::safeRelease(m_adapter3);
 	Memory::safeRelease(m_depthStencilBuffer);
@@ -26,7 +25,6 @@ DXAPI::~DXAPI() {
 	Memory::safeRelease(m_depthStencilView);
 	Memory::safeRelease(m_rasterStateBackfaceCulling);
 	Memory::safeRelease(m_rasterStateFrontfaceCulling);
-	Memory::safeRelease(m_rasterStateBackfaceCullingNoConservative);
 	Memory::safeRelease(m_rasterStateNoCulling);
 	Memory::safeRelease(m_blendStateAlpha);
 	Memory::safeRelease(m_blendStateDisabled);
@@ -86,11 +84,9 @@ bool DXAPI::init(Win32Window* window) {
 		ThrowIfFailed(result);
 		if (SUCCEEDED(result)) {
 			m_driverType = driverTypes[i];
-			ThrowIfFailed(m_device->QueryInterface(__uuidof (ID3D11Device3), (void **)&m_device3));
 			
 			ThrowIfFailed(m_device->QueryInterface(__uuidof(IDXGIDevice3), (void **)&m_dxgiDevice));
 			ThrowIfFailed(m_dxgiDevice->GetAdapter((IDXGIAdapter**)&m_adapter3));
-			//ThrowIfFailed(m_device->QueryInterface(__uuidof (IDXGIAdapter3), (void **)&m_adapter3));
 
 			break;
 		}
@@ -203,7 +199,7 @@ bool DXAPI::init(Win32Window* window) {
 	ThrowIfFailed(m_device->CreateBlendState(&blendStateDesc, &m_blendStateAdditive));
 
 	// Setup rasterizer description
-	D3D11_RASTERIZER_DESC2 rasterDesc;
+	D3D11_RASTERIZER_DESC rasterDesc;
 	ZeroMemory(&rasterDesc, sizeof(rasterDesc));
 	rasterDesc.AntialiasedLineEnable = false;
 	//rasterDesc.CullMode = D3D11_CULL_NONE;
@@ -213,32 +209,18 @@ bool DXAPI::init(Win32Window* window) {
 	rasterDesc.DepthClipEnable = true;
 	rasterDesc.FillMode = D3D11_FILL_SOLID;
 	//rasterDesc.FillMode = D3D11_FILL_WIREFRAME;
-	m_CW = false;
-	rasterDesc.FrontCounterClockwise = m_CW;
+	rasterDesc.FrontCounterClockwise = false;
 	rasterDesc.MultisampleEnable = true;
 	rasterDesc.ScissorEnable = false;
 	rasterDesc.SlopeScaledDepthBias = 0.f;
 
 	// Create rasterizer state
-
-	//D3D_FEATURE_LEVEL fl = m_device->GetFeatureLevel();
-	D3D11_FEATURE_DATA_D3D11_OPTIONS2 options2Support;
-	m_device3->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS2, &options2Support, sizeof(options2Support));
-
-	if (options2Support.ConservativeRasterizationTier == D3D11_CONSERVATIVE_RASTERIZATION_NOT_SUPPORTED) {
-		Logger::Warning("Conservative rasterization not supported on this hardware, running without.");
-		rasterDesc.ConservativeRaster = D3D11_CONSERVATIVE_RASTERIZATION_MODE_OFF;
-	} else {
-		rasterDesc.ConservativeRaster = D3D11_CONSERVATIVE_RASTERIZATION_MODE_ON;
-	}
-
-	ThrowIfFailed(m_device3->CreateRasterizerState2(&rasterDesc, &m_rasterStateBackfaceCulling));
-	rasterDesc.ConservativeRaster = D3D11_CONSERVATIVE_RASTERIZATION_MODE_OFF;
-	ThrowIfFailed(m_device3->CreateRasterizerState2(&rasterDesc, &m_rasterStateBackfaceCullingNoConservative));
+	
+	ThrowIfFailed(m_device->CreateRasterizerState(&rasterDesc, &m_rasterStateBackfaceCulling));
 	rasterDesc.CullMode = D3D11_CULL_FRONT;
-	ThrowIfFailed(m_device3->CreateRasterizerState2(&rasterDesc, &m_rasterStateFrontfaceCulling));
+	ThrowIfFailed(m_device->CreateRasterizerState(&rasterDesc, &m_rasterStateFrontfaceCulling));
 	rasterDesc.CullMode = D3D11_CULL_NONE;
-	ThrowIfFailed(m_device3->CreateRasterizerState2(&rasterDesc, &m_rasterStateNoCulling));
+	ThrowIfFailed(m_device->CreateRasterizerState(&rasterDesc, &m_rasterStateNoCulling));
 
 	// Set the rasterizer state
 	m_deviceContext->RSSetState(m_rasterStateBackfaceCulling);
