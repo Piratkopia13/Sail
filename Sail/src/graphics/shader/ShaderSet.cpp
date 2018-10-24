@@ -59,7 +59,7 @@ void ShaderSet::parse(const std::string& source) {
 	if (source.find("DSMain") != std::string::npos) m_parsedData.hasDS = true;
 	if (source.find("HSMain") != std::string::npos) m_parsedData.hasHS = true;
 
-	// TODO: remove comments from source
+	// Remove comments from source
 	std::string cleanSource = removeComments(source);
 
 	const char* src;

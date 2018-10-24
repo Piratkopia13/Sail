@@ -28,14 +28,14 @@ public:
 	void submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) override;
 	void setLightSetup(LightSetup* lightSetup) override;
 	void end() override;
-	void present() override;
+	void present(RenderableTexture* output = nullptr) override;
 	virtual void onEvent(Event& event) override;
 
 private:
 	bool onResize(WindowResizeEvent& event);
 
 	void beginGeometryPass() const;
-	void doLightPass();
+	void doLightPass(RenderableTexture* output);
 
 private:
 	Camera* m_camera;

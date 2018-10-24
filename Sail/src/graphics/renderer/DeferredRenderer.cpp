@@ -63,7 +63,7 @@ void DeferredRenderer::setLightSetup(LightSetup* lightSetup) {
 void DeferredRenderer::end() {
 }
 
-void DeferredRenderer::present() {
+void DeferredRenderer::present(RenderableTexture* output) {
 
 	beginGeometryPass();
 	// loop and draw -- assert shader == geometryShader
@@ -84,7 +84,7 @@ void DeferredRenderer::present() {
 	}
 	
 	
-	doLightPass();
+	doLightPass(output);
 	
 }
 
@@ -118,12 +118,15 @@ void DeferredRenderer::beginGeometryPass() const {
 	//Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>().bind();
 }
 
-void DeferredRenderer::doLightPass() {
+void DeferredRenderer::doLightPass(RenderableTexture* output) {
 
 	auto* dxm = Application::getInstance()->getAPI();
 	auto* devCon = dxm->getDeviceContext();
 
-	dxm->renderToBackBuffer();
+	if (!output)
+		dxm->renderToBackBuffer();
+	else
+		output->begin();
 
 	/*if (dlShadowMap)
 		devCon->PSSetShaderResources(10, 1, dlShadowMap->getSRV());*/

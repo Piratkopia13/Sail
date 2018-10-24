@@ -1,10 +1,12 @@
 #include "PostProcessStage.h"
 
-PostProcessStage::PostProcessStage(UINT width, UINT height, Model* fullscreenQuad, UINT outputTexBindFlags)
-	: OutputTexture(1, width, height, false, false, outputTexBindFlags)
+PostProcessStage::PostProcessStage(const Renderer& renderer, const std::string& filename, UINT width, UINT height, Mesh* fullscreenQuad, UINT outputTexBindFlags)
+	: ShaderSet(filename)
+	, OutputTexture(1, width, height, false, false, outputTexBindFlags)
 	, FullscreenQuad(fullscreenQuad)
 	, Width(width)
 	, Height(height)
+	, RendererRef(renderer)
 {
 	
 }

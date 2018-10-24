@@ -23,12 +23,13 @@ PSIn VSMain(VSIn input)
 
 }
 
-Texture2D tex;
-SamplerState ss : register(s0);
+Texture2D sys_texDiffuse;
+SamplerState PSss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0
 {
 	//float2 texCoords = input.texCoord / 2.f + 0.5f;
-	return tex.Sample(ss, input.texCoord).rgba;
+	return sys_texDiffuse.Sample(PSss, input.texCoord).rgba;
+	// return float4(1,0,0,1);
 }
 

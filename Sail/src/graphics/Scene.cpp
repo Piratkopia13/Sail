@@ -4,7 +4,18 @@
 #include "light/LightSetup.h"
 #include "../utils/Utils.h"
 
-Scene::Scene() {
+Scene::Scene() 
+	: m_postProcessPass(m_renderer)
+{
+
+	// TODO: the following method ish
+	// m_postProcessPass.add(chain index / prev link)
+
+	auto window = Application::getInstance()->getWindow();
+	UINT width = window->getWindowWidth();
+	UINT height = window->getWindowHeight();
+
+	m_deferredOutputTex = std::unique_ptr<RenderableTexture>(new RenderableTexture(1U, width, height, false));
 
 }
 
@@ -35,7 +46,9 @@ void Scene::draw(Camera& camera) {
 	}
 
 	m_renderer.end();
-	m_renderer.present();
+	m_renderer.present(m_deferredOutputTex.get());
+
+	m_postProcessPass.run(*m_deferredOutputTex, nullptr);
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice

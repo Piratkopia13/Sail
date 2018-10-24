@@ -12,7 +12,7 @@ public:
 	void submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) override;
 	void setLightSetup(LightSetup* lightSetup) override;
 	void end() override;
-	void present() override;
+	void present(RenderableTexture* output = nullptr) override;
 
 private:
 	Camera* m_camera;

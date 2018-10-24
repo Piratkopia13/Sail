@@ -25,7 +25,7 @@ struct PSIn {
     float2 texCoord : TEXCOORD0;
 };
 
-cbuffer CBuffer : register(b0) {
+cbuffer PSPixelSize : register(b0) {
   float invWindowWidth;
   float invWindowHeight;
 }
@@ -44,15 +44,15 @@ PSIn VSMain(VSIn input) {
 }
 
 Texture2D tex : register(t0);
-SamplerState ss : register(s0);
+SamplerState PSss : register(s0);
 
-float4 PSHorizontal(PSIn input) : SV_Target0 {
+float4 PSMain(PSIn input) : SV_Target0 {
 
-    float4 color = tex.Sample(ss, input.texCoord) * weight[0];
+    float4 color = tex.Sample(PSss, input.texCoord) * weight[0];
 
     for (int x = 1; x < 3; x++) {
-        color += tex.Sample(ss, input.texCoord + float2(offset[x] * invWindowWidth, 0.f)) * weight[x];
-        color += tex.Sample(ss, input.texCoord - float2(offset[x] * invWindowWidth, 0.f)) * weight[x];
+        color += tex.Sample(PSss, input.texCoord + float2(offset[x] * invWindowWidth, 0.f)) * weight[x];
+        color += tex.Sample(PSss, input.texCoord - float2(offset[x] * invWindowWidth, 0.f)) * weight[x];
     }
 
     return color;
@@ -61,11 +61,11 @@ float4 PSHorizontal(PSIn input) : SV_Target0 {
 
 float4 PSVertical(PSIn input) : SV_Target0 {
 
-    float4 color = tex.Sample(ss, input.texCoord) * weight[0];
+    float4 color = tex.Sample(PSss, input.texCoord) * weight[0];
 
     for (int y = 1; y < 3; y++) {
-        color += tex.Sample(ss, input.texCoord + float2(0.f, offset[y] * invWindowHeight)) * weight[y];
-        color += tex.Sample(ss, input.texCoord - float2(0.f, offset[y] * invWindowHeight)) * weight[y];
+        color += tex.Sample(PSss, input.texCoord + float2(0.f, offset[y] * invWindowHeight)) * weight[y];
+        color += tex.Sample(PSss, input.texCoord - float2(0.f, offset[y] * invWindowHeight)) * weight[y];
     }
 
     return color;

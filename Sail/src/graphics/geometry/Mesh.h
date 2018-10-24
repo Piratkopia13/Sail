@@ -34,7 +34,9 @@ public:
 	Mesh(Data& buildData, ShaderSet* shaderSet);
 	~Mesh();
 
-	void draw(Renderer& renderer);
+	static Mesh* getFullscreenQuad();
+
+	void draw(const Renderer& renderer);
 
 	//const Data& getBuildData() const;
 	Material* getMaterial();

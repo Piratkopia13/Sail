@@ -27,7 +27,7 @@ public:
 	//void buildBufferForShader(ShaderSet* shader);
 
 	// Draws the model using its material
-	void draw(Renderer& renderer);
+	void draw(const Renderer& renderer);
 
 	Mesh* getMesh(unsigned int index);
 	unsigned int getNumberOfMeshes() const;

@@ -27,7 +27,7 @@ Mesh::~Mesh() {
 	Memory::safeDeleteArr(m_data.texCoords);
 }
 
-void Mesh::draw(Renderer& renderer) {
+void Mesh::draw(const Renderer& renderer) {
 	m_material->bind();
 
 	m_vertexBuffer->bind();

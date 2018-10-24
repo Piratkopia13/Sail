@@ -41,7 +41,7 @@ void ForwardRenderer::end() {
 	}*/
 }
 
-void ForwardRenderer::present() {
+void ForwardRenderer::present(RenderableTexture* output) {
 
 	for (RenderCommand& command : commandQueue) {
 		ShaderSet* shader = command.mesh->getMaterial()->getShader();
