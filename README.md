@@ -1,6 +1,6 @@
 # Sail game engine :sailboat:
 
-[![Build status](https://ci.appveyor.com/api/projects/status/aqy3xsricje3cv28?svg=true)](https://ci.appveyor.com/project/Piratkopia13/sail)
+[![Build status](https://ci.appveyor.com/api/projects/status/aqy3xsricje3cv28/branch/master?svg=true)](https://ci.appveyor.com/project/Piratkopia13/sail/branch/master)
 
 Sail is a small c++ game engine developed and maintained as a hobby project
 
