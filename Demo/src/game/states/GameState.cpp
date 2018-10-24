@@ -19,7 +19,8 @@ GameState::GameState(StateStack& stack)
 	//m_scene = std::make_unique<Scene>(AABB(Vector3(-100.f, -100.f, -100.f), Vector3(100.f, 100.f, 100.f)));
 
 	// Set up camera with controllers
-	m_cam.setPosition(Vector3(1.5f, 1.f, -3.0f));
+	m_cam.setPosition(Vector3(6.6f, 3.7f, -9.4f));
+	m_camController.lookAt(Vector3::Zero);
 	
 	// Set up the scene
 	//m_scene->addSkybox(L"skybox_space_512.dds");
@@ -37,13 +38,15 @@ GameState::GameState(StateStack& stack)
 
 	m_cubeModel = ModelFactory::CubeModel::Create(Vector3(.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
-	//m_cubeModel = ModelFactory::PlaneModel::Create(Vector2(.5f), shader);
+	m_planeModel = ModelFactory::PlaneModel::Create(Vector2(5.f), shader);
 
 	m_scene.setLightSetup(&m_lights);
 
 	auto e = Entity::Create();
 	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>()->getTransform().setRotations(Vector3(0.f, 0.f, 1.07f));
+	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
+	transform.setRotations(Vector3(0.f, 0.f, 1.07f));
+	transform.setTranslation(Vector3(1.2f, 1.0f, 1.f));
 	m_scene.addEntity(MOVE(e));
 
 	e = Entity::Create();
@@ -51,11 +54,16 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 1.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
-	Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader);
+	e = Entity::Create();
+	e->addComponent<ModelComponent>(m_planeModel.get());
+	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 0.f, 0.f));
+	m_scene.addEntity(MOVE(e));
+
+	/*Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader);
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(fbxModel);
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 0.f, 0.f));
-	m_scene.addEntity(MOVE(e));
+	m_scene.addEntity(MOVE(e));*/
 
 	e = Entity::Create();
 	auto* textComp = e->addComponent<TextComponent>();
@@ -66,11 +74,6 @@ GameState::GameState(StateStack& stack)
 	// Set up HUD texts
 	if (m_debugCamText)
 		m_debugCamText->setPosition(Vector2(0.f, 20.f));
-	// Add texts to the scene
-	//m_scene->addText(&m_fpsText);
-#ifdef _DEBUG
-	//m_scene->addText(&m_debugCamText);
-#endif
 
 }
 
@@ -118,7 +121,7 @@ bool GameState::processInput(float dt) {
 }
 
 void GameState::onEvent(Event& event) {
-	Logger::Log("Recieved event: " + std::to_string(event.getType()));
+	Logger::Log("Received event: " + std::to_string(event.getType()));
 
 	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&GameState::onResize));
 
@@ -128,7 +131,7 @@ void GameState::onEvent(Event& event) {
 
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
-	////m_scene->resize(width, height);
+	//m_scene->resize(width, height);
 	return true;
 }
 

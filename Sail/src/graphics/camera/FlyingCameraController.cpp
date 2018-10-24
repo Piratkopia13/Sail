@@ -10,7 +10,20 @@ FlyingCameraController::FlyingCameraController(Camera* cam)
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
-};
+}
+
+void FlyingCameraController::setDirection(const DirectX::SimpleMath::Vector3 & dir) {
+	m_pitch = XMConvertToDegrees(asin(dir.y));
+	m_yaw = XMConvertToDegrees(atan2(dir.x, -dir.z)) - 90.f;
+	Logger::Log("Pitch: " + std::to_string(m_pitch));
+	Logger::Log("Yaw: " + std::to_string(m_yaw));
+}
+
+void FlyingCameraController::lookAt(const DirectX::SimpleMath::Vector3& pos) {
+	Vector3 dir = pos - getCameraPosition();
+	dir.Normalize();
+	setDirection(dir);
+}
 
 void FlyingCameraController::update(float dt) {
 

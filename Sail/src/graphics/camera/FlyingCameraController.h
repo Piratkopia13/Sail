@@ -8,6 +8,9 @@ public:
 
 	FlyingCameraController(Camera* cam);
 
+	void setDirection(const DirectX::SimpleMath::Vector3& dir);
+	void lookAt(const DirectX::SimpleMath::Vector3& pos);
+
 	virtual void update(float dt);
 
 private:
