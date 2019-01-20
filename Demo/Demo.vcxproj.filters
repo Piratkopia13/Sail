@@ -56,11 +56,12 @@
     <FxCompile Include="res\shaders\postprocess\BrightnessCutoffShader.hlsl" />
     <FxCompile Include="res\shaders\postprocess\DepthOfField.hlsl" />
     <FxCompile Include="res\shaders\postprocess\FXAAShader.hlsl" />
-    <FxCompile Include="res\shaders\postprocess\GaussianBlurPS.hlsl" />
     <FxCompile Include="res\shaders\postprocess\GaussianBlurWithDepthCheck.hlsl" />
     <FxCompile Include="res\shaders\postprocess\PostProcessFlushShader.hlsl" />
     <FxCompile Include="res\shaders\postprocess\SimpleDepthOfField.hlsl" />
     <FxCompile Include="res\shaders\postprocess\ToneMapHack.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurHorizontal.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurVertical.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="res\sounds\ambient\ambient_capture.wav">

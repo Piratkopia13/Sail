@@ -17,7 +17,6 @@ PSIn VSMain(VSIn input) {
 	output.texCoord.y = -input.position.y / 2.f + 0.5f;
 
 	return output;
-
 }
 
 Texture2D colorTex : register(t0);
@@ -38,7 +37,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 	//float focalDistance = 5.f;
 	//float focalDepth = 10.f;
-  
+  	
 
 	//float blendFactor = saturate(pow(pixelDepth - 5, 2) / zFar + zNear);
 	float blendFactor = smoothstep(0.f, focalWidth, abs(focalDistance - pixelDepth));

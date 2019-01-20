@@ -6,14 +6,18 @@
 
 class Model;
 
-class PostProcessStage : public ShaderSet {
+class PostProcessStage : public ShaderSet, public IEventListener {
 public:
 	PostProcessStage(const Renderer& renderer, const std::string& filename, UINT width, UINT height, Mesh* fullscreenQuad, UINT outputTexBindFlags = 0);
 	virtual ~PostProcessStage();
 
-	virtual void run(RenderableTexture& inputTexture) = 0;
-	virtual void resize(UINT width, UINT height);
+	virtual void run(RenderableTexture& inputTexture);
 	RenderableTexture& getOutput();
+
+	virtual void onEvent(Event& event) override;
+
+protected:
+	virtual bool onResize(WindowResizeEvent& event);
 
 protected:
 	RenderableTexture OutputTexture;

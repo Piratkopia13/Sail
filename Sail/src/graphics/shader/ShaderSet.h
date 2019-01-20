@@ -47,7 +47,7 @@ public:
 	virtual void setClippingPlane(const DirectX::SimpleMath::Vector4& clippingPlane) {};
 
 	static ID3D10Blob* compileShader(const std::string& source, const std::string& entryPoint, const std::string& shaderVersion);
-	const InputLayout& getInputLayout() const;
+	InputLayout& getInputLayout();
 
 	void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);

@@ -58,17 +58,3 @@ float4 PSMain(PSIn input) : SV_Target0 {
     return color;
 
 }
-
-float4 PSVertical(PSIn input) : SV_Target0 {
-
-    float4 color = tex.Sample(PSss, input.texCoord) * weight[0];
-
-    for (int y = 1; y < 3; y++) {
-        color += tex.Sample(PSss, input.texCoord + float2(0.f, offset[y] * invWindowHeight)) * weight[y];
-        color += tex.Sample(PSss, input.texCoord - float2(0.f, offset[y] * invWindowHeight)) * weight[y];
-    }
-
-    return color;
-
-}
-

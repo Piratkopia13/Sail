@@ -1,3 +1,29 @@
+struct VSIn {
+    float4 position : POSITION0;
+};
+
+struct PSIn {
+	float4 position : SV_Position;
+	float2 texCoord : TEXCOORD0;
+};
+
+PSIn VSMain(VSIn input) {
+    PSIn output;
+
+    input.position.w = 1.f;
+	// input position is already in clip space coordinates
+    output.position = input.position;
+    output.texCoord.x = input.position.x / 2.f + 0.5f;
+    output.texCoord.y = -input.position.y / 2.f + 0.5f;
+
+    return output;
+
+}
+
+/*
+ * Written by Emil Wahl 2017
+ */
+
 static const float EDGE_THRESHOLD_MIN = 0.0312;
 static const float EDGE_THRESHOLD_MAX = 0.125;
 static const float SUBPIXEL_QUALITY = 0.75;
@@ -8,19 +34,13 @@ float rgbToLuma(float3 rgb) {
 	return sqrt(dot(rgb, float3(0.299, 0.587, 0.114)));
 }
 
-struct PSIn
-{
-	float4 position : SV_Position;
-	float2 texCoord : TEXCOORD0;
-};
-
-cbuffer CBuffer : register(b0) {
+cbuffer PSWindowSize : register(b0) {
 	float windowWidth;
 	float windowHeight;
 }
 
 Texture2D tex : register(t0);
-SamplerState ss : register(s0);
+SamplerState PSss : register(s0);
 
 
 float4 PSMain(PSIn input) : SV_Target0
@@ -39,14 +59,14 @@ float4 PSMain(PSIn input) : SV_Target0
 
 	float2 pixelSize = float2(1.0f / windowWidth, 1.0f / windowHeight);
 	
-	float3 colorCenter = tex.Sample(ss, input.texCoord).rgb;
+	float3 colorCenter = tex.Sample(PSss, input.texCoord).rgb;
 
 	float lumaCenter = rgbToLuma(colorCenter);
 
-	float lumaDown = rgbToLuma(tex.Sample(ss, input.texCoord + float2(0.0f, pixelSize.y)).rgb);
-	float lumaUp = rgbToLuma(tex.Sample(ss, input.texCoord + float2(0.0f, -pixelSize.y)).rgb);
-	float lumaLeft = rgbToLuma(tex.Sample(ss, input.texCoord + float2(-pixelSize.x, 0.0f)).rgb);
-	float lumaRight = rgbToLuma(tex.Sample(ss, input.texCoord + float2(pixelSize.x, 0.0f)).rgb);
+	float lumaDown = rgbToLuma(tex.Sample(PSss, input.texCoord + float2(0.0f, pixelSize.y)).rgb);
+	float lumaUp = rgbToLuma(tex.Sample(PSss, input.texCoord + float2(0.0f, -pixelSize.y)).rgb);
+	float lumaLeft = rgbToLuma(tex.Sample(PSss, input.texCoord + float2(-pixelSize.x, 0.0f)).rgb);
+	float lumaRight = rgbToLuma(tex.Sample(PSss, input.texCoord + float2(pixelSize.x, 0.0f)).rgb);
 	
 	float lumaMin = min(lumaCenter, min(min(lumaDown, lumaUp), min(lumaLeft, lumaRight)));
 	float lumaMax = max(lumaCenter, max(max(lumaDown, lumaUp), max(lumaLeft, lumaRight)));
@@ -55,14 +75,14 @@ float4 PSMain(PSIn input) : SV_Target0
 
 	
 	if (lumaRange < max(EDGE_THRESHOLD_MIN, lumaMax * EDGE_THRESHOLD_MAX)) {
-		finalColor = tex.Sample(ss, input.texCoord).rgba;
+		finalColor = tex.Sample(PSss, input.texCoord).rgba;
 		return finalColor;
 	}
 
-	float lumaDownLeft = rgbToLuma(tex.Sample(ss, input.texCoord + float2(-pixelSize.x, pixelSize.y)).rgb);
-	float lumaUpLeft = rgbToLuma(tex.Sample(ss, input.texCoord + float2(-pixelSize.x, -pixelSize.y)).rgb);
-	float lumaDownRight = rgbToLuma(tex.Sample(ss, input.texCoord + float2(pixelSize.x, pixelSize.y)).rgb);
-	float lumaUpRight = rgbToLuma(tex.Sample(ss, input.texCoord + float2(pixelSize.x, -pixelSize.y)).rgb);
+	float lumaDownLeft = rgbToLuma(tex.Sample(PSss, input.texCoord + float2(-pixelSize.x, pixelSize.y)).rgb);
+	float lumaUpLeft = rgbToLuma(tex.Sample(PSss, input.texCoord + float2(-pixelSize.x, -pixelSize.y)).rgb);
+	float lumaDownRight = rgbToLuma(tex.Sample(PSss, input.texCoord + float2(pixelSize.x, pixelSize.y)).rgb);
+	float lumaUpRight = rgbToLuma(tex.Sample(PSss, input.texCoord + float2(pixelSize.x, -pixelSize.y)).rgb);
 	
 	float lumaDownUp = lumaDown + lumaUp;
 	float lumaLeftRight = lumaLeft + lumaRight;
@@ -129,11 +149,11 @@ float4 PSMain(PSIn input) : SV_Target0
 
 	for (int x = 0; x < ITERATIONS; x++) {
 		if (!reached1) {
-			lumaEnd1 = rgbToLuma(tex.Sample(ss, texCoord1).rgb);
+			lumaEnd1 = rgbToLuma(tex.Sample(PSss, texCoord1).rgb);
 			lumaEnd1 -= lumaLocalAverage;
 		}
 		if (!reached2) {
-			lumaEnd2 = rgbToLuma(tex.Sample(ss, texCoord2).rgb);
+			lumaEnd2 = rgbToLuma(tex.Sample(PSss, texCoord2).rgb);
 			lumaEnd2 -= lumaLocalAverage;
 		}
 		if (abs(lumaEnd1) >= gradientScaled) {
@@ -210,7 +230,7 @@ float4 PSMain(PSIn input) : SV_Target0
 		finalTexCoord.x += finalOffset * stepLength;
 	}
 
-	finalColor = tex.Sample(ss, finalTexCoord).rgba;
+	finalColor = tex.Sample(PSss, finalTexCoord).rgba;
 
 	return finalColor;
 }

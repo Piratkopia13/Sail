@@ -4,6 +4,7 @@
 #include "../geometry/Model.h"
 
 #include "stages/PostProcessStage.h"
+#include "stages/GaussianBlurStage.h"
 #include "stages/HGaussianBlurStage.h"
 #include "stages/VGaussianBlurStage.h"
 #include "stages/VGaussianBlurDepthTest.h"
@@ -17,22 +18,52 @@
 //#include "../shader/postprocess/GaussianBlurCShader.h"
 #include "../shader/postprocess/PostProcessFlushShader.h"
 
-class PostProcessPass {
+class PostProcessPipeline : public IEventListener {
 public:
-	PostProcessPass(const Renderer& renderer, const Camera* cam = nullptr);
-	~PostProcessPass();
+	PostProcessPipeline(const Renderer& renderer, const Camera* cam = nullptr);
+	~PostProcessPipeline();
+
+	template <typename T>
+	int add(float resolutionScale = 1.0f) {
+		Application* app = Application::getInstance();
+		UINT windowWidth = app->getWindow()->getWindowWidth();
+		UINT windowHeight = app->getWindow()->getWindowHeight();
+
+		// Create a new stage instance with the given scale
+		// TODO: look into caching these stages with resourceManager
+		m_pipeline.emplace_back(
+			std::make_unique<T>(m_renderer, UINT(windowWidth * resolutionScale), UINT(windowHeight * resolutionScale), m_fullscreenQuad.get()),
+			resolutionScale
+			);
+
+		// Return the index of the inserted stage
+		return m_pipeline.size() - 1;
+	}
+	void clear();
 
 	void run(RenderableTexture& baseTexture, ID3D11ShaderResourceView** depthTexture/*, RenderableTexture& bloomInputTexture, RenderableTexture& particlesTexture*/);
 
-	void resize(UINT width, UINT height);
+	virtual void onEvent(Event& event) override;
 
 	void setCamera(const Camera& cam);
 private:
 	void createFullscreenQuad();
+	bool onResize(WindowResizeEvent& event);
 
 private:
+	struct StageData {
+		StageData(std::unique_ptr<PostProcessStage> stage, float resolutionScale)
+			: stage(std::move(stage))
+			, resolutionScale(resolutionScale)
+		{}
+		std::unique_ptr<PostProcessStage> stage;
+		float resolutionScale;
+	};
+
+	std::vector<StageData> m_pipeline;
+
 	// Post process stages - TODO: make this a map
-	std::unique_ptr<HGaussianBlurStage> m_hGaussStage;
+	//std::unique_ptr<PostProcessStage> m_hGaussStage;
 	//std::unique_ptr<VGaussianBlurStage> m_vGaussStage;
 	//std::unique_ptr<HGaussianBlurStage> m_hGaussStage2;
 	//std::unique_ptr<VGaussianBlurStage> m_vGaussStage2;

@@ -1,7 +1,5 @@
 #include "DOFStage.h"
 
-
-
 DOFStage::DOFStage(UINT width, UINT height, Model* fullScreenQuad) 
 	: PostProcessStage(width, height, fullScreenQuad, D3D11_BIND_UNORDERED_ACCESS)
 {

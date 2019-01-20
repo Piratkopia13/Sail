@@ -259,7 +259,7 @@ ID3D10Blob* ShaderSet::compileShader(const std::string& source, const std::strin
 
 }
 
-const InputLayout& ShaderSet::getInputLayout() const {
+InputLayout& ShaderSet::getInputLayout() {
 	return inputLayout;
 }
 

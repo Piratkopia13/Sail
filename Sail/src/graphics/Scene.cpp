@@ -5,11 +5,15 @@
 #include "../utils/Utils.h"
 
 Scene::Scene() 
-	: m_postProcessPass(m_renderer)
+	: m_postProcessPipeline(m_renderer)
 {
 
 	// TODO: the following method ish
-	// m_postProcessPass.add(chain index / prev link)
+	m_postProcessPipeline.add<FXAAStage>();
+	/*m_postProcessPipeline.add<GaussianBlurStage>(1.f / 1.f);
+	m_postProcessPipeline.add<GaussianBlurStage>(1.f / 1.5f);
+	m_postProcessPipeline.add<GaussianBlurStage>(1.f / 2.f);*/
+	//m_postProcessPipeline.add<FXAAStage>();
 
 	auto window = Application::getInstance()->getWindow();
 	UINT width = window->getWindowWidth();
@@ -48,7 +52,7 @@ void Scene::draw(Camera& camera) {
 	m_renderer.end();
 	m_renderer.present(m_deferredOutputTex.get());
 
-	m_postProcessPass.run(*m_deferredOutputTex, nullptr);
+	m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
@@ -61,6 +65,19 @@ void Scene::draw(Camera& camera) {
 }
 
 void Scene::onEvent(Event& event) {
+	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&Scene::onResize));
+
 	// Forward events
 	m_renderer.onEvent(event);
+	m_postProcessPipeline.onEvent(event);
+}
+
+bool Scene::onResize(WindowResizeEvent & event) {
+
+	unsigned int width = event.getWidth();
+	unsigned int height = event.getHeight();
+
+	m_deferredOutputTex->resize(width, height);
+
+	return false;
 }

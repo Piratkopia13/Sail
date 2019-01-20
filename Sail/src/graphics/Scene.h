@@ -5,10 +5,10 @@
 #include "renderer/DeferredRenderer.h"
 #include "camera/Camera.h"
 #include "../events/Events.h"
-#include "postprocessing/PostProcessPass.h"
+#include "postprocessing/PostProcessPipeline.h"
 
 class LightSetup;
-
+// TODO: make this class virtual and have the actual scene in the demo/game project
 class Scene : public IEventListener {
 public:
 	Scene();
@@ -23,10 +23,13 @@ public:
 	virtual void onEvent(Event& event) override;
 
 private:
+	bool onResize(WindowResizeEvent& event);
+
+private:
 	std::vector<Entity::Ptr> m_entities;
 	//ForwardRenderer m_renderer;
 	DeferredRenderer m_renderer;
 	std::unique_ptr<RenderableTexture> m_deferredOutputTex;
-	PostProcessPass m_postProcessPass;
+	PostProcessPipeline m_postProcessPipeline;
 
 };

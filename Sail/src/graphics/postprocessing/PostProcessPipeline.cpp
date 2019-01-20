@@ -1,20 +1,20 @@
-#include "PostProcessPass.h"
+#include "PostProcessPipeline.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-PostProcessPass::PostProcessPass(const Renderer& renderer, const Camera* cam)
+PostProcessPipeline::PostProcessPipeline(const Renderer& renderer, const Camera* cam)
 	: m_cam(cam)
 	, m_renderer(renderer)
 {
 	createFullscreenQuad();
-
+/*
 	Application* app = Application::getInstance();
 	UINT windowWidth = app->getWindow()->getWindowWidth();
 	UINT windowHeight = app->getWindow()->getWindowHeight();
 
 
-	m_hGaussStage = std::make_unique<HGaussianBlurStage>(m_renderer, UINT(windowWidth * 1.0f), UINT(windowHeight * 1.0f), m_fullscreenQuad.get());
+	m_hGaussStage = std::make_unique<HGaussianBlurStage>(m_renderer, UINT(windowWidth * 1.0f), UINT(windowHeight * 1.0f), m_fullscreenQuad.get());*/
 
 
 	//m_gaussPass1Scale = 1.f / 1.f;
@@ -56,8 +56,16 @@ PostProcessPass::PostProcessPass(const Renderer& renderer, const Camera* cam)
 
 }
 
-void PostProcessPass::resize(UINT width, UINT height) {
-	m_hGaussStage->resize(UINT(width * 1.0f), UINT(height * 1.0f));
+bool PostProcessPipeline::onResize(WindowResizeEvent& event) {
+
+	/*unsigned int width = event.getWidth();
+	unsigned int height = event.getHeight();
+
+	for (StageData& s : m_pipeline) {
+		s.stage->resize(UINT(width * s.resolutionScale), UINT(height * s.resolutionScale));
+	}*/
+
+	//m_hGaussStage->resize(UINT(width * 1.0f), UINT(height * 1.0f));
 
 	//if (m_doBloom || m_doDOFPass) {
 	//	m_hGaussStage->resize(UINT(width * m_gaussPass1Scale), UINT(height * m_gaussPass1Scale));
@@ -81,16 +89,21 @@ void PostProcessPass::resize(UINT width, UINT height) {
 	//m_toneMapHackStage->resize(width, height);
 	//m_blendStage2->resize(width, height);
 	////m_dofStage->resize(width, height);
+	return false;
 }
 
-void PostProcessPass::setCamera(const Camera& cam) {
+void PostProcessPipeline::setCamera(const Camera& cam) {
 	m_cam = &cam;
 }
 
-PostProcessPass::~PostProcessPass() {
+PostProcessPipeline::~PostProcessPipeline() {
 }
 
-void PostProcessPass::run(RenderableTexture& baseTexture, ID3D11ShaderResourceView** depthTexture/*, RenderableTexture& bloomInputTexture, RenderableTexture& particlesTexture*/) {
+void PostProcessPipeline::clear() {
+	m_pipeline.clear();
+}
+
+void PostProcessPipeline::run(RenderableTexture& baseTexture, ID3D11ShaderResourceView** depthTexture/*, RenderableTexture& bloomInputTexture, RenderableTexture& particlesTexture*/) {
 
 	auto* dxm = Application::getInstance()->getAPI();
 
@@ -195,20 +208,35 @@ void PostProcessPass::run(RenderableTexture& baseTexture, ID3D11ShaderResourceVi
 	dxm->setDepthMask(GraphicsAPI::BUFFER_DISABLED);
 	dxm->setFaceCulling(GraphicsAPI::NO_CULLING);
 
+	// Toggle post processing on P key
+	auto& kbState = Application::getInstance()->getInput().getKbStateTracker();
+	static bool doPP = true;
+	if (kbState.pressed.P) {
+		doPP = !doPP;
+		Logger::Log("post processing: " + std::to_string(doPP));
+	}
 
-	m_hGaussStage->run(baseTexture);
+	RenderableTexture* input = &baseTexture;
+	if (doPP) {
+		// Process the input though each stage in the pipeline
+		for (StageData& s : m_pipeline) {
+			s.stage->run(*input);
+			input = &s.stage->getOutput();
+		}
+	}
+
+	// Draw the result to the backbuffer
 	dxm->renderToBackBuffer();
-	m_fullscreenQuad->getMaterial()->setDiffuseTexture(*m_hGaussStage->getOutput().getColorSRV());
+	m_fullscreenQuad->getMaterial()->setDiffuseTexture(*input->getColorSRV());
 
 	// Bind the flush shader which scales whatever the last output was to the screen resolution and renderes it to the back buffer
 	m_flushShader.bind();
 	m_fullscreenQuad->draw(m_renderer);
 
-	/*m_fullscreenQuad->draw();*/ // TODO: fix
 	dxm->setDepthMask(GraphicsAPI::NO_MASK);
 }
 
-void PostProcessPass::createFullscreenQuad() {
+void PostProcessPipeline::createFullscreenQuad() {
 
 	Vector2 halfSizes(1.f, 1.f);
 
@@ -242,4 +270,12 @@ void PostProcessPass::createFullscreenQuad() {
 
 	m_fullscreenQuad = std::make_unique<Mesh>(data, &m_flushShader);
 	//m_fullscreenQuad.buildBufferForShader(&m_flushShader);
+}
+
+void PostProcessPipeline::onEvent(Event& event) {
+	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&PostProcessPipeline::onResize));
+
+	for (StageData& s : m_pipeline)
+		s.stage->onEvent(event);
+
 }

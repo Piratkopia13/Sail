@@ -208,10 +208,8 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PSMain</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="res\shaders\postprocess\GaussianBlurPS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-    </FxCompile>
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurHorizontal.hlsl" />
+    <FxCompile Include="res\shaders\postprocess\GaussianBlurVertical.hlsl" />
     <FxCompile Include="res\shaders\postprocess\GaussianBlurWithDepthCheck.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
