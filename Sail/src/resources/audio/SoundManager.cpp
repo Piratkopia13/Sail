@@ -94,7 +94,7 @@ void SoundManager::playSoundEffect(const SoundEffect soundID, float volume, floa
 		return;
 
 	if (soundID < 0 || soundID >= SoundEffect::NumOfSoundEffects) {
-		Logger::Warning("Failed to play soundeffect since sound id was out of bounds. ID tried: " + soundID);
+		Logger::Warning("Failed to play soundeffect since sound id was out of bounds. ID tried: " + std::to_string(soundID));
 		return;
 	}
 
@@ -129,7 +129,7 @@ void SoundManager::playAmbientSound(const Ambient soundID, const bool looping, f
 		return;
 
 	if (soundID < 0 || soundID >= Ambient::NumOfAmbientSounds) {
-		Logger::Warning("Failed to play ambient sound since sound id was out of bounds. ID tried: " + soundID);
+		Logger::Warning("Failed to play ambient sound since sound id was out of bounds. ID tried: " + std::to_string(soundID));
 		return;
 	}
 
@@ -144,7 +144,7 @@ void SoundManager::pauseAmbientSound(const Ambient soundID) {
 		return;
 
 	if (soundID < 0 || soundID >= Ambient::NumOfAmbientSounds) {
-		Logger::Warning("Failed to pause ambient sound since sound id was out of bounds. ID tried: " + soundID);
+		Logger::Warning("Failed to pause ambient sound since sound id was out of bounds. ID tried: " + std::to_string(soundID));
 		return;
 	}
 
@@ -157,7 +157,7 @@ void SoundManager::resumeAmbientSound(const Ambient soundID) {
 		return;
 
 	if (soundID < 0 || soundID >= Ambient::NumOfAmbientSounds) {
-		Logger::Warning("Failed to resume ambient sound since sound id was out of bounds. ID tried: " + soundID);
+		Logger::Warning("Failed to resume ambient sound since sound id was out of bounds. ID tried: " + std::to_string(soundID));
 		return;
 	}
 
@@ -170,7 +170,7 @@ void SoundManager::stopAmbientSound(const Ambient soundID) {
 		return;
 
 	if (soundID < 0 || soundID >= Ambient::NumOfAmbientSounds) {
-		Logger::Warning("Failed to resume ambient sound since sound id was out of bounds. ID tried: " + soundID);
+		Logger::Warning("Failed to resume ambient sound since sound id was out of bounds. ID tried: " + std::to_string(soundID));
 		return;
 	}
 
@@ -195,14 +195,14 @@ bool SoundManager::loadSoundEffect(const SoundEffect soundID, wchar_t* file) {
 		return false;
 
 	if (soundID < 0 || soundID >= SoundEffect::NumOfSoundEffects) {
-		Logger::Warning("Failed to load sound effect since sound id was out of bounds. ID tried: " + soundID);
+		Logger::Warning("Failed to load sound effect since sound id was out of bounds. ID tried: " + std::to_string(soundID));
 		return false;
 	}
 
 	m_sounds[soundID] = std::make_unique<Sound>();
 	m_sounds[soundID]->Initialize(m_audioEngine, file);
 	if (!m_sounds[soundID]) {
-		Logger::Warning("Failed to load sound effect with id: " + soundID);
+		Logger::Warning("Failed to load sound effect with id: " + std::to_string(soundID));
 		return false;
 	}
 
@@ -214,7 +214,7 @@ bool SoundManager::loadAmbientSound(const Ambient soundID, wchar_t* file) {
 		return false;
 	
 	if (soundID < 0 || soundID >= Ambient::NumOfAmbientSounds) {
-		Logger::Warning("Failed to load ambient sound since sound id was out of bounds. ID tried: " + soundID);
+		Logger::Warning("Failed to load ambient sound since sound id was out of bounds. ID tried: " + std::to_string(soundID));
 		return false;
 	}
 

@@ -38,6 +38,7 @@
     <None Include="res\models\capture_point.fbx" />
     <None Include="res\shaders\deferred\GeometryShader.hlsl" />
     <None Include="packages.config" />
+    <None Include="res\shaders\Phong.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="res\shaders\deferred\DirectionalLightShader.hlsl" />
@@ -49,7 +50,6 @@
     <FxCompile Include="res\shaders\DepthShader.hlsl" />
     <FxCompile Include="res\shaders\DirectionalLightShader.hlsl" />
     <FxCompile Include="res\shaders\MaterialShader.hlsl" />
-    <FxCompile Include="res\shaders\Phong.hlsl" />
     <FxCompile Include="res\shaders\SimpleColorShader.hlsl" />
     <FxCompile Include="res\shaders\SimpleTextureShader.hlsl" />
     <FxCompile Include="res\shaders\postprocess\BlendShader.hlsl" />
