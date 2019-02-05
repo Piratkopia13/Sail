@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DeferredPointLightShader.h"
 #include "../../../api/Application.h"
 

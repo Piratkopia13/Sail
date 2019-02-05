@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DXAPI.h"
 #include "Win32Window.h"
 

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ShaderSet.h"
 #include "../../api/Application.h"
 #include <regex>

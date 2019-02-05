@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ShadowMap.h"
 
 ShadowMap::ShadowMap()

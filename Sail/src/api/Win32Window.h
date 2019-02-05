@@ -1,5 +1,7 @@
 #pragma once
 
+// Exclude some less used APIs to speed up the build process
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <string>
 

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "FXAAStage.h"
 
 FXAAStage::FXAAStage(const Renderer& renderer, UINT width, UINT height, Mesh* fullScreenQuad) 

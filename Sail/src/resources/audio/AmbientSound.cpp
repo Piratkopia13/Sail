@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "AmbientSound.h"
 
 AmbientSound::AmbientSound() {}

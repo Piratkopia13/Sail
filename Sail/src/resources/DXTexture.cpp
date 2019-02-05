@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DXTexture.h"
 #include "../api/Application.h"
 

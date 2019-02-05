@@ -4,23 +4,6 @@
 //#define _SAIL_BREAK_ON_WARNING
 #define _SAIL_BREAK_ON_ERROR
 
-// Exclude some less used APIs to speed up the build process
-#define WIN32_LEAN_AND_MEAN
-
-#include <Windows.h>
-#include <memory>
-#include <d3d11.h>
-#include <d3dcompiler.h>
-#include <DirectXColors.h>
-#include <string>
-#include <Memory>
-#include <comdef.h> 
-#include <iostream>
-// DirectX Toolkit includes
-#include <SimpleMath.h>
-#include <Keyboard.h>
-#include <Mouse.h>
-#include <GamePad.h>
 
 #include "api/Application.h"
 #include "Utils/Utils.h"

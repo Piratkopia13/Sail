@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ComputeShader.h"
 
 #include "../../api/Application.h"

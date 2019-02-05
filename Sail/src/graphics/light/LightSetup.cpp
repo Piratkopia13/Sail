@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "LightSetup.h"
 
 LightSetup::LightSetup()

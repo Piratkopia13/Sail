@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Entity.h"
 
 Entity::Ptr Entity::Create() {

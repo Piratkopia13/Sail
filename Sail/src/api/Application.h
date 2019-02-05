@@ -1,6 +1,6 @@
 #pragma once
 
-#include <windowsx.h>
+//#include <windowsx.h>
 #include "../utils/Timer.h"
 #include "Win32Window.h"
 #include "DXAPI.h"

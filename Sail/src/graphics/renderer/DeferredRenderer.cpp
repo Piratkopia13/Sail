@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DeferredRenderer.h"
 #include "../shader/ShaderSet.h"
 #include "../light/LightSetup.h"

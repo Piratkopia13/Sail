@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "HGaussianBlurStage.h"
 
 using namespace DirectX;

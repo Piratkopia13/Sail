@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "RenderableTexture.h"
 #include "../api/Application.h"
 

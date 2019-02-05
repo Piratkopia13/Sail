@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ResourceManager.h"
 #include "../graphics/shader/deferred/DeferredGeometryShader.h"
 #include "audio/SoundManager.h"

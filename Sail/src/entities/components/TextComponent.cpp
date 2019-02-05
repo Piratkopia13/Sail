@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "TextComponent.h"
 #include "../../api/Application.h"
 #include "../../graphics/shader/ShaderSet.h"

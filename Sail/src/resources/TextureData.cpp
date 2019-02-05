@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "TextureData.h"
 
 using namespace DirectX;

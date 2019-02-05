@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "GeometryShader.h"
 
 #include "../../api/Application.h"

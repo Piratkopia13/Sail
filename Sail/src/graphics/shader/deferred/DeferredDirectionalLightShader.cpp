@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DeferredDirectionalLightShader.h"
 #include "../../renderer/DeferredRenderer.h"
 

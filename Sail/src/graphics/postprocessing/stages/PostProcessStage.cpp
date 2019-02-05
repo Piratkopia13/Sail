@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "PostProcessStage.h"
 
 PostProcessStage::PostProcessStage(const Renderer& renderer, const std::string& filename, UINT width, UINT height, Mesh* fullscreenQuad, UINT outputTexBindFlags)

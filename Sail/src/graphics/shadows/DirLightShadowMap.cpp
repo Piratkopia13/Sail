@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DirLightShadowMap.h"
 
 DirLightShadowMap::DirLightShadowMap(int width, int height)

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "IndexBuffer.h"
 #include "../../api/Application.h"
 

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "FBXLoader.h"
 
 #include <d3d11.h>

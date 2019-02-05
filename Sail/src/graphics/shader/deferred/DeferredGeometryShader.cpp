@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DeferredGeometryShader.h"
 
 using namespace DirectX;

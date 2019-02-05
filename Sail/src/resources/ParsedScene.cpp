@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ParsedScene.h"
 #include "../graphics/geometry/Model.h"
 #include "../utils/Utils.h"
