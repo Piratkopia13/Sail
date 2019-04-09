@@ -4,7 +4,7 @@
 #include <SimpleMath.h>
 #include <vector>
 #include "../../events/Events.h"
-#include "../RenderableTexture.h"
+#include "Sail/api/RenderableTexture.h"
 
 class Camera;
 class Model;

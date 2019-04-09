@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Renderer.h"
-#include "../RenderableTexture.h"
+#include "API/DX11/DX11RenderableTexture.h"
 
 class Model;
 class DeferredPointLightShader;
@@ -35,13 +35,13 @@ private:
 	bool onResize(WindowResizeEvent& event);
 
 	void beginGeometryPass() const;
-	void doLightPass(RenderableTexture* output);
+	void doLightPass(DX11RenderableTexture* output);
 
 private:
 	Camera* m_camera;
 	LightSetup* m_lightSetup;
 
-	std::unique_ptr<RenderableTexture> m_gBuffers[NUM_GBUFFERS - 1];
+	std::unique_ptr<DX11RenderableTexture> m_gBuffers[NUM_GBUFFERS - 1];
 
 	std::unique_ptr<Model> m_screenQuadModel;
 	Model* m_pointLightVolumeModel;

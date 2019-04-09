@@ -337,19 +337,19 @@ void FBXLoader::getMaterial(FbxNode* pNode, Material* material) {
 		FbxFileTexture* diffTex = phong->Diffuse.GetSrcObject<FbxFileTexture>();
 		if (diffTex) {
 			std::string filename = diffTex->GetRelativeFileName();
-			resman.loadDXTexture(filename);
+			resman.loadTexture(filename);
 			material->setDiffuseTexture(filename);
 		}
 		FbxFileTexture* specTex = phong->Specular.GetSrcObject<FbxFileTexture>();
 		if (specTex) {
 			std::string filename = specTex->GetRelativeFileName();
-			resman.loadDXTexture(filename);
+			resman.loadTexture(filename);
 			material->setSpecularTexture(specTex->GetRelativeFileName());
 		}
 		FbxFileTexture* normTex = phong->NormalMap.GetSrcObject<FbxFileTexture>();
 		if (normTex) {
 			std::string filename = normTex->GetRelativeFileName();
-			resman.loadDXTexture(filename);
+			resman.loadTexture(filename);
 			material->setNormalTexture(normTex->GetRelativeFileName());
 		}
 

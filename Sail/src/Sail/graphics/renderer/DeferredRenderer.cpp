@@ -119,7 +119,7 @@ void DeferredRenderer::beginGeometryPass() const {
 	//Application::getInstance()->getResourceManager().getShaderSet<DeferredGeometryShader>().bind();
 }
 
-void DeferredRenderer::doLightPass(RenderableTexture* output) {
+void DeferredRenderer::doLightPass(DX11RenderableTexture* output) {
 
 	auto* dxm = Application::getInstance()->getAPI();
 	auto* devCon = dxm->getDeviceContext();

@@ -35,19 +35,19 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 // DXTexture
 //
 
-void ResourceManager::loadDXTexture(const std::string& filename) {
+void ResourceManager::loadTexture(const std::string& filename) {
 
-	m_dxTextures.insert({ filename, std::make_unique<DXTexture>(filename) });
+	m_textures.insert({ filename, std::make_unique<Texture>(filename) });
 }
-DXTexture& ResourceManager::getDXTexture(const std::string& filename) {
-	auto pos = m_dxTextures.find(filename);
-	if (pos == m_dxTextures.end())
+Texture& ResourceManager::getTexture(const std::string& filename) {
+	auto pos = m_textures.find(filename);
+	if (pos == m_textures.end())
 		Logger::Error("Tried to access a resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadDXTexture(" + filename + ") before accessing it.");
 
 	return *pos->second;
 }
-bool ResourceManager::hasDXTexture(const std::string& filename) {
-	return m_dxTextures.find(filename) != m_dxTextures.end();
+bool ResourceManager::hasTexture(const std::string& filename) {
+	return m_textures.find(filename) != m_textures.end();
 }
 
 

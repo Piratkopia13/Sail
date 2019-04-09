@@ -8,12 +8,12 @@
 
 #include "Sail/api/GraphicsAPI.h"
 
-class DXAPI : public GraphicsAPI {
+class DX11API : public GraphicsAPI {
 public:
-	DXAPI();
-	~DXAPI();
+	DX11API();
+	~DX11API();
 
-	bool init(Win32Window* window) override;
+	bool init(Window* window) override;
 	void clear(const DirectX::SimpleMath::Vector4& color) override;
 	void setDepthMask(DepthMask setting) override;
 	void setFaceCulling(Culling setting) override;

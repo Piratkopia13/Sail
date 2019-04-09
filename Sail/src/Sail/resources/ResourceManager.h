@@ -3,7 +3,7 @@
 #include <Map>
 #include <memory>
 #include "TextureData.h"
-#include "DXTexture.h"
+#include "Sail/api/Texture.h"
 #include "ParsedScene.h"
 
 class DeferredGeometryShader;
@@ -20,10 +20,10 @@ public:
 	TextureData& getTextureData(const std::string& filename);
 	bool hasTextureData(const std::string& filename);
 
-	// DXTexture
-	void loadDXTexture(const std::string& filename);
-	DXTexture& getDXTexture(const std::string& filename);
-	bool hasDXTexture(const std::string& filename);
+	// Texture
+	void loadTexture(const std::string& filename);
+	Texture& getTexture(const std::string& filename);
+	bool hasTexture(const std::string& filename);
 
 	// Models
 	void loadModel(const std::string& filename, ShaderSet* shaderSet);
@@ -70,7 +70,7 @@ public:
 private:
 	// Textures mapped to their filenames
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
-	std::map<std::string, std::unique_ptr<DXTexture>> m_dxTextures;
+	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	// ShaderSets mapped to their identifiers

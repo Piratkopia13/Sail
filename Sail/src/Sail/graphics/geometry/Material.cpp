@@ -93,9 +93,10 @@ void Material::setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures) {
 
 
 void Material::getAndInsertTexture(const std::string& filename, int arraySlot) {
-
-	DXTexture* t = &Application::getInstance()->getResourceManager().getDXTexture(filename);
-	m_srvs[arraySlot] = *t->getResourceView();
+	Texture* t = &Application::getInstance()->getResourceManager().getTexture(filename);
+	// TODO: FIX
+	assert(false);
+	//m_srvs[arraySlot] = *t->getResourceView();
 
 }
 

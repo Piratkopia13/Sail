@@ -17,7 +17,7 @@ Text* TextComponent::addText(Text::Ptr text) {
 }
 
 void TextComponent::draw() {
-	auto* dxm = Application::getInstance()->getAPI();
+	auto* dxm = Application::getInstance()->getAPI<GraphicsAPI>();
 
 	//dxm->setDepthMask(GraphicsAPI::BUFFER_DISABLED);
 

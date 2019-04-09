@@ -21,33 +21,33 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4BD27B5A-D461-4C31-B914-A18C73E17E87}</ProjectGuid>
     <RootNamespace>Project</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>Sail</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -73,7 +73,7 @@
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediates\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\SimpleMath\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\DXTK\include;$(IncludePath)</IncludePath>
     <Linkage-directxtk_desktop_2015>
     </Linkage-directxtk_desktop_2015>
   </PropertyGroup>
@@ -81,7 +81,7 @@
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediates\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\SimpleMath\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\DXTK\include;$(IncludePath)</IncludePath>
     <LinkIncremental>false</LinkIncremental>
     <Linkage-directxtk_desktop_2015>
     </Linkage-directxtk_desktop_2015>
@@ -89,12 +89,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediates\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\SimpleMath\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\DXTK\include;$(SolutionDir)libraries;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediates\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\SimpleMath\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\DXTK\include;$(SolutionDir)libraries;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -189,6 +189,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\API\DX11\DX11Mesh.cpp" />
+    <ClCompile Include="src\API\DX11\DX11RenderableTexture.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -215,35 +217,22 @@
     <ClCompile Include="src\Sail\graphics\postprocessing\stages\HGaussianBlurStage.cpp" />
     <ClCompile Include="src\Sail\graphics\postprocessing\stages\PostProcessStage.cpp" />
     <ClCompile Include="src\Sail\graphics\postprocessing\stages\VGaussianBlurStage.cpp" />
-    <ClCompile Include="src\Sail\graphics\RenderableTexture.cpp" />
-    <ClCompile Include="src\Sail\graphics\renderer\DeferredRenderer.cpp" />
-    <ClCompile Include="src\Sail\graphics\renderer\ForwardRenderer.cpp" />
-    <ClCompile Include="src\Sail\graphics\renderer\Renderer.cpp" />
     <ClCompile Include="src\Sail\graphics\Scene.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\component\ConstantBuffer.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\component\Sampler.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\ComputeShader.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\deferred\DeferredDirectionalLightShader.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\deferred\DeferredGeometryShader.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\deferred\DeferredPointLightShader.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\DomainShader.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\GeometryShader.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\HullShader.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\InputLayout.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\material\MaterialShader.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\PixelShader.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\postprocess\PostProcessFlushShader.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\ShaderSet.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\VertexShader.cpp" />
-    <ClCompile Include="src\Sail\graphics\shadows\DirLightShadowMap.cpp" />
-    <ClCompile Include="src\Sail\graphics\shadows\ShadowMap.cpp" />
     <ClCompile Include="src\Sail\graphics\text\SailFont.cpp" />
     <ClCompile Include="src\Sail\graphics\text\Text.cpp" />
     <ClCompile Include="src\Sail\resources\audio\AmbientSound.cpp" />
     <ClCompile Include="src\Sail\resources\audio\Sound.cpp" />
     <ClCompile Include="src\Sail\resources\audio\SoundManager.cpp" />
-    <ClCompile Include="src\Sail\resources\DXCubeMap.cpp" />
-    <ClCompile Include="src\Sail\resources\DXTexture.cpp" />
+    <ClCompile Include="src\API\DX11\resources\DXCubeMap.cpp" />
+    <ClCompile Include="src\API\DX11\resources\DX11Texture.cpp" />
     <ClCompile Include="src\Sail\resources\loaders\FBXLoader.cpp" />
     <ClCompile Include="src\Sail\resources\loaders\TGALoader.cpp" />
     <ClCompile Include="src\Sail\resources\ParsedScene.cpp" />
@@ -261,11 +250,20 @@
     <None Include="res\models\monkey.fbx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\API\DX11\DX11Mesh.h" />
+    <ClInclude Include="src\API\DX11\DX11RenderableTexture.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Sail.h" />
+    <ClInclude Include="src\Sail\api\ConstantBuffer.h" />
     <ClInclude Include="src\Sail\api\IndexBuffer.h" />
     <ClInclude Include="src\Sail\api\Mesh.h" />
+    <ClInclude Include="src\Sail\api\PipelineStateObject.h" />
+    <ClInclude Include="src\Sail\api\RenderableTexture.h" />
+    <ClInclude Include="src\Sail\api\Renderer.h" />
+    <ClInclude Include="src\Sail\api\Shader.h" />
+    <ClInclude Include="src\Sail\api\Texture.h" />
     <ClInclude Include="src\Sail\api\VertexBuffer.h" />
+    <ClInclude Include="src\Sail\api\Window.h" />
     <ClInclude Include="src\Sail\Application.h" />
     <ClInclude Include="src\API\DX11\DX11API.h" />
     <ClInclude Include="src\Sail\api\GraphicsAPI.h" />
@@ -309,29 +307,16 @@
     <ClInclude Include="src\Sail\graphics\postprocessing\stages\HGaussianBlurStage.h" />
     <ClInclude Include="src\Sail\graphics\postprocessing\stages\PostProcessStage.h" />
     <ClInclude Include="src\Sail\graphics\postprocessing\stages\VGaussianBlurStage.h" />
-    <ClInclude Include="src\Sail\graphics\RenderableTexture.h" />
-    <ClInclude Include="src\Sail\graphics\renderer\DeferredRenderer.h" />
-    <ClInclude Include="src\Sail\graphics\renderer\ForwardRenderer.h" />
-    <ClInclude Include="src\Sail\graphics\renderer\Renderer.h" />
     <ClInclude Include="src\Sail\graphics\Scene.h" />
     <ClInclude Include="src\Sail\graphics\shader\component\BindShader.h" />
     <ClInclude Include="src\Sail\graphics\shader\component\ConstantBuffer.h" />
     <ClInclude Include="src\Sail\graphics\shader\component\Sampler.h" />
-    <ClInclude Include="src\Sail\graphics\shader\ComputeShader.h" />
     <ClInclude Include="src\Sail\graphics\shader\deferred\DeferredDirectionalLightShader.h" />
     <ClInclude Include="src\Sail\graphics\shader\deferred\DeferredGeometryShader.h" />
     <ClInclude Include="src\Sail\graphics\shader\deferred\DeferredPointLightShader.h" />
-    <ClInclude Include="src\Sail\graphics\shader\DomainShader.h" />
-    <ClInclude Include="src\Sail\graphics\shader\GeometryShader.h" />
-    <ClInclude Include="src\Sail\graphics\shader\HullShader.h" />
-    <ClInclude Include="src\Sail\graphics\shader\InputLayout.h" />
     <ClInclude Include="src\Sail\graphics\shader\material\MaterialShader.h" />
-    <ClInclude Include="src\Sail\graphics\shader\PixelShader.h" />
     <ClInclude Include="src\Sail\graphics\shader\postprocess\PostProcessFlushShader.h" />
     <ClInclude Include="src\Sail\graphics\shader\ShaderSet.h" />
-    <ClInclude Include="src\Sail\graphics\shader\VertexShader.h" />
-    <ClInclude Include="src\Sail\graphics\shadows\DirLightShadowMap.h" />
-    <ClInclude Include="src\Sail\graphics\shadows\ShadowMap.h" />
     <ClInclude Include="src\Sail\graphics\text\SailFont.h" />
     <ClInclude Include="src\Sail\graphics\text\Text.h" />
     <ClInclude Include="src\Sail\patterns\Observer.h" />
@@ -339,8 +324,8 @@
     <ClInclude Include="src\Sail\resources\audio\AmbientSound.h" />
     <ClInclude Include="src\Sail\resources\audio\Sound.h" />
     <ClInclude Include="src\Sail\resources\audio\SoundManager.h" />
-    <ClInclude Include="src\Sail\resources\DXCubeMap.h" />
-    <ClInclude Include="src\Sail\resources\DXTexture.h" />
+    <ClInclude Include="src\API\DX11\resources\DXCubeMap.h" />
+    <ClInclude Include="src\API\DX11\resources\DX11Texture.h" />
     <ClInclude Include="src\Sail\resources\loaders\FBXLoader.h" />
     <ClInclude Include="src\Sail\resources\loaders\TGALoader.h" />
     <ClInclude Include="src\Sail\resources\ParsedScene.h" />

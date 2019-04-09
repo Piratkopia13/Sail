@@ -3,10 +3,11 @@
 
 // TODO: remove all api specific includes
 #include "API/DX11/Win32Window.h"
-#include "API/DX11/DX11API.h"
+//#include "API/DX11/DX11API.h"
 #include "API/DX11/Input.h"
 
 #include "api/GraphicsAPI.h"
+#include "api/Window.h"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
@@ -32,9 +33,13 @@ public:
 	virtual void render(float dt) = 0;
 	virtual void dispatchEvent(Event& event) override { }
 
+	template<typename T>
+	T* const getAPI() {
+		return static_cast<T*>(m_api.get());
+	}
+
 	static Application* getInstance();
-	GraphicsAPI* const getAPI();
-	Win32Window* const getWindow();
+	Window* const getWindow();
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
 
@@ -42,8 +47,8 @@ public:
 
 private:
 	static Application* m_instance;
-	Win32Window m_window;
-	DXAPI m_dxAPI;
+	std::unique_ptr<Window> m_window;
+	std::unique_ptr<GraphicsAPI> m_api;
 	ResourceManager m_resourceManager;
 
 	Timer m_timer;

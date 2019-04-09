@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../RenderableTexture.h"
+#include "API/DX11/DX11RenderableTexture.h"
 #include "../../shader/ShaderSet.h"
 #include "../../renderer/Renderer.h"
 
@@ -11,8 +11,8 @@ public:
 	PostProcessStage(const Renderer& renderer, const std::string& filename, UINT width, UINT height, Mesh* fullscreenQuad, UINT outputTexBindFlags = 0);
 	virtual ~PostProcessStage();
 
-	virtual void run(RenderableTexture& inputTexture);
-	RenderableTexture& getOutput();
+	virtual void run(DX11RenderableTexture& inputTexture);
+	DX11RenderableTexture& getOutput();
 
 	virtual void onEvent(Event& event) override;
 
@@ -20,7 +20,7 @@ protected:
 	virtual bool onResize(WindowResizeEvent& event);
 
 protected:
-	RenderableTexture OutputTexture;
+	DX11RenderableTexture OutputTexture;
 	Mesh* FullscreenQuad;
 	UINT Width, Height;
 	const Renderer& RendererRef;

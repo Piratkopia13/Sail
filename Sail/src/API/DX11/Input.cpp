@@ -145,7 +145,7 @@ void Input::newFrame() {
 		POINT p;
 		p.x = Application::getInstance()->getWindow()->getWindowWidth() / 2;
 		p.y = Application::getInstance()->getWindow()->getWindowHeight() / 2;
-		ClientToScreen(*Application::getInstance()->getWindow()->getHwnd(), &p);
+		ClientToScreen(*static_cast<Win32Window*>(Application::getInstance()->getWindow())->getHwnd(), &p);
 		SetCursorPos(p.x, p.y);
 	}
 

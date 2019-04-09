@@ -7,24 +7,28 @@ using namespace DirectX;
 Application* Application::m_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api)
-: m_window(hInstance, windowWidth, windowHeight, windowTitle)
 {
+	//m_window(hInstance, windowWidth, windowHeight, windowTitle)
+	m_window = std::make_unique<Window>(windowWidth, windowHeight);
+	m_window->setWindowTitle(windowTitle);
+	m_api = std::make_unique<GraphicsAPI>();
+
 	// Initalize the window
-	if (!m_window.initialize()) {
+	if (!m_window->initialize()) {
 		OutputDebugString(L"\nFailed to initialize Win32Window\n");
 		Logger::Error("Failed to initialize Win32Window!");
 		return;
 	}
 
-	// Initialize Direct3D
-	if (!m_dxAPI.init(&m_window)) {
-		OutputDebugString(L"\nFailed to initialize D3D\n");
-		Logger::Error("Failed to initialize Direct3D!");
+	// Initialize the graphics API
+	if (!m_api->init(m_window.get())) {
+		OutputDebugString(L"\nFailed to initialize the graphics API\n");
+		Logger::Error("Failed to initialize the grahics API!");
 		return;
 	}
 
 	// Register devices to use raw input from hardware
-	m_input.registerRawDevices(*m_window.getHwnd());
+	//m_input.registerRawDevices(*m_window.getHwnd());
 
 	// Set up instance if not set
 	if (m_instance) {
@@ -34,7 +38,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	m_instance = this;
 
 	// Load the missing texture texture
-	m_resourceManager.loadDXTexture("missing.tga");
+	m_resourceManager.loadTexture("missing.tga");
 
 }
 
@@ -58,6 +62,8 @@ int Application::startGameLoop() {
 
 	static_cast<float>(m_timer.getFrameTime());
 
+	// TODO: move windows loop to api specific section
+
 	// Main message loop
 	while (msg.message != WM_QUIT) {
 
@@ -67,11 +73,11 @@ int Application::startGameLoop() {
 		} else {
 
 			// Handle window resizing
-			if (m_window.hasBeenResized()) {
-				UINT newWidth = m_window.getWindowWidth();
-				UINT newHeight = m_window.getWindowHeight();
+			if (static_cast<Win32Window*>(m_window.get())->hasBeenResized()) {
+				UINT newWidth = m_window->getWindowWidth();
+				UINT newHeight = m_window->getWindowHeight();
 				// Resize graphics api
-				m_dxAPI.resize(newWidth, newHeight);
+				//m_api->resize(newWidth, newHeight);
 				// Send resize event
 				dispatchEvent(WindowResizeEvent(newWidth, newHeight));
 			}
@@ -143,11 +149,8 @@ Application* Application::getInstance() {
 	return m_instance;
 }
 
-GraphicsAPI* const Application::getAPI() {
-	return &m_dxAPI;
-}
-Win32Window* const Application::getWindow() {
-	return &m_window;
+Window* const Application::getWindow() {
+	return m_window.get();
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;

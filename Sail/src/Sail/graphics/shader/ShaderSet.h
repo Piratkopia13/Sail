@@ -7,14 +7,16 @@
 #include <iostream>
 #include <SimpleMath.h>
 
+#include "Sail/api/Shader.h"
+
 #include "component/ConstantBuffer.h"
 #include "component/Sampler.h"
-#include "VertexShader.h"
-#include "GeometryShader.h"
-#include "PixelShader.h"
-#include "ComputeShader.h"
-#include "DomainShader.h"
-#include "HullShader.h"
+//#include "VertexShader.h"
+//#include "GeometryShader.h"
+//#include "PixelShader.h"
+//#include "ComputeShader.h"
+//#include "DomainShader.h"
+//#include "HullShader.h"
 #include "../geometry/Model.h"
 #include "../camera/Camera.h"
 #include "InputLayout.h"
@@ -62,12 +64,13 @@ protected:
 	std::string filename;
 
 private:
-	std::unique_ptr<VertexShader> m_vs;
+	/*std::unique_ptr<VertexShader> m_vs;
 	std::unique_ptr<GeometryShader> m_gs;
 	std::unique_ptr<PixelShader> m_ps;
 	std::unique_ptr<DomainShader> m_ds;
 	std::unique_ptr<HullShader> m_hs;
-	std::vector<std::unique_ptr<ComputeShader>> m_css;
+	std::vector<std::unique_ptr<ComputeShader>> m_css;*/
+	std::unique_ptr<Shader> m_shaders;
 
 	struct ShaderResource {
 		ShaderResource(const std::string& name, UINT slot)

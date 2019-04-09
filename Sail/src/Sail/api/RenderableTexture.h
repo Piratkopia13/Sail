@@ -1,13 +1,16 @@
 #pragma once
 
-#include "Sail/api/Mesh.h"
+#include <SimpleMath.h>
 
-class IndexBuffer {
+class RenderableTexture {
 public:
-	IndexBuffer(Mesh::Data& modelData) { }
-	virtual ~IndexBuffer() { }
+	RenderableTexture(unsigned int width = 320, unsigned int height = 180);
+	virtual ~RenderableTexture();
 
-	virtual void bind() const = 0;
+	virtual void begin() = 0;
+	virtual void end() = 0;
+	virtual void clear(const DirectX::XMVECTORF32& color) = 0;
+	virtual void resize(int width, int height) = 0;
 
 protected:
 

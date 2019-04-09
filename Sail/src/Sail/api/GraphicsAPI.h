@@ -2,7 +2,7 @@
 
 #include "../utils/Utils.h"
 
-class Win32Window;
+class Window;
 
 class GraphicsAPI {
 public:
@@ -26,12 +26,14 @@ public:
 	GraphicsAPI() { };
 	~GraphicsAPI() { };
 
-	virtual bool init(Win32Window* window) = 0;
+	virtual bool init(Window* window) = 0;
 	virtual void clear(const DirectX::SimpleMath::Vector4& color) = 0;
 	virtual void setDepthMask(DepthMask setting) = 0;
 	virtual void setFaceCulling(Culling setting) = 0;
 	virtual void setBlending(Blending setting) = 0;
 	virtual void present(bool vsync = false) = 0;
+	virtual unsigned int getMemoryUsage() const = 0;
+	virtual unsigned int getMemoryBudget() const = 0;
 
 protected:
 

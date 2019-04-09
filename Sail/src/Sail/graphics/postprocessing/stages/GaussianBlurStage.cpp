@@ -29,7 +29,7 @@ GaussianBlurStage::GaussianBlurStage(const Renderer& renderer, UINT width, UINT 
 GaussianBlurStage::~GaussianBlurStage() {
 }
 
-void GaussianBlurStage::run(RenderableTexture& inputTexture) {
+void GaussianBlurStage::run(DX11RenderableTexture& inputTexture) {
 	// Overriden run method, dont call parent
 
 	// First pass - horizontal

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "PostProcessPipeline.h"
+#include "API/DX11/DX11API.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -104,9 +105,9 @@ void PostProcessPipeline::clear() {
 	m_pipeline.clear();
 }
 
-void PostProcessPipeline::run(RenderableTexture& baseTexture, ID3D11ShaderResourceView** depthTexture/*, RenderableTexture& bloomInputTexture, RenderableTexture& particlesTexture*/) {
+void PostProcessPipeline::run(DX11RenderableTexture& baseTexture, ID3D11ShaderResourceView** depthTexture/*, RenderableTexture& bloomInputTexture, RenderableTexture& particlesTexture*/) {
 
-	auto* dxm = Application::getInstance()->getAPI();
+	auto* dxm = Application::getInstance()->getAPI<DX11API>();
 
 #ifdef _DEBUG
 	//auto& kbState = Application::getInstance()->getInput().getKbStateTracker();
@@ -217,7 +218,7 @@ void PostProcessPipeline::run(RenderableTexture& baseTexture, ID3D11ShaderResour
 		Logger::Log("post processing: " + std::to_string(doPP));
 	}*/
 
-	RenderableTexture* input = &baseTexture;
+	DX11RenderableTexture* input = &baseTexture;
 	if (doPP) {
 		// Process the input though each stage in the pipeline
 		for (StageData& s : m_pipeline) {

@@ -9,15 +9,7 @@
 Mesh::Mesh(Data& buildData, ShaderSet* shaderSet)
 	: meshData(buildData) 
 {
-	// Place the following in the implementation override
-
-	//material = std::make_shared<Material>(shaderSet);
-	//// Create vertex buffer
-	//vertexBuffer = std::make_unique<VertexBuffer>(shaderSet->getInputLayout(), buildData);
-	//// Create index buffer is indices are set
-	//if (buildData.numIndices > 0) {
-	//	indexBuffer = std::make_unique<IndexBuffer>(buildData);
-	//}
+	
 }
 
 Mesh::~Mesh() {

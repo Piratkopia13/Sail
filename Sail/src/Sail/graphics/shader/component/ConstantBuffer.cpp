@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ConstantBuffer.h"
 #include "Sail/Application.h"
+#include "API/DX11/DX11API.h"
 
 namespace ShaderComponent {
 
@@ -22,7 +23,7 @@ namespace ShaderComponent {
 		data.SysMemPitch = 0;
 		data.SysMemSlicePitch = 0;
 
-		ThrowIfFailed(Application::getInstance()->getAPI()->getDevice()->CreateBuffer(&desc, &data, &m_buffer));
+		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateBuffer(&desc, &data, &m_buffer));
 
 		// Keep a copy of the data on the CPU
 		// Reason being GPU buffer is write only, and updateData can write parts of the buffer at a time
@@ -41,25 +42,25 @@ namespace ShaderComponent {
 		memcpy((char*)m_data + offset, newData, bufferSize);
 
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		Application::getInstance()->getAPI()->getDeviceContext()->Map(m_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->Map(m_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 		std::memcpy(mappedResource.pData, m_data, m_bufferSize);
-		Application::getInstance()->getAPI()->getDeviceContext()->Unmap(m_buffer, 0);
+		Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->Unmap(m_buffer, 0);
 
 	}
 
 	void ConstantBuffer::bind() {
 		if (m_bindShader & ShaderComponent::VS)
-			Application::getInstance()->getAPI()->getDeviceContext()->VSSetConstantBuffers(m_slot, 1, &m_buffer);
+			Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->VSSetConstantBuffers(m_slot, 1, &m_buffer);
 		if (m_bindShader & ShaderComponent::HS)
-			Application::getInstance()->getAPI()->getDeviceContext()->HSSetConstantBuffers(m_slot, 1, &m_buffer);
+			Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->HSSetConstantBuffers(m_slot, 1, &m_buffer);
 		if (m_bindShader & ShaderComponent::DS)
-			Application::getInstance()->getAPI()->getDeviceContext()->DSSetConstantBuffers(m_slot, 1, &m_buffer);
+			Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->DSSetConstantBuffers(m_slot, 1, &m_buffer);
 		if (m_bindShader & ShaderComponent::PS)
-			Application::getInstance()->getAPI()->getDeviceContext()->PSSetConstantBuffers(m_slot, 1, &m_buffer);
+			Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetConstantBuffers(m_slot, 1, &m_buffer);
 		if (m_bindShader & ShaderComponent::GS)
-			Application::getInstance()->getAPI()->getDeviceContext()->GSSetConstantBuffers(m_slot, 1, &m_buffer);
+			Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->GSSetConstantBuffers(m_slot, 1, &m_buffer);
 		if (m_bindShader & ShaderComponent::CS)
-			Application::getInstance()->getAPI()->getDeviceContext()->CSSetConstantBuffers(m_slot, 1, &m_buffer);
+			Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->CSSetConstantBuffers(m_slot, 1, &m_buffer);
 	}
 
 }

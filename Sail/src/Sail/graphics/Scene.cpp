@@ -20,7 +20,7 @@ Scene::Scene()
 	UINT width = window->getWindowWidth();
 	UINT height = window->getWindowHeight();
 
-	m_deferredOutputTex = std::unique_ptr<RenderableTexture>(new RenderableTexture(1U, width, height, false));
+	m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(new DX11RenderableTexture(1U, width, height, false));
 
 }
 

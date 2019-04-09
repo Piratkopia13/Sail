@@ -11,11 +11,11 @@ public:
 	GaussianBlurStage(const Renderer& renderer, UINT width, UINT height, Mesh* fullscreenQuad);
 	virtual ~GaussianBlurStage();
 
-	virtual void run(RenderableTexture& inputTexture) override;
+	virtual void run(DX11RenderableTexture& inputTexture) override;
 	bool onResize(WindowResizeEvent& event) override;
 
 private:
 	std::unique_ptr<ShaderSet> m_verticalPassShader;
-	RenderableTexture m_firstOutputTexture;
+	DX11RenderableTexture m_firstOutputTexture;
 
 };

@@ -8,7 +8,7 @@
 #include "Sail/Application.h"
 #include "../../light/LightSetup.h"
 #include "../../geometry/Material.h"
-#include "../../RenderableTexture.h"
+#include "../../../api/RenderableTexture.h"
 
 class DeferredDirectionalLightShader : public ShaderSet {
 public:

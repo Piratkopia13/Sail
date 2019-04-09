@@ -14,12 +14,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	else return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-Win32Window::Win32Window(HINSTANCE hInstance, int windowWidth, int windowHeight, const char* windowTitle)
-: m_hWnd(NULL)
+Win32Window::Win32Window(HINSTANCE hInstance, unsigned int windowWidth, unsigned int windowHeight)
+: Window(hInstance, windowWidth, windowHeight)
+, m_hWnd(NULL)
 , m_hInstance(hInstance)
-, m_windowWidth(windowWidth)
-, m_windowHeight(windowHeight)
-, m_windowTitle(windowTitle)
+, m_windowTitle("Sail")
 , m_windowStyle(WS_OVERLAPPEDWINDOW) // Default window style
 , m_resized(false)
 {
@@ -59,7 +58,7 @@ bool Win32Window::initialize() {
 	}
 
 	// Get the correct width and height (windows includes title bar in size)
-	RECT r = { 0L, 0L, static_cast<LONG>(m_windowWidth), static_cast<LONG>(m_windowHeight) };
+	RECT r = { 0L, 0L, static_cast<LONG>(windowWidth), static_cast<LONG>(windowHeight) };
 	AdjustWindowRect(&r, m_windowStyle, FALSE);
 	UINT width = r.right - r.left;
 	UINT height = r.bottom - r.top;
@@ -111,9 +110,9 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		if (wParam == SIZE_RESTORED || wParam == SIZE_MAXIMIZED) {
 			int width = LOWORD(lParam);
 			int height = HIWORD(lParam);
-			if (width != m_windowWidth || height != m_windowHeight) {
-				m_windowWidth = width;
-				m_windowHeight = height;
+			if (width != windowWidth || height != windowHeight) {
+				windowWidth = width;
+				windowHeight = height;
 				m_resized = true;
 			}
 		}
@@ -134,22 +133,15 @@ bool Win32Window::hasBeenResized() {
 	return ret;
 }
 
-void Win32Window::setWindowTitle(const std::wstring& title) {
-	std::wstring newTitle = title;
+void Win32Window::setWindowTitle(const std::string& title) {
+	std::string newTitle = title;
 #ifdef _DEBUG
-	newTitle += L" | Debug build";
+	newTitle += " | Debug build";
 #endif
-	SetWindowText(m_hWnd, newTitle.c_str());
+	std::wstring ttle(newTitle.begin(), newTitle.end());
+	SetWindowText(m_hWnd, ttle.c_str());
 }
 
 const HWND* Win32Window::getHwnd() const {
 	return &m_hWnd;
-}
-
-UINT Win32Window::getWindowWidth() const {
-	return m_windowWidth;
-}
-
-UINT Win32Window::getWindowHeight() const {
-	return m_windowHeight;
 }

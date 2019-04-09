@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../RenderableTexture.h"
+#include "Sail/api/RenderableTexture.h"
 #include "../geometry/Model.h"
 
 #include "stages/PostProcessStage.h"
@@ -41,7 +41,7 @@ public:
 	}
 	void clear();
 
-	void run(RenderableTexture& baseTexture, ID3D11ShaderResourceView** depthTexture/*, RenderableTexture& bloomInputTexture, RenderableTexture& particlesTexture*/);
+	void run(DX11RenderableTexture& baseTexture, ID3D11ShaderResourceView** depthTexture/*, RenderableTexture& bloomInputTexture, RenderableTexture& particlesTexture*/);
 
 	virtual void onEvent(Event& event) override;
 

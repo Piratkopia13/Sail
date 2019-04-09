@@ -19,7 +19,7 @@ PostProcessStage::~PostProcessStage() {
 
 }
 
-void PostProcessStage::run(RenderableTexture & inputTexture) {
+void PostProcessStage::run(DX11RenderableTexture& inputTexture) {
 	ShaderSet::bind();
 
 	OutputTexture.begin();
@@ -40,7 +40,7 @@ bool PostProcessStage::onResize(WindowResizeEvent& event) {
 	return false;
 }
 
-RenderableTexture& PostProcessStage::getOutput() {
+DX11RenderableTexture& PostProcessStage::getOutput() {
 	return OutputTexture;
 }
 

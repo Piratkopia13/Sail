@@ -8,12 +8,12 @@ ShaderSet* ShaderSet::CurrentlyBoundShader = nullptr;
 using namespace Utils::String;
 
 ShaderSet::ShaderSet(const std::string& filename)
-	: m_vs(nullptr)
+	: /*m_vs(nullptr)
 	, m_gs(nullptr)
 	, m_ps(nullptr)
 	, m_ds(nullptr)
 	, m_hs(nullptr)
-	, VSBlob(nullptr)
+	, */VSBlob(nullptr)
 	, filename(filename)
 {
 	std::string source = Utils::readFile(DEFAULT_SHADER_LOCATION + filename);
@@ -205,7 +205,7 @@ void ShaderSet::bind() {
 	/*if (CurrentlyBoundShader == this)
 		return;*/
 
-	auto* devCon = Application::getInstance()->getAPI()->getDeviceContext();
+	/*auto* devCon = Application::getInstance()->getAPI()->getDeviceContext();
 
 	if (m_vs)	m_vs->bind();
 	else		devCon->VSSetShader(nullptr, 0, 0);
@@ -216,7 +216,7 @@ void ShaderSet::bind() {
 	if (m_ds)	m_ds->bind();
 	else		devCon->DSSetShader(nullptr, 0, 0);
 	if (m_hs)	m_hs->bind();
-	else		devCon->HSSetShader(nullptr, 0, 0);
+	else		devCon->HSSetShader(nullptr, 0, 0);*/
 
 	for (auto& it : m_parsedData.cBuffers) {
 		it.cBuffer.bind();
@@ -234,8 +234,8 @@ void ShaderSet::bind() {
 }
 
 void ShaderSet::bindCS(UINT csIndex) {
-	if (m_css[csIndex]) 
-		m_css[csIndex]->bind();
+	/*if (m_css[csIndex]) 
+		m_css[csIndex]->bind();*/
 }
 
 ID3D10Blob* ShaderSet::compileShader(const std::string& source, const std::string& entryPoint, const std::string& shaderVersion) {
@@ -287,40 +287,40 @@ bool ShaderSet::trySetCBufferVar(const std::string& name, const void* data, UINT
 void ShaderSet::setTexture2D(const std::string& name, ID3D11ShaderResourceView* srv) {
 
 	UINT slot = findSlotFromName(name, m_parsedData.textures);
-	Application::getInstance()->getAPI()->getDeviceContext()->PSSetShaderResources(slot, 1, &srv);
+	//Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, &srv);
 
 }
 
 void ShaderSet::setVertexShader(ID3D10Blob* blob) {
 
-	m_vs = std::make_unique<VertexShader>(blob);
+	//m_vs = std::make_unique<VertexShader>(blob);
 
 }
 void ShaderSet::setGeometryShader(ID3D10Blob* blob) {
 
-	m_gs = std::make_unique<GeometryShader>(blob);
+	//m_gs = std::make_unique<GeometryShader>(blob);
 
 }
 void ShaderSet::setPixelShader(ID3D10Blob* blob) {
 
-	m_ps = std::make_unique<PixelShader>(blob);
+	//m_ps = std::make_unique<PixelShader>(blob);
 
 }
 void ShaderSet::setComputeShaders(ID3D10Blob** blob, UINT numBlobs) {
-	m_css.resize(numBlobs);
+	/*m_css.resize(numBlobs);
 
 	for (UINT i = 0; i < numBlobs; i++) {
 		m_css[i] = std::make_unique<ComputeShader>(blob[i]);
-	}
+	}*/
 }
 void ShaderSet::setDomainShader(ID3D10Blob* blob) {
 
-	m_ds = std::make_unique<DomainShader>(blob);
+	//m_ds = std::make_unique<DomainShader>(blob);
 
 }
 void ShaderSet::setHullShader(ID3D10Blob* blob) {
 
-	m_hs = std::make_unique<HullShader>(blob);
+	//m_hs = std::make_unique<HullShader>(blob);
 
 }
 

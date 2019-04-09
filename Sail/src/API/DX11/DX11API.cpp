@@ -2,14 +2,14 @@
 #include "DX11API.h"
 #include "Win32Window.h"
 
-DXAPI::DXAPI()
+DX11API::DX11API()
 	: m_device(nullptr)
 	, m_deviceContext(nullptr)
 	, m_swapChain(nullptr)
 	, m_renderTargetView(nullptr)
 {}
 
-DXAPI::~DXAPI() {
+DX11API::~DX11API() {
 	if (m_deviceContext)
 		m_deviceContext->ClearState();
 
@@ -35,7 +35,7 @@ DXAPI::~DXAPI() {
 	Memory::safeRelease(m_perf);
 }
 
-bool DXAPI::init(Win32Window* window) {
+bool DX11API::init(Window* window) {
 
 	// Number of samples to uses for anti aliasing
 	// Set to 1 for no aa
@@ -72,7 +72,7 @@ bool DXAPI::init(Win32Window* window) {
 	swapDesc.BufferDesc.RefreshRate.Numerator = 60;
 	swapDesc.BufferDesc.RefreshRate.Denominator = 1;
 	swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapDesc.OutputWindow = *window->getHwnd();
+	swapDesc.OutputWindow = *static_cast<Win32Window*>(window)->getHwnd();
 	swapDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	swapDesc.Windowed = true;
 	swapDesc.SampleDesc.Count = m_aaSamples;
@@ -259,7 +259,7 @@ bool DXAPI::init(Win32Window* window) {
 
 }
 
-void DXAPI::createDepthStencilBufferAndBind(UINT windowWidth, UINT windowHeight) {
+void DX11API::createDepthStencilBufferAndBind(UINT windowWidth, UINT windowHeight) {
 
 	// Release everything that is set already
 	// This is done since this method is called on window resize
@@ -299,7 +299,7 @@ void DXAPI::createDepthStencilBufferAndBind(UINT windowWidth, UINT windowHeight)
 
 }
 
-void DXAPI::resizeBuffers(UINT width, UINT height) {
+void DX11API::resizeBuffers(UINT width, UINT height) {
 	if (m_swapChain) {
 
 		m_deviceContext->OMSetRenderTargets(0, 0, m_depthStencilView);
@@ -336,7 +336,7 @@ void DXAPI::resizeBuffers(UINT width, UINT height) {
 	}
 }
 
-void DXAPI::setDepthMask(DepthMask setting) {
+void DX11API::setDepthMask(DepthMask setting) {
 
 	switch (setting) {
 		case DepthMask::NO_MASK:		m_deviceContext->OMSetDepthStencilState(m_depthStencilStateEnabled, 1);
@@ -349,7 +349,7 @@ void DXAPI::setDepthMask(DepthMask setting) {
 
 }
 
-void DXAPI::setFaceCulling(Culling setting) {
+void DX11API::setFaceCulling(Culling setting) {
 
 	switch (setting) {
 		case Culling::NO_CULLING: m_deviceContext->RSSetState(m_rasterStateNoCulling);
@@ -362,7 +362,7 @@ void DXAPI::setFaceCulling(Culling setting) {
 
 }
 
-void DXAPI::setBlending(Blending setting) {
+void DX11API::setBlending(Blending setting) {
 
 	switch (setting) {
 		case Blending::NO_BLENDING:	m_deviceContext->OMSetBlendState(m_blendStateDisabled, NULL, 0xffffff);
@@ -375,7 +375,7 @@ void DXAPI::setBlending(Blending setting) {
 
 }
 
-void DXAPI::clear(const DirectX::SimpleMath::Vector4& color) {
+void DX11API::clear(const DirectX::SimpleMath::Vector4& color) {
 	FLOAT colorArr[4] = { color.x, color.y, color.z, color.w };
 	// Clear back buffer
 	m_deviceContext->ClearRenderTargetView(m_renderTargetView, colorArr);
@@ -384,51 +384,51 @@ void DXAPI::clear(const DirectX::SimpleMath::Vector4& color) {
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
-void DXAPI::present(bool vsync) {
+void DX11API::present(bool vsync) {
 	m_swapChain->Present(vsync, 0);
 }
 
-ID3D11Device* DXAPI::getDevice() const {
+ID3D11Device* DX11API::getDevice() const {
 	return m_device;
 }
 
-ID3D11DeviceContext* DXAPI::getDeviceContext() const {
+ID3D11DeviceContext* DX11API::getDeviceContext() const {
 	return m_deviceContext;
 }
 
-ID3D11DepthStencilView* DXAPI::getDepthStencilView() const {
+ID3D11DepthStencilView* DX11API::getDepthStencilView() const {
 	return m_depthStencilView;
 }
 
-UINT DXAPI::getAASamples() {
+UINT DX11API::getAASamples() {
 	return m_aaSamples;
 }
 
-UINT64 DXAPI::getMemoryUsage() {
+UINT64 DX11API::getMemoryUsage() {
 	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
 	return info.CurrentUsage / 1000000;
 }
 
-UINT64 DXAPI::getMemoryBudget() {
+UINT64 DX11API::getMemoryBudget() {
 	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
 	return info.Budget / 1000000;
 }
 
-ID3D11RenderTargetView* const* DXAPI::getBackBufferRTV() const {
+ID3D11RenderTargetView* const* DX11API::getBackBufferRTV() const {
 	return &m_renderTargetView;
 }
 
-ID3DUserDefinedAnnotation* DXAPI::getPerfProfiler() {
+ID3DUserDefinedAnnotation* DX11API::getPerfProfiler() {
 	return m_perf;
 }
 
-void DXAPI::renderToBackBuffer() const {
+void DX11API::renderToBackBuffer() const {
 	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
 	m_deviceContext->RSSetViewports(1, &m_viewport);
 }
 
-void DXAPI::resize(UINT width, UINT height) {
+void DX11API::resize(UINT width, UINT height) {
 	resizeBuffers(width, height);
 }

@@ -29,7 +29,7 @@ private:
 	std::vector<Entity::Ptr> m_entities;
 	//ForwardRenderer m_renderer;
 	DeferredRenderer m_renderer;
-	std::unique_ptr<RenderableTexture> m_deferredOutputTex;
+	std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
 	PostProcessPipeline m_postProcessPipeline;
 
 };
