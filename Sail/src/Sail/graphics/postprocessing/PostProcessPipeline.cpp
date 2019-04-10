@@ -270,7 +270,7 @@ void PostProcessPipeline::createFullscreenQuad() {
 	data.indices = indices;
 	data.texCoords = texCoords;
 
-	m_fullscreenQuad = std::make_unique<Mesh>(data, &m_flushShader);
+	m_fullscreenQuad = std::unique_ptr<Mesh>(Mesh::create(data, &m_flushShader));
 	//m_fullscreenQuad.buildBufferForShader(&m_flushShader);
 }
 

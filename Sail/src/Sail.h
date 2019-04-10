@@ -4,6 +4,9 @@
 //#define _SAIL_BREAK_ON_WARNING
 #define _SAIL_BREAK_ON_ERROR
 
+// Disable "Variable uninitialized" warning
+// 218 of these in the fbx sdk
+#pragma warning(disable:26495)
 
 #include "Sail/Application.h"
 #include "Sail/Utils/Utils.h"
@@ -29,13 +32,12 @@
 #include "Sail/graphics/geometry/factory/CubeModel.h"
 #include "Sail/graphics/geometry/factory/ConeModel.h"
 #include "Sail/graphics/geometry/factory/PlaneModel.h"
-#include "Sail/graphics/RenderableTexture.h"
+//#include "Sail/graphics/RenderableTexture.h"
 //#include "Sail/graphics/Skybox.h"
 #include "Sail/graphics/renderer/DeferredRenderer.h"
 #include "Sail/graphics/renderer/ForwardRenderer.h"
 //#include "Sail/graphics/ParticleEmitter.h"
 //#include "Sail/graphics/postprocessing/PostProcessPass.h"
-#include "Sail/resources/DXCubeMap.h"
 #include "Sail/resources/audio/SoundManager.h"
 #include "Sail/states/StateStack.h"
 #include "Sail/events/Events.h"

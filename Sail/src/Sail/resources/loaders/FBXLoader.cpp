@@ -84,7 +84,7 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
-			std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(meshData, m_shaderSet);
+			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::create(meshData, m_shaderSet));
 			getMaterial(pNode, mesh->getMaterial());
 			m_model->addMesh(std::move(mesh));
 

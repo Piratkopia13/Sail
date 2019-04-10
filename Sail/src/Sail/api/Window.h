@@ -4,7 +4,14 @@
 
 class Window {
 public:
-	Window(HINSTANCE hInstance, unsigned int windowWidth = 1280, unsigned int windowHeight = 720) : windowWidth(windowWidth), windowHeight(windowHeight) {}
+	struct WindowProps {
+		HINSTANCE hInstance;
+		unsigned int windowWidth = 1280;
+		unsigned int windowHeight = 720;
+	};
+public:
+	static Window* create(const WindowProps& props);
+	Window(const WindowProps& props) : windowWidth(props.windowWidth), windowHeight(props.windowHeight) {}
 	virtual ~Window() {}
 
 	virtual bool initialize() = 0;

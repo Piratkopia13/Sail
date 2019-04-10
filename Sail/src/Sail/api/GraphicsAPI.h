@@ -23,6 +23,7 @@ public:
 	};
 
 public:
+	static GraphicsAPI* create();
 	GraphicsAPI() { };
 	~GraphicsAPI() { };
 

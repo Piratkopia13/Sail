@@ -10,7 +10,7 @@
 class Win32Window : public Window {
 
 public:
-	Win32Window(HINSTANCE hInstance, unsigned int windowWidth, unsigned int windowHeight);
+	Win32Window(const WindowProps& props);
 	~Win32Window();
 
 	virtual bool initialize() override;

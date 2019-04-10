@@ -6,12 +6,18 @@ using namespace DirectX;
 
 Application* Application::m_instance = nullptr;
 
-Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api)
-{
-	//m_window(hInstance, windowWidth, windowHeight, windowTitle)
-	m_window = std::make_unique<Window>(windowWidth, windowHeight);
+Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
+
+	// Set up window
+	Window::WindowProps windowProps;
+	windowProps.hInstance = hInstance;
+	windowProps.windowWidth = windowWidth;
+	windowProps.windowHeight = windowHeight;
+	m_window = std::unique_ptr<Window>(Window::create(windowProps));
 	m_window->setWindowTitle(windowTitle);
-	m_api = std::make_unique<GraphicsAPI>();
+
+	// Set up api
+	m_api = std::unique_ptr<GraphicsAPI>(GraphicsAPI::create());
 
 	// Initalize the window
 	if (!m_window->initialize()) {

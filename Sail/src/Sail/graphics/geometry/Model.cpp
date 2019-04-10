@@ -12,7 +12,7 @@ using namespace DirectX::SimpleMath;
 
 Model::Model(Mesh::Data& buildData, ShaderSet* shaderSet) {
 
-	m_meshes.push_back(Application::createAPIClass<Mesh>(buildData, shaderSet));
+	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::create(buildData, shaderSet)));
 
 	// TODO: reuse materials (?)
 	//m_material = std::make_shared<Material>(shaderSet);

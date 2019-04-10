@@ -2,6 +2,10 @@
 #include "DX11API.h"
 #include "Win32Window.h"
 
+GraphicsAPI* GraphicsAPI::create() {
+	return new DX11API();
+}
+
 DX11API::DX11API()
 	: m_device(nullptr)
 	, m_deviceContext(nullptr)
@@ -404,13 +408,13 @@ UINT DX11API::getAASamples() {
 	return m_aaSamples;
 }
 
-UINT64 DX11API::getMemoryUsage() {
+unsigned int DX11API::getMemoryUsage() const {
 	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
 	return info.CurrentUsage / 1000000;
 }
 
-UINT64 DX11API::getMemoryBudget() {
+unsigned int DX11API::getMemoryBudget() const {
 	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
 	return info.Budget / 1000000;

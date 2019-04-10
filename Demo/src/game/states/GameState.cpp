@@ -83,38 +83,38 @@ GameState::~GameState() {
 // Process input for the state
 bool GameState::processInput(float dt) {
 
-	auto& kbTracker = m_app->getInput().getKbStateTracker();
-	auto& kbState = m_app->getInput().getKeyboardState();
-
-#ifdef _DEBUG
-	// Toggle camera controller on 'F' key or 'Y' btn
-	if (kbTracker.pressed.F)
-		m_flyCam = !m_flyCam;
-	// Add point light at camera pos
-	if (kbTracker.pressed.E) {
-		PointLight pl;
-		pl.setColor(Vector3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(m_cam.getPosition());
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		m_lights.addPointLight(pl);
-	}
-#endif
-
-	if (kbState.G) {
-		Vector3 color(1.0f, 1.0f, 1.0f);;
-		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
-	}
+//	auto& kbTracker = m_app->getInput().getKbStateTracker();
+//	auto& kbState = m_app->getInput().getKeyboardState();
+//
+//#ifdef _DEBUG
+//	// Toggle camera controller on 'F' key or 'Y' btn
+//	if (kbTracker.pressed.F)
+//		m_flyCam = !m_flyCam;
+//	// Add point light at camera pos
+//	if (kbTracker.pressed.E) {
+//		PointLight pl;
+//		pl.setColor(Vector3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+//		pl.setPosition(m_cam.getPosition());
+//		pl.setAttenuation(.0f, 0.1f, 0.02f);
+//		m_lights.addPointLight(pl);
+//	}
+//#endif
+//
+//	if (kbState.G) {
+//		Vector3 color(1.0f, 1.0f, 1.0f);;
+//		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
+//	}
 
 	// Update the camera controller from input devices
 	if (m_flyCam)
 		m_camController.update(dt);
 
-	// Reload shaders
-	if (kbTracker.pressed.R) {
-		m_app->getResourceManager().reloadShader<DeferredGeometryShader>();
-		Event e(Event::POTATO);
-		m_app->dispatchEvent(e);
-	}
+	//// Reload shaders
+	//if (kbTracker.pressed.R) {
+	//	m_app->getResourceManager().reloadShader<DeferredGeometryShader>();
+	//	Event e(Event::POTATO);
+	//	m_app->dispatchEvent(e);
+	//}
 
 
 	return true;
@@ -137,17 +137,17 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::update(float dt) {
 
-	std::wstring fps = std::to_wstring(m_app->getFPS());
+	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 	// Update HUD texts
 	if (m_fpsText)
-		m_fpsText->setText(L"FPS: " + fps);
+		m_fpsText->setText(L"FPS: " + fpsStr);
 
 	auto& camPos = m_cam.getPosition();
 	if (m_debugCamText)
 		m_debugCamText->setText(L"Camera @ " + Utils::vec3ToWStr(camPos) + L"\n" + 
 			L"GPU memory usage: " + std::to_wstring(m_app->getAPI()->getMemoryUsage()) + L"/" + std::to_wstring(m_app->getAPI()->getMemoryBudget()) + L"mb");
 
-	m_app->getWindow()->setWindowTitle(L"Sail | Game Engine Demo | FPS: " + fps);
+	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | FPS: " + std::to_string(m_app->getFPS()));
 
 	return true;
 }

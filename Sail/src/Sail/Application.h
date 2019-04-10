@@ -37,6 +37,9 @@ public:
 	T* const getAPI() {
 		return static_cast<T*>(m_api.get());
 	}
+	GraphicsAPI* const getAPI() {
+		return m_api.get();
+	}
 
 	static Application* getInstance();
 	Window* const getWindow();

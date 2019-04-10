@@ -36,8 +36,7 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 //
 
 void ResourceManager::loadTexture(const std::string& filename) {
-
-	m_textures.insert({ filename, std::make_unique<Texture>(filename) });
+	m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::create(filename)) });
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
 	auto pos = m_textures.find(filename);

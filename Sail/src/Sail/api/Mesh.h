@@ -29,6 +29,7 @@ public:
 	};
 
 public:
+	static Mesh* create(Data& buildData, ShaderSet* shaderSet);
 	Mesh(Data& buildData, ShaderSet* shaderSet);
 	virtual ~Mesh();
 

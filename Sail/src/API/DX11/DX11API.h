@@ -13,19 +13,19 @@ public:
 	DX11API();
 	~DX11API();
 
-	bool init(Window* window) override;
-	void clear(const DirectX::SimpleMath::Vector4& color) override;
-	void setDepthMask(DepthMask setting) override;
-	void setFaceCulling(Culling setting) override;
-	void setBlending(Blending setting) override;
-	void present(bool vsync = false) override;
+	virtual bool init(Window* window) override;
+	virtual void clear(const DirectX::SimpleMath::Vector4& color) override;
+	virtual void setDepthMask(DepthMask setting) override;
+	virtual void setFaceCulling(Culling setting) override;
+	virtual void setBlending(Blending setting) override;
+	virtual void present(bool vsync = false) override;
+	virtual unsigned int getMemoryUsage() const override;
+	virtual unsigned int getMemoryBudget() const override;
 
 	ID3D11Device* getDevice() const;
 	ID3D11DeviceContext* getDeviceContext() const;
 	ID3D11DepthStencilView* getDepthStencilView() const;
 	UINT getAASamples();
-	UINT64 getMemoryUsage();
-	UINT64 getMemoryBudget();
 	ID3D11RenderTargetView* const* getBackBufferRTV() const;
 	ID3DUserDefinedAnnotation* getPerfProfiler();
 	void renderToBackBuffer() const;

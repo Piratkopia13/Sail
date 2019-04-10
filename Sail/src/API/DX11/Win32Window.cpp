@@ -14,10 +14,14 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	else return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-Win32Window::Win32Window(HINSTANCE hInstance, unsigned int windowWidth, unsigned int windowHeight)
-: Window(hInstance, windowWidth, windowHeight)
+Window* Window::create(const WindowProps& props) {
+	return new Win32Window(props);
+}
+
+Win32Window::Win32Window(const WindowProps& props)
+: Window(props)
 , m_hWnd(NULL)
-, m_hInstance(hInstance)
+, m_hInstance(props.hInstance)
 , m_windowTitle("Sail")
 , m_windowStyle(WS_OVERLAPPEDWINDOW) // Default window style
 , m_resized(false)

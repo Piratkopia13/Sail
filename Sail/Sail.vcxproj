@@ -191,6 +191,7 @@
   <ItemGroup>
     <ClCompile Include="src\API\DX11\DX11Mesh.cpp" />
     <ClCompile Include="src\API\DX11\DX11RenderableTexture.cpp" />
+    <ClCompile Include="src\API\DX12\DX12Mesh.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -231,7 +232,6 @@
     <ClCompile Include="src\Sail\resources\audio\AmbientSound.cpp" />
     <ClCompile Include="src\Sail\resources\audio\Sound.cpp" />
     <ClCompile Include="src\Sail\resources\audio\SoundManager.cpp" />
-    <ClCompile Include="src\API\DX11\resources\DXCubeMap.cpp" />
     <ClCompile Include="src\API\DX11\resources\DX11Texture.cpp" />
     <ClCompile Include="src\Sail\resources\loaders\FBXLoader.cpp" />
     <ClCompile Include="src\Sail\resources\loaders\TGALoader.cpp" />
@@ -252,6 +252,7 @@
   <ItemGroup>
     <ClInclude Include="src\API\DX11\DX11Mesh.h" />
     <ClInclude Include="src\API\DX11\DX11RenderableTexture.h" />
+    <ClInclude Include="src\API\DX12\DX12Mesh.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Sail.h" />
     <ClInclude Include="src\Sail\api\ConstantBuffer.h" />
@@ -324,7 +325,6 @@
     <ClInclude Include="src\Sail\resources\audio\AmbientSound.h" />
     <ClInclude Include="src\Sail\resources\audio\Sound.h" />
     <ClInclude Include="src\Sail\resources\audio\SoundManager.h" />
-    <ClInclude Include="src\API\DX11\resources\DXCubeMap.h" />
     <ClInclude Include="src\API\DX11\resources\DX11Texture.h" />
     <ClInclude Include="src\Sail\resources\loaders\FBXLoader.h" />
     <ClInclude Include="src\Sail\resources\loaders\TGALoader.h" />

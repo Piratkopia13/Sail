@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "DX11Texture.h"
 #include "Sail/Application.h"
+#include "../DX11API.h"
+
+Texture* Texture::create(const std::string& filename) {
+	return new DX11Texture(filename);
+}
 
 DX11Texture::DX11Texture(const std::string& filename) {
 
