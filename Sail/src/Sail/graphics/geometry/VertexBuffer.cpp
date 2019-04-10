@@ -26,12 +26,12 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData
 			void* addr = (char*)vertices + byteOffset;
 
 			if (inputType == InputLayout::POSITION) {
-				UINT size = sizeof(Vector3);
+				UINT size = sizeof(glm::vec3);
 				memcpy(addr, &modelData.positions[i], size);
 				byteOffset += size;
 			}
 			else if (inputType == InputLayout::TEXCOORD) {
-				UINT size = sizeof(Vector2);
+				UINT size = sizeof(glm::vec2);
 				// Check if model data contains texCoords
 				if (modelData.texCoords)
 					memcpy(addr, &modelData.texCoords[i], size);
@@ -40,7 +40,7 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData
 				byteOffset += size;
 			} 
 			else if (inputType == InputLayout::NORMAL) {
-				UINT size = sizeof(Vector3);
+				UINT size = sizeof(glm::vec3);
 				if (modelData.normals)
 					memcpy(addr, &modelData.normals[i], size);
 				else
@@ -48,7 +48,7 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData
 				byteOffset += size;
 			}
 			else if (inputType == InputLayout::TANGENT) {
-				UINT size = sizeof(Vector3);
+				UINT size = sizeof(glm::vec3);
 				if (modelData.tangents)
 					memcpy(addr, &modelData.tangents[i], size);
 				else
@@ -56,7 +56,7 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData
 				byteOffset += size;
 			}
 			else if (inputType == InputLayout::BITANGENT) {
-				UINT size = sizeof(Vector3);
+				UINT size = sizeof(glm::vec3);
 				if (modelData.bitangents)
 					memcpy(addr, &modelData.bitangents[i], size);
 				else

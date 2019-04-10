@@ -178,10 +178,10 @@ void DX11RenderableTexture::end() {
 	api->renderToBackBuffer();
 }
 
-void DX11RenderableTexture::clear(const DirectX::XMVECTORF32& color) {
+void DX11RenderableTexture::clear(const glm::vec4& color) {
 
 	auto api = Application::getInstance()->getAPI<DX11API>();
-	api->getDeviceContext()->ClearRenderTargetView(m_renderTargetView, color);
+	api->getDeviceContext()->ClearRenderTargetView(m_renderTargetView, glm::value_ptr(color));
 	if (m_hasDepthStencilView)
 		api->getDeviceContext()->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 

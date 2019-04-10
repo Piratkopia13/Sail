@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 //#include <SpriteBatch.h>
 
 class SailFont;
@@ -8,20 +8,20 @@ class SailFont;
 class Text {
 public:
 	typedef std::unique_ptr<Text> Ptr;
-	static Ptr Create(const std::wstring& text, const DirectX::SimpleMath::Vector2& pos = DirectX::SimpleMath::Vector2::Zero, const DirectX::SimpleMath::Vector4& color = DirectX::SimpleMath::Vector4::One);
+	static Ptr Create(const std::wstring& text, const glm::vec2& pos = glm::vec2(0.f), const glm::vec4& color = glm::vec4(1.0f));
 public:
-	Text(const std::wstring& text, const DirectX::SimpleMath::Vector2& pos = DirectX::SimpleMath::Vector2::Zero, const DirectX::SimpleMath::Vector4& color = DirectX::SimpleMath::Vector4::One);
+	Text(const std::wstring& text, const glm::vec2& pos = glm::vec2(0.f), const glm::vec4& color = glm::vec4(1.f));
 
 	void setText(const std::wstring& text);
 	const std::wstring& getText() const;
-	void setPosition(const DirectX::SimpleMath::Vector2& pos);
-	const DirectX::SimpleMath::Vector2& getPosition() const;
-	void setColor(const DirectX::SimpleMath::Vector4& color);
-	const DirectX::SimpleMath::Vector4& getColor() const;
+	void setPosition(const glm::vec2& pos);
+	const glm::vec2& getPosition() const;
+	void setColor(const glm::vec4& color);
+	const glm::vec4& getColor() const;
 
 private:
 	std::wstring m_text;
-	DirectX::SimpleMath::Vector2 m_pos;
-	DirectX::SimpleMath::Vector4 m_color;
+	glm::vec2 m_pos;
+	glm::vec4 m_color;
 
 };

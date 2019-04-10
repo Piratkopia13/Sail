@@ -2,8 +2,6 @@
 #include "Win32Window.h"
 #include "Sail/Application.h"
 
-using namespace DirectX;
-
 namespace {
 	// Used to forward messages to user defined proc function
 	Win32Window* g_pApp = nullptr;
@@ -14,7 +12,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	else return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-Window* Window::create(const WindowProps& props) {
+Window* Window::Create(const WindowProps& props) {
 	return new Win32Window(props);
 }
 

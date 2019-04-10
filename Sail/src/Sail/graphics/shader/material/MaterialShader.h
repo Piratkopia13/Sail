@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 #include "../ShaderSet.h"
 #include "../component/ConstantBuffer.h"
 #include "../component/Sampler.h"
@@ -16,28 +16,28 @@ public:
 
 	void bind() override;
 
-	virtual void setClippingPlane(const DirectX::SimpleMath::Vector4& clippingPlane);
+	virtual void setClippingPlane(const glm::vec4& clippingPlane);
 	//void updateLights(const Lights& lights);
 
 	// TODO: remove this
 	/*struct Vertex {
-		DirectX::SimpleMath::Vector3 position;
-		DirectX::SimpleMath::Vector2 texCoords;
-		DirectX::SimpleMath::Vector3 normal;
-		DirectX::SimpleMath::Vector3 tangent;
-		DirectX::SimpleMath::Vector3 bitangent;
+		glm::vec3 position;
+		glm::vec2 texCoords;
+		glm::vec3 normal;
+		glm::vec3 tangent;
+		glm::vec3 bitangent;
 	};*/
 
 private:
-	/*void updateModelDataBuffer(const Material& material, const DirectX::SimpleMath::Matrix& w, const DirectX::SimpleMath::Matrix& vp) const;
+	/*void updateModelDataBuffer(const Material& material, const glm::mat4& w, const glm::mat4& vp) const;
 	void updateWorldDataBuffer() const;*/
 
 private:
 	// Transform constant buffer structure
 	//struct ModelDataBuffer {
-	//	DirectX::SimpleMath::Matrix mWorld;
-	//	DirectX::SimpleMath::Matrix mVP;
-	//	DirectX::SimpleMath::Vector4 modelColor;
+	//	glm::mat4 mWorld;
+	//	glm::mat4 mVP;
+	//	glm::vec4 modelColor;
 	//	float ka;
 	//	float kd;
 	//	float ks;
@@ -46,8 +46,8 @@ private:
 	//	int padding;
 	//};
 	//struct WorldDataBuffer {
-	//	DirectX::SimpleMath::Vector4 clippingPlane;
-	//	DirectX::SimpleMath::Vector3 cameraPos;
+	//	glm::vec4 clippingPlane;
+	//	glm::vec3 cameraPos;
 	//	float padding;
 	//};
 	//struct DirLightBuffer {
@@ -59,9 +59,9 @@ private:
 	//};
 	/*DirLightBuffer m_dirLightData;
 	PointLightsBuffer m_pointLightsData;*/
-	/*DirectX::SimpleMath::Matrix m_vpMatrix;*/
-	DirectX::SimpleMath::Vector4 m_clippingPlane;
-	//DirectX::SimpleMath::Vector3 m_cameraPos;
+	/*glm::mat4 m_vpMatrix;*/
+	glm::vec4 m_clippingPlane;
+	//glm::vec3 m_cameraPos;
 	bool m_clippingPlaneHasChanged;
 	//bool m_cameraPosHasChanged;
 

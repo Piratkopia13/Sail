@@ -14,7 +14,7 @@ public:
 	~DX11API();
 
 	virtual bool init(Window* window) override;
-	virtual void clear(const DirectX::SimpleMath::Vector4& color) override;
+	virtual void clear(const glm::vec4& color) override;
 	virtual void setDepthMask(DepthMask setting) override;
 	virtual void setFaceCulling(Culling setting) override;
 	virtual void setBlending(Blending setting) override;

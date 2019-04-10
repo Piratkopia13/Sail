@@ -9,13 +9,13 @@ std::string Utils::readFile(const std::string& filepath) {
 	return str;
 }
 
-std::wstring Utils::vec3ToWStr(const DirectX::SimpleMath::Vector3& vec) {
+std::wstring Utils::vec3ToWStr(const glm::vec3& vec) {
 	std::wstringstream ss;
 	ss << "[X: " << vec.x << ", Y: " << vec.y << ", Z: " << vec.z << "]";
 	return ss.str();
 }
 
-std::string Utils::vec3ToStr(const DirectX::SimpleMath::Vector3& vec) {
+std::string Utils::vec3ToStr(const glm::vec3& vec) {
 	std::stringstream ss;
 	ss << "[X: " << vec.x << ", Y: " << vec.y << ", Z: " << vec.z << "]";
 	return ss.str();
@@ -41,8 +41,8 @@ float Utils::smootherstep(float edge0, float edge1, float x) {
 }
 
 
-DirectX::SimpleMath::Vector4 Utils::getRandomColor() {
-	return DirectX::SimpleMath::Vector4(Utils::rnd(), Utils::rnd(), Utils::rnd(), 1);
+glm::vec4 Utils::getRandomColor() {
+	return glm::vec4(Utils::rnd(), Utils::rnd(), Utils::rnd(), 1);
 }
 
 

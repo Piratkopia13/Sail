@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "HGaussianBlurStage.h"
 
-using namespace DirectX;
-using namespace SimpleMath;
-
 HGaussianBlurStage::HGaussianBlurStage(const Renderer& renderer, UINT width, UINT height, Mesh* fullscreenQuad)
 	: PostProcessStage(renderer, "postprocess/GaussianBlurHorizontal.hlsl", width, height, fullscreenQuad)
 {

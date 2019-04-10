@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 #include <string>
 #include <memory>
 
@@ -13,7 +13,7 @@ public:
 public:
 	// Matching shader struct
 	struct PhongSettings {
-		DirectX::SimpleMath::Vector4 modelColor;
+		glm::vec4 modelColor;
 		float ka;
 		float kd;
 		float ks;
@@ -33,7 +33,7 @@ public:
 	void setKd(float kd);
 	void setKs(float ks);
 	void setShininess(float shininess);
-	void setColor(const DirectX::SimpleMath::Vector4& color);
+	void setColor(const glm::vec4& color);
 
 	void setDiffuseTexture(const std::string& filename);
 	void setDiffuseTexture(ID3D11ShaderResourceView* srv);
@@ -54,7 +54,7 @@ public:
 	*/ 
 	ID3D11ShaderResourceView* const* getTextures(UINT& numTextures);
 
-	//const DirectX::SimpleMath::Vector4& getColor() const;
+	//const glm::vec4& getColor() const;
 	const PhongSettings& getPhongSettings() const;
 
 	ShaderSet* getShader() const;

@@ -14,14 +14,14 @@ namespace ModelFactory {
 
 			//ShaderSet* shaderSet = Application::getResourceManager().getShaderSet<>();
 
-			Vector2 halfSizes(1.f, 1.f);
+			glm::vec2 halfSizes(1.f, 1.f);
 
 			const int numVerts = 4;
-			Vector3* positions = new Vector3[numVerts]{
-				Vector3(-halfSizes.x, -halfSizes.y, 0.f),
-				Vector3(-halfSizes.x, halfSizes.y, 0.f),
-				Vector3(halfSizes.x, -halfSizes.y, 0.f),
-				Vector3(halfSizes.x, halfSizes.y, 0.f),
+			glm::vec3* positions = new glm::vec3[numVerts]{
+				glm::vec3(-halfSizes.x, -halfSizes.y, 0.f),
+				glm::vec3(-halfSizes.x, halfSizes.y, 0.f),
+				glm::vec3(halfSizes.x, -halfSizes.y, 0.f),
+				glm::vec3(halfSizes.x, halfSizes.y, 0.f),
 			};
 
 			const int numIndices = 6;
@@ -29,11 +29,11 @@ namespace ModelFactory {
 				0, 1, 2, 2, 1, 3
 			};
 
-			Vector2* texCoords = new Vector2[numVerts]{
-				Vector2(0.f, 1.f),
-				Vector2(0.f, 0.f),
-				Vector2(1.f, 1.f),
-				Vector2(1.f, 0.f)
+			glm::vec2* texCoords = new glm::vec2[numVerts]{
+				glm::vec2(0.f, 1.f),
+				glm::vec2(0.f, 0.f),
+				glm::vec2(1.f, 1.f),
+				glm::vec2(1.f, 0.f)
 			};
 
 			Mesh::Data data;

@@ -1,21 +1,21 @@
 #pragma once
 
 #include <d3d11.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 
 class Particle {
 public:
-	Particle(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocity, float scale = 1.0f, float gravityScale = 0.f, float lifetime = 10.f);
+	Particle(const glm::vec3& position, const glm::vec3& velocity, float scale = 1.0f, float gravityScale = 0.f, float lifetime = 10.f);
 	~Particle();
 
 	void update(float dt);
-	const DirectX::SimpleMath::Vector3& getPosition() const;
+	const glm::vec3& getPosition() const;
 	float getLifePercentage() const;
 	bool isDead() const;
 
 private:
-	DirectX::SimpleMath::Vector3 m_position;
-	DirectX::SimpleMath::Vector3 m_velocity;
+	glm::vec3 m_position;
+	glm::vec3 m_velocity;
 	float m_gravityScale;
 	float m_lifetime;
 	float m_scale;

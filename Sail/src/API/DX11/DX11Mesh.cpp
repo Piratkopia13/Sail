@@ -5,7 +5,7 @@
 #include "Sail/Application.h"
 #include "DX11API.h"
 
-Mesh* Mesh::create(Data& buildData, ShaderSet* shaderSet) {
+Mesh* Mesh::Create(Data& buildData, ShaderSet* shaderSet) {
 	return new DX11Mesh(buildData, shaderSet);
 }
 

@@ -26,7 +26,7 @@ protected:
 	const Renderer& RendererRef;
 
 	struct Vertex {
-		DirectX::SimpleMath::Vector3 position;
+		glm::vec3 position;
 	};
 
 };

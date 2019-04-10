@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 
 class RenderableTexture {
 public:
@@ -9,7 +9,7 @@ public:
 
 	virtual void begin() = 0;
 	virtual void end() = 0;
-	virtual void clear(const DirectX::XMVECTORF32& color) = 0;
+	virtual void clear(const glm::vec4& color) = 0;
 	virtual void resize(int width, int height) = 0;
 
 protected:

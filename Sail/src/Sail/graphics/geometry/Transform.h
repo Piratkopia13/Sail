@@ -1,18 +1,18 @@
 #pragma once
 
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 
 class Transform {
 
 public:
 	Transform() {
-		m_scale = DirectX::SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
-		m_transformMatrix = DirectX::SimpleMath::Matrix::Identity;
+		m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
+		m_transformMatrix = glm::mat4(1.0f);
 		m_matNeedsUpdate = false;
 	};
 	~Transform() {};
 
-	void translate(const DirectX::SimpleMath::Vector3& move) {
+	void translate(const glm::vec3& move) {
 		m_translation += move;
 		m_matNeedsUpdate = true;
 	}
@@ -33,61 +33,61 @@ public:
 		m_matNeedsUpdate = true;
 	}
 
-	void setTranslation(const DirectX::SimpleMath::Vector3& translation) {
+	void setTranslation(const glm::vec3& translation) {
 		m_translation = translation;
 		m_matNeedsUpdate = true;
 	}
-	void setRotations(const DirectX::SimpleMath::Vector3& rotations) {
+	void setRotations(const glm::vec3& rotations) {
 		m_rotation = rotations;
 		m_matNeedsUpdate = true;
 	}
 	void setScale(float scale) {
-		m_scale = DirectX::SimpleMath::Vector3(scale, scale, scale);
+		m_scale = glm::vec3(scale, scale, scale);
 		m_matNeedsUpdate = true;
 	}
 
 
 	void setNonUniScale(float scalex, float scaley, float scalez) {
-		m_scale = DirectX::SimpleMath::Vector3(scalex, scaley, scalez);
+		m_scale = glm::vec3(scalex, scaley, scalez);
 		m_matNeedsUpdate = true;
 	}
 
-	void setMatrix(DirectX::SimpleMath::Matrix newMatrix) {
+	void setMatrix(glm::mat4 newMatrix) {
 		m_transformMatrix = newMatrix;
 		m_matNeedsUpdate = false;
 	}
 
-	const DirectX::SimpleMath::Vector3& getTranslation() const {
+	const glm::vec3& getTranslation() const {
 		return m_translation;
 	}
-	const DirectX::SimpleMath::Vector3& getRotations() const {
+	const glm::vec3& getRotations() const {
 		return m_rotation;
 	}
-	const DirectX::SimpleMath::Vector3 getScale() const {
+	const glm::vec3 getScale() const {
 		return m_scale;
 	}
 
 
-	DirectX::SimpleMath::Matrix getMatrix() {
+	glm::mat4 getMatrix() {
 		if (m_matNeedsUpdate) {
-			m_transformMatrix = DirectX::SimpleMath::Matrix::CreateScale(m_scale)
-				* DirectX::SimpleMath::Matrix::CreateRotationX(m_rotation.x)
-				* DirectX::SimpleMath::Matrix::CreateRotationY(m_rotation.y)
-				* DirectX::SimpleMath::Matrix::CreateRotationZ(m_rotation.z)
-				* DirectX::SimpleMath::Matrix::CreateTranslation(m_translation);
+			m_transformMatrix = glm::scale(m_transformMatrix, m_scale);
+			m_transformMatrix = glm::rotate(m_transformMatrix, m_rotation.x, glm::vec3(1.f, 0.f, 0.f));
+			m_transformMatrix = glm::rotate(m_transformMatrix, m_rotation.y, glm::vec3(0.f, 1.f, 0.f));
+			m_transformMatrix = glm::rotate(m_transformMatrix, m_rotation.z, glm::vec3(0.f, 0.f, 1.f));
+			m_transformMatrix = glm::translate(m_transformMatrix, m_translation);
 
-				m_matNeedsUpdate = false;
+			m_matNeedsUpdate = false;
 		}
 		return m_transformMatrix;
 	}
 
 private:
 
-	DirectX::SimpleMath::Vector3 m_translation;
-	DirectX::SimpleMath::Vector3 m_rotation;
-	DirectX::SimpleMath::Vector3 m_scale;
+	glm::vec3 m_translation;
+	glm::vec3 m_rotation;
+	glm::vec3 m_scale;
 
 	bool m_matNeedsUpdate;
-	DirectX::SimpleMath::Matrix m_transformMatrix;
+	glm::mat4 m_transformMatrix;
 
 };

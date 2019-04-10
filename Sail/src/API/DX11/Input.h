@@ -1,7 +1,7 @@
 #pragma once
 
 //#include <d3d11.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 #include <memory>
 #include <functional>
 //#include <Keyboard.h>

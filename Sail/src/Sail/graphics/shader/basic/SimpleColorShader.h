@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 #include "../ShaderSet.h"
 #include "../component/ConstantBuffer.h"
 #include "../../geometry/Model.h"
@@ -23,13 +23,13 @@ public:
 	virtual void updateCamera(Camera& cam);
 
 	struct Vertex {
-		DirectX::XMFLOAT3 position;
-		DirectX::XMFLOAT4 color;
+		glm::vec3 position;
+		glm::vec4 color;
 	};
 
 
 private:
-	void updateBuffer(const DirectX::SimpleMath::Vector4& color, const DirectX::SimpleMath::Matrix& mvp) const;
+	void updateBuffer(const glm::vec4& color, const glm::mat4& mvp) const;
 
 private:
 	// Input element description
@@ -38,10 +38,10 @@ private:
 	ID3D11InputLayout* m_inputLayout;
 
 	struct ModelDataBuffer {
-		DirectX::SimpleMath::Vector4 modelColor;
-		DirectX::SimpleMath::Matrix mModelViewProj;
+		glm::vec4 modelColor;
+		glm::mat4 mModelViewProj;
 	};
-	DirectX::SimpleMath::Matrix m_vpMatrix;
+	glm::mat4 m_vpMatrix;
 
 	// Components
 

@@ -12,7 +12,7 @@ public:
 	
 	virtual void begin() override;
 	virtual void end() override;
-	virtual void clear(const DirectX::XMVECTORF32& color) override;
+	virtual void clear(const glm::vec4& color) override;
 	virtual void resize(int width, int height) override;
 
 	ID3D11ShaderResourceView** getColorSRV();

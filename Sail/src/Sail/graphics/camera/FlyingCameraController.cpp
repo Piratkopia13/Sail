@@ -2,9 +2,6 @@
 #include "FlyingCameraController.h"
 #include "Sail/Application.h"
 
-using namespace DirectX;
-using namespace DirectX::SimpleMath;
-
 FlyingCameraController::FlyingCameraController(Camera* cam)
 	: CameraController(cam)
 {
@@ -13,16 +10,16 @@ FlyingCameraController::FlyingCameraController(Camera* cam)
 	m_roll = 0.f;
 }
 
-void FlyingCameraController::setDirection(const DirectX::SimpleMath::Vector3 & dir) {
-	m_pitch = XMConvertToDegrees(asin(dir.y));
-	m_yaw = XMConvertToDegrees(atan2(dir.x, -dir.z)) - 90.f;
+void FlyingCameraController::setDirection(const glm::vec3 & dir) {
+	m_pitch = glm::degrees(glm::asin(dir.y));
+	m_yaw = glm::degrees(atan2(dir.x, -dir.z)) - 90.f;
 	Logger::Log("Pitch: " + std::to_string(m_pitch));
 	Logger::Log("Yaw: " + std::to_string(m_yaw));
 }
 
-void FlyingCameraController::lookAt(const DirectX::SimpleMath::Vector3& pos) {
-	Vector3 dir = pos - getCameraPosition();
-	dir.Normalize();
+void FlyingCameraController::lookAt(const glm::vec3& pos) {
+	glm::vec3 dir = pos - getCameraPosition();
+	dir = glm::normalize(dir);
 	setDirection(dir);
 }
 
@@ -58,7 +55,7 @@ void FlyingCameraController::update(float dt) {
 	//// Side to side motion
 	////
 
-	//Vector3 right = getCameraDirection().Cross(Vector3::Up);
+	//glm::vec3 right = getCameraDirection().Cross(glm::vec3::Up);
 	//right.Normalize();
 	//// Gamepad
 	//setCameraPosition(getCameraPosition() - right * gpState.thumbSticks.leftX * movementSpeed);
@@ -74,14 +71,14 @@ void FlyingCameraController::update(float dt) {
 	////
 
 	//// Gamepad
-	//setCameraPosition(getCameraPosition() + DirectX::SimpleMath::Vector3::Up * gpState.buttons.a * movementSpeed);
-	//setCameraPosition(getCameraPosition() + DirectX::SimpleMath::Vector3::Down * gpState.buttons.x * movementSpeed);
+	//setCameraPosition(getCameraPosition() + glm::vec3::Up * gpState.buttons.a * movementSpeed);
+	//setCameraPosition(getCameraPosition() + glm::vec3::Down * gpState.buttons.x * movementSpeed);
 
 	//// Keyboard
 	//if (kbState.Space)
-	//	setCameraPosition(getCameraPosition() + DirectX::SimpleMath::Vector3::Up * movementSpeed);
+	//	setCameraPosition(getCameraPosition() + glm::vec3::Up * movementSpeed);
 	//if (kbState.LeftControl)
-	//	setCameraPosition(getCameraPosition() + DirectX::SimpleMath::Vector3::Down * movementSpeed);
+	//	setCameraPosition(getCameraPosition() + glm::vec3::Down * movementSpeed);
 
 	////
 	//// Look around motion
@@ -116,12 +113,12 @@ void FlyingCameraController::update(float dt) {
 	else if (m_yaw <= 0)
 		m_yaw += 360;
 
-	Vector3 forwards(
-		std::cos(XMConvertToRadians(m_pitch)) * std::cos(XMConvertToRadians(m_yaw)),
-		std::sin(XMConvertToRadians(m_pitch)),
-		std::cos(XMConvertToRadians(m_pitch)) * std::sin(XMConvertToRadians(m_yaw))
+	glm::vec3 forwards(
+		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
+		std::sin(glm::radians(m_pitch)),
+		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
 	);
-	forwards.Normalize();
+	forwards = glm::normalize(forwards);
 
 	setCameraDirection(forwards);
 

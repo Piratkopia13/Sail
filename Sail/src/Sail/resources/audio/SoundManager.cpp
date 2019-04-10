@@ -101,8 +101,8 @@ void SoundManager::playSoundEffect(const SoundEffect soundID, float volume, floa
 	if (m_sourceVoices[m_currSVIndex])
 		m_sourceVoices[m_currSVIndex]->DestroyVoice();
 
-	float pit = min(MAX_PITCH, max(MIN_PITCH, pitch));
-	float vol = min(XAUDIO2_MAX_VOLUME_LEVEL, max(-XAUDIO2_MAX_VOLUME_LEVEL, volume * m_effectsVolume));
+	float pit = glm::min(MAX_PITCH, glm::max(MIN_PITCH, pitch));
+	float vol = glm::min(XAUDIO2_MAX_VOLUME_LEVEL, glm::max(-XAUDIO2_MAX_VOLUME_LEVEL, volume * m_effectsVolume));
 
 	WAVEFORMATEXTENSIBLE wfx = m_sounds[soundID]->getWFX();
 	XAUDIO2_BUFFER buffer = m_sounds[soundID]->getBuffer();
@@ -133,7 +133,7 @@ void SoundManager::playAmbientSound(const Ambient soundID, const bool looping, f
 		return;
 	}
 
-	float vol = min(XAUDIO2_MAX_VOLUME_LEVEL, max(-XAUDIO2_MAX_VOLUME_LEVEL, volume * m_ambientVolume));
+	float vol = glm::min(XAUDIO2_MAX_VOLUME_LEVEL, glm::max(-XAUDIO2_MAX_VOLUME_LEVEL, volume * m_ambientVolume));
 	m_ambientSounds[soundID]->Play(looping, vol);
 	
 	
@@ -241,7 +241,7 @@ void SoundManager::setAmbientVolume(const float& volume) {
 	for (unsigned int i = 0; i < m_ambientSounds.size(); i++) {
 		float oldVol = m_ambientSounds[i]->getVolume();
 		oldVol /= oldAmbient;
-		oldVol = min(XAUDIO2_MAX_VOLUME_LEVEL, max(-XAUDIO2_MAX_VOLUME_LEVEL, oldVol * m_ambientVolume));
+		oldVol = glm::min(XAUDIO2_MAX_VOLUME_LEVEL, glm::max(-XAUDIO2_MAX_VOLUME_LEVEL, oldVol * m_ambientVolume));
 		m_ambientSounds[i]->setVolume(volume);
 	}
 }

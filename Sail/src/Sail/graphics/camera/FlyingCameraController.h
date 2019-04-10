@@ -1,15 +1,15 @@
 #pragma once
 
 #include "CameraController.h"
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 
 class FlyingCameraController : public CameraController {
 public:
 
 	FlyingCameraController(Camera* cam);
 
-	void setDirection(const DirectX::SimpleMath::Vector3& dir);
-	void lookAt(const DirectX::SimpleMath::Vector3& pos);
+	void setDirection(const glm::vec3& dir);
+	void lookAt(const glm::vec3& pos);
 
 	virtual void update(float dt);
 

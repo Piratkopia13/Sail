@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "GaussianBlurStage.h"
 
-using namespace DirectX;
-using namespace SimpleMath;
-
 GaussianBlurStage::GaussianBlurStage(const Renderer& renderer, UINT width, UINT height, Mesh* fullscreenQuad)
 	: PostProcessStage(renderer, "postprocess/GaussianBlurHorizontal.hlsl", width, height, fullscreenQuad)
 	, m_firstOutputTexture(1, width, height, false, false)
@@ -11,7 +8,7 @@ GaussianBlurStage::GaussianBlurStage(const Renderer& renderer, UINT width, UINT 
 	m_verticalPassShader = std::make_unique<ShaderSet>("postprocess/GaussianBlurVertical.hlsl");
 
 	// Set up the input layout for second pass
-	m_verticalPassShader->getInputLayout().push<DirectX::SimpleMath::Vector3>(InputLayout::POSITION, "POSITION", 0);
+	m_verticalPassShader->getInputLayout().push<glm::vec3>(InputLayout::POSITION, "POSITION", 0);
 	m_verticalPassShader->getInputLayout().create(VSBlob);
 
 	// Set up constant buffer for horizontal pass

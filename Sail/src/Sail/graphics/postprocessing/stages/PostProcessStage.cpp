@@ -11,7 +11,7 @@ PostProcessStage::PostProcessStage(const Renderer& renderer, const std::string& 
 {
 	// Set up the input layout
 	// Will be the same for all pp stages
-	inputLayout.push<DirectX::SimpleMath::Vector3>(InputLayout::POSITION, "POSITION", 0);
+	inputLayout.push<glm::vec3>(InputLayout::POSITION, "POSITION", 0);
 	inputLayout.create(VSBlob);
 }
 

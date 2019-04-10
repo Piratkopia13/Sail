@@ -1,7 +1,6 @@
 #pragma once
 
 #include <d3d11.h>
-#include <SimpleMath.h>
 #include <string>
 #include "loaders/TGALoader.h"
 #include "ResourceFormat.h"
@@ -22,7 +21,7 @@ public:
 	unsigned int getWidth();
 	unsigned int getHeight();
 	unsigned char* getTextureData();
-	DirectX::SimpleMath::Vector4 getPixel(unsigned int x, unsigned int y);
+	glm::vec4 getPixel(unsigned int x, unsigned int y);
 
 private:
 	ResourceFormat::TextureData m_data;

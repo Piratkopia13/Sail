@@ -1,32 +1,32 @@
 #pragma once
 
 #include <d3d11.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 
 class AABB {
 public:
-	AABB(const DirectX::SimpleMath::Vector3& minPos, const DirectX::SimpleMath::Vector3& maxPos);
+	AABB(const glm::vec3& minPos, const glm::vec3& maxPos);
 	~AABB();
 
-	void setMinPos(const DirectX::SimpleMath::Vector3& minPos);
-	void setMaxPos(const DirectX::SimpleMath::Vector3& maxPos);
-	const DirectX::SimpleMath::Vector3& getMinPos() const;
-	const DirectX::SimpleMath::Vector3& getMaxPos() const;
-	DirectX::SimpleMath::Vector3 getHalfSizes() const;
-	DirectX::SimpleMath::Vector3 getCenterPos() const;
-	void updateTransform(const DirectX::SimpleMath::Matrix& transform);
-	void updateTranslation(const DirectX::SimpleMath::Vector3& translation);
+	void setMinPos(const glm::vec3& minPos);
+	void setMaxPos(const glm::vec3& maxPos);
+	const glm::vec3& getMinPos() const;
+	const glm::vec3& getMaxPos() const;
+	glm::vec3 getHalfSizes() const;
+	glm::vec3 getCenterPos() const;
+	void updateTransform(const glm::mat4& transform);
+	void updateTranslation(const glm::vec3& translation);
 
 	bool containsOrIntersects(const AABB& other);
 	bool contains(const AABB& other);
 
 private:
-	bool lessThan(const DirectX::SimpleMath::Vector3& first, const DirectX::SimpleMath::Vector3& second);
-	bool greaterThan(const DirectX::SimpleMath::Vector3& first, const DirectX::SimpleMath::Vector3& second);
-	float& getElementByIndex(DirectX::SimpleMath::Vector3& vec, int index);
+	bool lessThan(const glm::vec3& first, const glm::vec3& second);
+	bool greaterThan(const glm::vec3& first, const glm::vec3& second);
+	float& getElementByIndex(glm::vec3& vec, int index);
 
 private:
-	DirectX::SimpleMath::Vector3 m_minPos, m_originalMinPos;
-	DirectX::SimpleMath::Vector3 m_maxPos, m_originalMaxPos;
+	glm::vec3 m_minPos, m_originalMinPos;
+	glm::vec3 m_maxPos, m_originalMaxPos;
 
 };

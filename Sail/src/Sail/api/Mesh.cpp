@@ -53,32 +53,32 @@ void Mesh::Data::deepCopy(const Data& other) {
 	}
 	UINT numVerts = (other.numIndices > 0) ? other.numIndices : other.numVertices;
 	if (other.positions) {
-		this->positions = new DirectX::SimpleMath::Vector3[numVerts];
+		this->positions = new glm::vec3[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->positions[i] = other.positions[i];
 	}
 	if (other.normals) {
-		this->normals = new DirectX::SimpleMath::Vector3[numVerts];
+		this->normals = new glm::vec3[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->normals[i] = other.normals[i];
 	}
 	if (other.colors) {
-		this->colors = new DirectX::SimpleMath::Vector4[numVerts];
+		this->colors = new glm::vec4[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->colors[i] = other.colors[i];
 	}
 	if (other.texCoords) {
-		this->texCoords = new DirectX::SimpleMath::Vector2[numVerts];
+		this->texCoords = new glm::vec2[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->texCoords[i] = other.texCoords[i];
 	}
 	if (other.tangents) {
-		this->tangents = new DirectX::SimpleMath::Vector3[numVerts];
+		this->tangents = new glm::vec3[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->tangents[i] = other.tangents[i];
 	}
 	if (other.bitangents) {
-		this->bitangents = new DirectX::SimpleMath::Vector3[numVerts];
+		this->bitangents = new glm::vec3[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->bitangents[i] = other.bitangents[i];
 	}

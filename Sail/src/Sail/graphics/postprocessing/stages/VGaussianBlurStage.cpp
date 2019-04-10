@@ -1,10 +1,6 @@
 #include "pch.h"
 #include "VGaussianBlurStage.h"
 
-
-using namespace DirectX;
-using namespace SimpleMath;
-
 VGaussianBlurStage::VGaussianBlurStage(const Renderer& renderer, UINT width, UINT height, Mesh* fullscreenQuad)
 	: PostProcessStage(renderer, "postprocess/GaussianBlurVertical.hlsl", width, height, fullscreenQuad)
 {

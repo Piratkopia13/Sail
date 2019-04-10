@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 #include <random>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 
 #define BIT(x) 1 << x
 
@@ -109,10 +109,10 @@ public:
 
 namespace Utils {
 	std::string readFile(const std::string& filepath);
-	std::wstring vec3ToWStr(const DirectX::SimpleMath::Vector3& vec);
-	std::string vec3ToStr(const DirectX::SimpleMath::Vector3& vec);
+	std::wstring vec3ToWStr(const glm::vec3& vec);
+	std::string vec3ToStr(const glm::vec3& vec);
 	float rnd();
-	DirectX::SimpleMath::Vector4 getRandomColor();
+	glm::vec4 getRandomColor();
 	float clamp(float val, float min, float max);
 	float smootherstep(float edge0, float edge1, float x);
 

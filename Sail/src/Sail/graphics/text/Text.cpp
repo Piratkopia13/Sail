@@ -4,13 +4,11 @@
 #include "SailFont.h"
 #include "../shader/ShaderSet.h"
 
-using namespace DirectX::SimpleMath;
-
-Text::Ptr Text::Create(const std::wstring& text, const Vector2& pos, const Vector4& color) {
+Text::Ptr Text::Create(const std::wstring& text, const glm::vec2& pos, const glm::vec4& color) {
 	return std::make_unique<Text>(text, pos, color);
 }
 
-Text::Text(const std::wstring& text, const Vector2& pos, const Vector4& color)
+Text::Text(const std::wstring& text, const glm::vec2& pos, const glm::vec4& color)
 	: m_text(text)
 	, m_pos(pos)
 	, m_color(color)
@@ -24,18 +22,18 @@ const std::wstring& Text::getText() const {
 	return m_text;
 }
 
-void Text::setPosition(const Vector2& pos) {
+void Text::setPosition(const glm::vec2& pos) {
 	m_pos = pos;
 }
 
-const Vector2& Text::getPosition() const {
+const glm::vec2& Text::getPosition() const {
 	return m_pos;
 }
 
-void Text::setColor(const Vector4& color) {
+void Text::setColor(const glm::vec4& color) {
 	m_color = color;
 }
 
-const Vector4& Text::getColor() const {
+const glm::vec4& Text::getColor() const {
 	return m_color;
 }

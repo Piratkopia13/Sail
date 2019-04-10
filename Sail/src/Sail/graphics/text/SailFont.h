@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <SimpleMath.h>
 //#include <SpriteFont.h>
 
 namespace {

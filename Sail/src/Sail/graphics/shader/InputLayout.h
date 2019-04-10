@@ -42,9 +42,9 @@ void InputLayout::push(InputType inputType, LPCSTR semanticName, UINT semanticIn
 	}
 	UINT alignedByteOffset = (m_ied.size() == 0) ? 0 : D3D11_APPEND_ALIGNED_ELEMENT;
 	DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
-	if (typeid(T) == typeid(DirectX::SimpleMath::Vector4)) { format = DXGI_FORMAT_R32G32B32A32_FLOAT; }
-	if (typeid(T) == typeid(DirectX::SimpleMath::Vector3)) { format = DXGI_FORMAT_R32G32B32_FLOAT; }
-	if (typeid(T) == typeid(DirectX::SimpleMath::Vector2)) { format = DXGI_FORMAT_R32G32_FLOAT; }
+	if (typeid(T) == typeid(glm::vec4)) { format = DXGI_FORMAT_R32G32B32A32_FLOAT; }
+	if (typeid(T) == typeid(glm::vec3)) { format = DXGI_FORMAT_R32G32B32_FLOAT; }
+	if (typeid(T) == typeid(glm::vec2)) { format = DXGI_FORMAT_R32G32_FLOAT; }
 	if (typeid(T) == typeid(float)) { format = DXGI_FORMAT_R32_FLOAT; }
 	m_ied.push_back({ semanticName, semanticIndex, format, 0, alignedByteOffset, inputSlotClass, instanceDataStepRate });
 

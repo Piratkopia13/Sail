@@ -8,11 +8,9 @@
 #include "IndexBuffer.h"
 #include "Material.h"
 
-using namespace DirectX::SimpleMath;
-
 Model::Model(Mesh::Data& buildData, ShaderSet* shaderSet) {
 
-	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::create(buildData, shaderSet)));
+	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shaderSet)));
 
 	// TODO: reuse materials (?)
 	//m_material = std::make_shared<Material>(shaderSet);
@@ -42,7 +40,7 @@ Model::Model() {
 //}
 
 //Model::Model(ShaderSet* shaderSet)
-//	: m_aabb(Vector3::Zero, Vector3(.2f, .2f, .2f))
+//	: m_aabb(glm::vec3(0.f), glm::vec3(.2f, .2f, .2f))
 //	, m_vertexBuffer(nullptr)
 //	, m_indexBuffer(nullptr)
 //	, m_shader(shaderSet)
@@ -109,11 +107,11 @@ unsigned int Model::getNumberOfMeshes() const {
 //
 //void Model::calculateAABB() {
 //
-//	Vector3 minCorner(FLT_MAX, FLT_MAX, FLT_MAX );
-//	Vector3 maxCorner(-FLT_MIN, -FLT_MIN, -FLT_MIN);
+//	glm::vec3 minCorner(FLT_MAX, FLT_MAX, FLT_MAX );
+//	glm::vec3 maxCorner(-FLT_MIN, -FLT_MIN, -FLT_MIN);
 //
 //	for (UINT i = 0; i < m_data.numVertices; i++) {
-//		Vector3& p = m_data.positions[i];
+//		glm::vec3& p = m_data.positions[i];
 //
 //		if (p.x < minCorner.x) minCorner.x = p.x;
 //		if (p.y < minCorner.y) minCorner.y = p.y;

@@ -16,17 +16,17 @@ GameState::GameState(StateStack& stack)
 
 	// Get the Application instance
 	m_app = Application::getInstance();
-	//m_scene = std::make_unique<Scene>(AABB(Vector3(-100.f, -100.f, -100.f), Vector3(100.f, 100.f, 100.f)));
+	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
 	// Set up camera with controllers
-	m_cam.setPosition(Vector3(6.6f, 3.7f, -9.4f));
-	m_camController.lookAt(Vector3::Zero);
+	m_cam.setPosition(glm::vec3(6.6f, 3.7f, -9.4f));
+	m_camController.lookAt(glm::vec3(0.f));
 	
 	// Set up the scene
 	//m_scene->addSkybox(L"skybox_space_512.dds");
 	// Add a directional light
-	Vector3 color(1.0f, 1.0f, 1.0f);
- 	Vector3 direction(0.4f, -0.6f, 1.0f);
+	glm::vec3 color(1.0f, 1.0f, 1.0f);
+ 	glm::vec3 direction(0.4f, -0.6f, 1.0f);
 	direction.Normalize();
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 
@@ -36,33 +36,33 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<DeferredGeometryShader>();
 	//auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
-	m_cubeModel = ModelFactory::CubeModel::Create(Vector3(.5f), shader);
+	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
-	m_planeModel = ModelFactory::PlaneModel::Create(Vector2(5.f), shader);
+	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader);
 
 	m_scene.setLightSetup(&m_lights);
 
 	auto e = Entity::Create();
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
-	transform.setRotations(Vector3(0.f, 0.f, 1.07f));
-	transform.setTranslation(Vector3(1.2f, 1.0f, 1.f));
+	transform.setRotations(glm::vec3(0.f, 0.f, 1.07f));
+	transform.setTranslation(glm::vec3(1.2f, 1.0f, 1.f));
 	m_scene.addEntity(MOVE(e));
 
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 1.f, 0.f));
+	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 1.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(m_planeModel.get());
-	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 0.f, 0.f));
+	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
 	/*Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader);
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(fbxModel);
-	e->addComponent<TransformComponent>()->getTransform().setTranslation(Vector3(0.f, 0.f, 0.f));
+	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(MOVE(e));*/
 
 	e = Entity::Create();
@@ -73,7 +73,7 @@ GameState::GameState(StateStack& stack)
 
 	// Set up HUD texts
 	if (m_debugCamText)
-		m_debugCamText->setPosition(Vector2(0.f, 20.f));
+		m_debugCamText->setPosition(glm::vec2(0.f, 20.f));
 
 }
 
@@ -93,7 +93,7 @@ bool GameState::processInput(float dt) {
 //	// Add point light at camera pos
 //	if (kbTracker.pressed.E) {
 //		PointLight pl;
-//		pl.setColor(Vector3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+//		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 //		pl.setPosition(m_cam.getPosition());
 //		pl.setAttenuation(.0f, 0.1f, 0.02f);
 //		m_lights.addPointLight(pl);
@@ -101,7 +101,7 @@ bool GameState::processInput(float dt) {
 //#endif
 //
 //	if (kbState.G) {
-//		Vector3 color(1.0f, 1.0f, 1.0f);;
+//		glm::vec3 color(1.0f, 1.0f, 1.0f);;
 //		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 //	}
 

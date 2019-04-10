@@ -3,9 +3,6 @@
 #include "../shader/ShaderSet.h"
 #include "Sail/Application.h"
 
-using namespace DirectX;
-using namespace SimpleMath;
-
 Material::Material(ShaderSet* shaderSet)
 	: m_customSRVs(nullptr)
 	, m_numTextures(3)
@@ -15,7 +12,7 @@ Material::Material(ShaderSet* shaderSet)
 	m_phongSettings.kd = 1.f;
 	m_phongSettings.ks = 1.f;
 	m_phongSettings.shininess = 10.f;
-	m_phongSettings.modelColor = Vector4::One;
+	m_phongSettings.modelColor = glm::vec4(1.0f);
 	m_phongSettings.hasDiffuseTexture = 0;
 	m_phongSettings.hasNormalTexture = 0;
 	m_phongSettings.hasSpecularTexture = 0;
@@ -51,7 +48,7 @@ void Material::setKs(float ks) {
 void Material::setShininess(float shininess) {
 	m_phongSettings.shininess = shininess;
 }
-void Material::setColor(const DirectX::SimpleMath::Vector4& color) {
+void Material::setColor(const glm::vec4& color) {
 	m_phongSettings.modelColor = color;
 }
 
@@ -129,7 +126,7 @@ ShaderSet* Material::getShader() const {
 //float Material::getShininess() const {
 //	return m_phongSettings.shininess;
 //}
-//const DirectX::SimpleMath::Vector4& Material::getColor() const {
+//const glm::vec4& Material::getColor() const {
 //	return m_phongSettings.modelColor;
 //}
 //const bool* Material::getTextureFlags() const {

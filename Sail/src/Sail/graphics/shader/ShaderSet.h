@@ -5,7 +5,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <iostream>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 
 #include "Sail/api/Shader.h"
 
@@ -46,7 +46,7 @@ public:
 	// virtual void createBufferFromModelData(ID3D11Buffer** vertexBuffer, ID3D11Buffer** indexBuffer, ID3D11Buffer** instanceBuffer, const void* data) = 0;
 
 	virtual void updateCamera(Camera& cam) {};
-	virtual void setClippingPlane(const DirectX::SimpleMath::Vector4& clippingPlane) {};
+	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
 
 	static ID3D10Blob* compileShader(const std::string& source, const std::string& entryPoint, const std::string& shaderVersion);
 	InputLayout& getInputLayout();

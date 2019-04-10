@@ -2,8 +2,6 @@
 #include "Input.h"
 #include "Sail/Application.h"
 
-using namespace DirectX;
-
 Input::Input()
 	: m_frameDeltaAccumulationMouseDX(0)
 	, m_frameDeltaAccumulationMouseDY(0)

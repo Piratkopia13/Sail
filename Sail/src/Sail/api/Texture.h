@@ -2,7 +2,7 @@
 
 class Texture {
 public:
-	static Texture* create(const std::string& filename);
+	static Texture* Create(const std::string& filename);
 	Texture() {}
 	virtual ~Texture() {}
 

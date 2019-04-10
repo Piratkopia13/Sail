@@ -2,15 +2,11 @@
 #include "DeferredPointLightShader.h"
 #include "Sail/Application.h"
 
-
-using namespace DirectX;
-using namespace SimpleMath;
-
 DeferredPointLightShader::DeferredPointLightShader() 
 	: ShaderSet("deferred/PointLightShader.hlsl")
 {
 	// Create the input layout
-	inputLayout.push<Vector3>(InputLayout::POSITION, "POSITION", 0);
+	inputLayout.push<glm::vec3>(InputLayout::POSITION, "POSITION", 0);
 	inputLayout.create(VSBlob);
 
 }
@@ -25,7 +21,7 @@ void DeferredPointLightShader::setLight(const PointLight& pl, Camera* camera) {
 	data.attLinear = pl.getAttenuation().linear;
 	data.attQuadratic = pl.getAttenuation().quadratic;
 	// Set position in view space
-	data.positionVS = Vector3::Transform(pl.getPosition(), camera->getViewMatrix());
+	data.positionVS = glm::vec4(pl.getPosition(), 1.0) * camera->getViewMatrix();
 
 	setCBufferVar("def_pointLightInput", &data, sizeof(data));
 

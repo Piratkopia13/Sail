@@ -73,7 +73,7 @@
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediates\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\DXTK\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries;$(IncludePath)</IncludePath>
     <Linkage-directxtk_desktop_2015>
     </Linkage-directxtk_desktop_2015>
   </PropertyGroup>
@@ -81,7 +81,7 @@
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediates\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\DXTK\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries;$(IncludePath)</IncludePath>
     <LinkIncremental>false</LinkIncremental>
     <Linkage-directxtk_desktop_2015>
     </Linkage-directxtk_desktop_2015>
@@ -89,12 +89,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediates\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\DXTK\include;$(SolutionDir)libraries;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediates\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries\DXTK\include;$(SolutionDir)libraries;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)libraries\FBX_SDK\include;$(SolutionDir)Sail\src;$(SolutionDir)libraries;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

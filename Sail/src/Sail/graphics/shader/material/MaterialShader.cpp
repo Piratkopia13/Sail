@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "MaterialShader.h"
 
-using namespace DirectX;
-using namespace SimpleMath;
-
 MaterialShader::MaterialShader()
 	: ShaderSet("MaterialShader.hlsl")
 	, m_clippingPlaneHasChanged(false)
@@ -11,9 +8,9 @@ MaterialShader::MaterialShader()
 {
 
 	// Set up constant buffers
-	/*ModelDataBuffer defaultModelData = { Matrix::Identity, Matrix::Identity, Vector4::One, 1.f, 1.f, 1.f, 10.f, 0, 0, 0 };
+	/*ModelDataBuffer defaultModelData = { Matrix::Identity, Matrix::Identity, glm::vec4::One, 1.f, 1.f, 1.f, 10.f, 0, 0, 0 };
 	m_modelDataBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(new ShaderComponent::ConstantBuffer(&defaultModelData, sizeof(ModelDataBuffer)));
-	WorldDataBuffer defaultworldData = { Vector4::Zero, Vector3::Zero };
+	WorldDataBuffer defaultworldData = { glm::vec4(0.f), glm::vec3(0.f) };
 	m_worldDataBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(new ShaderComponent::ConstantBuffer(&defaultworldData, sizeof(WorldDataBuffer)));
 	LightsBuffer defaultLightsBuffer;
 	m_lightsBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(new ShaderComponent::ConstantBuffer(&defaultLightsBuffer, sizeof(LightsBuffer)));*/
@@ -32,11 +29,11 @@ MaterialShader::MaterialShader()
 	//setPixelShader(psBlob);
 
 	// Create the input layout
-	inputLayout.push<Vector3>(InputLayout::POSITION, "POSITION", 0);
-	inputLayout.push<Vector2>(InputLayout::TEXCOORD, "TEXCOORD", 0);
-	inputLayout.push<Vector3>(InputLayout::NORMAL, "NORMAL", 0);
-	inputLayout.push<Vector3>(InputLayout::TANGENT, "TANGENT", 0);
-	inputLayout.push<Vector3>(InputLayout::BITANGENT, "BINORMAL", 0);
+	inputLayout.push<glm::vec3>(InputLayout::POSITION, "POSITION", 0);
+	inputLayout.push<glm::vec2>(InputLayout::TEXCOORD, "TEXCOORD", 0);
+	inputLayout.push<glm::vec3>(InputLayout::NORMAL, "NORMAL", 0);
+	inputLayout.push<glm::vec3>(InputLayout::TANGENT, "TANGENT", 0);
+	inputLayout.push<glm::vec3>(InputLayout::BITANGENT, "BINORMAL", 0);
 	inputLayout.create(VSBlob);
 
 	// Done with the blobs, release them
@@ -51,7 +48,7 @@ MaterialShader::~MaterialShader() {
 //	m_vpMatrix = cam.getViewProjection();
 //}
 
-void MaterialShader::setClippingPlane(const DirectX::SimpleMath::Vector4& clippingPlane) {
+void MaterialShader::setClippingPlane(const glm::vec4& clippingPlane) {
 	m_clippingPlane = clippingPlane;
 	m_clippingPlaneHasChanged = true;
 }
@@ -73,7 +70,7 @@ void MaterialShader::setClippingPlane(const DirectX::SimpleMath::Vector4& clippi
 //	}
 //}
 
-//void MaterialShader::updateModelDataBuffer(const Material& material, const DirectX::SimpleMath::Matrix& w, const DirectX::SimpleMath::Matrix& vp) const {
+//void MaterialShader::updateModelDataBuffer(const Material& material, const glm::mat4& w, const glm::mat4& vp) const {
 //
 //	const bool* texFlags = material.getTextureFlags();
 //
@@ -137,22 +134,22 @@ void MaterialShader::bind() {
 	//	if (modelData.texCoords)
 	//		vertices[i].texCoords = modelData.texCoords[i];
 	//	else
-	//		vertices[i].texCoords = Vector2::Zero;
+	//		vertices[i].texCoords = glm::vec2(0.f);
 	//	// Normals
 	//	if (modelData.normals)
 	//		vertices[i].normal = modelData.normals[i];
 	//	else
-	//		vertices[i].normal = Vector3::Zero;
+	//		vertices[i].normal = glm::vec3(0.f);
 	//	// Tangents
 	//	if (modelData.tangents)
 	//		vertices[i].tangent = modelData.tangents[i];
 	//	else
-	//		vertices[i].tangent = Vector3::Zero;
+	//		vertices[i].tangent = glm::vec3(0.f);
 	//	// Bitangents
 	//	if (modelData.bitangents)
 	//		vertices[i].bitangent = modelData.bitangents[i];
 	//	else
-	//		vertices[i].bitangent = Vector3::Zero;
+	//		vertices[i].bitangent = glm::vec3(0.f);
 	//}
 
 	//D3D11_BUFFER_DESC vbd;

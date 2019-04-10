@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 #include <memory>
 #include "Material.h"
 #include "../renderer/Renderer.h"
@@ -22,12 +22,12 @@ public:
 		ULONG* indices;
 		UINT numVertices;
 		UINT numInstances;
-		DirectX::SimpleMath::Vector3* positions;
-		DirectX::SimpleMath::Vector3* normals;
-		DirectX::SimpleMath::Vector4* colors;
-		DirectX::SimpleMath::Vector2* texCoords;
-		DirectX::SimpleMath::Vector3* tangents;
-		DirectX::SimpleMath::Vector3* bitangents;
+		glm::vec3* positions;
+		glm::vec3* normals;
+		glm::vec4* colors;
+		glm::vec2* texCoords;
+		glm::vec3* tangents;
+		glm::vec3* bitangents;
 	};
 
 public:

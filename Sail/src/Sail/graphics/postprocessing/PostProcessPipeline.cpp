@@ -2,9 +2,6 @@
 #include "PostProcessPipeline.h"
 #include "API/DX11/DX11API.h"
 
-using namespace DirectX;
-using namespace DirectX::SimpleMath;
-
 PostProcessPipeline::PostProcessPipeline(const Renderer& renderer, const Camera* cam)
 	: m_cam(cam)
 	, m_renderer(renderer)
@@ -240,14 +237,14 @@ void PostProcessPipeline::run(DX11RenderableTexture& baseTexture, ID3D11ShaderRe
 
 void PostProcessPipeline::createFullscreenQuad() {
 
-	Vector2 halfSizes(1.f, 1.f);
+	glm::vec2 halfSizes(1.f, 1.f);
 
 	const int numVerts = 4;
-	Vector3* positions = new Vector3[numVerts]{
-		Vector3(-halfSizes.x, -halfSizes.y, 0.f),
-		Vector3(-halfSizes.x, halfSizes.y, 0.f),
-		Vector3(halfSizes.x, -halfSizes.y, 0.f),
-		Vector3(halfSizes.x, halfSizes.y, 0.f),
+	glm::vec3* positions = new glm::vec3[numVerts]{
+		glm::vec3(-halfSizes.x, -halfSizes.y, 0.f),
+		glm::vec3(-halfSizes.x, halfSizes.y, 0.f),
+		glm::vec3(halfSizes.x, -halfSizes.y, 0.f),
+		glm::vec3(halfSizes.x, halfSizes.y, 0.f),
 	};
 
 	const int numIndices = 6;
@@ -256,11 +253,11 @@ void PostProcessPipeline::createFullscreenQuad() {
 	};
 
 	// Tex coords not used in shader, only set to get rid of warning
-	Vector2* texCoords = new Vector2[numVerts]{
-		Vector2(0.f, 1.f),
-		Vector2(0.f, 0.f),
-		Vector2(1.f, 1.f),
-		Vector2(1.f, 0.f)
+	glm::vec2* texCoords = new glm::vec2[numVerts]{
+		glm::vec2(0.f, 1.f),
+		glm::vec2(0.f, 0.f),
+		glm::vec2(1.f, 1.f),
+		glm::vec2(1.f, 0.f)
 	};
 
 	Mesh::Data data;
@@ -270,7 +267,7 @@ void PostProcessPipeline::createFullscreenQuad() {
 	data.indices = indices;
 	data.texCoords = texCoords;
 
-	m_fullscreenQuad = std::unique_ptr<Mesh>(Mesh::create(data, &m_flushShader));
+	m_fullscreenQuad = std::unique_ptr<Mesh>(Mesh::Create(data, &m_flushShader));
 	//m_fullscreenQuad.buildBufferForShader(&m_flushShader);
 }
 

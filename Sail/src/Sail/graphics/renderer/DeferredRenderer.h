@@ -24,8 +24,8 @@ public:
 
 	void begin(Camera* camera) override;
 
-	void submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix);
-	void submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) override;
+	void submit(Model* model, const glm::mat4& modelMatrix);
+	void submit(Mesh* mesh, const glm::mat4& modelMatrix) override;
 	void setLightSetup(LightSetup* lightSetup) override;
 	void end() override;
 	void present(RenderableTexture* output = nullptr) override;

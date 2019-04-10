@@ -12,13 +12,13 @@ namespace ModelFactory {
 		static std::unique_ptr<Model> Create(float radius, float numFaces, ShaderSet* shaderSet) {
 
 			//const int numVerts = 4;
-			//Vector3* positions = new Vector3[numVerts]{
-			//	Vector3(-halfSizes.x, 0.f, -halfSizes.y),
-			//	Vector3(-halfSizes.x, 0.f, halfSizes.y),
-			//	Vector3(halfSizes.x, 0.f, -halfSizes.y),
-			//	//Vector3(halfSizes.x, 0.f, -halfSizes.y),
-			//	//Vector3(-halfSizes.x, 0.f, halfSizes.y),
-			//	Vector3(halfSizes.x, 0.f, halfSizes.y),
+			//glm::vec3* positions = new glm::vec3[numVerts]{
+			//	glm::vec3(-halfSizes.x, 0.f, -halfSizes.y),
+			//	glm::vec3(-halfSizes.x, 0.f, halfSizes.y),
+			//	glm::vec3(halfSizes.x, 0.f, -halfSizes.y),
+			//	//glm::vec3(halfSizes.x, 0.f, -halfSizes.y),
+			//	//glm::vec3(-halfSizes.x, 0.f, halfSizes.y),
+			//	glm::vec3(halfSizes.x, 0.f, halfSizes.y),
 			//};
 
 			//const int numIndices = 6;
@@ -26,18 +26,18 @@ namespace ModelFactory {
 			//	0, 1, 2, 2, 1, 3
 			//};
 
-			//Vector2* texCoords = new Vector2[numVerts]{
-			//	Vector2(0.f, 1.f),
-			//	Vector2(0.f, 0.f),
-			//	Vector2(1.f, 1.f),
-			//	Vector2(1.f, 0.f)
+			//glm::vec2* texCoords = new glm::vec2[numVerts]{
+			//	glm::vec2(0.f, 1.f),
+			//	glm::vec2(0.f, 0.f),
+			//	glm::vec2(1.f, 1.f),
+			//	glm::vec2(1.f, 0.f)
 			//};
 
-			//Vector3* normals = new Vector3[numVerts]{
-			//	Vector3(0.f, 1.f, 0.f),
-			//	Vector3(0.f, 1.f, 0.f),
-			//	Vector3(0.f, 1.f, 0.f),
-			//	Vector3(0.f, 1.f, 0.f)
+			//glm::vec3* normals = new glm::vec3[numVerts]{
+			//	glm::vec3(0.f, 1.f, 0.f),
+			//	glm::vec3(0.f, 1.f, 0.f),
+			//	glm::vec3(0.f, 1.f, 0.f),
+			//	glm::vec3(0.f, 1.f, 0.f)
 			//};
 
 			Model::Data buildData;

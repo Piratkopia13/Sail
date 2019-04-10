@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 #include "../ShaderSet.h"
 #include "../component/ConstantBuffer.h"
 #include "../component/Sampler.h"
@@ -22,21 +22,21 @@ public:
 private:
 	//// Transform constant buffer structure
 	//struct ModelDataBuffer {
-	//	DirectX::SimpleMath::Matrix mInvP;
+	//	glm::mat4 mInvP;
 	//};
 	struct LightDataBuffer {
-		DirectX::SimpleMath::Vector3 direction;
+		glm::vec3 direction;
 		float padding;
-		DirectX::SimpleMath::Vector3 color;
+		glm::vec3 color;
 		float padding2;
 	};
 	//struct ShadowLightBuffer {
-	//	DirectX::SimpleMath::Matrix mInvV;
-	//	DirectX::SimpleMath::Matrix mLightV;
-	//	DirectX::SimpleMath::Matrix mLightP;
+	//	glm::mat4 mInvV;
+	//	glm::mat4 mLightV;
+	//	glm::mat4 mLightP;
 	//};
-	//DirectX::SimpleMath::Matrix m_mV;
-	//DirectX::SimpleMath::Matrix m_mInvP;
+	//glm::mat4 m_mV;
+	//glm::mat4 m_mInvP;
 
 	//// Components
 

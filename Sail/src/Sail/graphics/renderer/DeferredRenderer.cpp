@@ -9,8 +9,6 @@
 #include "../shader/deferred/DeferredDirectionalLightShader.h"
 #include "../shader/deferred/DeferredGeometryShader.h"
 
-using namespace DirectX::SimpleMath;
-
 DeferredRenderer::DeferredRenderer() {
 
 	auto& resman = Application::getInstance()->getResourceManager();
@@ -44,7 +42,7 @@ void DeferredRenderer::begin(Camera* camera) {
 	commandQueue.clear();
 }
 
-void DeferredRenderer::submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) {
+void DeferredRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix) {
 	RenderCommand cmd;
 	cmd.mesh = mesh;
 	cmd.transform = modelMatrix.Transpose();
@@ -53,7 +51,7 @@ void DeferredRenderer::submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& mod
 
 }
 
-void DeferredRenderer::submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix) {
+void DeferredRenderer::submit(Model* model, const glm::mat4& modelMatrix) {
 	Renderer::submit(model, modelMatrix);
 }
 

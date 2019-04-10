@@ -2,12 +2,9 @@
 #include "FBXLoader.h"
 
 #include <d3d11.h>
-#include <SimpleMath.h>
 #include "../../utils/Utils.h"
 #include "../../graphics/geometry/factory/CubeModel.h"
 #include "Sail/Application.h"
-
-using namespace DirectX::SimpleMath;
 
 FbxManager* FBXLoader::s_manager = FbxManager::Create();
 FbxIOSettings* FBXLoader::s_ios = FbxIOSettings::Create(s_manager, IOSROOT);
@@ -41,7 +38,7 @@ FBXLoader::FBXLoader(const std::string& filepath, ShaderSet* shaderSet)
 
 	} else {
 		Logger::Warning("Failed to load fbx file '" + filepath + "', using default cube.");
-		DirectX::SimpleMath::Vector3 halfSizes = DirectX::SimpleMath::Vector3(0.5, 0.5, 0.5);
+		glm::vec3 halfSizes = glm::vec3(0.5, 0.5, 0.5);
 		m_model = ModelFactory::CubeModel::Create(halfSizes, shaderSet);
 	}
 }
@@ -84,7 +81,7 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
-			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::create(meshData, m_shaderSet));
+			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, m_shaderSet));
 			getMaterial(pNode, mesh->getMaterial());
 			m_model->addMesh(std::move(mesh));
 
@@ -151,11 +148,11 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 		return;
 	}
 
-	buildData.positions = new Vector3[buildData.numVertices];
-	buildData.normals = new Vector3[buildData.numVertices];
-	buildData.texCoords = new Vector2[buildData.numVertices];
-	buildData.tangents = new Vector3[buildData.numVertices];
-	buildData.bitangents = new Vector3[buildData.numVertices];
+	buildData.positions = new glm::vec3[buildData.numVertices];
+	buildData.normals = new glm::vec3[buildData.numVertices];
+	buildData.texCoords = new glm::vec2[buildData.numVertices];
+	buildData.tangents = new glm::vec3[buildData.numVertices];
+	buildData.bitangents = new glm::vec3[buildData.numVertices];
 
 	bool norms = true, uvs = true, tangs = true, bitangs = true;
 

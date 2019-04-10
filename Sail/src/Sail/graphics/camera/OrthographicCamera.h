@@ -17,13 +17,13 @@ public:
 	}
 
 private:
-	virtual const DirectX::SimpleMath::Matrix& getProjectionMatrix() {
+	virtual const glm::mat4& getProjectionMatrix() {
 		return m_projectionMatrix;
 	}
 
 	float m_nearZ;
 	float m_farZ;
 
-	DirectX::SimpleMath::Matrix m_projectionMatrix;
+	glm::mat4 m_projectionMatrix;
 
 };

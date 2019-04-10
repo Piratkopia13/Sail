@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SimpleMath.h>
+#include <glm/glm.hpp>
 #include <memory>
 #include "Sail/graphics/geometry/Material.h"
 #include "Sail/graphics/renderer/Renderer.h"
@@ -20,16 +20,16 @@ public:
 		ULONG* indices;
 		UINT numVertices;
 		UINT numInstances;
-		DirectX::SimpleMath::Vector3* positions;
-		DirectX::SimpleMath::Vector3* normals;
-		DirectX::SimpleMath::Vector4* colors;
-		DirectX::SimpleMath::Vector2* texCoords;
-		DirectX::SimpleMath::Vector3* tangents;
-		DirectX::SimpleMath::Vector3* bitangents;
+		glm::vec3* positions;
+		glm::vec3* normals;
+		glm::vec4* colors;
+		glm::vec2* texCoords;
+		glm::vec3* tangents;
+		glm::vec3* bitangents;
 	};
 
 public:
-	static Mesh* create(Data& buildData, ShaderSet* shaderSet);
+	static Mesh* Create(Data& buildData, ShaderSet* shaderSet);
 	Mesh(Data& buildData, ShaderSet* shaderSet);
 	virtual ~Mesh();
 

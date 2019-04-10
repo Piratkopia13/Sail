@@ -14,22 +14,22 @@ public:
 	virtual void update(float dt) {};
 
 protected:
-	void setCameralookAt(const DirectX::SimpleMath::Vector3& pos) {
+	void setCameralookAt(const glm::vec3& pos) {
 		m_cam->lookAt(pos);
 	}
-	void setCameraDirection(const DirectX::SimpleMath::Vector3& direction) {
+	void setCameraDirection(const glm::vec3& direction) {
 		m_cam->setDirection(direction);
 	}
-	void setCameraPosition(const DirectX::SimpleMath::Vector3& pos) {
+	void setCameraPosition(const glm::vec3& pos) {
 		m_cam->setPosition(pos);
 	}
-	const DirectX::SimpleMath::Vector3& getCameraDirection() {
+	const glm::vec3& getCameraDirection() {
 		return m_cam->m_direction;
 	}
-	const DirectX::SimpleMath::Vector3& getCameraPosition() {
+	const glm::vec3& getCameraPosition() {
 		return m_cam->m_pos;
 	}
-	const DirectX::SimpleMath::Vector3& getCameraUp() {
+	const glm::vec3& getCameraUp() {
 		return m_cam->getUp();
 	}
 	const Camera* getCamera() {

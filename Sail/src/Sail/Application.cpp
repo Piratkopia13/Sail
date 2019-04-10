@@ -2,8 +2,6 @@
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
 
-using namespace DirectX;
-
 Application* Application::m_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
@@ -13,11 +11,11 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	windowProps.hInstance = hInstance;
 	windowProps.windowWidth = windowWidth;
 	windowProps.windowHeight = windowHeight;
-	m_window = std::unique_ptr<Window>(Window::create(windowProps));
+	m_window = std::unique_ptr<Window>(Window::Create(windowProps));
 	m_window->setWindowTitle(windowTitle);
 
 	// Set up api
-	m_api = std::unique_ptr<GraphicsAPI>(GraphicsAPI::create());
+	m_api = std::unique_ptr<GraphicsAPI>(GraphicsAPI::Create());
 
 	// Initalize the window
 	if (!m_window->initialize()) {
@@ -90,7 +88,7 @@ int Application::startGameLoop() {
 			
 			// Get delta time from last frame
 			float delta = static_cast<float>(m_timer.getFrameTime());
-			delta = min(delta, 0.04f);
+			delta = glm::min(delta, 0.04f);
 
 			// Update fps counter
 			secCounter += delta;

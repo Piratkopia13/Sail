@@ -10,7 +10,7 @@ public:
 		unsigned int windowHeight = 720;
 	};
 public:
-	static Window* create(const WindowProps& props);
+	static Window* Create(const WindowProps& props);
 	Window(const WindowProps& props) : windowWidth(props.windowWidth), windowHeight(props.windowHeight) {}
 	virtual ~Window() {}
 

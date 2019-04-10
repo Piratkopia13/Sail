@@ -12,8 +12,8 @@ namespace ModelFactory {
 		static std::unique_ptr<Model> Create(UINT instances, ShaderSet* shaderSet) {
 
 			const int numVerts = 1;
-			Vector3* positions = new Vector3[numVerts]{
-				Vector3(0.f, 0.f, 0.f)
+			glm::vec3* positions = new glm::vec3[numVerts]{
+				glm::vec3(0.f, 0.f, 0.f)
 			};
 
 			Model::Data buildData;

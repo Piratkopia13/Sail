@@ -2,7 +2,7 @@
 #include "DX11API.h"
 #include "Win32Window.h"
 
-GraphicsAPI* GraphicsAPI::create() {
+GraphicsAPI* GraphicsAPI::Create() {
 	return new DX11API();
 }
 
@@ -379,7 +379,7 @@ void DX11API::setBlending(Blending setting) {
 
 }
 
-void DX11API::clear(const DirectX::SimpleMath::Vector4& color) {
+void DX11API::clear(const glm::vec4& color) {
 	FLOAT colorArr[4] = { color.x, color.y, color.z, color.w };
 	// Clear back buffer
 	m_deviceContext->ClearRenderTargetView(m_renderTargetView, colorArr);

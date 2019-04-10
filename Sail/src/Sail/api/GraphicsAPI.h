@@ -23,12 +23,12 @@ public:
 	};
 
 public:
-	static GraphicsAPI* create();
+	static GraphicsAPI* Create();
 	GraphicsAPI() { };
 	~GraphicsAPI() { };
 
 	virtual bool init(Window* window) = 0;
-	virtual void clear(const DirectX::SimpleMath::Vector4& color) = 0;
+	virtual void clear(const glm::vec4& color) = 0;
 	virtual void setDepthMask(DepthMask setting) = 0;
 	virtual void setFaceCulling(Culling setting) = 0;
 	virtual void setBlending(Blending setting) = 0;

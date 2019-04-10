@@ -16,20 +16,20 @@ private:
 
 	//// Transform constant buffer structure
 	//struct ModelDataBuffer {
-	//	DirectX::SimpleMath::Matrix mWV;
-	//	DirectX::SimpleMath::Matrix mP;
+	//	glm::mat4 mWV;
+	//	glm::mat4 mP;
 	//};
 	struct LightDataBuffer {
-		DirectX::SimpleMath::Vector3 color;
+		glm::vec3 color;
 		float attCostant;
 		float attLinear;
 		float attQuadratic;
 		float padding[2];
-		DirectX::SimpleMath::Vector3 positionVS; // View space position of pointlight
+		glm::vec3 positionVS; // View space position of pointlight
 		float padding2;
 	};
-	//DirectX::SimpleMath::Matrix m_mV;
-	//DirectX::SimpleMath::Matrix m_mP;
+	//glm::mat4 m_mV;
+	//glm::mat4 m_mP;
 
 	//// Components
 

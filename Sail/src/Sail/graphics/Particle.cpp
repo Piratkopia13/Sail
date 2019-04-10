@@ -1,10 +1,7 @@
 #include "pch.h"
 #include "Particle.h"
 
-using namespace DirectX;
-using namespace SimpleMath;
-
-Particle::Particle(const Vector3& position, const Vector3& velocity, float scale, float gravityScale, float lifetime) 
+Particle::Particle(const glm::vec3& position, const glm::vec3& velocity, float scale, float gravityScale, float lifetime) 
 	: m_position(position)
 	, m_velocity(velocity)
 	, m_gravityScale(gravityScale)
@@ -20,7 +17,7 @@ Particle::~Particle() {
 
 void Particle::update(float dt) {
 	if (m_alive) {
-		m_velocity += Vector3(0.f, -9.82f, 0.f) * m_gravityScale * dt;
+		m_velocity += glm::vec3(0.f, -9.82f, 0.f) * m_gravityScale * dt;
 		m_position += m_velocity * dt;
 		m_elapsedTime += dt;
 		//m_elapsedTime += 0.6f;
@@ -31,7 +28,7 @@ void Particle::update(float dt) {
 	}
 }
 
-const DirectX::SimpleMath::Vector3& Particle::getPosition() const {
+const glm::vec3& Particle::getPosition() const {
 	return m_position;
 }
 

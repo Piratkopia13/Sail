@@ -3,7 +3,7 @@
 #include "Sail/Application.h"
 #include "../DX11API.h"
 
-Texture* Texture::create(const std::string& filename) {
+Texture* Texture::Create(const std::string& filename) {
 	return new DX11Texture(filename);
 }
 
