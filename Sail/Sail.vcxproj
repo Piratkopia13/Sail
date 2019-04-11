@@ -229,9 +229,6 @@
     <ClCompile Include="src\Sail\graphics\shader\ShaderSet.cpp" />
     <ClCompile Include="src\Sail\graphics\text\SailFont.cpp" />
     <ClCompile Include="src\Sail\graphics\text\Text.cpp" />
-    <ClCompile Include="src\Sail\resources\audio\AmbientSound.cpp" />
-    <ClCompile Include="src\Sail\resources\audio\Sound.cpp" />
-    <ClCompile Include="src\Sail\resources\audio\SoundManager.cpp" />
     <ClCompile Include="src\API\DX11\resources\DX11Texture.cpp" />
     <ClCompile Include="src\Sail\resources\loaders\FBXLoader.cpp" />
     <ClCompile Include="src\Sail\resources\loaders\TGALoader.cpp" />
@@ -322,9 +319,6 @@
     <ClInclude Include="src\Sail\graphics\text\Text.h" />
     <ClInclude Include="src\Sail\patterns\Observer.h" />
     <ClInclude Include="src\Sail\patterns\Subject.h" />
-    <ClInclude Include="src\Sail\resources\audio\AmbientSound.h" />
-    <ClInclude Include="src\Sail\resources\audio\Sound.h" />
-    <ClInclude Include="src\Sail\resources\audio\SoundManager.h" />
     <ClInclude Include="src\API\DX11\resources\DX11Texture.h" />
     <ClInclude Include="src\Sail\resources\loaders\FBXLoader.h" />
     <ClInclude Include="src\Sail\resources\loaders\TGALoader.h" />

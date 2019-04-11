@@ -8,6 +8,10 @@
 // 218 of these in the fbx sdk
 #pragma warning(disable:26495)
 
+#define NOMINMAX // Removes min max macros which cause issues
+
+#include <glm/glm.hpp>
+
 #include "Sail/Application.h"
 #include "Sail/Utils/Utils.h"
 #include "Sail/graphics/text/Text.h"
@@ -38,7 +42,7 @@
 #include "Sail/graphics/renderer/ForwardRenderer.h"
 //#include "Sail/graphics/ParticleEmitter.h"
 //#include "Sail/graphics/postprocessing/PostProcessPass.h"
-#include "Sail/resources/audio/SoundManager.h"
+//#include "Sail/resources/audio/SoundManager.h"
 #include "Sail/states/StateStack.h"
 #include "Sail/events/Events.h"
 #include "Sail/entities/Entity.h"

@@ -1,17 +1,24 @@
 #pragma once
 
-#include <memory>
-#include <comdef.h> 
-#include <string>
-#include <Memory>
-#include <iostream>
-#include <vector>
-#include <unordered_map>
+#define NOMINMAX // Removes min max macros which cause issues
+// Exclude some less used APIs to speed up the build process on windows
+#define WIN32_LEAN_AND_MEAN
 
 // Math
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+//#include <windows.h>
+
+#include <memory>
+#include <comdef.h> 
+#include <string>
+#include <Memory>
+#include <algorithm>
+#include <iostream>
+#include <vector>
+#include <unordered_map>
 
 // DirectX Toolkit includes
 //#include <d3d12.h>

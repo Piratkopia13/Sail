@@ -1,10 +1,11 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include "common\Object.h"
 
 class Block : public Object {
 private:
-	DirectX::SimpleMath::Vector4 m_color;
+	glm::vec4 m_color;
 
 public:
 	Block();
@@ -12,5 +13,5 @@ public:
 	virtual ~Block();
 
 	virtual void draw();
-	void setColor(const DirectX::SimpleMath::Vector4& color);
+	void setColor(const glm::vec4& color);
 };

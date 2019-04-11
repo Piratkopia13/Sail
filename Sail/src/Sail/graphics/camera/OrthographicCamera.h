@@ -9,11 +9,11 @@ public:
 		: m_nearZ(nearZ)
 		, m_farZ(farZ)
 	{
-		m_projectionMatrix = DirectX::XMMatrixOrthographicLH(width, height, m_nearZ, m_farZ);
+		m_projectionMatrix = glm::orthoLH(-width / 2.0f, width / 2.0f, -height / 2.0f, height / 2.0f, m_nearZ, m_farZ);
 	};
 
 	void resize(int width, int height) {
-		m_projectionMatrix = DirectX::XMMatrixOrthographicLH(static_cast<float>(width), static_cast<float>(height), m_nearZ, m_farZ);
+		m_projectionMatrix = glm::orthoLH(-width / 2.0f, width / 2.0f, -height / 2.0f, height / 2.0f, m_nearZ, m_farZ);
 	}
 
 private:

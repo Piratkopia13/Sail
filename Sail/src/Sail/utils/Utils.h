@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Windows.h>
 #include <exception>
 #include <iostream>
 #include <string>

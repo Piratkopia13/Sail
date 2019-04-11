@@ -6,17 +6,17 @@ class PerspectiveCamera : public Camera {
 
 public:
 	PerspectiveCamera(float fov, float aspectRatio, float nearZ, float farZ) 
-		: m_fov(DirectX::XMConvertToRadians(fov))
+		: m_fov(glm::radians(fov))
 		, m_nearZ(nearZ)
 		, m_farZ(farZ)
 		, m_aspectRatio(aspectRatio)
 	{
-		m_projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(m_fov, aspectRatio, m_nearZ, m_farZ);
+		m_projectionMatrix = glm::perspectiveFovLH(m_fov, aspectRatio, 1.0f, m_nearZ, m_farZ);
 	};
 
 	void resize(int width, int height) {
 		m_aspectRatio = static_cast<float>(width) / height;
-		m_projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspectRatio, m_nearZ, m_farZ);
+		m_projectionMatrix = glm::perspectiveFovLH(m_fov, m_aspectRatio, 1.0f, m_nearZ, m_farZ);
 	}
 
 	float getFOV() const {

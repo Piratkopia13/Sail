@@ -5,8 +5,6 @@
 
 namespace ModelFactory {
 
-	using namespace DirectX::SimpleMath;
-
 	class ConeModel {
 	public:
 		static std::unique_ptr<Model> Create(const glm::vec3& halfSizes, ShaderSet* shaderSet) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include "Sail.h"
 
 class Object {
@@ -8,21 +9,21 @@ private:
 protected:
 	Model* model; 
 	AABB* boundingBox; //Pointer to be able to detect if a bounding box has been made
-	DirectX::SimpleMath::Vector4 lightColor;
+	glm::vec4 lightColor;
 
 public:
 	Object();
 	virtual ~Object();
 
-	void setPosition(const DirectX::SimpleMath::Vector3 &newPosition);
+	void setPosition(const glm::vec3 &newPosition);
 	void updateBoundingBox(bool includeBoundingBoxRotation = true);
 	void setModel(Model* model);
-	void setLightColor(DirectX::SimpleMath::Vector4 color);
+	void setLightColor(glm::vec4 color);
 	Model* getModel();
 	Transform& getTransform();
 	AABB* getBoundingBox();
-	DirectX::SimpleMath::Vector4 getLightColor();
-	DirectX::SimpleMath::Vector4 getColor();
+	glm::vec4 getLightColor();
+	glm::vec4 getColor();
 
 	virtual void draw() = 0;
 };

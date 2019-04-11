@@ -5,6 +5,7 @@
 #include "Sail/Application.h"
 //#include "DX12API.h"
 
+// TODO: only define if dx12 api is used
 Mesh* Mesh::Create(Data& buildData, ShaderSet* shaderSet) {
 	return new DX12Mesh(buildData, shaderSet);
 }

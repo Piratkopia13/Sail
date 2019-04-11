@@ -88,7 +88,7 @@ int Application::startGameLoop() {
 			
 			// Get delta time from last frame
 			float delta = static_cast<float>(m_timer.getFrameTime());
-			delta = glm::min(delta, 0.04f);
+			delta = std::min(delta, 0.04f);
 
 			// Update fps counter
 			secCounter += delta;

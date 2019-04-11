@@ -5,7 +5,7 @@ Block::Block() {
 
 Block::Block(Model *drawModel) {
 	setModel(drawModel);
-	m_color = DirectX::SimpleMath::Vector4(1.f, 1.f, 1.f, 1.f);
+	m_color = glm::vec4(1.f);
 }
 
 Block::~Block() {
@@ -18,6 +18,6 @@ void Block::draw() {
 	getModel()->draw();
 }
 
-void Block::setColor(const DirectX::SimpleMath::Vector4& color) {
+void Block::setColor(const glm::vec4& color) {
 	m_color = color;
 }

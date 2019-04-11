@@ -4,6 +4,7 @@
 
 // Exclude some less used APIs to speed up the build process
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 #include <string>
 

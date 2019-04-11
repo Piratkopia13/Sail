@@ -1,10 +1,6 @@
 #include "GameState.h"
 #include "../objects/Block.h"
 
-using namespace DirectX;
-using namespace DirectX::SimpleMath;
-
-
 GameState::GameState(StateStack& stack)
 : State(stack)
 , m_cam(30.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -27,7 +23,7 @@ GameState::GameState(StateStack& stack)
 	// Add a directional light
 	glm::vec3 color(1.0f, 1.0f, 1.0f);
  	glm::vec3 direction(0.4f, -0.6f, 1.0f);
-	direction.Normalize();
+	direction = glm::normalize(direction);
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 
 

@@ -1,7 +1,5 @@
 #include "Object.h"
 
-using namespace DirectX::SimpleMath;
-
 Object::Object()
 	: model(nullptr)
 	, lightColor(Vector4(1.f))
@@ -13,7 +11,7 @@ Object::~Object() {
 	Memory::safeDelete(this->boundingBox);
 }
 
-void Object::setPosition(const DirectX::SimpleMath::Vector3 &newPosition) {
+void Object::setPosition(const glm:::vec3 &newPosition) {
 	m_transform.setTranslation(newPosition);
 	updateBoundingBox();
 }
@@ -50,7 +48,7 @@ void Object::setModel(Model* model)
 	}
 }
 
-void Object::setLightColor(DirectX::SimpleMath::Vector4 color)
+void Object::setLightColor(glm:::vec4 color)
 {
 	this->lightColor = color;
 }
@@ -68,10 +66,10 @@ AABB* Object::getBoundingBox() {
 	return boundingBox;
 }
 
-DirectX::SimpleMath::Vector4 Object::getLightColor() {
+glm:::vec4 Object::getLightColor() {
 	return lightColor;
 }
 
-DirectX::SimpleMath::Vector4 Object::getColor() {
+glm:::vec4 Object::getColor() {
 	return model->getMaterial()->getColor();
 }
