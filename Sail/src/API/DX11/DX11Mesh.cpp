@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "DX11Mesh.h"
-#include "Sail/api/VertexBuffer.h"
-#include "Sail/api/IndexBuffer.h"
+#include "DX11VertexBuffer.h"
+#include "DX11IndexBuffer.h"
 #include "Sail/Application.h"
+#include "Sail/graphics/shader/ShaderSet.h"
 #include "DX11API.h"
 
 Mesh* Mesh::Create(Data& buildData, ShaderSet* shaderSet) {
@@ -17,11 +18,11 @@ DX11Mesh::DX11Mesh(Data& buildData, ShaderSet* shaderSet)
 
 	material = std::make_shared<Material>(shaderSet);
 	// Create vertex buffer
-	//vertexBuffer = std::make_unique<DX11VertexBuffer>(shaderSet->getInputLayout(), buildData);
-	//// Create index buffer is indices are set
-	//if (buildData.numIndices > 0) {
-	//	indexBuffer = std::make_unique<DX11IndexBuffer>(buildData);
-	//}
+	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shaderSet->getInputLayout(), buildData));
+	// Create index buffer is indices are set
+	if (buildData.numIndices > 0) {
+		indexBuffer = std::unique_ptr<IndexBuffer>(IndexBuffer::Create(buildData));
+	}
 }
 
 DX11Mesh::~DX11Mesh() {

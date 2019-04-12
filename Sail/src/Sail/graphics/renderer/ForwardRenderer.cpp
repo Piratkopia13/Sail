@@ -3,8 +3,6 @@
 #include "../shader/ShaderSet.h"
 #include "../light/LightSetup.h"
 
-using namespace DirectX::SimpleMath;
-
 ForwardRenderer::ForwardRenderer() {
 
 }
@@ -19,16 +17,16 @@ void ForwardRenderer::begin(Camera* camera) {
 	commandQueue.clear();
 }
 
-void ForwardRenderer::submit(Mesh* mesh, const DirectX::SimpleMath::Matrix& modelMatrix) {
+void ForwardRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix) {
 	RenderCommand cmd;
 	cmd.mesh = mesh;
-	cmd.transform = modelMatrix.Transpose();
+	cmd.transform = glm::transpose(modelMatrix);
 	commandQueue.push_back(cmd);
 	//Logger::Log("Submitted model at: " + Utils::vec3ToStr(commandQueue.back().modelMatrix.Transpose().Translation()));
 
 }
 
-void ForwardRenderer::submit(Model* model, const DirectX::SimpleMath::Matrix& modelMatrix) {
+void ForwardRenderer::submit(Model* model, const glm::mat4& modelMatrix) {
 	Renderer::submit(model, modelMatrix);
 }
 
@@ -48,9 +46,9 @@ void ForwardRenderer::present(RenderableTexture* output) {
 		ShaderSet* shader = command.mesh->getMaterial()->getShader();
 		shader->bind();
 
-		shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(Matrix));
-		shader->setCBufferVar("sys_mVP", &m_camera->getViewProjection().Transpose(), sizeof(Matrix));
-		shader->setCBufferVar("sys_cameraPos", &m_camera->getPosition(), sizeof(Vector3));
+		shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4));
+		shader->setCBufferVar("sys_mVP", &glm::transpose(m_camera->getViewProjection()), sizeof(glm::mat4));
+		shader->setCBufferVar("sys_cameraPos", &m_camera->getPosition(), sizeof(glm::vec3));
 
 		if (m_lightSetup) {
 			auto& dlData = m_lightSetup->getDirLightData();

@@ -4,9 +4,6 @@
 #include "../shader/basic/SimpleColorShader.h"
 #include "../shader/ShaderSet.h"
 #include "Material.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
-#include "Material.h"
 
 Model::Model(Mesh::Data& buildData, ShaderSet* shaderSet) {
 

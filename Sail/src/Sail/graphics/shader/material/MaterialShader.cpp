@@ -29,12 +29,12 @@ MaterialShader::MaterialShader()
 	//setPixelShader(psBlob);
 
 	// Create the input layout
-	inputLayout.push<glm::vec3>(InputLayout::POSITION, "POSITION", 0);
-	inputLayout.push<glm::vec2>(InputLayout::TEXCOORD, "TEXCOORD", 0);
-	inputLayout.push<glm::vec3>(InputLayout::NORMAL, "NORMAL", 0);
-	inputLayout.push<glm::vec3>(InputLayout::TANGENT, "TANGENT", 0);
-	inputLayout.push<glm::vec3>(InputLayout::BITANGENT, "BINORMAL", 0);
-	inputLayout.create(VSBlob);
+	inputLayout->pushVec3(InputLayout::POSITION, "POSITION", 0);
+	inputLayout->pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
+	inputLayout->pushVec3(InputLayout::NORMAL, "NORMAL", 0);
+	inputLayout->pushVec3(InputLayout::TANGENT, "TANGENT", 0);
+	inputLayout->pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
+	inputLayout->create(VSBlob);
 
 	// Done with the blobs, release them
 	/*Memory::safeRelease(vsBlob);

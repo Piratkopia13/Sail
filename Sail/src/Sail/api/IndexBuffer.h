@@ -4,6 +4,7 @@
 
 class IndexBuffer {
 public:
+	static IndexBuffer* Create(Mesh::Data& modelData);
 	IndexBuffer(Mesh::Data& modelData) { }
 	virtual ~IndexBuffer() { }
 

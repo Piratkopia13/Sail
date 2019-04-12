@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "ResourceManager.h"
-#include "../graphics/shader/deferred/DeferredGeometryShader.h"
-#include "audio/SoundManager.h"
+//#include "../graphics/shader/deferred/DeferredGeometryShader.h"
+//#include "audio/SoundManager.h"
 #include "../graphics/shader/ShaderSet.h"
 
 ResourceManager::ResourceManager() {
-	m_soundManager = std::make_unique<SoundManager>();
+	//m_soundManager = std::make_unique<SoundManager>();
 }
 ResourceManager::~ResourceManager() {
 	for (auto it : m_shaderSets) {
@@ -81,6 +81,6 @@ bool ResourceManager::hasModel(const std::string& filename) {
 
 
 // Sound Manager
-SoundManager* ResourceManager::getSoundManager() {
-	return m_soundManager.get();
-}
+//SoundManager* ResourceManager::getSoundManager() {
+//	return m_soundManager.get();
+//}

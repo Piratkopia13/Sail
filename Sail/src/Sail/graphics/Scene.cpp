@@ -6,11 +6,11 @@
 #include "../utils/Utils.h"
 
 Scene::Scene() 
-	: m_postProcessPipeline(m_renderer)
+	//: m_postProcessPipeline(m_renderer)
 {
 
 	// TODO: the following method ish
-	m_postProcessPipeline.add<FXAAStage>();
+	//m_postProcessPipeline.add<FXAAStage>();
 	/*m_postProcessPipeline.add<GaussianBlurStage>(1.f / 1.f);
 	m_postProcessPipeline.add<GaussianBlurStage>(1.f / 1.5f);
 	m_postProcessPipeline.add<GaussianBlurStage>(1.f / 2.f);*/
@@ -20,7 +20,7 @@ Scene::Scene()
 	UINT width = window->getWindowWidth();
 	UINT height = window->getWindowHeight();
 
-	m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(new DX11RenderableTexture(1U, width, height, false));
+	//m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(new DX11RenderableTexture(1U, width, height, false));
 
 }
 
@@ -51,9 +51,10 @@ void Scene::draw(Camera& camera) {
 	}
 
 	m_renderer.end();
-	m_renderer.present(m_deferredOutputTex.get());
+	m_renderer.present();
+	//m_renderer.present(m_deferredOutputTex.get());
 
-	m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
+	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
@@ -70,7 +71,7 @@ void Scene::onEvent(Event& event) {
 
 	// Forward events
 	m_renderer.onEvent(event);
-	m_postProcessPipeline.onEvent(event);
+	//m_postProcessPipeline.onEvent(event);
 }
 
 bool Scene::onResize(WindowResizeEvent & event) {
@@ -78,7 +79,7 @@ bool Scene::onResize(WindowResizeEvent & event) {
 	unsigned int width = event.getWidth();
 	unsigned int height = event.getHeight();
 
-	m_deferredOutputTex->resize(width, height);
+	//m_deferredOutputTex->resize(width, height);
 
 	return false;
 }

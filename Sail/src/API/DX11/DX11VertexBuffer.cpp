@@ -1,14 +1,16 @@
 #include "pch.h"
-#include "VertexBuffer.h"
+#include "DX11API.h"
+#include "DX11VertexBuffer.h"
 #include "Sail/Application.h"
 
-using namespace DirectX::SimpleMath;
+VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, Mesh::Data& modelData) {
+	return new DX11VertexBuffer(inputLayout, modelData);
+}
 
-VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData)
-	: m_instanceBuffer(nullptr)
-	, m_inputLayout(inputLayout)
+DX11VertexBuffer::DX11VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData)
+	: VertexBuffer(inputLayout, modelData)
+	, m_instanceBuffer(nullptr)
 {
-
 	m_stride = inputLayout.getVertexSize();
 	
 	if (m_stride == 0) {
@@ -82,7 +84,7 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData
 	vertexData.pSysMem = vertices;
 
 	// Create the vertex buffer
-	ThrowIfFailed(Application::getInstance()->getAPI()->getDevice()->CreateBuffer(&vbd, &vertexData, &m_vertBuffer));
+	ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateBuffer(&vbd, &vertexData, &m_vertBuffer));
 	// Delete vertices from cpu memory
 	free(vertices);
 
@@ -99,31 +101,31 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData
 		ibd.MiscFlags = 0;
 		ibd.StructureByteStride = 0;
 
-		ThrowIfFailed(Application::getInstance()->getAPI()->getDevice()->CreateBuffer(&ibd, nullptr, &m_instanceBuffer));
+		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateBuffer(&ibd, nullptr, &m_instanceBuffer));
 	}
 
 }
 
 
-VertexBuffer::~VertexBuffer() {
+DX11VertexBuffer::~DX11VertexBuffer() {
 	Memory::safeRelease(m_vertBuffer);
 	Memory::safeRelease(m_instanceBuffer);
 }
 
-ID3D11Buffer* const* VertexBuffer::getBuffer() const {
+ID3D11Buffer* const* DX11VertexBuffer::getBuffer() const {
 	return &m_vertBuffer;
 }
 
-void VertexBuffer::bind() const {
+void DX11VertexBuffer::bind() const {
 	if (m_instanceBuffer) {
 		// Bind both vertex and instance buffers
-		UINT strides[2] = { m_inputLayout.getVertexSize(), m_inputLayout.getInstanceSize() };
+		UINT strides[2] = { inputLayout.getVertexSize(), inputLayout.getInstanceSize() };
 		UINT offsets[2] = { 0, 0 };
 		ID3D11Buffer* bufferPtrs[2] = { m_vertBuffer, m_instanceBuffer };
-		Application::getInstance()->getAPI()->getDeviceContext()->IASetVertexBuffers(0, 2, bufferPtrs, strides, offsets);
+		Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->IASetVertexBuffers(0, 2, bufferPtrs, strides, offsets);
 	} else {
 		// Bind vertex buffer
 		UINT offset = 0;
-		Application::getInstance()->getAPI()->getDeviceContext()->IASetVertexBuffers(0, 1, &m_vertBuffer, &m_stride, &offset);
+		Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->IASetVertexBuffers(0, 1, &m_vertBuffer, &m_stride, &offset);
 	}
 }

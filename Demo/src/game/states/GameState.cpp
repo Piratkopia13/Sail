@@ -29,12 +29,12 @@ GameState::GameState(StateStack& stack)
 
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet<DeferredGeometryShader>();
-	//auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+	//auto* shader = &m_app->getResourceManager().getShaderSet<DeferredGeometryShader>();
+	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(.5f), shader);
-	m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
-	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader);
+	//m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
+	//m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader);
 
 	m_scene.setLightSetup(&m_lights);
 
@@ -45,7 +45,7 @@ GameState::GameState(StateStack& stack)
 	transform.setTranslation(glm::vec3(1.2f, 1.0f, 1.f));
 	m_scene.addEntity(MOVE(e));
 
-	e = Entity::Create();
+	/*e = Entity::Create();
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 1.f, 0.f));
 	m_scene.addEntity(MOVE(e));
@@ -53,7 +53,7 @@ GameState::GameState(StateStack& stack)
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(MOVE(e));
+	m_scene.addEntity(MOVE(e));*/
 
 	/*Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader);
 	e = Entity::Create();
@@ -61,15 +61,15 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(MOVE(e));*/
 
-	e = Entity::Create();
-	auto* textComp = e->addComponent<TextComponent>();
-	m_fpsText = textComp->addText(Text::Create(L"FPSText"));
-	m_debugCamText = textComp->addText(Text::Create(L"CamText"));
-	m_scene.addEntity(MOVE(e));
+	//e = Entity::Create();
+	//auto* textComp = e->addComponent<TextComponent>();
+	//m_fpsText = textComp->addText(Text::Create(L"FPSText"));
+	//m_debugCamText = textComp->addText(Text::Create(L"CamText"));
+	//m_scene.addEntity(MOVE(e));
 
-	// Set up HUD texts
-	if (m_debugCamText)
-		m_debugCamText->setPosition(glm::vec2(0.f, 20.f));
+	//// Set up HUD texts
+	//if (m_debugCamText)
+	//	m_debugCamText->setPosition(glm::vec2(0.f, 20.f));
 
 }
 

@@ -25,8 +25,6 @@ public:
 
 	virtual void setWindowTitle(const std::string& title) override;
 	const HWND* getHwnd() const;
-	virtual unsigned int getWindowWidth() const override;
-	virtual unsigned int getWindowHeight() const override;
 
 private:
 

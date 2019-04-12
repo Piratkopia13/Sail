@@ -18,7 +18,7 @@
 //#include "HullShader.h"
 #include "../geometry/Model.h"
 #include "../camera/Camera.h"
-#include "InputLayout.h"
+#include "../../api/shader/InputLayout.h"
 
 namespace {
 	static const std::string DEFAULT_SHADER_LOCATION = "res/shaders/";
@@ -58,7 +58,7 @@ protected:
 	void setComputeShaders(ID3D10Blob** blob, UINT numBlobs);
 
 protected:
-	InputLayout inputLayout;
+	std::unique_ptr<InputLayout> inputLayout;
 	ID3D10Blob* VSBlob;
 	std::string filename;
 

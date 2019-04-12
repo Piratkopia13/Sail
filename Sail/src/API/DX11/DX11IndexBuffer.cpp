@@ -1,9 +1,15 @@
 #include "pch.h"
-#include "IndexBuffer.h"
+#include "DX11API.h"
+#include "DX11IndexBuffer.h"
 #include "Sail/Application.h"
 
-IndexBuffer::IndexBuffer(Mesh::Data& modelData) {
+IndexBuffer* IndexBuffer::Create(Mesh::Data& modelData) {
+	return new DX11IndexBuffer(modelData);
+}
 
+DX11IndexBuffer::DX11IndexBuffer(Mesh::Data& modelData) 
+	: IndexBuffer(modelData)
+{
 	ULONG* indices = new ULONG[modelData.numIndices];
 
 	// Fill the array with the model indices
@@ -24,21 +30,21 @@ IndexBuffer::IndexBuffer(Mesh::Data& modelData) {
 	indexData.pSysMem = indices;
 
 	// Create the index buffer
-	ThrowIfFailed(Application::getInstance()->getAPI()->getDevice()->CreateBuffer(&ibd, &indexData, &m_buffer));
+	ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateBuffer(&ibd, &indexData, &m_buffer));
 	// Delete indices from cpu memory
 	Memory::safeDeleteArr(indices);
 
 }
 
-IndexBuffer::~IndexBuffer() {
+DX11IndexBuffer::~DX11IndexBuffer() {
 	Memory::safeRelease(m_buffer);
 }
 
-ID3D11Buffer* const* IndexBuffer::getBuffer() const {
+ID3D11Buffer* const* DX11IndexBuffer::getBuffer() const {
 	return &m_buffer;
 }
 
-void IndexBuffer::bind() const {
+void DX11IndexBuffer::bind() const {
 	// TODO: is 32 bits too much for indices?
-	Application::getInstance()->getAPI()->getDeviceContext()->IASetIndexBuffer(m_buffer, DXGI_FORMAT_R32_UINT, 0);
+	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->IASetIndexBuffer(m_buffer, DXGI_FORMAT_R32_UINT, 0);
 }

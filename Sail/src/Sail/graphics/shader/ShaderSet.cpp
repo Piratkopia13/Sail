@@ -16,6 +16,8 @@ ShaderSet::ShaderSet(const std::string& filename)
 	, */VSBlob(nullptr)
 	, filename(filename)
 {
+	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
+
 	std::string source = Utils::readFile(DEFAULT_SHADER_LOCATION + filename);
 	if (source == "")
 		Logger::Error("Shader file is empty or does not exist: " + filename);
@@ -203,9 +205,9 @@ void ShaderSet::bind() {
 	// Don't bind if already bound
 	// This is to cut down on shader state changes
 	/*if (CurrentlyBoundShader == this)
-		return;*/
+		return;
 
-	/*auto* devCon = Application::getInstance()->getAPI()->getDeviceContext();
+	auto* devCon = Application::getInstance()->getAPI()->getDeviceContext();
 
 	if (m_vs)	m_vs->bind();
 	else		devCon->VSSetShader(nullptr, 0, 0);
@@ -226,7 +228,7 @@ void ShaderSet::bind() {
 	}
 
 	// Set input layout as active
-	inputLayout.bind();
+	inputLayout->bind();
 
 	// Set this shader as bound
 	CurrentlyBoundShader = this;
@@ -261,7 +263,7 @@ ID3D10Blob* ShaderSet::compileShader(const std::string& source, const std::strin
 }
 
 InputLayout& ShaderSet::getInputLayout() {
-	return inputLayout;
+	return *inputLayout.get();
 }
 
 // TODO: size isnt really needed, can be read from the byteOffset of the next var

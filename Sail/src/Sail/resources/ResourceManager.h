@@ -6,9 +6,9 @@
 #include "Sail/api/Texture.h"
 #include "ParsedScene.h"
 
-class DeferredGeometryShader;
+//class DeferredGeometryShader;
 class ShaderSet;
-class SoundManager;
+//class SoundManager;
 
 class ResourceManager {
 public:
@@ -65,7 +65,7 @@ public:
 	}
 
 	// SoundManager
-	SoundManager* getSoundManager();
+	//SoundManager* getSoundManager();
 
 private:
 	// Textures mapped to their filenames
@@ -76,7 +76,7 @@ private:
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, ShaderSet*> m_shaderSets;
 	// SoundManager containing all sounds
-	std::unique_ptr<SoundManager> m_soundManager;
+	//std::unique_ptr<SoundManager> m_soundManager;
 
 };
 

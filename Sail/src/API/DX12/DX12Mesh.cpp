@@ -6,9 +6,9 @@
 //#include "DX12API.h"
 
 // TODO: only define if dx12 api is used
-Mesh* Mesh::Create(Data& buildData, ShaderSet* shaderSet) {
-	return new DX12Mesh(buildData, shaderSet);
-}
+//Mesh* Mesh::Create(Data& buildData, ShaderSet* shaderSet) {
+//	return new DX12Mesh(buildData, shaderSet);
+//}
 
 DX12Mesh::DX12Mesh(Data& buildData, ShaderSet* shaderSet)
 	: Mesh(buildData, shaderSet)
