@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
-#include "../ShaderSet.h"
+#include "../ShaderPipeline.h"
 #include "../component/ConstantBuffer.h"
 #include "../component/Sampler.h"
 #include "Sail/Application.h"

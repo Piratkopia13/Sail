@@ -3,10 +3,10 @@
 
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-#include "Sail/graphics/shader/ShaderSet.h"
+#include "Sail/graphics/shader/ShaderPipeline.h"
 #include "Sail/Application.h"
 
-Mesh::Mesh(Data& buildData, ShaderSet* shaderSet)
+Mesh::Mesh(Data& buildData, ShaderPipeline* shaderSet)
 	: meshData(buildData) 
 {
 	

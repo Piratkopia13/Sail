@@ -10,7 +10,7 @@ namespace ModelFactory {
 	class ScreenQuadModel {
 	public:
 
-		static std::unique_ptr<Model> Create(ShaderSet* shaderSet) {
+		static std::unique_ptr<Model> Create(ShaderPipeline* shaderSet) {
 
 			//ShaderSet* shaderSet = Application::getResourceManager().getShaderSet<>();
 

@@ -7,7 +7,7 @@
 #include "ParsedScene.h"
 
 //class DeferredGeometryShader;
-class ShaderSet;
+class ShaderPipeline;
 //class SoundManager;
 
 class ResourceManager {
@@ -26,8 +26,8 @@ public:
 	bool hasTexture(const std::string& filename);
 
 	// Models
-	void loadModel(const std::string& filename, ShaderSet* shaderSet);
-	Model& getModel(const std::string& filename, ShaderSet* shaderSet);
+	void loadModel(const std::string& filename, ShaderPipeline* shaderSet);
+	Model& getModel(const std::string& filename, ShaderPipeline* shaderSet);
 	bool hasModel(const std::string& filename);
 
 	// ShaderSets
@@ -74,7 +74,7 @@ private:
 	// Models mapped to their filenames
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	// ShaderSets mapped to their identifiers
-	std::map<std::string, ShaderSet*> m_shaderSets;
+	std::map<std::string, ShaderPipeline*> m_shaderSets;
 	// SoundManager containing all sounds
 	//std::unique_ptr<SoundManager> m_soundManager;
 

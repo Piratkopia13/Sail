@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../shader/ShaderSet.h"
+#include "../shader/ShaderPipeline.h"
 #include "../RenderableTexture.h"
 #include "../../utils/Utils.h"
 #include "../camera/Camera.h"

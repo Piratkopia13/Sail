@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "TextComponent.h"
 #include "Sail/Application.h"
-#include "../../graphics/shader/ShaderSet.h"
+#include "../../graphics/shader/ShaderPipeline.h"
 
 TextComponent::TextComponent() {
 	//m_spriteBatch = std::make_unique<DirectX::SpriteBatch>(Application::getInstance()->getAPI()->getDeviceContext());
@@ -35,5 +35,5 @@ void TextComponent::draw() {
 	dxm->setDepthMask(GraphicsAPI::NO_MASK);
 	//dxm->setFaceCulling(GraphicsAPI::BACKFACE);
 
-	ShaderSet::CurrentlyBoundShader = nullptr;
+	ShaderPipeline::CurrentlyBoundShader = nullptr;
 }

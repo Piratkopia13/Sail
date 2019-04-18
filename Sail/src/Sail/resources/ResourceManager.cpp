@@ -2,7 +2,7 @@
 #include "ResourceManager.h"
 //#include "../graphics/shader/deferred/DeferredGeometryShader.h"
 //#include "audio/SoundManager.h"
-#include "../graphics/shader/ShaderSet.h"
+#include "../graphics/shader/ShaderPipeline.h"
 
 ResourceManager::ResourceManager() {
 	//m_soundManager = std::make_unique<SoundManager>();
@@ -54,11 +54,11 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 // Model
 //
 
-void ResourceManager::loadModel(const std::string& filename, ShaderSet* shaderSet) {
+void ResourceManager::loadModel(const std::string& filename, ShaderPipeline* shaderSet) {
 	// Insert the new model
 	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shaderSet) });
 }
-Model& ResourceManager::getModel(const std::string& filename, ShaderSet* shaderSet) {
+Model& ResourceManager::getModel(const std::string& filename, ShaderPipeline* shaderSet) {
 	auto pos = m_fbxModels.find(filename);
 	if (pos == m_fbxModels.end()) {
 		// Model was not yet loaded, load it and return

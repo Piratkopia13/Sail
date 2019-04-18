@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "ForwardRenderer.h"
-#include "../shader/ShaderSet.h"
+#include "../shader/ShaderPipeline.h"
 #include "../light/LightSetup.h"
 
 ForwardRenderer::ForwardRenderer() {
@@ -43,7 +43,7 @@ void ForwardRenderer::end() {
 void ForwardRenderer::present(RenderableTexture* output) {
 
 	for (RenderCommand& command : commandQueue) {
-		ShaderSet* shader = command.mesh->getMaterial()->getShader();
+		ShaderPipeline* shader = command.mesh->getMaterial()->getShader();
 		shader->bind();
 
 		shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4));

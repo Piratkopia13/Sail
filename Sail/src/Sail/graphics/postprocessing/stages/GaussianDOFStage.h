@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PostProcessStage.h"
-#include "../../shader/ShaderSet.h"
+#include "../../shader/ShaderPipeline.h"
 #include "../../shader/component/ConstantBuffer.h"
 #include "../../shader/component/Sampler.h"
 #include "Sail/Application.h"

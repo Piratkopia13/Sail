@@ -10,7 +10,7 @@ namespace {
 
 class ParsedScene {
 public:
-	ParsedScene(const std::string& filename, ShaderSet* shaderSet);
+	ParsedScene(const std::string& filename, ShaderPipeline* shaderSet);
 
 	~ParsedScene();
 	Model* getModel();

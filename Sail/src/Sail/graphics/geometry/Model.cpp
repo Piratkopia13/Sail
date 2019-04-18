@@ -2,10 +2,10 @@
 #include "Model.h"
 
 #include "../shader/basic/SimpleColorShader.h"
-#include "../shader/ShaderSet.h"
+#include "../shader/ShaderPipeline.h"
 #include "Material.h"
 
-Model::Model(Mesh::Data& buildData, ShaderSet* shaderSet) {
+Model::Model(Mesh::Data& buildData, ShaderPipeline* shaderSet) {
 
 	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shaderSet)));
 

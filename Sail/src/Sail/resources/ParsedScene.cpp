@@ -3,7 +3,7 @@
 #include "../graphics/geometry/Model.h"
 #include "../utils/Utils.h"
 
-ParsedScene::ParsedScene(const std::string& filename, ShaderSet* shaderSet) {
+ParsedScene::ParsedScene(const std::string& filename, ShaderPipeline* shaderSet) {
 
 	if (filename.substr(filename.size() - 3) != "fbx") {
 		Logger::Error("Only FBX models are currently supported! Tried to load \"" + filename + "\"");

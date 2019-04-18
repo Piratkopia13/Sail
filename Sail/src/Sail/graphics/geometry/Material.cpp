@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "Material.h"
-#include "../shader/ShaderSet.h"
+#include "../shader/ShaderPipeline.h"
 #include "Sail/Application.h"
 
-Material::Material(ShaderSet* shaderSet)
+Material::Material(ShaderPipeline* shaderSet)
 	: m_customSRVs(nullptr)
 	, m_numTextures(3)
 	, m_shader(shaderSet)
@@ -109,7 +109,7 @@ const Material::PhongSettings& Material::getPhongSettings() const {
 	return m_phongSettings;
 }
 
-ShaderSet* Material::getShader() const {
+ShaderPipeline* Material::getShader() const {
 	return m_shader;
 }
 

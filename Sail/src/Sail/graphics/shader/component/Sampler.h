@@ -8,7 +8,7 @@ namespace ShaderComponent {
 	class Sampler {
 
 	public:
-		Sampler(D3D11_TEXTURE_ADDRESS_MODE adressMode = D3D11_TEXTURE_ADDRESS_WRAP, D3D11_FILTER filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR, BIND_SHADER bindShader = PS, UINT slot = 0);
+		Sampler(Texture::ADDRESS_MODE adressMode = Texture::WRAP, Texture::FILTER filter = Texture::MIN_MAG_MIP_LINEAR, BIND_SHADER bindShader = PS, UINT slot = 0);
 		~Sampler();
 
 		void bind();

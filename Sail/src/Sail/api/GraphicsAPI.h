@@ -25,7 +25,7 @@ public:
 public:
 	static GraphicsAPI* Create();
 	GraphicsAPI() { };
-	~GraphicsAPI() { };
+	virtual ~GraphicsAPI() { };
 
 	virtual bool init(Window* window) = 0;
 	virtual void clear(const glm::vec4& color) = 0;

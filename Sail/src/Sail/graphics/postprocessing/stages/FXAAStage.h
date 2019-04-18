@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PostProcessStage.h"
-#include "../../shader/ShaderSet.h"
+#include "../../shader/ShaderPipeline.h"
 
 class FXAAStage : public PostProcessStage {
 public:

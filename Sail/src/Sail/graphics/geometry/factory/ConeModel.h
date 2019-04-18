@@ -7,7 +7,7 @@ namespace ModelFactory {
 
 	class ConeModel {
 	public:
-		static std::unique_ptr<Model> Create(const glm::vec3& halfSizes, ShaderSet* shaderSet) {
+		static std::unique_ptr<Model> Create(const glm::vec3& halfSizes, ShaderPipeline* shaderSet) {
 
 			const int numVerts = 36;
 

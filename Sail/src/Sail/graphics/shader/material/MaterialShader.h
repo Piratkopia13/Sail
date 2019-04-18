@@ -2,14 +2,14 @@
 
 #include <d3d11.h>
 #include <glm/glm.hpp>
-#include "../ShaderSet.h"
+#include "../ShaderPipeline.h"
 #include "../component/ConstantBuffer.h"
 #include "../component/Sampler.h"
 #include "Sail/Application.h"
 //#include "../../Lights.h"
 #include "../../geometry/Material.h"
 
-class MaterialShader : public ShaderSet {
+class MaterialShader : public ShaderPipeline {
 public:
 	MaterialShader();
 	~MaterialShader();

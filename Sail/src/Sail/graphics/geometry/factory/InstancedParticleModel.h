@@ -9,7 +9,7 @@ namespace ModelFactory {
 
 	class InstancedParticleModel {
 	public:
-		static std::unique_ptr<Model> Create(UINT instances, ShaderSet* shaderSet) {
+		static std::unique_ptr<Model> Create(UINT instances, ShaderPipeline* shaderSet) {
 
 			const int numVerts = 1;
 			glm::vec3* positions = new glm::vec3[numVerts]{

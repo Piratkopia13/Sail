@@ -9,7 +9,7 @@ namespace ModelFactory {
 
 	class SphereModel {
 	public:
-		static std::unique_ptr<Model> Create(float radius, float numFaces, ShaderSet* shaderSet) {
+		static std::unique_ptr<Model> Create(float radius, float numFaces, ShaderPipeline* shaderSet) {
 
 			//const int numVerts = 4;
 			//glm::vec3* positions = new glm::vec3[numVerts]{

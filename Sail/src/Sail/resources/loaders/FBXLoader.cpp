@@ -9,7 +9,7 @@
 FbxManager* FBXLoader::s_manager = FbxManager::Create();
 FbxIOSettings* FBXLoader::s_ios = FbxIOSettings::Create(s_manager, IOSROOT);
 
-FBXLoader::FBXLoader(const std::string& filepath, ShaderSet* shaderSet) 
+FBXLoader::FBXLoader(const std::string& filepath, ShaderPipeline* shaderSet) 
 	: m_filepath(filepath)
 	, m_shaderSet(shaderSet)
 {

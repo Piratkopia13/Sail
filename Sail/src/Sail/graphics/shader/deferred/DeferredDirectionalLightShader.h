@@ -2,7 +2,7 @@
 
 #include <d3d11.h>
 #include <glm/glm.hpp>
-#include "../ShaderSet.h"
+#include "../ShaderPipeline.h"
 #include "../component/ConstantBuffer.h"
 #include "../component/Sampler.h"
 #include "Sail/Application.h"

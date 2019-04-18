@@ -19,7 +19,7 @@ public:
 public:
 	static InputLayout* InputLayout::Create();
 	InputLayout();
-	~InputLayout();
+	virtual ~InputLayout();
 
 	virtual void pushFloat(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0) = 0;
 	virtual void pushVec2(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0) = 0;

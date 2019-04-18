@@ -2,7 +2,7 @@
 #include "MaterialShader.h"
 
 MaterialShader::MaterialShader()
-	: ShaderSet("MaterialShader.hlsl")
+	: ShaderPipeline("MaterialShader.hlsl")
 	, m_clippingPlaneHasChanged(false)
 	//, m_cameraPosHasChanged(false)
 {
@@ -90,7 +90,7 @@ void MaterialShader::setClippingPlane(const glm::vec4& clippingPlane) {
 void MaterialShader::bind() {
 
 	// Call parent to bind shaders
-	ShaderSet::bind();
+	ShaderPipeline::bind();
 
 	//// Set input layout as active
 	//inputLayout.bind();

@@ -10,7 +10,7 @@
 //	return new DX12Mesh(buildData, shaderSet);
 //}
 
-DX12Mesh::DX12Mesh(Data& buildData, ShaderSet* shaderSet)
+DX12Mesh::DX12Mesh(Data& buildData, ShaderPipeline* shaderSet)
 	: Mesh(buildData, shaderSet)
 {
 

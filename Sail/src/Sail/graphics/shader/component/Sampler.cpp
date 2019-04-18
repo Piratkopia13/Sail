@@ -5,7 +5,7 @@
 
 namespace ShaderComponent {
 
-	Sampler::Sampler(D3D11_TEXTURE_ADDRESS_MODE addressMode, D3D11_FILTER filter, BIND_SHADER bindShader, UINT slot)
+	Sampler::Sampler(Texture::ADDRESS_MODE addressMode, Texture::FILTER filter, BIND_SHADER bindShader, UINT slot)
 		: m_bindShader(bindShader)
 		, m_slot(slot)
 	{

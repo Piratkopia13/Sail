@@ -1,7 +1,7 @@
 #pragma once
 
 #include "API/DX11/DX11RenderableTexture.h"
-#include "../../shader/ShaderSet.h"
+#include "../../shader/ShaderPipeline.h"
 #include "../../renderer/Renderer.h"
 
 class Model;

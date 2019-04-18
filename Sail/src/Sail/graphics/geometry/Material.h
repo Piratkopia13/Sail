@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 
-class ShaderSet;
+class ShaderPipeline;
 
 class Material {
 public:
@@ -24,7 +24,7 @@ public:
 	};
 
 public:
-	Material(ShaderSet* shaderSet);
+	Material(ShaderPipeline* shaderSet);
 	~Material();
 
 	void bind();
@@ -57,7 +57,7 @@ public:
 	//const glm::vec4& getColor() const;
 	const PhongSettings& getPhongSettings() const;
 
-	ShaderSet* getShader() const;
+	ShaderPipeline* getShader() const;
 
 	//const bool* getTextureFlags() const;// TODO: remove
 
@@ -65,7 +65,7 @@ private:
 	void getAndInsertTexture(const std::string& filename, int arraySlot);
 
 private:
-	ShaderSet* m_shader;
+	ShaderPipeline* m_shader;
 
 	PhongSettings m_phongSettings;
 

@@ -6,7 +6,7 @@
 #include "Sail/api/Mesh.h"
 
 // Forward declarations
-class ShaderSet;
+class ShaderPipeline;
 class Material;
 
 class Model {
@@ -16,7 +16,7 @@ public:
 public: 
 	//Model(std::vector<Mesh::Data>& data, ShaderSet* shaderSet);
 	Model();
-	Model(Mesh::Data& data, ShaderSet* shaderSet);
+	Model(Mesh::Data& data, ShaderPipeline* shaderSet);
 	//Model(const std::string& path, ShaderSet* shaderSet);
 	~Model();
 

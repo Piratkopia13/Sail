@@ -7,7 +7,7 @@ namespace ModelFactory {
 
 	class PlaneModel {
 	public:
-		static std::unique_ptr<Model> Create(const glm::vec2& halfSizes, ShaderSet* shaderSet, const glm::vec2& texCoordScale = glm::vec2(1.f)) {
+		static std::unique_ptr<Model> Create(const glm::vec2& halfSizes, ShaderPipeline* shaderSet, const glm::vec2& texCoordScale = glm::vec2(1.f)) {
 
 			const int numVerts = 4;
 			glm::vec3* positions = new glm::vec3[numVerts]{

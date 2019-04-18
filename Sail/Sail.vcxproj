@@ -223,7 +223,7 @@
     <ClCompile Include="src\Sail\graphics\shader\component\ConstantBuffer.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\component\Sampler.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\material\MaterialShader.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\ShaderSet.cpp" />
+    <ClCompile Include="src\Sail\graphics\shader\ShaderPipeline.cpp" />
     <ClCompile Include="src\Sail\graphics\text\SailFont.cpp" />
     <ClCompile Include="src\Sail\graphics\text\Text.cpp" />
     <ClCompile Include="src\API\DX11\resources\DX11Texture.cpp" />
@@ -258,7 +258,9 @@
     <ClInclude Include="src\Sail\api\PipelineStateObject.h" />
     <ClInclude Include="src\Sail\api\RenderableTexture.h" />
     <ClInclude Include="src\Sail\api\Shader.h" />
+    <ClInclude Include="src\Sail\api\shader\GraphicsPipelineState.h" />
     <ClInclude Include="src\Sail\api\shader\InputLayout.h" />
+    <ClInclude Include="src\Sail\api\shader\ShaderCompiler.h" />
     <ClInclude Include="src\Sail\api\Texture.h" />
     <ClInclude Include="src\Sail\api\VertexBuffer.h" />
     <ClInclude Include="src\Sail\api\Window.h" />
@@ -307,7 +309,7 @@
     <ClInclude Include="src\Sail\graphics\shader\component\ConstantBuffer.h" />
     <ClInclude Include="src\Sail\graphics\shader\component\Sampler.h" />
     <ClInclude Include="src\Sail\graphics\shader\material\MaterialShader.h" />
-    <ClInclude Include="src\Sail\graphics\shader\ShaderSet.h" />
+    <ClInclude Include="src\Sail\graphics\shader\ShaderPipeline.h" />
     <ClInclude Include="src\Sail\graphics\text\SailFont.h" />
     <ClInclude Include="src\Sail\graphics\text\Text.h" />
     <ClInclude Include="src\Sail\patterns\Observer.h" />
