@@ -17,7 +17,7 @@ namespace ShaderComponent {
 		ID3D11SamplerState* m_samplerState;
 		BIND_SHADER m_bindShader;
 		UINT m_slot;
-
+		asd
 	};
 
 }

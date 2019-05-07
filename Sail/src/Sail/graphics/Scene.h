@@ -5,7 +5,7 @@
 #include "renderer/DeferredRenderer.h"
 #include "camera/Camera.h"
 #include "../events/Events.h"
-#include "postprocessing/PostProcessPipeline.h"
+//#include "postprocessing/PostProcessPipeline.h"
 
 class LightSetup;
 // TODO: make this class virtual and have the actual scene in the demo/game project

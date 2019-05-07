@@ -3,9 +3,6 @@
 #include <d3d11.h>
 #include <glm/glm.hpp>
 #include "../ShaderPipeline.h"
-#include "../component/ConstantBuffer.h"
-#include "../component/Sampler.h"
-#include "Sail/Application.h"
 //#include "../../Lights.h"
 #include "../../geometry/Material.h"
 

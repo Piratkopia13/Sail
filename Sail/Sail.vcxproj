@@ -216,12 +216,9 @@
     <ClCompile Include="src\Sail\graphics\geometry\spatial\AABB.cpp" />
     <ClCompile Include="src\Sail\graphics\light\LightSetup.cpp" />
     <ClCompile Include="src\Sail\graphics\Particle.cpp" />
-    <ClCompile Include="src\Sail\graphics\postprocessing\PostProcessPipeline.cpp" />
     <ClCompile Include="src\Sail\graphics\renderer\ForwardRenderer.cpp" />
     <ClCompile Include="src\Sail\graphics\renderer\Renderer.cpp" />
     <ClCompile Include="src\Sail\graphics\Scene.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\component\ConstantBuffer.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\component\Sampler.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\material\MaterialShader.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\ShaderPipeline.cpp" />
     <ClCompile Include="src\Sail\graphics\text\SailFont.cpp" />
@@ -252,7 +249,7 @@
     <ClInclude Include="src\API\DX12\DX12Mesh.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Sail.h" />
-    <ClInclude Include="src\Sail\api\ConstantBuffer.h" />
+    <ClInclude Include="src\Sail\api\shader\ConstantBuffer.h" />
     <ClInclude Include="src\Sail\api\IndexBuffer.h" />
     <ClInclude Include="src\Sail\api\Mesh.h" />
     <ClInclude Include="src\Sail\api\PipelineStateObject.h" />
@@ -260,6 +257,7 @@
     <ClInclude Include="src\Sail\api\Shader.h" />
     <ClInclude Include="src\Sail\api\shader\GraphicsPipelineState.h" />
     <ClInclude Include="src\Sail\api\shader\InputLayout.h" />
+    <ClInclude Include="src\Sail\api\shader\Sampler.h" />
     <ClInclude Include="src\Sail\api\shader\ShaderCompiler.h" />
     <ClInclude Include="src\Sail\api\Texture.h" />
     <ClInclude Include="src\Sail\api\VertexBuffer.h" />
@@ -300,14 +298,11 @@
     <ClInclude Include="src\Sail\graphics\light\LightSetup.h" />
     <ClInclude Include="src\Sail\graphics\light\PointLight.h" />
     <ClInclude Include="src\Sail\graphics\Particle.h" />
-    <ClInclude Include="src\Sail\graphics\postprocessing\PostProcessPipeline.h" />
     <ClInclude Include="src\Sail\graphics\postprocessing\stages\BloomStage.h" />
     <ClInclude Include="src\Sail\graphics\renderer\ForwardRenderer.h" />
     <ClInclude Include="src\Sail\graphics\renderer\Renderer.h" />
     <ClInclude Include="src\Sail\graphics\Scene.h" />
     <ClInclude Include="src\Sail\graphics\shader\component\BindShader.h" />
-    <ClInclude Include="src\Sail\graphics\shader\component\ConstantBuffer.h" />
-    <ClInclude Include="src\Sail\graphics\shader\component\Sampler.h" />
     <ClInclude Include="src\Sail\graphics\shader\material\MaterialShader.h" />
     <ClInclude Include="src\Sail\graphics\shader\ShaderPipeline.h" />
     <ClInclude Include="src\Sail\graphics\text\SailFont.h" />

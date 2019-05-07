@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Model.h"
 
-#include "../shader/basic/SimpleColorShader.h"
+//#include "../shader/basic/SimpleColorShader.h"
 #include "../shader/ShaderPipeline.h"
 #include "Material.h"
 

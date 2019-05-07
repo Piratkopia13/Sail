@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../ShaderSet.h"
+#include "../ShaderPipeline.h"
 #include "../../light/PointLight.h"
 
-class DeferredPointLightShader : public ShaderSet {
+class DeferredPointLightShader : public ShaderPipeline {
 public:
 	DeferredPointLightShader();
 	~DeferredPointLightShader();

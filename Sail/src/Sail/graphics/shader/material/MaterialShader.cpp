@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "MaterialShader.h"
+#include "Sail/Application.h"
 
 MaterialShader::MaterialShader()
 	: ShaderPipeline("MaterialShader.hlsl")
@@ -34,7 +35,7 @@ MaterialShader::MaterialShader()
 	inputLayout->pushVec3(InputLayout::NORMAL, "NORMAL", 0);
 	inputLayout->pushVec3(InputLayout::TANGENT, "TANGENT", 0);
 	inputLayout->pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
-	inputLayout->create(VSBlob);
+	inputLayout->create(vsBlob);
 
 	// Done with the blobs, release them
 	/*Memory::safeRelease(vsBlob);

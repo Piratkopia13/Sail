@@ -9,7 +9,7 @@
 #include "Sail/api/Shader.h"
 
 #include "component/ConstantBuffer.h"
-#include "component/Sampler.h"
+#include "Sail/api/shader/Sampler.h"
 #include "VertexShader.h"
 #include "GeometryShader.h"
 #include "PixelShader.h"
@@ -34,8 +34,9 @@ public:
 	ShaderPipeline(const std::string& filename);
 	virtual ~ShaderPipeline();
 
-	/*virtual void bind();
-	virtual void bindCS(UINT csIndex = 0);*/
+	virtual void bind();
+	static void bind(ShaderPipeline& instance);
+	//virtual void bindCS(UINT csIndex = 0);
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
@@ -46,24 +47,23 @@ public:
 
 	void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
-	//void setTexture2D(const std::string& name, ID3D11ShaderResourceView* srv); // FIX
+	static void setTexture2D(const std::string& name, void* handle);
 
 protected:
-	void setComputeShaders(ID3D10Blob** blob, UINT numBlobs);
+	//void setComputeShaders(ID3D10Blob** blob, UINT numBlobs);
 
 protected:
 	std::unique_ptr<InputLayout> inputLayout;
-	//ID3D10Blob* VSBlob;
 	std::string filename;
 
+	void* vsBlob; // Used for the input layout
+	void* gsBlob;
+	void* psBlob;
+	void* dsBlob;
+	void* hsBlob;
 private:
-	/*std::unique_ptr<VertexShader> m_vs;
-	std::unique_ptr<GeometryShader> m_gs;
-	std::unique_ptr<PixelShader> m_ps;
-	std::unique_ptr<DomainShader> m_ds;
-	std::unique_ptr<HullShader> m_hs;*/
-	std::vector<std::unique_ptr<ComputeShader>> m_css;
-	std::unique_ptr<Shader> m_shaders;
+	//std::vector<std::unique_ptr<ComputeShader>> m_css;
+	//std::unique_ptr<Shader> m_shaders;
 
 	struct ShaderResource {
 		ShaderResource(const std::string& name, UINT slot)
@@ -88,10 +88,12 @@ private:
 	struct ShaderSampler {
 		ShaderSampler(ShaderResource res, Texture::ADDRESS_MODE adressMode, Texture::FILTER filter, ShaderComponent::BIND_SHADER bindShader, UINT slot)
 			: res(res)
-			, sampler(adressMode, filter, bindShader, slot)
-		{}
+		{
+			sampler = std::unique_ptr<ShaderComponent::Sampler>(ShaderComponent::Sampler::Create(adressMode, filter, bindShader, slot));
+
+		}
 		ShaderResource res;
-		ShaderComponent::Sampler sampler;
+		std::unique_ptr<ShaderComponent::Sampler> sampler;
 	};
 	struct ParsedData {
 		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false;
@@ -115,11 +117,11 @@ private:
 	std::string nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray = false) const;
 	ShaderComponent::BIND_SHADER getBindShaderFromName(const std::string& name) const;
 
-	/*void setVertexShader(void* blob);
-	void setGeometryShader(void* blob);
-	void setPixelShader(void* blob);
-	void setDomainShader(void* blob);
-	void setHullShader(void* blob);*/
+	//void setVertexShader(void* blob);
+	//void setGeometryShader(void* blob);
+	//void setPixelShader(void* blob);
+	//void setDomainShader(void* blob);
+	//void setHullShader(void* blob);
 
 	UINT getSizeOfType(const std::string& typeName) const;
 	UINT findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;

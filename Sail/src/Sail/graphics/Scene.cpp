@@ -4,6 +4,7 @@
 #include "geometry/Model.h"
 #include "light/LightSetup.h"
 #include "../utils/Utils.h"
+#include "Sail/Application.h"
 
 Scene::Scene() 
 	//: m_postProcessPipeline(m_renderer)

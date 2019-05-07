@@ -8,13 +8,12 @@ ShaderPipeline* ShaderPipeline::CurrentlyBoundShader = nullptr;
 using namespace Utils::String;
 
 ShaderPipeline::ShaderPipeline(const std::string& filename)
-	: /*m_vs(nullptr)
-	, m_gs(nullptr)
-	, m_ps(nullptr)
-	, m_ds(nullptr)
-	, m_hs(nullptr)
-	, VSBlob(nullptr)
-	,*/ filename(filename)
+	: vsBlob(nullptr)
+	, gsBlob(nullptr)
+	, psBlob(nullptr)
+	, dsBlob(nullptr)
+	, hsBlob(nullptr)
+	, filename(filename)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 
@@ -24,34 +23,34 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	parse(source);
 
 	if (m_parsedData.hasVS) {
-		auto VSBlob = CompileShader(source, ShaderComponent::VS);
-		setVertexShader(VSBlob);
-		Memory::safeRelease(VSBlob); // is this right?
+		vsBlob = CompileShader(source, ShaderComponent::VS);
+		//Memory::safeRelease(VSBlob); // is this right?
 	}
 	if (m_parsedData.hasPS) {
-		void* blob = CompileShader(source, ShaderComponent::PS);
-		setPixelShader(blob);
-		Memory::safeRelease(blob);
+		psBlob = CompileShader(source, ShaderComponent::PS);
+		//Memory::safeRelease(blob);
 	}
 	if (m_parsedData.hasGS) {
-		void* blob = CompileShader(source, ShaderComponent::GS);
-		setGeometryShader(blob);
-		Memory::safeRelease(blob);
+		gsBlob = CompileShader(source, ShaderComponent::GS);
+		//Memory::safeRelease(blob);
 	}
 	if (m_parsedData.hasDS) {
-		void* blob = CompileShader(source, ShaderComponent::DS);
-		setDomainShader(blob);
-		Memory::safeRelease(blob);
+		dsBlob = CompileShader(source, ShaderComponent::DS);
+		//Memory::safeRelease(blob);
 	}
 	if (m_parsedData.hasHS) {
-		void* blob = CompileShader(source, ShaderComponent::HS);
-		setHullShader(blob);
-		Memory::safeRelease(blob);
+		hsBlob = CompileShader(source, ShaderComponent::HS);
+		//Memory::safeRelease(blob);
 	}
 }
 
 ShaderPipeline::~ShaderPipeline() {
 	//Memory::safeRelease(VSBlob); // Do this?
+}
+
+void ShaderPipeline::bind() {
+	// Call api specific implementation
+	bind(*this);
 }
 
 void ShaderPipeline::parse(const std::string& source) {
@@ -158,7 +157,7 @@ void ShaderPipeline::parseSampler(const char* source) {
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
 
 	ShaderResource res(name, static_cast<UINT>(slot));
-	m_parsedData.samplers.emplace_back(res, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_FILTER_MIN_MAG_MIP_LINEAR, bindShader, slot);
+	m_parsedData.samplers.emplace_back(res, Texture::WRAP, Texture::MIN_MAG_MIP_LINEAR, bindShader, slot);
 }
 
 void ShaderPipeline::parseTexture(const char* source) {
