@@ -2,7 +2,7 @@
 #include "ResourceManager.h"
 //#include "../graphics/shader/deferred/DeferredGeometryShader.h"
 //#include "audio/SoundManager.h"
-#include "../graphics/shader/ShaderPipeline.h"
+#include "Sail/api/shader/ShaderPipeline.h"
 
 ResourceManager::ResourceManager() {
 	//m_soundManager = std::make_unique<SoundManager>();

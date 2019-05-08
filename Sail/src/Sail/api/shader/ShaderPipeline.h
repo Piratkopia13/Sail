@@ -8,22 +8,16 @@
 
 #include "Sail/api/Shader.h"
 
-#include "component/ConstantBuffer.h"
+#include "Sail/api/shader/ConstantBuffer.h"
 #include "Sail/api/shader/Sampler.h"
-#include "VertexShader.h"
-#include "GeometryShader.h"
-#include "PixelShader.h"
-#include "ComputeShader.h"
-#include "DomainShader.h"
-#include "HullShader.h"
-#include "../geometry/Model.h"
-#include "../camera/Camera.h"
-#include "../../api/shader/InputLayout.h"
+#include "Sail/graphics/geometry/Model.h"
+#include "Sail/graphics/camera/Camera.h"
+#include "InputLayout.h"
 
 namespace {
 	static const std::string DEFAULT_SHADER_LOCATION = "res/shaders/";
 }
-
+// TODO: potato
 class ShaderPipeline {
 
 	friend class Text;
@@ -35,19 +29,22 @@ public:
 	virtual ~ShaderPipeline();
 
 	virtual void bind();
-	static void bind(ShaderPipeline& instance);
+
+	// The following static methods are to be implemented in APIs
+	static void Bind(ShaderPipeline* instance);
+	static void* CompileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType);
+	static void SetTexture2D(ShaderPipeline* instance, const std::string& name, void* handle);
 	//virtual void bindCS(UINT csIndex = 0);
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
 
-	static void* CompileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType);
+
 	//static ID3D10Blob* compileShader(const std::string& source, const std::string& entryPoint, const std::string& shaderVersion); // Remove, its replaced by the static version above
 	InputLayout& getInputLayout();
 
 	void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
-	static void setTexture2D(const std::string& name, void* handle);
 
 protected:
 	//void setComputeShaders(ID3D10Blob** blob, UINT numBlobs);
@@ -80,10 +77,11 @@ private:
 		};
 		ShaderCBuffer(std::vector<ShaderCBuffer::CBufferVariable>& vars, void* initData, UINT size, ShaderComponent::BIND_SHADER bindShader, UINT slot)
 			: vars(vars)
-			, cBuffer(initData, size, bindShader, slot)
-		{}
+		{
+			cBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(ShaderComponent::ConstantBuffer::Create(initData, size, bindShader, slot));
+		}
 		std::vector<CBufferVariable> vars;
-		ShaderComponent::ConstantBuffer cBuffer;
+		std::unique_ptr <ShaderComponent::ConstantBuffer> cBuffer;
 	};
 	struct ShaderSampler {
 		ShaderSampler(ShaderResource res, Texture::ADDRESS_MODE adressMode, Texture::FILTER filter, ShaderComponent::BIND_SHADER bindShader, UINT slot)

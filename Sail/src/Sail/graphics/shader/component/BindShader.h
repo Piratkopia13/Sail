@@ -2,7 +2,7 @@
 
 namespace ShaderComponent {
 
-	enum BIND_SHADER : UINT8 {
+	enum BIND_SHADER : unsigned char {
 		VS = 1,
 		PS = 2,
 		GS = 4,

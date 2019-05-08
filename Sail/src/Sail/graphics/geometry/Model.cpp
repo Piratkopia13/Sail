@@ -2,7 +2,7 @@
 #include "Model.h"
 
 //#include "../shader/basic/SimpleColorShader.h"
-#include "../shader/ShaderPipeline.h"
+#include "Sail/api/shader/ShaderPipeline.h"
 #include "Material.h"
 
 Model::Model(Mesh::Data& buildData, ShaderPipeline* shaderSet) {

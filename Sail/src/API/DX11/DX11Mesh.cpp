@@ -3,7 +3,7 @@
 #include "DX11VertexBuffer.h"
 #include "DX11IndexBuffer.h"
 #include "Sail/Application.h"
-#include "Sail/graphics/shader/ShaderPipeline.h"
+#include "Sail/api/shader/ShaderPipeline.h"
 #include "DX11API.h"
 
 Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderSet) {

@@ -50,7 +50,7 @@ ShaderPipeline::~ShaderPipeline() {
 
 void ShaderPipeline::bind() {
 	// Call api specific implementation
-	bind(*this);
+	Bind(this);
 }
 
 void ShaderPipeline::parse(const std::string& source) {
@@ -277,7 +277,7 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 	for (auto& it : m_parsedData.cBuffers) {
 		for (auto& var : it.vars) {
 			if (var.name == name) {
-				ShaderComponent::ConstantBuffer& cbuffer = it.cBuffer;
+				ShaderComponent::ConstantBuffer& cbuffer = *it.cBuffer.get();
 				cbuffer.updateData(data, size, var.byteOffset);
 				return true;
 			}

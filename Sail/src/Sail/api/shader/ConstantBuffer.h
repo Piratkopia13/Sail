@@ -1,16 +1,17 @@
 #pragma once
 
-#include <string>
+#include "Sail/graphics/shader/component/BindShader.h"
 
 namespace ShaderComponent {
 
 	class ConstantBuffer {
 	public:
-		static ConstantBuffer* ConstantBuffer::Create(const std::string& name);
-		ConstantBuffer(const std::string& name) {}
+		static ConstantBuffer* ConstantBuffer::Create(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot = 0);
+		ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot = 0) {}
 		virtual ~ConstantBuffer() {}
 
-		virtual void setData(const void* data, unsigned int size) = 0;
+		virtual void updateData(const void* newData, unsigned int bufferSize, unsigned int offset = 0U) = 0;
+
 		virtual void bind() const = 0;
 	};
 

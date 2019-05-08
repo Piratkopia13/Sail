@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <sstream>
 
 // DirectX Toolkit includes
 //#include <d3d12.h>

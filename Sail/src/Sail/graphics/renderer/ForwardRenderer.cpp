@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "ForwardRenderer.h"
-#include "../shader/ShaderPipeline.h"
+#include "Sail/api/shader/ShaderPipeline.h"
 #include "../light/LightSetup.h"
 
 ForwardRenderer::ForwardRenderer() {

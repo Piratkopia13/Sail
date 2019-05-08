@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "TextComponent.h"
 #include "Sail/Application.h"
-#include "../../graphics/shader/ShaderPipeline.h"
+#include "Sail/api/shader/ShaderPipeline.h"
 
 TextComponent::TextComponent() {
 	//m_spriteBatch = std::make_unique<DirectX::SpriteBatch>(Application::getInstance()->getAPI()->getDeviceContext());

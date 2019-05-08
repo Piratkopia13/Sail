@@ -193,7 +193,10 @@
     <ClCompile Include="src\API\DX11\DX11Mesh.cpp" />
     <ClCompile Include="src\API\DX11\DX11RenderableTexture.cpp" />
     <ClCompile Include="src\API\DX11\DX11VertexBuffer.cpp" />
+    <ClCompile Include="src\API\DX11\shader\DX11ConstantBuffer.cpp" />
     <ClCompile Include="src\API\DX11\shader\DX11InputLayout.cpp" />
+    <ClCompile Include="src\API\DX11\shader\DX11Sampler.cpp" />
+    <ClCompile Include="src\API\DX11\shader\DX11ShaderPipeline.cpp" />
     <ClCompile Include="src\API\DX12\DX12Mesh.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -220,7 +223,7 @@
     <ClCompile Include="src\Sail\graphics\renderer\Renderer.cpp" />
     <ClCompile Include="src\Sail\graphics\Scene.cpp" />
     <ClCompile Include="src\Sail\graphics\shader\material\MaterialShader.cpp" />
-    <ClCompile Include="src\Sail\graphics\shader\ShaderPipeline.cpp" />
+    <ClCompile Include="src\Sail\api\shader\ShaderPipeline.cpp" />
     <ClCompile Include="src\Sail\graphics\text\SailFont.cpp" />
     <ClCompile Include="src\Sail\graphics\text\Text.cpp" />
     <ClCompile Include="src\API\DX11\resources\DX11Texture.cpp" />
@@ -245,7 +248,10 @@
     <ClInclude Include="src\API\DX11\DX11Mesh.h" />
     <ClInclude Include="src\API\DX11\DX11RenderableTexture.h" />
     <ClInclude Include="src\API\DX11\DX11VertexBuffer.h" />
+    <ClInclude Include="src\API\DX11\shader\DX11ConstantBuffer.h" />
     <ClInclude Include="src\API\DX11\shader\DX11InputLayout.h" />
+    <ClInclude Include="src\API\DX11\shader\DX11Sampler.h" />
+    <ClInclude Include="src\API\DX11\shader\DX11ShaderPipeline.h" />
     <ClInclude Include="src\API\DX12\DX12Mesh.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Sail.h" />
@@ -258,7 +264,6 @@
     <ClInclude Include="src\Sail\api\shader\GraphicsPipelineState.h" />
     <ClInclude Include="src\Sail\api\shader\InputLayout.h" />
     <ClInclude Include="src\Sail\api\shader\Sampler.h" />
-    <ClInclude Include="src\Sail\api\shader\ShaderCompiler.h" />
     <ClInclude Include="src\Sail\api\Texture.h" />
     <ClInclude Include="src\Sail\api\VertexBuffer.h" />
     <ClInclude Include="src\Sail\api\Window.h" />
@@ -304,7 +309,7 @@
     <ClInclude Include="src\Sail\graphics\Scene.h" />
     <ClInclude Include="src\Sail\graphics\shader\component\BindShader.h" />
     <ClInclude Include="src\Sail\graphics\shader\material\MaterialShader.h" />
-    <ClInclude Include="src\Sail\graphics\shader\ShaderPipeline.h" />
+    <ClInclude Include="src\Sail\api\shader\ShaderPipeline.h" />
     <ClInclude Include="src\Sail\graphics\text\SailFont.h" />
     <ClInclude Include="src\Sail\graphics\text\Text.h" />
     <ClInclude Include="src\Sail\patterns\Observer.h" />
