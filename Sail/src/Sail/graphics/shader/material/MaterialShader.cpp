@@ -3,7 +3,7 @@
 #include "Sail/Application.h"
 
 MaterialShader::MaterialShader()
-	: ShaderPipeline("MaterialShader.hlsl")
+	: Shader("MaterialShader.hlsl")
 	, m_clippingPlaneHasChanged(false)
 	//, m_cameraPosHasChanged(false)
 {
@@ -30,12 +30,12 @@ MaterialShader::MaterialShader()
 	//setPixelShader(psBlob);
 
 	// Create the input layout
-	inputLayout->pushVec3(InputLayout::POSITION, "POSITION", 0);
-	inputLayout->pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
-	inputLayout->pushVec3(InputLayout::NORMAL, "NORMAL", 0);
-	inputLayout->pushVec3(InputLayout::TANGENT, "TANGENT", 0);
-	inputLayout->pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
-	inputLayout->create(vsBlob);
+	shaderPipeline->getInputLayout().pushVec3(InputLayout::POSITION, "POSITION", 0);
+	shaderPipeline->getInputLayout().pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
+	shaderPipeline->getInputLayout().pushVec3(InputLayout::NORMAL, "NORMAL", 0);
+	shaderPipeline->getInputLayout().pushVec3(InputLayout::TANGENT, "TANGENT", 0);
+	shaderPipeline->getInputLayout().pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
+	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
 	// Done with the blobs, release them
 	/*Memory::safeRelease(vsBlob);
@@ -91,7 +91,7 @@ void MaterialShader::setClippingPlane(const glm::vec4& clippingPlane) {
 void MaterialShader::bind() {
 
 	// Call parent to bind shaders
-	ShaderPipeline::bind();
+	Shader::bind();
 
 	//// Set input layout as active
 	//inputLayout.bind();

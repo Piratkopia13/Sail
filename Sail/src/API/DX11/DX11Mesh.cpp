@@ -6,19 +6,19 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "DX11API.h"
 
-Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderSet) {
-	return new DX11Mesh(buildData, shaderSet);
+Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderPipeline) {
+	return new DX11Mesh(buildData, shaderPipeline);
 }
 
-DX11Mesh::DX11Mesh(Data& buildData, ShaderPipeline* shaderSet) 
-	: Mesh(buildData, shaderSet)
+DX11Mesh::DX11Mesh(Data& buildData, ShaderPipeline* shaderPipeline) 
+	: Mesh(buildData, shaderPipeline)
 {
 
 	//TODO: create DX11Index and Vertex buffer
 
-	material = std::make_shared<Material>(shaderSet);
+	material = std::make_shared<Material>(shaderPipeline);
 	// Create vertex buffer
-	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shaderSet->getInputLayout(), buildData));
+	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shaderPipeline->getInputLayout(), buildData));
 	// Create index buffer is indices are set
 	if (buildData.numIndices > 0) {
 		indexBuffer = std::unique_ptr<IndexBuffer>(IndexBuffer::Create(buildData));

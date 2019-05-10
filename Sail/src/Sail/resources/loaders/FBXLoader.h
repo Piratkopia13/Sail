@@ -6,7 +6,7 @@
 
 class FBXLoader {
 public:
-	FBXLoader(const std::string& filepath, ShaderPipeline* shaderSet);
+	FBXLoader(const std::string& filepath, ShaderPipeline* shaderPipeline);
 	~FBXLoader();
 
 	std::unique_ptr<Model>& getModel();
@@ -25,7 +25,7 @@ private:
 	FbxScene* m_scene;
 
 	std::string m_filepath;
-	ShaderPipeline* m_shaderSet;
+	ShaderPipeline* m_shaderPipeline;
 	std::unique_ptr<Model> m_model;
 	//std::vector<Mesh::Data> m_meshDataList;
 

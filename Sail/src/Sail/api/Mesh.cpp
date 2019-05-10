@@ -6,7 +6,7 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/Application.h"
 
-Mesh::Mesh(Data& buildData, ShaderPipeline* shaderSet)
+Mesh::Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
 	: meshData(buildData) 
 {
 	

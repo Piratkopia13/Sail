@@ -10,13 +10,13 @@
 //	return new DX12Mesh(buildData, shaderSet);
 //}
 
-DX12Mesh::DX12Mesh(Data& buildData, ShaderPipeline* shaderSet)
-	: Mesh(buildData, shaderSet)
+DX12Mesh::DX12Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
+	: Mesh(buildData, shaderPipeline)
 {
 
 	//TODO: create DX11Index and Vertex buffer
 
-	material = std::make_shared<Material>(shaderSet);
+	material = std::make_shared<Material>(shaderPipeline);
 	// Create vertex buffer
 	//vertexBuffer = std::make_unique<DX11VertexBuffer>(shaderSet->getInputLayout(), buildData);
 	//// Create index buffer is indices are set

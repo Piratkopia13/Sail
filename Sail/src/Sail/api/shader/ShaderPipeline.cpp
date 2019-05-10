@@ -15,52 +15,68 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, hsBlob(nullptr)
 	, filename(filename)
 {
-	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 
-	std::string source = Utils::readFile(DEFAULT_SHADER_LOCATION + filename);
-	if (source == "")
-		Logger::Error("Shader file is empty or does not exist: " + filename);
-	parse(source);
-
-	if (m_parsedData.hasVS) {
-		vsBlob = CompileShader(source, ShaderComponent::VS);
-		//Memory::safeRelease(VSBlob); // is this right?
-	}
-	if (m_parsedData.hasPS) {
-		psBlob = CompileShader(source, ShaderComponent::PS);
-		//Memory::safeRelease(blob);
-	}
-	if (m_parsedData.hasGS) {
-		gsBlob = CompileShader(source, ShaderComponent::GS);
-		//Memory::safeRelease(blob);
-	}
-	if (m_parsedData.hasDS) {
-		dsBlob = CompileShader(source, ShaderComponent::DS);
-		//Memory::safeRelease(blob);
-	}
-	if (m_parsedData.hasHS) {
-		hsBlob = CompileShader(source, ShaderComponent::HS);
-		//Memory::safeRelease(blob);
-	}
 }
 
 ShaderPipeline::~ShaderPipeline() {
 	//Memory::safeRelease(VSBlob); // Do this?
 }
 
+void ShaderPipeline::compile() {
+	std::string source = Utils::readFile(DEFAULT_SHADER_LOCATION + filename);
+	if (source == "")
+		Logger::Error("Shader file is empty or does not exist: " + filename);
+	parse(source);
+
+	if (parsedData.hasVS) {
+		vsBlob = compileShader(source, ShaderComponent::VS);
+		//Memory::safeRelease(VSBlob); // is this right?
+	}
+	if (parsedData.hasPS) {
+		psBlob = compileShader(source, ShaderComponent::PS);
+		//Memory::safeRelease(blob);
+	}
+	if (parsedData.hasGS) {
+		gsBlob = compileShader(source, ShaderComponent::GS);
+		//Memory::safeRelease(blob);
+	}
+	if (parsedData.hasDS) {
+		dsBlob = compileShader(source, ShaderComponent::DS);
+		//Memory::safeRelease(blob);
+	}
+	if (parsedData.hasHS) {
+		hsBlob = compileShader(source, ShaderComponent::HS);
+		//Memory::safeRelease(blob);
+	}
+
+	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
+}
+
 void ShaderPipeline::bind() {
-	// Call api specific implementation
-	Bind(this);
+	// Don't bind if already bound
+	// This is to cut down on shader state changes
+	if (CurrentlyBoundShader == this)
+		return;
+
+	for (auto& it : parsedData.cBuffers) {
+		it.cBuffer->bind();
+	}
+	for (auto& it : parsedData.samplers) {
+		it.sampler->bind();
+	}
+
+	// Set input layout as active
+	inputLayout->bind();
 }
 
 void ShaderPipeline::parse(const std::string& source) {
 	
 	// Find what shader types are contained in the source
-	if (source.find("VSMain") != std::string::npos) m_parsedData.hasVS = true;
-	if (source.find("PSMain") != std::string::npos) m_parsedData.hasPS = true;
-	if (source.find("GSMain") != std::string::npos) m_parsedData.hasGS = true;
-	if (source.find("DSMain") != std::string::npos) m_parsedData.hasDS = true;
-	if (source.find("HSMain") != std::string::npos) m_parsedData.hasHS = true;
+	if (source.find("VSMain") != std::string::npos) parsedData.hasVS = true;
+	if (source.find("PSMain") != std::string::npos) parsedData.hasPS = true;
+	if (source.find("GSMain") != std::string::npos) parsedData.hasGS = true;
+	if (source.find("DSMain") != std::string::npos) parsedData.hasDS = true;
+	if (source.find("HSMain") != std::string::npos) parsedData.hasHS = true;
 
 	// Remove comments from source
 	std::string cleanSource = removeComments(source);
@@ -73,13 +89,13 @@ void ShaderPipeline::parse(const std::string& source) {
 		int numCBuffers = 0;
 		src = cleanSource.c_str();
 		while (src = findToken("cbuffer", src))	numCBuffers++;
-		m_parsedData.cBuffers.reserve(numCBuffers);
+		parsedData.cBuffers.reserve(numCBuffers);
 	}
 	{
 		int numSamplers = 0;
 		src = cleanSource.c_str();
 		while (src = findToken("SamplerState", src)) numSamplers++;
-		m_parsedData.samplers.reserve(numSamplers);
+		parsedData.samplers.reserve(numSamplers);
 	}
 	
 	// Process all CBuffers
@@ -140,7 +156,7 @@ void ShaderPipeline::parseCBuffer(const std::string& source) {
 
 	void* initData = malloc(size);
 	memset(initData, 0, size);
-	m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot);
+	parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot);
 	free(initData);
 
 	Logger::Log(src);
@@ -157,7 +173,7 @@ void ShaderPipeline::parseSampler(const char* source) {
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
 
 	ShaderResource res(name, static_cast<UINT>(slot));
-	m_parsedData.samplers.emplace_back(res, Texture::WRAP, Texture::MIN_MAG_MIP_LINEAR, bindShader, slot);
+	parsedData.samplers.emplace_back(res, Texture::WRAP, Texture::MIN_MAG_MIP_LINEAR, bindShader, slot);
 }
 
 void ShaderPipeline::parseTexture(const char* source) {
@@ -168,7 +184,7 @@ void ShaderPipeline::parseTexture(const char* source) {
 	int slot = findNextIntOnLine(source);
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
 
-	m_parsedData.textures.emplace_back(name, slot);
+	parsedData.textures.emplace_back(name, slot);
 }
 
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
@@ -220,10 +236,10 @@ ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::st
 //	if (m_hs)	m_hs->bind();
 //	//else		devCon->HSSetShader(nullptr, 0, 0);
 //
-//	for (auto& it : m_parsedData.cBuffers) {
+//	for (auto& it : parsedData.cBuffers) {
 //		it.cBuffer.bind();
 //	}
-//	for (auto& it : m_parsedData.samplers) {
+//	for (auto& it : parsedData.samplers) {
 //		it.sampler.bind();
 //	}
 //
@@ -266,6 +282,10 @@ InputLayout& ShaderPipeline::getInputLayout() {
 	return *inputLayout.get();
 }
 
+void* ShaderPipeline::getVsBlob() {
+	return vsBlob;
+}
+
 // TODO: size isnt really needed, can be read from the byteOffset of the next var
 void ShaderPipeline::setCBufferVar(const std::string& name, const void* data, UINT size) {
 	bool success = trySetCBufferVar(name, data, size);
@@ -274,7 +294,7 @@ void ShaderPipeline::setCBufferVar(const std::string& name, const void* data, UI
 }
 
 bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data, UINT size) {
-	for (auto& it : m_parsedData.cBuffers) {
+	for (auto& it : parsedData.cBuffers) {
 		for (auto& var : it.vars) {
 			if (var.name == name) {
 				ShaderComponent::ConstantBuffer& cbuffer = *it.cBuffer.get();
@@ -288,7 +308,7 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 
 //void ShaderPipeline::setTexture2D(const std::string& name, ID3D11ShaderResourceView* srv) {
 //
-//	UINT slot = findSlotFromName(name, m_parsedData.textures);
+//	UINT slot = findSlotFromName(name, parsedData.textures);
 //	//Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, &srv);
 //
 //}

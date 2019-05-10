@@ -3,44 +3,45 @@
 #include "Sail/Application.h"
 #include "../DX11API.h"
 
-void ShaderPipeline::Bind(ShaderPipeline* instance) {
-	
-	// Don't bind if already bound
-	// This is to cut down on shader state changes
-	if (CurrentlyBoundShader == instance)
-		return;
-
-	//auto* devCon = Application::getInstance()->getAPI()->getDeviceContext();
-
-	// TODO: emulate pipeline with individual shader objects
-	//if (instance.vsBlob)	m_vs->bind();
-	////else		devCon->VSSetShader(nullptr, 0, 0);
-	//if (instance.gsBlob)	m_gs->bind();
-	////else		devCon->GSSetShader(nullptr, 0, 0);
-	//if (instance.psBlob)	m_ps->bind();
-	////else		devCon->PSSetShader(nullptr, 0, 0);
-	//if (instance.dsBlob)	m_ds->bind();
-	////else		devCon->DSSetShader(nullptr, 0, 0);
-	//if (instance.hsBlob)	m_hs->bind();
-	////else		devCon->HSSetShader(nullptr, 0, 0);
-
-	for (auto& it : instance->m_parsedData.cBuffers) {
-		it.cBuffer->bind();
-	}
-	for (auto& it : instance->m_parsedData.samplers) {
-		it.sampler->bind();
-	}
-
-	// Set input layout as active
-	instance->inputLayout->bind();
-
-	// Set this shader as bound
-	CurrentlyBoundShader = instance;
-
+ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
+	return new DX11ShaderPipeline(filename);
 }
 
-void* ShaderPipeline::CompileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType) {
+DX11ShaderPipeline::DX11ShaderPipeline(const std::string& filename) 
+	: ShaderPipeline(filename)
+	, m_vs(nullptr)
+	, m_ps(nullptr)
+	, m_ds(nullptr)
+	, m_hs(nullptr)
+	, m_gs(nullptr)
+{
+	
+}
 
+DX11ShaderPipeline::~DX11ShaderPipeline() {
+	ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(vsBlob);
+	Memory::safeRelease(compiledShader);
+}
+
+void DX11ShaderPipeline::bind() {
+	ShaderPipeline::bind();
+
+	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
+
+	// Bind or unbind shaders
+	// Shader types not used will be nullptr which will unbind any previously bound shaders of that type
+	devCon->VSSetShader(m_vs, 0, 0);
+	devCon->PSSetShader(m_ps, 0, 0);
+	devCon->GSSetShader(m_gs, 0, 0);
+	devCon->DSSetShader(m_ds, 0, 0);
+	devCon->HSSetShader(m_hs, 0, 0);
+
+
+	// Set this shader as bound
+	CurrentlyBoundShader = this;
+}
+
+void* DX11ShaderPipeline::compileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType) {
 	std::string entryPoint = "VSMain";
 	std::string shaderVersion = "vs_5_0";
 	switch (shaderType) {
@@ -88,7 +89,46 @@ void* ShaderPipeline::CompileShader(const std::string& source, ShaderComponent::
 
 	return shader;
 }
-void ShaderPipeline::SetTexture2D(ShaderPipeline* instance, const std::string& name, void* handle) {
-	UINT slot = instance->findSlotFromName(name, instance->m_parsedData.textures);
-	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, (ID3D11ShaderResourceView**)&handle);
+
+void DX11ShaderPipeline::setTexture2D(const std::string& name, void* handle) {
+	UINT slot = findSlotFromName(name, parsedData.textures);
+	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, (ID3D11ShaderResourceView * *)& handle);
+}
+
+void DX11ShaderPipeline::compile() {
+	ShaderPipeline::compile();
+
+	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
+
+	// Emulate pipeline with individual shader objects
+	if (vsBlob) {
+		std::cout << "has vs" << std::endl;
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(vsBlob);
+		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateVertexShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_vs));
+		//Memory::safeRelease(compiledShader);
+	}
+	if (psBlob) {
+		std::cout << "has ps" << std::endl;
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(psBlob);
+		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreatePixelShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ps));
+		Memory::safeRelease(compiledShader);
+	}
+	if (gsBlob) {
+		std::cout << "has gs" << std::endl;
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(gsBlob);
+		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateGeometryShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_gs));
+		Memory::safeRelease(compiledShader);
+	}
+	if (dsBlob) {
+		std::cout << "has ds" << std::endl;
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(dsBlob);
+		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateDomainShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ds));
+		Memory::safeRelease(compiledShader);
+	}
+	if (hsBlob) {
+		std::cout << "has hs" << std::endl;
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(hsBlob);
+		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateHullShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_hs));
+		Memory::safeRelease(compiledShader);
+	}
 }

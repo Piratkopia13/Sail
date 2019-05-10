@@ -24,7 +24,7 @@ public:
 	};
 
 public:
-	Material(ShaderPipeline* shaderSet);
+	Material(ShaderPipeline* ShaderPipeline);
 	~Material();
 
 	void bind();

@@ -4,16 +4,17 @@
 #include <glm/glm.hpp>
 #include "Sail/api/shader/ShaderPipeline.h"
 //#include "../../Lights.h"
+#include "Sail/graphics/shader/Shader.h"
 #include "../../geometry/Material.h"
 
-class MaterialShader : public ShaderPipeline {
+class MaterialShader : public Shader {
 public:
 	MaterialShader();
 	~MaterialShader();
 
-	void bind() override;
+	virtual void bind() override;
+	virtual void setClippingPlane(const glm::vec4& clippingPlane) override;
 
-	virtual void setClippingPlane(const glm::vec4& clippingPlane);
 	//void updateLights(const Lights& lights);
 
 	// TODO: remove this

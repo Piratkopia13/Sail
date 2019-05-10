@@ -2,6 +2,7 @@
 #include "ResourceManager.h"
 //#include "../graphics/shader/deferred/DeferredGeometryShader.h"
 //#include "audio/SoundManager.h"
+#include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 
 ResourceManager::ResourceManager() {

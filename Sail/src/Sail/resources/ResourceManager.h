@@ -8,6 +8,7 @@
 
 //class DeferredGeometryShader;
 class ShaderPipeline;
+class Shader;
 //class SoundManager;
 
 class ResourceManager {
@@ -74,7 +75,7 @@ private:
 	// Models mapped to their filenames
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	// ShaderSets mapped to their identifiers
-	std::map<std::string, ShaderPipeline*> m_shaderSets;
+	std::map<std::string, Shader*> m_shaderSets;
 	// SoundManager containing all sounds
 	//std::unique_ptr<SoundManager> m_soundManager;
 

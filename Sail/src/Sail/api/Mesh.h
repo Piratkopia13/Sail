@@ -29,8 +29,8 @@ public:
 	};
 
 public:
-	static Mesh* Create(Data& buildData, ShaderPipeline* shaderSet);
-	Mesh(Data& buildData, ShaderPipeline* shaderSet);
+	static Mesh* Create(Data& buildData, ShaderPipeline* shaderPipeline);
+	Mesh(Data& buildData, ShaderPipeline* shaderPipeline);
 	virtual ~Mesh();
 
 	virtual void draw(const Renderer& renderer) = 0;

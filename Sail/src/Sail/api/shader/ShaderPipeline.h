@@ -6,34 +6,33 @@
 #include <iostream>
 #include <glm/glm.hpp>
 
-#include "Sail/api/Shader.h"
-
 #include "Sail/api/shader/ConstantBuffer.h"
 #include "Sail/api/shader/Sampler.h"
 #include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/camera/Camera.h"
+#include "Sail/utils/Utils.h"
 #include "InputLayout.h"
 
 namespace {
 	static const std::string DEFAULT_SHADER_LOCATION = "res/shaders/";
 }
-// TODO: potato
+
 class ShaderPipeline {
-
-	friend class Text;
-
 public:
+	friend class Shader;
 	static ShaderPipeline* CurrentlyBoundShader;
+
 public:
+	static ShaderPipeline* Create(const std::string& filename);
 	ShaderPipeline(const std::string& filename);
 	virtual ~ShaderPipeline();
 
-	virtual void bind();
+	//virtual void bind();
 
 	// The following static methods are to be implemented in APIs
-	static void Bind(ShaderPipeline* instance);
-	static void* CompileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType);
-	static void SetTexture2D(ShaderPipeline* instance, const std::string& name, void* handle);
+	virtual void bind() = 0;
+	virtual void* compileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType) = 0;
+	virtual void setTexture2D(const std::string& name, void* handle) = 0;
 	//virtual void bindCS(UINT csIndex = 0);
 
 	virtual void updateCamera(Camera& cam) {};
@@ -42,11 +41,14 @@ public:
 
 	//static ID3D10Blob* compileShader(const std::string& source, const std::string& entryPoint, const std::string& shaderVersion); // Remove, its replaced by the static version above
 	InputLayout& getInputLayout();
+	void* getVsBlob();
 
 	void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
 
 protected:
+	virtual void compile();
+
 	//void setComputeShaders(ID3D10Blob** blob, UINT numBlobs);
 
 protected:
@@ -58,9 +60,7 @@ protected:
 	void* psBlob;
 	void* dsBlob;
 	void* hsBlob;
-private:
-	//std::vector<std::unique_ptr<ComputeShader>> m_css;
-	//std::unique_ptr<Shader> m_shaders;
+
 
 	struct ShaderResource {
 		ShaderResource(const std::string& name, UINT slot)
@@ -105,7 +105,12 @@ private:
 			textures.clear();
 		}
 	};
-	ParsedData m_parsedData;
+	ParsedData parsedData;
+
+private:
+	//std::vector<std::unique_ptr<ComputeShader>> m_css;
+	//std::unique_ptr<Shader> m_shaders;
+
 
 private:
 	void parse(const std::string& source);
@@ -122,5 +127,7 @@ private:
 	//void setHullShader(void* blob);
 
 	UINT getSizeOfType(const std::string& typeName) const;
+
+protected:
 	UINT findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;
 };

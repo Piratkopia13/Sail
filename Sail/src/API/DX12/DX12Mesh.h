@@ -5,7 +5,7 @@
 
 class DX12Mesh : public Mesh {
 public:
-	DX12Mesh(Data& buildData, ShaderPipeline* shaderSet);
+	DX12Mesh(Data& buildData, ShaderPipeline* shaderPipeline);
 	~DX12Mesh();
 
 	virtual void draw(const Renderer& renderer) override;

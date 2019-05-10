@@ -14,6 +14,14 @@
 	if (FAILED(result))			\
 		throw std::exception(); \
 
+// Inherit this to make a class non-inheritable
+template<typename T>
+class MakeFinal {
+private:
+	~MakeFinal() { };
+	friend T;
+};
+
 class Memory {
 
 public:

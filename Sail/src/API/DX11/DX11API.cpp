@@ -69,7 +69,7 @@ bool DX11API::init(Window* window) {
 
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	ZeroMemory(&swapDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
-	swapDesc.BufferCount = 1; // Double buffered
+	swapDesc.BufferCount = 2; // Double buffered
 	swapDesc.BufferDesc.Width = window->getWindowWidth();
 	swapDesc.BufferDesc.Width = window->getWindowHeight();
 	swapDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -77,7 +77,7 @@ bool DX11API::init(Window* window) {
 	swapDesc.BufferDesc.RefreshRate.Denominator = 1;
 	swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapDesc.OutputWindow = *static_cast<Win32Window*>(window)->getHwnd();
-	swapDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapDesc.Windowed = true;
 	swapDesc.SampleDesc.Count = m_aaSamples;
 	swapDesc.SampleDesc.Quality = 0;

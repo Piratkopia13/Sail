@@ -3,10 +3,10 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/Application.h"
 
-Material::Material(ShaderPipeline* shaderSet)
+Material::Material(ShaderPipeline* shaderPipeline)
 	: m_customSRVs(nullptr)
 	, m_numTextures(3)
-	, m_shader(shaderSet)
+	, m_shader(shaderPipeline)
 {
 	m_phongSettings.ka = 1.f;
 	m_phongSettings.kd = 1.f;
@@ -28,11 +28,11 @@ void Material::bind() {
 	m_shader->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
 
 	if (m_phongSettings.hasDiffuseTexture)
-		m_shader->SetTexture2D(m_shader, "sys_texDiffuse", m_srvs[0]);
+		m_shader->setTexture2D("sys_texDiffuse", m_srvs[0]);
 	if (m_phongSettings.hasNormalTexture)
-		m_shader->SetTexture2D(m_shader, "sys_texNormal", m_srvs[1]);
+		m_shader->setTexture2D("sys_texNormal", m_srvs[1]);
 	if (m_phongSettings.hasSpecularTexture)
-		m_shader->SetTexture2D(m_shader, "sys_texSpecular", m_srvs[2]);
+		m_shader->setTexture2D("sys_texSpecular", m_srvs[2]);
 	//m_shader->bind();
 }
 

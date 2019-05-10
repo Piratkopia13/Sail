@@ -5,9 +5,9 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Material.h"
 
-Model::Model(Mesh::Data& buildData, ShaderPipeline* shaderSet) {
+Model::Model(Mesh::Data& buildData, ShaderPipeline* shaderPipeline) {
 
-	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shaderSet)));
+	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shaderPipeline)));
 
 	// TODO: reuse materials (?)
 	//m_material = std::make_shared<Material>(shaderSet);
