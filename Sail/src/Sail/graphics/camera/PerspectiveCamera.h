@@ -12,11 +12,16 @@ public:
 		, m_aspectRatio(aspectRatio)
 	{
 		m_projectionMatrix = glm::perspectiveFovLH(m_fov, aspectRatio, 1.0f, m_nearZ, m_farZ);
+		/*m_projectionMatrix = glm::scale(m_projectionMatrix, glm::vec3(1.f, 1.f, 0.5f));
+		m_projectionMatrix = glm::translate(m_projectionMatrix, glm::vec3(0.f, 0.f, 0.5f));*/
+
 	};
 
 	void resize(int width, int height) {
 		m_aspectRatio = static_cast<float>(width) / height;
 		m_projectionMatrix = glm::perspectiveFovLH(m_fov, m_aspectRatio, 1.0f, m_nearZ, m_farZ);
+		/*m_projectionMatrix = glm::scale(m_projectionMatrix, glm::vec3(1.f, 1.f, 0.5f));
+		m_projectionMatrix = glm::translate(m_projectionMatrix, glm::vec3(0.f, 0.f, 0.5f));*/
 	}
 
 	float getFOV() const {

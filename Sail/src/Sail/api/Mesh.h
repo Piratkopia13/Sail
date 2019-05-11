@@ -13,6 +13,25 @@ public:
 	typedef std::unique_ptr<Mesh> Ptr;
 	typedef std::shared_ptr<Mesh> SPtr;
 
+	struct vec2 {
+		glm::vec2 vec;
+		vec2(float x = 0.f, float y = 0.f) {
+			this->vec.x = x; this->vec.y = y;
+		}
+	};
+	struct vec3 {
+		glm::vec3 vec;
+		vec3(float x = 0.f, float y = 0.f, float z = 0.f) {
+			this->vec.x = x; this->vec.y = y; this->vec.z = z;
+		}
+	};
+	struct vec4 {
+		glm::vec4 vec;
+		vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) {
+			this->vec.x = x; this->vec.y = y; this->vec.z = z; this->vec.w = w;
+		}
+	};
+
 	struct Data {
 		Data() : numIndices(0), numInstances(0), indices(nullptr), numVertices(0), normals(nullptr), positions(nullptr), colors(nullptr), texCoords(nullptr), tangents(nullptr), bitangents(nullptr) {};
 		void deepCopy(const Data& other);
@@ -20,12 +39,12 @@ public:
 		ULONG* indices;
 		UINT numVertices;
 		UINT numInstances;
-		glm::vec3* positions;
-		glm::vec3* normals;
-		glm::vec4* colors;
-		glm::vec2* texCoords;
-		glm::vec3* tangents;
-		glm::vec3* bitangents;
+		Mesh::vec3* positions;
+		Mesh::vec3* normals;
+		Mesh::vec4* colors;
+		Mesh::vec2* texCoords;
+		Mesh::vec3* tangents;
+		Mesh::vec3* bitangents;
 	};
 
 public:

@@ -13,9 +13,6 @@ Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderPipeline) {
 DX11Mesh::DX11Mesh(Data& buildData, ShaderPipeline* shaderPipeline) 
 	: Mesh(buildData, shaderPipeline)
 {
-
-	//TODO: create DX11Index and Vertex buffer
-
 	material = std::make_shared<Material>(shaderPipeline);
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shaderPipeline->getInputLayout(), buildData));

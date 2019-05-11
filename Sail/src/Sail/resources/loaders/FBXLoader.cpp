@@ -148,11 +148,11 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 		return;
 	}
 
-	buildData.positions = new glm::vec3[buildData.numVertices];
-	buildData.normals = new glm::vec3[buildData.numVertices];
-	buildData.texCoords = new glm::vec2[buildData.numVertices];
-	buildData.tangents = new glm::vec3[buildData.numVertices];
-	buildData.bitangents = new glm::vec3[buildData.numVertices];
+	buildData.positions = new Mesh::vec3[buildData.numVertices];
+	buildData.normals = new Mesh::vec3[buildData.numVertices];
+	buildData.texCoords = new Mesh::vec2[buildData.numVertices];
+	buildData.tangents = new Mesh::vec3[buildData.numVertices];
+	buildData.bitangents = new Mesh::vec3[buildData.numVertices];
 
 	bool norms = true, uvs = true, tangs = true, bitangs = true;
 
@@ -170,17 +170,17 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 			/*
 			--	Positions
 			*/
-			buildData.positions[vertexIndex].x = -(float)cp[indices[vertexIndex]][0];
-			buildData.positions[vertexIndex].y = (float)cp[indices[vertexIndex]][1];
-			buildData.positions[vertexIndex].z = (float)cp[indices[vertexIndex]][2];
+			buildData.positions[vertexIndex].vec.x = -(float)cp[indices[vertexIndex]][0];
+			buildData.positions[vertexIndex].vec.y = (float)cp[indices[vertexIndex]][1];
+			buildData.positions[vertexIndex].vec.z = (float)cp[indices[vertexIndex]][2];
 
-			buildData.positions[vertexIndex + 1].x = -(float)cp[indices[vertexIndex + 2]][0];
-			buildData.positions[vertexIndex + 1].y = (float)cp[indices[vertexIndex + 2]][1];
-			buildData.positions[vertexIndex + 1].z = (float)cp[indices[vertexIndex + 2]][2];
+			buildData.positions[vertexIndex + 1].vec.x = -(float)cp[indices[vertexIndex + 2]][0];
+			buildData.positions[vertexIndex + 1].vec.y = (float)cp[indices[vertexIndex + 2]][1];
+			buildData.positions[vertexIndex + 1].vec.z = (float)cp[indices[vertexIndex + 2]][2];
 
-			buildData.positions[vertexIndex + 2].x = -(float)cp[indices[vertexIndex + 1]][0];
-			buildData.positions[vertexIndex + 2].y = (float)cp[indices[vertexIndex + 1]][1];
-			buildData.positions[vertexIndex + 2].z = (float)cp[indices[vertexIndex + 1]][2];
+			buildData.positions[vertexIndex + 2].vec.x = -(float)cp[indices[vertexIndex + 1]][0];
+			buildData.positions[vertexIndex + 2].vec.y = (float)cp[indices[vertexIndex + 1]][1];
+			buildData.positions[vertexIndex + 2].vec.z = (float)cp[indices[vertexIndex + 1]][2];
 
 
 			/*
@@ -203,19 +203,19 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 
 					FbxVector4 norm = leNormal->GetDirectArray().GetAt(normIndex);
-					buildData.normals[vertexIndex].x = -(float)norm[0];
-					buildData.normals[vertexIndex].y = (float)norm[1];
-					buildData.normals[vertexIndex].z = (float)norm[2];
+					buildData.normals[vertexIndex].vec.x = -(float)norm[0];
+					buildData.normals[vertexIndex].vec.y = (float)norm[1];
+					buildData.normals[vertexIndex].vec.z = (float)norm[2];
 
 					norm = leNormal->GetDirectArray().GetAt(normIndex + 2);
-					buildData.normals[vertexIndex + 1].x = -(float)norm[0];
-					buildData.normals[vertexIndex + 1].y = (float)norm[1];
-					buildData.normals[vertexIndex + 1].z = (float)norm[2];
+					buildData.normals[vertexIndex + 1].vec.x = -(float)norm[0];
+					buildData.normals[vertexIndex + 1].vec.y = (float)norm[1];
+					buildData.normals[vertexIndex + 1].vec.z = (float)norm[2];
 
 					norm = leNormal->GetDirectArray().GetAt(normIndex + 1);
-					buildData.normals[vertexIndex + 2].x = -(float)norm[0];
-					buildData.normals[vertexIndex + 2].y = (float)norm[1];
-					buildData.normals[vertexIndex + 2].z = (float)norm[2];
+					buildData.normals[vertexIndex + 2].vec.x = -(float)norm[0];
+					buildData.normals[vertexIndex + 2].vec.y = (float)norm[1];
+					buildData.normals[vertexIndex + 2].vec.z = (float)norm[2];
 				}
 			}
 
@@ -238,19 +238,19 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 						tangIndex = geTang->GetIndexArray().GetAt(vertexIndex);
 
 					FbxVector4 tangent = geTang->GetDirectArray().GetAt(tangIndex);
-					buildData.tangents[vertexIndex].x = (float)tangent[0];
-					buildData.tangents[vertexIndex].y = (float)tangent[1];
-					buildData.tangents[vertexIndex].z = (float)tangent[2];
+					buildData.tangents[vertexIndex].vec.x = (float)tangent[0];
+					buildData.tangents[vertexIndex].vec.y = (float)tangent[1];
+					buildData.tangents[vertexIndex].vec.z = (float)tangent[2];
 
 					tangent = geTang->GetDirectArray().GetAt(tangIndex + 2);
-					buildData.tangents[vertexIndex + 1].x = (float)tangent[0];
-					buildData.tangents[vertexIndex + 1].y = (float)tangent[1];
-					buildData.tangents[vertexIndex + 1].z = (float)tangent[2];
+					buildData.tangents[vertexIndex + 1].vec.x = (float)tangent[0];
+					buildData.tangents[vertexIndex + 1].vec.y = (float)tangent[1];
+					buildData.tangents[vertexIndex + 1].vec.z = (float)tangent[2];
 
 					tangent = geTang->GetDirectArray().GetAt(tangIndex + 1);
-					buildData.tangents[vertexIndex + 2].x = (float)tangent[0];
-					buildData.tangents[vertexIndex + 2].y = (float)tangent[1];
-					buildData.tangents[vertexIndex + 2].z = (float)tangent[2];
+					buildData.tangents[vertexIndex + 2].vec.x = (float)tangent[0];
+					buildData.tangents[vertexIndex + 2].vec.y = (float)tangent[1];
+					buildData.tangents[vertexIndex + 2].vec.z = (float)tangent[2];
 				}
 			}
 
@@ -273,19 +273,19 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 						biNormIndex = geBN->GetIndexArray().GetAt(vertexIndex);
 
 					FbxVector4 biNorm = geBN->GetDirectArray().GetAt(biNormIndex);
-					buildData.bitangents[vertexIndex].x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex].y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex].z = (float)biNorm[2];
+					buildData.bitangents[vertexIndex].vec.x = (float)biNorm[0];
+					buildData.bitangents[vertexIndex].vec.y = (float)biNorm[1];
+					buildData.bitangents[vertexIndex].vec.z = (float)biNorm[2];
 
 					biNorm = geBN->GetDirectArray().GetAt(biNormIndex + 2);
-					buildData.bitangents[vertexIndex + 1].x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex + 1].y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex + 1].z = (float)biNorm[2];
+					buildData.bitangents[vertexIndex + 1].vec.x = (float)biNorm[0];
+					buildData.bitangents[vertexIndex + 1].vec.y = (float)biNorm[1];
+					buildData.bitangents[vertexIndex + 1].vec.z = (float)biNorm[2];
 
 					biNorm = geBN->GetDirectArray().GetAt(biNormIndex + 1);
-					buildData.bitangents[vertexIndex + 2].x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex + 2].y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex + 2].z = (float)biNorm[2];
+					buildData.bitangents[vertexIndex + 2].vec.x = (float)biNorm[0];
+					buildData.bitangents[vertexIndex + 2].vec.y = (float)biNorm[1];
+					buildData.bitangents[vertexIndex + 2].vec.z = (float)biNorm[2];
 				}
 			}
 
@@ -302,18 +302,18 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex);
 				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex);
-				buildData.texCoords[vertexIndex].x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex].y = -static_cast<float>(texCoord[1]);
+				buildData.texCoords[vertexIndex].vec.x = static_cast<float>(texCoord[0]);
+				buildData.texCoords[vertexIndex].vec.y = -static_cast<float>(texCoord[1]);
 
 				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex + 2);
 				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex + 2);
-				buildData.texCoords[vertexIndex + 1].x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex + 1].y = -static_cast<float>(texCoord[1]);
+				buildData.texCoords[vertexIndex + 1].vec.x = static_cast<float>(texCoord[0]);
+				buildData.texCoords[vertexIndex + 1].vec.y = -static_cast<float>(texCoord[1]);
 
 				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex + 1);
 				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex + 1);
-				buildData.texCoords[vertexIndex + 2].x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex + 2].y = -static_cast<float>(texCoord[1]);
+				buildData.texCoords[vertexIndex + 2].vec.x = static_cast<float>(texCoord[0]);
+				buildData.texCoords[vertexIndex + 2].vec.y = -static_cast<float>(texCoord[1]);
 			}
 
 			vertexIndex += 3;

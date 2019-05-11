@@ -46,8 +46,12 @@ void ForwardRenderer::present(RenderableTexture* output) {
 		ShaderPipeline* shader = command.mesh->getMaterial()->getShader();
 		shader->bind();
 
-		shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4));
-		shader->setCBufferVar("sys_mVP", &glm::transpose(m_camera->getViewProjection()), sizeof(glm::mat4));
+		//shader->setCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4));
+		shader->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
+		//shader->setCBufferVar("sys_mWorld", &glm::mat4(1.0f), sizeof(glm::mat4));
+		shader->setCBufferVar("sys_mVP", &m_camera->getViewProjection(), sizeof(glm::mat4));
+		//shader->setCBufferVar("sys_mVP", &glm::transpose(m_camera->getViewProjection()), sizeof(glm::mat4));
+		//shader->setCBufferVar("sys_mVP", &glm::mat4(1.0f), sizeof(glm::mat4));
 		shader->setCBufferVar("sys_cameraPos", &m_camera->getPosition(), sizeof(glm::vec3));
 
 		if (m_lightSetup) {

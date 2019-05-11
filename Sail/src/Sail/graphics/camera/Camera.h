@@ -114,7 +114,7 @@ public:
 		}
 
 		if (m_updateVPMatrix) {
-			m_VPMatrix = m_viewMatrix * getProjectionMatrix();
+			m_VPMatrix = getProjectionMatrix() * m_viewMatrix;
 			// Update frustum planes
 			m_frustum.extractPlanes(m_VPMatrix);
 			m_updateVPMatrix = false;

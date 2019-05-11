@@ -55,7 +55,7 @@ PSIn VSMain(VSIn input) {
     }
 
 	input.position.w = 1.f;
-	output.position = mul(input.position, sys_mWorld);
+	output.position = mul(sys_mWorld, input.position);
 
 	// Calculate the distance from the vertex to the clipping plane
 	// This needs to be done with world coordinates
@@ -72,7 +72,7 @@ PSIn VSMain(VSIn input) {
     }
 
 
-    output.position = mul(output.position, sys_mVP);
+    output.position = mul(sys_mVP, output.position);
 
 	if (sys_material.hasNormalTexture) {
 	    // Convert to tangent space

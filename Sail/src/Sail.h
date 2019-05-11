@@ -10,6 +10,8 @@
 
 #define NOMINMAX // Removes min max macros which cause issues
 
+// TODO: only define GLM_FORCE_DEPTH_ZERO_TO_ONE if directx or vulkan (not opengl)
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
 #include "Sail/Application.h"

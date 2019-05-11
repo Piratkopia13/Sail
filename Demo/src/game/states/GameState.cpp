@@ -3,7 +3,8 @@
 
 GameState::GameState(StateStack& stack)
 : State(stack)
-, m_cam(30.f, 1280.f / 720.f, 0.1f, 5000.f)
+//, m_cam(20.f, 20.f, 0.1f, 5000.f)
+, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 , m_camController(&m_cam)
 , m_flyCam(true)
 , m_fpsText(nullptr)
@@ -15,8 +16,10 @@ GameState::GameState(StateStack& stack)
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
 	// Set up camera with controllers
-	m_cam.setPosition(glm::vec3(6.6f, 3.7f, -9.4f));
+	m_cam.setPosition(glm::vec3(1.6f, 1.7f, -1.4f));
 	m_camController.lookAt(glm::vec3(0.f));
+	//m_cam.setPosition(glm::vec3(0.f, 0.f, -50.f));
+	//m_cam.setDirection(glm::vec3(0.f, 0.f, 1.f));
 	
 	// Set up the scene
 	//m_scene->addSkybox(L"skybox_space_512.dds");
@@ -32,7 +35,7 @@ GameState::GameState(StateStack& stack)
 	//auto* shader = &m_app->getResourceManager().getShaderSet<DeferredGeometryShader>();
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
-	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(.5f), shader->getPipeline());
+	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader->getPipeline());
 	//m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
 	//m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader);
 
@@ -42,7 +45,8 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
 	transform.setRotations(glm::vec3(0.f, 0.f, 1.07f));
-	transform.setTranslation(glm::vec3(1.2f, 1.0f, 1.f));
+	//transform.setTranslation(glm::vec3(0.f, 0.f, 0.f));
+	//transform.setTranslation(glm::vec3(1.2f, 1.0f, 1.f));
 	m_scene.addEntity(MOVE(e));
 
 	/*e = Entity::Create();
