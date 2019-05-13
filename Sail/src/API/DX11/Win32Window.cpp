@@ -32,9 +32,9 @@ Win32Window::Win32Window(const WindowProps& props)
 	m_windowTitle += " | Debug build";
 #endif
 
-	//if (!glfwInit()) {
-	//	// Initialization failed
-	//}
+	if (!glfwInit()) {
+		// Initialization failed
+	}
 }
 
 Win32Window::~Win32Window() {

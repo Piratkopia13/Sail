@@ -9,9 +9,18 @@ workspace "Sail"
 	filter "platforms:*64"
 		architecture "x64"
 
-local binDir = "bin/%{cfg.platform}-%{cfg.buildcfg}"
+local binDir = "bin/%{cfg.platform}-%{cfg.buildcfg}/%{prj.name}"
 local intermediatesDir = "intermediates/%{prj.name}-%{cfg.platform}-%{cfg.buildcfg}"
 
+IncludeDir = {}
+IncludeDir["GLFW"] = "libraries/glfw/include"
+IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
+-- IncludeDir["ImGui"] = "libraries/imgui"
+
+group "Libraries"
+include "libraries/glfw"
+
+group "Engine"
 project "Demo"
 	location "Demo"
 	kind "WindowedApp"
@@ -37,7 +46,7 @@ project "Demo"
 	includedirs {
 		"libraries",
 		"Sail/src",
-		"libraries/FBX_SDK/include"
+		"%{IncludeDir.FBX_SDK}"
 	}
 
 	links {
@@ -60,10 +69,10 @@ project "Demo"
 		postbuildcommands {
 			"{COPY} ../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll %{cfg.targetdir}"
 		}
-	-- filter { "action:vs2017 or vs2019", "platforms:*86" }
-	-- 	postbuildcommands {
-	-- 		("{COPY} libraries/FBX_SDK/lib/vs2017/x86/debug/libfbxsdk.dll %{cfg.targetdir}")
-	-- 	}
+	filter { "action:vs2017 or vs2019", "platforms:*86" }
+		postbuildcommands {
+			"{COPY} ../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll %{cfg.targetdir}"
+		}
 
 
 project "Sail"
@@ -112,14 +121,15 @@ project "Sail"
 	includedirs {
 		"libraries",
 		"Sail/src",
-		"libraries/FBX_SDK/include",
-		"libraries/glfw/include"
+		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.GLFW}"
 	}
 
 	links {
 		"libfbxsdk",
-		"d3d11.lib",
-		"d3dcompiler.lib"
+		"d3d11",
+		"d3dcompiler",
+		"GLFW"
 	}
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
