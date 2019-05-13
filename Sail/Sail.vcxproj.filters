@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="API">
+      <UniqueIdentifier>{FFD1870B-6BDB-877C-F456-9E7C605F937C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="API\DX11">
+      <UniqueIdentifier>{AC2F5F34-98FC-B93F-C115-A8E7AD41EFCD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="API\DX11\resources">
+      <UniqueIdentifier>{36FCDE89-22E0-9FDF-8B40-9A3277438A61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="API\DX11\shader">
+      <UniqueIdentifier>{F29992BB-5E25-0080-6736-8374D3405C80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="API\DX12">
+      <UniqueIdentifier>{AD2F5F34-99FC-B93F-C215-A8E7AE41EFCD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="API\DX12\shader">
+      <UniqueIdentifier>{D36ED4A7-3FFA-416C-480B-C560B4159E6C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail">
+      <UniqueIdentifier>{8E3D8C7C-7A74-8D0D-2361-73100F77090F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\api">
+      <UniqueIdentifier>{D7C5873C-C392-E247-ECAB-D0EFD8D717D6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\api\shader">
+      <UniqueIdentifier>{BD318548-29BD-F20C-32CE-75019ED84E0D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\entities">
+      <UniqueIdentifier>{221219DF-8ED2-9415-570D-DE92C38CD9F1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\entities\components">
+      <UniqueIdentifier>{1742DB18-0367-2A99-2CB2-0F29183629B7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\events">
+      <UniqueIdentifier>{D2716439-3E27-DD2E-C71B-D70533D0D332}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics">
+      <UniqueIdentifier>{AEC1ABBF-1A82-27F6-E3BC-70734F3C6CD2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\camera">
+      <UniqueIdentifier>{86FA7F57-7289-0921-1BA8-1D1C07161AC7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\geometry">
+      <UniqueIdentifier>{E94E8D21-D548-B673-BEB5-4C84AA4E1CE0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\geometry\factory">
+      <UniqueIdentifier>{50D48D43-3CFA-57AA-2540-DD7511057D76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\geometry\spatial">
+      <UniqueIdentifier>{C6FE1B4F-B224-E6B5-9B6A-6B81872F0B82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\light">
+      <UniqueIdentifier>{F5EF4D03-6151-2B11-EABE-71C3561F62D0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\renderer">
+      <UniqueIdentifier>{34656945-205F-9297-09CC-28A8F564F803}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\shader">
+      <UniqueIdentifier>{B4954A7D-A024-D446-4943-E84135B1E4EC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\shader\component">
+      <UniqueIdentifier>{363FF8EA-2265-C251-0BAB-471DF76FE71D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\shader\material">
+      <UniqueIdentifier>{F20A1C4A-5E23-0374-27D0-920D93A7970D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\graphics\text">
+      <UniqueIdentifier>{A2D7A10F-8EBB-6265-F71B-5DB8E31E4DE7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\patterns">
+      <UniqueIdentifier>{4E1DF71D-BADD-7254-8318-BCD1EF97B730}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\resources">
+      <UniqueIdentifier>{984C581F-841A-4C25-6DAE-BC4B591B288A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\resources\loaders">
+      <UniqueIdentifier>{B1946FF6-9D8E-9848-86FB-2E597294FEB4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\states">
+      <UniqueIdentifier>{B15FE659-1D15-5F4F-A609-592612BE5553}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sail\utils">
+      <UniqueIdentifier>{8EC1FC7E-7A79-3ECC-E380-1728CF57D9BC}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\API\DX11\DX11API.h">
+      <Filter>API\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\DX11IndexBuffer.h">
+      <Filter>API\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\DX11Mesh.h">
+      <Filter>API\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\DX11RenderableTexture.h">
+      <Filter>API\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\DX11VertexBuffer.h">
+      <Filter>API\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\Input.h">
+      <Filter>API\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\Win32Window.h">
+      <Filter>API\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\resources\DX11Texture.h">
+      <Filter>API\DX11\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\shader\DX11ConstantBuffer.h">
+      <Filter>API\DX11\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\shader\DX11InputLayout.h">
+      <Filter>API\DX11\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\shader\DX11Sampler.h">
+      <Filter>API\DX11\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX11\shader\DX11ShaderPipeline.h">
+      <Filter>API\DX11\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX12\DX12Mesh.h">
+      <Filter>API\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="src\API\DX12\shader\InputLayout.h">
+      <Filter>API\DX12\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail.h" />
+    <ClInclude Include="src\Sail\Application.h">
+      <Filter>Sail</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\GraphicsAPI.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\IndexBuffer.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\Mesh.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\PipelineStateObject.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\RenderableTexture.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\Shader.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\Texture.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\VertexBuffer.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\Window.h">
+      <Filter>Sail\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\shader\ConstantBuffer.h">
+      <Filter>Sail\api\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\shader\GraphicsPipelineState.h">
+      <Filter>Sail\api\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\shader\InputLayout.h">
+      <Filter>Sail\api\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\shader\Sampler.h">
+      <Filter>Sail\api\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\api\shader\ShaderPipeline.h">
+      <Filter>Sail\api\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\entities\Entity.h">
+      <Filter>Sail\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\entities\components\Component.h">
+      <Filter>Sail\entities\components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\entities\components\Components.h">
+      <Filter>Sail\entities\components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\entities\components\ModelComponent.h">
+      <Filter>Sail\entities\components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\entities\components\TextComponent.h">
+      <Filter>Sail\entities\components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\entities\components\TransformComponent.h">
+      <Filter>Sail\entities\components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\events\Event.h">
+      <Filter>Sail\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\events\EventHandler.h">
+      <Filter>Sail\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\events\Events.h">
+      <Filter>Sail\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\events\IEventDispatcher.h">
+      <Filter>Sail\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\events\IEventListener.h">
+      <Filter>Sail\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\events\WindowResizeEvent.h">
+      <Filter>Sail\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\Particle.h">
+      <Filter>Sail\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\Scene.h">
+      <Filter>Sail\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\camera\Camera.h">
+      <Filter>Sail\graphics\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\camera\CameraController.h">
+      <Filter>Sail\graphics\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\camera\FlyingCameraController.h">
+      <Filter>Sail\graphics\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\camera\OrthographicCamera.h">
+      <Filter>Sail\graphics\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\camera\PerspectiveCamera.h">
+      <Filter>Sail\graphics\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\Material.h">
+      <Filter>Sail\graphics\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\Model.h">
+      <Filter>Sail\graphics\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\Transform.h">
+      <Filter>Sail\graphics\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\factory\ConeModel.h">
+      <Filter>Sail\graphics\geometry\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\factory\CubeModel.h">
+      <Filter>Sail\graphics\geometry\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\factory\InstancedParticleModel.h">
+      <Filter>Sail\graphics\geometry\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\factory\PlaneModel.h">
+      <Filter>Sail\graphics\geometry\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\factory\ScreenQuadModel.h">
+      <Filter>Sail\graphics\geometry\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\factory\SphereModel.h">
+      <Filter>Sail\graphics\geometry\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\geometry\spatial\AABB.h">
+      <Filter>Sail\graphics\geometry\spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\light\DirectionalLight.h">
+      <Filter>Sail\graphics\light</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\light\LightSetup.h">
+      <Filter>Sail\graphics\light</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\light\PointLight.h">
+      <Filter>Sail\graphics\light</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\renderer\ForwardRenderer.h">
+      <Filter>Sail\graphics\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\renderer\Renderer.h">
+      <Filter>Sail\graphics\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\shader\Shader.h">
+      <Filter>Sail\graphics\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\shader\component\BindShader.h">
+      <Filter>Sail\graphics\shader\component</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\shader\material\MaterialShader.h">
+      <Filter>Sail\graphics\shader\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\text\SailFont.h">
+      <Filter>Sail\graphics\text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\graphics\text\Text.h">
+      <Filter>Sail\graphics\text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\patterns\Observer.h">
+      <Filter>Sail\patterns</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\patterns\Subject.h">
+      <Filter>Sail\patterns</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\resources\ParsedScene.h">
+      <Filter>Sail\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\resources\ResourceFormat.h">
+      <Filter>Sail\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\resources\ResourceManager.h">
+      <Filter>Sail\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\resources\TextureData.h">
+      <Filter>Sail\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\resources\loaders\FBXLoader.h">
+      <Filter>Sail\resources\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\resources\loaders\TGALoader.h">
+      <Filter>Sail\resources\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\states\State.h">
+      <Filter>Sail\states</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\states\StateIdentifiers.h">
+      <Filter>Sail\states</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\states\StateStack.h">
+      <Filter>Sail\states</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\utils\Timer.h">
+      <Filter>Sail\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sail\utils\Utils.h">
+      <Filter>Sail\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\API\DX11\DX11API.cpp">
+      <Filter>API\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\DX11IndexBuffer.cpp">
+      <Filter>API\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\DX11Mesh.cpp">
+      <Filter>API\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\DX11RenderableTexture.cpp">
+      <Filter>API\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\DX11VertexBuffer.cpp">
+      <Filter>API\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\Input.cpp">
+      <Filter>API\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\Win32Window.cpp">
+      <Filter>API\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\resources\DX11Texture.cpp">
+      <Filter>API\DX11\resources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\shader\DX11ConstantBuffer.cpp">
+      <Filter>API\DX11\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\shader\DX11InputLayout.cpp">
+      <Filter>API\DX11\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\shader\DX11Sampler.cpp">
+      <Filter>API\DX11\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX11\shader\DX11ShaderPipeline.cpp">
+      <Filter>API\DX11\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX12\DX12Mesh.cpp">
+      <Filter>API\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\API\DX12\shader\InputLayout.cpp">
+      <Filter>API\DX12\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\Application.cpp">
+      <Filter>Sail</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\api\Mesh.cpp">
+      <Filter>Sail\api</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\api\shader\InputLayout.cpp">
+      <Filter>Sail\api\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\api\shader\ShaderPipeline.cpp">
+      <Filter>Sail\api\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\entities\Entity.cpp">
+      <Filter>Sail\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\entities\components\TextComponent.cpp">
+      <Filter>Sail\entities\components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\events\Event.cpp">
+      <Filter>Sail\events</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\Particle.cpp">
+      <Filter>Sail\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\Scene.cpp">
+      <Filter>Sail\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\camera\FlyingCameraController.cpp">
+      <Filter>Sail\graphics\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\geometry\Material.cpp">
+      <Filter>Sail\graphics\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\geometry\Model.cpp">
+      <Filter>Sail\graphics\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\geometry\spatial\AABB.cpp">
+      <Filter>Sail\graphics\geometry\spatial</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\light\LightSetup.cpp">
+      <Filter>Sail\graphics\light</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\renderer\ForwardRenderer.cpp">
+      <Filter>Sail\graphics\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\renderer\Renderer.cpp">
+      <Filter>Sail\graphics\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\shader\Shader.cpp">
+      <Filter>Sail\graphics\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\shader\material\MaterialShader.cpp">
+      <Filter>Sail\graphics\shader\material</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\text\SailFont.cpp">
+      <Filter>Sail\graphics\text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\graphics\text\Text.cpp">
+      <Filter>Sail\graphics\text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\resources\ParsedScene.cpp">
+      <Filter>Sail\resources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\resources\ResourceManager.cpp">
+      <Filter>Sail\resources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\resources\TextureData.cpp">
+      <Filter>Sail\resources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\resources\loaders\FBXLoader.cpp">
+      <Filter>Sail\resources\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\resources\loaders\TGALoader.cpp">
+      <Filter>Sail\resources\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\states\State.cpp">
+      <Filter>Sail\states</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\states\StateStack.cpp">
+      <Filter>Sail\states</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sail\utils\Utils.cpp">
+      <Filter>Sail\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pch.cpp" />
+  </ItemGroup>
+</Project>

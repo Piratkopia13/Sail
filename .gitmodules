@@ -1,4 +1,4 @@
 [submodule "libraries/glfw"]
 	path = libraries/glfw
-	url = https://github.com/glfw/glfw.git
+	url = https://github.com/Piratkopia13/glfw.git
 	branch = master

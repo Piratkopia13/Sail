@@ -2,6 +2,8 @@
 #include "Win32Window.h"
 #include "Sail/Application.h"
 
+#include <GLFW/glfw3.h>
+
 namespace {
 	// Used to forward messages to user defined proc function
 	Win32Window* g_pApp = nullptr;
@@ -29,6 +31,10 @@ Win32Window::Win32Window(const WindowProps& props)
 #ifdef _DEBUG
 	m_windowTitle += " | Debug build";
 #endif
+
+	//if (!glfwInit()) {
+	//	// Initialization failed
+	//}
 }
 
 Win32Window::~Win32Window() {

@@ -11,6 +11,8 @@ DX11API::DX11API()
 	, m_deviceContext(nullptr)
 	, m_swapChain(nullptr)
 	, m_renderTargetView(nullptr)
+	, m_depthStencilBuffer(nullptr)
+	, m_depthStencilView(nullptr)
 {}
 
 DX11API::~DX11API() {

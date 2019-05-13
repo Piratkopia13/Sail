@@ -1,5 +1,4 @@
 #include "GameState.h"
-#include "../objects/Block.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -59,11 +58,11 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(MOVE(e));*/
 
-	/*Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader);
-	e = Entity::Create();
-	e->addComponent<ModelComponent>(fbxModel);
-	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(MOVE(e));*/
+	//Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader->getPipeline());
+	//e = Entity::Create();
+	//e->addComponent<ModelComponent>(fbxModel);
+	//e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
+	//m_scene.addEntity(MOVE(e));
 
 	//e = Entity::Create();
 	//auto* textComp = e->addComponent<TextComponent>();
