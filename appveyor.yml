@@ -1,0 +1,3 @@
+# Most appveyor configuration is done on the website
+platform:
+  - DX11 x64
