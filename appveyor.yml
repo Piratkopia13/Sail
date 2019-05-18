@@ -4,12 +4,13 @@ pull_requests:
 image: Visual Studio 2019 Preview
 configuration: Debug
 platform: DX11 x64
+install:
+- ps: git submodule update --init --recursive
 before_build:
 - ps: >-
-    git submodule update --init --recursive
-
     .\premake\premake5.exe vs2019
 
     nuget restore
+
 build:
   verbosity: minimal
