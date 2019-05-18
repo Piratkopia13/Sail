@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
+#include "KeyCodes.h"
 
 Application* Application::m_instance = nullptr;
 
@@ -104,11 +105,11 @@ int Application::startGameLoop() {
 			//m_input.updateStates();
 
 			// Update mouse deltas
-			m_input.newFrame();
+			Input::GetInstance()->beginFrame();
 
-			// Quit on escape or alt-f4
-			/*if (m_input.getKeyboardState().LeftAlt && m_input.getKeyboardState().F4)
-				PostQuitMessage(0);*/
+			// Quit on alt-f4
+			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
+				PostQuitMessage(0);
 
 			processInput(delta);
 
@@ -136,9 +137,9 @@ int Application::startGameLoop() {
 
 			// Render
 			render(delta);
-
-			// Update wasJustPressed bools
-			m_input.endOfFrame();
+			
+			// Reset just pressed keys
+			Input::GetInstance()->endFrame();
 		}
 
 	}
@@ -161,8 +162,4 @@ ResourceManager& Application::getResourceManager() {
 }
 const UINT Application::getFPS() const {
 	return m_fps;
-}
-
-Input& Application::getInput() {
-	return m_input;
 }

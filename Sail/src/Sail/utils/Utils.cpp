@@ -9,15 +9,21 @@ std::string Utils::readFile(const std::string& filepath) {
 	return str;
 }
 
-std::wstring Utils::vec3ToWStr(const glm::vec3& vec) {
+std::wstring Utils::toWStr(const glm::vec3& vec) {
 	std::wstringstream ss;
 	ss << "[X: " << vec.x << ", Y: " << vec.y << ", Z: " << vec.z << "]";
 	return ss.str();
 }
 
-std::string Utils::vec3ToStr(const glm::vec3& vec) {
+std::string Utils::toStr(const glm::vec3& vec) {
 	std::stringstream ss;
 	ss << "[X: " << vec.x << ", Y: " << vec.y << ", Z: " << vec.z << "]";
+	return ss.str();
+}
+
+std::string Utils::toStr(const glm::vec2& vec) {
+	std::stringstream ss;
+	ss << "[X: " << vec.x << ", Y: " << vec.y << "]";
 	return ss.str();
 }
 

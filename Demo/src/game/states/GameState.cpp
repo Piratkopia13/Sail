@@ -82,38 +82,44 @@ GameState::~GameState() {
 // Process input for the state
 bool GameState::processInput(float dt) {
 
-//	auto& kbTracker = m_app->getInput().getKbStateTracker();
-//	auto& kbState = m_app->getInput().getKeyboardState();
-//
-//#ifdef _DEBUG
-//	// Toggle camera controller on 'F' key or 'Y' btn
-//	if (kbTracker.pressed.F)
-//		m_flyCam = !m_flyCam;
-//	// Add point light at camera pos
-//	if (kbTracker.pressed.E) {
-//		PointLight pl;
-//		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-//		pl.setPosition(m_cam.getPosition());
-//		pl.setAttenuation(.0f, 0.1f, 0.02f);
-//		m_lights.addPointLight(pl);
-//	}
-//#endif
-//
-//	if (kbState.G) {
-//		glm::vec3 color(1.0f, 1.0f, 1.0f);;
-//		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
-//	}
+	//std::cout << Utils::toStr(Input::GetMousePosition()) << std::endl;
+	//std::cout << Input::IsKeyPressed(SAIL_KEY_RETURN) << std::endl;
+	if (Input::WasKeyJustPressed(SAIL_KEY_RETURN))
+		std::cout << "RETURN" << std::endl;
+	if (Input::WasMouseButtonJustPressed(SAIL_MOUSE_BUTTON_1))
+		std::cout << "LEFT MOUSE" << std::endl;
+	//std::cout << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_1) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_2) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_3) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_4) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_5) << std::endl;
+
+
+#ifdef _DEBUG
+	// Toggle camera controller on 'F' key or 'Y' btn
+	if (Input::WasKeyJustPressed(SAIL_KEY_F))
+		m_flyCam = !m_flyCam;
+	// Add point light at camera pos
+	if (Input::WasKeyJustPressed(SAIL_KEY_E)) {
+		PointLight pl;
+		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl.setPosition(m_cam.getPosition());
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		m_lights.addPointLight(pl);
+	}
+#endif
+
+	if (Input::IsKeyPressed(SAIL_KEY_G)) {
+		glm::vec3 color(1.0f, 1.0f, 1.0f);;
+		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
+	}
 
 	// Update the camera controller from input devices
 	if (m_flyCam)
 		m_camController.update(dt);
 
-	//// Reload shaders
-	//if (kbTracker.pressed.R) {
-	//	m_app->getResourceManager().reloadShader<DeferredGeometryShader>();
-	//	Event e(Event::POTATO);
-	//	m_app->dispatchEvent(e);
-	//}
+	// Reload shaders
+	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
+		m_app->getResourceManager().reloadShader<MaterialShader>();
+		Event e(Event::POTATO);
+		m_app->dispatchEvent(e);
+	}
 
 
 	return true;
@@ -143,7 +149,7 @@ bool GameState::update(float dt) {
 
 	auto& camPos = m_cam.getPosition();
 	if (m_debugCamText)
-		m_debugCamText->setText(L"Camera @ " + Utils::vec3ToWStr(camPos) + L"\n" + 
+		m_debugCamText->setText(L"Camera @ " + Utils::toWStr(camPos) + L"\n" + 
 			L"GPU memory usage: " + std::to_wstring(m_app->getAPI()->getMemoryUsage()) + L"/" + std::to_wstring(m_app->getAPI()->getMemoryBudget()) + L"mb");
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | FPS: " + std::to_string(m_app->getFPS()));

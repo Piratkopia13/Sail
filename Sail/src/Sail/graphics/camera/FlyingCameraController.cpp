@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "FlyingCameraController.h"
 #include "Sail/Application.h"
+#include "../../KeyCodes.h"
+#include "../../MouseButtonCodes.h"
 
 FlyingCameraController::FlyingCameraController(Camera* cam)
 	: CameraController(cam)
@@ -27,78 +29,76 @@ void FlyingCameraController::update(float dt) {
 
 	Application* app = Application::getInstance();
 
-	//auto& kbState = app->getInput().getKeyboardState();
-	//auto& gpState = app->getInput().getGamePadState(0);
+	float movementSpeed = dt * 5.f;
+	float lookSensitivityMouse = 0.1f;
+	float lookSensitivityController = 90.0f * 0.016f;
 
-	//float movementSpeed = dt * 5.f;
-	//float lookSensitivityMouse = 0.1f;
-	//float lookSensitivityController = 90.0f * 0.016f;
+	// Increase speed if shift or right trigger is pressed
+	if (Input::IsKeyPressed(SAIL_KEY_LSHIFT))
+		movementSpeed *= 5.f;
 
-	//// Increase speed if shift or right trigger is pressed
-	//if (kbState.LeftShift)
-	//	movementSpeed *= 5.f;
+	//
+	// Forwards / backwards motion
+	//
 
-	////
-	//// Forwards / backwards motion
-	////
-
-	//// Gamepad
+	// Gamepad
 	//setCameraPosition(getCameraPosition() + getCameraDirection() * gpState.thumbSticks.leftY * movementSpeed);
 
-	//// Keyboard
-	//if (kbState.W)
-	//	setCameraPosition(getCameraPosition() + getCameraDirection() * movementSpeed);
-	//if (kbState.S)
-	//	setCameraPosition(getCameraPosition() - getCameraDirection() * movementSpeed);
+	// Keyboard
+	if (Input::IsKeyPressed(SAIL_KEY_W))
+		setCameraPosition(getCameraPosition() + getCameraDirection() * movementSpeed);
+	if (Input::IsKeyPressed(SAIL_KEY_S))
+		setCameraPosition(getCameraPosition() - getCameraDirection() * movementSpeed);
 
-	////
-	//// Side to side motion
-	////
+	//
+	// Side to side motion
+	//
 
-	//glm::vec3 right = getCameraDirection().Cross(glm::vec3::Up);
-	//right.Normalize();
-	//// Gamepad
+	glm::vec3 right = glm::cross(getCameraDirection(), glm::vec3(0.f, 1.f, 0.f));
+	right = glm::normalize(right);
+	// Gamepad
 	//setCameraPosition(getCameraPosition() - right * gpState.thumbSticks.leftX * movementSpeed);
 
-	//// Keyboard
-	//if (kbState.A)
-	//	setCameraPosition(getCameraPosition() + right * movementSpeed);
-	//if (kbState.D)
-	//	setCameraPosition(getCameraPosition() - right * movementSpeed);
+	// Keyboard
+	if (Input::IsKeyPressed(SAIL_KEY_A))
+		setCameraPosition(getCameraPosition() + right * movementSpeed);
+	if (Input::IsKeyPressed(SAIL_KEY_D))
+		setCameraPosition(getCameraPosition() - right * movementSpeed);
 
-	////
-	//// Up and down motion
-	////
+	//
+	// Up and down motion
+	//
 
-	//// Gamepad
+	// Gamepad
 	//setCameraPosition(getCameraPosition() + glm::vec3::Up * gpState.buttons.a * movementSpeed);
 	//setCameraPosition(getCameraPosition() + glm::vec3::Down * gpState.buttons.x * movementSpeed);
 
-	//// Keyboard
-	//if (kbState.Space)
-	//	setCameraPosition(getCameraPosition() + glm::vec3::Up * movementSpeed);
-	//if (kbState.LeftControl)
-	//	setCameraPosition(getCameraPosition() + glm::vec3::Down * movementSpeed);
+	// Keyboard
+	if (Input::IsKeyPressed(SAIL_KEY_SPACE))
+		setCameraPosition(getCameraPosition() + glm::vec3(0.f, 1.f, 0.f) * movementSpeed);
+	if (Input::IsKeyPressed(SAIL_KEY_LCONTROL))
+		setCameraPosition(getCameraPosition() + glm::vec3(0.f, -1.f, 0.f) * movementSpeed);
 
-	////
-	//// Look around motion
-	////
+	//
+	// Look around motion
+	//
 
-	//// Gamepad
+	// Gamepad
 	//m_pitch += gpState.thumbSticks.rightY * lookSensitivityController;
 	//m_yaw -= gpState.thumbSticks.rightX * lookSensitivityController;
 
-	//// Mouse input
+	// Mouse input
 
-	//// Toggle cursor capture on right click
-	//if (app->getInput().wasJustPressed(Input::MouseButton::RIGHT)) {
-	//	app->getInput().showCursor(app->getInput().isCursorHidden());
-	//}
+	// Toggle cursor capture on right click
+	if (Input::WasMouseButtonJustPressed(SAIL_MOUSE_RIGHT_BUTTON)) {
+		Input::HideCursor(!Input::IsCursorHidden());
+	}
 
-	//if (app->getInput().isCursorHidden()) {
-	//	m_pitch -= (float)(app->getInput().getMouseDY()) * lookSensitivityMouse;
-	//	m_yaw -= (float)(app->getInput().getMouseDX()) * lookSensitivityMouse;
-	//}
+	if (Input::IsCursorHidden()) {
+		glm::ivec2& mouseDelta = Input::GetMouseDelta();
+		m_pitch -= mouseDelta.y * lookSensitivityMouse;
+		m_yaw -= mouseDelta.x * lookSensitivityMouse;
+	}
 
 
 	// Lock pitch to the range -89 - 89

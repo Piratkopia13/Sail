@@ -4,8 +4,8 @@
 // TODO: remove all api specific includes
 #include "API/DX11/Win32Window.h"
 //#include "API/DX11/DX11API.h"
-#include "API/DX11/Input.h"
 
+#include "api/Input.h"
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
 
@@ -46,8 +46,6 @@ public:
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
 
-	Input& getInput();
-
 private:
 	static Application* m_instance;
 	std::unique_ptr<Window> m_window;
@@ -56,7 +54,5 @@ private:
 
 	Timer m_timer;
 	UINT m_fps;
-
-	Input m_input;
 
 };

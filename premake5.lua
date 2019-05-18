@@ -1,7 +1,10 @@
 -- premake5.lua
 workspace "Sail"
 	configurations { "Debug", "Release" }
-	platforms { "x64", "x86", }
+	platforms { "DX11 x64", "DX11 x86",
+				"DX12 x64", "DX12 x86"
+				-- "Vulkan x64", "Vulkan x86",
+			  }
 
 	filter "platforms:*86"
 		architecture "x86"
@@ -67,11 +70,11 @@ project "Demo"
 	-- Copy fbxsdk dll to executable path
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		postbuildcommands {
-			"{COPY} ../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll %{cfg.targetdir}"
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		postbuildcommands {
-			"{COPY} ../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll %{cfg.targetdir}"
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
 		}
 
 

@@ -2,7 +2,7 @@
 #include "Win32Window.h"
 #include "Sail/Application.h"
 
-#include <GLFW/glfw3.h>
+#include "Win32Input.h"
 
 namespace {
 	// Used to forward messages to user defined proc function
@@ -20,7 +20,7 @@ Window* Window::Create(const WindowProps& props) {
 
 Win32Window::Win32Window(const WindowProps& props)
 : Window(props)
-, m_hWnd(NULL)
+, m_hWnd(nullptr)
 , m_hInstance(props.hInstance)
 , m_windowTitle("Sail")
 , m_windowStyle(WS_OVERLAPPEDWINDOW) // Default window style
@@ -32,12 +32,10 @@ Win32Window::Win32Window(const WindowProps& props)
 	m_windowTitle += " | Debug build";
 #endif
 
-	if (!glfwInit()) {
-		// Initialization failed
-	}
 }
 
 Win32Window::~Win32Window() {
+	
 }
 
 
@@ -87,6 +85,9 @@ bool Win32Window::initialize() {
 
 	ShowWindow(m_hWnd, SW_SHOW);
 
+	// Register raw input
+	Input::GetInstance<Win32Input>()->registerRawDevices(m_hWnd);
+
 	return true;
 
 }
@@ -100,18 +101,13 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		break;
 
 	case WM_ACTIVATEAPP:
-		//Keyboard::ProcessMessage(msg, wParam, lParam);
-		break;
-
 	case WM_INPUT:
-		Application::getInstance()->getInput().processMessage(msg, wParam, lParam);
-		break;
-
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
-		//Keyboard::ProcessMessage(msg, wParam, lParam);
+	case WM_MOUSEMOVE:
+		Input::GetInstance<Win32Input>()->processMessage(msg, wParam, lParam);
 		break;
 
 	case WM_SIZE:

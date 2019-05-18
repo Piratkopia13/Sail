@@ -116,8 +116,9 @@ public:
 
 namespace Utils {
 	std::string readFile(const std::string& filepath);
-	std::wstring vec3ToWStr(const glm::vec3& vec);
-	std::string vec3ToStr(const glm::vec3& vec);
+	std::wstring toWStr(const glm::vec3& vec);
+	std::string toStr(const glm::vec3& vec);
+	std::string toStr(const glm::vec2& vec);
 	float rnd();
 	glm::vec4 getRandomColor();
 	float clamp(float val, float min, float max);
