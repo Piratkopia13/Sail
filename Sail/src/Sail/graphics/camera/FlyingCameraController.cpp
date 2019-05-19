@@ -76,7 +76,7 @@ void FlyingCameraController::update(float dt) {
 	// Keyboard
 	if (Input::IsKeyPressed(SAIL_KEY_SPACE))
 		setCameraPosition(getCameraPosition() + glm::vec3(0.f, 1.f, 0.f) * movementSpeed);
-	if (Input::IsKeyPressed(SAIL_KEY_LCONTROL))
+	if (Input::IsKeyPressed(SAIL_KEY_CONTROL))
 		setCameraPosition(getCameraPosition() + glm::vec3(0.f, -1.f, 0.f) * movementSpeed);
 
 	//

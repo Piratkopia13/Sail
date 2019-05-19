@@ -89,7 +89,7 @@ PSIn VSMain(VSIn input) {
             output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
     }
 
-	output.normal = mul(input.normal, (float3x3) sys_mWorld);
+	output.normal = mul((float3x3) sys_mWorld, input.normal);
 	output.normal = normalize(output.normal);
 
 	output.texCoords = input.texCoords;
@@ -125,6 +125,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 
     //return sys_texDiffuse.Sample(PSss, input.texCoords);
+	// return float4(phongInput.normal * 0.5f + 0.5, 1.f);
     return phongShade(phongInput);
     //return float4(phongInput.lights.dirLight.direction, 1.f);
     //return float4(phongInput.diffuseColor.rgb, 1.f);

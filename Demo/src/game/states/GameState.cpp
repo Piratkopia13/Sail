@@ -36,7 +36,7 @@ GameState::GameState(StateStack& stack)
 
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader->getPipeline());
 	//m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
-	//m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader);
+	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader->getPipeline());
 
 	m_scene.setLightSetup(&m_lights);
 
@@ -44,11 +44,10 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
 	transform.setRotations(glm::vec3(0.f, 0.f, 1.07f));
-	//transform.setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	//transform.setTranslation(glm::vec3(1.2f, 1.0f, 1.f));
+	transform.setTranslation(glm::vec3(1.2f, 1.f, 1.f));
 	m_scene.addEntity(MOVE(e));
 
-	/*e = Entity::Create();
+	e = Entity::Create();
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 1.f, 0.f));
 	m_scene.addEntity(MOVE(e));
@@ -56,7 +55,7 @@ GameState::GameState(StateStack& stack)
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(MOVE(e));*/
+	m_scene.addEntity(MOVE(e));
 
 	//Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader->getPipeline());
 	//e = Entity::Create();
@@ -83,11 +82,16 @@ GameState::~GameState() {
 bool GameState::processInput(float dt) {
 
 	//std::cout << Utils::toStr(Input::GetMousePosition()) << std::endl;
-	//std::cout << Input::IsKeyPressed(SAIL_KEY_RETURN) << std::endl;
-	if (Input::WasKeyJustPressed(SAIL_KEY_RETURN))
+	//std::cout << Input::IsKeyPressed(SAIL_KEY_CONTROL) << std::endl;
+	for (int i = 0; i < 256; i++) {
+		if (Input::IsKeyPressed(i)) {
+			std::cout << "pressed: " << i << std::endl;
+		}
+	}
+	/*if (Input::WasKeyJustPressed(SAIL_KEY_CONTROL))
 		std::cout << "RETURN" << std::endl;
 	if (Input::WasMouseButtonJustPressed(SAIL_MOUSE_BUTTON_1))
-		std::cout << "LEFT MOUSE" << std::endl;
+		std::cout << "LEFT MOUSE" << std::endl;*/
 	//std::cout << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_1) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_2) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_3) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_4) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_5) << std::endl;
 
 

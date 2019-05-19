@@ -49,3 +49,6 @@ ipch/
 # User added
 plan\.txt
 
+# SonarQube
+/.sonarqube
+/bw-output
