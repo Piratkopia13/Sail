@@ -14,6 +14,10 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
+
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 1.7f, -1.4f));
 	m_camController.lookAt(glm::vec3(0.f));
@@ -35,7 +39,7 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader->getPipeline());
-	//m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
+	m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader->getPipeline());
 
 	m_scene.setLightSetup(&m_lights);
@@ -57,11 +61,13 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
-	//Model* fbxModel = &m_app->getResourceManager().getModel("sponza.fbx", shader->getPipeline());
-	//e = Entity::Create();
-	//e->addComponent<ModelComponent>(fbxModel);
-	//e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	//m_scene.addEntity(MOVE(e));
+	Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
+	e = Entity::Create();
+	e->addComponent<ModelComponent>(fbxModel);
+	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
+	m_scene.addEntity(MOVE(e));
 
 	//e = Entity::Create();
 	//auto* textComp = e->addComponent<TextComponent>();
@@ -83,11 +89,11 @@ bool GameState::processInput(float dt) {
 
 	//std::cout << Utils::toStr(Input::GetMousePosition()) << std::endl;
 	//std::cout << Input::IsKeyPressed(SAIL_KEY_CONTROL) << std::endl;
-	for (int i = 0; i < 256; i++) {
+	/*for (int i = 0; i < 256; i++) {
 		if (Input::IsKeyPressed(i)) {
 			std::cout << "pressed: " << i << std::endl;
 		}
-	}
+	}*/
 	/*if (Input::WasKeyJustPressed(SAIL_KEY_CONTROL))
 		std::cout << "RETURN" << std::endl;
 	if (Input::WasMouseButtonJustPressed(SAIL_MOUSE_BUTTON_1))

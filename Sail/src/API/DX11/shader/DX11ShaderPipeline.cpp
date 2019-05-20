@@ -92,7 +92,7 @@ void* DX11ShaderPipeline::compileShader(const std::string& source, ShaderCompone
 
 void DX11ShaderPipeline::setTexture2D(const std::string& name, void* handle) {
 	UINT slot = findSlotFromName(name, parsedData.textures);
-	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, (ID3D11ShaderResourceView * *)& handle);
+	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, (ID3D11ShaderResourceView**)& handle);
 }
 
 void DX11ShaderPipeline::compile() {

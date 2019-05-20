@@ -1,5 +1,7 @@
 #pragma once
 
+typedef void* SailTexture;
+
 class Texture {
 public:
 	enum ADDRESS_MODE {
@@ -25,5 +27,7 @@ public:
 	static Texture* Create(const std::string& filename);
 	Texture() {}
 	virtual ~Texture() {}
+
+	virtual SailTexture* getHandle() = 0;
 
 };

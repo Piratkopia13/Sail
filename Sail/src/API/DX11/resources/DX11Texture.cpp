@@ -116,8 +116,8 @@ DX11Texture::~DX11Texture() {
 	Memory::safeRelease(m_resourceView);
 }
 
-ID3D11ShaderResourceView** DX11Texture::getResourceView() {
-	return &m_resourceView;
+SailTexture* DX11Texture::getHandle() {
+	return (SailTexture*)&m_resourceView;
 }
 
 ID3D11Texture2D* DX11Texture::getTexture2D() {

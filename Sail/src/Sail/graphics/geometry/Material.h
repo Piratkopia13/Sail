@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <memory>
+#include "sail/api/Texture.h"
 
 class ShaderPipeline;
 
@@ -36,15 +37,15 @@ public:
 	void setColor(const glm::vec4& color);
 
 	void setDiffuseTexture(const std::string& filename);
-	void setDiffuseTexture(ID3D11ShaderResourceView* srv);
+	void setDiffuseTextureFromHandle(SailTexture srv);
 
 	void setNormalTexture(const std::string& filename);
-	void setNormalTexture(ID3D11ShaderResourceView* srv);
+	void setNormalTextureFromHandle(SailTexture srv);
 
 	void setSpecularTexture(const std::string& filename);
-	void setSpecularTexture(ID3D11ShaderResourceView* srv);
+	void setSpecularTextureFromHandle(SailTexture srv);
 
-	void setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures);
+	//void setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures);
 
 	/*	Returns an array of textures, numTextures get set
 		Default texture order in array is as follows
@@ -52,7 +53,7 @@ public:
 		1 - Normal map
 		2 - Specular map
 	*/ 
-	ID3D11ShaderResourceView* const* getTextures(UINT& numTextures);
+	//ID3D11ShaderResourceView* const* getTextures(UINT& numTextures);
 
 	//const glm::vec4& getColor() const;
 	const PhongSettings& getPhongSettings() const;
@@ -68,10 +69,10 @@ private:
 	ShaderPipeline* m_shader;
 
 	PhongSettings m_phongSettings;
+	SailTexture m_texHandles[3];
 
-	ID3D11ShaderResourceView* m_srvs[3];
 	UINT m_numTextures;
 
-	ID3D11ShaderResourceView** m_customSRVs;
+	//ID3D11ShaderResourceView** m_customSRVs;
 
 };

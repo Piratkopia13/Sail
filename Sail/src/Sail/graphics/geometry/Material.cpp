@@ -4,9 +4,9 @@
 #include "Sail/Application.h"
 
 Material::Material(ShaderPipeline* shaderPipeline)
-	: m_customSRVs(nullptr)
-	, m_numTextures(3)
+	: m_numTextures(3)
 	, m_shader(shaderPipeline)
+	, m_texHandles {nullptr}
 {
 	m_phongSettings.ka = 1.f;
 	m_phongSettings.kd = 1.f;
@@ -17,10 +17,6 @@ Material::Material(ShaderPipeline* shaderPipeline)
 	m_phongSettings.hasNormalTexture = 0;
 	m_phongSettings.hasSpecularTexture = 0;
 
-	m_srvs[0] = nullptr;
-	m_srvs[1] = nullptr;
-	m_srvs[2] = nullptr;
-
 }
 Material::~Material() { }
 
@@ -28,11 +24,11 @@ void Material::bind() {
 	m_shader->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
 
 	if (m_phongSettings.hasDiffuseTexture)
-		m_shader->setTexture2D("sys_texDiffuse", m_srvs[0]);
+		m_shader->setTexture2D("sys_texDiffuse", m_texHandles[0]);
 	if (m_phongSettings.hasNormalTexture)
-		m_shader->setTexture2D("sys_texNormal", m_srvs[1]);
+		m_shader->setTexture2D("sys_texNormal", m_texHandles[1]);
 	if (m_phongSettings.hasSpecularTexture)
-		m_shader->setTexture2D("sys_texSpecular", m_srvs[2]);
+		m_shader->setTexture2D("sys_texSpecular", m_texHandles[2]);
 	//m_shader->bind();
 }
 
@@ -57,8 +53,8 @@ void Material::setDiffuseTexture(const std::string& filename) {
 	getAndInsertTexture(filename, 0);
 	m_phongSettings.hasDiffuseTexture = 1;
 }
-void Material::setDiffuseTexture(ID3D11ShaderResourceView* srv) {
-	m_srvs[0] = srv;
+void Material::setDiffuseTextureFromHandle(SailTexture srv) {
+	m_texHandles[0] = srv;
 	m_phongSettings.hasDiffuseTexture = 1;
 }
 
@@ -67,8 +63,8 @@ void Material::setNormalTexture(const std::string& filename) {
 	getAndInsertTexture(filename, 1);
 	m_phongSettings.hasNormalTexture = 1;
 }
-void Material::setNormalTexture(ID3D11ShaderResourceView* srv) {
-	m_srvs[1] = srv;
+void Material::setNormalTextureFromHandle(SailTexture srv) {
+	m_texHandles[1] = srv;
 	m_phongSettings.hasNormalTexture = 1;
 }
 
@@ -77,33 +73,33 @@ void Material::setSpecularTexture(const std::string& filename) {
 	getAndInsertTexture(filename, 2);
 	m_phongSettings.hasSpecularTexture = 1;
 }
-void Material::setSpecularTexture(ID3D11ShaderResourceView* srv) {
-	m_srvs[2] = srv;
+void Material::setSpecularTextureFromHandle(SailTexture srv) {
+	m_texHandles[2] = srv;
 	m_phongSettings.hasSpecularTexture = 1;
 }
 
 
-void Material::setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures) {
-	m_numTextures = numTextures;
-	m_customSRVs = srvs;
-}
+//void Material::setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures) {
+//	m_numTextures = numTextures;
+//	m_customSRVs = srvs;
+//}
 
 
 void Material::getAndInsertTexture(const std::string& filename, int arraySlot) {
 	Texture* t = &Application::getInstance()->getResourceManager().getTexture(filename);
 	// TODO: FIX
-	assert(false);
-	//m_srvs[arraySlot] = *t->getResourceView();
+	//assert(false);
+	m_texHandles[arraySlot] = *t->getHandle();
 
 }
 
-ID3D11ShaderResourceView* const* Material::getTextures(UINT& numTextures) {
-	numTextures = m_numTextures;
-	if (m_customSRVs)
-		return m_customSRVs;
-	else
-		return m_srvs;
-}
+//ID3D11ShaderResourceView* const* Material::getTextures(UINT& numTextures) {
+//	numTextures = m_numTextures;
+//	if (m_customSRVs)
+//		return m_customSRVs;
+//	else
+//		return m_srvs;
+//}
 
 const Material::PhongSettings& Material::getPhongSettings() const {
 	return m_phongSettings;
