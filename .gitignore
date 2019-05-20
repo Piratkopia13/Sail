@@ -52,3 +52,6 @@ plan\.txt
 # SonarQube
 /.sonarqube
 /bw-output
+
+# Imgui configs
+/Demo/imgui.ini

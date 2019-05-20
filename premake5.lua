@@ -18,7 +18,7 @@ local intermediatesDir = "intermediates/%{prj.name}-%{cfg.platform}-%{cfg.buildc
 IncludeDir = {}
 IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
-IncludeDir["ImGui"] = "libraries/imgui/include"
+IncludeDir["ImGui"] = "libraries/imgui"
 
 group "Libraries"
 include "libraries/glfw"

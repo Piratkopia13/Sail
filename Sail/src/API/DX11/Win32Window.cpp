@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Win32Window.h"
 #include "Sail/Application.h"
-
+#include "imgui.h"
 #include "Win32Input.h"
 
 namespace {
@@ -92,7 +92,10 @@ bool Win32Window::initialize() {
 
 }
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+	if (ImGui_ImplWin32_WndProcHandler(m_hWnd, msg, wParam, lParam))
+		return true;
 
 	switch (msg) {
 	case WM_DESTROY:
@@ -119,6 +122,15 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				windowHeight = height;
 				m_resized = true;
 			}
+		}
+		break;
+
+	case WM_DPICHANGED:
+		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DpiEnableScaleViewports) {
+			//const int dpi = HIWORD(wParam);
+			//printf("WM_DPICHANGED to %d (%.0f%%)\n", dpi, (float)dpi / 96.0f * 100.0f);
+			const RECT* suggested_rect = (RECT*)lParam;
+			SetWindowPos(m_hWnd, NULL, suggested_rect->left, suggested_rect->top, suggested_rect->right - suggested_rect->left, suggested_rect->bottom - suggested_rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
 		}
 		break;
 

@@ -2,6 +2,10 @@
 #include "DX11API.h"
 #include "Win32Window.h"
 
+#include "imgui.h"
+#include "examples/imgui_impl_win32.h"
+#include "examples/imgui_impl_dx11.h"
+
 GraphicsAPI* GraphicsAPI::Create() {
 	return SAIL_NEW DX11API();
 }
@@ -16,6 +20,11 @@ DX11API::DX11API()
 {}
 
 DX11API::~DX11API() {
+
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
 	if (m_deviceContext)
 		m_deviceContext->ClearState();
 
@@ -49,6 +58,7 @@ DX11API::~DX11API() {
 }
 
 bool DX11API::init(Window* window) {
+	ImGui_ImplWin32_EnableDpiAwareness();
 
 	// Number of samples to uses for anti aliasing
 	// Set to 1 for no aa
@@ -268,6 +278,9 @@ bool DX11API::init(Window* window) {
 	// Bind viewport
 	m_deviceContext->RSSetViewports(1, &m_viewport);
 
+	// init imgui
+	setupImguiContext(window);
+
 	return true;
 
 }
@@ -349,6 +362,37 @@ void DX11API::resizeBuffers(UINT width, UINT height) {
 	}
 }
 
+void DX11API::setupImguiContext(Window* window) {
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+	//io.ConfigViewportsNoAutoMerge = true;
+	//io.ConfigViewportsNoTaskBarIcon = true;
+	//io.ConfigViewportsNoDefaultParent = true;
+	//io.ConfigDockingTabBarOnSingleWindows = true;
+	//io.ConfigDockingTransparentPayload = true;
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+
+	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+	ImGuiStyle& style = ImGui::GetStyle();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
+
+	// Setup Platform/Renderer bindings
+	ImGui_ImplWin32_Init((void*)*((Win32Window*)window)->getHwnd());
+	ImGui_ImplDX11_Init(m_device, m_deviceContext);
+}
+
 void DX11API::setDepthMask(DepthMask setting) {
 
 	switch (setting) {
@@ -398,6 +442,26 @@ void DX11API::clear(const glm::vec4& color) {
 }
 
 void DX11API::present(bool vsync) {
+	// TODO: move this to an inheritable state
+	{
+		// Start the Dear ImGui frame
+		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		ImGui::ShowDemoWindow();
+
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+		// Update and Render additional Platform Windows
+		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+
+		renderToBackBuffer(); // This is only here because imgui changes render target
+	}
 	m_swapChain->Present(vsync, 0);
 }
 

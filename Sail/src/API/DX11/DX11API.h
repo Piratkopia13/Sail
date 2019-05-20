@@ -35,6 +35,8 @@ private:
 	void createDepthStencilBufferAndBind(UINT windowWidth, UINT windowHeight);
 	void resizeBuffers(UINT width, UINT height);
 
+	void setupImguiContext(Window* window);
+
 private:
 	// DirectX attributes
 	ID3D11Device* m_device;
