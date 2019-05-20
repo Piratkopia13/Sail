@@ -18,12 +18,13 @@ local intermediatesDir = "intermediates/%{prj.name}-%{cfg.platform}-%{cfg.buildc
 IncludeDir = {}
 IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
--- IncludeDir["ImGui"] = "libraries/imgui"
+IncludeDir["ImGui"] = "libraries/imgui/include"
 
 group "Libraries"
 include "libraries/glfw"
+include "libraries/imgui"
 
-group "Engine"
+group ""
 project "Demo"
 	location "Demo"
 	kind "WindowedApp"
@@ -125,14 +126,16 @@ project "Sail"
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.GLFW}"
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.ImGui}"
 	}
 
 	links {
 		"libfbxsdk",
 		"d3d11",
 		"d3dcompiler",
-		"GLFW"
+		"GLFW",
+		"ImGui"
 	}
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
