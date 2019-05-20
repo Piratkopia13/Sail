@@ -13,4 +13,5 @@ before_build:
     nuget restore
 
 build:
+  project: Sail.sln
   verbosity: minimal
