@@ -42,8 +42,8 @@ Model::Model() {
 //	, m_indexBuffer(nullptr)
 //	, m_shader(shaderSet)
 //{
-//	m_material = new Material();
-//	m_transform = new Transform();
+//	m_material = SAIL_NEW Material();
+//	m_transform = SAIL_NEW Transform();
 //	m_transformChanged = false;
 //}
 Model::~Model() {

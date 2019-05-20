@@ -4,7 +4,7 @@
 #include "Sail/Application.h"
 
 InputLayout* InputLayout::Create() {
-	return new DX11InputLayout();
+	return SAIL_NEW DX11InputLayout();
 }
 
 DX11InputLayout::DX11InputLayout()

@@ -4,7 +4,7 @@
 #include "Sail/Application.h"
 
 VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, Mesh::Data& modelData) {
-	return new DX11VertexBuffer(inputLayout, modelData);
+	return SAIL_NEW DX11VertexBuffer(inputLayout, modelData);
 }
 
 DX11VertexBuffer::DX11VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData)

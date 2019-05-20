@@ -15,7 +15,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 }
 
 Window* Window::Create(const WindowProps& props) {
-	return new Win32Window(props);
+	return SAIL_NEW Win32Window(props);
 }
 
 Win32Window::Win32Window(const WindowProps& props)

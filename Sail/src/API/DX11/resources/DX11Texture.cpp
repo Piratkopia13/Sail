@@ -4,7 +4,7 @@
 #include "../DX11API.h"
 
 Texture* Texture::Create(const std::string& filename) {
-	return new DX11Texture(filename);
+	return SAIL_NEW DX11Texture(filename);
 }
 
 DX11Texture::DX11Texture(const std::string& filename) {

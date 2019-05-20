@@ -7,7 +7,7 @@
 #include "DX11API.h"
 
 Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderPipeline) {
-	return new DX11Mesh(buildData, shaderPipeline);
+	return SAIL_NEW DX11Mesh(buildData, shaderPipeline);
 }
 
 DX11Mesh::DX11Mesh(Data& buildData, ShaderPipeline* shaderPipeline) 

@@ -3,7 +3,7 @@
 #include "Win32Window.h"
 
 GraphicsAPI* GraphicsAPI::Create() {
-	return new DX11API();
+	return SAIL_NEW DX11API();
 }
 
 DX11API::DX11API()
@@ -39,6 +39,13 @@ DX11API::~DX11API() {
 	Memory::safeRelease(m_blendStateDisabled);
 	Memory::safeRelease(m_blendStateAdditive);
 	Memory::safeRelease(m_perf);
+
+#ifdef _DEBUG
+	OutputDebugString(L"\n========= Live object report =========\n");
+	m_debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+	OutputDebugString(L"======================================\n\n");
+#endif
+	m_debug = nullptr;
 }
 
 bool DX11API::init(Window* window) {

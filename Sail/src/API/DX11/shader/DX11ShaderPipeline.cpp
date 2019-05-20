@@ -4,7 +4,7 @@
 #include "../DX11API.h"
 
 ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
-	return new DX11ShaderPipeline(filename);
+	return SAIL_NEW DX11ShaderPipeline(filename);
 }
 
 DX11ShaderPipeline::DX11ShaderPipeline(const std::string& filename) 
@@ -21,6 +21,12 @@ DX11ShaderPipeline::DX11ShaderPipeline(const std::string& filename)
 DX11ShaderPipeline::~DX11ShaderPipeline() {
 	ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(vsBlob);
 	Memory::safeRelease(compiledShader);
+
+	Memory::safeRelease(m_vs);
+	Memory::safeRelease(m_ps);
+	Memory::safeRelease(m_ds);
+	Memory::safeRelease(m_hs);
+	Memory::safeRelease(m_gs);
 }
 
 void DX11ShaderPipeline::bind() {

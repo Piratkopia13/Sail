@@ -58,7 +58,7 @@ namespace FileLoader {
 		imageSize = textureData.width * textureData.height * 4;
 
 		// Allocate memory for the targa image data.
-		targaImage = new unsigned char[imageSize];
+		targaImage = SAIL_NEW unsigned char[imageSize];
 		if (!targaImage) {
 			return false;
 		}
@@ -76,7 +76,7 @@ namespace FileLoader {
 		}
 
 		// Allocate memory for the targa destination data.
-		textureData.textureData = new unsigned char[imageSize];
+		textureData.textureData = SAIL_NEW unsigned char[imageSize];
 		if (!textureData.textureData) {
 			return false;
 		}

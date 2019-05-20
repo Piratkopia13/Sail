@@ -50,7 +50,7 @@ void DX11RenderableTexture::createTextures() {
 	// Color
 	if (!m_onlyDSV) {
 		Memory::safeDelete(m_dxColorTexture);
-		m_dxColorTexture = new DX11Texture(m_width, m_height, m_aaSamples, m_bindFlags, m_cpuAccessFlags);
+		m_dxColorTexture = SAIL_NEW DX11Texture(m_width, m_height, m_aaSamples, m_bindFlags, m_cpuAccessFlags);
 
 		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
 		ZeroMemory(&rtvDesc, sizeof(rtvDesc));
@@ -67,7 +67,7 @@ void DX11RenderableTexture::createTextures() {
 	// Depth
 	if (m_hasDepthStencilView) {
 		Memory::safeDelete(m_dxDepthTexture);
-		m_dxDepthTexture = new DX11Texture(DXGI_FORMAT_R24G8_TYPELESS, m_width, m_height, m_aaSamples, m_cpuAccessFlags);
+		m_dxDepthTexture = SAIL_NEW DX11Texture(DXGI_FORMAT_R24G8_TYPELESS, m_width, m_height, m_aaSamples, m_cpuAccessFlags);
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 		ZeroMemory(&dsvDesc, sizeof(dsvDesc));

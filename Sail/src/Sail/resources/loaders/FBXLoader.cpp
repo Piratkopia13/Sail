@@ -148,11 +148,11 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 		return;
 	}
 
-	buildData.positions = new Mesh::vec3[buildData.numVertices];
-	buildData.normals = new Mesh::vec3[buildData.numVertices];
-	buildData.texCoords = new Mesh::vec2[buildData.numVertices];
-	buildData.tangents = new Mesh::vec3[buildData.numVertices];
-	buildData.bitangents = new Mesh::vec3[buildData.numVertices];
+	buildData.positions = SAIL_NEW Mesh::vec3[buildData.numVertices];
+	buildData.normals = SAIL_NEW Mesh::vec3[buildData.numVertices];
+	buildData.texCoords = SAIL_NEW Mesh::vec2[buildData.numVertices];
+	buildData.tangents = SAIL_NEW Mesh::vec3[buildData.numVertices];
+	buildData.bitangents = SAIL_NEW Mesh::vec3[buildData.numVertices];
 
 	bool norms = true, uvs = true, tangs = true, bitangs = true;
 

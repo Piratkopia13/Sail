@@ -47,38 +47,38 @@ void Mesh::Data::deepCopy(const Data& other) {
 	this->numVertices = other.numVertices;
 	this->numInstances = other.numInstances;
 	if (other.indices) {
-		this->indices = new ULONG[other.numIndices];
+		this->indices = SAIL_NEW ULONG[other.numIndices];
 		for (UINT i = 0; i < other.numIndices; i++)
 			this->indices[i] = other.indices[i];
 	}
 	UINT numVerts = (other.numIndices > 0) ? other.numIndices : other.numVertices;
 	if (other.positions) {
-		this->positions = new Mesh::vec3[numVerts];
+		this->positions = SAIL_NEW Mesh::vec3[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->positions[i] = other.positions[i];
 	}
 	if (other.normals) {
-		this->normals = new Mesh::vec3[numVerts];
+		this->normals = SAIL_NEW Mesh::vec3[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->normals[i] = other.normals[i];
 	}
 	if (other.colors) {
-		this->colors = new Mesh::vec4[numVerts];
+		this->colors = SAIL_NEW Mesh::vec4[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->colors[i] = other.colors[i];
 	}
 	if (other.texCoords) {
-		this->texCoords = new Mesh::vec2[numVerts];
+		this->texCoords = SAIL_NEW Mesh::vec2[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->texCoords[i] = other.texCoords[i];
 	}
 	if (other.tangents) {
-		this->tangents = new Mesh::vec3[numVerts];
+		this->tangents = SAIL_NEW Mesh::vec3[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->tangents[i] = other.tangents[i];
 	}
 	if (other.bitangents) {
-		this->bitangents = new Mesh::vec3[numVerts];
+		this->bitangents = SAIL_NEW Mesh::vec3[numVerts];
 		for (UINT i = 0; i < numVerts; i++)
 			this->bitangents[i] = other.bitangents[i];
 	}

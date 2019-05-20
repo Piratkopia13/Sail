@@ -126,7 +126,7 @@ void MaterialShader::bind() {
 	//	Logger::Warning("Texture coordinates not set for model that will render with a texture shader");
 
 	//// Create the vertex array that this shader uses
-	//MaterialShader::Vertex* vertices = new MaterialShader::Vertex[modelData.numVertices];
+	//MaterialShader::Vertex* vertices = SAIL_NEW MaterialShader::Vertex[modelData.numVertices];
 
 	//for (UINT i = 0; i < modelData.numVertices; i++) {
 	//	// Position
@@ -173,7 +173,7 @@ void MaterialShader::bind() {
 	//// Set up index buffer if indices are set
 	//if (modelData.numIndices > 0) {
 
-	//	ULONG* indices = new ULONG[modelData.numIndices];
+	//	ULONG* indices = SAIL_NEW ULONG[modelData.numIndices];
 
 	//	// Fill the array with the model indices
 	//	for (UINT i = 0; i < modelData.numIndices; i++) {

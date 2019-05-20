@@ -3,7 +3,7 @@
 #include <windowsx.h>
 #include "sail/Application.h"
 
-Input* Input::m_Instance = new Win32Input();
+Input* Input::m_Instance = SAIL_NEW Win32Input();
 
 Win32Input::Win32Input() 
 	: m_mouseButtons { false }
@@ -104,7 +104,7 @@ void Win32Input::processMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 
 		UINT dwSize = 0;
 		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
-		LPBYTE lpb = new BYTE[dwSize];
+		LPBYTE lpb = SAIL_NEW BYTE[dwSize];
 		if (lpb == nullptr) {
 			return;
 		}

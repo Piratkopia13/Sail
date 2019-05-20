@@ -85,5 +85,5 @@ template <typename T>
 void ResourceManager::loadShaderSet() {
 	// Insert and get the new ShaderSet
 	//m_shaderSets.insert({ typeid(T).name(), std::make_unique<T>() });
-	m_shaderSets.insert({ typeid(T).name(), new T() });
+	m_shaderSets.insert({ typeid(T).name(), SAIL_NEW T() });
 }

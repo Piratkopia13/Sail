@@ -4,13 +4,13 @@
 #include "Sail/Application.h"
 
 IndexBuffer* IndexBuffer::Create(Mesh::Data& modelData) {
-	return new DX11IndexBuffer(modelData);
+	return SAIL_NEW DX11IndexBuffer(modelData);
 }
 
 DX11IndexBuffer::DX11IndexBuffer(Mesh::Data& modelData) 
 	: IndexBuffer(modelData)
 {
-	ULONG* indices = new ULONG[modelData.numIndices];
+	ULONG* indices = SAIL_NEW ULONG[modelData.numIndices];
 
 	// Fill the array with the model indices
 	for (UINT i = 0; i < modelData.numIndices; i++) {

@@ -12,7 +12,7 @@ namespace ModelFactory {
 		static std::unique_ptr<Model> Create(float radius, float numFaces, ShaderPipeline* shaderSet) {
 
 			//const int numVerts = 4;
-			//glm::vec3* positions = new glm::vec3[numVerts]{
+			//glm::vec3* positions = SAIL_NEW glm::vec3[numVerts]{
 			//	glm::vec3(-halfSizes.x, 0.f, -halfSizes.y),
 			//	glm::vec3(-halfSizes.x, 0.f, halfSizes.y),
 			//	glm::vec3(halfSizes.x, 0.f, -halfSizes.y),
@@ -22,18 +22,18 @@ namespace ModelFactory {
 			//};
 
 			//const int numIndices = 6;
-			//ULONG* indices = new ULONG[numIndices]{
+			//ULONG* indices = SAIL_NEW ULONG[numIndices]{
 			//	0, 1, 2, 2, 1, 3
 			//};
 
-			//glm::vec2* texCoords = new glm::vec2[numVerts]{
+			//glm::vec2* texCoords = SAIL_NEW glm::vec2[numVerts]{
 			//	glm::vec2(0.f, 1.f),
 			//	glm::vec2(0.f, 0.f),
 			//	glm::vec2(1.f, 1.f),
 			//	glm::vec2(1.f, 0.f)
 			//};
 
-			//glm::vec3* normals = new glm::vec3[numVerts]{
+			//glm::vec3* normals = SAIL_NEW glm::vec3[numVerts]{
 			//	glm::vec3(0.f, 1.f, 0.f),
 			//	glm::vec3(0.f, 1.f, 0.f),
 			//	glm::vec3(0.f, 1.f, 0.f),

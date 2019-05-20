@@ -11,7 +11,7 @@ namespace ModelFactory {
 
 			const int numVerts = 36;
 
-			Mesh::vec3* positions = new Mesh::vec3[numVerts]{
+			Mesh::vec3* positions = SAIL_NEW Mesh::vec3[numVerts]{
 				Mesh::vec3(-halfSizes.x, -halfSizes.y, -halfSizes.z),
 				Mesh::vec3(-halfSizes.x, halfSizes.y, -halfSizes.z),
 				Mesh::vec3(halfSizes.x, -halfSizes.y, -halfSizes.z),
@@ -55,7 +55,7 @@ namespace ModelFactory {
 				Mesh::vec3(halfSizes.x, -halfSizes.y, halfSizes.z),
 			};
 
-			Mesh::vec2* texCoords = new Mesh::vec2[numVerts]{
+			Mesh::vec2* texCoords = SAIL_NEW Mesh::vec2[numVerts]{
 				// Neg z (front)
 				Mesh::vec2(0.f, 1.0f),
 				Mesh::vec2(0.f, 0.f),
@@ -111,7 +111,7 @@ namespace ModelFactory {
 				Mesh::vec2(1.f, 1.f),
 			};
 
-			Mesh::vec3* normals = new Mesh::vec3[numVerts]{
+			Mesh::vec3* normals = SAIL_NEW Mesh::vec3[numVerts]{
 				Mesh::vec3(0.f, 0.f, -1.f),
 				Mesh::vec3(0.f, 0.f, -1.f),
 				Mesh::vec3(0.f, 0.f, -1.f),

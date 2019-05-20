@@ -45,7 +45,7 @@
 //	UINT dwSize;
 //
 //	GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
-//	LPBYTE lpb = new BYTE[dwSize];
+//	LPBYTE lpb = SAIL_NEW BYTE[dwSize];
 //	if (lpb == NULL) {
 //		return;
 //	}

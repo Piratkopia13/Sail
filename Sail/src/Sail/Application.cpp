@@ -47,7 +47,9 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 }
 
-Application::~Application() {	}
+Application::~Application() {
+	delete Input::GetInstance();
+}
 
 int Application::startGameLoop() {
 

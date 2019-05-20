@@ -1,5 +1,17 @@
 #pragma once
 
+// Memory leak detection for debug
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#ifdef _DEBUG
+#define SAIL_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
+// allocations to be of _CLIENT_BLOCK type
+#else
+#define SAIL_NEW new
+#endif
+
 #define NOMINMAX // Removes min max macros which cause issues
 // Exclude some less used APIs to speed up the build process on windows
 #define WIN32_LEAN_AND_MEAN
