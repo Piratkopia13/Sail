@@ -50,7 +50,8 @@ project "Demo"
 	includedirs {
 		"libraries",
 		"Sail/src",
-		"%{IncludeDir.FBX_SDK}"
+		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.ImGui}"
 	}
 
 	links {

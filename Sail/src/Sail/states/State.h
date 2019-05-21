@@ -23,6 +23,8 @@ class State : public IEventListener {
 		virtual bool update(float dt) = 0;
 		// Renders the state
 		virtual bool render(float dt) = 0;
+		// Renders imgui
+		virtual bool renderImgui(float dt);
 		// Sends events to the state
 		virtual void onEvent(Event& event) { }
 

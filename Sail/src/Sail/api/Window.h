@@ -4,6 +4,8 @@
 
 class Window {
 public:
+	friend class Application;
+
 	struct WindowProps {
 		HINSTANCE hInstance;
 		unsigned int windowWidth = 1280;
@@ -26,5 +28,9 @@ protected:
 	unsigned int windowHeight;
 
 private:
+	// NOTE: this method is only used internally by the sail and should not be called by the user
+	// Returns true if the window has been resized
+	// after the last call of this method
+	virtual bool hasBeenResized() = 0;
 
 };

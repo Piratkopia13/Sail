@@ -1,4 +1,5 @@
 #include "GameState.h"
+#include "imgui.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -138,7 +139,7 @@ bool GameState::processInput(float dt) {
 void GameState::onEvent(Event& event) {
 	Logger::Log("Received event: " + std::to_string(event.getType()));
 
-	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&GameState::onResize));
+	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 
 	// Forward events
 	m_scene.onEvent(event);
@@ -180,4 +181,9 @@ bool GameState::render(float dt) {
 	//m_scene->drawHUD();
 
 	return true;
+}
+
+bool GameState::renderImgui(float dt) {
+	//ImGui::ShowDemoWindow();
+	return false;
 }

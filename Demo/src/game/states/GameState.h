@@ -15,6 +15,8 @@ public:
 	virtual bool update(float dt) override;
 	// Renders the state
 	virtual bool render(float dt) override;
+	// Renders imgui
+	virtual bool renderImgui(float dt) override;
 
 private:
 	bool onResize(WindowResizeEvent& event);

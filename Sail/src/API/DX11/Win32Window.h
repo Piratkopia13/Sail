@@ -18,10 +18,7 @@ public:
 
 	LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	
-	// NOTE: this method is only used internally by the sail and should not be called by the user
-	// Returns true if the window has been resized
-	// after the last call of this method
-	bool hasBeenResized();
+	virtual bool hasBeenResized() override;
 
 	virtual void setWindowTitle(const std::string& title) override;
 	const HWND* getHwnd() const;

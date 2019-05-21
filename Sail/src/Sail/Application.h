@@ -1,13 +1,10 @@
 #pragma once
 #include "api/Mesh.h"
 
-// TODO: remove all api specific includes
-#include "API/DX11/Win32Window.h"
-//#include "API/DX11/DX11API.h"
-
 #include "api/Input.h"
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
+#include "api/ImGuiHandler.h"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
@@ -34,15 +31,15 @@ public:
 	virtual void dispatchEvent(Event& event) override { }
 
 	template<typename T>
-	T* const getAPI() {
-		return static_cast<T*>(m_api.get());
-	}
-	GraphicsAPI* const getAPI() {
-		return m_api.get();
-	}
+	T* const getAPI() { return static_cast<T*>(m_api.get()); }
+	GraphicsAPI* const getAPI();
+
+	template<typename T>
+	T* const getWindow() { return static_cast<T*>(m_window.get()); }
+	Window* const getWindow();
 
 	static Application* getInstance();
-	Window* const getWindow();
+	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
 
@@ -50,6 +47,7 @@ private:
 	static Application* m_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
+	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	ResourceManager m_resourceManager;
 
 	Timer m_timer;

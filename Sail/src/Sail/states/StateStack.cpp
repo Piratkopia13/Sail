@@ -58,6 +58,12 @@ void StateStack::render(float dt) {
 	}*/
 	for (auto& state : m_stack)
 		state->render(dt);
+	
+	Application::getInstance()->getImGuiHandler()->begin();
+	for (auto& state : m_stack)
+		state->renderImgui(dt);
+	Application::getInstance()->getImGuiHandler()->end();
+
 
 	Application::getInstance()->getAPI()->present(false);
 }

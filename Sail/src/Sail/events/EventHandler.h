@@ -3,7 +3,7 @@
 #include "Event.h"
 #include <functional>
 
-#define FUNC(x) std::bind(x, this, std::placeholders::_1)
+#define SAIL_BIND_EVENT(x) std::bind(x, this, std::placeholders::_1)
 
 class EventHandler {
 public:

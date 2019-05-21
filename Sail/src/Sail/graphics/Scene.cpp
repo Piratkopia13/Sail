@@ -68,7 +68,7 @@ void Scene::draw(Camera& camera) {
 }
 
 void Scene::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&Scene::onResize));
+	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
 	// Forward events
 	m_renderer.onEvent(event);

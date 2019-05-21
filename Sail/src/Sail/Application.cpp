@@ -7,6 +7,13 @@ Application* Application::m_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
 
+	// Set up instance if not set
+	if (m_instance) {
+		Logger::Error("Only one application can exist!");
+		return;
+	}
+	m_instance = this;
+
 	// Set up window
 	Window::WindowProps windowProps;
 	windowProps.hInstance = hInstance;
@@ -17,6 +24,8 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Set up api
 	m_api = std::unique_ptr<GraphicsAPI>(GraphicsAPI::Create());
+	// Set up imgui handler
+	m_imguiHandler = std::unique_ptr<ImGuiHandler>(ImGuiHandler::Create());
 
 	// Initalize the window
 	if (!m_window->initialize()) {
@@ -32,15 +41,11 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 		return;
 	}
 
+	// Initialize imgui
+	m_imguiHandler->init();
+
 	// Register devices to use raw input from hardware
 	//m_input.registerRawDevices(*m_window.getHwnd());
-
-	// Set up instance if not set
-	if (m_instance) {
-		Logger::Error("Only one application can exist!");
-		return;
-	}
-	m_instance = this;
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
@@ -80,7 +85,7 @@ int Application::startGameLoop() {
 		} else {
 
 			// Handle window resizing
-			if (static_cast<Win32Window*>(m_window.get())->hasBeenResized()) {
+			if (m_window->hasBeenResized()) {
 				UINT newWidth = m_window->getWindowWidth();
 				UINT newHeight = m_window->getWindowHeight();
 				// Resize graphics api
@@ -155,9 +160,14 @@ Application* Application::getInstance() {
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
 	return m_instance;
 }
-
+GraphicsAPI* const Application::getAPI() {
+	return m_api.get();
+}
 Window* const Application::getWindow() {
 	return m_window.get();
+}
+ImGuiHandler* const Application::getImGuiHandler() {
+	return m_imguiHandler.get();
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
