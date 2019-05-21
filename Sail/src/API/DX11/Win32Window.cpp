@@ -151,9 +151,6 @@ bool Win32Window::hasBeenResized() {
 
 void Win32Window::setWindowTitle(const std::string& title) {
 	std::string newTitle = title;
-#ifdef _DEBUG
-	newTitle += " | Debug build";
-#endif
 	std::wstring ttle(newTitle.begin(), newTitle.end());
 	SetWindowText(m_hWnd, ttle.c_str());
 }

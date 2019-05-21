@@ -38,6 +38,7 @@ public:
 	T* const getWindow() { return static_cast<T*>(m_window.get()); }
 	Window* const getWindow();
 
+	static std::string getPlatformName();
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();

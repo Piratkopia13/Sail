@@ -139,6 +139,27 @@ project "Sail"
 		"ImGui"
 	}
 
+	defines {
+		"SAIL_PLATFORM=\"%{cfg.platform}\""
+	}
+
+	filter { "platforms:DX11*" }
+		defines {
+			"_SAIL_DX11"
+		}
+		removefiles {
+			"%{prj.name}/src/API/DX12/**",
+			"%{prj.name}/src/API/VULKAN/**",
+		}
+	filter { "platforms:DX12*" }
+		defines {
+			"_SAIL_DX12"
+		}
+		removefiles {
+			"%{prj.name}/src/API/DX11/**",
+			"%{prj.name}/src/API/VULKAN/**",
+		}
+
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
 			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"

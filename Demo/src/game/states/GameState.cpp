@@ -163,7 +163,7 @@ bool GameState::update(float dt) {
 		m_debugCamText->setText(L"Camera @ " + Utils::toWStr(camPos) + L"\n" + 
 			L"GPU memory usage: " + std::to_wstring(m_app->getAPI()->getMemoryUsage()) + L"/" + std::to_wstring(m_app->getAPI()->getMemoryBudget()) + L"mb");
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | FPS: " + std::to_string(m_app->getFPS()));
+	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
 
 	return true;
 }

@@ -6,9 +6,12 @@
 //#include "DX12API.h"
 
 // TODO: only define if dx12 api is used
-//Mesh* Mesh::Create(Data& buildData, ShaderSet* shaderSet) {
-//	return SAIL_NEW DX12Mesh(buildData, shaderSet);
-//}
+Mesh* Mesh::Create(Data& buildData, ShaderSet* shaderSet) {
+	return SAIL_NEW DX12Mesh(buildData, shaderSet);
+}
+
+#pragma message("COMPILED DX12MESH!")
+//#include "../../big.txt"
 
 DX12Mesh::DX12Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
 	: Mesh(buildData, shaderPipeline)

@@ -155,6 +155,10 @@ int Application::startGameLoop() {
 
 }
 
+std::string Application::getPlatformName() {
+	return std::string(SAIL_PLATFORM);
+}
+
 Application* Application::getInstance() {
 	if (!m_instance)
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
