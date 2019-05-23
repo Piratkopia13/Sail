@@ -3,11 +3,9 @@
 #include "Sail/api/VertexBuffer.h"
 #include "Sail/api/IndexBuffer.h"
 #include "Sail/Application.h"
-//#include "DX12API.h"
 
-// TODO: only define if dx12 api is used
-Mesh* Mesh::Create(Data& buildData, ShaderSet* shaderSet) {
-	return SAIL_NEW DX12Mesh(buildData, shaderSet);
+Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderPipeline) {
+	return SAIL_NEW DX12Mesh(buildData, shaderPipeline);
 }
 
 #pragma message("COMPILED DX12MESH!")

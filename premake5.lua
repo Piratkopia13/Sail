@@ -99,6 +99,10 @@ project "Sail"
 
 	-- include and fix these as soon as new cross-platform architecture is finished
 	removefiles { 
+		"%{prj.name}/src/API/DX11/**",
+		"%{prj.name}/src/API/DX12/**",
+		"%{prj.name}/src/API/VULKAN/**",
+
 		"**/DXCubeMap.*",
 		"%{prj.name}/src/Sail/resources/audio/**",
 		"**/Skybox.*",
@@ -133,7 +137,6 @@ project "Sail"
 
 	links {
 		"libfbxsdk",
-		"d3d11",
 		"d3dcompiler",
 		"GLFW",
 		"ImGui"
@@ -147,17 +150,17 @@ project "Sail"
 		defines {
 			"_SAIL_DX11"
 		}
-		removefiles {
-			"%{prj.name}/src/API/DX12/**",
-			"%{prj.name}/src/API/VULKAN/**",
+		files {
+			"%{prj.name}/src/API/DX11/**",
+			"%{prj.name}/src/API/Windows/**"
 		}
 	filter { "platforms:DX12*" }
 		defines {
 			"_SAIL_DX12"
 		}
-		removefiles {
-			"%{prj.name}/src/API/DX11/**",
-			"%{prj.name}/src/API/VULKAN/**",
+		files {
+			"%{prj.name}/src/API/DX12/**",
+			"%{prj.name}/src/API/Windows/**"
 		}
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }

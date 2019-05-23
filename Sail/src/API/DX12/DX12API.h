@@ -1,5 +1,10 @@
 #pragma once
 
+// Link necessary d3d12 libraries.
+#pragma comment(lib,"d3dcompiler.lib")
+#pragma comment(lib, "D3D12.lib")
+#pragma comment(lib, "dxgi.lib")
+
 // Include the minimal needed from windows.h
 #define VC_EXTRALEAN
 #define WIN32_LEAN_AND_MEAN
@@ -45,6 +50,8 @@ public:
 	virtual unsigned int getMemoryUsage() const override;
 	virtual unsigned int getMemoryBudget() const override;
 
+	inline UINT getFrameIndex() const;
+
 	void renderToBackBuffer() const;
 	// TODO: replace with event
 	void resize(UINT width, UINT height);
@@ -63,6 +70,8 @@ private:
 
 private:
 	static const UINT NUM_SWAP_BUFFERS;
+
+	UINT m_backBufferIndex;
 
 	wComPtr<ID3D12Device5> m_device;
 #ifdef _DEBUG

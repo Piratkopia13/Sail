@@ -1,5 +1,8 @@
 #pragma once
 
+// Link necessary d3d11 library
+#pragma comment(lib, "D3D11.lib")
+
 #include <d3d11.h>
 #include <d3d11_3.h>
 #include <dxgi1_4.h>

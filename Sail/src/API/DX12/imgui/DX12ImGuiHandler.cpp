@@ -1,34 +1,34 @@
 #include "pch.h"
-#include "DX11ImGuiHandler.h"
+#include "DX12ImGuiHandler.h"
 #include "Sail/Application.h"
-#include "../DX11API.h"
+#include "../DX12API.h"
 #include "API/Windows/Win32Window.h"
 
 #include "imgui.h"
 #include "examples/imgui_impl_win32.h"
-#include "examples/imgui_impl_dx11.h"
+#include "examples/imgui_impl_dx12.h"
 
 // Build imgui examples
-#include "examples/imgui_impl_dx11.cpp"
+#include "examples/imgui_impl_dx12.cpp"
 #include "examples/imgui_impl_win32.cpp"
 
 
 
 ImGuiHandler* ImGuiHandler::Create() {
-	return new DX11ImGuiHandler();
+	return new DX12ImGuiHandler();
 }
 
-DX11ImGuiHandler::DX11ImGuiHandler() {
+DX12ImGuiHandler::DX12ImGuiHandler() {
 	ImGui_ImplWin32_EnableDpiAwareness();
 }
 
-DX11ImGuiHandler::~DX11ImGuiHandler() {
-	ImGui_ImplDX11_Shutdown();
+DX12ImGuiHandler::~DX12ImGuiHandler() {
+	//ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 }
 
-void DX11ImGuiHandler::init() {
+void DX12ImGuiHandler::init() {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -54,29 +54,29 @@ void DX11ImGuiHandler::init() {
 		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 	}
 
-	auto* api = Application::getInstance()->getAPI<DX11API>();
-	auto* window = Application::getInstance()->getWindow<Win32Window>();
+	//auto* api = Application::getInstance()->getAPI<DX11API>();
+	//auto* window = Application::getInstance()->getWindow<Win32Window>();
 
-	// Setup Platform/Renderer bindings
-	ImGui_ImplWin32_Init((void*) * (window->getHwnd()));
-	ImGui_ImplDX11_Init(api->getDevice(), api->getDeviceContext());
+	//// Setup Platform/Renderer bindings
+	//ImGui_ImplWin32_Init((void*) * (window->getHwnd()));
+	//ImGui_ImplDX11_Init(api->getDevice(), api->getDeviceContext());
 }
 
-void DX11ImGuiHandler::begin() {
+void DX12ImGuiHandler::begin() {
 	// Start the Dear ImGui frame
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
+	//ImGui_ImplDX11_NewFrame();
+	/*ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();*/
 }
 
-void DX11ImGuiHandler::end() {
-	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+void DX12ImGuiHandler::end() {
+	//ImGui::Render();
+	//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData());
 
-	// Update and Render additional Platform Windows
-	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
-	}
-	Application::getInstance()->getAPI<DX11API>()->renderToBackBuffer(); // This is only here because imgui changes render target
+	//// Update and Render additional Platform Windows
+	//if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+	//	ImGui::UpdatePlatformWindows();
+	//	ImGui::RenderPlatformWindowsDefault();
+	//}
+	//Application::getInstance()->getAPI<DX12API>()->renderToBackBuffer(); // This is only here because imgui changes render target
 }

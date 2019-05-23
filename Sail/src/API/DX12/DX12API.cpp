@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "DX12API.h"
-#include "../DX11/Win32Window.h"
+#include "API/Windows/Win32Window.h"
+#include "DX12Utils.h"
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
 
@@ -9,6 +10,7 @@ GraphicsAPI* GraphicsAPI::Create() {
 }
 
 DX12API::DX12API()
+	: m_backBufferIndex(0)
 {}
 
 DX12API::~DX12API() {
@@ -27,23 +29,23 @@ bool DX12API::init(Window* window) {
 	createGlobalRootSignature();
 	createDepthStencilResources(winWindow);
 
-	//// Reset pre allocator and command list to prep for initialization commands
-	//ThrowIfFailed(m_preCommand.allocators[getFrameIndex()]->Reset());
-	//ThrowIfFailed(m_preCommand.list->Reset(m_preCommand.allocators[getFrameIndex()].Get(), nullptr));
+	// Reset pre allocator and command list to prep for initialization commands
+	ThrowIfFailed(m_preCommand.allocators[getFrameIndex()]->Reset());
+	ThrowIfFailed(m_preCommand.list->Reset(m_preCommand.allocators[getFrameIndex()].Get(), nullptr));
 
 
-	//// 7. Viewport and scissor rect
-	//m_viewport.TopLeftX = 0.0f;
-	//m_viewport.TopLeftY = 0.0f;
-	//m_viewport.Width = (float)width;
-	//m_viewport.Height = (float)height;
-	//m_viewport.MinDepth = 0.0f;
-	//m_viewport.MaxDepth = 1.0f;
+	// 7. Viewport and scissor rect
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f;
+	m_viewport.Width = (float)window->getWindowWidth();
+	m_viewport.Height = (float)window->getWindowHeight();
+	m_viewport.MinDepth = 0.0f;
+	m_viewport.MaxDepth = 1.0f;
 
-	//m_scissorRect.left = (long)0;
-	//m_scissorRect.right = (long)width;
-	//m_scissorRect.top = (long)0;
-	//m_scissorRect.bottom = (long)height;
+	m_scissorRect.left = (long)0;
+	m_scissorRect.right = (long)window->getWindowWidth();
+	m_scissorRect.top = (long)0;
+	m_scissorRect.bottom = (long)window->getWindowHeight();
 
 	OutputDebugString(L"DX12 Initialized.\n");
 
@@ -362,10 +364,21 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
+	D3D12_RESOURCE_DESC bufferDesc{};
+	bufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	bufferDesc.Width = window->getWindowWidth();
+	bufferDesc.Height = window->getWindowHeight();
+	bufferDesc.DepthOrArraySize = 1;
+	bufferDesc.MipLevels = 0;
+	bufferDesc.SampleDesc.Count = 1;
+	bufferDesc.SampleDesc.Quality = 0;
+	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
 	m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		&DX12Utils::sDefaultHeapProps,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, m_window->getWindowWidth(), m_window->getWindowHeight(), 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+		&bufferDesc,
 		D3D12_RESOURCE_STATE_DEPTH_WRITE,
 		&depthOptimizedClearValue,
 		IID_PPV_ARGS(&m_depthStencilBuffer)
@@ -455,12 +468,18 @@ unsigned int DX12API::getMemoryUsage() const {
 	/*DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
 	return info.CurrentUsage / 1000000;*/
+	return -1;
 }
 
 unsigned int DX12API::getMemoryBudget() const {
 	/*DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
 	return info.Budget / 1000000;*/
+	return -1;
+}
+
+inline UINT DX12API::getFrameIndex() const {
+	return m_backBufferIndex;
 }
 
 void DX12API::renderToBackBuffer() const {
