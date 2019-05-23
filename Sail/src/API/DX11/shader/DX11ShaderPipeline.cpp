@@ -20,13 +20,13 @@ DX11ShaderPipeline::DX11ShaderPipeline(const std::string& filename)
 
 DX11ShaderPipeline::~DX11ShaderPipeline() {
 	ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(vsBlob);
-	Memory::safeRelease(compiledShader);
+	Memory::SafeRelease(compiledShader);
 
-	Memory::safeRelease(m_vs);
-	Memory::safeRelease(m_ps);
-	Memory::safeRelease(m_ds);
-	Memory::safeRelease(m_hs);
-	Memory::safeRelease(m_gs);
+	Memory::SafeRelease(m_vs);
+	Memory::SafeRelease(m_ps);
+	Memory::SafeRelease(m_ds);
+	Memory::SafeRelease(m_hs);
+	Memory::SafeRelease(m_gs);
 }
 
 void DX11ShaderPipeline::bind() {
@@ -117,24 +117,24 @@ void DX11ShaderPipeline::compile() {
 		std::cout << "has ps" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(psBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreatePixelShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ps));
-		Memory::safeRelease(compiledShader);
+		Memory::SafeRelease(compiledShader);
 	}
 	if (gsBlob) {
 		std::cout << "has gs" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(gsBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateGeometryShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_gs));
-		Memory::safeRelease(compiledShader);
+		Memory::SafeRelease(compiledShader);
 	}
 	if (dsBlob) {
 		std::cout << "has ds" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(dsBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateDomainShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ds));
-		Memory::safeRelease(compiledShader);
+		Memory::SafeRelease(compiledShader);
 	}
 	if (hsBlob) {
 		std::cout << "has hs" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(hsBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateHullShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_hs));
-		Memory::safeRelease(compiledShader);
+		Memory::SafeRelease(compiledShader);
 	}
 }

@@ -20,26 +20,26 @@ DX11API::~DX11API() {
 	if (m_deviceContext)
 		m_deviceContext->ClearState();
 
-	Memory::safeRelease(m_renderTargetView);
-	Memory::safeRelease(m_swapChain);
-	Memory::safeRelease(m_deviceContext);
-	Memory::safeRelease(m_device);
-	Memory::safeRelease(m_device3);
-	Memory::safeRelease(m_dxgiDevice);
-	Memory::safeRelease(m_adapter3);
-	Memory::safeRelease(m_depthStencilBuffer);
-	Memory::safeRelease(m_depthStencilStateEnabled);
-	Memory::safeRelease(m_depthStencilStateWriteMask);
-	Memory::safeRelease(m_depthStencilStateDisabled);
-	Memory::safeRelease(m_depthStencilView);
-	Memory::safeRelease(m_rasterStateBackfaceCulling);
-	Memory::safeRelease(m_rasterStateFrontfaceCulling);
-	Memory::safeRelease(m_rasterStateBackfaceCullingNoConservative);
-	Memory::safeRelease(m_rasterStateNoCulling);
-	Memory::safeRelease(m_blendStateAlpha);
-	Memory::safeRelease(m_blendStateDisabled);
-	Memory::safeRelease(m_blendStateAdditive);
-	Memory::safeRelease(m_perf);
+	Memory::SafeRelease(m_renderTargetView);
+	Memory::SafeRelease(m_swapChain);
+	Memory::SafeRelease(m_deviceContext);
+	Memory::SafeRelease(m_device);
+	Memory::SafeRelease(m_device3);
+	Memory::SafeRelease(m_dxgiDevice);
+	Memory::SafeRelease(m_adapter3);
+	Memory::SafeRelease(m_depthStencilBuffer);
+	Memory::SafeRelease(m_depthStencilStateEnabled);
+	Memory::SafeRelease(m_depthStencilStateWriteMask);
+	Memory::SafeRelease(m_depthStencilStateDisabled);
+	Memory::SafeRelease(m_depthStencilView);
+	Memory::SafeRelease(m_rasterStateBackfaceCulling);
+	Memory::SafeRelease(m_rasterStateFrontfaceCulling);
+	Memory::SafeRelease(m_rasterStateBackfaceCullingNoConservative);
+	Memory::SafeRelease(m_rasterStateNoCulling);
+	Memory::SafeRelease(m_blendStateAlpha);
+	Memory::SafeRelease(m_blendStateDisabled);
+	Memory::SafeRelease(m_blendStateAdditive);
+	Memory::SafeRelease(m_perf);
 
 #ifdef _DEBUG
 	OutputDebugString(L"\n========= Live object report =========\n");
@@ -135,7 +135,7 @@ bool DX11API::init(Window* window) {
 		infoQueue->AddStorageFilterEntries(&filter);
 		infoQueue->Release();
 
-		Memory::safeRelease(infoQueue);
+		Memory::SafeRelease(infoQueue);
 		infoQueue = nullptr;
 	}
 	m_device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&m_debug));
@@ -147,7 +147,7 @@ bool DX11API::init(Window* window) {
 	ID3D11Texture2D* backBufferTex = nullptr;
 	m_swapChain->GetBuffer(NULL, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBufferTex));
 	ThrowIfFailed(m_device->CreateRenderTargetView(backBufferTex, nullptr, &m_renderTargetView));
-	Memory::safeRelease(backBufferTex);
+	Memory::SafeRelease(backBufferTex);
 
 
 	// Set up depth stencil description
@@ -277,8 +277,8 @@ void DX11API::createDepthStencilBufferAndBind(UINT windowWidth, UINT windowHeigh
 
 	// Release everything that is set already
 	// This is done since this method is called on window resize
-	Memory::safeRelease(m_depthStencilBuffer);
-	Memory::safeRelease(m_depthStencilView);
+	Memory::SafeRelease(m_depthStencilBuffer);
+	Memory::SafeRelease(m_depthStencilView);
 
 	// Set up depth buffer description
 	D3D11_TEXTURE2D_DESC depthBufferDesc;
@@ -319,7 +319,7 @@ void DX11API::resizeBuffers(UINT width, UINT height) {
 		m_deviceContext->OMSetRenderTargets(0, 0, m_depthStencilView);
 
 		// Release all outstanding references to the swap chain's buffers
-		Memory::safeRelease(m_renderTargetView);
+		Memory::SafeRelease(m_renderTargetView);
 
 		// Preserve the existing buffer count and format
 		// Automatically choose the width and height to match the client rect for HWNDs
@@ -329,7 +329,7 @@ void DX11API::resizeBuffers(UINT width, UINT height) {
 		ID3D11Texture2D* backBufferTex = nullptr;
 		ThrowIfFailed(m_swapChain->GetBuffer(NULL, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBufferTex)));
 		ThrowIfFailed(m_device->CreateRenderTargetView(backBufferTex, nullptr, &m_renderTargetView));
-		Memory::safeRelease(backBufferTex);
+		Memory::SafeRelease(backBufferTex);
 
 		m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, nullptr);
 

@@ -90,7 +90,7 @@ namespace ShaderComponent {
 	}
 
 	DX11Sampler::~DX11Sampler() {
-		Memory::safeRelease(m_samplerState);
+		Memory::SafeRelease(m_samplerState);
 	}
 
 	void DX11Sampler::bind() {

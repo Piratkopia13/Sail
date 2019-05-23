@@ -22,16 +22,16 @@ DX11RenderableTexture::DX11RenderableTexture(UINT aaSamples, UINT width, UINT he
 }
 
 DX11RenderableTexture::~DX11RenderableTexture() {
-	Memory::safeDelete(m_dxColorTexture);
-	Memory::safeDelete(m_dxDepthTexture);
-	Memory::safeRelease(m_renderTargetView);
-	Memory::safeRelease(m_depthStencilView);
+	Memory::SafeDelete(m_dxColorTexture);
+	Memory::SafeDelete(m_dxDepthTexture);
+	Memory::SafeRelease(m_renderTargetView);
+	Memory::SafeRelease(m_depthStencilView);
 
 	// Release the SRV if the MSAA sample count is > 1, since we created our own when this is true
 	if (m_aaSamples > 1) {
-		Memory::safeRelease(m_nonMSAAColorTexture2D);
-		Memory::safeRelease(m_nonMSAAColorSRV); 
-		Memory::safeRelease(m_nonMSAADepthSRV);
+		Memory::SafeRelease(m_nonMSAAColorTexture2D);
+		Memory::SafeRelease(m_nonMSAAColorSRV); 
+		Memory::SafeRelease(m_nonMSAADepthSRV);
 	}
 }
 
@@ -49,7 +49,7 @@ void DX11RenderableTexture::createTextures() {
 
 	// Color
 	if (!m_onlyDSV) {
-		Memory::safeDelete(m_dxColorTexture);
+		Memory::SafeDelete(m_dxColorTexture);
 		m_dxColorTexture = SAIL_NEW DX11Texture(m_width, m_height, m_aaSamples, m_bindFlags, m_cpuAccessFlags);
 
 		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
@@ -59,14 +59,14 @@ void DX11RenderableTexture::createTextures() {
 		rtvDesc.Texture2D.MipSlice = 0;
 
 		// Delete the old
-		Memory::safeRelease(m_renderTargetView);
+		Memory::SafeRelease(m_renderTargetView);
 		// Create the new
 		api->getDevice()->CreateRenderTargetView(m_dxColorTexture->getTexture2D(), &rtvDesc, &m_renderTargetView);
 	}
 
 	// Depth
 	if (m_hasDepthStencilView) {
-		Memory::safeDelete(m_dxDepthTexture);
+		Memory::SafeDelete(m_dxDepthTexture);
 		m_dxDepthTexture = SAIL_NEW DX11Texture(DXGI_FORMAT_R24G8_TYPELESS, m_width, m_height, m_aaSamples, m_cpuAccessFlags);
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
@@ -76,7 +76,7 @@ void DX11RenderableTexture::createTextures() {
 		dsvDesc.Texture2D.MipSlice = 0;
 
 		// Delete the old
-		Memory::safeRelease(m_depthStencilView);
+		Memory::SafeRelease(m_depthStencilView);
 		// Create the new
 		api->getDevice()->CreateDepthStencilView(m_dxDepthTexture->getTexture2D(), &dsvDesc, &m_depthStencilView);
 	}
@@ -94,7 +94,7 @@ void DX11RenderableTexture::createTextures() {
 		texDesc.CPUAccessFlags = m_cpuAccessFlags;
 
 		// Release the old Texture2D
-		Memory::safeRelease(m_nonMSAAColorTexture2D);
+		Memory::SafeRelease(m_nonMSAAColorTexture2D);
 		// Create the texture2D
 		api->getDevice()->CreateTexture2D(&texDesc, nullptr, &m_nonMSAAColorTexture2D);
 
@@ -106,7 +106,7 @@ void DX11RenderableTexture::createTextures() {
 		srvDesc.Texture2D.MipLevels = 1;
 
 		// Release the old SRV
-		Memory::safeRelease(m_nonMSAAColorSRV);
+		Memory::SafeRelease(m_nonMSAAColorSRV);
 		// Create the ShaderResourceView
 		api->getDevice()->CreateShaderResourceView(m_nonMSAAColorTexture2D, &srvDesc, &m_nonMSAAColorSRV);
 

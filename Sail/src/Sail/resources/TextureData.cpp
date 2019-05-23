@@ -11,7 +11,7 @@ TextureData::TextureData(const std::string& filename) {
 	load(filename);
 }
 TextureData::~TextureData() {
-	Memory::safeDeleteArr(m_data.textureData);
+	Memory::SafeDeleteArr(m_data.textureData);
 }
 
 void TextureData::load(const std::string& filename) {

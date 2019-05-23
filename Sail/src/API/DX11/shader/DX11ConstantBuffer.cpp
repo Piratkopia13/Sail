@@ -37,7 +37,7 @@ namespace ShaderComponent {
 
 	}
 	DX11ConstantBuffer::~DX11ConstantBuffer() {
-		Memory::safeRelease(m_buffer);
+		Memory::SafeRelease(m_buffer);
 		free(m_data);
 	}
 

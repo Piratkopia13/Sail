@@ -26,7 +26,7 @@ class Memory {
 
 public:
 	template <typename T>
-	static void safeDelete(T& t) {
+	static void SafeDelete(T& t) {
 		if (t) {
 			delete t;
 			t = nullptr;
@@ -34,7 +34,7 @@ public:
 	}
 
 	template <typename T>
-	static void safeDeleteArr(T& t) {
+	static void SafeDeleteArr(T& t) {
 		if (t) {
 			delete[] t;
 			t = nullptr;
@@ -42,10 +42,24 @@ public:
 	}
 
 	template<typename T>
-	static void safeRelease(T& t) {
+	static void SafeRelease(T& t) {
 		if (t) {
 			t->Release();
 			t = nullptr;
+		}
+	}
+	template<typename T>
+	static void SafeRelease(T*& t) {
+		if (t) {
+			t->Release();
+			t = nullptr;
+		}
+	}
+	template<typename T>
+	static void SafeRelease(T** t) {
+		if (*t) {
+			(*t)->Release();
+			(*t) = nullptr;
 		}
 	}
 

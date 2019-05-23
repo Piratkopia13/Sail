@@ -32,12 +32,12 @@ DX11IndexBuffer::DX11IndexBuffer(Mesh::Data& modelData)
 	// Create the index buffer
 	ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateBuffer(&ibd, &indexData, &m_buffer));
 	// Delete indices from cpu memory
-	Memory::safeDeleteArr(indices);
+	Memory::SafeDeleteArr(indices);
 
 }
 
 DX11IndexBuffer::~DX11IndexBuffer() {
-	Memory::safeRelease(m_buffer);
+	Memory::SafeRelease(m_buffer);
 }
 
 ID3D11Buffer* const* DX11IndexBuffer::getBuffer() const {

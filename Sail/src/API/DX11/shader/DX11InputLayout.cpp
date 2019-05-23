@@ -12,7 +12,7 @@ DX11InputLayout::DX11InputLayout()
 { }
 
 DX11InputLayout::~DX11InputLayout() {
-	Memory::safeRelease(m_inputLayout);
+	Memory::SafeRelease(m_inputLayout);
 }
 
 void DX11InputLayout::pushFloat(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass, UINT instanceDataStepRate) {

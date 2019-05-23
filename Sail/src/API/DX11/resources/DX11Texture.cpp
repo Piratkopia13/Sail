@@ -112,8 +112,8 @@ DX11Texture::DX11Texture(DXGI_FORMAT format, UINT width, UINT height, UINT sampl
 }
 
 DX11Texture::~DX11Texture() {
-	Memory::safeRelease(m_texture);
-	Memory::safeRelease(m_resourceView);
+	Memory::SafeRelease(m_texture);
+	Memory::SafeRelease(m_resourceView);
 }
 
 SailTexture* DX11Texture::getHandle() {

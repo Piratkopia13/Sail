@@ -13,13 +13,13 @@ Mesh::Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
 }
 
 Mesh::~Mesh() {
-	Memory::safeDeleteArr(meshData.indices);
-	Memory::safeDeleteArr(meshData.positions);
-	Memory::safeDeleteArr(meshData.normals);
-	Memory::safeDeleteArr(meshData.bitangents);
-	Memory::safeDeleteArr(meshData.colors);
-	Memory::safeDeleteArr(meshData.tangents);
-	Memory::safeDeleteArr(meshData.texCoords);
+	Memory::SafeDeleteArr(meshData.indices);
+	Memory::SafeDeleteArr(meshData.positions);
+	Memory::SafeDeleteArr(meshData.normals);
+	Memory::SafeDeleteArr(meshData.bitangents);
+	Memory::SafeDeleteArr(meshData.colors);
+	Memory::SafeDeleteArr(meshData.tangents);
+	Memory::SafeDeleteArr(meshData.texCoords);
 }
 
 Material* Mesh::getMaterial() {

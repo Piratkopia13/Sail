@@ -108,8 +108,8 @@ DX11VertexBuffer::DX11VertexBuffer(const InputLayout& inputLayout, Mesh::Data& m
 
 
 DX11VertexBuffer::~DX11VertexBuffer() {
-	Memory::safeRelease(m_vertBuffer);
-	Memory::safeRelease(m_instanceBuffer);
+	Memory::SafeRelease(m_vertBuffer);
+	Memory::SafeRelease(m_instanceBuffer);
 }
 
 ID3D11Buffer* const* DX11VertexBuffer::getBuffer() const {
