@@ -50,6 +50,9 @@ public:
 	virtual unsigned int getMemoryUsage() const override;
 	virtual unsigned int getMemoryBudget() const override;
 
+	ID3D12Device5* getDevice() const;
+	ID3D12RootSignature* getGlobalRootSignature() const;
+
 	inline UINT getFrameIndex() const;
 
 	void renderToBackBuffer() const;

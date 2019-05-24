@@ -1,5 +1,6 @@
 #pragma once
 
+#include <d3d12.h>
 #include "Sail/api/shader/InputLayout.h"
 
 class DX12InputLayout : public InputLayout {
@@ -16,5 +17,8 @@ public:
 
 protected:
 	virtual int convertInputClassification(InputClassification inputSlotClass) override;
+
+private:
+	D3D12_INPUT_LAYOUT_DESC m_inputLayoutDesc;
 
 };

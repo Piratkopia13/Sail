@@ -481,6 +481,14 @@ unsigned int DX12API::getMemoryBudget() const {
 	return -1;
 }
 
+ID3D12Device5* DX12API::getDevice() const {
+	return m_device.Get();
+}
+
+ID3D12RootSignature* DX12API::getGlobalRootSignature() const {
+	return m_globalRootSignature.Get();
+}
+
 inline UINT DX12API::getFrameIndex() const {
 	return m_backBufferIndex;
 }

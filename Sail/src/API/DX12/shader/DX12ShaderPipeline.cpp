@@ -1,5 +1,9 @@
 #include "pch.h"
 #include "DX12ShaderPipeline.h"
+#include "Sail/Application.h"
+#include "../DX12API.h"
+
+std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
 ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 	return new DX12ShaderPipeline(filename);
@@ -8,7 +12,10 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename) 
 	: ShaderPipeline(filename)
 {
-
+	if (!m_dxilCompiler) {
+		m_dxilCompiler = std::make_unique<DXILShaderCompiler>();
+		m_dxilCompiler->init();
+	}
 }
 
 DX12ShaderPipeline::~DX12ShaderPipeline() {
@@ -20,9 +27,130 @@ void DX12ShaderPipeline::bind() {
 }
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType) {
-	throw std::logic_error("The method or operation is not implemented.");
+
+	DXILShaderCompiler::Desc shaderDesc;
+	
+	switch (shaderType) {
+	case ShaderComponent::VS:
+		shaderDesc.entryPoint = L"VSMain";
+		shaderDesc.targetProfile = L"vs_6_0";
+		break;
+	case ShaderComponent::PS:
+		shaderDesc.entryPoint = L"PSMain";
+		shaderDesc.targetProfile = L"ps_6_0";
+		break;
+	case ShaderComponent::GS:
+		shaderDesc.entryPoint = L"GSMain";
+		shaderDesc.targetProfile = L"gs_6_0";
+		break;
+	case ShaderComponent::CS:
+		shaderDesc.entryPoint = L"CSMain";
+		shaderDesc.targetProfile = L"cs_6_0";
+		break;
+	case ShaderComponent::DS:
+		shaderDesc.entryPoint = L"DSMain";
+		shaderDesc.targetProfile = L"ds_6_0";
+		break;
+	case ShaderComponent::HS:
+		shaderDesc.entryPoint = L"HSMain";
+		shaderDesc.targetProfile = L"hs_6_0";
+		break;
+	}
+	
+#ifdef _DEBUG
+	shaderDesc.compileArguments.push_back(L"/Zi"); // Debug info
+#endif
+	//shaderDesc.compileArguments.push_back(L"/Gis"); // Declare all variables and values as precise
+	shaderDesc.source = source.c_str();
+	shaderDesc.sourceSize = source.length();
+
+	IDxcBlob* pShaders = nullptr;
+	ThrowIfFailed(m_dxilCompiler->compile(&shaderDesc, &pShaders));
+
+	return pShaders;
+
 }
 
 void DX12ShaderPipeline::setTexture2D(const std::string& name, void* handle) {
 	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void DX12ShaderPipeline::compile() {
+	ShaderPipeline::compile();
+	auto* context = Application::getInstance()->getAPI<DX12API>();
+
+	auto vsD3DBlob = static_cast<ID3DBlob*>(vsBlob);
+	auto psD3DBlob = static_cast<ID3DBlob*>(psBlob);
+	auto gsD3DBlob = static_cast<ID3DBlob*>(gsBlob);
+	auto dsD3DBlob = static_cast<ID3DBlob*>(dsBlob);
+	auto hsD3DBlob = static_cast<ID3DBlob*>(hsBlob);
+
+	////// Pipline State //////
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpsd = {};
+
+	// Specify pipeline stages
+	gpsd.pRootSignature = context->getGlobalRootSignature();
+	gpsd.InputLayout = m->getInputLayoutDesc();
+	gpsd.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	if (vsBlob) {
+		gpsd.VS.pShaderBytecode = reinterpret_cast<void*>(vsD3DBlob->GetBufferPointer());
+		gpsd.VS.BytecodeLength = vsD3DBlob->GetBufferSize();
+	}
+	if (psBlob) {
+		gpsd.PS.pShaderBytecode = reinterpret_cast<void*>(psD3DBlob->GetBufferPointer());
+		gpsd.PS.BytecodeLength = psD3DBlob->GetBufferSize();
+	}
+	if (gsBlob) {
+		gpsd.GS.pShaderBytecode = reinterpret_cast<void*>(gsD3DBlob->GetBufferPointer());
+		gpsd.GS.BytecodeLength = gsD3DBlob->GetBufferSize();
+	}
+	if (dsBlob) {
+		gpsd.DS.pShaderBytecode = reinterpret_cast<void*>(dsD3DBlob->GetBufferPointer());
+		gpsd.DS.BytecodeLength = dsD3DBlob->GetBufferSize();
+	}
+	if (hsBlob) {
+		gpsd.HS.pShaderBytecode = reinterpret_cast<void*>(hsD3DBlob->GetBufferPointer());
+		gpsd.HS.BytecodeLength = hsD3DBlob->GetBufferSize();
+	}
+
+	// Specify render target and depthstencil usage
+	gpsd.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	gpsd.NumRenderTargets = 1;
+
+	gpsd.SampleDesc.Count = 1;
+	gpsd.SampleDesc.Quality = 0;
+	gpsd.SampleMask = UINT_MAX;
+
+	// Specify rasterizer behaviour
+	// TODO: get these from DX12API
+	gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+	gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+
+	//Specify blend descriptions.
+	D3D12_RENDER_TARGET_BLEND_DESC defaultRTdesc = {
+		false, false,
+		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+		D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
+	};
+	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+		gpsd.BlendState.RenderTarget[i] = defaultRTdesc;
+
+	// Specify depth stencil state descriptor.
+	D3D12_DEPTH_STENCIL_DESC dsDesc{};
+	dsDesc.DepthEnable = TRUE;
+	dsDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	dsDesc.StencilEnable = FALSE;
+	dsDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+	dsDesc.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+	const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS };
+	dsDesc.FrontFace = defaultStencilOp;
+	dsDesc.BackFace = defaultStencilOp;
+
+	gpsd.DepthStencilState = dsDesc;
+	gpsd.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	
+	ThrowIfFailed(context->getDevice()->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&m_pipelineState)));
+
 }
