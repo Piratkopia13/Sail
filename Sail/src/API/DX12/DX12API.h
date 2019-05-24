@@ -1,8 +1,8 @@
 #pragma once
 
-// Link necessary d3d12 libraries.
-#pragma comment(lib,"d3dcompiler.lib")
+// Link necessary d3d12 libraries
 #pragma comment(lib, "D3D12.lib")
+#pragma comment(lib,"d3dcompiler.lib")
 #pragma comment(lib, "dxgi.lib")
 
 // Include the minimal needed from windows.h
@@ -11,7 +11,7 @@
 #include <windows.h>
 #include <wrl/client.h>
 #include <d3d12.h>
-#include <dxgi1_6.h> //Only used for initialization of the device and swap chain.
+#include <dxgi1_6.h> // Only used for initialization of the device and swap chain
 #include <d3dcompiler.h>
 #ifdef _DEBUG
 #include <initguid.h>

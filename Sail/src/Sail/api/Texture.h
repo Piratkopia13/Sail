@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string.h>
+
 typedef void* SailTexture;
 
 class Texture {

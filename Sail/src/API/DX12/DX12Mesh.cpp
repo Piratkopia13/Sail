@@ -8,9 +8,6 @@ Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderPipeline) {
 	return SAIL_NEW DX12Mesh(buildData, shaderPipeline);
 }
 
-#pragma message("COMPILED DX12MESH!")
-//#include "../../big.txt"
-
 DX12Mesh::DX12Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
 	: Mesh(buildData, shaderPipeline)
 {

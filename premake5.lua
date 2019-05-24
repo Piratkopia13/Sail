@@ -137,7 +137,6 @@ project "Sail"
 
 	links {
 		"libfbxsdk",
-		"d3dcompiler",
 		"GLFW",
 		"ImGui"
 	}

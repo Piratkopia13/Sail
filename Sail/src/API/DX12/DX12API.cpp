@@ -11,7 +11,10 @@ GraphicsAPI* GraphicsAPI::Create() {
 
 DX12API::DX12API()
 	: m_backBufferIndex(0)
-{}
+{
+	m_renderTargets.resize(NUM_SWAP_BUFFERS);
+	m_fenceValues.resize(NUM_SWAP_BUFFERS, 0);
+}
 
 DX12API::~DX12API() {
 

@@ -10,8 +10,7 @@ namespace ShaderComponent {
 	}
 
 	DX11ConstantBuffer::DX11ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot)
-		: ConstantBuffer(initData, size, bindShader, slot)
-		, m_bindShader(bindShader)
+		: m_bindShader(bindShader)
 		, m_slot(slot)
 		, m_bufferSize(size)
 	{

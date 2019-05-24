@@ -1,7 +1,8 @@
 #pragma once
 
-// Link necessary d3d11 library
+// Link necessary d3d11 libraries
 #pragma comment(lib, "D3D11.lib")
+#pragma comment(lib,"d3dcompiler.lib")
 
 #include <d3d11.h>
 #include <d3d11_3.h>
