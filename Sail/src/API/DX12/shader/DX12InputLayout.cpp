@@ -37,6 +37,10 @@ void DX12InputLayout::bind() const {
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
+const D3D12_INPUT_LAYOUT_DESC& DX12InputLayout::getDesc() const {
+	return m_inputLayoutDesc;
+}
+
 int DX12InputLayout::convertInputClassification(InputClassification inputSlotClass) {
 	throw std::logic_error("The method or operation is not implemented.");
 }

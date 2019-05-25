@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "DX12ShaderPipeline.h"
 #include "Sail/Application.h"
+#include "DX12InputLayout.h"
 #include "../DX12API.h"
 
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
@@ -26,7 +27,7 @@ void DX12ShaderPipeline::bind() {
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
-void* DX12ShaderPipeline::compileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType) {
+void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
 
 	DXILShaderCompiler::Desc shaderDesc;
 	
@@ -63,6 +64,8 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, ShaderCompone
 	//shaderDesc.compileArguments.push_back(L"/Gis"); // Declare all variables and values as precise
 	shaderDesc.source = source.c_str();
 	shaderDesc.sourceSize = source.length();
+	auto wfilepath = std::wstring(filepath.begin(), filepath.end());
+	shaderDesc.filePath = wfilepath.c_str();
 
 	IDxcBlob* pShaders = nullptr;
 	ThrowIfFailed(m_dxilCompiler->compile(&shaderDesc, &pShaders));
@@ -90,7 +93,7 @@ void DX12ShaderPipeline::compile() {
 
 	// Specify pipeline stages
 	gpsd.pRootSignature = context->getGlobalRootSignature();
-	gpsd.InputLayout = m->getInputLayoutDesc();
+	gpsd.InputLayout = static_cast<DX12InputLayout*>(inputLayout.get())->getDesc();
 	gpsd.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	if (vsBlob) {
 		gpsd.VS.pShaderBytecode = reinterpret_cast<void*>(vsD3DBlob->GetBufferPointer());

@@ -15,6 +15,8 @@ public:
 	virtual void create(void* vertexShaderBlob) override;
 	virtual void bind() const override;
 
+	const D3D12_INPUT_LAYOUT_DESC& getDesc() const;
+
 protected:
 	virtual int convertInputClassification(InputClassification inputSlotClass) override;
 

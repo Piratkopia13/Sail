@@ -2,5 +2,17 @@ windows_container:
   image: cirrusci/windowsservercore:2019
   os_version: 2019
 
-task:
-  setup_test_script: tree C:/
+main_task:
+  # choco_cache:
+  #   folder: ??
+  #   fingerprint_script: msbuild
+  #   populate_script: choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --quiet"
+  install_msbuild_script:
+    - choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --quiet"
+  get_dependencies_script:
+    - git submodule update --init --recursive
+    - ps: nuget restore
+  premake_script:
+    - ps: .\premake\premake5.exe vs2019
+  build_script:
+    - msbuild "Sail.sln" /verbosity:minimal /p:Configuration=Release /p:Platform="DX12 x64"

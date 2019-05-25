@@ -23,29 +23,30 @@ ShaderPipeline::~ShaderPipeline() {
 }
 
 void ShaderPipeline::compile() {
-	std::string source = Utils::readFile(DEFAULT_SHADER_LOCATION + filename);
+	std::string filepath = DEFAULT_SHADER_LOCATION + filename;
+	std::string source = Utils::readFile(filepath);
 	if (source == "")
 		Logger::Error("Shader file is empty or does not exist: " + filename);
 	parse(source);
 
 	if (parsedData.hasVS) {
-		vsBlob = compileShader(source, ShaderComponent::VS);
+		vsBlob = compileShader(source, filepath, ShaderComponent::VS);
 		//Memory::safeRelease(VSBlob); // is this right?
 	}
 	if (parsedData.hasPS) {
-		psBlob = compileShader(source, ShaderComponent::PS);
+		psBlob = compileShader(source, filepath, ShaderComponent::PS);
 		//Memory::safeRelease(blob);
 	}
 	if (parsedData.hasGS) {
-		gsBlob = compileShader(source, ShaderComponent::GS);
+		gsBlob = compileShader(source, filepath, ShaderComponent::GS);
 		//Memory::safeRelease(blob);
 	}
 	if (parsedData.hasDS) {
-		dsBlob = compileShader(source, ShaderComponent::DS);
+		dsBlob = compileShader(source, filepath, ShaderComponent::DS);
 		//Memory::safeRelease(blob);
 	}
 	if (parsedData.hasHS) {
-		hsBlob = compileShader(source, ShaderComponent::HS);
+		hsBlob = compileShader(source, filepath, ShaderComponent::HS);
 		//Memory::safeRelease(blob);
 	}
 

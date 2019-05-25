@@ -47,7 +47,7 @@ void DX11ShaderPipeline::bind() {
 	CurrentlyBoundShader = this;
 }
 
-void* DX11ShaderPipeline::compileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType) {
+void* DX11ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
 	std::string entryPoint = "VSMain";
 	std::string shaderVersion = "vs_5_0";
 	switch (shaderType) {

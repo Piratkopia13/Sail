@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../DX12API.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "DXILShaderCompiler.h"
 
@@ -9,7 +10,7 @@ public:
 	~DX12ShaderPipeline();
 
 	virtual void bind() override;
-	virtual void* compileShader(const std::string& source, ShaderComponent::BIND_SHADER shaderType) override;
+	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 	virtual void setTexture2D(const std::string& name, void* handle) override;
 
 protected:
