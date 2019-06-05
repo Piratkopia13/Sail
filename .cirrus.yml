@@ -4,14 +4,17 @@ windows_container:
 
 testing_this_ci_task:
   # choco_cache:
-  #   folder: ??
+  #   folder: C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey\visualstudio2019buildtools\
   #   fingerprint_script: msbuild
   #   populate_script: choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --quiet" -y
   install_msbuild_script:
     - choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --quiet" -y
+  tree_script:
+    - tree C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey\
+    - tree C:\Program Files (x86)\Microsoft Visual Studio\
   get_dependencies_script:
     - git submodule update --init --recursive
-    - ps: nuget restore
+    # - ps: nuget restore
   premake_script:
     - ps: .\premake\premake5.exe vs2019
   build_script:

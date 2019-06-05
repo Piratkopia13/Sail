@@ -40,7 +40,7 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader->getPipeline());
-	m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
+	//m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader->getPipeline());
 
 	m_scene.setLightSetup(&m_lights);
@@ -62,13 +62,13 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
-	Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
+	/*Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(fbxModel);
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(MOVE(e));
+	m_scene.addEntity(MOVE(e));*/
 
 	//e = Entity::Create();
 	//auto* textComp = e->addComponent<TextComponent>();

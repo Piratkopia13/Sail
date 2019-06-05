@@ -15,7 +15,7 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, hsBlob(nullptr)
 	, filename(filename)
 {
-
+	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 }
 
 ShaderPipeline::~ShaderPipeline() {
@@ -49,8 +49,9 @@ void ShaderPipeline::compile() {
 		hsBlob = compileShader(source, filepath, ShaderComponent::HS);
 		//Memory::safeRelease(blob);
 	}
+}
 
-	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
+void ShaderPipeline::finish() {
 }
 
 void ShaderPipeline::bind() {

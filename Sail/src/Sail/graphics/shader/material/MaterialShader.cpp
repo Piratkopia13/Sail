@@ -37,6 +37,9 @@ MaterialShader::MaterialShader()
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
+	// Finish the shader creation
+	finish();
+
 	// Done with the blobs, release them
 	/*Memory::safeRelease(vsBlob);
 	Memory::safeRelease(psBlob);*/

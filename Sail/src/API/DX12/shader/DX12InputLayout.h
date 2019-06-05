@@ -21,6 +21,10 @@ protected:
 	virtual int convertInputClassification(InputClassification inputSlotClass) override;
 
 private:
+	void push(DXGI_FORMAT format, UINT typeSize, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass, UINT instanceDataStepRate);
+
+private:
+	std::vector<D3D12_INPUT_ELEMENT_DESC> m_inputElementDescs;
 	D3D12_INPUT_LAYOUT_DESC m_inputLayoutDesc;
 
 };

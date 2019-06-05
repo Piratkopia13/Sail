@@ -238,7 +238,7 @@ void DX12API::createGlobalRootSignature() {
 	// Define descriptor range(s)
 	D3D12_DESCRIPTOR_RANGE descRangeSrv[1];
 	descRangeSrv[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	descRangeSrv[0].NumDescriptors = 2;
+	descRangeSrv[0].NumDescriptors = 3;
 	descRangeSrv[0].BaseShaderRegister = 0; // register bX
 	descRangeSrv[0].RegisterSpace = 0; // register (bX,spaceY)
 	descRangeSrv[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;

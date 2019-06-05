@@ -48,7 +48,10 @@ public:
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
 
 protected:
+	// Compiles shaders into blobs
 	virtual void compile();
+	// Called after the inputlayout is created
+	virtual void finish();
 
 	//void setComputeShaders(ID3D10Blob** blob, UINT numBlobs);
 

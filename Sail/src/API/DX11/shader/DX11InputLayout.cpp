@@ -35,7 +35,7 @@ void DX11InputLayout::pushFloat(InputType inputType, LPCSTR semanticName, UINT s
 	else
 		VertexSize += typeSize;
 
-	InputOrder.push_back(inputType);
+	InputLayout::pushFloat(inputType, semanticName, semanticIndex, inputSlotClass, instanceDataStepRate);
 }
 void DX11InputLayout::pushVec2(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass, UINT instanceDataStepRate) {
 	if (m_ied.size() == m_ied.capacity()) {
@@ -53,7 +53,7 @@ void DX11InputLayout::pushVec2(InputType inputType, LPCSTR semanticName, UINT se
 	else
 		VertexSize += typeSize;
 
-	InputOrder.push_back(inputType);
+	InputLayout::pushVec2(inputType, semanticName, semanticIndex, inputSlotClass, instanceDataStepRate);
 }
 void DX11InputLayout::pushVec3(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass, UINT instanceDataStepRate) {
 	if (m_ied.size() == m_ied.capacity()) {
@@ -71,7 +71,7 @@ void DX11InputLayout::pushVec3(InputType inputType, LPCSTR semanticName, UINT se
 	else
 		VertexSize += typeSize;
 
-	InputOrder.push_back(inputType);
+	InputLayout::pushVec3(inputType, semanticName, semanticIndex, inputSlotClass, instanceDataStepRate);
 }
 void DX11InputLayout::pushVec4(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass, UINT instanceDataStepRate) {
 	if (m_ied.size() == m_ied.capacity()) {
@@ -89,7 +89,7 @@ void DX11InputLayout::pushVec4(InputType inputType, LPCSTR semanticName, UINT se
 	else
 		VertexSize += typeSize;
 
-	InputOrder.push_back(inputType);
+	InputLayout::pushVec4(inputType, semanticName, semanticIndex, inputSlotClass, instanceDataStepRate);
 }
 
 void DX11InputLayout::create(void* vertexShaderBlob) {

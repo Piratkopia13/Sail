@@ -15,6 +15,7 @@ public:
 
 protected:
 	virtual void compile() override;
+	virtual void finish() override;
 
 private:
 	static std::unique_ptr<DXILShaderCompiler> m_dxilCompiler; // Class Singleton

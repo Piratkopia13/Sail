@@ -21,10 +21,10 @@ public:
 	InputLayout();
 	virtual ~InputLayout();
 
-	virtual void pushFloat(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0) = 0;
-	virtual void pushVec2(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0) = 0;
-	virtual void pushVec3(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0) = 0;
-	virtual void pushVec4(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0) = 0;
+	virtual void pushFloat(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0);
+	virtual void pushVec2(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0);
+	virtual void pushVec3(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0);
+	virtual void pushVec4(InputType inputType, LPCSTR semanticName, UINT semanticIndex, InputClassification inputSlotClass = PER_VERTEX_DATA, UINT instanceDataStepRate = 0);
 	
 	virtual void create(void* vertexShaderBlob) = 0;
 	virtual void bind() const = 0;

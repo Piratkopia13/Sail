@@ -16,6 +16,10 @@ public:
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
 
 protected:
+	void finish();
+protected:
 	std::unique_ptr<ShaderPipeline> shaderPipeline;
+private:
+	bool m_finished;
 
 };
