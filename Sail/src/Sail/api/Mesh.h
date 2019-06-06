@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include "Sail/graphics/geometry/Material.h"
-#include "Sail/graphics/renderer/Renderer.h"
+#include "Sail/api/Renderer.h"
 
 class VertexBuffer;
 class IndexBuffer;

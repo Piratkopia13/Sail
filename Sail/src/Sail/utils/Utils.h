@@ -14,6 +14,11 @@
 	if (FAILED(result))			\
 		throw std::exception(); \
 
+// Macro to easier track down memory leaks
+#ifdef _DEBUG
+#define SAIL_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+#endif
+
 // Inherit this to make a class non-inheritable
 template<typename T>
 class MakeFinal {

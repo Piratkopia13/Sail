@@ -32,7 +32,6 @@ private:
 	//std::unique_ptr<Scene> m_scene;
 
 	Scene m_scene;
-	ForwardRenderer m_renderer;
 	LightSetup m_lights;
 
 	// Texts

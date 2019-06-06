@@ -2,8 +2,8 @@
 
 #include <d3d11.h>
 #include <vector>
-#include "../renderer/Renderer.h"
 #include "Sail/api/Mesh.h"
+#include "Sail/api/Renderer.h"
 
 // Forward declarations
 class ShaderPipeline;

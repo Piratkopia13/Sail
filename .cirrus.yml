@@ -4,7 +4,7 @@ windows_container:
 
 testing_this_ci_task:
   choco_cache:
-    folder: "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\"
+    folder: "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\"
     fingerprint_script: msbuild
 	populate_script: choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --quiet" -y
   install_msbuild_script:
@@ -18,4 +18,4 @@ testing_this_ci_task:
   premake_script:
     - ps: .\premake\premake5.exe vs2019
   build_script:
-    - "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\msbuild.exe" "Sail.sln" /verbosity:minimal /p:Configuration=Release /p:Platform="DX12 x64"
+    - "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\msbuild.exe" "Sail.sln" /verbosity:minimal /p:Configuration=Release /p:Platform="DX12 x64"

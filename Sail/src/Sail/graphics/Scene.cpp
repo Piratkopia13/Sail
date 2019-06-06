@@ -5,10 +5,13 @@
 #include "light/LightSetup.h"
 #include "../utils/Utils.h"
 #include "Sail/Application.h"
+#include "Sail/api/Renderer.h"
+
 
 Scene::Scene() 
 	//: m_postProcessPipeline(m_renderer)
 {
+	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 
 	// TODO: the following method ish
 	//m_postProcessPipeline.add<FXAAStage>();
@@ -34,12 +37,12 @@ void Scene::addEntity(Entity::Ptr entity) {
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
-	m_renderer.setLightSetup(lights);
+	m_renderer->setLightSetup(lights);
 }
 
 void Scene::draw(Camera& camera) {
 
-	m_renderer.begin(&camera);
+	m_renderer->begin(&camera);
 
 	for (Entity::Ptr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
@@ -47,13 +50,13 @@ void Scene::draw(Camera& camera) {
 			TransformComponent* transform = entity->getComponent<TransformComponent>();
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-			m_renderer.submit(model->getModel(), transform->getTransform().getMatrix());
+			m_renderer->submit(model->getModel(), transform->getTransform().getMatrix());
 		}
 	}
 
-	m_renderer.end();
-	m_renderer.present();
-	//m_renderer.present(m_deferredOutputTex.get());
+	m_renderer->end();
+	m_renderer->present();
+	//m_renderer->present(m_deferredOutputTex.get());
 
 	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
 
@@ -71,7 +74,7 @@ void Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
 	// Forward events
-	m_renderer.onEvent(event);
+	m_renderer->onEvent(event);
 	//m_postProcessPipeline.onEvent(event);
 }
 

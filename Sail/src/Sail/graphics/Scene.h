@@ -1,13 +1,12 @@
 #pragma once
 
 #include "../entities/Entity.h"
-#include "renderer/ForwardRenderer.h"
-#include "renderer/DeferredRenderer.h"
 #include "camera/Camera.h"
 #include "../events/Events.h"
 //#include "postprocessing/PostProcessPipeline.h"
 
 class LightSetup;
+class Renderer;
 // TODO: make this class virtual and have the actual scene in the demo/game project
 class Scene : public IEventListener {
 public:
@@ -27,7 +26,7 @@ private:
 
 private:
 	std::vector<Entity::Ptr> m_entities;
-	ForwardRenderer m_renderer;
+	std::unique_ptr<Renderer> m_renderer;
 	//DeferredRenderer m_renderer;
 	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
 	//PostProcessPipeline m_postProcessPipeline;

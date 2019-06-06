@@ -120,11 +120,9 @@ project "Sail"
 		"%{prj.name}/src/Sail/graphics/shader/component/ConstantBuffer**",
 		"%{prj.name}/src/Sail/graphics/shader/component/Sampler**",
 		"%{prj.name}/src/Sail/graphics/shader/basic/**",
-		"**/OldDeferredRenderer.*",
-		"**/DeferredRenderer.*",
+		"%{prj.name}/src/Sail/graphics/renderer/**",
 		"%{prj.name}/src/Sail/graphics/postprocessing/**",
-		"**/Quadtree.*",
-		"%{prj.name}/src/Sail/api/Renderer.*"
+		"**/Quadtree.*"
 	}
 
 	includedirs {
