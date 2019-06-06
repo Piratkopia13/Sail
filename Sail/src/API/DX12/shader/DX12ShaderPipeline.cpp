@@ -24,7 +24,9 @@ DX12ShaderPipeline::~DX12ShaderPipeline() {
 }
 
 void DX12ShaderPipeline::bind() {
-	throw std::logic_error("The method or operation is not implemented.");
+	//auto* context = Application::getInstance()->getAPI<DX12API>();
+	//context->m_preCommand.list->SetPipelineState(m_pipelineState.Get());
+	throw std::logic_error("Not implemented");
 }
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
