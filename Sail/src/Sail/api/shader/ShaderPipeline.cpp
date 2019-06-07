@@ -54,7 +54,7 @@ void ShaderPipeline::compile() {
 void ShaderPipeline::finish() {
 }
 
-void ShaderPipeline::bind() {
+void ShaderPipeline::bind(void* cmdList) {
 	// Don't bind if already bound
 	// This is to cut down on shader state changes
 	if (CurrentlyBoundShader == this)

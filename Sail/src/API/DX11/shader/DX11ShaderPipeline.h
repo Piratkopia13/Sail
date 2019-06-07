@@ -11,7 +11,7 @@ public:
 	//virtual void bind();
 
 	// The following static methods are to be implemented in APIs
-	virtual void bind() override;
+	virtual void bind(void* cmdList) override;
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 	virtual void setTexture2D(const std::string& name, void* handle) override;
 	virtual void compile() override;

@@ -32,11 +32,6 @@ bool DX12API::init(Window* window) {
 	createGlobalRootSignature();
 	createDepthStencilResources(winWindow);
 
-	// Reset pre allocator and command list to prep for initialization commands
-	ThrowIfFailed(m_preCommand.allocators[getFrameIndex()]->Reset());
-	ThrowIfFailed(m_preCommand.list->Reset(m_preCommand.allocators[getFrameIndex()].Get(), nullptr));
-
-
 	// 7. Viewport and scissor rect
 	m_viewport.TopLeftX = 0.0f;
 	m_viewport.TopLeftY = 0.0f;
@@ -151,26 +146,22 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	m_copyCommandQueue->SetName(L"Copy Command Queue");
 
 	// Create allocators
-	m_preCommand.allocators.resize(NUM_SWAP_BUFFERS);
 	m_postCommand.allocators.resize(NUM_SWAP_BUFFERS);
 	m_computeCommand.allocators.resize(NUM_SWAP_BUFFERS);
 	m_copyCommand.allocators.resize(NUM_SWAP_BUFFERS);
 	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
-		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_preCommand.allocators[i])));
 		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_postCommand.allocators[i])));
 		// TODO: Is this required?
 		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&m_computeCommand.allocators[i])));
 		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_copyCommand.allocators[i])));
 	}
 	// Create command lists
-	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_preCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_preCommand.list)));
 	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_postCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_postCommand.list)));
 	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_computeCommand.list)));
 	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_copyCommand.list)));
 
 	// Command lists are created in the recording state. Since there is nothing to
 	// record right now and the main loop expects it to be closed, we close them
-	m_preCommand.list->Close();
 	m_postCommand.list->Close();
 	m_computeCommand.list->Close();
 	m_copyCommand.list->Close();
@@ -230,6 +221,8 @@ void DX12API::createRenderTargets() {
 		m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, cdh);
 		cdh.ptr += m_renderTargetDescriptorSize;
 	}
+	// Set first as initial rt
+	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
 void DX12API::createGlobalRootSignature() {
@@ -409,6 +402,11 @@ void DX12API::nextFrame() {
 
 	m_fenceValues[m_backBufferIndex] = currentFenceValue + 1;
 
+	auto frameIndex = getFrameIndex();
+	// Get the handle for the current render target used as back buffer
+	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
+	m_currentRenderTargetCDH.ptr += m_renderTargetDescriptorSize * frameIndex;
+
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {
@@ -493,9 +491,27 @@ inline UINT DX12API::getFrameIndex() const {
 	return m_backBufferIndex;
 }
 
-void DX12API::renderToBackBuffer() const {
-	/*m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
-	m_deviceContext->RSSetViewports(1, &m_viewport);*/
+void DX12API::initCommand(Command& cmd) {
+	// Create allocators
+	cmd.allocators.resize(NUM_SWAP_BUFFERS);
+	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
+		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmd.allocators[i])));
+	}
+	// Create command lists
+	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmd.allocators[0].Get(), nullptr, IID_PPV_ARGS(&cmd.list)));
+	// Command lists are created in the recording state. Since there is nothing to
+	// record right now and the main loop expects it to be closed, we close them
+	cmd.list->Close();
+
+	// Reset allocator and command list to accept commands
+	ThrowIfFailed(cmd.allocators[getFrameIndex()]->Reset());
+	ThrowIfFailed(cmd.list->Reset(cmd.allocators[getFrameIndex()].Get(), nullptr));
+}
+
+void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
+	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
+	cmdList->RSSetViewports(1, &m_viewport);
+	cmdList->RSSetScissorRects(1, &m_scissorRect);
 }
 
 void DX12API::resize(UINT width, UINT height) {

@@ -42,7 +42,8 @@ void DX12InputLayout::create(void* vertexShaderBlob) {
 }
 
 void DX12InputLayout::bind() const {
-	throw std::logic_error("The method or operation is not implemented.");
+	// Do nothing
+	// Already bound through the pipeline state
 }
 
 const D3D12_INPUT_LAYOUT_DESC& DX12InputLayout::getDesc() const {

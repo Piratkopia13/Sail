@@ -38,6 +38,12 @@ namespace GlobalRootParam {
 
 class DX12API : public GraphicsAPI {
 public:
+	struct Command {
+		std::vector<wComPtr<ID3D12CommandAllocator>> allocators; // Allocator only grows, use multple (one for each thing)
+		wComPtr<ID3D12GraphicsCommandList4> list;
+	};
+
+public:
 	DX12API();
 	~DX12API();
 
@@ -54,8 +60,9 @@ public:
 	ID3D12RootSignature* getGlobalRootSignature() const;
 
 	inline UINT getFrameIndex() const;
+	void initCommand(Command& cmd);
 
-	void renderToBackBuffer() const;
+	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	// TODO: replace with event
 	void resize(UINT width, UINT height);
 private:
@@ -75,6 +82,7 @@ private:
 	static const UINT NUM_SWAP_BUFFERS;
 
 	UINT m_backBufferIndex;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_currentRenderTargetCDH;
 
 	wComPtr<ID3D12Device5> m_device;
 #ifdef _DEBUG
@@ -90,11 +98,7 @@ private:
 	wComPtr<ID3D12CommandQueue> m_copyCommandQueue;
 
 	// Commands
-	struct Command {
-		std::vector<wComPtr<ID3D12CommandAllocator>> allocators; // Allocator only grows, use multple (one for each thing)
-		wComPtr<ID3D12GraphicsCommandList4> list;
-	};
-	Command m_preCommand;
+	//Command m_preCommand;
 	Command m_postCommand;
 	Command m_copyCommand;
 	Command m_computeCommand;

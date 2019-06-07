@@ -29,8 +29,8 @@ DX11ShaderPipeline::~DX11ShaderPipeline() {
 	Memory::SafeRelease(m_gs);
 }
 
-void DX11ShaderPipeline::bind() {
-	ShaderPipeline::bind();
+void DX11ShaderPipeline::bind(void* cmdList) {
+	ShaderPipeline::bind(cmdList);
 
 	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
 
