@@ -15,10 +15,11 @@ ShaderPipeline* Shader::getPipeline() {
 }
 
 void Shader::bind() {
+	Logger::Warning("Is shader::bind() used?"); // TODO: check if this method should exist, or if all binding is done directly through shaderPipeline
 	if (!m_finished) {
 		Logger::Error("A shader is trying to bind before it has finished its creation. Make sure to call shader::finish() at the end of the shader constructor.");
 	}
-	shaderPipeline->bind();
+	shaderPipeline->bind(nullptr);
 }
 
 void Shader::finish() {

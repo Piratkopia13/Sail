@@ -12,4 +12,4 @@ testing_this_ci_task:
   premake_script:
     - ps: ./premake/premake5.exe vs2019
   build_script:
-    - '"C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Current/Bin/msbuild.exe" "Sail.sln" /verbosity:minimal /p:Configuration=Release /p:Platform="DX12 x64"'
+    - '"C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Current/Bin/msbuild.exe" "Sail.sln" /verbosity:minimal /p:Configuration=Release /p:Platform="DX11 x64"'

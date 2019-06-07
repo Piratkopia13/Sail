@@ -9,7 +9,7 @@ Renderer* Renderer::Create(Renderer::Type type) {
 	case FORWARD:
 		return new DX12ForwardRenderer();
 	default:
-		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + type);
+		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + std::to_string(type));
 	}
 	return nullptr;
 }
@@ -40,7 +40,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Bind mesh-common constant buffers (camera)
-	cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
+	cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf); // TODO: DX12ConstantBuffer and figure out descriptor heaps for them
 
 	for (RenderCommand& command : commandQueue) {
 		ShaderPipeline* shader = command.mesh->getMaterial()->getShader();
