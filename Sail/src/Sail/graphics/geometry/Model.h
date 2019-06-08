@@ -4,6 +4,7 @@
 #include <vector>
 #include "Sail/api/Mesh.h"
 #include "Sail/api/Renderer.h"
+#include "Sail/utils/Utils.h"
 
 // Forward declarations
 class ShaderPipeline;

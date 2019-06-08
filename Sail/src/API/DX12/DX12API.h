@@ -60,6 +60,7 @@ public:
 	ID3D12RootSignature* getGlobalRootSignature() const;
 
 	inline UINT getFrameIndex() const;
+	inline UINT getNumSwapBuffers() const;
 	void initCommand(Command& cmd);
 
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;

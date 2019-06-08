@@ -491,6 +491,10 @@ inline UINT DX12API::getFrameIndex() const {
 	return m_backBufferIndex;
 }
 
+inline UINT DX12API::getNumSwapBuffers() const {
+	return NUM_SWAP_BUFFERS;
+}
+
 void DX12API::initCommand(Command& cmd) {
 	// Create allocators
 	cmd.allocators.resize(NUM_SWAP_BUFFERS);
