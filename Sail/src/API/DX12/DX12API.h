@@ -18,6 +18,7 @@
 #include <DXGIDebug.h>
 #endif
 #include "Sail/api/GraphicsAPI.h"
+#include <map>
 
 // Forward declarations
 class Win32Window;
@@ -58,9 +59,10 @@ public:
 
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
+	UINT getRootIndexFromRegister(const std::string& reg) const;
 
-	inline UINT getFrameIndex() const;
-	inline UINT getNumSwapBuffers() const;
+	UINT getFrameIndex() const;
+	UINT getNumSwapBuffers() const;
 	void initCommand(Command& cmd);
 
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
@@ -108,6 +110,7 @@ private:
 	wComPtr<IDXGISwapChain4> m_swapChain;
 	std::vector<wComPtr<ID3D12Resource1>> m_renderTargets;
 	wComPtr<ID3D12RootSignature> m_globalRootSignature;
+	std::map<std::string, UINT> m_globalRootSignatureRegisters;
 
 	// Fences
 	// TODO: check which ones are needed

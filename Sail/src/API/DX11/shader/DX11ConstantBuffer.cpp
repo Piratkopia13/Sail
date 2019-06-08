@@ -51,7 +51,7 @@ namespace ShaderComponent {
 
 	}
 
-	void DX11ConstantBuffer::bind() const {
+	void DX11ConstantBuffer::bind(void* cmdList) const {
 		if (m_bindShader & ShaderComponent::VS)
 			Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->VSSetConstantBuffers(m_slot, 1, &m_buffer);
 		if (m_bindShader & ShaderComponent::HS)

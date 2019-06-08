@@ -25,7 +25,7 @@ void DX11ForwardRenderer::present(RenderableTexture* output) {
 
 	for (RenderCommand& command : commandQueue) {
 		ShaderPipeline* shader = command.mesh->getMaterial()->getShader();
-		shader->bind(nullptr);
+		shader->bind();
 
 		shader->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
 		shader->setCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));

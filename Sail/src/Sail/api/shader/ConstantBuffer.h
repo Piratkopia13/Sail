@@ -11,7 +11,7 @@ namespace ShaderComponent {
 
 		virtual void updateData(const void* newData, unsigned int bufferSize, unsigned int offset = 0U) = 0;
 
-		virtual void bind() const = 0;
+		virtual void bind(void* cmdList = nullptr) const = 0;
 	};
 
 }

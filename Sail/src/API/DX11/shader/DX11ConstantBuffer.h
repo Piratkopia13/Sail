@@ -12,7 +12,7 @@ namespace ShaderComponent {
 
 		virtual void updateData(const void* newData, unsigned int bufferSize, unsigned int offset = 0U) override;
 
-		virtual void bind() const override;
+		virtual void bind(void* cmdList) const override;
 
 	private:
 		ID3D11Buffer* m_buffer;

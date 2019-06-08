@@ -9,13 +9,15 @@ namespace ShaderComponent {
 		return new DX12ConstantBuffer(initData, size, bindShader, slot);
 	}
 
-	DX12ConstantBuffer::DX12ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot) {
+	DX12ConstantBuffer::DX12ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot) 
+		: m_register(slot)
+	{
 		m_context = Application::getInstance()->getAPI<DX12API>();
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
 
 		m_constantBufferUploadHeap = new wComPtr<ID3D12Resource1>[numSwapBuffers];
-		m_cbGPUAddress = new UINT8 * [numSwapBuffers];
-		m_needsUpdate = new bool[numSwapBuffers](); // parenthesis invokes initialitaion to false
+		m_cbGPUAddress = new UINT8*[numSwapBuffers];
+		//m_needsUpdate = new bool[numSwapBuffers](); // parenthesis invokes initialitaion to false
 
 		// Create an upload heap to hold the constant buffer
 		// create a resource heap, descriptor heap, and pointer to cbv for each frame
@@ -35,19 +37,27 @@ namespace ShaderComponent {
 
 		// Allocate cpu memory for the buffer
 		// Memory leak
-		m_newData = malloc(size);
+		//m_newData = malloc(size);
 	}
 
 	DX12ConstantBuffer::~DX12ConstantBuffer() {
-
+		delete[] m_constantBufferUploadHeap;
+		delete[] m_cbGPUAddress;
+		//delete[] m_needsUpdate;
 	}
 
 	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset /*= 0U*/) {
-		throw std::logic_error("The method or operation is not implemented.");
+		//TODO: change this to needsUpdate thing we have in DXR project
+		auto frameIndex = m_context->getFrameIndex();
+		memcpy(m_cbGPUAddress[frameIndex] + offset, newData, bufferSize);
 	}
 
-	void DX12ConstantBuffer::bind() const {
-		throw std::logic_error("The method or operation is not implemented.");
+	void DX12ConstantBuffer::bind(void* cmdList) const {
+		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+		auto frameIndex = m_context->getFrameIndex();
+		// TODO: convert slot to rootIndex
+		UINT rootIndex = m_context->getRootIndexFromRegister("b" + std::to_string(m_register));
+		dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress());
 	}
 
 }

@@ -236,12 +236,20 @@ void DX12API::createGlobalRootSignature() {
 	descRangeSrv[0].RegisterSpace = 0; // register (bX,spaceY)
 	descRangeSrv[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+	// TODO: autogen from other data
+	m_globalRootSignatureRegisters["t0"] = GlobalRootParam::DT_SRVS;
+	m_globalRootSignatureRegisters["t1"] = GlobalRootParam::DT_SRVS;
+	m_globalRootSignatureRegisters["t2"] = GlobalRootParam::DT_SRVS;
+
 	D3D12_DESCRIPTOR_RANGE descRangeSampler[1];
 	descRangeSampler[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
 	descRangeSampler[0].NumDescriptors = 1; // TODO: make a few different samplers
 	descRangeSampler[0].BaseShaderRegister = 0; // register bX
 	descRangeSampler[0].RegisterSpace = 0; // register (bX,spaceY)
 	descRangeSampler[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	// TODO: autogen from other data
+	m_globalRootSignatureRegisters["s0"] = GlobalRootParam::DT_SAMPLERS;
 
 	// Create descriptor tables
 	D3D12_ROOT_DESCRIPTOR_TABLE dtSrv;
@@ -268,6 +276,11 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR rootDescSRVT11 = {};
 	rootDescSRVT11.ShaderRegister = 11;
 	rootDescSRVT11.RegisterSpace = 0;
+
+	// TODO: autogen from other data
+	m_globalRootSignatureRegisters["b0"] = GlobalRootParam::CBV_TRANSFORM;
+	m_globalRootSignatureRegisters["b1"] = GlobalRootParam::CBV_DIFFUSE_TINT;
+	m_globalRootSignatureRegisters["b2"] = GlobalRootParam::CBV_CAMERA;
 
 	// Create root parameters
 	D3D12_ROOT_PARAMETER rootParam[GlobalRootParam::SIZE];
@@ -487,11 +500,20 @@ ID3D12RootSignature* DX12API::getGlobalRootSignature() const {
 	return m_globalRootSignature.Get();
 }
 
-inline UINT DX12API::getFrameIndex() const {
+UINT DX12API::getRootIndexFromRegister(const std::string& reg) const {
+	auto it = m_globalRootSignatureRegisters.find(reg);
+	if (it != m_globalRootSignatureRegisters.end()) {
+		return it->second;
+	}
+	Logger::Error("Tried to get root index from a slot that is not bound in the global root signature!");
+	return -1;
+}
+
+UINT DX12API::getFrameIndex() const {
 	return m_backBufferIndex;
 }
 
-inline UINT DX12API::getNumSwapBuffers() const {
+UINT DX12API::getNumSwapBuffers() const {
 	return NUM_SWAP_BUFFERS;
 }
 

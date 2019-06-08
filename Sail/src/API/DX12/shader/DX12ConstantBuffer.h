@@ -11,7 +11,7 @@ namespace ShaderComponent {
 		~DX12ConstantBuffer();
 
 		virtual void updateData(const void* newData, unsigned int bufferSize, unsigned int offset = 0U) override;
-		virtual void bind() const override;
+		virtual void bind(void* cmdList) const override;
 
 	private:
 		DX12API* m_context;
@@ -19,7 +19,7 @@ namespace ShaderComponent {
 		void* m_newData;
 		bool* m_needsUpdate;
 
-		unsigned int m_location;
+		unsigned int m_register;
 		wComPtr<ID3D12Resource1>* m_constantBufferUploadHeap;
 		UINT8** m_cbGPUAddress;
 

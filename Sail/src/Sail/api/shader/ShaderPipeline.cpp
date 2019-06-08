@@ -61,7 +61,7 @@ void ShaderPipeline::bind(void* cmdList) {
 		return;
 
 	for (auto& it : parsedData.cBuffers) {
-		it.cBuffer->bind();
+		it.cBuffer->bind(cmdList);
 	}
 	for (auto& it : parsedData.samplers) {
 		it.sampler->bind();

@@ -12,7 +12,7 @@ namespace ShaderComponent {
 	}
 
 	void DX12Sampler::bind() {
-		throw std::logic_error("The method or operation is not implemented.");
+		//throw std::logic_error("The method or operation is not implemented.");
 	}
 
 	DX12Sampler::DX12Sampler(Texture::ADDRESS_MODE addressMode, Texture::FILTER filter, BIND_SHADER bindShader, unsigned int slot) {
