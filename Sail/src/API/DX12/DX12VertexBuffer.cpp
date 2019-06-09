@@ -18,14 +18,15 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, Mesh::Data& m
 	m_vertexBuffer = DX12Utils::CreateBuffer(context->getDevice(), getVertexDataSize(), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
 	m_vertexBuffer->SetName(L"Vertex buffer");
 
-	//ThrowIfFailed(context->getDevice()->CreateCommittedResource(
-	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-	//	D3D12_HEAP_FLAG_NONE,
-	//	&CD3DX12_RESOURCE_DESC::Buffer(byteSize),
-	//	D3D12_RESOURCE_STATE_COMMON,
-	//	nullptr,
-	//	IID_PPV_ARGS(m_vertexBuffer.GetAddressOf())));
+	// Place verticies in the buffer
+	void* pData;
+	D3D12_RANGE readRange{ 0, 0 };
+	ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, &pData));
+	memcpy(pData, vertices, getVertexDataSize());
+	m_vertexBuffer->Unmap(0, nullptr);
 
+	// Delete vertices from cpu memory
+	free(vertices);
 }
 
 DX12VertexBuffer::~DX12VertexBuffer() {

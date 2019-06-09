@@ -91,6 +91,7 @@ private:
 	UINT m_backBufferIndex;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentRenderTargetCDH;
 	ID3D12Resource* m_currentRenderTargetResource;
+	float m_clearColor[4];
 
 	wComPtr<ID3D12Device5> m_device;
 #ifdef _DEBUG

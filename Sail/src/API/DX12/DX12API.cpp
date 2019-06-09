@@ -11,6 +11,7 @@ GraphicsAPI* GraphicsAPI::Create() {
 
 DX12API::DX12API()
 	: m_backBufferIndex(0)
+	, m_clearColor{0.8, 0.2, 0.2, 1.0}
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 	m_fenceValues.resize(NUM_SWAP_BUFFERS, 0);
@@ -469,6 +470,12 @@ void DX12API::setBlending(Blending setting) {
 }
 
 void DX12API::clear(const glm::vec4& color) {
+	m_clearColor[0] = color.r;
+	m_clearColor[1] = color.g;
+	m_clearColor[2] = color.b;
+	m_clearColor[3] = color.a;
+	
+	// DX11
 	//FLOAT colorArr[4] = { color.x, color.y, color.z, color.w };
 	//// Clear back buffer
 	//m_deviceContext->ClearRenderTargetView(m_renderTargetView, colorArr);
@@ -555,6 +562,11 @@ void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
+
+	// Clear
+	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
+	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
 	cmdList->RSSetViewports(1, &m_viewport);
 	cmdList->RSSetScissorRects(1, &m_scissorRect);
 }

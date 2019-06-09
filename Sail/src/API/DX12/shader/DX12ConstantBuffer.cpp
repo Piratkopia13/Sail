@@ -32,6 +32,9 @@ namespace ShaderComponent {
 			D3D12_RANGE readRange{0, 0}; // We do not intend to read from this resource on the CPU. (End is less than or equal to begin)
 			ThrowIfFailed(m_constantBufferUploadHeap[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_cbGPUAddress[i])));
 
+			// Place initData in the buffer
+			memcpy(m_cbGPUAddress[i], initData, size);
+
 			// TODO: copy upload heap to a default heap when the data is not often changed
 		}
 
