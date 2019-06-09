@@ -60,12 +60,14 @@ public:
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
 	UINT getRootIndexFromRegister(const std::string& reg) const;
-
 	UINT getFrameIndex() const;
 	UINT getNumSwapBuffers() const;
+
 	void initCommand(Command& cmd);
 
+	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
+	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
 	// TODO: replace with event
 	void resize(UINT width, UINT height);
 private:
@@ -76,7 +78,9 @@ private:
 	void createGlobalRootSignature();
 	//void createShaderResources();
 	void createDepthStencilResources(Win32Window* window);
+
 	void nextFrame();
+	void waitForGPU();
 
 	void resizeBuffers(UINT width, UINT height);
 
@@ -86,6 +90,7 @@ private:
 
 	UINT m_backBufferIndex;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentRenderTargetCDH;
+	ID3D12Resource* m_currentRenderTargetResource;
 
 	wComPtr<ID3D12Device5> m_device;
 #ifdef _DEBUG

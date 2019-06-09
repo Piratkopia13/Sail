@@ -8,7 +8,7 @@ public:
 	DX11Mesh(Data& buildData, ShaderPipeline* shaderPipeline);
 	~DX11Mesh();
 
-	virtual void draw(const Renderer& renderer) override;
+	virtual void draw(const Renderer& renderer, void* cmdList) override;
 
 private:
 

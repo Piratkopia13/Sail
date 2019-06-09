@@ -3,6 +3,7 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "Sail/Application.h"
+#include "../DX12Utils.h"
 
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
@@ -17,7 +18,7 @@ Renderer* Renderer::Create(Renderer::Type type) {
 DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	m_context->initCommand(m_command);
-
+	m_command.list->SetName(L"Forward Renderer main command list");
 }
 
 DX12ForwardRenderer::~DX12ForwardRenderer() {
@@ -25,7 +26,6 @@ DX12ForwardRenderer::~DX12ForwardRenderer() {
 }
 
 void DX12ForwardRenderer::present(RenderableTexture* output) {
-
 	auto frameIndex = m_context->getFrameIndex();
 
 	auto& allocator = m_command.allocators[frameIndex];
@@ -40,11 +40,12 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Bind mesh-common constant buffers (camera)
-	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf); // TODO: DX12ConstantBuffer and figure out descriptor heaps for them
+	// TODO: bind camera cbuffer here
+	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
 	for (RenderCommand& command : commandQueue) {
 		ShaderPipeline* shader = command.mesh->getMaterial()->getShader();
-		shader->bind(m_command.list.Get());
+		shader->bind(cmdList.Get());
 
 		shader->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
 		shader->setCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
@@ -57,6 +58,13 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 			shader->setCBufferVar("pointLights", &plData, sizeof(plData));
 		}
 
-		command.mesh->draw(*this);
+		command.mesh->draw(*this, cmdList.Get());
 	}
+
+	// Lastly - transition back buffer to present
+	m_context->prepareToPresent(cmdList.Get());
+	// Execute command list
+	cmdList->Close();
+	m_context->executeCommandLists({ cmdList.Get() });
+
 }

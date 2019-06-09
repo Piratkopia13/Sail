@@ -35,10 +35,10 @@ public:
 	struct Data {
 		Data() : numIndices(0), numInstances(0), indices(nullptr), numVertices(0), normals(nullptr), positions(nullptr), colors(nullptr), texCoords(nullptr), tangents(nullptr), bitangents(nullptr) {};
 		void deepCopy(const Data& other);
-		UINT numIndices;
-		ULONG* indices;
-		UINT numVertices;
-		UINT numInstances;
+		unsigned int numIndices;
+		unsigned long* indices;
+		unsigned int numVertices;
+		unsigned int numInstances;
 		Mesh::vec3* positions;
 		Mesh::vec3* normals;
 		Mesh::vec4* colors;
@@ -52,13 +52,13 @@ public:
 	Mesh(Data& buildData, ShaderPipeline* shaderPipeline);
 	virtual ~Mesh();
 
-	virtual void draw(const Renderer& renderer) = 0;
+	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;
 
 	Material* getMaterial();
 
-	UINT getNumVertices() const;
-	UINT getNumIndices() const;
-	UINT getNumInstances() const;
+	unsigned int getNumVertices() const;
+	unsigned int getNumIndices() const;
+	unsigned int getNumInstances() const;
 	const VertexBuffer& getVertexBuffer() const;
 	const IndexBuffer& getIndexBuffer() const;
 

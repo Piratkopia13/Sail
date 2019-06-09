@@ -219,10 +219,12 @@ void DX12API::createRenderTargets() {
 	for (UINT n = 0; n < NUM_SWAP_BUFFERS; n++) {
 		ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
 		m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, cdh);
+		m_renderTargets[n]->SetName((std::wstring(L"Render Target ") + std::to_wstring(n)).c_str());
 		cdh.ptr += m_renderTargetDescriptorSize;
 	}
 	// Set first as initial rt
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
+	m_currentRenderTargetResource = m_renderTargets[0].Get();
 }
 
 void DX12API::createGlobalRootSignature() {
@@ -401,24 +403,25 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 
 void DX12API::nextFrame() {
 
-	UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
-	m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue);
-	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
+	//UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
+	//m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue);
+	//m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	if (m_fence->GetCompletedValue() < m_fenceValues[m_backBufferIndex]) {
-		//OutputDebugStringA("Waiting\n");
-		m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
-		WaitForSingleObject(m_eventHandle, INFINITE);
-	}
-	/*std::string str = std::to_string(m_backBufferIndex) + " : " + std::to_string(m_fenceValues[m_backBufferIndex]) + "\n";
-	OutputDebugStringA(str.c_str());*/
+	//if (m_fence->GetCompletedValue() < m_fenceValues[m_backBufferIndex]) {
+	//	//OutputDebugStringA("Waiting\n");
+	//	m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
+	//	WaitForSingleObject(m_eventHandle, INFINITE);
+	//}
+	///*std::string str = std::to_string(m_backBufferIndex) + " : " + std::to_string(m_fenceValues[m_backBufferIndex]) + "\n";
+	//OutputDebugStringA(str.c_str());*/
 
-	m_fenceValues[m_backBufferIndex] = currentFenceValue + 1;
+	//m_fenceValues[m_backBufferIndex] = currentFenceValue + 1;
 
 	auto frameIndex = getFrameIndex();
 	// Get the handle for the current render target used as back buffer
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
 	m_currentRenderTargetCDH.ptr += m_renderTargetDescriptorSize * frameIndex;
+	m_currentRenderTargetResource = m_renderTargets[frameIndex].Get();
 
 }
 
@@ -475,7 +478,15 @@ void DX12API::clear(const glm::vec4& color) {
 }
 
 void DX12API::present(bool vsync) {
-	//m_swapChain->Present(vsync, 0);
+
+	//Present the frame.
+	DXGI_PRESENT_PARAMETERS pp = { };
+	m_swapChain->Present1((UINT)vsync, 0, &pp);
+
+	waitForGPU(); //Wait for GPU to finish.
+				  //NOT BEST PRACTICE, only used as such for simplicity.
+	nextFrame();
+	
 }
 
 unsigned int DX12API::getMemoryUsage() const {
@@ -530,16 +541,47 @@ void DX12API::initCommand(Command& cmd) {
 	cmd.list->Close();
 
 	// Reset allocator and command list to accept commands
-	ThrowIfFailed(cmd.allocators[getFrameIndex()]->Reset());
-	ThrowIfFailed(cmd.list->Reset(cmd.allocators[getFrameIndex()].Get(), nullptr));
+	/*ThrowIfFailed(cmd.allocators[getFrameIndex()]->Reset());
+	ThrowIfFailed(cmd.list->Reset(cmd.allocators[getFrameIndex()].Get(), nullptr));*/
+}
+
+void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const {
+	// Command lists needs to be closed before sent to this method
+	m_directCommandQueue->ExecuteCommandLists(cmdLists.size(), cmdLists.begin());
 }
 
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
+	// Indicate that the back buffer will be used as render target
+	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
 	cmdList->RSSetViewports(1, &m_viewport);
 	cmdList->RSSetScissorRects(1, &m_scissorRect);
 }
 
+void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
+	// Indicate that the back buffer will be used to present
+	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+}
+
 void DX12API::resize(UINT width, UINT height) {
 	resizeBuffers(width, height);
+}
+
+void DX12API::waitForGPU() {
+	//WAITING FOR EACH FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.
+	//This is code implemented as such for simplicity. The cpu could for example be used
+	//for other tasks to prepare the next frame while the current one is being rendered.
+
+	//Signal and increment the fence value.
+	const UINT64 fence = m_fenceValues[m_backBufferIndex];
+	m_directCommandQueue->Signal(m_fence.Get(), fence);
+
+	//Wait until command queue is done.
+	//if (m_fence->GetCompletedValue() < fence) {
+	m_fence->SetEventOnCompletion(fence, m_eventHandle);
+	WaitForSingleObject(m_eventHandle, INFINITE);
+	m_fenceValues[m_backBufferIndex]++;
+	//}
+	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 }

@@ -11,71 +11,14 @@ DX11VertexBuffer::DX11VertexBuffer(const InputLayout& inputLayout, Mesh::Data& m
 	: VertexBuffer(inputLayout, modelData)
 	, m_instanceBuffer(nullptr)
 {
-	m_stride = inputLayout.getVertexSize();
-	
-	if (m_stride == 0) {
-		Logger::Error("Input layout to set up properly for shader");
-		__debugbreak();
-	}
-
-	void* vertices = malloc(modelData.numVertices * m_stride);
-
-	UINT byteOffset = 0;
-	for (UINT i = 0; i < modelData.numVertices; i++) {
-
-		// Loop through the input layout to get the order the data should have
-		for (const InputLayout::InputType& inputType : inputLayout.getOrderedInputs()) {
-			void* addr = (char*)vertices + byteOffset;
-
-			if (inputType == InputLayout::POSITION) {
-				UINT size = sizeof(glm::vec3);
-				memcpy(addr, &modelData.positions[i], size);
-				byteOffset += size;
-			}
-			else if (inputType == InputLayout::TEXCOORD) {
-				UINT size = sizeof(glm::vec2);
-				// Check if model data contains texCoords
-				if (modelData.texCoords)
-					memcpy(addr, &modelData.texCoords[i], size);
-				else 
-					memset(addr, 0, size);
-				byteOffset += size;
-			} 
-			else if (inputType == InputLayout::NORMAL) {
-				UINT size = sizeof(glm::vec3);
-				if (modelData.normals)
-					memcpy(addr, &modelData.normals[i], size);
-				else
-					memset(addr, 0, size);
-				byteOffset += size;
-			}
-			else if (inputType == InputLayout::TANGENT) {
-				UINT size = sizeof(glm::vec3);
-				if (modelData.tangents)
-					memcpy(addr, &modelData.tangents[i], size);
-				else
-					memset(addr, 0, size);
-				byteOffset += size;
-			}
-			else if (inputType == InputLayout::BITANGENT) {
-				UINT size = sizeof(glm::vec3);
-				if (modelData.bitangents)
-					memcpy(addr, &modelData.bitangents[i], size);
-				else
-					memset(addr, 0, size);
-				byteOffset += size;
-			}
-
-		}
-
-	}
+	void* vertices = getVertexData(modelData);
 
 	D3D11_BUFFER_DESC vbd;
 	ZeroMemory(&vbd, sizeof(vbd));
 
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
 	//vbd.ByteWidth = modelData.numVertices * sizeof(DeferredGeometryShader::Vertex);
-	vbd.ByteWidth = modelData.numVertices * m_stride;
+	vbd.ByteWidth = getVertexDataSize();
 	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbd.CPUAccessFlags = 0;
 
@@ -85,10 +28,10 @@ DX11VertexBuffer::DX11VertexBuffer(const InputLayout& inputLayout, Mesh::Data& m
 
 	// Create the vertex buffer
 	ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateBuffer(&vbd, &vertexData, &m_vertBuffer));
+	
 	// Delete vertices from cpu memory
 	free(vertices);
-
-
+	
 	// Set up instanceData buffer if instances are set
 	if (modelData.numInstances > 0) {
 		// Set up instance buffer
@@ -116,7 +59,7 @@ ID3D11Buffer* const* DX11VertexBuffer::getBuffer() const {
 	return &m_vertBuffer;
 }
 
-void DX11VertexBuffer::bind() const {
+void DX11VertexBuffer::bind(void* cmdList) const {
 	if (m_instanceBuffer) {
 		// Bind both vertex and instance buffers
 		UINT strides[2] = { inputLayout.getVertexSize(), inputLayout.getInstanceSize() };
@@ -126,6 +69,7 @@ void DX11VertexBuffer::bind() const {
 	} else {
 		// Bind vertex buffer
 		UINT offset = 0;
-		Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->IASetVertexBuffers(0, 1, &m_vertBuffer, &m_stride, &offset);
+		unsigned int stride = getVertexDataStride();
+		Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->IASetVertexBuffers(0, 1, &m_vertBuffer, &stride, &offset);
 	}
 }

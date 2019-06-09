@@ -25,7 +25,7 @@ DX11Mesh::DX11Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
 DX11Mesh::~DX11Mesh() {
 }
 
-void DX11Mesh::draw(const Renderer& renderer) {
+void DX11Mesh::draw(const Renderer& renderer, void* cmdList) {
 	material->bind();
 
 	vertexBuffer->bind();

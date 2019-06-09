@@ -9,11 +9,10 @@ public:
 	~DX11VertexBuffer();
 
 	ID3D11Buffer* const* getBuffer() const;
-	virtual void bind() const override;
+	virtual void bind(void* cmdList) const override;
 
 private:
 	ID3D11Buffer* m_vertBuffer;
 	ID3D11Buffer* m_instanceBuffer;
-	UINT m_stride;
 };
 
