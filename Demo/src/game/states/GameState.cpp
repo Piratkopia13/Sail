@@ -42,6 +42,7 @@ GameState::GameState(StateStack& stack)
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader->getPipeline());
 	//m_cubeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader->getPipeline());
+	m_planeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.8f, 0.2f, 0.2f, 1.0f));
 
 	m_scene.setLightSetup(&m_lights);
 

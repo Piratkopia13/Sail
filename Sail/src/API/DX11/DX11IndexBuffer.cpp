@@ -10,18 +10,13 @@ IndexBuffer* IndexBuffer::Create(Mesh::Data& modelData) {
 DX11IndexBuffer::DX11IndexBuffer(Mesh::Data& modelData) 
 	: IndexBuffer(modelData)
 {
-	ULONG* indices = SAIL_NEW ULONG[modelData.numIndices];
-
-	// Fill the array with the model indices
-	for (UINT i = 0; i < modelData.numIndices; i++) {
-		indices[i] = modelData.indices[i];
-	}
+	ULONG* indices = getIndexData(modelData);
 
 	// Set up index buffer description
 	D3D11_BUFFER_DESC ibd;
 	ZeroMemory(&ibd, sizeof(ibd));
 	ibd.Usage = D3D11_USAGE_IMMUTABLE;
-	ibd.ByteWidth = modelData.numIndices * sizeof(UINT);
+	ibd.ByteWidth = getIndexDataSize();
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibd.CPUAccessFlags = 0;
 
@@ -33,7 +28,6 @@ DX11IndexBuffer::DX11IndexBuffer(Mesh::Data& modelData)
 	ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateBuffer(&ibd, &indexData, &m_buffer));
 	// Delete indices from cpu memory
 	Memory::SafeDeleteArr(indices);
-
 }
 
 DX11IndexBuffer::~DX11IndexBuffer() {
@@ -44,7 +38,7 @@ ID3D11Buffer* const* DX11IndexBuffer::getBuffer() const {
 	return &m_buffer;
 }
 
-void DX11IndexBuffer::bind() const {
-	// TODO: is 32 bits too much for indices?
+void DX11IndexBuffer::bind(void* cmdList) const {
+	// TODO: is 32 bits too much for indices? nah
 	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->IASetIndexBuffer(m_buffer, DXGI_FORMAT_R32_UINT, 0);
 }

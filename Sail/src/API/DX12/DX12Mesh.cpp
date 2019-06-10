@@ -13,16 +13,13 @@ Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderPipeline) {
 DX12Mesh::DX12Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
 	: Mesh(buildData, shaderPipeline)
 {
-
-	//TODO: create DX11Index and Vertex buffer
-
 	material = std::make_shared<Material>(shaderPipeline);
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shaderPipeline->getInputLayout(), buildData));
-	//// Create index buffer is indices are set
-	//if (buildData.numIndices > 0) {
-	//	indexBuffer = std::make_unique<DX11IndexBuffer>(buildData);
-	//}
+	// Create index buffer if indices are set
+	if (buildData.numIndices > 0) {
+		indexBuffer = std::unique_ptr<IndexBuffer>(IndexBuffer::Create(buildData));
+	}
 }
 
 DX12Mesh::~DX12Mesh() {
@@ -33,14 +30,12 @@ void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
 
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)
-		indexBuffer->bind();
+		indexBuffer->bind(cmdList);
 
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-	//DX12API* context = Application::getInstance()->getAPI<DX12API>();
 	// Draw call
-	dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
-	/*if (indexBuffer)
-		devCon->DrawIndexed(getNumIndices(), 0U, 0U);
+	if (indexBuffer)
+		dxCmdList->DrawIndexedInstanced(getNumIndices(), 1, 0, 0, 0);
 	else
-		devCon->Draw(getNumVertices(), 0);*/
+		dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
 }

@@ -16,7 +16,7 @@ DX11Mesh::DX11Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
 	material = std::make_shared<Material>(shaderPipeline);
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shaderPipeline->getInputLayout(), buildData));
-	// Create index buffer is indices are set
+	// Create index buffer if indices are set
 	if (buildData.numIndices > 0) {
 		indexBuffer = std::unique_ptr<IndexBuffer>(IndexBuffer::Create(buildData));
 	}
@@ -31,8 +31,6 @@ void DX11Mesh::draw(const Renderer& renderer, void* cmdList) {
 	vertexBuffer->bind();
 	if (indexBuffer)
 		indexBuffer->bind();
-
-	// TODO: replace following DirectX calls with abstraction layer
 
 	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
 	// Set topology

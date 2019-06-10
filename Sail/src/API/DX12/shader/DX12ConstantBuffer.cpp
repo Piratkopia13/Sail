@@ -6,7 +6,7 @@
 namespace ShaderComponent {
 
 	ConstantBuffer* ConstantBuffer::Create(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot) {
-		return new DX12ConstantBuffer(initData, size, bindShader, slot);
+		return SAIL_NEW DX12ConstantBuffer(initData, size, bindShader, slot);
 	}
 
 	DX12ConstantBuffer::DX12ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot) 
@@ -23,9 +23,9 @@ namespace ShaderComponent {
 		// create a resource heap, descriptor heap, and pointer to cbv for each frame
 		for (UINT i = 0; i < numSwapBuffers; ++i) {
 			
-			// TODO: make size dynamic
-			// Must be a multiple of 64KB for single-textures and constant buffers
-			m_constantBufferUploadHeap[i] = DX12Utils::CreateBuffer(m_context->getDevice(), 1024 * 64, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+			// Size must be a multiple of 64KB for single-textures and constant buffers
+			UINT64 paddedSize = (glm::floor(size / (1024.0 * 64.0)) + 1) * (1024.0 * 64.0);
+			m_constantBufferUploadHeap[i] = DX12Utils::CreateBuffer(m_context->getDevice(), paddedSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
 			m_constantBufferUploadHeap[i]->SetName(L"Constant Buffer Upload Resource Heap");
 
 			// Map the constant buffer and keep it mapped for the duration of its lifetime
