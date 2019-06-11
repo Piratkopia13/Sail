@@ -4,6 +4,7 @@
 #include "Sail/graphics/light/LightSetup.h"
 #include "Sail/Application.h"
 #include "../DX12Utils.h"
+#include "../shader/DX12ShaderPipeline.h"
 
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
@@ -43,8 +44,14 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	// TODO: bind camera cbuffer here
 	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
+	unsigned int meshIndex = 0;
 	for (RenderCommand& command : commandQueue) {
-		ShaderPipeline* shader = command.mesh->getMaterial()->getShader();
+		DX12ShaderPipeline* shader = static_cast<DX12ShaderPipeline*>(command.mesh->getMaterial()->getShader());
+		
+		// Set mesh index which is used to bind the correct cbuffers from the resource heap
+		// The index order does not matter, as long as the same index is used for bind and setCBuffer
+		shader->setResourceHeapMeshIndex(meshIndex);
+
 		shader->bind(cmdList.Get());
 
 		shader->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
@@ -59,6 +66,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 		}
 
 		command.mesh->draw(*this, cmdList.Get());
+		meshIndex++;
 	}
 
 	// Lastly - transition back buffer to present

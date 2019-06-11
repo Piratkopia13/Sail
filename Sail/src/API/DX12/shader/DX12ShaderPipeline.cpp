@@ -3,6 +3,7 @@
 #include "Sail/Application.h"
 #include "DX12InputLayout.h"
 #include "../DX12API.h"
+#include "DX12ConstantBuffer.h"
 
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
@@ -115,6 +116,14 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 
 void DX12ShaderPipeline::setTexture2D(const std::string& name, void* handle) {
 	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {
+	//m_resourceHeapMeshIndex = index;
+
+	for (auto& it : parsedData.cBuffers) {
+		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->setResourceHeapMeshIndex(index);
+	}
 }
 
 void DX12ShaderPipeline::compile() {

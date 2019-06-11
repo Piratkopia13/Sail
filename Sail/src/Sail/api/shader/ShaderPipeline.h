@@ -27,20 +27,16 @@ public:
 	ShaderPipeline(const std::string& filename);
 	virtual ~ShaderPipeline();
 
-	//virtual void bind();
-
 	// The following static methods are to be implemented in APIs
 	virtual void bind(void* cmdList = nullptr) = 0;
 	// filepath is used for include paths and error messages 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) = 0;
 	virtual void setTexture2D(const std::string& name, void* handle) = 0;
-	//virtual void bindCS(UINT csIndex = 0);
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
 
 
-	//static ID3D10Blob* compileShader(const std::string& source, const std::string& entryPoint, const std::string& shaderVersion); // Remove, its replaced by the static version above
 	InputLayout& getInputLayout();
 	void* getVsBlob();
 
