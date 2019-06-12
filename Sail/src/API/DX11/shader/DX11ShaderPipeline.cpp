@@ -2,6 +2,7 @@
 #include "DX11ShaderPipeline.h"
 #include "Sail/Application.h"
 #include "../DX11API.h"
+#include <API\DX11\resources\DX11Texture.h>
 
 ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 	return SAIL_NEW DX11ShaderPipeline(filename);
@@ -96,9 +97,10 @@ void* DX11ShaderPipeline::compileShader(const std::string& source, const std::st
 	return shader;
 }
 
-void DX11ShaderPipeline::setTexture2D(const std::string& name, void* handle) {
+void DX11ShaderPipeline::setTexture2D(const std::string& name, Texture* texture, void* cmdList) {
 	UINT slot = findSlotFromName(name, parsedData.textures);
-	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, (ID3D11ShaderResourceView**)& handle);
+	auto* srv = ((DX11Texture*)texture)->getSRV();
+	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, &srv);
 }
 
 void DX11ShaderPipeline::compile() {

@@ -26,7 +26,7 @@ DX12Mesh::~DX12Mesh() {
 }
 
 void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
-	material->bind();
+	material->bind(cmdList);
 
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)

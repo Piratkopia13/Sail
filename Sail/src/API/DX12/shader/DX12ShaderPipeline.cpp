@@ -4,6 +4,7 @@
 #include "DX12InputLayout.h"
 #include "../DX12API.h"
 #include "DX12ConstantBuffer.h"
+#include "../resources/DX12Texture.h"
 
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
@@ -14,6 +15,8 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename) 
 	: ShaderPipeline(filename)
 {
+	m_context = Application::getInstance()->getAPI<DX12API>();
+
 	if (!m_dxilCompiler) {
 		m_dxilCompiler = std::make_unique<DXILShaderCompiler>();
 		m_dxilCompiler->init();
@@ -114,13 +117,16 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 
 }
 
-void DX12ShaderPipeline::setTexture2D(const std::string& name, void* handle) {
-	throw std::logic_error("The method or operation is not implemented.");
+void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture, void* cmdList) {
+	DX12Texture* dxTexture = static_cast<DX12Texture*>(texture);
+	if (!dxTexture->hasBeenInitialized())
+		dxTexture->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
+
+	// Copy texture SRVs to the gpu heap
+	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {
-	//m_resourceHeapMeshIndex = index;
-
 	for (auto& it : parsedData.cBuffers) {
 		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->setResourceHeapMeshIndex(index);
 	}
@@ -131,7 +137,6 @@ void DX12ShaderPipeline::compile() {
 }
 
 void DX12ShaderPipeline::finish() {
-	auto* context = Application::getInstance()->getAPI<DX12API>();
 
 	auto vsD3DBlob = static_cast<ID3DBlob*>(vsBlob);
 	auto psD3DBlob = static_cast<ID3DBlob*>(psBlob);
@@ -143,7 +148,7 @@ void DX12ShaderPipeline::finish() {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpsd = {};
 
 	// Specify pipeline stages
-	gpsd.pRootSignature = context->getGlobalRootSignature();
+	gpsd.pRootSignature = m_context->getGlobalRootSignature();
 	gpsd.InputLayout = static_cast<DX12InputLayout*>(inputLayout.get())->getDesc();
 	gpsd.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	if (vsBlob) {
@@ -205,6 +210,6 @@ void DX12ShaderPipeline::finish() {
 	gpsd.DepthStencilState = dsDesc;
 	gpsd.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
-	ThrowIfFailed(context->getDevice()->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&m_pipelineState)));
+	ThrowIfFailed(m_context->getDevice()->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&m_pipelineState)));
 
 }

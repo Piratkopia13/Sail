@@ -28,7 +28,7 @@ public:
 	Material(ShaderPipeline* ShaderPipeline);
 	~Material();
 
-	void bind();
+	void bind(void* cmdList = nullptr);
 
 	void setKa(float ka);
 	void setKd(float kd);
@@ -37,13 +37,13 @@ public:
 	void setColor(const glm::vec4& color);
 
 	void setDiffuseTexture(const std::string& filename);
-	void setDiffuseTextureFromHandle(SailTexture srv);
+	void setDiffuseTextureFromHandle(Texture* srv);
 
 	void setNormalTexture(const std::string& filename);
-	void setNormalTextureFromHandle(SailTexture srv);
+	void setNormalTextureFromHandle(Texture* srv);
 
 	void setSpecularTexture(const std::string& filename);
-	void setSpecularTextureFromHandle(SailTexture srv);
+	void setSpecularTextureFromHandle(Texture* srv);
 
 	//void setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures);
 
@@ -69,7 +69,7 @@ private:
 	ShaderPipeline* m_shader;
 
 	PhongSettings m_phongSettings;
-	SailTexture m_texHandles[3];
+	Texture* m_textures[3];
 
 	UINT m_numTextures;
 

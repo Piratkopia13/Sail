@@ -9,11 +9,7 @@ Texture* Texture::Create(const std::string& filename) {
 
 DX11Texture::DX11Texture(const std::string& filename) {
 
-	// Load the texture file it if is not loaded already
-	if (!Application::getInstance()->getResourceManager().hasTextureData(filename)) {
-		Application::getInstance()->getResourceManager().loadTextureData(filename);
-	}
-	auto& data = Application::getInstance()->getResourceManager().getTextureData(filename);
+	TextureData& data = getTextureData(filename);
 
 	D3D11_TEXTURE2D_DESC texDesc;
 	ZeroMemory(&texDesc, sizeof(texDesc));
@@ -116,8 +112,8 @@ DX11Texture::~DX11Texture() {
 	Memory::SafeRelease(m_resourceView);
 }
 
-SailTexture* DX11Texture::getHandle() {
-	return (SailTexture*)&m_resourceView;
+ID3D11ShaderResourceView* const DX11Texture::getSRV() const {
+	return m_resourceView;
 }
 
 ID3D11Texture2D* DX11Texture::getTexture2D() {

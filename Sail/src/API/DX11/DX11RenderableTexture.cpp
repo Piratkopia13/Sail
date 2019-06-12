@@ -113,9 +113,9 @@ void DX11RenderableTexture::createTextures() {
 	}
 	else {
 		if(!m_onlyDSV)
-			m_nonMSAAColorSRV = (ID3D11ShaderResourceView*)*m_dxColorTexture->getHandle();
+			m_nonMSAAColorSRV = m_dxColorTexture->getSRV();
 		if (m_hasDepthStencilView)
-			m_nonMSAADepthSRV = (ID3D11ShaderResourceView*)*m_dxDepthTexture->getHandle();
+			m_nonMSAADepthSRV = m_dxDepthTexture->getSRV();
 	}
 
 }

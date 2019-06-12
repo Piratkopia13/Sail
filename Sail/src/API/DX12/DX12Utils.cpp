@@ -20,6 +20,7 @@ const D3D12_HEAP_PROPERTIES DX12Utils::sDefaultHeapProps = {
 };
 
 void DX12Utils::UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const void* data, UINT64 byteSize, UINT64 offset, ID3D12Resource1* defaultBuffer, ID3D12Resource1** uploadBuffer) {
+	// TODO: make this method useful
 
 	D3D12_RESOURCE_DESC bufferDesc{};
 	bufferDesc.Width = byteSize;
@@ -37,7 +38,6 @@ void DX12Utils::UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsComm
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(uploadBuffer)));
-	(*uploadBuffer)->SetName(L"Vertex upload heap");
 
 	// Put in barriers in order to schedule for the data to be copied
 	// to the default buffer resource.

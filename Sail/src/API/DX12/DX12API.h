@@ -22,6 +22,7 @@
 
 // Forward declarations
 class Win32Window;
+class DescriptorHeap;
 
 template <typename T>
 using wComPtr = Microsoft::WRL::ComPtr<T>;
@@ -32,7 +33,6 @@ namespace GlobalRootParam {
 		CBV_DIFFUSE_TINT,
 		CBV_CAMERA,
 		DT_SRVS,
-		DT_SAMPLERS,
 		SIZE
 	};
 }
@@ -62,6 +62,7 @@ public:
 	UINT getRootIndexFromRegister(const std::string& reg) const;
 	UINT getFrameIndex() const;
 	UINT getNumSwapBuffers() const;
+	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 
 	void initCommand(Command& cmd);
 
@@ -76,7 +77,7 @@ private:
 	void createFenceAndEventHandle();
 	void createRenderTargets();
 	void createGlobalRootSignature();
-	//void createShaderResources();
+	void createShaderResources();
 	void createDepthStencilResources(Win32Window* window);
 
 	void nextFrame();
@@ -111,6 +112,7 @@ private:
 	Command m_postCommand;
 	Command m_copyCommand;
 	Command m_computeCommand;
+	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeap;
 
 	wComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
 	wComPtr<IDXGISwapChain4> m_swapChain;

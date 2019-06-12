@@ -67,6 +67,8 @@ void ShaderPipeline::bind(void* cmdList) {
 		it.sampler->bind();
 	}
 
+
+
 	// Set input layout as active
 	inputLayout->bind();
 }

@@ -14,7 +14,7 @@ public:
 	DX11Texture(DXGI_FORMAT format, UINT width, UINT height, UINT samples = 1, UINT cpuAccessFlags = 0);
 	~DX11Texture();
 
-	virtual SailTexture* getHandle() override;
+	ID3D11ShaderResourceView* const getSRV() const;
 	ID3D11Texture2D* getTexture2D();
 
 private:

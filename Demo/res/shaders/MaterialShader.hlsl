@@ -102,7 +102,7 @@ PSIn VSMain(VSIn input) {
 Texture2D sys_texDiffuse : register(t0);
 Texture2D sys_texNormal : register(t1);
 Texture2D sys_texSpecular : register(t2);
-SamplerState PSss;
+SamplerState PSss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0 {
 

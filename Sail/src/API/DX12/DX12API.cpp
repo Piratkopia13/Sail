@@ -2,6 +2,7 @@
 #include "DX12API.h"
 #include "API/Windows/Win32Window.h"
 #include "DX12Utils.h"
+#include "resources/DescriptorHeap.h"
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
 
@@ -29,7 +30,7 @@ bool DX12API::init(Window* window) {
 	createCmdInterfacesAndSwapChain(winWindow);
 	createFenceAndEventHandle();
 	createRenderTargets();
-	//createShaderResources(); // dont need this (?)
+	createShaderResources();
 	createGlobalRootSignature();
 	createDepthStencilResources(winWindow);
 
@@ -209,7 +210,7 @@ void DX12API::createFenceAndEventHandle() {
 void DX12API::createRenderTargets() {
 	// Create descriptor heap for render target views
 	D3D12_DESCRIPTOR_HEAP_DESC dhd = {};
-	dhd.NumDescriptors = NUM_SWAP_BUFFERS * 2; // * 2 to allow for render to texture resources
+	dhd.NumDescriptors = NUM_SWAP_BUFFERS;
 	dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&m_renderTargetsHeap)));
 
@@ -244,24 +245,10 @@ void DX12API::createGlobalRootSignature() {
 	m_globalRootSignatureRegisters["t1"] = GlobalRootParam::DT_SRVS;
 	m_globalRootSignatureRegisters["t2"] = GlobalRootParam::DT_SRVS;
 
-	D3D12_DESCRIPTOR_RANGE descRangeSampler[1];
-	descRangeSampler[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-	descRangeSampler[0].NumDescriptors = 1; // TODO: make a few different samplers
-	descRangeSampler[0].BaseShaderRegister = 0; // register bX
-	descRangeSampler[0].RegisterSpace = 0; // register (bX,spaceY)
-	descRangeSampler[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	// TODO: autogen from other data
-	m_globalRootSignatureRegisters["s0"] = GlobalRootParam::DT_SAMPLERS;
-
 	// Create descriptor tables
 	D3D12_ROOT_DESCRIPTOR_TABLE dtSrv;
 	dtSrv.NumDescriptorRanges = ARRAYSIZE(descRangeSrv);
 	dtSrv.pDescriptorRanges = descRangeSrv;
-
-	D3D12_ROOT_DESCRIPTOR_TABLE dtSampler;
-	dtSampler.NumDescriptorRanges = ARRAYSIZE(descRangeSampler);
-	dtSampler.pDescriptorRanges = descRangeSampler;
 
 	// Create root descriptors
 	D3D12_ROOT_DESCRIPTOR rootDescCBV = {};
@@ -304,10 +291,6 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::DT_SRVS].DescriptorTable = dtSrv;
 	rootParam[GlobalRootParam::DT_SRVS].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-	rootParam[GlobalRootParam::DT_SAMPLERS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParam[GlobalRootParam::DT_SAMPLERS].DescriptorTable = dtSampler;
-	rootParam[GlobalRootParam::DT_SAMPLERS].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
 	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[2];
 	staticSamplerDesc[0] = {};
 	staticSamplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -320,13 +303,13 @@ void DX12API::createGlobalRootSignature() {
 	staticSamplerDesc[0].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
 	staticSamplerDesc[0].MinLOD = 0.f;
 	staticSamplerDesc[0].MaxLOD = FLT_MAX;
-	staticSamplerDesc[0].ShaderRegister = 1;
+	staticSamplerDesc[0].ShaderRegister = 0;
 	staticSamplerDesc[0].RegisterSpace = 0;
 	staticSamplerDesc[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	staticSamplerDesc[1] = staticSamplerDesc[0];
 	staticSamplerDesc[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	staticSamplerDesc[1].ShaderRegister = 2;
+	staticSamplerDesc[1].ShaderRegister = 1;
 
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -348,15 +331,11 @@ void DX12API::createGlobalRootSignature() {
 }
 
 
-//void DX12API::createShaderResources() {
-//	// Create descriptor heap for samplers
-//	/*D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-//	samplerHeapDesc.NumDescriptors = MAX_NUM_SAMPLERS;
-//	samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-//	samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-//	ThrowIfFailed(m_device->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&m_samplerDescriptorHeap)));
-//	m_samplerDescriptorHandleIncrementSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);*/
-//}
+void DX12API::createShaderResources() {
+	// Create one big gpu descriptor heap for all cbvs, srvs and uavs
+	// TODO: maybe dont hardcode 512 as numdescriptors?
+	m_cbvSrvUavDescriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 512, true);
+}
 
 void DX12API::createDepthStencilResources(Win32Window* window) {
 	// create a depth stencil descriptor heap so we can get a pointer to the depth stencil buffer
@@ -533,6 +512,10 @@ UINT DX12API::getFrameIndex() const {
 
 UINT DX12API::getNumSwapBuffers() const {
 	return NUM_SWAP_BUFFERS;
+}
+
+DescriptorHeap* const DX12API::getMainGPUDescriptorHeap() const {
+	return m_cbvSrvUavDescriptorHeap.get();
 }
 
 void DX12API::initCommand(Command& cmd) {

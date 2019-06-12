@@ -18,9 +18,10 @@ public:
 
 	void load(const std::string& filename);
 
-	unsigned int getWidth();
-	unsigned int getHeight();
-	unsigned char* getTextureData();
+	unsigned int getWidth() const;
+	unsigned int getHeight() const;
+	unsigned int getBytesPerPixel() const;
+	unsigned char* getTextureData() const;
 	glm::vec4 getPixel(unsigned int x, unsigned int y);
 
 private:

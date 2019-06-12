@@ -1,8 +1,7 @@
 #pragma once
 
 #include <string.h>
-
-typedef void* SailTexture;
+#include "Sail/resources/TextureData.h"
 
 class Texture {
 public:
@@ -27,9 +26,11 @@ public:
 	};
 public:
 	static Texture* Create(const std::string& filename);
-	Texture() {}
 	virtual ~Texture() {}
 
-	virtual SailTexture* getHandle() = 0;
+	//virtual SailTexture* getHandle() = 0;
+
+protected:
+	TextureData& getTextureData(const std::string& filename) const;
 
 };

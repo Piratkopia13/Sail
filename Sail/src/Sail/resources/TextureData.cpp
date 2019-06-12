@@ -18,13 +18,20 @@ void TextureData::load(const std::string& filename) {
 	FileLoader::TGALoader TGALoader(DEFAULT_TEXTURE_LOCATION + filename, m_data);
 }
 
-unsigned int TextureData::getWidth() {
+unsigned int TextureData::getWidth() const {
 	return m_data.width;
 }
-unsigned int TextureData::getHeight() {
+unsigned int TextureData::getHeight() const {
 	return m_data.height;
 }
-unsigned char* TextureData::getTextureData() {
+
+unsigned int TextureData::getBytesPerPixel() const {
+	// TODO: change bitsPerChannel to match the loaded image
+	unsigned int bitsPerChannel = 8;
+	return (m_data.channels * bitsPerChannel) / 8;
+}
+
+unsigned char* TextureData::getTextureData() const {
 	return m_data.textureData;
 }
 glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
