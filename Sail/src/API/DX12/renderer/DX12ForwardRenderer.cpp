@@ -43,7 +43,6 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 
 	// Bind the descriptor heap that will contain all SRVs for this frame
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
-	cmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getGPUDescriptorHandleForIndex(0));
 
 	// Bind mesh-common constant buffers (camera)
 	// TODO: bind camera cbuffer here

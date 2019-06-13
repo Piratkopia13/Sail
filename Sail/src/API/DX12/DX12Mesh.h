@@ -1,7 +1,7 @@
 #pragma once
 
-#include <d3d12.h>
 #include "Sail/api/Mesh.h"
+#include "DX12API.h"
 
 class DX12Mesh : public Mesh {
 public:
@@ -11,5 +11,6 @@ public:
 	virtual void draw(const Renderer& renderer, void* cmdList) override;
 
 private:
+	DX12API* m_context;
 
 };

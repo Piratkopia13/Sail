@@ -63,13 +63,13 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(MOVE(e));
 
-	/*Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
+	Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(fbxModel);
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(MOVE(e));*/
+	m_scene.addEntity(MOVE(e));
 
 	//e = Entity::Create();
 	//auto* textComp = e->addComponent<TextComponent>();

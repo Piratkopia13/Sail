@@ -28,8 +28,9 @@ DX12ShaderPipeline::~DX12ShaderPipeline() {
 }
 
 void DX12ShaderPipeline::bind(void* cmdList) {
-	ShaderPipeline::bind(cmdList); // do this or not?
-	static_cast<ID3D12GraphicsCommandList4*>(cmdList)->SetPipelineState(m_pipelineState.Get());
+	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+	ShaderPipeline::bind(cmdList);
+	dxCmdList->SetPipelineState(m_pipelineState.Get());
 }
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {

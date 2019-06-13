@@ -33,6 +33,10 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getGPUDescriptorHandleForIndex(unsig
 	return heapHandle;
 }
 
+D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurentGPUDescriptorHandle() const {
+	return getGPUDescriptorHandleForIndex(m_index);
+}
+
 void DescriptorHeap::bind(ID3D12GraphicsCommandList4* cmdList) const {
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_descHeap.Get() };
 	cmdList->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
