@@ -72,6 +72,7 @@ public:
 
 	glm::mat4 getMatrix() {
 		if (m_matNeedsUpdate) {
+			m_transformMatrix = glm::mat4(1.0f);
 			m_transformMatrix = glm::scale(m_transformMatrix, m_scale);
 			m_transformMatrix = glm::rotate(m_transformMatrix, m_rotation.x, glm::vec3(1.f, 0.f, 0.f));
 			m_transformMatrix = glm::rotate(m_transformMatrix, m_rotation.y, glm::vec3(0.f, 1.f, 0.f));

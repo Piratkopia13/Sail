@@ -14,8 +14,8 @@ public:
 	~Scene();
 
 	// Adds an entity to later be drawn
-	// This takes ownership of the entity
-	void addEntity(Entity::Ptr entity);
+	// This takes shared ownership of the entity
+	void addEntity(Entity::SPtr entity);
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
 
@@ -25,7 +25,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 
 private:
-	std::vector<Entity::Ptr> m_entities;
+	std::vector<Entity::SPtr> m_entities;
 	std::unique_ptr<Renderer> m_renderer;
 	//DeferredRenderer m_renderer;
 	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;

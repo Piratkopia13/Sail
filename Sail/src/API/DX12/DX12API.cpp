@@ -12,7 +12,7 @@ GraphicsAPI* GraphicsAPI::Create() {
 
 DX12API::DX12API()
 	: m_backBufferIndex(0)
-	, m_clearColor{0.8, 0.2, 0.2, 1.0}
+	, m_clearColor{0.8f, 0.2f, 0.2f, 1.0f}
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 	m_fenceValues.resize(NUM_SWAP_BUFFERS, 0);
@@ -180,7 +180,7 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	scDesc.BufferCount = NUM_SWAP_BUFFERS;
 	scDesc.Scaling = DXGI_SCALING_NONE;
 	scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	scDesc.Flags = 0;
+	scDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 	scDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
 	IDXGISwapChain1* swapChain1 = nullptr;
@@ -383,19 +383,19 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 
 void DX12API::nextFrame() {
 
-	//UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
-	//m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue);
-	//m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
+	UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
+	m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue);
+	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	//if (m_fence->GetCompletedValue() < m_fenceValues[m_backBufferIndex]) {
-	//	//OutputDebugStringA("Waiting\n");
-	//	m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
-	//	WaitForSingleObject(m_eventHandle, INFINITE);
-	//}
-	///*std::string str = std::to_string(m_backBufferIndex) + " : " + std::to_string(m_fenceValues[m_backBufferIndex]) + "\n";
-	//OutputDebugStringA(str.c_str());*/
+	if (m_fence->GetCompletedValue() < m_fenceValues[m_backBufferIndex]) {
+		//OutputDebugStringA("Waiting\n");
+		m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
+		WaitForSingleObject(m_eventHandle, INFINITE);
+	}
+	/*std::string str = std::to_string(m_backBufferIndex) + " : " + std::to_string(m_fenceValues[m_backBufferIndex]) + "\n";
+	OutputDebugStringA(str.c_str());*/
 
-	//m_fenceValues[m_backBufferIndex] = currentFenceValue + 1;
+	m_fenceValues[m_backBufferIndex] = currentFenceValue + 1;
 
 	auto frameIndex = getFrameIndex();
 	// Get the handle for the current render target used as back buffer
@@ -467,9 +467,9 @@ void DX12API::present(bool vsync) {
 
 	//Present the frame.
 	DXGI_PRESENT_PARAMETERS pp = { };
-	m_swapChain->Present1((UINT)vsync, 0, &pp);
+	m_swapChain->Present1((UINT)vsync, (vsync) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
 
-	waitForGPU(); //Wait for GPU to finish.
+	//waitForGPU(); //Wait for GPU to finish.
 				  //NOT BEST PRACTICE, only used as such for simplicity.
 	nextFrame();
 	
@@ -537,7 +537,7 @@ void DX12API::initCommand(Command& cmd) {
 
 void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const {
 	// Command lists needs to be closed before sent to this method
-	m_directCommandQueue->ExecuteCommandLists(cmdLists.size(), cmdLists.begin());
+	m_directCommandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
 }
 
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {

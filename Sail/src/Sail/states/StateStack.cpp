@@ -64,7 +64,6 @@ void StateStack::render(float dt) {
 		state->renderImgui(dt);
 	Application::getInstance()->getImGuiHandler()->end();
 
-
 	Application::getInstance()->getAPI()->present(false);
 }
 

@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Entity.h"
 
-Entity::Ptr Entity::Create() {
-	return std::make_unique<Entity>();
+Entity::SPtr Entity::Create() {
+	return std::make_shared<Entity>();
 }
 
 Entity::Entity() {

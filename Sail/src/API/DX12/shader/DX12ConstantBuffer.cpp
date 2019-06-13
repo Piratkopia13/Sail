@@ -23,7 +23,7 @@ namespace ShaderComponent {
 
 		m_constantBufferUploadHeap = new wComPtr<ID3D12Resource1>[numSwapBuffers];
 		m_cbGPUAddress = new UINT8*[numSwapBuffers];
-		//m_needsUpdate = new bool[numSwapBuffers](); // parenthesis invokes initialitaion to false
+		m_needsUpdate = new bool[numSwapBuffers](); // Parenthesis invokes initialitaion to false
 
 		createBuffers();
 		for (UINT i = 0; i < numSwapBuffers; i++) {
@@ -35,11 +35,11 @@ namespace ShaderComponent {
 	DX12ConstantBuffer::~DX12ConstantBuffer() {
 		delete[] m_constantBufferUploadHeap;
 		delete[] m_cbGPUAddress;
-		//delete[] m_needsUpdate;
+		delete[] m_needsUpdate;
 	}
 
 	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset /*= 0U*/) {
-		// TODO: change this to needsUpdate thing we have in DXR project
+		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
 		auto frameIndex = m_context->getFrameIndex();
 		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * m_resourceHeapMeshIndex + offset, newData, bufferSize);
 	}
@@ -55,6 +55,7 @@ namespace ShaderComponent {
 	void DX12ConstantBuffer::setResourceHeapMeshIndex(unsigned int index) {
 		m_resourceHeapMeshIndex = index;
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
+		auto frameIndex = m_context->getFrameIndex();
 		// Expand resource heap if index is out of range
 		if ((index + 1) * m_byteAlignedSize >= m_resourceHeapSize) {
 			unsigned int oldSize = m_resourceHeapSize;
@@ -62,7 +63,7 @@ namespace ShaderComponent {
 
 			// Copy gpu memory to ram before recreating buffers
 			void* data = malloc(oldSize);
-			memcpy(data, m_cbGPUAddress[0], oldSize); // TODO: check if this is fine to use only index 0
+			memcpy(data, m_cbGPUAddress[frameIndex], oldSize);
 
 			createBuffers();
 			for (UINT i = 0; i < numSwapBuffers; i++) {

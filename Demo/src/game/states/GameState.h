@@ -28,8 +28,7 @@ private:
 	FlyingCameraController m_camController;
 	bool m_flyCam;
 
-	// Scene
-	//std::unique_ptr<Scene> m_scene;
+	Entity::SPtr m_testEntity;
 
 	Scene m_scene;
 	LightSetup m_lights;

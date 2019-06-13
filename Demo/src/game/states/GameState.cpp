@@ -51,25 +51,25 @@ GameState::GameState(StateStack& stack)
 	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
 	transform.setRotations(glm::vec3(0.f, 0.f, 1.07f));
 	transform.setTranslation(glm::vec3(1.2f, 1.f, 1.f));
-	m_scene.addEntity(MOVE(e));
+	m_scene.addEntity(e);
 
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 1.f, 0.f));
-	m_scene.addEntity(MOVE(e));
+	m_scene.addEntity(e);
 
 	e = Entity::Create();
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(MOVE(e));
+	m_scene.addEntity(e);
 
 	Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
-	e = Entity::Create();
-	e->addComponent<ModelComponent>(fbxModel);
+	m_testEntity = Entity::Create();
+	m_testEntity->addComponent<ModelComponent>(fbxModel);
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(MOVE(e));
+	m_testEntity->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(-1.f, 0.f, 0.f));
+	m_scene.addEntity(m_testEntity);
 
 	//e = Entity::Create();
 	//auto* textComp = e->addComponent<TextComponent>();
@@ -96,10 +96,10 @@ bool GameState::processInput(float dt) {
 			std::cout << "pressed: " << i << std::endl;
 		}
 	}*/
-	/*if (Input::WasKeyJustPressed(SAIL_KEY_CONTROL))
-		std::cout << "RETURN" << std::endl;
-	if (Input::WasMouseButtonJustPressed(SAIL_MOUSE_BUTTON_1))
-		std::cout << "LEFT MOUSE" << std::endl;*/
+	if (Input::WasKeyJustPressed(SAIL_KEY_END)) {
+		m_testEntity->getComponent<TransformComponent>()->getTransform().translate(glm::vec3(0.1f, 0.f, 0.f));
+		Logger::Log("move");
+	}
 	//std::cout << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_1) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_2) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_3) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_4) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_5) << std::endl;
 
 
@@ -165,6 +165,12 @@ bool GameState::update(float dt) {
 			L"GPU memory usage: " + std::to_wstring(m_app->getAPI()->getMemoryUsage()) + L"/" + std::to_wstring(m_app->getAPI()->getMemoryBudget()) + L"mb");
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+
+	static float counter = 0.0f;
+	counter += dt * 4;
+	//m_testEntity->getComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.2f, 0.f, 0.f));
+	m_testEntity->getComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
+	//Logger::Log(Utils::toStr(m_testEntity->getComponent<TransformComponent>()->getTransform().getTranslation()));
 
 	return true;
 }

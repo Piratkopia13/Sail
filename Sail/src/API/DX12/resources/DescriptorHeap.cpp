@@ -45,6 +45,7 @@ void DescriptorHeap::bind(ID3D12GraphicsCommandList4* cmdList) const {
 unsigned int DescriptorHeap::getAndStepIndex() {
 	unsigned int i = m_index;
 	m_index = (m_index + 1) % m_numDescriptors;
+	// TODO: check if there is a problem at the point where the index loops around in the middle of a bound shader
 	return i;
 }
 

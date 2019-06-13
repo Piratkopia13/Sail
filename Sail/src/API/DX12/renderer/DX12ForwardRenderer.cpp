@@ -48,7 +48,6 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	// TODO: bind camera cbuffer here
 	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
-
 	unsigned int meshIndex = 0;
 	for (RenderCommand& command : commandQueue) {
 		DX12ShaderPipeline* shader = static_cast<DX12ShaderPipeline*>(command.mesh->getMaterial()->getShader());

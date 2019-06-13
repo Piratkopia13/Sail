@@ -4,12 +4,12 @@
 #include <memory>
 #include "components/Component.h"
 
-#define MOVE(x) std::move(x)
+//#define MOVE(x) std::move(x)
 
 class Entity {
 public:
-	typedef std::unique_ptr<Entity> Ptr;
-	static Ptr Create();
+	typedef std::shared_ptr<Entity> SPtr;
+	static SPtr Create();
 public:
 	Entity();
 	virtual ~Entity();
