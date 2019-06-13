@@ -191,6 +191,6 @@ bool GameState::render(float dt) {
 }
 
 bool GameState::renderImgui(float dt) {
-	//ImGui::ShowDemoWindow();
+	ImGui::ShowDemoWindow();
 	return false;
 }

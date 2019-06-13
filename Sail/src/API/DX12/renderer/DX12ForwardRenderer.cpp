@@ -37,6 +37,9 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
 
+	// Transition back buffer to render target
+	m_context->prepareToRender(cmdList.Get());
+
 	m_context->renderToBackBuffer(cmdList.Get());
 	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

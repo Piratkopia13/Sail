@@ -63,11 +63,14 @@ public:
 	UINT getFrameIndex() const;
 	UINT getNumSwapBuffers() const;
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
+	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
+	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
 
 	void initCommand(Command& cmd);
 
 	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
+	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
 	// TODO: replace with event
 	void resize(UINT width, UINT height);

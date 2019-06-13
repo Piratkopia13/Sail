@@ -518,6 +518,14 @@ DescriptorHeap* const DX12API::getMainGPUDescriptorHeap() const {
 	return m_cbvSrvUavDescriptorHeap.get();
 }
 
+const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getCurrentRenderTargetCDH() const {
+	return m_currentRenderTargetCDH;
+}
+
+const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDsvCDH() const {
+	return m_dsvDescHandle;
+}
+
 void DX12API::initCommand(Command& cmd) {
 	// Create allocators
 	cmd.allocators.resize(NUM_SWAP_BUFFERS);
@@ -541,9 +549,6 @@ void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdL
 }
 
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
-	// Indicate that the back buffer will be used as render target
-	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
 
 	// Clear
@@ -552,6 +557,11 @@ void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 
 	cmdList->RSSetViewports(1, &m_viewport);
 	cmdList->RSSetScissorRects(1, &m_scissorRect);
+}
+
+void DX12API::prepareToRender(ID3D12GraphicsCommandList4* cmdList) const {
+	// Indicate that the back buffer will be used as render target
+	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 }
 
 void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
