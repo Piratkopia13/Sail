@@ -33,8 +33,9 @@ public:
 	ID3D11RenderTargetView* const* getBackBufferRTV() const;
 	ID3DUserDefinedAnnotation* getPerfProfiler();
 	void renderToBackBuffer() const;
-	// TODO: replace with event
-	void resize(UINT width, UINT height);
+
+	virtual bool onResize(WindowResizeEvent& event) override;
+
 private:
 	void createDepthStencilBufferAndBind(UINT windowWidth, UINT windowHeight);
 	void resizeBuffers(UINT width, UINT height);

@@ -19,7 +19,7 @@ public:
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
 
-	virtual void onEvent(Event& event) override;
+	virtual bool onEvent(Event& event) override;
 
 private:
 	bool onResize(WindowResizeEvent& event);

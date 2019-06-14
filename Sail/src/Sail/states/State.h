@@ -26,7 +26,7 @@ class State : public IEventListener {
 		// Renders imgui
 		virtual bool renderImgui(float dt);
 		// Sends events to the state
-		virtual void onEvent(Event& event) { }
+		virtual bool onEvent(Event& event) { return true; }
 
 	protected:
 		// Request the push of a new state to the stack next update

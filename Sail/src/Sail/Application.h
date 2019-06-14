@@ -28,7 +28,7 @@ public:
 	virtual void processInput(float dt) = 0;
 	virtual void update(float dt) = 0;
 	virtual void render(float dt) = 0;
-	virtual void dispatchEvent(Event& event) override { }
+	virtual void dispatchEvent(Event& event) override;
 
 	template<typename T>
 	T* const getAPI() { return static_cast<T*>(m_api.get()); }

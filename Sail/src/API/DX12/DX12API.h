@@ -56,6 +56,7 @@ public:
 	virtual void present(bool vsync = false) override;
 	virtual unsigned int getMemoryUsage() const override;
 	virtual unsigned int getMemoryBudget() const override;
+	virtual bool onResize(WindowResizeEvent& event) override;
 
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
@@ -72,8 +73,6 @@ public:
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
-	// TODO: replace with event
-	void resize(UINT width, UINT height);
 private:
 	void createDevice();
 	void createCmdInterfacesAndSwapChain(Win32Window* window);

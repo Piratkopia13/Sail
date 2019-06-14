@@ -27,7 +27,7 @@ public:
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void end();
 	virtual void present(RenderableTexture* output = nullptr) = 0;
-	virtual void onEvent(Event& event) override {};
+	virtual bool onEvent(Event& event) override { return true; };
 
 protected:
 	struct RenderCommand {

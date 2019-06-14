@@ -344,6 +344,7 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsDescriptorHeap)));
+	m_dsDescriptorHeap->SetName(L"Depth/Stencil Resource Heap");
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
 	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -374,7 +375,6 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 		&depthOptimizedClearValue,
 		IID_PPV_ARGS(&m_depthStencilBuffer)
 	);
-	m_dsDescriptorHeap->SetName(L"Depth/Stencil Resource Heap");
 	m_depthStencilBuffer->SetName(L"Depth/Stencil Resource Buffer");
 	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &depthStencilDesc, m_dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -383,30 +383,88 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 
 void DX12API::nextFrame() {
 
+	// Schedule a signal to notify when the current frame has finished presenting
 	UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
-	m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue);
+	ThrowIfFailed(m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue));
+	
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
+	// Wait until the next frame is ready
 	if (m_fence->GetCompletedValue() < m_fenceValues[m_backBufferIndex]) {
-		//OutputDebugStringA("Waiting\n");
 		m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
-		WaitForSingleObject(m_eventHandle, INFINITE);
+		WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
 	}
 	/*std::string str = std::to_string(m_backBufferIndex) + " : " + std::to_string(m_fenceValues[m_backBufferIndex]) + "\n";
 	OutputDebugStringA(str.c_str());*/
 
 	m_fenceValues[m_backBufferIndex] = currentFenceValue + 1;
 
-	auto frameIndex = getFrameIndex();
 	// Get the handle for the current render target used as back buffer
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
-	m_currentRenderTargetCDH.ptr += m_renderTargetDescriptorSize * frameIndex;
-	m_currentRenderTargetResource = m_renderTargets[frameIndex].Get();
+	m_currentRenderTargetCDH.ptr += m_renderTargetDescriptorSize * m_backBufferIndex;
+	m_currentRenderTargetResource = m_renderTargets[m_backBufferIndex].Get();
 
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {
-	
+	waitForGPU();
+
+	// Resize swap chain and backbuffers
+	for (auto& rt : m_renderTargets) {
+		rt.Reset();
+	}
+	ThrowIfFailed(m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING));
+
+	// Create resources for the render targets
+	D3D12_CPU_DESCRIPTOR_HANDLE cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
+	// One RTV for each frame
+	for (UINT n = 0; n < NUM_SWAP_BUFFERS; n++) {
+		ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
+		m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, cdh);
+		m_renderTargets[n]->SetName((std::wstring(L"Render Target ") + std::to_wstring(n)).c_str());
+		cdh.ptr += m_renderTargetDescriptorSize;
+	}
+	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
+	m_currentRenderTargetResource = m_renderTargets[getFrameIndex()].Get();
+	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
+
+	// Recreate the dsv
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+	depthOptimizedClearValue.DepthStencil.Stencil = 0;
+	D3D12_RESOURCE_DESC bufferDesc{};
+	bufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	bufferDesc.Width = width;
+	bufferDesc.Height = height;
+	bufferDesc.DepthOrArraySize = 1;
+	bufferDesc.MipLevels = 0;
+	bufferDesc.SampleDesc.Count = 1;
+	bufferDesc.SampleDesc.Quality = 0;
+	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+	m_device->CreateCommittedResource(
+		&DX12Utils::sDefaultHeapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&bufferDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&depthOptimizedClearValue,
+		IID_PPV_ARGS(&m_depthStencilBuffer)
+	);
+	m_depthStencilBuffer->SetName(L"Depth/Stencil Resource Buffer");
+	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &depthStencilDesc, m_dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+	// Update viewport and scissor rect
+	m_viewport.Width = (float)width;
+	m_viewport.Height = (float)height;
+	m_scissorRect.right = (long)width;
+	m_scissorRect.bottom = (long)height;
+
 }
 
 void DX12API::setDepthMask(DepthMask setting) {
@@ -469,8 +527,7 @@ void DX12API::present(bool vsync) {
 	DXGI_PRESENT_PARAMETERS pp = { };
 	m_swapChain->Present1((UINT)vsync, (vsync) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
 
-	//waitForGPU(); //Wait for GPU to finish.
-				  //NOT BEST PRACTICE, only used as such for simplicity.
+	//waitForGPU();
 	nextFrame();
 	
 }
@@ -537,10 +594,6 @@ void DX12API::initCommand(Command& cmd) {
 	// Command lists are created in the recording state. Since there is nothing to
 	// record right now and the main loop expects it to be closed, we close them
 	cmd.list->Close();
-
-	// Reset allocator and command list to accept commands
-	/*ThrowIfFailed(cmd.allocators[getFrameIndex()]->Reset());
-	ThrowIfFailed(cmd.list->Reset(cmd.allocators[getFrameIndex()].Get(), nullptr));*/
 }
 
 void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const {
@@ -569,24 +622,22 @@ void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 }
 
-void DX12API::resize(UINT width, UINT height) {
-	resizeBuffers(width, height);
+bool DX12API::onResize(WindowResizeEvent& event) {
+	resizeBuffers(event.getWidth(), event.getHeight());
+	Logger::Log("dx12 resize ran");
+	return true;
 }
 
 void DX12API::waitForGPU() {
-	//WAITING FOR EACH FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.
-	//This is code implemented as such for simplicity. The cpu could for example be used
-	//for other tasks to prepare the next frame while the current one is being rendered.
+	// Waits for the GPU to finish all current tasks in the direct queue
 
-	//Signal and increment the fence value.
-	const UINT64 fence = m_fenceValues[m_backBufferIndex];
-	m_directCommandQueue->Signal(m_fence.Get(), fence);
+	// Schedule a signal
+	ThrowIfFailed(m_directCommandQueue->Signal(m_fence.Get(), m_fenceValues[m_backBufferIndex]));
 
-	//Wait until command queue is done.
-	//if (m_fence->GetCompletedValue() < fence) {
-	m_fence->SetEventOnCompletion(fence, m_eventHandle);
-	WaitForSingleObject(m_eventHandle, INFINITE);
+	// Wait until command queue is done
+	m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
+	WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
+
+	// Increment fence value for current frame
 	m_fenceValues[m_backBufferIndex]++;
-	//}
-	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 }

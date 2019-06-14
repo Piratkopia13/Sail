@@ -1,10 +1,13 @@
 #pragma once
 
 #include "../utils/Utils.h"
+#include "Sail/events/IEventListener.h"
+#include "Sail/events/EventHandler.h"
+#include "Sail/events/WindowResizeEvent.h"
 
 class Window;
 
-class GraphicsAPI {
+class GraphicsAPI : public IEventListener {
 public:
 	enum DepthMask {
 		NO_MASK,
@@ -36,8 +39,11 @@ public:
 	virtual unsigned int getMemoryUsage() const = 0;
 	virtual unsigned int getMemoryBudget() const = 0;
 
-protected:
+	virtual bool onResize(WindowResizeEvent& event) = 0;
+	virtual bool onEvent(Event& event) override {
+		EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GraphicsAPI::onResize));
+		return true;
+	}
 
-private:
 
 };

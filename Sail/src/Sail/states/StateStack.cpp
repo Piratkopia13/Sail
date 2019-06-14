@@ -59,10 +59,10 @@ void StateStack::render(float dt) {
 	for (auto& state : m_stack)
 		state->render(dt);
 	
-	Application::getInstance()->getImGuiHandler()->begin();
+	/*Application::getInstance()->getImGuiHandler()->begin();
 	for (auto& state : m_stack)
 		state->renderImgui(dt);
-	Application::getInstance()->getImGuiHandler()->end();
+	Application::getInstance()->getImGuiHandler()->end();*/
 
 	Application::getInstance()->getAPI()->present(false);
 }
@@ -72,8 +72,9 @@ void StateStack::onEvent(Event& event) {
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
 
 		// Return if a state returns false
-		// This allows states to stop underlying states from updating
-		(*itr)->onEvent(event);
+		// This allows states to stop underlying states from receiving an event
+		if (!((*itr)->onEvent(event)))
+			break;
 
 	}
 }

@@ -137,16 +137,19 @@ bool GameState::processInput(float dt) {
 	return true;
 }
 
-void GameState::onEvent(Event& event) {
+bool GameState::onEvent(Event& event) {
 	Logger::Log("Received event: " + std::to_string(event.getType()));
 
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 
 	// Forward events
 	m_scene.onEvent(event);
+
+	return true;
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
+	//Logger::Log("resize event!");
 	m_cam.resize(event.getWidth(), event.getHeight());
 	//m_scene->resize(width, height);
 	return true;

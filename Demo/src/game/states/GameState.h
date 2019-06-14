@@ -10,7 +10,7 @@ public:
 	// Process input for the state
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
-	virtual void onEvent(Event& event) override;
+	virtual bool onEvent(Event& event) override;
 	// Updates the state
 	virtual bool update(float dt) override;
 	// Renders the state

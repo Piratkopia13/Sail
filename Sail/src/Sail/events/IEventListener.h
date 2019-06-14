@@ -4,5 +4,5 @@
 
 class IEventListener{
 public:
-	virtual void onEvent(Event& event) = 0;
+	virtual bool onEvent(Event& event) = 0;
 };

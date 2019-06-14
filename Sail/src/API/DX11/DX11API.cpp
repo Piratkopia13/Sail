@@ -443,6 +443,8 @@ void DX11API::renderToBackBuffer() const {
 	m_deviceContext->RSSetViewports(1, &m_viewport);
 }
 
-void DX11API::resize(UINT width, UINT height) {
-	resizeBuffers(width, height);
+bool DX11API::onResize(WindowResizeEvent& event) {
+	resizeBuffers(event.getWidth(), event.getHeight());
+	Logger::Log("dx11 resize ran");
+	return true;
 }

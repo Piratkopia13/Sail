@@ -164,6 +164,11 @@ Application* Application::getInstance() {
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
 	return m_instance;
 }
+
+void Application::dispatchEvent(Event& event) {
+	m_api->onEvent(event);
+}
+
 GraphicsAPI* const Application::getAPI() {
 	return m_api.get();
 }
