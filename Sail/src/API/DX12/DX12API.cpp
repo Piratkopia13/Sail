@@ -389,8 +389,9 @@ void DX12API::nextFrame() {
 	
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
+	auto val = m_fence->GetCompletedValue();
 	// Wait until the next frame is ready
-	if (m_fence->GetCompletedValue() < m_fenceValues[m_backBufferIndex]) {
+	if (val < m_fenceValues[m_backBufferIndex]) {
 		m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
 		WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
 	}
@@ -424,6 +425,10 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 		m_renderTargets[n]->SetName((std::wstring(L"Render Target ") + std::to_wstring(n)).c_str());
 		cdh.ptr += m_renderTargetDescriptorSize;
 	}
+	// Back buffer index now changes to 0
+	// Rotate fence values to avoid infinite stall
+	std::rotate(m_fenceValues.begin(), m_fenceValues.begin() + m_backBufferIndex, m_fenceValues.end());
+
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 	m_currentRenderTargetResource = m_renderTargets[getFrameIndex()].Get();
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
