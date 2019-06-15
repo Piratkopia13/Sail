@@ -19,7 +19,7 @@ namespace ShaderComponent {
 		// Store offset size for each mesh
 		m_byteAlignedSize = (size + 255) & ~255;
 		// Size must be a multiple of 64KB for single-textures and constant buffers
-		m_resourceHeapSize = (glm::floor(size / (1024.0 * 64.0)) + 1) * (1024.0 * 64.0);
+		m_resourceHeapSize = (unsigned int)((glm::floor(size / (1024.0 * 64.0)) + 1) * (1024.0 * 64.0));
 
 		m_constantBufferUploadHeap.resize(numSwapBuffers);
 		m_cbGPUAddress.resize(numSwapBuffers);

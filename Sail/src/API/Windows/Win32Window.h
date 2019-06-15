@@ -9,7 +9,7 @@
 #include <string>
 
 // Forward declaration
-class IDXGISwapChain;
+struct IDXGISwapChain;
 
 class Win32Window : public Window {
 

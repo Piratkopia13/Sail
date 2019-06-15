@@ -681,6 +681,9 @@ void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
 }
 
 bool DX12API::onResize(WindowResizeEvent& event) {
+	if (event.isMinimized()) {
+		Logger::Log("minimized!");
+	}
 	resizeBuffers(event.getWidth(), event.getHeight());
 	Logger::Log("dx12 resize ran");
 	return true;
