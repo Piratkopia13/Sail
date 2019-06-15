@@ -579,7 +579,7 @@ void DX12API::present(bool vsync) {
 
 	//Present the frame.
 	DXGI_PRESENT_PARAMETERS pp = { };
-	m_swapChain->Present1((UINT)vsync, (vsync) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
+	m_swapChain->Present1((UINT)vsync, (vsync /*|| !m_windowedMode*/) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
 
 	//waitForGPU();
 	nextFrame();
@@ -635,6 +635,10 @@ const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getCurrentRenderTargetCDH() const {
 
 const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDsvCDH() const {
 	return m_dsvDescHandle;
+}
+
+IDXGISwapChain4* const DX12API::getSwapChain() const {
+	return m_swapChain.Get();
 }
 
 void DX12API::initCommand(Command& cmd) {

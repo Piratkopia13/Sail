@@ -8,6 +8,9 @@
 #include <Windows.h>
 #include <string>
 
+// Forward declaration
+class IDXGISwapChain;
+
 class Win32Window : public Window {
 
 public:
@@ -15,12 +18,11 @@ public:
 	~Win32Window();
 
 	virtual bool initialize() override;
+	virtual bool hasBeenResized() override;
+	virtual void setWindowTitle(const std::string& title) override;
+	void toggleFullscreen(IDXGISwapChain* swapChain);
 
 	LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	
-	virtual bool hasBeenResized() override;
-
-	virtual void setWindowTitle(const std::string& title) override;
 	const HWND* getHwnd() const;
 
 private:
@@ -31,5 +33,7 @@ private:
 	std::string m_windowTitle;
 	DWORD m_windowStyle;
 	bool m_resized;
+	bool m_fullscreenMode;
+	RECT m_windowRect;
 
 };

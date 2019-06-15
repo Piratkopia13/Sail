@@ -3,6 +3,8 @@
 #include "Sail/Application.h"
 #include "imgui.h"
 #include "Win32Input.h"
+#include <dxgi.h>
+#include <wrl.h>
 
 namespace {
 	// Used to forward messages to user defined proc function
@@ -19,12 +21,13 @@ Window* Window::Create(const WindowProps& props) {
 }
 
 Win32Window::Win32Window(const WindowProps& props)
-: Window(props)
-, m_hWnd(nullptr)
-, m_hInstance(props.hInstance)
-, m_windowTitle("Sail")
-, m_windowStyle(WS_OVERLAPPEDWINDOW) // Default window style
-, m_resized(false)
+	: Window(props)
+	, m_hWnd(nullptr)
+	, m_hInstance(props.hInstance)
+	, m_windowTitle("Sail")
+	, m_windowStyle(WS_OVERLAPPEDWINDOW) // Default window style
+	, m_resized(false)
+	, m_fullscreenMode(false)
 {
 	g_pApp = this;
 
@@ -153,6 +156,75 @@ void Win32Window::setWindowTitle(const std::string& title) {
 	std::string newTitle = title;
 	std::wstring ttle(newTitle.begin(), newTitle.end());
 	SetWindowText(m_hWnd, ttle.c_str());
+}
+
+void Win32Window::toggleFullscreen(IDXGISwapChain* swapChain) {
+
+	if (m_fullscreenMode) {
+		// Restore the window's attributes and size.
+		SetWindowLong(m_hWnd, GWL_STYLE, m_windowStyle);
+
+		SetWindowPos(
+			m_hWnd,
+			HWND_NOTOPMOST,
+			m_windowRect.left,
+			m_windowRect.top,
+			m_windowRect.right - m_windowRect.left,
+			m_windowRect.bottom - m_windowRect.top,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
+		ShowWindow(m_hWnd, SW_NORMAL);
+	} else {
+		// Save the old window rect so we can restore it when exiting fullscreen mode.
+		GetWindowRect(m_hWnd, &m_windowRect);
+
+		// Make the window borderless so that the client area can fill the screen.
+		SetWindowLong(m_hWnd, GWL_STYLE, m_windowStyle & ~(WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME));
+
+		RECT fullscreenWindowRect;
+		try {
+			if (swapChain) {
+				// Get the settings of the display on which the app's window is currently displayed
+				Microsoft::WRL::ComPtr<IDXGIOutput> pOutput;
+				ThrowIfFailed(swapChain->GetContainingOutput(&pOutput));
+				DXGI_OUTPUT_DESC Desc;
+				ThrowIfFailed(pOutput->GetDesc(&Desc));
+				fullscreenWindowRect = Desc.DesktopCoordinates;
+			} else {
+				// Fallback to EnumDisplaySettings implementation
+				throw std::exception();
+			}
+		} catch (std::exception& e) {
+			UNREFERENCED_PARAMETER(e);
+
+			// Get the settings of the primary display
+			DEVMODE devMode = {};
+			devMode.dmSize = sizeof(DEVMODE);
+			EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode);
+
+			fullscreenWindowRect = {
+				devMode.dmPosition.x,
+				devMode.dmPosition.y,
+				devMode.dmPosition.x + static_cast<LONG>(devMode.dmPelsWidth),
+				devMode.dmPosition.y + static_cast<LONG>(devMode.dmPelsHeight)
+			};
+		}
+
+		SetWindowPos(
+			m_hWnd,
+			HWND_TOPMOST,
+			fullscreenWindowRect.left,
+			fullscreenWindowRect.top,
+			fullscreenWindowRect.right,
+			fullscreenWindowRect.bottom,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
+
+		ShowWindow(m_hWnd, SW_MAXIMIZE);
+	}
+
+	m_fullscreenMode = !m_fullscreenMode;
+
 }
 
 const HWND* Win32Window::getHwnd() const {
