@@ -55,15 +55,17 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	m_context->getDevice()->GetCopyableFootprints(&m_textureDesc, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
 	// Create the upload heap
-	wComPtr<ID3D12Resource1> textureUploadBuffer = DX12Utils::CreateBuffer(m_context->getDevice(), textureUploadBufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
-	textureUploadBuffer->SetName(L"Texture upload buffer");
+	// TODO: release the upload heap when it has been copied to the default buffer
+	// This could be done in a buffer manager owned by dx12api
+	m_textureUploadBuffer.Attach(DX12Utils::CreateBuffer(m_context->getDevice(), textureUploadBufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
+	m_textureUploadBuffer->SetName(L"Texture upload buffer");
 
 	D3D12_SUBRESOURCE_DATA textureData = {};
 	textureData.pData = m_textureData.getTextureData();
 	textureData.RowPitch = m_textureData.getWidth() * m_textureData.getBytesPerPixel();
 	textureData.SlicePitch = textureData.RowPitch * m_textureData.getHeight();
 	// Copy the upload buffer contents to the default heap using a helper method from d3dx12.h
-	DX12Utils::UpdateSubresources(cmdList, m_textureDefaultBuffer.Get(), textureUploadBuffer.Get(), 0, 0, 1, &textureData);
+	DX12Utils::UpdateSubresources(cmdList, m_textureDefaultBuffer.Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_textureDefaultBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	m_isInitialized = true;

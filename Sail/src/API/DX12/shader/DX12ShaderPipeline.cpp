@@ -9,7 +9,7 @@
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
 ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
-	return new DX12ShaderPipeline(filename);
+	return SAIL_NEW DX12ShaderPipeline(filename);
 }
 
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename) 

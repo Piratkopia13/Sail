@@ -15,7 +15,7 @@ DX12IndexBuffer::DX12IndexBuffer(Mesh::Data& modelData)
 	DX12API* context = Application::getInstance()->getAPI<DX12API>();
 	unsigned long* indices = getIndexData(modelData);
 
-	m_indexBuffer = DX12Utils::CreateBuffer(context->getDevice(), getIndexDataSize(), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+	m_indexBuffer.Attach(DX12Utils::CreateBuffer(context->getDevice(), getIndexDataSize(), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 	m_indexBuffer->SetName(L"Index buffer");
 	
 	// Place indices in the buffer

@@ -22,8 +22,8 @@ namespace ShaderComponent {
 	private:
 		DX12API* m_context;
 
-		void* m_newData;
-		bool* m_needsUpdate;
+		//void* m_newData;
+		//bool* m_needsUpdate;
 
 		// The index specifies which offset it should write/read from in the resource heap
 		// This is used since multiple meshes store their cbuffers in a single resource heap
@@ -32,8 +32,8 @@ namespace ShaderComponent {
 		unsigned int m_resourceHeapSize;
 
 		unsigned int m_register;
-		wComPtr<ID3D12Resource1>* m_constantBufferUploadHeap;
-		UINT8** m_cbGPUAddress;
+		std::vector<wComPtr<ID3D12Resource1>> m_constantBufferUploadHeap;
+		std::vector<UINT8*> m_cbGPUAddress;
 
 	};
 

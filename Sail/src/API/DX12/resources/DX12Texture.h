@@ -20,6 +20,7 @@ private:
 	DX12API* m_context;
 	TextureData& m_textureData;
 	D3D12_RESOURCE_DESC m_textureDesc;
+	wComPtr<ID3D12Resource1> m_textureUploadBuffer;
 	wComPtr<ID3D12Resource1> m_textureDefaultBuffer;
 	DescriptorHeap m_cpuDescHeap;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_heapCDH;

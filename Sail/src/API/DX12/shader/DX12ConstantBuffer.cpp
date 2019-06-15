@@ -21,9 +21,9 @@ namespace ShaderComponent {
 		// Size must be a multiple of 64KB for single-textures and constant buffers
 		m_resourceHeapSize = (glm::floor(size / (1024.0 * 64.0)) + 1) * (1024.0 * 64.0);
 
-		m_constantBufferUploadHeap = new wComPtr<ID3D12Resource1>[numSwapBuffers];
-		m_cbGPUAddress = new UINT8*[numSwapBuffers];
-		m_needsUpdate = new bool[numSwapBuffers](); // Parenthesis invokes initialitaion to false
+		m_constantBufferUploadHeap.resize(numSwapBuffers);
+		m_cbGPUAddress.resize(numSwapBuffers);
+		//m_needsUpdate = new bool[numSwapBuffers](); // Parenthesis invokes initialitaion to false
 
 		createBuffers();
 		for (UINT i = 0; i < numSwapBuffers; i++) {
@@ -33,9 +33,7 @@ namespace ShaderComponent {
 	}
 
 	DX12ConstantBuffer::~DX12ConstantBuffer() {
-		delete[] m_constantBufferUploadHeap;
-		delete[] m_cbGPUAddress;
-		delete[] m_needsUpdate;
+		//delete[] m_needsUpdate;
 	}
 
 	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset /*= 0U*/) {
@@ -80,7 +78,7 @@ namespace ShaderComponent {
 		// create a resource heap, and pointer to cbv for each frame
 		for (UINT i = 0; i < numSwapBuffers; i++) {
 
-			m_constantBufferUploadHeap[i] = DX12Utils::CreateBuffer(m_context->getDevice(), m_resourceHeapSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+			m_constantBufferUploadHeap[i].Attach(DX12Utils::CreateBuffer(m_context->getDevice(), m_resourceHeapSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 			m_constantBufferUploadHeap[i]->SetName(L"Constant Buffer Upload Resource Heap");
 
 			// Map the constant buffer and keep it mapped for the duration of its lifetime

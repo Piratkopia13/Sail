@@ -96,10 +96,6 @@ bool GameState::processInput(float dt) {
 			std::cout << "pressed: " << i << std::endl;
 		}
 	}*/
-	if (Input::WasKeyJustPressed(SAIL_KEY_END)) {
-		m_testEntity->getComponent<TransformComponent>()->getTransform().translate(glm::vec3(0.1f, 0.f, 0.f));
-		Logger::Log("move");
-	}
 	//std::cout << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_1) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_2) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_3) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_4) << " " << Input::IsMouseButtonPressed(SAIL_MOUSE_BUTTON_5) << std::endl;
 
 
@@ -171,9 +167,8 @@ bool GameState::update(float dt) {
 
 	static float counter = 0.0f;
 	counter += dt * 4;
-	//m_testEntity->getComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.2f, 0.f, 0.f));
-	m_testEntity->getComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-	//Logger::Log(Utils::toStr(m_testEntity->getComponent<TransformComponent>()->getTransform().getTranslation()));
+	if (m_testEntity)
+		m_testEntity->getComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 
 	return true;
 }

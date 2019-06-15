@@ -111,9 +111,9 @@ private:
 
 	// Commands
 	//Command m_preCommand;
-	Command m_postCommand;
-	Command m_copyCommand;
-	Command m_computeCommand;
+	//Command m_postCommand;
+	//Command m_copyCommand;
+	//Command m_computeCommand;
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeap;
 
 	wComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
@@ -126,9 +126,9 @@ private:
 	// TODO: check which ones are needed
 	std::vector<UINT64> m_fenceValues;
 	wComPtr<ID3D12Fence1> m_fence;
-	wComPtr<ID3D12Fence1> m_computeQueueFence;
-	wComPtr<ID3D12Fence1> m_copyQueueFence;
-	wComPtr<ID3D12Fence1> m_directQueueFence;
+	//wComPtr<ID3D12Fence1> m_computeQueueFence;
+	//wComPtr<ID3D12Fence1> m_copyQueueFence;
+	//wComPtr<ID3D12Fence1> m_directQueueFence;
 
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;

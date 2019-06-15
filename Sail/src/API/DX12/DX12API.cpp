@@ -3,6 +3,7 @@
 #include "API/Windows/Win32Window.h"
 #include "DX12Utils.h"
 #include "resources/DescriptorHeap.h"
+#include <iomanip>
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
 
@@ -20,6 +21,35 @@ DX12API::DX12API()
 
 DX12API::~DX12API() {
 
+	// Ensure that the GPU is no longer referencing resources that are about to be destroyed.
+	waitForGPU();
+
+#ifdef _DEBUG
+	{
+		m_dxgiFactory.Reset();
+		m_directCommandQueue.Reset();
+		m_computeCommandQueue.Reset();
+		m_copyCommandQueue.Reset();
+		m_swapChain.Reset();
+		m_fence.Reset();
+		m_globalRootSignature.Reset();
+		m_renderTargetsHeap.Reset();
+		m_depthStencilBuffer.Reset();
+		m_dsDescriptorHeap.Reset();
+		for (auto& rt : m_renderTargets) {
+			rt.Reset();
+		}
+		m_device.Reset();
+		m_cbvSrvUavDescriptorHeap.reset();
+
+		wComPtr<IDXGIDebug1> dxgiDebug;
+		if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
+			OutputDebugString(L"\n========= Live object report =========\n");
+			dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+			OutputDebugString(L"======================================\n\n");
+		}
+	}
+#endif
 	
 }
 
@@ -148,25 +178,25 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	m_copyCommandQueue->SetName(L"Copy Command Queue");
 
 	// Create allocators
-	m_postCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	m_computeCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	m_copyCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
-		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_postCommand.allocators[i])));
-		// TODO: Is this required?
-		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&m_computeCommand.allocators[i])));
-		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_copyCommand.allocators[i])));
-	}
-	// Create command lists
-	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_postCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_postCommand.list)));
-	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_computeCommand.list)));
-	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_copyCommand.list)));
+	//m_postCommand.allocators.resize(NUM_SWAP_BUFFERS);
+	//m_computeCommand.allocators.resize(NUM_SWAP_BUFFERS);
+	//m_copyCommand.allocators.resize(NUM_SWAP_BUFFERS);
+	//for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
+	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_postCommand.allocators[i])));
+	//	// TODO: Is this required?
+	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&m_computeCommand.allocators[i])));
+	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_copyCommand.allocators[i])));
+	//}
+	//// Create command lists
+	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_postCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_postCommand.list)));
+	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_computeCommand.list)));
+	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_copyCommand.list)));
 
-	// Command lists are created in the recording state. Since there is nothing to
-	// record right now and the main loop expects it to be closed, we close them
-	m_postCommand.list->Close();
-	m_computeCommand.list->Close();
-	m_copyCommand.list->Close();
+	//// Command lists are created in the recording state. Since there is nothing to
+	//// record right now and the main loop expects it to be closed, we close them
+	//m_postCommand.list->Close();
+	//m_computeCommand.list->Close();
+	//m_copyCommand.list->Close();
 
 	// 5. Create swap chain
 	DXGI_SWAP_CHAIN_DESC1 scDesc = {};
@@ -202,9 +232,9 @@ void DX12API::createFenceAndEventHandle() {
 	// Create an event handle to use for GPU synchronization
 	m_eventHandle = CreateEvent(0, false, false, 0);
 
-	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeQueueFence)));
+	/*ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeQueueFence)));
 	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyQueueFence)));
-	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directQueueFence)));
+	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directQueueFence)));*/
 }
 
 void DX12API::createRenderTargets() {
@@ -389,14 +419,33 @@ void DX12API::nextFrame() {
 	
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	auto val = m_fence->GetCompletedValue();
+	//// Debug vars to log how many frames have to wait for the gpu
+	//static const int waitedMax = 10000;
+	//static std::vector<bool> waited = std::vector<bool>(waitedMax, false);
+	//static int waitedCounter = 0;
+
 	// Wait until the next frame is ready
+	auto val = m_fence->GetCompletedValue();
 	if (val < m_fenceValues[m_backBufferIndex]) {
 		m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
 		WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
+		//waited[waitedCounter++] = true;
+	} else {
+		//waited[waitedCounter++] = false;
 	}
-	/*std::string str = std::to_string(m_backBufferIndex) + " : " + std::to_string(m_fenceValues[m_backBufferIndex]) + "\n";
-	OutputDebugStringA(str.c_str());*/
+
+	/*if (waitedCounter == waitedMax) {
+		int matches = std::count(waited.begin(), waited.end(), true);
+		std::stringstream stream;
+		stream << std::fixed << std::setprecision(2) << ((matches / (float)waitedMax) * 100.f);
+		std::string percentageStr = stream.str();
+
+		std::string outputStr(percentageStr + "% of the last " + std::to_string(waitedMax) + " frames had to wait for the gpu before rendering");
+		Logger::Log(outputStr);
+		OutputDebugStringA(outputStr.c_str());
+		OutputDebugStringA("\n");
+		waitedCounter = 0;
+	}*/
 
 	m_fenceValues[m_backBufferIndex] = currentFenceValue + 1;
 

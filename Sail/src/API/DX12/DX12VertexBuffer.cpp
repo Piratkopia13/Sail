@@ -4,7 +4,7 @@
 #include "DX12Utils.h"
 
 VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, Mesh::Data& modelData) {
-	return new DX12VertexBuffer(inputLayout, modelData);
+	return SAIL_NEW DX12VertexBuffer(inputLayout, modelData);
 }
 
 // TODO: Take in usage (Static or Dynamic) and create a default heap for static only
@@ -15,7 +15,7 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, Mesh::Data& m
 	DX12API* context = Application::getInstance()->getAPI<DX12API>();
 	void* vertices = getVertexData(modelData);
 
-	m_vertexBuffer = DX12Utils::CreateBuffer(context->getDevice(), getVertexDataSize(), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+	m_vertexBuffer.Attach(DX12Utils::CreateBuffer(context->getDevice(), getVertexDataSize(), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 	m_vertexBuffer->SetName(L"Vertex buffer");
 
 	// Place verticies in the buffer
