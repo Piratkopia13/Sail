@@ -4,14 +4,32 @@ pull_requests:
 image: Visual Studio 2019 Preview
 configuration: Debug
 platform: DX11 x64
+environment:
+  SONAR_TOKEN:
+    secure: KAEf9UqfPmzk2vdiKnkost4TY+pzdolwCJUPyEvZcjdUcao8IqfVr31LhnkTvaMb
+cache:
+  # Choco packages
+  - C:\ProgramData\chocolatey\bin -> appveyor.yml
+  - C:\ProgramData\chocolatey\lib -> appveyor.yml
+  # SonarQube build wrapper
+  - build-wrapper-win-x86-64.exe -> appveyor.yml
 install:
 - cmd: git submodule update --init --recursive
-before_build:
 - ps: >-
+    if(!(Test-Path -Path "build-wrapper-win-x86-64.exe")){
+      echo "Downloading SonarQube build wrapper"
+      Start-FileDownload 'https://sonarcloud.io/static/cpp/build-wrapper-win-x86.zip'
+      7z e build-wrapper-win-x86.zip -y
+    } else {
+      echo "SonarQube build wrapper cached, skipping download."
+    }
+    choco install sonarqube-scanner.portable -y
+build_script:
+- ps: >-
+    # pre build
     .\premake\premake5.exe vs2019
-
     nuget restore
-
-build:
-  project: Sail.sln
-  verbosity: minimal
+    # build
+    ./build-wrapper-win-x86-64.exe --out-dir bw-output msbuild "C:\projects\sail\Sail.sln" /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+    # post build
+    sonar-scanner -D sonar.login="%SONAR_TOKEN%" -D sonar.host.url=https://sonarcloud.io -D sonar.projectKey=Piratkopia13_Sail -D sonar.organization=piratkopia13-github -D sonar.cfamily.build-wrapper-output=bw-output -D sonar.exclusions=libraries/** -D sonar.cfamily.threads=4
