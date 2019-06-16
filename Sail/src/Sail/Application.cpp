@@ -88,10 +88,9 @@ int Application::startGameLoop() {
 			if (m_window->hasBeenResized()) {
 				UINT newWidth = m_window->getWindowWidth();
 				UINT newHeight = m_window->getWindowHeight();
-				// Resize graphics api
-				//m_api->resize(newWidth, newHeight);
+				bool isMinimized = m_window->isMinimized();
 				// Send resize event
-				dispatchEvent(WindowResizeEvent(newWidth, newHeight));
+				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
 			
 			// Get delta time from last frame

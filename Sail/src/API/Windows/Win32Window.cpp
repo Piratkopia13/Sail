@@ -117,7 +117,11 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		break;
 
 	case WM_SIZE:
-		if (wParam == SIZE_RESTORED || wParam == SIZE_MAXIMIZED) {
+	{
+		if (wParam == SIZE_MINIMIZED) {
+			isWindowMinimized = true;
+			m_resized = true;
+		} else if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED) {
 			int width = LOWORD(lParam);
 			int height = HIWORD(lParam);
 			if (width != windowWidth || height != windowHeight) {
@@ -126,6 +130,7 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				m_resized = true;
 			}
 		}
+	}
 		break;
 
 	case WM_DPICHANGED:
