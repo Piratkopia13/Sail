@@ -8,6 +8,9 @@ environment:
   SONAR_TOKEN:
     secure: KAEf9UqfPmzk2vdiKnkost4TY+pzdolwCJUPyEvZcjdUcao8IqfVr31LhnkTvaMb
 cache:
+  # Libraries
+  - libraries\glfw -> .gitmodules
+  - libraries\imgui -> .gitmodules
   # Choco packages
   - C:\ProgramData\chocolatey\bin -> appveyor.yml
   - C:\ProgramData\chocolatey\lib -> appveyor.yml
@@ -23,12 +26,17 @@ install:
     } else {
       echo "SonarQube build wrapper cached, skipping download."
     }
+
     choco install sonarqube-scanner.portable -y
 build_script:
 - ps: >-
     .\premake\premake5.exe vs2019
+
     nuget restore
     
     ./build-wrapper-win-x86-64.exe --out-dir bw-output msbuild "C:\projects\sail\Sail.sln" /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
     
-    sonar-scanner -D sonar.login="%SONAR_TOKEN%" -D sonar.host.url=https://sonarcloud.io -D sonar.projectKey=Piratkopia13_Sail -D sonar.organization=piratkopia13-github -D sonar.cfamily.build-wrapper-output=bw-output -D sonar.exclusions=libraries/** -D sonar.cfamily.threads=4
+    Write-Host "Build succeeded!" -ForegroundColor Green
+    Write-Host "Starting SonarQube analysis.."
+
+    sonar-scanner -D sonar.login="%SONAR_TOKEN%" -D sonar.host.url=https://sonarcloud.io -D sonar.projectKey=Piratkopia13_Sail -D sonar.organization=piratkopia13-github -D sonar.cfamily.build-wrapper-output=bw-output -D sonar.exclusions=libraries/** -D sonar.cfamily.threads=2 -D sonar.branch.name="%APPVEYOR_REPO_BRANCH%"
