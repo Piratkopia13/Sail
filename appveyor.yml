@@ -37,4 +37,8 @@ build_script:
 
     Write-Host "Starting SonarQube analysis.."
 
-    sonar-scanner -D sonar.login="%SONAR_TOKEN%" -D sonar.host.url=https://sonarcloud.io -D sonar.projectKey=Piratkopia13_Sail -D sonar.organization=piratkopia13-github -D sonar.cfamily.build-wrapper-output=bw-output -D sonar.exclusions=libraries/** -D sonar.cfamily.threads=2 -D sonar.branch.name="%APPVEYOR_REPO_BRANCH%"
+    if("%APPVEYOR_PULL_REQUEST_NUMBER%" -eq ""){
+      sonar-scanner -D sonar.login="%SONAR_TOKEN%" -D sonar.host.url=https://sonarcloud.io -D sonar.projectKey=Piratkopia13_Sail -D sonar.organization=piratkopia13-github -D sonar.cfamily.build-wrapper-output=bw-output -D sonar.exclusions=libraries/** -D sonar.cfamily.threads=2 -D sonar.branch.name="%APPVEYOR_REPO_BRANCH%"
+    } else {
+      sonar-scanner -D sonar.login="%SONAR_TOKEN%" -D sonar.host.url=https://sonarcloud.io -D sonar.projectKey=Piratkopia13_Sail -D sonar.organization=piratkopia13-github -D sonar.cfamily.build-wrapper-output=bw-output -D sonar.exclusions=libraries/** -D sonar.cfamily.threads=2 -D sonar.branch.name="%APPVEYOR_REPO_BRANCH%" -D sonar.pullrequest.base="%APPVEYOR_REPO_BRANCH%" -D sonar.pullrequest.branch="%APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%" -D sonar.pullrequest.key="%APPVEYOR_PULL_REQUEST_NUMBER%" -D sonar.pullrequest.provider=GitHub
+    }
