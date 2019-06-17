@@ -9,9 +9,10 @@
 class Entity {
 public:
 	typedef std::shared_ptr<Entity> SPtr;
-	static SPtr Create();
+	static SPtr Create(const std::string& name = "");
 public:
 	Entity();
+	Entity(const std::string& name = "");
 	virtual ~Entity();
 
 	template<typename T, typename... Targs>
@@ -19,9 +20,12 @@ public:
 	template<typename T>
 	T* getComponent();
 	
+	void setName(const std::string& name);
+	const std::string getName();
 
 private:
 	std::unordered_map<int, Component::Ptr> m_components;
+	std::string m_name;
 };
 
 template<typename T, typename... Targs>
