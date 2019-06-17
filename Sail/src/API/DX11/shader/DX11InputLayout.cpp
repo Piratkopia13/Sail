@@ -93,8 +93,10 @@ void DX11InputLayout::pushVec4(InputType inputType, LPCSTR semanticName, UINT se
 }
 
 void DX11InputLayout::create(void* vertexShaderBlob) {
-	if (!vertexShaderBlob)
+	if (!vertexShaderBlob) {
 		Logger::Error("Failed to set up input layout, the ShaderSet does not have a vertex shader!");
+		return;
+	}
 	auto shaderBlob = static_cast<ID3D10Blob*>(vertexShaderBlob);
 	Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateInputLayout(&m_ied[0], m_ied.size(), shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), &m_inputLayout);
 }
@@ -107,13 +109,10 @@ int DX11InputLayout::convertInputClassification(InputClassification inputSlotCla
 	switch (inputSlotClass) {
 	case InputLayout::PER_VERTEX_DATA:
 		return D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
-		break;
 	case InputLayout::PER_INSTANCE_DATA:
 		return D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_INSTANCE_DATA;
-		break;
 	default:
 		Logger::Error("Invalid input classifier specified");
 		return 0;
-		break;
 	}
 }

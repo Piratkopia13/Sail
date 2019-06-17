@@ -13,14 +13,11 @@
 #include "Sail/utils/Utils.h"
 #include "InputLayout.h"
 
-namespace {
-	static const std::string DEFAULT_SHADER_LOCATION = "res/shaders/";
-}
-
 class ShaderPipeline {
 public:
 	friend class Shader;
 	static ShaderPipeline* CurrentlyBoundShader;
+	static const std::string DEFAULT_SHADER_LOCATION;
 
 public:
 	static ShaderPipeline* Create(const std::string& filename);

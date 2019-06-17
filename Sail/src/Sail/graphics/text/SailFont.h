@@ -3,11 +3,9 @@
 #include <string>
 //#include <SpriteFont.h>
 
-namespace {
-	static const std::wstring DEFAULT_SPRITEFONT_LOCATION = L"res/fonts/";
-}
-
 class SailFont {
+public:
+	static const std::wstring DEFAULT_SPRITEFONT_LOCATION;
 
 public:
 	SailFont(LPCWSTR fontFilename = L"courierNew.spritefont");

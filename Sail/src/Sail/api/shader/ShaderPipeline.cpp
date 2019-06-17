@@ -4,6 +4,7 @@
 #include <regex>
 
 ShaderPipeline* ShaderPipeline::CurrentlyBoundShader = nullptr;
+const std::string ShaderPipeline::DEFAULT_SHADER_LOCATION = "res/shaders/";
 
 using namespace Utils::String;
 

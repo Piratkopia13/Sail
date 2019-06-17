@@ -63,7 +63,6 @@ bool Win32Window::initialize() {
 	if (!RegisterClassEx(&wcex)) {
 		OutputDebugString(L"\nFailed to create window class\n");
 		throw std::exception();
-		return false;
 	}
 
 	// Get the correct width and height (windows includes title bar in size)
@@ -83,7 +82,6 @@ bool Win32Window::initialize() {
 	if (!m_hWnd) {
 		OutputDebugString(L"\nFailed to create window\n");
 		throw std::exception();
-		return false;
 	}
 
 	ShowWindow(m_hWnd, SW_SHOW);
@@ -104,7 +102,6 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
-		break;
 
 	case WM_ACTIVATEAPP:
 	case WM_INPUT:
@@ -144,7 +141,6 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 	default:
 		return DefWindowProc(hwnd, msg, wParam, lParam);
-		break;
 	}
 
 	return 0;

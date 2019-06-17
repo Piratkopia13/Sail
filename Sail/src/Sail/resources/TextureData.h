@@ -5,11 +5,9 @@
 #include "loaders/TGALoader.h"
 #include "ResourceFormat.h"
 
-namespace {
-	static const std::string DEFAULT_TEXTURE_LOCATION = "res/textures/";
-}
-
 class TextureData {
+public:
+	static const std::string DEFAULT_TEXTURE_LOCATION;
 
 public:
 	TextureData();

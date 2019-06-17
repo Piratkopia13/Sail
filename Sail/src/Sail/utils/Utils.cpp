@@ -63,7 +63,7 @@ std::string Utils::String::getBlockStartingFrom(const char* source) {
 
 const char* Utils::String::findToken(const std::string& token, const char* source) {
 	const char* match;
-	while (match = strstr(source, token.c_str())) {
+	if (match = strstr(source, token.c_str())) {
 		bool left = match == source || isspace((match - 1)[0]);
 		match += token.size();
 		bool right = match != '\0' || isspace(match[0]); // might need to be match + 1

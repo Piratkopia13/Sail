@@ -72,8 +72,6 @@ int Application::startGameLoop() {
 	float updateTimer = 0.f;
 	float timeBetweenUpdates = 1.f / 60.f;
 
-	static_cast<float>(m_timer.getFrameTime());
-
 	// TODO: move windows loop to api specific section
 
 	// Main message loop

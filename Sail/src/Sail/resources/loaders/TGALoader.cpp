@@ -15,10 +15,10 @@ namespace FileLoader {
 		}
 
 	}
+
 	TGALoader::~TGALoader() {
 	}
-
-
+	
 	bool TGALoader::loadTarga(std::string filename, ResourceFormat::TextureData& textureData) {
 
 		textureData.channels = 4;

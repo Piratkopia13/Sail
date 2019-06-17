@@ -3,6 +3,8 @@
 #include "../graphics/geometry/Model.h"
 #include "../utils/Utils.h"
 
+const std::string ParsedScene::DEFAULT_MODEL_LOCATION = "res/models/";
+
 ParsedScene::ParsedScene(const std::string& filename, ShaderPipeline* shaderSet) {
 
 	if (filename.substr(filename.size() - 3) != "fbx") {

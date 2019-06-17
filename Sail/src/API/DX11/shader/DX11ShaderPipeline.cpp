@@ -2,7 +2,7 @@
 #include "DX11ShaderPipeline.h"
 #include "Sail/Application.h"
 #include "../DX11API.h"
-#include <API\DX11\resources\DX11Texture.h>
+#include "API/DX11/resources/DX11Texture.h"
 
 ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 	return SAIL_NEW DX11ShaderPipeline(filename);

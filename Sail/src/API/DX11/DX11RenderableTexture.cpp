@@ -62,6 +62,36 @@ void DX11RenderableTexture::createTextures() {
 		Memory::SafeRelease(m_renderTargetView);
 		// Create the new
 		api->getDevice()->CreateRenderTargetView(m_dxColorTexture->getTexture2D(), &rtvDesc, &m_renderTargetView);
+
+		if (m_aaSamples > 1) {
+
+			// Create a non MSAA'd copy of the color texture for use in shaders
+			D3D11_TEXTURE2D_DESC texDesc;
+			m_dxColorTexture->getTexture2D()->GetDesc(&texDesc);
+			texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | m_bindFlags;
+			texDesc.SampleDesc.Count = 1;
+			texDesc.SampleDesc.Quality = 0;
+			texDesc.CPUAccessFlags = m_cpuAccessFlags;
+
+			// Release the old Texture2D
+			Memory::SafeRelease(m_nonMSAAColorTexture2D);
+			// Create the texture2D
+			api->getDevice()->CreateTexture2D(&texDesc, nullptr, &m_nonMSAAColorTexture2D);
+
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+			ZeroMemory(&srvDesc, sizeof(srvDesc));
+			srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+			srvDesc.Texture2D.MostDetailedMip = 0;
+			srvDesc.Texture2D.MipLevels = 1;
+
+			// Release the old SRV
+			Memory::SafeRelease(m_nonMSAAColorSRV);
+			// Create the ShaderResourceView
+			api->getDevice()->CreateShaderResourceView(m_nonMSAAColorTexture2D, &srvDesc, &m_nonMSAAColorSRV);
+
+		}
+
 	}
 
 	// Depth
@@ -81,37 +111,7 @@ void DX11RenderableTexture::createTextures() {
 		api->getDevice()->CreateDepthStencilView(m_dxDepthTexture->getTexture2D(), &dsvDesc, &m_depthStencilView);
 	}
 
-	if (m_aaSamples > 1) {
-
-		// Color
-
-		// Create a non MSAA'd copy of the color texture for use in shaders
-		D3D11_TEXTURE2D_DESC texDesc;
-		m_dxColorTexture->getTexture2D()->GetDesc(&texDesc);
-		texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | m_bindFlags;
-		texDesc.SampleDesc.Count = 1;
-		texDesc.SampleDesc.Quality = 0;
-		texDesc.CPUAccessFlags = m_cpuAccessFlags;
-
-		// Release the old Texture2D
-		Memory::SafeRelease(m_nonMSAAColorTexture2D);
-		// Create the texture2D
-		api->getDevice()->CreateTexture2D(&texDesc, nullptr, &m_nonMSAAColorTexture2D);
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-		ZeroMemory(&srvDesc, sizeof(srvDesc));
-		srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.MipLevels = 1;
-
-		// Release the old SRV
-		Memory::SafeRelease(m_nonMSAAColorSRV);
-		// Create the ShaderResourceView
-		api->getDevice()->CreateShaderResourceView(m_nonMSAAColorTexture2D, &srvDesc, &m_nonMSAAColorSRV);
-
-	}
-	else {
+	if (m_aaSamples <= 1) {
 		if(!m_onlyDSV)
 			m_nonMSAAColorSRV = m_dxColorTexture->getSRV();
 		if (m_hasDepthStencilView)
