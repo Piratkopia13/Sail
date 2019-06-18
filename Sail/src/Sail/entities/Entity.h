@@ -20,7 +20,7 @@ public:
 	T* getComponent();
 	
 	void setName(const std::string& name);
-	const std::string getName() const;
+	const std::string& getName() const;
 
 private:
 	std::unordered_map<int, Component::Ptr> m_components;
