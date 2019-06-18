@@ -46,29 +46,30 @@ GameState::GameState(StateStack& stack)
 
 	m_scene.setLightSetup(&m_lights);
 
-	auto e = Entity::Create();
+	auto e = Entity::Create("Cube0");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
 	transform.setRotations(glm::vec3(0.f, 0.f, 1.07f));
 	transform.setTranslation(glm::vec3(1.2f, 1.f, 1.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create();
+	e = Entity::Create("Cube1");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 1.f, 0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create();
+	e = Entity::Create("Plane");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
 	Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
-	m_testEntity = Entity::Create();
+	m_testEntity = Entity::Create("thisIsAName");
 	m_testEntity->addComponent<ModelComponent>(fbxModel);
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	m_testEntity->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(-1.f, 0.f, 0.f));
+	m_testEntity->setName("MovingCube");
 	m_scene.addEntity(m_testEntity);
 
 	//e = Entity::Create();
