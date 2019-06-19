@@ -46,14 +46,9 @@ GameState::GameState(StateStack& stack)
 
 	m_scene.setLightSetup(&m_lights);
 
-	auto e = Entity::Create("Cube0");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
-	transform.setRotations(glm::vec3(0.f, 0.f, 1.07f));
-	transform.setTranslation(glm::vec3(1.2f, 1.f, 1.f));
-	m_scene.addEntity(e);
+	
 
-	e = Entity::Create("Cube1");
+	auto e = Entity::Create("Cube1");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 1.f, 0.f));
 	m_scene.addEntity(e);
@@ -61,6 +56,13 @@ GameState::GameState(StateStack& stack)
 	e = Entity::Create("Plane");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
+	m_scene.addEntity(e);
+
+	e = Entity::Create("Cube0");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
+	transform.setRotations(glm::vec3(0.f, 0.f, 1.07f));
+	transform.setTranslation(glm::vec3(1.2f, 1.f, 1.f));
 	m_scene.addEntity(e);
 
 	Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
@@ -71,6 +73,8 @@ GameState::GameState(StateStack& stack)
 	m_testEntity->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(-1.f, 0.f, 0.f));
 	m_testEntity->setName("MovingCube");
 	m_scene.addEntity(m_testEntity);
+	e->getComponent<TransformComponent>()->getTransform().setParent(
+		&m_testEntity->getComponent<TransformComponent>()->getTransform());
 
 	//e = Entity::Create();
 	//auto* textComp = e->addComponent<TextComponent>();
@@ -168,8 +172,11 @@ bool GameState::update(float dt) {
 
 	static float counter = 0.0f;
 	counter += dt * 4;
-	if (m_testEntity)
+	if (m_testEntity) {
 		m_testEntity->getComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
+		m_testEntity->getComponent<TransformComponent>()->getTransform().setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
+
+	}
 
 	return true;
 }
