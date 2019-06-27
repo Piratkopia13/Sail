@@ -50,19 +50,17 @@ GameState::GameState(StateStack& stack)
 
 	auto e = Entity::Create("Cube1");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 1.f, 0.f));
+	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	m_scene.addEntity(e);
 
 	e = Entity::Create("Plane");
 	e->addComponent<ModelComponent>(m_planeModel.get());
-	e->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
 	e = Entity::Create("Cube0");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
-	Transform& transform = e->addComponent<TransformComponent>()->getTransform();
-	transform.setRotations(glm::vec3(0.f, 0.f, 1.07f));
-	transform.setTranslation(glm::vec3(1.2f, 1.f, 1.f));
+	TransformComponent* transform = e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
 	m_scene.addEntity(e);
 
 	Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());
@@ -70,11 +68,20 @@ GameState::GameState(StateStack& stack)
 	m_testEntity->addComponent<ModelComponent>(fbxModel);
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	m_testEntity->addComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(-1.f, 0.f, 0.f));
+	m_testEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 0.f, 0.f), m_testEntity->getComponent<TransformComponent>());
 	m_testEntity->setName("MovingCube");
 	m_scene.addEntity(m_testEntity);
-	e->getComponent<TransformComponent>()->getTransform().setParent(
-		&m_testEntity->getComponent<TransformComponent>()->getTransform());
+	e->getComponent<TransformComponent>()->setParent(
+		m_testEntity->getComponent<TransformComponent>());
+
+
+	createTransformTest();
+
+
+
+
+
+
 
 	//e = Entity::Create();
 	//auto* textComp = e->addComponent<TextComponent>();
@@ -116,6 +123,18 @@ bool GameState::processInput(float dt) {
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		m_lights.addPointLight(pl);
 	}
+
+
+	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
+		Logger::Log("setting parent");
+		m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>());
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
+		Logger::Log("removing parent");
+		m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
+	}
+
+
 #endif
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
@@ -156,6 +175,64 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
+void GameState::createTransformTest() {
+
+
+
+	auto e = Entity::Create("CubeRoot");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	m_scene.addEntity(e);
+	m_transformTestEntities.push_back(e);
+
+	e = Entity::Create("Cube1st");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	m_scene.addEntity(e);
+	m_transformTestEntities.push_back(e);
+
+	e = Entity::Create("Cube1st");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	m_scene.addEntity(e);
+	m_transformTestEntities.push_back(e);
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+void GameState::updateTransformTest(const float dt) {
+
+	static float size = 1;
+	static float change = 1.0f;
+
+	for (Entity::SPtr item : m_transformTestEntities) {
+		item->getComponent<TransformComponent>()->rotateAroundY(dt * 3.14f);
+		item->getComponent<TransformComponent>()->setScale(size);
+		item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
+		
+	}
+	m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
+
+	size += change * dt;
+	if (size > 1.2f || size < 0.7f)
+		change *= -1.0f;
+
+
+
+
+
+}
+
 bool GameState::update(float dt) {
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
@@ -173,9 +250,10 @@ bool GameState::update(float dt) {
 	static float counter = 0.0f;
 	counter += dt * 4;
 	if (m_testEntity) {
-		m_testEntity->getComponent<TransformComponent>()->getTransform().setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-		m_testEntity->getComponent<TransformComponent>()->getTransform().setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
+		m_testEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
+		m_testEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 
+		updateTransformTest(dt);
 	}
 
 	return true;
