@@ -20,14 +20,11 @@ public:
 	
 	void setName(const std::string& name);
 	const std::string& getName() const;
-	const size_t& getUniqueID() const;
-	Entity(const size_t& id, const std::string& name = "");
-protected:
+	Entity(const std::string& name = "");
 
 private:
 	std::unordered_map<int, Component::Ptr> m_components;
 	std::string m_name;
-	const size_t m_uniqueID;
 };
 
 template<typename T, typename... Targs>
