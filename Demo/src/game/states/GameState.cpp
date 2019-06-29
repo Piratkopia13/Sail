@@ -60,7 +60,7 @@ GameState::GameState(StateStack& stack)
 
 	e = Entity::Create("Cube0");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
-	TransformComponent* transform = e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+	e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
 	m_scene.addEntity(e);
 
 	Model* fbxModel = &m_app->getResourceManager().getModel("box.fbx", shader->getPipeline());

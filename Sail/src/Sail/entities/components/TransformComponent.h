@@ -17,10 +17,7 @@ public:
 		: Transform(translation, rotation, scale, parent) { }
 	~TransformComponent() { }
 
-	//Transform& getTransform() {
-	//	return m_transform;
-	//}
 
 private:
-	//Transform m_transform;
+
 };

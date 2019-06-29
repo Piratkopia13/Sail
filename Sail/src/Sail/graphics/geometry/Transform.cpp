@@ -2,30 +2,22 @@
 #include "Transform.h"
 
 Transform::Transform(Transform* parent)
-	: Transform::Transform() {
-	m_parent = parent;
-	m_parentUpdated = true;
-	if (m_parent)
-		m_parent->addChild(this);
-}
+	: Transform::Transform({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, parent) 
+{ }
 
 Transform::Transform(const glm::vec3& translation, Transform* parent)
-	: Transform() {
-	m_translation = translation;
-	m_parent = parent;
-	m_parentUpdated = parent;
-	if (m_parent)
-		m_parent->addChild(this);
-}
+	: Transform(translation, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, parent) 
+{ }
 
 Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale, Transform* parent)
 	: m_translation(translation)
 	, m_rotation(rotation)
 	, m_scale(scale)
 	, m_transformMatrix(1.0f)
+	, m_parent(parent) 
 	, m_matNeedsUpdate(true)
 	, m_parentUpdated(parent)
-	, m_parent(parent) {
+{
 	if (m_parent)
 		m_parent->addChild(this);
 }
@@ -152,7 +144,7 @@ void Transform::setMatrix(const glm::mat4& newMatrix) {
 	glm::vec4 tempPerspective;
 	glm::quat tempRotation;
 	glm::decompose(newMatrix, m_scale, tempRotation, m_translation, tempSkew, tempPerspective);
-	// TODO: Doublecheck that rotation is valid
+	// TODO: Check that rotation is valid
 	m_rotation = glm::eulerAngles(tempRotation);
 
 	m_matNeedsUpdate = false;

@@ -6,7 +6,7 @@
 class Transform {
 
 public:
-	Transform(Transform* parent);
+	explicit Transform(Transform* parent);
 	Transform(const glm::vec3& translation, Transform* parent = nullptr);
 	Transform(const glm::vec3& translation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f }, Transform* parent = nullptr);
 	virtual ~Transform();
@@ -41,7 +41,6 @@ public:
 	void setMatrix(const glm::mat4& newMatrix);
 
 
-
 	const glm::vec3& getTranslation() const;
 	const glm::vec3& getRotations() const;
 	const glm::vec3& getScale() const;
@@ -55,15 +54,14 @@ private:
 	glm::vec3 m_rotation;
 	glm::vec3 m_scale;
 
-	bool m_matNeedsUpdate;
-	bool m_parentUpdated;
-
 	glm::mat4 m_transformMatrix;
 	glm::mat4 m_localTransformMatrix;
 
+	bool m_matNeedsUpdate;
+	bool m_parentUpdated;
+
 	Transform* m_parent;
 	std::vector<Transform*> m_children;
-
 private:
 	void updateLocalMatrix();
 	void updateMatrix();
