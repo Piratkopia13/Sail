@@ -50,7 +50,7 @@ void Scene::draw(Camera& camera) {
 			TransformComponent* transform = entity->getComponent<TransformComponent>();
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-			m_renderer->submit(model->getModel(), transform->getTransform().getMatrix());
+			m_renderer->submit(model->getModel(), transform->getMatrix());
 		}
 	}
 

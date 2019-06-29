@@ -40,4 +40,14 @@ private:
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 
+
+
+	// TRANSFORM TESTING
+	std::vector<Entity::SPtr> m_transformTestEntities;
+	void createTransformTest();
+	void updateTransformTest(const float dt);
+
+
+
+
 };

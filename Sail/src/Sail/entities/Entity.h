@@ -11,7 +11,6 @@ public:
 	typedef std::shared_ptr<Entity> SPtr;
 	static SPtr Create(const std::string& name = "");
 public:
-	Entity(const std::string& name = "");
 	virtual ~Entity();
 
 	template<typename T, typename... Targs>
@@ -21,6 +20,7 @@ public:
 	
 	void setName(const std::string& name);
 	const std::string& getName() const;
+	Entity(const std::string& name = "");
 
 private:
 	std::unordered_map<int, Component::Ptr> m_components;
