@@ -14,8 +14,9 @@ Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, co
 	, m_rotation(rotation)
 	, m_scale(scale)
 	, m_transformMatrix(1.0f)
-	, m_parent(parent) 
+	, m_localTransformMatrix(1.0f)
 	, m_matNeedsUpdate(true)
+	, m_parent(parent) 
 	, m_parentUpdated(parent)
 {
 	if (m_parent)

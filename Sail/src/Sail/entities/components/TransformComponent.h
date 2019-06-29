@@ -9,7 +9,7 @@ public:
 	/*static int getStaticID() {
 		return 3;
 	}*/
-	TransformComponent(TransformComponent* parent)
+	explicit TransformComponent(TransformComponent* parent)
 		: Transform(parent) { }
 	TransformComponent(const glm::vec3& translation, TransformComponent* parent) 
 		: Transform(translation, parent){ }

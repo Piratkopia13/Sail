@@ -3,12 +3,13 @@
 
 Entity::SPtr Entity::Create(const std::string& name) {
 	static size_t counter = 0;
+	counter++;
 	return std::make_shared<Entity>(counter++, name);
 }
 
 Entity::Entity(const size_t& id, const std::string& name)
-	: m_uniqueID(id),
-	m_name(name)
+	: m_name(name)
+	, m_uniqueID(id)
 {
 
 }
