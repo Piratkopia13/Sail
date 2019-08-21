@@ -14,9 +14,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	// Check for memory leaks
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
 
 	Game game(hInstance);
 	game.run();
+
+	//OutputDebugString(L"\n========= Memory leak report =========\n");
+	//_CrtDumpMemoryLeaks();
+	//OutputDebugString(L"======================================\n\n");
 
 	return 0;
 }

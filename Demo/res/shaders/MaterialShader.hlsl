@@ -55,7 +55,7 @@ PSIn VSMain(VSIn input) {
     }
 
 	input.position.w = 1.f;
-	output.position = mul(input.position, sys_mWorld);
+	output.position = mul(sys_mWorld, input.position);
 
 	// Calculate the distance from the vertex to the clipping plane
 	// This needs to be done with world coordinates
@@ -72,14 +72,14 @@ PSIn VSMain(VSIn input) {
     }
 
 
-    output.position = mul(output.position, sys_mVP);
+    output.position = mul(sys_mVP, output.position);
 
 	if (sys_material.hasNormalTexture) {
 	    // Convert to tangent space
 		float3x3 TBN = {
-			mul(input.tangent, (float3x3) sys_mWorld),
-			mul(input.bitangent, (float3x3) sys_mWorld),
-			mul(input.normal, (float3x3) sys_mWorld)
+			mul((float3x3) sys_mWorld, input.tangent),
+			mul((float3x3) sys_mWorld, input.bitangent),
+			mul((float3x3) sys_mWorld, input.normal)
 		};
 		TBN = transpose(TBN);
 
@@ -89,7 +89,7 @@ PSIn VSMain(VSIn input) {
             output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
     }
 
-	output.normal = mul(input.normal, (float3x3) sys_mWorld);
+	output.normal = mul((float3x3) sys_mWorld, input.normal);
 	output.normal = normalize(output.normal);
 
 	output.texCoords = input.texCoords;
@@ -102,7 +102,7 @@ PSIn VSMain(VSIn input) {
 Texture2D sys_texDiffuse : register(t0);
 Texture2D sys_texNormal : register(t1);
 Texture2D sys_texSpecular : register(t2);
-SamplerState PSss;
+SamplerState PSss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
@@ -125,6 +125,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 
     //return sys_texDiffuse.Sample(PSss, input.texCoords);
+	// return float4(phongInput.normal * 0.5f + 0.5, 1.f);
     return phongShade(phongInput);
     //return float4(phongInput.lights.dirLight.direction, 1.f);
     //return float4(phongInput.diffuseColor.rgb, 1.f);

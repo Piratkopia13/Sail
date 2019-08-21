@@ -28,6 +28,7 @@ void Game::registerStates() {
 }
 
 void Game::dispatchEvent(Event& event) {
+	Application::dispatchEvent(event);
 	m_stateStack.onEvent(event);
 }
 
