@@ -102,7 +102,17 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
-
+	case WM_CREATE:
+	{
+		HINSTANCE hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
+		HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(101));
+		if (!hIcon) {
+			Logger::Error("Window icon could not be loaded");
+		} else
+			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+		return 0;
+	}
+		break;
 	case WM_ACTIVATEAPP:
 	case WM_INPUT:
 	case WM_KEYDOWN:
