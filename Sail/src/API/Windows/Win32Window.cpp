@@ -112,7 +112,6 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 		return 0;
 	}
-		break;
 	case WM_ACTIVATEAPP:
 	case WM_INPUT:
 	case WM_KEYDOWN:
