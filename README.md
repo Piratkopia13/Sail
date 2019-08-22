@@ -1,3 +1,4 @@
+
 # Sail game engine :sailboat:
 
 [![Build status](https://ci.appveyor.com/api/projects/status/aqy3xsricje3cv28/branch/master?svg=true)](https://ci.appveyor.com/project/Piratkopia13/sail/branch/master)
@@ -5,7 +6,7 @@
 Sail is a small c++ game engine developed and maintained as a hobby project
 
 Current features include
-  - DirectX 11
+  - Cross API support - DirectX 11 or 12 
   - Component based entity system
   - Event system
   - Deferred rendering
@@ -14,17 +15,17 @@ Current features include
 
 ### Installation
 
-Sail requires Visual Studio 2017.
+Sail requires Visual Studio 2017 or later.
 
-I'm not even sure if everything required to build it is contained in this repo, hit me up if there are any issues.
+Everything required to build should be contained in this repo. Hit me up if there are any issues.
 
 
-### Future things I wanna implement
+### Future things I want to implement
 
+ - DXR (In the works)
  - PBR
  - AI
- - RTX
- - Cross-platform support (dx11/12, opengl/vulkan)
+ - Vulkan
 
 License
 ----
