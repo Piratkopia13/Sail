@@ -314,6 +314,9 @@ void DX11API::createDepthStencilBufferAndBind(UINT windowWidth, UINT windowHeigh
 }
 
 void DX11API::resizeBuffers(UINT width, UINT height) {
+	if (width == 0 || height == 0)
+		return;
+
 	if (m_swapChain) {
 
 		m_deviceContext->OMSetRenderTargets(0, 0, m_depthStencilView);
@@ -322,8 +325,7 @@ void DX11API::resizeBuffers(UINT width, UINT height) {
 		Memory::SafeRelease(m_renderTargetView);
 
 		// Preserve the existing buffer count and format
-		// Automatically choose the width and height to match the client rect for HWNDs
-		ThrowIfFailed(m_swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0));
+		ThrowIfFailed(m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0));
 
 		// Get buffer and create a render-target-view
 		ID3D11Texture2D* backBufferTex = nullptr;
