@@ -29,9 +29,9 @@
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
 #if defined(FBXSDK_ENV_WIN)
-	#ifndef isnan
+	/*#ifndef isnan
 		#define isnan	_isnan
-	#endif
+	#endif*/
 	#ifndef finite
 		#define finite	_finite
 	#endif

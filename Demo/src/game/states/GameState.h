@@ -10,11 +10,13 @@ public:
 	// Process input for the state
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
-	virtual void onEvent(Event& event) override;
+	virtual bool onEvent(Event& event) override;
 	// Updates the state
 	virtual bool update(float dt) override;
 	// Renders the state
 	virtual bool render(float dt) override;
+	// Renders imgui
+	virtual bool renderImgui(float dt) override;
 
 private:
 	bool onResize(WindowResizeEvent& event);
@@ -26,11 +28,9 @@ private:
 	FlyingCameraController m_camController;
 	bool m_flyCam;
 
-	// Scene
-	//std::unique_ptr<Scene> m_scene;
+	Entity::SPtr m_testEntity;
 
 	Scene m_scene;
-	ForwardRenderer m_renderer;
 	LightSetup m_lights;
 
 	// Texts
@@ -39,5 +39,15 @@ private:
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
+
+
+
+	// TRANSFORM TESTING
+	std::vector<Entity::SPtr> m_transformTestEntities;
+	void createTransformTest();
+	void updateTransformTest(const float dt);
+
+
+
 
 };
