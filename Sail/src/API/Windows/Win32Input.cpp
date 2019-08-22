@@ -90,6 +90,12 @@ void Win32Input::registerRawDevices(HWND hwnd) {
 }
 
 void Win32Input::processMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
+
+	// Handle ALT+ENTER:
+	if (msg == WM_SYSKEYDOWN && (wParam == VK_RETURN) && (lParam & (1 << 29))) {
+		Application::getInstance()->getAPI()->toggleFullscreen();
+	}
+
 	// The lParam thing ignores repeated keystrokes
 	if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) {
 		m_keys[wParam] = true;

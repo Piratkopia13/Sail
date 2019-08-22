@@ -38,7 +38,7 @@ public:
 	virtual void present(bool vsync = false) = 0;
 	virtual unsigned int getMemoryUsage() const = 0;
 	virtual unsigned int getMemoryBudget() const = 0;
-	virtual void toggleFullscreen() {};
+	virtual void toggleFullscreen() { /* All APIs might not need to implement this */ };
 
 	virtual bool onResize(WindowResizeEvent& event) = 0;
 	virtual bool onEvent(Event& event) override {

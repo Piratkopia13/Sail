@@ -103,6 +103,7 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		return 0;
 	case WM_CREATE:
 	{
+		// Set up window icon
 		HINSTANCE hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
 		HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(101));
 		if (!hIcon) {
@@ -111,17 +112,13 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 		return 0;
 	}
+		break;
 	case WM_SYSKEYDOWN:
-		// Handle ALT+ENTER:
-		if ((wParam == VK_RETURN) && (lParam & (1 << 29))) {
-			Application::getInstance()->getAPI()->toggleFullscreen();
-			return 0;
-		}
-	case WM_ACTIVATEAPP:
-	case WM_INPUT:
+	case WM_SYSKEYUP:
 	case WM_KEYDOWN:
 	case WM_KEYUP:
-	case WM_SYSKEYUP:
+	case WM_ACTIVATEAPP:
+	case WM_INPUT:
 	case WM_MOUSEMOVE:
 		Input::GetInstance<Win32Input>()->processMessage(msg, wParam, lParam);
 		break;
