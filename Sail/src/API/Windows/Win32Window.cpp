@@ -110,7 +110,6 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			Logger::Error("Window icon could not be loaded");
 		} else
 			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-		return 0;
 	}
 		break;
 	case WM_SYSKEYDOWN:
