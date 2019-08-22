@@ -36,6 +36,8 @@ project "Demo"
 	objdir (intermediatesDir)
 
 	files { 
+		"%{prj.name}/Demo.rc",    -- For icon
+		"%{prj.name}/resource.h", -- For icon
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp"
 	}

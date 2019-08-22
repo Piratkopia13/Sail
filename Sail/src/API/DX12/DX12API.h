@@ -56,6 +56,7 @@ public:
 	virtual void present(bool vsync = false) override;
 	virtual unsigned int getMemoryUsage() const override;
 	virtual unsigned int getMemoryBudget() const override;
+	virtual void toggleFullscreen() override;
 	virtual bool onResize(WindowResizeEvent& event) override;
 
 	ID3D12Device5* getDevice() const;
@@ -92,6 +93,11 @@ private:
 private:
 	static const UINT NUM_SWAP_BUFFERS;
 
+	// Whether or not tearing is available for fullscreen borderless windowed mode.
+	bool m_tearingSupport;
+	bool m_windowedMode;
+	RECT m_windowRect;
+	
 	UINT m_backBufferIndex;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentRenderTargetCDH;
 	ID3D12Resource* m_currentRenderTargetResource;

@@ -6,8 +6,8 @@
 
 Input* Input::m_Instance = SAIL_NEW Win32Input();
 
-Win32Input::Win32Input() 
-	: m_mouseButtons { false }
+Win32Input::Win32Input()
+	: m_mouseButtons{ false }
 	, m_keys{ false }
 	, m_mousePos(0, 0)
 	, m_cursorHidden(false)
@@ -90,17 +90,23 @@ void Win32Input::registerRawDevices(HWND hwnd) {
 }
 
 void Win32Input::processMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
+
+	// Handle ALT+ENTER:
+	if (msg == WM_SYSKEYDOWN && (wParam == VK_RETURN) && (lParam & (1 << 29))) {
+		Application::getInstance()->getAPI()->toggleFullscreen();
+	}
+
 	// The lParam thing ignores repeated keystrokes
-	if (msg == WM_KEYDOWN && (lParam & (1 << 30)) == 0) {
+	if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) {
 		m_keys[wParam] = true;
 		m_frameKeys[wParam] = true;
-	} else if (msg == WM_KEYUP) {
+	} else if (msg == WM_KEYUP || msg == WM_SYSKEYUP) {
 		m_keys[wParam] = false;
 		m_frameKeys[wParam] = false;
 	} else if (msg == WM_MOUSEMOVE) {
 		m_mousePos.x = GET_X_LPARAM(lParam);
 		m_mousePos.y = GET_Y_LPARAM(lParam);
-	} else if (msg == WM_INPUT) { 
+	} else if (msg == WM_INPUT) {
 		// Mouse input 
 
 		UINT dwSize = 0;

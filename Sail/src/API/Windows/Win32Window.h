@@ -20,10 +20,10 @@ public:
 	virtual bool initialize() override;
 	virtual bool hasBeenResized() override;
 	virtual void setWindowTitle(const std::string& title) override;
-	void toggleFullscreen(IDXGISwapChain* swapChain);
 
 	LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	const HWND* getHwnd() const;
+	DWORD getWindowStyle() const;
 
 private:
 
@@ -33,7 +33,5 @@ private:
 	std::string m_windowTitle;
 	DWORD m_windowStyle;
 	bool m_resized;
-	bool m_fullscreenMode;
-	RECT m_windowRect;
 
 };
