@@ -454,6 +454,13 @@ void DX12API::nextFrame() {
 	m_currentRenderTargetCDH.ptr += m_renderTargetDescriptorSize * m_backBufferIndex;
 	m_currentRenderTargetResource = m_renderTargets[m_backBufferIndex].Get();
 
+	// Reset descriptor heap index back to 0 as soon as the SRVs can be overwritten
+	// This is to avoid having to find a good point to loop the heap index mid-frame
+	// as this would be difficult to calculate (depends on the number of objects being 
+	// rendered and how many textures each object has)
+	if (m_backBufferIndex == 0)
+		getMainGPUDescriptorHeap()->setIndex(0);
+
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {

@@ -37,6 +37,12 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurentGPUDescriptorHandle() const
 	return getGPUDescriptorHandleForIndex(m_index);
 }
 
+void DescriptorHeap::setIndex(unsigned int index) {
+	if (index >= m_numDescriptors)
+		Logger::Error("Tried to set descriptor heap index to a value larger than max (" + std::to_string(m_numDescriptors) + ")!");
+	m_index = index;
+}
+
 void DescriptorHeap::bind(ID3D12GraphicsCommandList4* cmdList) const {
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_descHeap.Get() };
 	cmdList->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
@@ -45,7 +51,9 @@ void DescriptorHeap::bind(ID3D12GraphicsCommandList4* cmdList) const {
 unsigned int DescriptorHeap::getAndStepIndex() {
 	unsigned int i = m_index;
 	m_index = (m_index + 1) % m_numDescriptors;
-	// TODO: check if there is a problem at the point where the index loops around in the middle of a bound shader
+	// The index should never loop by this method since this means that it has looped mid-frame and will cause the GPU to read out of bounds
+	if (m_index == 0)
+		Logger::Error("Descriptor heap index has looped mid-frame - this may cause missing textures or GPU crashes! This can be caused by having too many textured objects being rendered simulateously. In that case, consider reducing the amount of textured objects or increase the descriptor heap size (which is currently " + std::to_string(m_numDescriptors) + ")");
 	return i;
 }
 
