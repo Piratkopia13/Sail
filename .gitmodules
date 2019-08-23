@@ -6,3 +6,6 @@
 	path = libraries/imgui
 	url = https://github.com/Piratkopia13/imgui
 	branch = docking
+[submodule "libraries/MemoryManager"]
+	path = libraries/MemoryManager
+	url = https://github.com/Skratzy/MemoryManager
