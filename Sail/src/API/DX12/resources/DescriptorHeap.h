@@ -17,6 +17,8 @@ public:
 
 	D3D12_GPU_DESCRIPTOR_HANDLE	getCurentGPUDescriptorHandle() const;
 
+	void setIndex(unsigned int index);
+
 	void bind(ID3D12GraphicsCommandList4* cmdList) const;
 
 private:

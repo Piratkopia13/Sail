@@ -3,6 +3,7 @@
 #include "API/Windows/Win32Window.h"
 #include "DX12Utils.h"
 #include "resources/DescriptorHeap.h"
+#include "Sail/Application.h"
 #include <iomanip>
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
@@ -14,6 +15,8 @@ GraphicsAPI* GraphicsAPI::Create() {
 DX12API::DX12API()
 	: m_backBufferIndex(0)
 	, m_clearColor{0.8f, 0.2f, 0.2f, 1.0f}
+	, m_tearingSupport(true)
+	, m_windowedMode(true)
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 	m_fenceValues.resize(NUM_SWAP_BUFFERS, 0);
@@ -198,6 +201,7 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	//m_computeCommand.list->Close();
 	//m_copyCommand.list->Close();
 
+	
 	// 5. Create swap chain
 	DXGI_SWAP_CHAIN_DESC1 scDesc = {};
 	scDesc.Width = 0;
@@ -210,14 +214,20 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	scDesc.BufferCount = NUM_SWAP_BUFFERS;
 	scDesc.Scaling = DXGI_SCALING_NONE;
 	scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	scDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 	scDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+	scDesc.Flags = (m_tearingSupport) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
 	IDXGISwapChain1* swapChain1 = nullptr;
 	if (SUCCEEDED(m_factory->CreateSwapChainForHwnd(m_directCommandQueue.Get(), *window->getHwnd(), &scDesc, nullptr, nullptr, &swapChain1))) {
 		if (SUCCEEDED(swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain)))) {
 			m_swapChain->Release();
 		}
+	}
+
+	if (m_tearingSupport) {
+		// When tearing support is enabled we will handle ALT+Enter key presses in the
+		// window message loop rather than let DXGI handle it by calling SetFullscreenState.
+		m_factory->MakeWindowAssociation(*window->getHwnd(), DXGI_MWA_NO_ALT_ENTER);
 	}
 
 	// No more m_factory using
@@ -454,16 +464,25 @@ void DX12API::nextFrame() {
 	m_currentRenderTargetCDH.ptr += m_renderTargetDescriptorSize * m_backBufferIndex;
 	m_currentRenderTargetResource = m_renderTargets[m_backBufferIndex].Get();
 
+	// Reset descriptor heap index back to 0 as soon as the SRVs can be overwritten
+	// This is to avoid having to find a good point to loop the heap index mid-frame
+	// as this would be difficult to calculate (depends on the number of objects being 
+	// rendered and how many textures each object has)
+	if (m_backBufferIndex == 0)
+		getMainGPUDescriptorHeap()->setIndex(0);
+
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {
+	if (width == 0 || height == 0)
+		return;
 	waitForGPU();
 
 	// Resize swap chain and backbuffers
 	for (auto& rt : m_renderTargets) {
 		rt.Reset();
 	}
-	ThrowIfFailed(m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING));
+	ThrowIfFailed(m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, (m_tearingSupport) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0));
 
 	// Create resources for the render targets
 	D3D12_CPU_DESCRIPTOR_HANDLE cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
@@ -518,7 +537,7 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 	m_viewport.Height = (float)height;
 	m_scissorRect.right = (long)width;
 	m_scissorRect.bottom = (long)height;
-
+	
 }
 
 void DX12API::setDepthMask(DepthMask setting) {
@@ -579,7 +598,7 @@ void DX12API::present(bool vsync) {
 
 	//Present the frame.
 	DXGI_PRESENT_PARAMETERS pp = { };
-	m_swapChain->Present1((UINT)vsync, (vsync /*|| !m_windowedMode*/) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
+	m_swapChain->Present1((UINT)vsync, (vsync || !m_windowedMode || !m_tearingSupport) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
 
 	//waitForGPU();
 	nextFrame();
@@ -687,6 +706,80 @@ bool DX12API::onResize(WindowResizeEvent& event) {
 	resizeBuffers(event.getWidth(), event.getHeight());
 	Logger::Log("dx12 resize ran");
 	return true;
+}
+
+void DX12API::toggleFullscreen() {
+	if (!m_tearingSupport)
+		return;
+
+	Win32Window* window = Application::getInstance()->getWindow<Win32Window>();
+	HWND hWnd = *window->getHwnd();
+	DWORD windowStyle = window->getWindowStyle();
+
+	if (!m_windowedMode) {
+		// Restore the window's attributes and size.
+		SetWindowLong(hWnd, GWL_STYLE, windowStyle);
+
+		SetWindowPos(
+			hWnd,
+			HWND_NOTOPMOST,
+			m_windowRect.left,
+			m_windowRect.top,
+			m_windowRect.right - m_windowRect.left,
+			m_windowRect.bottom - m_windowRect.top,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
+		ShowWindow(hWnd, SW_NORMAL);
+	} else {
+		// Save the old window rect so we can restore it when exiting fullscreen mode.
+		GetWindowRect(hWnd, &m_windowRect);
+
+		// Make the window borderless so that the client area can fill the screen.
+		SetWindowLong(hWnd, GWL_STYLE, windowStyle & ~(WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME));
+
+		RECT fullscreenWindowRect;
+		try {
+			if (m_swapChain) {
+				// Get the settings of the display on which the app's window is currently displayed
+				Microsoft::WRL::ComPtr<IDXGIOutput> pOutput;
+				ThrowIfFailed(m_swapChain->GetContainingOutput(&pOutput));
+				DXGI_OUTPUT_DESC Desc;
+				ThrowIfFailed(pOutput->GetDesc(&Desc));
+				fullscreenWindowRect = Desc.DesktopCoordinates;
+			} else {
+				// Fallback to EnumDisplaySettings implementation
+				throw std::exception();
+			}
+		} catch (std::exception& e) {
+			UNREFERENCED_PARAMETER(e);
+
+			// Get the settings of the primary display
+			DEVMODE devMode = {};
+			devMode.dmSize = sizeof(DEVMODE);
+			EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode);
+
+			fullscreenWindowRect = {
+				devMode.dmPosition.x,
+				devMode.dmPosition.y,
+				devMode.dmPosition.x + static_cast<LONG>(devMode.dmPelsWidth),
+				devMode.dmPosition.y + static_cast<LONG>(devMode.dmPelsHeight)
+			};
+		}
+
+		SetWindowPos(
+			hWnd,
+			HWND_TOPMOST,
+			fullscreenWindowRect.left,
+			fullscreenWindowRect.top,
+			fullscreenWindowRect.right,
+			fullscreenWindowRect.bottom,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
+
+		ShowWindow(hWnd, SW_MAXIMIZE);
+	}
+
+	m_windowedMode = !m_windowedMode;
 }
 
 void DX12API::waitForGPU() {
