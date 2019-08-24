@@ -135,7 +135,7 @@ void ShaderPipeline::parseCBuffer(const std::string& source) {
 	src = findToken("{", src); // Place ptr on same line as starting bracket
 	src = nextLine(src);
 
-	Logger::Log("Slot: " + std::to_string(registerSlot));
+	//Logger::Log("Slot: " + std::to_string(registerSlot));
 
 	UINT size = 0;
 	std::vector<ShaderCBuffer::CBufferVariable> vars;
@@ -151,8 +151,8 @@ void ShaderPipeline::parseCBuffer(const std::string& source) {
 		vars.push_back({name, size});
 		size += getSizeOfType(type);
 
-		Logger::Log("Type: " + type);
-		Logger::Log("Name: " + name);
+		/*Logger::Log("Type: " + type);
+		Logger::Log("Name: " + name);*/
 	}
 
 	// Memory align to 16 bytes
@@ -164,7 +164,7 @@ void ShaderPipeline::parseCBuffer(const std::string& source) {
 	parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot);
 	free(initData);
 
-	Logger::Log(src);
+	//Logger::Log(src);
 }
 
 void ShaderPipeline::parseSampler(const char* source) {
