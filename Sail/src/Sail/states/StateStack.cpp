@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "StateStack.h"
 #include "Sail/Application.h"
+#include "Sail/KeyCodes.h"
 
 StateStack::StateStack()
+	: m_renderImgui(false)
 {
 }
 
@@ -19,6 +21,10 @@ State::Ptr StateStack::createState(States::ID stateID) {
 }
 
 void StateStack::processInput(float dt) {
+
+	// Toggle imgui rendering on key
+	if (Input::WasKeyJustPressed(SAIL_KEY_F10))
+		m_renderImgui = !m_renderImgui;
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
@@ -59,10 +65,12 @@ void StateStack::render(float dt) {
 	for (auto& state : m_stack)
 		state->render(dt);
 	
-	/*Application::getInstance()->getImGuiHandler()->begin();
-	for (auto& state : m_stack)
-		state->renderImgui(dt);
-	Application::getInstance()->getImGuiHandler()->end();*/
+	if (m_renderImgui) {
+		Application::getInstance()->getImGuiHandler()->begin();
+		for (auto& state : m_stack)
+			state->renderImgui(dt);
+		Application::getInstance()->getImGuiHandler()->end();
+	}
 
 	Application::getInstance()->getAPI()->present(false);
 }

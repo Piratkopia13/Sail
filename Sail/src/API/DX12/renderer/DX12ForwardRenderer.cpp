@@ -28,6 +28,8 @@ DX12ForwardRenderer::~DX12ForwardRenderer() {
 }
 
 void DX12ForwardRenderer::present(RenderableTexture* output) {
+	assert(!output); // Render to texture is currently not implemented for DX12!
+
 	auto frameIndex = m_context->getFrameIndex();
 
 	auto& allocator = m_command.allocators[frameIndex];
@@ -51,6 +53,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	// TODO: bind camera cbuffer here
 	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
+	// TODO: Sort meshes according to material
 	unsigned int meshIndex = 0;
 	for (RenderCommand& command : commandQueue) {
 		DX12ShaderPipeline* shader = static_cast<DX12ShaderPipeline*>(command.mesh->getMaterial()->getShader());
