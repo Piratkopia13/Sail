@@ -19,14 +19,34 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Set up camera with controllers
-	m_cam.setPosition(glm::vec3(1.6f, 4.7f, -7.4f));
+	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	m_camController.lookAt(glm::vec3(0.f));
 	
 	// Add a directional light
 	glm::vec3 color(1.0f, 1.0f, 1.0f);
- 	glm::vec3 direction(0.4f, -0.6f, 1.0f);
+ 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
+	// Add four point lights
+	{
+		PointLight pl;
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl.setPosition(glm::vec3(-4.0f, 0.1f, -4.0f));
+		m_lights.addPointLight(pl);
+
+		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
+		m_lights.addPointLight(pl);
+
+		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
+		m_lights.addPointLight(pl);
+
+		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
+		m_lights.addPointLight(pl);
+	}
 
 	// Set up the scene
 	//m_scene->addSkybox(L"skybox_space_512.dds"); //TODO
@@ -41,8 +61,9 @@ GameState::GameState(StateStack& stack)
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader->getPipeline());
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader->getPipeline(), glm::vec2(3.0f));
-	m_planeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.7f, 0.2f, 0.2f, 1.0f));
-	//m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 	
 	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader->getPipeline());
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
@@ -68,7 +89,7 @@ GameState::GameState(StateStack& stack)
 	// Add some cubes which are connected through parenting
 	m_texturedCubeEntity = Entity::Create("Textured parent cube");
 	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 0.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
+	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
 	m_texturedCubeEntity->setName("MovingCube");
 	m_scene.addEntity(m_texturedCubeEntity);
 	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
