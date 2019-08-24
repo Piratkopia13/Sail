@@ -9,6 +9,8 @@ Input* Input::m_Instance = SAIL_NEW Win32Input();
 Win32Input::Win32Input()
 	: m_mouseButtons{ false }
 	, m_keys{ false }
+	, m_frameKeys{ false }
+	, m_frameMouseButtons{ false }
 	, m_mousePos(0, 0)
 	, m_cursorHidden(false)
 {

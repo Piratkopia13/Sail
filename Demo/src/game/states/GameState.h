@@ -26,28 +26,14 @@ private:
 	// Camera
 	PerspectiveCamera m_cam;
 	FlyingCameraController m_camController;
-	bool m_flyCam;
 
-	Entity::SPtr m_testEntity;
+	Entity::SPtr m_texturedCubeEntity;
+	std::vector<Entity::SPtr> m_transformTestEntities;
 
 	Scene m_scene;
 	LightSetup m_lights;
 
-	// Texts
-	Text* m_fpsText;
-	Text* m_debugCamText;
-
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
-
-
-
-	// TRANSFORM TESTING
-	std::vector<Entity::SPtr> m_transformTestEntities;
-	void createTransformTest();
-	void updateTransformTest(const float dt);
-
-
-
 
 };

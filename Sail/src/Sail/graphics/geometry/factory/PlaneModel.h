@@ -38,11 +38,28 @@ namespace ModelFactory {
 				Mesh::vec3(0.f, 1.f, 0.f)
 			};
 
+			Mesh::vec3* tangents = SAIL_NEW Mesh::vec3[numVerts]{
+				Mesh::vec3(0.f, 0.f, 1.f),
+				Mesh::vec3(0.f, 0.f, 1.f),
+				Mesh::vec3(0.f, 0.f, 1.f),
+				Mesh::vec3(0.f, 0.f, 1.f)
+
+			};
+
+			Mesh::vec3* bitangents = SAIL_NEW Mesh::vec3[numVerts]{
+				Mesh::vec3(1.f, 0.f, 0.f),
+				Mesh::vec3(1.f, 0.f, 0.f),
+				Mesh::vec3(1.f, 0.f, 0.f),
+				Mesh::vec3(1.f, 0.f, 0.f)
+			};
+
 			Mesh::Data buildData;
 			buildData.numVertices = numVerts;
 			buildData.positions = positions;
 			buildData.texCoords = texCoords;
 			buildData.normals = normals;
+			buildData.tangents = tangents;
+			buildData.bitangents = bitangents;
 			buildData.numIndices = numIndices;
 			buildData.indices = indices;
 

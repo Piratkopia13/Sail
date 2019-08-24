@@ -15,8 +15,6 @@ FlyingCameraController::FlyingCameraController(Camera* cam)
 void FlyingCameraController::setDirection(const glm::vec3 & dir) {
 	m_pitch = glm::degrees(glm::asin(dir.y));
 	m_yaw = glm::degrees(atan2(dir.x, -dir.z)) - 90.f;
-	Logger::Log("Pitch: " + std::to_string(m_pitch));
-	Logger::Log("Yaw: " + std::to_string(m_yaw));
 }
 
 void FlyingCameraController::lookAt(const glm::vec3& pos) {
