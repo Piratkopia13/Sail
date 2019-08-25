@@ -9,3 +9,6 @@
 [submodule "libraries/MemoryManager"]
 	path = libraries/MemoryManager
 	url = https://github.com/Skratzy/MemoryManager
+[submodule "libraries/ResourceManager"]
+	path = libraries/ResourceManager
+	url = https://github.com/Skratzy/ResourceManager
