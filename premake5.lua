@@ -19,10 +19,14 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["ImGui"] = "libraries/imgui"
+IncludeDir["MiniMM"] = "libraries/MemoryManager"
+IncludeDir["MiniRM"] = "libraries/ResourceManager"
 
 group "Libraries"
 include "libraries/glfw"
 include "libraries/imgui"
+include "libraries/MemoryManager"
+include "libraries/ResourceManager"
 
 group ""
 project "Demo"
@@ -53,7 +57,9 @@ project "Demo"
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.MiniMM}",
+		"%{IncludeDir.MiniRM}"
 	}
 
 	links {
@@ -132,13 +138,17 @@ project "Sail"
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.MiniMM}",
+		"%{IncludeDir.MiniRM}"
 	}
 
 	links {
 		"libfbxsdk",
 		"GLFW",
-		"ImGui"
+		"ImGui",
+		"MemoryManager",
+		"ResourceManager"
 	}
 
 	defines {
