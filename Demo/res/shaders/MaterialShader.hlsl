@@ -77,9 +77,9 @@ PSIn VSMain(VSIn input) {
 	if (sys_material.hasNormalTexture) {
 	    // Convert to tangent space
 		float3x3 TBN = {
-			mul((float3x3) sys_mWorld, input.tangent),
-			mul((float3x3) sys_mWorld, input.bitangent),
-			mul((float3x3) sys_mWorld, input.normal)
+			mul((float3x3) sys_mWorld, normalize(input.tangent)),
+			mul((float3x3) sys_mWorld, normalize(input.bitangent)),
+			mul((float3x3) sys_mWorld, normalize(input.normal))
 		};
 		TBN = transpose(TBN);
 

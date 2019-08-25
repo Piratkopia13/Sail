@@ -10,19 +10,19 @@ public:
 	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 8;  // Max number of lights as set in shader
 
 	struct PointLightStruct {
-		glm::vec3 color;
+		glm::vec3 color = glm::vec3(0.f);
 		float padding;
-		glm::vec3 position;
-		float attConstant;
+		glm::vec3 position = glm::vec3(0.f);
+		float attConstant = 0.f;
 		/*float attLinear;
 		float attQuadratic;
 		float padding1, padding2;*/
 	};
 	struct DirLightBuffer {
 		DirLightBuffer() { };
-		glm::vec3 color;
+		glm::vec3 color = glm::vec3(0.f);
 		float padding1;
-		glm::vec3 direction;
+		glm::vec3 direction = glm::vec3(0.f);
 		float padding2;
 	};
 	struct PointLightsBuffer {
