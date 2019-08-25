@@ -48,8 +48,8 @@ public:
 	};
 
 public:
-	static Mesh* Create(Data& buildData, ShaderPipeline* shaderPipeline);
-	Mesh(Data& buildData, ShaderPipeline* shaderPipeline);
+	static Mesh* Create(Data& buildData, Shader* shader);
+	Mesh(Data& buildData, Shader* shader);
 	virtual ~Mesh();
 
 	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;

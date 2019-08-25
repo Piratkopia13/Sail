@@ -1,11 +1,12 @@
 #include "pch.h"
 #include "Material.h"
 #include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/graphics/shader/Shader.h"
 #include "Sail/Application.h"
 
-Material::Material(ShaderPipeline* shaderPipeline)
+Material::Material(Shader* shader)
 	: m_numTextures(3)
-	, m_shader(shaderPipeline)
+	, m_shader(shader)
 	, m_textures {nullptr}
 {
 	m_phongSettings.ka = 1.f;
@@ -21,14 +22,15 @@ Material::Material(ShaderPipeline* shaderPipeline)
 Material::~Material() { }
 
 void Material::bind(void* cmdList) {
-	m_shader->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
+	ShaderPipeline* pipeline = m_shader->getPipeline();
+	pipeline->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
 
 	if (m_phongSettings.hasDiffuseTexture)
-		m_shader->setTexture2D("sys_texDiffuse", m_textures[0], cmdList);
+		pipeline->setTexture2D("sys_texDiffuse", m_textures[0], cmdList);
 	if (m_phongSettings.hasNormalTexture)
-		m_shader->setTexture2D("sys_texNormal", m_textures[1], cmdList);
+		pipeline->setTexture2D("sys_texNormal", m_textures[1], cmdList);
 	if (m_phongSettings.hasSpecularTexture)
-		m_shader->setTexture2D("sys_texSpecular", m_textures[2], cmdList);
+		pipeline->setTexture2D("sys_texSpecular", m_textures[2], cmdList);
 	//m_shader->bind();
 }
 
@@ -102,7 +104,7 @@ const Material::PhongSettings& Material::getPhongSettings() const {
 	return m_phongSettings;
 }
 
-ShaderPipeline* Material::getShader() const {
+Shader* Material::getShader() const {
 	return m_shader;
 }
 
