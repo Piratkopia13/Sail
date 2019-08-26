@@ -13,6 +13,7 @@ Win32Input::Win32Input()
 	, m_frameMouseButtons{ false }
 	, m_mousePos(0, 0)
 	, m_cursorHidden(false)
+	, m_stopInput(false)
 {
 }
 
@@ -62,7 +63,7 @@ void Win32Input::beginFrame() {
 
 	// Always center cursor if hidden
 	if (isCursorHiddenImpl()) {
-		auto* wnd = static_cast<Win32Window*>(Application::getInstance()->getWindow());
+		auto* wnd = Application::getInstance()->getWindow<Win32Window>();
 		POINT p;
 		p.x = wnd->getWindowWidth() / 2;
 		p.y = wnd->getWindowHeight() / 2;
@@ -93,12 +94,14 @@ void Win32Input::registerRawDevices(HWND hwnd) {
 
 void Win32Input::processMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 
+	if (m_stopInput) return;
+
+	// The lParam thing ignores repeated keystrokes
 	// Handle ALT+ENTER:
 	if (msg == WM_SYSKEYDOWN && (wParam == VK_RETURN) && (lParam & (1 << 29))) {
 		Application::getInstance()->getAPI()->toggleFullscreen();
 	}
 
-	// The lParam thing ignores repeated keystrokes
 	if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) {
 		m_keys[wParam] = true;
 		m_frameKeys[wParam] = true;
@@ -109,7 +112,7 @@ void Win32Input::processMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 		m_mousePos.x = GET_X_LPARAM(lParam);
 		m_mousePos.y = GET_Y_LPARAM(lParam);
 	} else if (msg == WM_INPUT) {
-		// Mouse input 
+		// Mouse button input 
 
 		UINT dwSize = 0;
 		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
@@ -143,4 +146,24 @@ void Win32Input::processMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 
 		delete[] lpb;
 	}
+}
+
+bool Win32Input::onEvent(Event& event) {
+	auto handleFocusChange = [&](WindowFocusChangedEvent& event) {
+		if (event.isFocused()) {
+			m_stopInput = false;
+		} else {
+			// show hidden cursor and remove any keys or buttons marked as pressed
+			HideCursor(false);
+			std::fill_n(m_mouseButtons, SAIL_NUM_MOUSE_BUTTONS, false);
+			std::fill_n(m_frameMouseButtons, SAIL_NUM_MOUSE_BUTTONS, false);
+			std::fill_n(m_keys, SAIL_NUM_KEYS, false);
+			std::fill_n(m_frameKeys, SAIL_NUM_KEYS, false);
+
+			m_stopInput = true;
+		}
+		return true;
+	};
+	EventHandler::dispatch<WindowFocusChangedEvent>(event, handleFocusChange);
+	return true;
 }
