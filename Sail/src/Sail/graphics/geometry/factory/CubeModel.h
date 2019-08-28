@@ -7,7 +7,7 @@ namespace ModelFactory {
 
 	class CubeModel {
 	public:
-		static std::unique_ptr<Model> Create(const glm::vec3& halfSizes, ShaderPipeline* shaderSet) {
+		static std::unique_ptr<Model> Create(const glm::vec3& halfSizes, Shader* shader) {
 
 			const int numVerts = 36;
 
@@ -161,7 +161,7 @@ namespace ModelFactory {
 			buildData.texCoords = texCoords;
 			buildData.normals = normals;
 
-			std::unique_ptr<Model> model = std::make_unique<Model>(buildData, shaderSet);
+			std::unique_ptr<Model> model = std::make_unique<Model>(buildData, shader);
 
 			return model;
 

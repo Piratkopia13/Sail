@@ -55,15 +55,15 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 // Model
 //
 
-void ResourceManager::loadModel(const std::string& filename, ShaderPipeline* shaderSet) {
+void ResourceManager::loadModel(const std::string& filename, Shader* shader) {
 	// Insert the new model
-	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shaderSet) });
+	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shader) });
 }
-Model& ResourceManager::getModel(const std::string& filename, ShaderPipeline* shaderSet) {
+Model& ResourceManager::getModel(const std::string& filename, Shader* shader) {
 	auto pos = m_fbxModels.find(filename);
 	if (pos == m_fbxModels.end()) {
 		// Model was not yet loaded, load it and return
-		loadModel(filename, shaderSet);
+		loadModel(filename, shader);
 		
 		return *m_fbxModels.find(filename)->second->getModel();
 		//Logger::Error("Tried to access an fbx model that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadFBXModel(" + filename + ") before accessing it.");

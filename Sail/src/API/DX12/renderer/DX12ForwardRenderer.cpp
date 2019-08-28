@@ -2,6 +2,7 @@
 #include "DX12ForwardRenderer.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/graphics/light/LightSetup.h"
+#include "Sail/graphics/shader/Shader.h"
 #include "Sail/Application.h"
 #include "../DX12Utils.h"
 #include "../shader/DX12ShaderPipeline.h"
@@ -56,23 +57,23 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	// TODO: Sort meshes according to material
 	unsigned int meshIndex = 0;
 	for (RenderCommand& command : commandQueue) {
-		DX12ShaderPipeline* shader = static_cast<DX12ShaderPipeline*>(command.mesh->getMaterial()->getShader());
+		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.mesh->getMaterial()->getShader()->getPipeline());
 
 		// Set mesh index which is used to bind the correct cbuffers from the resource heap
 		// The index order does not matter, as long as the same index is used for bind and setCBuffer
-		shader->setResourceHeapMeshIndex(meshIndex);
+		shaderPipeline->setResourceHeapMeshIndex(meshIndex);
 
-		shader->bind(cmdList.Get());
+		shaderPipeline->bind(cmdList.Get());
 
-		shader->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-		shader->setCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-		shader->setCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+		shaderPipeline->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
+		shaderPipeline->setCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
+		shaderPipeline->setCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
 		if (lightSetup) {
 			auto& dlData = lightSetup->getDirLightData();
 			auto& plData = lightSetup->getPointLightsData();
-			shader->setCBufferVar("dirLight", &dlData, sizeof(dlData));
-			shader->setCBufferVar("pointLights", &plData, sizeof(plData));
+			shaderPipeline->setCBufferVar("dirLight", &dlData, sizeof(dlData));
+			shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
 		}
 
 		command.mesh->draw(*this, cmdList.Get());

@@ -32,7 +32,7 @@ void FlyingCameraController::update(float dt) {
 	float lookSensitivityController = 90.0f * 0.016f;
 
 	// Increase speed if shift or right trigger is pressed
-	if (Input::IsKeyPressed(SAIL_KEY_LSHIFT))
+	if (Input::IsKeyPressed(SAIL_KEY_SHIFT))
 		movementSpeed *= 5.f;
 
 	//

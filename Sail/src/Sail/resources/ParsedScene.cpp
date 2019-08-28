@@ -5,13 +5,13 @@
 
 const std::string ParsedScene::DEFAULT_MODEL_LOCATION = "res/models/";
 
-ParsedScene::ParsedScene(const std::string& filename, ShaderPipeline* shaderSet) {
+ParsedScene::ParsedScene(const std::string& filename, Shader* shader) {
 
 	if (filename.substr(filename.size() - 3) != "fbx") {
 		Logger::Error("Only FBX models are currently supported! Tried to load \"" + filename + "\"");
 	}
 
-	FBXLoader loader(DEFAULT_MODEL_LOCATION + filename, shaderSet);
+	FBXLoader loader(DEFAULT_MODEL_LOCATION + filename, shader);
 	m_model = std::move(loader.getModel());
 }
 
