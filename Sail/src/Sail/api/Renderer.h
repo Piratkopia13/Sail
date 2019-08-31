@@ -12,10 +12,9 @@ class RenderableTexture;
 class Renderer : public IEventListener {
 public:
 	enum Type {
-		FORWARD
-		//DEFERRED
-		//RAYTRACED
-		//TILED
+		FORWARD,
+		DEFERRED,
+		RAYTRACED
 	};
 public:
 	static Renderer* Create(Renderer::Type type);

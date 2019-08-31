@@ -221,68 +221,6 @@ ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::st
 	return ShaderComponent::VS; // Default to binding to VertexShader
 }
 
-//void ShaderPipeline::bind() {
-//
-//	// Don't bind if already bound
-//	// This is to cut down on shader state changes
-//	if (CurrentlyBoundShader == this)
-//		return;
-//
-//	//auto* devCon = Application::getInstance()->getAPI()->getDeviceContext();
-//
-//	if (m_vs)	m_vs->bind();
-//	//else		devCon->VSSetShader(nullptr, 0, 0);
-//	if (m_gs)	m_gs->bind();
-//	//else		devCon->GSSetShader(nullptr, 0, 0);
-//	if (m_ps)	m_ps->bind();
-//	//else		devCon->PSSetShader(nullptr, 0, 0);
-//	if (m_ds)	m_ds->bind();
-//	//else		devCon->DSSetShader(nullptr, 0, 0);
-//	if (m_hs)	m_hs->bind();
-//	//else		devCon->HSSetShader(nullptr, 0, 0);
-//
-//	for (auto& it : parsedData.cBuffers) {
-//		it.cBuffer.bind();
-//	}
-//	for (auto& it : parsedData.samplers) {
-//		it.sampler.bind();
-//	}
-//
-//	// Set input layout as active
-//	inputLayout->bind();
-//
-//	// Set this shader as bound
-//	CurrentlyBoundShader = this;
-//
-//}
-//
-//void ShaderPipeline::bindCS(UINT csIndex) {
-//	/*if (m_css[csIndex]) 
-//		m_css[csIndex]->bind();*/
-//}
-
-//ID3D10Blob* ShaderPipeline::compileShader(const std::string& source, const std::string& entryPoint, const std::string& shaderVersion) {
-//	
-//	ID3D10Blob *shader = nullptr;
-//	ID3D10Blob *errorMsg;
-//	if (FAILED(D3DCompile(source.c_str(), source.size(), DEFAULT_SHADER_LOCATION.c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), shaderVersion.c_str(), D3DCOMPILE_DEBUG, 0, &shader, &errorMsg))) {
-//		OutputDebugString(L"\n Failed to compile shader\n\n");
-//
-//		char* msg = (char*)(errorMsg->GetBufferPointer());
-//
-//		std::stringstream ss;
-//		ss << "Failed to compile shader (" << entryPoint << ", " << shaderVersion << ")\n";
-//
-//		for (size_t i = 0; i < errorMsg->GetBufferSize(); i++) {
-//			ss << msg[i];
-//		}
-//		Logger::Error(ss.str());
-//	}
-//
-//	return shader;
-//
-//}
-
 InputLayout& ShaderPipeline::getInputLayout() {
 	return *inputLayout.get();
 }
@@ -314,46 +252,6 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 	}
 	return false;
 }
-
-//void ShaderPipeline::setTexture2D(const std::string& name, ID3D11ShaderResourceView* srv) {
-//
-//	UINT slot = findSlotFromName(name, parsedData.textures);
-//	//Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, &srv);
-//
-//}
-
-//void ShaderPipeline::setVertexShader(void* blob) {
-//
-//	//m_vs = std::make_unique<VertexShader>(blob);
-//
-//}
-//void ShaderPipeline::setGeometryShader(void* blob) {
-//
-//	//m_gs = std::make_unique<GeometryShader>(blob);
-//
-//}
-//void ShaderPipeline::setPixelShader(void* blob) {
-//
-//	//m_ps = std::make_unique<PixelShader>(blob);
-//
-//}
-//void ShaderPipeline::setComputeShaders(void** blob, UINT numBlobs) {
-//	/*m_css.resize(numBlobs);
-//
-//	for (UINT i = 0; i < numBlobs; i++) {
-//		m_css[i] = std::make_unique<ComputeShader>(blob[i]);
-//	}*/
-//}
-//void ShaderPipeline::setDomainShader(void* blob) {
-//
-//	//m_ds = std::make_unique<DomainShader>(blob);
-//
-//}
-//void ShaderPipeline::setHullShader(void* blob) {
-//
-//	//m_hs = std::make_unique<HullShader>(blob);
-//
-//}
 
 // TODO: registerTypeSize(typeName, size)
 UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
