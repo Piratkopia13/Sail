@@ -36,7 +36,7 @@ namespace DXRMissRootParam {
 	};
 }
 
-class DXRBase {
+class DXRBase : public IEventListener {
 public:
 
 	// TODO: somehow allow this to change from different DXRBase instances
@@ -53,13 +53,15 @@ public:
 	void updateCamera(Camera& cam);
 	ID3D12Resource* dispatch(ID3D12GraphicsCommandList4* cmdList);
 
+	virtual bool onEvent(Event& event) override;
+
 private:
 	// Acceleration structures
 	void createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 
 	// Other DXR requirements
-	void createShaderResources();
+	void createShaderResources(bool remake = false);
 	void createShaderTables();
 	void createRaytracingPSO();
 

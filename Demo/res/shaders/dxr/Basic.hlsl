@@ -1,3 +1,5 @@
+#include "Utils.hlsl"
+
 struct RayPayload {
 	float4 color;
 	unsigned int recursionDepth;
@@ -52,7 +54,7 @@ void rayGen() {
 	payload.recursionDepth = 0;
 	payload.hit = 0;
 	payload.color = float4(0,0,0,0);
-	TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 	lOutput[launchIndex] = payload.color;
 
 	// lOutput[launchIndex] = float4(1.0f, 0.2f, 0.2f, 1.0f);
@@ -65,5 +67,15 @@ void miss(inout RayPayload payload) {
 
 [shader("closesthit")]
 void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
-	payload.color = float4(1.f, 0.2f, 0.2f, 1.0f);
+	payload.recursionDepth++;
+
+	float3 normalInWorldSpace = float3(0,1,0);
+
+	if (payload.recursionDepth < 0) {
+		float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
+	} else {
+		// Max recursion, return color
+		payload.color = float4(1.f, 0.2f, 0.2f, 1.0f);
+	}
 }

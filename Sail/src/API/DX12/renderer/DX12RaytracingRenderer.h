@@ -12,6 +12,8 @@ public:
 
 	void present(RenderableTexture* output = nullptr) override;
 
+	virtual bool onEvent(Event& event) override;
+
 private:
 	DX12API* m_context;
 	DX12API::Command m_command;

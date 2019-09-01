@@ -6,7 +6,7 @@
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/DX12IndexBuffer.h"
 
-const int DXRBase::MAX_RAY_RECURSION_DEPTH = 1;
+const int DXRBase::MAX_RAY_RECURSION_DEPTH = 30;
 
 DXRBase::DXRBase(const std::string& shaderFilename)
 : m_shaderFilename(shaderFilename) 
@@ -120,6 +120,17 @@ ID3D12Resource* DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
 
 	return m_rtOutputUAV.resource.Get();
 
+}
+
+bool DXRBase::onEvent(Event& event) {
+	auto onResize = [&](WindowResizeEvent& event) {
+		// Window changed size, resize output UAV
+		createShaderResources(true);
+		return true;
+	};
+
+	EventHandler::dispatch<WindowResizeEvent>(event, onResize);
+	return true;
 }
 
 void DXRBase::createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
@@ -271,10 +282,10 @@ void DXRBase::createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeomet
 
 }
 
-void DXRBase::createShaderResources() {
+void DXRBase::createShaderResources(bool remake) {
 
 	// Create some resources only once on init
-	if (!m_rtDescriptorHeap) {
+	if (!m_rtDescriptorHeap || remake) {
 		m_rtDescriptorHeap.Reset();
 		D3D12_DESCRIPTOR_HEAP_DESC heapDescriptorDesc = {};
 		heapDescriptorDesc.NumDescriptors = 2000; // TODO: this does not throw error when full

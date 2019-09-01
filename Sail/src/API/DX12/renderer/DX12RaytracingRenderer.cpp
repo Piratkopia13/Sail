@@ -46,3 +46,9 @@ void DX12RaytracingRenderer::present(RenderableTexture* output) {
 
 
 }
+
+bool DX12RaytracingRenderer::onEvent(Event& event) {
+	// Pass along events
+	m_dxr.onEvent(event);
+	return true;
+}
