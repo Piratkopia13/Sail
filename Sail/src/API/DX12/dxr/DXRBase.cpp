@@ -35,9 +35,20 @@ DXRBase::~DXRBase() {
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 
+	unsigned int frameIndex = m_context->getFrameIndex();
+
 	// TODO: run this on an async compute queue
 	createBLAS(sceneGeometry, cmdList);
 	createTLAS(sceneGeometry, cmdList);
+	// Update hit shader table to match numBLAS
+	{
+		if (m_hitGroupShaderTable[frameIndex].Resource) {
+			m_hitGroupShaderTable[frameIndex].Resource->Release();
+			m_hitGroupShaderTable[frameIndex].Resource.Reset();
+		}
+		DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size());
+		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+	}
 
 }
 
