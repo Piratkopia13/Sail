@@ -80,6 +80,7 @@ public:
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
+	ID3D12Resource* getCurrentRenderTargetResource() const;
 	IDXGISwapChain4* const getSwapChain() const;
 
 	void initCommand(Command& cmd);

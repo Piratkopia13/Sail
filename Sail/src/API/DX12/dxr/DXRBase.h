@@ -2,6 +2,8 @@
 
 #include "../DX12API.h"
 #include "DXRUtils.h"
+#include "Sail/api/Renderer.h"
+#include "../shader/DX12ConstantBuffer.h"
 
 namespace DXRGlobalRootParam {
 	enum Slot {
@@ -47,13 +49,14 @@ public:
 	DXRBase(const std::string& shaderFilename);
 	~DXRBase();
 
-	//void updateAccelerationStructures(ID3D12GraphicsCommandList4* cmdList);
-	void dispatch(ID3D12GraphicsCommandList4* cmdList);
+	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
+	void updateCamera(Camera& cam);
+	ID3D12Resource* dispatch(ID3D12GraphicsCommandList4* cmdList);
 
 private:
 	// Acceleration structures
-	void createTLAS(ID3D12GraphicsCommandList4* cmdList);
-	void createBLAS(ID3D12GraphicsCommandList4* cmdList);
+	void createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
+	void createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 
 	// Other DXR requirements
 	void createShaderResources();
@@ -80,6 +83,12 @@ private:
 	//AlignedSceneConstantBuffer* m_mappedSceneCBData; // TODO: Fix memory leak
 	//SceneConstantBuffer* m_sceneCBData; // TODO: Fix memory leak
 	//RayGenSettings m_rayGenCBData;
+
+	struct CameraCBData {
+		glm::mat4 projectionToWorld;
+		glm::vec3 cameraPosition;
+	};
+	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_cameraCB;
 
 	struct AccelerationStructureBuffers {
 		wComPtr<ID3D12Resource1> scratch = nullptr;

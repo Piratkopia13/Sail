@@ -656,6 +656,10 @@ const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDsvCDH() const {
 	return m_dsvDescHandle;
 }
 
+ID3D12Resource* DX12API::getCurrentRenderTargetResource() const {
+	return m_currentRenderTargetResource;
+}
+
 IDXGISwapChain4* const DX12API::getSwapChain() const {
 	return m_swapChain.Get();
 }

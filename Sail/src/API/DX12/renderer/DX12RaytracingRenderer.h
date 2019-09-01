@@ -14,6 +14,7 @@ public:
 
 private:
 	DX12API* m_context;
+	DX12API::Command m_command;
 	DXRBase m_dxr;
 
 };

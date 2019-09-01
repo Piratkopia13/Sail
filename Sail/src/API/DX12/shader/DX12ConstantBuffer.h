@@ -16,6 +16,8 @@ namespace ShaderComponent {
 
 		void setResourceHeapMeshIndex(unsigned int index);
 
+		ID3D12Resource* getBuffer() const;
+
 	private:
 		void createBuffers();
 
