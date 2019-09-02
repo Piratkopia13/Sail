@@ -1,0 +1,24 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-2019'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'DX12 x64'
+  buildConfiguration: 'Release'
+
+steps:
+- script: git submodule update --init --recursive
+  displayName: 'Fetch git submodules'
+
+- script: .\premake\premake5.exe vs2019
+  displayName: 'Run premake'
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+  displayName: 'Build'
