@@ -24,8 +24,11 @@ steps:
     configuration: 'Release'
     maximumCpuCount: true
     msbuildArchitecture: 'x64'
-- task: PublishBuildArtifacts@1
+- task: UniversalPackages@0
   inputs:
-    PathtoPublish: './bin/DX12 x64-Release/Demo/Demo.exe'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
+    command: 'publish'
+    vstsFeed: 'd5cea0b8-9cd8-4167-915c-135194afcc5f'
+    publishDirectory: './bin/DX12 x64-Release/Demo/Demo.exe'
+    feedsToUsePublish: 'internal'
+    vstsFeedPublish: 'd5cea0b8-9cd8-4167-915c-135194afcc5f'
+    versionOption: 'patch'
