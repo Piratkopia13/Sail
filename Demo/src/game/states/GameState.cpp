@@ -221,5 +221,10 @@ bool GameState::render(float dt) {
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
+
+	ImGui::Begin("Performance");
+	ImGui::Text("VRAM usage: %u / %u MB", m_app->getAPI()->getMemoryUsage(), m_app->getAPI()->getMemoryBudget());
+	ImGui::End();
+
 	return false;
 }
