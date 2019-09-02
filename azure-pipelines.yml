@@ -18,7 +18,9 @@ steps:
 
 - task: VSBuild@1
   inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-  displayName: 'Build'
+    solution: 'Sail.sln'
+    vsVersion: '16.0'
+    platform: 'DX12 x64'
+    configuration: 'Release'
+    maximumCpuCount: true
+    msbuildArchitecture: 'x64'
