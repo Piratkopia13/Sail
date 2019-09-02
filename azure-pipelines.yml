@@ -10,6 +10,15 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+
+- task: SonarCloudPrepare@1
+  inputs:
+    SonarCloud: 'Stora Spel SonarCloud'
+    organization: 'bth-storaspel-dxr'
+    scannerMode: 'MSBuild'
+    projectKey: 'bth-storaspel-dxr'
+    projectName: 'Game'
+
 - script: git submodule update --init --recursive
   displayName: 'Fetch git submodules'
 
@@ -24,14 +33,6 @@ steps:
     configuration: 'Release'
     maximumCpuCount: true
     msbuildArchitecture: 'x64'
-
-- task: SonarCloudPrepare@1
-  inputs:
-    SonarCloud: 'Stora Spel SonarCloud'
-    organization: 'bth-storaspel-dxr'
-    scannerMode: 'MSBuild'
-    projectKey: 'bth-storaspel-dxr'
-    projectName: 'Game'
 
 - task: SonarCloudAnalyze@1
 
