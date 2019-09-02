@@ -6,7 +6,7 @@
 #include <memory>
 #include "sail/api/Texture.h"
 
-class ShaderPipeline;
+class Shader;
 
 class Material {
 public:
@@ -25,7 +25,7 @@ public:
 	};
 
 public:
-	Material(ShaderPipeline* ShaderPipeline);
+	Material(Shader* shader);
 	~Material();
 
 	void bind(void* cmdList = nullptr);
@@ -58,7 +58,7 @@ public:
 	//const glm::vec4& getColor() const;
 	const PhongSettings& getPhongSettings() const;
 
-	ShaderPipeline* getShader() const;
+	Shader* getShader() const;
 
 	//const bool* getTextureFlags() const;// TODO: remove
 
@@ -66,7 +66,7 @@ private:
 	void getAndInsertTexture(const std::string& filename, int arraySlot);
 
 private:
-	ShaderPipeline* m_shader;
+	Shader* m_shader;
 
 	PhongSettings m_phongSettings;
 	Texture* m_textures[3];

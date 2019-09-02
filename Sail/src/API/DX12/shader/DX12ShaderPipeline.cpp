@@ -24,10 +24,12 @@ DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
 }
 
 DX12ShaderPipeline::~DX12ShaderPipeline() {
-
+	m_context->waitForGPU();
 }
 
 void DX12ShaderPipeline::bind(void* cmdList) {
+	if (!m_pipelineState)
+		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	ShaderPipeline::bind(cmdList);
 	dxCmdList->SetPipelineState(m_pipelineState.Get());

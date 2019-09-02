@@ -2,12 +2,11 @@
 #include "Model.h"
 
 //#include "../shader/basic/SimpleColorShader.h"
-#include "Sail/api/shader/ShaderPipeline.h"
 #include "Material.h"
 
-Model::Model(Mesh::Data& buildData, ShaderPipeline* shaderPipeline) {
+Model::Model(Mesh::Data& buildData, Shader* shader) {
 
-	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shaderPipeline)));
+	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shader)));
 
 	// TODO: reuse materials (?)
 	//m_material = std::make_shared<Material>(shaderSet);

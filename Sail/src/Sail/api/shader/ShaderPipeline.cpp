@@ -291,6 +291,10 @@ void* ShaderPipeline::getVsBlob() {
 	return vsBlob;
 }
 
+const std::string& ShaderPipeline::getName() const {
+	return filename;
+}
+
 // TODO: size isnt really needed, can be read from the byteOffset of the next var
 void ShaderPipeline::setCBufferVar(const std::string& name, const void* data, UINT size) {
 	bool success = trySetCBufferVar(name, data, size);

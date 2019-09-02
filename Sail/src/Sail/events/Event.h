@@ -4,6 +4,7 @@ class Event {
 public:
 	enum Type {
 		WINDOW_RESIZE,
+		WINDOW_FOCUS_CHANGED,
 		POTATO
 	};
 public:

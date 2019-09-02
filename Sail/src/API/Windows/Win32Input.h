@@ -12,6 +12,8 @@ public:
 	void registerRawDevices(HWND hwnd);
 	void processMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 
+	virtual bool onEvent(Event& event) override;
+
 private:
 	bool m_cursorHidden;
 	int m_mouseDX;
@@ -23,6 +25,7 @@ private:
 	// frame_ contains keys and buttons pressed this frame
 	bool m_frameMouseButtons[SAIL_NUM_MOUSE_BUTTONS];
 	bool m_frameKeys[SAIL_NUM_KEYS];
+	bool m_stopInput; // Used to stop input when window is not in focus
 
 protected:
 	virtual bool isKeyPressedImpl(int keycode) override;

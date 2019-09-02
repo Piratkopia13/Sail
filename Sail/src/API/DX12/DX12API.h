@@ -75,6 +75,8 @@ public:
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
+
+	void waitForGPU();
 private:
 	void createDevice();
 	void createCmdInterfacesAndSwapChain(Win32Window* window);
@@ -85,7 +87,6 @@ private:
 	void createDepthStencilResources(Win32Window* window);
 
 	void nextFrame();
-	void waitForGPU();
 
 	void resizeBuffers(UINT width, UINT height);
 

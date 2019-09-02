@@ -1,17 +1,19 @@
 #include "pch.h"
 #include "Shader.h"
 
-Shader::Shader(const std::string& filename) 
+Shader::Shader(const std::string& filename)
 	: m_finished(false)
 {
-	shaderPipeline = std::unique_ptr<ShaderPipeline>(ShaderPipeline::Create(filename));
+	shaderPipeline = ShaderPipeline::Create(filename);
 	shaderPipeline->compile();
 }
 
-Shader::~Shader() {}
+Shader::~Shader() {
+	delete shaderPipeline;
+}
 
 ShaderPipeline* Shader::getPipeline() {
-	return shaderPipeline.get();
+	return shaderPipeline;
 }
 
 void Shader::bind() {
