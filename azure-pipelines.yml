@@ -1,5 +1,7 @@
 trigger:
-- master
+  branches:
+    include:
+    - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
 pool:
   vmImage: 'windows-2019'
@@ -10,15 +12,6 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-
-- task: SonarCloudPrepare@1
-  inputs:
-    SonarCloud: 'Stora Spel SonarCloud'
-    organization: 'bth-storaspel-dxr'
-    scannerMode: 'MSBuild'
-    projectKey: 'bth-storaspel-dxr'
-    projectName: 'Game'
-
 - script: git submodule update --init --recursive
   displayName: 'Fetch git submodules'
 
@@ -33,9 +26,3 @@ steps:
     configuration: 'Release'
     maximumCpuCount: true
     msbuildArchitecture: 'x64'
-
-- task: SonarCloudAnalyze@1
-
-- task: SonarCloudPublish@1
-  inputs:
-    pollingTimeoutSec: '300'
