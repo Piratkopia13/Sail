@@ -1,5 +1,7 @@
 trigger:
-- master
+  branches:
+    include:
+    - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
 pool:
   vmImage: 'windows-2019'
