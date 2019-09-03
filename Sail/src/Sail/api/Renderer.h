@@ -12,10 +12,13 @@ class RenderableTexture;
 class Renderer : public IEventListener {
 public:
 	enum Type {
-		FORWARD
-		//DEFERRED
-		//RAYTRACED
-		//TILED
+		FORWARD,
+		DEFERRED,
+		RAYTRACED
+	};
+	struct RenderCommand {
+		Mesh* mesh;
+		glm::mat4 transform; // TODO: find out why having a const ptr here doesnt work
 	};
 public:
 	static Renderer* Create(Renderer::Type type);
@@ -30,11 +33,6 @@ public:
 	virtual bool onEvent(Event& event) override { return true; };
 
 protected:
-	struct RenderCommand {
-		Mesh* mesh;
-		glm::mat4 transform; // TODO: find out why having a const ptr here doesnt work
-	};
-
 	std::vector<RenderCommand> commandQueue;
 	Camera* camera;
 	LightSetup* lightSetup;

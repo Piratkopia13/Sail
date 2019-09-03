@@ -11,7 +11,7 @@
 Scene::Scene() 
 	//: m_postProcessPipeline(m_renderer)
 {
-	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
 
 	// TODO: the following method ish
 	//m_postProcessPipeline.add<FXAAStage>();

@@ -606,17 +606,15 @@ void DX12API::present(bool vsync) {
 }
 
 unsigned int DX12API::getMemoryUsage() const {
-	/*DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.CurrentUsage / 1000000;*/
-	return -1;
+	return info.CurrentUsage / 1000000;
 }
 
 unsigned int DX12API::getMemoryBudget() const {
-	/*DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.Budget / 1000000;*/
-	return -1;
+	return info.Budget / 1000000;
 }
 
 ID3D12Device5* DX12API::getDevice() const {
@@ -654,6 +652,10 @@ const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getCurrentRenderTargetCDH() const {
 
 const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDsvCDH() const {
 	return m_dsvDescHandle;
+}
+
+ID3D12Resource* DX12API::getCurrentRenderTargetResource() const {
+	return m_currentRenderTargetResource;
 }
 
 IDXGISwapChain4* const DX12API::getSwapChain() const {

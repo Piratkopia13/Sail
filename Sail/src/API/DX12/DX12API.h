@@ -48,6 +48,19 @@ public:
 	DX12API();
 	~DX12API();
 
+	// Helper method to create resources that require one for each swap buffer
+	template <typename T>
+	std::vector<T> createFrameResource() {
+		auto resource = std::vector<T>();
+		resource.resize(NUM_SWAP_BUFFERS);
+		return resource;
+	}
+	// Retrieves the resource for the current back buffer index
+	template <typename T>
+	T getFrameResource(const std::vector<T>& resource) {
+		return resource[m_context->getFrameIndex()];
+	}
+
 	virtual bool init(Window* window) override;
 	virtual void clear(const glm::vec4& color) override;
 	virtual void setDepthMask(DepthMask setting) override;
@@ -67,6 +80,7 @@ public:
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
+	ID3D12Resource* getCurrentRenderTargetResource() const;
 	IDXGISwapChain4* const getSwapChain() const;
 
 	void initCommand(Command& cmd);

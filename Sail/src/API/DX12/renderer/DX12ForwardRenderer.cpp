@@ -8,16 +8,6 @@
 #include "../shader/DX12ShaderPipeline.h"
 #include "../resources/DescriptorHeap.h"
 
-Renderer* Renderer::Create(Renderer::Type type) {
-	switch (type) {
-	case FORWARD:
-		return new DX12ForwardRenderer();
-	default:
-		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + std::to_string(type));
-	}
-	return nullptr;
-}
-
 DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	m_context->initCommand(m_command);
