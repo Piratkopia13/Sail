@@ -37,7 +37,7 @@ steps:
 - script: .\premake\premake5.exe vs2019
   displayName: 'Run premake'
 
-- pwsh: ./build-wrapper-win-x86-64.exe --out-dir bw-output msbuild "d:\a\1\s\Sail.sln" /p:Configuration=Release /p:Platform="DX12 x64" /verbosity:minimal /p:VisualStudioVersion="16.0"
+- pwsh: ./build-wrapper-win-x86-64.exe --out-dir bw-output "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\amd64\msbuild.exe" "d:\a\1\s\Sail.sln" /p:Configuration=Release /p:Platform="DX12 x64" /verbosity:minimal /p:VisualStudioVersion="16.0"
   displayName: 'Build'
 
 - pwsh: |
