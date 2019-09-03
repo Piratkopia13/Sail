@@ -21,14 +21,6 @@ steps:
   inputs:
     key: 'azure-pipeline-sonarcloud.yml'
     path: 'build-wrapper-win-x86-64.exe'
-- task: CacheBeta@1
-  inputs:
-    key: 'azure-pipeline-sonarcloud.yml'
-    path: 'C:\ProgramData\chocolatey\bin'
-- task: CacheBeta@1
-  inputs:
-    key: 'azure-pipeline-sonarcloud.yml'
-    path: 'C:\ProgramData\chocolatey\lib'
 
 - pwsh: |
     if(!(Test-Path -Path "build-wrapper-win-x86-64.exe")){
