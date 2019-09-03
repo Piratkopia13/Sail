@@ -22,10 +22,12 @@ steps:
     key: 'azure-pipeline-sonarcloud.yml'
     path: 'build-wrapper-win-x86-64.exe'
 
+
+
 - pwsh: |
     if(!(Test-Path -Path "build-wrapper-win-x86-64.exe")){
       echo "Downloading SonarQube build wrapper"
-      Start-FileDownload 'https://sonarcloud.io/static/cpp/build-wrapper-win-x86.zip'
+      wget 'https://sonarcloud.io/static/cpp/build-wrapper-win-x86.zip' -outfile 'build-wrapper-win-x86.zip'
       7z e build-wrapper-win-x86.zip -y
     } else {
       echo "SonarQube build wrapper cached, skipping download."
