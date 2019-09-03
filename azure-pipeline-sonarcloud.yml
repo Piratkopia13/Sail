@@ -34,6 +34,11 @@ steps:
     }
   displayName: 'Download build wrapper'
 
+- task: ChocolateyCommand@0
+  inputs:
+    command: 'install'
+    installPackageId: 'sonarqube-scanner.portable'
+
 - script: .\premake\premake5.exe vs2019
   displayName: 'Run premake'
 
