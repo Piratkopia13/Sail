@@ -1,6 +1,7 @@
 -- premake5.lua
 workspace "Sail"
 	configurations { "Debug", "Release" }
+	startproject "SPLASH"
 	platforms { "DX11 x64", "DX11 x86",
 				"DX12 x64", "DX12 x86"
 				-- "Vulkan x64", "Vulkan x86",
@@ -25,8 +26,8 @@ include "libraries/glfw"
 include "libraries/imgui"
 
 group ""
-project "Demo"
-	location "Demo"
+project "SPLASH"
+	location "SPLASH"
 	kind "WindowedApp"
 	language "C++"
 	cppdialect "C++17"
@@ -36,7 +37,7 @@ project "Demo"
 	objdir (intermediatesDir)
 
 	files { 
-		"%{prj.name}/Demo.rc",    -- For icon
+		"%{prj.name}/SPLASH.rc",    -- For icon
 		"%{prj.name}/resource.h", -- For icon
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp"
