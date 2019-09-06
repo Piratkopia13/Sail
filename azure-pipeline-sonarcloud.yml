@@ -1,0 +1,56 @@
+trigger:
+  - '*'
+
+pool:
+  vmImage: 'windows-2019'
+
+steps:
+- script: git submodule update --init --recursive
+  displayName: 'Fetch git submodules'
+
+- task: SonarCloudPrepare@1
+  inputs:
+    SonarCloud: 'Stora Spel SonarCloud'
+    organization: 'bth-storaspel-dxr'
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: 'StoraSpelGame'
+    cliSources: '.' 
+
+- task: CacheBeta@1
+  inputs:
+    key: 'azure-pipeline-sonarcloud.yml'
+    path: 'build-wrapper-win-x86-64.exe'
+
+- pwsh: |
+    if(!(Test-Path -Path "build-wrapper-win-x86-64.exe")){
+      echo "Downloading SonarQube build wrapper"
+      Invoke-WebRequest 'https://sonarcloud.io/static/cpp/build-wrapper-win-x86.zip' -outfile 'build-wrapper-win-x86.zip'
+      7z e build-wrapper-win-x86.zip -y
+    } else {
+      echo "SonarQube build wrapper cached, skipping download."
+    }
+  displayName: 'Download build wrapper'
+
+- task: ChocolateyCommand@0
+  inputs:
+    command: 'install'
+    installPackageId: 'sonarqube-scanner.portable'
+
+- script: .\premake\premake5.exe vs2019
+  displayName: 'Run premake'
+
+- pwsh: ./build-wrapper-win-x86-64.exe --out-dir bw-output "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\amd64\msbuild.exe" "d:\a\1\s\Sail.sln" /p:Configuration=Release /p:Platform="DX12 x64" /verbosity:minimal /p:VisualStudioVersion="16.0"
+  displayName: 'Build'
+
+- pwsh: sonar-scanner -D sonar.login=$env:SONAR_TOKEN -D sonar.host.url=https://sonarcloud.io -D sonar.projectKey=StoraSpelGame -D sonar.organization=bth-storaspel-dxr -D sonar.cfamily.build-wrapper-output=bw-output -D sonar.exclusions=libraries/** -D sonar.cfamily.threads=2 -D sonar.pullrequest.base=${env:Build.SourceBranchName} -D sonar.pullrequest.branch=${env:System.PullRequest.SourceBranch} -D sonar.pullrequest.key=${env:System.PullRequest.PullRequestNumber} -D sonar.pullrequest.provider=GitHub
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+  displayName: 'SonarCube analysis (PR)'
+
+- pwsh: sonar-scanner -D sonar.login=$env:SONAR_TOKEN -D sonar.host.url=https://sonarcloud.io -D sonar.projectKey=StoraSpelGame -D sonar.organization=bth-storaspel-dxr -D sonar.cfamily.build-wrapper-output=bw-output -D sonar.exclusions=libraries/** -D sonar.cfamily.threads=2 -D sonar.branch.name=${env:Build.SourceBranchName}
+  condition: ne(variables['Build.Reason'], 'PullRequest')
+  displayName: 'SonarCube analysis'
+  
+- task: SonarCloudPublish@1
+  inputs:
+    pollingTimeoutSec: '300'
