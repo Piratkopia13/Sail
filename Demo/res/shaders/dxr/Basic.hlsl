@@ -90,7 +90,7 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 
 	// float3 normalInWorldSpace = float3(0,-1,0);
 
-	if (instanceID == 1 && payload.recursionDepth < 1) {
+	if ((CB_MeshData.flags[instanceID] & MESH_USE_INDICES) && payload.recursionDepth < 2) {
 		float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
 		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
 	} else {

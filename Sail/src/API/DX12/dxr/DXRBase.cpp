@@ -2,7 +2,6 @@
 #include "DXRBase.h"
 #include "Sail/Application.h"
 #include "Sail/api/shader/ShaderPipeline.h"
-#include "../DX12Utils.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/DX12IndexBuffer.h"
 
@@ -20,7 +19,13 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 
 	//createAccelerationStructures(cmdList); // TODO: make sure updateAS is called before the first dispatch (??)
+	
+	// Create root signatures
 	createDXRGlobalRootSignature();
+	createRayGenLocalRootSignature();
+	createHitGroupLocalRootSignature();
+	createMissLocalRootSignature();
+
 	createRaytracingPSO();
 	createShaderResources();
 
@@ -129,12 +134,12 @@ ID3D12Resource* DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
 	raytraceDesc.HitGroupTable.SizeInBytes = m_hitGroupShaderTable[frameIndex].SizeInBytes;
 
 	// Bind the global root signature
-	cmdList->SetComputeRootSignature(m_dxrGlobalRootSignature.Get());
+	cmdList->SetComputeRootSignature(*m_dxrGlobalRootSignature->get());
 
 	// Set acceleration structure
-	cmdList->SetComputeRootShaderResourceView(DXRGlobalRootParam::SRV_ACCELERATION_STRUCTURE, m_DXR_TopBuffer[frameIndex].result->GetGPUVirtualAddress());
+	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_DXR_TopBuffer[frameIndex].result->GetGPUVirtualAddress());
 	// Set scene constant buffer
-	cmdList->SetComputeRootConstantBufferView(DXRGlobalRootParam::CBV_SCENE_BUFFER, m_cameraCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
+	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_cameraCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
 	// Set ray gen settings constant buffer
 	//cmdList->SetComputeRootConstantBufferView(DXRGlobalRootParam::CBV_SETTINGS, m_rayGenSettingsCB->getBuffer(m_context->getFrameIndex())->GetGPUVirtualAddress());
 
@@ -433,16 +438,23 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 
 				// TODO: enforce this to match the root signature order!
 
-				tableBuilder.addDescriptor(m_rtMeshHandles[i].vertexBufferHandle, i);
-				//if (sceneGeometry[i].mesh->getNumIndices() > 0)
-				D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-					tableBuilder.addDescriptor((sceneGeometry[i].mesh->getNumIndices() > 0) ? m_rtMeshHandles[i].indexBufferHandle : nullAddr, i);
-				//tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandle.ptr, i); // only supports one texture/mesh atm // TODO FIX
-				////tableBuilder.addDescriptor(m_rtMeshHandles[i].materialHandle, i);
-				////tableBuilder.addDescriptor(rayGenHandle, i);
-
-				D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
-				tableBuilder.addDescriptor(meshCBHandle, i);
+				m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
+					if (parameterName == "VertexBuffer") {
+						tableBuilder.addDescriptor(m_rtMeshHandles[i].vertexBufferHandle, i);
+					} else if (parameterName == "IndexBuffer") {
+						D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
+						tableBuilder.addDescriptor((sceneGeometry[i].mesh->getNumIndices() > 0) ? m_rtMeshHandles[i].indexBufferHandle : nullAddr, i);
+					} else if (parameterName == "MeshCBuffer") {
+						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
+						tableBuilder.addDescriptor(meshCBHandle, i);
+					} else {
+						Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
+					}
+					
+					//tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandle.ptr, i); // only supports one texture/mesh atm // TODO FIX
+					////tableBuilder.addDescriptor(m_rtMeshHandles[i].materialHandle, i);
+					////tableBuilder.addDescriptor(rayGenHandle, i);
+				});
 			}
 			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 		}
@@ -450,181 +462,49 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 }
 
 void DXRBase::createRaytracingPSO() {
-	m_localSignatureRayGen = createRayGenLocalRootSignature();
-	m_localSignatureHitGroup = createHitGroupLocalRootSignature();
-	m_localSignatureMiss = createMissLocalRootSignature();
-
 	DXRUtils::PSOBuilder psoBuilder;
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
-	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen.GetAddressOf());
-	psoBuilder.addSignatureToShaders({ m_closestHitName }, m_localSignatureHitGroup.GetAddressOf());
-	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss.GetAddressOf());
+	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
+	psoBuilder.addSignatureToShaders({ m_closestHitName }, m_localSignatureHitGroup->get());
+	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
 	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);
-	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature.GetAddressOf());
+	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());
 
 	m_rtPipelineState = psoBuilder.build(m_context->getDevice());
 }
 
 void DXRBase::createDXRGlobalRootSignature() {
-	D3D12_ROOT_PARAMETER rootParams[DXRGlobalRootParam::SIZE]{};
+	m_dxrGlobalRootSignature = std::make_unique<DX12Utils::RootSignature>("dxrGlobal");
+	m_dxrGlobalRootSignature->addSRV("AccelerationStructure", 0);
+	m_dxrGlobalRootSignature->addCBV("SceneCBuffer", 0);
 
-	// gRtScene
-	rootParams[DXRGlobalRootParam::SRV_ACCELERATION_STRUCTURE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-	rootParams[DXRGlobalRootParam::SRV_ACCELERATION_STRUCTURE].Descriptor.ShaderRegister = 0;
-	rootParams[DXRGlobalRootParam::SRV_ACCELERATION_STRUCTURE].Descriptor.RegisterSpace = 0;
-
-	// Scene CBV
-	rootParams[DXRGlobalRootParam::CBV_SCENE_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParams[DXRGlobalRootParam::CBV_SCENE_BUFFER].Descriptor.ShaderRegister = 0;
-	rootParams[DXRGlobalRootParam::CBV_SCENE_BUFFER].Descriptor.RegisterSpace = 0;
-
-	D3D12_ROOT_SIGNATURE_DESC desc = {};
-	desc.NumParameters = _countof(rootParams);
-	desc.pParameters = rootParams;
-	desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
-
-	ID3DBlob* sigBlob;
-	ID3DBlob* errorBlob;
-	ThrowIfBlobError(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &sigBlob, &errorBlob), errorBlob);
-	m_context->getDevice()->CreateRootSignature(0, sigBlob->GetBufferPointer(), sigBlob->GetBufferSize(), IID_PPV_ARGS(&m_dxrGlobalRootSignature));
-	m_dxrGlobalRootSignature->SetName(L"dxrGlobal");
+	m_dxrGlobalRootSignature->build(m_context->getDevice());
 }
 
-ID3D12RootSignature* DXRBase::createRayGenLocalRootSignature() {
-	D3D12_DESCRIPTOR_RANGE range[1]{};
-	D3D12_ROOT_PARAMETER rootParams[DXRRayGenRootParam::SIZE]{};
+void DXRBase::createRayGenLocalRootSignature() {
+	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
+	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 
-	// lOutput
-	range[0].BaseShaderRegister = 0;
-	range[0].NumDescriptors = 1;
-	range[0].RegisterSpace = 0;
-	range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	range[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	rootParams[DXRRayGenRootParam::DT_UAV_OUTPUT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParams[DXRRayGenRootParam::DT_UAV_OUTPUT].DescriptorTable.NumDescriptorRanges = _countof(range);
-	rootParams[DXRRayGenRootParam::DT_UAV_OUTPUT].DescriptorTable.pDescriptorRanges = range;
-
-	// Create the desc
-	D3D12_ROOT_SIGNATURE_DESC desc = {};
-	desc.NumParameters = _countof(rootParams);
-	desc.pParameters = rootParams;
-	desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-
-
-	ID3DBlob* sigBlob = nullptr;
-	ID3DBlob* errorBlob = nullptr;
-	ThrowIfBlobError(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &sigBlob, &errorBlob), errorBlob);
-	ID3D12RootSignature* pRootSig;
-	ThrowIfFailed(m_context->getDevice()->CreateRootSignature(0, sigBlob->GetBufferPointer(), sigBlob->GetBufferSize(), IID_PPV_ARGS(&pRootSig)));
-	pRootSig->SetName(L"RayGenLocal");
-
-	return pRootSig;
+	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
-ID3D12RootSignature* DXRBase::createHitGroupLocalRootSignature() {
-	D3D12_ROOT_PARAMETER rootParams[DXRHitGroupRootParam::SIZE]{};
+void DXRBase::createHitGroupLocalRootSignature() {
+	m_localSignatureHitGroup = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
+	m_localSignatureHitGroup->addSRV("VertexBuffer", 1, 0);
+	m_localSignatureHitGroup->addSRV("IndexBuffer", 1, 1);
+	m_localSignatureHitGroup->addCBV("MeshCBuffer", 1, 0);
+	//m_localSignatureHitGroup->addDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2); // Textures
+	m_localSignatureHitGroup->addStaticSampler();
 
-	// Textures
-	D3D12_DESCRIPTOR_RANGE range[1]{};
-	range[0].BaseShaderRegister = 2;
-	range[0].NumDescriptors = 1;
-	range[0].RegisterSpace = 0;
-	range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	range[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	rootParams[DXRHitGroupRootParam::SRV_VERTEX_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-	rootParams[DXRHitGroupRootParam::SRV_VERTEX_BUFFER].Descriptor.ShaderRegister = 1;
-	rootParams[DXRHitGroupRootParam::SRV_VERTEX_BUFFER].Descriptor.RegisterSpace = 0;
-
-	rootParams[DXRHitGroupRootParam::SRV_INDEX_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-	rootParams[DXRHitGroupRootParam::SRV_INDEX_BUFFER].Descriptor.ShaderRegister = 1;
-	rootParams[DXRHitGroupRootParam::SRV_INDEX_BUFFER].Descriptor.RegisterSpace = 1;
-
-	rootParams[DXRHitGroupRootParam::CBV_MESH_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParams[DXRHitGroupRootParam::CBV_MESH_BUFFER].Descriptor.ShaderRegister = 1;
-	rootParams[DXRHitGroupRootParam::CBV_MESH_BUFFER].Descriptor.RegisterSpace = 0;
-
-	/*rootParams[DXRHitGroupRootParam::DT_TEXTURES].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParams[DXRHitGroupRootParam::DT_TEXTURES].DescriptorTable.NumDescriptorRanges = _countof(range);
-	rootParams[DXRHitGroupRootParam::DT_TEXTURES].DescriptorTable.pDescriptorRanges = range;*/
-
-
-	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc = {};
-	staticSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	staticSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplerDesc.MipLODBias = 0.f;
-	staticSamplerDesc.MaxAnisotropy = 1;
-	staticSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	staticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
-	staticSamplerDesc.MinLOD = 0.f;
-	staticSamplerDesc.MaxLOD = FLT_MAX;
-	staticSamplerDesc.RegisterSpace = 0;
-	staticSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-	D3D12_ROOT_SIGNATURE_DESC desc = {};
-	desc.NumParameters = _countof(rootParams);
-	desc.pParameters = rootParams;
-	desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-	desc.NumStaticSamplers = 1;
-	desc.pStaticSamplers = &staticSamplerDesc;
-
-
-	ID3DBlob* sigBlob;
-	ID3DBlob* errorBlob;
-	ThrowIfBlobError(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &sigBlob, &errorBlob), errorBlob);
-	ID3D12RootSignature* rootSig;
-	m_context->getDevice()->CreateRootSignature(0, sigBlob->GetBufferPointer(), sigBlob->GetBufferSize(), IID_PPV_ARGS(&rootSig));
-	rootSig->SetName(L"HitGroupLocal");
-
-	return rootSig;
+	m_localSignatureHitGroup->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
-ID3D12RootSignature* DXRBase::createMissLocalRootSignature() {
-	D3D12_ROOT_PARAMETER rootParams[DXRMissRootParam::SIZE]{};
+void DXRBase::createMissLocalRootSignature() {
+	m_localSignatureMiss = std::make_unique<DX12Utils::RootSignature>("MissLocal");
+	//m_localSignatureMiss->addDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3); // Skybox
+	m_localSignatureMiss->addStaticSampler();
 
-	D3D12_DESCRIPTOR_RANGE range[1]{};
-	range[0].BaseShaderRegister = 3;
-	range[0].NumDescriptors = 1;
-	range[0].RegisterSpace = 0;
-	range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	range[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	rootParams[DXRMissRootParam::SRV_SKYBOX].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParams[DXRMissRootParam::SRV_SKYBOX].DescriptorTable.NumDescriptorRanges = _countof(range);
-	rootParams[DXRMissRootParam::SRV_SKYBOX].DescriptorTable.pDescriptorRanges = range;
-
-	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc = {};
-	staticSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	staticSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplerDesc.MipLODBias = 0.f;
-	staticSamplerDesc.MaxAnisotropy = 1;
-	staticSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	staticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
-	staticSamplerDesc.MinLOD = 0.f;
-	staticSamplerDesc.MaxLOD = FLT_MAX;
-	staticSamplerDesc.RegisterSpace = 0;
-	staticSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-	D3D12_ROOT_SIGNATURE_DESC desc = {};
-	desc.NumParameters = _countof(rootParams);
-	desc.pParameters = rootParams;
-	desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-	desc.NumStaticSamplers = 1;
-	desc.pStaticSamplers = &staticSamplerDesc;
-
-	ID3DBlob* sigBlob;
-	ID3DBlob* errorBlob;
-	ThrowIfBlobError(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &sigBlob, &errorBlob), errorBlob);
-	ID3D12RootSignature* pRootSig;
-	m_context->getDevice()->CreateRootSignature(0, sigBlob->GetBufferPointer(), sigBlob->GetBufferSize(), IID_PPV_ARGS(&pRootSig));
-	pRootSig->SetName(L"MissLocal");
-
-	return pRootSig;
+	m_localSignatureMiss->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }

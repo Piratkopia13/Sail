@@ -2,40 +2,41 @@
 
 #include "../DX12API.h"
 #include "DXRUtils.h"
+#include "../DX12Utils.h"
 #include "Sail/api/Renderer.h"
 #include "../shader/DX12ConstantBuffer.h"
 
 // Include defines shared with dxr shaders
 #include "Sail/../../Demo/res/shaders/dxr/Common_hlsl_cpp.hlsl"
 
-namespace DXRGlobalRootParam {
-	enum Slot {
-		SRV_ACCELERATION_STRUCTURE = 0,
-		CBV_SCENE_BUFFER,
-		SIZE
-	};
-}
-namespace DXRRayGenRootParam {
-	enum Slot {
-		DT_UAV_OUTPUT = 0,
-		SIZE
-	};
-}
-namespace DXRHitGroupRootParam {
-	enum Slot {
-		SRV_VERTEX_BUFFER = 0,
-		SRV_INDEX_BUFFER,
-		CBV_MESH_BUFFER,
-		//DT_TEXTURES,
-		SIZE
-	};
-}
-namespace DXRMissRootParam {
-	enum Slot {
-		SRV_SKYBOX = 0,
-		SIZE
-	};
-}
+//namespace DXRGlobalRootParam {
+//	enum Slot {
+//		SRV_ACCELERATION_STRUCTURE = 0,
+//		CBV_SCENE_BUFFER,
+//		SIZE
+//	};
+//}
+//namespace DXRRayGenRootParam {
+//	enum Slot {
+//		DT_UAV_OUTPUT = 0,
+//		SIZE
+//	};
+//}
+//namespace DXRHitGroupRootParam {
+//	enum Slot {
+//		SRV_VERTEX_BUFFER = 0,
+//		SRV_INDEX_BUFFER,
+//		CBV_MESH_BUFFER,
+//		//DT_TEXTURES,
+//		SIZE
+//	};
+//}
+//namespace DXRMissRootParam {
+//	enum Slot {
+//		SRV_SKYBOX = 0,
+//		SIZE
+//	};
+//}
 
 class DXRBase : public IEventListener {
 public:
@@ -69,9 +70,9 @@ private:
 	// Root signature creation
 	// TODO: create them dynamically after parsing the shader source (like ShaderPipeline does)
 	void createDXRGlobalRootSignature();
-	ID3D12RootSignature* createRayGenLocalRootSignature();
-	ID3D12RootSignature* createHitGroupLocalRootSignature();
-	ID3D12RootSignature* createMissLocalRootSignature();
+	void createRayGenLocalRootSignature();
+	void createHitGroupLocalRootSignature();
+	void createMissLocalRootSignature();
 
 private:
 	DX12API* m_context;
@@ -141,10 +142,10 @@ private:
 	const WCHAR* m_missName = L"miss";
 	const WCHAR* m_hitGroupName = L"HitGroup";
 
-	wComPtr<ID3D12RootSignature> m_dxrGlobalRootSignature;
-	wComPtr<ID3D12RootSignature> m_localSignatureRayGen;
-	wComPtr<ID3D12RootSignature> m_localSignatureHitGroup;
-	wComPtr<ID3D12RootSignature> m_localSignatureMiss;
+	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 
 
 };
