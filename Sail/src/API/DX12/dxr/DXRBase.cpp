@@ -6,8 +6,6 @@
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/DX12IndexBuffer.h"
 
-const int DXRBase::MAX_RAY_RECURSION_DEPTH = 30;
-
 DXRBase::DXRBase(const std::string& shaderFilename)
 : m_shaderFilename(shaderFilename) 
 {
@@ -25,7 +23,6 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 	createDXRGlobalRootSignature();
 	createRaytracingPSO();
 	createShaderResources();
-	createShaderTables();
 
 }
 
@@ -35,28 +32,55 @@ DXRBase::~DXRBase() {
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 
+	m_context->waitForGPU(); // TODO: REMOVE!!
+
 	unsigned int frameIndex = m_context->getFrameIndex();
+
+	// Update descriptors for vertices, indices, textures etc
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtHeapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtHeapGPUHandle;
+	m_rtMeshHandles.clear();
+	unsigned int i = 0;
+	for (auto& geometry : sceneGeometry) {
+		auto& mesh = geometry.mesh;
+
+		/*DX12Texture2DArray* texture = mesh->getTexture2DArray();
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = texture->getSRVDesc();
+		m_renderer->getDevice()->CreateShaderResourceView(texture->getResource(), &srvDesc, cpuHandle);*/
+
+		MeshHandles handles;
+		handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
+		if (mesh->getNumIndices() > 0)
+			handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
+		handles.textureHandle = gpuHandle;
+
+		//handles.materialHandle = mesh->getMaterialCB()->getBuffer(0)->GetGPUVirtualAddress();
+
+		// Update flags telling the shader to use indices or not
+		unsigned int flagSize = sizeof(UINT32);
+		UINT32 flag = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+		m_meshCB[frameIndex]->updateData(&flag, flagSize, i * flagSize);
+
+		m_rtMeshHandles.emplace_back(handles);
+
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+		i++;
+	}
+
 
 	// TODO: run this on an async compute queue
 	createBLAS(sceneGeometry, cmdList);
 	createTLAS(sceneGeometry, cmdList);
-	// Update hit shader table to match numBLAS
-	{
-		if (m_hitGroupShaderTable[frameIndex].Resource) {
-			m_hitGroupShaderTable[frameIndex].Resource->Release();
-			m_hitGroupShaderTable[frameIndex].Resource.Reset();
-		}
-		DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size());
-		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
-	}
+	createShaderTables(sceneGeometry);
 
 }
 
 void DXRBase::updateCamera(Camera& cam) {
-	CameraCBData newData = {};
+	DXRShaderCommon::SceneCBuffer newData = {};
 	newData.cameraPosition = cam.getPosition();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
-	m_cameraCB->updateData(&newData, sizeof(newData));
+	m_cameraCB[m_context->getFrameIndex()]->updateData(&newData, sizeof(newData));
 }
 
 ID3D12Resource* DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
@@ -108,9 +132,9 @@ ID3D12Resource* DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
 	cmdList->SetComputeRootSignature(m_dxrGlobalRootSignature.Get());
 
 	// Set acceleration structure
-	cmdList->SetComputeRootShaderResourceView(DXRGlobalRootParam::SRV_ACCELERATION_STRUCTURE, m_DXR_TopBuffer[m_context->getFrameIndex()].result->GetGPUVirtualAddress());
+	cmdList->SetComputeRootShaderResourceView(DXRGlobalRootParam::SRV_ACCELERATION_STRUCTURE, m_DXR_TopBuffer[frameIndex].result->GetGPUVirtualAddress());
 	// Set scene constant buffer
-	cmdList->SetComputeRootConstantBufferView(DXRGlobalRootParam::CBV_SCENE_BUFFER, m_cameraCB->getBuffer()->GetGPUVirtualAddress());
+	cmdList->SetComputeRootConstantBufferView(DXRGlobalRootParam::CBV_SCENE_BUFFER, m_cameraCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
 	// Set ray gen settings constant buffer
 	//cmdList->SetComputeRootConstantBufferView(DXRGlobalRootParam::CBV_SETTINGS, m_rayGenSettingsCB->getBuffer(m_context->getFrameIndex())->GetGPUVirtualAddress());
 
@@ -174,7 +198,7 @@ void DXRBase::createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeomet
 	for (UINT i = 0; i < numBLAS; i++) {
 
 		pInstanceDesc->InstanceID = i;                            // exposed to the shader via InstanceID()
-		pInstanceDesc->InstanceContributionToHitGroupIndex = i;   // offset inside the shader-table. we only have a single geometry, so the offset 0
+		pInstanceDesc->InstanceContributionToHitGroupIndex = i;   // offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 		pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
 		// apply transform from lambda function
@@ -222,8 +246,11 @@ void DXRBase::createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeomet
 	}
 
 	for (unsigned int i = 0; i < numBLAS; i++) {
-		auto& vb = static_cast<const DX12VertexBuffer&>(sceneGeometry[i].mesh->getVertexBuffer());
-		auto& ib = static_cast<const DX12IndexBuffer&>(sceneGeometry[i].mesh->getIndexBuffer());
+		auto& geometry = sceneGeometry[i];
+		auto& bottomBuffer = m_DXR_BottomBuffers[frameIndex][i];
+
+		auto& vb = static_cast<const DX12VertexBuffer&>(geometry.mesh->getVertexBuffer());
+		auto& ib = static_cast<const DX12IndexBuffer&>(geometry.mesh->getIndexBuffer());
 
 		D3D12_RAYTRACING_GEOMETRY_DESC geomDesc[1] = {};
 		geomDesc[0] = {};
@@ -232,12 +259,12 @@ void DXRBase::createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeomet
 		geomDesc[0].Triangles.VertexBuffer.StartAddress = vb.getBuffer()->GetGPUVirtualAddress();
 		geomDesc[0].Triangles.VertexBuffer.StrideInBytes = vb.getVertexDataStride();
 		geomDesc[0].Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-		geomDesc[0].Triangles.VertexCount = sceneGeometry[i].mesh->getNumVertices();
+		geomDesc[0].Triangles.VertexCount = geometry.mesh->getNumVertices();
 
-		if (sceneGeometry[i].mesh->getNumIndices() > 0) {
+		if (geometry.mesh->getNumIndices() > 0) {
 			geomDesc[0].Triangles.IndexBuffer = ib.getBuffer()->GetGPUVirtualAddress();
 			geomDesc[0].Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
-			geomDesc[0].Triangles.IndexCount = UINT(sceneGeometry[i].mesh->getNumIndices());
+			geomDesc[0].Triangles.IndexCount = UINT(geometry.mesh->getNumIndices());
 		}
 
 		// Get the size requirements for the scratch and AS buffers
@@ -257,19 +284,19 @@ void DXRBase::createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeomet
 		// TODO: make sure buffer size is >= info.UpdateScratchDataSize in bytes
 		if (!onlyUpdate) {
 			// Create the buffers. They need to support UAV, and since we are going to immediately use them, we create them with an unordered-access state
-			m_DXR_BottomBuffers[frameIndex][i].scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
-			m_DXR_BottomBuffers[frameIndex][i].scratch->SetName(L"BLAS_SCRATCH");
-			m_DXR_BottomBuffers[frameIndex][i].result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
-			m_DXR_BottomBuffers[frameIndex][i].result->SetName(L"BLAS_RESULT");
+			bottomBuffer.scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
+			bottomBuffer.scratch->SetName(L"BLAS_SCRATCH");
+			bottomBuffer.result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
+			bottomBuffer.result->SetName(L"BLAS_RESULT");
 		}
 
 		// Create the bottom-level AS
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
 		asDesc.Inputs = inputs;
-		asDesc.ScratchAccelerationStructureData = m_DXR_BottomBuffers[frameIndex][i].scratch->GetGPUVirtualAddress();
-		asDesc.DestAccelerationStructureData = m_DXR_BottomBuffers[frameIndex][i].result->GetGPUVirtualAddress();
+		asDesc.ScratchAccelerationStructureData = bottomBuffer.scratch->GetGPUVirtualAddress();
+		asDesc.DestAccelerationStructureData = bottomBuffer.result->GetGPUVirtualAddress();
 		if (inputs.Flags & D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE)
-			asDesc.SourceAccelerationStructureData = m_DXR_BottomBuffers[frameIndex][i].result->GetGPUVirtualAddress();
+			asDesc.SourceAccelerationStructureData = bottomBuffer.result->GetGPUVirtualAddress();
 
 		cmdList->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
 
@@ -341,41 +368,31 @@ void DXRBase::createShaderResources(bool remake) {
 		//m_sceneCB = std::make_unique<DX12ConstantBuffer>("Scene Constant Buffer", sizeof(SceneConstantBuffer), m_renderer);
 		//m_sceneCB->setData(m_sceneCBData, 0/*Not used*/);
 
-		unsigned int size = sizeof(CameraCBData);
-		void* initData = malloc(size);
-		memset(initData, 0, size);
-		m_cameraCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
-		free(initData);
+		// Scene CB
+		{
+			unsigned int size = sizeof(DXRShaderCommon::SceneCBuffer);
+			void* initData = malloc(size);
+			memset(initData, 0, size);
+			for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
+				m_cameraCB.emplace_back(std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0));
+			}
+			free(initData);
+		}
+		// Mesh CB
+		{
+			unsigned int size = sizeof(DXRShaderCommon::MeshCBuffer);
+			void* initData = malloc(size);
+			memset(initData, 0, size);
+			for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
+				m_meshCB.emplace_back(std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0));
+			}
+			free(initData);
+		}
 	}
-
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtHeapCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtHeapGPUHandle;
-
-	//// Create a view for each mesh textures
-	//if (m_meshes) {
-	//	m_rtMeshHandles.clear();
-	//	for (auto& mesh : *m_meshes) {
-	//		DX12Texture2DArray* texture = mesh->getTexture2DArray();
-	//		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = texture->getSRVDesc();
-	//		m_renderer->getDevice()->CreateShaderResourceView(texture->getResource(), &srvDesc, cpuHandle);
-
-	//		MeshHandles handles;
-	//		handles.vertexBufferHandle = static_cast<DX12VertexBuffer*>(mesh->geometryBuffer.vBuffer)->getBuffer()->GetGPUVirtualAddress();
-	//		handles.indexBufferHandle = static_cast<DX12IndexBuffer*>(mesh->geometryBuffer.iBuffer)->getBuffer()->GetGPUVirtualAddress();
-	//		handles.textureHandle = gpuHandle;
-
-	//		handles.materialHandle = mesh->getMaterialCB()->getBuffer(0)->GetGPUVirtualAddress();
-
-	//		m_rtMeshHandles.emplace_back(handles);
-
-	//		cpuHandle.ptr += m_heapIncr;
-	//		gpuHandle.ptr += m_heapIncr;
-	//	}
-	//}
 
 }
 
-void DXRBase::createShaderTables() {
+void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sceneGeometry) {
 
 	// 	 "Shader tables can be modified freely by the application (with appropriate state barriers)"
 
@@ -405,19 +422,28 @@ void DXRBase::createShaderTables() {
 		}
 
 		// Hit group
+		// TODO: use different hit groups for regular shading, shadows, transparecy etc
 		{
 			if (m_hitGroupShaderTable[frameIndex].Resource) {
 				m_hitGroupShaderTable[frameIndex].Resource->Release();
 				m_hitGroupShaderTable[frameIndex].Resource.Reset();
 			}
-			DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get());
-			//for (unsigned int i = 0; i < m_meshes->size(); i++) {
-			//	tableBuilder.addDescriptor(m_rtMeshHandles[i].vertexBufferHandle, i);
-			//	tableBuilder.addDescriptor(m_rtMeshHandles[i].indexBufferHandle, i);
-			//	tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandle.ptr, i); // only supports one texture/mesh atm // TODO FIX
-			//	tableBuilder.addDescriptor(m_rtMeshHandles[i].materialHandle, i);
-			//	//tableBuilder.addDescriptor(rayGenHandle, i);
-			//}
+			DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size());
+			for (unsigned int i = 0; i < sceneGeometry.size(); i++) {
+
+				// TODO: enforce this to match the root signature order!
+
+				tableBuilder.addDescriptor(m_rtMeshHandles[i].vertexBufferHandle, i);
+				//if (sceneGeometry[i].mesh->getNumIndices() > 0)
+				D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
+					tableBuilder.addDescriptor((sceneGeometry[i].mesh->getNumIndices() > 0) ? m_rtMeshHandles[i].indexBufferHandle : nullAddr, i);
+				//tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandle.ptr, i); // only supports one texture/mesh atm // TODO FIX
+				////tableBuilder.addDescriptor(m_rtMeshHandles[i].materialHandle, i);
+				////tableBuilder.addDescriptor(rayGenHandle, i);
+
+				D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
+				tableBuilder.addDescriptor(meshCBHandle, i);
+			}
 			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 		}
 	}
@@ -444,12 +470,6 @@ void DXRBase::createRaytracingPSO() {
 void DXRBase::createDXRGlobalRootSignature() {
 	D3D12_ROOT_PARAMETER rootParams[DXRGlobalRootParam::SIZE]{};
 
-	//float RedChannel
-	rootParams[DXRGlobalRootParam::FLOAT_RED_CHANNEL].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	rootParams[DXRGlobalRootParam::FLOAT_RED_CHANNEL].Constants.RegisterSpace = 0;
-	rootParams[DXRGlobalRootParam::FLOAT_RED_CHANNEL].Constants.ShaderRegister = 0;
-	rootParams[DXRGlobalRootParam::FLOAT_RED_CHANNEL].Constants.Num32BitValues = 2; // ??
-
 	// gRtScene
 	rootParams[DXRGlobalRootParam::SRV_ACCELERATION_STRUCTURE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
 	rootParams[DXRGlobalRootParam::SRV_ACCELERATION_STRUCTURE].Descriptor.ShaderRegister = 0;
@@ -458,13 +478,7 @@ void DXRBase::createDXRGlobalRootSignature() {
 	// Scene CBV
 	rootParams[DXRGlobalRootParam::CBV_SCENE_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParams[DXRGlobalRootParam::CBV_SCENE_BUFFER].Descriptor.ShaderRegister = 0;
-	rootParams[DXRGlobalRootParam::CBV_SCENE_BUFFER].Descriptor.RegisterSpace = 2;
-
-	// Ray Gen settings CBV
-	rootParams[DXRGlobalRootParam::CBV_SETTINGS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParams[DXRGlobalRootParam::CBV_SETTINGS].Descriptor.ShaderRegister = 0;
-	rootParams[DXRGlobalRootParam::CBV_SETTINGS].Descriptor.RegisterSpace = 1;
-	rootParams[DXRGlobalRootParam::CBV_SETTINGS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParams[DXRGlobalRootParam::CBV_SCENE_BUFFER].Descriptor.RegisterSpace = 0;
 
 	D3D12_ROOT_SIGNATURE_DESC desc = {};
 	desc.NumParameters = _countof(rootParams);
@@ -513,11 +527,7 @@ ID3D12RootSignature* DXRBase::createRayGenLocalRootSignature() {
 ID3D12RootSignature* DXRBase::createHitGroupLocalRootSignature() {
 	D3D12_ROOT_PARAMETER rootParams[DXRHitGroupRootParam::SIZE]{};
 
-	rootParams[DXRHitGroupRootParam::SRV_VERTEX_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-	rootParams[DXRHitGroupRootParam::SRV_VERTEX_BUFFER].Descriptor.ShaderRegister = 1;
-	rootParams[DXRHitGroupRootParam::SRV_VERTEX_BUFFER].Descriptor.RegisterSpace = 0;
-
-	// diffuseTexture
+	// Textures
 	D3D12_DESCRIPTOR_RANGE range[1]{};
 	range[0].BaseShaderRegister = 2;
 	range[0].NumDescriptors = 1;
@@ -533,15 +543,14 @@ ID3D12RootSignature* DXRBase::createHitGroupLocalRootSignature() {
 	rootParams[DXRHitGroupRootParam::SRV_INDEX_BUFFER].Descriptor.ShaderRegister = 1;
 	rootParams[DXRHitGroupRootParam::SRV_INDEX_BUFFER].Descriptor.RegisterSpace = 1;
 
-	rootParams[DXRHitGroupRootParam::DT_TEXTURES].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParams[DXRHitGroupRootParam::DT_TEXTURES].DescriptorTable.NumDescriptorRanges = _countof(range);
-	rootParams[DXRHitGroupRootParam::DT_TEXTURES].DescriptorTable.pDescriptorRanges = range;
+	rootParams[DXRHitGroupRootParam::CBV_MESH_BUFFER].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParams[DXRHitGroupRootParam::CBV_MESH_BUFFER].Descriptor.ShaderRegister = 1;
+	rootParams[DXRHitGroupRootParam::CBV_MESH_BUFFER].Descriptor.RegisterSpace = 0;
 
-	// Material properties CBV
-	rootParams[DXRHitGroupRootParam::CBV_MATERIAL].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParams[DXRHitGroupRootParam::CBV_MATERIAL].Descriptor.ShaderRegister = 1;
-	rootParams[DXRHitGroupRootParam::CBV_MATERIAL].Descriptor.RegisterSpace = 0;
-	rootParams[DXRHitGroupRootParam::CBV_MATERIAL].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	/*rootParams[DXRHitGroupRootParam::DT_TEXTURES].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParams[DXRHitGroupRootParam::DT_TEXTURES].DescriptorTable.NumDescriptorRanges = _countof(range);
+	rootParams[DXRHitGroupRootParam::DT_TEXTURES].DescriptorTable.pDescriptorRanges = range;*/
+
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc = {};
 	staticSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
