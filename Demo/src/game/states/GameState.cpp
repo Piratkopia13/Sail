@@ -183,13 +183,15 @@ bool GameState::update(float dt) {
 	static float counter = 0.0f;
 	static float size = 1;
 	static float change = 0.4f;
-	
+
 	counter += dt * 2;
 	if (m_texturedCubeEntity) {
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
+	}
 
+	if (m_transformTestEntities.size() > 0) {
 		// Move the three parented cubes with identical translation, rotations and scale to show how parenting affects transforms
 		for (Entity::SPtr item : m_transformTestEntities) {
 			item->getComponent<TransformComponent>()->rotateAroundY(dt * 1.0f);
@@ -197,11 +199,11 @@ bool GameState::update(float dt) {
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
 		}
 		m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
-
-		size += change * dt;
-		if (size > 1.2f || size < 0.7f)
-			change *= -1.0f;
 	}
+
+	size += change * dt;
+	if (size > 1.2f || size < 0.7f)
+		change *= -1.0f;
 
 	return true;
 }

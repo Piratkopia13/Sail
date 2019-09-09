@@ -2,39 +2,41 @@
 
 #include "../DX12API.h"
 #include "DXRUtils.h"
+#include "../DX12Utils.h"
 #include "Sail/api/Renderer.h"
 #include "../shader/DX12ConstantBuffer.h"
 
-namespace DXRGlobalRootParam {
-	enum Slot {
-		FLOAT_RED_CHANNEL = 0,
-		SRV_ACCELERATION_STRUCTURE,
-		CBV_SCENE_BUFFER,
-		CBV_SETTINGS,
-		SIZE
-	};
-}
-namespace DXRRayGenRootParam {
-	enum Slot {
-		DT_UAV_OUTPUT = 0,
-		SIZE
-	};
-}
-namespace DXRHitGroupRootParam {
-	enum Slot {
-		SRV_VERTEX_BUFFER = 0,
-		SRV_INDEX_BUFFER,
-		DT_TEXTURES,
-		CBV_MATERIAL,
-		SIZE
-	};
-}
-namespace DXRMissRootParam {
-	enum Slot {
-		SRV_SKYBOX = 0,
-		SIZE
-	};
-}
+// Include defines shared with dxr shaders
+#include "Sail/../../Demo/res/shaders/dxr/Common_hlsl_cpp.hlsl"
+
+//namespace DXRGlobalRootParam {
+//	enum Slot {
+//		SRV_ACCELERATION_STRUCTURE = 0,
+//		CBV_SCENE_BUFFER,
+//		SIZE
+//	};
+//}
+//namespace DXRRayGenRootParam {
+//	enum Slot {
+//		DT_UAV_OUTPUT = 0,
+//		SIZE
+//	};
+//}
+//namespace DXRHitGroupRootParam {
+//	enum Slot {
+//		SRV_VERTEX_BUFFER = 0,
+//		SRV_INDEX_BUFFER,
+//		CBV_MESH_BUFFER,
+//		//DT_TEXTURES,
+//		SIZE
+//	};
+//}
+//namespace DXRMissRootParam {
+//	enum Slot {
+//		SRV_SKYBOX = 0,
+//		SIZE
+//	};
+//}
 
 class DXRBase : public IEventListener {
 public:
@@ -61,22 +63,20 @@ private:
 	void createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 
 	// Other DXR requirements
+	void createShaderTables(const std::vector<Renderer::RenderCommand>& sceneGeometry);
 	void createShaderResources(bool remake = false);
-	void createShaderTables();
 	void createRaytracingPSO();
 
 	// Root signature creation
 	// TODO: create them dynamically after parsing the shader source (like ShaderPipeline does)
 	void createDXRGlobalRootSignature();
-	ID3D12RootSignature* createRayGenLocalRootSignature();
-	ID3D12RootSignature* createHitGroupLocalRootSignature();
-	ID3D12RootSignature* createMissLocalRootSignature();
+	void createRayGenLocalRootSignature();
+	void createHitGroupLocalRootSignature();
+	void createMissLocalRootSignature();
 
 private:
 	DX12API* m_context;
 	std::string m_shaderFilename;
-
-	static const int MAX_RAY_RECURSION_DEPTH;
 
 	//union AlignedSceneConstantBuffer { 	// TODO: Use this instead of SceneConstantBuffer
 	//	SceneConstantBuffer* constants;
@@ -86,11 +86,8 @@ private:
 	//SceneConstantBuffer* m_sceneCBData; // TODO: Fix memory leak
 	//RayGenSettings m_rayGenCBData;
 
-	struct CameraCBData {
-		glm::mat4 projectionToWorld;
-		glm::vec3 cameraPosition;
-	};
-	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_cameraCB;
+	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_cameraCB;
+	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_meshCB;
 
 	struct AccelerationStructureBuffers {
 		wComPtr<ID3D12Resource1> scratch = nullptr;
@@ -145,10 +142,10 @@ private:
 	const WCHAR* m_missName = L"miss";
 	const WCHAR* m_hitGroupName = L"HitGroup";
 
-	wComPtr<ID3D12RootSignature> m_dxrGlobalRootSignature;
-	wComPtr<ID3D12RootSignature> m_localSignatureRayGen;
-	wComPtr<ID3D12RootSignature> m_localSignatureHitGroup;
-	wComPtr<ID3D12RootSignature> m_localSignatureMiss;
+	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 
 
 };
