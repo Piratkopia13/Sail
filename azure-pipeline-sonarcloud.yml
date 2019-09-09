@@ -15,8 +15,9 @@ steps:
     scannerMode: 'MSBuild'
     projectKey: 'StoraSpelGame'
     extraProperties: |
-      sonar.cfamily.build-wrapper-output=bw-output
+      sonar.cfamily.build-wrapper-output=s\bw-output
       sonar.exclusions=libraries/**
+      sonar.cfamily.threads=2
 
 - pwsh: |
       echo "Downloading SonarQube build wrapper"
