@@ -23,6 +23,9 @@
 #include <glm/ext.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// Thread pool
+#include <ctpl/ctpl_stl.h> // From: https://github.com/vit-vit/ctpl
+
 //#include <windows.h>
 
 #include <memory>
