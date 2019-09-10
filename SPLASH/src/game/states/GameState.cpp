@@ -5,7 +5,8 @@ GameState::GameState(StateStack& stack)
 : State(stack)
 //, m_cam(20.f, 20.f, 0.1f, 5000.f)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-, m_camController(&m_cam)
+//, m_camController(&m_cam)
+, m_playerController(&m_cam)
 {
 
 	// Get the Application instance
@@ -20,7 +21,9 @@ GameState::GameState(StateStack& stack)
 
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
-	m_camController.lookAt(glm::vec3(0.f));
+	//m_camController.lookAt(glm::vec3(0.f));
+	m_cam.lookAt(glm::vec3(0.f));
+	m_playerController.getEntity()->getComponent<TransformComponent>()->setTranslation(glm::vec3(1.6f, 4.7f, 7.4f));
 	
 	// Add a directional light
 	glm::vec3 color(1.0f, 1.0f, 1.0f);
@@ -60,7 +63,7 @@ GameState::GameState(StateStack& stack)
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader, glm::vec2(3.0f));
+	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(3.0f));
 	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
@@ -112,6 +115,7 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
+	m_physSystem.registerEntity(m_playerController.getEntity());
 }
 
 GameState::~GameState() {
@@ -146,7 +150,9 @@ bool GameState::processInput(float dt) {
 	}
 
 	// Update the camera controller from input devices
-	m_camController.update(dt);
+	//m_camController.update(dt);
+	m_playerController.update(dt);
+	m_physSystem.execute(dt);
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
