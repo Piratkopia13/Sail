@@ -23,6 +23,11 @@ void ConsoleCommands::addCommand(const std::string& command, std::function<void(
 }
 
 const bool ConsoleCommands::execute() {
+	if (m_textField == "") {
+		return false;
+	}
+
+
 	m_textLog.emplace_back(m_textField);
 	m_commandHistory.emplace_back(m_textField);
 	m_textField = "";

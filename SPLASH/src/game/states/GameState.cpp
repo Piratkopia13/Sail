@@ -241,7 +241,7 @@ bool GameState::renderImguiConsole(float dt) {
 	bool open = m_cc.windowOpen();
 	if (open) {
 		static char buf[256] = "";
-		if (ImGui::Begin("Animation", &open)) {
+		if (ImGui::Begin("Console", &open)) {
 			m_cc.windowState(open);
 			std::string txt = "test";
 			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -260,8 +260,12 @@ bool GameState::renderImguiConsole(float dt) {
 
 			//std::string* str = new std::string(m_cc.getTextField());
 			std::string original = m_cc.getTextField();
-			if (ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-				ImGuiInputTextFlags_EnterReturnsTrue)) {
+			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
+				ImGuiInputTextFlags_EnterReturnsTrue);
+
+
+			ImGui::SameLine();
+			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
 				
 				if (m_cc.execute()) {
 
@@ -271,7 +275,9 @@ bool GameState::renderImguiConsole(float dt) {
 				
 				reclaim_focus = true;
 			}
-			m_cc.setTextField(std::string(buf));
+			else {
+				m_cc.setTextField(std::string(buf));
+			}
 	
 			//ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
 			//ImGui::TextWrapped("NOTE: Animations are skinned on the CPU. This is slow. Turn down animation speed to 0 to see pure raytracing performance.");
