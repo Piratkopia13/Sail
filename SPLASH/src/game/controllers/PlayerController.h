@@ -23,4 +23,6 @@ private:
 
 	float m_yaw, m_pitch, m_roll;
 
+	float m_lookSensitivityMouse = 0.1f;
+
 };

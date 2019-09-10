@@ -17,9 +17,6 @@ PlayerController::~PlayerController() {}
 
 void PlayerController::update(float dt) {
 	float speedModifier = 1.f;
-	float movementSpeed = 0.f;
-	float lookSensitivityMouse = 0.1f;
-	float lookSensitivityController = 90.0f * 0.016f;
 
 	float forwardM = 0.f, backM = 0.f, leftM = 0.f, rightM = 0.f, upM = 0.f, downM = 0.f;
 
@@ -55,8 +52,6 @@ void PlayerController::update(float dt) {
 
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), m_cam->getCameraDirection());
 	right = glm::normalize(right);
-	// Gamepad
-	//setCameraPosition(getCameraPosition() - right * gpState.thumbSticks.leftX * movementSpeed);
 
 	// Keyboard
 	if ( Input::IsKeyPressed(SAIL_KEY_A) ) {
@@ -105,8 +100,8 @@ void PlayerController::update(float dt) {
 
 	if ( Input::IsCursorHidden() ) {
 		glm::ivec2& mouseDelta = Input::GetMouseDelta();
-		m_pitch -= mouseDelta.y * lookSensitivityMouse;
-		m_yaw -= mouseDelta.x * lookSensitivityMouse;
+		m_pitch -= mouseDelta.y * m_lookSensitivityMouse;
+		m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 	}
 
 
@@ -135,7 +130,6 @@ void PlayerController::update(float dt) {
 
 	glm::vec3 forward = m_cam->getCameraDirection();
 	float totM = forwardM + backM + rightM + leftM + upM + downM;
-	//Logger::Warning(std::to_string(totM));
 	if ( totM != 0.f ) {
 		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
 
