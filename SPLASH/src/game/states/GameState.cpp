@@ -127,7 +127,7 @@ GameState::GameState(StateStack& stack)
 	m_transformTestEntities.push_back(e);
 
 
-	m_boundingBox.setPosition(glm::vec3(5.0f, 1.0f, 0.0f));
+	m_boundingBox.setPosition(glm::vec3(5.0f, 5.0f, 0.0f));
 	m_boundingBox.setSize(glm::vec3(3.0f));
 }
 

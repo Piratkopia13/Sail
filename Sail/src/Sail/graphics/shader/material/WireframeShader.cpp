@@ -3,15 +3,11 @@
 #include "Sail/Application.h"
 
 WireframeShader::WireframeShader()
-	: Shader("MaterialShader.hlsl")
+	: Shader("WireframeShader.hlsl")
 	, m_clippingPlaneHasChanged(false)
 {
 	// Create the input layout
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::POSITION, "POSITION", 0);
-	shaderPipeline->getInputLayout().pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
-	shaderPipeline->getInputLayout().pushVec3(InputLayout::NORMAL, "NORMAL", 0);
-	shaderPipeline->getInputLayout().pushVec3(InputLayout::TANGENT, "TANGENT", 0);
-	shaderPipeline->getInputLayout().pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
 	setWireframe(true);
