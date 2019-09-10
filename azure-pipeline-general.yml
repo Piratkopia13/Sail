@@ -1,5 +1,7 @@
 trigger:
-  - master
+  branches:
+    exclude:
+    - master
 
 pool:
   vmImage: 'windows-2019'
@@ -24,9 +26,3 @@ steps:
     configuration: 'Release'
     maximumCpuCount: true
     msbuildArchitecture: 'x64'
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: './bin/DX12 x64-Release/Demo/Demo.exe'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
