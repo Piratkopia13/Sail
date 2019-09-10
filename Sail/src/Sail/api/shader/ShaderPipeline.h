@@ -8,6 +8,7 @@
 
 #include "Sail/api/shader/ConstantBuffer.h"
 #include "Sail/api/shader/Sampler.h"
+#include "Sail/api/GraphicsAPI.h"
 #include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/camera/Camera.h"
 #include "Sail/utils/Utils.h"
@@ -32,7 +33,8 @@ public:
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
-
+	virtual void setWireframe(bool wireframeState);
+	virtual void setCullMode(GraphicsAPI::Culling newCullMode);
 
 	InputLayout& getInputLayout();
 	void* getVsBlob();
@@ -52,6 +54,9 @@ protected:
 protected:
 	std::unique_ptr<InputLayout> inputLayout;
 	std::string filename;
+
+	bool wireframe; //Only used in DX12ShaderPipeline. TODO: Implement for other API:s
+	GraphicsAPI::Culling cullMode; //Only used in DX12ShaderPipeline. TODO: Implement for other API:s
 
 	void* vsBlob; // Used for the input layout
 	void* gsBlob;

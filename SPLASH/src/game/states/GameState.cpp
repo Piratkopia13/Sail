@@ -57,6 +57,9 @@ GameState::GameState(StateStack& stack)
 
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
+	//Wireframe shader
+	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
+
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
@@ -70,11 +73,22 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
+	//Wireframe bounding box model
+	m_boundingBoxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), wireframeShader);
+	m_boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
 	// Create entities
 	auto e = Entity::Create("Static cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	m_scene.addEntity(e);
+
+	//Wireframe bounding box model entity
+	e = Entity::Create("Wireframe bounding box");
+	e->addComponent<ModelComponent>(m_boundingBoxModel.get());
+	e->addComponent<TransformComponent>();
+	m_scene.addEntity(e);
+	m_boundingBox.setModel(e);
 
 	e = Entity::Create("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
@@ -112,6 +126,9 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
+
+	m_boundingBox.setPosition(glm::vec3(5.0f, 5.0f, 0.0f));
+	m_boundingBox.setSize(glm::vec3(3.0f));
 }
 
 GameState::~GameState() {
