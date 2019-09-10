@@ -1,8 +1,5 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
-
 class Transform {
 
 public:

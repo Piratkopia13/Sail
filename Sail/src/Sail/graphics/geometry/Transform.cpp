@@ -186,14 +186,6 @@ glm::mat4 Transform::getLocalMatrix() {
 	return m_localTransformMatrix;
 }
 
-
-
-
-
-
-
-
-
 void Transform::updateLocalMatrix() {
 	m_localTransformMatrix = glm::mat4(1.0f);
 	m_localTransformMatrix = glm::translate(m_localTransformMatrix, m_translation);

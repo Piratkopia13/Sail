@@ -22,11 +22,14 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 // Thread pool
 #include <ctpl/ctpl_stl.h> // From: https://github.com/vit-vit/ctpl
 
 //#include <windows.h>
+
+
 
 #include <memory>
 #include <comdef.h> 

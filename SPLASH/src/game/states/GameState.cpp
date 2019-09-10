@@ -74,16 +74,20 @@ GameState::GameState(StateStack& stack)
 	auto e = Entity::Create("Static cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
+	e->addComponent<StaticPositionComponent>(glm::vec3(-4.f, 1.f, -2.f));
+
 	m_scene.addEntity(e);
 
 	e = Entity::Create("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<StaticPositionComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
 	e = Entity::Create("Clingy cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+	e->addComponent<StaticPositionComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
 	m_scene.addEntity(e);
 
 	// Add some cubes which are connected through parenting
