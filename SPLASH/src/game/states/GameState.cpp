@@ -1,5 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
+#include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
+#include "..//Sail/src/Sail/entities/ECS.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -57,6 +59,11 @@ GameState::GameState(StateStack& stack)
 
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
+
+	// ECS management
+	ECS::Instance()->createSystem<PhysicSystem>();
+
+
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
@@ -71,42 +78,42 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Create entities
-	auto e = Entity::Create("Static cube");
+	auto e = ECS::Instance()->createEntity("Static cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Floor");
+	e = ECS::Instance()->createEntity("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Clingy cube");
+	e = ECS::Instance()->createEntity("Clingy cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
 	m_scene.addEntity(e);
 
 	// Add some cubes which are connected through parenting
-	m_texturedCubeEntity = Entity::Create("Textured parent cube");
+	m_texturedCubeEntity = ECS::Instance()->createEntity("Textured parent cube");
 	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
 	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
 	m_texturedCubeEntity->setName("MovingCube");
 	m_scene.addEntity(m_texturedCubeEntity);
 	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
 
-	e = Entity::Create("CubeRoot");
+	e = ECS::Instance()->createEntity("CubeRoot");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
-	e = Entity::Create("CubeChild");
+	e = ECS::Instance()->createEntity("CubeChild");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
-	e = Entity::Create("CubeChildChild");
+	e = ECS::Instance()->createEntity("CubeChildChild");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
 	m_scene.addEntity(e);
@@ -185,6 +192,13 @@ bool GameState::update(float dt) {
 	static float change = 0.4f;
 	
 	counter += dt * 2;
+
+	int idtran = TransformComponent::getStaticID();
+	int idmod = ModelComponent::getStaticID();
+	int idphy = PhysicsComponent::getStaticID();
+	int idtxt = TextComponent::getStaticID();
+	ECS::Instance()->update(dt);
+
 	if (m_texturedCubeEntity) {
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
