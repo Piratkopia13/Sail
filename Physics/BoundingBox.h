@@ -1,5 +1,7 @@
 #pragma once
 
+//#include "Sail.h"
+
 class BoundingBox {
 private:
 	glm::vec3 m_position;
