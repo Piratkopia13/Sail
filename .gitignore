@@ -60,3 +60,4 @@ plan\.txt
 
 #bin
 bin/*
+/libraries/glm/out/build
