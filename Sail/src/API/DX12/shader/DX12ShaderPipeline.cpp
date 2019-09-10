@@ -184,14 +184,22 @@ void DX12ShaderPipeline::finish() {
 	gpsd.SampleMask = UINT_MAX;
 
 	// Specify rasterizer behaviour
-	// TODO: get these from DX12API
 	if (wireframe) {
 		gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
 	}
 	else {
 		gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	}
-	gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+
+	if (cullMode == GraphicsAPI::Culling::NO_CULLING) {
+		gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	} 
+	else if (cullMode == GraphicsAPI::Culling::FRONTFACE) {
+		gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+	}
+	else if (cullMode == GraphicsAPI::Culling::BACKFACE) {
+		gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+	}
 
 	//Specify blend descriptions.
 	D3D12_RENDER_TARGET_BLEND_DESC defaultRTdesc = {

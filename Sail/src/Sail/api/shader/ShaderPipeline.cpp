@@ -15,6 +15,7 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, dsBlob(nullptr)
 	, hsBlob(nullptr)
 	, filename(filename)
+	, wireframe(false)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 }
@@ -285,7 +286,10 @@ ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::st
 
 void ShaderPipeline::setWireframe(bool wireframeState) {
 	wireframe = wireframeState;
+}
 
+void ShaderPipeline::setCullMode(GraphicsAPI::Culling newCullMode) {
+	cullMode = newCullMode;
 }
 
 InputLayout& ShaderPipeline::getInputLayout() {
