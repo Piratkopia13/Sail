@@ -5,11 +5,12 @@
 
 class MovementComponent : public Component {
 public:
-	SAIL_COMPONENT MovementComponent(const float& initialSpeed, const glm::vec3& initialDirection) {
-		m_speed = initialSpeed;
-		m_direction = initialDirection;
+	static int getStaticID() {
+		return 123;
 	}
-	~MovementComponent() {}
+
+		MovementComponent(const float& initialSpeed, const glm::vec3& initialDirection);
+	~MovementComponent();
 
 	void setSpeed(const float& speed);
 	void addSpeed(const float& speed);

@@ -19,8 +19,15 @@ void SimplePhysicsSystem::execute(float dt) {
 		MovementComponent* moveComp = entity->getComponent<MovementComponent>();
 		TransformComponent* transComp = entity->getComponent<TransformComponent>();
 
-		transComp->translate(moveComp->getDirection() * moveComp->getSpeed());
-		moveComp->setSpeed(moveComp->getSpeed() * (1.0f - 0.1f * dt));
+		if ( moveComp->getSpeed() > 0.f ) {
+			transComp->translate(moveComp->getDirection() * moveComp->getSpeed() * dt);
+			if ( moveComp->getSpeed() < 0.1f ) {
+				moveComp->setSpeed(0.f);
+			}
+			else {
+				moveComp->setSpeed(moveComp->getSpeed() * ( 1.0f - 4.0f * dt ));
+			}
+		}
 	}
 
 }

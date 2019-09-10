@@ -1,7 +1,16 @@
 #include "pch.h"
 #include "MovementComponent.h"
 
-void MovementComponent::setSpeed( const float& speed ) { 
+
+
+MovementComponent::MovementComponent(const float& initialSpeed, const glm::vec3& initialDirection) {
+	m_speed = initialSpeed;
+	m_direction = initialDirection;
+}
+
+MovementComponent::~MovementComponent() {}
+
+void MovementComponent::setSpeed( const float& speed ) {
 	m_speed = speed;
 }
 

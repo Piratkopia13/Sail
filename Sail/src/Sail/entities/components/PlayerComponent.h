@@ -4,7 +4,8 @@
 
 class PlayerComponent : public Component {
 public:
-	SAIL_COMPONENT PlayerComponent() {}
+	SAIL_COMPONENT 
+		PlayerComponent() {}
 	~PlayerComponent() {}
 
 private:

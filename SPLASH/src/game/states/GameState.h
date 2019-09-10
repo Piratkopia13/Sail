@@ -25,7 +25,10 @@ private:
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	FlyingCameraController m_camController;
+	//FlyingCameraController m_camController;
+	PlayerController m_playerController;
+
+	SimplePhysicsSystem m_physSystem;
 
 	Entity::SPtr m_texturedCubeEntity;
 	std::vector<Entity::SPtr> m_transformTestEntities;
