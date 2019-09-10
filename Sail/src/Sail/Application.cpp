@@ -3,9 +3,6 @@
 #include "events/WindowResizeEvent.h"
 #include "KeyCodes.h"
 
-
-int testStandaloneFunction(int id, int n) { return n; }
-
 Application* Application::m_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
@@ -17,18 +14,10 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	}
 	m_instance = this;
 
-	// Set up thread pool with twice the number of threads as logical cores
+	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
-	unsigned int logicalCores = std::thread::hardware_concurrency();
-	m_threadPool = std::unique_ptr<ctpl::thread_pool>(new ctpl::thread_pool(2 * logicalCores));
-
-
-	// DEBUGGING to test thread pool
-	int testInt = 3;
-	std::future<int> retTest = pushJobToThreadPool(testStandaloneFunction, testInt);
-
-
-	int t = retTest.get();
+	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
+	m_threadPool = std::unique_ptr<ctpl::thread_pool>(new ctpl::thread_pool(poolSize));
 
 	// Set up window
 	Window::WindowProps windowProps;

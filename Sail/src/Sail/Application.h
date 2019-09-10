@@ -29,10 +29,6 @@ public:
 	Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api = DX11);
 	virtual ~Application();
 
-
-	int testClassFunction(int id, int n) { return n; }
-
-
 	int startGameLoop();
 
 	// Required methods
@@ -50,12 +46,24 @@ public:
 	T* const getWindow() { return static_cast<T*>(m_window.get()); }
 	Window* const getWindow();
 
-	//TODO: documentation
+	// Pass-through functions for pushing jobs (functions, lambdas, etc.) to the thread pool.
+	// The first parameter of all jobs must be int id which becomes the id of the running thread.
+	// Returns std::future containing the return type of the job.
+	//
+	// EXAMPLE USAGE:
+	// To push a member function from another member function use a lambda which captures this and other relevant arguments:
+	//     float f = 10.0f;
+	//     pushJobToThreadPool([this,f](int id) { return this->memberFunction(id, f); });
+	//
+	// To push a member function in another object use a lambda which captures that object and other relevant arguments:
+	//     Object obj;
+	//     pushJobToThreadPool([&obj, f](int id) { return obj.memberFunction(id, f); });
+	//
+	// See https://github.com/vit-vit/CTPL for other examples with standalone functions, lambdas, etc.
 	template<typename F, typename... Rest>
 	auto pushJobToThreadPool(F&& f, Rest&& ... rest)->std::future<decltype(f(0, rest...))> {
 		return m_threadPool->push(f, std::forward<Rest>(rest)...);
 	}
-
 	template<typename F>
 	auto pushJobToThreadPool(F&& f)->std::future<decltype(f(0))> {
 		return m_threadPool->push(f);
