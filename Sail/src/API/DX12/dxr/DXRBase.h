@@ -7,7 +7,7 @@
 #include "../shader/DX12ConstantBuffer.h"
 
 // Include defines shared with dxr shaders
-#include "Sail/../../Demo/res/shaders/dxr/Common_hlsl_cpp.hlsl"
+#include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
 
 //namespace DXRGlobalRootParam {
 //	enum Slot {
@@ -125,8 +125,7 @@ private:
 	struct MeshHandles {
 		D3D12_GPU_VIRTUAL_ADDRESS vertexBufferHandle;
 		D3D12_GPU_VIRTUAL_ADDRESS indexBufferHandle;
-		D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
-		D3D12_GPU_VIRTUAL_ADDRESS materialHandle;
+		D3D12_GPU_DESCRIPTOR_HANDLE textureHandles[3];
 	};
 
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};

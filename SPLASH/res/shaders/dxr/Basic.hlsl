@@ -11,6 +11,10 @@ StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 
 // Texture2DArray<float4> textures : register(t2, space0);
+// Texture2D sys_texDiffuse : register(t2);
+// Texture2D sys_texNormal : register(t3);
+// Texture2D sys_texSpecular : register(t4);
+
 SamplerState ss : register(s0);
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.

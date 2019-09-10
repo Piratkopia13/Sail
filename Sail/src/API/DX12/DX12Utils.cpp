@@ -92,7 +92,7 @@ void DX12Utils::RootSignature::add32BitConstants() {
 }
 
 void DX12Utils::RootSignature::addDescriptorTable(const std::string& name, D3D12_DESCRIPTOR_RANGE_TYPE type, unsigned int shaderRegister, unsigned int space, unsigned int numDescriptors) {
-	m_order.insert({name, m_rootParams.size()});
+	m_order[name] = m_rootParams.size();
 
 	D3D12_DESCRIPTOR_RANGE* range = new D3D12_DESCRIPTOR_RANGE;
 	range->BaseShaderRegister = shaderRegister;

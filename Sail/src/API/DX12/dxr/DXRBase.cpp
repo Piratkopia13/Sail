@@ -4,6 +4,7 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/DX12IndexBuffer.h"
+#include "API/DX12/resources/DX12Texture.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename)
 : m_shaderFilename(shaderFilename) 
@@ -57,7 +58,33 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 		handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
 		if (mesh->getNumIndices() > 0)
 			handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
-		handles.textureHandle = gpuHandle;
+		
+		// Three textures
+		const DX12Texture* diffuseTexture = static_cast<const DX12Texture*>(mesh->getMaterial()->getTexture(0));
+		const DX12Texture* normalTexture = static_cast<const DX12Texture*>(mesh->getMaterial()->getTexture(1));
+		const DX12Texture* specularTexture = static_cast<const DX12Texture*>(mesh->getMaterial()->getTexture(2));
+		if (mesh->getMaterial()->getPhongSettings().hasDiffuseTexture) {
+			// Copy SRV to DXR heap
+			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, diffuseTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			handles.textureHandles[0] = gpuHandle;
+			cpuHandle.ptr += m_heapIncr;
+			gpuHandle.ptr += m_heapIncr;
+		}
+		if (mesh->getMaterial()->getPhongSettings().hasNormalTexture) {
+			// Copy SRV to DXR heap
+			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, normalTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			handles.textureHandles[1] = gpuHandle;
+			cpuHandle.ptr += m_heapIncr;
+			gpuHandle.ptr += m_heapIncr;
+		}
+		if (mesh->getMaterial()->getPhongSettings().hasSpecularTexture) {
+			// Copy SRV to DXR heap
+			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, specularTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			handles.textureHandles[1] = gpuHandle;
+			cpuHandle.ptr += m_heapIncr;
+			gpuHandle.ptr += m_heapIncr;
+		}
+
 
 		//handles.materialHandle = mesh->getMaterialCB()->getBuffer(0)->GetGPUVirtualAddress();
 
@@ -68,8 +95,6 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 		m_rtMeshHandles.emplace_back(handles);
 
-		cpuHandle.ptr += m_heapIncr;
-		gpuHandle.ptr += m_heapIncr;
 		i++;
 	}
 
@@ -369,11 +394,6 @@ void DXRBase::createShaderResources(bool remake) {
 		//m_rayGenSettingsCB->setData(&m_rayGenCBData, 0);
 
 		// Scene CB
-		//m_sceneCBData = new SceneConstantBuffer();
-		//m_sceneCB = std::make_unique<DX12ConstantBuffer>("Scene Constant Buffer", sizeof(SceneConstantBuffer), m_renderer);
-		//m_sceneCB->setData(m_sceneCBData, 0/*Not used*/);
-
-		// Scene CB
 		{
 			unsigned int size = sizeof(DXRShaderCommon::SceneCBuffer);
 			void* initData = malloc(size);
@@ -433,9 +453,9 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 				m_hitGroupShaderTable[frameIndex].Resource->Release();
 				m_hitGroupShaderTable[frameIndex].Resource.Reset();
 			}
-			DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size());
+			DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size(), 64U);
 			for (unsigned int i = 0; i < sceneGeometry.size(); i++) {
-
+				auto& mesh = sceneGeometry[i].mesh;
 				// TODO: enforce this to match the root signature order!
 
 				m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
@@ -443,10 +463,15 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 						tableBuilder.addDescriptor(m_rtMeshHandles[i].vertexBufferHandle, i);
 					} else if (parameterName == "IndexBuffer") {
 						D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-						tableBuilder.addDescriptor((sceneGeometry[i].mesh->getNumIndices() > 0) ? m_rtMeshHandles[i].indexBufferHandle : nullAddr, i);
+						tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[i].indexBufferHandle : nullAddr, i);
 					} else if (parameterName == "MeshCBuffer") {
 						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
 						tableBuilder.addDescriptor(meshCBHandle, i);
+					} else if (parameterName == "Textures") {
+						// Three textures
+						for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+							tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandles[textureNum].ptr, i);
+						}
 					} else {
 						Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
 					}
@@ -495,7 +520,7 @@ void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup->addSRV("VertexBuffer", 1, 0);
 	m_localSignatureHitGroup->addSRV("IndexBuffer", 1, 1);
 	m_localSignatureHitGroup->addCBV("MeshCBuffer", 1, 0);
-	//m_localSignatureHitGroup->addDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2); // Textures
+	m_localSignatureHitGroup->addDescriptorTable("Textures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 3); // Textures (t0, t1, t2)
 	m_localSignatureHitGroup->addStaticSampler();
 
 	m_localSignatureHitGroup->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
