@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Sail.h"
+#include "../controllers/PlayerController.h"
 
 class GameState : public State {
 public:

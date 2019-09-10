@@ -1,12 +1,6 @@
 #include "pch.h"
 #include "PlayerController.h"
-#include "../Application.h"
-#include "../KeyCodes.h"
-#include "../MouseButtonCodes.h"
-#include "../graphics/camera/CameraController.h"
-#include "../entities/Entity.h"
-#include "../entities/components/MovementComponent.h"
-#include "../entities/components/TransformComponent.h"
+#include "Sail.h"
 
 PlayerController::PlayerController(Camera* cam) {
 	m_cam = new CameraController(cam);
@@ -42,13 +36,17 @@ void PlayerController::update(float dt) {
 
 	// Keyboard
 	if ( Input::IsKeyPressed(SAIL_KEY_W) ) {
-		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
 		forwardM = 1.0f;
 	}
 
 	if ( Input::IsKeyPressed(SAIL_KEY_S) ) {
-		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
-		backM = 1.0f;
+		if ( forwardM == 0.f ) {
+			backM = 1.0f;
+		}
+		else {
+			forwardM = 0.f;
+			backM = 0.f;
+		}
 	}
 
 	//
@@ -62,12 +60,17 @@ void PlayerController::update(float dt) {
 
 	// Keyboard
 	if ( Input::IsKeyPressed(SAIL_KEY_A) ) {
-		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
 		leftM = 1.0f;
 	}
 	if ( Input::IsKeyPressed(SAIL_KEY_D) ) {
-		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
 		rightM = 1.0f;
+		if ( leftM == 0.f ) {
+			rightM = 1.0f;
+		}
+		else {
+			rightM = 0.f;
+			leftM = 0.f;
+		}
 	}
 
 	//
@@ -76,12 +79,17 @@ void PlayerController::update(float dt) {
 
 	// Keyboard
 	if ( Input::IsKeyPressed(SAIL_KEY_SPACE) ) {
-		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
 		upM = 1.0f;
 	}
 	if ( Input::IsKeyPressed(SAIL_KEY_CONTROL) ) {
-		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
 		downM = 1.0f;
+		if ( upM == 0.f ) {
+			downM = 1.0f;
+		}
+		else {
+			upM = 0.f;
+			downM = 0.f;
+		}
 	}
 
 	//
@@ -129,11 +137,18 @@ void PlayerController::update(float dt) {
 	float totM = forwardM + backM + rightM + leftM + upM + downM;
 	//Logger::Warning(std::to_string(totM));
 	if ( totM != 0.f ) {
+		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
+
 		glm::vec3 dir = (forward * forwardM) - (forward * backM) + (right * rightM) - (right * leftM)
 			/*Only for flying*/ + ( m_cam->getCameraUp() * upM ) - ( m_cam->getCameraUp() * downM );
 
 		playerMovComp->setDirection(glm::normalize(dir));
 	}
+	else {
+
+	}
+
+
 
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 	m_cam->setCameraPosition(playerTrans->getTranslation());

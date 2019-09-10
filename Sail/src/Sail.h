@@ -53,5 +53,4 @@
 #include "Sail/entities/components/Components.h"
 #include "Sail/graphics/Scene.h"
 #include "Sail/graphics/geometry/Transform.h"
-#include "Sail/game/PlayerController.h"
 #include "Sail/entities/systems/SimplePhysicsSystem.h"
