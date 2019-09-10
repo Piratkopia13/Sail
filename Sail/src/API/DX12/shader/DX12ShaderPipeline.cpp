@@ -185,7 +185,12 @@ void DX12ShaderPipeline::finish() {
 
 	// Specify rasterizer behaviour
 	// TODO: get these from DX12API
-	gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+	if (wireframe) {
+		gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	}
+	else {
+		gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+	}
 	gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 
 	//Specify blend descriptions.

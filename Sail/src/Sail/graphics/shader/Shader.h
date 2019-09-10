@@ -14,6 +14,7 @@ public:
 
 	virtual void bind();
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
+	virtual void setWireframe(bool wireframe);
 
 protected:
 	void finish();
@@ -22,5 +23,4 @@ protected:
 	ShaderPipeline* shaderPipeline;
 private:
 	bool m_finished;
-
 };

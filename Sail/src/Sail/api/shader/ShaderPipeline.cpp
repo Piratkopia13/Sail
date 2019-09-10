@@ -283,6 +283,11 @@ ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::st
 //
 //}
 
+void ShaderPipeline::setWireframe(bool wireframeState) {
+	wireframe = wireframeState;
+
+}
+
 InputLayout& ShaderPipeline::getInputLayout() {
 	return *inputLayout.get();
 }

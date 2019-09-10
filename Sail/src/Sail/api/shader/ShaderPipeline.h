@@ -32,6 +32,7 @@ public:
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
+	virtual void setWireframe(bool wireframeState);
 
 
 	InputLayout& getInputLayout();
@@ -52,6 +53,8 @@ protected:
 protected:
 	std::unique_ptr<InputLayout> inputLayout;
 	std::string filename;
+
+	bool wireframe; //Only used in DX12ShaderPipeline. TODO: Implement for other API:s
 
 	void* vsBlob; // Used for the input layout
 	void* gsBlob;
