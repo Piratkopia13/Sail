@@ -17,8 +17,8 @@ SailImGuiWindow(windowState)
 ConsoleCommands::~ConsoleCommands() {
 }
 
-void ConsoleCommands::addCommand(const std::string& command, std::function<void()> function) {
-	m_commands.emplace_back(std::pair(command, function));
+void ConsoleCommands::addCommand(const std::string& command, std::function<void()> function, std::function<std::string()> successfulMessage) {
+	m_commands.push_back({ command, function, successfulMessage });
 	
 }
 
@@ -26,7 +26,7 @@ const bool ConsoleCommands::execute() {
 	if (m_textField == "") {
 		return false;
 	}
-
+	parseCommand(m_textField);
 
 	m_textLog.emplace_back(m_textField);
 	m_commandHistory.emplace_back(m_textField);
@@ -52,5 +52,40 @@ void ConsoleCommands::setTextField(const std::string text) {
 
 const std::vector<std::string>& ConsoleCommands::getLog() {
 	return m_textLog;
+}
+
+std::string ConsoleCommands::prune(const std::string& command) {
+	std::string temp = command.substr(0, command.find_last_not_of(" ") + 1);
+	return std::string();
+}
+
+const bool ConsoleCommands::voidMatch(const std::string& command) {
+	for (int i = 0; i < m_commands.size(); i++) {
+		if (m_commands[i].command == command) {
+			m_commands[i].function();
+			return true;
+		}
+	}
+	return false;
+}
+
+const std::string ConsoleCommands::parseCommand(const std::string& command) {
+	std::string cmd = prune(command);
+	if (voidMatch(cmd)) {
+		return "";
+	}
+
+
+	int location = cmd.find_first_of(" ");
+	
+
+
+
+	int pos = command.find(" ");
+
+
+
+
+	return std::string();
 }
 
