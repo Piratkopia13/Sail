@@ -1,13 +1,10 @@
 #include "NetworkModule.hpp"
-//
-//static BOOL bOptVal = TRUE;
-//static int bOptLen = sizeof(bool);
 
 Network::Network() {}
 
 Network::~Network() {}
 
-void Network::CheckForPackages(void(*m_callbackfunction)(NetworkEvent))
+void Network::checkForPackages(void(*m_callbackfunction)(NetworkEvent))
 {
 
 	bool morePackages = true;
@@ -27,7 +24,7 @@ void Network::CheckForPackages(void(*m_callbackfunction)(NetworkEvent))
 
 }
 
-bool Network::SetupHost(unsigned short port)
+bool Network::setupHost(unsigned short port)
 {
 	if (m_isInitialized)
 		return false;
@@ -64,18 +61,18 @@ bool Network::SetupHost(unsigned short port)
 	setsockopt(m_soc, IPPROTO_TCP, TCP_NODELAY, (char*)& bOptVal, bOptLen);//Prepare the socket to listen
 	setsockopt(m_soc, IPPROTO_TCP, SO_SNDBUF, (char*)& iOptVal, iOptLen);//Prepare the socket to listen
 
-	listen(m_soc, SOMAXCONN);
+	::listen(m_soc, SOMAXCONN);
 
 	m_isInitialized = true;
 	m_isServer = true;
 
 	//Start a new thread that will wait for new connections
-	m_clientAcceptThread = new std::thread(&Network::WaitForNewConnections, this);
+	m_clientAcceptThread = new std::thread(&Network::waitForNewConnections, this);
 
 	return true;
 }
 
-bool Network::SetupClient(const char* IP_adress, unsigned short hostport)
+bool Network::setupClient(const char* IP_adress, unsigned short hostport)
 {
 	if (m_isInitialized)
 		return false;
@@ -125,7 +122,7 @@ bool Network::SetupClient(const char* IP_adress, unsigned short hostport)
 	conn.ip = "";
 	conn.port = ntohs(m_myAddr.sin_port);
 	conn.id = 0;
-	conn.thread = new std::thread(&Network::Listen, this, conn); //Create new listening thread listening for the host
+	conn.thread = new std::thread(&Network::listen, this, conn); //Create new listening thread listening for the host
 	m_connections.push_back(conn);
 
 	m_isInitialized = true;
@@ -134,7 +131,7 @@ bool Network::SetupClient(const char* IP_adress, unsigned short hostport)
 	return true;
 }
 
-bool Network::Send(const char* message, size_t size, ConnectionID receiverID)
+bool Network::send(const char* message, size_t size, ConnectionID receiverID)
 {
 	if (receiverID == -1 && m_isServer) {
 		int n = 0;
@@ -145,7 +142,7 @@ bool Network::Send(const char* message, size_t size, ConnectionID receiverID)
 		int success = 0;
 		for (int i = 0; i < n; i++)
 		{
-			if (Send(message, size, i))
+			if (send(message, size, i))
 				success++;
 		}
 		//printf((std::string("Broadcasting to ") + std::to_string(success) + "/" + std::to_string(n) + " Clients: " + std::string(message) + "\n").c_str());
@@ -168,24 +165,24 @@ bool Network::Send(const char* message, size_t size, ConnectionID receiverID)
 	if (!conn.isConnected)
 		return false;
 
-	if (send(conn.socket, msg, MAX_PACKAGE_SIZE, 0) == SOCKET_ERROR)
+	if (::send(conn.socket, msg, MAX_PACKAGE_SIZE, 0) == SOCKET_ERROR)
 		return false;
 
 	return true;
 }
 
-bool Network::Send(const char* message, size_t size, Connection conn)
+bool Network::send(const char* message, size_t size, Connection conn)
 {
 	if (!conn.isConnected)
 		return false;
 
-	if (send(conn.socket, message, size, 0) == SOCKET_ERROR)
+	if (::send(conn.socket, message, size, 0) == SOCKET_ERROR)
 		return false;
 
 	return true;
 }
 
-void Network::Shutdown()
+void Network::shutdown()
 {
 	m_shutdown = true;
 
@@ -217,7 +214,7 @@ void Network::Shutdown()
 	delete[] m_awaitingMessages;
 }
 
-void Network::AddNetworkEvent(NetworkEvent n, int dataSize)
+void Network::addNetworkEvent(NetworkEvent n, int dataSize)
 {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
 
@@ -231,7 +228,7 @@ void Network::AddNetworkEvent(NetworkEvent n, int dataSize)
 		m_pstart++;
 }
 
-void Network::WaitForNewConnections()
+void Network::waitForNewConnections()
 {
 	while (!m_shutdown)
 	{
@@ -265,19 +262,19 @@ void Network::WaitForNewConnections()
 			//Critical region for m_connections
 			std::lock_guard<std::mutex> lock(m_mutex_connections);
 			conn.id = m_connections.size();
-			conn.thread = new std::thread(&Network::Listen, this, conn); //Create new listening thread for the new connection
+			conn.thread = new std::thread(&Network::listen, this, conn); //Create new listening thread for the new connection
 			m_connections.push_back(conn);
 		}
 	}
 }
 
-void Network::Listen(const Connection conn)
+void Network::listen(const Connection conn)
 {
 
 	NetworkEvent nEvent;
 	nEvent.clientID = conn.id;
 	nEvent.eventType = NETWORK_EVENT_TYPE::CLIENT_JOINED;
-	AddNetworkEvent(nEvent, 0);
+	addNetworkEvent(nEvent, 0);
 
 	bool connectionIsClosed = false;
 	char msg[MAX_PACKAGE_SIZE];
@@ -296,7 +293,7 @@ void Network::Listen(const Connection conn)
 #endif // DEBUG_NETWORK
 			connectionIsClosed = true;
 			nEvent.eventType = NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED;
-			AddNetworkEvent(nEvent, 0);
+			addNetworkEvent(nEvent, 0);
 			break;
 		case SOCKET_ERROR:
 #ifdef DEBUG_NETWORK
@@ -304,14 +301,14 @@ void Network::Listen(const Connection conn)
 #endif // DEBUG_NETWORK
 			connectionIsClosed = true;
 			nEvent.eventType = NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED;
-			AddNetworkEvent(nEvent, 0);
+			addNetworkEvent(nEvent, 0);
 			break;
 		default:
 
 			nEvent.data = reinterpret_cast<MessageData*>(msg);
 			nEvent.eventType = NETWORK_EVENT_TYPE::MSG_RECEIVED;
 
-			AddNetworkEvent(nEvent, bytesReceived);
+			addNetworkEvent(nEvent, bytesReceived);
 
 			break;
 		}

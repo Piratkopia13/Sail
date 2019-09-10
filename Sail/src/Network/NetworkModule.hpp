@@ -64,16 +64,16 @@ public:
 	Network();
 	~Network();
 
-	void CheckForPackages(void (*m_callbackfunction)(NetworkEvent));
+	void checkForPackages(void (*m_callbackfunction)(NetworkEvent));
 
 	/*
 		Call SetupHost() to initialize a host socket. Dont call this and SetupHost() in the same application.
 	*/
-	bool SetupHost(unsigned short port);
+	bool setupHost(unsigned short port);
 	/*
 		Call SetupClient() to initialize a client socket. Dont call this and SetupHost() in the same application.
 	*/
-	bool SetupClient(const char* host_ip, unsigned short hostport);
+	bool setupClient(const char* host_ip, unsigned short hostport);
 	/*
 		Send a message to connection "receiverID".
 		If SetupClient has been called, any number passed to receiverID will all send to the connected host.
@@ -81,10 +81,10 @@ public:
 
 		Return true if message could be sent to all receivers.
 	*/
-	bool Send(const char* message, size_t size, ConnectionID receiverID = 0);
-	bool Send(const char* message, size_t size, Connection conn);
+	bool send(const char* message, size_t size, ConnectionID receiverID = 0);
+	bool send(const char* message, size_t size, Connection conn);
 
-	void Shutdown();
+	void shutdown();
 
 private:
 	bool m_shutdown = false;
@@ -105,13 +105,13 @@ private:
 	std::mutex m_mutex_packages;
 	//std::mutex m_mutex_pend;
 
-	void AddNetworkEvent(NetworkEvent n, int dataSize);
+	void addNetworkEvent(NetworkEvent n, int dataSize);
 
 	/*
 		Only used by the server. This function is called in a new thread and waits for new incomming connection requests.
 		Accepted connections are stored in m_connections. A new thread is created for each connection directly Listen() in order to listen for incomming messages from that connection;
 	*/
-	void WaitForNewConnections();
+	void waitForNewConnections();
 
 	/*
 		This function is called by multiple threads. Listen for incomming messages from one specific connection.
@@ -120,5 +120,5 @@ private:
 
 		Host connection requests is handled in WaitForNewConnections()
 	*/
-	void Listen(const Connection conn);//Rename this function
+	void listen(const Connection conn);//Rename this function
 };
