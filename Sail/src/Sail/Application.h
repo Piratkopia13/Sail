@@ -10,6 +10,14 @@
 #include "resources/ResourceManager.h"
 #include "events/IEventDispatcher.h"
 
+#include <future>
+
+// Forward declarations
+namespace ctpl {
+	class thread_pool;
+}
+
+
 class Application : public IEventDispatcher {
 
 public:
@@ -20,6 +28,10 @@ public:
 public:
 	Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api = DX11);
 	virtual ~Application();
+
+
+	int testClassFunction(int id, int n) { return n; }
+
 
 	int startGameLoop();
 
@@ -38,6 +50,17 @@ public:
 	T* const getWindow() { return static_cast<T*>(m_window.get()); }
 	Window* const getWindow();
 
+	//TODO: documentation
+	template<typename F, typename... Rest>
+	auto pushJobToThreadPool(F&& f, Rest&& ... rest)->std::future<decltype(f(0, rest...))> {
+		return m_threadPool->push(f, std::forward<Rest>(rest)...);
+	}
+
+	template<typename F>
+	auto pushJobToThreadPool(F&& f)->std::future<decltype(f(0))> {
+		return m_threadPool->push(f);
+	}
+
 	static std::string getPlatformName();
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
@@ -50,6 +73,8 @@ private:
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	ResourceManager m_resourceManager;
+
+	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 
 	Timer m_timer;
 	UINT m_fps;

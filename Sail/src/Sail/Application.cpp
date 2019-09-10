@@ -3,6 +3,9 @@
 #include "events/WindowResizeEvent.h"
 #include "KeyCodes.h"
 
+
+int testStandaloneFunction(int id, int n) { return n; }
+
 Application* Application::m_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
@@ -13,6 +16,19 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 		return;
 	}
 	m_instance = this;
+
+	// Set up thread pool with twice the number of threads as logical cores
+	// Note: this value might need future optimization
+	unsigned int logicalCores = std::thread::hardware_concurrency();
+	m_threadPool = std::unique_ptr<ctpl::thread_pool>(new ctpl::thread_pool(2 * logicalCores));
+
+
+	// DEBUGGING to test thread pool
+	int testInt = 3;
+	std::future<int> retTest = pushJobToThreadPool(testStandaloneFunction, testInt);
+
+
+	int t = retTest.get();
 
 	// Set up window
 	Window::WindowProps windowProps;
@@ -27,7 +43,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Set up imgui handler
 	m_imguiHandler = std::unique_ptr<ImGuiHandler>(ImGuiHandler::Create());
 
-	// Initalize the window
+	// Initialize the window
 	if (!m_window->initialize()) {
 		OutputDebugString(L"\nFailed to initialize Win32Window\n");
 		Logger::Error("Failed to initialize Win32Window!");
@@ -37,7 +53,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Initialize the graphics API
 	if (!m_api->init(m_window.get())) {
 		OutputDebugString(L"\nFailed to initialize the graphics API\n");
-		Logger::Error("Failed to initialize the grahics API!");
+		Logger::Error("Failed to initialize the graphics API!");
 		return;
 	}
 
@@ -182,3 +198,5 @@ ResourceManager& Application::getResourceManager() {
 const UINT Application::getFPS() const {
 	return m_fps;
 }
+
+
