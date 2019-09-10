@@ -62,12 +62,12 @@ void Scene::draw(Camera& camera) {
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
-	for (Entity::SPtr& entity : m_entities) {
+	/*for (Entity::SPtr& entity : m_entities) {
 		TextComponent* text = entity->getComponent<TextComponent>();
 		if (text) {
 			text->draw();
 		}
-	}
+	}*/
 }
 
 bool Scene::onEvent(Event& event) {

@@ -1,11 +1,13 @@
 #pragma once
 
-//#include "Sail.h"
+class Entity;
 
 class BoundingBox {
 private:
 	glm::vec3 m_position;
 	glm::vec3 m_size;
+
+	Entity::SPtr m_modelEntity;
 
 public:
 	BoundingBox();
@@ -16,4 +18,6 @@ public:
 
 	void setPosition(glm::vec3 position);
 	void setSize(glm::vec3 size);
+
+	void setModel(Entity::SPtr modelEntity);
 };

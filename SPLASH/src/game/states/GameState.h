@@ -2,6 +2,8 @@
 
 #include "Sail.h"
 
+#include "Physics.h"
+
 class GameState : public State {
 public:
 	GameState(StateStack& stack);
@@ -36,4 +38,6 @@ private:
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 
+	BoundingBox m_boundingBox;
+	std::unique_ptr<Model> m_boundingBoxModel;
 };

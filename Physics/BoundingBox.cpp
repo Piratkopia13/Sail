@@ -1,4 +1,6 @@
 #include "PhysicsPCH.h"
+#include "Sail/entities/Entity.h"
+#include "Sail/entities/components/Components.h"
 
 #include "BoundingBox.h"
 
@@ -21,8 +23,14 @@ glm::vec3 BoundingBox::getSize() const {
 
 void BoundingBox::setPosition(glm::vec3 position) {
 	m_position = position;
+	m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_position);
 }
 
 void BoundingBox::setSize(glm::vec3 size) {
 	m_size = size;
+	m_modelEntity->getComponent<TransformComponent>()->setScale(m_size);
+}
+
+void BoundingBox::setModel(Entity::SPtr modelEntity) {
+	m_modelEntity = modelEntity;
 }
