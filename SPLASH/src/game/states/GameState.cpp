@@ -262,8 +262,6 @@ bool GameState::renderImguiConsole(float dt) {
 			std::string original = m_cc.getTextField();
 			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
 				ImGuiInputTextFlags_EnterReturnsTrue);
-
-
 			ImGui::SameLine();
 			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
 				
@@ -278,30 +276,6 @@ bool GameState::renderImguiConsole(float dt) {
 			else {
 				m_cc.setTextField(std::string(buf));
 			}
-	
-			//ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-			//ImGui::TextWrapped("NOTE: Animations are skinned on the CPU. This is slow. Turn down animation speed to 0 to see pure raytracing performance.");
-			//ImGui::PopStyleColor();
-			//ImGui::SliderFloat("Speed", &m_animationSpeed, 0.0f, 1.0f);
-			//ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
-			//if (ImGui::CollapsingHeader("Objects")) {
-			//	for (int i = 0; i < m_gameObjects.size(); i++) {
-			//		if (ImGui::TreeNode(std::string("Animation " + std::to_string(i)).c_str())) {
-			//			ImGui::Checkbox("Updating", &m_gameObjects[i].getAnimationUpdate());
-			//
-			//			int index = (int)m_gameObjects[i].getAnimationIndex();
-			//			if (ImGui::SliderInt("Animation", &index, 0, (int)m_gameObjects[i].getModel()->getStackSize() - 1)) {
-			//				m_gameObjects[i].setAnimationIndex(index);
-			//			}
-			//
-			//			if (ImGui::SliderFloat("Time", &m_gameObjects[i].getAnimationTime(), 0.0f, m_gameObjects[i].getMaxAnimationTime())) {
-			//
-			//			}
-			//
-			//			ImGui::TreePop();
-			//		}
-			//	}
-			//}
 			ImGui::End();
 		}
 		else {
