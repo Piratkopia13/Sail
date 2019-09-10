@@ -1,11 +1,13 @@
 #include "GameState.h"
 #include "imgui.h"
 
+
 GameState::GameState(StateStack& stack)
-: State(stack)
-//, m_cam(20.f, 20.f, 0.1f, 5000.f)
-, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-, m_camController(&m_cam)
+	: State(stack)
+	//, m_cam(20.f, 20.f, 0.1f, 5000.f)
+	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
+	, m_camController(&m_cam)
+	, m_cc(true)
 {
 
 	// Get the Application instance
@@ -144,7 +146,9 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);;
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-
+	if (Input::WasKeyJustPressed(SAIL_KEY_OEM_5)) {
+		m_cc.toggle();
+	}
 	// Update the camera controller from input devices
 	m_camController.update(dt);
 
@@ -173,6 +177,8 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
+
+
 
 bool GameState::update(float dt) {
 
@@ -221,5 +227,88 @@ bool GameState::render(float dt) {
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
+	renderImguiConsole(dt);
+	return false;
+}
+
+
+
+
+
+bool GameState::renderImguiConsole(float dt) {
+	
+
+	bool open = m_cc.windowOpen();
+	if (open) {
+		static char buf[256] = "";
+		if (ImGui::Begin("Animation", &open)) {
+			m_cc.windowState(open);
+			std::string txt = "test";
+			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
+			
+
+			for (int i = 0; i < m_cc.getLog().size(); i++) {
+				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
+			}
+
+			ImGui::EndChild();
+			ImGui::Separator();
+			bool reclaim_focus = false;
+			
+			m_cc.getTextField().copy(buf, m_cc.getTextField().size()+1);
+			buf[m_cc.getTextField().size()] = '\0';
+
+			//std::string* str = new std::string(m_cc.getTextField());
+			std::string original = m_cc.getTextField();
+			if (ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
+				ImGuiInputTextFlags_EnterReturnsTrue)) {
+				
+				if (m_cc.execute()) {
+
+				}
+				
+				
+				
+				reclaim_focus = true;
+			}
+			m_cc.setTextField(std::string(buf));
+	
+			//ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+			//ImGui::TextWrapped("NOTE: Animations are skinned on the CPU. This is slow. Turn down animation speed to 0 to see pure raytracing performance.");
+			//ImGui::PopStyleColor();
+			//ImGui::SliderFloat("Speed", &m_animationSpeed, 0.0f, 1.0f);
+			//ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
+			//if (ImGui::CollapsingHeader("Objects")) {
+			//	for (int i = 0; i < m_gameObjects.size(); i++) {
+			//		if (ImGui::TreeNode(std::string("Animation " + std::to_string(i)).c_str())) {
+			//			ImGui::Checkbox("Updating", &m_gameObjects[i].getAnimationUpdate());
+			//
+			//			int index = (int)m_gameObjects[i].getAnimationIndex();
+			//			if (ImGui::SliderInt("Animation", &index, 0, (int)m_gameObjects[i].getModel()->getStackSize() - 1)) {
+			//				m_gameObjects[i].setAnimationIndex(index);
+			//			}
+			//
+			//			if (ImGui::SliderFloat("Time", &m_gameObjects[i].getAnimationTime(), 0.0f, m_gameObjects[i].getMaxAnimationTime())) {
+			//
+			//			}
+			//
+			//			ImGui::TreePop();
+			//		}
+			//	}
+			//}
+			ImGui::End();
+		}
+		else {
+		
+			ImGui::End();
+		}
+
+	}
+
+
+
+
+
+
 	return false;
 }

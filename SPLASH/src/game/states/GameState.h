@@ -20,6 +20,7 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool renderImguiConsole(float dt);
 
 private:
 	Application* m_app;
@@ -32,7 +33,7 @@ private:
 
 	Scene m_scene;
 	LightSetup m_lights;
-
+	ConsoleCommands m_cc;
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 
