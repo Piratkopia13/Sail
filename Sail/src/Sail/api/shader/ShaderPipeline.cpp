@@ -16,6 +16,7 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, hsBlob(nullptr)
 	, filename(filename)
 	, wireframe(false)
+	, cullMode(GraphicsAPI::Culling::NO_CULLING)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 }

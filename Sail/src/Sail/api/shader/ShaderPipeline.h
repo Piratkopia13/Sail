@@ -56,7 +56,7 @@ protected:
 	std::string filename;
 
 	bool wireframe; //Only used in DX12ShaderPipeline. TODO: Implement for other API:s
-	GraphicsAPI::Culling cullMode;
+	GraphicsAPI::Culling cullMode; //Only used in DX12ShaderPipeline. TODO: Implement for other API:s
 
 	void* vsBlob; // Used for the input layout
 	void* gsBlob;
