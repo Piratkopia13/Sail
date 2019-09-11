@@ -154,8 +154,6 @@ ID3D12Resource* DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
 	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_DXR_TopBuffer[frameIndex].result->GetGPUVirtualAddress());
 	// Set scene constant buffer
 	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_cameraCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
-	// Set ray gen settings constant buffer
-	//cmdList->SetComputeRootConstantBufferView(DXRGlobalRootParam::CBV_SETTINGS, m_rayGenSettingsCB->getBuffer(m_context->getFrameIndex())->GetGPUVirtualAddress());
 
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
@@ -410,63 +408,62 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 
 	// 	 "Shader tables can be modified freely by the application (with appropriate state barriers)"
 
-	// This might need to be called every AS update (without loop)
-	for (unsigned int frameIndex = 0; frameIndex < m_context->getNumSwapBuffers(); frameIndex++) {
-		// Ray gen
-		{
-			if (m_rayGenShaderTable[frameIndex].Resource) {
-				m_rayGenShaderTable[frameIndex].Resource->Release();
-				m_rayGenShaderTable[frameIndex].Resource.Reset();
-			}
-			DXRUtils::ShaderTableBuilder tableBuilder(m_rayGenName, m_rtPipelineState.Get());
-			tableBuilder.addDescriptor(m_rtOutputUAV.gpuHandle.ptr);
-			m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+	auto frameIndex = m_context->getFrameIndex();
+
+	// Ray gen
+	{
+		if (m_rayGenShaderTable[frameIndex].Resource) {
+			m_rayGenShaderTable[frameIndex].Resource->Release();
+			m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
+		DXRUtils::ShaderTableBuilder tableBuilder(m_rayGenName, m_rtPipelineState.Get());
+		tableBuilder.addDescriptor(m_rtOutputUAV.gpuHandle.ptr);
+		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+	}
 
-		// Miss
-		{
-			if (m_missShaderTable[frameIndex].Resource) {
-				m_missShaderTable[frameIndex].Resource->Release();
-				m_missShaderTable[frameIndex].Resource.Reset();
-			}
-			DXRUtils::ShaderTableBuilder tableBuilder(m_missName, m_rtPipelineState.Get());
-			//tableBuilder.addDescriptor(m_skyboxGPUDescHandle.ptr);
-			m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+	// Miss
+	{
+		if (m_missShaderTable[frameIndex].Resource) {
+			m_missShaderTable[frameIndex].Resource->Release();
+			m_missShaderTable[frameIndex].Resource.Reset();
 		}
+		DXRUtils::ShaderTableBuilder tableBuilder(m_missName, m_rtPipelineState.Get());
+		//tableBuilder.addDescriptor(m_skyboxGPUDescHandle.ptr);
+		m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+	}
 
-		// Hit group
-		// TODO: use different hit groups for regular shading, shadows, transparecy etc
-		{
-			if (m_hitGroupShaderTable[frameIndex].Resource) {
-				m_hitGroupShaderTable[frameIndex].Resource->Release();
-				m_hitGroupShaderTable[frameIndex].Resource.Reset();
-			}
-			DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size(), 64U);
-			for (unsigned int i = 0; i < sceneGeometry.size(); i++) {
-				auto& mesh = sceneGeometry[i].mesh;
+	// Hit group
+	// TODO: use different hit groups for regular shading, shadows, transparecy etc
+	{
+		if (m_hitGroupShaderTable[frameIndex].Resource) {
+			m_hitGroupShaderTable[frameIndex].Resource->Release();
+			m_hitGroupShaderTable[frameIndex].Resource.Reset();
+		}
+		DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size(), 64U);
+		for (unsigned int i = 0; i < sceneGeometry.size(); i++) {
+			auto& mesh = sceneGeometry[i].mesh;
 
-				m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
-					if (parameterName == "VertexBuffer") {
-						tableBuilder.addDescriptor(m_rtMeshHandles[i].vertexBufferHandle, i);
-					} else if (parameterName == "IndexBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-						tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[i].indexBufferHandle : nullAddr, i);
-					} else if (parameterName == "MeshCBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
-						tableBuilder.addDescriptor(meshCBHandle, i);
-					} else if (parameterName == "Textures") {
-						// Three textures
-						for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-							tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandles[textureNum].ptr, i);
-						}
-					} else {
-						Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
+			m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
+				if (parameterName == "VertexBuffer") {
+					tableBuilder.addDescriptor(m_rtMeshHandles[i].vertexBufferHandle, i);
+				} else if (parameterName == "IndexBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
+					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[i].indexBufferHandle : nullAddr, i);
+				} else if (parameterName == "MeshCBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
+					tableBuilder.addDescriptor(meshCBHandle, i);
+				} else if (parameterName == "Textures") {
+					// Three textures
+					for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+						tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandles[textureNum].ptr, i);
 					}
+				} else {
+					Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
+				}
 					
-				});
-			}
-			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+			});
 		}
+		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 }
 
