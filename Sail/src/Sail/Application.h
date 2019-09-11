@@ -8,6 +8,7 @@
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
+#include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "events/IEventDispatcher.h"
 
 class Application : public IEventDispatcher {
@@ -42,6 +43,7 @@ public:
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
+	MemoryManager& getMemoryManager();
 	const UINT getFPS() const;
 
 private:
@@ -50,6 +52,8 @@ private:
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	ResourceManager m_resourceManager;
+	MemoryManager m_memoryManager;
+	
 
 	Timer m_timer;
 	UINT m_fps;

@@ -50,6 +50,24 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
 
+
+	/*
+	TODO: This has to be designed for the application, only a temporary implementation
+		struct PoolInstance {
+			unsigned int sizeBytesEachEntry;
+			unsigned int numEntries;
+			unsigned int numQuadrants;
+		};
+
+		struct StackInstance {
+			unsigned int sizeBytes;
+		};
+	*/
+	std::vector<PoolInstance> poolInstances;
+	std::vector<StackInstance> stackInstances;
+	stackInstances.emplace_back(StackInstance{ 50 * 1000 * 1000 });
+	m_memoryManager.init(stackInstances, poolInstances);
+
 }
 
 Application::~Application() {
@@ -178,6 +196,9 @@ ImGuiHandler* const Application::getImGuiHandler() {
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
+}
+MemoryManager& Application::getMemoryManager() {
+	return m_memoryManager;
 }
 const UINT Application::getFPS() const {
 	return m_fps;
