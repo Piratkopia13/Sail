@@ -33,7 +33,25 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 }
 
 DXRBase::~DXRBase() {
-
+	m_rtPipelineState->Release();
+	for (auto& blasList : m_DXR_BottomBuffers) {
+		for (auto& blas : blasList) {
+			blas.release();
+		}
+	}
+	for (auto& tlas : m_DXR_TopBuffer) {
+		tlas.release();
+	}
+	for (auto& st : m_rayGenShaderTable) {
+		st.release();
+	}
+	for (auto& st : m_missShaderTable) {
+		st.release();
+	}
+	for (auto& st : m_hitGroupShaderTable) {
+		st.release();
+	}
+		
 }
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
@@ -111,23 +129,6 @@ void DXRBase::updateCamera(Camera& cam) {
 ID3D12Resource* DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
 	
 	unsigned int frameIndex = m_context->getFrameIndex();
-
-	//// Update constant buffers
-	//if (m_camera) {
-	//	XMMATRIX jitterMat = XMMatrixIdentity();
-	//	if (getRTFlags() & RT_ENABLE_JITTER_AA) {
-	//		float jitterX = (float(m_dis(m_gen)) * 0.26f - 0.13f) / m_renderer->getWindow()->getWindowWidth();
-	//		float jitterY = (float(m_dis(m_gen)) * 0.26f - 0.13f) / m_renderer->getWindow()->getWindowHeight();
-	//		jitterMat = XMMatrixTranslation(jitterX, jitterY, 0.f);
-	//	}
-	//	m_sceneCBData->cameraPosition = m_camera->getPositionF3();
-	//	m_sceneCBData->projectionToWorld = (m_camera->getInvProjMatrix() * jitterMat) * m_camera->getInvViewMatrix();
-	//	m_sceneCB->setData(m_sceneCBData, 0);
-	//}
-
-	//m_rayGenCBData.frameCount++;
-	//m_rayGenSettingsCB->setData(&m_rayGenCBData, 0);
-
 
 	//Set constant buffer descriptor heap
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_rtDescriptorHeap.Get() };

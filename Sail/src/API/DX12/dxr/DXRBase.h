@@ -111,11 +111,11 @@ private:
 	std::vector<std::vector<AccelerationStructureBuffers>> m_DXR_BottomBuffers;
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
 
-	wComPtr<ID3D12StateObject> m_rtPipelineState = nullptr;
+	wComPtr<ID3D12StateObject> m_rtPipelineState;
 
-	std::vector<DXRUtils::ShaderTableData> m_rayGenShaderTable{};
-	std::vector<DXRUtils::ShaderTableData> m_missShaderTable{};
-	std::vector<DXRUtils::ShaderTableData> m_hitGroupShaderTable{};
+	std::vector<DXRUtils::ShaderTableData> m_rayGenShaderTable;
+	std::vector<DXRUtils::ShaderTableData> m_missShaderTable;
+	std::vector<DXRUtils::ShaderTableData> m_hitGroupShaderTable;
 
 	struct ResourceWithDescriptor {
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
