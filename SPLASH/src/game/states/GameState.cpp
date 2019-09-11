@@ -224,6 +224,14 @@ bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
 
+	ImGui::Begin("Rendering settings");
+	const char* items[] = { "Forward raster", "Raytraced" };
+	static int selectedRenderer = 0;
+	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
+		m_scene.changeRenderer(selectedRenderer);
+	}
+	ImGui::End();
+
 	ImGui::Begin("Performance");
 	ImGui::Text("VRAM usage: %u / %u MB", m_app->getAPI()->getMemoryUsage(), m_app->getAPI()->getMemoryBudget());
 	ImGui::End();

@@ -55,7 +55,7 @@ void rayGen() {
 	payload.recursionDepth = 0;
 	payload.hit = 0;
 	payload.color = float4(0,0,0,0);
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+	TraceRay(gRtScene, 0, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 	lOutput[launchIndex] = payload.color;
 
 	// lOutput[launchIndex] = float4(1.0f, 0.2f, 0.2f, 1.0f);
@@ -64,6 +64,17 @@ void rayGen() {
 [shader("miss")]
 void miss(inout RayPayload payload) {
 	payload.color = float4(0.2f, 0.2f, 0.2f, 1.0f);
+}
+
+float4 getColor(MeshData data, float2 texCoords) {
+	float4 color = data.color;
+	if (data.flags & MESH_HAS_DIFFUSE_TEX)
+		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
+	if (data.flags & MESH_HAS_NORMAL_TEX)
+		color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
+	if (data.flags & MESH_HAS_SPECULAR_TEX)
+		color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
+	return color;
 }
 
 [shader("closesthit")]
@@ -94,20 +105,13 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 
 	// float3 normalInWorldSpace = float3(0,-1,0);
 
-	// if ((CB_MeshData.data[instanceID].flags & MESH_USE_INDICES) && payload.recursionDepth < 0) {
-	// 	float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
-	// 	TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
-	// 	payload.color += float4(0.5, 0.2, 0.2, 0.0);
-	// } else {
-		// Max recursion, return color
-		// payload.color = float4(normalInWorldSpace * 0.5f + 0.5, 1.f);
+	if (payload.recursionDepth < 2) {
+		float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
+		TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
+		payload.color = payload.color * 0.2f + getColor(CB_MeshData.data[instanceID], texCoords) * 0.8f;
 
-		payload.color = CB_MeshData.data[instanceID].color;
-		if (CB_MeshData.data[instanceID].flags & MESH_HAS_DIFFUSE_TEX)
-			payload.color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
-		if (CB_MeshData.data[instanceID].flags & MESH_HAS_NORMAL_TEX)
-			payload.color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
-		if (CB_MeshData.data[instanceID].flags & MESH_HAS_SPECULAR_TEX)
-			payload.color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
-	// }
+	} else {
+		// Max recursion, return color
+		payload.color = getColor(CB_MeshData.data[instanceID], texCoords);
+	}
 }
