@@ -45,7 +45,7 @@ public:
 
 	void treeNeedsUpdating() {
 		m_parentUpdated = true;
-		for (auto child : m_children) {
+		for (Node<T>* child : m_children) {
 			child->treeNeedsUpdating();
 		}
 	}
@@ -69,10 +69,12 @@ public:
 	Node<T>* getParent() {
 		return m_parent;
 	}
-private:
+protected:
 	T* m_data = nullptr;
 
 	Node<T>* m_parent = nullptr;
 	std::vector<Node<T>*> m_children;
+private:
+
 	bool m_parentUpdated = false;
 };

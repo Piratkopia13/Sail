@@ -55,6 +55,8 @@ void Scene::draw(Camera& camera) {
 	//	}
 	//}
 
+
+	// TODO: Should be in a prepare render stage:
 	for (Entity::SPtr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
 		if (model) {
@@ -62,36 +64,11 @@ void Scene::draw(Camera& camera) {
 			TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
 			TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
 			if (data && matrix) {
-				if (data->wasUpdatedThisTick()) {
-					matrix->updateLocalMatrix(data->getTranslation(), data->getTranslation(), data->getScale());
-					data->dataProcessed();
-				}
-				//if (!data->hasParent() || data->getParentUpdated()) {
-				//	matrix->updateMatrix();
-				//}
-				//m_renderer->submit(model->getModel(), matrix->getMatrix());
+				m_renderer->submit(model->getModel(), data->getMatrixFromData());
 			}
 		}
 	}
 
-	for (Entity::SPtr& entity : m_entities) {
-		ModelComponent* model = entity->getComponent<ModelComponent>();
-		if (model) {
-			// Update all entities that have transform matrices
-			TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
-			TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
-			if (data && matrix) {
-				//if (data->wasUpdatedThisTick()) {
-				//	matrix->updateLocalMatrix(data->getTranslation(), data->getTranslation(), data->getScale());
-				//	data->dataProcessed();
-				//}
-				if (!data->hasParent() || data->getParentUpdated()) {
-					matrix->updateMatrix();
-				}
-				m_renderer->submit(model->getModel(), matrix->getMatrix());
-			}
-		}
-	}
 
 
 		//if (model) {
