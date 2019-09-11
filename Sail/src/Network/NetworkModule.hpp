@@ -1,16 +1,16 @@
 #pragma once
 #include <WS2tcpip.h>
-#pragma comment (lib, "ws2_32.lib")
 #include <vector>
 #include <string>
-//#include <iostream>
 #include <thread>
 #include <mutex>
 #include "NetworkStructs.hpp"
+#pragma comment (lib, "ws2_32.lib")
 
 struct Connection
 {
-	std::string ip, port;
+	std::string ip;
+	std::string port;
 	ConnectionID id;
 	bool isConnected;
 	SOCKET socket;
@@ -24,18 +24,13 @@ struct Connection
 	}
 };
 
-/*
-	This function needs to be implemented by the application and passed to SetupHost or SetupClient.
-*/
-//void CALLBACK ProcessPackage(Package p);
-
 class Network
 {
 public:
 	Network();
 	~Network();
 
-	void checkForPackages(void(*m_callbackfunction)(NetworkEvent));
+	void checkForPackages(NetworkEventHandler& handler);
 
 	/*
 		Call SetupHost() to initialize a host socket. Dont call this and SetupHost() in the same application.
@@ -53,7 +48,7 @@ public:
 		Return true if message could be sent to all receivers.
 	*/
 	bool send(const char* message, size_t size, ConnectionID receiverID = 0);
-	bool send(const char* message, size_t size, Connection conn);
+	bool send(const char* message, size_t size, const Connection &conn);
 
 	/*
 		Returns true if this is a Host.
@@ -77,15 +72,15 @@ private:
 	MessageData* m_awaitingMessages;
 	NetworkEvent* m_awaitingEvents;
 
-	int m_pstart = 0, m_pend = 0;
+	int m_pstart = 0;
+	int m_pend = 0;
 	std::mutex m_mutex_packages;
-	//std::mutex m_mutex_pend;
 
 	void addNetworkEvent(NetworkEvent n, int dataSize);
 
 	/*
 		Only used by the server. This function is called in a new thread and waits for new incomming connection requests.
-		Accepted connections are stored in m_connections. A new thread is created for each connection directly Listen() in order to listen for incomming messages from that connection;
+		Accepted connections are stored in m_connections. A new thread is created for each connection directly Listen() in order to listen for incomming messages from that connection.
 	*/
 	void waitForNewConnections();
 
@@ -96,5 +91,5 @@ private:
 
 		Host connection requests is handled in WaitForNewConnections()
 	*/
-	void listen(const Connection conn);//Rename this function
+	void listen(const Connection &conn);//Rename this function
 };

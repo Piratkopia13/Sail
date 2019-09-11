@@ -1,6 +1,6 @@
 #pragma once
-#define MAX_PACKAGE_SIZE 64
-#define MAX_AWAITING_PACKAGES 1000
+const unsigned int MAX_PACKAGE_SIZE = 64;
+const unsigned int MAX_AWAITING_PACKAGES = 1000;
 //#define DEBUG_NETWORK
 
 typedef unsigned long long ConnectionID;
@@ -27,4 +27,14 @@ struct NetworkEvent {
 		clientID = 0;
 		data = nullptr;
 	}
+};
+
+class NetworkEventHandler
+{
+public:
+	NetworkEventHandler() {};
+	~NetworkEventHandler() {};
+	virtual void handleNetworkEvents(NetworkEvent nEvents) = 0;
+private:
+
 };
