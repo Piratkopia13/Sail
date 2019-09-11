@@ -18,7 +18,8 @@ public:
 protected:
 	void finish();
 protected:
-	std::unique_ptr<ShaderPipeline> shaderPipeline;
+	// This is a raw pointer and not a smart pointer because reload() requires new (*) T() functionality
+	ShaderPipeline* shaderPipeline;
 private:
 	bool m_finished;
 

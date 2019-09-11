@@ -36,6 +36,7 @@ public:
 
 	InputLayout& getInputLayout();
 	void* getVsBlob();
+	const std::string& getName() const;
 
 	void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);

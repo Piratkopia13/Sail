@@ -5,12 +5,10 @@
 
 namespace ModelFactory {
 
-	using namespace DirectX::SimpleMath;
-
 	class ScreenQuadModel {
 	public:
 
-		static std::unique_ptr<Model> Create(ShaderPipeline* shaderSet) {
+		static std::unique_ptr<Model> Create(Shader* shader) {
 
 			//ShaderSet* shaderSet = Application::getResourceManager().getShaderSet<>();
 
@@ -43,7 +41,7 @@ namespace ModelFactory {
 			data.indices = indices;
 			data.texCoords = texCoords;
 
-			return std::make_unique<Model>(data, shaderSet);
+			return std::make_unique<Model>(data, shader);
 
 		}
 

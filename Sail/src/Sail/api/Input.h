@@ -3,8 +3,9 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <functional>
+#include "Sail/events/Events.h"
 
-class Input {
+class Input : public IEventListener {
 	friend class Application;
 public:
 	template <typename T>
@@ -22,6 +23,8 @@ public:
 	
 	static void HideCursor(bool hide) { m_Instance->hideCursorImpl(hide); };
 	static bool IsCursorHidden() { return m_Instance->isCursorHiddenImpl(); };
+
+	virtual bool onEvent(Event& event) { return true; }
 
 protected:
 	virtual bool isKeyPressedImpl(int keycode) = 0;

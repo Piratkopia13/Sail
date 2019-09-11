@@ -3,20 +3,20 @@
 #include "Sail/api/VertexBuffer.h"
 #include "Sail/api/IndexBuffer.h"
 #include "Sail/Application.h"
-#include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/graphics/shader/Shader.h"
 #include "resources/DescriptorHeap.h"
 
-Mesh* Mesh::Create(Data& buildData, ShaderPipeline* shaderPipeline) {
-	return SAIL_NEW DX12Mesh(buildData, shaderPipeline);
+Mesh* Mesh::Create(Data& buildData, Shader* shader) {
+	return SAIL_NEW DX12Mesh(buildData, shader);
 }
 
-DX12Mesh::DX12Mesh(Data& buildData, ShaderPipeline* shaderPipeline)
-	: Mesh(buildData, shaderPipeline)
+DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
+	: Mesh(buildData, shader)
 {
 	m_context = Application::getInstance()->getAPI<DX12API>();
-	material = std::make_shared<Material>(shaderPipeline);
+	material = std::make_shared<Material>(shader);
 	// Create vertex buffer
-	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shaderPipeline->getInputLayout(), buildData));
+	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), buildData));
 	// Create index buffer if indices are set
 	if (buildData.numIndices > 0) {
 		indexBuffer = std::unique_ptr<IndexBuffer>(IndexBuffer::Create(buildData));

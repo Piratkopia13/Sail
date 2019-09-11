@@ -6,3 +6,4 @@
 #include "EventHandler.h"
 
 #include "WindowResizeEvent.h"
+#include "WindowFocusChangedEvent.h"

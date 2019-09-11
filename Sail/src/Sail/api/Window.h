@@ -13,7 +13,7 @@ public:
 	};
 public:
 	static Window* Create(const WindowProps& props);
-	Window(const WindowProps& props) : windowWidth(props.windowWidth), windowHeight(props.windowHeight), isWindowMinimized(false) {}
+	Window(const WindowProps& props) : windowWidth(props.windowWidth), windowHeight(props.windowHeight), isWindowMinimized(false), isWindowFocused(false) {}
 	virtual ~Window() {}
 
 	virtual bool initialize() = 0;
@@ -22,12 +22,14 @@ public:
 	virtual inline unsigned int getWindowWidth() const { return windowWidth; };
 	virtual inline unsigned int getWindowHeight() const { return windowHeight; };
 	virtual inline bool isMinimized() const { return isWindowMinimized; };
+	virtual inline bool isFocused() const { return isWindowFocused; };
 
 
 protected:
 	unsigned int windowWidth;
 	unsigned int windowHeight;
 	bool isWindowMinimized;
+	bool isWindowFocused;
 
 private:
 	// NOTE: this method is only used internally by the sail and should not be called by the user

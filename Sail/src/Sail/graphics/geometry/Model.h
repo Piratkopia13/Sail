@@ -17,7 +17,7 @@ public:
 public: 
 	//Model(std::vector<Mesh::Data>& data, ShaderSet* shaderSet);
 	Model();
-	Model(Mesh::Data& data, ShaderPipeline* shaderPipeline);
+	Model(Mesh::Data& data, Shader* shader);
 	//Model(const std::string& path, ShaderSet* shaderSet);
 	~Model();
 
