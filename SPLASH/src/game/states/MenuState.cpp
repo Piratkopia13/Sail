@@ -4,7 +4,8 @@
 //#include "../imgui-sfml-master/imgui-SFML.h"
 #include "..//libraries/imgui/imgui.h"
 #include "..//Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
-#include "../Sail/src/API/Windows/Win32Input.h"
+#include "..//SPLASH/src/game/events/TextInputEvent.h"
+
 #include <string>
 using namespace std;
 
@@ -17,11 +18,18 @@ MenuState::MenuState(StateStack& stack)
 	// ImGui is already initiated and set up, thanks alex!
 	m_app = Application::getInstance();
 	m_input = Input::GetInstance();
-	m_playerLimit = 12;
+	m_textHeight = 52;
+	m_outerPadding = 15;
+
 	m_messageLimit = 5;
-	
 	m_messages = new message[m_messageLimit];
+
+	m_playerLimit = 12;
 	m_players = new string[m_playerLimit];
+
+	m_messageSizeLimit = 50;
+	m_currentMessageIndex = 0;
+	m_currentMessage = new char[m_messageSizeLimit] { 0 };
 
 
 	// -------- test -------- 
@@ -44,6 +52,7 @@ bool MenuState::processInput(float dt){
 	/// ChatBox input from here, so it always recieves input (maybe switch on/off with enter)
 	if (m_input->IsKeyPressed(SAIL_KEY_DOWN)) {
 		// 48-90 0-Z
+		int asdf = 3;
 	}
 
 	// Did user want to change some setting?
@@ -104,6 +113,25 @@ bool MenuState::renderImgui(float dt) {
 	return false;
 }
 
+bool MenuState::onEvent(Event& event) {
+	Logger::Log("Received event: " + std::to_string(event.getType()));
+
+	EventHandler::dispatch<TextInputEvent>(event, SAIL_BIND_EVENT(&MenuState::onTextInput));
+
+	return false;
+}
+
+bool MenuState::onTextInput(TextInputEvent& event)
+{
+	TextInputEvent* e = (TextInputEvent*)& event;
+	MSG message = e->getMSG();
+
+	message.wParam;
+
+	return true;
+}
+
+
 void MenuState::renderPlayerList() {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	flags |= ImGuiWindowFlags_NoResize;
@@ -139,7 +167,7 @@ void MenuState::renderStartButton() {
 	));
 	ImGui::Begin("Goto GameState", NULL, flags);
 	if (ImGui::Button("S.P.L.A.S.H")) {
-		// Queue a removal of menustate, then a push of gamestate
+		// Queue a removal of menustate, the		n a push of gamestate
 		this->requestStackPop();
 		this->requestStackPush(States::Game);
 	}
@@ -161,7 +189,6 @@ void MenuState::renderChat() {
 	chatFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	chatFlags |= ImGuiWindowFlags_NoTitleBar;
 	chatFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-
 	ImGui::SetNextWindowPos(ImVec2(
 		m_outerPadding,
 		m_screenHeight - (m_outerPadding + m_textHeight)
@@ -171,27 +198,17 @@ void MenuState::renderChat() {
 		NULL,
 		chatFlags
 	);
-	char* input = new char[255]{ 0 };
-	int charCount = 255;
+
+
 	ImGui::Text("Enter Message:");
-
-	if (ImGui::InputText("", input, 255, ImGuiInputTextFlags_EnterReturnsTrue)) {
-
-		// Save messages here, use a messageLogger or smth which
-		// handles all responsibilities for logging and maintaining
-		// a fixed size, deletion of extra, etc.
-		// ---
-		std::string temp = std::string(input);
-
+	if (ImGui::InputText("", m_currentMessage, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
 		message msg = {
 			0, // My id
-			temp
+			std::string(m_currentMessage)
 		};
 		m_messageCount = m_messageCount % m_messageLimit;
 		m_messages[m_messageCount++] = msg;
 	}
-	delete[]input;
-
 	ImGui::End();
 
 
@@ -209,7 +226,6 @@ void MenuState::renderChat() {
 	ImGui::Begin("Chat Log", NULL, chatFlags);
 	ImGui::SameLine();
 	ImGui::BeginChild("Messages");
-
 	for (size_t i = 0; i < m_messageCount; i++) {
 		std::string msg;
 		msg.append("HH:MM:SS | ");
@@ -244,6 +260,7 @@ void MenuState::addTestData()
 	msg.content = "msg 3 mr.boss";
 	m_messages[2] = msg;
 }
+
 
 bool MenuState::playerJoined(string name) {
 	if (m_playerCount < m_playerLimit) {

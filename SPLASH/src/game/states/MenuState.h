@@ -4,8 +4,7 @@
 #include <string>
 using namespace std;
 
-// Currently only a copy of State, but if more menus are added,
-// similar behavior between menuStates should reside here.
+class TextInputEvent;
 
 struct message {
 	unsigned int playerID;
@@ -26,19 +25,18 @@ public:
 	// Renders imgui
 	bool renderImgui(float dt);
 	// Sends events to the state
-	bool onEvent(Event& event) { return true; }
+	bool onEvent(Event& event);
 
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 	Application* m_app = nullptr;
 	Input* m_input = nullptr;
 
-	// Formatting settings
-	unsigned int m_outerPadding = 15;
+	// Render ImGui Stuff
+	unsigned int m_outerPadding;
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;
-	unsigned int m_textHeight = 52;
-	// Render ImGui Stuff
+	unsigned int m_textHeight;
 	void renderPlayerList();
 	void renderStartButton();
 	void renderSettings();
@@ -50,12 +48,19 @@ private:
 	// Handling the Players & Chat
 	message* m_messages = nullptr;
 	string* m_players = nullptr;
+	char* m_currentMessage = nullptr;
+	unsigned int m_currentMessageIndex;
+	unsigned int m_messageSizeLimit;
 	unsigned int m_playerCount = 0;
-	unsigned int m_playerLimit = 12;
+	unsigned int m_playerLimit;
 	unsigned int m_messageCount = 0;
-	unsigned int m_messageLimit = 50;
+	unsigned int m_messageLimit;
+
+	// Events
+	bool onTextInput(TextInputEvent& event);
+
 	bool playerJoined(string name);
-	
+	//bool playerLeft(string name); ? 
 
 	
 };

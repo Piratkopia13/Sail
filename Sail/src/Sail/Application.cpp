@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
+#include "../..//..//SPLASH/SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyCodes.h"
 
 Application* Application::m_instance = nullptr;
@@ -80,6 +81,11 @@ int Application::startGameLoop() {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+
+			if (msg.message == WM_KEYDOWN) {
+				dispatchEvent(TextInputEvent(msg));
+			}
+		
 		} else {
 
 			// Handle window resizing
