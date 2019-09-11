@@ -3,11 +3,12 @@
 
 
 GameState::GameState(StateStack& stack)
-	: State(stack)
-	//, m_cam(20.f, 20.f, 0.1f, 5000.f)
-	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-	, m_camController(&m_cam)
-	, m_cc(true)
+: State(stack)
+//, m_cam(20.f, 20.f, 0.1f, 5000.f)
+, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
+//, m_camController(&m_cam)
+, m_playerController(&m_cam)
+, m_cc(true)
 {
 
 	// Get the Application instance
@@ -22,7 +23,9 @@ GameState::GameState(StateStack& stack)
 
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
-	m_camController.lookAt(glm::vec3(0.f));
+	//m_camController.lookAt(glm::vec3(0.f));
+	m_cam.lookAt(glm::vec3(0.f));
+	m_playerController.getEntity()->getComponent<TransformComponent>()->setTranslation(glm::vec3(1.6f, 4.7f, 7.4f));
 	
 	// Add a directional light
 	glm::vec3 color(1.0f, 1.0f, 1.0f);
@@ -114,6 +117,7 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
+	m_physSystem.registerEntity(m_playerController.getEntity());
 }
 
 GameState::~GameState() {
@@ -150,7 +154,9 @@ bool GameState::processInput(float dt) {
 		m_cc.toggle();
 	}
 	// Update the camera controller from input devices
-	m_camController.update(dt);
+	//m_camController.update(dt);
+	m_playerController.update(dt);
+	m_physSystem.execute(dt);
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
