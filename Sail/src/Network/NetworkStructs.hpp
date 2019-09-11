@@ -5,7 +5,6 @@
 
 typedef unsigned long long ConnectionID;
 
-
 enum class NETWORK_EVENT_TYPE {
 	NETWORK_ERROR,
 	CLIENT_JOINED,

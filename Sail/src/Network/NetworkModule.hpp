@@ -35,7 +35,7 @@ public:
 	Network();
 	~Network();
 
-	void checkForPackages(void (*m_callbackfunction)(NetworkEvent));
+	void checkForPackages(void(*m_callbackfunction)(NetworkEvent));
 
 	/*
 		Call SetupHost() to initialize a host socket. Dont call this and SetupHost() in the same application.
@@ -54,6 +54,11 @@ public:
 	*/
 	bool send(const char* message, size_t size, ConnectionID receiverID = 0);
 	bool send(const char* message, size_t size, Connection conn);
+
+	/*
+		Returns true if this is a Host.
+	*/
+	bool isServer();
 
 	void shutdown();
 

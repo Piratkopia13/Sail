@@ -11,10 +11,13 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 	// Set starting state
 	m_stateStack.pushState(States::Game);
-	NetworkWrapper wrapper;
+	
+	m_networkWrapper = new NetworkWrapper();
 }
 
-Game::~Game() {	}
+Game::~Game() {
+	delete m_networkWrapper;
+}
 
 int Game::run() {
 	
@@ -39,6 +42,43 @@ void Game::processInput(float dt) {
 
 void Game::update(float dt) {
 	m_stateStack.update(dt);
+
+	// TEMPORARY TESTING FOR NETWORK
+
+	//m_networkWrapper->ProcessPackages(,);
+
+	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_H)) {
+		
+		if (m_networkWrapper->Host())
+		{
+			printf("Setting up host.");
+		}
+		else
+		{
+			printf("Failed to set up Host.");
+		}
+	}
+
+	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_J))
+	{
+		if (m_networkWrapper->ConnectToIP("192.168.1.55"))
+		{
+			printf("Connecting to 192.168.1.55.");
+		}
+		else
+		{
+			printf("Failed to connect.");
+		}
+	}
+
+	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_M))
+	{
+		
+	
+	}
+
+
+
 }
 
 void Game::render(float dt) {
