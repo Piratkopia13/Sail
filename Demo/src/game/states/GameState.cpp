@@ -37,6 +37,11 @@ GameState::GameState(StateStack& stack)
 		//pl.setPosition(glm::vec3(-4.0f, 0.1f, -4.0f));
 		m_lights.addPointLight(pl);
 
+		pl.setColor(glm::vec3(1.f,1.f,1.f));
+		pl.setPosition(glm::vec3(1.0f, 3.1f, 1.0f));
+		m_lights.addPointLight(pl);
+
+
 		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
 		m_lights.addPointLight(pl);
@@ -123,6 +128,12 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(lightModel);
 	e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
 	m_scene.addEntity(e);
+
+	e = Entity::Create("Candle2");
+	e->addComponent<ModelComponent>(lightModel);
+	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
+	m_scene.addEntity(e);
+
 }
 
 GameState::~GameState() {
