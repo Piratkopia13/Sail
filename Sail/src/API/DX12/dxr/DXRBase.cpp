@@ -19,8 +19,6 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 
-	//createAccelerationStructures(cmdList); // TODO: make sure updateAS is called before the first dispatch (??)
-	
 	// Create root signatures
 	createDXRGlobalRootSignature();
 	createRayGenLocalRootSignature();
@@ -56,8 +54,6 @@ DXRBase::~DXRBase() {
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 
-	m_context->waitForGPU(); // TODO: REMOVE!!
-
 	unsigned int frameIndex = m_context->getFrameIndex();
 
 	// Update descriptors for vertices, indices, textures etc
@@ -67,10 +63,6 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	unsigned int i = 0;
 	for (auto& geometry : sceneGeometry) {
 		auto& mesh = geometry.mesh;
-
-		/*DX12Texture2DArray* texture = mesh->getTexture2DArray();
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = texture->getSRVDesc();
-		m_renderer->getDevice()->CreateShaderResourceView(texture->getResource(), &srvDesc, cpuHandle);*/
 
 		MeshHandles handles;
 		handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
@@ -96,7 +88,8 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 			gpuHandle.ptr += m_heapIncr;
 		}
 
-		// Update flags telling the shader to use indices or not
+		// Update per mesh data
+		// Such as flags telling the shader to use indices, textures or not
 		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
 		DXRShaderCommon::MeshData meshData;
 		meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
@@ -417,7 +410,6 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 
 	// 	 "Shader tables can be modified freely by the application (with appropriate state barriers)"
 
-	//unsigned int frameIndex = m_context->getFrameIndex();
 	// This might need to be called every AS update (without loop)
 	for (unsigned int frameIndex = 0; frameIndex < m_context->getNumSwapBuffers(); frameIndex++) {
 		// Ray gen
@@ -452,7 +444,6 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 			DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size(), 64U);
 			for (unsigned int i = 0; i < sceneGeometry.size(); i++) {
 				auto& mesh = sceneGeometry[i].mesh;
-				// TODO: enforce this to match the root signature order!
 
 				m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
 					if (parameterName == "VertexBuffer") {
@@ -472,9 +463,6 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 						Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
 					}
 					
-					//tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandle.ptr, i); // only supports one texture/mesh atm // TODO FIX
-					////tableBuilder.addDescriptor(m_rtMeshHandles[i].materialHandle, i);
-					////tableBuilder.addDescriptor(rayGenHandle, i);
 				});
 			}
 			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
