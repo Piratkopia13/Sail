@@ -10,6 +10,7 @@ NetworkWrapper::NetworkWrapper()
 
 NetworkWrapper::~NetworkWrapper()
 {
+	delete m_network;
 }
 
 bool NetworkWrapper::Host(int port)

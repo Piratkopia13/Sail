@@ -3,7 +3,11 @@
 
 Network::Network() {}
 
-Network::~Network() {}
+Network::~Network() {
+	if (m_isInitialized && !m_shutdown) {
+		shutdown();
+	}
+}
 
 void Network::checkForPackages(void(*m_callbackfunction)(NetworkEvent))
 {
@@ -194,6 +198,7 @@ void Network::shutdown()
 		}
 		else if (m_clientAcceptThread) {
 			m_clientAcceptThread->join();
+			delete m_clientAcceptThread;
 		}
 	}
 
@@ -207,6 +212,7 @@ void Network::shutdown()
 			}
 			else if (conn.thread) {
 				conn.thread->join();
+				delete conn.thread;
 			}
 		}
 	}

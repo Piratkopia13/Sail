@@ -1,6 +1,5 @@
 #include "Game.h"
 #include "states/GameState.h"
-#include "../NetworkWrapper.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -11,7 +10,6 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 	// Set starting state
 	m_stateStack.pushState(States::Game);
-	NetworkWrapper wrapper;
 }
 
 Game::~Game() {	}
