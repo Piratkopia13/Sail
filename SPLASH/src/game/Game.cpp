@@ -16,9 +16,11 @@ Game::Game(HINSTANCE hInstance)
 Game::~Game() {	}
 
 int Game::run() {
-	
+	Application::getAudioManager()->loadSound("../Audio/sampleLarge.wav");
+	Application::getAudioManager()->loadSound("../Audio/sampleLarge.wav");
+
 	// Start the game loop and return when game exits
-	return startGameLoop();
+	return Application::startGameLoop();
 }
 
 void Game::registerStates() {

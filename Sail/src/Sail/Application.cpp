@@ -111,6 +111,22 @@ int Application::startGameLoop() {
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
+			if (Input::IsKeyPressed(SAIL_KEY_9)) {
+				Application::getAudioManager()->playSound(0);
+			}
+
+			if (Input::IsKeyPressed(SAIL_KEY_0)) {
+				Application::getAudioManager()->stopSound(0);
+			}
+
+			if (Input::IsKeyPressed(SAIL_KEY_1)) {
+				Application::getAudioManager()->playSound(1);
+			}
+
+			if (Input::IsKeyPressed(SAIL_KEY_2)) {
+				Application::getAudioManager()->stopSound(1);
+			}
+
 			// Quit on alt-f4
 			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
 				PostQuitMessage(0);
@@ -178,6 +194,10 @@ ImGuiHandler* const Application::getImGuiHandler() {
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
+}
+Audio* Application::getAudioManager()
+{
+	return &m_audioManager;
 }
 const UINT Application::getFPS() const {
 	return m_fps;
