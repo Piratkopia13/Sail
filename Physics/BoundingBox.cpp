@@ -1,5 +1,5 @@
 #include "PhysicsPCH.h"
-#include "Sail/entities/Entity.h"
+
 #include "Sail/entities/components/Components.h"
 
 #include "BoundingBox.h"

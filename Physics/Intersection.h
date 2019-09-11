@@ -5,6 +5,7 @@ private:
 
 public:
 	Intersection();
+	~Intersection();
 	
 	bool aabbWithTriangle(BoundingBox aabb, glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) const;
 

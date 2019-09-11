@@ -1,6 +1,13 @@
-#include "Intersection.h"
-#include "BoundingBox.h"
 #include "PhysicsPCH.h"
+#include "BoundingBox.h"
+
+#include "Intersection.h"
+
+
+Intersection::Intersection(){}
+
+Intersection::~Intersection(){}
+
 
 bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) const {
 	

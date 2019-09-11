@@ -1,6 +1,7 @@
 #pragma once
 
-class Entity;
+#include "Sail/entities/Entity.h"
+
 
 class BoundingBox {
 private:
