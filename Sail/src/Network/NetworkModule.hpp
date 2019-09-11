@@ -53,7 +53,7 @@ public:
 		Return true if message could be sent to all receivers.
 	*/
 	bool send(const char* message, size_t size, ConnectionID receiverID = 0);
-	bool send(const char* message, size_t size, Connection conn);
+	bool send(const char* message, size_t size, const Connection &conn);
 
 	void shutdown();
 
@@ -91,5 +91,5 @@ private:
 
 		Host connection requests is handled in WaitForNewConnections()
 	*/
-	void listen(const Connection conn);//Rename this function
+	void listen(const Connection &conn);//Rename this function
 };

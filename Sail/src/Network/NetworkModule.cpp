@@ -41,19 +41,25 @@ bool Network::setupHost(unsigned short port)
 	WORD version = MAKEWORD(2, 2); // use version winsock 2.2
 	int status = WSAStartup(version, &data);
 	if (status != 0) {
+#ifdef DEBUG_NETWORK
 		printf("Error starting WSA\n");
+#endif
 		return false;
 	}
 	m_soc = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //IPPROTO_TCP
 	if (m_soc == INVALID_SOCKET) {
+#ifdef DEBUG_NETWORK
 		printf("Error creating socket\n");
+#endif
 	}
 	m_myAddr.sin_addr.S_un.S_addr = ADDR_ANY;
 	m_myAddr.sin_family = AF_INET;
 	m_myAddr.sin_port = htons(port);
 
 	if (bind(m_soc, (sockaddr*)& m_myAddr, sizeof(m_myAddr)) == SOCKET_ERROR) {
+#ifdef DEBUG_NETWORK
 		printf("Error binding socket\n");
+#endif
 		return false;
 	}
 
@@ -89,17 +95,20 @@ bool Network::setupClient(const char* IP_adress, unsigned short hostport)
 	WORD version = MAKEWORD(2, 2); // use version winsock 2.2
 	int status = WSAStartup(version, &data);
 	if (status != 0) {
+#ifdef DEBUG_NETWORK
 		printf("Error starting WSA\n");
+#endif
 		return false;
 	}
 
 	m_soc = socket(AF_INET, SOCK_STREAM, 0); //IPPROTO_TCP
 	if (m_soc == INVALID_SOCKET) {
+#ifdef DEBUG_NETWORK
 		printf("Error creating socket\n");
+#endif
 		return false;
 	}
 
-	//m_myAddr.sin_addr.S_un.S_addr = ADDR_ANY;
 	m_myAddr.sin_family = AF_INET;
 	m_myAddr.sin_port = htons(hostport);
 	inet_pton(AF_INET, IP_adress, &m_myAddr.sin_addr);
@@ -107,7 +116,9 @@ bool Network::setupClient(const char* IP_adress, unsigned short hostport)
 	//connect needs error checking!
 	int conres = connect(m_soc, (sockaddr*)& m_myAddr, sizeof(m_myAddr));
 	if (conres == SOCKET_ERROR) {
+#ifdef DEBUG_NETWORK
 		printf("Error connecting to host\n");
+#endif
 		return false;
 	}
 
@@ -150,8 +161,6 @@ bool Network::send(const char* message, size_t size, ConnectionID receiverID)
 			if (send(message, size, i))
 				success++;
 		}
-		//printf((std::string("Broadcasting to ") + std::to_string(success) + "/" + std::to_string(n) + " Clients: " + std::string(message) + "\n").c_str());
-
 		return true;
 	}
 
@@ -176,7 +185,7 @@ bool Network::send(const char* message, size_t size, ConnectionID receiverID)
 	return true;
 }
 
-bool Network::send(const char* message, size_t size, Connection conn)
+bool Network::send(const char* message, size_t size, const Connection &conn)
 {
 	if (!conn.isConnected)
 		return false;
@@ -194,7 +203,9 @@ void Network::shutdown()
 	if (m_isServer) {
 		::shutdown(m_soc, 2);
 		if (closesocket(m_soc) == SOCKET_ERROR) {
+#ifdef DEBUG_NETWORK
 			printf("Error closing m_soc\n");
+#endif
 		}
 		else if (m_clientAcceptThread) {
 			m_clientAcceptThread->join();
@@ -208,7 +219,9 @@ void Network::shutdown()
 		{
 			::shutdown(conn.socket, 2);
 			if (closesocket(conn.socket) == SOCKET_ERROR) {
+#ifdef DEBUG_NETWORK
 				printf((std::string("Error closing socket") + std::to_string(conn.id) + "\n").c_str());
+#endif
 			}
 			else if (conn.thread) {
 				conn.thread->join();
@@ -275,7 +288,7 @@ void Network::waitForNewConnections()
 	}
 }
 
-void Network::listen(const Connection conn)
+void Network::listen(const Connection &conn)
 {
 
 	NetworkEvent nEvent;
@@ -297,19 +310,21 @@ void Network::listen(const Connection conn)
 		case 0:
 #ifdef DEBUG_NETWORK
 			printf("Client Disconnected\n");
-#endif // DEBUG_NETWORK
-			connectionIsClosed = true;
-			nEvent.eventType = NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED;
-			addNetworkEvent(nEvent, 0);
-			break;
+#else
 		case SOCKET_ERROR:
-#ifdef DEBUG_NETWORK
-			printf("Error Receiving: Disconnecting client.\n");
 #endif // DEBUG_NETWORK
 			connectionIsClosed = true;
 			nEvent.eventType = NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED;
 			addNetworkEvent(nEvent, 0);
 			break;
+#ifdef DEBUG_NETWORK
+		case SOCKET_ERROR:
+			printf("Error Receiving: Disconnecting client.\n");
+			connectionIsClosed = true;
+			nEvent.eventType = NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED;
+			addNetworkEvent(nEvent, 0);
+			break;
+#endif // DEBUG_NETWORK
 		default:
 
 			nEvent.data = reinterpret_cast<MessageData*>(msg);
