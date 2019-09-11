@@ -17,14 +17,13 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	m_camController.lookAt(glm::vec3(0.f));
 	
 	// Add a directional light
-	glm::vec3 color(0.1f, 0.1f, 0.1f);
+	glm::vec3 color(1.0f, 1.0f, 1.0f);
  	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
@@ -33,8 +32,7 @@ GameState::GameState(StateStack& stack)
 		PointLight pl;
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(3.0f, 3.1f, 3.0f));
-		//pl.setPosition(glm::vec3(-4.0f, 0.1f, -4.0f));
+		pl.setPosition(glm::vec3(-4.0f, 0.1f, -4.0f));
 		m_lights.addPointLight(pl);
 
 		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
@@ -71,11 +69,6 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-
-	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
-
-
 
 	// Create entities
 	auto e = Entity::Create("Static cube");
@@ -119,10 +112,6 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
-	e = Entity::Create("Candle");
-	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
-	m_scene.addEntity(e);
 }
 
 GameState::~GameState() {
