@@ -128,7 +128,7 @@ GameState::GameState(StateStack& stack)
 
 
 	m_boundingBox.setPosition(glm::vec3(5.0f, 5.0f, 0.0f));
-	m_boundingBox.setSize(glm::vec3(3.0f));
+	m_boundingBox.setHalfSize(glm::vec3(3.0f));
 }
 
 GameState::~GameState() {

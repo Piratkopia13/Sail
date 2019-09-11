@@ -3,46 +3,52 @@
 #include "BoundingBox.h"
 
 class Octree {
+public:
+	struct CollisionInfo {
+		glm::vec3 normal;
+		glm::vec3 positions[3];
+		glm::vec2 uvs[3];
+		//Entity* entity;
+	};
+
 private:
 	struct Node {
 		std::vector<Node> childNodes;
 		Node* parentNode;
-		glm::vec3 nodeSize;
-		glm::vec3 origin;
 		BoundingBox bb;
 		int nrOfMeshes;
-		//std::vector<MeshBuilder*> meshes;
+		std::vector<BoundingBox*> entities; //TODO: Replace this with entities that contain model and bounding box when component system is working properly
 	};
 
 	Node m_baseNode;
 
 	int m_softLimitMeshes;
-	float m_minimumNodeSize;
+	float m_minimumNodeHalfSize;
 
 	void expandBaseNode(glm::vec3 direction);
-	/*glm::vec3 findCornerOutside(MeshBuilder* mesh, Node* testNode);
-	bool addMeshRec(MeshBuilder* newMesh, Node* currentNode);
-	bool removeMeshRec(MeshBuilder* meshToRemove, Node* currentNode);
-	void updateRec(Node* currentNode, std::vector<MeshBuilder*>* meshesToReAdd);
-	void getCollisionsRec(BoundingBox* boundingBox, Node* currentNode, std::vector<CollisionInfo>* collisionData);
+	glm::vec3 findCornerOutside(BoundingBox* entity, Node* testNode);
+	bool addEntityRec(BoundingBox* newEntity, Node* currentNode);
+	bool removeEntityRec(BoundingBox* entityToRemove, Node* currentNode);
+	void updateRec(Node* currentNode, std::vector<BoundingBox*>* entitiesToReAdd);
+	void getCollisionsRec(BoundingBox* entity, Node* currentNode, std::vector<Octree::CollisionInfo>* collisionData);
 	float getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode);
-	int drawRec(GLuint shaderProgram, Frustum* frustum, Node* currentNode);*/
+	/*int drawRec(GLuint shaderProgram, Frustum* frustum, Node* currentNode);*/
 
 public:
 	Octree();
 	~Octree();
 
-	/*void addMesh(MeshBuilder* newMesh);
-	void addMeshes(std::vector<MeshBuilder*> newMeshes);
+	void addEntity(BoundingBox* newEntity);
+	void addEntities(std::vector<BoundingBox*> newEntities);
 
-	void removeMesh(MeshBuilder* meshToRemove);
-	void removeMeshes(std::vector<MeshBuilder*> meshesToRemove);
+	void removeEntity(BoundingBox* entityToRemove);
+	void removeEntities(std::vector<BoundingBox*> entitiesToRemove);
 
 	void update();
 
-	void getCollisions(BoundingBox* boundingBox, std::vector<CollisionInfo>* collisionData);
+	void getCollisions(BoundingBox* entity, std::vector<CollisionInfo>* collisionData);
 
 	float getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection);
 
-	int draw(GLuint shaderProgram, Frustum* frustum);*/
+	/*int draw(GLuint shaderProgram, Frustum* frustum);*/
 };
