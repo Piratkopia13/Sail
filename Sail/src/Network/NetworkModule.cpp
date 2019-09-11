@@ -200,6 +200,10 @@ bool Network::isServer() {
 	return m_isServer;
 }
 
+bool Network::isInitialized() {
+	return m_isInitialized;
+}
+
 void Network::shutdown()
 {
 	m_shutdown = true;

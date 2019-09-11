@@ -25,39 +25,20 @@ bool NetworkWrapper::ConnectToIP(const char* ip, int port) {
 	return m_network->setupClient(ip, port);
 }
 
-void NetworkWrapper::SendChat(char* msg) {
-	m_network->send(msg, sizeof(msg));
+void NetworkWrapper::SendChat(std::string msg) {
+	m_network->send(msg.c_str(), msg.length());
 }
 
-void NetworkWrapper::SendChatAllClients(char* msg) {
-	m_network->send(msg, sizeof(msg), -1);
-}
-
-void NetworkWrapper::ProcessPackages(NetworkEvent nEvent) {
-
-	switch (nEvent.eventType)
-	{
-	case NETWORK_EVENT_TYPE::NETWORK_ERROR:
-		break;
-	case NETWORK_EVENT_TYPE::CLIENT_JOINED:
-		PlayerJoined(nEvent.clientID);
-		break;
-	case NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED:
-		PlayerDisconnected(nEvent.clientID);
-		break;
-	case NETWORK_EVENT_TYPE::CLIENT_RECONNECTED:
-		PlayerReconnected(nEvent.clientID);
-		break;
-	case NETWORK_EVENT_TYPE::MSG_RECEIVED:
-		DecodeMessage(nEvent);
-		break;
-	default:
-		break;
-	}
+void NetworkWrapper::SendChatAllClients(std::string msg) {
+	m_network->send(msg.c_str(), msg.length(), -1);
 }
 
 void NetworkWrapper::CheckForPackages() {
-	//m_network->checkForPackages(&ProcessPackages);
+	m_network->checkForPackages(*this);
+}
+
+bool NetworkWrapper::isInitialized() {
+	return m_network->isInitialized();
 }
 
 void NetworkWrapper::DecodeMessage(NetworkEvent nEvent) {
@@ -148,4 +129,26 @@ void NetworkWrapper::PlayerJoined(ConnectionID id) {
 	m_network->send(msg, sizeof(msg), -1);
 
 	// Add this user id to the list of players in the lobby.
+}
+
+void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
+	switch (nEvent.eventType)
+	{
+	case NETWORK_EVENT_TYPE::NETWORK_ERROR:
+		break;
+	case NETWORK_EVENT_TYPE::CLIENT_JOINED:
+		PlayerJoined(nEvent.clientID);
+		break;
+	case NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED:
+		PlayerDisconnected(nEvent.clientID);
+		break;
+	case NETWORK_EVENT_TYPE::CLIENT_RECONNECTED:
+		PlayerReconnected(nEvent.clientID);
+		break;
+	case NETWORK_EVENT_TYPE::MSG_RECEIVED:
+		DecodeMessage(nEvent);
+		break;
+	default:
+		break;
+	}
 }

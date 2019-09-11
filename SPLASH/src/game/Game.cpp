@@ -45,8 +45,11 @@ void Game::update(float dt) {
 
 	// TEMPORARY TESTING FOR NETWORK
 
-	//m_networkWrapper->ProcessPackages(,);
-
+	if (m_networkWrapper->isInitialized())
+	{
+		m_networkWrapper->CheckForPackages();
+	}
+	
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_H)) {
 		
 		if (m_networkWrapper->Host())
@@ -73,8 +76,7 @@ void Game::update(float dt) {
 
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_M))
 	{
-		
-	
+		m_networkWrapper->SendChat("mHoppla");
 	}
 
 

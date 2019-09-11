@@ -54,6 +54,7 @@ public:
 		Returns true if this is a Host.
 	*/
 	bool isServer();
+	bool isInitialized();
 
 	void shutdown();
 

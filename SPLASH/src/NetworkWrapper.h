@@ -6,7 +6,7 @@
 // Forward declaration
 class Network;
 
-class NetworkWrapper
+class NetworkWrapper : NetworkEventHandler
 {
 public:
 	NetworkWrapper();
@@ -14,10 +14,11 @@ public:
 
 	bool Host(int port = 54000);
 	bool ConnectToIP(const char* ip = "127.0.0.1", int port = 54000);
-	void SendChat(char* msg);
-	void SendChatAllClients(char* msg);
-	void ProcessPackages(NetworkEvent nEvent);
+	void SendChat(std::string msg);
+	void SendChatAllClients(std::string msg);
 	void CheckForPackages();
+
+	bool isInitialized();
 
 private:
 	Network* m_network;
@@ -26,6 +27,7 @@ private:
 	void PlayerDisconnected(ConnectionID id);
 	void PlayerReconnected(ConnectionID id); // This remains unimplemented.
 	void PlayerJoined(ConnectionID id);
+	void handleNetworkEvents(NetworkEvent nEvents);
 
 };
 
