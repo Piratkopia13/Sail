@@ -9,7 +9,64 @@ GameState::GameState(StateStack& stack)
 	, m_camController(&m_cam)
 	, m_cc(true)
 {
+#ifdef _DEBUG
+#pragma region TESTCASES
+	m_cc.addCommand(std::string("save"),			[&]() { return std::string("saved"); });
+	m_cc.addCommand(std::string("test <int>"),		[&](int in) { return std::string("test<int>"); });
+	m_cc.addCommand(std::string("test <float>"),	[&](float in) { return std::string("test<float>"); });
+	m_cc.addCommand(std::string("test <string>"),	[&](std::string in) { return std::string("test<string>"); });
+	m_cc.addCommand(std::string("test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
+	m_cc.addCommand(std::string("test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
+#pragma endregion
+	
+	m_cc.addCommand(std::string("addCube"), [&]() {
+		auto e = Entity::Create("new cube");
+		e->addComponent<ModelComponent>(m_cubeModel.get());
+		e->addComponent<TransformComponent>(m_cam.getPosition());
 
+		m_scene.addEntity(e);
+		return std::string("Added Cube at (" + std::to_string(m_cam.getPosition().x) + ":" + std::to_string(m_cam.getPosition().y) + ":" + std::to_string(m_cam.getPosition().z) + ")");
+		});
+	m_cc.addCommand(std::string("addCube <int> <int> <int>"), [&](std::vector<int> in) {
+		if (in.size() == 3) {
+			auto e = Entity::Create("new cube");
+			e->addComponent<ModelComponent>(m_cubeModel.get());
+			glm::vec3 pos(in[0], in[1], in[2]);
+			e->addComponent<TransformComponent>(pos);
+
+			m_scene.addEntity(e);
+			return std::string("Added INT Cube at (" +
+				std::to_string(pos.x) + ":" +
+				std::to_string(pos.y) + ":" +
+				std::to_string(pos.z) + ")");
+
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	});
+	m_cc.addCommand(std::string("addCube <float> <float> <float>"), [&](std::vector<float> in){
+		if (in.size() == 3) {
+			auto e = Entity::Create("new cube");
+			e->addComponent<ModelComponent>(m_cubeModel.get());
+			glm::vec3 pos(in[0], in[1], in[2]);
+			e->addComponent<TransformComponent>(pos);
+
+			m_scene.addEntity(e);
+			return std::string("Added FLOAT Cube at (" +
+				std::to_string(pos.x) + ":" +
+				std::to_string(pos.y) + ":" +
+				std::to_string(pos.z) + ")");
+
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	});
+#endif
+	
 	// Get the Application instance
 	m_app = Application::getInstance();
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
