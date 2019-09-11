@@ -9,7 +9,7 @@ Network::~Network() {
 	}
 }
 
-void Network::checkForPackages(void(*m_callbackfunction)(NetworkEvent))
+void Network::checkForPackages(NetworkEventHandler& handler)
 {
 
 	bool morePackages = true;
@@ -22,7 +22,7 @@ void Network::checkForPackages(void(*m_callbackfunction)(NetworkEvent))
 			break;
 		}
 
-		m_callbackfunction(m_awaitingEvents[m_pstart]);
+		handler.handleNetworkEvents(m_awaitingEvents[m_pstart]);
 
 		m_pstart = (m_pstart + 1) % MAX_AWAITING_PACKAGES;
 	}

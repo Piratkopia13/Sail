@@ -30,7 +30,7 @@ public:
 	Network();
 	~Network();
 
-	void checkForPackages(void (*m_callbackfunction)(NetworkEvent));
+	void checkForPackages(NetworkEventHandler& handler);
 
 	/*
 		Call SetupHost() to initialize a host socket. Dont call this and SetupHost() in the same application.

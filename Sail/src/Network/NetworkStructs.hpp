@@ -5,7 +5,6 @@ const unsigned int MAX_AWAITING_PACKAGES = 1000;
 
 typedef unsigned long long ConnectionID;
 
-
 enum class NETWORK_EVENT_TYPE {
 	NETWORK_ERROR,
 	CLIENT_JOINED,
@@ -28,4 +27,14 @@ struct NetworkEvent {
 		clientID = 0;
 		data = nullptr;
 	}
+};
+
+class NetworkEventHandler
+{
+public:
+	NetworkEventHandler() {};
+	~NetworkEventHandler() {};
+	virtual void handleNetworkEvents(NetworkEvent nEvents) = 0;
+private:
+
 };
