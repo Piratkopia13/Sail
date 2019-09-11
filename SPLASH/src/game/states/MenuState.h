@@ -2,12 +2,13 @@
 
 #include "Sail.h"
 #include <string>
+#include <list>
 using namespace std;
 
 class TextInputEvent;
 
 struct message {
-	unsigned int playerID;
+	string sender;
 	string content;
 };
 
@@ -44,9 +45,12 @@ private:
 
 	// Purely for testing
 	void addTestData();
+	void doTestStuff();
 	
 	// Handling the Players & Chat
 	message* m_messages = nullptr;
+	std::list<message> messages;
+	std::list<string> players;
 	string* m_players = nullptr;
 	char* m_currentMessage = nullptr;
 	unsigned int m_currentMessageIndex;
@@ -55,11 +59,15 @@ private:
 	unsigned int m_playerLimit;
 	unsigned int m_messageCount = 0;
 	unsigned int m_messageLimit;
+	string m_myName;
+	bool firstFrame = true;
 
 	// Events
 	bool onTextInput(TextInputEvent& event);
 
 	bool playerJoined(string name);
+	bool playerLeft(string name);
+	void sendMessage(string text);
 	//bool playerLeft(string name); ? 
 
 	
