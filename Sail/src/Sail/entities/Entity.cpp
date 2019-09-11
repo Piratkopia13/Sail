@@ -14,6 +14,11 @@ void Entity::addToSystems() {
 	m_ecs->addEntityToSystems(this);
 }
 
+void Entity::removeFromSystems()
+{
+	m_ecs->removeEntityFromSystems(this);
+}
+
 Entity::Entity(const std::string& name) : m_name(name) {
 	m_id = s_id++;
 }

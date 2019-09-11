@@ -48,9 +48,10 @@ public:
 
 	/*
 		Should NOT be called by the game developer
-		This is called internally by Entity
+		These are called internally by Entity
 	*/
 	void addEntityToSystems(Entity* entity);
+	void removeEntityFromSystems(Entity* entity);
 
 private:
 	typedef std::unordered_map<std::type_index, std::unique_ptr<BaseComponentSystem>> SystemMap;

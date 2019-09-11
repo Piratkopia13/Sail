@@ -86,7 +86,6 @@ GameState::GameState(StateStack& stack)
 	auto e = ECS::Instance()->createEntity("Static cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(9.82f, 0, 0));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Floor");
@@ -103,7 +102,6 @@ GameState::GameState(StateStack& stack)
 	m_texturedCubeEntity = ECS::Instance()->createEntity("Textured parent cube");
 	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
 	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
-	//m_texturedCubeEntity->addComponent<PhysicsComponent>();
 	m_texturedCubeEntity->setName("MovingCube");
 	m_scene.addEntity(m_texturedCubeEntity);
 	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
@@ -162,10 +160,30 @@ bool GameState::processInput(float dt) {
 		Logger::Log("Removing parent");
 		m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
 	}
+
+
+	/*
+		Test:
+		Will add or remove the PhysicsComponent on the first entity in m_transformTestEntities
+		If that entity already has the component, the first press will write a warning to the console
+	*/
+	if (Input::WasKeyJustPressed(SAIL_KEY_J)) {
+		static bool hasPhysics = false;
+		hasPhysics = !hasPhysics;
+
+		switch (hasPhysics) {
+		case true:
+			m_transformTestEntities[0]->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(9.82f, 0, 0));
+			break;
+		case false:
+			m_transformTestEntities[0]->removeComponent<PhysicsComponent>();
+			break;
+		}
+	}
 #endif
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
-		glm::vec3 color(1.0f, 1.0f, 1.0f);;
+		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
 
@@ -226,11 +244,13 @@ bool GameState::update(float dt) {
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 
 		// Set translation and scale to show how parenting affects transforms
-		for (Entity::SPtr item : m_transformTestEntities) {
+		//for (Entity::SPtr item : m_transformTestEntities) {
+		for (size_t i = 1; i < m_transformTestEntities.size(); i++) {
+			Entity::SPtr item = m_transformTestEntities[i];
 			item->getComponent<TransformComponent>()->setScale(size);
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
 		}
-		m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
+		//m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
 
 		size += change * dt;
 		if (size > 1.2f || size < 0.7f)

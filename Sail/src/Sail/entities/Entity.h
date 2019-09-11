@@ -17,8 +17,9 @@ public:
 	template<typename ComponentType, typename... Targs>
 	ComponentType* addComponent(Targs... args);
 	template<typename ComponentType>
+	void removeComponent();
+	template<typename ComponentType>
 	ComponentType* getComponent();
-
 	template<typename ComponentType>
 	bool hasComponent() const;
 
@@ -35,6 +36,7 @@ private:
 	static SPtr Create(ECS* ecs, const std::string& name = "");
 
 	void addToSystems();
+	void removeFromSystems();
 
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::string m_name;
@@ -57,18 +59,30 @@ ComponentType* Entity::addComponent(Targs... args) {
 }
 
 template<typename ComponentType>
+inline void Entity::removeComponent() {
+	auto it = m_components.find(ComponentType::ID);
+	if (it != m_components.end()) {
+		// Simply erasing the result of find() appears to be undefined behavior if the iterator points to end()
+		m_components.erase(it);
+
+		// Remove this entity from systems which required the removed component
+		removeFromSystems();
+	}
+}
+
+template<typename ComponentType>
 ComponentType* Entity::getComponent() {
 	// If the following line causes compile errors, then a class 
 	// deriving from component is missing public SAIL_COMPONENT macro
 	auto it = m_components.find(ComponentType::ID);
-	if (it != m_components.end())
+	if (it != m_components.end()) {
 		return static_cast<ComponentType*>(it->second.get());
+	}
 
 	return nullptr;
 }
 
 template<typename ComponentType>
-inline bool Entity::hasComponent() const
-{
+inline bool Entity::hasComponent() const {
 	return hasComponent(ComponentType::ID);
 }

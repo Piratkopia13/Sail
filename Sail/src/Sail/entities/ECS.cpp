@@ -14,8 +14,7 @@ void ECS::update(float dt) {
 	}
 }
 
-unsigned ECS::nrOfComponentTypes() const
-{
+unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
 }
 
@@ -43,6 +42,26 @@ void ECS::addEntityToSystems(Entity* entity) {
 		// Add this entity to the system
 		if (hasCorrectComponents) {
 			it->second->addEntity(entity);
+		}
+	}
+}
+
+void ECS::removeEntityFromSystems(Entity* entity) {
+	SystemMap::iterator it = m_systems.begin();
+
+	for (; it != m_systems.end(); ++it) {
+		std::vector<int> componentTypes = it->second->getRequiredComponentTypes();
+
+		bool hasCorrectComponents = true;
+		for (auto typeID : componentTypes) {
+			if (!entity->hasComponent(typeID)) {
+				hasCorrectComponents = false;
+				break;
+			}
+		}
+
+		if (!hasCorrectComponents) {
+			it->second->removeEntity(entity);
 		}
 	}
 }

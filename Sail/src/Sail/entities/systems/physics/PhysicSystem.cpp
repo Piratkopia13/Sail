@@ -13,12 +13,12 @@ PhysicSystem::~PhysicSystem() {
 }
 
 void PhysicSystem::update(float dt) {
-	for (auto e : m_entities) {
+	for (auto& e : m_entities) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
 
-		transform->translate(physics->velocity * dt);
 		transform->rotate(physics->rotation * dt);
+		transform->translate(physics->velocity * dt + physics->acceleration * (dt * dt * 0.5f));
 
 		physics->velocity += physics->acceleration * dt;
 	}
