@@ -112,6 +112,9 @@ int Application::startGameLoop() {
 			Input::GetInstance()->beginFrame();
 
 			if (Input::IsKeyPressed(SAIL_KEY_9)) {
+
+				Application::getAudioManager()->stopSound(0);
+				Application::getAudioManager()->loadSound("../Audio/sampleLarge.wav", 0);
 				Application::getAudioManager()->playSound(0);
 			}
 

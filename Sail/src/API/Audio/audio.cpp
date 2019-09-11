@@ -14,9 +14,13 @@ Audio::~Audio(){
 
 }
 
-void Audio::loadSound(std::string fileName)
+void Audio::loadSound(std::string fileName, int index)
 {
-	HRESULT hr;
+	if (m_soundBuffers[index].pAudioData != nullptr) {
+		delete m_soundBuffers[index].pAudioData;
+	}
+
+	HRESULT hr = 0;
 
 	std::wstring fileNameWSTR = s2ws(fileName);
 	LPCWSTR fileNameLPCWSTR = fileNameWSTR.c_str();
@@ -30,10 +34,10 @@ void Audio::loadSound(std::string fileName)
 		0,
 		nullptr);
 
-	DWORD dwChunkSize;
-	DWORD dwChunkPosition;
+	DWORD dwChunkSize = 0;
+	DWORD dwChunkPosition = 0;
 
-	DWORD filetype;
+	DWORD filetype = 0;
 
 #pragma region ERROR_CHECKING
 	try {
@@ -192,12 +196,12 @@ void Audio::loadSound(std::string fileName)
 	}
 #pragma endregion ERROR_CHECKING
 
-	m_buffer[m_currIndex].AudioBytes = dwChunkSize;  //buffer containing audio data
-	m_buffer[m_currIndex].pAudioData = pDataBuffer;  //size of the audio buffer in bytes
-	m_buffer[m_currIndex].Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
+	m_soundBuffers[index].AudioBytes = dwChunkSize;  //buffer containing audio data
+	m_soundBuffers[index].pAudioData = pDataBuffer;  //size of the audio buffer in bytes
+	m_soundBuffers[index].Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
 
 	// creating a 'sourceVoice' for WAV file-type
-	hr = m_xAudio2->CreateSourceVoice(&m_sourceVoice[m_currIndex], (WAVEFORMATEX*)&m_formatWAV);
+	hr = m_xAudio2->CreateSourceVoice(&m_sourceVoice[index], (WAVEFORMATEX*)&m_formatWAV);
 	// creating a 'sourceVoice' for ADPC-WAV compressed file-type
 	//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
 
@@ -217,7 +221,7 @@ void Audio::loadSound(std::string fileName)
 	}
 #pragma endregion
 
-	hr = m_sourceVoice[m_currIndex]->SubmitSourceBuffer(&m_buffer[m_currIndex]);
+	hr = m_sourceVoice[index]->SubmitSourceBuffer(&m_soundBuffers[index]);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -235,7 +239,7 @@ void Audio::loadSound(std::string fileName)
 	}
 #pragma endregion
 
-	m_currIndex++;
+	//m_currIndex++;
 }
 
 void Audio::playSound(int index) {
@@ -269,6 +273,7 @@ void Audio::initXAudio2() {
 
 	hr = XAudio2Create(&m_xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
 
+#pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
 			throw std::exception(nullptr);
@@ -282,9 +287,11 @@ void Audio::initXAudio2() {
 		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
 		std::exit(0);
 	}
+#pragma endregion
 
 	hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice);
 
+#pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
 			throw std::exception(nullptr);
@@ -297,4 +304,7 @@ void Audio::initXAudio2() {
 		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
 		std::exit(0);
 	}
+#pragma endregion
+
+	m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 }
