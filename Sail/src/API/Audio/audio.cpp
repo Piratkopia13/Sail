@@ -7,6 +7,21 @@ Audio::Audio() {
 	HRESULT hr;
 	hr = CoInitialize(nullptr);
 
+#pragma region ERROR_CHECKING
+	try {
+		if (hr != S_OK) {
+			throw std::invalid_argument(nullptr);
+		}
+	}
+	catch (const std::invalid_argument& e) {
+		UNREFERENCED_PARAMETER(e);
+		wchar_t errorMsgBuffer[256];
+		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::Audio()\n\nMESSAGE: The 'CoInitialize' function failed!");
+		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
+		std::exit(0);
+	}
+#pragma endregion
+
 	this->initXAudio2();
 }
 
@@ -14,7 +29,7 @@ Audio::~Audio(){
 
 }
 
-void Audio::loadSound(std::string fileName, int index)
+void Audio::loadSound(std::string const &fileName, int index)
 {
 	if (m_soundBuffers[index].pAudioData != nullptr) {
 		delete m_soundBuffers[index].pAudioData;
@@ -42,10 +57,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (INVALID_HANDLE_VALUE == hFile) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 		
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -56,10 +71,10 @@ void Audio::loadSound(std::string fileName, int index)
 
 	try {
 		if (INVALID_SET_FILE_POINTER == SetFilePointer(hFile, 0, NULL, FILE_BEGIN)) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 	
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -74,10 +89,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -92,10 +107,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -106,10 +121,10 @@ void Audio::loadSound(std::string fileName, int index)
 
 	try {
 		if (filetype != fourccWAVE) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -124,10 +139,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -145,10 +160,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -163,10 +178,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -183,10 +198,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -208,10 +223,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -226,10 +241,10 @@ void Audio::loadSound(std::string fileName, int index)
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
@@ -247,19 +262,22 @@ void Audio::playSound(int index) {
 	HRESULT hr;
 
 	hr = m_sourceVoice[index]->Start(0);
+
+#pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to play the loaded audio sample!");
+		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: Failed to play the loaded audio sample!");
 		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
 		std::exit(0);
 	}
+#pragma endregion
 }
 
 void Audio::stopSound(int index) {
@@ -277,14 +295,14 @@ void Audio::initXAudio2() {
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::Audio()\n\nMESSAGE: Creating the 'IXAudio2' object failed!");
+		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::initXAudio2()\n\nMESSAGE: Creating the 'IXAudio2' object failed!");
 		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
 		std::exit(0);
 	}
@@ -295,13 +313,13 @@ void Audio::initXAudio2() {
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
-			throw std::exception(nullptr);
+			throw std::invalid_argument(nullptr);
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::invalid_argument& e) {
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::Audio()\n\nMESSAGE: Creating the 'IXAudio2MasterVoice' failed!");
+		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::initXAudio2()\n\nMESSAGE: Creating the 'IXAudio2MasterVoice' failed!");
 		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
 		std::exit(0);
 	}

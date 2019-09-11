@@ -20,7 +20,7 @@ public:
 	Audio();
 	~Audio();
 
-	void loadSound(std::string fileName, int index);
+	void loadSound(std::string const &fileName, int index);
 	void playSound(int index);
 	void stopSound(int index);
 
