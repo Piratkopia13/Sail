@@ -8,6 +8,8 @@ PlayerController::PlayerController(Camera* cam) {
 	m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 
+	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(0.0f, 3.f, 0.f));
+
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
@@ -129,12 +131,14 @@ void PlayerController::update(float dt) {
 	forwards = glm::normalize(forwards);
 
 	glm::vec3 forward = m_cam->getCameraDirection();
-	float totM = forwardM + backM + rightM + leftM + upM + downM;
+	forward.y = 0.f;
+	forward = glm::normalize(forward);
+	float totM = forwardM + backM + rightM + leftM;// +upM + downM;
 	if ( totM != 0.f ) {
 		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
 
-		glm::vec3 dir = (forward * forwardM) - (forward * backM) + (right * rightM) - (right * leftM)
-			/*Only for flying*/ + ( m_cam->getCameraUp() * upM ) - ( m_cam->getCameraUp() * downM );
+		glm::vec3 dir = ( forward * forwardM ) - ( forward * backM ) + ( right * rightM ) - ( right * leftM );
+			/*Only for flying*/// + ( m_cam->getCameraUp() * upM ) - ( m_cam->getCameraUp() * downM );
 
 		playerMovComp->setDirection(glm::normalize(dir));
 	}
