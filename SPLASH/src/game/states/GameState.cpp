@@ -120,10 +120,25 @@ GameState::GameState(StateStack& stack)
 	m_transformTestEntities.push_back(e);
 
 	m_octree = new Octree(&m_scene, m_boundingBoxModel.get());
+
+	for (int i = 0; i < 7; i++) {
+		m_testBoundingBoxes.push_back(new BoundingBox());
+		m_testBoundingBoxes.back()->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 0.0f));
+		m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());
+	}
+
+	m_testBoundingBoxes.push_back(new BoundingBox());
+	m_testBoundingBoxes.back()->setPosition(glm::vec3(51.0f, 1.0f, 0.0f));
+	m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());
+
+	m_octree->addEntities(&m_testBoundingBoxes);
 }
 
 GameState::~GameState() {
 	delete m_octree;
+	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
+		delete m_testBoundingBoxes[i];
+	}
 }
 
 // Process input for the state

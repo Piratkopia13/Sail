@@ -44,7 +44,7 @@ public:
 	~Octree();
 
 	void addEntity(BoundingBox* newEntity);
-	void addEntities(std::vector<BoundingBox*> newEntities);
+	void addEntities(std::vector<BoundingBox*> *newEntities);
 
 	void removeEntity(BoundingBox* entityToRemove);
 	void removeEntities(std::vector<BoundingBox*> entitiesToRemove);

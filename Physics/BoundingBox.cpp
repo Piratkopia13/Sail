@@ -70,7 +70,7 @@ void BoundingBox::setModel(Scene* scene, Model* model) {
 		m_modelEntity->addComponent<ModelComponent>(model);
 		m_modelEntity->addComponent<TransformComponent>();
 		m_modelEntity->getComponent<TransformComponent>()->setScale(m_halfSize * 2.0f);
-		m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_halfSize);
+		m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_position);
 		scene->addEntity(m_modelEntity);
 	}
 	else {

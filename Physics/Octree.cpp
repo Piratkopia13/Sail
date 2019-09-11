@@ -22,27 +22,30 @@ Octree::~Octree() {
 void Octree::expandBaseNode(glm::vec3 direction) {
 	//Direction to expand in
 	int x, y, z;
-	x = direction.x <= 0.0f;
-	y = direction.y <= 0.0f;
-	z = direction.z <= 0.0f;
+	x = direction.x >= 0.0f;
+	y = direction.y >= 0.0f;
+	z = direction.z >= 0.0f;
 
 	Node newBaseNode;
-	newBaseNode.bb.setPosition(m_baseNode.bb.getPosition() - glm::vec3(x * m_baseNode.bb.getHalfSize().x, y * m_baseNode.bb.getHalfSize().y, z * m_baseNode.bb.getHalfSize().z));
+	newBaseNode.bb.setPosition(m_baseNode.bb.getPosition() - m_baseNode.bb.getHalfSize() + glm::vec3(x * m_baseNode.bb.getHalfSize().x * 2.0f, y * m_baseNode.bb.getHalfSize().y * 2.0f, z * m_baseNode.bb.getHalfSize().z * 2.0f));
 	newBaseNode.bb.setHalfSize(m_baseNode.bb.getHalfSize() * 2.0f);
 	newBaseNode.bb.setModel(m_scene, m_boundingBoxModel);
 	newBaseNode.nrOfMeshes = 0;
 	newBaseNode.parentNode = nullptr;
 
+	//m_baseNode.parentNode = &newBaseNode;
+	//newBaseNode.childNodes.push_back(m_baseNode);
+
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 2; j++) {
 			for (int k = 0; k < 2; k++) {
 				Node tempChildNode;
-				if (i == x && j == y && k == z) {
+				if (i != x && j != y && k != z) {
 					tempChildNode = m_baseNode;
 				}
 				else {
 					tempChildNode.bb.setHalfSize(m_baseNode.bb.getHalfSize());
-					tempChildNode.bb.setPosition(newBaseNode.bb.getPosition() + glm::vec3(tempChildNode.bb.getHalfSize().x * i, tempChildNode.bb.getHalfSize().y * j, tempChildNode.bb.getHalfSize().z * k));
+					tempChildNode.bb.setPosition(newBaseNode.bb.getPosition() - m_baseNode.bb.getHalfSize() + glm::vec3(tempChildNode.bb.getHalfSize().x * 2.0f * i, tempChildNode.bb.getHalfSize().y * 2.0f * j, tempChildNode.bb.getHalfSize().z * 2.0f * k));
 					tempChildNode.bb.setModel(m_scene, m_boundingBoxModel);
 					tempChildNode.nrOfMeshes = 0;
 				}
@@ -68,8 +71,8 @@ glm::vec3 Octree::findCornerOutside(BoundingBox* entity, Node* testNode) {
 		glm::vec3 testNodeHalfSize = testNode->bb.getHalfSize();
 
 		if (distanceVec.x <= -testNodeHalfSize.x || distanceVec.x >= testNodeHalfSize.x ||
-			distanceVec.y <= -testNodeHalfSize.y || distanceVec.y >= -testNodeHalfSize.y ||
-			distanceVec.z <= -testNodeHalfSize.z || distanceVec.z >= -testNodeHalfSize.z) {
+			distanceVec.y <= -testNodeHalfSize.y || distanceVec.y >= testNodeHalfSize.y ||
+			distanceVec.z <= -testNodeHalfSize.z || distanceVec.z >= testNodeHalfSize.z) {
 			directionVec = distanceVec;
 			i = 8;
 		}
@@ -113,12 +116,12 @@ bool Octree::addEntityRec(BoundingBox* newEntity, Node* currentNode) {
 			}
 			else {
 				//Create more children
-				for (int i = -1; i < 1; i++) {
-					for (int j = -1; j < 1; j++) {
-						for (int k = -1; k < 1; k++) {
+				for (int i = 0; i < 2; i++) {
+					for (int j = 0; j < 2; j++) {
+						for (int k = 0; k < 2; k++) {
 							Node tempChildNode;
 							tempChildNode.bb.setHalfSize(currentNode->bb.getHalfSize() / 2.0f);
-							tempChildNode.bb.setPosition(currentNode->bb.getPosition() + glm::vec3(tempChildNode.bb.getHalfSize().x * i, tempChildNode.bb.getHalfSize().y * j, tempChildNode.bb.getHalfSize().z * k));
+							tempChildNode.bb.setPosition(currentNode->bb.getPosition() - tempChildNode.bb.getHalfSize() + glm::vec3(tempChildNode.bb.getHalfSize().x * 2.0f * i, tempChildNode.bb.getHalfSize().y * 2.0f * j, tempChildNode.bb.getHalfSize().z * 2.0f * k));
 							tempChildNode.bb.setModel(m_scene, m_boundingBoxModel);
 							tempChildNode.nrOfMeshes = 0;
 							tempChildNode.parentNode = currentNode;
@@ -311,9 +314,9 @@ void Octree::addEntity(BoundingBox* newEntity) {
 	}
 }
 
-void Octree::addEntities(std::vector<BoundingBox*> newEntities) {
-	for (unsigned int i = 0; i < newEntities.size(); i++) {
-		addEntity(newEntities[i]);
+void Octree::addEntities(std::vector<BoundingBox*> *newEntities) {
+	for (unsigned int i = 0; i < newEntities->size(); i++) {
+		addEntity(newEntities->at(i));
 	}
 }
 

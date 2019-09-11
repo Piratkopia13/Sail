@@ -41,4 +41,6 @@ private:
 	std::unique_ptr<Model> m_boundingBoxModel;
 
 	Octree* m_octree;
+
+	std::vector<BoundingBox*> m_testBoundingBoxes;
 };
