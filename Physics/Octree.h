@@ -1,6 +1,8 @@
 #pragma once
 
 #include "BoundingBox.h"
+#include "Sail/graphics/Scene.h"
+#include "Sail/graphics/geometry/Model.h"
 
 class Octree {
 public:
@@ -22,6 +24,9 @@ private:
 
 	Node m_baseNode;
 
+	Scene* m_scene;
+	Model* m_boundingBoxModel;
+
 	int m_softLimitMeshes;
 	float m_minimumNodeHalfSize;
 
@@ -35,7 +40,7 @@ private:
 	/*int drawRec(GLuint shaderProgram, Frustum* frustum, Node* currentNode);*/
 
 public:
-	Octree();
+	Octree(Scene *scene, Model *boundingBoxModel);
 	~Octree();
 
 	void addEntity(BoundingBox* newEntity);

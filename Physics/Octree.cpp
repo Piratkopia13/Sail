@@ -2,10 +2,13 @@
 
 #include "Octree.h"
 
-Octree::Octree() {
+Octree::Octree(Scene* scene, Model *boundingBoxModel) {
+	m_scene = scene;
+	m_boundingBoxModel = boundingBoxModel;
 	m_softLimitMeshes = 6;
 	m_minimumNodeHalfSize = 10.0f;
 
+	m_baseNode.bb.setModel(m_scene, m_boundingBoxModel);
 	m_baseNode.bb.setPosition(glm::vec3(0.0f));
 	m_baseNode.bb.setHalfSize(glm::vec3(50.0f, 50.0f, 50.0f));
 	m_baseNode.parentNode = nullptr;
@@ -26,6 +29,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 	Node newBaseNode;
 	newBaseNode.bb.setPosition(m_baseNode.bb.getPosition() - glm::vec3(x * m_baseNode.bb.getHalfSize().x, y * m_baseNode.bb.getHalfSize().y, z * m_baseNode.bb.getHalfSize().z));
 	newBaseNode.bb.setHalfSize(m_baseNode.bb.getHalfSize() * 2.0f);
+	newBaseNode.bb.setModel(m_scene, m_boundingBoxModel);
 	newBaseNode.nrOfMeshes = 0;
 	newBaseNode.parentNode = nullptr;
 
@@ -39,6 +43,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 				else {
 					tempChildNode.bb.setHalfSize(m_baseNode.bb.getHalfSize());
 					tempChildNode.bb.setPosition(newBaseNode.bb.getPosition() + glm::vec3(tempChildNode.bb.getHalfSize().x * i, tempChildNode.bb.getHalfSize().y * j, tempChildNode.bb.getHalfSize().z * k));
+					tempChildNode.bb.setModel(m_scene, m_boundingBoxModel);
 					tempChildNode.nrOfMeshes = 0;
 				}
 				tempChildNode.parentNode = &newBaseNode;
@@ -114,6 +119,7 @@ bool Octree::addEntityRec(BoundingBox* newEntity, Node* currentNode) {
 							Node tempChildNode;
 							tempChildNode.bb.setHalfSize(currentNode->bb.getHalfSize() / 2.0f);
 							tempChildNode.bb.setPosition(currentNode->bb.getPosition() + glm::vec3(tempChildNode.bb.getHalfSize().x * i, tempChildNode.bb.getHalfSize().y * j, tempChildNode.bb.getHalfSize().z * k));
+							tempChildNode.bb.setModel(m_scene, m_boundingBoxModel);
 							tempChildNode.nrOfMeshes = 0;
 							tempChildNode.parentNode = currentNode;
 							currentNode->childNodes.push_back(tempChildNode);

@@ -83,13 +83,6 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	m_scene.addEntity(e);
 
-	//Wireframe bounding box model entity
-	e = Entity::Create("Wireframe bounding box");
-	e->addComponent<ModelComponent>(m_boundingBoxModel.get());
-	e->addComponent<TransformComponent>();
-	m_scene.addEntity(e);
-	m_boundingBox.setModel(e);
-
 	e = Entity::Create("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
@@ -126,12 +119,11 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
-
-	m_boundingBox.setPosition(glm::vec3(5.0f, 5.0f, 0.0f));
-	m_boundingBox.setHalfSize(glm::vec3(3.0f));
+	m_octree = new Octree(&m_scene, m_boundingBoxModel.get());
 }
 
 GameState::~GameState() {
+	delete m_octree;
 }
 
 // Process input for the state

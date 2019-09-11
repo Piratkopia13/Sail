@@ -2,6 +2,9 @@
 
 //class Entity;
 #include "Sail/entities/Entity.h"
+#include "Sail/graphics/Scene.h"
+#include "Sail/graphics/geometry/Model.h"
+
 
 class BoundingBox {
 private:
@@ -29,5 +32,5 @@ public:
 	void setPosition(glm::vec3 position);
 	void setHalfSize(glm::vec3 size);
 
-	void setModel(Entity::SPtr modelEntity);
+	void setModel(Scene* scene, Model* model);
 };

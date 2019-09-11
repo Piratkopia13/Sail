@@ -5,7 +5,7 @@
 
 BoundingBox::BoundingBox() {
 	m_position = glm::vec3(0.0f);
-	m_halfSize = glm::vec3(1.0f);
+	m_halfSize = glm::vec3(0.5f);
 	m_hasChanged = false;
 	for (int i = 0; i < 8; i++) {
 		m_corners.push_back(glm::vec3(0.0f));
@@ -42,25 +42,38 @@ const std::vector<glm::vec3>* BoundingBox::getCorners() const {
 
 const bool BoundingBox::getChange() {
 	bool theChange = m_hasChanged;
-
 	m_hasChanged = false;
 	return theChange;
 }
 
 void BoundingBox::setPosition(glm::vec3 position) {
 	m_position = position;
-	m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_position);
+	if (m_modelEntity) {
+		m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_position);
+	}
 	updateCorners();
 	m_hasChanged = true;
 }
 
 void BoundingBox::setHalfSize(glm::vec3 size) {
 	m_halfSize = size;
-	m_modelEntity->getComponent<TransformComponent>()->setScale(m_halfSize);
+	if (m_modelEntity) {
+		m_modelEntity->getComponent<TransformComponent>()->setScale(m_halfSize * 2.0f);
+	}
 	updateCorners();
 	m_hasChanged = true;
 }
 
-void BoundingBox::setModel(Entity::SPtr modelEntity) {
-	m_modelEntity = modelEntity;
+void BoundingBox::setModel(Scene* scene, Model* model) {
+	if (!m_modelEntity) {
+		m_modelEntity = Entity::Create("Bounding Box Model");
+		m_modelEntity->addComponent<ModelComponent>(model);
+		m_modelEntity->addComponent<TransformComponent>();
+		m_modelEntity->getComponent<TransformComponent>()->setScale(m_halfSize * 2.0f);
+		m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_halfSize);
+		scene->addEntity(m_modelEntity);
+	}
+	else {
+		m_modelEntity->getComponent<ModelComponent>()->setModel(model);
+	}
 }

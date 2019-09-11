@@ -14,6 +14,10 @@ public:
 	{ }
 	~ModelComponent() { }
 
+	void setModel(Model* model) {
+		m_model = model;
+	}
+
 	Model* getModel() {
 		return m_model;
 	}

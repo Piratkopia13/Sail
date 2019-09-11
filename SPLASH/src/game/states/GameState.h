@@ -38,6 +38,7 @@ private:
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 
-	BoundingBox m_boundingBox;
 	std::unique_ptr<Model> m_boundingBoxModel;
+
+	Octree* m_octree;
 };
