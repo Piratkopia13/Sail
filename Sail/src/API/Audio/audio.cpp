@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "API/Audio/audio.hpp"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
+#include "Sail/Application.h"
+#include "Sail/KeyCodes.h"
 
 Audio::Audio() {
 
@@ -283,6 +285,39 @@ void Audio::playSound(int index) {
 void Audio::stopSound(int index) {
 	if (m_soundBuffers[index].pAudioData != nullptr) {
 		m_sourceVoice[index]->Stop(index);
+	}
+}
+
+void Audio::updateAudio() {
+	if (Input::IsKeyPressed(SAIL_KEY_9) && m_singlePressBool1) {
+
+		m_singlePressBool1 = false;
+		stopSound(0);
+		loadSound("../Audio/sampleLarge.wav", 0);
+		playSound(0);
+	}
+
+	else if (!Input::IsKeyPressed(SAIL_KEY_9) && !m_singlePressBool1) {
+		m_singlePressBool1 = true;
+	}
+
+	if (Input::IsKeyPressed(SAIL_KEY_0)) {
+		stopSound(0);
+	}
+
+	if (Input::IsKeyPressed(SAIL_KEY_7) && m_singlePressBool2) {
+		m_singlePressBool2 = false;
+		stopSound(1);
+		loadSound("../Audio/sampleLarge.wav", 1);
+		playSound(1);
+	}
+
+	else if (!Input::IsKeyPressed(SAIL_KEY_7) && !m_singlePressBool2) {
+		m_singlePressBool2 = true;
+	}
+
+	if (Input::IsKeyPressed(SAIL_KEY_8)) {
+		stopSound(1);
 	}
 }
 

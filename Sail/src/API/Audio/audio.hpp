@@ -24,7 +24,12 @@ public:
 	void playSound(int index);
 	void stopSound(int index);
 
+	void updateAudio();
+
 private:
+	bool m_singlePressBool1 = true;
+	bool m_singlePressBool2 = true;
+
 	// Main 'interface' object managing all audio engine states
 	IXAudio2* m_xAudio2 = nullptr;
 	// Represents the audio output device
