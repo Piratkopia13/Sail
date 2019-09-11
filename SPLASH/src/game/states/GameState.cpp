@@ -11,15 +11,15 @@ GameState::GameState(StateStack& stack)
 {
 #ifdef _DEBUG
 #pragma region TESTCASES
-	m_cc.addCommand(std::string("save"),			[&]() { return std::string("saved"); });
-	m_cc.addCommand(std::string("test <int>"),		[&](int in) { return std::string("test<int>"); });
-	m_cc.addCommand(std::string("test <float>"),	[&](float in) { return std::string("test<float>"); });
-	m_cc.addCommand(std::string("test <string>"),	[&](std::string in) { return std::string("test<string>"); });
-	m_cc.addCommand(std::string("test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
-	m_cc.addCommand(std::string("test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
+	m_cc.addCommand(std::string("Save"),			[&]() { return std::string("saved"); });
+	m_cc.addCommand(std::string("Test <int>"),		[&](int in) { return std::string("test<int>"); });
+	m_cc.addCommand(std::string("Test <float>"),	[&](float in) { return std::string("test<float>"); });
+	m_cc.addCommand(std::string("Test <string>"),	[&](std::string in) { return std::string("test<string>"); });
+	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
+	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
 #pragma endregion
 	
-	m_cc.addCommand(std::string("addCube"), [&]() {
+	m_cc.addCommand(std::string("AddCube"), [&]() {
 		auto e = Entity::Create("new cube");
 		e->addComponent<ModelComponent>(m_cubeModel.get());
 		e->addComponent<TransformComponent>(m_cam.getPosition());
@@ -27,7 +27,7 @@ GameState::GameState(StateStack& stack)
 		m_scene.addEntity(e);
 		return std::string("Added Cube at (" + std::to_string(m_cam.getPosition().x) + ":" + std::to_string(m_cam.getPosition().y) + ":" + std::to_string(m_cam.getPosition().z) + ")");
 		});
-	m_cc.addCommand(std::string("addCube <int> <int> <int>"), [&](std::vector<int> in) {
+	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -37,7 +37,7 @@ GameState::GameState(StateStack& stack)
 		}
 		return std::string("wat");
 	});
-	m_cc.addCommand(std::string("addCube <float> <float> <float>"), [&](std::vector<float> in){
+	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&](std::vector<float> in){
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -337,7 +337,7 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(position);
 	m_scene.addEntity(e);
-	return std::string("Added FLOAT Cube at (" +
+	return std::string("Added Cube at (" +
 		std::to_string(position.x) + ":" +
 		std::to_string(position.y) + ":" +
 		std::to_string(position.z) + ")");

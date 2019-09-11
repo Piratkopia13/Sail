@@ -12,6 +12,7 @@
 	2.5 Create a new case in parseCommand and a new Regex case if an input is not a string float or int
 	3. Create a new Match function
 	4. add match function to execute();
+	5. add vector to help function if you want them visible in "Help"
 
 	(I think that's it)
 	Ask Henrik if you have any questions
@@ -48,7 +49,8 @@ public:
 	const std::vector<std::string>& getCommandLog();
 
 private:
-
+	void createHelpCommand();
+	
 	std::string prune(const std::string& command);
 	const std::string parseCommand(const std::string& command);
 
@@ -71,6 +73,5 @@ private:
 	std::vector<std::pair<std::string, std::function<std::string(std::vector<int>)>>> m_intArrayCommands;
 	std::vector<std::pair<std::string, std::function<std::string(std::vector<float>)>>> m_floatArrayCommands;
 	
-
 };
 

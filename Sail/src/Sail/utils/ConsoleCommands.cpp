@@ -5,12 +5,13 @@ ConsoleCommands::ConsoleCommands() :
 	SailImGuiWindow(false),
 	m_textField("")
 {
+	createHelpCommand();
 
 }
 ConsoleCommands::ConsoleCommands(const bool windowState) :
 SailImGuiWindow(windowState) 
 {
-
+	createHelpCommand();
 }
 ConsoleCommands::~ConsoleCommands() {
 }
@@ -91,6 +92,33 @@ const std::vector<std::string>& ConsoleCommands::getCommandLog() {
 	return m_commandHistory;
 }
 
+void ConsoleCommands::createHelpCommand() {
+	addCommand(std::string("Help"), [&]() {
+
+		m_textLog.emplace_back("");
+		m_textLog.emplace_back("Current Commands:");
+		for (int i = 0; i < m_voidCommands.size(); i++) {
+			m_textLog.emplace_back(m_voidCommands[i].first);
+		}
+		for (int i = 0; i < m_stringCommands.size(); i++) {
+			m_textLog.emplace_back(m_stringCommands[i].first);
+		}
+		for (int i = 0; i < m_numberCommands.size(); i++) {
+			m_textLog.emplace_back(m_numberCommands[i].first);
+		}
+		for (int i = 0; i < m_intArrayCommands.size(); i++) {
+			m_textLog.emplace_back(m_intArrayCommands[i].first);
+		}
+		for (int i = 0; i < m_floatArrayCommands.size(); i++) {
+			m_textLog.emplace_back(m_floatArrayCommands[i].first);
+		}
+
+		return std::string("");
+		});
+
+
+}
+
 std::string ConsoleCommands::prune(const std::string& command) {
 	std::string temp = command.substr(0, command.find_last_not_of(" ") + 1);
 	return temp;
@@ -137,7 +165,10 @@ const bool ConsoleCommands::intMatch(const std::string& command, const std::stri
 		if (m_numberCommands[i].first == parsedCommand) {
 			int location = command.find(" ");
 			int size = command.find(" ", location + 1) - location - 1;
-			int value = std::stoi(command.substr(location + 1, size));
+			std::string section = command.substr(location + 1, size);
+			if (section.size() > 9)
+				section = section.substr(0, 9);
+			int value = std::stoi(section);
 			
 			m_textLog.emplace_back(m_textField);
 			m_commandHistory.emplace_back(command);
@@ -156,6 +187,8 @@ const bool ConsoleCommands::intArrayMatch(const std::string& command, const std:
 			while (location != std::string::npos) {
 				int nextLocation = command.find(" ", location + 1);
 				std::string section = command.substr(location + 1, nextLocation - location - 1);
+				if (section.size() > 9)
+					section = section.substr(0, 9);
 				int value = std::stoi(section);
 				arr.emplace_back(value);
 				location = nextLocation;
@@ -175,7 +208,11 @@ const bool ConsoleCommands::floatMatch(const std::string& command, const std::st
 		if (m_numberCommands[i].first == parsedCommand) {
 			int location = command.find(" ");
 			int size = command.find(" ", location + 1) - location - 1;
-			float value = std::stof(command.substr(location + 1, size));
+
+			std::string section = command.substr(location + 1, size);
+			if (section.size() > 9)
+				section = section.substr(0, 9);
+			float value = std::stof(section);
 
 			m_textLog.emplace_back(m_textField);
 			m_commandHistory.emplace_back(command);
@@ -194,6 +231,8 @@ const bool ConsoleCommands::floatArrayMatch(const std::string& command, const st
 			while (location != std::string::npos) {
 				int nextLocation = command.find(" ", location + 1);
 				std::string section = command.substr(location + 1, nextLocation - location - 1);
+				if (section.size() > 9)
+					section = section.substr(0, 9);
 				float value = std::stof(section);
 				arr.emplace_back(value);
 				location = nextLocation;
