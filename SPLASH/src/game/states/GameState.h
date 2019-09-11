@@ -31,6 +31,8 @@ private:
 	Entity::SPtr m_texturedCubeEntity;
 	std::vector<Entity::SPtr> m_transformTestEntities;
 
+	const std::string createCube(const glm::vec3& position);
+
 	Scene m_scene;
 	LightSetup m_lights;
 	ConsoleCommands m_cc;

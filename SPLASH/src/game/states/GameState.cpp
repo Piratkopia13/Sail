@@ -29,17 +29,8 @@ GameState::GameState(StateStack& stack)
 		});
 	m_cc.addCommand(std::string("addCube <int> <int> <int>"), [&](std::vector<int> in) {
 		if (in.size() == 3) {
-			auto e = Entity::Create("new cube");
-			e->addComponent<ModelComponent>(m_cubeModel.get());
 			glm::vec3 pos(in[0], in[1], in[2]);
-			e->addComponent<TransformComponent>(pos);
-
-			m_scene.addEntity(e);
-			return std::string("Added INT Cube at (" +
-				std::to_string(pos.x) + ":" +
-				std::to_string(pos.y) + ":" +
-				std::to_string(pos.z) + ")");
-
+			return createCube(pos);
 		}
 		else {
 			return std::string("Error: wrong number of inputs. Console Broken");
@@ -48,17 +39,8 @@ GameState::GameState(StateStack& stack)
 	});
 	m_cc.addCommand(std::string("addCube <float> <float> <float>"), [&](std::vector<float> in){
 		if (in.size() == 3) {
-			auto e = Entity::Create("new cube");
-			e->addComponent<ModelComponent>(m_cubeModel.get());
 			glm::vec3 pos(in[0], in[1], in[2]);
-			e->addComponent<TransformComponent>(pos);
-
-			m_scene.addEntity(e);
-			return std::string("Added FLOAT Cube at (" +
-				std::to_string(pos.x) + ":" +
-				std::to_string(pos.y) + ":" +
-				std::to_string(pos.z) + ")");
-
+			return createCube(pos);
 		}
 		else {
 			return std::string("Error: wrong number of inputs. Console Broken");
@@ -348,4 +330,15 @@ bool GameState::renderImguiConsole(float dt) {
 
 
 	return false;
+}
+
+const std::string GameState::createCube(const glm::vec3& position) {
+	auto e = Entity::Create("new cube");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	e->addComponent<TransformComponent>(position);
+	m_scene.addEntity(e);
+	return std::string("Added FLOAT Cube at (" +
+		std::to_string(position.x) + ":" +
+		std::to_string(position.y) + ":" +
+		std::to_string(position.z) + ")");
 }
