@@ -2,14 +2,23 @@
 
 #include "Component.h"
 
+#include "../../patterns/Node.h"
+
+
 // TODO: rewrite TransformComponent to make it leaner, use this component for interpolation eventually
 // keep the matrixes in it
 
 // TODO: move node to own class with treeneedsupdate function etc.
 
-class TransformDataComponent : public Component {
+class TransformDataComponent : public Component, public Node<TransformDataComponent> {
 public:
 	SAIL_COMPONENT
+
+
+	//TransformDataComponent(const glm::vec3& translation, TransformDataComponent* parent = nullptr)
+	//	: m_translation(translation), Node(this, parent) {}
+
+	//TransformDataComponent(TransformDataComponent* parent) : Node(this, parent) {}
 
 	TransformDataComponent(
 			const glm::vec3& translation = { 0.0f, 0.0f, 0.0f },
@@ -18,8 +27,10 @@ public:
 		: m_translation(translation),
 		m_rotation(rotation),
 		m_scale(scale),
-		Component()
+		Component(),
+		Node(this)
 	{}
+
 
 	void setTranslation(const glm::vec3& translation) { 
 		m_translation = translation; 

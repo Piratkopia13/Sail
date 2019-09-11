@@ -70,13 +70,13 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
+
 	// Create entities
 	auto e = Entity::Create("Static cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	//e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	e->addComponent<TransformDataComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	e->addComponent<TransformMatrixComponent>();
-
 	m_scene.addEntity(e);
 
 	e = Entity::Create("Floor");
@@ -86,35 +86,122 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformMatrixComponent>();
 	m_scene.addEntity(e);
 
-	//e = Entity::Create("Clingy cube");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
+	// Add some cubes which are connected through parenting
+	m_texturedCubeEntity = Entity::Create("Textured parent cube");
+	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
+	//m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
+	//m_texturedCubeEntity->addComponent<TransformDataComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformDataComponent>());
+	//m_texturedCubeEntity->addComponent<TransformMatrixComponent>(m_texturedCubeEntity->getComponent<TransformMatrixComponent>());
+	m_texturedCubeEntity->addComponent<TransformDataComponent>(glm::vec3(-1.f, 2.f, 0.f));
+	m_texturedCubeEntity->addComponent<TransformMatrixComponent>();
+	m_texturedCubeEntity->setName("MovingCube");
+	m_scene.addEntity(m_texturedCubeEntity);
+
+	e = Entity::Create("Clingy cube");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
 	//e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-	//e->addComponent<TransformDataComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+	e->addComponent<TransformDataComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+	e->addComponent<TransformMatrixComponent>();
+	m_scene.addEntity(e);
+
+	//e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
+	e->getComponent<TransformDataComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformDataComponent>());
+	e->getComponent<TransformMatrixComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformMatrixComponent>());
+
+
+
+	e = Entity::Create("CubeRoot");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	e->addComponent<TransformDataComponent>(glm::vec3(10.f, 0.f, 10.f));
+	e->addComponent<TransformMatrixComponent>();
+	m_scene.addEntity(e);
+	m_transformTestEntities.push_back(e);
+
+	e = Entity::Create("CubeChild");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	e->addComponent<TransformDataComponent>(glm::vec3(1.f, 1.f, 1.f));
+	e->addComponent<TransformMatrixComponent>();
+	e->getComponent<TransformDataComponent>()->setParent(m_transformTestEntities[0]->getComponent<TransformDataComponent>());
+	e->getComponent<TransformMatrixComponent>()->setParent(m_transformTestEntities[0]->getComponent<TransformMatrixComponent>());
+	m_scene.addEntity(e);
+	m_transformTestEntities.push_back(e);
+
+	e = Entity::Create("CubeChildChild");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	e->addComponent<TransformDataComponent>(glm::vec3(1.f, 1.f, 1.f));
+	e->addComponent<TransformMatrixComponent>();
+	e->getComponent<TransformDataComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformDataComponent>());
+	e->getComponent<TransformMatrixComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformMatrixComponent>());
+	m_scene.addEntity(e);
+	m_transformTestEntities.push_back(e);
+
+
+
+
+
+
+
+	//// Create entities
+	//auto e = Entity::Create("Static cube");
+	//e->addComponent<ModelComponent>(m_cubeModel.get());
+	////e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
+	//e->addComponent<TransformDataComponent>(glm::vec3(-4.f, 1.f, -2.f));
+	//e->addComponent<TransformMatrixComponent>();
+
+	//m_scene.addEntity(e);
+
+	//e = Entity::Create("Floor");
+	//e->addComponent<ModelComponent>(m_planeModel.get());
+	////e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	//e->addComponent<TransformDataComponent>(glm::vec3(0.f, 0.f, 0.f));
+	//e->addComponent<TransformMatrixComponent>();
 	//m_scene.addEntity(e);
 
 	//// Add some cubes which are connected through parenting
 	//m_texturedCubeEntity = Entity::Create("Textured parent cube");
 	//m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-	//m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
+	////m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
+	//m_texturedCubeEntity->addComponent<TransformDataComponent>(glm::vec3(-1.f, 2.f, 0.f));
+	//m_texturedCubeEntity->addComponent<TransformMatrixComponent>();
 	//m_texturedCubeEntity->setName("MovingCube");
 	//m_scene.addEntity(m_texturedCubeEntity);
-	//e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
+
+	//e = Entity::Create("Clingy cube");
+	//e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformDataComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+	//e->addComponent<TransformMatrixComponent>();
+	//e->getComponent<TransformDataComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformDataComponent>());
+	//e->getComponent<TransformMatrixComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformMatrixComponent>());
+	//m_scene.addEntity(e);
 
 	//e = Entity::Create("CubeRoot");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	////e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	//e->addComponent<TransformDataComponent>(glm::vec3(10.f, 0.f, 10.f));
+	//e->addComponent<TransformMatrixComponent>();
 	//m_scene.addEntity(e);
 	//m_transformTestEntities.push_back(e);
 
 	//e = Entity::Create("CubeChild");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	////e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	//e->addComponent<TransformDataComponent>(glm::vec3(1.f, 1.f, 1.f));
+	//e->addComponent<TransformMatrixComponent>();
+	//e->getComponent<TransformDataComponent>()->setParent(m_transformTestEntities[0]->getComponent<TransformDataComponent>());
+	//e->getComponent<TransformMatrixComponent>()->setParent(m_transformTestEntities[0]->getComponent<TransformMatrixComponent>());
 	//m_scene.addEntity(e);
 	//m_transformTestEntities.push_back(e);
 
 	//e = Entity::Create("CubeChildChild");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	////e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	//e->addComponent<TransformDataComponent>(glm::vec3(1.f, 1.f, 1.f));
+	//e->addComponent<TransformMatrixComponent>();
+	//e->getComponent<TransformDataComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformDataComponent>());
+	//e->getComponent<TransformMatrixComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformMatrixComponent>());
 	//m_scene.addEntity(e);
 	//m_transformTestEntities.push_back(e);
 
@@ -140,11 +227,13 @@ bool GameState::processInput(float dt) {
 		Logger::Log("Setting parent");
 		//m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>());
 		m_transformTestEntities[2]->getComponent<TransformMatrixComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformMatrixComponent>());
+		m_transformTestEntities[2]->getComponent<TransformDataComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformDataComponent>());
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
 		Logger::Log("Removing parent");
 		//m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
 		m_transformTestEntities[2]->getComponent<TransformMatrixComponent>()->removeParent();
+		m_transformTestEntities[2]->getComponent<TransformDataComponent>()->removeParent();
 	}
 #endif
 

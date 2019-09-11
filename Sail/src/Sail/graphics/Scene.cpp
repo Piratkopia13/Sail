@@ -45,25 +45,53 @@ void Scene::draw(Camera& camera) {
 
 	m_renderer->begin(&camera);
 
+	//for (Entity::SPtr& entity : m_entities) {
+	//	ModelComponent* model = entity->getComponent<ModelComponent>();
+	//	if (model) {
+	//		TransformComponent* transform = entity->getComponent<TransformComponent>();
+	//		if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
+
+	//		m_renderer->submit(model->getModel(), transform->getMatrix());
+	//	}
+	//}
+
 	for (Entity::SPtr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
 		if (model) {
 			// Update all entities that have transform matrices
+			TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
 			TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
-			if (matrix) {
-				TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
-				if (data) {
-					if (data->wasUpdatedThisTick()) {
-						matrix->updateLocalMatrix(data->getTranslation(), data->getTranslation(), data->getScale());
-						data->dataProcessed();
-					}
-					if (!matrix->hasParent() || matrix->getParentUpdated()) {
-						matrix->updateMatrix();
-					}
+			if (data && matrix) {
+				if (data->wasUpdatedThisTick()) {
+					matrix->updateLocalMatrix(data->getTranslation(), data->getTranslation(), data->getScale());
+					data->dataProcessed();
+				}
+				//if (!data->hasParent() || data->getParentUpdated()) {
+				//	matrix->updateMatrix();
+				//}
+				//m_renderer->submit(model->getModel(), matrix->getMatrix());
+			}
+		}
+	}
+
+	for (Entity::SPtr& entity : m_entities) {
+		ModelComponent* model = entity->getComponent<ModelComponent>();
+		if (model) {
+			// Update all entities that have transform matrices
+			TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
+			TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
+			if (data && matrix) {
+				//if (data->wasUpdatedThisTick()) {
+				//	matrix->updateLocalMatrix(data->getTranslation(), data->getTranslation(), data->getScale());
+				//	data->dataProcessed();
+				//}
+				if (!data->hasParent() || data->getParentUpdated()) {
+					matrix->updateMatrix();
 				}
 				m_renderer->submit(model->getModel(), matrix->getMatrix());
 			}
 		}
+	}
 
 
 		//if (model) {
@@ -93,7 +121,6 @@ void Scene::draw(Camera& camera) {
 		//		m_renderer->submit(model->getModel(), transform->getMatrix());
 		//	}
 		//}
-	}
 
 	m_renderer->end();
 	m_renderer->present();
