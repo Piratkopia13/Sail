@@ -79,9 +79,14 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 		}
 
 		// Update flags telling the shader to use indices or not
-		unsigned int flagSize = sizeof(UINT32);
-		UINT32 flag = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
-		m_meshCB[frameIndex]->updateData(&flag, flagSize, i * flagSize);
+		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
+		DXRShaderCommon::MeshData meshData;
+		meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasDiffuseTexture) ?		DXRShaderCommon::MESH_HAS_DIFFUSE_TEX	: meshData.flags;
+		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasNormalTexture) ?		DXRShaderCommon::MESH_HAS_NORMAL_TEX	: meshData.flags;
+		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasSpecularTexture) ?	DXRShaderCommon::MESH_HAS_SPECULAR_TEX	: meshData.flags;
+		meshData.color = mesh->getMaterial()->getPhongSettings().modelColor;
+		m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, i * meshDataSize);
 
 		m_rtMeshHandles.emplace_back(handles);
 

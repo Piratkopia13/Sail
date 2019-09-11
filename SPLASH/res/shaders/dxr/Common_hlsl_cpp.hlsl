@@ -22,9 +22,13 @@ namespace DXRShaderCommon {
 
 
 #define MAX_RAY_RECURSION_DEPTH 30
+#define MAX_INSTANCES 400
 
-static const uint MESH_NO_FLAGS	 		= 	0;
-static const uint MESH_USE_INDICES 		= 	1 << 0;
+static const uint MESH_NO_FLAGS	 			= 	0;
+static const uint MESH_USE_INDICES 			= 	1 << 0;
+static const uint MESH_HAS_DIFFUSE_TEX 		= 	1 << 1;
+static const uint MESH_HAS_NORMAL_TEX 		= 	1 << 2;
+static const uint MESH_HAS_SPECULAR_TEX		= 	1 << 3;
 
 struct RayPayload {
 	float4 color;
@@ -47,11 +51,14 @@ struct SceneCBuffer {
 };
 
 // Properties set once per BLAS/Mesh
-struct MeshCBuffer {
-	uint flags[2048]; // cbuffer min size is 64kb = 2048 uints(32 bits) will fit
+struct MeshData {
+	float4 color;
+	int flags;
+	float3 padding;
 };
-
-
+struct MeshCBuffer {
+	MeshData data[MAX_INSTANCES]; // cbuffer min size is 64kb, fill with flags
+};
 
 #ifndef HLSL
 // C++ only

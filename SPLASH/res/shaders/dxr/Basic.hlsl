@@ -79,7 +79,7 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	uint i2 = primitiveID * verticesPerPrimitive + 1;
 	uint i3 = primitiveID * verticesPerPrimitive + 2;
 	// Use indices if available
-	if (CB_MeshData.flags[instanceID] & MESH_USE_INDICES) {
+	if (CB_MeshData.data[instanceID].flags & MESH_USE_INDICES) {
 		i1 = indices[i1];
 		i2 = indices[i2];
 		i3 = indices[i3];
@@ -94,16 +94,20 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 
 	// float3 normalInWorldSpace = float3(0,-1,0);
 
-	if ((CB_MeshData.flags[instanceID] & MESH_USE_INDICES) && payload.recursionDepth < 2) {
-		float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
-		TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
-		payload.color += float4(0.5, 0.2, 0.2, 0.0);
-	} else {
+	// if ((CB_MeshData.data[instanceID].flags & MESH_USE_INDICES) && payload.recursionDepth < 0) {
+	// 	float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
+	// 	TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
+	// 	payload.color += float4(0.5, 0.2, 0.2, 0.0);
+	// } else {
 		// Max recursion, return color
 		// payload.color = float4(normalInWorldSpace * 0.5f + 0.5, 1.f);
-		payload.color += sys_texDiffuse.SampleLevel(ss, texCoords, 0) * 0.1f;
-		payload.color += sys_texNormal.SampleLevel(ss, texCoords, 0);
-		payload.color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
-		// payload.color = float4(1.f, 0.2f, 0.2f, 1.0f);
-	}
+
+		payload.color = CB_MeshData.data[instanceID].color;
+		if (CB_MeshData.data[instanceID].flags & MESH_HAS_DIFFUSE_TEX)
+			payload.color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
+		if (CB_MeshData.data[instanceID].flags & MESH_HAS_NORMAL_TEX)
+			payload.color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
+		if (CB_MeshData.data[instanceID].flags & MESH_HAS_SPECULAR_TEX)
+			payload.color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
+	// }
 }
