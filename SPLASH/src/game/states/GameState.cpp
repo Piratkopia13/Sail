@@ -1,5 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
+#include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
+#include "..//Sail/src/Sail/entities/ECS.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -57,6 +59,16 @@ GameState::GameState(StateStack& stack)
 
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
+
+	/*
+		Create a PhysicSystem
+		If the game developer does not want to add the systems like this,
+		this call could be moved inside the default constructor of ECS,
+		assuming each system is included in ECS.cpp instead of here
+	*/
+	ECS::Instance()->createSystem<PhysicSystem>();
+
+
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
@@ -71,47 +83,57 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Create entities
-	auto e = Entity::Create("Static cube");
+	auto e = ECS::Instance()->createEntity("Static cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Floor");
+	e = ECS::Instance()->createEntity("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Clingy cube");
+	e = ECS::Instance()->createEntity("Clingy cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
 	m_scene.addEntity(e);
 
 	// Add some cubes which are connected through parenting
-	m_texturedCubeEntity = Entity::Create("Textured parent cube");
+	m_texturedCubeEntity = ECS::Instance()->createEntity("Textured parent cube");
 	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
 	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
 	m_texturedCubeEntity->setName("MovingCube");
 	m_scene.addEntity(m_texturedCubeEntity);
 	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
 
-	e = Entity::Create("CubeRoot");
+	e = ECS::Instance()->createEntity("CubeRoot");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
-	e = Entity::Create("CubeChild");
+	e = ECS::Instance()->createEntity("CubeChild");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
-	e = Entity::Create("CubeChildChild");
+	e = ECS::Instance()->createEntity("CubeChildChild");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
+	std::cout
+		<< "Transform: " << TransformComponent::ID
+		<< "\nText: " << TextComponent::ID
+		<< "\nPhysics: " << PhysicsComponent::ID
+		<< "\nModel: " << ModelComponent::ID
+		<< "\nNr of components: " << ECS::Instance()->nrOfComponentTypes()
+		<< "\nNr of transform test entities: " << m_transformTestEntities.size() << "\n";
 }
 
 GameState::~GameState() {
@@ -138,10 +160,30 @@ bool GameState::processInput(float dt) {
 		Logger::Log("Removing parent");
 		m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
 	}
+
+
+	/*
+		Test:
+		Will add or remove the PhysicsComponent on the first entity in m_transformTestEntities
+		If that entity already has the component, the first press will write a warning to the console
+	*/
+	if (Input::WasKeyJustPressed(SAIL_KEY_J)) {
+		static bool hasPhysics = false;
+		hasPhysics = !hasPhysics;
+
+		switch (hasPhysics) {
+		case true:
+			m_transformTestEntities[0]->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(9.82f, 0, 0));
+			break;
+		case false:
+			m_transformTestEntities[0]->removeComponent<PhysicsComponent>();
+			break;
+		}
+	}
 #endif
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
-		glm::vec3 color(1.0f, 1.0f, 1.0f);;
+		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
 
@@ -185,18 +227,30 @@ bool GameState::update(float dt) {
 	static float change = 0.4f;
 	
 	counter += dt * 2;
+
+	/*
+		Updates all Component Systems in order
+	*/
+	ECS::Instance()->update(dt);
+
 	if (m_texturedCubeEntity) {
+		/*
+			Translations, rotations and scales done here are non-constant, meaning they change between updates
+			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
+		*/
+		
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 
-		// Move the three parented cubes with identical translation, rotations and scale to show how parenting affects transforms
-		for (Entity::SPtr item : m_transformTestEntities) {
-			item->getComponent<TransformComponent>()->rotateAroundY(dt * 1.0f);
+		// Set translation and scale to show how parenting affects transforms
+		//for (Entity::SPtr item : m_transformTestEntities) {
+		for (size_t i = 1; i < m_transformTestEntities.size(); i++) {
+			Entity::SPtr item = m_transformTestEntities[i];
 			item->getComponent<TransformComponent>()->setScale(size);
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
 		}
-		m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
+		//m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
 
 		size += change * dt;
 		if (size > 1.2f || size < 0.7f)
