@@ -60,7 +60,12 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
 
-	// ECS management
+	/*
+		Create a PhysicSystem
+		If the game developer does not want to add the systems like this,
+		this call could be moved inside the default constructor of ECS,
+		assuming each system is included in ECS.cpp instead of here
+	*/
 	ECS::Instance()->createSystem<PhysicSystem>();
 
 
@@ -81,6 +86,7 @@ GameState::GameState(StateStack& stack)
 	auto e = ECS::Instance()->createEntity("Static cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
+	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(9.82f, 0, 0));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Floor");
@@ -97,6 +103,7 @@ GameState::GameState(StateStack& stack)
 	m_texturedCubeEntity = ECS::Instance()->createEntity("Textured parent cube");
 	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
 	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
+	//m_texturedCubeEntity->addComponent<PhysicsComponent>();
 	m_texturedCubeEntity->setName("MovingCube");
 	m_scene.addEntity(m_texturedCubeEntity);
 	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
@@ -104,21 +111,31 @@ GameState::GameState(StateStack& stack)
 	e = ECS::Instance()->createEntity("CubeRoot");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
 	e = ECS::Instance()->createEntity("CubeChild");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
 	e = ECS::Instance()->createEntity("CubeChildChild");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
+	std::cout
+		<< "Transform: " << TransformComponent::ID
+		<< "\nText: " << TextComponent::ID
+		<< "\nPhysics: " << PhysicsComponent::ID
+		<< "\nModel: " << ModelComponent::ID
+		<< "\nNr of components: " << ECS::Instance()->nrOfComponentTypes()
+		<< "\nNr of transform test entities: " << m_transformTestEntities.size() << "\n";
 }
 
 GameState::~GameState() {
@@ -193,20 +210,23 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2;
 
-	int idtran = TransformComponent::getStaticID();
-	int idmod = ModelComponent::getStaticID();
-	int idphy = PhysicsComponent::getStaticID();
-	int idtxt = TextComponent::getStaticID();
+	/*
+		Updates all Component Systems in order
+	*/
 	ECS::Instance()->update(dt);
 
 	if (m_texturedCubeEntity) {
+		/*
+			Translations, rotations and scales done here are non-constant, meaning they change between updates
+			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
+		*/
+		
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 
-		// Move the three parented cubes with identical translation, rotations and scale to show how parenting affects transforms
+		// Set translation and scale to show how parenting affects transforms
 		for (Entity::SPtr item : m_transformTestEntities) {
-			item->getComponent<TransformComponent>()->rotateAroundY(dt * 1.0f);
 			item->getComponent<TransformComponent>()->setScale(size);
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
 		}
