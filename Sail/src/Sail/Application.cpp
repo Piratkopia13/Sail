@@ -111,19 +111,31 @@ int Application::startGameLoop() {
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
-			if (Input::IsKeyPressed(SAIL_KEY_9)) {
+			if (Input::IsKeyPressed(SAIL_KEY_9) && m_singlePressBool1) {
 
+				m_singlePressBool1 = false;
 				Application::getAudioManager()->stopSound(0);
 				Application::getAudioManager()->loadSound("../Audio/sampleLarge.wav", 0);
 				Application::getAudioManager()->playSound(0);
+			}
+
+			else if (!Input::IsKeyPressed(SAIL_KEY_9) && !m_singlePressBool1) {
+				m_singlePressBool1 = true;
 			}
 
 			if (Input::IsKeyPressed(SAIL_KEY_0)) {
 				Application::getAudioManager()->stopSound(0);
 			}
 
-			if (Input::IsKeyPressed(SAIL_KEY_1)) {
+			if (Input::IsKeyPressed(SAIL_KEY_1) && m_singlePressBool2) {
+				m_singlePressBool2 = false;
+				Application::getAudioManager()->stopSound(1);
+				Application::getAudioManager()->loadSound("../Audio/sampleLarge.wav", 1);
 				Application::getAudioManager()->playSound(1);
+			}
+
+			else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePressBool2) {
+				m_singlePressBool2 = true;
 			}
 
 			if (Input::IsKeyPressed(SAIL_KEY_2)) {

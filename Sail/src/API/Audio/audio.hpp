@@ -36,8 +36,8 @@ private:
 	//ADPCMWAVEFORMAT m_formatADPCM = { 0 };
 	
 	XAUDIO2_BUFFER m_soundBuffers[SOUND_COUNT] = { 0 };
-	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
-	OVERLAPPED m_overlapped = { 0 };
+	//BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
+	//OVERLAPPED m_overlapped = { 0 };
 
 	//int m_currIndex = 0;
 

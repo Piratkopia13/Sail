@@ -140,7 +140,7 @@ void Audio::loadSound(std::string fileName, int index)
 	// reading data from WAV files
 	hr = ReadChunkData(hFile, &m_formatWAV, dwChunkSize, dwChunkPosition);
 	// reading data from ADPC-WAV files (compressed)
-	//hr = ReadChunkData(hFile, &adpcwf, dwChunkSize, dwChunkPosition);
+	// hr = ReadChunkData(hFile, &adpcwf, dwChunkSize, dwChunkPosition);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -263,8 +263,9 @@ void Audio::playSound(int index) {
 }
 
 void Audio::stopSound(int index) {
-	m_sourceVoice[index]->Stop(0);
-	//this->m_buffer[index]
+	if (m_soundBuffers[index].pAudioData != nullptr) {
+		m_sourceVoice[index]->Stop(index);
+	}
 }
 
 void Audio::initXAudio2() {
@@ -306,5 +307,5 @@ void Audio::initXAudio2() {
 	}
 #pragma endregion
 
-	m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	//m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 }

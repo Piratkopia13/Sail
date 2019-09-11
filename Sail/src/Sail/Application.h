@@ -57,4 +57,7 @@ private:
 	Timer m_timer;
 	UINT m_fps;
 
+	bool m_singlePressBool1 = true;
+	bool m_singlePressBool2 = true;
+
 };
