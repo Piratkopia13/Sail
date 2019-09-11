@@ -60,33 +60,23 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 			handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
 		
 		// Three textures
-		const DX12Texture* diffuseTexture = static_cast<const DX12Texture*>(mesh->getMaterial()->getTexture(0));
-		const DX12Texture* normalTexture = static_cast<const DX12Texture*>(mesh->getMaterial()->getTexture(1));
-		const DX12Texture* specularTexture = static_cast<const DX12Texture*>(mesh->getMaterial()->getTexture(2));
-		if (mesh->getMaterial()->getPhongSettings().hasDiffuseTexture) {
-			// Copy SRV to DXR heap
-			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, diffuseTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			handles.textureHandles[0] = gpuHandle;
-			cpuHandle.ptr += m_heapIncr;
-			gpuHandle.ptr += m_heapIncr;
-		}
-		if (mesh->getMaterial()->getPhongSettings().hasNormalTexture) {
-			// Copy SRV to DXR heap
-			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, normalTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			handles.textureHandles[1] = gpuHandle;
-			cpuHandle.ptr += m_heapIncr;
-			gpuHandle.ptr += m_heapIncr;
-		}
-		if (mesh->getMaterial()->getPhongSettings().hasSpecularTexture) {
-			// Copy SRV to DXR heap
-			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, specularTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			handles.textureHandles[1] = gpuHandle;
-			cpuHandle.ptr += m_heapIncr;
-			gpuHandle.ptr += m_heapIncr;
-		}
+		for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+			DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
+			bool hasTexture = (textureNum == 0) ? mesh->getMaterial()->getPhongSettings().hasDiffuseTexture : mesh->getMaterial()->getPhongSettings().hasNormalTexture;
+			hasTexture = (textureNum == 2) ? mesh->getMaterial()->getPhongSettings().hasSpecularTexture : hasTexture;
+			if (hasTexture) {
+				// Make sure textures have initialized / uploaded their data to its default buffer
+				if (!texture->hasBeenInitialized())
+					texture->initBuffers(cmdList);
 
-
-		//handles.materialHandle = mesh->getMaterialCB()->getBuffer(0)->GetGPUVirtualAddress();
+				// Copy SRV to DXR heap
+				m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				handles.textureHandles[textureNum] = gpuHandle;
+			}
+			// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
+			cpuHandle.ptr += m_heapIncr;
+			gpuHandle.ptr += m_heapIncr;
+		}
 
 		// Update flags telling the shader to use indices or not
 		unsigned int flagSize = sizeof(UINT32);

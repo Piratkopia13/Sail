@@ -11,9 +11,9 @@ StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 
 // Texture2DArray<float4> textures : register(t2, space0);
-// Texture2D sys_texDiffuse : register(t2);
-// Texture2D sys_texNormal : register(t3);
-// Texture2D sys_texSpecular : register(t4);
+Texture2D<float4> sys_texDiffuse : register(t2);
+Texture2D<float4> sys_texNormal : register(t3);
+Texture2D<float4> sys_texSpecular : register(t4);
 
 SamplerState ss : register(s0);
 
@@ -96,10 +96,14 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 
 	if ((CB_MeshData.flags[instanceID] & MESH_USE_INDICES) && payload.recursionDepth < 2) {
 		float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
+		TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
+		payload.color += float4(0.5, 0.2, 0.2, 0.0);
 	} else {
 		// Max recursion, return color
-		payload.color = float4(normalInWorldSpace * 0.5f + 0.5, 1.f);
+		// payload.color = float4(normalInWorldSpace * 0.5f + 0.5, 1.f);
+		payload.color += sys_texDiffuse.SampleLevel(ss, texCoords, 0) * 0.1f;
+		payload.color += sys_texNormal.SampleLevel(ss, texCoords, 0);
+		payload.color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
 		// payload.color = float4(1.f, 0.2f, 0.2f, 1.0f);
 	}
 }

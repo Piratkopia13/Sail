@@ -100,7 +100,7 @@ void Material::getAndInsertTexture(const std::string& filename, int arraySlot) {
 //		return m_srvs;
 //}
 
-const Texture* Material::getTexture(unsigned int id) const {
+Texture* Material::getTexture(unsigned int id) {
 	return m_textures[id];
 }
 
