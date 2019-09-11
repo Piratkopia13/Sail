@@ -1,9 +1,11 @@
 #pragma once
 
+#include "pch.h"
+
 #include <memory>
 
 
-// This method only works in debug without optimisations
+// This method only works in debug without optimizations
 //#define SAIL_COMPONENT static int getStaticID() { \
 //	return reinterpret_cast<int>(&getStaticID); \
 //}

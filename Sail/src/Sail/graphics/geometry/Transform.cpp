@@ -139,6 +139,8 @@ void Transform::setScale(const glm::vec3& scale) {
 	treeNeedsUpdating();
 }
 
+
+// NOTE: Not used anywhere atm
 void Transform::setMatrix(const glm::mat4& newMatrix) {
 	m_localTransformMatrix = newMatrix;
 	glm::vec3 tempSkew;

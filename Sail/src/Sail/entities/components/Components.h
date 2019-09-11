@@ -4,4 +4,5 @@
 #include "TransformComponent.h"
 #include "ModelComponent.h"
 #include "TextComponent.h"
-#include "StaticPositionComponent.h"
+#include "TransformMatrixComponent.h"
+#include "TransformDataComponent.h"
