@@ -121,17 +121,19 @@ GameState::GameState(StateStack& stack)
 
 	m_octree = new Octree(&m_scene, m_boundingBoxModel.get());
 
-	for (int i = 0; i < 7; i++) {
+	for (int i = 0; i < 4; i++) {
 		m_testBoundingBoxes.push_back(new BoundingBox());
-		m_testBoundingBoxes.back()->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 0.0f));
+		m_testBoundingBoxes.back()->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
 		m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());
 	}
 
-	m_testBoundingBoxes.push_back(new BoundingBox());
+	/*m_testBoundingBoxes.push_back(new BoundingBox());
 	m_testBoundingBoxes.back()->setPosition(glm::vec3(51.0f, 1.0f, 0.0f));
-	m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());
+	m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());*/
 
 	m_octree->addEntities(&m_testBoundingBoxes);
+
+	m_testAngle = 0.0f;
 }
 
 GameState::~GameState() {
@@ -226,6 +228,18 @@ bool GameState::update(float dt) {
 		if (size > 1.2f || size < 0.7f)
 			change *= -1.0f;
 	}
+
+	if (Input::WasKeyJustPressed(SAIL_KEY_B)) {
+		std::cout << "Break\n";
+	}
+
+	m_testAngle = std::fmod(m_testAngle + 0.2f * dt, 6.14);
+
+	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
+		m_testBoundingBoxes[i]->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
+	}
+
+	m_octree->update();
 
 	return true;
 }

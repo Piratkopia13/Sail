@@ -18,7 +18,7 @@ private:
 		std::vector<Node> childNodes;
 		Node* parentNode;
 		BoundingBox bb;
-		int nrOfMeshes;
+		int nrOfEntities;
 		std::vector<BoundingBox*> entities; //TODO: Replace this with entities that contain model and bounding box when component system is working properly
 	};
 
@@ -37,6 +37,7 @@ private:
 	void updateRec(Node* currentNode, std::vector<BoundingBox*>* entitiesToReAdd);
 	void getCollisionsRec(BoundingBox* entity, Node* currentNode, std::vector<Octree::CollisionInfo>* collisionData);
 	float getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode);
+	int pruneTreeRec(Node* currentNode);
 	/*int drawRec(GLuint shaderProgram, Frustum* frustum, Node* currentNode);*/
 
 public:

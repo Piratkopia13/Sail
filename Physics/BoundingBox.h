@@ -17,6 +17,8 @@ private:
 
 	bool m_hasChanged;
 
+	bool m_drawBoundingBoxes;
+
 	void updateCorners();
 public:
 	BoundingBox();
@@ -33,4 +35,6 @@ public:
 	void setHalfSize(glm::vec3 size);
 
 	void setModel(Scene* scene, Model* model);
+
+	void hide();
 };

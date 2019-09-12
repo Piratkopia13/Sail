@@ -43,4 +43,6 @@ private:
 	Octree* m_octree;
 
 	std::vector<BoundingBox*> m_testBoundingBoxes;
+
+	float m_testAngle;
 };
