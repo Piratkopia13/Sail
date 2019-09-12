@@ -42,10 +42,10 @@ void Scene::setLightSetup(LightSetup* lights) {
 
 // TODO: Move matrix updates to its own system and optimize it more, only update matrices that need to be updated
 // TODO: use the alpha value to interpolate between game states
-void Scene::draw(Camera& camera, const float alpha) {
-	const UINT nextInd = Application::getInstance()->getSnapshotBufferIndex();
-	const UINT currentInd = (nextInd + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
-	const UINT prevInd = (nextInd + SNAPSHOT_BUFFER_SIZE - 2) % SNAPSHOT_BUFFER_SIZE;
+void Scene::draw(Camera& camera, const int nextRenderInd, const float alpha) {
+	//const UINT nextInd = Application::getInstance()->getSnapshotBufferIndex();
+	const UINT currentInd = (nextRenderInd + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
+	const UINT prevInd = (nextRenderInd + SNAPSHOT_BUFFER_SIZE - 2) % SNAPSHOT_BUFFER_SIZE;
 
 	m_renderer->begin(&camera);
 

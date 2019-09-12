@@ -14,7 +14,7 @@ public:
 	// Updates the state
 	virtual bool update(float dt) override;
 	// Renders the state
-	virtual bool render(float alpha) override;
+	virtual bool render(float alpha, int currentInd) override;
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
 

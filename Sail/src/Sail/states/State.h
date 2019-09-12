@@ -22,7 +22,7 @@ class State : public IEventListener {
 		// Updates the state
 		virtual bool update(float dt) = 0;
 		// Renders the state
-		virtual bool render(float dt) = 0;
+		virtual bool render(float dt, const int currentInd = 0) = 0;
 		// Renders imgui
 		virtual bool renderImgui(float dt);
 		// Sends events to the state

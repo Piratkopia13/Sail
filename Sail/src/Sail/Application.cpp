@@ -150,10 +150,10 @@ int Application::startGameLoop() {
 			accumulator += frameTime;
 
 			if (accumulator >= TIMESTEP) {
-
+				accumulator -= TIMESTEP;
 				m_threadPool->push([this](int id) {
+						incrementFrameIndex();
 						update(TIMESTEP); 
-						incrementFrameIndex(); 
 					});
 
 
@@ -161,11 +161,10 @@ int Application::startGameLoop() {
 				incrementFrameIndex();*/
 				
 				//updateTimer -= timeBetweenUpdates;
-				accumulator -= TIMESTEP;
 			}
 
 			// Render
-			render(delta);
+			render(delta, getSnapshotBufferIndex());
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
@@ -180,79 +179,79 @@ int Application::startGameLoop() {
 }
 
 void Application::startUpdateAndRenderLoops() {
-	m_threadPool->push([this](int id) {startUpdateLoop(); });
-	m_threadPool->push([this](int id) {startRenderLoop(); });
+	//m_threadPool->push([this](int id) {startUpdateLoop(); });
+	//m_threadPool->push([this](int id) {startRenderLoop(); });
 }
 
 
 // TODO: rewrite in a simpler way since render is now completely separate
 void Application::startUpdateLoop() {
-	//double t = 0.0;
-	//double dt = TIMESTEP;
+	////double t = 0.0;
+	////double dt = TIMESTEP;
 
-	double currentTime = m_startTime;
-	double accumulator = 0.0;
+	//double currentTime = m_startTime;
+	//double accumulator = 0.0;
 
-	while (m_isRunning.load()) {
-		double newTime = m_updateTimer.getTimeSince(m_startTime);
-		double frameTime = newTime - currentTime;
-		if (frameTime > 0.25) {
-			frameTime = 0.25;
-		}
-		currentTime = newTime;
+	//while (m_isRunning.load()) {
+	//	double newTime = m_updateTimer.getTimeSince(m_startTime);
+	//	double frameTime = newTime - currentTime;
+	//	if (frameTime > 0.25) {
+	//		frameTime = 0.25;
+	//	}
+	//	currentTime = newTime;
 
-		accumulator += frameTime;
+	//	accumulator += frameTime;
 
-		while (accumulator >= TIMESTEP) {
-			// Update mouse deltas
-			Input::GetInstance()->beginFrame();
+	//	while (accumulator >= TIMESTEP) {
+	//		// Update mouse deltas
+	//		Input::GetInstance()->beginFrame();
 
-			// Quit on alt-f4
-			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
-				PostQuitMessage(0);
-
-
-			// TODO: separate camera update
-			processInput(TIMESTEP);
+	//		// Quit on alt-f4
+	//		if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
+	//			PostQuitMessage(0);
 
 
-			incrementFrameIndex(); // ? do here or in gamestate update?
-			update(TIMESTEP);
-			//t += dt;
-			accumulator -= TIMESTEP;
+	//		// TODO: separate camera update
+	//		processInput(TIMESTEP);
 
-			// Reset just pressed keys
-			Input::GetInstance()->endFrame();
-		}
 
-		// TODO: interpolate between game states in render
-	}
+	//		incrementFrameIndex(); // ? do here or in gamestate update?
+	//		update(TIMESTEP);
+	//		//t += dt;
+	//		accumulator -= TIMESTEP;
+
+	//		// Reset just pressed keys
+	//		Input::GetInstance()->endFrame();
+	//	}
+
+	//	// TODO: interpolate between game states in render
+	//}
 }
 
 void Application::startRenderLoop() {
-	float secCounter = 0.f;
-	//float elapsedTime = 0.f;
-	UINT frameCounter = 0;
+	//float secCounter = 0.f;
+	////float elapsedTime = 0.f;
+	//UINT frameCounter = 0;
 
-	while (m_isRunning.load()) {
-		// Get delta time from last frame
-		float delta = static_cast<float>(m_updateTimer.getFrameTime());
-		delta = std::min(delta, 0.04f);
+	//while (m_isRunning.load()) {
+	//	// Get delta time from last frame
+	//	float delta = static_cast<float>(m_updateTimer.getFrameTime());
+	//	delta = std::min(delta, 0.04f);
 
-		// Update fps counter
-		secCounter += delta;
-		frameCounter++;
+	//	// Update fps counter
+	//	secCounter += delta;
+	//	frameCounter++;
 
-		if (secCounter >= 1) {
-			m_fps = frameCounter;
-			frameCounter = 0;
-			secCounter = 0.f;
-		}
+	//	if (secCounter >= 1) {
+	//		m_fps = frameCounter;
+	//		frameCounter = 0;
+	//		secCounter = 0.f;
+	//	}
 
 
-		double alpha = std::fmod(m_renderTimer.getTimeSince(m_startTime), TIMESTEP);
-		render(alpha);
-	}
+	//	double alpha = std::fmod(m_renderTimer.getTimeSince(m_startTime), TIMESTEP);
+	//	render(alpha);
+	//}
 }
 
 std::string Application::getPlatformName() {
@@ -288,11 +287,11 @@ const UINT Application::getFPS() const {
 
 // To be done at the end of each CPU update and nowhere else
 void Application::incrementFrameIndex() {
-	m_snapshotBufInd = (++m_frameInd) % SNAPSHOT_BUFFER_SIZE;
+	m_snapshotBufInd = ((++m_frameInd) % SNAPSHOT_BUFFER_SIZE);
 }
-unsigned int Application::getFrameIndex() const { 
+const unsigned int Application::getFrameIndex() const { 
 	return m_frameInd.load(); 
 }
-unsigned int Application::getSnapshotBufferIndex() const {
+const unsigned int Application::getSnapshotBufferIndex() const {
 	return m_snapshotBufInd.load();
 }

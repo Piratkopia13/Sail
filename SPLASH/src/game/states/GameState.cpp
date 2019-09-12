@@ -212,8 +212,6 @@ bool GameState::onResize(WindowResizeEvent& event) {
 }
 
 bool GameState::update(float dt) {
-	//m_app->incrementFrameIndex();
-
 	// Get the index that'll be used to write to the correct snapshot of the game state
 	const unsigned int bufInd = m_app->getSnapshotBufferIndex();
 
@@ -227,6 +225,9 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2;
 	if (m_texturedCubeEntity) {
+
+		m_texturedCubeEntity->getComponent<TransformDataComponent>()->copyDataFromPrevUpdate(bufInd);
+
 		// Move the cubes around
 		//m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 		//m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
@@ -236,6 +237,7 @@ bool GameState::update(float dt) {
 
 		// Move the three parented cubes with identical translation, rotations and scale to show how parenting affects transforms
 		for (Entity::SPtr item : m_transformTestEntities) {
+			item->getComponent<TransformDataComponent>()->copyDataFromPrevUpdate(bufInd);
 			/*item->getComponent<TransformComponent>()->rotateAroundY(dt * 1.0f);
 			item->getComponent<TransformComponent>()->setScale(size);
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);*/
@@ -258,13 +260,13 @@ bool GameState::update(float dt) {
 
 // Renders the state
 // Note: uses alpha (the interpolation value between two game states) instead of dt
-bool GameState::render(float alpha) {
+bool GameState::render(float alpha, int currentInd) {
 
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
 
 	// Draw the scene
-	m_scene.draw(m_cam, alpha);
+	m_scene.draw(m_cam, currentInd, alpha);
 
 	return true;
 }

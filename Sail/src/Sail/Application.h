@@ -25,7 +25,7 @@ namespace ctpl {
 
 // TODO: Move elsewhere
 //const unsigned int SNAPSHOT_BUFFER_SIZE = 4;
-const double TICKRATE = 100.0;
+const double TICKRATE = 128.0;
 const double TIMESTEP = 1.0 / TICKRATE;
 
 
@@ -51,7 +51,7 @@ public:
 	virtual int run() = 0;
 	virtual void processInput(float dt) = 0;
 	virtual void update(float dt) = 0;
-	virtual void render(float dt) = 0;
+	virtual void render(float dt, const int currentInd = 0) = 0;
 	virtual void dispatchEvent(Event& event) override;
 
 	template<typename T>
@@ -94,8 +94,8 @@ public:
 
 	// To be done at the end of each CPU update and nowhere else
 	void incrementFrameIndex();
-	unsigned int getFrameIndex() const;
-	unsigned int getSnapshotBufferIndex() const;
+	const unsigned int getFrameIndex() const;
+	const unsigned int getSnapshotBufferIndex() const;
 private:
 	static Application* m_instance;
 	std::unique_ptr<Window> m_window;
