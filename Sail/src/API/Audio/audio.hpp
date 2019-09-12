@@ -21,6 +21,7 @@ public:
 	~Audio();
 
 	void loadSound(std::string const &fileName, int index);
+	void loadCompressedSound(std::string const& fileName, int index);
 	void playSound(int index);
 	void stopSound(int index);
 
@@ -36,9 +37,6 @@ private:
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
 	// Represents one loaded sound in the form of an 'object'
 	IXAudio2SourceVoice* m_sourceVoice[SOUND_COUNT];
-
-	WAVEFORMATEXTENSIBLE m_formatWAV = { 0 };
-	/*ADPCMWAVEFORMAT m_formatADPCM = { 0 };*/
 	
 	XAUDIO2_BUFFER m_soundBuffers[SOUND_COUNT] = { 0 };
 
@@ -49,18 +47,6 @@ private:
 	// PRIVATE FUNCTION
 	//-----------------
 	void initXAudio2();
-
-	std::wstring s2ws(const std::string& s)
-	{
-		int len;
-		int slength = (int)s.length() + 1;
-		len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
-		wchar_t* buf = new wchar_t[len];
-		MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
-		std::wstring r(buf);
-		delete[] buf;
-		return r;
-	}
 
 	HRESULT findChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition)
 	{
