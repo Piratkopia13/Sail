@@ -9,6 +9,10 @@ Audio::Audio() {
 	HRESULT hr;
 	hr = CoInitialize(nullptr);
 
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		m_sourceVoice[i] = nullptr;
+	}
+
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
@@ -28,7 +32,13 @@ Audio::Audio() {
 }
 
 Audio::~Audio(){
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		if (m_sourceVoice[i] != nullptr) {
 
+			m_sourceVoice[i]->Stop();
+			m_sourceVoice[i]->DestroyVoice();
+		}
+	}
 }
 
 void Audio::loadSound(std::string const &fileName, int index)
@@ -284,7 +294,7 @@ void Audio::playSound(int index) {
 
 void Audio::stopSound(int index) {
 	if (m_soundBuffers[index].pAudioData != nullptr) {
-		m_sourceVoice[index]->Stop(index);
+		m_sourceVoice[index]->Stop();
 	}
 }
 
@@ -292,9 +302,9 @@ void Audio::updateAudio() {
 	if (Input::IsKeyPressed(SAIL_KEY_9) && m_singlePressBool1) {
 
 		m_singlePressBool1 = false;
-		stopSound(0);
-		loadSound("../Audio/sampleLarge.wav", 0);
-		playSound(0);
+		this->stopSound(0);
+		this->loadSound("../Audio/sampleLarge.wav", 0);
+		this->playSound(0);
 	}
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_9) && !m_singlePressBool1) {
@@ -302,14 +312,14 @@ void Audio::updateAudio() {
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_0)) {
-		stopSound(0);
+		this->stopSound(0);
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_7) && m_singlePressBool2) {
 		m_singlePressBool2 = false;
-		stopSound(1);
-		loadSound("../Audio/sampleLarge.wav", 1);
-		playSound(1);
+		this->stopSound(1);
+		this->loadSound("../Audio/sampleLarge.wav", 1);
+		this->playSound(1);
 	}
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_7) && !m_singlePressBool2) {
@@ -317,7 +327,8 @@ void Audio::updateAudio() {
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_8)) {
-		stopSound(1);
+		this->stopSound(0);
+		this->stopSound(1);
 	}
 }
 
