@@ -4,7 +4,7 @@
 #include "Sail/KeyCodes.h"
 
 StateStack::StateStack()
-	: m_renderImgui(false)
+	: m_renderImgui(true)
 {
 }
 
