@@ -86,7 +86,7 @@ void Audio::loadSound(std::string const &fileName, int index)
 	}
 #pragma endregion
 
-	hr = FindChunk(hFile, fourccRIFF, dwChunkSize, dwChunkPosition);
+	hr = findChunk(hFile, fourccRIFF, dwChunkSize, dwChunkPosition);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -104,7 +104,7 @@ void Audio::loadSound(std::string const &fileName, int index)
 	}
 #pragma endregion
 
-	hr = ReadChunkData(hFile, &filetype, sizeof(DWORD), dwChunkPosition);
+	hr = readChunkData(hFile, &filetype, sizeof(DWORD), dwChunkPosition);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -136,7 +136,7 @@ void Audio::loadSound(std::string const &fileName, int index)
 	}
 #pragma endregion
 
-	hr = FindChunk(hFile, fourccFMT, dwChunkSize, dwChunkPosition);
+	hr = findChunk(hFile, fourccFMT, dwChunkSize, dwChunkPosition);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -155,7 +155,7 @@ void Audio::loadSound(std::string const &fileName, int index)
 #pragma endregion
 
 	// reading data from WAV files
-	hr = ReadChunkData(hFile, &m_formatWAV, dwChunkSize, dwChunkPosition);
+	hr = readChunkData(hFile, &m_formatWAV, dwChunkSize, dwChunkPosition);
 	// reading data from ADPC-WAV files (compressed)
 	// hr = ReadChunkData(hFile, &adpcwf, dwChunkSize, dwChunkPosition);
 
@@ -175,7 +175,7 @@ void Audio::loadSound(std::string const &fileName, int index)
 	}
 #pragma endregion
 
-	hr = FindChunk(hFile, fourccDATA, dwChunkSize, dwChunkPosition);
+	hr = findChunk(hFile, fourccDATA, dwChunkSize, dwChunkPosition);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -195,7 +195,7 @@ void Audio::loadSound(std::string const &fileName, int index)
 
 	BYTE* pDataBuffer = new BYTE[dwChunkSize];
 
-	hr = ReadChunkData(hFile, pDataBuffer, dwChunkSize, dwChunkPosition);
+	hr = readChunkData(hFile, pDataBuffer, dwChunkSize, dwChunkPosition);
 
 #pragma region ERROR_CHECKING
 	try {
