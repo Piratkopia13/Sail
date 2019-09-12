@@ -42,6 +42,10 @@ void Scene::setLightSetup(LightSetup* lights) {
 
 // TODO: Move matrix updates to its own system and optimize it more, only update matrices that need to be updated
 void Scene::draw(Camera& camera) {
+	const UINT nextInd = Application::getInstance()->getSnapshotBufferIndex();
+	const UINT currentInd = (nextInd + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
+	const UINT prevInd = (nextInd + SNAPSHOT_BUFFER_SIZE - 2) % SNAPSHOT_BUFFER_SIZE;
+
 
 	m_renderer->begin(&camera);
 
@@ -64,7 +68,7 @@ void Scene::draw(Camera& camera) {
 			TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
 			TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
 			if (data && matrix) {
-				m_renderer->submit(model->getModel(), data->getMatrixFromData());
+				m_renderer->submit(model->getModel(), data->getMatrixFromData(currentInd));
 			}
 		}
 	}

@@ -10,12 +10,24 @@
 #include "resources/ResourceManager.h"
 #include "events/IEventDispatcher.h"
 
+//#include "graphics/FrameSynchronizer.h"
+
+
+
+// used in template functions
 #include <future>
 
 // Forward declarations
 namespace ctpl {
 	class thread_pool;
 }
+
+
+// TODO: Move elsewhere
+//const unsigned int SNAPSHOT_BUFFER_SIZE = 4;
+const float TICKRATE = 60.0f;
+const float TIMESTEP = 1.0f / TICKRATE;
+
 
 
 class Application : public IEventDispatcher {
@@ -75,6 +87,11 @@ public:
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
 
+
+	// To be done at the end of each CPU update and nowhere else
+	void incrementFrameIndex();
+	unsigned int getFrameIndex() const;
+	unsigned int getSnapshotBufferIndex() const;
 private:
 	static Application* m_instance;
 	std::unique_ptr<Window> m_window;
@@ -83,6 +100,19 @@ private:
 	ResourceManager m_resourceManager;
 
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
+
+	//std::unique_ptr<FrameSynchronizer> m_frameSynchronizer;
+
+	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
+	// you leave the game running for like a year or two.
+	std::atomic_uint m_frameInd = 0;
+
+	// the index in the snapshot buffer that is used in the update loop on the CPU.
+	// [0, SNAPSHOT_BUFFER_SIZE-1]
+	// If CPU update is working on index 3 then prepare render will safely interpolate between
+	// index 1 and 2 without any data races
+	std::atomic_uint m_snapshotBufInd = 0;
+
 
 	Timer m_timer;
 	UINT m_fps;

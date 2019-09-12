@@ -6,8 +6,8 @@
 #include "TransformMatrixComponent.h"
 
 
-// TODO: rewrite TransformComponent to make it leaner, use this component for interpolation eventually
-// keep the matrixes in it
+// TODO: Rewrite this more cleanly
+
 
 class TransformDataComponent : public Component, public Node<TransformDataComponent> {
 public:
@@ -24,92 +24,100 @@ public:
 			const glm::vec3& translation = { 0.0f, 0.0f, 0.0f },
 			const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f },
 			const glm::vec3& scale = { 1.0f, 1.0f, 1.0f })
-		: m_translation(translation),
-		m_rotation(rotation),
-		m_scale(scale),
-		Component(),
+		: Component(),
 		Node(this),
 		m_matrixComponent(matrixComponent)
-	{}
+	{
+		for (auto &t : m_snapshots) {
+			t.m_translation = translation;
+			t.m_rotation = rotation;
+			t.m_scale = scale;
+			t.m_dataUpdated = true;
+		}
+	
+	}
 
 
-	void setTranslation(const glm::vec3& translation) { 
-		m_translation = translation; 
-		m_dataUpdated = true;
+	void setTranslation(const UINT ind, const glm::vec3& translation) { 
+		m_snapshots[ind].m_translation = translation; 
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void setTranslation(const float x, const float y, const float z) {
-		m_translation = glm::vec3(x, y, z);
-		m_dataUpdated = true;
+	void setTranslation(const UINT ind, const float x, const float y, const float z) {
+		m_snapshots[ind].m_translation = glm::vec3(x, y, z);
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 	
-	void setRotation(const glm::vec3& rotation) { 
-		m_rotation = rotation; 
-		m_dataUpdated = true;
+	void setRotation(const UINT ind, const glm::vec3& rotation) { 
+		m_snapshots[ind].m_rotation = rotation; 
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void setScale(const float scale) {
-		m_scale = glm::vec3(scale, scale, scale);
-		m_dataUpdated = true;
+	void setScale(const UINT ind, const float scale) {
+		m_snapshots[ind].m_scale = glm::vec3(scale, scale, scale);
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void setScale(const float x, const float y, const float z) {
-		m_scale = glm::vec3(x, y, z);
-		m_dataUpdated = true;
+	void setScale(const UINT ind, const float x, const float y, const float z) {
+		m_snapshots[ind].m_scale = glm::vec3(x, y, z);
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void setScale(const glm::vec3& scale) { 
-		m_scale = scale; 
-		m_dataUpdated = true;
+	void setScale(const UINT ind, const glm::vec3& scale) { 
+		m_snapshots[ind].m_scale = scale; 
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void translate(const glm::vec3& move) {
-		m_translation += move;
-		m_dataUpdated = true;
+	void translate(const UINT ind, const glm::vec3& move) {
+		m_snapshots[ind].m_translation += move;
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void translate(const float x, const float y, const float z) {
-		m_translation += glm::vec3(x, y, z);
-		m_dataUpdated = true;
+	void translate(const UINT ind, const float x, const float y, const float z) {
+		m_snapshots[ind].m_translation += glm::vec3(x, y, z);
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void rotateAroundX(const float radians) {
-		m_rotation.x += radians;
-		m_dataUpdated = true;
+	void rotateAroundX(const UINT ind, const float radians) {
+		m_snapshots[ind].m_rotation.x += radians;
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void rotateAroundY(const float radians) {
-		m_rotation.y += radians;
-		m_dataUpdated = true;
+	void rotateAroundY(const UINT ind, const float radians) {
+		m_snapshots[ind].m_rotation.y += radians;
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	void rotateAroundZ(const float radians) {
-		m_rotation.z += radians;
-		m_dataUpdated = true;
+	void rotateAroundZ(const UINT ind, const float radians) {
+		m_snapshots[ind].m_rotation.z += radians;
+		m_snapshots[ind].m_dataUpdated = true;
 		treeNeedsUpdating();
 	}
 
-	glm::mat4 getMatrixFromData() {
-		if (m_dataUpdated) {
-			m_matrixComponent->updateLocalMatrix(m_translation, m_rotation, m_scale);
-			m_dataUpdated = false;
+	glm::mat4 getMatrixFromData(const UINT ind) {
+		if (m_snapshots[ind].m_dataUpdated) {
+			m_matrixComponent->updateLocalMatrix(
+				m_snapshots[ind].m_translation, 
+				m_snapshots[ind].m_rotation, 
+				m_snapshots[ind].m_scale);
+			m_snapshots[ind].m_dataUpdated = false;
 		}
 		/*if (getParentUpdated() || !hasParent()) {
 			m_matrixComponent->updateMatrix();
 			setParentUpdated(false);
 		}*/
 		if (getParentUpdated() && hasParent()) {
-			m_matrixComponent->updateMatrixWithParent(getParentMatrix());
+			m_matrixComponent->updateMatrixWithParent(getParentMatrix(ind));
 			setParentUpdated(false);
 		} else if (!hasParent()) {
 			m_matrixComponent->updateMatrix();
@@ -122,27 +130,34 @@ public:
 
 	
 
-	const glm::vec3& getTranslation() const { return m_translation; }
-	const glm::vec3& getRotation() const { return m_rotation; }
-	const glm::vec3& getScale() const { return m_scale; }
-	const bool wasUpdatedThisTick() const { return m_dataUpdated; }
+	const glm::vec3& getTranslation(const UINT ind) const { return m_snapshots[ind].m_translation; }
+	const glm::vec3& getRotation(const UINT ind) const { return m_snapshots[ind].m_rotation; }
+	const glm::vec3& getScale(const UINT ind) const { return m_snapshots[ind].m_scale; }
+	const bool wasUpdatedThisTick(const UINT ind) const { return m_snapshots[ind].m_dataUpdated; }
 
 	// called once the positions have been used to update relevant matrices
-	void dataProcessed() { m_dataUpdated = true; }
+	void dataProcessed(const UINT ind) { m_snapshots[ind].m_dataUpdated = true; }
 private:
-	glm::mat4 getParentMatrix() const {
-		return m_parent->getDataPtr()->getMatrixFromData();
+	glm::mat4 getParentMatrix(const UINT ind) const {
+		return m_parent->getDataPtr()->getMatrixFromData(ind);
 	}
 
 
+	// Written to in update loop
+	//glm::vec3 m_translation;
+	//glm::vec3 m_rotation;
+	//glm::vec3 m_scale;
 
+
+	struct TransformSnapshot {
+		glm::vec3 m_translation;
+		glm::vec3 m_rotation;
+		glm::vec3 m_scale;
+		bool m_dataUpdated;
+	};
+
+	TransformSnapshot m_snapshots[SNAPSHOT_BUFFER_SIZE];
 
 	TransformMatrixComponent* m_matrixComponent;
 
-	// Written to in update loop
-	glm::vec3 m_translation;
-	glm::vec3 m_rotation;
-	glm::vec3 m_scale;
-
-	bool m_dataUpdated;
 };

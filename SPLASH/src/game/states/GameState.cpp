@@ -212,6 +212,10 @@ bool GameState::onResize(WindowResizeEvent& event) {
 }
 
 bool GameState::update(float dt) {
+	m_app->incrementFrameIndex();
+
+	// Get the index that'll be used to write to the correct snapshot of the game state
+	const unsigned int bufInd = m_app->getSnapshotBufferIndex();
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
@@ -226,8 +230,8 @@ bool GameState::update(float dt) {
 		// Move the cubes around
 		//m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 		//m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
-		m_texturedCubeEntity->getComponent<TransformDataComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-		m_texturedCubeEntity->getComponent<TransformDataComponent>()->setRotation(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
+		m_texturedCubeEntity->getComponent<TransformDataComponent>()->setTranslation(bufInd, glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
+		m_texturedCubeEntity->getComponent<TransformDataComponent>()->setRotation(bufInd, glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 		//m_texturedCubeEntity->getComponent<TransformMatrixComponent>()->treeNeedsUpdating();
 
 		// Move the three parented cubes with identical translation, rotations and scale to show how parenting affects transforms
@@ -235,13 +239,13 @@ bool GameState::update(float dt) {
 			/*item->getComponent<TransformComponent>()->rotateAroundY(dt * 1.0f);
 			item->getComponent<TransformComponent>()->setScale(size);
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);*/
-			item->getComponent<TransformDataComponent>()->rotateAroundY(dt * 1.0f);
-			item->getComponent<TransformDataComponent>()->setScale(size);
-			item->getComponent<TransformDataComponent>()->setTranslation(size * 3, 1.0f, size * 3);
+			item->getComponent<TransformDataComponent>()->rotateAroundY(bufInd, dt * 1.0f);
+			item->getComponent<TransformDataComponent>()->setScale(bufInd, size);
+			item->getComponent<TransformDataComponent>()->setTranslation(bufInd, size * 3, 1.0f, size * 3);
 			//item->getComponent<TransformMatrixComponent>()->treeNeedsUpdating();
 		}
 		//m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
-		m_transformTestEntities[0]->getComponent<TransformDataComponent>()->translate(2.0f, 0.0f, 2.0f);
+		m_transformTestEntities[0]->getComponent<TransformDataComponent>()->translate(bufInd, 2.0f, 0.0f, 2.0f);
 		//m_transformTestEntities[0]->getComponent<TransformMatrixComponent>()->treeNeedsUpdating();
 
 		size += change * dt;

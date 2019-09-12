@@ -3,6 +3,9 @@
 #include "events/WindowResizeEvent.h"
 #include "KeyCodes.h"
 
+
+
+
 Application* Application::m_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
@@ -139,6 +142,7 @@ int Application::startGameLoop() {
 			while (updateTimer >= timeBetweenUpdates) {
 				if (maxCounter >= 4)
 					break;
+
 				update(timeBetweenUpdates);
 				updateTimer -= timeBetweenUpdates;
 				maxCounter++;
@@ -188,4 +192,13 @@ const UINT Application::getFPS() const {
 	return m_fps;
 }
 
-
+// To be done at the end of each CPU update and nowhere else
+void Application::incrementFrameIndex() {
+	m_snapshotBufInd = (++m_frameInd) % SNAPSHOT_BUFFER_SIZE;
+}
+unsigned int Application::getFrameIndex() const { 
+	return m_frameInd.load(); 
+}
+unsigned int Application::getSnapshotBufferIndex() const {
+	return m_snapshotBufInd.load();
+}
