@@ -10,7 +10,6 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 	// Set starting state
 	m_stateStack.pushState(States::Game);
-
 }
 
 Game::~Game() {	}
