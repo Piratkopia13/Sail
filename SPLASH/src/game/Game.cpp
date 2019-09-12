@@ -37,6 +37,7 @@ void Game::processInput(float dt) {
 }
 
 void Game::update(float dt) {
+	incrementFrameIndex();
 	m_stateStack.update(dt);
 }
 

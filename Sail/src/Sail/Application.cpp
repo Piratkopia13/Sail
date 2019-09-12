@@ -151,10 +151,7 @@ int Application::startGameLoop() {
 
 			if (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
-				m_threadPool->push([this](int id) {
-						incrementFrameIndex();
-						update(TIMESTEP); 
-					});
+				m_threadPool->push([this](int id) { update(TIMESTEP); });
 
 
 			/*	update(TIMESTEP);
