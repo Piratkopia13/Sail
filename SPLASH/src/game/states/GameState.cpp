@@ -1,14 +1,55 @@
 #include "GameState.h"
 #include "imgui.h"
 
+
 GameState::GameState(StateStack& stack)
 : State(stack)
 //, m_cam(20.f, 20.f, 0.1f, 5000.f)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 //, m_camController(&m_cam)
 , m_playerController(&m_cam)
+, m_cc(true)
 {
+#ifdef _DEBUG
+#pragma region TESTCASES
+	m_cc.addCommand(std::string("Save"),			[&]() { return std::string("saved"); });
+	m_cc.addCommand(std::string("Test <int>"),		[&](int in) { return std::string("test<int>"); });
+	m_cc.addCommand(std::string("Test <float>"),	[&](float in) { return std::string("test<float>"); });
+	m_cc.addCommand(std::string("Test <string>"),	[&](std::string in) { return std::string("test<string>"); });
+	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
+	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
+#pragma endregion
+	
+	m_cc.addCommand(std::string("AddCube"), [&]() {
+		auto e = Entity::Create("new cube");
+		e->addComponent<ModelComponent>(m_cubeModel.get());
+		e->addComponent<TransformComponent>(m_cam.getPosition());
 
+		m_scene.addEntity(e);
+		return std::string("Added Cube at (" + std::to_string(m_cam.getPosition().x) + ":" + std::to_string(m_cam.getPosition().y) + ":" + std::to_string(m_cam.getPosition().z) + ")");
+		});
+	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
+		if (in.size() == 3) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	});
+	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&](std::vector<float> in){
+		if (in.size() == 3) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	});
+#endif
+	
 	// Get the Application instance
 	m_app = Application::getInstance();
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -148,7 +189,9 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);;
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-
+	if (Input::WasKeyJustPressed(SAIL_KEY_OEM_5)) {
+		m_cc.toggle();
+	}
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
 	m_playerController.update(dt);
@@ -179,6 +222,8 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
+
+
 
 bool GameState::update(float dt) {
 
@@ -227,5 +272,79 @@ bool GameState::render(float dt) {
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
+	renderImguiConsole(dt);
 	return false;
+}
+
+
+
+
+
+bool GameState::renderImguiConsole(float dt) {
+	
+
+	bool open = m_cc.windowOpen();
+	if (open) {
+		static char buf[256] = "";
+		if (ImGui::Begin("Console", &open)) {
+			m_cc.windowState(open);
+			std::string txt = "test";
+			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
+			
+
+			for (int i = 0; i < m_cc.getLog().size(); i++) {
+				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
+			}
+
+			ImGui::EndChild();
+			ImGui::Separator();
+			bool reclaim_focus = false;
+			
+			m_cc.getTextField().copy(buf, m_cc.getTextField().size()+1);
+			buf[m_cc.getTextField().size()] = '\0';
+
+			//std::string* str = new std::string(m_cc.getTextField());
+			std::string original = m_cc.getTextField();
+			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
+				ImGuiInputTextFlags_EnterReturnsTrue);
+			ImGui::SameLine();
+			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
+				
+				if (m_cc.execute()) {
+
+				}
+				
+				
+				
+				reclaim_focus = true;
+			}
+			else {
+				m_cc.setTextField(std::string(buf));
+			}
+			ImGui::End();
+		}
+		else {
+		
+			ImGui::End();
+		}
+
+	}
+
+
+
+
+
+
+	return false;
+}
+
+const std::string GameState::createCube(const glm::vec3& position) {
+	auto e = Entity::Create("new cube");
+	e->addComponent<ModelComponent>(m_cubeModel.get());
+	e->addComponent<TransformComponent>(position);
+	m_scene.addEntity(e);
+	return std::string("Added Cube at (" +
+		std::to_string(position.x) + ":" +
+		std::to_string(position.y) + ":" +
+		std::to_string(position.z) + ")");
 }
