@@ -280,6 +280,13 @@ void DX12API::createGlobalRootSignature() {
 	descRangeSrv[0].RegisterSpace = 0; // register (bX,spaceY)
 	descRangeSrv[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+	D3D12_DESCRIPTOR_RANGE descRangeUav;
+	descRangeUav.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	descRangeUav.NumDescriptors = 10;
+	descRangeUav.BaseShaderRegister = 10; // register bX
+	descRangeUav.RegisterSpace = 0; // register (bX,spaceY)
+	descRangeUav.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
 	// TODO: autogen from other data
 	m_globalRootSignatureRegisters["t0"] = GlobalRootParam::DT_SRVS;
 	m_globalRootSignatureRegisters["t1"] = GlobalRootParam::DT_SRVS;
@@ -289,6 +296,10 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR_TABLE dtSrv;
 	dtSrv.NumDescriptorRanges = ARRAYSIZE(descRangeSrv);
 	dtSrv.pDescriptorRanges = descRangeSrv;
+
+	D3D12_ROOT_DESCRIPTOR_TABLE dtUav;
+	dtUav.NumDescriptorRanges = 1;
+	dtUav.pDescriptorRanges = &descRangeUav;
 
 	// Create root descriptors
 	D3D12_ROOT_DESCRIPTOR rootDesc0_0 = {};
@@ -329,7 +340,7 @@ void DX12API::createGlobalRootSignature() {
 
 	rootParam[GlobalRootParam::DT_SRVS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParam[GlobalRootParam::DT_SRVS].DescriptorTable = dtSrv;
-	rootParam[GlobalRootParam::DT_SRVS].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParam[GlobalRootParam::DT_SRVS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	rootParam[GlobalRootParam::SRV_GENERAL10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
 	rootParam[GlobalRootParam::SRV_GENERAL10].Descriptor = rootDesc10_0;
@@ -346,6 +357,11 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::UAV_GENERAL1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
 	rootParam[GlobalRootParam::UAV_GENERAL1].Descriptor = rootDesc1_0;
 	rootParam[GlobalRootParam::UAV_GENERAL1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	rootParam[GlobalRootParam::DT_UAV_GENERAL_10TO20].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParam[GlobalRootParam::DT_UAV_GENERAL_10TO20].DescriptorTable = dtUav;
+	rootParam[GlobalRootParam::DT_UAV_GENERAL_10TO20].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[2];

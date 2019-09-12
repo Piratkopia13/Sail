@@ -37,6 +37,7 @@ namespace GlobalRootParam {
 		SRV_GENERAL11,
 		UAV_GENERAL0,
 		UAV_GENERAL1,
+		DT_UAV_GENERAL_10TO20,
 		SIZE
 	};
 }
