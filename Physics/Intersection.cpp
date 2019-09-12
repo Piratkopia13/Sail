@@ -8,11 +8,30 @@ Intersection::Intersection(){}
 
 Intersection::~Intersection(){}
 
+bool Intersection::aabbWithAabb(BoundingBox aabb1, BoundingBox aabb2) const {
+
+	glm::vec3 center1 = aabb1.getPosition();
+	glm::vec3 center2 = aabb2.getPosition();
+	glm::vec3 halfWidth1 = aabb1.getSize();
+	glm::vec3 halfWidth2 = aabb2.getSize();
+
+	if (glm::abs(center1.x - center2.x) > (halfWidth1.x + halfWidth2.x)) { 
+		return false; 
+	}
+	if (glm::abs(center1.y - center2.y) > (halfWidth1.y + halfWidth2.y)) {
+		return false;
+	}
+	if (glm::abs(center1.z - center2.z) > (halfWidth1.z + halfWidth2.z)) {
+		return false;
+	}
+	return true;
+}
 
 bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) const {
 	
 	glm::vec3 center = aabb.getPosition();
-	glm::vec3 triNormal = glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)); // TODO: Calculate normal, might be wrong direction, needs testing.
+	//Calculate normal for triangle
+	glm::vec3 triNormal = glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)); // TODO: Might be wrong direction, needs testing.
 	
 
 	// Calculate triangle points relative to the AABB
@@ -28,7 +47,7 @@ bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1
 	// Test the AABB against the plane that the triangle is on
 	if (aabbWithPlane(aabb, triNormal, distance)) {
 
-		// Testing using separating axis theorem(SAT)
+		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
 		e[1] = glm::vec3(0.f, 1.f, 0.f);
@@ -62,7 +81,7 @@ bool Intersection::aabbWithPlane(BoundingBox aabb, glm::vec3 normal, float dista
 	
 	glm::vec3 extent = aabb.getSize();
 	
-	float radius = extent[0] * glm::abs(normal[0]) + extent[1] * glm::abs(normal[1]) + extent[2] * glm::abs(normal[2]);// TODO: Normal might be pointed in wrong direction, can't test at this point.
+	float radius = extent[0] * glm::abs(normal[0]) + extent[1] * glm::abs(normal[1]) + extent[2] * glm::abs(normal[2]);// TODO: Normal might be pointed in wrong direction, needs testing.
 	
 	if (glm::abs(glm::dot(normal, aabb.getPosition()) - distance) <= radius) {
 		return true;
