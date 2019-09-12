@@ -6,7 +6,8 @@
 
 //#define MOVE(x) std::move(x)
 
-class ECS;
+class ECSManager;
+
 
 class Entity {
 public:
@@ -32,8 +33,8 @@ public:
 
 private:
 	// Only ECS should be able to create entities
-	friend class ECS;
-	static SPtr Create(ECS* ecs, const std::string& name = "");
+	friend class ECSManager;
+	static SPtr Create(ECSManager* ecs, const std::string& name = "");
 
 	void addToSystems();
 	void removeFromSystems();
@@ -41,7 +42,7 @@ private:
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::string m_name;
 	int m_id;
-	ECS* m_ecs;
+	ECSManager* m_ecs;
 };
 
 template<typename ComponentType, typename... Targs>

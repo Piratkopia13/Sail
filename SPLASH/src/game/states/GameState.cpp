@@ -1,7 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
-#include "..//Sail/src/Sail/entities/ECS.h"
+#include "..//Sail/src/Sail/entities/ECSManager.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -66,7 +66,7 @@ GameState::GameState(StateStack& stack)
 		this call could be moved inside the default constructor of ECS,
 		assuming each system is included in ECS.cpp instead of here
 	*/
-	ECS::Instance()->createSystem<PhysicSystem>();
+	ECSManager::Instance()->createSystem<PhysicSystem>();
 
 
 	// Create/load models
@@ -83,44 +83,44 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Create entities
-	auto e = ECS::Instance()->createEntity("Static cube");
+	auto e = ECSManager::Instance()->createEntity("Static cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Floor");
+	e = ECSManager::Instance()->createEntity("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Clingy cube");
+	e = ECSManager::Instance()->createEntity("Clingy cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
 	m_scene.addEntity(e);
 
 	// Add some cubes which are connected through parenting
-	m_texturedCubeEntity = ECS::Instance()->createEntity("Textured parent cube");
+	m_texturedCubeEntity = ECSManager::Instance()->createEntity("Textured parent cube");
 	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
 	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
 	m_texturedCubeEntity->setName("MovingCube");
 	m_scene.addEntity(m_texturedCubeEntity);
 	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
 
-	e = ECS::Instance()->createEntity("CubeRoot");
+	e = ECSManager::Instance()->createEntity("CubeRoot");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
 	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
-	e = ECS::Instance()->createEntity("CubeChild");
+	e = ECSManager::Instance()->createEntity("CubeChild");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
 	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
-	e = ECS::Instance()->createEntity("CubeChildChild");
+	e = ECSManager::Instance()->createEntity("CubeChildChild");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
 	e->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));	// add constant rotation
@@ -132,7 +132,7 @@ GameState::GameState(StateStack& stack)
 		<< "\nText: " << TextComponent::ID
 		<< "\nPhysics: " << PhysicsComponent::ID
 		<< "\nModel: " << ModelComponent::ID
-		<< "\nNr of components: " << ECS::Instance()->nrOfComponentTypes()
+		<< "\nNr of components: " << ECSManager::Instance()->nrOfComponentTypes()
 		<< "\nNr of transform test entities: " << m_transformTestEntities.size() << "\n";
 }
 
@@ -231,7 +231,7 @@ bool GameState::update(float dt) {
 	/*
 		Updates all Component Systems in order
 	*/
-	ECS::Instance()->update(dt);
+	ECSManager::Instance()->update(dt);
 
 	if (m_texturedCubeEntity) {
 		/*
