@@ -47,12 +47,12 @@ void Game::update(float dt) {
 
 	if (m_networkWrapper->isInitialized())
 	{
-		m_networkWrapper->CheckForPackages();
+		m_networkWrapper->checkForPackages();
 	}
 	
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_H)) {
-		
-		if (m_networkWrapper->Host())
+
+		if (m_networkWrapper->host())
 		{
 			printf("Setting up host.");
 		}
@@ -64,19 +64,20 @@ void Game::update(float dt) {
 
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_J))
 	{
-		if (m_networkWrapper->ConnectToIP("192.168.1.55"))
+		printf("Attempting connection... \n");
+		if (m_networkWrapper->connectToIP("192.168.1.55:54540"))
 		{
-			printf("Connecting to 192.168.1.55.");
+			printf("Connecting to 192.168.1.55. \n");
 		}
 		else
 		{
-			printf("Failed to connect.");
+			printf("Failed to connect. \n");
 		}
 	}
 
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_M))
 	{
-		m_networkWrapper->SendChat("mHoppla");
+		m_networkWrapper->sendChatMsg("mHoppla");
 	}
 
 

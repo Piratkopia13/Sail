@@ -12,21 +12,45 @@ public:
 	NetworkWrapper();
 	~NetworkWrapper();
 
-	bool Host(int port = 54000);
-	bool ConnectToIP(const char* ip = "127.0.0.1", int port = 54000);
-	void SendChat(std::string msg);
-	void SendChatAllClients(std::string msg);
-	void CheckForPackages();
+	bool host(int port = 54000);
+
+	/*
+		Connects to the IP and port in the format "192.168.1.55:54000".
+	*/
+	bool connectToIP(char* = "127.0.0.1:54000");
+	void sendMsg(std::string msg);
+
+	/*
+		Send chat message to host.
+	*/
+	void sendChatMsg(std::string msg);
+	void sendMsgAllClients(std::string msg);
+
+	/*
+		Call this in an update loop.
+	*/
+	void checkForPackages();
 
 	bool isInitialized();
 
 private:
 	Network* m_network;
 
-	void DecodeMessage(NetworkEvent nEvent);
-	void PlayerDisconnected(ConnectionID id);
-	void PlayerReconnected(ConnectionID id); // This remains unimplemented.
-	void PlayerJoined(ConnectionID id);
+	/*
+		This is the general message decoder who does different things depending on starting letter.
+	*/
+	void decodeMessage(NetworkEvent nEvent);
+
+	/*
+		Only the host will get these messages to then send to each client.
+	*/
+	void playerDisconnected(ConnectionID id);
+	void playerReconnected(ConnectionID id); // This remains unimplemented.
+	void playerJoined(ConnectionID id);
+
+	/*
+		Depending on event, call the correct function.
+	*/
 	void handleNetworkEvents(NetworkEvent nEvents);
 
 };
