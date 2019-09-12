@@ -2,6 +2,7 @@
 
 #include <time.h>
 
+
 class Timer {
 
 public:
@@ -23,8 +24,15 @@ public:
 		LARGE_INTEGER currentTime;
 		QueryPerformanceCounter(&currentTime);
 
-		return static_cast<double>(currentTime.QuadPart - m_counterStart / m_countsPerSecond);
+		return static_cast<double>((currentTime.QuadPart - m_counterStart) / m_countsPerSecond);
 
+	}
+
+	double getTimeSince(const INT64 time) {
+		LARGE_INTEGER currentTime;
+		QueryPerformanceCounter(&currentTime);
+
+		return static_cast<double>((currentTime.QuadPart - time) / m_countsPerSecond);
 	}
 
 	double getFrameTime() {

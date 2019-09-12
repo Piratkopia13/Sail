@@ -41,24 +41,13 @@ void Scene::setLightSetup(LightSetup* lights) {
 }
 
 // TODO: Move matrix updates to its own system and optimize it more, only update matrices that need to be updated
-void Scene::draw(Camera& camera) {
+// TODO: use the alpha value to interpolate between game states
+void Scene::draw(Camera& camera, const float alpha) {
 	const UINT nextInd = Application::getInstance()->getSnapshotBufferIndex();
 	const UINT currentInd = (nextInd + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
 	const UINT prevInd = (nextInd + SNAPSHOT_BUFFER_SIZE - 2) % SNAPSHOT_BUFFER_SIZE;
 
-
 	m_renderer->begin(&camera);
-
-	//for (Entity::SPtr& entity : m_entities) {
-	//	ModelComponent* model = entity->getComponent<ModelComponent>();
-	//	if (model) {
-	//		TransformComponent* transform = entity->getComponent<TransformComponent>();
-	//		if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
-
-	//		m_renderer->submit(model->getModel(), transform->getMatrix());
-	//	}
-	//}
-
 
 	// TODO: Should be in a prepare render stage:
 	for (Entity::SPtr& entity : m_entities) {
@@ -68,40 +57,11 @@ void Scene::draw(Camera& camera) {
 			TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
 			TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
 			if (data && matrix) {
-				m_renderer->submit(model->getModel(), data->getMatrixFromData(currentInd));
+				m_renderer->submit(model->getModel(), data->getMatrixFromData(currentInd, alpha));
 			}
 		}
 	}
 
-
-
-		//if (model) {
-		//	TransformComponent* transform = entity->getComponent<TransformComponent>();
-		//	if (!transform) { Logger::Error("Tried to draw entity that is missing a TransformComponent!"); }
-
-		//	// For static objects
-		//	StaticPositionComponent* s = entity->getComponent<StaticPositionComponent>();
-		//	if (s) {
-		//		// TODO: only update matrix of object has changed
-		//		//if (s->getUpdated()) {
-		//		glm::mat4 mat = glm::mat4(1.0f);
-
-		//		glm::vec3 rot = s->getRotation();
-
-		//		mat = glm::translate(mat, s->getTranslation());
-		//		mat = glm::rotate(mat, rot.x, glm::vec3(1.f, 0.f, 0.f));
-		//		mat = glm::rotate(mat, rot.y, glm::vec3(0.f, 1.f, 0.f));
-		//		mat = glm::rotate(mat, rot.z, glm::vec3(0.f, 0.f, 1.f));
-		//		mat = glm::scale(mat, s->getScale());
-
-		//		//}
-
-		//		m_renderer->submit(model->getModel(), mat);
-
-		//	} else {
-		//		m_renderer->submit(model->getModel(), transform->getMatrix());
-		//	}
-		//}
 
 	m_renderer->end();
 	m_renderer->present();

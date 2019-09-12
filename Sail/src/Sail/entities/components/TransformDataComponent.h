@@ -104,7 +104,9 @@ public:
 		treeNeedsUpdating();
 	}
 
-	glm::mat4 getMatrixFromData(const UINT ind) {
+	// alpha = [0,1]
+	// alpha of 1 is the most recent snapshot and alpha of 0 is the one before that
+	glm::mat4 getMatrixFromData(const UINT ind, const float alpha) {
 		if (m_snapshots[ind].m_dataUpdated) {
 			m_matrixComponent->updateLocalMatrix(
 				m_snapshots[ind].m_translation, 
@@ -139,7 +141,7 @@ public:
 	void dataProcessed(const UINT ind) { m_snapshots[ind].m_dataUpdated = true; }
 private:
 	glm::mat4 getParentMatrix(const UINT ind) const {
-		return m_parent->getDataPtr()->getMatrixFromData(ind);
+		return m_parent->getDataPtr()->getMatrixFromData(ind, 1.0);
 	}
 
 

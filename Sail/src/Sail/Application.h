@@ -25,8 +25,8 @@ namespace ctpl {
 
 // TODO: Move elsewhere
 //const unsigned int SNAPSHOT_BUFFER_SIZE = 4;
-const float TICKRATE = 60.0f;
-const float TIMESTEP = 1.0f / TICKRATE;
+const double TICKRATE = 100.0;
+const double TIMESTEP = 1.0 / TICKRATE;
 
 
 
@@ -42,6 +42,10 @@ public:
 	virtual ~Application();
 
 	int startGameLoop();
+
+	void startUpdateAndRenderLoops();
+	void startUpdateLoop();
+	void startRenderLoop();
 
 	// Required methods
 	virtual int run() = 0;
@@ -113,8 +117,13 @@ private:
 	// index 1 and 2 without any data races
 	std::atomic_uint m_snapshotBufInd = 0;
 
+	std::atomic_bool m_isRunning = true;
 
-	Timer m_timer;
+	double m_startTime;
+
+	Timer m_updateTimer;
+	Timer m_renderTimer;
+
 	UINT m_fps;
 
 };

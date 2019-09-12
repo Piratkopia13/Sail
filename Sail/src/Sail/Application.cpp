@@ -66,23 +66,29 @@ Application::~Application() {
 
 int Application::startGameLoop() {
 
-	// Start delta timer
-	m_timer.startTimer();
+	// Start delta timers
+	m_updateTimer.startTimer();
+	m_renderTimer.startTimer();
 	
+
+	// Set the start time so that the update and render loops use the same time with the getTimeSince(time) function in Timer.h
+	m_startTime = m_updateTimer.getTime();
+
 	MSG msg = {0};
 
 	m_fps = 0;
+
+	float updateTimer = 0.f;
+	float timeBetweenUpdates = 1.f / 60.f;
+
+	double currentTime = m_startTime;
+	double accumulator = 0.0;
+
 
 	float secCounter = 0.f;
 	float elapsedTime = 0.f;
 	UINT frameCounter = 0;
 
-	float updateTimer = 0.f;
-	float timeBetweenUpdates = 1.f / 60.f;
-
-	// TODO: move windows loop to api specific section
-
-	// Main message loop
 	while (msg.message != WM_QUIT) {
 
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
@@ -98,9 +104,9 @@ int Application::startGameLoop() {
 				// Send resize event
 				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
-			
+
 			// Get delta time from last frame
-			float delta = static_cast<float>(m_timer.getFrameTime());
+			float delta = static_cast<float>(m_updateTimer.getFrameTime());
 			delta = std::min(delta, 0.04f);
 
 			// Update fps counter
@@ -128,37 +134,125 @@ int Application::startGameLoop() {
 			// Update
 #ifdef _DEBUG
 			/*if (m_input.getKeyboardState().Escape)
-				PostQuitMessage(0);*/
+			PostQuitMessage(0);*/
 
 
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
-			updateTimer += delta;
+			double newTime = m_updateTimer.getTimeSince(m_startTime);
+			double frameTime = newTime - currentTime;
+			if (frameTime > 0.25) {
+				frameTime = 0.25;
+			}
+			currentTime = newTime;
 
-			int maxCounter = 0;
-		
+			accumulator += frameTime;
 
-			while (updateTimer >= timeBetweenUpdates) {
-				if (maxCounter >= 4)
-					break;
+			if (accumulator >= TIMESTEP) {
 
-				update(timeBetweenUpdates);
-				updateTimer -= timeBetweenUpdates;
-				maxCounter++;
+				m_threadPool->push([this](int id) {
+						update(TIMESTEP); 
+						incrementFrameIndex(); 
+					});
+
+
+			/*	update(TIMESTEP);
+				incrementFrameIndex();*/
+				
+				//updateTimer -= timeBetweenUpdates;
+				accumulator -= TIMESTEP;
 			}
 
 			// Render
 			render(delta);
-			
+
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
 		}
 
 	}
 
+	m_isRunning = false;
+
 	return (int)msg.wParam;
 
+}
+
+void Application::startUpdateAndRenderLoops() {
+	m_threadPool->push([this](int id) {startUpdateLoop(); });
+	m_threadPool->push([this](int id) {startRenderLoop(); });
+}
+
+
+// TODO: rewrite in a simpler way since render is now completely separate
+void Application::startUpdateLoop() {
+	//double t = 0.0;
+	//double dt = TIMESTEP;
+
+	double currentTime = m_startTime;
+	double accumulator = 0.0;
+
+	while (m_isRunning.load()) {
+		double newTime = m_updateTimer.getTimeSince(m_startTime);
+		double frameTime = newTime - currentTime;
+		if (frameTime > 0.25) {
+			frameTime = 0.25;
+		}
+		currentTime = newTime;
+
+		accumulator += frameTime;
+
+		while (accumulator >= TIMESTEP) {
+			// Update mouse deltas
+			Input::GetInstance()->beginFrame();
+
+			// Quit on alt-f4
+			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
+				PostQuitMessage(0);
+
+
+			// TODO: separate camera update
+			processInput(TIMESTEP);
+
+
+			incrementFrameIndex(); // ? do here or in gamestate update?
+			update(TIMESTEP);
+			//t += dt;
+			accumulator -= TIMESTEP;
+
+			// Reset just pressed keys
+			Input::GetInstance()->endFrame();
+		}
+
+		// TODO: interpolate between game states in render
+	}
+}
+
+void Application::startRenderLoop() {
+	float secCounter = 0.f;
+	//float elapsedTime = 0.f;
+	UINT frameCounter = 0;
+
+	while (m_isRunning.load()) {
+		// Get delta time from last frame
+		float delta = static_cast<float>(m_updateTimer.getFrameTime());
+		delta = std::min(delta, 0.04f);
+
+		// Update fps counter
+		secCounter += delta;
+		frameCounter++;
+
+		if (secCounter >= 1) {
+			m_fps = frameCounter;
+			frameCounter = 0;
+			secCounter = 0.f;
+		}
+
+
+		double alpha = std::fmod(m_renderTimer.getTimeSince(m_startTime), TIMESTEP);
+		render(alpha);
+	}
 }
 
 std::string Application::getPlatformName() {
