@@ -16,9 +16,8 @@ Game::Game(HINSTANCE hInstance)
 Game::~Game() {	}
 
 int Game::run() {
-	
 	// Start the game loop and return when game exits
-	return startGameLoop();
+	return Application::startGameLoop();
 }
 
 void Game::registerStates() {

@@ -5,6 +5,7 @@
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
 #include "api/ImGuiHandler.h"
+#include "api/Audio/audio.hpp"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
@@ -44,6 +45,7 @@ public:
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
 	MemoryManager& getMemoryManager();
+	Audio* getAudioManager();
 	const UINT getFPS() const;
 
 private:
@@ -53,9 +55,8 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	ResourceManager m_resourceManager;
 	MemoryManager m_memoryManager;
-	
+	Audio m_audioManager;
 
 	Timer m_timer;
 	UINT m_fps;
-
 };
