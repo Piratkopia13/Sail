@@ -196,9 +196,20 @@ bool Network::send(const char* message, size_t size, const Connection &conn)
 	return true;
 }
 
+bool Network::isServer() {
+	return m_isServer;
+}
+
+bool Network::isInitialized() {
+	return m_isInitialized;
+}
+
 void Network::shutdown()
 {
 	m_shutdown = true;
+
+	if (!m_isInitialized)
+		return;
 
 	if (m_isServer) {
 		::shutdown(m_soc, 2);

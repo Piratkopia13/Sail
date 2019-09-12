@@ -50,6 +50,12 @@ public:
 	bool send(const char* message, size_t size, ConnectionID receiverID = 0);
 	bool send(const char* message, size_t size, const Connection &conn);
 
+	/*
+		Returns true if this is a Host.
+	*/
+	bool isServer();
+	bool isInitialized();
+
 	void shutdown();
 
 private:

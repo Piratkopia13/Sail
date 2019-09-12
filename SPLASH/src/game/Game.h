@@ -2,6 +2,8 @@
 
 #include "Sail.h"
 
+class NetworkWrapper;
+
 class Game : public Application {
 
 public:
@@ -20,4 +22,5 @@ private:
 
 	StateStack m_stateStack;
 
+	NetworkWrapper* m_networkWrapper;
 };
