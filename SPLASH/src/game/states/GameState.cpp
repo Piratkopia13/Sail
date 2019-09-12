@@ -59,7 +59,14 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/arenaBasicTexture.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/barrierBasicTexture.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/containerBasicTexture.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("sponza/textures/boxOrientationTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
+
+
 
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
@@ -120,50 +127,157 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
+	Model* arenaModel= &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
+	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
+
+	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
+	barrierModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/barrierBasicTexture.tga");
+
+	Model* containerModel= &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
+	containerModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/containerBasicTexture.tga");
+
+	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
+	rampModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/rampBasicTexture.tga");
+
+	//For testing purposes only
+	//Model* boxOrientation = &m_app->getResourceManager().getModel("boxOrientation.fbx", shader);
+	//boxOrientation->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/boxOrientationTexture.tga");
+	//Model* lrTest= &m_app->getResourceManager().getModel("lrTest.fbx", shader);
+
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
 
 	// Create entities
-	auto e = Entity::Create("Static cube");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-	m_scene.addEntity(e);
-
-	e = Entity::Create("Floor");
-	e->addComponent<ModelComponent>(m_planeModel.get());
+	auto e = Entity::Create("Arena");
+	e->addComponent<ModelComponent>(arenaModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Clingy cube");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+	e = Entity::Create("Barrier1");
+	e->addComponent<ModelComponent>(barrierModel);
+	e->addComponent<TransformComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f,-0.79f, 0.f));
 	m_scene.addEntity(e);
 
-	// Add some cubes which are connected through parenting
-	m_texturedCubeEntity = Entity::Create("Textured parent cube");
-	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
-	m_texturedCubeEntity->setName("MovingCube");
-	m_scene.addEntity(m_texturedCubeEntity);
-	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
-
-	e = Entity::Create("CubeRoot");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	e = Entity::Create("Barrier2");
+	e->addComponent<ModelComponent>(barrierModel);
+	e->addComponent<TransformComponent>(glm::vec3(-4.54f,0.f,8.06f));
 	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
 
-	e = Entity::Create("CubeChild");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	e = Entity::Create("Barrier3");
+	e->addComponent<ModelComponent>(barrierModel);
+	e->addComponent<TransformComponent>(glm::vec3(8.46f,0.f,8.06f));
 	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
 
-	e = Entity::Create("CubeChildChild");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	e = Entity::Create("Container1");
+	e->addComponent<ModelComponent>(containerModel);
+	e->addComponent<TransformComponent>(glm::vec3(6.95f,0.f,25.f));
 	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
+
+	e = Entity::Create("Container2");
+	e->addComponent<ModelComponent>(containerModel);
+	e->addComponent<TransformComponent>(glm::vec3(-25.f,0.f,12.43f), glm::vec3(0.f, 1.57f, 0.f));
+	m_scene.addEntity(e);
+
+	e = Entity::Create("Container3");
+	e->addComponent<ModelComponent>(containerModel);
+	e->addComponent<TransformComponent>(glm::vec3(-25.f,8.f,-7.73f), glm::vec3(0.f, 1.57f, 0.f));
+	m_scene.addEntity(e);
+	
+	e = Entity::Create("Container4");
+	e->addComponent<ModelComponent>(containerModel);
+	e->addComponent<TransformComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
+	m_scene.addEntity(e);
+	
+	e = Entity::Create("Container5");
+	e->addComponent<ModelComponent>(containerModel);
+	e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f));
+	m_scene.addEntity(e);
+	
+	e = Entity::Create("Container6");
+	e->addComponent<ModelComponent>(containerModel);
+	e->addComponent<TransformComponent>(glm::vec3(24.20f,0.f,-8.f), glm::vec3(0.f, 1.57f, 0.f));
+	m_scene.addEntity(e);
+	
+	e = Entity::Create("Container7");
+	e->addComponent<ModelComponent>(containerModel);
+	e->addComponent<TransformComponent>(glm::vec3(24.2f,8.f,-22.8f), glm::vec3(0.f, 1.57f, 0.f));
+	m_scene.addEntity(e);
+	
+	e = Entity::Create("Container8");
+	e->addComponent<ModelComponent>(containerModel);
+	e->addComponent<TransformComponent>(glm::vec3(24.36f,0.f,-32.41f));
+	m_scene.addEntity(e);
+
+	e = Entity::Create("Ramp1");
+	e->addComponent<ModelComponent>(rampModel);
+	e->addComponent<TransformComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+	m_scene.addEntity(e);
+	e = Entity::Create("Ramp2");
+	e->addComponent<ModelComponent>(rampModel);
+	e->addComponent<TransformComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+	m_scene.addEntity(e);
+	e = Entity::Create("Ramp3");
+	e->addComponent<ModelComponent>(rampModel);
+	e->addComponent<TransformComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
+	m_scene.addEntity(e);
+	e = Entity::Create("Ramp4");
+	e->addComponent<ModelComponent>(rampModel);
+	e->addComponent<TransformComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
+	m_scene.addEntity(e);
+	e = Entity::Create("Ramp5");
+	e->addComponent<ModelComponent>(rampModel);
+	e->addComponent<TransformComponent>(glm::vec3(-16.f, 0.f, 20.f),glm::vec3(0.f,3.14f,0.f));
+	m_scene.addEntity(e);
+	e = Entity::Create("Ramp6");
+	e->addComponent<ModelComponent>(rampModel);
+	e->addComponent<TransformComponent>(glm::vec3(-34.f, 0.f, 20.f),glm::vec3(0.f,0.f,0.f));
+	m_scene.addEntity(e);
+
+	//e = Entity::Create("OrientationBox");
+	//e->addComponent<ModelComponent>(lrTest);
+	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	//m_scene.addEntity(e);
+
+	//auto e = Entity::Create("Static cube");
+	//e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
+	//m_scene.addEntity(e);
+
+	//e = Entity::Create("Floor");
+	//e->addComponent<ModelComponent>(m_planeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	//m_scene.addEntity(e);
+
+	//e = Entity::Create("Clingy cube");
+	//e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+	//m_scene.addEntity(e);
+
+	//// Add some cubes which are connected through parenting
+	//m_texturedCubeEntity = Entity::Create("Textured parent cube");
+	//m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
+	//m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
+	//m_texturedCubeEntity->setName("MovingCube");
+	//m_scene.addEntity(m_texturedCubeEntity);
+	//e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
+
+	//e = Entity::Create("CubeRoot");
+	//e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	//m_scene.addEntity(e);
+	//m_transformTestEntities.push_back(e);
+
+	//e = Entity::Create("CubeChild");
+	//e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	//m_scene.addEntity(e);
+	//m_transformTestEntities.push_back(e);
+
+	//e = Entity::Create("CubeChildChild");
+	//e->addComponent<ModelComponent>(m_cubeModel.get());
+	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	//m_scene.addEntity(e);
+	//m_transformTestEntities.push_back(e);
 
 
 	e = Entity::Create("Candle");
