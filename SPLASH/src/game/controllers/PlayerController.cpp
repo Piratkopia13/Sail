@@ -3,7 +3,7 @@
 #include "Sail.h"
 
 PlayerController::PlayerController(Camera* cam) {
-	m_cam = new CameraController(cam);
+	m_cam = SAIL_NEW CameraController(cam);
 	m_player = Entity::Create("player_entity");
 	m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
@@ -15,7 +15,9 @@ PlayerController::PlayerController(Camera* cam) {
 	m_roll = 0.f;
 }
 
-PlayerController::~PlayerController() {}
+PlayerController::~PlayerController() {
+	delete m_cam;
+}
 
 void PlayerController::update(float dt) {
 	float speedModifier = 1.f;
