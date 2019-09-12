@@ -65,7 +65,11 @@ void Game::update(float dt) {
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_J))
 	{
 		printf("Attempting connection... \n");
-		if (m_networkWrapper->connectToIP("192.168.1.55:54540"))
+		/*if (m_networkWrapper->connectToIP("192.168.1.55:54540"))
+		{
+			printf("Connecting to 192.168.1.55. \n");
+		}*/
+		if (m_networkWrapper->connectToIP("127.0.0.1:54000"))
 		{
 			printf("Connecting to 192.168.1.55. \n");
 		}
@@ -77,7 +81,7 @@ void Game::update(float dt) {
 
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_M))
 	{
-		m_networkWrapper->sendChatMsg("mHoppla");
+		m_networkWrapper->sendChatMsg("Kanel finns nu.");
 	}
 
 

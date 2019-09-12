@@ -63,8 +63,21 @@ void NetworkWrapper::sendMsg(std::string msg) {
 }
 
 void NetworkWrapper::sendChatMsg(std::string msg) {
-	msg = std::string("m") + msg;
-	m_network->send(msg.c_str(), msg.length());
+	
+	
+	if (m_network->isServer())
+	{
+		msg = std::string("mHost: ") + msg;
+		m_network->send(msg.c_str(), msg.length());
+		msg.erase(0, 1);
+		msg = msg + std::string("\n");
+		printf(msg.c_str());
+	}
+	else
+	{
+		msg = std::string("m") + msg;
+		m_network->send(msg.c_str(), msg.length());
+	}
 }
 
 void NetworkWrapper::sendMsgAllClients(std::string msg) {
@@ -84,7 +97,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 	// These will be assigned in the switch case.
 	int userID;
 	std::string message;
-	char* charAsInt[4];
+	char charAsInt[4] = { 0 };
 
 	switch (nEvent.data->msg[0])
 	{
@@ -94,8 +107,11 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// The host sends this message to all clients.
 		if (m_network->isServer())
 		{
-			message.erase(0, 1);
-			message = std::string("m") + std::to_string(nEvent.clientID) + std::string(": ") + std::string(nEvent.data->msg);
+			std::string tempMessage = std::string(nEvent.data->msg);
+			tempMessage.erase(0, 1);
+			message = std::string("m") + std::to_string(nEvent.clientID) + 
+				std::string(": ") + tempMessage;
+
 			sendMsgAllClients(message);
 
 			// Print to screen
@@ -106,7 +122,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		else
 		{
 			// Print to screen
-			message = message + std::string("\n");
+			message = nEvent.data->msg + std::string("\n");
 			message.erase(0, 1);
 			printf(message.c_str());
 		}
@@ -118,12 +134,13 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = &nEvent.data->msg[1 + i];
+			charAsInt[i] = nEvent.data->msg[1 + i];
 		}
-		userID = reinterpret_cast<int>(&charAsInt);
+		userID = reinterpret_cast<int&>(charAsInt);
 
 		// TODO:
 		// Remove the user with this ID from the lobby and print out that it disconnected.
+		printf((std::to_string(userID) + " disconnected. \n").c_str());
 		break;
 
 	case 'j':
@@ -131,12 +148,14 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = &nEvent.data->msg[1 + i];
+			charAsInt[i] = nEvent.data->msg[1 + i];
 		}
-		userID = reinterpret_cast<int>(&charAsInt);
+		userID = reinterpret_cast<int&>(charAsInt);
 
 		// TODO:
 		// Add this user id to the list of players in the lobby.
+		// Print out that this ID joined the lobby.
+		printf((std::to_string(userID) + " joined. \n").c_str());
 		break;
 
 	default:
@@ -165,6 +184,8 @@ void NetworkWrapper::playerDisconnected(ConnectionID id) {
 	m_network->send(msg ,sizeof(msg) ,-1);
 
 	// Remove the user with this ID from the lobby and print out that it disconnected.
+
+	printf((std::to_string(intid) + " disconnected. \n").c_str());
 }
 
 void NetworkWrapper::playerReconnected(ConnectionID id) {
@@ -175,19 +196,24 @@ void NetworkWrapper::playerReconnected(ConnectionID id) {
 
 void NetworkWrapper::playerJoined(ConnectionID id) {
 
-	char msg[64];
-	int intid = id;
-	char* int_asChar = reinterpret_cast<char*>(&intid);
+	if (m_network->isServer())
+	{
+		char msg[64] = { 0 };
+		int intid = id;
+		char* int_asChar = reinterpret_cast<char*>(&intid);
 
-	msg[0] = 'j';
-	for (int i = 0; i < 4; i++) {
-		msg[i + 1] = int_asChar[i];
+		msg[0] = 'j';
+		for (int i = 0; i < 4; i++) {
+			msg[i + 1] = int_asChar[i];
+		}
+
+		// Send to all clients that someone joined and which id.
+		m_network->send(msg, sizeof(msg), -1);
+
+		// Add this user id to the list of players in the lobby.
+		// Print out that this ID joined the lobby.
+		printf((std::to_string(intid) + " joined. \n").c_str());
 	}
-
-	// Send to all clients that someone joined and which id.
-	m_network->send(msg, sizeof(msg), -1);
-
-	// Add this user id to the list of players in the lobby.
 }
 
 void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
