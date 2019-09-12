@@ -65,6 +65,7 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
 	//Application::getInstance()->getResourceManager().loadTexture("sponza/textures/boxOrientationTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
 
 
@@ -146,6 +147,9 @@ GameState::GameState(StateStack& stack)
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
+
+	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
+	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	// Create entities
 	auto e = Entity::Create("Arena");
@@ -231,6 +235,24 @@ GameState::GameState(StateStack& stack)
 	e = Entity::Create("Ramp6");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(-34.f, 0.f, 20.f),glm::vec3(0.f,0.f,0.f));
+	m_scene.addEntity(e);
+
+	e = Entity::Create("Character");
+	e->addComponent<ModelComponent>(characterModel);
+	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+	m_scene.addEntity(e);
+
+	e = Entity::Create("Character1");
+	e->addComponent<ModelComponent>(characterModel);
+	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+	m_scene.addEntity(e);
+	e = Entity::Create("Character2");
+	e->addComponent<ModelComponent>(characterModel);
+	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+	m_scene.addEntity(e);
+	e = Entity::Create("Character3");
+	e->addComponent<ModelComponent>(characterModel);
+	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
 	//e = Entity::Create("OrientationBox");
