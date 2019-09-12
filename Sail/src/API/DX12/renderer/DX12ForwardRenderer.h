@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include "../DX12API.h"
 
+//#define MULTI_THREADED_COMMAND_RECORDING
+
 class DX12ForwardRenderer : public Renderer {
 public:
 	DX12ForwardRenderer();
@@ -12,7 +14,10 @@ public:
 	void present(RenderableTexture* output = nullptr) override;
 
 private:
-	DX12API* m_context;
-	DX12API::Command m_command;
+	static const int nRecordThreads = 2;
 
+	DX12API* m_context;
+	DX12API::Command m_command[nRecordThreads];
+
+	void RecordCommands(const int threadID, const int frameIndex);
 };

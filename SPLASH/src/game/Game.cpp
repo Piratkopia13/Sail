@@ -1,11 +1,27 @@
 #include "Game.h"
 #include "states/GameState.h"
 
+void test(int id, int myval) {
+	std::string s;
+	s += std::to_string(id) + ", " + std::to_string(myval);
+	printf(s.c_str());
+}
+
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
 	, m_stateStack()
 	
 {
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		Application::getInstance()->pushJobToThreadPool([i](int id) {
+			test(id, i);
+		});
+	}
+
+
+
 	// Register states
 	registerStates();
 	// Set starting state

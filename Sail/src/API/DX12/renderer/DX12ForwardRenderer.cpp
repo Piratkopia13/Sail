@@ -20,21 +20,47 @@ Renderer* Renderer::Create(Renderer::Type type) {
 
 DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context = Application::getInstance()->getAPI<DX12API>();
-	m_context->initCommand(m_command);
-	m_command.list->SetName(L"Forward Renderer main command list");
+
+	for (size_t i = 0; i < nRecordThreads; i++)
+	{
+		m_context->initCommand(m_command[i]);
+		std::wstring name = L"Forward Renderer main command list for render thread: " + std::to_wstring(i);
+		m_command[i].list->SetName(name.c_str());
+	}
+
 }
 
 DX12ForwardRenderer::~DX12ForwardRenderer() {
 
 }
 
+void test(int id) {
+
+}
+
 void DX12ForwardRenderer::present(RenderableTexture* output) {
-	assert(!output); // Render to texture is currently not implemented for DX12!
+	//assert(!output); // Render to texture is currently not implemented for DX12!
 
-	auto frameIndex = m_context->getFrameIndex();
+	//auto frameIndex = m_context->getFrameIndex();
 
-	auto& allocator = m_command.allocators[frameIndex];
-	auto& cmdList = m_command.list;
+	//int a = 0;
+	//Application::getInstance()->pushJobToThreadPool([this, a](int id) {
+	//	test(a);
+	//});
+
+	//RecordCommands(0, frameIndex);
+
+	//m_context->executeCommandLists({ cmdList.Get() });
+
+}
+
+void DX12ForwardRenderer::RecordCommands(const int threadID, const int frameIndex)
+{
+#ifdef MULTI_THREADED_COMMAND_RECORDING
+
+#else
+	auto& allocator = m_command[0].allocators[frameIndex];
+	auto& cmdList = m_command[0].list;
 
 	// Reset allocators and lists for this frame
 	allocator->Reset();
@@ -84,6 +110,5 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	m_context->prepareToPresent(cmdList.Get());
 	// Execute command list
 	cmdList->Close();
-	m_context->executeCommandLists({ cmdList.Get() });
-
+#endif
 }
