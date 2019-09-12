@@ -7,6 +7,7 @@
 #include "../DX12Utils.h"
 #include "../shader/DX12ShaderPipeline.h"
 #include "../resources/DescriptorHeap.h"
+#include "Sail/graphics/shader/compute/TestComputeShader.h"
 
 DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context = Application::getInstance()->getAPI<DX12API>();
@@ -29,13 +30,21 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	// Reset allocators and lists for this frame
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
-
+	
 	// Transition back buffer to render target
 	m_context->prepareToRender(cmdList.Get());
 
 	m_context->renderToBackBuffer(cmdList.Get());
 	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+	// Compute shader testing
+	auto* computeShader = &Application::getInstance()->getResourceManager().getShaderSet<TestComputeShader>();
+	cmdList->SetComputeRootSignature(m_context->getGlobalRootSignature());
+	computeShader->getPipeline()->bind(cmdList.Get());
+	computeShader->getPipeline()->dispatch(10, 10, 10, cmdList.Get());
+
 
 	// Bind the descriptor heap that will contain all SRVs for this frame
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());

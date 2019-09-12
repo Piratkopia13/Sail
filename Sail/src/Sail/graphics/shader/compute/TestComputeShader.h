@@ -1,17 +1,17 @@
 #pragma once
 
+#include <d3d11.h>
 #include <glm/glm.hpp>
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "../../geometry/Material.h"
 
-class MaterialShader : public Shader {
+class TestComputeShader : public Shader {
 public:
-	MaterialShader();
-	~MaterialShader();
+	TestComputeShader();
+	~TestComputeShader();
 
 	virtual void bind() override;
-	virtual void setClippingPlane(const glm::vec4& clippingPlane) override;
 
 private:
 	glm::vec4 m_clippingPlane;

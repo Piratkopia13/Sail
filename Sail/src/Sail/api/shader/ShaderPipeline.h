@@ -26,6 +26,7 @@ public:
 
 	// The following static methods are to be implemented in APIs
 	virtual void bind(void* cmdList = nullptr) = 0;
+	virtual void dispatch(unsigned int threadGroupCountX, unsigned int threadGroupCountY, unsigned int threadGroupCountZ, void* cmdList = nullptr) = 0; // Only used by compute shaders
 	// filepath is used for include paths and error messages 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) = 0;
 	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;
@@ -58,7 +59,7 @@ protected:
 	void* psBlob;
 	void* dsBlob;
 	void* hsBlob;
-
+	void* csBlob;
 
 	struct ShaderResource {
 		ShaderResource(const std::string& name, UINT slot)
@@ -92,15 +93,17 @@ protected:
 		std::unique_ptr<ShaderComponent::Sampler> sampler;
 	};
 	struct ParsedData {
-		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false;
+		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false, hasCS = false;
 		std::vector<ShaderCBuffer> cBuffers;
 		std::vector<ShaderSampler> samplers;
 		std::vector<ShaderResource> textures;
+		std::vector<ShaderResource> structuredBuffers;
 		void clear() {
-			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false;
+			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false, hasCS = false;
 			cBuffers.clear();
 			samplers.clear();
 			textures.clear();
+			structuredBuffers.clear();
 		}
 	};
 	ParsedData parsedData;
@@ -115,14 +118,10 @@ private:
 	void parseCBuffer(const std::string& source);
 	void parseSampler(const char* source);
 	void parseTexture(const char* source);
+	void parseStructuredBuffer(const char* source);
 	std::string nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray = false) const;
+	std::string nextTokenAsType(const char* source, UINT& outTokenSize) const;
 	ShaderComponent::BIND_SHADER getBindShaderFromName(const std::string& name) const;
-
-	//void setVertexShader(void* blob);
-	//void setGeometryShader(void* blob);
-	//void setPixelShader(void* blob);
-	//void setDomainShader(void* blob);
-	//void setHullShader(void* blob);
 
 	UINT getSizeOfType(const std::string& typeName) const;
 

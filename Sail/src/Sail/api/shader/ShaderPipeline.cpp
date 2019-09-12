@@ -14,6 +14,7 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, psBlob(nullptr)
 	, dsBlob(nullptr)
 	, hsBlob(nullptr)
+	, csBlob(nullptr)
 	, filename(filename)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
@@ -50,6 +51,9 @@ void ShaderPipeline::compile() {
 		hsBlob = compileShader(source, filepath, ShaderComponent::HS);
 		//Memory::safeRelease(blob);
 	}
+	if (parsedData.hasCS) {
+		csBlob = compileShader(source, filepath, ShaderComponent::CS);
+	}
 }
 
 void ShaderPipeline::finish() {
@@ -82,6 +86,7 @@ void ShaderPipeline::parse(const std::string& source) {
 	if (source.find("GSMain") != std::string::npos) parsedData.hasGS = true;
 	if (source.find("DSMain") != std::string::npos) parsedData.hasDS = true;
 	if (source.find("HSMain") != std::string::npos) parsedData.hasHS = true;
+	if (source.find("CSMain") != std::string::npos) parsedData.hasCS = true;
 
 	// Remove comments from source
 	std::string cleanSource = removeComments(source);
@@ -119,6 +124,12 @@ void ShaderPipeline::parse(const std::string& source) {
 	src = cleanSource.c_str();
 	while (src = findToken("Texture2D", src)) {
 		parseTexture(src);
+	}
+
+	// Process all structured buffers (used in some compute shaders)
+	src = cleanSource.c_str();
+	while (src = findToken("StructuredBuffer", src)) {
+		parseStructuredBuffer(src);
 	}
 
 }
@@ -192,9 +203,26 @@ void ShaderPipeline::parseTexture(const char* source) {
 	parsedData.textures.emplace_back(name, slot);
 }
 
+void ShaderPipeline::parseStructuredBuffer(const char* source) {
+	
+	// TODO: use type for something (or remove it)
+	UINT tokenSize = 0;
+	std::string type = nextTokenAsType(source, tokenSize);
+	source += tokenSize;
+
+	tokenSize = 0;
+	std::string name = nextTokenAsName(source, tokenSize);
+	source += tokenSize;
+
+	int slot = findNextIntOnLine(source);
+	if (slot == -1) slot = 0; // No slot specified, use 0 as default
+
+	parsedData.structuredBuffers.emplace_back(name, slot);
+}
+
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
 	std::string name = nextToken(source);
-	outTokenSize = name.size();
+	outTokenSize = name.size() + 1; /// +1 to account for the space before the name
 	if (name[name.size() - 1] == ';')
 		name = name.substr(0, name.size() - 1); // Remove ending ';'
 	bool isArray = name[name.size() - 1] == ']';
@@ -207,6 +235,15 @@ std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSi
 		name.erase(start, size);
 	}
 	return name;
+}
+
+std::string ShaderPipeline::nextTokenAsType(const char* source, UINT& outTokenSize) const {
+	std::string type = nextToken(source);
+	outTokenSize = type.size();
+	// Remove first '<' and last '>' character
+	type = type.substr(1, type.size() - 2);
+
+	return type;
 }
 
 ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::string& name) const {

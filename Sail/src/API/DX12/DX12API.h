@@ -33,6 +33,10 @@ namespace GlobalRootParam {
 		CBV_DIFFUSE_TINT,
 		CBV_CAMERA,
 		DT_SRVS,
+		SRV_GENERAL10,
+		SRV_GENERAL11,
+		UAV_GENERAL0,
+		UAV_GENERAL1,
 		SIZE
 	};
 }

@@ -291,21 +291,21 @@ void DX12API::createGlobalRootSignature() {
 	dtSrv.pDescriptorRanges = descRangeSrv;
 
 	// Create root descriptors
-	D3D12_ROOT_DESCRIPTOR rootDescCBV = {};
-	rootDescCBV.ShaderRegister = 0; // TODO make shader shared define
-	rootDescCBV.RegisterSpace = 0;
-	D3D12_ROOT_DESCRIPTOR rootDescCBV2 = {};
-	rootDescCBV2.ShaderRegister = 1; // TODO make shader shared define
-	rootDescCBV2.RegisterSpace = 0;
-	D3D12_ROOT_DESCRIPTOR rootDescCBV3 = {};
-	rootDescCBV3.ShaderRegister = 2; // TODO make shader shared define
-	rootDescCBV3.RegisterSpace = 0;
-	D3D12_ROOT_DESCRIPTOR rootDescSRVT10 = {};
-	rootDescSRVT10.ShaderRegister = 10;
-	rootDescSRVT10.RegisterSpace = 0;
-	D3D12_ROOT_DESCRIPTOR rootDescSRVT11 = {};
-	rootDescSRVT11.ShaderRegister = 11;
-	rootDescSRVT11.RegisterSpace = 0;
+	D3D12_ROOT_DESCRIPTOR rootDesc0_0 = {};
+	rootDesc0_0.ShaderRegister = 0; // TODO make shader shared define
+	rootDesc0_0.RegisterSpace = 0;
+	D3D12_ROOT_DESCRIPTOR rootDesc1_0 = {};
+	rootDesc1_0.ShaderRegister = 1; // TODO make shader shared define
+	rootDesc1_0.RegisterSpace = 0;
+	D3D12_ROOT_DESCRIPTOR rootDesc2_0 = {};
+	rootDesc2_0.ShaderRegister = 2; // TODO make shader shared define
+	rootDesc2_0.RegisterSpace = 0;
+	D3D12_ROOT_DESCRIPTOR rootDesc10_0 = {};
+	rootDesc10_0.ShaderRegister = 10;
+	rootDesc10_0.RegisterSpace = 0;
+	D3D12_ROOT_DESCRIPTOR rootDesc11_0 = {};
+	rootDesc11_0.ShaderRegister = 11;
+	rootDesc11_0.RegisterSpace = 0;
 
 	// TODO: autogen from other data
 	m_globalRootSignatureRegisters["b0"] = GlobalRootParam::CBV_TRANSFORM;
@@ -316,20 +316,37 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_PARAMETER rootParam[GlobalRootParam::SIZE];
 
 	rootParam[GlobalRootParam::CBV_TRANSFORM].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParam[GlobalRootParam::CBV_TRANSFORM].Descriptor = rootDescCBV;
+	rootParam[GlobalRootParam::CBV_TRANSFORM].Descriptor = rootDesc0_0;
 	rootParam[GlobalRootParam::CBV_TRANSFORM].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	rootParam[GlobalRootParam::CBV_DIFFUSE_TINT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParam[GlobalRootParam::CBV_DIFFUSE_TINT].Descriptor = rootDescCBV2;
+	rootParam[GlobalRootParam::CBV_DIFFUSE_TINT].Descriptor = rootDesc1_0;
 	rootParam[GlobalRootParam::CBV_DIFFUSE_TINT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	rootParam[GlobalRootParam::CBV_CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParam[GlobalRootParam::CBV_CAMERA].Descriptor = rootDescCBV3;
+	rootParam[GlobalRootParam::CBV_CAMERA].Descriptor = rootDesc2_0;
 	rootParam[GlobalRootParam::CBV_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 	rootParam[GlobalRootParam::DT_SRVS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParam[GlobalRootParam::DT_SRVS].DescriptorTable = dtSrv;
 	rootParam[GlobalRootParam::DT_SRVS].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	rootParam[GlobalRootParam::SRV_GENERAL10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+	rootParam[GlobalRootParam::SRV_GENERAL10].Descriptor = rootDesc10_0;
+	rootParam[GlobalRootParam::SRV_GENERAL10].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	rootParam[GlobalRootParam::SRV_GENERAL11].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+	rootParam[GlobalRootParam::SRV_GENERAL11].Descriptor = rootDesc11_0;
+	rootParam[GlobalRootParam::SRV_GENERAL11].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	rootParam[GlobalRootParam::UAV_GENERAL0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+	rootParam[GlobalRootParam::UAV_GENERAL0].Descriptor = rootDesc0_0;
+	rootParam[GlobalRootParam::UAV_GENERAL0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	rootParam[GlobalRootParam::UAV_GENERAL1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+	rootParam[GlobalRootParam::UAV_GENERAL1].Descriptor = rootDesc1_0;
+	rootParam[GlobalRootParam::UAV_GENERAL1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[2];
 	staticSamplerDesc[0] = {};
@@ -353,7 +370,7 @@ void DX12API::createGlobalRootSignature() {
 
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-	rsDesc.NumParameters = ARRAYSIZE(rootParam);
+	rsDesc.NumParameters = GlobalRootParam::SIZE;
 	rsDesc.pParameters = rootParam;
 	rsDesc.NumStaticSamplers = 2;
 	rsDesc.pStaticSamplers = staticSamplerDesc;
