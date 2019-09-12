@@ -3,6 +3,7 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 #include <functional>
+#include <map>
 
 namespace DX12Utils {
 
@@ -171,7 +172,7 @@ namespace DX12Utils {
 		std::vector<D3D12_ROOT_PARAMETER> m_rootParams;
 		std::vector<D3D12_STATIC_SAMPLER_DESC> m_staticSamplerDescs;
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_signature;
-		std::unordered_map<std::string, unsigned int> m_order;
+		std::vector<std::string> m_order;
 	};
 
 }

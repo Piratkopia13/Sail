@@ -78,3 +78,7 @@ bool DX12Texture::hasBeenInitialized() const {
 D3D12_CPU_DESCRIPTOR_HANDLE DX12Texture::getCDH() const {
 	return m_heapCDH;
 }
+
+ID3D12Resource1* DX12Texture::getBuffer() const {
+	return m_textureDefaultBuffer.Get();
+}

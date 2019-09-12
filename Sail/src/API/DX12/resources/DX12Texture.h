@@ -15,6 +15,7 @@ public:
 	void initBuffers(ID3D12GraphicsCommandList4* cmdList);
 	bool hasBeenInitialized() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE getCDH() const;
+	ID3D12Resource1* getBuffer() const;
 
 private:
 	DX12API* m_context;

@@ -123,7 +123,7 @@ private:
 	wComPtr<IDXGIFactory2> m_dxgiFactory;
 #endif
 	// Only used for initialization
-	IDXGIFactory7* m_factory;
+	IDXGIFactory6* m_factory;
 	IDXGIAdapter3* m_adapter3;
 
 	// Queues

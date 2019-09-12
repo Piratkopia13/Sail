@@ -92,7 +92,7 @@ void DX12Utils::RootSignature::add32BitConstants() {
 }
 
 void DX12Utils::RootSignature::addDescriptorTable(const std::string& name, D3D12_DESCRIPTOR_RANGE_TYPE type, unsigned int shaderRegister, unsigned int space, unsigned int numDescriptors) {
-	m_order.insert({name, m_rootParams.size()});
+	m_order.emplace_back(name);
 
 	D3D12_DESCRIPTOR_RANGE* range = new D3D12_DESCRIPTOR_RANGE;
 	range->BaseShaderRegister = shaderRegister;
@@ -110,7 +110,7 @@ void DX12Utils::RootSignature::addDescriptorTable(const std::string& name, D3D12
 }
 
 void DX12Utils::RootSignature::addCBV(const std::string& name, unsigned int shaderRegister, unsigned int space) {
-	m_order[name] = m_rootParams.size();
+	m_order.emplace_back(name);
 
 	D3D12_ROOT_PARAMETER rootParam = {};
 	rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -121,7 +121,7 @@ void DX12Utils::RootSignature::addCBV(const std::string& name, unsigned int shad
 }
 
 void DX12Utils::RootSignature::addSRV(const std::string& name, unsigned int shaderRegister, unsigned int space) {
-	m_order[name] = m_rootParams.size();
+	m_order.emplace_back(name);
 	
 	D3D12_ROOT_PARAMETER rootParam = {};
 	rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
@@ -132,7 +132,7 @@ void DX12Utils::RootSignature::addSRV(const std::string& name, unsigned int shad
 }
 
 void DX12Utils::RootSignature::addUAV(const std::string& name, unsigned int shaderRegister, unsigned int space) {
-	m_order[name] = m_rootParams.size();
+	m_order.emplace_back(name);
 	
 	D3D12_ROOT_PARAMETER rootParam = {};
 	rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
@@ -177,11 +177,11 @@ ID3D12RootSignature** DX12Utils::RootSignature::get() {
 }
 
 unsigned int DX12Utils::RootSignature::getIndex(const std::string& name) {
-	return m_order[name];
+	return std::find(m_order.begin(), m_order.end(), name) - m_order.begin();
 }
 
 void DX12Utils::RootSignature::doInOrder(std::function<void(const std::string&)> func) {
 	for (auto& it : m_order) {
-		func(it.first);
+		func(it);
 	}
 }

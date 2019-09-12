@@ -45,6 +45,12 @@ namespace DXRUtils {
 		UINT64 SizeInBytes;
 		UINT32 StrideInBytes;
 		wComPtr<ID3D12Resource1> Resource = nullptr;
+		void release() {
+			if (Resource) {
+				Resource->Release();
+				Resource = nullptr;
+			}
+		}
 	};
 
 	class ShaderTableBuilder {

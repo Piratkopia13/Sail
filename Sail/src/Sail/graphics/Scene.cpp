@@ -11,7 +11,9 @@
 Scene::Scene() 
 	//: m_postProcessPipeline(m_renderer)
 {
-	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
+	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
+	m_currentRenderer = &m_rendererRaster;
 
 	// TODO: the following method ish
 	//m_postProcessPipeline.add<FXAAStage>();
@@ -37,12 +39,12 @@ void Scene::addEntity(Entity::SPtr entity) {
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
-	m_renderer->setLightSetup(lights);
+	(*m_currentRenderer)->setLightSetup(lights);
 }
 
 void Scene::draw(Camera& camera) {
 
-	m_renderer->begin(&camera);
+	(*m_currentRenderer)->begin(&camera);
 
 	for (Entity::SPtr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
@@ -50,13 +52,13 @@ void Scene::draw(Camera& camera) {
 			TransformComponent* transform = entity->getComponent<TransformComponent>();
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-			m_renderer->submit(model->getModel(), transform->getMatrix());
+			(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
 		}
 	}
 
-	m_renderer->end();
-	m_renderer->present();
-	//m_renderer->present(m_deferredOutputTex.get());
+	(*m_currentRenderer)->end();
+	(*m_currentRenderer)->present();
+	//(*m_currentRenderer)->present(m_deferredOutputTex.get());
 
 	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
 
@@ -74,10 +76,19 @@ bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
 	// Forward events
-	m_renderer->onEvent(event);
+	m_rendererRaster->onEvent(event);
+	m_rendererRaytrace->onEvent(event);
 	//m_postProcessPipeline.onEvent(event);
 
 	return true;
+}
+
+void Scene::changeRenderer(unsigned int index) {
+	if (index == 0) {
+		m_currentRenderer = &m_rendererRaster;
+	} else {
+		m_currentRenderer = &m_rendererRaytrace;
+	}
 }
 
 bool Scene::onResize(WindowResizeEvent & event) {

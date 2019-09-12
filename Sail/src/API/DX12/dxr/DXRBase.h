@@ -7,7 +7,7 @@
 #include "../shader/DX12ConstantBuffer.h"
 
 // Include defines shared with dxr shaders
-#include "Sail/../../Demo/res/shaders/dxr/Common_hlsl_cpp.hlsl"
+#include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
 
 //namespace DXRGlobalRootParam {
 //	enum Slot {
@@ -111,11 +111,11 @@ private:
 	std::vector<std::vector<AccelerationStructureBuffers>> m_DXR_BottomBuffers;
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
 
-	wComPtr<ID3D12StateObject> m_rtPipelineState = nullptr;
+	wComPtr<ID3D12StateObject> m_rtPipelineState;
 
-	std::vector<DXRUtils::ShaderTableData> m_rayGenShaderTable{};
-	std::vector<DXRUtils::ShaderTableData> m_missShaderTable{};
-	std::vector<DXRUtils::ShaderTableData> m_hitGroupShaderTable{};
+	std::vector<DXRUtils::ShaderTableData> m_rayGenShaderTable;
+	std::vector<DXRUtils::ShaderTableData> m_missShaderTable;
+	std::vector<DXRUtils::ShaderTableData> m_hitGroupShaderTable;
 
 	struct ResourceWithDescriptor {
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
@@ -125,8 +125,7 @@ private:
 	struct MeshHandles {
 		D3D12_GPU_VIRTUAL_ADDRESS vertexBufferHandle;
 		D3D12_GPU_VIRTUAL_ADDRESS indexBufferHandle;
-		D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
-		D3D12_GPU_VIRTUAL_ADDRESS materialHandle;
+		D3D12_GPU_DESCRIPTOR_HANDLE textureHandles[3];
 	};
 
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};

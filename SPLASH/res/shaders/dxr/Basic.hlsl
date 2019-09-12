@@ -11,10 +11,14 @@ StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 
 // Texture2DArray<float4> textures : register(t2, space0);
+Texture2D<float4> sys_texDiffuse : register(t2);
+Texture2D<float4> sys_texNormal : register(t3);
+Texture2D<float4> sys_texSpecular : register(t4);
+
 SamplerState ss : register(s0);
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
-inline void GenerateCameraRay(uint2 index, out float3 origin, out float3 direction) {
+inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
 	float2 xy = index + 0.5f; // center in the middle of the pixel.
 	float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
 
@@ -36,7 +40,7 @@ void rayGen() {
 
 	uint2 launchIndex = DispatchRaysIndex().xy;
 	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
-	GenerateCameraRay(launchIndex, origin, rayDir);
+	generateCameraRay(launchIndex, origin, rayDir);
 
 	RayDesc ray;
 	ray.Origin = origin;
@@ -51,7 +55,7 @@ void rayGen() {
 	payload.recursionDepth = 0;
 	payload.hit = 0;
 	payload.color = float4(0,0,0,0);
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+	TraceRay(gRtScene, 0, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 	lOutput[launchIndex] = payload.color;
 
 	// lOutput[launchIndex] = float4(1.0f, 0.2f, 0.2f, 1.0f);
@@ -60,6 +64,17 @@ void rayGen() {
 [shader("miss")]
 void miss(inout RayPayload payload) {
 	payload.color = float4(0.2f, 0.2f, 0.2f, 1.0f);
+}
+
+float4 getColor(MeshData data, float2 texCoords) {
+	float4 color = data.color;
+	if (data.flags & MESH_HAS_DIFFUSE_TEX)
+		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
+	if (data.flags & MESH_HAS_NORMAL_TEX)
+		color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
+	if (data.flags & MESH_HAS_SPECULAR_TEX)
+		color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
+	return color;
 }
 
 [shader("closesthit")]
@@ -75,7 +90,7 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	uint i2 = primitiveID * verticesPerPrimitive + 1;
 	uint i3 = primitiveID * verticesPerPrimitive + 2;
 	// Use indices if available
-	if (CB_MeshData.flags[instanceID] & MESH_USE_INDICES) {
+	if (CB_MeshData.data[instanceID].flags & MESH_USE_INDICES) {
 		i1 = indices[i1];
 		i2 = indices[i2];
 		i3 = indices[i3];
@@ -90,12 +105,13 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 
 	// float3 normalInWorldSpace = float3(0,-1,0);
 
-	if ((CB_MeshData.flags[instanceID] & MESH_USE_INDICES) && payload.recursionDepth < 2) {
+	if (payload.recursionDepth < 2) {
 		float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
+		TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
+		payload.color = payload.color * 0.2f + getColor(CB_MeshData.data[instanceID], texCoords) * 0.8f;
+
 	} else {
 		// Max recursion, return color
-		payload.color = float4(normalInWorldSpace * 0.5f + 0.5, 1.f);
-		// payload.color = float4(1.f, 0.2f, 0.2f, 1.0f);
+		payload.color = getColor(CB_MeshData.data[instanceID], texCoords);
 	}
 }

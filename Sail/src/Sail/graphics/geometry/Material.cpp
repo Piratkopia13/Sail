@@ -100,6 +100,10 @@ void Material::getAndInsertTexture(const std::string& filename, int arraySlot) {
 //		return m_srvs;
 //}
 
+Texture* Material::getTexture(unsigned int id) {
+	return m_textures[id];
+}
+
 const Material::PhongSettings& Material::getPhongSettings() const {
 	return m_phongSettings;
 }
