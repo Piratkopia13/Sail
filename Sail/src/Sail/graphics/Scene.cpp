@@ -84,10 +84,11 @@ bool Scene::onEvent(Event& event) {
 }
 
 void Scene::changeRenderer(unsigned int index) {
-	if (index == 0)
+	if (index == 0) {
 		m_currentRenderer = &m_rendererRaster;
-	else 
+	} else {
 		m_currentRenderer = &m_rendererRaytrace;
+	}
 }
 
 bool Scene::onResize(WindowResizeEvent & event) {

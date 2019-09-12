@@ -18,7 +18,7 @@ Texture2D<float4> sys_texSpecular : register(t4);
 SamplerState ss : register(s0);
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
-inline void GenerateCameraRay(uint2 index, out float3 origin, out float3 direction) {
+inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
 	float2 xy = index + 0.5f; // center in the middle of the pixel.
 	float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
 
@@ -40,7 +40,7 @@ void rayGen() {
 
 	uint2 launchIndex = DispatchRaysIndex().xy;
 	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
-	GenerateCameraRay(launchIndex, origin, rayDir);
+	generateCameraRay(launchIndex, origin, rayDir);
 
 	RayDesc ray;
 	ray.Origin = origin;
