@@ -171,7 +171,7 @@ bool Network::send(const char* message, size_t size, ConnectionID receiverID)
 	Connection conn;
 	{
 		std::lock_guard<std::mutex> mu(m_mutex_connections);
-		if (receiverID > m_connections.size())
+		if (receiverID >= m_connections.size())
 			return false;
 
 		conn = m_connections[receiverID];
