@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BoundingBox.h"
+#include "Sail/entities/ECS.h"
 #include "Sail/graphics/Scene.h"
 #include "Sail/graphics/geometry/Model.h"
 
@@ -17,9 +18,9 @@ private:
 	struct Node {
 		std::vector<Node> childNodes;
 		Node* parentNode;
-		BoundingBox bb;
+		Entity::SPtr bbEntity;
 		int nrOfEntities;
-		std::vector<BoundingBox*> entities; //TODO: Replace this with entities that contain model and bounding box when component system is working properly
+		std::vector<Entity::SPtr> entities; //TODO: Replace this with entities that contain model and bounding box when component system is working properly
 
 		Node() {
 			nrOfEntities = 0;
@@ -36,11 +37,11 @@ private:
 	float m_minimumNodeHalfSize;
 
 	void expandBaseNode(glm::vec3 direction);
-	glm::vec3 findCornerOutside(BoundingBox* entity, Node* testNode);
-	bool addEntityRec(BoundingBox* newEntity, Node* currentNode);
-	bool removeEntityRec(BoundingBox* entityToRemove, Node* currentNode);
-	void updateRec(Node* currentNode, std::vector<BoundingBox*>* entitiesToReAdd);
-	void getCollisionsRec(BoundingBox* entity, Node* currentNode, std::vector<Octree::CollisionInfo>* collisionData);
+	glm::vec3 findCornerOutside(Entity::SPtr entity, Node* testNode);
+	bool addEntityRec(Entity::SPtr newEntity, Node* currentNode);
+	bool removeEntityRec(Entity::SPtr entityToRemove, Node* currentNode);
+	void updateRec(Node* currentNode, std::vector<Entity::SPtr>* entitiesToReAdd);
+	void getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vector<Octree::CollisionInfo>* collisionData);
 	float getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode);
 	int pruneTreeRec(Node* currentNode);
 
@@ -48,15 +49,15 @@ public:
 	Octree(Scene *scene, Model *boundingBoxModel);
 	~Octree();
 
-	void addEntity(BoundingBox* newEntity);
-	void addEntities(std::vector<BoundingBox*> *newEntities);
+	void addEntity(Entity::SPtr newEntity);
+	void addEntities(std::vector<Entity::SPtr> *newEntities);
 
-	void removeEntity(BoundingBox* entityToRemove);
-	void removeEntities(std::vector<BoundingBox*> entitiesToRemove);
+	void removeEntity(Entity::SPtr entityToRemove);
+	void removeEntities(std::vector<Entity::SPtr> entitiesToRemove);
 
 	void update();
 
-	void getCollisions(BoundingBox* entity, std::vector<CollisionInfo>* collisionData);
+	void getCollisions(Entity::SPtr entity, std::vector<CollisionInfo>* collisionData);
 
 	float getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection);
 };

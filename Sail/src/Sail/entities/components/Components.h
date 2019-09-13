@@ -7,3 +7,4 @@
 #include "PhysicsComponent.h"
 //#include "MovementComponent.h"
 #include "PlayerComponent.h"
+#include "BoundingBoxComponent.h"

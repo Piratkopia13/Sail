@@ -4,8 +4,6 @@
 #include "BoundingBox.h"
 
 BoundingBox::BoundingBox() {
-	m_drawBoundingBoxes = true;
-
 	m_position = glm::vec3(0.0f);
 	m_halfSize = glm::vec3(0.5f);
 	m_hasChanged = false;
@@ -29,11 +27,11 @@ void BoundingBox::updateCorners() {
 	m_corners[7] = m_position + glm::vec3(m_halfSize.x, -m_halfSize.y, m_halfSize.z); //Right Bottom Far - 7
 }
 
-glm::vec3 BoundingBox::getPosition() const {
+const glm::vec3& BoundingBox::getPosition() const {
 	return m_position;
 }
 
-glm::vec3 BoundingBox::getHalfSize() const {
+const glm::vec3& BoundingBox::getHalfSize() const {
 	return m_halfSize;
 }
 
@@ -49,41 +47,12 @@ const bool BoundingBox::getChange() {
 
 void BoundingBox::setPosition(const glm::vec3& position) {
 	m_position = position;
-	if (m_modelEntity) {
-		m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_position);
-	}
 	updateCorners();
 	m_hasChanged = true;
 }
 
 void BoundingBox::setHalfSize(const glm::vec3& size) {
 	m_halfSize = size;
-	if (m_modelEntity) {
-		m_modelEntity->getComponent<TransformComponent>()->setScale(m_halfSize * 2.0f);
-	}
 	updateCorners();
 	m_hasChanged = true;
-}
-
-void BoundingBox::setModel(Scene* scene, Model* model) {
-	if (m_drawBoundingBoxes) {
-		if (!m_modelEntity) {
-			m_modelEntity = ECS::Instance()->createEntity("Bounding Box Model");
-			m_modelEntity->addComponent<ModelComponent>(model);
-			m_modelEntity->addComponent<TransformComponent>();
-			m_modelEntity->getComponent<TransformComponent>()->setScale(m_halfSize * 2.0f);
-			m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_position);
-			scene->addEntity(m_modelEntity);
-		}
-		else {
-			m_modelEntity->getComponent<ModelComponent>()->setModel(model);
-		}
-	}
-}
-
-void BoundingBox::hide() {
-	if (m_modelEntity) {
-		ECS::Instance()->destroyEntity(m_modelEntity);
-		m_modelEntity = nullptr;
-	}
 }

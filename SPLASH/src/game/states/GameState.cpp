@@ -132,7 +132,7 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+	auto* shader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
 
 	//Wireframe shader
 	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
@@ -336,12 +336,16 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 	m_scene.addEntity(e);
 
-	m_octree = new Octree(&m_scene, m_boundingBoxModel.get());
+	m_octree = SAIL_NEW Octree(&m_scene, m_boundingBoxModel.get());
 
 	for (int i = 0; i < 4; i++) {
-		m_testBoundingBoxes.push_back(new BoundingBox());
-		m_testBoundingBoxes.back()->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
-		m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());
+		BoundingBox* tempBoundingBox = SAIL_NEW BoundingBox();
+		tempBoundingBox->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
+		Entity::SPtr tempEntity = ECS::Instance()->createEntity("Bounding Box");
+		tempEntity->addComponent<BoundingBoxComponent>(tempBoundingBox, m_boundingBoxModel.get());
+		tempEntity->addComponent<TransformComponent>(tempBoundingBox->getPosition(), glm::vec3(0.0f), tempBoundingBox->getHalfSize());
+		m_testBoundingBoxes.push_back(tempEntity);
+		m_scene.addEntity(tempEntity);
 	}
 
 	/*m_testBoundingBoxes.push_back(new BoundingBox());
@@ -355,9 +359,6 @@ GameState::GameState(StateStack& stack)
 
 GameState::~GameState() {
 	delete m_octree;
-	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
-		delete m_testBoundingBoxes[i];
-	}
 }
 
 // Process input for the state
@@ -497,7 +498,8 @@ bool GameState::update(float dt) {
 	m_testAngle = std::fmod(m_testAngle + 0.5f * dt, 6.28f);
 
 	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
-		m_testBoundingBoxes[i]->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
+		m_testBoundingBoxes[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
+		m_testBoundingBoxes[i]->getComponent<TransformComponent>()->setTranslation(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
 	}
 
 	m_octree->update();

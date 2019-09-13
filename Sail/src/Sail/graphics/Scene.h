@@ -30,5 +30,5 @@ private:
 	//DeferredRenderer m_renderer;
 	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
 	//PostProcessPipeline m_postProcessPipeline;
-
+	bool m_drawBoundingBoxes;
 };
