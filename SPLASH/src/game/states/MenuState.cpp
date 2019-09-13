@@ -20,13 +20,15 @@ MenuState::MenuState(StateStack& stack)
 	m_input = Input::GetInstance();
 	m_textHeight = 52;
 	m_outerPadding = 15;
-	m_myName = "Daniel";
 
-	m_messageLimit = 14;		// Should be based on size of chatbox
-	m_messages = new message[m_messageLimit];
-
+	m_messageLimit = 14;		// Should be based on size of chatbox instead of fixed
 	m_playerLimit = 12;
-	m_players = new string[m_playerLimit];
+	m_playerCount = 0;
+	m_messageCount = 0;
+
+	// Add local player as the first.
+	m_myName = "Daniel";
+	playerJoined(m_myName, m_tempID++);
 
 	m_messageSizeLimit = 50;
 	m_currentMessageIndex = 0;
@@ -36,12 +38,7 @@ MenuState::MenuState(StateStack& stack)
 	addTestData();
 }
 
-MenuState::~MenuState()
-{
-	// Handle destruction of ImGui
-	// ---
-	delete[] this->m_messages;
-	delete[] this->m_players;
+MenuState::~MenuState() {
 }
 
 bool MenuState::processInput(float dt){
@@ -49,11 +46,16 @@ bool MenuState::processInput(float dt){
 	// Did user want to send the message?
 	// ---
 
-	/// ChatBox input from here, so it always recieves input (maybe switch on/off with enter)
+	if (m_input->IsMouseButtonPressed(0)) {
+		m_chatFocus = false;
+	}
+
+	// Purely a function for testing
 	this->doTestStuff();
 
 	// Did user want to change some setting?
 	// ---
+
 	// Did user want to start the game?
 	// ---
 
@@ -75,7 +77,11 @@ bool MenuState::onTextInput(TextInputEvent& event)
 
 	if (m_currentMessageIndex < m_messageSizeLimit && msg.wParam != SAIL_KEY_RETURN) {
 		// Add whichever button that was inputted to the current message
+		// --- OBS : doesn't account for capslock, etc.
 		m_currentMessage[m_currentMessageIndex++] = (char)msg.wParam;
+	}
+	if (msg.wParam == SAIL_KEY_RETURN && m_chatFocus == false) {
+		sendMessage(&string(m_currentMessage));
 	}
 	
 	return true;
@@ -91,26 +97,21 @@ bool MenuState::update(float dt){
 
 	// Did we send something?
 	// ---
-	
+	Application::getInstance();
+	Input::GetInstance();
+
 
 	// Did we recieve something?
-	// Append the message in the proper order in the chatbox.
 	// ---
 
 	// Is anything going on in the background?
-	// ---
-
-	// Did we send something?
 	// ---
 
 	return false;
 }
 
 bool MenuState::render(float dt) {
-	/// Maybe have m_ptr instead of fetching instance every frame.
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	
-
 
 	return false;
 }
@@ -131,6 +132,115 @@ bool MenuState::renderImgui(float dt) {
 	return false;
 }
 
+bool MenuState::playerJoined(string name, unsigned int id) {
+	if (m_playerCount < m_playerLimit) {
+		player newPlayer{
+			id,
+			name
+		};
+		m_players.push_back(newPlayer);
+		m_playerCount++;
+		return true;
+	}
+	return false;
+}
+
+bool MenuState::playerLeft(unsigned int id) {
+	// Linear search to get target 'player' struct, then erase that from the list
+	player* toBeRemoved = nullptr;
+	int pos = 0;
+	for (auto playerIt : m_players) {
+		if (playerIt.id == id) {
+			toBeRemoved = &playerIt;
+			m_players.remove(*toBeRemoved);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void MenuState::sendMessage(const string* text) {
+	if (m_currentMessageIndex != 0) { // If the message isn't empty
+		this->addMessageToChat(text, &m_players.front());
+
+		// Reset currentMessage
+		m_currentMessageIndex = 0;
+		for (size_t i = 0; i < m_messageSizeLimit; i++) {
+			m_currentMessage[i] = '\0';
+		}
+	}
+}
+
+void MenuState::recieveMessage(string text, unsigned int senderID) {
+
+
+	addMessageToChat(&text, getPlayer(senderID));
+
+}
+
+void MenuState::addMessageToChat(const string* text, const player* sender) {
+	// Add message to chatlog
+	m_messages.push_back(message{
+		sender->name,
+		*text
+	});
+
+	// New messages replace old
+	if (m_messages.size() > m_messageLimit) {
+		m_messages.pop_front();
+	}
+}
+
+player* MenuState::getPlayer(unsigned int id) {
+	for (auto playerIt : m_players) {
+		if (playerIt.id == id) {
+			return &playerIt;
+		}
+	}
+	return nullptr;
+}
+
+void MenuState::addTestData()
+{
+	// Set up players
+	playerJoined("Ollie", m_tempID++);
+	playerJoined("David", m_tempID++);
+	//playerJoined("Press 0 to switch between enter msg and going to gamestate with mouse (MouseClick by default)");
+	//playerJoined("The cause of this is an IMGUI-bug where keyboard focus prevents buttons from working");
+	//playerJoined("This tape is since we'll switch from imgui later anyway, so why patch shit that's only an imgui bug");
+	//playerJoined("If u want to look at it: https://github.com/ocornut/imgui/issues/455#event-1428367449");
+
+	message msg;
+	msg.sender = "Daniel";
+	msg.content = "msg1";
+	m_messages.push_back(msg);
+
+	msg.sender = "Ollie";
+	msg.content = "Message Two";
+	m_messages.push_back(msg);
+
+	msg.sender = "David";
+	msg.content = "msg 3 mr.boss";
+	m_messages.push_back(msg);
+}
+
+void MenuState::doTestStuff()
+{
+	if (m_input->WasKeyJustPressed(SAIL_KEY_J)) {
+		playerJoined("TestPlayer", m_tempID++);
+	}
+	if (m_input->WasKeyJustPressed(SAIL_KEY_U)) {
+		playerLeft(1);
+	}
+	if (m_input->WasKeyJustPressed(SAIL_KEY_I)) {
+		playerJoined("David", m_tempID++);
+	}
+	if (m_input->WasKeyJustPressed(SAIL_KEY_O)) {
+		playerLeft(m_tempID--);
+	}
+}
+
 void MenuState::renderPlayerList() {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	flags |= ImGuiWindowFlags_NoResize;
@@ -146,14 +256,9 @@ void MenuState::renderPlayerList() {
 	));
 	ImGui::Begin("Players in lobby:", NULL, flags);
 
-	/*for (size_t i = 0; i < players.size(); i++) {
+	for (auto currentPlayer : m_players) {
 		ImGui::Text(
-			std::string("- ").append(m_players[i].c_str()).c_str()
-		);
-	}*/
-	for (auto currentPlayer : players) {
-		ImGui::Text(
-			std::string("- ").append(currentPlayer.c_str()).c_str()
+			std::string("- ").append(currentPlayer.name.c_str()).c_str()
 		);
 	}
 	ImGui::End();
@@ -206,14 +311,16 @@ void MenuState::renderChat() {
 		chatFlags
 	);
 
-	if (firstFrame) {
+	if (m_firstFrame) {
 		ImGui::SetKeyboardFocusHere(-1);
-		firstFrame = false;
+		m_firstFrame = false;
+		m_chatFocus = true;
 	}
 	ImGui::Text("Enter Message:");
 	if (ImGui::InputText("", m_currentMessage, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
-		this->sendMessage(m_currentMessage);
+		this->sendMessage(&(string)m_currentMessage);
 		ImGui::SetKeyboardFocusHere(-1);
+		m_chatFocus = true;
 	}
 	ImGui::End();
 
@@ -231,16 +338,7 @@ void MenuState::renderChat() {
 	ImGui::Begin("Chat Log", NULL, chatFlags);
 	ImGui::SameLine();
 	ImGui::BeginChild("Messages");
-	for (auto currentMessage : messages) {
-		//std::string msg;
-		//msg.append("HH:MM:SS | ");
-		//msg.append(m_players[currentMessage.playerID]);
-		//msg.append(" | ");
-		//msg.append(currentMessage.content.c_str()).c_str();
-		//ImGui::Text(
-		//	msg.c_str()
-		//);
-
+	for (auto currentMessage : m_messages) {
 		std::string msg;
 		msg.append("HH:MM:SS | ");
 		msg.append(currentMessage.sender);
@@ -252,86 +350,4 @@ void MenuState::renderChat() {
 	}
 	ImGui::EndChild();
 	ImGui::End();
-}
-
-void MenuState::addTestData()
-{
-	// Set up players
-	playerJoined("Daniel");
-	playerJoined("Ollie");
-	playerJoined("David");
-	//playerJoined("Press 0 to switch between enter msg and going to gamestate with mouse (MouseClick by default)");
-	//playerJoined("The cause of this is an IMGUI-bug where keyboard focus prevents buttons from working");
-	//playerJoined("This tape is since we'll switch from imgui later anyway, so why patch shit that's only an imgui bug");
-	//playerJoined("If u want to look at it: https://github.com/ocornut/imgui/issues/455#event-1428367449");
-	
-	message msg;
-	msg.sender = "Daniel";
-	msg.content = "msg1";
-	m_messages[0] = msg;
-	messages.push_back(msg);
-
-	msg.sender = "Ollie";
-	msg.content = "Message Two";
-	m_messages[1] = msg;
-	messages.push_back(msg);
-
-	msg.sender = "David";
-	msg.content = "msg 3 mr.boss";
-	m_messages[2] = msg;
-	messages.push_back(msg);
-}
-
-void MenuState::doTestStuff()
-{
-	if (m_input->WasKeyJustPressed(SAIL_KEY_J)) {
-		playerJoined("TestPlayer");
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_U)) {
-		playerLeft("Ollie");
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_I)) {
-		playerJoined("David");
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_O)) {
-		playerLeft ("TestPlayer");
-	}
-}
-
-
-bool MenuState::playerJoined(string name) {
-	/*if (m_playerCount < m_playerLimit) {
-		m_players[m_playerCount++] = name;
-		return true;
-	}*/
-
-	if (m_playerCount < m_playerLimit) {
-		players.push_back(name);
-		return true;
-	}
-	return false;
-}
-
-bool MenuState::playerLeft(string name) {
-	players.remove(name);
-	return true;
-}
-
-void MenuState::sendMessage(string text) {
-	if (m_currentMessageIndex != 0) { // If the message isn't empty
-		// Add message to chatlog
-		messages.push_back(message{
-			m_myName,
-			text
-		});
-
-		// New messages replace old
-		if (messages.size() > m_messageLimit) {
-			messages.pop_front();
-		}
-
-		// Reset currentMessage
-		m_currentMessageIndex = 0;
-		*m_currentMessage = { 0 };
-	}
 }
