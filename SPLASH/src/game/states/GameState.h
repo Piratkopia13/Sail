@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Sail.h"
+#include "../controllers/PlayerController.h"
 
 #include "Physics.h"
 
@@ -22,22 +23,33 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool renderImguiConsole(float dt);
 
 private:
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	FlyingCameraController m_camController;
+	//FlyingCameraController m_camController;
+	PlayerController m_playerController;
+
+	//SimplePhysicsSystem m_physSystem;
 
 	Entity::SPtr m_texturedCubeEntity;
 	std::vector<Entity::SPtr> m_transformTestEntities;
 
+	const std::string createCube(const glm::vec3& position);
+
 	Scene m_scene;
 	LightSetup m_lights;
-
+	ConsoleCommands m_cc;
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 
-	BoundingBox m_boundingBox;
 	std::unique_ptr<Model> m_boundingBoxModel;
+
+	Octree* m_octree;
+
+	std::vector<BoundingBox*> m_testBoundingBoxes;
+
+	float m_testAngle;
 };

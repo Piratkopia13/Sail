@@ -13,7 +13,7 @@ public:
 
 	virtual void update(float dt) {};
 
-protected:
+//protected:
 	void setCameralookAt(const glm::vec3& pos) {
 		m_cam->lookAt(pos);
 	}
