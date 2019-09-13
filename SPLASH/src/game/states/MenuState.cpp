@@ -9,7 +9,7 @@
 #include <string>
 using namespace std;
 
-
+// Nothing
 
 
 MenuState::MenuState(StateStack& stack)
