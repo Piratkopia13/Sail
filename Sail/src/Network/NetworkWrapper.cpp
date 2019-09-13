@@ -88,6 +88,11 @@ void NetworkWrapper::sendMsgAllClients(std::string msg) {
 	m_network->send(msg.c_str(), msg.length(), -1);
 }
 
+void NetworkWrapper::sendChatAllClients(std::string msg) {
+	msg = std::string("m") + msg;
+	m_network->send(msg.c_str(), msg.length(), -1);
+}
+
 void NetworkWrapper::checkForPackages() {
 	m_network->checkForPackages(*this);
 }
@@ -135,7 +140,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 			printf(message.c_str());
 		}
 
-		Application::getInstance()->dispatchEvent(NetworkChatEvent());
+		Application::getInstance()->dispatchEvent(NetworkChatEvent(message));
 
 		break;
 

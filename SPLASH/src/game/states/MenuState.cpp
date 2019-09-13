@@ -28,7 +28,7 @@ bool MenuState::processInput(float dt) {
 			printf("Setting up host.");
 			
 			this->requestStackPop();
-			this->requestStackPush(States::Lobby);
+			this->requestStackPush(States::HostLobby);
 		}
 		else
 		{
@@ -45,7 +45,7 @@ bool MenuState::processInput(float dt) {
 		{
 			printf("Connecting to 192.168.1.55. \n");
 			this->requestStackPop();
-			this->requestStackPush(States::Lobby);
+			this->requestStackPush(States::JoinLobby);
 		}
 		else
 		{

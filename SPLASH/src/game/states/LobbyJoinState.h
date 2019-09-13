@@ -1,16 +1,17 @@
 #pragma once
 
 #include "LobbyState.h"
+#include "Sail.h"
 
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 
-class LobbyHostState : public LobbyState {
+class LobbyJoinState : public LobbyState {
 public:
-	LobbyHostState(StateStack& stack);
-	~LobbyHostState();
+	LobbyJoinState(StateStack& stack);
+	~LobbyJoinState();
 
 	bool onEvent(Event& event);
 
@@ -19,7 +20,4 @@ private:
 	bool onRecievedText(NetworkChatEvent& event);
 	bool onPlayerJoined(NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(NetworkDisconnectEvent& event);
-
-
-
 };

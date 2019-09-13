@@ -36,6 +36,7 @@ public:
 	*/
 	void sendChatMsg(std::string msg);
 	void sendMsgAllClients(std::string msg);
+	void sendChatAllClients(std::string msg);
 
 	/*
 		Call this in an update loop.
