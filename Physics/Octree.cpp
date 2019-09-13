@@ -270,27 +270,6 @@ float Octree::getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection,
 	return returnValue;
 }
 
-/*int Octree::drawRec(GLuint shaderProgram, Frustum* frustum, Node* currentNode) {
-	int returnValue = 0;
-
-	//Check if node is in frustum
-	if (frustum->getCollision(&currentNode->bb)) {
-		//In frustum
-
-		//Draw meshes in node
-		for (int i = 0; i < currentNode->nrOfMeshes; i++) {
-			currentNode->meshes[i]->draw(shaderProgram);
-			returnValue++;
-		}
-
-		//Call draw for all children
-		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-			returnValue += drawRec(shaderProgram, frustum, &currentNode->childNodes[i]);
-		}
-	}
-	return returnValue;
-} */
-
 int Octree::pruneTreeRec(Node* currentNode) {
 	int returnValue = 0;
 
@@ -364,9 +343,3 @@ void Octree::getCollisions(BoundingBox* entity, std::vector<CollisionInfo>* coll
 float Octree::getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection) {
 	return getRayIntersectionRec(rayOrigin, rayDirection, &m_baseNode);
 }
-
-/*
-int Octree::draw(GLuint shaderProgram, Frustum* frustum) {
-	return drawRec(shaderProgram, frustum, &m_baseNode);
-}
-*/

@@ -38,7 +38,6 @@ private:
 	void getCollisionsRec(BoundingBox* entity, Node* currentNode, std::vector<Octree::CollisionInfo>* collisionData);
 	float getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode);
 	int pruneTreeRec(Node* currentNode);
-	/*int drawRec(GLuint shaderProgram, Frustum* frustum, Node* currentNode);*/
 
 public:
 	Octree(Scene *scene, Model *boundingBoxModel);
@@ -55,6 +54,4 @@ public:
 	void getCollisions(BoundingBox* entity, std::vector<CollisionInfo>* collisionData);
 
 	float getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection);
-
-	/*int draw(GLuint shaderProgram, Frustum* frustum);*/
 };
