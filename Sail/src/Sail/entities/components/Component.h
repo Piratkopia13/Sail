@@ -34,6 +34,9 @@ public:
 	static int nrOfComponentTypes() {
 		return global_componentID;
 	}
+
+	unsigned int entityID;
+
 protected:
 	BaseComponent() {}
 };
