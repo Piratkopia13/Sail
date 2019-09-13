@@ -156,6 +156,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// TODO:
 		// Remove the user with this ID from the lobby and print out that it disconnected.
 		printf((std::to_string(userID) + " disconnected. \n").c_str());
+		Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(userID));
 		break;
 
 	case 'j':
@@ -171,6 +172,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// Add this user id to the list of players in the lobby.
 		// Print out that this ID joined the lobby.
 		printf((std::to_string(userID) + " joined. \n").c_str());
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(userID));
 		break;
 
 	default:
