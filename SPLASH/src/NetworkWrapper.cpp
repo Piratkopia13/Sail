@@ -68,7 +68,7 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 	if (m_network->isServer())
 	{
 		msg = std::string("mHost: ") + msg;
-		m_network->send(msg.c_str(), msg.length());
+		m_network->send(msg.c_str(), msg.length(), -1);
 		msg.erase(0, 1);
 		msg = msg + std::string("\n");
 		printf(msg.c_str());
