@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "states/GameState.h"
+#include "states/MenuState.h"
 #include "Network/NetworkWrapper.h"
 
 Game::Game(HINSTANCE hInstance)
@@ -9,8 +10,9 @@ Game::Game(HINSTANCE hInstance)
 {
 	// Register states
 	registerStates();
+
 	// Set starting state
-	m_stateStack.pushState(States::Game);
+	m_stateStack.pushState(States::MainMenu);
 	
 	// Initialize the Network wrapper instance.
 	NetworkWrapper::getInstance().Initialize();
@@ -26,9 +28,9 @@ int Game::run() {
 }
 
 void Game::registerStates() {
-
 	// Register all of the different states
 	m_stateStack.registerState<GameState>(States::Game);
+	m_stateStack.registerState<MenuState>(States::MainMenu);
 }
 
 void Game::dispatchEvent(Event& event) {
