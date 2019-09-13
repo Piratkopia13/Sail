@@ -395,8 +395,10 @@ bool GameState::processInput(float dt) {
 	}
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
-	m_playerController.update(dt);
+	//m_playerController.update(dt);
 	//m_physSystem.execute(dt);
+	m_playerController.processMouseInput(dt);
+
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
@@ -427,7 +429,7 @@ bool GameState::onResize(WindowResizeEvent& event) {
 }
 
 
-
+// TODO: add a get player transform somewhere in this function
 bool GameState::update(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
@@ -439,7 +441,11 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2;
 
+
 	m_scene.prepareUpdate();
+	m_playerController.prepareUpdate();
+
+	m_playerController.processKeyboardInput(dt);
 
 	/*
 		Updates all Component Systems in order

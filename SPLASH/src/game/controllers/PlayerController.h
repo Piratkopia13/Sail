@@ -12,6 +12,10 @@ public:
 	void update(float dt);
 
 	void setStartPosition(const glm::vec3& pos);
+	void prepareUpdate();
+
+	void processKeyboardInput(float dt);
+	void processMouseInput(float dt);
 
 	std::shared_ptr<Entity> getEntity();
 
@@ -23,6 +27,7 @@ private:
 
 	std::shared_ptr<Entity> m_player;
 
+	// NOTE: not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
 
 	float m_lookSensitivityMouse = 0.1f;

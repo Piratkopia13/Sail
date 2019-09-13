@@ -159,7 +159,7 @@ int Application::startGameLoop() {
 				CPU_updatesThisLoop++;
 			}
 
-			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
+			//m_threadPool->push([this, CPU_updatesThisLoop](int id) {
 				int updatesRemaining = CPU_updatesThisLoop;
 				//while (updatesRemaining > 0) {
 				while (updatesRemaining > 0) {
@@ -171,7 +171,7 @@ int Application::startGameLoop() {
 					//m_threadPool->push([this](int id) { update(TIMESTEP); });
 					update(TIMESTEP);
 				}
-				});
+				//});
 
 			// Render
 			Transform::updateCurrentRenderIndex();
