@@ -25,6 +25,8 @@ public:
 	bool hasComponent() const;
 
 	bool hasComponent(int id) const;
+
+	void removeAllComponents();
 	
 	void setName(const std::string& name);
 	const std::string& getName() const;
