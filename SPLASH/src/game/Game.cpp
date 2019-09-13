@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "states/GameState.h"
 #include "states/MenuState.h"
+#include "../NetworkWrapper.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -15,7 +16,9 @@ Game::Game(HINSTANCE hInstance)
 	m_stateStack.pushState(States::MainMenu);
 }
 
-Game::~Game() {	}
+Game::~Game() {
+	delete m_networkWrapper;
+}
 
 int Game::run() {
 	
@@ -40,6 +43,50 @@ void Game::processInput(float dt) {
 
 void Game::update(float dt) {
 	m_stateStack.update(dt);
+
+	// TEMPORARY TESTING FOR NETWORK
+
+	if (m_networkWrapper->isInitialized())
+	{
+		m_networkWrapper->checkForPackages();
+	}
+	
+	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_H)) {
+
+		if (m_networkWrapper->host())
+		{
+			printf("Setting up host.");
+		}
+		else
+		{
+			printf("Failed to set up Host.");
+		}
+	}
+
+	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_J))
+	{
+		printf("Attempting connection... \n");
+		/*if (m_networkWrapper->connectToIP("192.168.1.55:54540"))
+		{
+			printf("Connecting to 192.168.1.55. \n");
+		}*/
+		if (m_networkWrapper->connectToIP("127.0.0.1:54000"))
+		{
+			printf("Connecting to 192.168.1.55. \n");
+		}
+		else
+		{
+			printf("Failed to connect. \n");
+		}
+	}
+
+	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_M))
+	{
+		m_networkWrapper->sendChatMsg("Kanel finns nu.");
+	}
+
+
+
 }
 
 void Game::render(float dt) {
