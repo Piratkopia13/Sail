@@ -5,8 +5,11 @@
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 
+const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
+
 ResourceManager::ResourceManager() {
 	//m_soundManager = std::make_unique<SoundManager>();
+	m_assimpLoader = std::make_unique<AssimpLoader>();
 }
 ResourceManager::~ResourceManager() {
 	for (auto it : m_shaderSets) {
@@ -57,6 +60,7 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 
 void ResourceManager::loadModel(const std::string& filename, Shader* shader) {
 	// Insert the new model
+	Model* temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION +filename, shader);
 	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shader) });
 }
 Model& ResourceManager::getModel(const std::string& filename, Shader* shader) {

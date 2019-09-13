@@ -5,6 +5,7 @@
 #include "TextureData.h"
 #include "Sail/api/Texture.h"
 #include "ParsedScene.h"
+#include "loaders/AssimpLoader.h"
 
 //class DeferredGeometryShader;
 class ShaderPipeline;
@@ -15,6 +16,7 @@ class ResourceManager {
 public:
 	ResourceManager();
 	~ResourceManager();
+	static const std::string SAIL_DEFAULT_MODEL_LOCATION;
 
 	// TextureData
 	void loadTextureData(const std::string& filename);
@@ -74,11 +76,14 @@ private:
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
+	std::map < std::string, std::unique_ptr<Model>> m_models;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;
 	// SoundManager containing all sounds
 	//std::unique_ptr<SoundManager> m_soundManager;
 
+
+	std::unique_ptr<AssimpLoader> m_assimpLoader;
 };
 
 template <typename T>

@@ -9,6 +9,7 @@
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
 #include "events/IEventDispatcher.h"
+#include "resources/loaders/AssimpLoader.h"
 
 class Application : public IEventDispatcher {
 
