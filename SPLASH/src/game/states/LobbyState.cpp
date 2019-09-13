@@ -6,6 +6,7 @@
 #include "../Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
+#include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "Network/NetworkWrapper.h"
 
 #include <string>
@@ -70,6 +71,7 @@ bool LobbyState::onEvent(Event& event) {
 
 	EventHandler::dispatch<TextInputEvent>(event, SAIL_BIND_EVENT(&LobbyState::onTextInput));
 	EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&LobbyState::onPlayerJoined));
+	//EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&LobbyState::onPlayerDisconnect));
 
 
 	return false;
@@ -78,8 +80,12 @@ bool LobbyState::onEvent(Event& event) {
 
 bool LobbyState::onPlayerJoined(NetworkJoinedEvent& event)
 {
+
+	//event.getPlayerID() return the joined players id.
+	
 	return false;
 }
+
 
 bool LobbyState::onTextInput(TextInputEvent& event)
 {

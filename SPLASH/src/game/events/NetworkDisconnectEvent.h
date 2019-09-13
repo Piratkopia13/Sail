@@ -2,17 +2,17 @@
 
 #include "../../../../Sail/src/Sail/events/Event.h"
 
-class NetworkJoinedEvent : public Event {
+class NetworkDisconnectEvent : public Event {
 public:
-	NetworkJoinedEvent(int ID) : Event(Event::NETWORK_JOINED) {
+	NetworkDisconnectEvent(int ID) : Event(Event::NETWORK_DISCONNECT) {
 		m_player_id = ID;
 	}
-	~NetworkJoinedEvent() {}
+	~NetworkDisconnectEvent() {}
 
 	inline int getPlayerID() const { return m_player_id; };
 
 	static Type getStaticType() {
-		return Event::NETWORK_JOINED;
+		return Event::NETWORK_DISCONNECT;
 	}
 
 private:

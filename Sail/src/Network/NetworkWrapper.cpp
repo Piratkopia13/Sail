@@ -4,6 +4,8 @@
 #include "Sail.h"
 
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
+#include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
+#include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 
 void NetworkWrapper::Initialize() {
 	m_network = new Network();
@@ -94,6 +96,10 @@ bool NetworkWrapper::isInitialized() {
 	return m_network->isInitialized();
 }
 
+bool NetworkWrapper::isHost() {
+	return m_network->isServer();
+}
+
 void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 	// These will be assigned in the switch case.
@@ -128,6 +134,8 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 			message.erase(0, 1);
 			printf(message.c_str());
 		}
+
+		Application::getInstance()->dispatchEvent(NetworkChatEvent());
 
 		break;
 
@@ -188,6 +196,9 @@ void NetworkWrapper::playerDisconnected(ConnectionID id) {
 		m_network->send(msg, sizeof(msg), -1);
 
 		printf((std::to_string(intid) + " disconnected. \n").c_str());
+
+		// Send id to menu / game state
+		Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(intid));
 	}
 	else
 	{
@@ -196,7 +207,7 @@ void NetworkWrapper::playerDisconnected(ConnectionID id) {
 	
 
 	// Remove the user with this ID from the lobby and print out that it disconnected.
-
+	
 	
 }
 
@@ -225,7 +236,7 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 		// Print out that this ID joined the lobby.
 		printf((std::to_string(intid) + " joined. \n").c_str());
 
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent());
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(intid));
 	}
 }
 

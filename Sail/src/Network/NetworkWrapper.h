@@ -43,6 +43,7 @@ public:
 	void checkForPackages();
 
 	bool isInitialized();
+	bool isHost();
 
 private:
 	Network* m_network;
