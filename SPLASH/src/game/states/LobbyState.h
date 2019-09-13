@@ -28,12 +28,6 @@ struct player {
 	}
 };
 
-/*
-
-
-
-*/
-
 class LobbyState : public State {
 public:
 	LobbyState(StateStack& stack);
