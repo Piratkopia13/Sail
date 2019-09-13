@@ -25,7 +25,7 @@ namespace ctpl {
 
 // TODO: Move elsewhere
 //const unsigned int SNAPSHOT_BUFFER_SIZE = 4;
-const double TICKRATE = 60.0;
+const double TICKRATE = 100.0;
 const double TIMESTEP = 1.0 / TICKRATE;
 
 

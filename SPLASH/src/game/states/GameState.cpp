@@ -445,7 +445,7 @@ bool GameState::update(float dt) {
 	m_scene.prepareUpdate();
 	m_playerController.prepareUpdate();
 
-	m_playerController.processKeyboardInput(dt);
+	m_playerController.processKeyboardInput(TIMESTEP);
 
 	/*
 		Updates all Component Systems in order
