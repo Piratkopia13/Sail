@@ -4,10 +4,14 @@ class CameraController;
 class Camera;
 class Entity;
 
-// Stuff
-class Projectile;
 class Scene;
 class Model;
+
+// Will most likely be obselete once collision is implemented and projectiles can be destroyed that way.
+struct Projectile {
+	std::shared_ptr<Entity> projectile;
+	float lifeTime = 0.f;
+};
 
 class PlayerController {
 public:
@@ -16,8 +20,6 @@ public:
 
 	void update(float dt);
 
-	//void setScene(Scene* scene);
-
 	std::shared_ptr<Entity> getEntity();
 
 	void setProjectileModel(Model* model);
@@ -25,13 +27,14 @@ public:
 private:
 	float m_movementSpeed = 5.f;
 
-	std::vector<Projectile*> m_projectiles;
 
 	// "Attached" camera
 	CameraController* m_cam;
+	
 	Scene* m_scene;
 
 	Model* m_projectileModel;
+	std::vector<Projectile> m_projectiles;
 
 	std::shared_ptr<Entity> m_player;
 

@@ -19,6 +19,7 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 
 PlayerController::~PlayerController() {
 	delete m_cam;
+	m_projectiles.clear();
 }
 
 void PlayerController::update(float dt) {
@@ -121,21 +122,29 @@ void PlayerController::update(float dt) {
 	// Shoot gun
 	if (Input::IsMouseButtonPressed(0)) {
 		if (m_projectileSpawnCounter == 0.f) {
-			Logger::Log("Pew");//Replace with spawning projectile
+
+			// Create projectile entity and attaching components
 			auto e = ECS::Instance()->createEntity("new cube");
 			e->addComponent<ModelComponent>(m_projectileModel);
-			e->addComponent<TransformComponent>(m_cam->getCameraPosition());
+			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
+			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.1f));
 			e->addComponent<PhysicsComponent>();
 			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
 			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -10.f, 0.f);
 
+			// Adding projectile to projectile vector to keep track of current projectiles
+			Projectile proj;
+			proj.projectile = e;
+			m_projectiles.push_back(proj);
+
+			// Add entity to scene for rendering, will most likely be changed once scene system is created
 			m_scene->addEntity(e);
 
 			m_projectileSpawnCounter += dt;
 		}
 		else {
 			m_projectileSpawnCounter += dt;
-			if (m_projectileSpawnCounter > 0.2f) {
+			if (m_projectileSpawnCounter > 0.05f) {
 				m_projectileSpawnCounter = 0.f;
 			}
 		}
@@ -200,6 +209,15 @@ void PlayerController::update(float dt) {
 	//
 	//}
 
+	// Update for all projectiles
+	for (int i = 0; i < m_projectiles.size(); i++) {
+		m_projectiles[i].lifeTime += dt;
+		if (m_projectiles[i].lifeTime > 2.f) {
+			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
+			m_projectiles.erase(m_projectiles.begin() + i);
+			i--;
+		}
+	}
 
 
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
