@@ -25,4 +25,6 @@ private:
 
 	float m_lookSensitivityMouse = 0.1f;
 
+	float m_particleSpawnCounter = 0.f;
+
 };

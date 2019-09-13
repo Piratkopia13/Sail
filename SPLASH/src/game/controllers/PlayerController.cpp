@@ -117,7 +117,22 @@ void PlayerController::update(float dt) {
 		m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 	}
 
-
+	// Shoot gun
+	if (Input::IsMouseButtonPressed(0)) {
+		if (m_particleSpawnCounter == 0.f) {
+			Logger::Log("Pew");//Replace with spawning particle
+			m_particleSpawnCounter += dt;
+		}
+		else {
+			m_particleSpawnCounter += dt;
+			if (m_particleSpawnCounter > 0.2f) {
+				m_particleSpawnCounter = 0.f;
+			}
+		}
+	}
+	else {
+		m_particleSpawnCounter = 0.0f;
+	}
 	// Lock pitch to the range -89 - 89
 	if ( m_pitch >= 89 ) {
 		m_pitch = 89;
