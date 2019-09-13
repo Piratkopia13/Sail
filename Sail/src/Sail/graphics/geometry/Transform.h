@@ -38,12 +38,15 @@ public:
 	void setScale(const float x, const float y, const float z);
 	void setScale(const glm::vec3& scale);
 
+	void setForward(const glm::vec3& forward);
+
 	void setMatrix(const glm::mat4& newMatrix);
 
 
 	const glm::vec3& getTranslation() const;
 	const glm::vec3& getRotations() const;
 	const glm::vec3& getScale() const;
+	const glm::vec3& getForward();
 
 	glm::mat4 getMatrix();
 	glm::mat4 getLocalMatrix();
@@ -52,13 +55,19 @@ private:
 
 	glm::vec3 m_translation;
 	glm::vec3 m_rotation;
+	glm::quat m_rotationQuat;
 	glm::vec3 m_scale;
+	glm::vec3 m_forward;
+	glm::vec3 m_right;
+	glm::vec3 m_up;
 
+	glm::mat4 m_rotationMatrix;
 	glm::mat4 m_transformMatrix;
 	glm::mat4 m_localTransformMatrix;
 
 	bool m_matNeedsUpdate;
 	bool m_parentUpdated;
+	bool m_updateDirections;
 
 	Transform* m_parent;
 	std::vector<Transform*> m_children;

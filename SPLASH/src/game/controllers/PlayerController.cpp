@@ -134,12 +134,18 @@ void PlayerController::update(float dt) {
 		m_yaw += 360;
 	}
 
+	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+	//playerTrans->setRotations(glm::radians(m_pitch), glm::radians(m_yaw), glm::radians(m_roll));
+	//auto forwardzzz = playerTrans->getForward();
+	//Logger::Warning(std::to_string(forwardzzz.x) + " " + std::to_string(forwardzzz.y) + " " + std::to_string(forwardzzz.z));
+
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
 		std::sin(glm::radians(m_pitch)),
 		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
 	);
 	forwards = glm::normalize(forwards);
+	playerTrans->setForward(forwards);
 
 	glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
@@ -161,30 +167,8 @@ void PlayerController::update(float dt) {
 		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	}
 
-
-	//float totM = forwardM + backM + rightM + leftM;// +upM + downM;
-	//if ( totM != 0.f ) {
-	//	glm::vec3 dir = ( forward * forwardM ) - ( forward * backM ) + ( right * rightM ) - ( right * leftM );
-	//		///*Only for flying*/// + ( m_cam->getCameraUp() * upM ) - ( m_cam->getCameraUp() * downM );
-	//
-	//	physicsComp->velocity = glm::normalize(dir) * (m_movementSpeed * speedModifier);
-	//	/*playerMovComp->setSpeed(m_movementSpeed* speedModifier);
-	//	playerMovComp->setDirection(glm::normalize(dir));*/
-	//}
-	//else {
-	//
-	//}
-
-
-
-	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 	m_cam->setCameraPosition(playerTrans->getTranslation());
-	// TODO: Replace with transform rotation/direction
-	/*Logger::Warning("totM: " + std::to_string(totM) + 
-					" fowards: " + std::to_string(forwards.x) + 
-					" " + std::to_string(forwards.y)
-					+ " " + std::to_string(forwards.z));*/
-	m_cam->setCameraDirection(forwards);
+	m_cam->setCameraDirection(playerTrans->getForward());
 }
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
