@@ -9,7 +9,3 @@
 [submodule "libraries/MemoryManager"]
 	path = libraries/MemoryManager
 	url = https://github.com/Skratzy/MemoryManager
-[submodule "libraries/Network_Module"]
-	path = libraries/Network_Module
-	url = https://github.com/tofb15/Network_Module.git
-	branch = Splash/master
