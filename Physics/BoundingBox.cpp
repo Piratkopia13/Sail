@@ -47,7 +47,7 @@ const bool BoundingBox::getChange() {
 	return theChange;
 }
 
-void BoundingBox::setPosition(glm::vec3 position) {
+void BoundingBox::setPosition(const glm::vec3& position) {
 	m_position = position;
 	if (m_modelEntity) {
 		m_modelEntity->getComponent<TransformComponent>()->setTranslation(m_position);
@@ -56,7 +56,7 @@ void BoundingBox::setPosition(glm::vec3 position) {
 	m_hasChanged = true;
 }
 
-void BoundingBox::setHalfSize(glm::vec3 size) {
+void BoundingBox::setHalfSize(const glm::vec3& size) {
 	m_halfSize = size;
 	if (m_modelEntity) {
 		m_modelEntity->getComponent<TransformComponent>()->setScale(m_halfSize * 2.0f);

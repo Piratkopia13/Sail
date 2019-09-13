@@ -31,8 +31,8 @@ public:
 
 	const bool getChange();
 
-	void setPosition(glm::vec3 position);
-	void setHalfSize(glm::vec3 size);
+	void setPosition(const glm::vec3& position);
+	void setHalfSize(const glm::vec3& size);
 
 	void setModel(Scene* scene, Model* model);
 
