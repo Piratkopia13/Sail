@@ -8,7 +8,9 @@ LightSetup::~LightSetup() {}
 
 void LightSetup::addPointLight(const PointLight& pl) {
 	m_pls.push_back(pl);
-	//m_pls.back().setIndex(m_pls.size());
+	if (pl.getIndex() < 0) {
+		m_pls.back().setIndex(m_pls.size()+12);
+	}
 	std::cout << "added ligth " << m_pls.size() << std::endl;
 	updateBufferData();
 }
@@ -39,19 +41,25 @@ void LightSetup::removePointLight() {
 		updateBufferData();
 	}
 }
+void LightSetup::removePLByIndex(int index) {
+	for (unsigned int i = 0; i < m_pls.size(); i++) {
+		if (m_pls[i].getIndex() == index) {
+			m_pls.erase(m_pls.begin()+i);
+			std::cout << "removed lightIndex " << i<<std::endl;
+		}
+	}
+	updateBufferData();
+}
 
 void LightSetup::updateBufferData() {
 	m_dlData.color = m_dl.getColor();
 	m_dlData.direction = m_dl.getDirection();
 	// Copy the x first lights into the buffer
-	if (m_pls.size() == 0) {
 		for (unsigned int i = 0; i < MAX_POINTLIGHTS_FORWARD_RENDERING; i++) {
 			m_plData.pLights[i].attConstant = 0;
 			m_plData.pLights[i].color = glm::vec3(0.f, 0.f, 0.f);
 			m_plData.pLights[i].position = glm::vec3(0.f, 0.f, 0.f);
 		}
-	}
-	else {
 		for (unsigned int i = 0; i < MAX_POINTLIGHTS_FORWARD_RENDERING; i++) {
 			if (i >= m_pls.size()) break;
 			m_plData.pLights[i].attConstant = m_pls[i].getAttenuation().constant;
@@ -60,5 +68,4 @@ void LightSetup::updateBufferData() {
 			m_plData.pLights[i].color = m_pls[i].getColor();
 			m_plData.pLights[i].position = m_pls[i].getPosition();
 		}
-	}
 }

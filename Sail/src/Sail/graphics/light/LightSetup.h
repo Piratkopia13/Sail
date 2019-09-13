@@ -45,6 +45,7 @@ public:
 	const DirLightBuffer& getDirLightData() const;
 	const PointLightsBuffer& getPointLightsData() const;
 	void removePointLight();
+	void removePLByIndex(int index);
 private:
 	void updateBufferData();
 private:

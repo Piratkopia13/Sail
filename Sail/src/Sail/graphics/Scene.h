@@ -18,7 +18,7 @@ public:
 	void addEntity(Entity::SPtr entity);
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
-
+	Entity::SPtr getEntityByName(std::string name);
 	virtual bool onEvent(Event& event) override;
 
 private:
