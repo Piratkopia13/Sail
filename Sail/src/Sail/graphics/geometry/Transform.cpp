@@ -165,7 +165,7 @@ void Transform::setScale(const glm::vec3& scale) {
 
 void Transform::setForward(const glm::vec3& forward) {
 	m_forward = glm::vec3(forward.x, forward.y, -forward.z);
-	m_rotationQuat = glm::rotation(glm::vec3(0.f, 0.f, 1.f), m_forward);
+	m_rotationQuat = glm::rotation(glm::vec3(0.f, 0.f, -1.f), m_forward);
 	m_matNeedsUpdate = true;
 }
 
@@ -226,7 +226,10 @@ glm::mat4 Transform::getMatrix() {
 		//m_up = glm::normalize(m_up);
 		m_right = glm::vec3(glm::vec4(1.f, 0.f, 0.f, 1.f) * m_rotationMatrix);
 		//m_right = glm::normalize(m_right);
-		m_forward = glm::vec3(glm::vec4(0.f, 0.f, -1.f, 1.f) * m_rotationMatrix);
+		m_forward = glm::vec3(glm::vec4(0.f, 0.f, 1.f, 1.f) * m_rotationMatrix);
+		float x = m_forward.x;
+		m_forward.x = m_forward.z;
+		m_forward.z = x;
 		//m_forward = glm::normalize(m_forward);
 	}
 

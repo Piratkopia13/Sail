@@ -18,11 +18,12 @@ AiController::AiController(std::shared_ptr<Entity> toControl)
 
 AiController::~AiController() {}
 
-void AiController::update(float dt) {
+void AiController::update() {
 	if ( m_controlledEntity != nullptr ) {
 		float speedModifier = 1.f;
 
-		bool aPressed = true, dPressed = false, wPressed = true, sPressed = false, spacePressed = false, ctrlPressed = false, shiftPressed = true;
+		bool leftPressed = false, rightPressed = false, forwardPressed = true, backPressed = false, jumpPressed = true, 
+			crouchPressed = false, speedModifierPressed = true;
 
 		float forwardMovement = 0.0f;
 		float rightMovement = 0.0f;
@@ -31,7 +32,7 @@ void AiController::update(float dt) {
 		PhysicsComponent* physicsComp = m_controlledEntity->getComponent<PhysicsComponent>();
 
 		// Increase speed if shift or right trigger is pressed
-		if ( shiftPressed ) {
+		if ( speedModifierPressed ) {
 			speedModifier = 5.f;
 		}
 
@@ -40,11 +41,11 @@ void AiController::update(float dt) {
 		//
 
 		// "Keyboard"
-		if ( wPressed ) {
+		if ( forwardPressed ) {
 			forwardMovement += 1.0f;
 		}
 
-		if ( sPressed ) {
+		if ( backPressed ) {
 			forwardMovement -= 1.0f;
 		}
 
@@ -53,10 +54,10 @@ void AiController::update(float dt) {
 		//
 
 		// "Keyboard"
-		if ( aPressed ) {
+		if ( leftPressed ) {
 			rightMovement -= 1.0f;
 		}
-		if ( dPressed ) {
+		if ( rightPressed ) {
 			rightMovement += 1.0f;
 		}
 
@@ -65,10 +66,10 @@ void AiController::update(float dt) {
 		//
 
 		// "Keyboard"
-		if ( spacePressed ) {
+		if ( jumpPressed ) {
 			upMovement += 1.0f;
 		}
-		if ( ctrlPressed ) {
+		if ( crouchPressed ) {
 			upMovement -= 1.0f;
 		}
 
@@ -79,17 +80,27 @@ void AiController::update(float dt) {
 		// "Mouse input"
 
 		// Toggle cursor capture on right click
-		physicsComp->rotation = glm::vec3(0.f, 1.f, 0.f);
+		physicsComp->rotation = glm::vec3(0.f, 100.f, 0.f);
 
 		TransformComponent* eTC = m_controlledEntity->getComponent<TransformComponent>();
+
+		float beginStuff = 5.f;
+		float flyAway = 15.f;
+		if ( eTC->getTranslation().y > beginStuff ) {
+			physicsComp->rotation = glm::vec3(0.f, (( flyAway - eTC->getTranslation().y ) / beginStuff) * 100.f, 0.f);
+		}
+		if ( eTC->getTranslation().y > flyAway) {
+			physicsComp->velocity.x += 3.f;
+		}
 
 		// Prevent division by zero
 		if ( forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f ) {
 
 			// Calculate total movement
-			physicsComp->velocity =
+			/*physicsComp->velocity =
 				glm::normalize(eTC->getRight() * rightMovement + eTC->getForward() * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
-				* speedModifier;
+				* speedModifier;*/
+			physicsComp->velocity = glm::vec3(physicsComp->velocity.x, 1.f, physicsComp->velocity.z);
 		}
 		else {
 			physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);

@@ -268,14 +268,20 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
+	// Add AI
+	m_aiControllers.push_back(e);
 	e = ECS::Instance()->createEntity("Character2");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
+	// Add AI
+	m_aiControllers.push_back(e);
 	e = ECS::Instance()->createEntity("Character3");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
+	// Add AI
+	m_aiControllers.push_back(e);
 
 	//auto e = Entity::Create("Static cube");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
@@ -329,6 +335,12 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 	m_scene.addEntity(e);
 
+
+	for ( AiController aiCont : m_aiControllers ) {
+		aiCont.getEntity()->addComponent<PhysicsComponent>();
+	}
+
+	
 	//m_physSystem.registerEntity(m_playerController.getEntity());
 //>>>>>>> dev
 }
@@ -395,6 +407,9 @@ bool GameState::processInput(float dt) {
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
 	m_playerController.update(dt);
+	for ( auto ai : m_aiControllers ) {
+		ai.update();
+	}
 	//m_physSystem.execute(dt);
 
 	// Reload shaders

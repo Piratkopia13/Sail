@@ -8,7 +8,7 @@ public:
 	AiController(std::shared_ptr<Entity> toControl);
 	~AiController();
 
-	void update(float dt);
+	void update();
 
 	void setEntity(std::shared_ptr<Entity> toControl);
 	std::shared_ptr<Entity> getEntity();

@@ -166,7 +166,11 @@ void PlayerController::update(float dt) {
 
 
 	m_cam->setCameraPosition(playerTrans->getTranslation());
-	m_cam->setCameraDirection(playerTrans->getForward());
+	forward = playerTrans->getForward();
+	float x = forward.x;
+	forward.x = forward.z;
+	forward.z = x;
+	m_cam->setCameraDirection(forward);
 }
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
