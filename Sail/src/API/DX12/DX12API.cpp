@@ -274,33 +274,28 @@ void DX12API::createGlobalRootSignature() {
 	// 8. Create root signature
 
 	// Define descriptor range(s)
-	D3D12_DESCRIPTOR_RANGE descRangeSrv[1];
-	descRangeSrv[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	descRangeSrv[0].NumDescriptors = 3;
-	descRangeSrv[0].BaseShaderRegister = 0; // register bX
-	descRangeSrv[0].RegisterSpace = 0; // register (bX,spaceY)
-	descRangeSrv[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	D3D12_DESCRIPTOR_RANGE descRangeSrvUav[2];
+	descRangeSrvUav[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descRangeSrvUav[0].NumDescriptors = 3;
+	descRangeSrvUav[0].BaseShaderRegister = 0; // register bX
+	descRangeSrvUav[0].RegisterSpace = 0; // register (bX,spaceY)
+	descRangeSrvUav[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_DESCRIPTOR_RANGE descRangeUav;
-	descRangeUav.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	descRangeUav.NumDescriptors = 10;
-	descRangeUav.BaseShaderRegister = 10; // register bX
-	descRangeUav.RegisterSpace = 0; // register (bX,spaceY)
-	descRangeUav.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	descRangeSrvUav[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	descRangeSrvUav[1].NumDescriptors = 1;
+	descRangeSrvUav[1].BaseShaderRegister = 10; // register bX
+	descRangeSrvUav[1].RegisterSpace = 0; // register (bX,spaceY)
+	descRangeSrvUav[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	// TODO: autogen from other data
-	m_globalRootSignatureRegisters["t0"] = GlobalRootParam::DT_SRVS;
-	m_globalRootSignatureRegisters["t1"] = GlobalRootParam::DT_SRVS;
-	m_globalRootSignatureRegisters["t2"] = GlobalRootParam::DT_SRVS;
+	m_globalRootSignatureRegisters["t0"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+	m_globalRootSignatureRegisters["t1"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+	m_globalRootSignatureRegisters["t2"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
 
-	// Create descriptor tables
-	D3D12_ROOT_DESCRIPTOR_TABLE dtSrv;
-	dtSrv.NumDescriptorRanges = ARRAYSIZE(descRangeSrv);
-	dtSrv.pDescriptorRanges = descRangeSrv;
-
-	D3D12_ROOT_DESCRIPTOR_TABLE dtUav;
-	dtUav.NumDescriptorRanges = 1;
-	dtUav.pDescriptorRanges = &descRangeUav;
+	// Create descriptor table
+	D3D12_ROOT_DESCRIPTOR_TABLE dtSrvUav;
+	dtSrvUav.NumDescriptorRanges = ARRAYSIZE(descRangeSrvUav);
+	dtSrvUav.pDescriptorRanges = descRangeSrvUav;
 
 	// Create root descriptors
 	D3D12_ROOT_DESCRIPTOR rootDesc0_0 = {};
@@ -339,9 +334,9 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::CBV_CAMERA].Descriptor = rootDesc2_0;
 	rootParam[GlobalRootParam::CBV_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-	rootParam[GlobalRootParam::DT_SRVS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParam[GlobalRootParam::DT_SRVS].DescriptorTable = dtSrv;
-	rootParam[GlobalRootParam::DT_SRVS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].DescriptorTable = dtSrvUav;
+	rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	rootParam[GlobalRootParam::SRV_GENERAL10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
 	rootParam[GlobalRootParam::SRV_GENERAL10].Descriptor = rootDesc10_0;
@@ -358,11 +353,6 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::UAV_GENERAL1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
 	rootParam[GlobalRootParam::UAV_GENERAL1].Descriptor = rootDesc1_0;
 	rootParam[GlobalRootParam::UAV_GENERAL1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-	rootParam[GlobalRootParam::DT_UAV_GENERAL_10TO20].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParam[GlobalRootParam::DT_UAV_GENERAL_10TO20].DescriptorTable = dtUav;
-	rootParam[GlobalRootParam::DT_UAV_GENERAL_10TO20].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
 
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[2];

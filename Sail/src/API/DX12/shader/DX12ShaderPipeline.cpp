@@ -34,7 +34,9 @@ void DX12ShaderPipeline::bind(void* cmdList) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	ShaderPipeline::bind(cmdList);
 	for (auto& it : parsedData.renderableTextures) {
-		static_cast<DX12RenderableTexture*>(it.renderableTexture.get())->bind(dxCmdList);
+		auto* dxRendTexture = static_cast<DX12RenderableTexture*>(it.renderableTexture.get());
+		// Copy descriptor heap to the GPU bound heap
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxRendTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	dxCmdList->SetPipelineState(m_pipelineState.Get());
 }
@@ -139,7 +141,13 @@ void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture,
 		dxTexture->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
 
 	// Copy texture SRVs to the gpu heap
-	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	if (csBlob) {
+		// Use compute heap
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	} else {
+		// Use main/graphics heap
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
 }
 
 void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {

@@ -15,7 +15,7 @@ public:
 	virtual void clear(const glm::vec4& color) override;
 	virtual void resize(int width, int height) override;
 
-	void bind(ID3D12CommandList* cmdList) const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getCDH() const;
 	ID3D12Resource1* getResource() const;
 
 private:
@@ -24,5 +24,6 @@ private:
 private:
 	UINT m_width, m_height;
 	wComPtr<ID3D12Resource1> m_textureDefaultBuffer;
+	DescriptorHeap m_cpuDescHeap;
 
 };
