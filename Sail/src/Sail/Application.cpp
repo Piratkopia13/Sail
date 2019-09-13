@@ -64,6 +64,10 @@ Application::~Application() {
 	delete Input::GetInstance();
 }
 
+
+// CAUTION: HERE BE DRAGONS!
+// Update and render synchronization is not guaranteed to work correctly when the tickrate is significantly higher
+// than the framerate.
 int Application::startGameLoop() {
 
 	// Start delta timers
@@ -149,16 +153,23 @@ int Application::startGameLoop() {
 
 			accumulator += frameTime;
 
-			if (accumulator >= TIMESTEP) {
+			int CPU_updatesThisLoop = 0;
+			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
-				m_threadPool->push([this](int id) { update(TIMESTEP); });
-
-
-			/*	update(TIMESTEP);
-				incrementFrameIndex();*/
-				
-				//updateTimer -= timeBetweenUpdates;
+				CPU_updatesThisLoop++;
 			}
+
+			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
+				int updatesRemaining = CPU_updatesThisLoop;
+				//while (updatesRemaining > 0) {
+				while (updatesRemaining > 0) {
+
+					//accumulator -= TIMESTEP;
+					updatesRemaining--;
+					//m_threadPool->push([this](int id) { update(TIMESTEP); });
+					update(TIMESTEP);
+				}
+				});
 
 			// Render
 			render(delta, getSnapshotBufferIndex());
