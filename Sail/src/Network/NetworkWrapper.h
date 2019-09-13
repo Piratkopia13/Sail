@@ -9,7 +9,18 @@ class Network;
 class NetworkWrapper : NetworkEventHandler
 {
 public:
-	NetworkWrapper();
+
+	static NetworkWrapper& getInstance() {
+		static NetworkWrapper instance; // Guaranteed to be destroyed.
+										// Instantiated on first use.
+		return instance;
+	}
+
+	NetworkWrapper(NetworkWrapper const&) = delete;
+	void operator=(NetworkWrapper const&) = delete;
+
+	void Initialize();
+	
 	~NetworkWrapper();
 
 	bool host(int port = 54000);
@@ -35,6 +46,9 @@ public:
 
 private:
 	Network* m_network;
+
+
+	NetworkWrapper() {}
 
 	/*
 		This is the general message decoder who does different things depending on starting letter.

@@ -2,14 +2,15 @@
 #include "Network/NetworkModule.hpp"
 #include "NetworkWrapper.h"
 
-NetworkWrapper::NetworkWrapper() {
+
+
+void NetworkWrapper::Initialize() {
 	m_network = new Network();
 }
 
 NetworkWrapper::~NetworkWrapper() {
 	m_network->shutdown();
 	delete m_network;
-
 }
 
 bool NetworkWrapper::host(int port) {

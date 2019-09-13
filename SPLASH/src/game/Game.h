@@ -21,6 +21,4 @@ private:
 	void registerStates();
 
 	StateStack m_stateStack;
-
-	NetworkWrapper* m_networkWrapper;
 };
