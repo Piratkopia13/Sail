@@ -6,6 +6,7 @@
 using namespace std;
 
 class TextInputEvent;
+class NetworkJoinedEvent;
 
 struct message {
 	string sender;
@@ -53,6 +54,9 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 	Application* m_app = nullptr;
 	Input* m_input = nullptr;
+
+	// Functions which use the network wrapper via events
+	bool onPlayerJoined(NetworkJoinedEvent& event);
 
 	// Front-end functions - Use these!
 	bool playerJoined(string name, unsigned int id);

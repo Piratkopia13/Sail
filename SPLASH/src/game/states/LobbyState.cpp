@@ -5,6 +5,7 @@
 #include "../libraries/imgui/imgui.h"
 #include "../Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
 #include "../SPLASH/src/game/events/TextInputEvent.h"
+#include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "Network/NetworkWrapper.h"
 
 #include <string>
@@ -68,7 +69,15 @@ bool LobbyState::onEvent(Event& event) {
 	Logger::Log("Received event: " + std::to_string(event.getType()));
 
 	EventHandler::dispatch<TextInputEvent>(event, SAIL_BIND_EVENT(&LobbyState::onTextInput));
+	EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&LobbyState::onPlayerJoined));
 
+
+	return false;
+}
+
+
+bool LobbyState::onPlayerJoined(NetworkJoinedEvent& event)
+{
 	return false;
 }
 
@@ -85,7 +94,7 @@ bool LobbyState::onTextInput(TextInputEvent& event)
 	if (msg.wParam == SAIL_KEY_RETURN && m_chatFocus == false) {
 		sendMessage(&string(m_currentMessage));
 	}
-	
+
 	return true;
 }
 
@@ -96,11 +105,12 @@ bool LobbyState::update(float dt){
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
 	this->m_screenHeight = m_app->getWindow()->getWindowHeight();
 
-
 	// Did we send something?
 	// ---
-
-	
+	if (NetworkWrapper::getInstance().isInitialized())
+	{
+		NetworkWrapper::getInstance().checkForPackages();
+	}
 
 	// Did we recieve something?
 	// ---

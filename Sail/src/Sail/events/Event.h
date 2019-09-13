@@ -6,7 +6,8 @@ public:
 		WINDOW_RESIZE,
 		WINDOW_FOCUS_CHANGED,
 		POTATO,
-		TEXTINPUT
+		TEXTINPUT,
+		NETWORK_JOINED
 	};
 public:
 	Event(Type type);

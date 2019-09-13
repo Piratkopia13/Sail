@@ -24,6 +24,7 @@ void Network::checkForPackages(NetworkEventHandler& handler)
 
 		handler.handleNetworkEvents(m_awaitingEvents[m_pstart]);
 
+
 		m_pstart = (m_pstart + 1) % MAX_AWAITING_PACKAGES;
 	}
 

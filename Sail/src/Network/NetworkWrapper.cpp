@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "Network/NetworkModule.hpp"
 #include "NetworkWrapper.h"
+#include "Sail.h"
 
-
+#include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 
 void NetworkWrapper::Initialize() {
 	m_network = new Network();
@@ -206,7 +207,6 @@ void NetworkWrapper::playerReconnected(ConnectionID id) {
 }
 
 void NetworkWrapper::playerJoined(ConnectionID id) {
-
 	if (m_network->isServer())
 	{
 		char msg[64] = { 0 };
@@ -224,6 +224,8 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 		// Add this user id to the list of players in the lobby.
 		// Print out that this ID joined the lobby.
 		printf((std::to_string(intid) + " joined. \n").c_str());
+
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent());
 	}
 }
 

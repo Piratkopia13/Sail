@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../../Sail/src/Sail/events/Event.h" // FOUR
+#include "../../../../Sail/src/Sail/events/Event.h"
 #include <WinUser.h>
 
 class TextInputEvent : public Event {
@@ -19,6 +19,6 @@ public:
 
 private:
 	MSG& m_msg;
-	// Comment
-	//
+
+
 };

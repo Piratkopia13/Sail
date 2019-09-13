@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Sail.h"
+#include "Network/NetworkWrapper.h"
 
-class MenuState : public State {
+
+class MenuState : public State, public NetworkEvent {
 
 public:
 	typedef std::unique_ptr<State> Ptr;
