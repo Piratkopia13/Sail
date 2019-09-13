@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
-#include "../../../SPLASH/SPLASH/src/game/events/TextInputEvent.h"
+#include "../../SPLASH/SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyCodes.h"
 
 Application* Application::m_instance = nullptr;

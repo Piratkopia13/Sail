@@ -3,7 +3,7 @@
 #include <string>
 #include "Network/NetworkStructs.hpp"
 
-// Forward declaration
+// Forward declaration :)
 class Network;
 
 class NetworkWrapper : NetworkEventHandler
