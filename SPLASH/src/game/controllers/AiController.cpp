@@ -4,108 +4,46 @@
 
 AiController::AiController() {
 	m_controlledEntity = nullptr;
-
-	m_yaw = 90.f;
-	m_pitch = 0.f;
-	m_roll = 0.f;
+	m_entityTarget = nullptr;
+	m_target = glm::vec3(0.f, 0.f, 0.f);
 }
 
 AiController::AiController(std::shared_ptr<Entity> toControl) 
 	: AiController() 
 {
 	m_controlledEntity = toControl;
+	m_transComp = m_controlledEntity->getComponent<TransformComponent>();
+	m_physComp = m_controlledEntity->getComponent<PhysicsComponent>();
 }
 
 AiController::~AiController() {}
 
 void AiController::update() {
-	if ( m_controlledEntity != nullptr ) {
-		float speedModifier = 1.f;
-
-		bool leftPressed = false, rightPressed = false, forwardPressed = true, backPressed = false, jumpPressed = true, 
-			crouchPressed = false, speedModifierPressed = true;
-
-		float forwardMovement = 0.0f;
-		float rightMovement = 0.0f;
-		float upMovement = 0.0f;
-
-		PhysicsComponent* physicsComp = m_controlledEntity->getComponent<PhysicsComponent>();
-
-		// Increase speed if shift or right trigger is pressed
-		if ( speedModifierPressed ) {
-			speedModifier = 5.f;
-		}
-
-		//
-		// Forwards / backwards motion
-		//
-
-		// "Keyboard"
-		if ( forwardPressed ) {
-			forwardMovement += 1.0f;
-		}
-
-		if ( backPressed ) {
-			forwardMovement -= 1.0f;
-		}
-
-		//
-		// Side to side motion
-		//
-
-		// "Keyboard"
-		if ( leftPressed ) {
-			rightMovement -= 1.0f;
-		}
-		if ( rightPressed ) {
-			rightMovement += 1.0f;
-		}
-
-		//
-		// Up and down motion
-		//
-
-		// "Keyboard"
-		if ( jumpPressed ) {
-			upMovement += 1.0f;
-		}
-		if ( crouchPressed ) {
-			upMovement -= 1.0f;
-		}
-
-		//
-		// Look around motion
-		//
-
-		// "Mouse input"
-
-		// Toggle cursor capture on right click
-		physicsComp->rotation = glm::vec3(0.f, 100.f, 0.f);
-
-		TransformComponent* eTC = m_controlledEntity->getComponent<TransformComponent>();
-
-		float beginStuff = 5.f;
-		float flyAway = 15.f;
-		if ( eTC->getTranslation().y > beginStuff ) {
-			physicsComp->rotation = glm::vec3(0.f, (( flyAway - eTC->getTranslation().y ) / beginStuff) * 100.f, 0.f);
-		}
-		if ( eTC->getTranslation().y > flyAway) {
-			physicsComp->velocity.x += 3.f;
-		}
-
-		// Prevent division by zero
-		if ( forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f ) {
-
-			// Calculate total movement
-			/*physicsComp->velocity =
-				glm::normalize(eTC->getRight() * rightMovement + eTC->getForward() * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
-				* speedModifier;*/
-			physicsComp->velocity = glm::vec3(physicsComp->velocity.x, 1.f, physicsComp->velocity.z);
-		}
-		else {
-			physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+	if ( m_entityTarget != nullptr ) {
+		m_target = m_entityTarget->getComponent<TransformComponent>()->getTranslation();
+		m_reachedTarget = false;
+	}
+	
+	if (!m_reachedTarget) {
+		auto dir = glm::normalize(m_target - m_transComp->getTranslation());
+		m_physComp->velocity = dir * m_movementSpeed;
+		m_transComp->setForward(dir);
+		if (glm::distance(m_transComp->getTranslation(), m_target) < 3.f) {
+			m_reachedTarget = true;
 		}
 	}
+	else {
+		m_physComp->velocity = glm::vec3(0.f);
+	}
+}
+
+void AiController::moveTo(glm::vec3 point) {
+	m_target = point;
+	m_reachedTarget = false;
+}
+
+void AiController::chaseEntity(Entity* toChase) {
+	m_entityTarget = toChase;
 }
 
 void AiController::setEntity(std::shared_ptr<Entity> toControl) {
@@ -114,4 +52,8 @@ void AiController::setEntity(std::shared_ptr<Entity> toControl) {
 
 std::shared_ptr<Entity> AiController::getEntity() {
 	return m_controlledEntity;
+}
+
+Entity* AiController::getTargetEntity() {
+	return m_entityTarget;
 }

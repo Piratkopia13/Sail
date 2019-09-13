@@ -1,6 +1,8 @@
 #pragma once
 
 class Entity;
+class TransformComponent;
+class PhysicsComponent;
 
 class AiController {
 public:
@@ -10,17 +12,25 @@ public:
 
 	void update();
 
+	void moveTo(glm::vec3 point);
+
+	void chaseEntity(Entity* toChase);
 	void setEntity(std::shared_ptr<Entity> toControl);
+
 	std::shared_ptr<Entity> getEntity();
+	Entity* getTargetEntity();
 	
 
 private:
 	float m_movementSpeed = 5.f;
 
 	std::shared_ptr<Entity> m_controlledEntity;
+	PhysicsComponent* m_physComp;
+	TransformComponent* m_transComp;
 
-	float m_yaw, m_pitch, m_roll;
+	Entity* m_entityTarget;
 
-	float m_lookSensitivityMouse = 0.1f;
+	glm::vec3 m_target;
 
+	bool m_reachedTarget;
 };
