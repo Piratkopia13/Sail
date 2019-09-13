@@ -98,31 +98,33 @@ GameState::GameState(StateStack& stack)
 	glm::vec3 color(0.1f, 0.1f, 0.1f);
  	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
-	m_lights.setDirectionalLight(DirectionalLight(color, direction));
+	//m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	// Add four point lights
 	{
 		PointLight pl;
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
 		pl.setPosition(glm::vec3(3.0f, 3.1f, 3.0f));
+		pl.setIndex(0);
 		m_lights.addPointLight(pl);
 
 		pl.setColor(glm::vec3(1.f,1.f,1.f));
 		pl.setPosition(glm::vec3(1.0f, 3.1f, 1.0f));
+		pl.setIndex(1);
 		m_lights.addPointLight(pl);
 
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
+		//m_lights.addPointLight(pl);
 	}
 
 	// Set up the scene
@@ -319,7 +321,7 @@ GameState::GameState(StateStack& stack)
 	//m_transformTestEntities.push_back(e);
 
 
-	e = ECS::Instance()->createEntity("Candle");
+	e = ECS::Instance()->createEntity("Candle1");
 	e->addComponent<ModelComponent>(lightModel);
 	e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
 	m_scene.addEntity(e);
@@ -404,6 +406,33 @@ bool GameState::processInput(float dt) {
 		m_app->dispatchEvent(e);
 	}
 
+	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
+		PointLight pl;
+		glm::vec3 pos = m_scene.getEntityByName("Candle1")->getComponent<TransformComponent>()->getTranslation();
+		pl.setColor(glm::vec3(1.f,1.f,1.f));
+		pl.setPosition(glm::vec3(pos.x,pos.y+3.1,pos.z));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		pl.setIndex(0);
+		m_lights.addPointLight(pl);
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
+		PointLight pl;
+		glm::vec3 pos = m_scene.getEntityByName("Candle2")->getComponent<TransformComponent>()->getTranslation();
+		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		pl.setIndex(1);
+		m_lights.addPointLight(pl);
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
+		m_lights.removePointLight();
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_M)) {
+		m_lights.removePLByIndex(0);
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_N)) {
+		m_lights.removePLByIndex(1);
+	}
 	return true;
 }
 
