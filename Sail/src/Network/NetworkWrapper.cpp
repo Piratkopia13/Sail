@@ -2,14 +2,15 @@
 #include "Network/NetworkModule.hpp"
 #include "NetworkWrapper.h"
 
-NetworkWrapper::NetworkWrapper() {
+
+
+void NetworkWrapper::Initialize() {
 	m_network = new Network();
 }
 
 NetworkWrapper::~NetworkWrapper() {
 	m_network->shutdown();
 	delete m_network;
-
 }
 
 bool NetworkWrapper::host(int port) {
@@ -68,7 +69,7 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 	if (m_network->isServer())
 	{
 		msg = std::string("mHost: ") + msg;
-		m_network->send(msg.c_str(), msg.length());
+		m_network->send(msg.c_str(), msg.length(), -1);
 		msg.erase(0, 1);
 		msg = msg + std::string("\n");
 		printf(msg.c_str());

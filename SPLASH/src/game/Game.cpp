@@ -1,7 +1,7 @@
 #include "Game.h"
 #include "states/GameState.h"
 #include "states/MenuState.h"
-#include "../NetworkWrapper.h"
+#include "Network/NetworkWrapper.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -12,12 +12,13 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 
 	// Set starting state
-//	m_stateStack.pushState(States::Game);
 	m_stateStack.pushState(States::MainMenu);
+	
+	// Initialize the Network wrapper instance.
+	NetworkWrapper::getInstance().Initialize();
 }
 
 Game::~Game() {
-	delete m_networkWrapper;
 }
 
 int Game::run() {
@@ -46,14 +47,14 @@ void Game::update(float dt) {
 
 	// TEMPORARY TESTING FOR NETWORK
 
-	if (m_networkWrapper->isInitialized())
+	if (NetworkWrapper::getInstance().isInitialized())
 	{
-		m_networkWrapper->checkForPackages();
+		NetworkWrapper::getInstance().checkForPackages();
 	}
 	
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_H)) {
 
-		if (m_networkWrapper->host())
+		if (NetworkWrapper::getInstance().host())
 		{
 			printf("Setting up host.");
 		}
@@ -65,12 +66,10 @@ void Game::update(float dt) {
 
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_J))
 	{
+
 		printf("Attempting connection... \n");
-		/*if (m_networkWrapper->connectToIP("192.168.1.55:54540"))
-		{
-			printf("Connecting to 192.168.1.55. \n");
-		}*/
-		if (m_networkWrapper->connectToIP("127.0.0.1:54000"))
+
+		if (NetworkWrapper::getInstance().connectToIP("127.0.0.1:54000"))
 		{
 			printf("Connecting to 192.168.1.55. \n");
 		}
@@ -82,10 +81,8 @@ void Game::update(float dt) {
 
 	if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_M))
 	{
-		m_networkWrapper->sendChatMsg("Kanel finns nu.");
+		NetworkWrapper::getInstance().sendChatMsg("Kanel finns nu.");
 	}
-
-
 
 }
 
