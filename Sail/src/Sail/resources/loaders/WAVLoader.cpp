@@ -13,12 +13,12 @@ namespace Fileloader {
 			result = this->loadWAV(filename, xAudio2, audioData);
 		}
 
-		else if (fileExt == "adpc") {
-			result = this->loadADPC(filename, xAudio2, audioData);
+		else {
+			Logger::Warning("The audio file extension \"" + fileExt + "\" could not be read!");
 		}
 
 		if (!result) {
-			Logger::Warning("Texture file \"" + filename + "\" could not be read!");
+			Logger::Warning("Sound file \"" + filename + "\" could not be read!");
 		}
 	}
 
@@ -27,8 +27,6 @@ namespace Fileloader {
 	}
 
 	bool WAVLoader::loadWAV(std::string filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData) {
-
-		WAVEFORMATEXTENSIBLE m_formatWAV = { 0 };
 
 		// PROBABLY ISN'T NEEDED ANYMORE!
 		//-------------------------------
@@ -154,7 +152,7 @@ namespace Fileloader {
 #pragma endregion
 
 		// reading data from WAV files
-		hr = readChunkData(hFile, &m_formatWAV, dwChunkSize, dwChunkPosition);
+		hr = readChunkData(hFile, (void*)&audioData.m_formatWAV, dwChunkSize, dwChunkPosition);
 		// reading data from ADPC-WAV files (compressed)
 		/*hr = ReadChunkData(hFile, &adpcwf, dwChunkSize, dwChunkPosition);*/
 
@@ -211,57 +209,16 @@ namespace Fileloader {
 			std::exit(0);
 		}
 #pragma endregion ERROR_CHECKING
-
-		audioData.m_soundBuffer.AudioBytes = dwChunkSize;  //buffer containing audio data
-		audioData.m_soundBuffer.pAudioData = pDataBuffer;  //size of the audio buffer in bytes
+		
+		audioData.m_soundBuffer.AudioBytes = dwChunkSize;  //size of the audio buffer in bytes
+		audioData.m_soundBuffer.pAudioData = pDataBuffer;  //buffer containing audio data
 		audioData.m_soundBuffer.Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
-
-		// creating a 'sourceVoice' for WAV file-type
-		hr = xAudio2->CreateSourceVoice(&audioData.m_sourceVoice, (WAVEFORMATEX*)& m_formatWAV);
-		// creating a 'sourceVoice' for ADPC-WAV compressed file-type
-		//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
-
-#pragma region ERROR_CHECKING
-		try {
-			if (hr != S_OK) {
-				throw std::invalid_argument(nullptr);
-			}
-		}
-		catch (const std::invalid_argument& e) {
-
-			UNREFERENCED_PARAMETER(e);
-			wchar_t errorMsgBuffer[256];
-			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to create the actual 'SourceVoice' for the sound!");
-			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-			std::exit(0);
-		}
-#pragma endregion
-
-		hr = audioData.m_sourceVoice->SubmitSourceBuffer(&audioData.m_soundBuffer);
-
-#pragma region ERROR_CHECKING
-		try {
-			if (hr != S_OK) {
-				throw std::invalid_argument(nullptr);
-			}
-		}
-		catch (const std::invalid_argument& e) {
-
-			UNREFERENCED_PARAMETER(e);
-			wchar_t errorMsgBuffer[256];
-			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed submit processed audio data to data buffer!");
-			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-			std::exit(0);
-		}
-#pragma endregion
-
-		//m_currIndex++;
 	}
 
 	bool WAVLoader::loadADPC(std::string filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData) {
-		
-		ADPCMWAVEFORMAT m_formatADPCM = { 0 };
-		
+
+		ADPCMWAVEFORMAT* formatADPCM = { 0 };
+
 		// PROBABLY ISN'T NEEDED ANYMORE!
 		//-------------------------------
 		//if (audioData.m_soundBuffer.pAudioData != nullptr) {
@@ -385,7 +342,7 @@ namespace Fileloader {
 #pragma endregion
 
 		// reading data from WAV files
-		hr = readChunkData(hFile, &m_formatADPCM, dwChunkSize, dwChunkPosition);
+		hr = readChunkData(hFile, formatADPCM, dwChunkSize, dwChunkPosition);
 		// reading data from ADPC-WAV files (compressed)
 		/*hr = ReadChunkData(hFile, &adpcwf, dwChunkSize, dwChunkPosition);*/
 
@@ -448,7 +405,7 @@ namespace Fileloader {
 		audioData.m_soundBuffer.Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
 
 		// creating a 'sourceVoice' for WAV file-type
-		hr = xAudio2->CreateSourceVoice(&audioData.m_sourceVoice, (WAVEFORMATEX*)& m_formatADPCM);
+		//hr = xAudio2->CreateSourceVoice(&audioData.m_sourceVoice, (WAVEFORMATEX*)& m_formatADPCM);
 
 #pragma region ERROR_CHECKING
 		try {
@@ -466,7 +423,7 @@ namespace Fileloader {
 		}
 #pragma endregion
 
-		hr = audioData.m_sourceVoice->SubmitSourceBuffer(&audioData.m_soundBuffer);
+		//hr = audioData.m_sourceVoice->SubmitSourceBuffer(&audioData.m_soundBuffer);
 
 #pragma region ERROR_CHECKING
 		try {
@@ -485,6 +442,8 @@ namespace Fileloader {
 #pragma endregion
 	}
 
+	// PRIVATE FUNCTIONS
+	//------------------
 	std::string WAVLoader::getFileExtension(const std::string& filename) {
 
 		size_t i = filename.rfind('.', filename.length());
@@ -572,4 +531,5 @@ namespace Fileloader {
 			hr = HRESULT_FROM_WIN32(GetLastError());
 		return hr;
 	}
+	//------------------
 }

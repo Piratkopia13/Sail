@@ -12,8 +12,8 @@ namespace ResourceFormat {
 	};
 
 	struct AudioData {
-		IXAudio2SourceVoice* m_sourceVoice = nullptr;
-		XAUDIO2_BUFFER m_soundBuffer;
+		XAUDIO2_BUFFER m_soundBuffer = { 0 };
+		WAVEFORMATEXTENSIBLE m_formatWAV = { 0 };
 	};
 
 }

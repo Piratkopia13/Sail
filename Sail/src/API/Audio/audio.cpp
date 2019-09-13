@@ -9,10 +9,6 @@ Audio::Audio() {
 	HRESULT hr;
 	hr = CoInitialize(nullptr);
 
-	//for (int i = 0; i < SOUND_COUNT; i++) {
-	//	m_sourceVoice[i] = nullptr;
-	//}
-
 #pragma region ERROR_CHECKING
 	try {
 		if (hr != S_OK) {
@@ -29,71 +25,155 @@ Audio::Audio() {
 #pragma endregion
 
 	this->initXAudio2();
+
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		m_sourceVoice[i] = nullptr;
+	}
 }
 
 Audio::~Audio(){
-	//for (int i = 0; i < SOUND_COUNT; i++) {
-	//	if (m_sourceVoice[i] != nullptr) {
-	//
-	//		m_sourceVoice[i]->Stop();
-	//		m_sourceVoice[i]->DestroyVoice();
-	//	}
-	//}
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		if (m_sourceVoice[i] != nullptr) {
+	
+			m_sourceVoice[i]->Stop();
+			m_sourceVoice[i]->DestroyVoice();
+		}
+	}
 }
 
-void Audio::loadSound(std::string const &filename) {
+void Audio::loadSound(const std::string& filename) {
 	Application::getInstance()->getResourceManager().loadAudioData(filename, m_xAudio2);
 }
 
-void Audio::loadCompressedSound(std::string const& filename, int index)
-{
+int Audio::playSound(const std::string &filename) {
 
-}
+	if (Application::getInstance()->getResourceManager().hasAudioData(filename)) {
 
-void Audio::playSound(int index) {
+		if (m_sourceVoice[m_currIndex] != nullptr) {
 
-	HRESULT hr;
+			m_sourceVoice[m_currIndex]->Stop();
+			//m_sourceVoice[m_currIndex]->DestroyVoice();
+		}
 
-	//hr = m_sourceVoice[index]->Start(0);
+		// creating a 'sourceVoice' for WAV file-type
+		HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sourceVoice[m_currIndex], (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+			
+		// THIS IS THE OTHER VERSION FOR ADPC
+				// ... for ADPC-WAV compressed file-type
+				//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
 
 #pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
+		try {
+			if (hr != S_OK) {
+				throw std::invalid_argument(nullptr);
+			}
 		}
-	}
-	catch (const std::invalid_argument& e) {
+		catch (const std::invalid_argument& e) {
 
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: Failed to play the loaded audio sample!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
+			UNREFERENCED_PARAMETER(e);
+			wchar_t errorMsgBuffer[256];
+			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: Failed to create the actual 'SourceVoice' for the sound file '%S'!", filename.c_str());
+			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
+			std::exit(0);
+		}
 #pragma endregion
+
+		hr = m_sourceVoice[m_currIndex]->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
+
+#pragma region ERROR_CHECKING
+		try {
+			if (hr != S_OK) {
+				throw std::invalid_argument(nullptr);
+			}
+		}
+		catch (const std::invalid_argument& e) {
+
+			UNREFERENCED_PARAMETER(e);
+			wchar_t errorMsgBuffer[256];
+			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: Failed to submit the 'sourceBuffer' to the 'sourceVoice' for the sound file '%S'!", filename.c_str());
+			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
+			std::exit(0);
+		}
+#pragma endregion
+
+		hr = m_sourceVoice[m_currIndex]->Start(0);
+
+#pragma region ERROR_CHECKING
+		try {
+			if (hr != S_OK) {
+				throw std::invalid_argument(nullptr);
+			}
+		}
+		catch (const std::invalid_argument& e) {
+
+			UNREFERENCED_PARAMETER(e);
+			wchar_t errorMsgBuffer[256];
+			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed submit processed audio data to data buffer for the audio file '%S'!", filename.c_str());
+			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
+			std::exit(0);
+		}
+#pragma endregion
+
+		m_currIndex++;
+		m_currIndex %= SOUND_COUNT;
+
+		return (m_currIndex - 1);
+	}
+
+	else {
+
+#pragma region ERROR_CHECKING
+		try {
+				throw std::invalid_argument(nullptr);
+		}
+		catch (const std::invalid_argument& e) {
+
+			UNREFERENCED_PARAMETER(e);
+			wchar_t errorMsgBuffer[256];
+			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: The audio file '%S' has NOT been loaded yet!", filename.c_str());
+			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO WARNING!"), MB_ICONWARNING);
+		}
+#pragma endregion
+
+		return (-1);
+	}
+
 }
 
-void Audio::stopSound(int index) {
-	//if (m_soundBuffers[index].pAudioData != nullptr) {
-	//	m_sourceVoice[index]->Stop();
-	//}
+void Audio::stopSpecificSound(int index) {
+
+	if (m_sourceVoice[index] != nullptr) {
+		m_sourceVoice[index]->Stop();
+	}
+}
+
+void Audio::stopAllSounds() {
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		if (m_sourceVoice[i] != nullptr) {
+			m_sourceVoice[i]->Stop();
+		}
+	}
 }
 
 void Audio::updateAudio() {
-	if (Input::IsKeyPressed(SAIL_KEY_9) && m_singlePressBool1) {
+	if (Input::IsKeyPressed(SAIL_KEY_1)/* && m_singlePressBool1*/) {
 
 		m_singlePressBool1 = false;
-		this->stopSound(0);
+		//this->stopSound("../Audio/sampleLarge.wav");
 		this->loadSound("../Audio/sampleLarge.wav");
-		this->playSound(0);
 	}
 
-	else if (!Input::IsKeyPressed(SAIL_KEY_9) && !m_singlePressBool1) {
+	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePressBool1) {
 		m_singlePressBool1 = true;
+		this->playSound("../Audio/sampleLarge.wav");
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_0)) {
-		this->stopSound(0);
+		this->stopAllSounds();
+	}
+
+	if (Input::IsKeyPressed(SAIL_KEY_9)) {
+		this->stopSpecificSound(0);
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_7)) {
@@ -101,9 +181,9 @@ void Audio::updateAudio() {
 		if (m_singlePressBool2) {
 
 			m_singlePressBool2 = false;
-			this->stopSound(1);
-			this->loadCompressedSound("../Audio/sampleADPC_1.wav", 1);
-			this->playSound(1);
+			//this->stopSound(1);
+			//this->loadCompressedSound("../Audio/sampleADPC_1.wav", 1);
+			//this->playSound(1);
 		}
 
 		else if (!m_singlePressBool2) {
@@ -113,7 +193,7 @@ void Audio::updateAudio() {
 
 
 	if (Input::IsKeyPressed(SAIL_KEY_8)) {
-		this->stopSound(1);
+		//this->stopSound();
 	}
 }
 
