@@ -11,6 +11,8 @@ public:
 
 	void update(float dt);
 
+	void setStartPosition(const glm::vec3& pos);
+
 	std::shared_ptr<Entity> getEntity();
 
 private:

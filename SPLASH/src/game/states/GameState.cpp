@@ -92,8 +92,9 @@ GameState::GameState(StateStack& stack)
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	//m_camController.lookAt(glm::vec3(0.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	m_playerController.getEntity()->getComponent<TransformComponent>()->setTranslation(glm::vec3(1.6f, 4.7f, 7.4f));
+	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 4.7f, 7.4f));
 	
+
 	// Add a directional light
 	glm::vec3 color(0.1f, 0.1f, 0.1f);
  	glm::vec3 direction(0.4f, -0.2f, 1.0f);
@@ -407,6 +408,8 @@ bool GameState::processInput(float dt) {
 	return true;
 }
 
+
+
 bool GameState::onEvent(Event& event) {
 	Logger::Log("Received event: " + std::to_string(event.getType()));
 
@@ -426,9 +429,6 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 
 bool GameState::update(float dt) {
-	// Get the index that'll be used to write to the correct snapshot of the game state
-	const unsigned int bufInd = m_app->getSnapshotBufferIndex();
-
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
@@ -438,6 +438,8 @@ bool GameState::update(float dt) {
 	static float change = 0.4f;
 	
 	counter += dt * 2;
+
+	m_scene.prepareUpdate();
 
 	/*
 		Updates all Component Systems in order
@@ -449,20 +451,19 @@ bool GameState::update(float dt) {
 			Translations, rotations and scales done here are non-constant, meaning they change between updates
 			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
 		*/
-		m_texturedCubeEntity->getComponent<TransformDataComponent>()->copyDataFromPrevUpdate(bufInd);
+		// IMPORTANT: data needs to be copied from previous tick before it is processed.
+		//m_texturedCubeEntity->getComponent<TransformComponent>()->copyDataFromPrevUpdate();
 
 		// Move the cubes around
-		//m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-		//m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
-		m_texturedCubeEntity->getComponent<TransformDataComponent>()->setTranslation(bufInd, glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-		m_texturedCubeEntity->getComponent<TransformDataComponent>()->setRotation(bufInd, glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
-		//m_texturedCubeEntity->getComponent<TransformMatrixComponent>()->treeNeedsUpdating();
+		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
+		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 
 		// Set translation and scale to show how parenting affects transforms
 		//for (Entity::SPtr item : m_transformTestEntities) {
 		for (size_t i = 1; i < m_transformTestEntities.size(); i++) {
 			Entity::SPtr item = m_transformTestEntities[i];
-			item->getComponent<TransformDataComponent>()->copyDataFromPrevUpdate(bufInd);
+			//item->getComponent<TransformComponent>()->copyDataFromPrevUpdate();
+
 			item->getComponent<TransformComponent>()->setScale(size);
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
 		}
@@ -478,13 +479,13 @@ bool GameState::update(float dt) {
 
 // Renders the state
 // Note: uses alpha (the interpolation value between two game states) instead of dt
-bool GameState::render(float alpha, int currentInd) {
+bool GameState::render(float alpha) {
 
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
 
 	// Draw the scene
-	m_scene.draw(m_cam, currentInd, alpha);
+	m_scene.draw(m_cam, alpha);
 
 	return true;
 }

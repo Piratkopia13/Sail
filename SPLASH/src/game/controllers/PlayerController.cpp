@@ -10,6 +10,8 @@ PlayerController::PlayerController(Camera* cam) {
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 
 	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(0.0f, 3.f, 0.f));
+	//m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 3.f, 0.f));
+	
 
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -20,7 +22,17 @@ PlayerController::~PlayerController() {
 	delete m_cam;
 }
 
+void PlayerController::setStartPosition(const glm::vec3& pos) {
+
+}
+
+
+
+// TODO: rewrite and change camera in a separate place
 void PlayerController::update(float dt) {
+	TransformComponent* transform = m_player->getComponent<TransformComponent>();
+	if (transform) { transform->copyDataFromPrevUpdate(); }
+
 	float speedModifier = 1.f;
 
 	//float forwardM = 0.f, backM = 0.f, leftM = 0.f, rightM = 0.f, upM = 0.f, downM = 0.f;

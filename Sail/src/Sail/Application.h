@@ -51,7 +51,7 @@ public:
 	virtual int run() = 0;
 	virtual void processInput(float dt) = 0;
 	virtual void update(float dt) = 0;
-	virtual void render(float dt, const int currentInd = 0) = 0;
+	virtual void render(float dt) = 0;
 	virtual void dispatchEvent(Event& event) override;
 
 	template<typename T>
@@ -93,9 +93,9 @@ public:
 
 
 	// To be done at the end of each CPU update and nowhere else
-	void incrementFrameIndex();
-	const unsigned int getFrameIndex() const;
-	const unsigned int getSnapshotBufferIndex() const;
+	//void incrementFrameIndex();
+	//const unsigned int getFrameIndex() const;
+	//const unsigned int getSnapshotBufferIndex() const;
 private:
 	static Application* m_instance;
 	std::unique_ptr<Window> m_window;
@@ -107,15 +107,15 @@ private:
 
 	//std::unique_ptr<FrameSynchronizer> m_frameSynchronizer;
 
-	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
-	// you leave the game running for like a year or two.
-	std::atomic_uint m_frameInd = 0;
+	//// first frame is 0 and it continues from there, integer overflow isn't a problem unless
+	//// you leave the game running for like a year or two.
+	//std::atomic_uint m_frameInd = 0;
 
-	// the index in the snapshot buffer that is used in the update loop on the CPU.
-	// [0, SNAPSHOT_BUFFER_SIZE-1]
-	// If CPU update is working on index 3 then prepare render will safely interpolate between
-	// index 1 and 2 without any data races
-	std::atomic_uint m_snapshotBufInd = 0;
+	//// the index in the snapshot buffer that is used in the update loop on the CPU.
+	//// [0, SNAPSHOT_BUFFER_SIZE-1]
+	//// If CPU update is working on index 3 then prepare render will safely interpolate between
+	//// index 1 and 2 without any data races
+	//std::atomic_uint m_snapshotBufInd = 0;
 
 	std::atomic_bool m_isRunning = true;
 

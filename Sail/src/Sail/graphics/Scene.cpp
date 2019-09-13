@@ -40,28 +40,43 @@ void Scene::setLightSetup(LightSetup* lights) {
 	m_renderer->setLightSetup(lights);
 }
 
+// NEEDS TO RUN BEFORE EACH UPDATE
+void Scene::prepareUpdate() {
+	for (auto e : m_entities) {
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+		if (transform) {
+			transform->copyDataFromPrevUpdate();
+		}
+	}
+}
+
 // TODO: Move matrix updates to its own system and optimize it more, only update matrices that need to be updated
 // TODO: use the alpha value to interpolate between game states
-void Scene::draw(Camera& camera, const int nextRenderInd, const float alpha) {
-	//const UINT nextInd = Application::getInstance()->getSnapshotBufferIndex();
-	const UINT currentInd = (nextRenderInd + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
-	const UINT prevInd = (nextRenderInd + SNAPSHOT_BUFFER_SIZE - 2) % SNAPSHOT_BUFFER_SIZE;
-
+void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
 
 	// TODO: Should be in a prepare render stage:
+	//for (Entity::SPtr& entity : m_entities) {
+	//	ModelComponent* model = entity->getComponent<ModelComponent>();
+	//	if (model) {
+	//		// Update all entities that have transform matrices
+	//		TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
+	//		TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
+	//		if (data && matrix) {
+	//			m_renderer->submit(model->getModel(), data->getMatrixFromData(currentInd, alpha));
+	//		}
+	//	}
+	//}
+
 	for (Entity::SPtr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
 		if (model) {
-			// Update all entities that have transform matrices
-			TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
-			TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
-			if (data && matrix) {
-				m_renderer->submit(model->getModel(), data->getMatrixFromData(currentInd, alpha));
-			}
+			TransformComponent* transform = entity->getComponent<TransformComponent>();
+			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
+
+			m_renderer->submit(model->getModel(), transform->getMatrix(alpha));
 		}
 	}
-
 
 	m_renderer->end();
 	m_renderer->present();

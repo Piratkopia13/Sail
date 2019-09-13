@@ -2,7 +2,7 @@
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
 #include "KeyCodes.h"
-
+#include "graphics/geometry/Transform.h"
 
 
 
@@ -163,16 +163,25 @@ int Application::startGameLoop() {
 				int updatesRemaining = CPU_updatesThisLoop;
 				//while (updatesRemaining > 0) {
 				while (updatesRemaining > 0) {
+					Transform::updateCurrentUpdateIndex();
 
 					//accumulator -= TIMESTEP;
 					updatesRemaining--;
+
 					//m_threadPool->push([this](int id) { update(TIMESTEP); });
 					update(TIMESTEP);
 				}
 				});
 
 			// Render
-			render(delta, getSnapshotBufferIndex());
+			Transform::updateCurrentRenderIndex();
+			render(delta);
+
+
+			// FOR DEBUGGING
+			UINT a = Transform::getUpdateIndex();
+			UINT b = Transform::getRenderIndex();
+
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
@@ -294,12 +303,12 @@ const UINT Application::getFPS() const {
 }
 
 // To be done at the end of each CPU update and nowhere else
-void Application::incrementFrameIndex() {
-	m_snapshotBufInd = ((++m_frameInd) % SNAPSHOT_BUFFER_SIZE);
-}
-const unsigned int Application::getFrameIndex() const { 
-	return m_frameInd.load(); 
-}
-const unsigned int Application::getSnapshotBufferIndex() const {
-	return m_snapshotBufInd.load();
-}
+//void Application::incrementFrameIndex() {
+//	m_snapshotBufInd = ((++m_frameInd) % SNAPSHOT_BUFFER_SIZE);
+//}
+//const unsigned int Application::getFrameIndex() const { 
+//	return m_frameInd.load(); 
+//}
+//const unsigned int Application::getSnapshotBufferIndex() const {
+//	return m_snapshotBufInd.load();
+//}

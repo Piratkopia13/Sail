@@ -56,14 +56,14 @@ void StateStack::update(float dt) {
 
 }
 
-void StateStack::render(float dt, int currentInd) {
+void StateStack::render(float dt) {
 
 	// Loop through the states and draw them all
 	/*for (int i = m_stack.size() - 1; i >= 0; i--) {
 		m_stack.at(i)->render(dt);
 	}*/
 	for (auto& state : m_stack)
-		state->render(dt, currentInd);
+		state->render(dt);
 	
 	if (m_renderImgui) {
 		Application::getInstance()->getImGuiHandler()->begin();

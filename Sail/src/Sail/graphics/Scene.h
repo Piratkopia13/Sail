@@ -17,7 +17,10 @@ public:
 	// This takes shared ownership of the entity
 	void addEntity(Entity::SPtr entity);
 	void setLightSetup(LightSetup* lights);
-	void draw(Camera& camera, const int currentInd, const float alpha);
+	void draw(Camera& camera, const float alpha = 1.0f);
+
+
+	void prepareUpdate();
 
 	virtual bool onEvent(Event& event) override;
 
