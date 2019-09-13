@@ -8,6 +8,8 @@ namespace States {
 		None,
 		MainMenu,
 		Lobby,
+		HostLobby,
+		JoinLobby,
 		Game,
 		Pause,
 		Score

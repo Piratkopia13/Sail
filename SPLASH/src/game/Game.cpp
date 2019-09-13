@@ -2,6 +2,7 @@
 #include "states/GameState.h"
 #include "states/LobbyState.h"
 #include "states/MenuState.h"
+#include "states/BobbyHostState.h"
 #include "Network/NetworkWrapper.h"
 
 Game::Game(HINSTANCE hInstance)
@@ -13,7 +14,7 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 
 	// Set starting state
-	m_stateStack.pushState(States::MainMenu);
+	m_stateStack.pushState(States::HostLobby);
 	
 	// Initialize the Network wrapper instance.
 	NetworkWrapper::getInstance().Initialize();
@@ -31,7 +32,7 @@ int Game::run() {
 void Game::registerStates() {
 	// Register all of the different states
 	m_stateStack.registerState<GameState>(States::Game);
-	m_stateStack.registerState<LobbyState>(States::Lobby);
+	m_stateStack.registerState<BobbyHostState>(States::HostLobby);
 	m_stateStack.registerState<MenuState>(States::MainMenu);
 }
 
