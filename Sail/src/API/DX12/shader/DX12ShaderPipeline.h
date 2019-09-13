@@ -9,11 +9,18 @@ public:
 	DX12ShaderPipeline(const std::string& filename);
 	~DX12ShaderPipeline();
 
+	/*[deprecated]. Not thread safe. Use bind_new().*/
 	virtual void bind(void* cmdList) override;
+	virtual void bind_new(void* cmdList, int meshIndex);
+
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList) override;
+	virtual void setMaterial(Material* texture, void* cmdList);
 
 	void setResourceHeapMeshIndex(unsigned int index);
+
+	void setCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex);
+	bool trySetCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex);
 
 protected:
 	virtual void compile() override;
@@ -24,5 +31,4 @@ private:
 
 	static std::unique_ptr<DXILShaderCompiler> m_dxilCompiler; // Class Singleton
 	wComPtr<ID3D12PipelineState> m_pipelineState;
-
 };

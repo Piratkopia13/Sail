@@ -42,6 +42,14 @@ namespace ShaderComponent {
 		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * m_resourceHeapMeshIndex + offset, newData, bufferSize);
 	}
 
+	void DX12ConstantBuffer::updateData_new(const void* newData, unsigned int bufferSize, int meshIndex, unsigned int offset)
+	{
+		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
+		auto frameIndex = m_context->getFrameIndex();
+		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * meshIndex + offset, newData, bufferSize);
+	}
+
+	/*[deprecated]*/
 	void DX12ConstantBuffer::bind(void* cmdList) const {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getFrameIndex();
@@ -50,12 +58,26 @@ namespace ShaderComponent {
 		dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * m_resourceHeapMeshIndex);
 	}
 
+	void DX12ConstantBuffer::bind_new(void* cmdList, int meshIndex) const
+	{
+		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+		auto frameIndex = m_context->getFrameIndex();
+
+		UINT rootIndex = m_context->getRootIndexFromRegister("b" + std::to_string(m_register));
+		dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
+	}
+
+	/*[deprecated]*/
 	void DX12ConstantBuffer::setResourceHeapMeshIndex(unsigned int index) {
+
 		m_resourceHeapMeshIndex = index;
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
 		auto frameIndex = m_context->getFrameIndex();
 		// Expand resource heap if index is out of range
 		if ((index + 1) * m_byteAlignedSize >= m_resourceHeapSize) {
+
+			//NOT THREAD SAFE
+
 			unsigned int oldSize = m_resourceHeapSize;
 			m_resourceHeapSize += 1024.0 * 64.0;
 

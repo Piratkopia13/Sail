@@ -59,7 +59,7 @@ public:
 	const PhongSettings& getPhongSettings() const;
 
 	Shader* getShader() const;
-
+	Texture* getTexture(int i) const;
 	//const bool* getTextureFlags() const;// TODO: remove
 
 private:

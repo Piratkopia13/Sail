@@ -5,7 +5,7 @@
 #include "../DX12API.h"
 
 #define MULTI_THREADED_COMMAND_RECORDING
-#define DEBUG_MULTI_THREADED_COMMAND_RECORDING
+//#define DEBUG_MULTI_THREADED_COMMAND_RECORDING
 
 class DX12ForwardRenderer : public Renderer {
 public:

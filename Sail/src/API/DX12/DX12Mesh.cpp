@@ -5,6 +5,7 @@
 #include "Sail/Application.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "resources/DescriptorHeap.h"
+#include "shader/DX12ShaderPipeline.h"
 
 Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 	return SAIL_NEW DX12Mesh(buildData, shader);
@@ -26,14 +27,17 @@ DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 DX12Mesh::~DX12Mesh() {
 }
 
-void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
+void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {}
+
+void DX12Mesh::draw_new(const Renderer& renderer, void* cmdList, int meshIndex) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Set offset in SRV heap for this mesh 
 	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
-	material->bind(cmdList);
-
+	//material->bind(cmdList);
+	bindMaterial(cmdList, meshIndex);
 	vertexBuffer->bind(cmdList);
+
 	if (indexBuffer)
 		indexBuffer->bind(cmdList);
 
@@ -42,4 +46,22 @@ void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
 		dxCmdList->DrawIndexedInstanced(getNumIndices(), 1, 0, 0, 0);
 	else
 		dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
+}
+
+void DX12Mesh::bindMaterial(void* cmdList, int meshIndex)
+{
+	Shader* shader = material->getShader();
+	const Material::PhongSettings & phongSettings = material->getPhongSettings();
+	DX12ShaderPipeline* pipeline = static_cast<DX12ShaderPipeline*>(shader->getPipeline());	
+	pipeline->trySetCBufferVar_new("sys_material", (void*)&phongSettings, sizeof(Material::PhongSettings), meshIndex);
+	pipeline->setMaterial(material.get(), cmdList);
+
+	/*
+	if (phongSettings.hasDiffuseTexture)
+		pipeline->setTexture2D("sys_texDiffuse", material->getTexture(0), cmdList);
+	if (phongSettings.hasNormalTexture)
+		pipeline->setTexture2D("sys_texNormal", material->getTexture(1), cmdList);
+	if (phongSettings.hasSpecularTexture)
+		pipeline->setTexture2D("sys_texSpecular", material->getTexture(2), cmdList);
+	*/
 }

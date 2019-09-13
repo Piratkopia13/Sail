@@ -6,6 +6,7 @@
 #include "Sail/Application.h"
 #include "../DX12Utils.h"
 #include "../shader/DX12ShaderPipeline.h"
+#include "../DX12Mesh.h"
 #include "../resources/DescriptorHeap.h"
 
 Renderer* Renderer::Create(Renderer::Type type) {
@@ -60,11 +61,10 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
  	for (size_t i = 0; i < nRecordThreads; i++)
 	{
 #ifndef DEBUG_MULTI_THREADED_COMMAND_RECORDING
-		fut[i].wait(); //Wait for all recording threads to finnish
+		fut[i].get(); //Wait for all recording threads to finnish
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		commandlists[i] = m_command[i].list.Get();
 	}
-
 	m_context->executeCommandLists(commandlists, nRecordThreads);
 #else
 	RecordCommands(0, frameIndex, 0, count, count);
@@ -121,24 +121,21 @@ void DX12ForwardRenderer::RecordCommands(const int threadID, const int frameInde
 		command = &commandQueue[meshIndex];
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->mesh->getMaterial()->getShader()->getPipeline());
 
-		// Set mesh index which is used to bind the correct cbuffers from the resource heap
-		// The index order does not matter, as long as the same index is used for bind and setCBuffer
-		shaderPipeline->setResourceHeapMeshIndex(meshIndex);
+		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
 
-		shaderPipeline->bind(cmdList.Get());
-
-		shaderPipeline->setCBufferVar("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4));
-		shaderPipeline->setCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-		shaderPipeline->setCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+		shaderPipeline->setCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->setCBufferVar_new("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->setCBufferVar_new("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), meshIndex);
 
 		if (lightSetup) {
 			auto& dlData = lightSetup->getDirLightData();
 			auto& plData = lightSetup->getPointLightsData();
-			shaderPipeline->setCBufferVar("dirLight", &dlData, sizeof(dlData));
-			shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
+			shaderPipeline->setCBufferVar_new("dirLight", &dlData, sizeof(dlData), meshIndex);
+			shaderPipeline->setCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
 		}
 
-		command->mesh->draw(*this, cmdList.Get());
+		static_cast<DX12Mesh*>(command->mesh)->draw_new(*this, cmdList.Get(), meshIndex);
+
 		//meshIndex++;
 	}
 
