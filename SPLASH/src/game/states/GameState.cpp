@@ -21,22 +21,6 @@ GameState::GameState(StateStack& stack)
 	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
 	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
 #pragma endregion
-	
-
-	/*
-		Create a PhysicSystem
-		If the game developer does not want to add the systems like this,
-		this call could be moved inside the default constructor of ECS,
-		assuming each system is included in ECS.cpp instead of here
-	*/
-	ECS::Instance()->createSystem<PhysicSystem>();
-
-
-	// This was moved out from the PlayerController constructor
-	// since the PhysicSystem needs to be created first
-	// (or the PhysicsComponent needed to be detached and reattached
-	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-
 
 
 	m_cc.addCommand(std::string("AddCube"), [&]() {
@@ -69,6 +53,22 @@ GameState::GameState(StateStack& stack)
 	});
 #endif
 	
+
+	/*
+		Create a PhysicSystem
+		If the game developer does not want to add the systems like this,
+		this call could be moved inside the default constructor of ECS,
+		assuming each system is included in ECS.cpp instead of here
+	*/
+	ECS::Instance()->createSystem<PhysicSystem>();
+
+
+	// This was moved out from the PlayerController constructor
+	// since the PhysicSystem needs to be created first
+	// (or the PhysicsComponent needed to be detached and reattached
+	m_playerController.getEntity()->addComponent<PhysicsComponent>();
+
+
 	// Get the Application instance
 	m_app = Application::getInstance();
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
