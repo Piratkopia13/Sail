@@ -8,6 +8,7 @@
 #include "../shader/DX12ShaderPipeline.h"
 #include "../resources/DescriptorHeap.h"
 #include "Sail/graphics/shader/compute/TestComputeShader.h"
+#include "../resources/DX12Texture.h"
 
 DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context = Application::getInstance()->getAPI<DX12API>();
@@ -38,16 +39,26 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	// Bind the descriptor heap that will contain all SRVs for this frame
+	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 
 	// Compute shader testing
 	auto* computeShader = &Application::getInstance()->getResourceManager().getShaderSet<TestComputeShader>();
 	cmdList->SetComputeRootSignature(m_context->getGlobalRootSignature());
+	// Set offset in SRV heap for this mesh 
+	cmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getGPUDescriptorHandleForIndex(1));
 	computeShader->getPipeline()->bind(cmdList.Get());
+	// Bind the second mesh's textures
+	auto* mat = commandQueue.at(1).mesh->getMaterial();
+	mat->bind(cmdList.Get());
+	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(0))->getBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_GENERIC_READ);
+	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(1))->getBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_GENERIC_READ);
+	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(2))->getBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_GENERIC_READ);
 	computeShader->getPipeline()->dispatch(10, 10, 10, cmdList.Get());
+	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(0))->getBuffer(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(1))->getBuffer(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(2))->getBuffer(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-
-	// Bind the descriptor heap that will contain all SRVs for this frame
-	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 
 	// Bind mesh-common constant buffers (camera)
 	// TODO: bind camera cbuffer here

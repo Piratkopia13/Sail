@@ -4,8 +4,8 @@
 
 class RenderableTexture {
 public:
-	RenderableTexture(unsigned int width = 320, unsigned int height = 180);
-	virtual ~RenderableTexture();
+	static RenderableTexture* Create(unsigned int width = 320, unsigned int height = 180);
+	virtual ~RenderableTexture() {}
 
 	virtual void begin() = 0;
 	virtual void end() = 0;

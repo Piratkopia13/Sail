@@ -83,6 +83,7 @@ public:
 	UINT getFrameIndex() const;
 	UINT getNumSwapBuffers() const;
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
+	DescriptorHeap* const getComputeGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
 	ID3D12Resource* getCurrentRenderTargetResource() const;
@@ -141,7 +142,8 @@ private:
 	//Command m_postCommand;
 	//Command m_copyCommand;
 	//Command m_computeCommand;
-	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeap;
+	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapGraphics;
+	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapCompute;
 
 	wComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
 	wComPtr<IDXGISwapChain4> m_swapChain;

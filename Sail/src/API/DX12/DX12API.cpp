@@ -43,7 +43,8 @@ DX12API::~DX12API() {
 			rt.Reset();
 		}
 		m_device.Reset();
-		m_cbvSrvUavDescriptorHeap.reset();
+		m_cbvSrvUavDescriptorHeapGraphics.reset();
+		m_cbvSrvUavDescriptorHeapCompute.reset();
 
 		wComPtr<IDXGIDebug1> dxgiDebug;
 		if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
@@ -405,9 +406,11 @@ void DX12API::createGlobalRootSignature() {
 
 
 void DX12API::createShaderResources() {
-	// Create one big gpu descriptor heap for all cbvs, srvs and uavs
-	// TODO: maybe dont hardcode 512 as numdescriptors?
-	m_cbvSrvUavDescriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 512, true);
+	// TODO: maybe dont hardcode 4096 as numdescriptors?
+	// Create one big gpu descriptor heap for all cbvs, srvs and uavs used on the graphics queue
+	m_cbvSrvUavDescriptorHeapGraphics = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4096, true);
+	// Create one big gpu descriptor heap for all cbvs, srvs and uavs used on the compute queue
+	m_cbvSrvUavDescriptorHeapCompute = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4096, true);
 }
 
 void DX12API::createDepthStencilResources(Win32Window* window) {
@@ -676,7 +679,11 @@ UINT DX12API::getNumSwapBuffers() const {
 }
 
 DescriptorHeap* const DX12API::getMainGPUDescriptorHeap() const {
-	return m_cbvSrvUavDescriptorHeap.get();
+	return m_cbvSrvUavDescriptorHeapGraphics.get();
+}
+
+DescriptorHeap* const DX12API::getComputeGPUDescriptorHeap() const {
+	return m_cbvSrvUavDescriptorHeapCompute.get();
 }
 
 const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getCurrentRenderTargetCDH() const {

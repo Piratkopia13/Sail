@@ -5,6 +5,7 @@
 #include "../DX12API.h"
 #include "DX12ConstantBuffer.h"
 #include "../resources/DX12Texture.h"
+#include "../resources/DX12RenderableTexture.h"
 
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
@@ -32,6 +33,9 @@ void DX12ShaderPipeline::bind(void* cmdList) {
 		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	ShaderPipeline::bind(cmdList);
+	for (auto& it : parsedData.renderableTextures) {
+		static_cast<DX12RenderableTexture*>(it.renderableTexture.get())->bind(dxCmdList);
+	}
 	dxCmdList->SetPipelineState(m_pipelineState.Get());
 }
 

@@ -8,6 +8,7 @@
 
 #include "Sail/api/shader/ConstantBuffer.h"
 #include "Sail/api/shader/Sampler.h"
+#include "Sail/api/RenderableTexture.h"
 #include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/camera/Camera.h"
 #include "Sail/utils/Utils.h"
@@ -92,18 +93,29 @@ protected:
 		ShaderResource res;
 		std::unique_ptr<ShaderComponent::Sampler> sampler;
 	};
+	struct ShaderRenderableTexture {
+		ShaderRenderableTexture(ShaderResource res)
+			: res(res)
+		{
+			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180));
+		}
+		ShaderResource res;
+		std::unique_ptr<RenderableTexture> renderableTexture;
+	};
 	struct ParsedData {
 		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false, hasCS = false;
 		std::vector<ShaderCBuffer> cBuffers;
 		std::vector<ShaderSampler> samplers;
 		std::vector<ShaderResource> textures;
 		std::vector<ShaderResource> structuredBuffers;
+		std::vector<ShaderRenderableTexture> renderableTextures;
 		void clear() {
 			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false, hasCS = false;
 			cBuffers.clear();
 			samplers.clear();
 			textures.clear();
 			structuredBuffers.clear();
+			renderableTextures.clear();
 		}
 	};
 	ParsedData parsedData;
@@ -118,6 +130,7 @@ private:
 	void parseCBuffer(const std::string& source);
 	void parseSampler(const char* source);
 	void parseTexture(const char* source);
+	void parseRWTexture(const char* source);
 	void parseStructuredBuffer(const char* source);
 	std::string nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray = false) const;
 	std::string nextTokenAsType(const char* source, UINT& outTokenSize) const;

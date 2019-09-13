@@ -73,7 +73,6 @@ void ShaderPipeline::bind(void* cmdList) {
 	}
 
 
-
 	// Set input layout as active
 	inputLayout->bind();
 }
@@ -121,6 +120,10 @@ void ShaderPipeline::parse(const std::string& source) {
 	}
 
 	// Process all textures
+	src = cleanSource.c_str();
+	while (src = findToken("RWTexture2D", src)) {
+		parseRWTexture(src);
+	}
 	src = cleanSource.c_str();
 	while (src = findToken("Texture2D", src)) {
 		parseTexture(src);
@@ -193,6 +196,13 @@ void ShaderPipeline::parseSampler(const char* source) {
 }
 
 void ShaderPipeline::parseTexture(const char* source) {
+	if (source[0] == '<') {
+		// A type was found in the place of a name
+		// This probably means that it is a RWTexture2D and has already been handled
+		source = nextLine(source);
+		return;
+	}
+
 	UINT tokenSize = 0;
 	std::string name = nextTokenAsName(source, tokenSize);
 	source += tokenSize;
@@ -203,8 +213,22 @@ void ShaderPipeline::parseTexture(const char* source) {
 	parsedData.textures.emplace_back(name, slot);
 }
 
+void ShaderPipeline::parseRWTexture(const char* source) {
+	UINT tokenSize = 0;
+	std::string type = nextTokenAsType(source, tokenSize);
+	source += tokenSize;
+
+	tokenSize = 0;
+	std::string name = nextTokenAsName(source, tokenSize);
+	source += tokenSize;
+
+	int slot = findNextIntOnLine(source);
+	if (slot == -1) slot = 0; // No slot specified, use 0 as default
+
+	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot));
+}
+
 void ShaderPipeline::parseStructuredBuffer(const char* source) {
-	
 	// TODO: use type for something (or remove it)
 	UINT tokenSize = 0;
 	std::string type = nextTokenAsType(source, tokenSize);
