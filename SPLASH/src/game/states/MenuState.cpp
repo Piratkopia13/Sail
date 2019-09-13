@@ -170,7 +170,6 @@ void MenuState::sendMessage(const string* text) {
 			m_currentMessage[i] = '\0';
 		}
 	}
-	
 }
 
 void MenuState::recieveMessage(string text, unsigned int senderID) {
