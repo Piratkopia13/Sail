@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../../SPLASH/Sail/src/Sail/events/Event.h"
+#include "../../../../Sail/src/Sail/events/Event.h" // FOUR
 #include <WinUser.h>
 
 class TextInputEvent : public Event {
