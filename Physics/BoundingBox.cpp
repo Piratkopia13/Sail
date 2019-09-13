@@ -83,7 +83,7 @@ void BoundingBox::setModel(Scene* scene, Model* model) {
 
 void BoundingBox::hide() {
 	if (m_modelEntity) {
-		m_modelEntity->getComponent<TransformComponent>()->setScale(glm::vec3(0.0f));
-		m_modelEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(0.0f));
+		ECS::Instance()->destroyEntity(m_modelEntity);
+		m_modelEntity = nullptr;
 	}
 }

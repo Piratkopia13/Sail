@@ -494,7 +494,7 @@ bool GameState::update(float dt) {
 		std::cout << "Break\n";
 	}
 
-	m_testAngle = std::fmod(m_testAngle + 0.2f * dt, 6.28f);
+	m_testAngle = std::fmod(m_testAngle + 0.5f * dt, 6.28f);
 
 	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
 		m_testBoundingBoxes[i]->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
