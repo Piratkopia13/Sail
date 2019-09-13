@@ -1,29 +1,29 @@
 #include "pch.h"
 #include "ECS.h"
 
-ECSManager::ECSManager() {
+ECS::ECS() {
 }
 
-ECSManager::~ECSManager() {
+ECS::~ECS() {
 }
 
-void ECSManager::update(float dt) {
+void ECS::update(float dt) {
 	SystemMap::iterator it = m_systems.begin();
 	for (; it != m_systems.end(); ++it) {
 		it->second->update(dt);
 	}
 }
 
-unsigned ECSManager::nrOfComponentTypes() const {
+unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
 }
 
-Entity::SPtr ECSManager::createEntity(const std::string& name) {
+Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));
 	return m_entities.back();
 }
 
-void ECSManager::addEntityToSystems(Entity* entity) {
+void ECS::addEntityToSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 	
 	// Check which systems this entity can be placed in
@@ -46,7 +46,7 @@ void ECSManager::addEntityToSystems(Entity* entity) {
 	}
 }
 
-void ECSManager::removeEntityFromSystems(Entity* entity) {
+void ECS::removeEntityFromSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 
 	for (; it != m_systems.end(); ++it) {

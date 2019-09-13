@@ -4,7 +4,7 @@
 
 static int s_id = 0;
 
-Entity::SPtr Entity::Create(ECSManager* ecs, const std::string& name) {
+Entity::SPtr Entity::Create(ECS* ecs, const std::string& name) {
 	Entity::SPtr temp = std::make_shared<Entity>(name);
 	temp->m_ecs = ecs;
 	return temp;

@@ -6,15 +6,15 @@
 #include <memory>
 #include <vector>
 
-class ECSManager final {
+class ECS final {
 public:
 
 	/*
 		Retrieves a pointer to an instance of this class
 		Needs to be called to access ECS unless a direct pointer is stored
 	*/
-	static ECSManager* Instance() {
-		static ECSManager instance;
+	static ECS* Instance() {
+		static ECS instance;
 		return &instance;
 	}
 
@@ -57,15 +57,15 @@ public:
 private:
 	typedef std::unordered_map<std::type_index, std::unique_ptr<BaseComponentSystem>> SystemMap;
 
-	ECSManager();
-	~ECSManager();
+	ECS();
+	~ECS();
 
 	std::vector<Entity::SPtr> m_entities;
 	SystemMap m_systems;
 };
 
 template<typename T>
-inline void ECSManager::addSystem(BaseComponentSystem* system) {
+inline void ECS::addSystem(BaseComponentSystem* system) {
 	SystemMap::iterator it = m_systems.find(typeid(T));
 	if (it == m_systems.end()) {
 		m_systems[typeid(T)] = std::unique_ptr<T>(system);
@@ -73,7 +73,7 @@ inline void ECSManager::addSystem(BaseComponentSystem* system) {
 }
 
 template<typename T>
-inline void ECSManager::createSystem() {
+inline void ECS::createSystem() {
 	SystemMap::iterator it = m_systems.find(typeid(T));
 	if (it == m_systems.end()) {
 		m_systems[typeid(T)] = std::make_unique<T>();
