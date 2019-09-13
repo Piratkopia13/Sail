@@ -5,11 +5,14 @@ class Entity;
 class AiController {
 public:
 	AiController();
+	AiController(std::shared_ptr<Entity> toControl);
 	~AiController();
 
 	void update(float dt);
 
+	void setEntity(std::shared_ptr<Entity> toControl);
 	std::shared_ptr<Entity> getEntity();
+	
 
 private:
 	float m_movementSpeed = 5.f;

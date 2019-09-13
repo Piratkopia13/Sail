@@ -135,9 +135,6 @@ void PlayerController::update(float dt) {
 	}
 
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
-	//playerTrans->setRotations(glm::radians(m_pitch), glm::radians(m_yaw), glm::radians(m_roll));
-	//auto forwardzzz = playerTrans->getForward();
-	//Logger::Warning(std::to_string(forwardzzz.x) + " " + std::to_string(forwardzzz.y) + " " + std::to_string(forwardzzz.z));
 
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
@@ -166,6 +163,7 @@ void PlayerController::update(float dt) {
 	else {
 		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	}
+
 
 	m_cam->setCameraPosition(playerTrans->getTranslation());
 	m_cam->setCameraDirection(playerTrans->getForward());

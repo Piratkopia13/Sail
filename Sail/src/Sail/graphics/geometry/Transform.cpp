@@ -202,6 +202,14 @@ const glm::vec3& Transform::getForward() {
 	return m_forward;
 }
 
+const glm::vec3& Transform::getRight() {
+	return m_right;
+}
+
+const glm::vec3& Transform::getUp() {
+	return m_up;
+}
+
 glm::mat4 Transform::getMatrix() {
 	if (m_matNeedsUpdate) {
 		updateLocalMatrix();
