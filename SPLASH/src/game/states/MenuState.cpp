@@ -6,8 +6,6 @@
 #include "..//Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
 #include "..//SPLASH/src/game/events/TextInputEvent.h"
 
-#include "networkwrapper.h"
-
 #include <string>
 using namespace std;
 
@@ -100,7 +98,6 @@ bool MenuState::update(float dt){
 	// Did we send something?
 	// ---
 	Application::getInstance();
-	myrapper = NetworkWrapper::getInstance();
 	Input::GetInstance();
 
 
