@@ -12,8 +12,8 @@ bool Intersection::aabbWithAabb(BoundingBox aabb1, BoundingBox aabb2) const {
 
 	glm::vec3 center1 = aabb1.getPosition();
 	glm::vec3 center2 = aabb2.getPosition();
-	glm::vec3 halfWidth1 = aabb1.getSize();
-	glm::vec3 halfWidth2 = aabb2.getSize();
+	glm::vec3 halfWidth1 = aabb1.getHalfSize();
+	glm::vec3 halfWidth2 = aabb2.getHalfSize();
 
 	if (glm::abs(center1.x - center2.x) > (halfWidth1.x + halfWidth2.x)) { 
 		return false; 
@@ -58,13 +58,13 @@ bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1
 		f[1] = v2 - v1;
 		f[2] = v0 - v2;
 
-		glm::vec3 aabbSize = aabb.getSize();
+		glm::vec3 aabbSize = aabb.getHalfSize();
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
 				glm::vec3 a = glm::cross(e[i], f[j]);
 				glm::vec3 p = glm::vec3(glm::dot(a, v0), glm::dot(a, v1), glm::dot(a, v2));
 				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z))) {
+				if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z))) {
 					return false;
 				}
 			}
@@ -79,7 +79,7 @@ bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1
 
 bool Intersection::aabbWithPlane(BoundingBox aabb, glm::vec3 normal, float distance) const {
 	
-	glm::vec3 extent = aabb.getSize();
+	glm::vec3 extent = aabb.getHalfSize();
 	
 	float radius = extent[0] * glm::abs(normal[0]) + extent[1] * glm::abs(normal[1]) + extent[2] * glm::abs(normal[2]);// TODO: Normal might be pointed in wrong direction, needs testing.
 	
