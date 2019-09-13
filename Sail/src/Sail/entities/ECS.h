@@ -22,7 +22,7 @@ public:
 	*/
 	Entity::SPtr createEntity(const std::string& name = "");
 
-	bool destroyEntity(const Entity::SPtr entityToRemove);
+	void destroyEntity(const Entity::SPtr entityToRemove);
 
 	/*
 		Adds an already existing system of a chosen type
