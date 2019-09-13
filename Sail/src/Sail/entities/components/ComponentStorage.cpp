@@ -4,7 +4,7 @@
 ComponentStorage::ComponentStorage() {
 	m_components.reserve(BaseComponent::nrOfComponentTypes());
 	for (size_t i = 0; i < BaseComponent::nrOfComponentTypes(); i++) {
-		m_components.push_back(GenericComponentList());
+		m_components.push_back(ComponentStorage::GenericComponentList());
 	}
 }
 

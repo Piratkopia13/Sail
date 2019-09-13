@@ -46,7 +46,7 @@ private:
 };
 
 template<typename ComponentType, typename... Targs>
-ComponentType* Entity::addComponent(Targs... args) {
+inline ComponentType* Entity::addComponent(Targs... args) {
 	auto res = m_components.insert({ ComponentType::ID, std::make_unique<ComponentType>(args...) });
 	if (!res.second) {
 		Logger::Warning("Tried to add a duplicate component to an entity");
@@ -72,7 +72,7 @@ inline void Entity::removeComponent() {
 }
 
 template<typename ComponentType>
-ComponentType* Entity::getComponent() {
+inline ComponentType* Entity::getComponent() {
 	// If the following line causes compile errors, then a class 
 	// deriving from component is missing public SAIL_COMPONENT macro
 	auto it = m_components.find(ComponentType::ID);
