@@ -83,13 +83,6 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
 	m_scene.addEntity(e);
 
-	//Wireframe bounding box model entity
-	e = Entity::Create("Wireframe bounding box");
-	e->addComponent<ModelComponent>(m_boundingBoxModel.get());
-	e->addComponent<TransformComponent>();
-	m_scene.addEntity(e);
-	m_boundingBox.setModel(e);
-
 	e = Entity::Create("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
@@ -126,12 +119,28 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
+	m_octree = new Octree(&m_scene, m_boundingBoxModel.get());
 
-	m_boundingBox.setPosition(glm::vec3(5.0f, 5.0f, 0.0f));
-	m_boundingBox.setSize(glm::vec3(3.0f));
+	for (int i = 0; i < 4; i++) {
+		m_testBoundingBoxes.push_back(new BoundingBox());
+		m_testBoundingBoxes.back()->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
+		m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());
+	}
+
+	/*m_testBoundingBoxes.push_back(new BoundingBox());
+	m_testBoundingBoxes.back()->setPosition(glm::vec3(51.0f, 1.0f, 0.0f));
+	m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());*/
+
+	m_octree->addEntities(&m_testBoundingBoxes);
+
+	m_testAngle = 0.0f;
 }
 
 GameState::~GameState() {
+	delete m_octree;
+	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
+		delete m_testBoundingBoxes[i];
+	}
 }
 
 // Process input for the state
@@ -219,6 +228,18 @@ bool GameState::update(float dt) {
 		if (size > 1.2f || size < 0.7f)
 			change *= -1.0f;
 	}
+
+	if (Input::WasKeyJustPressed(SAIL_KEY_B)) {
+		std::cout << "Break\n";
+	}
+
+	m_testAngle = std::fmod(m_testAngle + 0.2f * dt, 6.28f);
+
+	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
+		m_testBoundingBoxes[i]->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
+	}
+
+	m_octree->update();
 
 	return true;
 }
