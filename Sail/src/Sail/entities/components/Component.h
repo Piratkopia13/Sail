@@ -1,29 +1,61 @@
 #pragma once
-
-#include "pch.h"
-
 #include <memory>
 
+typedef int ComponentTypeID;
 
-// This method only works in debug without optimizations
-//#define SAIL_COMPONENT static int getStaticID() { \
-//	return reinterpret_cast<int>(&getStaticID); \
-//}
+/*
+	Counter for assigning IDs to component types at compile time
+	Defined in Component.cpp
+*/
+extern ComponentTypeID global_componentID;
 
-// Creates a unique id for each class which derives from component
-// This method uses the gcc defined __COUNTER__ macro that increments with every use
-#define SAIL_COMPONENT static int getStaticID() { \
-	return __COUNTER__; \
-}
-
-
-class Component {
+/*
+	Base component class
+	Created components should NOT inherit from this
+	This should be hidden in the future
+*/
+class BaseComponent {
 public:
-	typedef std::unique_ptr<Component> Ptr;
-public:
-	Component() {}
-	virtual ~Component() {}
+	typedef std::unique_ptr<BaseComponent> Ptr;
 
-private:
+	virtual ~BaseComponent() {}
+	
+	/*
+		Called by Component<T> below to assign IDs to the different types
+		Should not be called anywhere else
+	*/
+	static ComponentTypeID createID() {
+		return global_componentID++;
+	}
+
+	/*
+		Retrieves the number of component types
+	*/
+	static int nrOfComponentTypes() {
+		return global_componentID;
+	}
+protected:
+	BaseComponent() {}
 };
 
+
+/*
+	Component class
+	Created components should inherit from this and pass their own type as template
+	Their type ID will be assigned automatically
+*/
+template<typename ComponentType>
+class Component : public BaseComponent {
+public:
+	virtual ~Component() {}
+
+	static const ComponentTypeID ID;
+protected:
+	Component() {}
+};
+
+/*
+	Defines the constant static ID of each component type at compile time
+*/
+template<typename ComponentType>
+const ComponentTypeID Component<ComponentType>::ID = BaseComponent::createID();

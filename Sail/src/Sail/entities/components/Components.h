@@ -6,3 +6,6 @@
 #include "TextComponent.h"
 #include "TransformMatrixComponent.h"
 #include "TransformDataComponent.h"
+#include "PhysicsComponent.h"
+//#include "MovementComponent.h"
+#include "PlayerComponent.h"
