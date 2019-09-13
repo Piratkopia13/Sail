@@ -170,23 +170,33 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 void NetworkWrapper::playerDisconnected(ConnectionID id) {
 
 	/*
-		Send disconnect message to all clients.
+		Send disconnect message to all clients if host.
 	*/
-	char msg[64];
-	int intid = (int)id;
-	char* int_asChar = reinterpret_cast<char*>(&intid);
+	if (m_network->isServer())
+	{
+		char msg[64];
+		int intid = (int)id;
+		char* int_asChar = reinterpret_cast<char*>(&intid);
 
-	msg[0] = 'd';
-	for (int i = 0; i < 4; i++) {
-		msg[i + 1] = int_asChar[i];
+		msg[0] = 'd';
+		for (int i = 0; i < 4; i++) {
+			msg[i + 1] = int_asChar[i];
+		}
+
+		// Send to all clients that soneone disconnected and which id.
+		m_network->send(msg, sizeof(msg), -1);
+
+		printf((std::to_string(intid) + " disconnected. \n").c_str());
 	}
-
-	// Send to all clients that soneone disconnected and which id.
-	m_network->send(msg ,sizeof(msg) ,-1);
+	else
+	{
+		printf("Host disconnected. \n");
+	}
+	
 
 	// Remove the user with this ID from the lobby and print out that it disconnected.
 
-	printf((std::to_string(intid) + " disconnected. \n").c_str());
+	
 }
 
 void NetworkWrapper::playerReconnected(ConnectionID id) {
