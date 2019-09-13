@@ -12,16 +12,6 @@ Game::Game(HINSTANCE hInstance)
 	, m_stateStack()
 	
 {
-
-	for (size_t i = 0; i < 4; i++)
-	{
-		Application::getInstance()->pushJobToThreadPool([i](int id) {
-			test(id, i);
-		});
-	}
-
-
-
 	// Register states
 	registerStates();
 	// Set starting state

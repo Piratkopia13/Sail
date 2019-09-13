@@ -48,6 +48,11 @@ DX12Texture::~DX12Texture() {
 }
 
 void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
+	//The lock_guard will make sure multiple threads wont try to initialize the same texture
+	std::lock_guard<std::mutex> lock(m_initializeMutex);
+	if (m_isInitialized)
+		return;
+
 	UINT64 textureUploadBufferSize;
 	// this function gets the size an upload buffer needs to be to upload a texture to the gpu.
 	// each row must be 256 byte aligned except for the last row, which can just be the size in bytes of the row

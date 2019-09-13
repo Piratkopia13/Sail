@@ -678,12 +678,13 @@ void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdL
 	m_directCommandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
 }
 
+void DX12API::executeCommandLists(ID3D12CommandList*const* cmdLists, const int nLists) const
+{
+	m_directCommandQueue->ExecuteCommandLists(nLists, cmdLists);
+}
+
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
-
-	// Clear
-	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
-	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	cmdList->RSSetViewports(1, &m_viewport);
 	cmdList->RSSetScissorRects(1, &m_scissorRect);
@@ -692,6 +693,10 @@ void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 void DX12API::prepareToRender(ID3D12GraphicsCommandList4* cmdList) const {
 	// Indicate that the back buffer will be used as render target
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	
+	// Clear
+	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
+	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
