@@ -98,12 +98,12 @@ GameState::GameState(StateStack& stack)
 	glm::vec3 color(0.1f, 0.1f, 0.1f);
  	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
-	m_lights.setDirectionalLight(DirectionalLight(color, direction));
+	//m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	// Add four point lights
 	{
 		PointLight pl;
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
 		pl.setPosition(glm::vec3(3.0f, 3.1f, 3.0f));
 		m_lights.addPointLight(pl);
 
@@ -112,17 +112,17 @@ GameState::GameState(StateStack& stack)
 		m_lights.addPointLight(pl);
 
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
+		//m_lights.addPointLight(pl);
 	}
 
 	// Set up the scene
@@ -404,6 +404,23 @@ bool GameState::processInput(float dt) {
 		m_app->dispatchEvent(e);
 	}
 
+	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
+		PointLight pl;
+		pl.setColor(glm::vec3(1.f,1.f,1.f));
+		pl.setPosition(glm::vec3(3.0f,3.1f,3.f));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		m_lights.addPointLight(pl);
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
+		PointLight pl;
+		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		pl.setPosition(glm::vec3(1.0f, 3.1f, 1.f));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		m_lights.addPointLight(pl);
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
+		m_lights.removePointLight();
+	}
 	return true;
 }
 

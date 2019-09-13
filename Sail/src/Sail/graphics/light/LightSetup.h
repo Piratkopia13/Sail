@@ -14,6 +14,7 @@ public:
 		float padding;
 		glm::vec3 position = glm::vec3(0.f);
 		float attConstant = 0.f;
+		//int index;
 		/*float attLinear;
 		float attQuadratic;
 		float padding1, padding2;*/
@@ -43,7 +44,7 @@ public:
 
 	const DirLightBuffer& getDirLightData() const;
 	const PointLightsBuffer& getPointLightsData() const;
-
+	void removePointLight();
 private:
 	void updateBufferData();
 private:
