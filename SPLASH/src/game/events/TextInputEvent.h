@@ -20,4 +20,5 @@ public:
 private:
 	MSG& m_msg;
 	// Comment
+	//
 };

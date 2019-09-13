@@ -2,9 +2,9 @@
 
 
 //#include "../imgui-sfml-master/imgui-SFML.h"
-#include "..//libraries/imgui/imgui.h"
-#include "..//Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
-#include "..//SPLASH/src/game/events/TextInputEvent.h"
+#include "../libraries/imgui/imgui.h"
+#include "../Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
+#include "../SPLASH/src/game/events/TextInputEvent.h"
 
 #include <string>
 using namespace std;
