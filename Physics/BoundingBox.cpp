@@ -68,7 +68,7 @@ void BoundingBox::setHalfSize(const glm::vec3& size) {
 void BoundingBox::setModel(Scene* scene, Model* model) {
 	if (m_drawBoundingBoxes) {
 		if (!m_modelEntity) {
-			m_modelEntity = Entity::Create("Bounding Box Model");
+			m_modelEntity = ECS::Instance()->createEntity("Bounding Box Model");
 			m_modelEntity->addComponent<ModelComponent>(model);
 			m_modelEntity->addComponent<TransformComponent>();
 			m_modelEntity->getComponent<TransformComponent>()->setScale(m_halfSize * 2.0f);

@@ -20,6 +20,11 @@ private:
 		BoundingBox bb;
 		int nrOfEntities;
 		std::vector<BoundingBox*> entities; //TODO: Replace this with entities that contain model and bounding box when component system is working properly
+
+		Node() {
+			nrOfEntities = 0;
+			parentNode = nullptr;
+		}
 	};
 
 	Node m_baseNode;

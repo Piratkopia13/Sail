@@ -1,7 +1,7 @@
 #pragma once
 
 //class Entity;
-#include "Sail/entities/Entity.h"
+#include "Sail/entities/ECS.h"
 #include "Sail/graphics/Scene.h"
 #include "Sail/graphics/geometry/Model.h"
 

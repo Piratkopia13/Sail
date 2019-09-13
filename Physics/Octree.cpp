@@ -92,7 +92,7 @@ bool Octree::addEntityRec(BoundingBox* newEntity, Node* currentNode) {
 
 				if (entityAdded) {
 					//Mesh was added to child node. Break loop. No need to try the rest of the children
-					i = currentNode->childNodes.size();
+					i = (unsigned int) currentNode->childNodes.size();
 				}
 			}
 
@@ -165,7 +165,7 @@ bool Octree::removeEntityRec(BoundingBox* entityToRemove, Node* currentNode) {
 			if (removeEntityRec(entityToRemove, &currentNode->childNodes[i])) {
 				//Mesh was removed by one of the children, break the loop
 				entityRemoved = true;
-				i = currentNode->childNodes.size();
+				i = (unsigned int) currentNode->childNodes.size();
 			}
 		}
 	}
