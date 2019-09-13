@@ -4,8 +4,9 @@
 
 PlayerController::PlayerController(Camera* cam) {
 	m_cam = SAIL_NEW CameraController(cam);
-	m_player = Entity::Create("player_entity");
-	m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
+	m_player = ECS::Instance()->createEntity("player_entity");
+	
+	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 
 	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(0.0f, 3.f, 0.f));
@@ -22,9 +23,14 @@ PlayerController::~PlayerController() {
 void PlayerController::update(float dt) {
 	float speedModifier = 1.f;
 
-	float forwardM = 0.f, backM = 0.f, leftM = 0.f, rightM = 0.f, upM = 0.f, downM = 0.f;
+	//float forwardM = 0.f, backM = 0.f, leftM = 0.f, rightM = 0.f, upM = 0.f, downM = 0.f;
 
-	MovementComponent* playerMovComp = m_player->getComponent<MovementComponent>();
+	float forwardMovement = 0.0f;
+	float rightMovement = 0.0f;
+	float upMovement = 0.0f;
+
+	PhysicsComponent* physicsComp = m_player->getComponent<PhysicsComponent>();
+	//MovementComponent* playerMovComp = m_player->getComponent<MovementComponent>();
 
 	// Increase speed if shift or right trigger is pressed
 	if ( Input::IsKeyPressed(SAIL_KEY_SHIFT) ) {
@@ -37,39 +43,40 @@ void PlayerController::update(float dt) {
 
 	// Keyboard
 	if ( Input::IsKeyPressed(SAIL_KEY_W) ) {
-		forwardM = 1.0f;
+		//forwardM = 1.0f;
+		forwardMovement += 1.0f;
 	}
 
 	if ( Input::IsKeyPressed(SAIL_KEY_S) ) {
-		if ( forwardM == 0.f ) {
+		forwardMovement -= 1.0f;
+		/*if ( forwardM == 0.f ) {
 			backM = 1.0f;
 		}
 		else {
 			forwardM = 0.f;
 			backM = 0.f;
-		}
+		}*/
 	}
 
 	//
 	// Side to side motion
 	//
 
-	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), m_cam->getCameraDirection());
-	right = glm::normalize(right);
-
 	// Keyboard
 	if ( Input::IsKeyPressed(SAIL_KEY_A) ) {
-		leftM = 1.0f;
+		rightMovement -= 1.0f;
+		//leftM = 1.0f;
 	}
 	if ( Input::IsKeyPressed(SAIL_KEY_D) ) {
-		rightM = 1.0f;
+		rightMovement += 1.0f;
+		/*rightM = 1.0f;
 		if ( leftM == 0.f ) {
 			rightM = 1.0f;
 		}
 		else {
 			rightM = 0.f;
 			leftM = 0.f;
-		}
+		}*/
 	}
 
 	//
@@ -78,17 +85,19 @@ void PlayerController::update(float dt) {
 
 	// Keyboard
 	if ( Input::IsKeyPressed(SAIL_KEY_SPACE) ) {
-		upM = 1.0f;
+		upMovement += 1.0f;
+		//upM = 1.0f;
 	}
 	if ( Input::IsKeyPressed(SAIL_KEY_CONTROL) ) {
-		downM = 1.0f;
+		upMovement -= 1.0f;
+		/*downM = 1.0f;
 		if ( upM == 0.f ) {
 			downM = 1.0f;
 		}
 		else {
 			upM = 0.f;
 			downM = 0.f;
-		}
+		}*/
 	}
 
 	//
@@ -135,18 +144,36 @@ void PlayerController::update(float dt) {
 	glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
 	forward = glm::normalize(forward);
-	float totM = forwardM + backM + rightM + leftM;// +upM + downM;
-	if ( totM != 0.f ) {
-		playerMovComp->setSpeed(m_movementSpeed * speedModifier);
+	
+	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+	right = glm::normalize(right);
 
-		glm::vec3 dir = ( forward * forwardM ) - ( forward * backM ) + ( right * rightM ) - ( right * leftM );
-			/*Only for flying*/// + ( m_cam->getCameraUp() * upM ) - ( m_cam->getCameraUp() * downM );
 
-		playerMovComp->setDirection(glm::normalize(dir));
+	// Prevent division by zero
+	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
+
+		// Calculate total movement
+		physicsComp->velocity =
+			glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
+			* speedModifier;
 	}
 	else {
-
+		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	}
+
+
+	//float totM = forwardM + backM + rightM + leftM;// +upM + downM;
+	//if ( totM != 0.f ) {
+	//	glm::vec3 dir = ( forward * forwardM ) - ( forward * backM ) + ( right * rightM ) - ( right * leftM );
+	//		///*Only for flying*/// + ( m_cam->getCameraUp() * upM ) - ( m_cam->getCameraUp() * downM );
+	//
+	//	physicsComp->velocity = glm::normalize(dir) * (m_movementSpeed * speedModifier);
+	//	/*playerMovComp->setSpeed(m_movementSpeed* speedModifier);
+	//	playerMovComp->setDirection(glm::normalize(dir));*/
+	//}
+	//else {
+	//
+	//}
 
 
 

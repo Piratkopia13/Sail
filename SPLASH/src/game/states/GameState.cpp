@@ -1,5 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
+#include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
+#include "..//Sail/src/Sail/entities/ECS.h"
 
 
 GameState::GameState(StateStack& stack)
@@ -20,8 +22,25 @@ GameState::GameState(StateStack& stack)
 	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
 #pragma endregion
 	
+
+	/*
+		Create a PhysicSystem
+		If the game developer does not want to add the systems like this,
+		this call could be moved inside the default constructor of ECS,
+		assuming each system is included in ECS.cpp instead of here
+	*/
+	ECS::Instance()->createSystem<PhysicSystem>();
+
+
+	// This was moved out from the PlayerController constructor
+	// since the PhysicSystem needs to be created first
+	// (or the PhysicsComponent needed to be detached and reattached
+	m_playerController.getEntity()->addComponent<PhysicsComponent>();
+
+
+
 	m_cc.addCommand(std::string("AddCube"), [&]() {
-		auto e = Entity::Create("new cube");
+		auto e = ECS::Instance()->createEntity("new cube");
 		e->addComponent<ModelComponent>(m_cubeModel.get());
 		e->addComponent<TransformComponent>(m_cam.getPosition());
 
@@ -115,6 +134,7 @@ GameState::GameState(StateStack& stack)
 
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
+
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
@@ -151,114 +171,111 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-	// Create entities
-	auto e = Entity::Create("Arena");
+	/*
+		Creation of entitites
+	*/
+	auto e = ECS::Instance()->createEntity("Arena");
 	e->addComponent<ModelComponent>(arenaModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Barrier1");
+	e = ECS::Instance()->createEntity("Barrier1");
 	e->addComponent<ModelComponent>(barrierModel);
 	e->addComponent<TransformComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f,-0.79f, 0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Barrier2");
+	e = ECS::Instance()->createEntity("Barrier2");
 	e->addComponent<ModelComponent>(barrierModel);
 	e->addComponent<TransformComponent>(glm::vec3(-4.54f,0.f,8.06f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Barrier3");
+	e = ECS::Instance()->createEntity("Barrier3");
 	e->addComponent<ModelComponent>(barrierModel);
 	e->addComponent<TransformComponent>(glm::vec3(8.46f,0.f,8.06f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Container1");
+	e = ECS::Instance()->createEntity("Container1");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(6.95f,0.f,25.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Container2");
+	e = ECS::Instance()->createEntity("Container2");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(-25.f,0.f,12.43f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Container3");
+	e = ECS::Instance()->createEntity("Container3");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(-25.f,8.f,-7.73f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 	
-	e = Entity::Create("Container4");
+	e = ECS::Instance()->createEntity("Container4");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
 	m_scene.addEntity(e);
 	
-	e = Entity::Create("Container5");
+	e = ECS::Instance()->createEntity("Container5");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f));
 	m_scene.addEntity(e);
 	
-	e = Entity::Create("Container6");
+	e = ECS::Instance()->createEntity("Container6");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.20f,0.f,-8.f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 	
-	e = Entity::Create("Container7");
+	e = ECS::Instance()->createEntity("Container7");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.2f,8.f,-22.8f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 	
-	e = Entity::Create("Container8");
+	e = ECS::Instance()->createEntity("Container8");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.36f,0.f,-32.41f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Ramp1");
+	e = ECS::Instance()->createEntity("Ramp1");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-	e = Entity::Create("Ramp2");
+	e = ECS::Instance()->createEntity("Ramp2");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-	e = Entity::Create("Ramp3");
+	e = ECS::Instance()->createEntity("Ramp3");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
-	e = Entity::Create("Ramp4");
+	e = ECS::Instance()->createEntity("Ramp4");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
-	e = Entity::Create("Ramp5");
+	e = ECS::Instance()->createEntity("Ramp5");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(-16.f, 0.f, 20.f),glm::vec3(0.f,3.14f,0.f));
 	m_scene.addEntity(e);
-	e = Entity::Create("Ramp6");
+	e = ECS::Instance()->createEntity("Ramp6");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(-34.f, 0.f, 20.f),glm::vec3(0.f,0.f,0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Character");
+	e = ECS::Instance()->createEntity("Character");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Character1");
+	e = ECS::Instance()->createEntity("Character1");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-	e = Entity::Create("Character2");
+	e = ECS::Instance()->createEntity("Character2");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-	e = Entity::Create("Character3");
+	e = ECS::Instance()->createEntity("Character3");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-
-	//e = Entity::Create("OrientationBox");
-	//e->addComponent<ModelComponent>(lrTest);
-	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	//m_scene.addEntity(e);
 
 	//auto e = Entity::Create("Static cube");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
@@ -302,17 +319,18 @@ GameState::GameState(StateStack& stack)
 	//m_transformTestEntities.push_back(e);
 
 
-	e = Entity::Create("Candle");
+	e = ECS::Instance()->createEntity("Candle");
 	e->addComponent<ModelComponent>(lightModel);
 	e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
 	m_scene.addEntity(e);
 
-	e = Entity::Create("Candle2");
+	e = ECS::Instance()->createEntity("Candle2");
 	e->addComponent<ModelComponent>(lightModel);
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 	m_scene.addEntity(e);
 
-	m_physSystem.registerEntity(m_playerController.getEntity());
+	//m_physSystem.registerEntity(m_playerController.getEntity());
+//>>>>>>> dev
 }
 
 GameState::~GameState() {
@@ -332,17 +350,43 @@ bool GameState::processInput(float dt) {
 	}
 
 	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
-		Logger::Log("Setting parent");
-		m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>());
+		if (m_transformTestEntities.size() >= 3) {
+			Logger::Log("Setting parent");
+			m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>());
+		}
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
-		Logger::Log("Removing parent");
-		m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
+		if (m_transformTestEntities.size() >= 3) {
+			Logger::Log("Removing parent");
+			m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
+		}
+	}
+
+
+	/*
+		Test:
+		Will add or remove the PhysicsComponent on the first entity in m_transformTestEntities
+		If that entity already has the component, the first press will write a warning to the console
+	*/
+	if (Input::WasKeyJustPressed(SAIL_KEY_J)) {
+		static bool hasPhysics = false;
+		hasPhysics = !hasPhysics;
+
+		if (m_transformTestEntities.size() >= 1) {
+			switch (hasPhysics) {
+			case true:
+				m_transformTestEntities[0]->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(9.82f, 0, 0));
+				break;
+			case false:
+				m_transformTestEntities[0]->removeComponent<PhysicsComponent>();
+				break;
+			}
+		}
 	}
 #endif
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
-		glm::vec3 color(1.0f, 1.0f, 1.0f);;
+		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_OEM_5)) {
@@ -351,7 +395,7 @@ bool GameState::processInput(float dt) {
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
 	m_playerController.update(dt);
-	m_physSystem.execute(dt);
+	//m_physSystem.execute(dt);
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
@@ -392,18 +436,30 @@ bool GameState::update(float dt) {
 	static float change = 0.4f;
 	
 	counter += dt * 2;
+
+	/*
+		Updates all Component Systems in order
+	*/
+	ECS::Instance()->update(dt);
+
 	if (m_texturedCubeEntity) {
+		/*
+			Translations, rotations and scales done here are non-constant, meaning they change between updates
+			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
+		*/
+		
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 
-		// Move the three parented cubes with identical translation, rotations and scale to show how parenting affects transforms
-		for (Entity::SPtr item : m_transformTestEntities) {
-			item->getComponent<TransformComponent>()->rotateAroundY(dt * 1.0f);
+		// Set translation and scale to show how parenting affects transforms
+		//for (Entity::SPtr item : m_transformTestEntities) {
+		for (size_t i = 1; i < m_transformTestEntities.size(); i++) {
+			Entity::SPtr item = m_transformTestEntities[i];
 			item->getComponent<TransformComponent>()->setScale(size);
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
 		}
-		m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
+		//m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
 
 		size += change * dt;
 		if (size > 1.2f || size < 0.7f)
@@ -495,7 +551,7 @@ bool GameState::renderImguiConsole(float dt) {
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
-	auto e = Entity::Create("new cube");
+	auto e = ECS::Instance()->createEntity("new cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(position);
 	m_scene.addEntity(e);
