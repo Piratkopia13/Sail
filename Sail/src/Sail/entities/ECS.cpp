@@ -23,6 +23,18 @@ Entity::SPtr ECS::createEntity(const std::string& name) {
 	return m_entities.back();
 }
 
+bool ECS::destroyEntity(const Entity::SPtr entityToRemove) {
+	//Loop through and find entity
+	for (unsigned int i = 0; i < m_entities.size(); i++) {
+		if (m_entities[i] == entityToRemove) { //Entity found
+			//Destroy it
+			m_entities[i]->removeAllComponents();
+			m_entities.erase(m_entities.begin + i);
+			break;
+		}
+	}
+}
+
 void ECS::addEntityToSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 	

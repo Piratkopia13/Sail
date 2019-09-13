@@ -22,6 +22,8 @@ public:
 	*/
 	Entity::SPtr createEntity(const std::string& name = "");
 
+	bool destroyEntity(const Entity::SPtr entityToRemove);
+
 	/*
 		Adds an already existing system of a chosen type
 		Will not add if one of the same type already has been added or created
