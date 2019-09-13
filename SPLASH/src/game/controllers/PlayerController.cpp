@@ -2,8 +2,9 @@
 #include "PlayerController.h"
 #include "Sail.h"
 
-PlayerController::PlayerController(Camera* cam) {
+PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_cam = SAIL_NEW CameraController(cam);
+	m_scene = scene;
 	m_player = ECS::Instance()->createEntity("player_entity");
 	
 	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
@@ -119,19 +120,28 @@ void PlayerController::update(float dt) {
 
 	// Shoot gun
 	if (Input::IsMouseButtonPressed(0)) {
-		if (m_particleSpawnCounter == 0.f) {
-			Logger::Log("Pew");//Replace with spawning particle
-			m_particleSpawnCounter += dt;
+		if (m_projectileSpawnCounter == 0.f) {
+			Logger::Log("Pew");//Replace with spawning projectile
+			auto e = ECS::Instance()->createEntity("new cube");
+			e->addComponent<ModelComponent>(m_projectileModel);
+			e->addComponent<TransformComponent>(m_cam->getCameraPosition());
+			e->addComponent<PhysicsComponent>();
+			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
+			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -10.f, 0.f);
+
+			m_scene->addEntity(e);
+
+			m_projectileSpawnCounter += dt;
 		}
 		else {
-			m_particleSpawnCounter += dt;
-			if (m_particleSpawnCounter > 0.2f) {
-				m_particleSpawnCounter = 0.f;
+			m_projectileSpawnCounter += dt;
+			if (m_projectileSpawnCounter > 0.2f) {
+				m_projectileSpawnCounter = 0.f;
 			}
 		}
 	}
 	else {
-		m_particleSpawnCounter = 0.0f;
+		m_projectileSpawnCounter = 0.f;
 	}
 	// Lock pitch to the range -89 - 89
 	if ( m_pitch >= 89 ) {
@@ -204,4 +214,8 @@ void PlayerController::update(float dt) {
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
 	return m_player;
+}
+
+void PlayerController::setProjectileModel(Model* model) {
+	m_projectileModel = model;
 }
