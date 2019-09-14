@@ -13,6 +13,8 @@ std::pair<std::string, Texture*> TestComputeShader::getComputeInputForIndex(Shad
 		return {"input", thisInput.inputTexture};
 		break;
 	}
+	Logger::Error("Tried to get compute input from unknown index - " + std::to_string(index));
+	return {"", nullptr};
 }
 
 RenderableTexture* TestComputeShader::getComputeOutputForIndex(Shader::ComputeShaderOutput& output, unsigned int index) {
@@ -22,6 +24,8 @@ RenderableTexture* TestComputeShader::getComputeOutputForIndex(Shader::ComputeSh
 		return thisOutput.outputTexture;
 		break;
 	}
+	Logger::Error("Tried to get compute output from unknown index - " + std::to_string(index));
+	return nullptr;
 }
 
 Shader::ComputeShaderOutput* TestComputeShader::getComputeOutput() {

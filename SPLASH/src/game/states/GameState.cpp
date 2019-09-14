@@ -236,5 +236,87 @@ bool GameState::renderImgui(float dt) {
 	ImGui::Text("VRAM usage: %u / %u MB", m_app->getAPI()->getMemoryUsage(), m_app->getAPI()->getMemoryBudget());
 	ImGui::End();
 
+
+	ImGui::Begin("Post processing");
+	// Reordering is actually a rather odd use case for the drag and drop API which is meant to carry data around. 
+	// Here we implement a little demo using the drag and drop primitives, but we could perfectly achieve the same results by using a mixture of
+	//  IsItemActive() on the source item + IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) on target items.
+	// This demo however serves as a pretext to demonstrate some of the flags you can use with BeginDragDropSource() and AcceptDragDropPayload().
+	ImGui::BulletText("Drag and drop to re-order");
+
+	ImGui::Columns(3, NULL);
+	ImGui::Separator();
+	ImGui::Text("Stage"); ImGui::NextColumn();
+	ImGui::Text("Resolution scale"); ImGui::NextColumn();
+	ImGui::NextColumn();
+	ImGui::Separator();
+	
+	static const char* usedStages[] = { "Gaussian blur horizontal", "Gaussian blur vertical", "Tonemapping", "Bloom", "FXAA" };
+	int move_from = -1, move_to = -1;
+	static int selected = -1;
+	for (int n = 0; n < IM_ARRAYSIZE(usedStages); n++) {
+		if (ImGui::Selectable(usedStages[n], selected == n, 0, ImVec2(0, 19))) {
+			selected = n;
+		}
+
+		ImGuiDragDropFlags src_flags = 0;
+		src_flags |= ImGuiDragDropFlags_SourceNoDisableHover;     // Keep the source displayed as hovered
+		src_flags |= ImGuiDragDropFlags_SourceNoHoldToOpenOthers; // Because our dragging is local, we disable the feature of opening foreign treenodes/tabs while dragging
+		//src_flags |= ImGuiDragDropFlags_SourceNoPreviewTooltip; // Hide the tooltip
+		if (ImGui::BeginDragDropSource(src_flags)) {
+			if (!(src_flags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
+				ImGui::Text("Moving \"%s\"", usedStages[n]);
+			ImGui::SetDragDropPayload("DND_DEMO_NAME", &n, sizeof(int));
+			ImGui::EndDragDropSource();
+		}
+		
+		if (ImGui::BeginDragDropTarget()) {
+			ImGuiDragDropFlags target_flags = 0;
+			target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;    // Don't wait until the delivery (release mouse button on a target) to do something
+			target_flags |= ImGuiDragDropFlags_AcceptNoDrawDefaultRect; // Don't display the yellow rectangle
+			if (const ImGuiPayload * payload = ImGui::AcceptDragDropPayload("DND_DEMO_NAME", target_flags)) {
+				move_from = *(const int*)payload->Data;
+				move_to = n;
+			}
+			ImGui::EndDragDropTarget();
+		}
+	}
+
+	ImGui::NextColumn();
+	static float resScale[IM_ARRAYSIZE(usedStages)];
+	for (int n = 0; n < IM_ARRAYSIZE(usedStages); n++) {
+		ImGui::SliderFloat((std::string("##resScale")+std::to_string(n)).c_str(), &resScale[n], 0.f, 1.0f);
+	}
+	ImGui::NextColumn();
+	for (int n = 0; n < IM_ARRAYSIZE(usedStages); n++) {
+		ImGui::Button("Remove");
+	}
+
+	if (move_from != -1 && move_to != -1) {
+		// Reorder items
+		int copy_dst = (move_from < move_to) ? move_from : move_to + 1;
+		int copy_src = (move_from < move_to) ? move_from + 1 : move_to;
+		int copy_count = (move_from < move_to) ? move_to - move_from : move_from - move_to;
+		const char* tmp = usedStages[move_from];
+		float tmp2 = resScale[move_from];
+		memmove(&usedStages[copy_dst], &usedStages[copy_src], (size_t)copy_count * sizeof(const char*));
+		memmove(&resScale[copy_dst], &resScale[copy_src], (size_t)copy_count * sizeof(float));
+		usedStages[move_to] = tmp;
+		resScale[move_to] = tmp2;
+		ImGui::SetDragDropPayload("DND_DEMO_NAME", &move_to, sizeof(int)); // Update payload immediately so on the next frame if we move the mouse to an earlier item our index payload will be correct. This is odd and showcase how the DnD api isn't best presented in this example.
+	}
+	ImGui::Separator();
+	ImGui::Columns(1);
+	ImGui::Spacing();
+
+	// Add new stage dropdown list
+	static int currentItem = 0;
+	static const char* availableStages[] = { "Gaussian blur horizontal", "Gaussian blur vertical", "Tonemapping", "Bloom", "FXAA" };
+	ImGui::Combo("##newStage", &currentItem, availableStages, IM_ARRAYSIZE(availableStages));
+	ImGui::SameLine();
+	ImGui::Button("Add");
+
+	ImGui::End();
+
 	return false;
 }
