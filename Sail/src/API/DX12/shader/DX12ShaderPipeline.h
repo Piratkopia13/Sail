@@ -3,6 +3,7 @@
 #include "../DX12API.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "DXILShaderCompiler.h"
+#include "../resources/DX12ATexture.h"
 
 class DX12ShaderPipeline : public ShaderPipeline {
 public:
@@ -13,7 +14,10 @@ public:
 	// Only used by compute shaders
 	virtual void dispatch(unsigned int threadGroupCountX, unsigned int threadGroupCountY, unsigned int threadGroupCountZ, void* cmdList = nullptr) override;
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
-	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList) override;
+	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList = nullptr) override;
+	virtual void setTexture2D(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) override;
+
+	void setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsCommandList4* dxCmdList);
 
 	void setResourceHeapMeshIndex(unsigned int index);
 

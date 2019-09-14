@@ -39,7 +39,7 @@ public:
 
 	// Compute specific
 	virtual const ComputeSettings* getComputeSettings() const { return nullptr; };
-	virtual std::pair<std::string, Texture*> getComputeInputForIndex(Shader::ComputeShaderInput& input, unsigned int index) { return { "", nullptr }; };
+	virtual std::pair<std::string, void*> getComputeInputForIndex(Shader::ComputeShaderInput& input, unsigned int index) { return { "", nullptr }; };
 	virtual Shader::ComputeShaderOutput* getComputeOutput() { return nullptr; };
 	virtual RenderableTexture* getComputeOutputForIndex(Shader::ComputeShaderOutput& output, unsigned int index) { return nullptr; };
 

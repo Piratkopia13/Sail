@@ -135,12 +135,23 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 
 }
 
+void DX12ShaderPipeline::setTexture2D(const std::string& name, RenderableTexture* texture, void* cmdList) {
+	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+	DX12RenderableTexture* dxTexture = static_cast<DX12RenderableTexture*>(texture);
+
+	setDXTexture2D(dxTexture, dxCmdList);
+}
+
 void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture, void* cmdList) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	DX12Texture* dxTexture = static_cast<DX12Texture*>(texture);
 	if (!dxTexture->hasBeenInitialized())
 		dxTexture->initBuffers(dxCmdList);
 
+	setDXTexture2D(dxTexture, dxCmdList);
+}
+
+void DX12ShaderPipeline::setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsCommandList4* dxCmdList) {
 	dxTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	// Copy texture SRVs to the gpu heap

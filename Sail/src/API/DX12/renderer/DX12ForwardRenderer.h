@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include "../DX12API.h"
 #include "Sail/api/ComputeShaderDispatcher.h"
+#include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 
 class DX12ForwardRenderer : public Renderer {
 public:
@@ -18,5 +19,6 @@ private:
 
 	// Compute shader testing
 	std::unique_ptr<ComputeShaderDispatcher> m_computeShaderDispatcher;
+	PostProcessPipeline m_ppp;
 
 };

@@ -31,6 +31,7 @@ public:
 	// filepath is used for include paths and error messages 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) = 0;
 	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;
+	virtual void setTexture2D(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) = 0;
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};

@@ -5,11 +5,11 @@
 
 class DX12ComputeShaderDispatcher : public ComputeShaderDispatcher {
 public:
-	DX12ComputeShaderDispatcher(Shader& computeShader);
+	DX12ComputeShaderDispatcher();
 	~DX12ComputeShaderDispatcher();
 
-	virtual void dispatch(void* cmdList) override;
-	virtual Shader::ComputeShaderOutput& getOutput() override;
+	virtual void begin(void* cmdList = nullptr) override;
+	virtual Shader::ComputeShaderOutput& dispatch(Shader& computeShader, Shader::ComputeShaderInput& input, void* cmdList) override;
 
 private:
 	DX12API* m_context;

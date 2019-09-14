@@ -6,7 +6,7 @@ const Shader::ComputeSettings* TestComputeShader::getComputeSettings() const {
 	return &m_settings;
 }
 
-std::pair<std::string, Texture*> TestComputeShader::getComputeInputForIndex(Shader::ComputeShaderInput& input, unsigned int index) {
+std::pair<std::string, void*> TestComputeShader::getComputeInputForIndex(Shader::ComputeShaderInput& input, unsigned int index) {
 	auto& thisInput = static_cast<TestComputeShader::Input&>(input);
 	switch (index) {
 	case 0:

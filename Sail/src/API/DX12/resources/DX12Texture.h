@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Sail/resources/TextureData.h"
 #include "Sail/api/Texture.h"
+#include "DX12ATexture.h"
+#include "Sail/resources/TextureData.h"
 #include "../DX12API.h"
-#include "DescriptorHeap.h"
 
-class DX12Texture : public Texture {
+class DX12Texture : public Texture, public DX12ATexture {
 public:
 	DX12Texture(const std::string& filename);
 	~DX12Texture();
@@ -14,19 +14,13 @@ public:
 	// It is used to create resource objects that needs an open command list
 	void initBuffers(ID3D12GraphicsCommandList4* cmdList);
 	bool hasBeenInitialized() const;
-	D3D12_CPU_DESCRIPTOR_HANDLE getCDH() const;
-	ID3D12Resource1* getBuffer() const;
-	void transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState);
+	ID3D12Resource1* getResource() const;
 
 private:
 	DX12API* m_context;
 	TextureData& m_textureData;
 	D3D12_RESOURCE_DESC m_textureDesc;
 	wComPtr<ID3D12Resource1> m_textureUploadBuffer;
-	wComPtr<ID3D12Resource1> m_textureDefaultBuffer;
-	DescriptorHeap m_cpuDescHeap;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_heapCDH;
-	D3D12_RESOURCE_STATES m_state;
 
 	bool m_isInitialized;
 

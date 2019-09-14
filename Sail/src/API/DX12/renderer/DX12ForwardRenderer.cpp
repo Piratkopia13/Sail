@@ -16,8 +16,7 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context->initCommand(m_command);
 	m_command.list->SetName(L"Forward Renderer main command list");
 
-	auto* computeShader = &Application::getInstance()->getResourceManager().getShaderSet<TestComputeShader>();
-	m_computeShaderDispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create(*computeShader));
+	m_computeShaderDispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 }
 
 DX12ForwardRenderer::~DX12ForwardRenderer() {
@@ -46,18 +45,19 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 
 
 	// Compute shader testing
+	auto* computeShader = &Application::getInstance()->getResourceManager().getShaderSet<TestComputeShader>();
 	auto* mat = commandQueue.at(1).mesh->getMaterial();
 	// bind only used to initialize textures and get them to the right state
 	mat->bind(cmdList.Get());
-	TestComputeShader::Input computeInput;
-	computeInput.outputWidth = 400;
-	computeInput.outputHeight = 400;
-	computeInput.threadGroupCountX = computeInput.outputWidth;
-	computeInput.threadGroupCountY = computeInput.outputHeight;
-	computeInput.inputTexture = mat->getTexture(0);
-	m_computeShaderDispatcher->setInput(computeInput);
-	m_computeShaderDispatcher->dispatch(cmdList.Get());
-	auto& computeOutput = m_computeShaderDispatcher->getOutput();
+	m_ppp.run(mat->getTexture(0), cmdList.Get());
+	//TestComputeShader::Input computeInput;
+	//computeInput.outputWidth = 400;
+	//computeInput.outputHeight = 400;
+	//computeInput.threadGroupCountX = computeInput.outputWidth;
+	//computeInput.threadGroupCountY = computeInput.outputHeight;
+	//computeInput.inputTexture = mat->getTexture(0);
+	//m_computeShaderDispatcher->begin(cmdList.Get());
+	//auto& computeOutput = m_computeShaderDispatcher->dispatch(*computeShader, computeInput, cmdList.Get());
 
 
 

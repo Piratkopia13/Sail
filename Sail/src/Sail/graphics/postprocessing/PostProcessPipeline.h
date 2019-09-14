@@ -1,10 +1,22 @@
 #pragma once
 
+#include "Sail/Application.h"
 #include "Sail/api/RenderableTexture.h"
-#include "stages/PostProcessStage.h"
-#include "../geometry/Model.h"
+#include "Sail/api/ComputeShaderDispatcher.h"
 
 class PostProcessPipeline : public IEventListener {
+public:
+	class PostProcessInput : public Shader::ComputeShaderInput {
+	public:
+		Texture* inputTexture = nullptr;
+		RenderableTexture* inputRenderableTexture = nullptr;
+	};
+	class PostProcessOutput : public Shader::ComputeShaderOutput {
+	public:
+		PostProcessOutput() {}
+		RenderableTexture* outputTexture = nullptr;
+	};
+
 public:
 	PostProcessPipeline();
 	~PostProcessPipeline();
@@ -12,19 +24,16 @@ public:
 	template <typename T>
 	int add(float resolutionScale = 1.0f) {
 		Application* app = Application::getInstance();
-		UINT windowWidth = app->getWindow()->getWindowWidth();
-		UINT windowHeight = app->getWindow()->getWindowHeight();
 
 		// Create a new stage instance with the given scale
-		// TODO: look into caching these stages with resourceManager
-		m_pipeline.emplace_back(std::make_unique<T>(UINT(windowWidth * resolutionScale), UINT(windowHeight * resolutionScale)), resolutionScale);
+		m_pipelineStages.emplace_back(app->getResourceManager().getShaderSet<T>(), resolutionScale);
 
 		// Return the index of the inserted stage
-		return m_pipeline.size() - 1;
+		return m_pipelineStages.size() - 1;
 	}
 	void clear();
 
-	void run(RenderableTexture& baseTexture);
+	void run(Texture* baseTexture, void* cmdList = nullptr);
 
 	virtual bool onEvent(Event& event) override;
 
@@ -33,14 +42,16 @@ private:
 
 private:
 	struct StageData {
-		StageData(std::unique_ptr<PostProcessStage> stage, float resolutionScale)
-			: stage(std::move(stage))
+		StageData(Shader& shader, float resolutionScale)
+			: shader(shader)
 			, resolutionScale(resolutionScale)
 		{}
-		std::unique_ptr<PostProcessStage> stage;
+		Shader& shader;
 		float resolutionScale;
 	};
 
 	std::vector<StageData> m_pipelineStages;
+
+	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
 
 };
