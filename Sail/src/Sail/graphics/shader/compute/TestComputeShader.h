@@ -8,13 +8,28 @@
 
 class TestComputeShader : public Shader {
 public:
+	class Input : public Shader::ComputeShaderInput {
+	public:
+		Texture* inputTexture;
+	};
+	class Output : public Shader::ComputeShaderOutput {
+	public:
+		RenderableTexture* outputTexture;
+	};
+
+
+public:
 	TestComputeShader();
 	~TestComputeShader();
 
-	virtual void bind() override;
+	virtual const Shader::ComputeSettings* getComputeSettings() const override;
+	virtual std::pair<std::string, Texture*> getComputeInputForIndex(Shader::ComputeShaderInput& input, unsigned int index) override;
+	virtual RenderableTexture* getComputeOutputForIndex(Shader::ComputeShaderOutput& output, unsigned int index) override;
+	virtual Shader::ComputeShaderOutput* getComputeOutput() override;
 
 private:
-	glm::vec4 m_clippingPlane;
 	bool m_clippingPlaneHasChanged;
+	Shader::ComputeSettings m_settings;
+	Output m_output;
 
 };

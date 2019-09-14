@@ -36,9 +36,11 @@ public:
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
 
 
+	bool isComputeShader() const;
 	InputLayout& getInputLayout();
 	void* getVsBlob();
 	const std::string& getName() const;
+	RenderableTexture* getRenderableTexture(const std::string& name) const;
 
 	void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);

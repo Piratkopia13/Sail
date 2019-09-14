@@ -16,6 +16,7 @@ public:
 	bool hasBeenInitialized() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE getCDH() const;
 	ID3D12Resource1* getBuffer() const;
+	void transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState);
 
 private:
 	DX12API* m_context;
@@ -25,6 +26,7 @@ private:
 	wComPtr<ID3D12Resource1> m_textureDefaultBuffer;
 	DescriptorHeap m_cpuDescHeap;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_heapCDH;
+	D3D12_RESOURCE_STATES m_state;
 
 	bool m_isInitialized;
 

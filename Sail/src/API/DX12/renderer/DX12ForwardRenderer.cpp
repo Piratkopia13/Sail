@@ -8,12 +8,16 @@
 #include "../shader/DX12ShaderPipeline.h"
 #include "../resources/DescriptorHeap.h"
 #include "Sail/graphics/shader/compute/TestComputeShader.h"
+#include "Sail/api/ComputeShaderDispatcher.h"
 #include "../resources/DX12Texture.h"
 
 DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	m_context->initCommand(m_command);
 	m_command.list->SetName(L"Forward Renderer main command list");
+
+	auto* computeShader = &Application::getInstance()->getResourceManager().getShaderSet<TestComputeShader>();
+	m_computeShaderDispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create(*computeShader));
 }
 
 DX12ForwardRenderer::~DX12ForwardRenderer() {
@@ -42,30 +46,19 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 
 
 	// Compute shader testing
-	m_context->getComputeGPUDescriptorHeap()->bind(cmdList.Get());
-
-	auto* computeShader = &Application::getInstance()->getResourceManager().getShaderSet<TestComputeShader>();
-	cmdList->SetComputeRootSignature(m_context->getGlobalRootSignature());
-	// Set offset in SRV heap for this mesh 
-	cmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getComputeGPUDescriptorHeap()->getGPUDescriptorHandleForIndex(0));
-	// Bind the second mesh's texture as input
 	auto* mat = commandQueue.at(1).mesh->getMaterial();
-	computeShader->getPipeline()->setTexture2D("input", mat->getTexture(0), cmdList.Get());
-	// Skip the next 2 heap slots to match layout
-	m_context->getComputeGPUDescriptorHeap()->setIndex(3);
-	// Bind output resources
-	computeShader->getPipeline()->bind(cmdList.Get());
-
 	// bind only used to initialize textures and get them to the right state
 	mat->bind(cmdList.Get());
+	TestComputeShader::Input computeInput;
+	computeInput.outputWidth = 400;
+	computeInput.outputHeight = 400;
+	computeInput.threadGroupCountX = computeInput.outputWidth;
+	computeInput.threadGroupCountY = computeInput.outputHeight;
+	computeInput.inputTexture = mat->getTexture(0);
+	m_computeShaderDispatcher->setInput(computeInput);
+	m_computeShaderDispatcher->dispatch(cmdList.Get());
+	auto& computeOutput = m_computeShaderDispatcher->getOutput();
 
-	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(0))->getBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_GENERIC_READ);
-	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(1))->getBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_GENERIC_READ);
-	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(2))->getBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_GENERIC_READ);
-	computeShader->getPipeline()->dispatch(320, 180, 1, cmdList.Get());
-	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(0))->getBuffer(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(1))->getBuffer(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), static_cast<DX12Texture*>(mat->getTexture(2))->getBuffer(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 
 	// Bind the descriptor heap that will contain all SRVs for this frame

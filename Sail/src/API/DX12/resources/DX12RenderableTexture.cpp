@@ -30,10 +30,11 @@ void DX12RenderableTexture::end() {
 
 void DX12RenderableTexture::clear(const glm::vec4& color) {
 	assert(false); // Not implemented
-
 }
 
 void DX12RenderableTexture::resize(int width, int height) {
+	if (width == m_width && height == m_height) return;
+
 	m_width = width;
 	m_height = height;
 	createTextures();

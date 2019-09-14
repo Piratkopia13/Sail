@@ -494,8 +494,10 @@ void DX12API::nextFrame() {
 	// This is to avoid having to find a good point to loop the heap index mid-frame
 	// as this would be difficult to calculate (depends on the number of objects being 
 	// rendered and how many textures each object has)
-	if (m_backBufferIndex == 0)
+	if (m_backBufferIndex == 0) {
 		getMainGPUDescriptorHeap()->setIndex(0);
+		getComputeGPUDescriptorHeap()->setIndex(0);
+	}
 
 }
 
