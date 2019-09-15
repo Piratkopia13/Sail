@@ -80,7 +80,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					texture->initBuffers(cmdList);
 
 				// Copy SRV to DXR heap
-				m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				handles.textureHandles[textureNum] = gpuHandle;
 			}
 			// Increase pointer regardless of if the texture existed or not to keep to order in the SBT

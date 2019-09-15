@@ -65,9 +65,16 @@ void DX12RenderableTexture::createTextures() {
 	textureDefaultBuffer->SetName(L"Renderable texture default buffer");
 
 	// Create a shader resource view (descriptor that points to the texture and describes it)
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = textureDesc.Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	context->getDevice()->CreateShaderResourceView(textureDefaultBuffer.Get(), &srvDesc, srvHeapCDH);
+
+	// Create a unordered access view
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Format = textureDesc.Format;
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-
-	context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffer.Get(), nullptr, &uavDesc, cpuDescHeap.getCPUDescriptorHandleForIndex(0));
+	context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffer.Get(), nullptr, &uavDesc, uavHeapCDH);
 }

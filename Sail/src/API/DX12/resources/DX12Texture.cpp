@@ -36,7 +36,16 @@ DX12Texture::DX12Texture(const std::string& filename)
 	srvDesc.Format = m_textureDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
-	m_context->getDevice()->CreateShaderResourceView(textureDefaultBuffer.Get(), &srvDesc, heapCDH);
+	m_context->getDevice()->CreateShaderResourceView(textureDefaultBuffer.Get(), &srvDesc, srvHeapCDH);
+
+	// Dont allow UAV access
+	uavHeapCDH = {0};
+
+	//// Create a unordered access view 
+	//D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	//uavDesc.Format = m_textureDesc.Format;
+	//uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	//m_context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffer.Get(), nullptr, &uavDesc, uavHeapCDH);
 	
 }
 
