@@ -396,11 +396,11 @@ void DX12API::createGlobalRootSignature() {
 
 
 void DX12API::createShaderResources() {
-	// TODO: maybe dont hardcode 4096 as numdescriptors?
+	// TODO: maybe dont hardcode numdescriptors?
 	// Create one big gpu descriptor heap for all cbvs, srvs and uavs used on the graphics queue
-	m_cbvSrvUavDescriptorHeapGraphics = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4096, true);
+	m_cbvSrvUavDescriptorHeapGraphics = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 50000, true);
 	// Create one big gpu descriptor heap for all cbvs, srvs and uavs used on the compute queue
-	m_cbvSrvUavDescriptorHeapCompute = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4096, true);
+	m_cbvSrvUavDescriptorHeapCompute = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 50000, true);
 }
 
 void DX12API::createDepthStencilResources(Win32Window* window) {
