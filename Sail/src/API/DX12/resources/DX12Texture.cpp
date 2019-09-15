@@ -63,8 +63,8 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	textureData.SlicePitch = textureData.RowPitch * m_textureData.getHeight();
 	// Copy the upload buffer contents to the default heap using a helper method from d3dx12.h
 	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffer.Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
-	DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffer.Get(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	//DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffer.Get(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	//transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	m_isInitialized = true;
 }

@@ -5,7 +5,7 @@
 #include "Sail/resources/TextureData.h"
 #include "../DX12API.h"
 
-class DX12Texture : public Texture, public DX12ATexture {
+class DX12Texture : public Texture, public virtual DX12ATexture {
 public:
 	DX12Texture(const std::string& filename);
 	~DX12Texture();

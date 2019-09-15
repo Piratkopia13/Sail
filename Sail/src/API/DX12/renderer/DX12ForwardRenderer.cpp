@@ -48,8 +48,9 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	auto* computeShader = &Application::getInstance()->getResourceManager().getShaderSet<TestComputeShader>();
 	auto* mat = commandQueue.at(1).mesh->getMaterial();
 	// bind only used to initialize textures and get them to the right state
-	mat->bind(cmdList.Get());
+	//mat->bind(cmdList.Get());
 	m_ppp.run(mat->getTexture(0), cmdList.Get());
+
 	//TestComputeShader::Input computeInput;
 	//computeInput.outputWidth = 400;
 	//computeInput.outputHeight = 400;

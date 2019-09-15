@@ -39,7 +39,8 @@ void PostProcessPipeline::run(Texture* baseTexture, void* cmdList) {
 		input.threadGroupCountX = input.outputWidth;
 		input.threadGroupCountY = input.outputHeight;
 
-		PostProcessOutput& output = static_cast<PostProcessOutput&>(m_dispatcher->dispatch(stage.shader, input, cmdList));
+		PostProcessOutput& output = static_cast<PostProcessOutput&>(m_dispatcher->dispatch(*stage.shader, input, cmdList));
+		input.inputTexture = nullptr;
 		input.inputRenderableTexture = output.outputTexture;
 	}
 

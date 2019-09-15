@@ -26,7 +26,7 @@ public:
 		Application* app = Application::getInstance();
 
 		// Create a new stage instance with the given scale
-		m_pipelineStages.emplace_back(app->getResourceManager().getShaderSet<T>(), resolutionScale);
+		m_pipelineStages.emplace_back(std::make_unique<T>(), resolutionScale);
 
 		// Return the index of the inserted stage
 		return m_pipelineStages.size() - 1;
@@ -42,11 +42,11 @@ private:
 
 private:
 	struct StageData {
-		StageData(Shader& shader, float resolutionScale)
-			: shader(shader)
+		StageData(std::unique_ptr<Shader> shader, float resolutionScale)
+			: shader(std::move(shader))
 			, resolutionScale(resolutionScale)
 		{}
-		Shader& shader;
+		std::unique_ptr<Shader> shader;
 		float resolutionScale;
 	};
 

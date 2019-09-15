@@ -69,5 +69,5 @@ void DX12RenderableTexture::createTextures() {
 	uavDesc.Format = textureDesc.Format;
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 
-	context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffer.Get(), nullptr, &uavDesc, m_cpuDescHeap.getCPUDescriptorHandleForIndex(0));
+	context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffer.Get(), nullptr, &uavDesc, cpuDescHeap.getCPUDescriptorHandleForIndex(0));
 }

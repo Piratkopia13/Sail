@@ -29,7 +29,7 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 	const auto& settings = computeShader.getComputeSettings();
 
 	if (settings->usesCBV_SRV_UAV)
-		dxCmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getComputeGPUDescriptorHeap()->getGPUDescriptorHandleForIndex(0));
+		dxCmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getComputeGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
 	// Resize output textures
 	for (unsigned int i = 0; i < settings->numOutputTextures; i++) {
@@ -47,8 +47,8 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		} else {
 			computeShader.getPipeline()->setTexture2D(tex.first, (Texture*)texture, dxCmdList);
 		}
-		texture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_GENERIC_READ);
-		// Skip the next 2 heap slots to match layout
+		// Skip the next 2 heap slots to match root signature layout
+		// TODO: read this from the root signature, currently it will crash if the root signature changes num srv descriptors
 		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
 		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
 	}

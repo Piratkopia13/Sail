@@ -5,7 +5,7 @@
 #include "DX12Texture.h"
 #include "DX12ATexture.h"
 
-class DX12RenderableTexture : public RenderableTexture, public DX12ATexture {
+class DX12RenderableTexture : public RenderableTexture, public virtual DX12ATexture {
 
 public:
 	DX12RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, bool createDepthStencilView = true, bool createOnlyDSV = false, UINT bindFlags = 0, UINT cpuAccessFlags = 0);
