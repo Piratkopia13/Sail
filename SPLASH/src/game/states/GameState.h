@@ -32,8 +32,9 @@ private:
 
 	//SimplePhysicsSystem m_physSystem;
 
-	Entity::SPtr m_texturedCubeEntity;
-	std::vector<Entity::SPtr> m_transformTestEntities;
+	//Entity::SPtr m_texturedCubeEntity;
+	
+	std::vector<Entity::SPtr> m_testEntities;
 
 	const std::string createCube(const glm::vec3& position);
 

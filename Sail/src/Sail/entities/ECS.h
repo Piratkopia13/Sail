@@ -40,6 +40,13 @@ public:
 	void createSystem();
 
 	/*
+		Retrieves a system of the chosen type if it has been created or added
+		Otherwise a null pointer is returned
+	*/
+	template<typename T>
+	T* getSystem();
+
+	/*
 		Updates every system
 	*/
 	void update(float dt);
@@ -80,4 +87,13 @@ inline void ECS::createSystem() {
 	if (it == m_systems.end()) {
 		m_systems[typeid(T)] = std::make_unique<T>();
 	}
+}
+
+template<typename T>
+inline T* ECS::getSystem() {
+	SystemMap::iterator it = m_entities.find(typeid(T));
+	if (it == m_systems.end()) {
+		return nullptr;
+	}
+	return it->second.get();
 }

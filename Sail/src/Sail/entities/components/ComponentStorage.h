@@ -5,6 +5,10 @@
 
 class ComponentStorage final {
 public:
+	static ComponentStorage* Instance() {
+		static ComponentStorage cs;
+		return &cs; 
+	}
 
 	/*
 		Specified list of components returned by getAllComponentsOfType<ComponentType>()
@@ -15,20 +19,23 @@ public:
 		unsigned int nrOfComponents = 0;
 	};
 
-	ComponentStorage();
-	~ComponentStorage();
-
 	/*
 		Adds a component to the storage and passes any number of arguments to its constructor
 	*/
 	template<typename ComponentType, typename... TArgs>
-	void addComponent(int entityID, TArgs... args);
+	ComponentType* addComponent(int entityID, TArgs... args);
 
 	/*
 		Removes a component from the storage
 	*/
 	template<typename ComponentType>
 	void removeComponent(int entityID);
+
+	/*
+		Returns true if the entity has a component of this type
+	*/
+	template<typename ComponentType>
+	bool hasComponent(int entityID);
 
 	/*
 		Returns a component attached to an entity
@@ -53,6 +60,10 @@ private:
 		unsigned int maxNrOfComps = 0;
 	};
 
+
+	ComponentStorage();
+	~ComponentStorage();
+
 	/*
 		Expands one of the arrays to fit more components
 	*/
@@ -64,22 +75,23 @@ private:
 
 
 template<typename ComponentType, typename... TArgs>
-inline void ComponentStorage::addComponent(int entityID, TArgs... args) {
+inline ComponentType* ComponentStorage::addComponent(int entityID, TArgs... args) {
 	ComponentTypeID cType = ComponentType::ID;
 	GenericComponentList* list = &m_components[cType];
 	
-	// Do not add this component if a link between this entity and a component of this type already exists
+	// Cast the base class pointer to a sub class pointer
+	ComponentType* components = static_cast<ComponentType*>(list->comps);
+
+	// Return the component if a link between this entity and a component of this type already exists
 	std::unordered_map<int, int>::iterator it = list->ID_to_index.find(entityID);
 	if (it != list->ID_to_index.end()) {
-		return;
+		return &components[list->nrOfComps];
 	}
 
 	if (list->nrOfComps == list->maxNrOfComps) {
 		expand<ComponentType>(*list);
+		components = static_cast<ComponentType*>(list->comps);
 	}
-
-	// Cast the base class pointer to a sub class pointer
-	ComponentType* components = static_cast<ComponentType*>(list->comps);
 
 	// Create the new component by using the pointer as a sub class array
 	components[list->nrOfComps] = ComponentType(args...);
@@ -87,7 +99,7 @@ inline void ComponentStorage::addComponent(int entityID, TArgs... args) {
 	// Link this entity ID to this component index
 	list->ID_to_index[entityID] = list->nrOfComps;
 
-	list->nrOfComps++;
+	return &components[list->nrOfComps++];
 }
 
 template<typename ComponentType>
@@ -109,7 +121,7 @@ inline void ComponentStorage::removeComponent(int entityID) {
 
 	// Redirect the link of the moved component
 	// Since the last component in the array now has the index (it->second),
-	// the link between its entity and itself has to be redirected
+	// the link between itself and its entity has to be redirected
 	list->ID_to_index.at(components[it->second].entityID) = it->second;
 
 	// Remove the link between entity and component
@@ -119,16 +131,22 @@ inline void ComponentStorage::removeComponent(int entityID) {
 }
 
 template<typename ComponentType>
+inline bool ComponentStorage::hasComponent(int entityID) {
+	GenericComponentList* list = &m_components[ComponentType::ID];
+	return (list->ID_to_index.find(entityID) != list->ID_to_index.end());
+}
+
+template<typename ComponentType>
 inline ComponentType* ComponentStorage::getComponent(int entityID) {
 	GenericComponentList* list = &m_components[ComponentType::ID];
 	
 	// Check if a link between this entity ID and this component type already exists
-	std::unordered_map<int, int>::iterator it = list.ID_to_index.find(entityID);
+	std::unordered_map<int, int>::iterator it = list->ID_to_index.find(entityID);
 	if (it != list->ID_to_index.end()) {
 
 		// Convert the pointer and retrieve the linked index
 		ComponentType* comps = static_cast<ComponentType*>(list->comps);
-		return comps[it->second];
+		return &comps[it->second];
 	}
 	return nullptr;
 }

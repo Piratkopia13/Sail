@@ -53,6 +53,7 @@ public:
 	virtual ~Component() {}
 
 	static const ComponentTypeID ID;
+	static const unsigned int SIZE;
 protected:
 	Component() {}
 };
@@ -62,3 +63,9 @@ protected:
 */
 template<typename ComponentType>
 const ComponentTypeID Component<ComponentType>::ID = BaseComponent::createID();
+
+/*
+	Defines the constant static size of each component type at compile time
+*/
+template<typename ComponentType>
+const unsigned int Component<ComponentType>::SIZE = sizeof(ComponentType);

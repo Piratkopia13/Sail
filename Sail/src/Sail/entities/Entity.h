@@ -1,8 +1,9 @@
 #pragma once
 
-#include <unordered_map>
+//#include <unordered_map>
 #include <memory>
 #include "components/Component.h"
+//#include "components/ComponentStorage.h"
 
 //#define MOVE(x) std::move(x)
 
@@ -60,6 +61,16 @@ inline ComponentType* Entity::addComponent(Targs... args) {
 	// Return pointer to the inserted component
 	return static_cast<ComponentType*>(res.first->second.get());
 }
+/*template<typename ComponentType, typename... Targs>
+inline ComponentType* Entity::addComponent(Targs... args) {
+	ComponentType* component = ComponentStorage::Instance()->addComponent<ComponentType>(m_id, args...);
+
+	// Place this entity within the correct systems
+	addToSystems();
+
+	// Return pointer to the inserted component
+	return component;
+}*/
 
 template<typename ComponentType>
 inline void Entity::removeComponent() {
@@ -72,6 +83,13 @@ inline void Entity::removeComponent() {
 		removeFromSystems();
 	}
 }
+/*template<typename ComponentType>
+inline void Entity::removeComponent() {
+	ComponentStorage::Instance()->removeComponent<ComponentType>(m_id);
+
+	// Remove this entity from systems which required the removed component
+	removeFromSystems();
+}*/
 
 template<typename ComponentType>
 inline ComponentType* Entity::getComponent() {
@@ -84,6 +102,10 @@ inline ComponentType* Entity::getComponent() {
 
 	return nullptr;
 }
+/*template<typename ComponentType>
+inline ComponentType* Entity::getComponent() {
+	return ComponentStorage::Instance()->getComponent<ComponentType>(m_id);
+}*/
 
 template<typename ComponentType>
 inline bool Entity::hasComponent() const {

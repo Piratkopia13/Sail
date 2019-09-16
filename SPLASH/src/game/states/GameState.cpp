@@ -67,8 +67,6 @@ GameState::GameState(StateStack& stack)
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-
-
 	// Get the Application instance
 	m_app = Application::getInstance();
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -286,6 +284,16 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(lightModel);
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 	m_scene.addEntity(e);
+
+
+	for (int i = 0; i < 1000; i++)
+	{
+		e = ECS::Instance()->createEntity("Test_" + std::to_string(i));
+		e->addComponent<TransformComponent>(glm::vec3((i % 10) * 20.0f, 0.0f, (i / 10) * 20.0f), glm::vec3(0.f, 0.f, 0.f));
+		m_testEntities.push_back(e);
+	}
+
+
 }
 
 GameState::~GameState() {
@@ -304,6 +312,7 @@ bool GameState::processInput(float dt) {
 		m_lights.addPointLight(pl);
 	}
 
+	/*
 	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
 		if (m_transformTestEntities.size() >= 3) {
 			Logger::Log("Setting parent");
@@ -315,29 +324,28 @@ bool GameState::processInput(float dt) {
 			Logger::Log("Removing parent");
 			m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
 		}
-	}
+	}*/
 
-
-	/*
-		Test:
-		Will add or remove the PhysicsComponent on the first entity in m_transformTestEntities
-		If that entity already has the component, the first press will write a warning to the console
-	*/
 	if (Input::WasKeyJustPressed(SAIL_KEY_J)) {
 		static bool hasPhysics = false;
 		hasPhysics = !hasPhysics;
 
-		if (m_transformTestEntities.size() >= 1) {
-			switch (hasPhysics) {
-			case true:
-				m_transformTestEntities[0]->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(9.82f, 0, 0));
-				break;
-			case false:
-				m_transformTestEntities[0]->removeComponent<PhysicsComponent>();
-				break;
+		if (hasPhysics)
+		{
+			for (auto& entity : m_testEntities) {
+				entity->addComponent<PhysicsComponent>(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
 			}
+			std::cout << "Added " << m_testEntities.size() << " PhysicsComponents\n";
+		}
+		else
+		{
+			for (auto& entity : m_testEntities) {
+				entity->removeComponent<PhysicsComponent>();
+			}
+			std::cout << "Removed " << m_testEntities.size() << " PhysicsComponents\n";
 		}
 	}
+
 #endif
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
@@ -397,11 +405,10 @@ bool GameState::update(float dt) {
 	*/
 	ECS::Instance()->update(dt);
 
-	if (m_texturedCubeEntity) {
-		/*
-			Translations, rotations and scales done here are non-constant, meaning they change between updates
-			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
-		*/
+	/*if (m_texturedCubeEntity) {
+		//Translations, rotations and scales done here are non-constant, meaning they change between updates
+		//All constant transformations can be set in the PhysicsComponent and will then be updated automatically
+		
 		
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
@@ -419,7 +426,7 @@ bool GameState::update(float dt) {
 		size += change * dt;
 		if (size > 1.2f || size < 0.7f)
 			change *= -1.0f;
-	}
+	}*/
 
 	return true;
 }

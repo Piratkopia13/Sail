@@ -155,7 +155,7 @@ void PlayerController::update(float dt) {
 		// Calculate total movement
 		physicsComp->velocity =
 			glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
-			* speedModifier;
+			* (m_movementSpeed * speedModifier);
 	}
 	else {
 		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
