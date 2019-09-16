@@ -20,7 +20,7 @@ private:
 		Node* parentNode;
 		Entity::SPtr bbEntity;
 		int nrOfEntities;
-		std::vector<Entity::SPtr> entities; //TODO: Replace this with entities that contain model and bounding box when component system is working properly
+		std::vector<Entity::SPtr> entities;
 
 		Node() {
 			nrOfEntities = 0;
