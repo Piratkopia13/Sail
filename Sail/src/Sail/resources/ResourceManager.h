@@ -17,6 +17,7 @@ public:
 	ResourceManager();
 	~ResourceManager();
 	static const std::string SAIL_DEFAULT_MODEL_LOCATION;
+	
 
 	// TextureData
 	void loadTextureData(const std::string& filename);
@@ -32,6 +33,11 @@ public:
 	void loadModel(const std::string& filename, Shader* shader);
 	Model& getModel(const std::string& filename, Shader* shader);
 	bool hasModel(const std::string& filename);
+
+	// Animations
+	void loadAnimationStack(const std::string& fileName);
+	//AnimationStack& getAnimationStack(const std::string& fileName);
+	bool hasAnimationStack(const std::string& fileName);
 
 	// ShaderSets
 	template <typename T>
@@ -77,6 +83,7 @@ private:
 	// Models mapped to their filenames
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	std::map < std::string, std::unique_ptr<Model>> m_models;
+	std::map < std::string, std::unique_ptr<AnimationStack>> m_animationStacks;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;
 	// SoundManager containing all sounds

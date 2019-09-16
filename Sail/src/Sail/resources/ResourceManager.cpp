@@ -79,6 +79,20 @@ bool ResourceManager::hasModel(const std::string& filename) {
 	return m_fbxModels.find(filename) != m_fbxModels.end();
 }
 
+void ResourceManager::loadAnimationStack(const std::string& fileName) {
+	AnimationStack* stack = m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName);
+
+}
+
+//AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) {
+//	// TODO: insert return statement here
+//	return 
+//}
+
+bool ResourceManager::hasAnimationStack(const std::string& fileName) {
+	return false;
+}
+
 //void ResourceManager::reloadShaders() {
 //	for (auto it = m_shaderSets.begin(); it != m_shaderSets.end(); ++it)
 //		it->second->reload();
