@@ -589,6 +589,9 @@ bool GameState::renderImguiProfiler(float dt) {
 			if (m_profilerTimer > 0.5f) {
 				m_profilerTimer = 0.f;
 			}
+
+			// This will be changed/removed when the final profiling window is polished/done
+
 			//ImGui::Separator();
 			//bool reclaim_focus = false;
 

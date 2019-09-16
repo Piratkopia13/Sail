@@ -1,6 +1,5 @@
 #pragma once
 
-#include <windows.h>
 #include "SailImGui/SailImGuiWindow.h"
 
 class Profiler : public SailImGuiWindow {

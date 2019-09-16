@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Profiler.h"
-#include "Utils.h"
 #include <Psapi.h>
 #include "Sail/Application.h"
 
