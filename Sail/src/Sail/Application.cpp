@@ -66,40 +66,34 @@ Application::~Application() {
 
 
 // CAUTION: HERE BE DRAGONS!
-// Update and render synchronization is not guaranteed to work correctly when the tickrate is significantly higher
-// than the framerate.
+// Update and render synchronization is not guaranteed to work without data races when the framerate is significantly lower
+// than the update rate
 int Application::startGameLoop() {
-
-	// Start delta timers
-	m_updateTimer.startTimer();
-	m_renderTimer.startTimer();
-	
-
-	// Set the start time so that the update and render loops use the same time with the getTimeSince(time) function in Timer.h
-	m_startTime = m_updateTimer.getTime();
-
 	MSG msg = {0};
-
 	m_fps = 0;
 
-	float updateTimer = 0.f;
-	float timeBetweenUpdates = 1.f / 60.f;
-
 	double currentTime = m_startTime;
+	double newTime = 0.0;
+	double delta = 0.0;
 	double accumulator = 0.0;
 
-
-	float secCounter = 0.f;
-	float elapsedTime = 0.f;
+	double secCounter = 0.0;
+	double elapsedTime = 0.0;
 	UINT frameCounter = 0;
 
-	while (msg.message != WM_QUIT) {
 
+	// Start delta timer
+	m_timer.startTimer();
+	
+	// Set the start time so that the update and render loops use the same epoch with the getTimeSince(time) function in Timer.h
+	m_startTime = m_timer.getTime();
+
+	// Render loop, each iteration of it results in one rendered frame
+	while (msg.message != WM_QUIT) {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		} else {
-
 			// Handle window resizing
 			if (m_window->hasBeenResized()) {
 				UINT newWidth = m_window->getWindowWidth();
@@ -109,11 +103,18 @@ int Application::startGameLoop() {
 				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
 
+			newTime = m_timer.getTimeSince(m_startTime);
+			delta = newTime - currentTime;
+			currentTime = newTime;
+			//delta = std::min(delta, 0.25); // might be needed for correct interpolation
+
 			// Get delta time from last frame
-			float delta = static_cast<float>(m_updateTimer.getFrameTime());
-			delta = std::min(delta, 0.04f);
+			//float delta = static_cast<float>(m_timer.getFrameTime());
+			//delta = std::min(delta, 0.04f);
+			//delta = std::min(delta, 0.04); // needed?
 
 			// Update fps counter
+			//secCounter += delta;
 			secCounter += delta;
 			frameCounter++;
 
@@ -123,9 +124,6 @@ int Application::startGameLoop() {
 				secCounter = 0.f;
 			}
 
-			// Update input states
-			//m_input.updateStates();
-
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
@@ -133,42 +131,32 @@ int Application::startGameLoop() {
 			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
 				PostQuitMessage(0);
 
-			processInput(delta);
-
-			// Update
 #ifdef _DEBUG
 			/*if (m_input.getKeyboardState().Escape)
 			PostQuitMessage(0);*/
-
-
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
-			double newTime = m_updateTimer.getTimeSince(m_startTime);
-			double frameTime = newTime - currentTime;
-			if (frameTime > 0.25) {
-				frameTime = 0.25;
-			}
-			currentTime = newTime;
 
-			accumulator += frameTime;
+			// Process state specific input
+			// NOTE: player movement is updated in update() and mouse movement is updated in render()
+			processInput(delta);
 
+			accumulator += delta;
+
+			// Queue multiple updates if the update has fallen behind to make sure that it catches back up to the current time.
 			int CPU_updatesThisLoop = 0;
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
 				CPU_updatesThisLoop++;
 			}
 
+			// Run update(s) in a separate thread
 			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
 				int updatesRemaining = CPU_updatesThisLoop;
-				//while (updatesRemaining > 0) {
 				while (updatesRemaining > 0) {
-					Transform::updateCurrentUpdateIndex();
-
-					//accumulator -= TIMESTEP;
+					Transform::incrementCurrentUpdateIndex();
 					updatesRemaining--;
-
-					//m_threadPool->push([this](int id) { update(TIMESTEP); });
 					update(TIMESTEP);
 				}
 				});
@@ -178,97 +166,17 @@ int Application::startGameLoop() {
 			render(delta);
 
 
-			// FOR DEBUGGING
-			UINT a = Transform::getUpdateIndex();
-			UINT b = Transform::getRenderIndex();
-
+			//// FOR DEBUGGING
+			//UINT a = Transform::getUpdateIndex();
+			//UINT b = Transform::getRenderIndex();
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
 		}
-
 	}
-
-	m_isRunning = false;
 
 	return (int)msg.wParam;
 
-}
-
-void Application::startUpdateAndRenderLoops() {
-	//m_threadPool->push([this](int id) {startUpdateLoop(); });
-	//m_threadPool->push([this](int id) {startRenderLoop(); });
-}
-
-
-// TODO: rewrite in a simpler way since render is now completely separate
-void Application::startUpdateLoop() {
-	////double t = 0.0;
-	////double dt = TIMESTEP;
-
-	//double currentTime = m_startTime;
-	//double accumulator = 0.0;
-
-	//while (m_isRunning.load()) {
-	//	double newTime = m_updateTimer.getTimeSince(m_startTime);
-	//	double frameTime = newTime - currentTime;
-	//	if (frameTime > 0.25) {
-	//		frameTime = 0.25;
-	//	}
-	//	currentTime = newTime;
-
-	//	accumulator += frameTime;
-
-	//	while (accumulator >= TIMESTEP) {
-	//		// Update mouse deltas
-	//		Input::GetInstance()->beginFrame();
-
-	//		// Quit on alt-f4
-	//		if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
-	//			PostQuitMessage(0);
-
-
-	//		// TODO: separate camera update
-	//		processInput(TIMESTEP);
-
-
-	//		incrementFrameIndex(); // ? do here or in gamestate update?
-	//		update(TIMESTEP);
-	//		//t += dt;
-	//		accumulator -= TIMESTEP;
-
-	//		// Reset just pressed keys
-	//		Input::GetInstance()->endFrame();
-	//	}
-
-	//	// TODO: interpolate between game states in render
-	//}
-}
-
-void Application::startRenderLoop() {
-	//float secCounter = 0.f;
-	////float elapsedTime = 0.f;
-	//UINT frameCounter = 0;
-
-	//while (m_isRunning.load()) {
-	//	// Get delta time from last frame
-	//	float delta = static_cast<float>(m_updateTimer.getFrameTime());
-	//	delta = std::min(delta, 0.04f);
-
-	//	// Update fps counter
-	//	secCounter += delta;
-	//	frameCounter++;
-
-	//	if (secCounter >= 1) {
-	//		m_fps = frameCounter;
-	//		frameCounter = 0;
-	//		secCounter = 0.f;
-	//	}
-
-
-	//	double alpha = std::fmod(m_renderTimer.getTimeSince(m_startTime), TIMESTEP);
-	//	render(alpha);
-	//}
 }
 
 std::string Application::getPlatformName() {
@@ -301,14 +209,3 @@ ResourceManager& Application::getResourceManager() {
 const UINT Application::getFPS() const {
 	return m_fps;
 }
-
-// To be done at the end of each CPU update and nowhere else
-//void Application::incrementFrameIndex() {
-//	m_snapshotBufInd = ((++m_frameInd) % SNAPSHOT_BUFFER_SIZE);
-//}
-//const unsigned int Application::getFrameIndex() const { 
-//	return m_frameInd.load(); 
-//}
-//const unsigned int Application::getSnapshotBufferIndex() const {
-//	return m_snapshotBufInd.load();
-//}

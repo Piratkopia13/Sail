@@ -28,6 +28,7 @@ public:
 
 	}
 
+	// returns time in seconds from time
 	double getTimeSince(const INT64 time) {
 		LARGE_INTEGER currentTime;
 		QueryPerformanceCounter(&currentTime);

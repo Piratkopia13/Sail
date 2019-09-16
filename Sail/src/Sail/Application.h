@@ -23,7 +23,7 @@ namespace ctpl {
 }
 
 
-// TODO: Move elsewhere
+// TODO? Move elsewhere
 //const unsigned int SNAPSHOT_BUFFER_SIZE = 4;
 const double TICKRATE = 100.0;
 const double TIMESTEP = 1.0 / TICKRATE;
@@ -42,10 +42,6 @@ public:
 	virtual ~Application();
 
 	int startGameLoop();
-
-	void startUpdateAndRenderLoops();
-	void startUpdateLoop();
-	void startRenderLoop();
 
 	// Required methods
 	virtual int run() = 0;
@@ -105,25 +101,9 @@ private:
 
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 
-	//std::unique_ptr<FrameSynchronizer> m_frameSynchronizer;
-
-	//// first frame is 0 and it continues from there, integer overflow isn't a problem unless
-	//// you leave the game running for like a year or two.
-	//std::atomic_uint m_frameInd = 0;
-
-	//// the index in the snapshot buffer that is used in the update loop on the CPU.
-	//// [0, SNAPSHOT_BUFFER_SIZE-1]
-	//// If CPU update is working on index 3 then prepare render will safely interpolate between
-	//// index 1 and 2 without any data races
-	//std::atomic_uint m_snapshotBufInd = 0;
-
-	std::atomic_bool m_isRunning = true;
-
+	// Timer
 	double m_startTime;
-
-	Timer m_updateTimer;
-	Timer m_renderTimer;
-
+	Timer m_timer;
 	UINT m_fps;
 
 };

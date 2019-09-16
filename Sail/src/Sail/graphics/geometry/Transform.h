@@ -13,7 +13,7 @@ public:
 	
 	//static const UINT getCurrentUpdateIndex();
 	
-	static void updateCurrentUpdateIndex();
+	static void incrementCurrentUpdateIndex();
 	static void updateCurrentRenderIndex();
 
 	// for debugging

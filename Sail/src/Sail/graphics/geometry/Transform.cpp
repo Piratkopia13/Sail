@@ -18,7 +18,7 @@ UINT Transform::s_renderIndex = 0;
 //}
 
 // To be done at the start of each iteration of the update loop
-void Transform::updateCurrentUpdateIndex() {
+void Transform::incrementCurrentUpdateIndex() {
 	s_frameIndex++;
 	s_updateIndex = s_frameIndex.load() % SNAPSHOT_BUFFER_SIZE;
 }
