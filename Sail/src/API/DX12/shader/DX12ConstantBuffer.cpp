@@ -57,7 +57,7 @@ namespace ShaderComponent {
 		// Expand resource heap if index is out of range
 		if ((index + 1) * m_byteAlignedSize >= m_resourceHeapSize) {
 			unsigned int oldSize = m_resourceHeapSize;
-			m_resourceHeapSize += 1024.0 * 64.0;
+			m_resourceHeapSize += 1024 * 64;
 
 			// Copy gpu memory to ram before recreating buffers
 			void* data = malloc(oldSize);
