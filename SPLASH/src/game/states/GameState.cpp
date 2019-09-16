@@ -2,7 +2,7 @@
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
-
+#include "..//Sail/src/Sail/utils/OpaqueVector.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -53,6 +53,21 @@ GameState::GameState(StateStack& stack)
 	});
 #endif
 	
+
+
+
+	OpaqueVector<int> vec;
+	for (int i = 0; i < 10; i++)
+	{
+		vec.push_back(i + 1);
+	}
+	for (int i = 0; i < 10; i++)
+	{
+		std::cout << i << "\n";
+	}
+
+
+
 
 	/*
 		Create a PhysicSystem
@@ -286,13 +301,12 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 
 
-	for (int i = 0; i < 1000; i++)
+	for (int i = 0; i < 10000; i++)
 	{
 		e = ECS::Instance()->createEntity("Test_" + std::to_string(i));
 		e->addComponent<TransformComponent>(glm::vec3((i % 10) * 20.0f, 0.0f, (i / 10) * 20.0f), glm::vec3(0.f, 0.f, 0.f));
 		m_testEntities.push_back(e);
 	}
-
 
 }
 
@@ -326,6 +340,11 @@ bool GameState::processInput(float dt) {
 		}
 	}*/
 
+
+
+#endif
+
+
 	if (Input::WasKeyJustPressed(SAIL_KEY_J)) {
 		static bool hasPhysics = false;
 		hasPhysics = !hasPhysics;
@@ -335,18 +354,19 @@ bool GameState::processInput(float dt) {
 			for (auto& entity : m_testEntities) {
 				entity->addComponent<PhysicsComponent>(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
 			}
-			std::cout << "Added " << m_testEntities.size() << " PhysicsComponents\n";
+			//std::cout << "Added " << m_testEntities.size() << " PhysicsComponents\n";
 		}
 		else
 		{
 			for (auto& entity : m_testEntities) {
 				entity->removeComponent<PhysicsComponent>();
 			}
-			std::cout << "Removed " << m_testEntities.size() << " PhysicsComponents\n";
+			//std::cout << "Removed " << m_testEntities.size() << " PhysicsComponents\n";
 		}
 	}
 
-#endif
+
+
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);

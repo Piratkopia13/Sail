@@ -7,7 +7,7 @@ class ComponentStorage final {
 public:
 	static ComponentStorage* Instance() {
 		static ComponentStorage cs;
-		return &cs; 
+		return &cs;
 	}
 
 	/*
@@ -53,13 +53,19 @@ private:
 	/*
 		Information about a generic array of components
 	*/
+
 	struct GenericComponentList {
 		BaseComponent* comps = nullptr;
 		std::unordered_map<int, int> ID_to_index;
 		unsigned int nrOfComps = 0;
 		unsigned int maxNrOfComps = 0;
 	};
-
+	/*struct ComponentTypeData {
+		uint8_t* data;
+		unsigned int elementSize = 0;
+		unsigned int nrOfElements = 0;
+		unsigned int maxNrOfElements = 0;
+	};*/
 
 	ComponentStorage();
 	~ComponentStorage();
@@ -69,8 +75,10 @@ private:
 	*/
 	template<typename ComponentType>
 	void expand(GenericComponentList& list);
+	//void expand(ComponentTypeData& list);
 
 	std::vector<GenericComponentList> m_components;
+	//std::vector<ComponentTypeData> m_components;
 };
 
 
@@ -101,6 +109,10 @@ inline ComponentType* ComponentStorage::addComponent(int entityID, TArgs... args
 
 	return &components[list->nrOfComps++];
 }
+//template<typename ComponentType, typename... TArgs>
+//inline ComponentType* ComponentStorage::addComponent(int entityID, TArgs... args) {
+//	m_components.
+//}
 
 template<typename ComponentType>
 inline void ComponentStorage::removeComponent(int entityID) {
