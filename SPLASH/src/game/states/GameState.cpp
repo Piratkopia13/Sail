@@ -2,7 +2,6 @@
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
-#include "..//Sail/src/Sail/utils/OpaqueVector.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -53,21 +52,6 @@ GameState::GameState(StateStack& stack)
 	});
 #endif
 	
-
-
-
-	OpaqueVector<int> vec;
-	for (int i = 0; i < 10; i++)
-	{
-		vec.push_back(i + 1);
-	}
-	for (int i = 0; i < 10; i++)
-	{
-		std::cout << i << "\n";
-	}
-
-
-
 
 	/*
 		Create a PhysicSystem

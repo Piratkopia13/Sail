@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+
 class Entity;
 
 class BaseComponentSystem
