@@ -2,10 +2,11 @@
 #define AUDIO_HPP
 
 #include "Xaudio2.h"
+#include <thread>
 
 #define SOUND_COUNT 3
-//#define STREAMING_BUFFER_SIZE 65536
-//#define MAX_BUFFER_COUNT 3
+#define STREAMING_BUFFER_SIZE 65536
+#define MAX_BUFFER_COUNT 3
 
 class Audio
 {
@@ -37,13 +38,15 @@ private:
 	
 	int m_currIndex = 0;
 
-	//BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
-	//OVERLAPPED m_overlapped = { 0 };
+	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
+	OVERLAPPED m_overlapped = { 0 };
+	std::thread* m_tempStreamThread = nullptr;
 
 	// PRIVATE FUNCTION
 	//-----------------
 	void initXAudio2();
-	//void streamingLoop(IXAudio2SourceVoice* streamedSourceVoice);
+	void streamingLoop(const std::string& filename, IXAudio2SourceVoice* streamedSourceVoice);
+	std::wstring s2ws(const std::string& s);
 	// ----------------
 };
 

@@ -138,6 +138,15 @@ int Audio::playSound(const std::string &filename) {
 
 }
 
+int Audio::streamSound(const std::string& filename) {
+
+	this->loadSound(filename);
+
+	m_tempStreamThread = new std::thread(&Audio::streamingLoop, this, (this->m_sourceVoice[this->m_currIndex]));
+
+	return 0;
+}
+
 void Audio::pauseSound(int index) {
 
 	if (m_sourceVoice[index] != nullptr) {
@@ -178,16 +187,18 @@ void Audio::updateAudio() {
 
 
 
-	//// 'STREAM' Sound
-	//if (Input::IsKeyPressed(SAIL_KEY_2) && m_singlePress2) {
+	// 'STREAM' Sound
+	if (Input::IsKeyPressed(SAIL_KEY_2) && m_singlePress2) {
 
-	//	m_singlePress2 = false;
-	//	m_sourceVoice[this->m_currIndex]->Start(0, 0);
-	//}
+		m_singlePress2 = false;
+		
+		this->streamSound("../Audio/sampleLarge.wav");
+		//m_sourceVoice[this->m_currIndex]->Start(0, 0);
+	}
 
-	//else if (!Input::IsKeyPressed(SAIL_KEY_2) && !m_singlePress2) {
-	//	m_singlePress2 = true;
-	//}
+	else if (!Input::IsKeyPressed(SAIL_KEY_2) && !m_singlePress2) {
+		m_singlePress2 = true;
+	}
 }
 
 void Audio::initXAudio2() {
@@ -229,5 +240,57 @@ void Audio::initXAudio2() {
 	}
 #pragma endregion
 
-	//m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+}
+
+void Audio::streamingLoop(const std::string& filename, IXAudio2SourceVoice* streamedSourceVoice) {
+	
+	int currentDiskReadBuffer = 0;
+	int currentPos = 0;
+
+	AudioData* tempAudioData = &Application::getInstance()->getResourceManager().getAudioData(filename);
+	int samplesPerSec = tempAudioData->getFormat()->Format.nSamplesPerSec;
+	int bitsPerSample = tempAudioData->getFormat()->Format.wBitsPerSample;
+	double soundDuration = static_cast<double>(tempAudioData->getSoundBuffer()->AudioBytes / static_cast<UINT32>(tempAudioData->getFormat()->Format.nAvgBytesPerSec));
+
+	long cbWaveSize = 0.1;
+	DWORD cbValid;
+	DWORD dwRead;
+	
+	std::wstring fileNameWSTR = s2ws(filename);
+	LPCWSTR fileNameLPCWSTR = fileNameWSTR.c_str();
+	HANDLE hFile = CreateFile(
+		fileNameLPCWSTR,
+		GENERIC_READ,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		nullptr);
+
+	while (currentPos < cbWaveSize) {
+
+		if (SUCCEEDED(hr) && 0 == ReadFile(hFile, &tempAudioData->getSoundBuffer()->pAudioData, dwDataSize, &dwRead, &m_overlapped)) {
+			hr = HRESULT_FROM_WIN32(GetLastError());
+		}
+		cbValid = min(STREAMING_BUFFER_SIZE, cbWaveSize - CurrentPosition);
+		if (0 == ReadFile(hFile, buffers[CurrentDiskReadBuffer], STREAMING_BUFFER_SIZE, &dwRead, &m_overlapped))
+			hr = HRESULT_FROM_WIN32(GetLastError());
+		m_overlapped.Offset += cbValid;
+
+		//update the file position to where it will be once the read finishes
+		CurrentPosition += cbValid;
+	}
+}
+
+std::wstring Audio::s2ws(const std::string& s)
+{
+	int len;
+	int slength = (int)s.length() + 1;
+	len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+	wchar_t* buf = new wchar_t[len];
+	MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+	std::wstring r(buf);
+	delete[] buf;
+	return r;
 }
