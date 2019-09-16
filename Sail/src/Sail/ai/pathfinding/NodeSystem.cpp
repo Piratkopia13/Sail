@@ -35,8 +35,8 @@ const std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& 
 	auto path = m_graph->BFS(from.index, to.index);
 	
 	std::vector<NodeSystem::Node> nPath;
-	for ( auto n : path ) {
-		nPath.push_back(m_nodes[n]);
+	for ( int i = path.size() - 1; i > -1; i-- ) {
+		nPath.push_back(m_nodes[path[i]]);
 	}
 
 	return nPath;

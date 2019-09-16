@@ -373,8 +373,8 @@ GameState::GameState(StateStack& stack)
 
 	auto path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(4.f, 0.f, 0.f));
 	std::vector<glm::vec3> testPath;
-	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
 	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
 	for ( int i = 0; i < testPath.size(); i++ ) {
 		if ( testPath[i] != path[i].position ) {
 			Logger::Error("Something is wrong with the node system.");
@@ -383,9 +383,9 @@ GameState::GameState(StateStack& stack)
 
 	path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(6.f, 0.f, 0.f));
 	testPath.clear();
-	testPath.emplace_back(glm::vec3(6.f, 0.f, 0.f)); // 2
-	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
 	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
+	testPath.emplace_back(glm::vec3(6.f, 0.f, 0.f)); // 2
 	for ( int i = 0; i < testPath.size(); i++ ) {
 		if ( testPath[i] != path[i].position ) {
 			Logger::Error("Something is wrong with the node system.");
@@ -394,9 +394,9 @@ GameState::GameState(StateStack& stack)
 
 	path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(5.f, 2.f, 0.f));
 	testPath.clear();
-	testPath.emplace_back(glm::vec3(5.f, 2.f, 0.f)); // 3
-	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
 	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
+	testPath.emplace_back(glm::vec3(5.f, 2.f, 0.f)); // 3
 	for ( int i = 0; i < testPath.size(); i++ ) {
 		if ( testPath[i] != path[i].position ) {
 			Logger::Error("Something is wrong with the node system.");
