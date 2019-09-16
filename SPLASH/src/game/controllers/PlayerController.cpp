@@ -48,7 +48,7 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	// Increase speed if shift or right trigger is pressed
 	if ( Input::IsKeyPressed(SAIL_KEY_SHIFT) ) {
-		speedModifier = 5.f;
+		speedModifier = 2.f;
 	}
 
 	//
@@ -145,7 +145,7 @@ void PlayerController::processKeyboardInput(float dt) {
 		// Calculate total movement
 		physicsComp->velocity =
 			glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
-			* speedModifier;
+			* m_movementSpeed * speedModifier;
 
 		//velocity = glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement) * speedModifier;
 		//playerTrans->translate(velocity* dt + acceleration * (dt * dt * 0.5f));

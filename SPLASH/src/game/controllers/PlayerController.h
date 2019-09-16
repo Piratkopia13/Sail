@@ -20,7 +20,7 @@ public:
 	std::shared_ptr<Entity> getEntity();
 
 private:
-	float m_movementSpeed = 5.f;
+	float m_movementSpeed = 20.f;
 
 	// "Attached" camera
 	CameraController* m_cam;
