@@ -30,7 +30,9 @@ private:
 private:
 	std::vector<Entity::SPtr> m_entities; // game objects
 
-	std::vector<Entity::SPtr> m_renderObjects; // TODO
+	// should be a ring buffer or something
+	// make it as small as possible
+	std::vector<Entity::SPtr> m_perFrameRenderObjects[4]; // TODO
 
 
 
