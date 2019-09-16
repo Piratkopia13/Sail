@@ -1,21 +1,22 @@
 #pragma once
 
 #include "../../../../Sail/src/Sail/events/Event.h"
+#include "../states/LobbyState.h"
 
 class NetworkJoinedEvent : public Event {
 public:
-	NetworkJoinedEvent(int ID) : Event(Event::NETWORK_JOINED) {
-		m_player_id = ID;
+	NetworkJoinedEvent(player player) : Event(Event::NETWORK_JOINED) {
+		m_player = player;
 	}
 	~NetworkJoinedEvent() {}
 
-	inline int getPlayerID() const { return m_player_id; };
+	inline player getPlayer() const { return m_player; };
 
 	static Type getStaticType() {
 		return Event::NETWORK_JOINED;
 	}
 
 private:
-	int m_player_id;
+	player m_player;
 
 };

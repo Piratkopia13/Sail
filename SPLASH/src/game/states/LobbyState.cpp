@@ -28,7 +28,7 @@ LobbyState::LobbyState(StateStack& stack)
 
 	// Add local player as the first.
 	m_myName = "Daniel";
-	playerJoined(m_myName, m_tempID++);
+	playerJoined(player{ m_tempID++, m_myName });
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
@@ -120,13 +120,9 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-bool LobbyState::playerJoined(string name, unsigned int id) {
+bool LobbyState::playerJoined(player player) {
 	if (m_playerCount < m_playerLimit) {
-		player newplayer{
-			id,
-			name
-		};
-		m_players.push_back(newplayer);
+		m_players.push_back(player);
 		m_playerCount++;
 		return true;
 	}
@@ -217,8 +213,8 @@ player* LobbyState::getplayer(unsigned int id) {
 void LobbyState::addTestData()
 {
 	// Set up players
-	playerJoined("Ollie", m_tempID++);
-	playerJoined("David", m_tempID++);
+//	playerJoined("Ollie", m_tempID++);
+//	playerJoined("David", m_tempID++);
 	//playerJoined("Press 0 to switch between enter msg and going to gamestate with mouse (MouseClick by default)");
 	//playerJoined("The cause of this is an IMGUI-bug where keyboard focus prevents buttons from working");
 	//playerJoined("This tape is since we'll switch from imgui later anyway, so why patch shit that's only an imgui bug");
@@ -236,22 +232,6 @@ void LobbyState::addTestData()
 	msg.sender = "David";
 	msg.content = "msg 3 mr.boss";
 	m_messages.push_back(msg);
-}
-
-void LobbyState::doTestStuff()
-{
-	if (m_input->WasKeyJustPressed(SAIL_KEY_J)) {
-		playerJoined("Testplayer", m_tempID++);
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_U)) {
-		playerLeft(1);
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_I)) {
-		playerJoined("David", m_tempID++);
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_O)) {
-		playerLeft(m_tempID--);
-	}
 }
 
 void LobbyState::renderplayerList() {

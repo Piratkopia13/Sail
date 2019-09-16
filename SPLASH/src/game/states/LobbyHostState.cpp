@@ -45,7 +45,7 @@ bool LobbyHostState::onRecievedText(NetworkChatEvent& event) {
 
 bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add player to player list
-	this->playerJoined(std::to_string(event.getPlayerID()), event.getPlayerID());
+	this->playerJoined(event.getPlayer());
 
 	// Send out 'playerjoined'
 	// --- Wrapper already does this
@@ -67,10 +67,5 @@ bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Send out 'playerdisconnected'
 	// --- Wrapper already does this
 	
-	return false;
-}
-
-
-bool LobbyHostState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 	return false;
 }

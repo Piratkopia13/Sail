@@ -40,10 +40,7 @@ bool LobbyJoinState::onRecievedText(NetworkChatEvent& event) {
 
 bool LobbyJoinState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add the player to the player list
-	this->playerJoined(
-		std::to_string(event.getPlayerID()),
-		event.getPlayerID()
-	);
+	this->playerJoined(event.getPlayer());
 	return false;
 }
 
@@ -59,9 +56,9 @@ bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 	m_players.clear();
 
 	// Update local list of players.
-	std::list<player>* list = &event.getListOfPlayers();
-	for (auto currentName : *list) {
-		m_players.push_back(currentName)
+	std::list<player> &list = event.getListOfPlayers();
+	for (auto currentName : list) {
+		m_players.push_back(currentName);
 	}
 
 	return false;

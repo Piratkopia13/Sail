@@ -20,5 +20,4 @@ private:
 	bool onRecievedText(NetworkChatEvent& event);
 	bool onPlayerJoined(NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(NetworkDisconnectEvent& event);
-//	bool onPlayerWelcomed(NetworkWelcomeEvent& event);
 };

@@ -54,7 +54,7 @@ protected:
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
-	bool playerJoined(string name, unsigned int id);
+	bool playerJoined(player player);
 	bool playerLeft(unsigned int id);
 	void addTextToChat(const string* text);
 	void resetCurrentMessage();
@@ -85,7 +85,6 @@ private:
 
 	// Purely for testing
 	void addTestData();
-	void doTestStuff();
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	unsigned int m_outerPadding;

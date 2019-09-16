@@ -48,7 +48,17 @@ public:
 
 private:
 	Network* m_network;
-
+	//struct HConnectedPlayer { U can delete if u want to
+	//	string name;
+	//	unsigned int ID;
+	//	unsigned int ConnectionID;
+	//};
+	//struct ConnectedPlayer {
+	//	string name;
+	//	unsigned int ID;
+	//};
+	//std::vector<ConnectedPlayer> connections;
+	//std::vector<ConnectedPlayer> Hconnections;
 
 	NetworkWrapper() {}
 
