@@ -26,6 +26,12 @@ void BoundingBox::updateCorners() {
 	m_corners[7] = m_position + glm::vec3(m_halfSize.x, -m_halfSize.y, m_halfSize.z); //Right Bottom Far - 7
 }
 
+const bool BoundingBox::getChange() {
+	bool theChange = m_hasChanged;
+	m_hasChanged = false;
+	return theChange;
+}
+
 const glm::vec3& BoundingBox::getPosition() const {
 	return m_position;
 }
@@ -36,12 +42,6 @@ const glm::vec3& BoundingBox::getHalfSize() const {
 
 const std::vector<glm::vec3>* BoundingBox::getCorners() const {
 	return &m_corners;
-}
-
-const bool BoundingBox::getChange() {
-	bool theChange = m_hasChanged;
-	m_hasChanged = false;
-	return theChange;
 }
 
 void BoundingBox::setPosition(const glm::vec3& position) {

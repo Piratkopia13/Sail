@@ -1,5 +1,6 @@
 #pragma once
 
+
 class BoundingBox {
 private:
 	glm::vec3 m_position;
@@ -10,6 +11,11 @@ private:
 	bool m_hasChanged;
 
 	void updateCorners();
+
+private:
+	friend class Octree;
+	const bool getChange(); //Only access this from Octree::updateRec
+
 public:
 	BoundingBox();
 	~BoundingBox();
@@ -18,8 +24,6 @@ public:
 	const glm::vec3& getHalfSize() const;
 
 	const std::vector<glm::vec3>* getCorners() const;
-
-	const bool getChange();
 
 	void setPosition(const glm::vec3& position);
 	void setHalfSize(const glm::vec3& size);

@@ -49,6 +49,8 @@ public:
 	glm::mat4 getMatrix();
 	glm::mat4 getLocalMatrix();
 
+	const bool getChange();
+
 private:
 
 	glm::vec3 m_translation;
@@ -60,6 +62,7 @@ private:
 
 	bool m_matNeedsUpdate;
 	bool m_parentUpdated;
+	bool m_hasChanged;
 
 	Transform* m_parent;
 	std::vector<Transform*> m_children;

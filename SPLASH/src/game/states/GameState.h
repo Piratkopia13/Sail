@@ -51,5 +51,7 @@ private:
 
 	std::vector<Entity::SPtr> m_testBoundingBoxes;
 
+	Entity::SPtr m_keepCharacterPointerForTesting;
+
 	float m_testAngle;
 };
