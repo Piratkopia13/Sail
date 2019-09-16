@@ -25,7 +25,7 @@ public:
 	void setProjectileModel(Model* model);
 
 private:
-	float m_movementSpeed = 5.f;
+	float m_movementSpeed = 10.f;
 
 
 	// "Attached" camera

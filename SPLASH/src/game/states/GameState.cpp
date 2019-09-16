@@ -280,6 +280,15 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
+
+	for (size_t i = 0; i < 100; i++)
+	{
+		e = ECS::Instance()->createEntity("Character #" + std::to_string( i + 4 ));
+		e->addComponent<ModelComponent>(characterModel);
+		e->addComponent<TransformComponent>(glm::vec3(20.f * (i % 10), 20.f, 20.f * (i / 10)), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
+	}
+
 	//auto e = Entity::Create("Static cube");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
 	//e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
@@ -506,7 +515,6 @@ bool GameState::renderImguiConsole(float dt) {
 			std::string txt = "test";
 			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
 			
-
 			for (int i = 0; i < m_cc.getLog().size(); i++) {
 				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
 			}
