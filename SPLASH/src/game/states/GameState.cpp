@@ -350,25 +350,59 @@ GameState::GameState(StateStack& stack)
 	std::vector<unsigned int> conn1;
 	conn1.emplace_back(0);
 	conn1.emplace_back(2);
+	conn1.emplace_back(3);
 	std::vector<unsigned int> conn2;
 	conn2.emplace_back(1);
+	conn2.emplace_back(3);
+	std::vector<unsigned int> conn3;
+	conn3.emplace_back(1);
+	conn3.emplace_back(2);
 
 	std::vector<glm::vec3> nodes;
-	nodes.push_back(glm::vec3(2.f, 0.f, 0.f));
-	nodes.push_back(glm::vec3(4.f, 0.f, 0.f));
-	nodes.push_back(glm::vec3(6.f, 0.f, 0.f));
+	nodes.push_back(glm::vec3(2.f, 0.f, 0.f)); // Node 0
+	nodes.push_back(glm::vec3(4.f, 0.f, 0.f)); // Node 1
+	nodes.push_back(glm::vec3(6.f, 0.f, 0.f)); // Node 2
+	nodes.push_back(glm::vec3(5.f, 2.f, 0.f)); // Node 3
 	std::vector<std::vector<unsigned int>> connections;
 	connections.push_back(conn0);
 	connections.push_back(conn1);
 	connections.push_back(conn2);
+	connections.push_back(conn3);
 
 	test.setNodes(nodes, connections);
 
-	auto path = test.getPath(glm::vec3(1.f, 0.f, 0.f), glm::vec3(4.f, 0.f, 0.f));
-
-	for ( auto v : path ) {
-		Logger::Log(std::to_string(v.position.x) + " " + std::to_string(v.position.y) + " " + std::to_string(v.position.z));
+	auto path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(4.f, 0.f, 0.f));
+	std::vector<glm::vec3> testPath;
+	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
+	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	for ( int i = 0; i < testPath.size(); i++ ) {
+		if ( testPath[i] != path[i].position ) {
+			Logger::Error("Something is wrong with the node system.");
+		}
 	}
+
+	path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(6.f, 0.f, 0.f));
+	testPath.clear();
+	testPath.emplace_back(glm::vec3(6.f, 0.f, 0.f)); // 2
+	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
+	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	for ( int i = 0; i < testPath.size(); i++ ) {
+		if ( testPath[i] != path[i].position ) {
+			Logger::Error("Something is wrong with the node system.");
+		}
+	}
+
+	path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(5.f, 2.f, 0.f));
+	testPath.clear();
+	testPath.emplace_back(glm::vec3(5.f, 2.f, 0.f)); // 3
+	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
+	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	for ( int i = 0; i < testPath.size(); i++ ) {
+		if ( testPath[i] != path[i].position ) {
+			Logger::Error("Something is wrong with the node system.");
+		}
+	}
+
 #endif
 	
 	//m_physSystem.registerEntity(m_playerController.getEntity());
