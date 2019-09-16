@@ -22,7 +22,7 @@ Renderer* Renderer::Create(Renderer::Type type) {
 DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
-	for (size_t i = 0; i < nRecordThreads; i++)
+	for (size_t i = 0; i < MAX_RECORD_THREADS; i++)
 	{
 		m_context->initCommand(m_command[i]);
 		std::wstring name = L"Forward Renderer main command list for render thread: " + std::to_wstring(i);
@@ -42,14 +42,24 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	size_t count = commandQueue.size();
 
 #ifdef MULTI_THREADED_COMMAND_RECORDING
-	std::future<void> fut[nRecordThreads];
-	int commandsPerThread = round(count / (float)nRecordThreads);
-	int start = 0;
-	for (size_t i = 0; i < nRecordThreads; i++)
+	int nThreadsToUse = (count / MIN_COMMANDS_PER_THREAD) + (count % MIN_COMMANDS_PER_THREAD > 0);
+	if (nThreadsToUse < 0) {
+		nThreadsToUse = 1;
+	}
+	else if (nThreadsToUse > MAX_RECORD_THREADS) {
+		nThreadsToUse = MAX_RECORD_THREADS;
+	}
+
+	std::future<void> fut[MAX_RECORD_THREADS];
+
+	int commandsPerThread = round(count / (float)nThreadsToUse);
+	int start = commandsPerThread;
+
+	for (size_t i = 1; i < nThreadsToUse; i++)
 	{
 		fut[i] = Application::getInstance()->pushJobToThreadPool(
-			[this, i, frameIndex, start, commandsPerThread, count](int id) {
-				return this->RecordCommands(i, frameIndex, start, (i < nRecordThreads - 1) ? commandsPerThread : commandsPerThread + 1, count);
+			[this, i, frameIndex, start, commandsPerThread, count, nThreadsToUse](int id) {
+				return this->RecordCommands(i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
 			});
 		start += commandsPerThread;
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
@@ -57,22 +67,25 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	}
 
-	ID3D12CommandList* commandlists[nRecordThreads];
- 	for (size_t i = 0; i < nRecordThreads; i++)
+	RecordCommands(0, frameIndex, 0, commandsPerThread, count, nThreadsToUse);
+	ID3D12CommandList* commandlists[MAX_RECORD_THREADS];
+	commandlists[0] = m_command[0].list.Get();
+
+ 	for (size_t i = 1; i < nThreadsToUse; i++)
 	{
 #ifndef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		fut[i].get(); //Wait for all recording threads to finnish
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		commandlists[i] = m_command[i].list.Get();
 	}
-	m_context->executeCommandLists(commandlists, nRecordThreads);
+	m_context->executeCommandLists(commandlists, nThreadsToUse);
 #else
 	RecordCommands(0, frameIndex, 0, count, count);
 	m_context->executeCommandLists({ m_command[0].list.Get() });
 #endif // MULTI_THREADED_COMMAND_RECORDING
 }
 
-void DX12ForwardRenderer::RecordCommands(const int threadID, const int frameIndex, const int start, const int nCommands, size_t oobMax)
+void DX12ForwardRenderer::RecordCommands(const int threadID, const int frameIndex, const int start, const int nCommands, size_t oobMax, int nThreads)
 {
 //#ifdef MULTI_THREADED_COMMAND_RECORDING
 	auto& allocator = m_command[threadID].allocators[frameIndex];
@@ -135,13 +148,11 @@ void DX12ForwardRenderer::RecordCommands(const int threadID, const int frameInde
 		}
 
 		static_cast<DX12Mesh*>(command->mesh)->draw_new(*this, cmdList.Get(), meshIndex);
-
-		//meshIndex++;
 	}
 
 	// Lastly - transition back buffer to present
 #ifdef MULTI_THREADED_COMMAND_RECORDING
-	if (threadID == nRecordThreads - 1) {
+	if (threadID == nThreads - 1) {
 		m_context->prepareToPresent(cmdList.Get());
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
