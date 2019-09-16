@@ -82,7 +82,7 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::Begin("Host Game");
 	if (ImGui::Button("S.P.L.A.S.H over here")) {
 		if (m_network->host()) {
-			printf("Setting up host.");
+			printf("Setting up host.\n");
 			this->requestStackPop();
 			this->requestStackPush(States::HostLobby);
 		}

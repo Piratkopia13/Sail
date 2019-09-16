@@ -27,8 +27,9 @@ LobbyState::LobbyState(StateStack& stack)
 	m_messageCount = 0;
 
 	// Add local player as the first.
-	m_myName = "Daniel";
-	playerJoined(player{ m_tempID++, m_myName });
+	m_me.id = 1337;
+	m_me.name = "Empty";
+	playerJoined(player{ 0, m_me.name });
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
@@ -251,9 +252,13 @@ void LobbyState::renderplayerList() {
 	ImGui::Begin("players in lobby:", NULL, flags);
 
 	for (auto currentplayer : m_players) {
-		ImGui::Text(
-			std::string("- ").append(currentplayer.name.c_str()).c_str()
-		);
+		std::string temp;
+		temp += " - ";
+		temp += to_string(currentplayer.id);
+		temp += " - ";
+		temp += currentplayer.name.c_str();
+		
+		ImGui::Text(temp.c_str());
 	}
 	ImGui::End();
 }

@@ -7,6 +7,7 @@
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
+#include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/SPLASH/src/game/states/LobbyState.h"
 
 void NetworkWrapper::Initialize() {
@@ -113,8 +114,8 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 	unsigned int userID;
 	std::string message;
 	char charAsInt[4] = { 0 };
-	std::list<player> playerList;	// Only used in 'w'-case but needs to be initialized
-	player currentPlayer{ -1, "" };	// up here
+	std::list<player> playerList;	// Only used in 'w'-case but needs to be initialized up here
+	player currentPlayer{ -1, "" };	// 
 	int charCounter = 0;			//
 
 	switch (nEvent.data->msg[0])
@@ -179,6 +180,17 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		printf((std::to_string(userID) + " joined. \n").c_str());
 		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(player{ userID, "who?" }));
 		break;
+
+	case '?':
+
+		// This client has recieved a request for its selected name
+		if (!m_network->isServer()) {
+			string temp = to_string(nEvent.clientID);
+			Application::getInstance()->dispatchEvent(NetworkNameEvent{temp});
+		}
+		else {
+			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->msg});
+		}
 
 	case 'w':
 
@@ -272,6 +284,10 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 		for (int i = 0; i < 4; i++) {
 			msg[i + 1] = int_asChar[i];
 		}
+
+		// Request a name from the client, which upon recieval will be sent to all clients.
+		m_network->send("?", sizeof("?"), id);
+		printf("Gave id to: %d. Requesting Name... \n", id);
 
 		// Send to all clients that someone joined and which id.
 		m_network->send(msg, sizeof(msg), -1);

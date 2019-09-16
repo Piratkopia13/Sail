@@ -48,7 +48,7 @@ protected:
 	Input* m_input = nullptr;
 	NetworkWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
-	string m_myName;
+	player m_me;
 	std::list<message> m_messages;
 	std::list<player> m_players;
 

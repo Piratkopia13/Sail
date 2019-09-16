@@ -1,12 +1,13 @@
 #include "LobbyJoinState.h"
 
 #include "../SPLASH/src/game/events/TextInputEvent.h"
+#include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "Network/NetworkWrapper.h"
 
 LobbyJoinState::LobbyJoinState(StateStack& stack)
 	: LobbyState(stack)
 {
-
+	m_me.name = "Joiner";
 }
 
 LobbyJoinState::~LobbyJoinState() {
@@ -18,6 +19,7 @@ bool LobbyJoinState::onEvent(Event& event) {
 	EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onPlayerJoined));
 	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onPlayerDisconnected));
 	EventHandler::dispatch<NetworkWelcomeEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onPlayerWelcomed));
+	EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onNameRequest));
 
 	return true;
 }
@@ -57,9 +59,27 @@ bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 
 	// Update local list of players.
 	std::list<player> &list = event.getListOfPlayers();
-	for (auto currentName : list) {
-		m_players.push_back(currentName);
+	printf("Recieved welcome package...\n");
+	for (auto currentPlayer : list) {
+		
+		m_players.push_back(currentPlayer);
+		printf("\t");
+		printf(currentPlayer.name.c_str());
+		printf("\n");
 	}
 
+	return false;
+}
+
+bool LobbyJoinState::onNameRequest(NetworkNameEvent& event) {
+	// Save the ID which the host has blessed us with
+	string temp = event.getRepliedName();
+	m_me.id = stoi(temp);
+	
+	// Append :NAME onto ?ID --> ?ID:NAME and answer the host
+	string message = "?";
+	message += event.getRepliedName();
+	message += ":" + m_me.name + ":";
+	m_network->sendMsg(message);
 	return false;
 }
