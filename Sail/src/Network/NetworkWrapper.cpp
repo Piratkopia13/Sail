@@ -117,6 +117,9 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 	std::list<player> playerList;	// Only used in 'w'-case but needs to be initialized up here
 	player currentPlayer{ -1, "" };	// 
 	int charCounter = 0;			//
+	string id_string;				//
+	string remnants;				//
+	unsigned int id_number;			//
 
 	switch (nEvent.data->msg[0])
 	{
@@ -194,40 +197,23 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 	case 'w':
 
-		// Parse the welcome-package. Hosts should never recieve welcome packages
-		// Parse first player
-		charCounter = 1; // Content starts after the 'w'
-		for (; true; charCounter++)
-		{
-			if (nEvent.data->msg[charCounter] == ':') {
+		// Parse the welcome-package.
+		remnants = nEvent.data->msg;
+
+		while (remnants != "") {
+			currentPlayer.id = this->parseID(remnants);
+			currentPlayer.name = this->parseName(remnants);
+
+			// Only add players with full names.
+			if (currentPlayer.name != "") { 
 				playerList.push_back(currentPlayer);
-				currentPlayer.name = "";
-				charCounter++;
-				break;	// First name has been found
-			}
-			else {
-				currentPlayer.name += nEvent.data->msg[charCounter];
 			}
 		}
 
-		for (charCounter; charCounter < MAX_PACKAGE_SIZE; charCounter++)
-		{
-			// If delimiter, we just finished with a player name
-			if (nEvent.data->msg[charCounter] == ':') {
-				playerList.push_back(currentPlayer);
-				currentPlayer.name = "";
-			}
-			// If nullterminator, the msg is over.
-			else if (nEvent.data->msg[charCounter] == '\0') {
-				break;
-			}
-			// If neither above, add char to currentplayer
-			else {
-				currentPlayer.name += nEvent.data->msg[charCounter];
-			}
+		if (playerList.size() > 0) {
+			Application::getInstance()->dispatchEvent(NetworkWelcomeEvent(playerList));
 		}
-
-		Application::getInstance()->dispatchEvent(NetworkWelcomeEvent(playerList));
+		
 		break;
 
 	default:
@@ -286,11 +272,16 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 		}
 
 		// Request a name from the client, which upon recieval will be sent to all clients.
-		m_network->send("?", sizeof("?"), id);
+		char msgRequest[64];
+		msgRequest[0] = '?';
+		msgRequest[1] = '0';
+		msgRequest[2] = '\0';
+
+		m_network->send(msgRequest, sizeof(msgRequest), id);
 		printf("Gave id to: %d. Requesting Name... \n", id);
 
 		// Send to all clients that someone joined and which id.
-		m_network->send(msg, sizeof(msg), -1);
+	//	m_network->send(msg, sizeof(msg), -1);
 
 		// Add this user id to the list of players in the lobby.
 		// Print out that this ID joined the lobby.
@@ -319,5 +310,56 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 		break;
 	default:
 		break;
+	}
+}
+
+ConnectionID NetworkWrapper::parseID(std::string& data) {
+	if (data.size() > 0) {
+		return 0;
+	}
+	else {
+		// Remove opening '?' marker.
+		data.erase(0, 1);
+
+		std::string id_string = "";
+		int lastIndex;
+		for (lastIndex = 0; lastIndex < MAX_PACKAGE_SIZE; lastIndex++) {
+			if (data[lastIndex] == '\0') {
+				break;
+			}
+			else if (data[lastIndex] != ':') {
+				id_string += data[lastIndex];
+			}
+			else {
+				break;
+			}
+		}
+
+		data.erase(0, lastIndex);
+		return stoll(id_string);
+	}
+}
+
+std::string NetworkWrapper::parseName(std::string& data) {
+	if (data.size() == 0) {
+		return data;
+	}
+	else {
+		// Remove first ':'
+		data.erase(0, 1);
+
+		int lastIndex;
+		std::string parsedName = "";
+		for (lastIndex = 0; lastIndex < MAX_PACKAGE_SIZE; lastIndex++) {
+			if (data[lastIndex] == ':') { // Does parseID also remove the last ':'? no?
+				break;
+			}
+			else {
+				parsedName += data[lastIndex];
+			}
+		}
+
+		data.erase(0, lastIndex);
+		return parsedName;
 	}
 }

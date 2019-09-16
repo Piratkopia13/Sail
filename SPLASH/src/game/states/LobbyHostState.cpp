@@ -5,6 +5,7 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack)
 {
 	m_me.name = "Hoster";
+	playerJoined(m_me);
 }
 
 LobbyHostState::~LobbyHostState() {
@@ -46,7 +47,7 @@ bool LobbyHostState::onRecievedText(NetworkChatEvent& event) {
 
 bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add player to player list
-	this->playerJoined(event.getPlayer());
+	//this->playerJoined(event.getPlayer());
 
 	// Send out 'playerjoined'
 	// --- Wrapper already does this
@@ -68,8 +69,9 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	// Parse the message | ?12:DANIEL
 	string message = event.getRepliedName(); 
 	string id_string = "";
-	unsigned int id_int = message.at(0);
+	unsigned int id_int = 0;
 	
+
 
 	// Get ID...
 	for (int i = 1; i < 64; i++) {

@@ -26,11 +26,6 @@ LobbyState::LobbyState(StateStack& stack)
 	m_playerCount = 0;
 	m_messageCount = 0;
 
-	// Add local player as the first.
-	m_me.id = 1337;
-	m_me.name = "Empty";
-	playerJoined(player{ 0, m_me.name });
-
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = new char[m_messageSizeLimit] { 0 };

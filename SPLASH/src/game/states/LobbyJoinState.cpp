@@ -7,7 +7,9 @@
 LobbyJoinState::LobbyJoinState(StateStack& stack)
 	: LobbyState(stack)
 {
+	m_me.id = 1337;
 	m_me.name = "Joiner";
+	playerJoined(m_me);
 }
 
 LobbyJoinState::~LobbyJoinState() {
@@ -59,14 +61,17 @@ bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 
 	// Update local list of players.
 	std::list<player> &list = event.getListOfPlayers();
-	printf("Recieved welcome package...\n");
-	for (auto currentPlayer : list) {
-		
-		m_players.push_back(currentPlayer);
-		printf("\t");
-		printf(currentPlayer.name.c_str());
-		printf("\n");
+	if (list.size() < 2) {
+		printf("Recieved welcome package...\n");
+		for (auto currentPlayer : list) {
+
+			m_players.push_back(currentPlayer);
+			printf("\t");
+			printf(currentPlayer.name.c_str());
+			printf("\n");
+		}
 	}
+	
 
 	return false;
 }

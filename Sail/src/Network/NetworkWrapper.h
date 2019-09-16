@@ -48,18 +48,6 @@ public:
 
 private:
 	Network* m_network;
-	//struct HConnectedPlayer { U can delete if u want to
-	//	string name;
-	//	unsigned int ID;
-	//	unsigned int ConnectionID;
-	//};
-	//struct ConnectedPlayer {
-	//	string name;
-	//	unsigned int ID;
-	//};
-	//std::vector<ConnectedPlayer> connections;
-	//std::vector<ConnectedPlayer> Hconnections;
-
 	NetworkWrapper() {}
 
 	/*
@@ -78,6 +66,11 @@ private:
 		Depending on event, call the correct function.
 	*/
 	void handleNetworkEvents(NetworkEvent nEvents);
+	/*
+		 WARNING: These parse functions EXTRACT data, NOT COPY.
+	*/
+	ConnectionID parseID(std::string& data);
+	std::string parseName(std::string& data);
 
 };
 
