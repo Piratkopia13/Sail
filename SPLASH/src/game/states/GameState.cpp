@@ -344,7 +344,7 @@ GameState::GameState(StateStack& stack)
 
 
 /* "Unit test" for NodeSystem */
-	NodeSystem test;
+	NodeSystem* test = m_app->getNodeSystem();
 	std::vector<unsigned int> conn0;
 	conn0.emplace_back(1);
 	std::vector<unsigned int> conn1;
@@ -369,9 +369,9 @@ GameState::GameState(StateStack& stack)
 	connections.push_back(conn2);
 	connections.push_back(conn3);
 
-	test.setNodes(nodes, connections);
+	test->setNodes(nodes, connections);
 
-	auto path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(4.f, 0.f, 0.f));
+	auto path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(4.f, 0.f, 0.f));
 	std::vector<glm::vec3> testPath;
 	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
 	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
@@ -381,7 +381,7 @@ GameState::GameState(StateStack& stack)
 		}
 	}
 
-	path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(6.f, 0.f, 0.f));
+	path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(6.f, 0.f, 0.f));
 	testPath.clear();
 	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
 	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1
@@ -392,7 +392,7 @@ GameState::GameState(StateStack& stack)
 		}
 	}
 
-	path = test.getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(5.f, 2.f, 0.f));
+	path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(5.f, 2.f, 0.f));
 	testPath.clear();
 	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
 	testPath.emplace_back(glm::vec3(4.f, 0.f, 0.f)); // 1

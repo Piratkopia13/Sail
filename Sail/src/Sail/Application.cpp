@@ -179,6 +179,9 @@ ImGuiHandler* const Application::getImGuiHandler() {
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
 }
+NodeSystem* Application::getNodeSystem() {
+	return m_nodeSystem.get();
+}
 const UINT Application::getFPS() const {
 	return m_fps;
 }
