@@ -88,7 +88,7 @@ int Audio::streamSound(const std::string& filename) {
 
 	this->loadSound(filename);
 
-	m_tempStreamThread = new std::thread(&Audio::streamingLoop, this, (this->m_sourceVoice[this->m_currIndex]));
+	//m_tempStreamThread = new std::thread(&Audio::streamingLoop, this, (this->m_sourceVoice[this->m_currIndex]));
 
 	return 0;
 }
@@ -187,19 +187,19 @@ void Audio::streamingLoop(const std::string& filename, IXAudio2SourceVoice* stre
 		0,
 		nullptr);
 
-	while (currentPos < cbWaveSize) {
+	//while (currentPos < cbWaveSize) {
 
-		if (SUCCEEDED(hr) && 0 == ReadFile(hFile, &tempAudioData->getSoundBuffer()->pAudioData, dwDataSize, &dwRead, &m_overlapped)) {
-			hr = HRESULT_FROM_WIN32(GetLastError());
-		}
-		cbValid = min(STREAMING_BUFFER_SIZE, cbWaveSize - CurrentPosition);
-		if (0 == ReadFile(hFile, buffers[CurrentDiskReadBuffer], STREAMING_BUFFER_SIZE, &dwRead, &m_overlapped))
-			hr = HRESULT_FROM_WIN32(GetLastError());
-		m_overlapped.Offset += cbValid;
+	//	if (SUCCEEDED(hr) && 0 == ReadFile(hFile, &tempAudioData->getSoundBuffer()->pAudioData, dwDataSize, &dwRead, &m_overlapped)) {
+	//		hr = HRESULT_FROM_WIN32(GetLastError());
+	//	}
+	//	cbValid = min(STREAMING_BUFFER_SIZE, cbWaveSize - CurrentPosition);
+	//	if (0 == ReadFile(hFile, buffers[CurrentDiskReadBuffer], STREAMING_BUFFER_SIZE, &dwRead, &m_overlapped))
+	//		hr = HRESULT_FROM_WIN32(GetLastError());
+	//	m_overlapped.Offset += cbValid;
 
-		//update the file position to where it will be once the read finishes
-		CurrentPosition += cbValid;
-	}
+	//	//update the file position to where it will be once the read finishes
+	//	CurrentPosition += cbValid;
+	//}
 }
 
 std::wstring Audio::s2ws(const std::string& s)
