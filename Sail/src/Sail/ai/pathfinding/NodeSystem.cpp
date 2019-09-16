@@ -19,7 +19,7 @@ void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector
 		m_graph = nullptr;
 	}
 
-	m_graph = new Graph(nodes.size());
+	m_graph = new Graph(unsigned int(nodes.size()));
 
 	for ( auto node : nodes ) {
 		unsigned int index = unsigned int(m_nodes.size());
@@ -81,7 +81,7 @@ const std::vector<unsigned int> NodeSystem::Graph::BFS(const unsigned int from, 
 	std::list<unsigned int> queue;
 	std::vector<unsigned int> visited = std::vector<unsigned int>(m_connections.size());
 	std::vector<unsigned int> path;
-	std::vector<unsigned int> dist(m_connections.size(), FLT_MAX);
+	std::vector<float> dist(m_connections.size(), FLT_MAX);
 	std::vector<unsigned int> traceBack(m_connections.size(), INT_MAX);
 
 	queue.emplace_back(from);
