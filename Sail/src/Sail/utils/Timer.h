@@ -19,6 +19,10 @@ public:
 
 	}
 
+	INT64 getStartTime() const {
+		return m_counterStart;
+	}
+
 	double getTime() {
 
 		LARGE_INTEGER currentTime;

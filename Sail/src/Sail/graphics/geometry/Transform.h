@@ -5,22 +5,16 @@
 class Transform {
 
 public:
-	
-	
-	// To be done at the end of each CPU update and nowhere else
-	//static void incrementFrameIndex();
-	//static const UINT getFrameIndex();
-	
-	//static const UINT getCurrentUpdateIndex();
-	
-	static void incrementCurrentUpdateIndex();
-	static void updateCurrentRenderIndex();
+	// To be done at the end of each CPU update and nowhere else	
+	static void IncrementCurrentUpdateIndex();
 
-	// for debugging
-	static UINT getUpdateIndex();
-	static UINT getRenderIndex();
-	//static const UINT getCurrentRenderIndex();
+	// To be done just before render is called
+	static void UpdateCurrentRenderIndex();
 
+#ifdef _DEBUG
+	static UINT GetUpdateIndex();
+	static UINT GetRenderIndex();
+#endif
 
 	explicit Transform(Transform* parent);
 	Transform(const glm::vec3& translation, Transform* parent = nullptr);
@@ -70,7 +64,6 @@ public:
 	glm::mat4 getLocalMatrix();
 
 private:
-
 	struct TransformSnapshot {
 		glm::vec3 m_translation;
 		glm::vec3 m_rotation;
@@ -79,14 +72,10 @@ private:
 		bool m_matNeedsUpdate;
 		bool m_parentUpdated;
 	};
-
 	TransformSnapshot m_transformSnapshots[SNAPSHOT_BUFFER_SIZE];
 
 	glm::mat4 m_transformMatrix;
 	glm::mat4 m_localTransformMatrix;
-
-	//bool m_matNeedsUpdate[SNAPSHOT_BUFFER_SIZE];
-	//bool m_parentUpdated[SNAPSHOT_BUFFER_SIZE];
 
 	Transform* m_parent;
 	std::vector<Transform*> m_children;

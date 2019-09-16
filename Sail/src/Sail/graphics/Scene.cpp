@@ -41,32 +41,16 @@ void Scene::setLightSetup(LightSetup* lights) {
 }
 
 // NEEDS TO RUN BEFORE EACH UPDATE
+// Copies the game state from the previous tick 
 void Scene::prepareUpdate() {
 	for (auto e : m_entities) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
-		if (transform) {
-			transform->copyDataFromPrevUpdate();
-		}
+		if (transform) { transform->copyDataFromPrevUpdate(); }
 	}
 }
 
-// TODO: Move matrix updates to its own system and optimize it more, only update matrices that need to be updated
-// TODO: use the alpha value to interpolate between game states
 void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
-
-	// TODO: Should be in a prepare render stage:
-	//for (Entity::SPtr& entity : m_entities) {
-	//	ModelComponent* model = entity->getComponent<ModelComponent>();
-	//	if (model) {
-	//		// Update all entities that have transform matrices
-	//		TransformDataComponent* data = entity->getComponent<TransformDataComponent>();
-	//		TransformMatrixComponent* matrix = entity->getComponent<TransformMatrixComponent>();
-	//		if (data && matrix) {
-	//			m_renderer->submit(model->getModel(), data->getMatrixFromData(currentInd, alpha));
-	//		}
-	//	}
-	//}
 
 	for (Entity::SPtr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
@@ -80,7 +64,6 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 	m_renderer->end();
 	m_renderer->present();
-	//m_renderer->present(m_deferredOutputTex.get());
 
 	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
 

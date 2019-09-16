@@ -4,53 +4,38 @@
 std::atomic_uint Transform::s_frameIndex = 0;
 UINT Transform::s_updateIndex = 0;
 UINT Transform::s_renderIndex = 0;
-// Static functions
 
-// To be done at the end of each CPU update and nowhere else
-//void Transform::incrementFrameIndex() {
-//	m_snapshotBufInd = ((++m_frameIndex) % SNAPSHOT_BUFFER_SIZE);
-//}
-//const UINT Transform::getFrameIndex() {
-//	return m_frameIndex.load();
-//}
-//const UINT Transform::getCurrentUpdateIndex() {
-//	return m_snapshotBufInd.load();
-//}
+// STATIC FUNCTIONS
 
-// To be done at the start of each iteration of the update loop
-void Transform::incrementCurrentUpdateIndex() {
+// To be done at the end of each CPU update and nowhere else	
+void Transform::IncrementCurrentUpdateIndex() {
 	s_frameIndex++;
 	s_updateIndex = s_frameIndex.load() % SNAPSHOT_BUFFER_SIZE;
 }
 
-
-void Transform::updateCurrentRenderIndex() {
+// To be done just before render is called
+void Transform::UpdateCurrentRenderIndex() {
 	s_renderIndex = prevInd(s_frameIndex.load());
-	//s_renderIndex = 0;
 }
-UINT Transform::getUpdateIndex() { return s_updateIndex; }
-UINT Transform::getRenderIndex() { return s_renderIndex; }
 
+#ifdef _DEBUG
+UINT Transform::GetUpdateIndex() { return s_updateIndex; }
+UINT Transform::GetRenderIndex() { return s_renderIndex; }
+#endif
 
-// Non-static functions
+// NON-STATIC FUNCTIONS
 
 Transform::Transform(Transform* parent)
 	: Transform::Transform({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, parent) 
-{ }
+{}
 
 Transform::Transform(const glm::vec3& translation, Transform* parent)
 	: Transform(translation, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, parent) 
-{ }
+{}
 
 Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale, Transform* parent)
-	: /*m_translation(translation)
-	, m_rotation(rotation)
-	, m_scale(scale)*/
-	//, 
-	m_transformMatrix(1.0f)
+	: m_transformMatrix(1.0f)
 	, m_localTransformMatrix(1.0f)
-	//, m_matNeedsUpdate(true)
-	//, m_parentUpdated(parent)
 	, m_parent(parent) 
 {
 	for (auto& ts : m_transformSnapshots) {
@@ -88,7 +73,7 @@ void Transform::removeParent() {
 	}
 }
 
-// NOTE: Has to be done at the begging of each update
+// NOTE: Has to be done at the beginning of each update
 void Transform::copyDataFromPrevUpdate() {
 	m_transformSnapshots[s_updateIndex] = m_transformSnapshots[prevInd(s_updateIndex)];
 }
@@ -105,7 +90,6 @@ void Transform::setStartTranslation(const glm::vec3& translation) {
 		ts.m_matNeedsUpdate = true;
 	}
 }
-
 
 void Transform::translate(const float x, const float y, const float z) {
 	m_transformSnapshots[s_updateIndex].m_translation += glm::vec3(x, y, z);
@@ -197,7 +181,6 @@ void Transform::setScale(const glm::vec3& scale) {
 	treeNeedsUpdating();
 }
 
-
 // NOTE: Not used anywhere at the moment
 void Transform::setMatrix(const glm::mat4& newMatrix) {
 	m_localTransformMatrix = newMatrix;
@@ -212,7 +195,7 @@ void Transform::setMatrix(const glm::mat4& newMatrix) {
 	// TODO: Check that rotation is valid
 	m_transformSnapshots[s_updateIndex].m_rotation = glm::eulerAngles(tempRotation);
 
-	//m_transformSnapshots[s_updateIndex].m_matNeedsUpdate = false;
+	m_transformSnapshots[s_updateIndex].m_matNeedsUpdate = false;
 	treeNeedsUpdating();
 }
 
@@ -234,11 +217,11 @@ const glm::vec3& Transform::getScale() const {
 glm::mat4 Transform::getMatrix(const float alpha) {
 	if (m_transformSnapshots[s_renderIndex].m_matNeedsUpdate) {
 		updateLocalMatrix();
-		//m_transformSnapshots[s_renderIndex].m_matNeedsUpdate = false;
+		m_transformSnapshots[s_renderIndex].m_matNeedsUpdate = false;
 	}
 	if (m_transformSnapshots[s_renderIndex].m_parentUpdated || !m_parent) {
 		updateMatrix();
-		//m_transformSnapshots[s_renderIndex].m_parentUpdated = false;
+		m_transformSnapshots[s_renderIndex].m_parentUpdated = false;
 	}
 
 	return m_transformMatrix;
@@ -248,7 +231,7 @@ glm::mat4 Transform::getMatrix(const float alpha) {
 glm::mat4 Transform::getLocalMatrix() {
 	if (m_transformSnapshots[s_renderIndex].m_matNeedsUpdate) {
 		updateLocalMatrix();
-		//m_transformSnapshots[s_renderIndex].m_matNeedsUpdate = false;
+		m_transformSnapshots[s_renderIndex].m_matNeedsUpdate = false;
 	}
 	return m_localTransformMatrix;
 }

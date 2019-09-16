@@ -82,7 +82,7 @@ public:
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
 private:
-	static Application* m_instance;
+	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
@@ -91,7 +91,6 @@ private:
 
 
 	// Timer
-	double m_startTime;
 	Timer m_timer;
 	UINT m_fps;
 };

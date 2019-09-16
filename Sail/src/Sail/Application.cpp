@@ -4,16 +4,16 @@
 #include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
 
-Application* Application::m_instance = nullptr;
+Application* Application::s_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
 
 	// Set up instance if not set
-	if (m_instance) {
+	if (s_instance) {
 		Logger::Error("Only one application can exist!");
 		return;
 	}
-	m_instance = this;
+	s_instance = this;
 
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
@@ -71,9 +71,9 @@ int Application::startGameLoop() {
 	m_fps = 0;
 	// Start delta timer
 	m_timer.startTimer();
-	m_startTime = m_timer.getTime();
+	const INT64 startTime = m_timer.getStartTime();
 
-	double currentTime = m_timer.getTimeSince(m_startTime);
+	double currentTime = m_timer.getTimeSince(startTime);
 	double newTime = 0.0;
 	double delta = 0.0;
 	double accumulator = 0.0;
@@ -97,7 +97,7 @@ int Application::startGameLoop() {
 			}
 
 			// Get delta time from last frame
-			newTime = m_timer.getTimeSince(m_startTime);
+			newTime = m_timer.getTimeSince(startTime);
 			delta = newTime - currentTime;
 			currentTime = newTime;
 
@@ -135,22 +135,22 @@ int Application::startGameLoop() {
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
 			// Process state specific input
-			// NOTE: player movement is processed in update() and mouse movement is processed in render()
-			processInput(delta);
+			// NOTE: player movement is processed in update() except for mouse movement which is processed here
+			processInput(static_cast<float>(delta));
 
 			// Run update(s) in a separate thread
 			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
 				UINT updatesRemaining = CPU_updatesThisLoop;
 				while (updatesRemaining > 0) {
-					Transform::incrementCurrentUpdateIndex();
 					updatesRemaining--;
 					update(TIMESTEP);
+					Transform::IncrementCurrentUpdateIndex();
 				}
 				});
 
 			// Render
-			Transform::updateCurrentRenderIndex();
-			render(delta); // TODO: interpolate between game states with an alpha value
+			Transform::UpdateCurrentRenderIndex();
+			render(static_cast<float>(delta)); // TODO: interpolate between game states with an alpha value
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
@@ -166,9 +166,9 @@ std::string Application::getPlatformName() {
 }
 
 Application* Application::getInstance() {
-	if (!m_instance)
+	if (!s_instance)
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
-	return m_instance;
+	return s_instance;
 }
 
 void Application::dispatchEvent(Event& event) {
