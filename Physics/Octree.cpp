@@ -10,11 +10,11 @@ Octree::Octree(Scene* scene, Model* boundingBoxModel) {
 	m_softLimitMeshes = 1;
 	m_minimumNodeHalfSize = 5.0f;
 
-	BoundingBox* tempBoundingBox = SAIL_NEW BoundingBox();
+	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
+	BoundingBox* tempBoundingBox = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	tempBoundingBox->setPosition(glm::vec3(0.0f));
 	tempBoundingBox->setHalfSize(glm::vec3(50.0f, 50.0f, 50.0f));
-	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(tempBoundingBox, m_boundingBoxModel);
 	m_baseNode.bbEntity->addComponent<TransformComponent>(tempBoundingBox->getPosition(), glm::vec3(0.0f), tempBoundingBox->getHalfSize() * 2.0f);
 	m_scene->addEntity(m_baseNode.bbEntity);
 	m_baseNode.parentNode = nullptr;
@@ -33,12 +33,12 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 	z = direction.z >= 0.0f;
 
 	Node newBaseNode;
-	BoundingBox* newBaseNodeBoundingBox = SAIL_NEW BoundingBox();
 	const BoundingBox* baseNodeBB = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+	newBaseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+	newBaseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
+	BoundingBox* newBaseNodeBoundingBox = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNodeBoundingBox->setPosition(baseNodeBB->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(x * baseNodeBB->getHalfSize().x * 2.0f, y * baseNodeBB->getHalfSize().y * 2.0f, z * baseNodeBB->getHalfSize().z * 2.0f));
 	newBaseNodeBoundingBox->setHalfSize(baseNodeBB->getHalfSize() * 2.0f);
-	newBaseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	newBaseNode.bbEntity->addComponent<BoundingBoxComponent>(newBaseNodeBoundingBox, m_boundingBoxModel);
 	newBaseNode.bbEntity->addComponent<TransformComponent>(newBaseNodeBoundingBox->getPosition(), glm::vec3(0.0f), newBaseNodeBoundingBox->getHalfSize() * 2.0f);
 	m_scene->addEntity(newBaseNode.bbEntity);
 	newBaseNode.nrOfEntities = 0;
@@ -52,11 +52,11 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 					tempChildNode = m_baseNode;
 				}
 				else {
-					BoundingBox* tempChildBoundingBox = SAIL_NEW BoundingBox();
+					tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+					tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
+					BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 					tempChildBoundingBox->setHalfSize(baseNodeBB->getHalfSize());
 					tempChildBoundingBox->setPosition(newBaseNodeBoundingBox->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(tempChildBoundingBox->getHalfSize().x * 2.0f * i, tempChildBoundingBox->getHalfSize().y * 2.0f * j, tempChildBoundingBox->getHalfSize().z * 2.0f * k));
-					tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-					tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(tempChildBoundingBox, m_boundingBoxModel);
 					tempChildNode.bbEntity->addComponent<TransformComponent>(tempChildBoundingBox->getPosition(), glm::vec3(0.0f), tempChildBoundingBox->getHalfSize() * 2.0f);
 					m_scene->addEntity(tempChildNode.bbEntity);
 					tempChildNode.nrOfEntities = 0;
@@ -130,13 +130,13 @@ bool Octree::addEntityRec(Entity::SPtr newEntity, Node* currentNode) {
 				for (int i = 0; i < 2; i++) {
 					for (int j = 0; j < 2; j++) {
 						for (int k = 0; k < 2; k++) {
-							Node tempChildNode;
-							BoundingBox* tempChildBoundingBox = SAIL_NEW BoundingBox();
 							const BoundingBox* currentNodeBB = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+							Node tempChildNode;
+							tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+							tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
+							BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							tempChildBoundingBox->setHalfSize(currentNodeBB->getHalfSize() / 2.0f);
 							tempChildBoundingBox->setPosition(currentNodeBB->getPosition() - tempChildBoundingBox->getHalfSize() + glm::vec3(tempChildBoundingBox->getHalfSize().x * 2.0f * i, tempChildBoundingBox->getHalfSize().y * 2.0f * j, tempChildBoundingBox->getHalfSize().z * 2.0f * k));
-							tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-							tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(tempChildBoundingBox, m_boundingBoxModel);
 							tempChildNode.bbEntity->addComponent<TransformComponent>(tempChildBoundingBox->getPosition(), glm::vec3(0.0f), tempChildBoundingBox->getHalfSize() * 2.0f);
 							m_scene->addEntity(tempChildNode.bbEntity);
 							tempChildNode.nrOfEntities = 0;

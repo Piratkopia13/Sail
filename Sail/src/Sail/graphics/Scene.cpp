@@ -26,7 +26,7 @@ Scene::Scene()
 
 	//m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(SAIL_NEW DX11RenderableTexture(1U, width, height, false));
 
-	m_drawBoundingBoxes = false;
+	m_drawBoundingBoxes = true;
 }
 
 Scene::~Scene() {

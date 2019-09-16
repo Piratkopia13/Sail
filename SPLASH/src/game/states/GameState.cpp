@@ -339,10 +339,10 @@ GameState::GameState(StateStack& stack)
 	m_octree = SAIL_NEW Octree(&m_scene, m_boundingBoxModel.get());
 
 	for (int i = 0; i < 4; i++) {
-		BoundingBox* tempBoundingBox = SAIL_NEW BoundingBox();
-		tempBoundingBox->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
 		Entity::SPtr tempEntity = ECS::Instance()->createEntity("Bounding Box");
-		tempEntity->addComponent<BoundingBoxComponent>(tempBoundingBox, m_boundingBoxModel.get());
+		tempEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		BoundingBox* tempBoundingBox = tempEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+		tempBoundingBox->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
 		tempEntity->addComponent<TransformComponent>(tempBoundingBox->getPosition(), glm::vec3(0.0f), tempBoundingBox->getHalfSize());
 		m_testBoundingBoxes.push_back(tempEntity);
 		m_scene.addEntity(tempEntity);
