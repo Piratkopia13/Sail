@@ -12,6 +12,7 @@ AssimpLoader::~AssimpLoader() {
 }
 
 Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
+
 	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 	if (errorCheck(scene)) {
 		return nullptr;
@@ -38,11 +39,17 @@ AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 	}
 	AnimationStack* stack = new AnimationStack(vertCount);
 
-	std::map<std::string, size_t> boneMap;
-	if (!importBonesFromNode(scene, scene->mRootNode, stack, boneMap)) {
+	if (!importBonesFromNode(scene, scene->mRootNode, stack)) {
 		Memory::SafeDelete(stack);
 		return nullptr;
 	}
+	stack->checkWeights();
+
+	if (!importAnimations(scene, stack)) {
+		Memory::SafeDelete(stack);
+		return nullptr;
+	}
+	clearData();
 	return stack;
 }
 
@@ -57,7 +64,7 @@ Mesh* AssimpLoader::importMesh(const aiScene* scene, aiNode* node) {
 	return nullptr;
 }
 
-bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack, std::map<std::string, size_t>& map) {
+bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack) {
 	Animation* animation = new Animation();
 
 
@@ -76,7 +83,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 				
 				std::string boneName = bone->mName.C_Str();
 				size_t index = stack->m_boneMap.size();
-				if (map.find(boneName) == map.end()) {
+				if (stack->m_boneMap.find(boneName) == stack->m_boneMap.end()) {
 					stack->m_boneMap[boneName] = { index, mat4_cast(bone->mOffsetMatrix) };
 
 				}
@@ -113,7 +120,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 
 	int size = node->mNumChildren;
 	for (size_t i = 0; i < size; i++) {
-		importBonesFromNode(scene, node->mChildren[i], stack, map);
+		importBonesFromNode(scene, node->mChildren[i], stack);
 	}
 
 
@@ -121,12 +128,29 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 }
 
 bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack) {
+	if (!scene->HasAnimations()) {
+		return false;
+	}
+
+
+	for (size_t animationIndex = 0; animationIndex < scene->mNumAnimations; animationIndex++) {
+		const aiAnimation* animation = scene->mAnimations[animationIndex];
+
+		std::string temp = std::to_string(animation->mDuration) + ":" + std::to_string(animation->mTicksPerSecond) + " = " + std::to_string(animation->mDuration / animation->mTicksPerSecond);
+		Logger::Log(temp);
 
 
 
 
 
-	return false;
+	}
+	
+
+
+
+
+
+	return true;
 }
 
 //Animation* AssimpLoader::importAnimation(const aiScene* scene, aiNode* node) {
@@ -151,5 +175,10 @@ const bool AssimpLoader::errorCheck(const aiScene* scene) {
 		return true;
 	}
 	return false;
+}
+
+void AssimpLoader::clearData() {
+	m_meshOffsets.clear();
+
 }
 

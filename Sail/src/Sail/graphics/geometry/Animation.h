@@ -69,9 +69,25 @@ public:
 			weight[count] = _weight;
 			count++;
 		}
-		
+		float checkWeights() {
+			double sum = 0;
+			for (int i = 0; i < count; i++) {
+				sum += weight[i];
+			}
+			return sum;
+		}
 	};
 	void setConnectionData(const int vertexIndex, const int boneIndex, float weight);
+
+
+	void checkWeights() {
+		for (int i = 0; i < m_connectionSize; i++) {
+			float value = m_connections[i].checkWeights();
+			if (value > 1.001 || value < 0.999) {
+				Logger::Warning("Weights fucked: " + std::to_string(i)+ "(" + std::to_string(value)+")");
+			}
+		}
+	}
 
 	struct BoneInfo {
 		size_t index;

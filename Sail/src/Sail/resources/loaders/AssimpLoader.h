@@ -24,10 +24,10 @@ private:
 
 	
 	Mesh* importMesh(const aiScene* scene, aiNode* node);
-	bool importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack, std::map<std::string, size_t>& map);
+	bool importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack);
 	bool importAnimations(const aiScene* scene, AnimationStack* stack);
 	const bool errorCheck(const aiScene* scene);
-
+	void clearData();
 	//static inline glm::mat4 mat4_cast(const aiMatrix4x4& m) { 
 	//	return glm::transpose(glm::make_mat4(&m.a1)); 
 	//}
@@ -41,10 +41,12 @@ private:
 	}
 
 	void makeOffsets(const aiScene* scene) {
-		if (scene->mNumMeshes >= 1) {
-			m_meshOffsets.emplace_back(0);
-			for (size_t i = 1; i < scene->mNumMeshes; i++) {
-				m_meshOffsets.emplace_back(scene->mMeshes[i]->mNumVertices);
+		m_meshOffsets.emplace_back(0);
+		size_t old = 0;
+		if (scene->mNumMeshes > 1) {
+			for (size_t i = 0; i < scene->mNumMeshes; i++) {
+				m_meshOffsets.emplace_back(old + scene->mMeshes[i]->mNumVertices);
+				old = scene->mMeshes[i]->mNumVertices;
 			}
 		}
 	}

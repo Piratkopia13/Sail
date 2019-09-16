@@ -47,7 +47,7 @@ void AnimationStack::setConnectionData(const int vertexIndex, const int boneInde
 		return;
 	}
 #endif
-	if (m_connections[vertexIndex].count >= 4) {
+	if (m_connections[vertexIndex].count >= SAIL_BONES_PER_VERTEX) {
 		Logger::Error("AnimationStack::SetConnectionData: vertexIndex: " + std::to_string(vertexIndex) + "");
 	}
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
