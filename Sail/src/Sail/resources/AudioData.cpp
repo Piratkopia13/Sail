@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "AudioData.h"
+#include "API/Audio/GeneralFunctions.h"
 
 AudioData::AudioData() {
 
