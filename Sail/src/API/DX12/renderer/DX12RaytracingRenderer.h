@@ -10,7 +10,7 @@ public:
 	DX12RaytracingRenderer();
 	~DX12RaytracingRenderer();
 
-	void present(RenderableTexture* output = nullptr) override;
+	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
 
 	virtual bool onEvent(Event& event) override;
 

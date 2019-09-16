@@ -57,7 +57,8 @@ void Scene::draw(Camera& camera) {
 	}
 
 	(*m_currentRenderer)->end();
-	(*m_currentRenderer)->present();
+	(*m_currentRenderer)->present(&m_postProcessPipeline);
+
 	//(*m_currentRenderer)->present(m_deferredOutputTex.get());
 
 	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);

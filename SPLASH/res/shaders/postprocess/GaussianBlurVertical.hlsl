@@ -3,10 +3,10 @@
 //
 // Performs a separable blur with a blur radius of 5.  
 //=============================================================================
-#include "GassianBlurCommon.hlsl"
+#include "GaussianBlurCommon.hlsl"
 
-Texture2D input;
-RWTexture2D<float4> output;
+Texture2D input : register(t0);
+RWTexture2D<float4> output : register(u10);
 
 [numthreads(1, N, 1)]
 void CSMain(int3 groupThreadID : SV_GroupThreadID,

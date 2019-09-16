@@ -33,12 +33,14 @@ public:
 	}
 	void clear();
 
-	void run(Texture* baseTexture, void* cmdList = nullptr);
+	RenderableTexture* run(Texture* baseTexture, void* cmdList = nullptr);
+	RenderableTexture* run(RenderableTexture* baseTexture, void* cmdList = nullptr);
 
 	virtual bool onEvent(Event& event) override;
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	RenderableTexture* runInternal(PostProcessInput& input, void* cmdList);
 
 private:
 	struct StageData {

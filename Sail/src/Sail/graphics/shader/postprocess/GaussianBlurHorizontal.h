@@ -1,13 +1,12 @@
 #pragma once
 
-#include <glm/glm.hpp>
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 
-class RedTintShader : public Shader {
+class GaussianBlurHorizontal : public Shader {
 public:
-	RedTintShader();
-	~RedTintShader();
+	GaussianBlurHorizontal();
+	~GaussianBlurHorizontal();
 
 	virtual const Shader::ComputeSettings* getComputeSettings() const override;
 	virtual std::pair<std::string, void*> getComputeInputForIndex(Shader::ComputeShaderInput& input, unsigned int index) override;
@@ -17,5 +16,7 @@ public:
 private:
 	Shader::ComputeSettings m_settings;
 	std::unique_ptr<PostProcessPipeline::PostProcessOutput> m_output;
+
+private:
 
 };

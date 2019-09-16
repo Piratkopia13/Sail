@@ -24,6 +24,9 @@ public:
 		bool usesCBV_SRV_UAV = false;
 		unsigned int numInputTextures = 0;
 		unsigned int numOutputTextures = 0;
+		float threadGroupXScale = 1.0f;
+		float threadGroupYScale = 1.0f;
+		float threadGroupZScale = 1.0f;
 		// TODO: expand settings to support more types
 	};
 

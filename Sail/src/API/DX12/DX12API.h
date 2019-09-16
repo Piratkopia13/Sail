@@ -85,8 +85,11 @@ public:
 	DescriptorHeap* const getComputeGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
+	const D3D12_CPU_DESCRIPTOR_HANDLE& getDepthStencilViewCDH() const;
 	ID3D12Resource* getCurrentRenderTargetResource() const;
 	IDXGISwapChain4* const getSwapChain() const;
+	const D3D12_VIEWPORT* getViewport() const;
+	const D3D12_RECT* getScissorRect() const;
 
 	void initCommand(Command& cmd);
 

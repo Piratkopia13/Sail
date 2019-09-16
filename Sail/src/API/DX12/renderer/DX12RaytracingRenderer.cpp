@@ -17,8 +17,8 @@ DX12RaytracingRenderer::~DX12RaytracingRenderer() {
 
 }
 
-void DX12RaytracingRenderer::present(RenderableTexture* output) {
-
+void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
+	assert(!postProcessPipeline); // post processing not implemented in this renderer
 	auto frameIndex = m_context->getFrameIndex();
 
 	auto& allocator = m_command.allocators[frameIndex];
@@ -43,8 +43,6 @@ void DX12RaytracingRenderer::present(RenderableTexture* output) {
 	// Execute command list
 	cmdList->Close();
 	m_context->executeCommandLists({ cmdList.Get() });
-
-
 }
 
 bool DX12RaytracingRenderer::onEvent(Event& event) {

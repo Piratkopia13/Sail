@@ -8,6 +8,7 @@ class Camera;
 class Model;
 class LightSetup;
 class RenderableTexture;
+class PostProcessPipeline;
 
 class Renderer : public IEventListener {
 public:
@@ -29,7 +30,7 @@ public:
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix);
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void end();
-	virtual void present(RenderableTexture* output = nullptr) = 0;
+	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) = 0;
 	virtual bool onEvent(Event& event) override { return true; };
 
 protected:

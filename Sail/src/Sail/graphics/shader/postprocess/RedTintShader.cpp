@@ -39,7 +39,7 @@ Shader::ComputeShaderOutput* RedTintShader::getComputeOutput() {
 
 RedTintShader::RedTintShader()
 	: Shader("compute/ComputeTest.hlsl")
-	, m_clippingPlaneHasChanged(false) {
+{
 	// Finish the shader creation
 	finish();
 
