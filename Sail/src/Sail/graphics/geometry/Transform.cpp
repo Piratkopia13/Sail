@@ -43,9 +43,9 @@ Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, co
 		ts.m_rotation = rotation;
 		ts.m_rotationQuat = rotation;
 		ts.m_scale = scale;
-		ts.m_forward = 0.0f;
-		ts.m_right = 0.0f;
-		ts.m_up = 0.0f;
+		ts.m_forward = glm::vec3(0.0f);
+		ts.m_right = glm::vec3(0.0f);
+		ts.m_up = glm::vec3(0.0f);
 		ts.m_matNeedsUpdate = true;
 		ts.m_parentUpdated = parent;
 	}
@@ -254,7 +254,7 @@ const glm::vec3& Transform::getUp() {
 	return m_transformSnapshots[s_updateIndex].m_up;
 }
 
-glm::mat4 Transform::getMatrix() {
+glm::mat4 Transform::getMatrix(float alpha) {
 	if (m_transformSnapshots[s_updateIndex].m_matNeedsUpdate) {
 		updateLocalMatrix();
 		m_transformSnapshots[s_renderIndex].m_matNeedsUpdate = false;
@@ -265,15 +265,15 @@ glm::mat4 Transform::getMatrix() {
 		m_transformSnapshots[s_renderIndex].m_parentUpdated = false;
 		m_transformSnapshots[s_renderIndex].m_updatedDirections = true;
 	}
-	if (m_transformSnapshots[s_updateIndex].m_updateDirections) {
-		m_transformSnapshots[s_updateIndex].m_up = glm::vec3(glm::vec4(0.f, 1.f, 0.f, 1.f) * m_rotationMatrix);
+	if (m_transformSnapshots[s_renderIndex].m_updatedDirections) {
+		m_transformSnapshots[s_renderIndex].m_up = glm::vec3(glm::vec4(0.f, 1.f, 0.f, 1.f) * m_rotationMatrix);
 		//m_up = glm::normalize(m_up);
-		m_transformSnapshots[s_updateIndex].m_right = glm::vec3(glm::vec4(1.f, 0.f, 0.f, 1.f) * m_rotationMatrix);
+		m_transformSnapshots[s_renderIndex].m_right = glm::vec3(glm::vec4(1.f, 0.f, 0.f, 1.f) * m_rotationMatrix);
 		//m_right = glm::normalize(m_right);
-		m_transformSnapshots[s_updateIndex].m_forward = glm::vec3(glm::vec4(0.f, 0.f, 1.f, 1.f) * m_rotationMatrix);
-		float x = m_transformSnapshots[s_updateIndex].m_forward.x;
-		m_transformSnapshots[s_updateIndex].m_forward.x = m_transformSnapshots[s_updateIndex].m_forward.z;
-		m_transformSnapshots[s_updateIndex].m_forward.z = x;
+		m_transformSnapshots[s_renderIndex].m_forward = glm::vec3(glm::vec4(0.f, 0.f, 1.f, 1.f) * m_rotationMatrix);
+		float x = m_transformSnapshots[s_renderIndex].m_forward.x;
+		m_transformSnapshots[s_renderIndex].m_forward.x = m_transformSnapshots[s_renderIndex].m_forward.z;
+		m_transformSnapshots[s_renderIndex].m_forward.z = x;
 		//m_forward = glm::normalize(m_forward);
 	}
 
@@ -291,9 +291,9 @@ glm::mat4 Transform::getLocalMatrix() {
 
 void Transform::updateLocalMatrix() {
 	m_localTransformMatrix = glm::mat4(1.0f);
-	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_transformSnapshots[s_updateIndex].m_translation);
-	m_rotationMatrix = glm::mat4_cast(m_transformSnapshots[s_updateIndex].m_rotationQuat);
-	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_transformSnapshots[s_updateIndex].m_scale);
+	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_transformSnapshots[s_renderIndex].m_translation);
+	m_rotationMatrix = glm::mat4_cast(m_transformSnapshots[s_renderIndex].m_rotationQuat);
+	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_transformSnapshots[s_renderIndex].m_scale);
 	//m_localTransformMatrix = glm::translate(m_localTransformMatrix, m_translation);
 	/*m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.x, glm::vec3(1.f, 0.f, 0.f));
 	m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.y, glm::vec3(0.f, 1.f, 0.f));

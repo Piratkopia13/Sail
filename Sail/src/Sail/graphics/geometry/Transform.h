@@ -86,6 +86,7 @@ private:
 	};
 	TransformSnapshot m_transformSnapshots[SNAPSHOT_BUFFER_SIZE];
 
+	glm::mat4 m_rotationMatrix;
 	glm::mat4 m_transformMatrix;
 	glm::mat4 m_localTransformMatrix;
 
