@@ -12,7 +12,7 @@
 Octree::Octree(Scene* scene, Model* boundingBoxModel) {
 	m_scene = scene;
 	m_boundingBoxModel = boundingBoxModel;
-	m_softLimitMeshes = 1;
+	m_softLimitMeshes = 3;
 	m_minimumNodeHalfSize = 5.0f;
 
 	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");

@@ -204,12 +204,6 @@ glm::mat4 Transform::getLocalMatrix() {
 	return m_localTransformMatrix;
 }
 
-const bool Transform::getChange() {
-	bool tempChange = m_hasChanged;
-	m_hasChanged = false;
-	return tempChange;
-}
-
 
 
 
@@ -253,4 +247,10 @@ void Transform::removeChild(Transform* transform) {
 			break;
 		}
 	}
+}
+
+const bool Transform::getChange() {
+	bool tempChange = m_hasChanged;
+	m_hasChanged = false;
+	return tempChange;
 }

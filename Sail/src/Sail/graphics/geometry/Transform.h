@@ -49,8 +49,6 @@ public:
 	glm::mat4 getMatrix();
 	glm::mat4 getLocalMatrix();
 
-	const bool getChange();
-
 private:
 
 	glm::vec3 m_translation;
@@ -72,4 +70,8 @@ private:
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);
+
+private:
+	friend class UpdateBoundingBoxSystem;
+	const bool getChange(); //Only access this from UpdateBoundingBoxSystem::update()
 };
