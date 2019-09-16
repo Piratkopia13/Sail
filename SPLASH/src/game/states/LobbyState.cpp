@@ -150,8 +150,6 @@ bool LobbyState::playerLeft(unsigned int id) {
 
 void LobbyState::addTextToChat(const string* text) {
 	this->addmessageToChat(text, &m_players.front());
-
-	// Reset currentmessage
 }
 
 void LobbyState::resetCurrentMessage() {
@@ -191,10 +189,7 @@ string LobbyState::fetchMessage()
 }
 
 void LobbyState::recievemessage(string text, unsigned int senderID) {
-
-
 	addmessageToChat(&text, getplayer(senderID));
-
 }
 
 void LobbyState::addmessageToChat(const string* text, const player* sender) {
@@ -267,6 +262,7 @@ void LobbyState::renderplayerList() {
 	flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	flags |= ImGuiWindowFlags_NoTitleBar;
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
+	flags |= ImGuiWindowFlags_NoSavedSettings;
 
 	ImGui::SetNextWindowPos(ImVec2(
 		m_outerPadding,
@@ -288,11 +284,12 @@ void LobbyState::renderStartButton() {
 	flags |= ImGuiWindowFlags_NoMove;
 	flags |= ImGuiWindowFlags_NoNav;
 	flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	flags |= ImGuiWindowFlags_NoSavedSettings;
 	ImGui::SetNextWindowPos(ImVec2(
 		m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
 		m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
 	));
-	ImGui::Begin("Press 0 once", NULL, flags);
+	ImGui::Begin("Press 0 once");
 
 	// SetKeyBoardFocusHere on the chatbox prevents the button from working,
 	// so if we click with the mouse, temporarily set focus to the button.
@@ -317,6 +314,7 @@ void LobbyState::renderChat() {
 	chatFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	chatFlags |= ImGuiWindowFlags_NoTitleBar;
 	chatFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+	chatFlags |= ImGuiWindowFlags_NoSavedSettings;
 
 	// ------- message BOX ------- 
 	ImGui::SetNextWindowPos(ImVec2(

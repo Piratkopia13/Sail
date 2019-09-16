@@ -9,7 +9,8 @@ public:
 		TEXTINPUT,
 		NETWORK_JOINED,
 		NETWORK_DISCONNECT,
-		NETWORK_CHAT
+		NETWORK_CHAT,
+		NETWORK_WELCOME
 	};
 public:
 	Event(Type type);

@@ -48,6 +48,9 @@ protected:
 	Input* m_input = nullptr;
 	NetworkWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
+	string m_myName;
+	std::list<message> m_messages;
+	std::list<player> m_players;
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
@@ -70,9 +73,6 @@ private:
 
 	player* getplayer(unsigned int id);
 	// Back-end variables
-	string m_myName;
-	std::list<message> m_messages;
-	std::list<player> m_players;
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
 	unsigned int m_playerCount;

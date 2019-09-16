@@ -50,6 +50,13 @@ bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Send out 'playerjoined'
 	// --- Wrapper already does this
 
+	// Send a welcome package to all players
+	std::string listOfPlayers = "w";
+	for (auto currentPlayer : m_players) {
+		listOfPlayers.append(currentPlayer.name).append(":");
+	}
+	m_network->sendMsgAllClients(listOfPlayers);
+
 	return true;
 }
 
@@ -60,5 +67,10 @@ bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Send out 'playerdisconnected'
 	// --- Wrapper already does this
 	
+	return false;
+}
+
+
+bool LobbyHostState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 	return false;
 }
