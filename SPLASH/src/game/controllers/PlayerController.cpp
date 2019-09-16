@@ -222,8 +222,6 @@ void PlayerController::update(float dt) {
 		}
 	}
 
-
-	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 	m_cam->setCameraPosition(playerTrans->getTranslation());
 	// TODO: Replace with transform rotation/direction
 	/*Logger::Warning("totM: " + std::to_string(totM) + 

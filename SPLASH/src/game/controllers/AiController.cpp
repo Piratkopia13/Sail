@@ -27,7 +27,6 @@ void AiController::update() {
 	if (!m_reachedTarget) {
 		auto dir = glm::normalize(m_target - m_transComp->getTranslation());
 		m_physComp->velocity = dir * m_movementSpeed;
-		m_transComp->setForward(dir);
 		if (glm::distance(m_transComp->getTranslation(), m_target) < 3.f) {
 			m_reachedTarget = true;
 		}
