@@ -48,10 +48,13 @@ protected:
 	Input* m_input = nullptr;
 	NetworkWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
+	string m_myName;
+	std::list<message> m_messages;
+	std::list<player> m_players;
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
-	bool playerJoined(string name, unsigned int id);
+	bool playerJoined(player player);
 	bool playerLeft(unsigned int id);
 	void addTextToChat(const string* text);
 	void resetCurrentMessage();
@@ -70,9 +73,6 @@ private:
 
 	player* getplayer(unsigned int id);
 	// Back-end variables
-	string m_myName;
-	std::list<message> m_messages;
-	std::list<player> m_players;
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
 	unsigned int m_playerCount;
@@ -85,7 +85,6 @@ private:
 
 	// Purely for testing
 	void addTestData();
-	void doTestStuff();
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	unsigned int m_outerPadding;

@@ -45,10 +45,17 @@ bool LobbyHostState::onRecievedText(NetworkChatEvent& event) {
 
 bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add player to player list
-	this->playerJoined(std::to_string(event.getPlayerID()), event.getPlayerID());
+	this->playerJoined(event.getPlayer());
 
 	// Send out 'playerjoined'
 	// --- Wrapper already does this
+
+	// Send a welcome package to all players
+	std::string listOfPlayers = "w";
+	for (auto currentPlayer : m_players) {
+		listOfPlayers.append(currentPlayer.name).append(":");
+	}
+	m_network->sendMsgAllClients(listOfPlayers);
 
 	return true;
 }

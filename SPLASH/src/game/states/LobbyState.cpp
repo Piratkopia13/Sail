@@ -28,7 +28,7 @@ LobbyState::LobbyState(StateStack& stack)
 
 	// Add local player as the first.
 	m_myName = "Daniel";
-	playerJoined(m_myName, m_tempID++);
+	playerJoined(player{ m_tempID++, m_myName });
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
@@ -120,13 +120,9 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-bool LobbyState::playerJoined(string name, unsigned int id) {
+bool LobbyState::playerJoined(player player) {
 	if (m_playerCount < m_playerLimit) {
-		player newplayer{
-			id,
-			name
-		};
-		m_players.push_back(newplayer);
+		m_players.push_back(player);
 		m_playerCount++;
 		return true;
 	}
@@ -150,8 +146,6 @@ bool LobbyState::playerLeft(unsigned int id) {
 
 void LobbyState::addTextToChat(const string* text) {
 	this->addmessageToChat(text, &m_players.front());
-
-	// Reset currentmessage
 }
 
 void LobbyState::resetCurrentMessage() {
@@ -191,10 +185,7 @@ string LobbyState::fetchMessage()
 }
 
 void LobbyState::recievemessage(string text, unsigned int senderID) {
-
-
 	addmessageToChat(&text, getplayer(senderID));
-
 }
 
 void LobbyState::addmessageToChat(const string* text, const player* sender) {
@@ -222,8 +213,8 @@ player* LobbyState::getplayer(unsigned int id) {
 void LobbyState::addTestData()
 {
 	// Set up players
-	playerJoined("Ollie", m_tempID++);
-	playerJoined("David", m_tempID++);
+//	playerJoined("Ollie", m_tempID++);
+//	playerJoined("David", m_tempID++);
 	//playerJoined("Press 0 to switch between enter msg and going to gamestate with mouse (MouseClick by default)");
 	//playerJoined("The cause of this is an IMGUI-bug where keyboard focus prevents buttons from working");
 	//playerJoined("This tape is since we'll switch from imgui later anyway, so why patch shit that's only an imgui bug");
@@ -243,22 +234,6 @@ void LobbyState::addTestData()
 	m_messages.push_back(msg);
 }
 
-void LobbyState::doTestStuff()
-{
-	if (m_input->WasKeyJustPressed(SAIL_KEY_J)) {
-		playerJoined("Testplayer", m_tempID++);
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_U)) {
-		playerLeft(1);
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_I)) {
-		playerJoined("David", m_tempID++);
-	}
-	if (m_input->WasKeyJustPressed(SAIL_KEY_O)) {
-		playerLeft(m_tempID--);
-	}
-}
-
 void LobbyState::renderplayerList() {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	flags |= ImGuiWindowFlags_NoResize;
@@ -267,6 +242,7 @@ void LobbyState::renderplayerList() {
 	flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	flags |= ImGuiWindowFlags_NoTitleBar;
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
+	flags |= ImGuiWindowFlags_NoSavedSettings;
 
 	ImGui::SetNextWindowPos(ImVec2(
 		m_outerPadding,
@@ -288,11 +264,12 @@ void LobbyState::renderStartButton() {
 	flags |= ImGuiWindowFlags_NoMove;
 	flags |= ImGuiWindowFlags_NoNav;
 	flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	flags |= ImGuiWindowFlags_NoSavedSettings;
 	ImGui::SetNextWindowPos(ImVec2(
 		m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
 		m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
 	));
-	ImGui::Begin("Press 0 once", NULL, flags);
+	ImGui::Begin("Press 0 once");
 
 	// SetKeyBoardFocusHere on the chatbox prevents the button from working,
 	// so if we click with the mouse, temporarily set focus to the button.
@@ -317,6 +294,7 @@ void LobbyState::renderChat() {
 	chatFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	chatFlags |= ImGuiWindowFlags_NoTitleBar;
 	chatFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+	chatFlags |= ImGuiWindowFlags_NoSavedSettings;
 
 	// ------- message BOX ------- 
 	ImGui::SetNextWindowPos(ImVec2(

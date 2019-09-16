@@ -6,7 +6,9 @@
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
-//
+#include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
+#include "../../SPLASH/SPLASH/src/game/states/LobbyState.h"
+
 void NetworkWrapper::Initialize() {
 	m_network = new Network();
 }
@@ -108,9 +110,12 @@ bool NetworkWrapper::isHost() {
 void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 	// These will be assigned in the switch case.
-	int userID;
+	unsigned int userID;
 	std::string message;
 	char charAsInt[4] = { 0 };
+	std::list<player> playerList;	// Only used in 'w'-case but needs to be initialized
+	player currentPlayer{ -1, "" };	// up here
+	int charCounter = 0;			//
 
 	switch (nEvent.data->msg[0])
 	{
@@ -172,7 +177,45 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// Add this user id to the list of players in the lobby.
 		// Print out that this ID joined the lobby.
 		printf((std::to_string(userID) + " joined. \n").c_str());
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(userID));
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(player{ userID, "who?" }));
+		break;
+
+	case 'w':
+
+		// Parse the welcome-package. Hosts should never recieve welcome packages
+		// Parse first player
+		charCounter = 1; // Content starts after the 'w'
+		for (; true; charCounter++)
+		{
+			if (nEvent.data->msg[charCounter] == ':') {
+				playerList.push_back(currentPlayer);
+				currentPlayer.name = "";
+				charCounter++;
+				break;	// First name has been found
+			}
+			else {
+				currentPlayer.name += nEvent.data->msg[charCounter];
+			}
+		}
+
+		for (charCounter; charCounter < MAX_PACKAGE_SIZE; charCounter++)
+		{
+			// If delimiter, we just finished with a player name
+			if (nEvent.data->msg[charCounter] == ':') {
+				playerList.push_back(currentPlayer);
+				currentPlayer.name = "";
+			}
+			// If nullterminator, the msg is over.
+			else if (nEvent.data->msg[charCounter] == '\0') {
+				break;
+			}
+			// If neither above, add char to currentplayer
+			else {
+				currentPlayer.name += nEvent.data->msg[charCounter];
+			}
+		}
+
+		Application::getInstance()->dispatchEvent(NetworkWelcomeEvent(playerList));
 		break;
 
 	default:
@@ -184,7 +227,6 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 }
 
 void NetworkWrapper::playerDisconnected(ConnectionID id) {
-
 	/*
 		Send disconnect message to all clients if host.
 	*/
@@ -211,11 +253,6 @@ void NetworkWrapper::playerDisconnected(ConnectionID id) {
 	{
 		printf("Host disconnected. \n");
 	}
-	
-
-	// Remove the user with this ID from the lobby and print out that it disconnected.
-	
-	
 }
 
 void NetworkWrapper::playerReconnected(ConnectionID id) {
@@ -228,7 +265,7 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 	if (m_network->isServer())
 	{
 		char msg[64] = { 0 };
-		int intid = id;
+		unsigned int intid = id;
 		char* int_asChar = reinterpret_cast<char*>(&intid);
 
 		msg[0] = 'j';
@@ -243,7 +280,7 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 		// Print out that this ID joined the lobby.
 		printf((std::to_string(intid) + " joined. \n").c_str());
 
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(intid));
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(player{ intid, "" }));
 	}
 }
 

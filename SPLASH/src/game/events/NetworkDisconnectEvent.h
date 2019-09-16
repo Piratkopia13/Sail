@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../../Sail/src/Sail/events/Event.h"
+#include "../states/LobbyState.h"
 
 class NetworkDisconnectEvent : public Event {
 public:

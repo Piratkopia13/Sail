@@ -26,5 +26,9 @@ public:
 
 private:
 	Input* m_input = nullptr;
-
+	NetworkWrapper* m_network = nullptr;
+	Application* m_app = nullptr;
+	// For ImGui Input
+	char* inputIP = nullptr;
+	char* inputName = nullptr;
 };
