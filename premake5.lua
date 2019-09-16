@@ -142,8 +142,7 @@ project "Sail"
 		"libfbxsdk",
 		"GLFW",
 		"ImGui",
-		"MemoryManager",
-		"ResourceManager"
+		"MemoryManager"
 	}
 
 	defines {

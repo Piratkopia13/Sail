@@ -60,57 +60,15 @@ int Audio::playSound(const std::string &filename) {
 				// ... for ADPC-WAV compressed file-type
 				//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
 
-#pragma region ERROR_CHECKING
-		try {
-			if (hr != S_OK) {
-				throw std::invalid_argument(nullptr);
-			}
-		}
-		catch (const std::invalid_argument& e) {
-
-			UNREFERENCED_PARAMETER(e);
-			wchar_t errorMsgBuffer[256];
-			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: Failed to create the actual 'SourceVoice' for the sound file '%S'!", filename.c_str());
-			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-			std::exit(0);
-		}
-#pragma endregion
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::playSound()", "Failed to create the actual 'SourceVoice' for a sound file!", 0, true);
 
 		hr = m_sourceVoice[m_currIndex]->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
 
-#pragma region ERROR_CHECKING
-		try {
-			if (hr != S_OK) {
-				throw std::invalid_argument(nullptr);
-			}
-		}
-		catch (const std::invalid_argument& e) {
-
-			UNREFERENCED_PARAMETER(e);
-			wchar_t errorMsgBuffer[256];
-			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: Failed to submit the 'sourceBuffer' to the 'sourceVoice' for the sound file '%S'!", filename.c_str());
-			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-			std::exit(0);
-		}
-#pragma endregion
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::playSound()", "Failed to submit the 'sourceBuffer' to the 'sourceVoice' for a sound file!", 0, true);
 
 		hr = m_sourceVoice[m_currIndex]->Start(0);
 
-#pragma region ERROR_CHECKING
-		try {
-			if (hr != S_OK) {
-				throw std::invalid_argument(nullptr);
-			}
-		}
-		catch (const std::invalid_argument& e) {
-
-			UNREFERENCED_PARAMETER(e);
-			wchar_t errorMsgBuffer[256];
-			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed submit processed audio data to data buffer for the audio file '%S'!", filename.c_str());
-			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-			std::exit(0);
-		}
-#pragma endregion
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed submit processed audio data to data buffer for a audio file", 0, true);
 
 		m_currIndex++;
 		m_currIndex %= SOUND_COUNT;
@@ -120,19 +78,7 @@ int Audio::playSound(const std::string &filename) {
 
 	else {
 
-#pragma region ERROR_CHECKING
-		try {
-				throw std::invalid_argument(nullptr);
-		}
-		catch (const std::invalid_argument& e) {
-
-			UNREFERENCED_PARAMETER(e);
-			wchar_t errorMsgBuffer[256];
-			wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: The audio file '%S' has NOT been loaded yet!", filename.c_str());
-			MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO WARNING!"), MB_ICONWARNING);
-		}
-#pragma endregion
-
+		errorCheck(E_FAIL, "AUDIO WARNING!", "FUNCTION: Audio::playSound()", "That audio file has NOT been loaded yet!", 1, false);
 		return (-1);
 	}
 
@@ -196,38 +142,11 @@ void Audio::initXAudio2() {
 
 	hr = XAudio2Create(&m_xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
 
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::initXAudio2()\n\nMESSAGE: Creating the 'IXAudio2' object failed!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
+	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::initXAudio2()", "Creating the 'IXAudio2' object failed!", 0, true);
 
 	hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice);
 
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::initXAudio2()\n\nMESSAGE: Creating the 'IXAudio2MasterVoice' failed!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
+	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::initXAudio2()", "Creating the 'IXAudio2MasterVoice' failed!", 0, true);
 
 	//m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 }
