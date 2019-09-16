@@ -58,6 +58,11 @@ void UpdateBoundingBoxSystem::update(float dt) {
 				boundingBox->getBoundingBox()->setPosition(minPositions + boundingBox->getBoundingBox()->getHalfSize());
 			}
 		}
+		else if (transform) {
+			if (transform->getChange()) {
+				boundingBox->getBoundingBox()->setPosition(transform->getTranslation());
+			}
+		}
 
 		boundingBox->getTransform()->setTranslation(boundingBox->getBoundingBox()->getPosition());
 		boundingBox->getTransform()->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);

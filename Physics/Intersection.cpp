@@ -3,11 +3,7 @@
 #include "Intersection.h"
 
 
-Intersection::Intersection(){}
-
-Intersection::~Intersection(){}
-
-bool Intersection::aabbWithAabb(BoundingBox aabb1, BoundingBox aabb2) const {
+bool Intersection::aabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2) {
 
 	glm::vec3 center1 = aabb1.getPosition();
 	glm::vec3 center2 = aabb2.getPosition();
@@ -26,17 +22,17 @@ bool Intersection::aabbWithAabb(BoundingBox aabb1, BoundingBox aabb2) const {
 	return true;
 }
 
-bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) const {
+bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
 	
 	glm::vec3 center = aabb.getPosition();
 	//Calculate normal for triangle
-	glm::vec3 triNormal = glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)); // TODO: Might be wrong direction, needs testing.
+	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2))); // TODO: Might be wrong direction, needs testing.
 	
 
 	// Calculate triangle points relative to the AABB
-	v0 = v0 - center;
-	v1 = v1 - center;
-	v2 = v2 - center;
+	glm::vec3 newV0 = v0 - center;
+	glm::vec3 newV1 = v1 - center;
+	glm::vec3 newV2 = v2 - center;
 
 	
 	// Calculate the plane that the triangle is on
@@ -53,15 +49,15 @@ bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1
 		e[2] = glm::vec3(0.f, 0.f, 1.f);
 		
 		glm::vec3 f[3];
-		f[0] = v1 - v0;
-		f[1] = v2 - v1;
-		f[2] = v0 - v2;
+		f[0] = newV1 - newV0;
+		f[1] = newV2 - newV1;
+		f[2] = newV0 - newV2;
 
 		glm::vec3 aabbSize = aabb.getHalfSize();
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
 				glm::vec3 a = glm::cross(e[i], f[j]);
-				glm::vec3 p = glm::vec3(glm::dot(a, v0), glm::dot(a, v1), glm::dot(a, v2));
+				glm::vec3 p = glm::vec3(glm::dot(a, newV0), glm::dot(a, newV1), glm::dot(a, newV2));
 				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
 				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z))) {
 					return false;
@@ -76,7 +72,7 @@ bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1
 	return true;
 }
 
-bool Intersection::aabbWithPlane(BoundingBox aabb, glm::vec3 normal, float distance) const {
+bool Intersection::aabbWithPlane(const BoundingBox& aabb, const glm::vec3& normal, const float& distance) {
 	
 	glm::vec3 extent = aabb.getHalfSize();
 	

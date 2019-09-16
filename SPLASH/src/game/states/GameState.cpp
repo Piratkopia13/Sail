@@ -177,6 +177,10 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
+	//Give player a bounding box
+	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	m_scene.addEntity(m_playerController.getEntity());
+
 	//Create octree
 	m_octree = SAIL_NEW Octree(&m_scene, m_boundingBoxModel.get());
 
@@ -551,6 +555,9 @@ bool GameState::update(float dt) {
 
 	m_octree->update();
 
+	std::vector<Octree::CollisionInfo> throwaway;
+	m_octree->getCollisions(m_playerController.getEntity(), &throwaway);
+
 	return true;
 }
 
@@ -639,8 +646,9 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	auto e = ECS::Instance()->createEntity("new cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(position);
-	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	//e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	return std::string("Added Cube at (" +
 		std::to_string(position.x) + ":" +
 		std::to_string(position.y) + ":" +
