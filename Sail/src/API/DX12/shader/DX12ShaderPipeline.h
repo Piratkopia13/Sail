@@ -15,7 +15,7 @@ public:
 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList) override;
-	virtual void setMaterial(Material* texture, void* cmdList);
+	virtual unsigned int setMaterial(Material* texture, void* cmdList);
 
 	void setResourceHeapMeshIndex(unsigned int index);
 

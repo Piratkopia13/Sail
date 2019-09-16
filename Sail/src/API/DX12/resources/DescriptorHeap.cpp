@@ -25,7 +25,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::getNextCPUDescriptorHandle(int nStep
 	return getCPUDescriptorHandleForIndex(getAndStepIndex(nSteps));
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getGPUDescriptorHandleForIndex(unsigned int index) const {
+D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getGPUDescriptorHandleForIndex(unsigned int index) const {	
 	if (index >= m_numDescriptors)
 		Logger::Error("Tried to get out of bounds descriptor heap gpu handle!");
 	auto heapHandle = m_descHeap->GetGPUDescriptorHandleForHeapStart();

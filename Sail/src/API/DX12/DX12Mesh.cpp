@@ -27,15 +27,18 @@ DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 DX12Mesh::~DX12Mesh() {
 }
 
-void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {}
+void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
+	assert(false);/*[deprecated]*/
+}
 
 void DX12Mesh::draw_new(const Renderer& renderer, void* cmdList, int meshIndex) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-	// Set offset in SRV heap for this mesh 
-	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
-	//material->bind(cmdList);
 	bindMaterial(cmdList, meshIndex);
+	// Set offset in SRV heap for this mesh 
+	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getGPUDescriptorHandleForIndex(m_SRVIndex));
+	//dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
+	//material->bind(cmdList);
 	vertexBuffer->bind(cmdList);
 
 	if (indexBuffer)
@@ -54,7 +57,7 @@ void DX12Mesh::bindMaterial(void* cmdList, int meshIndex)
 	const Material::PhongSettings & phongSettings = material->getPhongSettings();
 	DX12ShaderPipeline* pipeline = static_cast<DX12ShaderPipeline*>(shader->getPipeline());	
 	pipeline->trySetCBufferVar_new("sys_material", (void*)&phongSettings, sizeof(Material::PhongSettings), meshIndex);
-	pipeline->setMaterial(material.get(), cmdList);
+	m_SRVIndex = pipeline->setMaterial(material.get(), cmdList);
 
 	/*
 	if (phongSettings.hasDiffuseTexture)
@@ -64,4 +67,9 @@ void DX12Mesh::bindMaterial(void* cmdList, int meshIndex)
 	if (phongSettings.hasSpecularTexture)
 		pipeline->setTexture2D("sys_texSpecular", material->getTexture(2), cmdList);
 	*/
+}
+
+unsigned int DX12Mesh::getSRVIndex()
+{
+	return m_SRVIndex;
 }

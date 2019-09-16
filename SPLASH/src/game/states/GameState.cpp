@@ -545,11 +545,6 @@ bool GameState::renderImguiConsole(float dt) {
 
 	}
 
-
-
-
-
-
 	return false;
 }
 

@@ -29,21 +29,7 @@ DX12ShaderPipeline::~DX12ShaderPipeline() {
 
 /*[deprecated]*/
 void DX12ShaderPipeline::bind(void* cmdList) {
-	if (!m_pipelineState)
-		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
-	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-
-	for (auto& it : parsedData.cBuffers) {
-		it.cBuffer->bind(cmdList);
-	}
-	for (auto& it : parsedData.samplers) {
-		it.sampler->bind();
-	}
-
-	// Set input layout as active
-	inputLayout->bind();
-
-	dxCmdList->SetPipelineState(m_pipelineState.Get());
+	assert(false);/*[deprecated]*/
 }
 
 void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex)
@@ -159,7 +145,7 @@ void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture,
 	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
-void DX12ShaderPipeline::setMaterial(Material* material, void* cmdList)
+unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList)
 {
 	const Material::PhongSettings& ps = material->getPhongSettings();
 	int nTextures = 0;
@@ -177,7 +163,8 @@ void DX12ShaderPipeline::setMaterial(Material* material, void* cmdList)
 		nTextures++;
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(nTextures);
+	unsigned int indexStart = m_context->getMainGPUDescriptorHeap()->getAndStepIndex(nTextures);
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_context->getMainGPUDescriptorHeap()->getCPUDescriptorHandleForIndex(indexStart);
 
 	for (size_t i = 0; i < nTextures; i++)
 	{
@@ -189,6 +176,7 @@ void DX12ShaderPipeline::setMaterial(Material* material, void* cmdList)
 		handle.ptr += m_context->getMainGPUDescriptorHeap()->getDescriptorIncrementSize();
 	}
 
+	return indexStart;
 }
 
 void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {

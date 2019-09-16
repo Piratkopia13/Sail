@@ -22,9 +22,9 @@ public:
 	void setIndex(unsigned int index);
 
 	void bind(ID3D12GraphicsCommandList4* cmdList) const;
+	unsigned int getAndStepIndex(int nSteps = 1);
 
 private:
-	unsigned int getAndStepIndex(int nSteps = 1);
 	std::mutex m_getAndStepIndex_mutex;
 
 private:

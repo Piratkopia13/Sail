@@ -594,6 +594,14 @@ void DX12API::clear(const glm::vec4& color) {
 	//m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
+void DX12API::clear(ID3D12GraphicsCommandList4* cmdList, const glm::vec4& color)
+{
+	clear(color);
+	// Clear
+	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
+	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+}
+
 void DX12API::present(bool vsync) {
 
 	//Present the frame.
@@ -693,10 +701,6 @@ void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 void DX12API::prepareToRender(ID3D12GraphicsCommandList4* cmdList) const {
 	// Indicate that the back buffer will be used as render target
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	
-	// Clear
-	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
-	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
