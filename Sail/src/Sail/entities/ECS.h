@@ -22,6 +22,7 @@ public:
 	*/
 	Entity::SPtr createEntity(const std::string& name = "");
 
+	void queueDestructionOfEntity(const Entity::SPtr entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
 
 	/*

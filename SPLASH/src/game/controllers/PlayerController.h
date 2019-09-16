@@ -32,6 +32,10 @@ public:
 
 	void setProjectileModel(Model* model);
 
+
+	// TEMPORARY SOLUTION, should be done in a more threadsafe way
+	// Call at the start of the render loop and nowhere else
+	void destroyOldProjectiles();
 private:
 	float m_movementSpeed = 20.f;
 
@@ -42,7 +46,11 @@ private:
 	Scene* m_scene;
 
 	Model* m_projectileModel;
+	
+	// Never access without the mutex lock
 	std::vector<Projectile> m_projectiles;
+	std::mutex m_projectileLock;
+
 
 	std::shared_ptr<Entity> m_player;
 

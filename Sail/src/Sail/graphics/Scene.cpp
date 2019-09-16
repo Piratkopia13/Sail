@@ -49,6 +49,9 @@ void Scene::prepareUpdate() {
 	}
 }
 
+
+
+// TODO: loop through renderEntities
 void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
 

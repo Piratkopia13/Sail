@@ -507,6 +507,10 @@ bool GameState::update(float dt) {
 // Renders the state
 // Note: will use alpha (the interpolation value between two game states) instead of dt
 bool GameState::render(float alpha) {
+	// TODO: make a system or something for this
+	m_playerController.destroyOldProjectiles();
+
+
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
 
