@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
+#include "Sail/ai/pathfinding/NodeSystem.h"
 
 
 GameState::GameState(StateStack& stack)
@@ -341,6 +342,34 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 	m_scene.addEntity(e);
 
+
+#ifdef _DEBUG
+	NodeSystem test;
+	std::vector<unsigned int> conn0;
+	conn0.emplace_back(1);
+	std::vector<unsigned int> conn1;
+	conn1.emplace_back(0);
+	conn1.emplace_back(2);
+	std::vector<unsigned int> conn2;
+	conn2.emplace_back(1);
+
+	std::vector<glm::vec3> nodes;
+	nodes.push_back(glm::vec3(2.f, 0.f, 0.f));
+	nodes.push_back(glm::vec3(4.f, 0.f, 0.f));
+	nodes.push_back(glm::vec3(6.f, 0.f, 0.f));
+	std::vector<std::vector<unsigned int>> connections;
+	connections.push_back(conn0);
+	connections.push_back(conn1);
+	connections.push_back(conn2);
+
+	test.setNodes(nodes, connections);
+
+	auto path = test.getPath(glm::vec3(1.f, 0.f, 0.f), glm::vec3(4.f, 0.f, 0.f));
+
+	for ( auto v : path ) {
+		Logger::Log(std::to_string(v.position.x) + " " + std::to_string(v.position.y) + " " + std::to_string(v.position.z));
+	}
+#endif
 	
 	//m_physSystem.registerEntity(m_playerController.getEntity());
 //>>>>>>> dev
