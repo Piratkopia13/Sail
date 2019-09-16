@@ -343,7 +343,7 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 
 
-#ifdef _DEBUG
+/* "Unit test" for NodeSystem */
 	NodeSystem test;
 	std::vector<unsigned int> conn0;
 	conn0.emplace_back(1);
@@ -400,13 +400,11 @@ GameState::GameState(StateStack& stack)
 	for ( int i = 0; i < testPath.size(); i++ ) {
 		if ( testPath[i] != path[i].position ) {
 			Logger::Error("Something is wrong with the node system.");
-		}
+		}tes
 	}
-
-#endif
+/* End of "Unit test" for NodeSystem */
 	
 	//m_physSystem.registerEntity(m_playerController.getEntity());
-//>>>>>>> dev
 }
 
 GameState::~GameState() {
