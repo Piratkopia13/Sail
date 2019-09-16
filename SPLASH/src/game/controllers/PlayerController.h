@@ -4,6 +4,8 @@ class CameraController;
 class Camera;
 class Entity;
 
+constexpr float RUN_SPEED = 2.0f;
+
 class PlayerController {
 public:
 	PlayerController(Camera* cam);
@@ -27,7 +29,7 @@ private:
 
 	std::shared_ptr<Entity> m_player;
 
-	// NOTE: not thread safe, might cause issues
+	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
 
 	float m_lookSensitivityMouse = 0.1f;

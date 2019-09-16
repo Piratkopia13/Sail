@@ -4,8 +4,6 @@
 #include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
 
-
-
 Application* Application::m_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
@@ -66,27 +64,22 @@ Application::~Application() {
 
 
 // CAUTION: HERE BE DRAGONS!
-// Update and render synchronization is not guaranteed to work without data races when the framerate is significantly lower
-// than the update rate
+// Update and render synchronization is not guaranteed to work without data races when the framerate 
+// is significantly lower than the update rate
 int Application::startGameLoop() {
 	MSG msg = {0};
 	m_fps = 0;
+	// Start delta timer
+	m_timer.startTimer();
+	m_startTime = m_timer.getTime();
 
-	double currentTime = m_startTime;
+	double currentTime = m_timer.getTimeSince(m_startTime);
 	double newTime = 0.0;
 	double delta = 0.0;
 	double accumulator = 0.0;
-
 	double secCounter = 0.0;
 	double elapsedTime = 0.0;
 	UINT frameCounter = 0;
-
-
-	// Start delta timer
-	m_timer.startTimer();
-	
-	// Set the start time so that the update and render loops use the same epoch with the getTimeSince(time) function in Timer.h
-	m_startTime = m_timer.getTime();
 
 	// Render loop, each iteration of it results in one rendered frame
 	while (msg.message != WM_QUIT) {
@@ -103,25 +96,29 @@ int Application::startGameLoop() {
 				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
 
+			// Get delta time from last frame
 			newTime = m_timer.getTimeSince(m_startTime);
 			delta = newTime - currentTime;
 			currentTime = newTime;
-			//delta = std::min(delta, 0.25); // might be needed for correct interpolation
 
-			// Get delta time from last frame
-			//float delta = static_cast<float>(m_timer.getFrameTime());
-			//delta = std::min(delta, 0.04f);
-			//delta = std::min(delta, 0.04); // needed?
+			// Will slow the game down if the CPU can't keep up with the TICKRATE
+			delta = std::min(delta, 4 * TIMESTEP); 
 
 			// Update fps counter
-			//secCounter += delta;
 			secCounter += delta;
+			accumulator += delta;
 			frameCounter++;
-
-			if (secCounter >= 1) {
+			if (secCounter >= 1.0) {
 				m_fps = frameCounter;
 				frameCounter = 0;
-				secCounter = 0.f;
+				secCounter = 0.0;
+			}
+
+			// Queue multiple updates if the game has fallen behind to make sure that it catches back up to the current time.
+			UINT CPU_updatesThisLoop = 0;
+			while (accumulator >= TIMESTEP) {
+				accumulator -= TIMESTEP;
+				CPU_updatesThisLoop++;
 			}
 
 			// Update mouse deltas
@@ -137,23 +134,13 @@ int Application::startGameLoop() {
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
-
 			// Process state specific input
-			// NOTE: player movement is updated in update() and mouse movement is updated in render()
+			// NOTE: player movement is processed in update() and mouse movement is processed in render()
 			processInput(delta);
-
-			accumulator += delta;
-
-			// Queue multiple updates if the update has fallen behind to make sure that it catches back up to the current time.
-			int CPU_updatesThisLoop = 0;
-			while (accumulator >= TIMESTEP) {
-				accumulator -= TIMESTEP;
-				CPU_updatesThisLoop++;
-			}
 
 			// Run update(s) in a separate thread
 			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
-				int updatesRemaining = CPU_updatesThisLoop;
+				UINT updatesRemaining = CPU_updatesThisLoop;
 				while (updatesRemaining > 0) {
 					Transform::incrementCurrentUpdateIndex();
 					updatesRemaining--;
@@ -163,12 +150,7 @@ int Application::startGameLoop() {
 
 			// Render
 			Transform::updateCurrentRenderIndex();
-			render(delta);
-
-
-			//// FOR DEBUGGING
-			//UINT a = Transform::getUpdateIndex();
-			//UINT b = Transform::getRenderIndex();
+			render(delta); // TODO: interpolate between game states with an alpha value
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();

@@ -10,10 +10,6 @@
 #include "resources/ResourceManager.h"
 #include "events/IEventDispatcher.h"
 
-//#include "graphics/FrameSynchronizer.h"
-
-
-
 // used in template functions
 #include <future>
 
@@ -24,10 +20,8 @@ namespace ctpl {
 
 
 // TODO? Move elsewhere
-//const unsigned int SNAPSHOT_BUFFER_SIZE = 4;
-const double TICKRATE = 100.0;
+const double TICKRATE = 128.0;
 const double TIMESTEP = 1.0 / TICKRATE;
-
 
 
 class Application : public IEventDispatcher {
@@ -58,6 +52,7 @@ public:
 	T* const getWindow() { return static_cast<T*>(m_window.get()); }
 	Window* const getWindow();
 
+
 	// Pass-through functions for pushing jobs (functions, lambdas, etc.) to the thread pool.
 	// The first parameter of all jobs must be int id which becomes the id of the running thread.
 	// Returns std::future containing the return type of the job.
@@ -86,24 +81,17 @@ public:
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
-
-
-	// To be done at the end of each CPU update and nowhere else
-	//void incrementFrameIndex();
-	//const unsigned int getFrameIndex() const;
-	//const unsigned int getSnapshotBufferIndex() const;
 private:
 	static Application* m_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
+	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
 
-	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 
 	// Timer
 	double m_startTime;
 	Timer m_timer;
 	UINT m_fps;
-
 };
