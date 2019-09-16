@@ -2,6 +2,7 @@
 
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
+#include "../controllers/AiController.h"
 
 class GameState : public State {
 public:
@@ -29,6 +30,7 @@ private:
 	PerspectiveCamera m_cam;
 	//FlyingCameraController m_camController;
 	PlayerController m_playerController;
+	std::vector<AiController> m_aiControllers;
 
 	//SimplePhysicsSystem m_physSystem;
 
