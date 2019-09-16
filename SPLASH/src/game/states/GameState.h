@@ -22,6 +22,7 @@ public:
 private:
 	bool onResize(WindowResizeEvent& event);
 	bool renderImguiConsole(float dt);
+	bool renderImguiProfiler(float dt);
 
 private:
 	Application* m_app;
@@ -40,6 +41,9 @@ private:
 	Scene m_scene;
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
+	Profiler m_profiler;
+	float m_profilerTimer = 0.f;
+	std::string m_cpuUsage;
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 
