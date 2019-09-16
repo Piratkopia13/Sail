@@ -6,7 +6,7 @@
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
-
+// deg
 void NetworkWrapper::Initialize() {
 	m_network = new Network();
 }
