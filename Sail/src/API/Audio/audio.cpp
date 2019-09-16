@@ -156,43 +156,37 @@ void Audio::pauseAllSounds() {
 
 void Audio::updateAudio() {
 
-	if (Input::IsKeyPressed(SAIL_KEY_1) && m_singlePressBool1) {
+	// 'PLAY' Sound
+	if (Input::IsKeyPressed(SAIL_KEY_1) && m_singlePress1) {
 
-		m_singlePressBool1 = false;
+		m_singlePress1 = false;
 		this->loadSound("../Audio/sampleLarge.wav");
 	}
 
-	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePressBool1) {
-		m_singlePressBool1 = true;
+	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePress1) {
+		m_singlePress1 = true;
 		this->playSound("../Audio/sampleLarge.wav");
-	}
-
-	if (Input::IsKeyPressed(SAIL_KEY_0)) {
-		this->pauseAllSounds();
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_9)) {
 		this->pauseSound(0);
 	}
 
-	//if (Input::IsKeyPressed(SAIL_KEY_7)) {
+	if (Input::IsKeyPressed(SAIL_KEY_0)) {
+		this->pauseAllSounds();
+	}
 
-	//	if (m_singlePressBool2) {
 
-	//		m_singlePressBool2 = false;
-	//		//this->stopSound(1);
-	//		//this->loadCompressedSound("../Audio/sampleADPC_1.wav", 1);
-	//		//this->playSound(1);
-	//	}
 
-	//	else if (!m_singlePressBool2) {
-	//		m_singlePressBool2 = true;
-	//	}
+	//// 'STREAM' Sound
+	//if (Input::IsKeyPressed(SAIL_KEY_2) && m_singlePress2) {
+
+	//	m_singlePress2 = false;
+	//	m_sourceVoice[this->m_currIndex]->Start(0, 0);
 	//}
 
-
-	//if (Input::IsKeyPressed(SAIL_KEY_8)) {
-	//	//this->stopSound();
+	//else if (!Input::IsKeyPressed(SAIL_KEY_2) && !m_singlePress2) {
+	//	m_singlePress2 = true;
 	//}
 }
 
