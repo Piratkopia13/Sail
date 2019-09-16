@@ -168,12 +168,15 @@ void PlayerController::update(float dt) {
 		m_yaw += 360;
 	}
 
+	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
 		std::sin(glm::radians(m_pitch)),
 		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
 	);
 	forwards = glm::normalize(forwards);
+	playerTrans->setForward(forwards);
 
 	glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
@@ -219,8 +222,6 @@ void PlayerController::update(float dt) {
 		}
 	}
 
-
-	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 	m_cam->setCameraPosition(playerTrans->getTranslation());
 	// TODO: Replace with transform rotation/direction
 	/*Logger::Warning("totM: " + std::to_string(totM) + 
