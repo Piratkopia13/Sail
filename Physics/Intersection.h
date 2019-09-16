@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BoundingBox.h"
+
 class Intersection {
 private:
 

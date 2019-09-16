@@ -1,5 +1,4 @@
 #include "PhysicsPCH.h"
-#include "BoundingBox.h"
 
 #include "Intersection.h"
 
@@ -64,7 +63,7 @@ bool Intersection::aabbWithTriangle(BoundingBox aabb, glm::vec3 v0, glm::vec3 v1
 				glm::vec3 a = glm::cross(e[i], f[j]);
 				glm::vec3 p = glm::vec3(glm::dot(a, v0), glm::dot(a, v1), glm::dot(a, v2));
 				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-				if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z))) {
+				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z))) {
 					return false;
 				}
 			}

@@ -1,10 +1,5 @@
 #pragma once
 
-#include "Sail/entities/ECS.h"
-#include "Sail/graphics/Scene.h"
-#include "Sail/graphics/geometry/Model.h"
-
-
 class BoundingBox {
 private:
 	glm::vec3 m_position;

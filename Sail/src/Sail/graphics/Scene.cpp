@@ -57,10 +57,7 @@ void Scene::draw(Camera& camera) {
 		if (m_drawBoundingBoxes) {
 			BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
 			if (boundingBox) {
-				TransformComponent* transform = entity->getComponent<TransformComponent>();
-				if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
-
-				m_renderer->submit(boundingBox->getWireframeModel(), transform->getMatrix());
+				m_renderer->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
 			}
 		}
 	}

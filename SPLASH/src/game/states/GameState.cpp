@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
+#include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 
 
@@ -61,6 +62,9 @@ GameState::GameState(StateStack& stack)
 		assuming each system is included in ECS.cpp instead of here
 	*/
 	ECS::Instance()->createSystem<PhysicSystem>();
+
+	//Create system for updating bounding box
+	ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 
 
 	// This was moved out from the PlayerController constructor
@@ -343,7 +347,6 @@ GameState::GameState(StateStack& stack)
 		tempEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		BoundingBox* tempBoundingBox = tempEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 		tempBoundingBox->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
-		tempEntity->addComponent<TransformComponent>(tempBoundingBox->getPosition(), glm::vec3(0.0f), tempBoundingBox->getHalfSize());
 		m_testBoundingBoxes.push_back(tempEntity);
 		m_scene.addEntity(tempEntity);
 	}
@@ -495,7 +498,6 @@ bool GameState::update(float dt) {
 
 	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
 		m_testBoundingBoxes[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
-		m_testBoundingBoxes[i]->getComponent<TransformComponent>()->setTranslation(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
 	}
 
 	m_octree->update();

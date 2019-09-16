@@ -1,9 +1,10 @@
 #pragma once
 
 #include "BoundingBox.h"
-#include "Sail/entities/ECS.h"
-#include "Sail/graphics/Scene.h"
-#include "Sail/graphics/geometry/Model.h"
+#include "Sail/entities/Entity.h"
+
+class Model;
+class Scene;
 
 class Octree {
 public:
@@ -19,13 +20,8 @@ private:
 		std::vector<Node> childNodes;
 		Node* parentNode;
 		Entity::SPtr bbEntity;
-		int nrOfEntities;
+		int nrOfEntities = 0;
 		std::vector<Entity::SPtr> entities;
-
-		Node() {
-			nrOfEntities = 0;
-			parentNode = nullptr;
-		}
 	};
 
 	Node m_baseNode;
