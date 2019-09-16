@@ -1,5 +1,9 @@
 #pragma once
 
+#include <chrono>
+
+#include "Sail.h"
+
 class Entity;
 class TransformComponent;
 class PhysicsComponent;
@@ -10,7 +14,7 @@ public:
 	AiController(std::shared_ptr<Entity> toControl);
 	~AiController();
 
-	void update();
+	void update(float dt);
 
 	void moveTo(glm::vec3 point);
 
@@ -19,10 +23,19 @@ public:
 
 	std::shared_ptr<Entity> getEntity();
 	Entity* getTargetEntity();
-	
 
 private:
-	float m_movementSpeed = 5.f;
+	void updatePath();	
+
+private:
+	float m_movementSpeed;
+	// In milliseconds
+	float m_timeBetweenPathUpdate;
+	float m_timeTaken;
+
+	std::vector<NodeSystem::Node> m_currPath;
+	int m_currNodeIndex;
+	NodeSystem::Node m_lastVisitedNode;
 
 	std::shared_ptr<Entity> m_controlledEntity;
 	PhysicsComponent* m_physComp;
@@ -30,6 +43,7 @@ private:
 
 	Entity* m_entityTarget;
 
+	glm::vec3 m_lastTargetPos;
 	glm::vec3 m_target;
 
 	bool m_reachedTarget;

@@ -50,6 +50,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
 
+	m_nodeSystem = std::make_unique<NodeSystem>();
 }
 
 Application::~Application() {

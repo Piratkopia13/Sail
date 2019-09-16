@@ -31,7 +31,7 @@ void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector
 	}
 }
 
-const std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
+std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
 	auto path = m_graph->BFS(from.index, to.index);
 	
 	std::vector<NodeSystem::Node> nPath;
@@ -42,7 +42,7 @@ const std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& 
 	return nPath;
 }
 
-const std::vector<NodeSystem::Node> NodeSystem::getPath(const glm::vec3& from, const glm::vec3& to) {
+std::vector<NodeSystem::Node> NodeSystem::getPath(const glm::vec3& from, const glm::vec3& to) {
 	return getPath(getNearestNode(from), getNearestNode(to));
 }
 
@@ -77,7 +77,7 @@ void NodeSystem::Graph::addEdge(const unsigned int src, const unsigned int dest)
 	m_connections[src].push_back(dest);
 }
 
-const std::vector<unsigned int> NodeSystem::Graph::BFS(const unsigned int from, const unsigned int to) {
+std::vector<unsigned int> NodeSystem::Graph::BFS(const unsigned int from, const unsigned int to) {
 	std::list<unsigned int> queue;
 	std::vector<unsigned int> visited = std::vector<unsigned int>(m_connections.size());
 	std::vector<unsigned int> path;
