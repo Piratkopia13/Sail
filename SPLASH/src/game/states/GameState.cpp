@@ -348,10 +348,6 @@ GameState::GameState(StateStack& stack)
 		m_scene.addEntity(tempEntity);
 	}
 
-	/*m_testBoundingBoxes.push_back(new BoundingBox());
-	m_testBoundingBoxes.back()->setPosition(glm::vec3(51.0f, 1.0f, 0.0f));
-	m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());*/
-
 	m_octree->addEntities(&m_testBoundingBoxes);
 
 	m_testAngle = 0.0f;
