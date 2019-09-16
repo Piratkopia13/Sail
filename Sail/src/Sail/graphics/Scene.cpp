@@ -79,7 +79,9 @@ Entity::SPtr Scene::getEntityByName(std::string name) {
 	}
 	return NULL;
 }
-
+const std::vector<Entity::SPtr>& Scene::getEntities()const {
+	return m_entities;
+}
 bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 

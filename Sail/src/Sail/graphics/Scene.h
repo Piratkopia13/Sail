@@ -19,6 +19,7 @@ public:
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
 	Entity::SPtr getEntityByName(std::string name);
+	const std::vector<Entity::SPtr>& getEntities()const;
 	virtual bool onEvent(Event& event) override;
 
 private:
