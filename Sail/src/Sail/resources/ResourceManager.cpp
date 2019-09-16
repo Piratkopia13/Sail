@@ -21,7 +21,7 @@ ResourceManager::~ResourceManager() {
 void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {
 	if (!this->hasAudioData(filename)) {
 		m_audioDataAll.insert({ filename, std::make_unique<AudioData>(filename, xAudio2) });
-	}
+	} 
 }
 
 AudioData& ResourceManager::getAudioData(const std::string& filename) {

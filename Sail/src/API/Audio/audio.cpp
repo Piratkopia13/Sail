@@ -50,9 +50,7 @@ int Audio::playSound(const std::string &filename) {
 	if (Application::getInstance()->getResourceManager().hasAudioData(filename)) {
 
 		if (m_sourceVoice[m_currIndex] != nullptr) {
-
 			m_sourceVoice[m_currIndex]->Stop();
-			//m_sourceVoice[m_currIndex]->DestroyVoice();
 		}
 
 		// creating a 'sourceVoice' for WAV file-type
@@ -140,14 +138,15 @@ int Audio::playSound(const std::string &filename) {
 
 }
 
-void Audio::stopSpecificSound(int index) {
+void Audio::pauseSound(int index) {
 
 	if (m_sourceVoice[index] != nullptr) {
 		m_sourceVoice[index]->Stop();
 	}
 }
 
-void Audio::stopAllSounds() {
+void Audio::pauseAllSounds() {
+
 	for (int i = 0; i < SOUND_COUNT; i++) {
 		if (m_sourceVoice[i] != nullptr) {
 			m_sourceVoice[i]->Stop();
@@ -156,10 +155,10 @@ void Audio::stopAllSounds() {
 }
 
 void Audio::updateAudio() {
-	if (Input::IsKeyPressed(SAIL_KEY_1)/* && m_singlePressBool1*/) {
+
+	if (Input::IsKeyPressed(SAIL_KEY_1) && m_singlePressBool1) {
 
 		m_singlePressBool1 = false;
-		//this->stopSound("../Audio/sampleLarge.wav");
 		this->loadSound("../Audio/sampleLarge.wav");
 	}
 
@@ -169,32 +168,32 @@ void Audio::updateAudio() {
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_0)) {
-		this->stopAllSounds();
+		this->pauseAllSounds();
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_9)) {
-		this->stopSpecificSound(0);
+		this->pauseSound(0);
 	}
 
-	if (Input::IsKeyPressed(SAIL_KEY_7)) {
+	//if (Input::IsKeyPressed(SAIL_KEY_7)) {
 
-		if (m_singlePressBool2) {
+	//	if (m_singlePressBool2) {
 
-			m_singlePressBool2 = false;
-			//this->stopSound(1);
-			//this->loadCompressedSound("../Audio/sampleADPC_1.wav", 1);
-			//this->playSound(1);
-		}
+	//		m_singlePressBool2 = false;
+	//		//this->stopSound(1);
+	//		//this->loadCompressedSound("../Audio/sampleADPC_1.wav", 1);
+	//		//this->playSound(1);
+	//	}
 
-		else if (!m_singlePressBool2) {
-			m_singlePressBool2 = true;
-		}
-	}
+	//	else if (!m_singlePressBool2) {
+	//		m_singlePressBool2 = true;
+	//	}
+	//}
 
 
-	if (Input::IsKeyPressed(SAIL_KEY_8)) {
-		//this->stopSound();
-	}
+	//if (Input::IsKeyPressed(SAIL_KEY_8)) {
+	//	//this->stopSound();
+	//}
 }
 
 void Audio::initXAudio2() {
