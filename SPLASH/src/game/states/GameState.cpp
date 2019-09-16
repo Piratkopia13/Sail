@@ -400,7 +400,7 @@ GameState::GameState(StateStack& stack)
 	for ( int i = 0; i < testPath.size(); i++ ) {
 		if ( testPath[i] != path[i].position ) {
 			Logger::Error("Something is wrong with the node system.");
-		}tes
+		}
 	}
 /* End of "Unit test" for NodeSystem */
 	
