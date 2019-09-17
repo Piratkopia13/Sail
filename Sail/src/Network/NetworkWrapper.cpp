@@ -88,12 +88,12 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 }
 
 void NetworkWrapper::sendMsgAllClients(std::string msg) {
-	m_network->send(msg.c_str(), msg.length(), -1);
+	m_network->send(msg.c_str(), msg.length() + 1, -1);
 }
 
 void NetworkWrapper::sendChatAllClients(std::string msg) {
 	msg = std::string("m") + msg;
-	m_network->send(msg.c_str(), msg.length(), -1);
+	m_network->send(msg.c_str(), msg.length() + 1, -1);
 }
 
 void NetworkWrapper::checkForPackages() {
@@ -117,9 +117,12 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
 	Player currentPlayer{ -1, "" };	// 
 	int charCounter = 0;			//
-	string id_string;				//
-	string remnants;				//
-	unsigned int id_number;			//
+	string id_string = "";				//
+	string remnants = "";				//
+	unsigned int id_number = 0;			//
+	string id = "";			// used in 'm'
+	string remnants_m = "";
+	unsigned int id_m;
 
 	switch (nEvent.data->msg[0])
 	{
@@ -131,8 +134,10 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		{
 			std::string tempMessage = std::string(nEvent.data->msg);
 			tempMessage.erase(0, 1);
-			message = std::string("m")/* + std::to_string(nEvent.clientID) + 
-				std::string(": ")*/ + tempMessage;
+			message += "m";
+			message += std::to_string(nEvent.clientID);
+			message += std::string(": ");
+			message += tempMessage;
 
 			sendMsgAllClients(message);
 
@@ -149,7 +154,8 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 			printf(message.c_str());
 		}
 
-
+		remnants_m = nEvent.data->msg;
+		id_m = parseID(remnants);
 
 		Application::getInstance()->dispatchEvent(NetworkChatEvent(Message{
 			to_string(nEvent.clientID),
@@ -200,6 +206,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		else {
 			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->msg});
 		}
+		break;
 
 	case 'w':
 

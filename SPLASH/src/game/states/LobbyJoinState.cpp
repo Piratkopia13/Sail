@@ -53,8 +53,6 @@ bool LobbyJoinState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 }
 
 bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
-
-
 	// Update local list of players.
 	std::list<Player> &list = event.getListOfPlayers();
 	if (list.size() >= 2) {
@@ -81,8 +79,10 @@ bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 
 bool LobbyJoinState::onNameRequest(NetworkNameEvent& event) {
 	// Save the ID which the host has blessed us with
-	string temp = event.getRepliedName();
-	m_me.id = stoi(temp);
+	string temp = event.getRepliedName();	// And replace our current HOSTID
+	int newId = stoi(temp);					//
+	m_me.id = newId;
+	this->playerJoined(Player{ 0, m_me.name });
 	
 	// Append :NAME onto ?ID --> ?ID:NAME and answer the host
 	string message = "?";

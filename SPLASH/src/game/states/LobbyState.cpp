@@ -85,6 +85,7 @@ bool LobbyState::update(float dt) {
 	this->m_screenHeight = m_app->getWindow()->getWindowHeight();
 
 	// Did we send something?
+
 	// ---
 	if (NetworkWrapper::getInstance().isInitialized()) {
 		NetworkWrapper::getInstance().checkForPackages();
@@ -178,6 +179,12 @@ void LobbyState::addmessageToChat(Message message) {
 
 	// Add message to chatlog
 	m_messages.push_back(message);
+
+	if (false)
+	{
+		int asdf = 3;
+	}
+
 
 	// New messages replace old
 	if (m_messages.size() > m_messageLimit) {

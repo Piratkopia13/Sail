@@ -27,7 +27,7 @@ struct Player {
 	}
 };
 
-#define HOST_ID 1337;
+#define HOST_ID 1337
 
 class LobbyState : public State {
 public:
@@ -53,6 +53,7 @@ protected:
 	Player m_me;
 	std::list<Message> m_messages;
 	std::list<Player> m_players;
+	Player* getplayer(unsigned int id);
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
@@ -67,9 +68,7 @@ protected:
 
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
-	// Front-end functions - Use these!	
 
-	Player* getplayer(unsigned int id);
 	// Back-end variables
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
