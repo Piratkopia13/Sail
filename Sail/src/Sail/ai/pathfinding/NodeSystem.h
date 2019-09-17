@@ -1,8 +1,15 @@
 #pragma once
 
-//#include "Sail.h"
 #include <map>
 #include <list>
+
+#define _DEBUG_NODESYSTEM
+
+#ifdef _DEBUG_NODESYSTEM
+#include "Sail/entities/Entity.h"
+#endif
+
+class Model;
 
 class NodeSystem {
 public:
@@ -40,8 +47,18 @@ public:
 
 	const NodeSystem::Node& getNearestNode(const glm::vec3& position) const;
 
+#ifdef _DEBUG_NODESYSTEM
+	void setDebugModelAndScene(Model* model, Scene* scene);
+#endif
+
 private:
 	std::vector<NodeSystem::Node> m_nodes;
 
 	NodeSystem::Graph* m_graph;
+
+#ifdef _DEBUG_NODESYSTEM
+	Model* m_nodeModel;
+	Scene* m_scene;
+	std::vector<Entity::SPtr> m_nodeEntities;
+#endif
 };
