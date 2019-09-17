@@ -2,8 +2,7 @@
 #include "AssimpLoader.h"
 
 AssimpLoader::AssimpLoader() :
-m_importer()
-{
+	m_importer() {
 
 }
 
@@ -15,7 +14,7 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 	Model* model = new Model();
 
 	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
-	if (errorCheck(scene)) {
+	if ( errorCheck(scene) ) {
 		return nullptr;
 	}
 	std::string name = scene->GetShortFilename(path.c_str());
@@ -26,27 +25,27 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 
 AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
-	if (errorCheck(scene)) {
+	if ( errorCheck(scene) ) {
 		return nullptr;
 	}
 	std::string name = scene->GetShortFilename(path.c_str());
 	//processNode(scene, scene->mRootNode);
 
 	size_t vertCount = 0;
-	
+
 	makeOffsets(scene);
-	for (size_t i = 0; i < scene->mNumMeshes; i++) {
+	for ( size_t i = 0; i < scene->mNumMeshes; i++ ) {
 		vertCount += scene->mMeshes[i]->mNumVertices;
 	}
 	AnimationStack* stack = new AnimationStack(vertCount);
 
-	if (!importBonesFromNode(scene, scene->mRootNode, stack)) {
+	if ( !importBonesFromNode(scene, scene->mRootNode, stack) ) {
 		Memory::SafeDelete(stack);
 		return nullptr;
 	}
 	stack->checkWeights();
 
-	if (!importAnimations(scene, stack)) {
+	if ( !importAnimations(scene, stack) ) {
 		Memory::SafeDelete(stack);
 		return nullptr;
 	}
@@ -76,8 +75,8 @@ void AssimpLoader::processNode(const aiScene* scene, aiNode* node, Model* model,
 }
 
 void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData) {
-	
-	if ( mesh->HasPositions() ) {
+
+	if ( mesh->HasPositions() && mesh->HasNormals() ) {
 		buildData.numVertices = mesh->mNumVertices;
 		buildData.numIndices = mesh->mNumFaces * 3; // 3 indices per face
 
@@ -101,13 +100,6 @@ void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData) {
 				buildData.positions[vertexIndex + 2].vec.z = mesh->mVertices[vertexIndex + 2].z;
 
 				/*
-					Normals
-				*/
-				if ( mesh->HasNormals() ) {
-
-				}
-
-				/*
 					Tangents and bitangents
 				*/
 				if ( mesh->HasTangentsAndBitangents() ) {
@@ -116,6 +108,8 @@ void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData) {
 
 			}
 		}
+	} else {
+		Logger::Error("Oh- oh!");
 	}
 
 }
@@ -128,48 +122,46 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 	Animation* animation = new Animation();
 
 
-	#ifdef _DEBUG 
-	Logger::Log("1"+std::string(node->mName.C_Str())); 
-	#endif
-	for (size_t nodeID = 0; nodeID < node->mNumMeshes; nodeID++) {
+#ifdef _DEBUG 
+	Logger::Log("1" + std::string(node->mName.C_Str()));
+#endif
+	for ( size_t nodeID = 0; nodeID < node->mNumMeshes; nodeID++ ) {
 		const aiMesh* mesh = scene->mMeshes[node->mMeshes[nodeID]];
-		
-			#ifdef _DEBUG 
-		Logger::Log("2 "+std::string(mesh->mName.C_Str()));
-			#endif
-		if (mesh->HasBones()) {
-			for (size_t boneID = 0; boneID < mesh->mNumBones; boneID++) {
+
+#ifdef _DEBUG 
+		Logger::Log("2 " + std::string(mesh->mName.C_Str()));
+#endif
+		if ( mesh->HasBones() ) {
+			for ( size_t boneID = 0; boneID < mesh->mNumBones; boneID++ ) {
 				const aiBone* bone = mesh->mBones[boneID];
-				
+
 				std::string boneName = bone->mName.C_Str();
 				size_t index = stack->m_boneMap.size();
-				if (stack->m_boneMap.find(boneName) == stack->m_boneMap.end()) {
+				if ( stack->m_boneMap.find(boneName) == stack->m_boneMap.end() ) {
 					stack->m_boneMap[boneName] = { index, mat4_cast(bone->mOffsetMatrix) };
 
-				}
-				else {
+				} else {
 					index = stack->m_boneMap[boneName].index;
 				}
-				
-
-
-				#ifdef _DEBUG 
-				Logger::Log("3  "+std::string(bone->mName.C_Str()));
-				#endif
 
 
 
-				for (size_t weightID = 0; weightID < bone->mNumWeights; weightID++) {
+#ifdef _DEBUG 
+				Logger::Log("3  " + std::string(bone->mName.C_Str()));
+#endif
+
+
+
+				for ( size_t weightID = 0; weightID < bone->mNumWeights; weightID++ ) {
 					const aiVertexWeight weight = bone->mWeights[weightID];
-					stack->setConnectionData(m_meshOffsets[node->mMeshes[nodeID]]+weight.mVertexId, index, weight.mWeight);
+					stack->setConnectionData(m_meshOffsets[node->mMeshes[nodeID]] + weight.mVertexId, index, weight.mWeight);
 
 				}
 
 
 			}
 
-		}
-		else {
+		} else {
 			Logger::Log("3  No Bones");
 		}
 
@@ -179,7 +171,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 
 
 	int size = node->mNumChildren;
-	for (size_t i = 0; i < size; i++) {
+	for ( size_t i = 0; i < size; i++ ) {
 		importBonesFromNode(scene, node->mChildren[i], stack);
 	}
 
@@ -188,12 +180,12 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 }
 
 bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack) {
-	if (!scene->HasAnimations()) {
+	if ( !scene->HasAnimations() ) {
 		return false;
 	}
 
 
-	for (size_t animationIndex = 0; animationIndex < scene->mNumAnimations; animationIndex++) {
+	for ( size_t animationIndex = 0; animationIndex < scene->mNumAnimations; animationIndex++ ) {
 		const aiAnimation* animation = scene->mAnimations[animationIndex];
 
 		std::string temp = std::to_string(animation->mDuration) + ":" + std::to_string(animation->mTicksPerSecond) + " = " + std::to_string(animation->mDuration / animation->mTicksPerSecond);
@@ -204,7 +196,7 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 
 
 	}
-	
+
 
 
 
@@ -230,7 +222,7 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 //}
 
 const bool AssimpLoader::errorCheck(const aiScene* scene) {
-	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+	if ( !scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode ) {
 		Logger::Error("ERROR::ASSIMP::" + std::string(m_importer.GetErrorString()));
 		return true;
 	}
