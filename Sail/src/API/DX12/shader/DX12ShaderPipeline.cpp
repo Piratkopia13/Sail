@@ -5,6 +5,7 @@
 #include "../DX12API.h"
 #include "DX12ConstantBuffer.h"
 #include "../resources/DX12Texture.h"
+#include "../resources/DX12RenderableTexture.h"
 
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
@@ -32,7 +33,18 @@ void DX12ShaderPipeline::bind(void* cmdList) {
 		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	ShaderPipeline::bind(cmdList);
+	for (auto& it : parsedData.renderableTextures) {
+		auto* dxRendTexture = static_cast<DX12RenderableTexture*>(it.renderableTexture.get());
+		dxRendTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		// Copy descriptor heap to the GPU bound heap
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxRendTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
 	dxCmdList->SetPipelineState(m_pipelineState.Get());
+}
+
+void DX12ShaderPipeline::dispatch(unsigned int threadGroupCountX, unsigned int threadGroupCountY, unsigned int threadGroupCountZ, void* cmdList) {
+	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+	dxCmdList->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
 }
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
@@ -95,6 +107,10 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 		break;
 	case ShaderComponent::PS:
 		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
+	case ShaderComponent::CS:
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
 	}
 
 	if (FAILED(hr)) {
@@ -120,13 +136,33 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 
 }
 
+void DX12ShaderPipeline::setTexture2D(const std::string& name, RenderableTexture* texture, void* cmdList) {
+	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+	DX12RenderableTexture* dxTexture = static_cast<DX12RenderableTexture*>(texture);
+
+	setDXTexture2D(dxTexture, dxCmdList);
+}
+
 void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture, void* cmdList) {
+	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	DX12Texture* dxTexture = static_cast<DX12Texture*>(texture);
 	if (!dxTexture->hasBeenInitialized())
-		dxTexture->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
+		dxTexture->initBuffers(dxCmdList);
 
-	// Copy texture SRVs to the gpu heap
-	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	setDXTexture2D(dxTexture, dxCmdList);
+}
+
+void DX12ShaderPipeline::setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsCommandList4* dxCmdList) {
+	// Copy texture resource view to the gpu heap
+	if (csBlob) {
+		dxTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_GENERIC_READ);
+		// Use compute heap
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	} else {
+		dxTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		// Use main/graphics heap
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
 }
 
 void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {
@@ -135,18 +171,14 @@ void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {
 	}
 }
 
-void DX12ShaderPipeline::compile() {
-	ShaderPipeline::compile();
-}
-
-void DX12ShaderPipeline::finish() {
-
+void DX12ShaderPipeline::createGraphicsPipelineState() {
 	auto vsD3DBlob = static_cast<ID3DBlob*>(vsBlob);
 	auto psD3DBlob = static_cast<ID3DBlob*>(psBlob);
 	auto gsD3DBlob = static_cast<ID3DBlob*>(gsBlob);
 	auto dsD3DBlob = static_cast<ID3DBlob*>(dsBlob);
 	auto hsD3DBlob = static_cast<ID3DBlob*>(hsBlob);
-
+	auto csD3DBlob = static_cast<ID3DBlob*>(csBlob);
+	
 	////// Pipline State //////
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpsd = {};
 
@@ -214,5 +246,33 @@ void DX12ShaderPipeline::finish() {
 	gpsd.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
 	ThrowIfFailed(m_context->getDevice()->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&m_pipelineState)));
+}
+
+void DX12ShaderPipeline::createComputePipelineState() {
+	auto csD3DBlob = static_cast<ID3DBlob*>(csBlob);
+
+	////// Pipline State //////
+	D3D12_COMPUTE_PIPELINE_STATE_DESC cpsd = {};
+
+	// Specify pipeline stages
+	cpsd.pRootSignature = m_context->getGlobalRootSignature();
+	cpsd.CS.pShaderBytecode = reinterpret_cast<void*>(csD3DBlob->GetBufferPointer());;
+	cpsd.CS.BytecodeLength = csD3DBlob->GetBufferSize();
+
+	ThrowIfFailed(m_context->getDevice()->CreateComputePipelineState(&cpsd, IID_PPV_ARGS(&m_pipelineState)));
+}
+
+void DX12ShaderPipeline::compile() {
+	ShaderPipeline::compile();
+}
+
+void DX12ShaderPipeline::finish() {
+
+	// Create a compute pipeline state if it has a compute shader
+	if (csBlob) {
+		createComputePipelineState();
+	} else {
+		createGraphicsPipelineState();
+	}
 
 }

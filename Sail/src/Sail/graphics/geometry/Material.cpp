@@ -25,6 +25,8 @@ void Material::bind(void* cmdList) {
 	ShaderPipeline* pipeline = m_shader->getPipeline();
 	pipeline->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
 
+	// TODO: check if this causes a problem in DX12
+	// when a normal or specular texture is bound but not a diffuse one, the order will probably be wrong in dx12 shaders
 	if (m_phongSettings.hasDiffuseTexture)
 		pipeline->setTexture2D("sys_texDiffuse", m_textures[0], cmdList);
 	if (m_phongSettings.hasNormalTexture)

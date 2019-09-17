@@ -5,42 +5,13 @@
 #include "../DX12Utils.h"
 #include "Sail/api/Renderer.h"
 #include "../shader/DX12ConstantBuffer.h"
+#include "API/DX12/resources/DX12RenderableTexture.h"
 
 // Include defines shared with dxr shaders
 #include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
 
-//namespace DXRGlobalRootParam {
-//	enum Slot {
-//		SRV_ACCELERATION_STRUCTURE = 0,
-//		CBV_SCENE_BUFFER,
-//		SIZE
-//	};
-//}
-//namespace DXRRayGenRootParam {
-//	enum Slot {
-//		DT_UAV_OUTPUT = 0,
-//		SIZE
-//	};
-//}
-//namespace DXRHitGroupRootParam {
-//	enum Slot {
-//		SRV_VERTEX_BUFFER = 0,
-//		SRV_INDEX_BUFFER,
-//		CBV_MESH_BUFFER,
-//		//DT_TEXTURES,
-//		SIZE
-//	};
-//}
-//namespace DXRMissRootParam {
-//	enum Slot {
-//		SRV_SKYBOX = 0,
-//		SIZE
-//	};
-//}
-
 class DXRBase : public IEventListener {
 public:
-
 	// TODO: somehow allow this to change from different DXRBase instances
 	struct RayPayload {
 		glm::vec4 color;
@@ -53,7 +24,7 @@ public:
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateCamera(Camera& cam);
-	ID3D12Resource* dispatch(ID3D12GraphicsCommandList4* cmdList);
+	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	virtual bool onEvent(Event& event) override;
 
@@ -117,11 +88,6 @@ private:
 	std::vector<DXRUtils::ShaderTableData> m_missShaderTable;
 	std::vector<DXRUtils::ShaderTableData> m_hitGroupShaderTable;
 
-	struct ResourceWithDescriptor {
-		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-		wComPtr<ID3D12Resource> resource;
-	};
 	struct MeshHandles {
 		D3D12_GPU_VIRTUAL_ADDRESS vertexBufferHandle;
 		D3D12_GPU_VIRTUAL_ADDRESS indexBufferHandle;
@@ -131,8 +97,8 @@ private:
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandle;
 	UINT m_heapIncr;
-	ResourceWithDescriptor m_rtOutputUAV;
 
 	std::vector<MeshHandles> m_rtMeshHandles;
 

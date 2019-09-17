@@ -1,5 +1,6 @@
 #include "GameState.h"
 #include "imgui.h"
+#include "API/DX12/DX12API.cpp"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -230,6 +231,7 @@ bool GameState::renderImgui(float dt) {
 	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
 		m_scene.changeRenderer(selectedRenderer);
 	}
+	ImGui::Checkbox("Enable post processing", &m_scene.getDoProcessing());
 	ImGui::End();
 
 	ImGui::Begin("Performance");

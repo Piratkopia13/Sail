@@ -32,7 +32,11 @@ namespace GlobalRootParam {
 		CBV_TRANSFORM = 0,
 		CBV_DIFFUSE_TINT,
 		CBV_CAMERA,
-		DT_SRVS,
+		DT_SRV_0TO9_UAV_10TO20,
+		SRV_GENERAL10,
+		SRV_GENERAL11,
+		UAV_GENERAL0,
+		UAV_GENERAL1,
 		SIZE
 	};
 }
@@ -78,10 +82,14 @@ public:
 	UINT getFrameIndex() const;
 	UINT getNumSwapBuffers() const;
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
+	DescriptorHeap* const getComputeGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
+	const D3D12_CPU_DESCRIPTOR_HANDLE& getDepthStencilViewCDH() const;
 	ID3D12Resource* getCurrentRenderTargetResource() const;
 	IDXGISwapChain4* const getSwapChain() const;
+	const D3D12_VIEWPORT* getViewport() const;
+	const D3D12_RECT* getScissorRect() const;
 
 	void initCommand(Command& cmd);
 
@@ -136,7 +144,8 @@ private:
 	//Command m_postCommand;
 	//Command m_copyCommand;
 	//Command m_computeCommand;
-	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeap;
+	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapGraphics;
+	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapCompute;
 
 	wComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
 	wComPtr<IDXGISwapChain4> m_swapChain;
