@@ -70,10 +70,11 @@ namespace ShaderComponent {
 		// Expand resource heap if index is out of range
 		if ((nMeshes + 1) * m_byteAlignedSize >= m_resourceHeapSize || expanding) {
 			std::lock_guard<std::mutex> lock(m_mutex_bufferExpander);
-			if (!((nMeshes + 1) * m_byteAlignedSize >= m_resourceHeapSize))
+			if ((nMeshes + 1) * m_byteAlignedSize < m_resourceHeapSize)
 				return;
 
 			expanding = true;
+
 
 			unsigned int oldSize = m_resourceHeapSize;
 			m_resourceHeapSize += 1024.0 * 64.0;
@@ -95,7 +96,7 @@ namespace ShaderComponent {
 
 	void DX12ConstantBuffer::createBuffers() {
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
-
+		static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 		// Create an upload heap to hold the constant buffer
 		// create a resource heap, and pointer to cbv for each frame
 		for (UINT i = 0; i < numSwapBuffers; i++) {

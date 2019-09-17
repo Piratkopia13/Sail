@@ -285,7 +285,7 @@ GameState::GameState(StateStack& stack)
 	{
 		e = ECS::Instance()->createEntity("Character #" + std::to_string( i + 4 ));
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(20.f * (i % 10), 20.f, 20.f * (i / 10)), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(20.f * (i % 20), 20.f, 20.f * (i / 20)), glm::vec3(0.f, 0.f, 0.f));
 		m_scene.addEntity(e);
 	}
 
