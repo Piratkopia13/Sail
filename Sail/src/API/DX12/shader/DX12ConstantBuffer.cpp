@@ -88,6 +88,7 @@ namespace ShaderComponent {
 				// Place the original data in the buffer
 				memcpy(m_cbGPUAddress[i], data, oldSize);
 			}
+			free(data);
 
 			expanding = false;
 		}

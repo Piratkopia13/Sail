@@ -32,7 +32,7 @@ public:
 
 private:
 	float m_movementSpeed = 20.f;
-  constexpr float RUN_SPEED = 2.0f;
+	float RUN_SPEED = 2.0f;
 
 	// "Attached" camera
 	CameraController* m_cam;

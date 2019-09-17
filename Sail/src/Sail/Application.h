@@ -85,8 +85,6 @@ private:
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
 
-	std::unique_ptr<ctpl::thread_pool> m_threadPool;
-
 	// Timer
 	Timer m_timer;
 	UINT m_fps;

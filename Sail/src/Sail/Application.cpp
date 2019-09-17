@@ -20,11 +20,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
 	m_threadPool = std::unique_ptr<ctpl::thread_pool>(new ctpl::thread_pool(poolSize));
 
-	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
-	// Note: this value might need future optimization
-	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
-	m_threadPool = std::unique_ptr<ctpl::thread_pool>(new ctpl::thread_pool(poolSize));
-
 	// Set up window
 	Window::WindowProps windowProps;
 	windowProps.hInstance = hInstance;
@@ -144,14 +139,14 @@ int Application::startGameLoop() {
 			processInput(static_cast<float>(delta));
 
 			// Run update(s) in a separate thread
-			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
+			//m_threadPool->push([this, CPU_updatesThisLoop](int id) {
 				UINT updatesRemaining = CPU_updatesThisLoop;
 				while (updatesRemaining > 0) {
 					updatesRemaining--;
 					update(TIMESTEP);
 					Transform::IncrementCurrentUpdateIndex();
 				}
-				});
+				//});
 
 			// Render
 			Transform::UpdateCurrentRenderIndex();
