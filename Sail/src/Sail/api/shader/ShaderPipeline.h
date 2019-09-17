@@ -43,7 +43,7 @@ public:
 	const std::string& getName() const;
 	RenderableTexture* getRenderableTexture(const std::string& name) const;
 
-	void setCBufferVar(const std::string& name, const void* data, UINT size);
+	virtual void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
 
 protected:

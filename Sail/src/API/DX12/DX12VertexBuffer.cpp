@@ -10,8 +10,7 @@ VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, Mesh::Data& m
 // TODO: Take in usage (Static or Dynamic) and create a default heap for static only
 // TODO: updateData and/or setData
 DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData)
-	: VertexBuffer(inputLayout, modelData)
-{
+	: VertexBuffer(inputLayout, modelData) {
 	DX12API* context = Application::getInstance()->getAPI<DX12API>();
 	void* vertices = getVertexData(modelData);
 

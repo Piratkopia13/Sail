@@ -14,7 +14,7 @@ GraphicsAPI* GraphicsAPI::Create() {
 
 DX12API::DX12API()
 	: m_backBufferIndex(0)
-	, m_clearColor{0.8f, 0.2f, 0.2f, 1.0f}
+	, m_clearColor{ 0.8f, 0.2f, 0.2f, 1.0f }
 	, m_tearingSupport(true)
 	, m_windowedMode(true)
 {
@@ -54,7 +54,7 @@ DX12API::~DX12API() {
 		}
 	}
 #endif
-	
+
 }
 
 bool DX12API::init(Window* window) {
@@ -202,7 +202,7 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	//m_computeCommand.list->Close();
 	//m_copyCommand.list->Close();
 
-	
+
 	// 5. Create swap chain
 	DXGI_SWAP_CHAIN_DESC1 scDesc = {};
 	scDesc.Width = 0;
@@ -452,7 +452,7 @@ void DX12API::nextFrame() {
 	// Schedule a signal to notify when the current frame has finished presenting
 	UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
 	ThrowIfFailed(m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue));
-	
+
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
 	//// Debug vars to log how many frames have to wait for the gpu
@@ -565,7 +565,7 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 	m_viewport.Height = (float)height;
 	m_scissorRect.right = (long)width;
 	m_scissorRect.bottom = (long)height;
-	
+
 }
 
 void DX12API::setDepthMask(DepthMask setting) {
@@ -612,7 +612,7 @@ void DX12API::clear(const glm::vec4& color) {
 	m_clearColor[1] = color.g;
 	m_clearColor[2] = color.b;
 	m_clearColor[3] = color.a;
-	
+
 	// DX11
 	//FLOAT colorArr[4] = { color.x, color.y, color.z, color.w };
 	//// Clear back buffer
@@ -620,6 +620,13 @@ void DX12API::clear(const glm::vec4& color) {
 
 	//// Clear depth buffer
 	//m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
+void DX12API::clear(ID3D12GraphicsCommandList4* cmdList, const glm::vec4& color) {
+	clear(color);
+	// Clear
+	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
+	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 void DX12API::present(bool vsync) {
@@ -630,7 +637,7 @@ void DX12API::present(bool vsync) {
 
 	//waitForGPU();
 	nextFrame();
-	
+
 }
 
 unsigned int DX12API::getMemoryUsage() const {
@@ -724,12 +731,12 @@ void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdL
 	m_directCommandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
 }
 
+void DX12API::executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const {
+	m_directCommandQueue->ExecuteCommandLists(nLists, cmdLists);
+}
+
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
-
-	// Clear
-	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
-	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	cmdList->RSSetViewports(1, &m_viewport);
 	cmdList->RSSetScissorRects(1, &m_scissorRect);

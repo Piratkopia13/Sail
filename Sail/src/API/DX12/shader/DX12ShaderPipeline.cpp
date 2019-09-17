@@ -13,9 +13,8 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 	return SAIL_NEW DX12ShaderPipeline(filename);
 }
 
-DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename) 
-	: ShaderPipeline(filename)
-{
+DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
+	: ShaderPipeline(filename) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	if (!m_dxilCompiler) {
@@ -28,17 +27,32 @@ DX12ShaderPipeline::~DX12ShaderPipeline() {
 	m_context->waitForGPU();
 }
 
+/*[deprecated]*/
 void DX12ShaderPipeline::bind(void* cmdList) {
+	assert(false);/*[deprecated]*/
+}
+
+void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 	if (!m_pipelineState)
 		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-	ShaderPipeline::bind(cmdList);
+
+	for (auto& it : parsedData.cBuffers) {
+		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->bind_new(cmdList, meshIndex);
+	}
+	for (auto& it : parsedData.samplers) {
+		it.sampler->bind();
+	}
 	for (auto& it : parsedData.renderableTextures) {
 		auto* dxRendTexture = static_cast<DX12RenderableTexture*>(it.renderableTexture.get());
 		dxRendTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		// Copy descriptor heap to the GPU bound heap
 		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxRendTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
+
+	// Set input layout as active
+	inputLayout->bind();
+
 	dxCmdList->SetPipelineState(m_pipelineState.Get());
 }
 
@@ -165,10 +179,69 @@ void DX12ShaderPipeline::setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsC
 	}
 }
 
-void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {
-	for (auto& it : parsedData.cBuffers) {
-		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->setResourceHeapMeshIndex(index);
+unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList) {
+	const Material::PhongSettings& ps = material->getPhongSettings();
+	int nTextures = 0;
+	DX12Texture* textures[3];
+	if (ps.hasDiffuseTexture) {
+		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
+		nTextures++;
 	}
+	if (ps.hasNormalTexture) {
+		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
+		nTextures++;
+	}
+	if (ps.hasSpecularTexture) {
+		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
+		nTextures++;
+	}
+
+	unsigned int indexStart = m_context->getMainGPUDescriptorHeap()->getAndStepIndex(nTextures);
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_context->getMainGPUDescriptorHeap()->getCPUDescriptorHandleForIndex(indexStart);
+
+	for (size_t i = 0; i < nTextures; i++) {
+		if (!textures[i]->hasBeenInitialized()) {
+			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
+		}
+
+		m_context->getDevice()->CopyDescriptorsSimple(1, handle, textures[i]->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		handle.ptr += m_context->getMainGPUDescriptorHeap()->getDescriptorIncrementSize();
+	}
+
+	return indexStart;
+}
+
+/*
+	Temp fix to expand constant buffers if the scene contain to many objects.
+*/
+void DX12ShaderPipeline::checkBufferSizes(unsigned int nMeshes) {
+	for (auto& it : parsedData.cBuffers) {
+		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->checkBufferSize(nMeshes);
+	}
+}
+
+// TODO: size isnt really needed, can be read from the byteOffset of the next var
+void DX12ShaderPipeline::setCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {
+	bool success = trySetCBufferVar_new(name, data, size, meshIndex);
+	if (!success)
+		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+}
+
+bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {
+	for (auto& it : parsedData.cBuffers) {
+		for (auto& var : it.vars) {
+			if (var.name == name) {
+				ShaderComponent::DX12ConstantBuffer& cbuffer = static_cast<ShaderComponent::DX12ConstantBuffer&>(*it.cBuffer.get());
+				cbuffer.updateData_new(data, size, meshIndex, var.byteOffset);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void DX12ShaderPipeline::compile() {
+	ShaderPipeline::compile();
 }
 
 void DX12ShaderPipeline::createGraphicsPipelineState() {

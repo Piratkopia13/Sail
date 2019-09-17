@@ -4,6 +4,8 @@
 #include "DX12ATexture.h"
 #include "Sail/resources/TextureData.h"
 #include "../DX12API.h"
+#include "DescriptorHeap.h"
+#include <mutex>
 
 class DX12Texture : public Texture, public virtual DX12ATexture {
 public:
@@ -22,6 +24,7 @@ private:
 	D3D12_RESOURCE_DESC m_textureDesc;
 	wComPtr<ID3D12Resource1> m_textureUploadBuffer;
 
+	std::mutex m_initializeMutex;
 	bool m_isInitialized;
 
 };

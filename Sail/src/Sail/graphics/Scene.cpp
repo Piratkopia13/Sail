@@ -42,7 +42,14 @@ void Scene::setLightSetup(LightSetup* lights) {
 	(*m_currentRenderer)->setLightSetup(lights);
 }
 
-void Scene::draw(Camera& camera) {
+// NEEDS TO RUN BEFORE EACH UPDATE
+// Copies the game state from the previous tick 
+void Scene::prepareUpdate() {
+	for (auto e : m_entities) {
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+		if (transform) { transform->copyDataFromPrevUpdate(); }
+	}
+}
 
 	(*m_currentRenderer)->begin(&camera);
 
