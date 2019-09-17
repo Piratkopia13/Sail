@@ -221,7 +221,7 @@ void Octree::getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, cons
 		//Calculate normal for triangle
 		glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
-		tempInfo.normal = triNormal;
+		tempInfo.normal = triNormal; 
 
 		tempInfo.positions[0] = v0;
 		tempInfo.positions[1] = v1;
