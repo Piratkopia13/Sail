@@ -338,6 +338,7 @@ GameState::GameState(StateStack& stack)
 //>>>>>>> dev
 	m_virtRAMHistory = SAIL_NEW float[100];
 	m_physRAMHistory = SAIL_NEW float[100];
+	// Uncomment this to enable vram budget visualization
 	//m_vramBudgetHistory = SAIL_NEW float[100];
 	m_vramUsageHistory = SAIL_NEW float[100];
 	m_cpuHistory = SAIL_NEW float[100];
@@ -347,6 +348,7 @@ GameState::GameState(StateStack& stack)
 GameState::~GameState() {
 	delete m_virtRAMHistory;
 	delete m_physRAMHistory;
+	// Uncomment this to enable vram budget visualization
 	//delete m_vramBudgetHistory;
 	delete m_vramUsageHistory;
 	delete m_cpuHistory;
