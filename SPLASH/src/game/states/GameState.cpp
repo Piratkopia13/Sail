@@ -92,8 +92,9 @@ GameState::GameState(StateStack& stack)
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	//m_camController.lookAt(glm::vec3(0.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	m_playerController.getEntity()->getComponent<TransformComponent>()->setTranslation(glm::vec3(1.6f, 4.7f, 7.4f));
+	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 4.7f, 7.4f));
 	
+
 	// Add a directional light
 	glm::vec3 color(0.1f, 0.1f, 0.1f);
  	glm::vec3 direction(0.4f, -0.2f, 1.0f);
@@ -404,10 +405,10 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(SAIL_KEY_OEM_5)) {
 		m_cc.toggle();
 	}
+
 	// Update the camera controller from input devices
-	//m_camController.update(dt);
-	m_playerController.update(dt);
-	//m_physSystem.execute(dt);
+	m_playerController.processMouseInput(dt);
+
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
@@ -418,6 +419,7 @@ bool GameState::processInput(float dt) {
 
 	return true;
 }
+
 
 bool GameState::onEvent(Event& event) {
 	Logger::Log("Received event: " + std::to_string(event.getType()));
@@ -436,18 +438,22 @@ bool GameState::onResize(WindowResizeEvent& event) {
 }
 
 
-
+// TODO: add a get player transform somewhere in this function
 bool GameState::update(float dt) {
-
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
 
 	static float counter = 0.0f;
-	static float size = 1;
+	static float size = 1.0f;
 	static float change = 0.4f;
 	
-	counter += dt * 2;
+	counter += dt * 2.0f;
+
+	m_scene.prepareUpdate(); // Copy game state from previous tick
+	m_playerController.prepareUpdate(); // Copy player position from previous tick
+
+	m_playerController.processKeyboardInput(TIMESTEP);
 
 	/*
 		Updates all Component Systems in order
@@ -459,7 +465,6 @@ bool GameState::update(float dt) {
 			Translations, rotations and scales done here are non-constant, meaning they change between updates
 			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
 		*/
-		
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
@@ -468,6 +473,7 @@ bool GameState::update(float dt) {
 		//for (Entity::SPtr item : m_transformTestEntities) {
 		for (size_t i = 1; i < m_transformTestEntities.size(); i++) {
 			Entity::SPtr item = m_transformTestEntities[i];
+
 			item->getComponent<TransformComponent>()->setScale(size);
 			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
 		}
@@ -482,13 +488,13 @@ bool GameState::update(float dt) {
 }
 
 // Renders the state
-bool GameState::render(float dt) {
-
+// Note: will use alpha (the interpolation value between two game states) instead of dt
+bool GameState::render(float alpha) {
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
 
 	// Draw the scene
-	m_scene.draw(m_cam);
+	m_scene.draw(m_cam, alpha);
 
 	return true;
 }
@@ -501,12 +507,7 @@ bool GameState::renderImgui(float dt) {
 }
 
 
-
-
-
 bool GameState::renderImguiConsole(float dt) {
-	
-
 	bool open = m_cc.windowOpen();
 	if (open) {
 		static char buf[256] = "";
@@ -532,25 +533,17 @@ bool GameState::renderImguiConsole(float dt) {
 				ImGuiInputTextFlags_EnterReturnsTrue);
 			ImGui::SameLine();
 			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
-				
 				if (m_cc.execute()) {
 
 				}
-				
-				
-				
 				reclaim_focus = true;
-			}
-			else {
+			} else {
 				m_cc.setTextField(std::string(buf));
 			}
 			ImGui::End();
-		}
-		else {
-		
+		} else {
 			ImGui::End();
 		}
-
 	}
 
 	return false;

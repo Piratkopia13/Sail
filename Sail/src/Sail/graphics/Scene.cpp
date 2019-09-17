@@ -40,8 +40,16 @@ void Scene::setLightSetup(LightSetup* lights) {
 	m_renderer->setLightSetup(lights);
 }
 
-void Scene::draw(Camera& camera) {
+// NEEDS TO RUN BEFORE EACH UPDATE
+// Copies the game state from the previous tick 
+void Scene::prepareUpdate() {
+	for (auto e : m_entities) {
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+		if (transform) { transform->copyDataFromPrevUpdate(); }
+	}
+}
 
+void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
 
 	for (Entity::SPtr& entity : m_entities) {
@@ -50,13 +58,12 @@ void Scene::draw(Camera& camera) {
 			TransformComponent* transform = entity->getComponent<TransformComponent>();
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-			m_renderer->submit(model->getModel(), transform->getMatrix());
+			m_renderer->submit(model->getModel(), transform->getMatrix(alpha));
 		}
 	}
 
 	m_renderer->end();
 	m_renderer->present();
-	//m_renderer->present(m_deferredOutputTex.get());
 
 	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
 

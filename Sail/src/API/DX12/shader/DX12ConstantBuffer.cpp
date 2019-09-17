@@ -75,7 +75,6 @@ namespace ShaderComponent {
 
 			expanding = true;
 
-
 			unsigned int oldSize = m_resourceHeapSize;
 			m_resourceHeapSize += 1024.0 * 64.0;
 			Logger::Log("Expanding constantbuffer from " + std::to_string(oldSize) + " to " + std::to_string(m_resourceHeapSize) + " Bytes.");

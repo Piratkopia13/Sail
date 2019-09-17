@@ -194,7 +194,7 @@ void ShaderPipeline::parseTexture(const char* source) {
 
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
 	std::string name = nextToken(source);
-	outTokenSize = name.size();
+	outTokenSize = static_cast<UINT>(name.size());
 	if (name[name.size() - 1] == ';')
 		name = name.substr(0, name.size() - 1); // Remove ending ';'
 	bool isArray = name[name.size() - 1] == ']';

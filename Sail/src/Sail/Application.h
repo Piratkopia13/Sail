@@ -17,6 +17,9 @@ namespace ctpl {
 	class thread_pool;
 }
 
+// TODO? Move elsewhere
+const double TICKRATE = 128.0;
+const double TIMESTEP = 1.0 / TICKRATE;
 
 class Application : public IEventDispatcher {
 
@@ -74,17 +77,17 @@ public:
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
-
 private:
-	static Application* m_instance;
+	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
+	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
 
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 
+	// Timer
 	Timer m_timer;
 	UINT m_fps;
-
 };
