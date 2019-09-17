@@ -11,7 +11,6 @@ std::pair<std::string, void*> TestComputeShader::getComputeInputForIndex(Shader:
 	switch (index) {
 	case 0:
 		return {"input", thisInput.inputTexture};
-		break;
 	}
 	Logger::Error("Tried to get compute input from unknown index - " + std::to_string(index));
 	return {"", nullptr};
@@ -22,7 +21,6 @@ RenderableTexture* TestComputeShader::getComputeOutputForIndex(Shader::ComputeSh
 	switch (index) {
 	case 0:
 		return thisOutput.outputTexture;
-		break;
 	}
 	Logger::Error("Tried to get compute output from unknown index - " + std::to_string(index));
 	return nullptr;

@@ -37,7 +37,6 @@ std::pair<std::string, void*> GaussianBlurHorizontal::getComputeInputForIndex(Sh
 		else {
 			return { "input", thisInput.inputRenderableTexture };
 		}
-		break;
 	}
 	Logger::Error("Tried to get compute input from unknown index - " + std::to_string(index));
 	return { "", nullptr };
@@ -48,7 +47,6 @@ RenderableTexture* GaussianBlurHorizontal::getComputeOutputForIndex(Shader::Comp
 	switch (index) {
 	case 0:
 		return thisOutput.outputTexture;
-		break;
 	}
 	Logger::Error("Tried to get compute output from unknown index - " + std::to_string(index));
 	return nullptr;

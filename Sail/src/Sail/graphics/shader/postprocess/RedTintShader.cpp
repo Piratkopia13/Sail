@@ -16,7 +16,6 @@ std::pair<std::string, void*> RedTintShader::getComputeInputForIndex(Shader::Com
 		} else {
 			return { "input", thisInput.inputRenderableTexture };
 		}
-		break;
 	}
 	Logger::Error("Tried to get compute input from unknown index - " + std::to_string(index));
 	return { "", nullptr };
@@ -27,7 +26,6 @@ RenderableTexture* RedTintShader::getComputeOutputForIndex(Shader::ComputeShader
 	switch (index) {
 	case 0:
 		return thisOutput.outputTexture;
-		break;
 	}
 	Logger::Error("Tried to get compute output from unknown index - " + std::to_string(index));
 	return nullptr;
