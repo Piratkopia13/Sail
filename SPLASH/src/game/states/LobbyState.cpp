@@ -28,8 +28,6 @@ LobbyState::LobbyState(StateStack& stack)
 
 	// Set name according to data from menustate
 	m_me.name = m_app->getStateStorage().getMenuToLobbyData().name;
-	m_me.id = 1337;
-	playerJoined(m_me);
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
@@ -173,23 +171,10 @@ string LobbyState::fetchMessage()
 
 void LobbyState::addmessageToChat(Message message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
-
-	/*
-		- Parse up to ':'
-		- remember how much u parsed
-		- erase that shit
-		- insert 'name: '
-	*/
-	//for (size_t i = 0; i < text->size(); i++)	{
-	//	if ((*text)[i] == ':') {
-	//		(*text).erase(0, i+2);	// ': '
-	//		(*text).insert(0, sender->name + ": ");
-	//		break;
-	//	}
-	//}
 	// Add sender to the text
-	// Maybe make 'sender' to name?
-	message.content.insert(0, this->getplayer(stoi(message.sender))->name + ": ");
+	Player* playa = this->getplayer(stoi(message.sender));
+	string msg = playa->name + ": ";
+	message.content.insert(0, msg);
 
 	// Add message to chatlog
 	m_messages.push_back(message);
@@ -201,12 +186,16 @@ void LobbyState::addmessageToChat(Message message) {
 }
 
 Player* LobbyState::getplayer(unsigned int id) {
-	for (auto playerIt : m_players) {
-		if (playerIt.id == id) {
-			return &playerIt;
+	Player* foundPlayer = nullptr;
+	for (Player& player : m_players) {
+		if (player.id == id) {
+			foundPlayer = &player;
+			break;
+			//return foundPlayer;
 		}
 	}
-	return nullptr;
+	
+	return foundPlayer;
 }
 
 void LobbyState::renderplayerList() {

@@ -205,7 +205,6 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// Parse the welcome-package.
 		remnants = nEvent.data->msg;
-
 		while (remnants != "") {
 			currentPlayer.id = this->parseID(remnants);
 			currentPlayer.name = this->parseName(remnants);
