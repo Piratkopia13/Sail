@@ -50,6 +50,7 @@ public:
 
 	virtual bool init(Window* window) override;
 	virtual void clear(const glm::vec4& color) override;
+	virtual void clear(ID3D12GraphicsCommandList4* cmdList, const glm::vec4& color = {0,0,0,1});
 	virtual void setDepthMask(DepthMask setting) override;
 	virtual void setFaceCulling(Culling setting) override;
 	virtual void setBlending(Blending setting) override;
@@ -72,6 +73,7 @@ public:
 	void initCommand(Command& cmd);
 
 	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
+	void executeCommandLists(ID3D12CommandList*const* cmdLists, const int nLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;

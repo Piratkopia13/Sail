@@ -9,7 +9,7 @@ GameState::GameState(StateStack& stack)
 //, m_cam(20.f, 20.f, 0.1f, 5000.f)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 //, m_camController(&m_cam)
-, m_playerController(&m_cam)
+, m_playerController(&m_cam, &m_scene)
 , m_cc(true)
 {
 #ifdef _DEBUG
@@ -172,6 +172,9 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
+	// Temporary projectile model for the player's gun
+	m_playerController.setProjectileModel(m_cubeModel.get());
+
 	/*
 		Creation of entitites
 	*/
@@ -277,6 +280,15 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
+
+
+	for (size_t i = 0; i < 200; i++)
+	{
+		e = ECS::Instance()->createEntity("Character #" + std::to_string( i + 4 ));
+		e->addComponent<ModelComponent>(characterModel);
+		e->addComponent<TransformComponent>(glm::vec3(20.f * (i % 20), 20.f, 20.f * (i / 20)), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
+	}
 
 	//auto e = Entity::Create("Static cube");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
