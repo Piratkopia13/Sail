@@ -40,10 +40,22 @@ public:
 		ENABLE_LAN_SEARCH_VISIBILITY = 2U
 	};
 
+	enum INITIALIZED_STATUS : char {
+		NOT_INITIALIZED = 0,
+		INITIALIZED = 1,
+		IS_CLIENT = 2,
+		IS_SERVER = 4,
+	};
+
 	Network();
 	~Network();
 
+	/*
+		Initializes winsock. Call this once.
+		No need to call this again after calling shutdown() even if the network is intended to be reused for hosting / joining.
+	*/
 	bool initialize();
+
 	void checkForPackages(NetworkEventHandler& handler);
 	void checkForPackages(void (*m_callbackfunction)(NetworkEvent));
 
@@ -90,7 +102,10 @@ public:
 		Returns true if this is a Host.
 	*/
 	bool isServer();
-	bool isInitialized();
+	INITIALIZED_STATUS getInitializeStatus();
+	/*
+		Shutsdown the current network setup(host or client setup). Call this if you want to reuse the network to join a new host, host again, or switch between hosting/joining.
+	*/
 	void shutdown();
 	/*
 		Expands a compressed ipv4 address into a readable char array in dotted-decimal notation.
@@ -119,13 +134,6 @@ private:
 	{
 		UDP_DATA_PACKAGE_TYPE_HOSTINFO = 1,
 		UDP_DATA_PACKAGE_TYPE_HOSTINFO_REQUEST = 2,
-	};
-
-	enum INITIALIZED_STATUS : char {
-		NOT_INITIALIZED = 0,
-		INITIALIZED = 1,
-		IS_CLIENT = 2,
-		IS_SERVER = 4,
 	};
 
 	struct UDP_DATA

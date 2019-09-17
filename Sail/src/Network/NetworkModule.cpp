@@ -1,11 +1,10 @@
-//#include "pch.h"
+#include "pch.h"
 #include "NetworkModule.hpp"
 
 Network::Network() {}
 
 Network::~Network() {
 	shutdown();
-
 
 	delete[] m_awaitingEvents;
 	delete[] m_awaitingMessages;
@@ -437,7 +436,7 @@ bool Network::isServer() {
 	return m_initializedStatus == INITIALIZED_STATUS::IS_SERVER;
 }
 
-bool Network::isInitialized() {
+Network::INITIALIZED_STATUS Network::getInitializeStatus() {
 	return m_initializedStatus;
 }
 

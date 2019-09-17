@@ -101,7 +101,7 @@ void NetworkWrapper::checkForPackages() {
 }
 
 bool NetworkWrapper::isInitialized() {
-	return m_network->isInitialized();
+	return m_network->getInitializeStatus();
 }
 
 bool NetworkWrapper::isHost() {
