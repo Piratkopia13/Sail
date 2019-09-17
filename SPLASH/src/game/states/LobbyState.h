@@ -27,6 +27,8 @@ struct Player {
 	}
 };
 
+#define HOST_ID 1337;
+
 class LobbyState : public State {
 public:
 	LobbyState(StateStack& stack);
