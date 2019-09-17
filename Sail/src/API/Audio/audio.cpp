@@ -25,300 +25,115 @@ Audio::Audio() {
 #pragma endregion
 
 	this->initXAudio2();
+
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		m_sourceVoice[i] = nullptr;
+	}
 }
 
 Audio::~Audio(){
-
-}
-
-void Audio::loadSound(std::string const &fileName, int index)
-{
-	if (m_soundBuffers[index].pAudioData != nullptr) {
-		delete m_soundBuffers[index].pAudioData;
-	}
-
-	HRESULT hr = 0;
-
-	std::wstring fileNameWSTR = s2ws(fileName);
-	LPCWSTR fileNameLPCWSTR = fileNameWSTR.c_str();
-
-	HANDLE hFile = CreateFile(
-		fileNameLPCWSTR,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		0,
-		nullptr);
-
-	DWORD dwChunkSize = 0;
-	DWORD dwChunkPosition = 0;
-
-	DWORD filetype = 0;
-
-#pragma region ERROR_CHECKING
-	try {
-		if (INVALID_HANDLE_VALUE == hFile) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-		
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to create the internal audio file!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-
-	try {
-		if (INVALID_SET_FILE_POINTER == SetFilePointer(hFile, 0, NULL, FILE_BEGIN)) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		if (m_sourceVoice[i] != nullptr) {
 	
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: 'SetFilePointer' failed!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
-
-	hr = FindChunk(hFile, fourccRIFF, dwChunkSize, dwChunkPosition);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
+			m_sourceVoice[i]->Stop();
+			m_sourceVoice[i]->DestroyVoice();
 		}
 	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to find the audio file's 'RIFF' data chunk!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
-
-	hr = ReadChunkData(hFile, &filetype, sizeof(DWORD), dwChunkPosition);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to read data chunk!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-
-	try {
-		if (filetype != fourccWAVE) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: The file type was NOT of the 'WAV' type!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
-
-	hr = FindChunk(hFile, fourccFMT, dwChunkSize, dwChunkPosition);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to find the desired data chunk!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
-
-	// reading data from WAV files
-	hr = ReadChunkData(hFile, &m_formatWAV, dwChunkSize, dwChunkPosition);
-	// reading data from ADPC-WAV files (compressed)
-	// hr = ReadChunkData(hFile, &adpcwf, dwChunkSize, dwChunkPosition);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to read data chunk!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
-
-	hr = FindChunk(hFile, fourccDATA, dwChunkSize, dwChunkPosition);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to find the desired data chunk!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
-
-	BYTE* pDataBuffer = new BYTE[dwChunkSize];
-
-	hr = ReadChunkData(hFile, pDataBuffer, dwChunkSize, dwChunkPosition);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to read data chunk!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion ERROR_CHECKING
-
-	m_soundBuffers[index].AudioBytes = dwChunkSize;  //buffer containing audio data
-	m_soundBuffers[index].pAudioData = pDataBuffer;  //size of the audio buffer in bytes
-	m_soundBuffers[index].Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
-
-	// creating a 'sourceVoice' for WAV file-type
-	hr = m_xAudio2->CreateSourceVoice(&m_sourceVoice[index], (WAVEFORMATEX*)&m_formatWAV);
-	// creating a 'sourceVoice' for ADPC-WAV compressed file-type
-	//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed to create the actual 'SourceVoice' for the sound!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
-
-	hr = m_sourceVoice[index]->SubmitSourceBuffer(&m_soundBuffers[index]);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::loadSound()\n\nMESSAGE: Failed submit processed audio data to data buffer!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
-
-	//m_currIndex++;
 }
 
-void Audio::playSound(int index) {
-
-	HRESULT hr;
-
-	hr = m_sourceVoice[index]->Start(0);
-
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::playSound()\n\nMESSAGE: Failed to play the loaded audio sample!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
+void Audio::loadSound(const std::string& filename) {
+	Application::getInstance()->getResourceManager().loadAudioData(filename, m_xAudio2);
 }
 
-void Audio::stopSound(int index) {
-	if (m_soundBuffers[index].pAudioData != nullptr) {
-		m_sourceVoice[index]->Stop(index);
+int Audio::playSound(const std::string &filename) {
+
+	if (Application::getInstance()->getResourceManager().hasAudioData(filename)) {
+
+		if (m_sourceVoice[m_currIndex] != nullptr) {
+			m_sourceVoice[m_currIndex]->Stop();
+		}
+
+		// creating a 'sourceVoice' for WAV file-type
+		HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sourceVoice[m_currIndex], (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+			
+		// THIS IS THE OTHER VERSION FOR ADPC
+				// ... for ADPC-WAV compressed file-type
+				//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
+
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::playSound()", "Failed to create the actual 'SourceVoice' for a sound file!", 0, true);
+
+		hr = m_sourceVoice[m_currIndex]->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
+
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::playSound()", "Failed to submit the 'sourceBuffer' to the 'sourceVoice' for a sound file!", 0, true);
+
+		hr = m_sourceVoice[m_currIndex]->Start(0);
+
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed submit processed audio data to data buffer for a audio file", 0, true);
+
+		m_currIndex++;
+		m_currIndex %= SOUND_COUNT;
+
+		return (m_currIndex - 1);
+	}
+
+	else {
+
+		errorCheck(E_FAIL, "AUDIO WARNING!", "FUNCTION: Audio::playSound()", "That audio file has NOT been loaded yet!", 1, false);
+		return (-1);
+	}
+
+}
+
+void Audio::pauseSound(int index) {
+
+	if (m_sourceVoice[index] != nullptr) {
+		m_sourceVoice[index]->Stop();
+	}
+}
+
+void Audio::pauseAllSounds() {
+
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		if (m_sourceVoice[i] != nullptr) {
+			m_sourceVoice[i]->Stop();
+		}
 	}
 }
 
 void Audio::updateAudio() {
-	if (Input::IsKeyPressed(SAIL_KEY_9) && m_singlePressBool1) {
 
-		m_singlePressBool1 = false;
-		stopSound(0);
-		loadSound("../Audio/sampleLarge.wav", 0);
-		playSound(0);
+	// 'PLAY' Sound
+	if (Input::IsKeyPressed(SAIL_KEY_1) && m_singlePress1) {
+
+		m_singlePress1 = false;
+		this->loadSound("../Audio/sampleLarge.wav");
 	}
 
-	else if (!Input::IsKeyPressed(SAIL_KEY_9) && !m_singlePressBool1) {
-		m_singlePressBool1 = true;
+	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePress1) {
+		m_singlePress1 = true;
+		this->playSound("../Audio/sampleLarge.wav");
+	}
+
+	if (Input::IsKeyPressed(SAIL_KEY_9)) {
+		this->pauseSound(0);
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_0)) {
-		stopSound(0);
+		this->pauseAllSounds();
 	}
 
-	if (Input::IsKeyPressed(SAIL_KEY_7) && m_singlePressBool2) {
-		m_singlePressBool2 = false;
-		stopSound(1);
-		loadSound("../Audio/sampleLarge.wav", 1);
-		playSound(1);
-	}
 
-	else if (!Input::IsKeyPressed(SAIL_KEY_7) && !m_singlePressBool2) {
-		m_singlePressBool2 = true;
-	}
 
-	if (Input::IsKeyPressed(SAIL_KEY_8)) {
-		stopSound(1);
-	}
+	//// 'STREAM' Sound
+	//if (Input::IsKeyPressed(SAIL_KEY_2) && m_singlePress2) {
+
+	//	m_singlePress2 = false;
+	//	m_sourceVoice[this->m_currIndex]->Start(0, 0);
+	//}
+
+	//else if (!Input::IsKeyPressed(SAIL_KEY_2) && !m_singlePress2) {
+	//	m_singlePress2 = true;
+	//}
 }
 
 void Audio::initXAudio2() {
@@ -327,38 +142,11 @@ void Audio::initXAudio2() {
 
 	hr = XAudio2Create(&m_xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
 
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::initXAudio2()\n\nMESSAGE: Creating the 'IXAudio2' object failed!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
+	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::initXAudio2()", "Creating the 'IXAudio2' object failed!", 0, true);
 
 	hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice);
 
-#pragma region ERROR_CHECKING
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, L"FUNCTION: Audio::initXAudio2()\n\nMESSAGE: Creating the 'IXAudio2MasterVoice' failed!");
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(L"AUDIO ERROR!"), MB_ICONERROR);
-		std::exit(0);
-	}
-#pragma endregion
+	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::initXAudio2()", "Creating the 'IXAudio2MasterVoice' failed!", 0, true);
 
 	//m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 }

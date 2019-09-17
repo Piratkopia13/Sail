@@ -129,7 +129,7 @@ int Application::startGameLoop() {
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
-			// UPDATES ALL CURRENTLY-WORKING AUDIO FUNCTIONALITY (TL;DR - Press '9' and '0')
+			//UPDATES ALL CURRENTLY-WORKING AUDIO FUNCTIONALITY (TL;DR - Press '9' and '0')
 			Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
