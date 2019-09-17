@@ -70,7 +70,8 @@ private:
 		 WARNING: These parse functions EXTRACT data, NOT COPY.
 		 They WILL remove the part they extract from data.
 	*/
-	ConnectionID parseID(std::string& data);
+	
+	TCP_CONNECTION_ID parseID(std::string& data);
 	std::string parseName(std::string& data);
 
 

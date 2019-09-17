@@ -67,7 +67,7 @@ bool NetworkWrapper::connectToIP(char* adress) {
 }
 
 void NetworkWrapper::sendMsg(std::string msg) {
-	m_network->send(msg.c_str(), msg.length());
+	m_network->send(msg.c_str(), msg.length() +1);
 }
 
 void NetworkWrapper::sendChatMsg(std::string msg) {
@@ -76,7 +76,7 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 	if (m_network->isServer())
 	{
 		msg = std::string("mHost: ") + msg;
-		m_network->send(msg.c_str(), msg.length(), -1);
+		m_network->send(msg.c_str(), msg.length() +1, -1);
 		msg.erase(0, 1);
 		msg = msg + std::string("\n");
 		printf(msg.c_str());
@@ -84,17 +84,17 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 	else
 	{
 		msg = std::string("m") + msg;
-		m_network->send(msg.c_str(), msg.length());
+		m_network->send(msg.c_str(), msg.length() +1);
 	}
 }
 
 void NetworkWrapper::sendMsgAllClients(std::string msg) {
-	m_network->send(msg.c_str(), msg.length(), -1);
+	m_network->send(msg.c_str(), msg.length() +1, -1);
 }
 
 void NetworkWrapper::sendChatAllClients(std::string msg) {
 	msg = std::string("m") + msg;
-	m_network->send(msg.c_str(), msg.length(), -1);
+	m_network->send(msg.c_str(), msg.length() +1, -1);
 }
 
 void NetworkWrapper::checkForPackages() {
@@ -194,18 +194,18 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// This client has recieved a request for its selected name
 		if (!m_network->isServer()) {
-			string ultratemp = nEvent.data->msg;
-			ConnectionID id = parseID(ultratemp);
+			string ultratemp = nEvent.data->rawMsg;
+			TCP_CONNECTION_ID id = parseID(ultratemp);
 			Application::getInstance()->dispatchEvent(NetworkNameEvent(to_string(id)));
 		}
 		else {
-			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->msg});
+			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->rawMsg});
 		}
 
 	case 'w':
 
 		// Parse the welcome-package.
-		remnants = nEvent.data->msg;
+		remnants = nEvent.data->rawMsg;
 
 		while (remnants != "") {
 			currentPlayer.id = this->parseID(remnants);
@@ -237,7 +237,7 @@ void NetworkWrapper::playerDisconnected(TCP_CONNECTION_ID id) {
 	*/
 	if (m_network->isServer())
 	{
-		char msg[64];
+		char msg[64] = {0};
 		int intid = (int)id;
 		char* int_asChar = reinterpret_cast<char*>(&intid);
 
@@ -320,7 +320,10 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 	}
 }
 
-ConnectionID NetworkWrapper::parseID(std::string& data) {
+TCP_CONNECTION_ID NetworkWrapper::parseID(std::string& data) {
+	if (data.size() > 1000) {
+		return 0;
+	}
 	if (data.size() < 1) {
 		return 0;
 	}
@@ -330,7 +333,7 @@ ConnectionID NetworkWrapper::parseID(std::string& data) {
 
 		std::string id_string = "";
 		int lastIndex;
-		for (lastIndex = 0; lastIndex < MAX_PACKAGE_SIZE; lastIndex++) {
+		for (lastIndex = 0; lastIndex < data.size(); lastIndex++) {
 			if (data[lastIndex] == '\0') {
 				break;
 			}
