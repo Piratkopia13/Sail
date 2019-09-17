@@ -12,6 +12,7 @@ AssimpLoader::~AssimpLoader() {
 }
 
 Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
+	Model* model = new Model();
 
 	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 	if (errorCheck(scene)) {
@@ -59,6 +60,65 @@ std::vector<Model*> AssimpLoader::importScene(const std::string& path, Shader* s
 
 
 
+
+void AssimpLoader::processNode(const aiScene* scene, aiNode* node, Model* model, Shader* shader) {
+	for ( int i = 0; i < node->mNumMeshes; i++ ) {
+		Mesh::Data meshData;
+		getGeometry(scene->mMeshes[node->mMeshes[i]], meshData);
+		std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, shader));
+		//getMaterial(pNode, mesh->getMaterial());
+		model->addMesh(std::move(mesh));
+	}
+
+	for ( int i = 0; i < node->mNumChildren; i++ ) {
+		processNode(scene, node->mChildren[i], model, shader);
+	}
+}
+
+void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData) {
+	
+	if ( mesh->HasPositions() ) {
+		buildData.numVertices = mesh->mNumVertices;
+		buildData.numIndices = mesh->mNumFaces * 3; // 3 indices per face
+
+		unsigned int vertexIndex = 0;
+
+		for ( int faceIndex = 0; faceIndex < mesh->mNumFaces; faceIndex++ ) {
+			for ( int vertIndex = 0; vertIndex < 3; vertIndex += 3 ) {
+				/*
+					Positions
+				*/
+				buildData.positions[vertexIndex].vec.x = mesh->mVertices[vertexIndex].x;
+				buildData.positions[vertexIndex].vec.y = mesh->mVertices[vertexIndex].y;
+				buildData.positions[vertexIndex].vec.z = mesh->mVertices[vertexIndex].z;
+
+				buildData.positions[vertexIndex + 1].vec.x = mesh->mVertices[vertexIndex + 1].x;
+				buildData.positions[vertexIndex + 1].vec.y = mesh->mVertices[vertexIndex + 1].y;
+				buildData.positions[vertexIndex + 1].vec.z = mesh->mVertices[vertexIndex + 1].z;
+
+				buildData.positions[vertexIndex + 2].vec.x = mesh->mVertices[vertexIndex + 2].x;
+				buildData.positions[vertexIndex + 2].vec.y = mesh->mVertices[vertexIndex + 2].y;
+				buildData.positions[vertexIndex + 2].vec.z = mesh->mVertices[vertexIndex + 2].z;
+
+				/*
+					Normals
+				*/
+				if ( mesh->HasNormals() ) {
+
+				}
+
+				/*
+					Tangents and bitangents
+				*/
+				if ( mesh->HasTangentsAndBitangents() ) {
+
+				}
+
+			}
+		}
+	}
+
+}
 
 Mesh* AssimpLoader::importMesh(const aiScene* scene, aiNode* node) {
 	return nullptr;

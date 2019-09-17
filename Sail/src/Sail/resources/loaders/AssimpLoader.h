@@ -22,6 +22,13 @@ public:
 
 private:
 
+	void processNode(const aiScene* scene, aiNode* node, Model* model, Shader* shader);
+
+	//FbxVector2 getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMesh* mesh, int polyIndex, int vertIndex) const;
+	//void getGeometry(FbxMesh* mesh, Mesh::Data& buildData);
+	void getGeometry(aiMesh* mesh, Mesh::Data& buildData);
+	//void getMaterial(FbxNode* pNode, Material* material);
+	void getMaterial(aiNode* node);
 	
 	Mesh* importMesh(const aiScene* scene, aiNode* node);
 	bool importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack);
