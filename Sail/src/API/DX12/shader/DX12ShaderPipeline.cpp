@@ -53,6 +53,7 @@ void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 	// Set input layout as active
 	inputLayout->bind();
 
+	// TODO: move this to somewhere where it is more efficient
 	dxCmdList->SetPipelineState(m_pipelineState.Get());
 }
 

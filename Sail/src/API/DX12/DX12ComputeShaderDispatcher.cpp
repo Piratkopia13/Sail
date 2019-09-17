@@ -55,7 +55,7 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
 	}
 	// Bind output resources
-	dxShaderPipeline->bind_new(dxCmdList, 0);
+	dxShaderPipeline->bind_new(dxCmdList, 3); // TODO: why 3?
 
 	dxShaderPipeline->dispatch(input.threadGroupCountX, input.threadGroupCountY, input.threadGroupCountZ, dxCmdList);
 
