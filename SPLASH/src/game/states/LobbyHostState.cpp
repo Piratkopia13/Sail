@@ -70,8 +70,6 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	string message = event.getRepliedName(); 
 	string id_string = "";
 	unsigned int id_int = 0;
-	
-
 
 	// Get ID...
 	for (int i = 1; i < 64; i++) {

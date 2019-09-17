@@ -56,18 +56,24 @@ bool LobbyJoinState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 }
 
 bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
-	// Clean local list of players.
-	m_players.clear();
+
 
 	// Update local list of players.
 	std::list<player> &list = event.getListOfPlayers();
-	if (list.size() < 2) {
+	if (list.size() >= 2) {
+		// Clean local list of players.
+		this->resetPlayerList();
+
 		printf("Recieved welcome package...\n");
 		for (auto currentPlayer : list) {
+			// TODO: Maybe addPlayerFunction?
+			this->playerJoined(currentPlayer);
 
-			m_players.push_back(currentPlayer);
+			//m_players.push_back(currentPlayer);
 			printf("\t");
 			printf(currentPlayer.name.c_str());
+			printf("\t");
+			printf(to_string(currentPlayer.id).c_str());
 			printf("\n");
 		}
 	}

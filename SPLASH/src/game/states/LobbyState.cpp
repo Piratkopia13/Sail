@@ -72,6 +72,12 @@ bool LobbyState::inputToChatLog(MSG& msg)
 	return false;
 }
 
+void LobbyState::resetPlayerList()
+{
+	m_players.clear();
+	m_playerCount = 0;
+}
+
 bool LobbyState::update(float dt) {
 	// Update screen dimensions & ImGui related
 	// (Sure, events, but the only thing consuming resources is the LobbyState)
@@ -80,8 +86,7 @@ bool LobbyState::update(float dt) {
 
 	// Did we send something?
 	// ---
-	if (NetworkWrapper::getInstance().isInitialized())
-	{
+	if (NetworkWrapper::getInstance().isInitialized()) {
 		NetworkWrapper::getInstance().checkForPackages();
 	}
 

@@ -54,6 +54,7 @@ protected:
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
+	void resetPlayerList();
 	bool playerJoined(player player);
 	bool playerLeft(unsigned int id);
 	void addTextToChat(const string* text);

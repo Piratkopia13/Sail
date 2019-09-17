@@ -188,8 +188,9 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// This client has recieved a request for its selected name
 		if (!m_network->isServer()) {
-			string temp = to_string(nEvent.clientID);
-			Application::getInstance()->dispatchEvent(NetworkNameEvent{temp});
+			string ultratemp = nEvent.data->msg;
+			ConnectionID id = parseID(ultratemp);
+			Application::getInstance()->dispatchEvent(NetworkNameEvent(to_string(id)));
 		}
 		else {
 			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->msg});
@@ -274,11 +275,11 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 		// Request a name from the client, which upon recieval will be sent to all clients.
 		char msgRequest[64];
 		msgRequest[0] = '?';
-		msgRequest[1] = '0';
+		msgRequest[1] = *to_string(id).c_str();//*reinterpret_cast<char*>(&id);
 		msgRequest[2] = '\0';
 
 		m_network->send(msgRequest, sizeof(msgRequest), id);
-		printf("Gave id to: %d. Requesting Name... \n", id);
+		printf("Greeted ID: %d. Requesting Name... \n", id);
 
 		// Send to all clients that someone joined and which id.
 	//	m_network->send(msg, sizeof(msg), -1);
@@ -314,11 +315,11 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 }
 
 ConnectionID NetworkWrapper::parseID(std::string& data) {
-	if (data.size() > 0) {
+	if (data.size() < 1) {
 		return 0;
 	}
 	else {
-		// Remove opening '?' marker.
+		// Remove opening ':' / '?' marker.
 		data.erase(0, 1);
 
 		std::string id_string = "";
@@ -336,16 +337,22 @@ ConnectionID NetworkWrapper::parseID(std::string& data) {
 		}
 
 		data.erase(0, lastIndex);
-		return stoll(id_string);
+		if (id_string != "") {
+			return stoll(id_string);
+		}
+		else {
+			return 0;
+		}
+		
 	}
 }
 
 std::string NetworkWrapper::parseName(std::string& data) {
-	if (data.size() == 0) {
+	if (data.size() < 1) {
 		return data;
 	}
 	else {
-		// Remove first ':'
+		// Remove first ':' marker
 		data.erase(0, 1);
 
 		int lastIndex;
