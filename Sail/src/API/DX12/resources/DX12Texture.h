@@ -17,7 +17,7 @@ public:
 	ID3D12Resource1* getResource() const;
 
 private:
-	DX12API* m_context;
+	DX12API* context;
 	TextureData& m_textureData;
 	D3D12_RESOURCE_DESC m_textureDesc;
 	wComPtr<ID3D12Resource1> m_textureUploadBuffer;

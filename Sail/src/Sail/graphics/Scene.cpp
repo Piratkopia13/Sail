@@ -9,7 +9,7 @@
 
 
 Scene::Scene() 
-	//: m_postProcessPipeline(m_renderer)
+	: m_doPostProcessing(false)
 {
 	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
@@ -57,7 +57,7 @@ void Scene::draw(Camera& camera) {
 	}
 
 	(*m_currentRenderer)->end();
-	(*m_currentRenderer)->present(&m_postProcessPipeline);
+	(*m_currentRenderer)->present((m_doPostProcessing) ? &m_postProcessPipeline : nullptr);
 
 	//(*m_currentRenderer)->present(m_deferredOutputTex.get());
 
@@ -89,6 +89,10 @@ void Scene::changeRenderer(unsigned int index) {
 		m_currentRenderer = &m_rendererRaster;
 	else 
 		m_currentRenderer = &m_rendererRaytrace;
+}
+
+bool& Scene::getDoProcessing() {
+	return m_doPostProcessing;
 }
 
 bool Scene::onResize(WindowResizeEvent & event) {

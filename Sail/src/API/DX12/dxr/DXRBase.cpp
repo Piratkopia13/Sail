@@ -119,16 +119,22 @@ void DXRBase::updateCamera(Camera& cam) {
 	m_cameraCB[m_context->getFrameIndex()]->updateData(&newData, sizeof(newData));
 }
 
-ID3D12Resource* DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
 	
 	unsigned int frameIndex = m_context->getFrameIndex();
+
+	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	// Copy output texture srv to beginning of heap
+	m_context->getDevice()->CopyDescriptorsSimple(1, m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), outputTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	//Set constant buffer descriptor heap
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_rtDescriptorHeap.Get() };
 	cmdList->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
 
+
 	// Let's raytrace
-	DX12Utils::SetResourceTransitionBarrier(cmdList, m_rtOutputUAV.resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	//DX12Utils::SetResourceTransitionBarrier(cmdList, m_rtOutputUAV.resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 	D3D12_DISPATCH_RAYS_DESC raytraceDesc = {};
 	raytraceDesc.Width = Application::getInstance()->getWindow()->getWindowWidth();
@@ -158,9 +164,6 @@ ID3D12Resource* DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
 	cmdList->DispatchRays(&raytraceDesc);
-
-	return m_rtOutputUAV.resource.Get();
-
 }
 
 bool DXRBase::onEvent(Event& event) {
@@ -339,20 +342,6 @@ void DXRBase::createShaderResources(bool remake) {
 
 		m_heapIncr = m_context->getDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		// Create the output resource. The dimensions and format should match the swap-chain
-		D3D12_RESOURCE_DESC resDesc = {};
-		resDesc.DepthOrArraySize = 1;
-		resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // The backbuffer is actually DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, but sRGB formats can't be used with UAVs. We will convert to sRGB ourselves in the shader
-		resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		resDesc.Width = Application::getInstance()->getWindow()->getWindowWidth();
-		resDesc.Height = Application::getInstance()->getWindow()->getWindowHeight();
-		resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		resDesc.MipLevels = 1;
-		resDesc.SampleDesc.Count = 1;
-		m_context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr, IID_PPV_ARGS(&m_rtOutputUAV.resource)); // Starting as copy-source to simplify onFrameRender()
-		m_rtOutputUAV.resource->SetName(L"RTOutputUAV");
-
 		// Create the UAV. Based on the root signature we created it should be the first entry
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
@@ -360,9 +349,9 @@ void DXRBase::createShaderResources(bool remake) {
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-		// Create a view for the output UAV
-		m_context->getDevice()->CreateUnorderedAccessView(m_rtOutputUAV.resource.Get(), nullptr, &uavDesc, cpuHandle);
-		m_rtOutputUAV.gpuHandle = gpuHandle;
+		// The first slot in the heap will be used for the output UAV, therefore we step once
+		m_rtOutputTextureUavGPUHandle = m_rtDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 
@@ -417,7 +406,7 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 			m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
 		DXRUtils::ShaderTableBuilder tableBuilder(m_rayGenName, m_rtPipelineState.Get());
-		tableBuilder.addDescriptor(m_rtOutputUAV.gpuHandle.ptr);
+		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 

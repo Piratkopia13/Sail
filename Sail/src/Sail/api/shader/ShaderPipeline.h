@@ -100,7 +100,7 @@ protected:
 		ShaderRenderableTexture(ShaderResource res)
 			: res(res)
 		{
-			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180));
+			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180, "Renderable Texture owned by a ShaderPipeline"));
 		}
 		ShaderResource res;
 		std::unique_ptr<RenderableTexture> renderableTexture;

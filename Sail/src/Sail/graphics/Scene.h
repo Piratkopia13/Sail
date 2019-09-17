@@ -21,6 +21,7 @@ public:
 
 	virtual bool onEvent(Event& event) override;
 	void changeRenderer(unsigned int index);
+	bool& getDoProcessing();
 
 private:
 	bool onResize(WindowResizeEvent& event);
@@ -31,5 +32,6 @@ private:
 	std::unique_ptr<Renderer> m_rendererRaytrace;
 	std::unique_ptr<Renderer>* m_currentRenderer;
 	PostProcessPipeline m_postProcessPipeline;
+	bool m_doPostProcessing;
 
 };

@@ -11,7 +11,9 @@ DX12Texture::DX12Texture(const std::string& filename)
 	: m_isInitialized(false)
 	, m_textureData(getTextureData(filename))
 {
-	m_context = Application::getInstance()->getAPI<DX12API>();
+	context = Application::getInstance()->getAPI<DX12API>();
+	// Dont create one resource per swap buffer
+	useOneResource = true;
 
 	m_textureDesc = {};
 	m_textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // TODO: read this from texture data
@@ -26,9 +28,9 @@ DX12Texture::DX12Texture(const std::string& filename)
 	m_textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
 	// A texture rarely updates its data, if at all, so it is stored in a default heap
-	state = D3D12_RESOURCE_STATE_COPY_DEST;
-	ThrowIfFailed(m_context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &m_textureDesc, state, nullptr, IID_PPV_ARGS(&textureDefaultBuffer)));
-	textureDefaultBuffer->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filename.begin(), filename.end())).c_str());
+	states[0] = D3D12_RESOURCE_STATE_COPY_DEST;
+	ThrowIfFailed(context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &m_textureDesc, states[0], nullptr, IID_PPV_ARGS(&textureDefaultBuffers[0])));
+	textureDefaultBuffers[0]->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filename.begin(), filename.end())).c_str());
 
 	// Create a shader resource view (descriptor that points to the texture and describes it)
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -36,17 +38,11 @@ DX12Texture::DX12Texture(const std::string& filename)
 	srvDesc.Format = m_textureDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
-	m_context->getDevice()->CreateShaderResourceView(textureDefaultBuffer.Get(), &srvDesc, srvHeapCDH);
+	context->getDevice()->CreateShaderResourceView(textureDefaultBuffers[0].Get(), &srvDesc, srvHeapCDHs[0]);
 
 	// Dont allow UAV access
-	uavHeapCDH = {0};
+	uavHeapCDHs[0] = {0};
 
-	//// Create a unordered access view 
-	//D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	//uavDesc.Format = m_textureDesc.Format;
-	//uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-	//m_context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffer.Get(), nullptr, &uavDesc, uavHeapCDH);
-	
 }
 
 DX12Texture::~DX12Texture() {
@@ -58,12 +54,12 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	// this function gets the size an upload buffer needs to be to upload a texture to the gpu.
 	// each row must be 256 byte aligned except for the last row, which can just be the size in bytes of the row
 	// eg. textureUploadBufferSize = ((((width * numBytesPerPixel) + 255) & ~255) * (height - 1)) + (width * numBytesPerPixel);
-	m_context->getDevice()->GetCopyableFootprints(&m_textureDesc, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
+	context->getDevice()->GetCopyableFootprints(&m_textureDesc, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
 	// Create the upload heap
 	// TODO: release the upload heap when it has been copied to the default buffer
 	// This could be done in a buffer manager owned by dx12api
-	m_textureUploadBuffer.Attach(DX12Utils::CreateBuffer(m_context->getDevice(), textureUploadBufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
+	m_textureUploadBuffer.Attach(DX12Utils::CreateBuffer(context->getDevice(), textureUploadBufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 	m_textureUploadBuffer->SetName(L"Texture upload buffer");
 
 	D3D12_SUBRESOURCE_DATA textureData = {};
@@ -71,7 +67,7 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	textureData.RowPitch = m_textureData.getWidth() * m_textureData.getBytesPerPixel();
 	textureData.SlicePitch = textureData.RowPitch * m_textureData.getHeight();
 	// Copy the upload buffer contents to the default heap using a helper method from d3dx12.h
-	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffer.Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
+	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffers[0].Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
 	//DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffer.Get(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	//transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
@@ -83,5 +79,5 @@ bool DX12Texture::hasBeenInitialized() const {
 }
 
 ID3D12Resource1* DX12Texture::getResource() const {
-	return textureDefaultBuffer.Get();
+	return textureDefaultBuffers[0].Get();
 }

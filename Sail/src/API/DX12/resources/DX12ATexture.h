@@ -13,12 +13,16 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE getUavCDH() const;
 	void transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState);
 	bool isRenderable() const;
+	void renameBuffer(const std::string& name) const;
 
 protected:
-	wComPtr<ID3D12Resource1> textureDefaultBuffer;
+	DX12API* context;
+
+	std::vector<wComPtr<ID3D12Resource1>> textureDefaultBuffers;
 	DescriptorHeap cpuDescHeap;
-	D3D12_CPU_DESCRIPTOR_HANDLE srvHeapCDH;
-	D3D12_CPU_DESCRIPTOR_HANDLE uavHeapCDH;
-	D3D12_RESOURCE_STATES state;
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> srvHeapCDHs;
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> uavHeapCDHs;
+	std::vector<D3D12_RESOURCE_STATES> states;
 	bool isRenderableTex;
+	bool useOneResource;
 };

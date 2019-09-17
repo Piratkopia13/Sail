@@ -4,7 +4,7 @@
 
 class RenderableTexture {
 public:
-	static RenderableTexture* Create(unsigned int width = 320, unsigned int height = 180);
+	static RenderableTexture* Create(unsigned int width = 320, unsigned int height = 180, const std::string& name = "Renderable Texture");
 	virtual ~RenderableTexture() {}
 
 	virtual void begin(void* cmdList = nullptr) = 0;
