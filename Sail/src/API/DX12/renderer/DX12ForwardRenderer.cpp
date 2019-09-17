@@ -92,13 +92,10 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
 
-	// Transition back buffer to render target
-
-	m_context->renderToBackBuffer(cmdList.Get());
-
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	if (threadID == 0) {
+		// TODO: fix
 		m_context->prepareToRender(cmdList.Get());
 		m_context->clear(cmdList.Get());
 		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Prep to render, and record. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
@@ -113,12 +110,11 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 			m_outputTexture->clear({ 0.1f, 0.2f, 0.3f, 1.0f }, cmdList.Get());
 }
 		else {
-			m_context->prepareToRender(cmdList.Get());
 			m_context->renderToBackBuffer(cmdList.Get());
+			m_context->prepareToRender(cmdList.Get());
+			m_context->clear(cmdList.Get());
 		}
-		// add clear
-		/*m_context->prepareToRender(cmdList.Get());
-		m_context->clear(cmdList.Get());*/
+		
 	}
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 #else
@@ -211,9 +207,8 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	}
 
 #endif
-	// Execute command list
+	// Close command list
 	cmdList->Close();
-	m_context->executeCommandLists({ cmdList.Get() });
 
 }
 

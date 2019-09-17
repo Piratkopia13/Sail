@@ -4,6 +4,7 @@
 #include "resources/DescriptorHeap.h"
 #include "resources/DX12Texture.h"
 #include "DX12Utils.h"
+#include "API/DX12/shader/DX12ShaderPipeline.h"
 
 ComputeShaderDispatcher* ComputeShaderDispatcher::Create() {
 	return SAIL_NEW DX12ComputeShaderDispatcher();
@@ -24,6 +25,7 @@ void DX12ComputeShaderDispatcher::begin(void* cmdList) {
 
 Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, Shader::ComputeShaderInput& input, void* cmdList) {
 	assert(computeShader.getPipeline()->isComputeShader()); // Not a compute shader
+	auto* dxShaderPipeline = static_cast<DX12ShaderPipeline*>(computeShader.getPipeline());
 	
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	const auto& settings = computeShader.getComputeSettings();
@@ -43,9 +45,9 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		DX12ATexture* texture = static_cast<DX12ATexture*>(tex.second);
 		
 		if (texture->isRenderable()) {
-			computeShader.getPipeline()->setTexture2D(tex.first, (RenderableTexture*)texture, dxCmdList);
+			dxShaderPipeline->setTexture2D(tex.first, (RenderableTexture*)texture, dxCmdList);
 		} else {
-			computeShader.getPipeline()->setTexture2D(tex.first, (Texture*)texture, dxCmdList);
+			dxShaderPipeline->setTexture2D(tex.first, (Texture*)texture, dxCmdList);
 		}
 		// Skip the next 2 heap slots to match root signature layout
 		// TODO: read this from the root signature, currently it will crash if the root signature changes num srv descriptors
@@ -53,9 +55,9 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
 	}
 	// Bind output resources
-	computeShader.getPipeline()->bind(dxCmdList);
+	dxShaderPipeline->bind_new(dxCmdList, 0);
 
-	computeShader.getPipeline()->dispatch(input.threadGroupCountX, input.threadGroupCountY, input.threadGroupCountZ, dxCmdList);
+	dxShaderPipeline->dispatch(input.threadGroupCountX, input.threadGroupCountY, input.threadGroupCountZ, dxCmdList);
 
 	return *computeShader.getComputeOutput();
 }
