@@ -56,9 +56,9 @@ void Scene::prepareUpdate() {
 // Should be done at the end of each update tick.
 // TODO: move the update indexes out of transform
 void Scene::prepareRenderObjects() {
-	for (auto e : m_perFrameRenderObjects[0]) {
+	/*for (auto e : m_perFrameRenderObjects[0]) {
 		ECS::Instance()->destroyEntity(e);
-	}
+	}*/
 
 	m_perFrameRenderObjects[0].clear();
 
@@ -68,12 +68,14 @@ void Scene::prepareRenderObjects() {
 		GameTransformComponent* transform = gameObject->getComponent<GameTransformComponent>();
 		ModelComponent* model = gameObject->getComponent<ModelComponent>();
 		if (transform && model) {
-			auto e = ECS::Instance()->createEntity("RenderEntity"); // TODO? unique name
-			//Model* model = modelComponent->getModel();
-			e->addComponent<ModelComponent>(model->getModel());
-			e->addComponent<RenderTransformComponent>(transform);
+			//auto e = ECS::Instance()->createEntity("RenderEntity"); // TODO? unique name
+			////Model* model = modelComponent->getModel();
+			//e->addComponent<ModelComponent>(model->getModel());
+			//e->addComponent<RenderTransformComponent>(transform);
+			//
 
-			m_perFrameRenderObjects[0].push_back(e);
+			// TODO: allocate RenderTransforms sequentially in memory
+			m_perFrameRenderObjects[0].push_back(PerFrameRenderObject(model->getModel(), RenderTransform(transform)));
 		}
 	}
 }
@@ -83,14 +85,13 @@ void Scene::prepareRenderObjects() {
 void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
 
-	for (Entity::SPtr& entity : m_perFrameRenderObjects[0]) {
-		ModelComponent* model = entity->getComponent<ModelComponent>();
-		if (model) {
-			RenderTransformComponent* transform = entity->getComponent<RenderTransformComponent>();
-			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
+	for (PerFrameRenderObject& obj : m_perFrameRenderObjects[0]) {
+		//if (obj.m_model && obj.m_transform) {
+			//RenderTransformComponent* transform = entity->getComponent<RenderTransformComponent>();
+			//if (!obj.m_transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-			m_renderer->submit(model->getModel(), transform->getMatrix(alpha));
-		}
+			m_renderer->submit(obj.m_model, obj.m_transform.getMatrix(alpha));
+		//}
 	}
 
 	m_renderer->end();

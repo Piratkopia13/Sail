@@ -5,8 +5,31 @@
 #include "../events/Events.h"
 //#include "postprocessing/PostProcessPipeline.h"
 
+
+#include "Sail/graphics/geometry/transform/RenderTransform.h"
+
+//TODO: Move elsewhere
 class LightSetup;
 class Renderer;
+class Model;
+class RenderTransform;
+
+struct PerFrameRenderObject {
+	Model* m_model = nullptr;
+	RenderTransform m_transform;
+
+	PerFrameRenderObject(Model* model, RenderTransform transform)
+		: m_model(model), m_transform(transform) {}
+
+	virtual ~PerFrameRenderObject() {
+//		if (m_transform) {
+////			delete m_transform;
+//			m_transform = nullptr;
+//		}
+	}
+};
+
+
 // TODO: make this class virtual and have the actual scene in the demo/game project
 class Scene : public IEventListener {
 public:
@@ -49,8 +72,8 @@ private:
 	// should be a ring buffer or something similar
 	// should only include Model, transform, and whatever else might be needed to
 	// render the object.
-	std::vector<Entity::SPtr> m_perFrameRenderObjects[4];
-
+	//std::vector<Entity::SPtr> m_perFrameRenderObjects[4];
+	std::vector<PerFrameRenderObject> m_perFrameRenderObjects[4];
 
 
 	std::unique_ptr<Renderer> m_renderer;
