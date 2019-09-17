@@ -4,13 +4,15 @@
 #include "TransformCommon.h"
 
 // Forward declare
-class GameTransform;
+class GameTransformComponent;
+class ModelComponent;
+class Model;
 
-
+// TODO: Rename to something more fitting like objectFramePacket or something
 class RenderTransform {
 public:
 	explicit RenderTransform();
-	explicit RenderTransform(GameTransform* gameObject);
+	explicit RenderTransform(GameTransformComponent* gameObject, ModelComponent* model);
 	//RenderTransform(TransformFrame frame);
 	//RenderTransform(const glm::vec3& translation, RenderTransform* parent = nullptr);
 	//RenderTransform(
@@ -23,7 +25,7 @@ public:
 	void setParent(RenderTransform* parent);
 	void removeParent();
 
-	void createSnapShotFromGameObject(GameTransform* object);
+	void createSnapShotFromGameObject(GameTransformComponent* object);
 
 
 	void setMatrix(const glm::mat4& newMatrix);
@@ -33,7 +35,10 @@ public:
 	//glm::mat4 getLocalMatrix();
 
 	RenderTransform* getParent() const;
+	Model* getModel() const;
 private:
+	Model* m_model = nullptr;
+	
 	TransformFrame m_data;
 
 	glm::mat4 m_rotationMatrix;

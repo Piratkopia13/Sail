@@ -171,7 +171,6 @@ int Application::startGameLoop() {
 				while (s_queuedUpdates > 0) {
 					s_queuedUpdates--;
 					update(TIMESTEP);
-					// TODO: frame synchronization
 					Application::IncrementCurrentUpdateIndex();
 				}
 				s_updateLock.unlock();

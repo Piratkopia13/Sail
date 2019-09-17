@@ -76,12 +76,12 @@ void Scene::prepareRenderObjects() {
 			//e->addComponent<RenderTransformComponent>(transform);
 			//
 
-			RenderTransform* rf = SAIL_NEW RenderTransform(transform);
+			//RenderTransform* rf = SAIL_NEW RenderTransform(transform);
 
-			PerFrameRenderObject pfo = PerFrameRenderObject(model->getModel(), rf);
+			//PerFrameRenderObject pfo = PerFrameRenderObject(model->getModel(), rf);
 
 			// TODO: allocate RenderTransforms sequentially in memory
-			m_perFrameRenderObjects[ind].push_back(pfo);
+			m_perFrameRenderObjects[ind].push_back(RenderTransform(transform, model));
 		}
 	}
 	m_perFrameLocks[ind].unlock();
@@ -98,12 +98,12 @@ void Scene::draw(Camera& camera, const float alpha) {
 	m_perFrameLocks[ind].lock();
 
 
-	for (PerFrameRenderObject& obj : m_perFrameRenderObjects[ind]) {
+	for (RenderTransform& obj : m_perFrameRenderObjects[ind]) {
 		//if (obj.m_model && obj.m_transform) {
 			//RenderTransformComponent* transform = entity->getComponent<RenderTransformComponent>();
 			//if (!obj.m_transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-			m_renderer->submit(obj.m_model, obj.m_transform->getMatrix(alpha));
+			m_renderer->submit(obj.getModel(), obj.getMatrix(alpha));
 		//}
 	}
 	m_perFrameLocks[ind].unlock();

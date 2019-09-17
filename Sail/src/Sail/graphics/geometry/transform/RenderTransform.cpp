@@ -1,11 +1,14 @@
 #include "pch.h"
 #include "RenderTransform.h"
 #include "GameTransform.h"
+#include "Sail/graphics/geometry/Model.h"
+#include "Sail/entities/components/GameTransformComponent.h"
+#include "Sail/entities/components/ModelComponent.h"
 
 RenderTransform::RenderTransform() {
 }
 
-RenderTransform::RenderTransform(GameTransform* gameObject) {
+RenderTransform::RenderTransform(GameTransformComponent* gameObject, ModelComponent* model) : m_model(model->getModel()) {
 	createSnapShotFromGameObject(gameObject);
 }
 
@@ -42,7 +45,7 @@ void RenderTransform::removeParent() {
 }
 
 // TODO: rewrite
-void RenderTransform::createSnapShotFromGameObject(GameTransform* object) {
+void RenderTransform::createSnapShotFromGameObject(GameTransformComponent* object) {
 	m_data = object->getTransformFrame();
 
 	// If the object has a parent transform copy that one as well,
@@ -76,6 +79,11 @@ void RenderTransform::setMatrix(const glm::mat4& newMatrix) {
 RenderTransform* RenderTransform::getParent() const {
 	return m_parent;
 }
+
+Model* RenderTransform::getModel() const {
+	return m_model;
+}
+
 
 // TODO: rewrite with alpha value
 //       Optimize for static objects or make a separate transform type for those

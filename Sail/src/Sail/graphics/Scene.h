@@ -14,21 +14,24 @@ class Renderer;
 class Model;
 class RenderTransform;
 
-struct PerFrameRenderObject {
-	Model* m_model = nullptr;
-	RenderTransform* m_transform = nullptr;
-
-	PerFrameRenderObject(Model* model, RenderTransform* transform)
-		: m_model(model), m_transform(transform) {}
-
-	virtual ~PerFrameRenderObject() {
-		if (m_transform) {
-			delete m_transform;
-			m_transform = nullptr;
+//struct PerFrameRenderObject {
+//	Model* m_model = nullptr;
+//	RenderTransform* m_transform = nullptr;
+//
+//	PerFrameRenderObject(Model* model, RenderTransform* transform)
+//		: m_model(model), m_transform(transform) {
+//
+//	
+//	}
+//
+//	virtual ~PerFrameRenderObject() {
+//		if (m_transform) {
+//			delete m_transform;
 //			m_transform = nullptr;
-		}
-	}
-};
+////			m_transform = nullptr;
+//		}
+//	}
+//};
 
 
 // TODO: make this class virtual and have the actual scene in the demo/game project
@@ -74,7 +77,7 @@ private:
 	// should only include Model, transform, and whatever else might be needed to
 	// render the object.
 	//std::vector<Entity::SPtr> m_perFrameRenderObjects[4];
-	std::vector<PerFrameRenderObject> m_perFrameRenderObjects[SNAPSHOT_BUFFER_SIZE];
+	std::vector<RenderTransform> m_perFrameRenderObjects[SNAPSHOT_BUFFER_SIZE];
 	std::mutex m_perFrameLocks[SNAPSHOT_BUFFER_SIZE];
 
 
