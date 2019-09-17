@@ -90,7 +90,7 @@ static HRESULT readChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD
 	return hr;
 }
 
-static void errorCheck(HRESULT hr, std::string titleWindow, std::string titleMessage, std::string message, int errorType, bool exitIfFailed) {
+static void errorCheck(HRESULT hr, std::string titleWindow, std::string titleMessage, std::string message, int errorType = 0, bool exitIfFailed = true) {
 
 	LPCWSTR convertedMessage = stringToWString((titleWindow + "\n\nMESSAGE: " + titleMessage)).c_str();
 	LPCWSTR convertedTitle = stringToWString(titleWindow).c_str();

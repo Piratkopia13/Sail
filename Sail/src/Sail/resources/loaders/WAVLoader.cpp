@@ -55,7 +55,7 @@ namespace Fileloader {
 
 		DWORD filetype = 0;
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed to create the internal audio file!", 0, true);
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: WAVLoader::loadWAV()", "Failed to create the internal audio file!");
 
 #pragma region SPECIAL_CASE_ERROR_CHECK
 		try {
@@ -75,11 +75,11 @@ namespace Fileloader {
 
 		hr = findChunk(hFile, fourccRIFF, dwChunkSize, dwChunkPosition);
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed to find the audio file's 'RIFF' data chunk!", 0, true);
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: WAVLoader::loadWAV()", "Failed to find the audio file's 'RIFF' data chunk!");
 
 		hr = readChunkData(hFile, &filetype, sizeof(DWORD), dwChunkPosition);
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound", "Failed to read data chunk!", 0, true);
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: WAVLoader::loadWAV()", "Failed to read data chunk!");
 
 #pragma region SPECIAL_CASE_ERROR_CHECK
 		try {
@@ -99,24 +99,24 @@ namespace Fileloader {
 
 		hr = findChunk(hFile, fourccFMT, dwChunkSize, dwChunkPosition);
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed to find the desired data chunk!", 0, true);
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: WAVLoader::loadSound()", "Failed to find the desired data chunk!");
 
 		// reading data from WAV files
 		hr = readChunkData(hFile, (void*)& audioData.m_formatWAV, dwChunkSize, dwChunkPosition);
 		// reading data from ADPC-WAV files (compressed)
 		/*hr = ReadChunkData(hFile, &adpcwf, dwChunkSize, dwChunkPosition);*/
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed to read data chunk!", 0, true);
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: WAVLoader::loadWAV()", "Failed to read data chunk!");
 
 		hr = findChunk(hFile, fourccDATA, dwChunkSize, dwChunkPosition);
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed to find the desired data chunk!", 0, true);
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: WAVLoader::loadWAV()", "Failed to find the desired data chunk!");
 
 		BYTE* pDataBuffer = new BYTE[dwChunkSize];
 
 		hr = readChunkData(hFile, pDataBuffer, dwChunkSize, dwChunkPosition);
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed to read data chunk!", 0, true);
+		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: WAVLoader::loadWAV()", "Failed to read data chunk!");
 
 		audioData.m_soundBuffer.AudioBytes = dwChunkSize;  //size of the audio buffer in bytes
 		audioData.m_soundBuffer.pAudioData = pDataBuffer;  //buffer containing audio data
