@@ -11,8 +11,7 @@ public:
 	struct CollisionInfo {
 		glm::vec3 normal;
 		glm::vec3 positions[3];
-		glm::vec2 uvs[3];
-		//Entity* entity;
+		Entity::SPtr entity;
 	};
 
 private:
@@ -37,7 +36,8 @@ private:
 	bool addEntityRec(Entity::SPtr newEntity, Node* currentNode);
 	bool removeEntityRec(Entity::SPtr entityToRemove, Node* currentNode);
 	void updateRec(Node* currentNode, std::vector<Entity::SPtr>* entitiesToReAdd);
-	void getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vector<Octree::CollisionInfo>* collisionData);
+	void getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, std::vector<Octree::CollisionInfo>* outCollisionData);
+	void getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vector<Octree::CollisionInfo>* outCollisionData);
 	float getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode);
 	int pruneTreeRec(Node* currentNode);
 
@@ -53,7 +53,7 @@ public:
 
 	void update();
 
-	void getCollisions(Entity::SPtr entity, std::vector<CollisionInfo>* collisionData);
+	void getCollisions(Entity::SPtr entity, std::vector<CollisionInfo>* outCollisionData);
 
 	float getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection);
 };
