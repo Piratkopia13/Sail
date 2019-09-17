@@ -80,12 +80,12 @@ void ShaderPipeline::bind(void* cmdList) {
 void ShaderPipeline::parse(const std::string& source) {
 	
 	// Find what shader types are contained in the source
-	if (source.find("VSMain") != std::string::npos) parsedData.hasVS = true;
-	if (source.find("PSMain") != std::string::npos) parsedData.hasPS = true;
-	if (source.find("GSMain") != std::string::npos) parsedData.hasGS = true;
-	if (source.find("DSMain") != std::string::npos) parsedData.hasDS = true;
-	if (source.find("HSMain") != std::string::npos) parsedData.hasHS = true;
-	if (source.find("CSMain") != std::string::npos) parsedData.hasCS = true;
+	if (source.find("VSMain") != std::string::npos) { parsedData.hasVS = true; }
+	if (source.find("PSMain") != std::string::npos) { parsedData.hasPS = true; }
+	if (source.find("GSMain") != std::string::npos) { parsedData.hasGS = true; }
+	if (source.find("DSMain") != std::string::npos) { parsedData.hasDS = true; }
+	if (source.find("HSMain") != std::string::npos) { parsedData.hasHS = true; }
+	if (source.find("CSMain") != std::string::npos) { parsedData.hasCS = true; }
 
 	// Remove comments from source
 	std::string cleanSource = removeComments(source);
@@ -223,7 +223,9 @@ void ShaderPipeline::parseRWTexture(const char* source) {
 	source += tokenSize;
 
 	int slot = findNextIntOnLine(source);
-	if (slot == -1) slot = 0; // No slot specified, use 0 as default
+	if (slot == -1) {
+		slot = 0; // No slot specified, use 0 as default
+	}
 
 	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot));
 }
@@ -239,7 +241,9 @@ void ShaderPipeline::parseStructuredBuffer(const char* source) {
 	source += tokenSize;
 
 	int slot = findNextIntOnLine(source);
-	if (slot == -1) slot = 0; // No slot specified, use 0 as default
+	if (slot == -1) {
+		slot = 0; // No slot specified, use 0 as default
+	}
 
 	parsedData.structuredBuffers.emplace_back(name, slot);
 }
@@ -247,11 +251,13 @@ void ShaderPipeline::parseStructuredBuffer(const char* source) {
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
 	std::string name = nextToken(source);
 	outTokenSize = name.size() + 1; /// +1 to account for the space before the name
-	if (name[name.size() - 1] == ';')
+	if (name[name.size() - 1] == ';') {
 		name = name.substr(0, name.size() - 1); // Remove ending ';'
+	}
 	bool isArray = name[name.size() - 1] == ']';
-	if (!allowArray && isArray)
+	if (!allowArray && isArray) {
 		Logger::Error("Shader resource with name \"" + name + "\" is of unsupported type - array");
+	}
 	if (isArray) {
 		// remove [asd] part from the name
 		auto start = name.find("[");
@@ -272,12 +278,12 @@ std::string ShaderPipeline::nextTokenAsType(const char* source, UINT& outTokenSi
 
 ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::string& name) const {
 	if (startsWith(name.c_str(), "VSPS") || startsWith(name.c_str(), "PSVS")) return ShaderComponent::BIND_SHADER(ShaderComponent::VS | ShaderComponent::PS);
-	if (startsWith(name.c_str(), "VS")) return ShaderComponent::VS;
-	if (startsWith(name.c_str(), "PS")) return ShaderComponent::PS;
-	if (startsWith(name.c_str(), "GS")) return ShaderComponent::GS;
-	if (startsWith(name.c_str(), "DS")) return ShaderComponent::DS;
-	if (startsWith(name.c_str(), "HS")) return ShaderComponent::HS;
-	if (startsWith(name.c_str(), "CS")) return ShaderComponent::CS;
+	if (startsWith(name.c_str(), "VS")) { return ShaderComponent::VS; }
+	if (startsWith(name.c_str(), "PS")) { return ShaderComponent::PS; }
+	if (startsWith(name.c_str(), "GS")) { return ShaderComponent::GS; }
+	if (startsWith(name.c_str(), "DS")) { return ShaderComponent::DS; }
+	if (startsWith(name.c_str(), "HS")) { return ShaderComponent::HS; }
+	if (startsWith(name.c_str(), "CS")) { return ShaderComponent::CS; }
 	Logger::Warning("Shader resource with name \"" + name + "\" not starting with VS/PS etc, using VS as default in shader: \"" + filename + "\"");
 	return ShaderComponent::VS; // Default to binding to VertexShader
 }
