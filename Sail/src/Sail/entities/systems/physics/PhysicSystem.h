@@ -1,8 +1,7 @@
 #pragma once
-#include "..//ComponentSystem.h"
+#include "..//BaseComponentSystem.h"
 
-class PhysicSystem final : public ComponentSystem<PhysicSystem>
-{
+class PhysicSystem final : public BaseComponentSystem {
 public:
 	PhysicSystem();
 	~PhysicSystem();

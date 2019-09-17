@@ -1,9 +1,8 @@
 #pragma once
 
-//#include <unordered_map>
+#include <unordered_map>
 #include <memory>
 #include "components/Component.h"
-//#include "components/ComponentStorage.h"
 
 //#define MOVE(x) std::move(x)
 
@@ -34,6 +33,8 @@ public:
 	int getID() const;
 	Entity(const std::string& name = "");
 
+public:
+	bool tryToAddToSystems = true;
 private:
 	// Only ECS should be able to create entities
 	friend class ECS;
@@ -55,22 +56,14 @@ inline ComponentType* Entity::addComponent(Targs... args) {
 		Logger::Warning("Tried to add a duplicate component to an entity");
 	}
 
-	// Place this entity within the correct systems
-	addToSystems();
+	// Place this entity within the correct systems if told to
+	if (tryToAddToSystems) {
+		addToSystems();
+	}
 
 	// Return pointer to the inserted component
 	return static_cast<ComponentType*>(res.first->second.get());
 }
-/*template<typename ComponentType, typename... Targs>
-inline ComponentType* Entity::addComponent(Targs... args) {
-	ComponentType* component = ComponentStorage::Instance()->addComponent<ComponentType>(m_id, args...);
-
-	// Place this entity within the correct systems
-	addToSystems();
-
-	// Return pointer to the inserted component
-	return component;
-}*/
 
 template<typename ComponentType>
 inline void Entity::removeComponent() {
@@ -83,13 +76,6 @@ inline void Entity::removeComponent() {
 		removeFromSystems();
 	}
 }
-/*template<typename ComponentType>
-inline void Entity::removeComponent() {
-	ComponentStorage::Instance()->removeComponent<ComponentType>(m_id);
-
-	// Remove this entity from systems which required the removed component
-	removeFromSystems();
-}*/
 
 template<typename ComponentType>
 inline ComponentType* Entity::getComponent() {
@@ -102,10 +88,6 @@ inline ComponentType* Entity::getComponent() {
 
 	return nullptr;
 }
-/*template<typename ComponentType>
-inline ComponentType* Entity::getComponent() {
-	return ComponentStorage::Instance()->getComponent<ComponentType>(m_id);
-}*/
 
 template<typename ComponentType>
 inline bool Entity::hasComponent() const {

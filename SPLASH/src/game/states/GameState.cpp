@@ -59,8 +59,7 @@ GameState::GameState(StateStack& stack)
 		this call could be moved inside the default constructor of ECS,
 		assuming each system is included in ECS.cpp instead of here
 	*/
-	ECS::Instance()->createSystem<PhysicSystem>();
-
+	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
@@ -404,10 +403,7 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2;
 
-	/*
-		Updates all Component Systems in the order they were added
-	*/
-	ECS::Instance()->update(dt);
+	updateComponentSystems(dt);
 
 	/*if (m_texturedCubeEntity) {
 		//Translations, rotations and scales done here are non-constant, meaning they change between updates
@@ -514,6 +510,10 @@ bool GameState::renderImguiConsole(float dt) {
 
 
 	return false;
+}
+
+void GameState::updateComponentSystems(float dt) {
+	m_componentSystems.physicSystem->update(dt);
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
