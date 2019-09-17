@@ -8,3 +8,5 @@
 //#include "MovementComponent.h"
 #include "PlayerComponent.h"
 #include "BoundingBoxComponent.h"
+#include "LightComponent.h"
+#include "LightListComponent.h"

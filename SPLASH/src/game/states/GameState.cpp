@@ -10,7 +10,7 @@ GameState::GameState(StateStack& stack)
 //, m_cam(20.f, 20.f, 0.1f, 5000.f)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 //, m_camController(&m_cam)
-, m_playerController(&m_cam)
+, m_playerController(&m_cam, &m_scene)
 , m_cc(true)
 {
 #ifdef _DEBUG
@@ -97,31 +97,33 @@ GameState::GameState(StateStack& stack)
 	glm::vec3 color(0.1f, 0.1f, 0.1f);
  	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
-	m_lights.setDirectionalLight(DirectionalLight(color, direction));
+	//m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	// Add four point lights
 	{
-		PointLight pl;
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(3.0f, 3.1f, 3.0f));
-		m_lights.addPointLight(pl);
+		//PointLight pl;
+		//pl.setAttenuation(.0f, 0.1f, 0.02f);
+		//pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		//pl.setPosition(glm::vec3(3.0f, 3.1f, 3.0f));
+		//pl.setIndex(0);
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(1.f,1.f,1.f));
-		pl.setPosition(glm::vec3(1.0f, 3.1f, 1.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(1.f,1.f,1.f));
+		//pl.setPosition(glm::vec3(1.0f, 3.1f, 1.0f));
+		//pl.setIndex(1);
+		//m_lights.addPointLight(pl);
 
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
+		//m_lights.addPointLight(pl);
 	}
 
 	// Set up the scene
@@ -184,15 +186,20 @@ GameState::GameState(StateStack& stack)
 	//Create octree
 	m_octree = SAIL_NEW Octree(&m_scene, m_boundingBoxModel.get());
 
+	// Temporary projectile model for the player's gun
+	m_playerController.setProjectileModel(m_cubeModel.get());
+
 	/*
 		Creation of entitites
 	*/
-	auto e = ECS::Instance()->createEntity("Arena");
-	e->addComponent<ModelComponent>(arenaModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	m_scene.addEntity(e);
-	m_octree->addEntity(e);
+	{
+		auto e = ECS::Instance()->createEntity("Arena");
+		e->addComponent<ModelComponent>(arenaModel);
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<LightListComponent>();
+		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		m_scene.addEntity(e);
+		m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Barrier1");
 	e->addComponent<ModelComponent>(barrierModel);
@@ -334,61 +341,77 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 	m_octree->addEntity(e);
 
-	//auto e = Entity::Create("Static cube");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-	//m_scene.addEntity(e);
+		//auto e = Entity::Create("Static cube");
+		//e->addComponent<ModelComponent>(m_cubeModel.get());
+		//e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
+		//m_scene.addEntity(e);
 
-	//e = Entity::Create("Floor");
-	//e->addComponent<ModelComponent>(m_planeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	//m_scene.addEntity(e);
+		//e = Entity::Create("Floor");
+		//e->addComponent<ModelComponent>(m_planeModel.get());
+		//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		//m_scene.addEntity(e);
 
-	//e = Entity::Create("Clingy cube");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-	//m_scene.addEntity(e);
+		//e = Entity::Create("Clingy cube");
+		//e->addComponent<ModelComponent>(m_cubeModel.get());
+		//e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+		//m_scene.addEntity(e);
 
-	//// Add some cubes which are connected through parenting
-	//m_texturedCubeEntity = Entity::Create("Textured parent cube");
-	//m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-	//m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
-	//m_texturedCubeEntity->setName("MovingCube");
-	//m_scene.addEntity(m_texturedCubeEntity);
-	//e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
+		//// Add some cubes which are connected through parenting
+		//m_texturedCubeEntity = Entity::Create("Textured parent cube");
+		//m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
+		//m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
+		//m_texturedCubeEntity->setName("MovingCube");
+		//m_scene.addEntity(m_texturedCubeEntity);
+		//e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
 
-	//e = Entity::Create("CubeRoot");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-	//m_scene.addEntity(e);
-	//m_transformTestEntities.push_back(e);
+		//e = Entity::Create("CubeRoot");
+		//e->addComponent<ModelComponent>(m_cubeModel.get());
+		//e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+		//m_scene.addEntity(e);
+		//m_transformTestEntities.push_back(e);
 
-	//e = Entity::Create("CubeChild");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
-	//m_scene.addEntity(e);
-	//m_transformTestEntities.push_back(e);
+		//e = Entity::Create("CubeChild");
+		//e->addComponent<ModelComponent>(m_cubeModel.get());
+		//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+		//m_scene.addEntity(e);
+		//m_transformTestEntities.push_back(e);
 
-	//e = Entity::Create("CubeChildChild");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
-	//m_scene.addEntity(e);
-	//m_transformTestEntities.push_back(e);
+		//e = Entity::Create("CubeChildChild");
+		//e->addComponent<ModelComponent>(m_cubeModel.get());
+		//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+		//m_scene.addEntity(e);
+		//m_transformTestEntities.push_back(e);
 
+		//creates light with model and pointlight
+		e = ECS::Instance()->createEntity("Candle1");
+		e->addComponent<ModelComponent>(lightModel);
+		e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
+		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		PointLight pl;
+		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
+		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		pl.setIndex(0);
+		e->addComponent<LightComponent>(pl);
+		m_scene.addEntity(e);
+		m_octree->addEntity(e);
 
-	e = ECS::Instance()->createEntity("Candle");
-	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
-	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	m_scene.addEntity(e);
-	m_octree->addEntity(e);
-
-	e = ECS::Instance()->createEntity("Candle2");
-	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
-	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	m_scene.addEntity(e);
-	m_octree->addEntity(e);
+		e = ECS::Instance()->createEntity("Candle2");
+		e->addComponent<ModelComponent>(lightModel);
+		e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
+		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		lightPos = e->getComponent<TransformComponent>()->getTranslation();
+		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		pl.setIndex(1);
+		e->addComponent<LightComponent>(pl);
+		m_scene.addEntity(e);
+		m_octree->addEntity(e);
+	}
+	//m_physSystem.registerEntity(m_playerController.getEntity());
+//>>>>>>> dev
 
 	for (int i = 0; i < 4; i++) {
 		Entity::SPtr tempEntity = ECS::Instance()->createEntity("Bounding Box");
@@ -412,13 +435,14 @@ GameState::~GameState() {
 bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
-	// Add point light at camera pos
+	// Add point light at camera pos by adding it to component
 	if (Input::WasKeyJustPressed(SAIL_KEY_E)) {
 		PointLight pl;
 		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl.setPosition(m_cam.getPosition());
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		m_lights.addPointLight(pl);
+		m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.push_back(pl);
+		//m_lights.addPointLight(pl);
 	}
 
 	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
@@ -476,6 +500,55 @@ bool GameState::processInput(float dt) {
 		m_app->dispatchEvent(e);
 	}
 
+	//checks if candle entity has light and if not, adds one 
+	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
+		if (!m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
+			PointLight pl;
+			glm::vec3 pos = m_scene.getEntityByName("Candle1")->getComponent<TransformComponent>()->getTranslation();
+			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+			pl.setAttenuation(.0f, 0.1f, 0.02f);
+			pl.setIndex(0);
+			m_scene.getEntityByName("Candle1")->addComponent<LightComponent>(pl);
+			//m_lights.addPointLight(pl);
+		}
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
+		if (!m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
+			PointLight pl;
+			glm::vec3 pos = m_scene.getEntityByName("Candle2")->getComponent<TransformComponent>()->getTranslation();
+			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+			pl.setAttenuation(.0f, 0.1f, 0.02f);
+			pl.setIndex(1);
+			m_scene.getEntityByName("Candle2")->addComponent<LightComponent>(pl);
+			//m_lights.addPointLight(pl);
+		}
+	}
+
+	//removes first added pointlight in arena
+	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
+
+		if (m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.size() > 0) {
+			m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.erase(m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.begin());
+		}
+
+		//m_lights.removePointLight();
+	}
+
+	//removes light from candle entities if they have it
+	if (Input::WasKeyJustPressed(SAIL_KEY_M)) {
+		if (m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
+			m_scene.getEntityByName("Candle1")->removeComponent<LightComponent> ();
+		}
+		//m_lights.removePLByIndex(0);
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_N)) {
+		if (m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
+			m_scene.getEntityByName("Candle2")->removeComponent<LightComponent>();
+		}
+		//m_lights.removePLByIndex(1);
+	}
 	return true;
 }
 
@@ -553,6 +626,20 @@ bool GameState::update(float dt) {
 		m_testBoundingBoxes[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
 	}
 
+	//check and update all lights for all entities
+	std::vector<Entity::SPtr> entities = m_scene.getEntities();
+	m_lights.clearPointLights();
+	for (int i = 0; i < entities.size();i++) {
+		if (entities[i]->hasComponent<LightComponent>()) {
+			m_lights.addPointLight(entities[i]->getComponent<LightComponent>()->m_pointLight);
+		}
+		if (entities[i]->hasComponent<LightListComponent>()) {
+			for (int j = 0; j < entities[i]->getComponent<LightListComponent>()->m_pls.size(); j++) {
+				m_lights.addPointLight(entities[i]->getComponent<LightListComponent>()->m_pls[j]);
+			}
+		}
+	}
+	m_lights.updateBufferData();
 	m_octree->update();
 
 	std::vector<Octree::CollisionInfo> throwaway;
