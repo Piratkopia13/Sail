@@ -2,6 +2,10 @@
 #include "NodeSystem.h"
 #include "Sail.h"
 
+#ifdef _DEBUG_NODESYSTEM
+#include "Sail/entities/ECS.h"
+#endif
+
 NodeSystem::NodeSystem() {
 	m_graph = nullptr;
 }
@@ -14,6 +18,11 @@ NodeSystem::~NodeSystem() {
 }
 
 void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
+#ifdef _DEBUG_NODESYSTEM
+	if ( m_nodeModel == nullptr || m_scene == nullptr ) {
+		Logger::Error("Node model and scene need to be set in the node system during debug.");
+	}
+#endif
 	if ( m_graph != nullptr ) {
 		delete m_graph;
 		m_graph = nullptr;
@@ -29,6 +38,19 @@ void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector
 			// m_graph.addEdge(c, index); <-- should probably be done
 		}
 	}
+
+#ifdef _DEBUG_NODESYSTEM
+	for ( int i = 0; i < m_nodeEntities.size(); i++ ) {
+		ECS::Instance()->destroyEntity(m_nodeEntities[i]);
+	}
+	m_nodeEntities.clear();
+	for ( int i = 0; i < m_nodes.size(); i++ ) {
+		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
+		m_nodeEntities[i]->addComponent<TransformComponent>(m_nodes[i].position);
+		m_nodeEntities[i]->addComponent<ModelComponent>(m_nodeModel);
+		m_scene->addEntity(m_nodeEntities[i]);
+	}
+#endif
 }
 
 std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
@@ -60,6 +82,13 @@ const NodeSystem::Node& NodeSystem::getNearestNode(const glm::vec3& position) co
 
 	return m_nodes[index];
 }
+
+#ifdef _DEBUG_NODESYSTEM
+void NodeSystem::setDebugModelAndScene(Model* model, Scene* scene) {
+	m_nodeModel = model;
+	m_scene = scene;
+}
+#endif
 
 /*
 ---------------
