@@ -103,7 +103,7 @@ void Material::getAndInsertTexture(const std::string& filename, int arraySlot) {
 //		return m_srvs;
 //}
 
-Texture* Material::getTexture(unsigned int id) {
+Texture* Material::getTexture(unsigned int id) const {
 	return m_textures[id];
 }
 
@@ -113,11 +113,6 @@ const Material::PhongSettings& Material::getPhongSettings() const {
 
 Shader* Material::getShader() const {
 	return m_shader;
-}
-
-Texture* Material::getTexture(int i) const
-{
-	return m_textures[i];
 }
 
 // TODO: remove

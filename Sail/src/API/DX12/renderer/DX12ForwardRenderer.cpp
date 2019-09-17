@@ -17,7 +17,6 @@
 DX12ForwardRenderer::DX12ForwardRenderer() {
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
-	m_context->initCommand(m_command);
 
 	for (size_t i = 0; i < MAX_RECORD_THREADS; i++) {
 		m_context->initCommand(m_command[i]);
@@ -58,8 +57,8 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 
 	for (size_t i = 0; i < mainThreadIndex; i++) {
 		fut[i] = Application::getInstance()->pushJobToThreadPool(
-			[this, i, frameIndex, start, commandsPerThread, count, nThreadsToUse](int id) {
-				return this->recordCommands(i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
+			[this, postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse](int id) {
+				return this->recordCommands(postProcessPipeline, i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
 			});
 		start += commandsPerThread;
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
@@ -67,7 +66,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	}
 
-	recordCommands(mainThreadIndex, frameIndex, start, commandsPerThread, count, nThreadsToUse);
+	recordCommands(postProcessPipeline, mainThreadIndex, frameIndex, start, commandsPerThread, count, nThreadsToUse);
 	ID3D12CommandList* commandlists[MAX_RECORD_THREADS];
 	commandlists[mainThreadIndex] = m_command[mainThreadIndex].list.Get();
 
@@ -84,7 +83,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // MULTI_THREADED_COMMAND_RECORDING
 }
 
-void DX12ForwardRenderer::recordCommands(const int threadID, const int frameIndex, const int start, const int nCommands, size_t oobMax, int nThreads) {
+void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipeline, const int threadID, const int frameIndex, const int start, const int nCommands, size_t oobMax, int nThreads) {
 	//#ifdef MULTI_THREADED_COMMAND_RECORDING
 	auto& allocator = m_command[threadID].allocators[frameIndex];
 	auto& cmdList = m_command[threadID].list;
@@ -216,4 +215,14 @@ void DX12ForwardRenderer::recordCommands(const int threadID, const int frameInde
 	cmdList->Close();
 	m_context->executeCommandLists({ cmdList.Get() });
 
+}
+
+bool DX12ForwardRenderer::onEvent(Event& event) {
+	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12ForwardRenderer::onResize));
+	return true;
+}
+
+bool DX12ForwardRenderer::onResize(WindowResizeEvent& event) {
+	m_outputTexture->resize(event.getWidth(), event.getHeight());
+	return true;
 }

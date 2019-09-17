@@ -7,7 +7,6 @@
 #include "Sail/Application.h"
 #include "Sail/api/Renderer.h"
 
-
 Scene::Scene() 
 	: m_doPostProcessing(false)
 {
@@ -42,15 +41,8 @@ void Scene::setLightSetup(LightSetup* lights) {
 	(*m_currentRenderer)->setLightSetup(lights);
 }
 
-// NEEDS TO RUN BEFORE EACH UPDATE
-// Copies the game state from the previous tick 
-void Scene::prepareUpdate() {
-	for (auto e : m_entities) {
-		TransformComponent* transform = e->getComponent<TransformComponent>();
-		if (transform) { transform->copyDataFromPrevUpdate(); }
-	}
-}
 
+void Scene::draw(Camera& camera, const float alpha) {
 	(*m_currentRenderer)->begin(&camera);
 
 	for (Entity::SPtr& entity : m_entities) {
@@ -66,10 +58,6 @@ void Scene::prepareUpdate() {
 	(*m_currentRenderer)->end();
 	(*m_currentRenderer)->present((m_doPostProcessing) ? &m_postProcessPipeline : nullptr);
 
-	//(*m_currentRenderer)->present(m_deferredOutputTex.get());
-
-	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
-
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
 	for (Entity::SPtr& entity : m_entities) {
@@ -77,6 +65,15 @@ void Scene::prepareUpdate() {
 		if (text) {
 			text->draw();
 		}
+	}
+}
+
+// NEEDS TO RUN BEFORE EACH UPDATE
+// Copies the game state from the previous tick 
+void Scene::prepareUpdate() {
+	for (auto e : m_entities) {
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+		if (transform) { transform->copyDataFromPrevUpdate(); }
 	}
 }
 

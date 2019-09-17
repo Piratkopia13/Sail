@@ -204,7 +204,7 @@ unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList) 
 			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
 		}
 
-		m_context->getDevice()->CopyDescriptorsSimple(1, handle, textures[i]->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		m_context->getDevice()->CopyDescriptorsSimple(1, handle, textures[i]->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		handle.ptr += m_context->getMainGPUDescriptorHeap()->getDescriptorIncrementSize();
 	}
 
@@ -333,10 +333,6 @@ void DX12ShaderPipeline::createComputePipelineState() {
 	cpsd.CS.BytecodeLength = csD3DBlob->GetBufferSize();
 
 	ThrowIfFailed(m_context->getDevice()->CreateComputePipelineState(&cpsd, IID_PPV_ARGS(&m_pipelineState)));
-}
-
-void DX12ShaderPipeline::compile() {
-	ShaderPipeline::compile();
 }
 
 void DX12ShaderPipeline::finish() {

@@ -53,13 +53,12 @@ public:
 		1 - Normal map
 		2 - Specular map
 	*/ 
-	Texture* getTexture(unsigned int id);
+	Texture* getTexture(unsigned int id) const;
 
 	//const glm::vec4& getColor() const;
 	const PhongSettings& getPhongSettings() const;
 
 	Shader* getShader() const;
-	Texture* getTexture(int i) const;
 	//const bool* getTextureFlags() const;// TODO: remove
 
 private:
