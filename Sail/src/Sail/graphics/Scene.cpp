@@ -6,7 +6,7 @@
 #include "../utils/Utils.h"
 #include "Sail/Application.h"
 #include "Sail/api/Renderer.h"
-
+#include "Sail/entities/ECS.h"
 
 Scene::Scene() 
 	//: m_postProcessPipeline(m_renderer)
@@ -33,29 +33,56 @@ Scene::~Scene() {
 }
 
 void Scene::addEntity(Entity::SPtr entity) {
-	m_entities.push_back(entity);
+	m_GameObjectEntities.push_back(entity);
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
 	m_renderer->setLightSetup(lights);
 }
 
+
+// TODO: REMOVE, won't be needed with separate render objects
 // NEEDS TO RUN BEFORE EACH UPDATE
 // Copies the game state from the previous tick 
 void Scene::prepareUpdate() {
-	for (auto e : m_entities) {
+	for (auto e : m_GameObjectEntities) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
-		if (transform) { transform->copyDataFromPrevUpdate(); }
+		if (transform) { transform->prepareUpdate(); }
 	}
 }
 
+
+// creates a vector of render objects corresponding to the current state of the game objects
+// Should be done at the end of each update tick.
+// TODO: move the update indexes out of transform
+void Scene::prepareRenderObjects() {
+	m_perFrameRenderObjects[0].clear();
+
+	size_t test = m_perFrameRenderObjects[0].size();
+
+	for (auto gameObject : m_GameObjectEntities) {
+		TransformComponent* transform = gameObject->getComponent<TransformComponent>();
+		ModelComponent* model = gameObject->getComponent<ModelComponent>();
+		if (transform && model) {
+			auto e = ECS::Instance()->createEntity("RenderEntity"); // TODO? unique name
+			//Model* model = modelComponent->getModel();
+			e->addComponent<ModelComponent>(model->getModel());
+
+
+			e->addComponent<TransformComponent>();
+			e->getComponent<TransformComponent>()->copySnapshotFromObject(transform);
+
+			m_perFrameRenderObjects[0].push_back(e);
+		}
+	}
+}
 
 
 // TODO: loop through renderEntities
 void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
 
-	for (Entity::SPtr& entity : m_entities) {
+	for (Entity::SPtr& entity : m_perFrameRenderObjects[0]) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
 		if (model) {
 			TransformComponent* transform = entity->getComponent<TransformComponent>();
@@ -72,7 +99,7 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
-	for (Entity::SPtr& entity : m_entities) {
+	for (Entity::SPtr& entity : m_GameObjectEntities) {
 		TextComponent* text = entity->getComponent<TextComponent>();
 		if (text) {
 			text->draw();

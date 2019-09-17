@@ -28,7 +28,7 @@ void PlayerController::setStartPosition(const glm::vec3& pos) {
 // To be run at the beginning of each update tick
 void PlayerController::prepareUpdate() {
 	TransformComponent* transform = m_player->getComponent<TransformComponent>();
-	if (transform) { transform->copyDataFromPrevUpdate(); }
+	if (transform) { transform->prepareUpdate(); }
 }
 
 void PlayerController::processKeyboardInput(float dt) {

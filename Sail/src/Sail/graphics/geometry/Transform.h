@@ -2,6 +2,22 @@
 
 #include "pch.h" // for SNAPSHOT_BUFFER_IND
 
+
+// TODO: move out bools and separate the game object and render object transform classes entirely
+struct TransformSnapshot {
+	glm::vec3 m_translation;
+	glm::vec3 m_rotation;
+	glm::quat m_rotationQuat;
+	glm::vec3 m_scale;
+	glm::vec3 m_forward;
+	glm::vec3 m_right;
+	glm::vec3 m_up;
+
+	bool m_matNeedsUpdate;
+	bool m_parentUpdated;
+	bool m_updatedDirections;
+};
+
 class Transform {
 
 public:
@@ -17,6 +33,7 @@ public:
 #endif
 
 	explicit Transform(Transform* parent);
+	Transform(TransformSnapshot current, TransformSnapshot prev);
 	Transform(const glm::vec3& translation, Transform* parent = nullptr);
 	Transform(const glm::vec3& translation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f }, Transform* parent = nullptr);
 	virtual ~Transform();
@@ -24,7 +41,11 @@ public:
 	void setParent(Transform* parent);
 	void removeParent();
 
-	void copyDataFromPrevUpdate();
+	void prepareUpdate();
+	TransformSnapshot getCurrentTransformState() const;
+	TransformSnapshot getPreviousTransformState() const;
+	Transform* getTransformSnapshot() const;
+	void copySnapshotFromObject(Transform* object);
 
 	void setStartTranslation(const glm::vec3& translation);
 
@@ -58,6 +79,7 @@ public:
 
 	void setMatrix(const glm::mat4& newMatrix);
 
+	Transform* getParent() const;
 
 	const glm::vec3& getTranslation() const;
 	const glm::vec3& getRotations() const;
@@ -71,7 +93,7 @@ public:
 
 private:
 	// TODO: Make sure this struct is only as large as necessary
-	struct TransformSnapshot {
+	/*struct TransformSnapshot {
 		glm::vec3 m_translation;
 		glm::vec3 m_rotation;
 		glm::quat m_rotationQuat;
@@ -83,8 +105,13 @@ private:
 		bool m_matNeedsUpdate;
 		bool m_parentUpdated;
 		bool m_updatedDirections;
-	};
-	TransformSnapshot m_transformSnapshots[SNAPSHOT_BUFFER_SIZE];
+	};*/
+	//TransformSnapshot m_transformSnapshots[SNAPSHOT_BUFFER_SIZE];
+
+	TransformSnapshot m_currentState;
+	TransformSnapshot m_previousState;
+
+
 
 	glm::mat4 m_rotationMatrix;
 	glm::mat4 m_transformMatrix;

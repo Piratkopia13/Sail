@@ -22,17 +22,34 @@ public:
 
 	void prepareUpdate();
 
+	void prepareRenderObjects();
+
 	virtual bool onEvent(Event& event) override;
 
 private:
 	bool onResize(WindowResizeEvent& event);
 
 private:
-	std::vector<Entity::SPtr> m_entities; // game objects
+	// Entities are split into game objects and per-frame render objects to prevent
+	// data races when rendering objects that have just been modified/deleted from
+	// the scene.
 
-	// should be a ring buffer or something
-	// make it as small as possible
-	std::vector<Entity::SPtr> m_perFrameRenderObjects[4]; // TODO
+	// Game objects are used for everything but the rendering pass
+	//
+	// Should include Model, Transform, Physics, Sound, etc.
+	std::vector<Entity::SPtr> m_GameObjectEntities;
+
+
+
+
+	// Render objects are essentially read only and have only the minimum required data
+	// needed to render the corresponding game object. A list of render objects is created
+	// at the end of each CPU update from the m_GameObjectEntities.
+	//
+	// should be a ring buffer or something similar
+	// should only include Model, transform, and whatever else might be needed to
+	// render the object.
+	std::vector<Entity::SPtr> m_perFrameRenderObjects[4];
 
 
 

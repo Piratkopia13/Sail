@@ -139,14 +139,14 @@ int Application::startGameLoop() {
 			processInput(static_cast<float>(delta));
 
 			// Run update(s) in a separate thread
-			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
+			//m_threadPool->push([this, CPU_updatesThisLoop](int id) {
 				UINT updatesRemaining = CPU_updatesThisLoop;
 				while (updatesRemaining > 0) {
 					updatesRemaining--;
 					update(TIMESTEP);
 					Transform::IncrementCurrentUpdateIndex();
 				}
-				});
+				//});
 
 			// Render
 			Transform::UpdateCurrentRenderIndex();

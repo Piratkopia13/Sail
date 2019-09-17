@@ -176,7 +176,7 @@ GameState::GameState(StateStack& stack)
 	m_playerController.setProjectileModel(m_cubeModel.get());
 
 	/*
-		Creation of entitites
+		Creation of entities
 	*/
 	auto e = ECS::Instance()->createEntity("Arena");
 	e->addComponent<ModelComponent>(arenaModel);
@@ -366,7 +366,8 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
 		if (m_transformTestEntities.size() >= 3) {
 			Logger::Log("Setting parent");
-			m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>());
+			m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(
+				m_transformTestEntities[1]->getComponent<TransformComponent>());
 		}
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
@@ -472,6 +473,8 @@ bool GameState::update(float dt) {
 
 	m_playerController.processKeyboardInput(TIMESTEP);
 
+
+	// TODO: REMOVE, update systems individually instead
 	/*
 		Updates all Component Systems in order
 	*/
@@ -500,6 +503,10 @@ bool GameState::update(float dt) {
 		if (size > 1.2f || size < 0.7f)
 			change *= -1.0f;
 	}
+
+	// copy per-frame render objects to their own list so that they can be rendered without
+	// any interference from the update loop
+	m_scene.prepareRenderObjects();
 
 	return true;
 }
