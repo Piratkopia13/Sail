@@ -12,7 +12,7 @@ AiController::AiController(std::shared_ptr<Entity> toControl)
 	: AiController() 
 {
 	m_controlledEntity = toControl;
-	m_transComp = m_controlledEntity->getComponent<TransformComponent>();
+	m_transComp = m_controlledEntity->getComponent<GameTransformComponent>();
 	m_physComp = m_controlledEntity->getComponent<PhysicsComponent>();
 }
 
@@ -20,7 +20,7 @@ AiController::~AiController() {}
 
 void AiController::update() {
 	if ( m_entityTarget != nullptr ) {
-		m_target = m_entityTarget->getComponent<TransformComponent>()->getTranslation();
+		m_target = m_entityTarget->getComponent<GameTransformComponent>()->getTranslation();
 		m_reachedTarget = false;
 	}
 	

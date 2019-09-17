@@ -26,7 +26,7 @@ GameState::GameState(StateStack& stack)
 	m_cc.addCommand(std::string("AddCube"), [&]() {
 		auto e = ECS::Instance()->createEntity("new cube");
 		e->addComponent<ModelComponent>(m_cubeModel.get());
-		e->addComponent<TransformComponent>(m_cam.getPosition());
+		e->addComponent<GameTransformComponent>(m_cam.getPosition());
 
 		m_scene.addEntity(e);
 		return std::string("Added Cube at (" + std::to_string(m_cam.getPosition().x) + ":" + std::to_string(m_cam.getPosition().y) + ":" + std::to_string(m_cam.getPosition().z) + ")");
@@ -92,7 +92,7 @@ GameState::GameState(StateStack& stack)
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	//m_camController.lookAt(glm::vec3(0.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 4.7f, 7.4f));
+	m_playerController.getEntity()->getComponent<GameTransformComponent>()->setStartTranslation(glm::vec3(1.6f, 4.7f, 7.4f));
 	
 
 	// Add a directional light
@@ -180,111 +180,111 @@ GameState::GameState(StateStack& stack)
 	*/
 	auto e = ECS::Instance()->createEntity("Arena");
 	e->addComponent<ModelComponent>(arenaModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Barrier1");
 	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f,-0.79f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f,-0.79f, 0.f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Barrier2");
 	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(-4.54f,0.f,8.06f));
+	e->addComponent<GameTransformComponent>(glm::vec3(-4.54f,0.f,8.06f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Barrier3");
 	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(8.46f,0.f,8.06f));
+	e->addComponent<GameTransformComponent>(glm::vec3(8.46f,0.f,8.06f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Container1");
 	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(6.95f,0.f,25.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(6.95f,0.f,25.f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Container2");
 	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-25.f,0.f,12.43f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(-25.f,0.f,12.43f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Container3");
 	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-25.f,8.f,-7.73f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(-25.f,8.f,-7.73f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container4");
 	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
 	m_scene.addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container5");
 	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(-0.f, 0.f, -14.f));
 	m_scene.addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container6");
 	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.20f,0.f,-8.f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(24.20f,0.f,-8.f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container7");
 	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.2f,8.f,-22.8f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(24.2f,8.f,-22.8f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container8");
 	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.36f,0.f,-32.41f));
+	e->addComponent<GameTransformComponent>(glm::vec3(24.36f,0.f,-32.41f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Ramp1");
 	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp2");
 	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp3");
 	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp4");
 	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
 	m_scene.addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp5");
 	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(-16.f, 0.f, 20.f),glm::vec3(0.f,3.14f,0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(-16.f, 0.f, 20.f),glm::vec3(0.f,3.14f,0.f));
 	m_scene.addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp6");
 	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(-34.f, 0.f, 20.f),glm::vec3(0.f,0.f,0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(-34.f, 0.f, 20.f),glm::vec3(0.f,0.f,0.f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Character");
 	e->addComponent<ModelComponent>(characterModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Character1");
 	e->addComponent<ModelComponent>(characterModel);
-	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 	// Add AI
 	e->addComponent<PhysicsComponent>();
 	m_aiControllers.push_back(e);
 	e = ECS::Instance()->createEntity("Character2");
 	e->addComponent<ModelComponent>(characterModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 	// Add AI
 	e->addComponent<PhysicsComponent>();
 	m_aiControllers.push_back(e);
 	e = ECS::Instance()->createEntity("Character3");
 	e->addComponent<ModelComponent>(characterModel);
-	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
 	// Add AI
 	e->addComponent<PhysicsComponent>();
@@ -334,12 +334,12 @@ GameState::GameState(StateStack& stack)
 
 	e = ECS::Instance()->createEntity("Candle");
 	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(3.f, 0.f, 3.f));
 	m_scene.addEntity(e);
 
 	e = ECS::Instance()->createEntity("Candle2");
 	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
+	e->addComponent<GameTransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 	m_scene.addEntity(e);
 
 	
@@ -366,14 +366,14 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
 		if (m_transformTestEntities.size() >= 3) {
 			Logger::Log("Setting parent");
-			m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(
-				m_transformTestEntities[1]->getComponent<TransformComponent>());
+			m_transformTestEntities[2]->getComponent<GameTransformComponent>()->setParent(
+				m_transformTestEntities[1]->getComponent<GameTransformComponent>());
 		}
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
 		if (m_transformTestEntities.size() >= 3) {
 			Logger::Log("Removing parent");
-			m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
+			m_transformTestEntities[2]->getComponent<GameTransformComponent>()->removeParent();
 		}
 	}
 
@@ -486,16 +486,16 @@ bool GameState::update(float dt) {
 			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
 		*/
 		// Move the cubes around
-		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
+		m_texturedCubeEntity->getComponent<GameTransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
+		m_texturedCubeEntity->getComponent<GameTransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 
 		// Set translation and scale to show how parenting affects transforms
 		//for (Entity::SPtr item : m_transformTestEntities) {
 		for (size_t i = 1; i < m_transformTestEntities.size(); i++) {
 			Entity::SPtr item = m_transformTestEntities[i];
 
-			item->getComponent<TransformComponent>()->setScale(size);
-			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
+			item->getComponent<GameTransformComponent>()->setScale(size);
+			item->getComponent<GameTransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
 		}
 		//m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
 
@@ -580,7 +580,7 @@ bool GameState::renderImguiConsole(float dt) {
 const std::string GameState::createCube(const glm::vec3& position) {
 	auto e = ECS::Instance()->createEntity("new cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(position);
+	e->addComponent<GameTransformComponent>(position);
 	m_scene.addEntity(e);
 	return std::string("Added Cube at (" +
 		std::to_string(position.x) + ":" +

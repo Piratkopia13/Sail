@@ -144,12 +144,13 @@ int Application::startGameLoop() {
 				while (updatesRemaining > 0) {
 					updatesRemaining--;
 					update(TIMESTEP);
-					Transform::IncrementCurrentUpdateIndex();
+					// TODO: frame synchronization
+					//Transform::IncrementCurrentUpdateIndex();
 				}
 				//});
 
 			// Render
-			Transform::UpdateCurrentRenderIndex();
+			//Transform::UpdateCurrentRenderIndex();
 			render(static_cast<float>(delta)); // TODO: interpolate between game states with an alpha value
 
 			// Reset just pressed keys

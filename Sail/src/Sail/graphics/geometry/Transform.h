@@ -1,151 +1,151 @@
-#pragma once
-
-#include "pch.h" // for SNAPSHOT_BUFFER_IND
-
-
-// TODO: move out bools and separate the game object and render object transform classes entirely
-struct TransformSnapshot {
-	glm::vec3 m_translation;
-	glm::vec3 m_rotation;
-	glm::quat m_rotationQuat;
-	glm::vec3 m_scale;
-	glm::vec3 m_forward;
-	glm::vec3 m_right;
-	glm::vec3 m_up;
-
-	bool m_matNeedsUpdate;
-	bool m_parentUpdated;
-	bool m_updatedDirections;
-};
-
-class Transform {
-
-public:
-	// To be done at the end of each CPU update and nowhere else	
-	static void IncrementCurrentUpdateIndex();
-
-	// To be done just before render is called
-	static void UpdateCurrentRenderIndex();
-
-#ifdef _DEBUG
-	static UINT GetUpdateIndex();
-	static UINT GetRenderIndex();
-#endif
-
-	explicit Transform(Transform* parent);
-	Transform(TransformSnapshot current, TransformSnapshot prev);
-	Transform(const glm::vec3& translation, Transform* parent = nullptr);
-	Transform(const glm::vec3& translation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f }, Transform* parent = nullptr);
-	virtual ~Transform();
-
-	void setParent(Transform* parent);
-	void removeParent();
-
-	void prepareUpdate();
-	TransformSnapshot getCurrentTransformState() const;
-	TransformSnapshot getPreviousTransformState() const;
-	Transform* getTransformSnapshot() const;
-	void copySnapshotFromObject(Transform* object);
-
-	void setStartTranslation(const glm::vec3& translation);
-
-
-	void translate(const glm::vec3& move);
-	void translate(const float x, const float y, const float z);
-	
-	void scale(const float factor);
-	void scale(const glm::vec3& scale);
-
-	//In radians
-	void rotate(const glm::vec3& rotation);
-	//In radians
-	void rotate(const float x, const float y, const float z);
-	void rotateAroundX(const float radians);
-	void rotateAroundY(const float radians);
-	void rotateAroundZ(const float radians);
-
-
-	void setTranslation(const glm::vec3& translation);
-	void setTranslation(const float x, const float y, const float z);
-
-	void setRotations(const glm::vec3& rotations);
-	void setRotations(const float x, const float y, const float z);
-	void setScale(const float scale);
-	void setScale(const float x, const float y, const float z);
-	void setScale(const glm::vec3& scale);
-
-	/* Forward should always be a normalized vector */
-	void setForward(const glm::vec3& forward);
-
-	void setMatrix(const glm::mat4& newMatrix);
-
-	Transform* getParent() const;
-
-	const glm::vec3& getTranslation() const;
-	const glm::vec3& getRotations() const;
-	const glm::vec3& getScale() const;
-	const glm::vec3& getForward();
-	const glm::vec3& getRight();
-	const glm::vec3& getUp();
-
-	glm::mat4 getMatrix(float alpha = 1.0f);
-	glm::mat4 getLocalMatrix();
-
-private:
-	// TODO: Make sure this struct is only as large as necessary
-	/*struct TransformSnapshot {
-		glm::vec3 m_translation;
-		glm::vec3 m_rotation;
-		glm::quat m_rotationQuat;
-		glm::vec3 m_scale;
-		glm::vec3 m_forward;
-		glm::vec3 m_right;
-		glm::vec3 m_up;
-
-		bool m_matNeedsUpdate;
-		bool m_parentUpdated;
-		bool m_updatedDirections;
-	};*/
-	//TransformSnapshot m_transformSnapshots[SNAPSHOT_BUFFER_SIZE];
-
-	TransformSnapshot m_currentState;
-	TransformSnapshot m_previousState;
-
-
-
-	glm::mat4 m_rotationMatrix;
-	glm::mat4 m_transformMatrix;
-	glm::mat4 m_localTransformMatrix;
-
-	Transform* m_parent;
-	std::vector<Transform*> m_children;
-
-
-private:
-	void updateLocalMatrix();
-	void updateMatrix();
-	void treeNeedsUpdating();
-	void addChild(Transform* transform);
-	void removeChild(Transform* transform);
-
-
-	static constexpr int prevInd(int ind) {
-		return (ind + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
-	}
-
-	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
-	// you leave the game running for like a year or two.
-	// Note: atomic since it's written to in every update and read from in every update and render
-	static std::atomic_uint s_frameIndex;
-	
-	// the index in the snapshot buffer that is used in the update loop on the CPU.
-	// [0, SNAPSHOT_BUFFER_SIZE-1]
-	// Note: Updated once at the start of update and read-only in update so no atomics needed
-	static UINT s_updateIndex;
-	
-	
-	// If CPU update is working on index 3 then prepare render will safely interpolate between
-	// index 1 and 2 without any data races
-	// Note: Updated once at the start of render and read-only in render so no atomics needed
-	static UINT s_renderIndex;
-};
+//#pragma once
+//
+//#include "pch.h" // for SNAPSHOT_BUFFER_IND
+//
+//
+//// TODO: move out bools and separate the game object and render object transform classes entirely
+//struct TransformSnapshot {
+//	glm::vec3 m_translation;
+//	glm::vec3 m_rotation;
+//	glm::quat m_rotationQuat;
+//	glm::vec3 m_scale;
+//	glm::vec3 m_forward;
+//	glm::vec3 m_right;
+//	glm::vec3 m_up;
+//
+//	bool m_matNeedsUpdate;
+//	bool m_parentUpdated;
+//	bool m_updatedDirections;
+//};
+//
+//class Transform {
+//
+//public:
+//	// To be done at the end of each CPU update and nowhere else	
+//	static void IncrementCurrentUpdateIndex();
+//
+//	// To be done just before render is called
+//	static void UpdateCurrentRenderIndex();
+//
+//#ifdef _DEBUG
+//	static UINT GetUpdateIndex();
+//	static UINT GetRenderIndex();
+//#endif
+//
+//	explicit Transform(Transform* parent);
+//	Transform(TransformSnapshot current, TransformSnapshot prev);
+//	Transform(const glm::vec3& translation, Transform* parent = nullptr);
+//	Transform(const glm::vec3& translation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f }, Transform* parent = nullptr);
+//	virtual ~Transform();
+//
+//	void setParent(Transform* parent);
+//	void removeParent();
+//
+//	void prepareUpdate();
+//	TransformSnapshot getCurrentTransformState() const;
+//	TransformSnapshot getPreviousTransformState() const;
+//	Transform* getTransformSnapshot() const;
+//	void copySnapshotFromObject(Transform* object);
+//
+//	void setStartTranslation(const glm::vec3& translation);
+//
+//
+//	void translate(const glm::vec3& move);
+//	void translate(const float x, const float y, const float z);
+//	
+//	void scale(const float factor);
+//	void scale(const glm::vec3& scale);
+//
+//	//In radians
+//	void rotate(const glm::vec3& rotation);
+//	//In radians
+//	void rotate(const float x, const float y, const float z);
+//	void rotateAroundX(const float radians);
+//	void rotateAroundY(const float radians);
+//	void rotateAroundZ(const float radians);
+//
+//
+//	void setTranslation(const glm::vec3& translation);
+//	void setTranslation(const float x, const float y, const float z);
+//
+//	void setRotations(const glm::vec3& rotations);
+//	void setRotations(const float x, const float y, const float z);
+//	void setScale(const float scale);
+//	void setScale(const float x, const float y, const float z);
+//	void setScale(const glm::vec3& scale);
+//
+//	/* Forward should always be a normalized vector */
+//	void setForward(const glm::vec3& forward);
+//
+//	void setMatrix(const glm::mat4& newMatrix);
+//
+//	Transform* getParent() const;
+//
+//	const glm::vec3& getTranslation() const;
+//	const glm::vec3& getRotations() const;
+//	const glm::vec3& getScale() const;
+//	const glm::vec3& getForward();
+//	const glm::vec3& getRight();
+//	const glm::vec3& getUp();
+//
+//	glm::mat4 getMatrix(float alpha = 1.0f);
+//	glm::mat4 getLocalMatrix();
+//
+//private:
+//	// TODO: Make sure this struct is only as large as necessary
+//	/*struct TransformSnapshot {
+//		glm::vec3 m_translation;
+//		glm::vec3 m_rotation;
+//		glm::quat m_rotationQuat;
+//		glm::vec3 m_scale;
+//		glm::vec3 m_forward;
+//		glm::vec3 m_right;
+//		glm::vec3 m_up;
+//
+//		bool m_matNeedsUpdate;
+//		bool m_parentUpdated;
+//		bool m_updatedDirections;
+//	};*/
+//	//TransformSnapshot m_transformSnapshots[SNAPSHOT_BUFFER_SIZE];
+//
+//	TransformSnapshot m_currentState;
+//	TransformSnapshot m_previousState;
+//
+//
+//
+//	glm::mat4 m_rotationMatrix;
+//	glm::mat4 m_transformMatrix;
+//	glm::mat4 m_localTransformMatrix;
+//
+//	Transform* m_parent;
+//	std::vector<Transform*> m_children;
+//
+//
+//private:
+//	void updateLocalMatrix();
+//	void updateMatrix();
+//	void treeNeedsUpdating();
+//	void addChild(Transform* transform);
+//	void removeChild(Transform* transform);
+//
+//
+//	static constexpr int prevInd(int ind) {
+//		return (ind + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
+//	}
+//
+//	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
+//	// you leave the game running for like a year or two.
+//	// Note: atomic since it's written to in every update and read from in every update and render
+//	static std::atomic_uint s_frameIndex;
+//	
+//	// the index in the snapshot buffer that is used in the update loop on the CPU.
+//	// [0, SNAPSHOT_BUFFER_SIZE-1]
+//	// Note: Updated once at the start of update and read-only in update so no atomics needed
+//	static UINT s_updateIndex;
+//	
+//	
+//	// If CPU update is working on index 3 then prepare render will safely interpolate between
+//	// index 1 and 2 without any data races
+//	// Note: Updated once at the start of render and read-only in render so no atomics needed
+//	static UINT s_renderIndex;
+//};

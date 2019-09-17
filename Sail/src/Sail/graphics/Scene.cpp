@@ -46,7 +46,7 @@ void Scene::setLightSetup(LightSetup* lights) {
 // Copies the game state from the previous tick 
 void Scene::prepareUpdate() {
 	for (auto e : m_GameObjectEntities) {
-		TransformComponent* transform = e->getComponent<TransformComponent>();
+		GameTransformComponent* transform = e->getComponent<GameTransformComponent>();
 		if (transform) { transform->prepareUpdate(); }
 	}
 }
@@ -56,21 +56,22 @@ void Scene::prepareUpdate() {
 // Should be done at the end of each update tick.
 // TODO: move the update indexes out of transform
 void Scene::prepareRenderObjects() {
+	for (auto e : m_perFrameRenderObjects[0]) {
+		ECS::Instance()->destroyEntity(e);
+	}
+
 	m_perFrameRenderObjects[0].clear();
 
 	size_t test = m_perFrameRenderObjects[0].size();
 
 	for (auto gameObject : m_GameObjectEntities) {
-		TransformComponent* transform = gameObject->getComponent<TransformComponent>();
+		GameTransformComponent* transform = gameObject->getComponent<GameTransformComponent>();
 		ModelComponent* model = gameObject->getComponent<ModelComponent>();
 		if (transform && model) {
 			auto e = ECS::Instance()->createEntity("RenderEntity"); // TODO? unique name
 			//Model* model = modelComponent->getModel();
 			e->addComponent<ModelComponent>(model->getModel());
-
-
-			e->addComponent<TransformComponent>();
-			e->getComponent<TransformComponent>()->copySnapshotFromObject(transform);
+			e->addComponent<RenderTransformComponent>(transform);
 
 			m_perFrameRenderObjects[0].push_back(e);
 		}
@@ -85,7 +86,7 @@ void Scene::draw(Camera& camera, const float alpha) {
 	for (Entity::SPtr& entity : m_perFrameRenderObjects[0]) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
 		if (model) {
-			TransformComponent* transform = entity->getComponent<TransformComponent>();
+			RenderTransformComponent* transform = entity->getComponent<RenderTransformComponent>();
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
 			m_renderer->submit(model->getModel(), transform->getMatrix(alpha));

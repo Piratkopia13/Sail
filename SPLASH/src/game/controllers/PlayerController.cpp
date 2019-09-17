@@ -8,8 +8,8 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_player = ECS::Instance()->createEntity("player_entity");
 	
 	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
-	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 3.f, 0.f));
+	m_player->addComponent<GameTransformComponent>(m_cam->getCameraPosition());
+	m_player->getComponent<GameTransformComponent>()->setStartTranslation(glm::vec3(0.0f, 3.f, 0.f));
 	
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -27,7 +27,7 @@ void PlayerController::setStartPosition(const glm::vec3& pos) {
 
 // To be run at the beginning of each update tick
 void PlayerController::prepareUpdate() {
-	TransformComponent* transform = m_player->getComponent<TransformComponent>();
+	GameTransformComponent* transform = m_player->getComponent<GameTransformComponent>();
 	if (transform) { transform->prepareUpdate(); }
 }
 
@@ -64,7 +64,7 @@ void PlayerController::processKeyboardInput(float dt) {
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 	right = glm::normalize(right);
 
-	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+	GameTransformComponent* playerTrans = m_player->getComponent<GameTransformComponent>();
 
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
@@ -94,7 +94,7 @@ void PlayerController::processKeyboardInput(float dt) {
 			auto e = ECS::Instance()->createEntity("new cube");
 			e->addComponent<ModelComponent>(m_projectileModel);
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.1f));
+			e->addComponent<GameTransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.1f));
 			e->addComponent<PhysicsComponent>();
 			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
 			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -10.f, 0.f);
@@ -195,7 +195,7 @@ void PlayerController::processMouseInput(float dt) {
 		m_yaw += 360;
 	}
 
-	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+	GameTransformComponent* playerTrans = m_player->getComponent<GameTransformComponent>();
 
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
