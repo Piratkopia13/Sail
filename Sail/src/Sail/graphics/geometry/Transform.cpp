@@ -17,6 +17,7 @@ Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, co
 	, m_localTransformMatrix(1.0f)
 	, m_matNeedsUpdate(true)
 	, m_parentUpdated(parent)
+	, m_hasChanged(true)
 	, m_parent(parent) 
 {
 	if (m_parent)
@@ -46,96 +47,112 @@ void Transform::removeParent() {
 void Transform::translate(const glm::vec3& move) {
 	m_translation += move;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::translate(const float x, const float y, const float z) {
 	m_translation += glm::vec3(x, y, z);
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::scale(const float factor) {
 	m_scale *= factor;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::scale(const glm::vec3& scale) {
 	m_scale *= scale;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::rotate(const glm::vec3& rotation) {
 	m_rotation += rotation;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::rotate(const float x, const float y, const float z) {
 	m_rotation += glm::vec3(x, y, z);
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::rotateAroundX(const float radians) {
 	m_rotation.x += radians;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::rotateAroundY(const float radians) {
 	m_rotation.y += radians;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::rotateAroundZ(const float radians) {
 	m_rotation.z += radians;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::setTranslation(const glm::vec3& translation) {
 	m_translation = translation;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::setTranslation(const float x, const float y, const float z) {
 	m_translation = glm::vec3(x, y, z);
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::setRotations(const glm::vec3& rotations) {
 	m_rotation = rotations;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::setRotations(const float x, const float y, const float z) {
 	m_rotation = glm::vec3(x, y, z);
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::setScale(const float scale) {
 	m_scale = glm::vec3(scale, scale, scale);
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::setScale(const float x, const float y, const float z) {
 	m_scale = glm::vec3(x, y, z);
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
 void Transform::setScale(const glm::vec3& scale) {
 	m_scale = scale;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
@@ -149,6 +166,7 @@ void Transform::setMatrix(const glm::mat4& newMatrix) {
 	m_rotation = glm::eulerAngles(tempRotation);
 
 	m_matNeedsUpdate = false;
+	m_hasChanged = true;
 	treeNeedsUpdating();
 }
 
@@ -229,4 +247,10 @@ void Transform::removeChild(Transform* transform) {
 			break;
 		}
 	}
+}
+
+const bool Transform::getChange() {
+	bool tempChange = m_hasChanged;
+	m_hasChanged = false;
+	return tempChange;
 }

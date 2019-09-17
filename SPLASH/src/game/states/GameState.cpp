@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
+#include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 
 
@@ -24,12 +25,7 @@ GameState::GameState(StateStack& stack)
 
 
 	m_cc.addCommand(std::string("AddCube"), [&]() {
-		auto e = ECS::Instance()->createEntity("new cube");
-		e->addComponent<ModelComponent>(m_cubeModel.get());
-		e->addComponent<TransformComponent>(m_cam.getPosition());
-
-		m_scene.addEntity(e);
-		return std::string("Added Cube at (" + std::to_string(m_cam.getPosition().x) + ":" + std::to_string(m_cam.getPosition().y) + ":" + std::to_string(m_cam.getPosition().z) + ")");
+			return createCube(m_cam.getPosition());
 		});
 	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
 		if (in.size() == 3) {
@@ -61,6 +57,9 @@ GameState::GameState(StateStack& stack)
 		assuming each system is included in ECS.cpp instead of here
 	*/
 	ECS::Instance()->createSystem<PhysicSystem>();
+
+	//Create system for updating bounding box
+	ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 
 
 	// This was moved out from the PlayerController constructor
@@ -178,111 +177,162 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
+	//Give player a bounding box
+	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	m_scene.addEntity(m_playerController.getEntity());
+
+	//Create octree
+	m_octree = SAIL_NEW Octree(&m_scene, m_boundingBoxModel.get());
+
 	/*
 		Creation of entitites
 	*/
 	auto e = ECS::Instance()->createEntity("Arena");
 	e->addComponent<ModelComponent>(arenaModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Barrier1");
 	e->addComponent<ModelComponent>(barrierModel);
 	e->addComponent<TransformComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f,-0.79f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Barrier2");
 	e->addComponent<ModelComponent>(barrierModel);
 	e->addComponent<TransformComponent>(glm::vec3(-4.54f,0.f,8.06f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Barrier3");
 	e->addComponent<ModelComponent>(barrierModel);
 	e->addComponent<TransformComponent>(glm::vec3(8.46f,0.f,8.06f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Container1");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(6.95f,0.f,25.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Container2");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(-25.f,0.f,12.43f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Container3");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(-25.f,8.f,-7.73f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container4");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container5");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container6");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.20f,0.f,-8.f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container7");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.2f,8.f,-22.8f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	
 	e = ECS::Instance()->createEntity("Container8");
 	e->addComponent<ModelComponent>(containerModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.36f,0.f,-32.41f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Ramp1");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp2");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp3");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp4");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp5");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(-16.f, 0.f, 20.f),glm::vec3(0.f,3.14f,0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	e = ECS::Instance()->createEntity("Ramp6");
 	e->addComponent<ModelComponent>(rampModel);
 	e->addComponent<TransformComponent>(glm::vec3(-34.f, 0.f, 20.f),glm::vec3(0.f,0.f,0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
-	e = ECS::Instance()->createEntity("Character");
+	m_keepCharacterPointerForTesting = e = ECS::Instance()->createEntity("Character");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Character1");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	e = ECS::Instance()->createEntity("Character2");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	e = ECS::Instance()->createEntity("Character3");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	//auto e = Entity::Create("Static cube");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
@@ -329,24 +379,25 @@ GameState::GameState(StateStack& stack)
 	e = ECS::Instance()->createEntity("Candle");
 	e->addComponent<ModelComponent>(lightModel);
 	e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 
 	e = ECS::Instance()->createEntity("Candle2");
 	e->addComponent<ModelComponent>(lightModel);
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
-
-	m_octree = new Octree(&m_scene, m_boundingBoxModel.get());
+	m_octree->addEntity(e);
 
 	for (int i = 0; i < 4; i++) {
-		m_testBoundingBoxes.push_back(new BoundingBox());
-		m_testBoundingBoxes.back()->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
-		m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());
+		Entity::SPtr tempEntity = ECS::Instance()->createEntity("Bounding Box");
+		tempEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		BoundingBox* tempBoundingBox = tempEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+		tempBoundingBox->setPosition(glm::vec3(i * 2.0f - 5.0f, 1.0f, 5.0f));
+		m_testBoundingBoxes.push_back(tempEntity);
+		m_scene.addEntity(tempEntity);
 	}
-
-	/*m_testBoundingBoxes.push_back(new BoundingBox());
-	m_testBoundingBoxes.back()->setPosition(glm::vec3(51.0f, 1.0f, 0.0f));
-	m_testBoundingBoxes.back()->setModel(&m_scene, m_boundingBoxModel.get());*/
 
 	m_octree->addEntities(&m_testBoundingBoxes);
 
@@ -355,9 +406,6 @@ GameState::GameState(StateStack& stack)
 
 GameState::~GameState() {
 	delete m_octree;
-	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
-		delete m_testBoundingBoxes[i];
-	}
 }
 
 // Process input for the state
@@ -490,17 +538,25 @@ bool GameState::update(float dt) {
 			change *= -1.0f;
 	}
 
-	if (Input::WasKeyJustPressed(SAIL_KEY_B)) {
-		std::cout << "Break\n";
+	if (Input::IsKeyPressed(SAIL_KEY_B)) {
+		m_scene.showBoundingBoxes(true);
+	}
+	if (Input::IsKeyPressed(SAIL_KEY_V)) {
+		m_scene.showBoundingBoxes(false);
 	}
 
 	m_testAngle = std::fmod(m_testAngle + 0.5f * dt, 6.28f);
 
+	m_keepCharacterPointerForTesting->getComponent<TransformComponent>()->rotateAroundY(glm::pi<float>() * dt);
+
 	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
-		m_testBoundingBoxes[i]->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
+		m_testBoundingBoxes[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
 	}
 
 	m_octree->update();
+
+	std::vector<Octree::CollisionInfo> throwaway;
+	m_octree->getCollisions(m_playerController.getEntity(), &throwaway);
 
 	return true;
 }
@@ -590,7 +646,9 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	auto e = ECS::Instance()->createEntity("new cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(position);
+	//e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
+	m_octree->addEntity(e);
 	return std::string("Added Cube at (" +
 		std::to_string(position.x) + ":" +
 		std::to_string(position.y) + ":" +

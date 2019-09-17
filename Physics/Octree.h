@@ -1,30 +1,26 @@
 #pragma once
 
 #include "BoundingBox.h"
-#include "Sail/graphics/Scene.h"
-#include "Sail/graphics/geometry/Model.h"
+#include "Sail/entities/Entity.h"
+
+class Model;
+class Scene;
 
 class Octree {
 public:
 	struct CollisionInfo {
 		glm::vec3 normal;
 		glm::vec3 positions[3];
-		glm::vec2 uvs[3];
-		//Entity* entity;
+		Entity::SPtr entity;
 	};
 
 private:
 	struct Node {
 		std::vector<Node> childNodes;
-		Node* parentNode;
-		BoundingBox bb;
-		int nrOfEntities;
-		std::vector<BoundingBox*> entities; //TODO: Replace this with entities that contain model and bounding box when component system is working properly
-
-		Node() {
-			nrOfEntities = 0;
-			parentNode = nullptr;
-		}
+		Node* parentNode = nullptr;
+		Entity::SPtr bbEntity;
+		int nrOfEntities = 0;
+		std::vector<Entity::SPtr> entities;
 	};
 
 	Node m_baseNode;
@@ -36,11 +32,12 @@ private:
 	float m_minimumNodeHalfSize;
 
 	void expandBaseNode(glm::vec3 direction);
-	glm::vec3 findCornerOutside(BoundingBox* entity, Node* testNode);
-	bool addEntityRec(BoundingBox* newEntity, Node* currentNode);
-	bool removeEntityRec(BoundingBox* entityToRemove, Node* currentNode);
-	void updateRec(Node* currentNode, std::vector<BoundingBox*>* entitiesToReAdd);
-	void getCollisionsRec(BoundingBox* entity, Node* currentNode, std::vector<Octree::CollisionInfo>* collisionData);
+	glm::vec3 findCornerOutside(Entity::SPtr entity, Node* testNode);
+	bool addEntityRec(Entity::SPtr newEntity, Node* currentNode);
+	bool removeEntityRec(Entity::SPtr entityToRemove, Node* currentNode);
+	void updateRec(Node* currentNode, std::vector<Entity::SPtr>* entitiesToReAdd);
+	void getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, std::vector<Octree::CollisionInfo>* outCollisionData);
+	void getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vector<Octree::CollisionInfo>* outCollisionData);
 	float getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode);
 	int pruneTreeRec(Node* currentNode);
 
@@ -48,15 +45,15 @@ public:
 	Octree(Scene *scene, Model *boundingBoxModel);
 	~Octree();
 
-	void addEntity(BoundingBox* newEntity);
-	void addEntities(std::vector<BoundingBox*> *newEntities);
+	void addEntity(Entity::SPtr newEntity);
+	void addEntities(std::vector<Entity::SPtr> *newEntities);
 
-	void removeEntity(BoundingBox* entityToRemove);
-	void removeEntities(std::vector<BoundingBox*> entitiesToRemove);
+	void removeEntity(Entity::SPtr entityToRemove);
+	void removeEntities(std::vector<Entity::SPtr> entitiesToRemove);
 
 	void update();
 
-	void getCollisions(BoundingBox* entity, std::vector<CollisionInfo>* collisionData);
+	void getCollisions(Entity::SPtr entity, std::vector<CollisionInfo>* outCollisionData);
 
 	float getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection);
 };

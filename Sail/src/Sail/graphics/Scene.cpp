@@ -26,6 +26,7 @@ Scene::Scene()
 
 	//m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(SAIL_NEW DX11RenderableTexture(1U, width, height, false));
 
+	m_showBoundingBoxes = false;
 }
 
 Scene::~Scene() {
@@ -40,6 +41,10 @@ void Scene::setLightSetup(LightSetup* lights) {
 	m_renderer->setLightSetup(lights);
 }
 
+void Scene::showBoundingBoxes(bool val) {
+	m_showBoundingBoxes = val;
+}
+
 void Scene::draw(Camera& camera) {
 
 	m_renderer->begin(&camera);
@@ -51,6 +56,13 @@ void Scene::draw(Camera& camera) {
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
 			m_renderer->submit(model->getModel(), transform->getMatrix());
+		}
+
+		if (m_showBoundingBoxes) {
+			BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
+			if (boundingBox) {
+				m_renderer->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
+			}
 		}
 	}
 

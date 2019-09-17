@@ -1,10 +1,5 @@
 #pragma once
 
-//class Entity;
-#include "Sail/entities/ECS.h"
-#include "Sail/graphics/Scene.h"
-#include "Sail/graphics/geometry/Model.h"
-
 
 class BoundingBox {
 private:
@@ -13,28 +8,23 @@ private:
 
 	std::vector<glm::vec3> m_corners;
 
-	Entity::SPtr m_modelEntity;
-
 	bool m_hasChanged;
 
-	bool m_drawBoundingBoxes;
-
 	void updateCorners();
+
+private:
+	friend class Octree;
+	const bool getChange(); //Only access this from Octree::updateRec
+
 public:
 	BoundingBox();
 	~BoundingBox();
 
-	glm::vec3 getPosition() const;
-	glm::vec3 getHalfSize() const;
+	const glm::vec3& getPosition() const;
+	const glm::vec3& getHalfSize() const;
 
 	const std::vector<glm::vec3>* getCorners() const;
 
-	const bool getChange();
-
 	void setPosition(const glm::vec3& position);
 	void setHalfSize(const glm::vec3& size);
-
-	void setModel(Scene* scene, Model* model);
-
-	void hide();
 };
