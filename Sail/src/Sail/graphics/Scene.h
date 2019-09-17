@@ -16,16 +16,17 @@ class RenderTransform;
 
 struct PerFrameRenderObject {
 	Model* m_model = nullptr;
-	RenderTransform m_transform;
+	RenderTransform* m_transform = nullptr;
 
-	PerFrameRenderObject(Model* model, RenderTransform transform)
+	PerFrameRenderObject(Model* model, RenderTransform* transform)
 		: m_model(model), m_transform(transform) {}
 
 	virtual ~PerFrameRenderObject() {
-//		if (m_transform) {
-////			delete m_transform;
+		if (m_transform) {
+			delete m_transform;
+			m_transform = nullptr;
 //			m_transform = nullptr;
-//		}
+		}
 	}
 };
 
@@ -73,7 +74,9 @@ private:
 	// should only include Model, transform, and whatever else might be needed to
 	// render the object.
 	//std::vector<Entity::SPtr> m_perFrameRenderObjects[4];
-	std::vector<PerFrameRenderObject> m_perFrameRenderObjects[4];
+	std::vector<PerFrameRenderObject> m_perFrameRenderObjects[SNAPSHOT_BUFFER_SIZE];
+	std::mutex m_perFrameLocks[SNAPSHOT_BUFFER_SIZE];
+
 
 
 	std::unique_ptr<Renderer> m_renderer;

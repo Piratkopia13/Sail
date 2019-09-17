@@ -59,10 +59,12 @@ void Scene::prepareRenderObjects() {
 	/*for (auto e : m_perFrameRenderObjects[0]) {
 		ECS::Instance()->destroyEntity(e);
 	}*/
+	const UINT ind = Application::GetUpdateIndex();
+	const UINT t = Application::GetRenderIndex();
+	m_perFrameLocks[ind].lock();
+	m_perFrameRenderObjects[ind].clear();
 
-	m_perFrameRenderObjects[0].clear();
-
-	size_t test = m_perFrameRenderObjects[0].size();
+	size_t test = m_perFrameRenderObjects[ind].size();
 
 	for (auto gameObject : m_GameObjectEntities) {
 		GameTransformComponent* transform = gameObject->getComponent<GameTransformComponent>();
@@ -74,10 +76,16 @@ void Scene::prepareRenderObjects() {
 			//e->addComponent<RenderTransformComponent>(transform);
 			//
 
+			RenderTransform* rf = SAIL_NEW RenderTransform(transform);
+
+			PerFrameRenderObject pfo = PerFrameRenderObject(model->getModel(), rf);
+
 			// TODO: allocate RenderTransforms sequentially in memory
-			m_perFrameRenderObjects[0].push_back(PerFrameRenderObject(model->getModel(), RenderTransform(transform)));
+			m_perFrameRenderObjects[ind].push_back(pfo);
 		}
 	}
+	m_perFrameLocks[ind].unlock();
+
 }
 
 
@@ -85,14 +93,21 @@ void Scene::prepareRenderObjects() {
 void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
 
-	for (PerFrameRenderObject& obj : m_perFrameRenderObjects[0]) {
+	const UINT ind = Application::GetRenderIndex();
+
+	m_perFrameLocks[ind].lock();
+
+
+	for (PerFrameRenderObject& obj : m_perFrameRenderObjects[ind]) {
 		//if (obj.m_model && obj.m_transform) {
 			//RenderTransformComponent* transform = entity->getComponent<RenderTransformComponent>();
 			//if (!obj.m_transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-			m_renderer->submit(obj.m_model, obj.m_transform.getMatrix(alpha));
+			m_renderer->submit(obj.m_model, obj.m_transform->getMatrix(alpha));
 		//}
 	}
+	m_perFrameLocks[ind].unlock();
+
 
 	m_renderer->end();
 	m_renderer->present();
@@ -101,12 +116,12 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
-	for (Entity::SPtr& entity : m_GameObjectEntities) {
-		TextComponent* text = entity->getComponent<TextComponent>();
-		if (text) {
-			text->draw();
-		}
-	}
+	//for (Entity::SPtr& entity : m_GameObjectEntities) {
+	//	TextComponent* text = entity->getComponent<TextComponent>();
+	//	if (text) {
+	//		text->draw();
+	//	}
+	//}
 }
 
 bool Scene::onEvent(Event& event) {

@@ -1,4 +1,6 @@
 #pragma once
+#include "pch.h" // FOR SNAPSHOT INDEX TODO: move
+
 #include "api/Mesh.h"
 
 #include "api/Input.h"
@@ -20,7 +22,7 @@ namespace ctpl {
 
 
 // TODO? Move elsewhere
-const double TICKRATE = 128.0;
+const double TICKRATE = 60.0;
 const double TIMESTEP = 1.0 / TICKRATE;
 
 
@@ -81,6 +83,19 @@ public:
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
+
+
+	// STATIC SYCHRONIZATION STUFF USED IN SCENE
+	// To be done at the end of each CPU update and nowhere else	
+	static void IncrementCurrentUpdateIndex();
+	
+	// To be done just before render is called
+	static void UpdateCurrentRenderIndex();
+	
+//#ifdef _DEBUG
+	static UINT GetUpdateIndex();
+	static UINT GetRenderIndex();
+//#endif
 private:
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
@@ -93,4 +108,31 @@ private:
 	// Timer
 	Timer m_timer;
 	UINT m_fps;
+
+	static std::mutex s_updateLock;
+
+
+	// STATIC SYCHRONIZATION STUFF USED IN SCENE
+	static constexpr int prevInd(int ind) {
+		return (ind + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
+	}
+	
+
+	static std::atomic_uint s_queuedUpdates;
+
+	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
+	// you leave the game running for like a year or two.
+	// Note: atomic since it's written to in every update and read from in every update and render
+	static std::atomic_uint s_frameIndex;
+		
+	// the index in the snapshot buffer that is used in the update loop on the CPU.
+	// [0, SNAPSHOT_BUFFER_SIZE-1]
+	// Note: Updated once at the start of update and read-only in update so no atomics needed
+	static UINT s_updateIndex;
+		
+		
+	// If CPU update is working on index 3 then prepare render will safely interpolate between
+	// index 1 and 2 without any data races
+	// Note: Updated once at the start of render and read-only in render so no atomics needed
+	static UINT s_renderIndex;
 };
