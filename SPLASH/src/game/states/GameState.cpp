@@ -360,63 +360,93 @@ GameState::GameState(StateStack& stack)
 	nodeSystemModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
 	test->setDebugModelAndScene(nodeSystemModel, &m_scene);
 #endif
-	std::vector<unsigned int> conn0;
-	conn0.emplace_back(1);
-	std::vector<unsigned int> conn1;
-	conn1.emplace_back(0);
-	conn1.emplace_back(2);
-	conn1.emplace_back(3);
-	std::vector<unsigned int> conn2;
-	conn2.emplace_back(1);
-	conn2.emplace_back(3);
-	std::vector<unsigned int> conn3;
-	conn3.emplace_back(1);
-	conn3.emplace_back(2);
+	//std::vector<unsigned int> conn0;
+	//conn0.emplace_back(1);
+	//std::vector<unsigned int> conn1;
+	//conn1.emplace_back(0);
+	//conn1.emplace_back(2);
+	//conn1.emplace_back(3);
+	//std::vector<unsigned int> conn2;
+	//conn2.emplace_back(1);
+	//conn2.emplace_back(3);
+	//std::vector<unsigned int> conn3;
+	//conn3.emplace_back(1);
+	//conn3.emplace_back(2);
 
 	std::vector<glm::vec3> nodes;
-	nodes.push_back(glm::vec3(2.f, 0.f, 0.f)); // Node 0
-	nodes.push_back(glm::vec3(10.f, 0.f, 0.f)); // Node 1
-	nodes.push_back(glm::vec3(20.f, 0.f, 0.f)); // Node 2
-	nodes.push_back(glm::vec3(15.f, 15.f, 0.f)); // Node 3
 	std::vector<std::vector<unsigned int>> connections;
-	connections.push_back(conn0);
-	connections.push_back(conn1);
-	connections.push_back(conn2);
-	connections.push_back(conn3);
+
+	//nodes.push_back(glm::vec3(2.f, 0.f, 0.f)); // Node 0
+	//nodes.push_back(glm::vec3(10.f, 0.f, 0.f)); // Node 1
+	//nodes.push_back(glm::vec3(20.f, 0.f, 0.f)); // Node 2
+	//nodes.push_back(glm::vec3(15.f, 15.f, 0.f)); // Node 3
+	//connections.push_back(conn0);
+	//connections.push_back(conn1);
+	//connections.push_back(conn2);
+	//connections.push_back(conn3);
+
+	std::vector<unsigned int> conns;
+	int x_max = 20;
+	int z_max = 20;
+	int x_cur = 0;
+	int z_cur = 0;
+	int size = x_max * z_max;
+	for (size_t i = 0; i < size; i++) {	
+		conns.clear();
+		x_cur = i % x_max;
+		z_cur = floor(i / x_max);
+		nodes.push_back(glm::vec3(x_cur * 4, 3.f, z_cur * 4));
+		
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				if (dx == 0 && dz == 0)
+					continue;
+
+				int nx = x_cur + dx;
+				int nz = z_cur + dz;
+				if (nx >= 0 && nx < x_max && nz >= 0 && nz < z_max) {
+					int ni = nx * x_max + nz;
+					conns.push_back(ni);
+				}
+			}
+		}
+
+		connections.push_back(conns);
+	}
 
 	test->setNodes(nodes, connections);
 
-	auto path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(10.f, 0.f, 0.f));
-	std::vector<glm::vec3> testPath;
-	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
-	testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
-	for ( int i = 0; i < testPath.size(); i++ ) {
-		if ( testPath[i] != path[i].position ) {
-			Logger::Error("Something is wrong with the node system.");
-		}
-	}
+	//auto path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(10.f, 0.f, 0.f));
+	//std::vector<glm::vec3> testPath;
+	//testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	//testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
+	//for ( int i = 0; i < testPath.size(); i++ ) {
+	//	if ( testPath[i] != path[i].position ) {
+	//		Logger::Error("Something is wrong with the node system.");
+	//	}
+	//}
 
-	path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(20.f, 0.f, 0.f));
-	testPath.clear();
-	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
-	testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
-	testPath.emplace_back(glm::vec3(20.f, 0.f, 0.f)); // 2
-	for ( int i = 0; i < testPath.size(); i++ ) {
-		if ( testPath[i] != path[i].position ) {
-			Logger::Error("Something is wrong with the node system.");
-		}
-	}
+	//path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(20.f, 0.f, 0.f));
+	//testPath.clear();
+	//testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	//testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
+	//testPath.emplace_back(glm::vec3(20.f, 0.f, 0.f)); // 2
+	//for ( int i = 0; i < testPath.size(); i++ ) {
+	//	if ( testPath[i] != path[i].position ) {
+	//		Logger::Error("Something is wrong with the node system.");
+	//	}
+	//}
 
-	path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(15.f, 15.f, 0.f));
-	testPath.clear();
-	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
-	testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
-	testPath.emplace_back(glm::vec3(15.f, 15.f, 0.f)); // 3
-	for ( int i = 0; i < testPath.size(); i++ ) {
-		if ( testPath[i] != path[i].position ) {
-			Logger::Error("Something is wrong with the node system.");
-		}
-	}
+	//path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(15.f, 15.f, 0.f));
+	//testPath.clear();
+	//testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	//testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
+	//testPath.emplace_back(glm::vec3(15.f, 15.f, 0.f)); // 3
+	//for ( int i = 0; i < testPath.size(); i++ ) {
+	//	if ( testPath[i] != path[i].position ) {
+	//		Logger::Error("Something is wrong with the node system.");
+	//	}
+	//}
 	/* End of "Unit test" for NodeSystem */
 	//m_physSystem.registerEntity(m_playerController.getEntity());
 }

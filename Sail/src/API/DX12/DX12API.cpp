@@ -374,7 +374,7 @@ void DX12API::createGlobalRootSignature() {
 void DX12API::createShaderResources() {
 	// Create one big gpu descriptor heap for all cbvs, srvs and uavs
 	// TODO: maybe dont hardcode 512 as numdescriptors?
-	m_cbvSrvUavDescriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 512, true);
+	m_cbvSrvUavDescriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 512000, true);
 }
 
 void DX12API::createDepthStencilResources(Win32Window* window) {
