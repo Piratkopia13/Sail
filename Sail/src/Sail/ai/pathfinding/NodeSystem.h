@@ -10,6 +10,7 @@
 #endif
 
 class Model;
+class Scene;
 
 class NodeSystem {
 public:

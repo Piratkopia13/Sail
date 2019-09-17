@@ -339,6 +339,11 @@ GameState::GameState(StateStack& stack)
 
 /* "Unit test" for NodeSystem */
 	NodeSystem* test = m_app->getNodeSystem();
+#ifdef _DEBUG_NODESYSTEM
+	Model* nodeSystemModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
+	nodeSystemModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
+	test->setDebugModelAndScene(nodeSystemModel, &m_scene);
+#endif
 	std::vector<unsigned int> conn0;
 	conn0.emplace_back(1);
 	std::vector<unsigned int> conn1;

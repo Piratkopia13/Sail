@@ -40,9 +40,14 @@ void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector
 	}
 
 #ifdef _DEBUG_NODESYSTEM
+	for ( int i = 0; i < m_nodeEntities.size(); i++ ) {
+		ECS::Instance()->destroyEntity(m_nodeEntities[i]);
+	}
 	m_nodeEntities.clear();
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
 		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
+		m_nodeEntities[i]->addComponent<TransformComponent>(m_nodes[i].position);
+		m_nodeEntities[i]->addComponent<ModelComponent>(m_nodeModel);
 		m_scene->addEntity(m_nodeEntities[i]);
 	}
 #endif
