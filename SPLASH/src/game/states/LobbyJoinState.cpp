@@ -7,9 +7,6 @@
 LobbyJoinState::LobbyJoinState(StateStack& stack)
 	: LobbyState(stack)
 {
-	m_me.id = 1337;
-	m_me.name = "Joiner";
-	playerJoined(m_me);
 }
 
 LobbyJoinState::~LobbyJoinState() {
@@ -59,7 +56,7 @@ bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 
 
 	// Update local list of players.
-	std::list<player> &list = event.getListOfPlayers();
+	std::list<Player> &list = event.getListOfPlayers();
 	if (list.size() >= 2) {
 		// Clean local list of players.
 		this->resetPlayerList();

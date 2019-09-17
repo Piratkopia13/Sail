@@ -91,6 +91,7 @@ bool MenuState::renderImgui(float dt) {
 
 	ImGui::Begin("Name:");
 	ImGui::InputText("", inputName, 100);
+	m_app->getStateStorage().setMenuToLobbyData(MenuToLobbyData{ inputName });
 	ImGui::End();
 
 	// 

@@ -4,8 +4,6 @@
 LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack)
 {
-	m_me.name = "Hoster";
-	playerJoined(m_me);
 }
 
 LobbyHostState::~LobbyHostState() {
@@ -26,7 +24,8 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 	// Add to current message, If 'enter' ...
 	if (this->inputToChatLog(event.getMSG())) {
 		// ... Add current message to chat log
-		this->addTextToChat(&std::string(m_currentmessage));
+		Message temp{ to_string(m_me.id), m_currentmessage };
+		this->addTextToChat(&temp);
 
 		// ... Send the message to other clients and reset message
 		m_network->sendChatAllClients(this->fetchMessage());
@@ -88,7 +87,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	message.erase(message.size() - 1);		// Removes ___ :
 
 	// Add player
-	this->playerJoined(player{
+	this->playerJoined(Player{
 		id_int,
 		message	// Which at this point is only the name
 	});

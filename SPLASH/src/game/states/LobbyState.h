@@ -9,16 +9,16 @@ using namespace std;
 class TextInputEvent;
 class NetworkJoinedEvent;
 
-struct message {
+struct Message {
 	string sender;
 	string content;
 };
 
-struct player {
+struct Player {
 	unsigned int id;
 	string name;
 
-	bool friend operator==(const player& left, const player& right) {
+	bool friend operator==(const Player& left, const Player& right) {
 		if (left.id == right.id &&
 			left.name == right.name) {
 			return true;
@@ -48,31 +48,26 @@ protected:
 	Input* m_input = nullptr;
 	NetworkWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
-	player m_me;
-	std::list<message> m_messages;
-	std::list<player> m_players;
+	Player m_me;
+	std::list<Message> m_messages;
+	std::list<Player> m_players;
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
 	void resetPlayerList();
-	bool playerJoined(player player);
+	bool playerJoined(Player player);
 	bool playerLeft(unsigned int id);
-	void addTextToChat(const string* text);
+	void addTextToChat(Message* text);
 	void resetCurrentMessage();
 
-	void appendMSGToCurrentMessage();
-	void sendMessage();
 	string fetchMessage();
-	void addmessageToChat(const string* text, const player* sender);
+	void addmessageToChat(Message message);
 
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 	// Front-end functions - Use these!	
-	
-	void recievemessage(string text, unsigned int senderID);
-	// Back-end functions
 
-	player* getplayer(unsigned int id);
+	Player* getplayer(unsigned int id);
 	// Back-end variables
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
@@ -83,9 +78,6 @@ private:
 	bool m_firstFrame = true;	// Used solely for ImGui
 	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
-
-	// Purely for testing
-	void addTestData();
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	unsigned int m_outerPadding;

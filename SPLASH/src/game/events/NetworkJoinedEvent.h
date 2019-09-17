@@ -5,18 +5,18 @@
 
 class NetworkJoinedEvent : public Event {
 public:
-	NetworkJoinedEvent(player player) : Event(Event::NETWORK_JOINED) {
+	NetworkJoinedEvent(Player player) : Event(Event::NETWORK_JOINED) {
 		m_player = player;
 	}
 	~NetworkJoinedEvent() {}
 
-	inline player getPlayer() const { return m_player; };
+	inline Player getPlayer() const { return m_player; };
 
 	static Type getStaticType() {
 		return Event::NETWORK_JOINED;
 	}
 
 private:
-	player m_player;
+	Player m_player;
 
 };

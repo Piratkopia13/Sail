@@ -7,7 +7,7 @@
 
 class NetworkWelcomeEvent : public Event {
 public:
-	NetworkWelcomeEvent(std::list<player> players) 
+	NetworkWelcomeEvent(std::list<Player> players) 
 		: Event(Event::NETWORK_WELCOME) 
 		, playerList(players)
 	{
@@ -15,13 +15,13 @@ public:
 	}
 	~NetworkWelcomeEvent() {}
 
-	inline std::list<player> getListOfPlayers() { return playerList; }
+	inline std::list<Player> getListOfPlayers() { return playerList; }
 
 	static Type getStaticType() {
 		return Event::NETWORK_WELCOME;
 	}
 
 private:
-	std::list<player> playerList;
+	std::list<Player> playerList;
 
 };

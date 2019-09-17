@@ -26,12 +26,14 @@ LobbyState::LobbyState(StateStack& stack)
 	m_playerCount = 0;
 	m_messageCount = 0;
 
+	// Set name according to data from menustate
+	m_me.name = m_app->getStateStorage().getMenuToLobbyData().name;
+	m_me.id = 1337;
+	playerJoined(m_me);
+
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = new char[m_messageSizeLimit] { 0 };
-
-	// -------- test -------- 
-	//addTestData();
 }
 
 LobbyState::~LobbyState() {
@@ -121,7 +123,7 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-bool LobbyState::playerJoined(player player) {
+bool LobbyState::playerJoined(Player player) {
 	if (m_playerCount < m_playerLimit) {
 		m_players.push_back(player);
 		m_playerCount++;
@@ -132,7 +134,7 @@ bool LobbyState::playerJoined(player player) {
 
 bool LobbyState::playerLeft(unsigned int id) {
 	// Linear search to get target 'player' struct, then erase that from the list
-	player* toBeRemoved = nullptr;
+	Player* toBeRemoved = nullptr;
 	int pos = 0;
 	for (auto playerIt : m_players) {
 		if (playerIt.id == id) {
@@ -145,30 +147,14 @@ bool LobbyState::playerLeft(unsigned int id) {
 	return false;
 }
 
-void LobbyState::addTextToChat(const string* text) {
-	this->addmessageToChat(text, &m_players.front());
+void LobbyState::addTextToChat(Message* message) {
+	this->addmessageToChat(*message);
 }
 
 void LobbyState::resetCurrentMessage() {
 	m_currentmessageIndex = 0;
 	for (size_t i = 0; i < m_messageSizeLimit; i++) {
 		m_currentmessage[i] = '\0';
-	}
-}
-
-void LobbyState::appendMSGToCurrentMessage()
-{
-}
-
-void LobbyState::sendMessage() {
-	if (m_currentmessageIndex != 0) { // If the message isn't empty
-		//this->addmessageToChat(text, &m_players.front());
-
-		// Reset currentMessage
-		m_currentmessageIndex = 0;
-		for (size_t i = 0; i < m_messageSizeLimit; i++) {
-			m_currentmessage[i] = '\0';
-		}
 	}
 }
 
@@ -185,16 +171,28 @@ string LobbyState::fetchMessage()
 	return message;
 }
 
-void LobbyState::recievemessage(string text, unsigned int senderID) {
-	addmessageToChat(&text, getplayer(senderID));
-}
+void LobbyState::addmessageToChat(Message message) {
+	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 
-void LobbyState::addmessageToChat(const string* text, const player* sender) {
+	/*
+		- Parse up to ':'
+		- remember how much u parsed
+		- erase that shit
+		- insert 'name: '
+	*/
+	//for (size_t i = 0; i < text->size(); i++)	{
+	//	if ((*text)[i] == ':') {
+	//		(*text).erase(0, i+2);	// ': '
+	//		(*text).insert(0, sender->name + ": ");
+	//		break;
+	//	}
+	//}
+	// Add sender to the text
+	// Maybe make 'sender' to name?
+	message.content.insert(0, this->getplayer(stoi(message.sender))->name + ": ");
+
 	// Add message to chatlog
-	m_messages.push_back(message{
-		sender->name,
-		*text
-		});
+	m_messages.push_back(message);
 
 	// New messages replace old
 	if (m_messages.size() > m_messageLimit) {
@@ -202,37 +200,13 @@ void LobbyState::addmessageToChat(const string* text, const player* sender) {
 	}
 }
 
-player* LobbyState::getplayer(unsigned int id) {
+Player* LobbyState::getplayer(unsigned int id) {
 	for (auto playerIt : m_players) {
 		if (playerIt.id == id) {
 			return &playerIt;
 		}
 	}
 	return nullptr;
-}
-
-void LobbyState::addTestData()
-{
-	// Set up players
-//	playerJoined("Ollie", m_tempID++);
-//	playerJoined("David", m_tempID++);
-	//playerJoined("Press 0 to switch between enter msg and going to gamestate with mouse (MouseClick by default)");
-	//playerJoined("The cause of this is an IMGUI-bug where keyboard focus prevents buttons from working");
-	//playerJoined("This tape is since we'll switch from imgui later anyway, so why patch shit that's only an imgui bug");
-	//playerJoined("If u want to look at it: https://github.com/ocornut/imgui/issues/455#event-1428367449");
-
-	message msg;
-	msg.sender = "Daniel";
-	msg.content = "msg1";
-	m_messages.push_back(msg);
-
-	msg.sender = "Ollie";
-	msg.content = "message Two";
-	m_messages.push_back(msg);
-
-	msg.sender = "David";
-	msg.content = "msg 3 mr.boss";
-	m_messages.push_back(msg);
 }
 
 void LobbyState::renderplayerList() {

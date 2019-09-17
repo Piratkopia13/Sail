@@ -114,8 +114,8 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 	unsigned int userID;
 	std::string message;
 	char charAsInt[4] = { 0 };
-	std::list<player> playerList;	// Only used in 'w'-case but needs to be initialized up here
-	player currentPlayer{ -1, "" };	// 
+	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
+	Player currentPlayer{ -1, "" };	// 
 	int charCounter = 0;			//
 	string id_string;				//
 	string remnants;				//
@@ -131,8 +131,8 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		{
 			std::string tempMessage = std::string(nEvent.data->msg);
 			tempMessage.erase(0, 1);
-			message = std::string("m") + std::to_string(nEvent.clientID) + 
-				std::string(": ") + tempMessage;
+			message = std::string("m")/* + std::to_string(nEvent.clientID) + 
+				std::string(": ")*/ + tempMessage;
 
 			sendMsgAllClients(message);
 
@@ -149,7 +149,12 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 			printf(message.c_str());
 		}
 
-		Application::getInstance()->dispatchEvent(NetworkChatEvent(message));
+
+
+		Application::getInstance()->dispatchEvent(NetworkChatEvent(Message{
+			to_string(nEvent.clientID),
+			message
+		}));
 
 		break;
 
@@ -181,7 +186,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// Add this user id to the list of players in the lobby.
 		// Print out that this ID joined the lobby.
 		printf((std::to_string(userID) + " joined. \n").c_str());
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(player{ userID, "who?" }));
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ userID, "who?" }));
 		break;
 
 	case '?':
@@ -288,7 +293,7 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 		// Print out that this ID joined the lobby.
 		printf((std::to_string(intid) + " joined. \n").c_str());
 
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(player{ intid, "" }));
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ intid, "" }));
 	}
 }
 
