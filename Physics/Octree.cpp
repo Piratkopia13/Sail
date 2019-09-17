@@ -231,7 +231,7 @@ void Octree::getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, cons
 
 		outCollisionData->push_back(tempInfo);
 
-		Logger::Log("Collision detected with " + meshEntity->getName());
+		//Logger::Log("Collision detected with " + meshEntity->getName());
 	}
 }
 

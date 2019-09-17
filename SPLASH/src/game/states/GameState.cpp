@@ -642,8 +642,9 @@ bool GameState::update(float dt) {
 	m_lights.updateBufferData();
 	m_octree->update();
 
-	std::vector<Octree::CollisionInfo> throwaway;
-	m_octree->getCollisions(m_playerController.getEntity(), &throwaway);
+	std::vector<Octree::CollisionInfo> collisions;
+	m_octree->getCollisions(m_playerController.getEntity(), &collisions);
+	m_playerController.giveCollisionData(&collisions);
 
 	return true;
 }

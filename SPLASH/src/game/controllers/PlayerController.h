@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Octree.h"
+
 class CameraController;
 class Camera;
 class Entity;
@@ -24,6 +26,8 @@ public:
 
 	void setProjectileModel(Model* model);
 
+	void giveCollisionData(const std::vector<Octree::CollisionInfo>* collisionInfo);
+
 private:
 	float m_movementSpeed = 5.f;
 
@@ -37,6 +41,8 @@ private:
 	std::vector<Projectile> m_projectiles;
 
 	std::shared_ptr<Entity> m_player;
+
+	std::vector<Octree::CollisionInfo> m_collisionInfo;
 
 	float m_yaw, m_pitch, m_roll;
 
