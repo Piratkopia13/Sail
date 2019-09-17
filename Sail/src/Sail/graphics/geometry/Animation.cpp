@@ -53,8 +53,20 @@ void AnimationStack::setConnectionData(const int vertexIndex, const int boneInde
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
 }
 
-Animation::Frame::Frame() {
+Animation::Frame::Frame() : 
+m_transformSize(0),
+m_limbTransform(nullptr)
+{
+	
+
+}
+
+Animation::Frame::Frame(size_t size) :
+m_transformSize(size)
+{
+	m_limbTransform = SAIL_NEW glm::mat4[size];
 }
 
 Animation::Frame::~Frame() {
+	Memory::SafeDeleteArr(m_limbTransform);
 }

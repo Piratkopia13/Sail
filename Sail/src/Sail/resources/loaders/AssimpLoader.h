@@ -26,6 +26,8 @@ private:
 	Mesh* importMesh(const aiScene* scene, aiNode* node);
 	bool importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack);
 	bool importAnimations(const aiScene* scene, AnimationStack* stack);
+	void readNodeHierarchy(const size_t animationID, const size_t frame, const float animationTime, const aiNode* node, const glm::mat4& parent, Animation::Frame* animationFrame);
+
 	const bool errorCheck(const aiScene* scene);
 	void clearData();
 	//static inline glm::mat4 mat4_cast(const aiMatrix4x4& m) { 
@@ -51,7 +53,27 @@ private:
 		}
 	}
 
+	struct BoneInfo {
+		size_t index;
+		std::string nodeName;
+		BoneInfo* parent;
+		std::vector<BoneInfo*> children;
+		size_t parentIndex;
+		glm::mat4 offset;
+	};
+	std::unordered_map<std::string, const aiNode*> m_nodes;
+	std::unordered_map<std::string, AssimpLoader::BoneInfo> m_boneMap;
 	std::vector<int> m_meshOffsets;
 	Assimp::Importer m_importer;
+	std::vector<std::map<std::string, const aiNodeAnim*>> m_channels;
+	void mapChannels(const aiScene* scene) {
+		m_channels.resize(scene->mNumAnimations);
+		for (int i = 0; i < scene->mNumAnimations; i++) {
+			const aiAnimation* animation = scene->mAnimations[i];
 
+			for (int channel = 0; channel < animation->mNumChannels; channel++) {
+				m_channels[i][animation->mChannels[channel]->mNodeName.C_Str()] = animation->mChannels[channel];
+			}
+		}
+	}
 };

@@ -13,10 +13,21 @@ public:
 	class Frame {
 	public:
 		Frame();
+		Frame(size_t size);
 		~Frame();
-	
+		void setTransform(size_t index, const glm::mat4& transform) {
+#ifdef _DEBUG
+			if (index >= m_transformSize) {
+				Logger::Error("Tried to add transform to index(" + std::to_string(index) + ") maxSize(" + std::to_string(m_transformSize));
+				return;
+			}
+#endif
+			m_limbTransform[index] = transform;
+		};
+
+
 	private:
-		int m_transformSize;
+		size_t m_transformSize;
 
 		glm::mat4* m_limbTransform;
 	};
@@ -62,9 +73,11 @@ public:
 #ifdef _DEBUG
 			if (count >= SAIL_BONES_PER_VERTEX) {
 				Logger::Error("AnimationStack:VertConnection: Too many existing connections(" + std::to_string(count) + ")");
-				return;
 			}
 #endif
+			if (count >= SAIL_BONES_PER_VERTEX) {
+				return;
+			}
 			transform[count] = _transform;
 			weight[count] = _weight;
 			count++;
@@ -89,11 +102,6 @@ public:
 		}
 	}
 
-	struct BoneInfo {
-		size_t index;
-		glm::mat4 offset;
-	};
-	std::map<std::string, AnimationStack::BoneInfo> m_boneMap;
 private:
 
 	size_t m_connectionSize;
