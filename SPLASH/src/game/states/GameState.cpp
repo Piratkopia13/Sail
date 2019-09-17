@@ -336,9 +336,21 @@ GameState::GameState(StateStack& stack)
 
 	//m_physSystem.registerEntity(m_playerController.getEntity());
 //>>>>>>> dev
+	m_virtRAMHistory = SAIL_NEW float[100];
+	m_physRAMHistory = SAIL_NEW float[100];
+	//m_vramBudgetHistory = SAIL_NEW float[100];
+	m_vramUsageHistory = SAIL_NEW float[100];
+	m_cpuHistory = SAIL_NEW float[100];
+	m_frameTimesHistory = SAIL_NEW float[100];
 }
 
 GameState::~GameState() {
+	delete m_virtRAMHistory;
+	delete m_physRAMHistory;
+	//delete m_vramBudgetHistory;
+	delete m_vramUsageHistory;
+	delete m_cpuHistory;
+	delete m_frameTimesHistory;
 }
 
 // Process input for the state
@@ -396,6 +408,7 @@ bool GameState::processInput(float dt) {
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_OEM_5)) {
 		m_cc.toggle();
+		m_profiler.toggle();
 	}
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
@@ -561,61 +574,134 @@ bool GameState::renderImguiProfiler(float dt) {
 
 	bool open = m_profiler.windowOpen();
 	if (open) {
-		static char buf[256] = "";
 		if (ImGui::Begin("Profiler", &open)) {
 			m_profiler.windowState(open);
 			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
-			if (m_profilerTimer == 0.f) {
-				//Update CPU usage every few frames, otherwise it won't display correctly
-				std::ostringstream os;
-				os << std::setprecision(4);
-				os << "CPU Usage: " << std::to_string(m_profiler.processUsage()) + "%";
-				m_cpuUsage = os.str();
+			std::string header;
+
+			header = "CPU (" + m_cpuCount + "%%)";
+			ImGui::Text(header.c_str());
+
+			header = "Frame time (" + m_ftCount + " seconds)";
+			ImGui::Text(header.c_str());
+
+			header = "Virtual RAM (" + m_virtCount + " MB)";
+			ImGui::Text(header.c_str());
+
+			header = "Physical RAM (" + m_physCount + " MB)";
+			ImGui::Text(header.c_str());
+
+			header = "VRAM (" + m_vramUCount + " MB)";
+			ImGui::Text(header.c_str());
+
+			// Uncomment this to enable vram budget visualization
+
+			/*header = "VRAM Available (" + m_vramBCount + " MB)";
+			ImGui::Text(header.c_str());*/
+
+
+			ImGui::Separator();
+			if (ImGui::CollapsingHeader("CPU Graph")) {
+				header = "\n\n\n" + m_cpuCount + "(%)";
+				ImGui::PlotLines(header.c_str(), m_cpuHistory, 100, 0, "", 0.f, 100.f, ImVec2(0, 100));
 			}
-			std::string workSetUsage = "Physical RAM Usage: " + std::to_string(m_profiler.workSetUsage()) + " MB";
-			std::string virtMemUsage = "Virtual RAM Usage: " + std::to_string(m_profiler.virtMemUsage()) + " MB";
-			std::string vramBudget = "VRAM available: " + std::to_string(m_profiler.vramBudget()) + " MB";
-			std::string vramUsed = "VRAM used: " + std::to_string(m_profiler.vramUsage()) + " MB";
-			std::string frameTimes = "Frame times: " + std::to_string(dt) + " s";
-			ImGui::TextUnformatted(workSetUsage.c_str());
-			ImGui::TextUnformatted(virtMemUsage.c_str());
-			ImGui::TextUnformatted(m_cpuUsage.c_str());
-			ImGui::TextUnformatted(frameTimes.c_str());
-			ImGui::TextUnformatted(vramBudget.c_str());
-			ImGui::TextUnformatted(vramUsed.c_str());
+			if (ImGui::CollapsingHeader("Frame Times Graph")) {
+				header = "\n\n\n" + m_ftCount + "(s)";
+				ImGui::PlotLines(header.c_str(), m_frameTimesHistory, 100, 0, "", 0.f, 0.01f, ImVec2(0, 100));
+			}
+			if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
+				header = "\n\n\n" + m_virtCount + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+
+			}
+			if (ImGui::CollapsingHeader("Physical RAM Graph")) {
+				header = "\n\n\n" + m_physCount + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_physRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+			}
+			if (ImGui::CollapsingHeader("VRAM Graph")) {
+				header = "\n\n\n" + m_vramUCount + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+			}
+
+			// Uncomment this to enable vram budget visualization
+
+			/*if (ImGui::CollapsingHeader("VRAM Budget Graph")) {
+				header = "\n\n\n" + m_vramBCount + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_vramBudgetHistory, 100, 0, "", 0.f, 6000.f, ImVec2(0, 100));
+			}*/
+
+
+
 			ImGui::EndChild();
 
 			m_profilerTimer += dt;
-			if (m_profilerTimer > 0.5f) {
+			if (m_profilerTimer > 0.2f) {
 				m_profilerTimer = 0.f;
+				if (m_profilerCounter <= 100) {
+
+					// Uncomment this to enable vram budget visualization
+
+					//m_vramBudgetHistory[m_profilerCounter] = m_profiler.vramBudget();
+					//m_vramBCount = "\n\n\n" + std::to_string(m_profiler.vramBudget());
+
+					m_virtRAMHistory[m_profilerCounter] = m_profiler.virtMemUsage();
+					m_physRAMHistory[m_profilerCounter] = m_profiler.workSetUsage();
+					m_vramUsageHistory[m_profilerCounter] = m_profiler.vramUsage();
+					m_frameTimesHistory[m_profilerCounter] = dt;
+					m_cpuHistory[m_profilerCounter++] = m_profiler.processUsage();
+					m_virtCount = std::to_string(m_profiler.virtMemUsage());
+					m_physCount = std::to_string(m_profiler.workSetUsage());
+					m_vramUCount = std::to_string(m_profiler.vramUsage());
+					m_cpuCount = std::to_string(m_profiler.processUsage());
+					m_ftCount = std::to_string(dt);
+
+				}
+				else {
+					float* tempFloatArr = SAIL_NEW float[100];
+					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 101, tempFloatArr);
+					tempFloatArr[100] = m_profiler.virtMemUsage();
+					delete m_virtRAMHistory;
+					m_virtRAMHistory = tempFloatArr;
+					m_virtCount = std::to_string(m_profiler.virtMemUsage());
+
+					float* tempFloatArr1 = SAIL_NEW float[100];
+					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 101, tempFloatArr1);
+					tempFloatArr1[100] = m_profiler.workSetUsage();
+					delete m_physRAMHistory;
+					m_physRAMHistory = tempFloatArr1;
+					m_physCount = std::to_string(m_profiler.workSetUsage());
+
+					// Uncomment this to enable vram budget visualization
+
+					/*float* tempFloatArr2 = SAIL_NEW float[100];
+					std::copy(m_vramBudgetHistory + 1, m_vramBudgetHistory + 101, tempFloatArr2);
+					tempFloatArr2[100] = m_profiler.vramBudget();
+					delete m_vramBudgetHistory;
+					m_vramBudgetHistory = tempFloatArr2;
+					m_vramBCount = std::to_string(m_profiler.vramBudget());*/
+
+					float* tempFloatArr3 = SAIL_NEW float[100];
+					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 101, tempFloatArr3);
+					tempFloatArr3[100] = m_profiler.vramUsage();
+					delete m_vramUsageHistory;
+					m_vramUsageHistory = tempFloatArr3;
+					m_vramUCount = std::to_string(m_profiler.vramUsage());
+
+					float* tempFloatArr4 = SAIL_NEW float[100];
+					std::copy(m_cpuHistory + 1, m_cpuHistory + 101, tempFloatArr4);
+					tempFloatArr4[100] = m_profiler.processUsage();
+					delete m_cpuHistory;
+					m_cpuHistory = tempFloatArr4;
+					m_cpuCount = std::to_string(m_profiler.processUsage());
+
+					float* tempFloatArr5 = SAIL_NEW float[100];
+					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 101, tempFloatArr5);
+					tempFloatArr5[100] = dt;
+					delete m_frameTimesHistory;
+					m_frameTimesHistory = tempFloatArr5;
+					m_ftCount = std::to_string(dt);
+				}
 			}
-
-			// This will be changed/removed when the final profiling window is polished/done
-
-			//ImGui::Separator();
-			//bool reclaim_focus = false;
-
-			//m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
-			//buf[m_cc.getTextField().size()] = '\0';
-
-			////std::string* str = new std::string(m_cc.getTextField());
-			//std::string original = m_cc.getTextField();
-			//bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-			//	ImGuiInputTextFlags_EnterReturnsTrue);
-			//ImGui::SameLine();
-			//if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
-
-			//	if (m_cc.execute()) {
-
-			//	}
-
-
-
-			//	reclaim_focus = true;
-			//}
-			//else {
-			//	m_cc.setTextField(std::string(buf));
-			//}
 			ImGui::End();
 		}
 		else {

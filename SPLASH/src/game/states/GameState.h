@@ -42,8 +42,24 @@ private:
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
+	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
-	std::string m_cpuUsage;
+	int m_profilerCounter = 0;
+	float* m_virtRAMHistory;
+	float* m_physRAMHistory;
+	float* m_cpuHistory;
+	float* m_vramUsageHistory;
+	float* m_frameTimesHistory;
+	std::string m_virtCount;
+	std::string m_physCount;
+	std::string m_vramUCount;
+	std::string m_cpuCount;
+	std::string m_ftCount;
+
+	// Uncomment this to enable vram budget visualization
+	//std::string m_vramBCount;
+	//float* m_vramBudgetHistory;
+
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 

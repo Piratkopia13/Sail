@@ -6,7 +6,7 @@ class Profiler : public SailImGuiWindow {
 
 public:
 	Profiler();
-	Profiler(const bool windowState);
+	explicit Profiler(const bool windowState);
 	~Profiler();
 
 	unsigned int workSetUsage() const;
