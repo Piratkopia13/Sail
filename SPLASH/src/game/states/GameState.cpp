@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
+#include "Sail/ai/pathfinding/NodeSystem.h"
 
 
 GameState::GameState(StateStack& stack)
@@ -278,16 +279,10 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-	// Add AI
-	e->addComponent<PhysicsComponent>();
-	m_aiControllers.push_back(e);
 	e = ECS::Instance()->createEntity("Character3");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-	// Add AI
-	e->addComponent<PhysicsComponent>();
-	m_aiControllers.push_back(e);
 
 	//auto e = Entity::Create("Static cube");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
@@ -341,9 +336,69 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 	m_scene.addEntity(e);
 
+
+/* "Unit test" for NodeSystem */
+	NodeSystem* test = m_app->getNodeSystem();
+	std::vector<unsigned int> conn0;
+	conn0.emplace_back(1);
+	std::vector<unsigned int> conn1;
+	conn1.emplace_back(0);
+	conn1.emplace_back(2);
+	conn1.emplace_back(3);
+	std::vector<unsigned int> conn2;
+	conn2.emplace_back(1);
+	conn2.emplace_back(3);
+	std::vector<unsigned int> conn3;
+	conn3.emplace_back(1);
+	conn3.emplace_back(2);
+
+	std::vector<glm::vec3> nodes;
+	nodes.push_back(glm::vec3(2.f, 0.f, 0.f)); // Node 0
+	nodes.push_back(glm::vec3(10.f, 0.f, 0.f)); // Node 1
+	nodes.push_back(glm::vec3(20.f, 0.f, 0.f)); // Node 2
+	nodes.push_back(glm::vec3(15.f, 15.f, 0.f)); // Node 3
+	std::vector<std::vector<unsigned int>> connections;
+	connections.push_back(conn0);
+	connections.push_back(conn1);
+	connections.push_back(conn2);
+	connections.push_back(conn3);
+
+	test->setNodes(nodes, connections);
+
+	auto path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(10.f, 0.f, 0.f));
+	std::vector<glm::vec3> testPath;
+	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
+	for ( int i = 0; i < testPath.size(); i++ ) {
+		if ( testPath[i] != path[i].position ) {
+			Logger::Error("Something is wrong with the node system.");
+		}
+	}
+
+	path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(20.f, 0.f, 0.f));
+	testPath.clear();
+	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
+	testPath.emplace_back(glm::vec3(20.f, 0.f, 0.f)); // 2
+	for ( int i = 0; i < testPath.size(); i++ ) {
+		if ( testPath[i] != path[i].position ) {
+			Logger::Error("Something is wrong with the node system.");
+		}
+	}
+
+	path = test->getPath(glm::vec3(2.f, 0.f, 0.f), glm::vec3(15.f, 15.f, 0.f));
+	testPath.clear();
+	testPath.emplace_back(glm::vec3(2.f, 0.f, 0.f)); // 0
+	testPath.emplace_back(glm::vec3(10.f, 0.f, 0.f)); // 1
+	testPath.emplace_back(glm::vec3(15.f, 15.f, 0.f)); // 3
+	for ( int i = 0; i < testPath.size(); i++ ) {
+		if ( testPath[i] != path[i].position ) {
+			Logger::Error("Something is wrong with the node system.");
+		}
+	}
+/* End of "Unit test" for NodeSystem */
 	
 	//m_physSystem.registerEntity(m_playerController.getEntity());
-//>>>>>>> dev
 }
 
 GameState::~GameState() {
@@ -419,8 +474,8 @@ bool GameState::processInput(float dt) {
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
 	m_playerController.update(dt);
-	for ( auto ai : m_aiControllers ) {
-		ai.update();
+	for ( auto& ai : m_aiControllers ) {
+		ai.update(dt);
 	}
 	//m_physSystem.execute(dt);
 

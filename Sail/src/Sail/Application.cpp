@@ -50,6 +50,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
 
+	m_nodeSystem = std::make_unique<NodeSystem>();
 }
 
 Application::~Application() {
@@ -178,6 +179,9 @@ ImGuiHandler* const Application::getImGuiHandler() {
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
+}
+NodeSystem* Application::getNodeSystem() {
+	return m_nodeSystem.get();
 }
 const UINT Application::getFPS() const {
 	return m_fps;

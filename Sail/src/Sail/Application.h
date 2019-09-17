@@ -9,6 +9,7 @@
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
 #include "events/IEventDispatcher.h"
+#include "ai/pathfinding/NodeSystem.h"
 
 class Application : public IEventDispatcher {
 
@@ -42,6 +43,7 @@ public:
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
+	NodeSystem* getNodeSystem();
 	const UINT getFPS() const;
 
 private:
@@ -50,6 +52,7 @@ private:
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	ResourceManager m_resourceManager;
+	std::unique_ptr<NodeSystem> m_nodeSystem;
 
 	Timer m_timer;
 	UINT m_fps;
