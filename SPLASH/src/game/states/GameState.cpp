@@ -660,15 +660,15 @@ bool GameState::renderImguiProfiler(float dt) {
 				}
 				else {
 					float* tempFloatArr = SAIL_NEW float[100];
-					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 101, tempFloatArr);
-					tempFloatArr[100] = m_profiler.virtMemUsage();
+					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
+					tempFloatArr[99] = m_profiler.virtMemUsage();
 					delete m_virtRAMHistory;
 					m_virtRAMHistory = tempFloatArr;
 					m_virtCount = std::to_string(m_profiler.virtMemUsage());
 
 					float* tempFloatArr1 = SAIL_NEW float[100];
-					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 101, tempFloatArr1);
-					tempFloatArr1[100] = m_profiler.workSetUsage();
+					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 100, tempFloatArr1);
+					tempFloatArr1[99] = m_profiler.workSetUsage();
 					delete m_physRAMHistory;
 					m_physRAMHistory = tempFloatArr1;
 					m_physCount = std::to_string(m_profiler.workSetUsage());
@@ -677,28 +677,28 @@ bool GameState::renderImguiProfiler(float dt) {
 
 					/*float* tempFloatArr2 = SAIL_NEW float[100];
 					std::copy(m_vramBudgetHistory + 1, m_vramBudgetHistory + 101, tempFloatArr2);
-					tempFloatArr2[100] = m_profiler.vramBudget();
+					tempFloatArr2[99] = m_profiler.vramBudget();
 					delete m_vramBudgetHistory;
 					m_vramBudgetHistory = tempFloatArr2;
 					m_vramBCount = std::to_string(m_profiler.vramBudget());*/
 
 					float* tempFloatArr3 = SAIL_NEW float[100];
-					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 101, tempFloatArr3);
-					tempFloatArr3[100] = m_profiler.vramUsage();
+					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
+					tempFloatArr3[99] = m_profiler.vramUsage();
 					delete m_vramUsageHistory;
 					m_vramUsageHistory = tempFloatArr3;
 					m_vramUCount = std::to_string(m_profiler.vramUsage());
 
 					float* tempFloatArr4 = SAIL_NEW float[100];
-					std::copy(m_cpuHistory + 1, m_cpuHistory + 101, tempFloatArr4);
-					tempFloatArr4[100] = m_profiler.processUsage();
+					std::copy(m_cpuHistory + 1, m_cpuHistory + 100, tempFloatArr4);
+					tempFloatArr4[99] = m_profiler.processUsage();
 					delete m_cpuHistory;
 					m_cpuHistory = tempFloatArr4;
 					m_cpuCount = std::to_string(m_profiler.processUsage());
 
 					float* tempFloatArr5 = SAIL_NEW float[100];
-					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 101, tempFloatArr5);
-					tempFloatArr5[100] = dt;
+					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 100, tempFloatArr5);
+					tempFloatArr5[99] = dt;
 					delete m_frameTimesHistory;
 					m_frameTimesHistory = tempFloatArr5;
 					m_ftCount = std::to_string(dt);
