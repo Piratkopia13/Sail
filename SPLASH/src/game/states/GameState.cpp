@@ -62,15 +62,12 @@ GameState::GameState(StateStack& stack)
 		this call could be moved inside the default constructor of ECS,
 		assuming each system is included in ECS.cpp instead of here
 	*/
-	ECS::Instance()->createSystem<PhysicSystem>();
-
+	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-
-
 	// Get the Application instance
 	m_app = Application::getInstance();
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -100,31 +97,33 @@ GameState::GameState(StateStack& stack)
 	glm::vec3 color(0.1f, 0.1f, 0.1f);
  	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
-	m_lights.setDirectionalLight(DirectionalLight(color, direction));
+	//m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	// Add four point lights
 	{
-		PointLight pl;
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(3.0f, 3.1f, 3.0f));
-		m_lights.addPointLight(pl);
+		//PointLight pl;
+		//pl.setAttenuation(.0f, 0.1f, 0.02f);
+		//pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		//pl.setPosition(glm::vec3(3.0f, 3.1f, 3.0f));
+		//pl.setIndex(0);
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(1.f,1.f,1.f));
-		pl.setPosition(glm::vec3(1.0f, 3.1f, 1.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(1.f,1.f,1.f));
+		//pl.setPosition(glm::vec3(1.0f, 3.1f, 1.0f));
+		//pl.setIndex(1);
+		//m_lights.addPointLight(pl);
 
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
+		//m_lights.addPointLight(pl);
 
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
-		m_lights.addPointLight(pl);
+		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		//pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
+		//m_lights.addPointLight(pl);
 	}
 
 	// Set up the scene
@@ -135,7 +134,6 @@ GameState::GameState(StateStack& stack)
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
-
 
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
@@ -149,6 +147,7 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+
 
 	Model* arenaModel= &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
 	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
@@ -179,170 +178,144 @@ GameState::GameState(StateStack& stack)
 	/*
 		Creation of entitites
 	*/
-	auto e = ECS::Instance()->createEntity("Arena");
-	e->addComponent<ModelComponent>(arenaModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(e);
+	{
+		auto e = ECS::Instance()->createEntity("Arena");
+		e->addComponent<ModelComponent>(arenaModel);
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<LightListComponent>();
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Barrier1");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f,-0.79f, 0.f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Barrier1");
+		e->addComponent<ModelComponent>(barrierModel);
+		e->addComponent<TransformComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f, -0.79f, 0.f));
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Barrier2");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(-4.54f,0.f,8.06f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Barrier2");
+		e->addComponent<ModelComponent>(barrierModel);
+		e->addComponent<TransformComponent>(glm::vec3(-4.54f, 0.f, 8.06f));
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Barrier3");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(8.46f,0.f,8.06f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Barrier3");
+		e->addComponent<ModelComponent>(barrierModel);
+		e->addComponent<TransformComponent>(glm::vec3(8.46f, 0.f, 8.06f));
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Container1");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(6.95f,0.f,25.f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Container1");
+		e->addComponent<ModelComponent>(containerModel);
+		e->addComponent<TransformComponent>(glm::vec3(6.95f, 0.f, 25.f));
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Container2");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-25.f,0.f,12.43f), glm::vec3(0.f, 1.57f, 0.f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Container2");
+		e->addComponent<ModelComponent>(containerModel);
+		e->addComponent<TransformComponent>(glm::vec3(-25.f, 0.f, 12.43f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Container3");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-25.f,8.f,-7.73f), glm::vec3(0.f, 1.57f, 0.f));
-	m_scene.addEntity(e);
-	
-	e = ECS::Instance()->createEntity("Container4");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
-	m_scene.addEntity(e);
-	
-	e = ECS::Instance()->createEntity("Container5");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f));
-	m_scene.addEntity(e);
-	
-	e = ECS::Instance()->createEntity("Container6");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.20f,0.f,-8.f), glm::vec3(0.f, 1.57f, 0.f));
-	m_scene.addEntity(e);
-	
-	e = ECS::Instance()->createEntity("Container7");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.2f,8.f,-22.8f), glm::vec3(0.f, 1.57f, 0.f));
-	m_scene.addEntity(e);
-	
-	e = ECS::Instance()->createEntity("Container8");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.36f,0.f,-32.41f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Container3");
+		e->addComponent<ModelComponent>(containerModel);
+		e->addComponent<TransformComponent>(glm::vec3(-25.f, 8.f, -7.73f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Ramp1");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(e);
-	e = ECS::Instance()->createEntity("Ramp2");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(e);
-	e = ECS::Instance()->createEntity("Ramp3");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
-	m_scene.addEntity(e);
-	e = ECS::Instance()->createEntity("Ramp4");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
-	m_scene.addEntity(e);
-	e = ECS::Instance()->createEntity("Ramp5");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(-16.f, 0.f, 20.f),glm::vec3(0.f,3.14f,0.f));
-	m_scene.addEntity(e);
-	e = ECS::Instance()->createEntity("Ramp6");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(-34.f, 0.f, 20.f),glm::vec3(0.f,0.f,0.f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Container4");
+		e->addComponent<ModelComponent>(containerModel);
+		e->addComponent<TransformComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Character");
-	e->addComponent<ModelComponent>(characterModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Container5");
+		e->addComponent<ModelComponent>(containerModel);
+		e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f));
+		m_scene.addEntity(e);
 
-	e = ECS::Instance()->createEntity("Character1");
-	e->addComponent<ModelComponent>(characterModel);
-	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(e);
-	e = ECS::Instance()->createEntity("Character2");
-	e->addComponent<ModelComponent>(characterModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(e);
-	e = ECS::Instance()->createEntity("Character3");
-	e->addComponent<ModelComponent>(characterModel);
-	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Container6");
+		e->addComponent<ModelComponent>(containerModel);
+		e->addComponent<TransformComponent>(glm::vec3(24.20f, 0.f, -8.f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addEntity(e);
 
-	//auto e = Entity::Create("Static cube");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-	//m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Container7");
+		e->addComponent<ModelComponent>(containerModel);
+		e->addComponent<TransformComponent>(glm::vec3(24.2f, 8.f, -22.8f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addEntity(e);
 
-	//e = Entity::Create("Floor");
-	//e->addComponent<ModelComponent>(m_planeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	//m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Container8");
+		e->addComponent<ModelComponent>(containerModel);
+		e->addComponent<TransformComponent>(glm::vec3(24.36f, 0.f, -32.41f));
+		m_scene.addEntity(e);
 
-	//e = Entity::Create("Clingy cube");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-	//m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Ramp1");
+		e->addComponent<ModelComponent>(rampModel);
+		e->addComponent<TransformComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Ramp2");
+		e->addComponent<ModelComponent>(rampModel);
+		e->addComponent<TransformComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Ramp3");
+		e->addComponent<ModelComponent>(rampModel);
+		e->addComponent<TransformComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Ramp4");
+		e->addComponent<ModelComponent>(rampModel);
+		e->addComponent<TransformComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Ramp5");
+		e->addComponent<ModelComponent>(rampModel);
+		e->addComponent<TransformComponent>(glm::vec3(-16.f, 0.f, 20.f), glm::vec3(0.f, 3.14f, 0.f));
+		m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Ramp6");
+		e->addComponent<ModelComponent>(rampModel);
+		e->addComponent<TransformComponent>(glm::vec3(-34.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
 
-	//// Add some cubes which are connected through parenting
-	//m_texturedCubeEntity = Entity::Create("Textured parent cube");
-	//m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-	//m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
-	//m_texturedCubeEntity->setName("MovingCube");
-	//m_scene.addEntity(m_texturedCubeEntity);
-	//e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
+		e = ECS::Instance()->createEntity("Character");
+		e->addComponent<ModelComponent>(characterModel);
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
 
-	//e = Entity::Create("CubeRoot");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-	//m_scene.addEntity(e);
-	//m_transformTestEntities.push_back(e);
+		e = ECS::Instance()->createEntity("Character1");
+		e->addComponent<ModelComponent>(characterModel);
+		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Character2");
+		e->addComponent<ModelComponent>(characterModel);
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
+		e = ECS::Instance()->createEntity("Character3");
+		e->addComponent<ModelComponent>(characterModel);
+		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addEntity(e);
 
-	//e = Entity::Create("CubeChild");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
-	//m_scene.addEntity(e);
-	//m_transformTestEntities.push_back(e);
+		//creates light with model and pointlight
+		e = ECS::Instance()->createEntity("Candle1");
+		e->addComponent<ModelComponent>(lightModel);
+		e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
+		PointLight pl;
+		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
+		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		pl.setIndex(0);
+		e->addComponent<LightComponent>(pl);
+		m_scene.addEntity(e);
 
-	//e = Entity::Create("CubeChildChild");
-	//e->addComponent<ModelComponent>(m_cubeModel.get());
-	//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
-	//m_scene.addEntity(e);
-	//m_transformTestEntities.push_back(e);
+		e = ECS::Instance()->createEntity("Candle2");
+		e->addComponent<ModelComponent>(lightModel);
+		e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
+		lightPos = e->getComponent<TransformComponent>()->getTranslation();
+		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		pl.setIndex(1);
+		e->addComponent<LightComponent>(pl);
+		m_scene.addEntity(e);
 
 
-	e = ECS::Instance()->createEntity("Candle");
-	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
-	m_scene.addEntity(e);
-
-	e = ECS::Instance()->createEntity("Candle2");
-	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
-	m_scene.addEntity(e);
-
-	//m_physSystem.registerEntity(m_playerController.getEntity());
-//>>>>>>> dev
-	m_virtRAMHistory = SAIL_NEW float[100];
-	m_physRAMHistory = SAIL_NEW float[100];
-	// Uncomment this to enable vram budget visualization
-	//m_vramBudgetHistory = SAIL_NEW float[100];
-	m_vramUsageHistory = SAIL_NEW float[100];
-	m_cpuHistory = SAIL_NEW float[100];
-	m_frameTimesHistory = SAIL_NEW float[100];
+		m_virtRAMHistory = SAIL_NEW float[100];
+		m_physRAMHistory = SAIL_NEW float[100];
+		// Uncomment this to enable vram budget visualization
+		//m_vramBudgetHistory = SAIL_NEW float[100];
+		m_vramUsageHistory = SAIL_NEW float[100];
+		m_cpuHistory = SAIL_NEW float[100];
+		m_frameTimesHistory = SAIL_NEW float[100];
+	}
 }
 
 GameState::~GameState() {
@@ -359,49 +332,16 @@ GameState::~GameState() {
 bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
-	// Add point light at camera pos
+	// Add point light at camera pos by adding it to component
 	if (Input::WasKeyJustPressed(SAIL_KEY_E)) {
 		PointLight pl;
 		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl.setPosition(m_cam.getPosition());
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		m_lights.addPointLight(pl);
+		m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.push_back(pl);
+		//m_lights.addPointLight(pl);
 	}
 
-	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
-		if (m_transformTestEntities.size() >= 3) {
-			Logger::Log("Setting parent");
-			m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>());
-		}
-	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
-		if (m_transformTestEntities.size() >= 3) {
-			Logger::Log("Removing parent");
-			m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
-		}
-	}
-
-
-	/*
-		Test:
-		Will add or remove the PhysicsComponent on the first entity in m_transformTestEntities
-		If that entity already has the component, the first press will write a warning to the console
-	*/
-	if (Input::WasKeyJustPressed(SAIL_KEY_J)) {
-		static bool hasPhysics = false;
-		hasPhysics = !hasPhysics;
-
-		if (m_transformTestEntities.size() >= 1) {
-			switch (hasPhysics) {
-			case true:
-				m_transformTestEntities[0]->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(9.82f, 0, 0));
-				break;
-			case false:
-				m_transformTestEntities[0]->removeComponent<PhysicsComponent>();
-				break;
-			}
-		}
-	}
 #endif
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
@@ -424,6 +364,55 @@ bool GameState::processInput(float dt) {
 		m_app->dispatchEvent(e);
 	}
 
+	//checks if candle entity has light and if not, adds one 
+	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
+		if (!m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
+			PointLight pl;
+			glm::vec3 pos = m_scene.getEntityByName("Candle1")->getComponent<TransformComponent>()->getTranslation();
+			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+			pl.setAttenuation(.0f, 0.1f, 0.02f);
+			pl.setIndex(0);
+			m_scene.getEntityByName("Candle1")->addComponent<LightComponent>(pl);
+			//m_lights.addPointLight(pl);
+		}
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
+		if (!m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
+			PointLight pl;
+			glm::vec3 pos = m_scene.getEntityByName("Candle2")->getComponent<TransformComponent>()->getTranslation();
+			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+			pl.setAttenuation(.0f, 0.1f, 0.02f);
+			pl.setIndex(1);
+			m_scene.getEntityByName("Candle2")->addComponent<LightComponent>(pl);
+			//m_lights.addPointLight(pl);
+		}
+	}
+
+	//removes first added pointlight in arena
+	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
+
+		if (m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.size() > 0) {
+			m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.erase(m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.begin());
+		}
+
+		//m_lights.removePointLight();
+	}
+
+	//removes light from candle entities if they have it
+	if (Input::WasKeyJustPressed(SAIL_KEY_M)) {
+		if (m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
+			m_scene.getEntityByName("Candle1")->removeComponent<LightComponent> ();
+		}
+		//m_lights.removePLByIndex(0);
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_N)) {
+		if (m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
+			m_scene.getEntityByName("Candle2")->removeComponent<LightComponent>();
+		}
+		//m_lights.removePLByIndex(1);
+	}
 	return true;
 }
 
@@ -443,8 +432,6 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
-
-
 bool GameState::update(float dt) {
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
@@ -457,16 +444,12 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2;
 
-	/*
-		Updates all Component Systems in order
-	*/
-	ECS::Instance()->update(dt);
+	updateComponentSystems(dt);
 
-	if (m_texturedCubeEntity) {
-		/*
-			Translations, rotations and scales done here are non-constant, meaning they change between updates
-			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
-		*/
+	/*if (m_texturedCubeEntity) {
+		//Translations, rotations and scales done here are non-constant, meaning they change between updates
+		//All constant transformations can be set in the PhysicsComponent and will then be updated automatically
+		
 		
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
@@ -484,8 +467,22 @@ bool GameState::update(float dt) {
 		size += change * dt;
 		if (size > 1.2f || size < 0.7f)
 			change *= -1.0f;
-	}
+	}*/
 
+	//check and update all lights for all entities
+	std::vector<Entity::SPtr> entities = m_scene.getEntities();
+	m_lights.clearPointLights();
+	for (int i = 0; i < entities.size();i++) {
+		if (entities[i]->hasComponent<LightComponent>()) {
+			m_lights.addPointLight(entities[i]->getComponent<LightComponent>()->m_pointLight);
+		}
+		if (entities[i]->hasComponent<LightListComponent>()) {
+			for (int j = 0; j < entities[i]->getComponent<LightListComponent>()->m_pls.size(); j++) {
+				m_lights.addPointLight(entities[i]->getComponent<LightListComponent>()->m_pls[j]);
+			}
+		}
+	}
+	m_lights.updateBufferData();
 	return true;
 }
 
@@ -508,10 +505,6 @@ bool GameState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	return false;
 }
-
-
-
-
 
 bool GameState::renderImguiConsole(float dt) {
 	
@@ -719,6 +712,10 @@ bool GameState::renderImguiProfiler(float dt) {
 
 
 	return false;
+}
+
+void GameState::updateComponentSystems(float dt) {
+	m_componentSystems.physicSystem->update(dt);
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

@@ -4,7 +4,7 @@ class Model;
 
 class ModelComponent : public Component<ModelComponent> {
 public:
-	ModelComponent(Model* model)
+	ModelComponent(Model* model = nullptr)
 		: m_model(model)
 	{ }
 	~ModelComponent() { }
