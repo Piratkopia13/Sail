@@ -281,7 +281,7 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 
 
-	for (size_t i = 0; i < 100; i++)
+	for (size_t i = 0; i < 200; i++)
 	{
 		e = ECS::Instance()->createEntity("Character #" + std::to_string( i + 4 ));
 		e->addComponent<ModelComponent>(characterModel);

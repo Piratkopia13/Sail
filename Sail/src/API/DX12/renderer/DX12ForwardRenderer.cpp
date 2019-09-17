@@ -139,6 +139,7 @@ void DX12ForwardRenderer::recordCommands(const int threadID, const int frameInde
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->mesh->getMaterial()->getShader()->getPipeline());
 
 		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
+		shaderPipeline->checkBufferSizes(oobMax); //Temp fix to expand constant buffers if the scene contain to many objects
 
 		shaderPipeline->setCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
 		shaderPipeline->setCBufferVar_new("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), meshIndex);

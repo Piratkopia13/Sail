@@ -179,9 +179,13 @@ unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList)
 	return indexStart;
 }
 
-void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {
+/*
+	Temp fix to expand constant buffers if the scene contain to many objects.
+*/
+void DX12ShaderPipeline::checkBufferSizes(unsigned int nMeshes)
+{
 	for (auto& it : parsedData.cBuffers) {
-		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->setResourceHeapMeshIndex(index);
+		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->checkBufferSize(nMeshes);
 	}
 }
 

@@ -63,19 +63,21 @@ namespace ShaderComponent {
 		dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
 	}
 
-	/*[deprecated]*/
-	void DX12ConstantBuffer::setResourceHeapMeshIndex(unsigned int index) {
-
-		m_resourceHeapMeshIndex = index;
+	void DX12ConstantBuffer::checkBufferSize(unsigned int nMeshes)
+	{
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
 		auto frameIndex = m_context->getFrameIndex();
 		// Expand resource heap if index is out of range
-		if ((index + 1) * m_byteAlignedSize >= m_resourceHeapSize) {
+		if ((nMeshes + 1) * m_byteAlignedSize >= m_resourceHeapSize || expanding) {
+			std::lock_guard<std::mutex> lock(m_mutex_bufferExpander);
+			if (!((nMeshes + 1) * m_byteAlignedSize >= m_resourceHeapSize))
+				return;
 
-			//NOT THREAD SAFE
+			expanding = true;
 
 			unsigned int oldSize = m_resourceHeapSize;
 			m_resourceHeapSize += 1024.0 * 64.0;
+			Logger::Log("Expanding constantbuffer from " + std::to_string(oldSize) + " to " + std::to_string(m_resourceHeapSize) + " Bytes.");
 
 			// Copy gpu memory to ram before recreating buffers
 			void* data = malloc(oldSize);
@@ -86,6 +88,8 @@ namespace ShaderComponent {
 				// Place the original data in the buffer
 				memcpy(m_cbGPUAddress[i], data, oldSize);
 			}
+
+			expanding = false;
 		}
 	}
 
