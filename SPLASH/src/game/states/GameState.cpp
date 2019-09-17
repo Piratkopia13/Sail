@@ -2,7 +2,8 @@
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
-
+#include <sstream>
+#include <iomanip>
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -11,6 +12,7 @@ GameState::GameState(StateStack& stack)
 //, m_camController(&m_cam)
 , m_playerController(&m_cam, &m_scene)
 , m_cc(true)
+, m_profiler(true)
 {
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -488,6 +490,7 @@ bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
 	renderImguiConsole(dt);
+	renderImguiProfiler(dt);
 	return false;
 }
 
@@ -540,6 +543,83 @@ bool GameState::renderImguiConsole(float dt) {
 		}
 		else {
 		
+			ImGui::End();
+		}
+
+	}
+
+
+
+
+
+
+	return false;
+}
+
+bool GameState::renderImguiProfiler(float dt) {
+
+
+	bool open = m_profiler.windowOpen();
+	if (open) {
+		static char buf[256] = "";
+		if (ImGui::Begin("Profiler", &open)) {
+			m_profiler.windowState(open);
+			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
+			if (m_profilerTimer == 0.f) {
+				//Update CPU usage every few frames, otherwise it won't display correctly
+				std::ostringstream os;
+				os << std::setprecision(4);
+				os << "CPU Usage: " << std::to_string(m_profiler.processUsage()) + "%";
+				m_cpuUsage = os.str();
+			}
+			std::string workSetUsage = "Physical RAM Usage: " + std::to_string(m_profiler.workSetUsage()) + " MB";
+			std::string virtMemUsage = "Virtual RAM Usage: " + std::to_string(m_profiler.virtMemUsage()) + " MB";
+			std::string vramBudget = "VRAM available: " + std::to_string(m_profiler.vramBudget()) + " MB";
+			std::string vramUsed = "VRAM used: " + std::to_string(m_profiler.vramUsage()) + " MB";
+			std::string frameTimes = "Frame times: " + std::to_string(dt) + " s";
+			ImGui::TextUnformatted(workSetUsage.c_str());
+			ImGui::TextUnformatted(virtMemUsage.c_str());
+			ImGui::TextUnformatted(m_cpuUsage.c_str());
+			ImGui::TextUnformatted(frameTimes.c_str());
+			ImGui::TextUnformatted(vramBudget.c_str());
+			ImGui::TextUnformatted(vramUsed.c_str());
+			ImGui::EndChild();
+
+			m_profilerTimer += dt;
+			if (m_profilerTimer > 0.5f) {
+				m_profilerTimer = 0.f;
+			}
+
+			// This will be changed/removed when the final profiling window is polished/done
+
+			//ImGui::Separator();
+			//bool reclaim_focus = false;
+
+			//m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
+			//buf[m_cc.getTextField().size()] = '\0';
+
+			////std::string* str = new std::string(m_cc.getTextField());
+			//std::string original = m_cc.getTextField();
+			//bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
+			//	ImGuiInputTextFlags_EnterReturnsTrue);
+			//ImGui::SameLine();
+			//if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
+
+			//	if (m_cc.execute()) {
+
+			//	}
+
+
+
+			//	reclaim_focus = true;
+			//}
+			//else {
+			//	m_cc.setTextField(std::string(buf));
+			//}
+			ImGui::End();
+		}
+		else {
+
 			ImGui::End();
 		}
 
