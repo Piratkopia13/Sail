@@ -3,6 +3,8 @@
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
 
+class PhysicSystem;
+
 class GameState : public State {
 public:
 	GameState(StateStack& stack);
@@ -22,21 +24,23 @@ public:
 private:
 	bool onResize(WindowResizeEvent& event);
 	bool renderImguiConsole(float dt);
+	// Where to updates the component systems. Responsibility can be moved to other places
+	void updateComponentSystems(float dt);
 
 private:
+	struct Systems {
+		PhysicSystem* physicSystem = nullptr;
+	};
+
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
 	//FlyingCameraController m_camController;
 	PlayerController m_playerController;
 
-	//SimplePhysicsSystem m_physSystem;
-
-	Entity::SPtr m_texturedCubeEntity;
-	std::vector<Entity::SPtr> m_transformTestEntities;
-
 	const std::string createCube(const glm::vec3& position);
 
+	Systems m_componentSystems;
 	Scene m_scene;
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
