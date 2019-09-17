@@ -82,6 +82,7 @@ private:
 	bool m_firstFrame = true;	// Used solely for ImGui
 	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
+	Scene m_scene;
 
 	// Purely for testing
 	void addTestData();

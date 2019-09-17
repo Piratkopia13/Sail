@@ -7,7 +7,7 @@
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
-#include "../../SPLASH/SPLASH/src/game/states/LobbyState.h"
+#include "../../SPLASH/src/game/states/LobbyState.h"
 
 void NetworkWrapper::Initialize() {
 	m_network = new Network();

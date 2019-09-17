@@ -18,6 +18,7 @@ public:
 	void addEntity(Entity::SPtr entity);
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
+	void draw(void);
 
 	virtual bool onEvent(Event& event) override;
 

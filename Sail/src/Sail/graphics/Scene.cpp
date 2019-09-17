@@ -70,6 +70,13 @@ void Scene::draw(Camera& camera) {
 	}
 }
 
+void Scene::draw(void)
+{
+	m_renderer->begin(nullptr);
+	m_renderer->end();
+	m_renderer->present();
+}
+
 bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
