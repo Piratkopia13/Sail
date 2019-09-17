@@ -3,16 +3,19 @@
 #include "Sail.h"
 
 AiController::AiController()
-	: m_controlledEntity(nullptr)
-	, m_entityTarget(nullptr)
-	, m_reachedTarget(true)
-	, m_lastTargetPos(glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX))
-	, m_target(glm::vec3(0.f, 0.f, 0.f))
-	, m_movementSpeed(2.f)
-	, m_timeBetweenPathUpdate(1000.f/1000.f)
+	: m_movementSpeed(2.f)
+	, m_timeBetweenPathUpdate(1.0f /*seconds*/)
 	, m_timeTaken(0.f)
+	, m_currPath(0)
 	, m_currNodeIndex(-1)
 	, m_lastVisitedNode(NodeSystem::Node(glm::vec3(10000.f, 10000.f, 10000.f), 2381831))
+	, m_controlledEntity(nullptr)
+	, m_physComp(nullptr)
+	, m_transComp(nullptr)
+	, m_entityTarget(nullptr)
+	, m_lastTargetPos(glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX))
+	, m_target(glm::vec3(0.f, 0.f, 0.f))
+	, m_reachedTarget(true)
 {
 }
 
@@ -94,14 +97,11 @@ void AiController::updatePath() {
 
 		auto tempPath = Application::getInstance()->getNodeSystem()->getPath(m_transComp->getTranslation(), m_target);
 
-		auto lastCurrNodeIndex = m_currNodeIndex;
 		m_currNodeIndex = 0;
 
 		// Fix problem of always going toward closest node
-		if ( tempPath.size() > 1 ) {
-			if ( glm::distance(tempPath[1].position, m_transComp->getTranslation()) < glm::distance(tempPath[1].position, tempPath[0].position) ) {
-				m_currNodeIndex += 1;
-			}
+		if ( tempPath.size() > 1 && glm::distance(tempPath[1].position, m_transComp->getTranslation()) < glm::distance(tempPath[1].position, tempPath[0].position) ) {
+			m_currNodeIndex += 1;
 		}
 
 		m_currPath = tempPath;

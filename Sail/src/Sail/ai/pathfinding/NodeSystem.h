@@ -19,7 +19,7 @@ public:
 private:
 	class Graph {
 	public:
-		Graph(const unsigned int numNodes);
+		explicit Graph(const unsigned int numNodes);
 		~Graph();
 
 		void addEdge(const unsigned int src, const unsigned int dest);

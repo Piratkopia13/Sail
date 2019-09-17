@@ -279,16 +279,10 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-	/*// Add AI
-	e->addComponent<PhysicsComponent>();
-	m_aiControllers.push_back(e);*/
 	e = ECS::Instance()->createEntity("Character3");
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-	/*// Add AI
-	e->addComponent<PhysicsComponent>();
-	m_aiControllers.push_back(e);*/
 
 	//auto e = Entity::Create("Static cube");
 	//e->addComponent<ModelComponent>(m_cubeModel.get());
