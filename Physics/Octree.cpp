@@ -279,43 +279,6 @@ void Octree::getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vecto
 	}
 }
 
-float Octree::getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode) {
-	float returnValue = -1.0f;
-
-	/*if (Intersection::rayWithAabb(rayOrigin, rayDirection, currentNode->bb) >= 0.0f) { //Ray intersects this node
-		//Check against meshes
-		for (int i = 0; i < currentNode->nrOfMeshes; i++) {
-			if (Intersection::rayWithAabb(rayOrigin, rayDirection, currentNode->entities[i])) {
-				//Test for intersection
-				for (int j = 0; j < currentNode->entities[i]->getNumberOfVertices(); j += 3) {
-					float tempIntersection;
-					glm::vec3 triangle[3] = { currentNode->entities[i]->getVertexPosition(j), currentNode->entities[i]->getVertexPosition(j + 1), currentNode->entities[i]->getVertexPosition(j + 2) };
-					tempIntersection = Intersection::rayWithTri(rayOrigin, rayDirection, triangle);
-
-					//Save if closer than previous hit
-					if (glm::length(tempIntersection) < returnValue || (returnValue < 0.0f && tempIntersection >= 0.0f)) {
-						returnValue = tempIntersection;
-					}
-				}
-			}
-		}
-
-		//Check for children
-		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-			float tempIntersection = getRayIntersectionRec(rayOrigin, rayDirection, &currentNode->childNodes[i]);
-
-			//Save if closer than previous hit
-			if (glm::length(tempIntersection) < returnValue || (returnValue < 0.0f && tempIntersection >= 0.0f)) {
-				returnValue = tempIntersection;
-			}
-		}
-	}*/
-
-	assert(false); //Not implemented yet
-
-	return returnValue;
-}
-
 int Octree::pruneTreeRec(Node* currentNode) {
 	int returnValue = 0;
 
@@ -389,8 +352,4 @@ void Octree::update() {
 
 void Octree::getCollisions(Entity::SPtr entity, std::vector<CollisionInfo>* outCollisionData) {
 	getCollisionsRec(entity, &m_baseNode, outCollisionData);
-}
-
-float Octree::getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection) {
-	return getRayIntersectionRec(rayOrigin, rayDirection, &m_baseNode);
 }
