@@ -46,5 +46,8 @@ private:
 	glm::vec3 m_lastTargetPos;
 	glm::vec3 m_target;
 
+	float m_targetReachedThreshold;
 	bool m_reachedTarget;
+	float m_maxSteeringForce;
+	float m_mass;
 };
