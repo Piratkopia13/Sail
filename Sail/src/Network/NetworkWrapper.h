@@ -70,9 +70,9 @@ private:
 	/*
 		Only the host will get these messages to then send to each client.
 	*/
-	void playerDisconnected(ConnectionID id);
-	void playerReconnected(ConnectionID id); // This remains unimplemented.
-	void playerJoined(ConnectionID id);
+	void playerDisconnected(TCP_CONNECTION_ID id);
+	void playerReconnected(TCP_CONNECTION_ID id); // This remains unimplemented.
+	void playerJoined(TCP_CONNECTION_ID id);
 
 	/*
 		Depending on event, call the correct function.

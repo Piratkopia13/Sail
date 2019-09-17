@@ -7,10 +7,11 @@
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
-#include "../../SPLASH/SPLASH/src/game/states/LobbyState.h"
+//#include "../../SPLASH/SPLASH/src/game/states/LobbyState.h"
 
 void NetworkWrapper::Initialize() {
 	m_network = new Network();
+	m_network->initialize();
 }
 
 NetworkWrapper::~NetworkWrapper() {
@@ -23,7 +24,7 @@ bool NetworkWrapper::host(int port) {
 	{
 		//return m_network->setupHost(port);
 	}
-	return m_network->setupHost(port);
+	return m_network->host(port);
 }
 
 bool NetworkWrapper::connectToIP(char* adress) {
@@ -61,7 +62,7 @@ bool NetworkWrapper::connectToIP(char* adress) {
 
 	port = std::atoi(portChar);
 
-	return m_network->setupClient(IP, port);
+	return m_network->join(IP, port);
 }
 
 void NetworkWrapper::sendMsg(std::string msg) {
@@ -117,7 +118,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 	player currentPlayer{ -1, "" };	// up here
 	int charCounter = 0;			//
 
-	switch (nEvent.data->msg[0])
+	switch (nEvent.data->rawMsg[0])
 	{
 	case 'm':
 		// handle chat message.
@@ -125,7 +126,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// The host sends this message to all clients.
 		if (m_network->isServer())
 		{
-			std::string tempMessage = std::string(nEvent.data->msg);
+			std::string tempMessage = std::string(nEvent.data->rawMsg);
 			tempMessage.erase(0, 1);
 			message = std::string("m") + std::to_string(nEvent.clientID) + 
 				std::string(": ") + tempMessage;
@@ -140,7 +141,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		else
 		{
 			// Print to screen
-			message = nEvent.data->msg + std::string("\n");
+			message = nEvent.data->rawMsg + std::string("\n");
 			message.erase(0, 1);
 			printf(message.c_str());
 		}
@@ -154,7 +155,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->msg[1 + i];
+			charAsInt[i] = nEvent.data->rawMsg[1 + i];
 		}
 		userID = reinterpret_cast<int&>(charAsInt);
 
@@ -169,7 +170,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->msg[1 + i];
+			charAsInt[i] = nEvent.data->rawMsg[1 + i];
 		}
 		userID = reinterpret_cast<int&>(charAsInt);
 
@@ -187,31 +188,31 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		charCounter = 1; // Content starts after the 'w'
 		for (; true; charCounter++)
 		{
-			if (nEvent.data->msg[charCounter] == ':') {
+			if (nEvent.data->rawMsg[charCounter] == ':') {
 				playerList.push_back(currentPlayer);
 				currentPlayer.name = "";
 				charCounter++;
 				break;	// First name has been found
 			}
 			else {
-				currentPlayer.name += nEvent.data->msg[charCounter];
+				currentPlayer.name += nEvent.data->rawMsg[charCounter];
 			}
 		}
 
 		for (charCounter; charCounter < MAX_PACKAGE_SIZE; charCounter++)
 		{
 			// If delimiter, we just finished with a player name
-			if (nEvent.data->msg[charCounter] == ':') {
+			if (nEvent.data->rawMsg[charCounter] == ':') {
 				playerList.push_back(currentPlayer);
 				currentPlayer.name = "";
 			}
 			// If nullterminator, the msg is over.
-			else if (nEvent.data->msg[charCounter] == '\0') {
+			else if (nEvent.data->rawMsg[charCounter] == '\0') {
 				break;
 			}
 			// If neither above, add char to currentplayer
 			else {
-				currentPlayer.name += nEvent.data->msg[charCounter];
+				currentPlayer.name += nEvent.data->rawMsg[charCounter];
 			}
 		}
 
@@ -220,13 +221,13 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 	default:
 		printf((std::string("Error: Packet message with key: ") + 
-			nEvent.data->msg[0] + "can't be handled. \n").c_str());
+			nEvent.data->rawMsg[0] + "can't be handled. \n").c_str());
 		break;
 	}
 
 }
 
-void NetworkWrapper::playerDisconnected(ConnectionID id) {
+void NetworkWrapper::playerDisconnected(TCP_CONNECTION_ID id) {
 	/*
 		Send disconnect message to all clients if host.
 	*/
@@ -255,13 +256,13 @@ void NetworkWrapper::playerDisconnected(ConnectionID id) {
 	}
 }
 
-void NetworkWrapper::playerReconnected(ConnectionID id) {
+void NetworkWrapper::playerReconnected(TCP_CONNECTION_ID id) {
 	/*
 		This remains unimplemented.
 	*/
 }
 
-void NetworkWrapper::playerJoined(ConnectionID id) {
+void NetworkWrapper::playerJoined(TCP_CONNECTION_ID id) {
 	if (m_network->isServer())
 	{
 		char msg[64] = { 0 };
@@ -289,13 +290,13 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 	{
 	case NETWORK_EVENT_TYPE::NETWORK_ERROR:
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_JOINED:
+	case NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED:
 		playerJoined(nEvent.clientID);
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED:
+	case NETWORK_EVENT_TYPE::CONNECTION_CLOSED:
 		playerDisconnected(nEvent.clientID);
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_RECONNECTED:
+	case NETWORK_EVENT_TYPE::CONNECTION_RE_ESTABLISHED:
 		playerReconnected(nEvent.clientID);
 		break;
 	case NETWORK_EVENT_TYPE::MSG_RECEIVED:
