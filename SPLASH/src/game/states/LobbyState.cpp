@@ -90,6 +90,10 @@ bool LobbyState::update(float dt) {
 		NetworkWrapper::getInstance().checkForPackages();
 	}
 
+
+
+
+
 	// Did we recieve something?
 	// ---
 

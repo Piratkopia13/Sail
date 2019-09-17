@@ -2,7 +2,7 @@
 
 #include <string>
 #include "Network/NetworkStructs.hpp"
-
+#include <map>
 // Forward declaration :)
 class Network;
 
@@ -49,6 +49,12 @@ public:
 private:
 	Network* m_network;
 	NetworkWrapper() {}
+
+	// Map of all connection IDs and the assigned ID of each connection of the session.
+	std::map<TCP_CONNECTION_ID, unsigned char> m_connectionsMap;
+	unsigned char m_IdDistribution = 0;
+
+	// TODO: Shutdown function which will be used to re-host or re-join lobbies.
 
 	/*
 		This is the general message decoder who does different things depending on starting letter.

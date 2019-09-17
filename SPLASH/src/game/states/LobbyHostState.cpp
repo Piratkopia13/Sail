@@ -110,9 +110,6 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 		printf(currentPlayer.name.c_str());
 		printf("\n");
 	}
-	if (welcomePackage.size() > 63) {
-		int asdf = 3;
-	}
 	m_network->sendMsgAllClients(welcomePackage);
 	printf("Done sending welcome package\n");
 	return false;
