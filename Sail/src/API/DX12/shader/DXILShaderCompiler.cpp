@@ -2,12 +2,11 @@
 #include "DXILShaderCompiler.h"
 #include "../../../Sail/utils/Utils.h"
 
-DXILShaderCompiler::DXILShaderCompiler() 
+DXILShaderCompiler::DXILShaderCompiler()
 	: m_linker(nullptr)
 	, m_library(nullptr)
 	, m_includeHandler(nullptr)
-	, m_compiler(nullptr)
-{
+	, m_compiler(nullptr) {
 
 }
 

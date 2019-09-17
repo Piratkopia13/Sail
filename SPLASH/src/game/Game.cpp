@@ -1,12 +1,6 @@
 #include "Game.h"
 #include "states/GameState.h"
 
-void test(int id, int myval) {
-	std::string s;
-	s += std::to_string(id) + ", " + std::to_string(myval);
-	printf(s.c_str());
-}
-
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
 	, m_stateStack()

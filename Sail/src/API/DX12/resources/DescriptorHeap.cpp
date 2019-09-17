@@ -2,10 +2,9 @@
 #include "DescriptorHeap.h"
 #include "Sail/Application.h"
 
-DescriptorHeap::DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numDescriptors, bool shaderVisible) 
+DescriptorHeap::DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numDescriptors, bool shaderVisible)
 	: m_numDescriptors(numDescriptors)
-	, m_index(0)
-{
+	, m_index(0) {
 	DX12API* context = Application::getInstance()->getAPI<DX12API>();
 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
@@ -25,7 +24,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::getNextCPUDescriptorHandle(int nStep
 	return getCPUDescriptorHandleForIndex(getAndStepIndex(nSteps));
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getGPUDescriptorHandleForIndex(unsigned int index) const {	
+D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getGPUDescriptorHandleForIndex(unsigned int index) const {
 	if (index >= m_numDescriptors)
 		Logger::Error("Tried to get out of bounds descriptor heap gpu handle!");
 	auto heapHandle = m_descHeap->GetGPUDescriptorHandleForHeapStart();
@@ -37,8 +36,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurentGPUDescriptorHandle() const
 	return getGPUDescriptorHandleForIndex(m_index);
 }
 
-unsigned int DescriptorHeap::getDescriptorIncrementSize() const
-{
+unsigned int DescriptorHeap::getDescriptorIncrementSize() const {
 	return m_incrementSize;
 }
 

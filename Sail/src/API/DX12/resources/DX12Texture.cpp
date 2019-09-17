@@ -7,11 +7,10 @@ Texture* Texture::Create(const std::string& filename) {
 	return new DX12Texture(filename);
 }
 
-DX12Texture::DX12Texture(const std::string& filename) 
+DX12Texture::DX12Texture(const std::string& filename)
 	: m_cpuDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1)
 	, m_isInitialized(false)
-	, m_textureData(getTextureData(filename))
-{
+	, m_textureData(getTextureData(filename)) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	m_textureDesc = {};
@@ -40,7 +39,7 @@ DX12Texture::DX12Texture(const std::string& filename)
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 	m_context->getDevice()->CreateShaderResourceView(m_textureDefaultBuffer.Get(), &srvDesc, m_heapCDH);
-	
+
 }
 
 DX12Texture::~DX12Texture() {

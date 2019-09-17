@@ -35,7 +35,7 @@ void DX12InputLayout::pushVec4(InputType inputType, LPCSTR semanticName, UINT se
 }
 
 void DX12InputLayout::create(void* vertexShaderBlob) {
-	
+
 	m_inputLayoutDesc.pInputElementDescs = m_inputElementDescs.data();
 	m_inputLayoutDesc.NumElements = static_cast<UINT>(m_inputElementDescs.size());
 

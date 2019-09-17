@@ -12,8 +12,7 @@ Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 }
 
 DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
-	: Mesh(buildData, shader)
-{
+	: Mesh(buildData, shader) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	material = std::make_shared<Material>(shader);
 	// Create vertex buffer
@@ -37,8 +36,6 @@ void DX12Mesh::draw_new(const Renderer& renderer, void* cmdList, int meshIndex) 
 	bindMaterial(cmdList, meshIndex);
 	// Set offset in SRV heap for this mesh 
 	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getGPUDescriptorHandleForIndex(m_SRVIndex));
-	//dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
-	//material->bind(cmdList);
 	vertexBuffer->bind(cmdList);
 
 	if (indexBuffer)
@@ -51,25 +48,14 @@ void DX12Mesh::draw_new(const Renderer& renderer, void* cmdList, int meshIndex) 
 		dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
 }
 
-void DX12Mesh::bindMaterial(void* cmdList, int meshIndex)
-{
+void DX12Mesh::bindMaterial(void* cmdList, int meshIndex) {
 	Shader* shader = material->getShader();
-	const Material::PhongSettings & phongSettings = material->getPhongSettings();
-	DX12ShaderPipeline* pipeline = static_cast<DX12ShaderPipeline*>(shader->getPipeline());	
-	pipeline->trySetCBufferVar_new("sys_material", (void*)&phongSettings, sizeof(Material::PhongSettings), meshIndex);
+	const Material::PhongSettings& phongSettings = material->getPhongSettings();
+	DX12ShaderPipeline* pipeline = static_cast<DX12ShaderPipeline*>(shader->getPipeline());
+	pipeline->trySetCBufferVar_new("sys_material", (void*)& phongSettings, sizeof(Material::PhongSettings), meshIndex);
 	m_SRVIndex = pipeline->setMaterial(material.get(), cmdList);
-
-	/*
-	if (phongSettings.hasDiffuseTexture)
-		pipeline->setTexture2D("sys_texDiffuse", material->getTexture(0), cmdList);
-	if (phongSettings.hasNormalTexture)
-		pipeline->setTexture2D("sys_texNormal", material->getTexture(1), cmdList);
-	if (phongSettings.hasSpecularTexture)
-		pipeline->setTexture2D("sys_texSpecular", material->getTexture(2), cmdList);
-	*/
 }
 
-unsigned int DX12Mesh::getSRVIndex()
-{
+unsigned int DX12Mesh::getSRVIndex() {
 	return m_SRVIndex;
 }

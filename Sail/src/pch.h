@@ -27,9 +27,6 @@
 // Thread pool
 #include <ctpl/ctpl_stl.h> // From: https://github.com/vit-vit/ctpl
 
-// Thread pool
-#include <ctpl/ctpl_stl.h> // From: https://github.com/vit-vit/ctpl
-
 //#include <windows.h>
 
 

@@ -12,9 +12,8 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 	return SAIL_NEW DX12ShaderPipeline(filename);
 }
 
-DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename) 
-	: ShaderPipeline(filename)
-{
+DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
+	: ShaderPipeline(filename) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	if (!m_dxilCompiler) {
@@ -32,8 +31,7 @@ void DX12ShaderPipeline::bind(void* cmdList) {
 	assert(false);/*[deprecated]*/
 }
 
-void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex)
-{
+void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 	if (!m_pipelineState)
 		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
@@ -145,8 +143,7 @@ void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture,
 	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
-unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList)
-{
+unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList) {
 	const Material::PhongSettings& ps = material->getPhongSettings();
 	int nTextures = 0;
 	DX12Texture* textures[3];
@@ -166,8 +163,7 @@ unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList)
 	unsigned int indexStart = m_context->getMainGPUDescriptorHeap()->getAndStepIndex(nTextures);
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_context->getMainGPUDescriptorHeap()->getCPUDescriptorHandleForIndex(indexStart);
 
-	for (size_t i = 0; i < nTextures; i++)
-	{
+	for (size_t i = 0; i < nTextures; i++) {
 		if (!textures[i]->hasBeenInitialized()) {
 			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
 		}
@@ -182,8 +178,7 @@ unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList)
 /*
 	Temp fix to expand constant buffers if the scene contain to many objects.
 */
-void DX12ShaderPipeline::checkBufferSizes(unsigned int nMeshes)
-{
+void DX12ShaderPipeline::checkBufferSizes(unsigned int nMeshes) {
 	for (auto& it : parsedData.cBuffers) {
 		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->checkBufferSize(nMeshes);
 	}
