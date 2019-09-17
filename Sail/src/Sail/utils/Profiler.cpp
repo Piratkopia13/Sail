@@ -48,8 +48,12 @@ unsigned int Profiler::virtMemUsage() const {
 }
 
 double Profiler::processUsage(){
-	FILETIME ftime, fsys, fuser;
-	ULARGE_INTEGER now, sys, user;
+	FILETIME ftime;
+	FILETIME fsys;
+	FILETIME fuser;
+	ULARGE_INTEGER now;
+	ULARGE_INTEGER sys;
+	ULARGE_INTEGER user;
 	double percent;
 
 	GetSystemTimeAsFileTime(&ftime);
