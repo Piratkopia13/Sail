@@ -547,11 +547,11 @@ bool GameState::update(float dt) {
 
 	m_testAngle = std::fmod(m_testAngle + 0.5f * dt, 6.28f);
 
-	m_keepCharacterPointerForTesting->getComponent<TransformComponent>()->rotateAroundY(glm::pi<float>() * dt);
+	//m_keepCharacterPointerForTesting->getComponent<TransformComponent>()->rotateAroundY(glm::pi<float>() * dt);
 
-	for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
+	/*for (unsigned int i = 0; i < m_testBoundingBoxes.size(); i++) {
 		m_testBoundingBoxes[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(glm::vec3(std::sin(m_testAngle + i * 0.2) * 40.0f, 2.0f, 5.0f));
-	}
+	}*/
 
 	m_octree->update();
 

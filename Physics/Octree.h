@@ -18,7 +18,7 @@ public:
 private:
 	struct Node {
 		std::vector<Node> childNodes;
-		Node* parentNode;
+		Node* parentNode = nullptr;
 		Entity::SPtr bbEntity;
 		int nrOfEntities = 0;
 		std::vector<Entity::SPtr> entities;
