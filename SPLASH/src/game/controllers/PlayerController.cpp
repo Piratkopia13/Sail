@@ -28,7 +28,7 @@ void PlayerController::setStartPosition(const glm::vec3& pos) {
 // To be run at the beginning of each update tick
 void PlayerController::prepareUpdate() {
 	TransformComponent* transform = m_player->getComponent<TransformComponent>();
-	if (transform) { transform->copyDataFromPrevUpdate(); }
+	if (transform) { transform->prepareUpdate(); }
 }
 
 void PlayerController::processKeyboardInput(float dt) {
@@ -76,25 +76,17 @@ void PlayerController::processKeyboardInput(float dt) {
 		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	}
 
-}
 
-void PlayerController::processMouseInput(float dt) {
-	PhysicsComponent* physicsComp = m_player->getComponent<PhysicsComponent>();
 
-	// Mouse input
 
-	// Toggle cursor capture on right click
-	if ( Input::WasMouseButtonJustPressed(SAIL_MOUSE_RIGHT_BUTTON) ) {
-		Input::HideCursor(!Input::IsCursorHidden());
-	}
-
-	if ( Input::IsCursorHidden() ) {
-		glm::ivec2& mouseDelta = Input::GetMouseDelta();
-		m_pitch -= mouseDelta.y * m_lookSensitivityMouse;
-		m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
-	}
+	// Shooting
 
 	// Shoot gun
+	// TODO: This should probably be moved elsewhere.
+	//       See if it should be done every tick or every frame and where the projectiles are to be created
+
+	m_projectileLock.lock();
+
 	if (Input::IsMouseButtonPressed(0)) {
 		if (m_projectileSpawnCounter == 0.f) {
 
@@ -115,19 +107,80 @@ void PlayerController::processMouseInput(float dt) {
 			// Add entity to scene for rendering, will most likely be changed once scene system is created
 			m_scene->addEntity(e);
 
-			m_projectileSpawnCounter += dt;
-		}
-		else {
-			m_projectileSpawnCounter += dt;
+			m_projectileSpawnCounter += TIMESTEP;
+		} else {
+			m_projectileSpawnCounter += TIMESTEP;
 			if (m_projectileSpawnCounter > 0.05f) {
 				m_projectileSpawnCounter = 0.f;
 			}
 		}
-	}
-	else {
+	} else {
 		m_projectileSpawnCounter = 0.f;
 	}
 
+	// Update for all projectiles
+	//for (int i = 0; i < m_projectiles.size(); i++) {
+	for (Projectile &p : m_projectiles) {
+		p.lifeTime += TIMESTEP;
+		if (p.lifeTime > 2.f) {
+			ECS::Instance()->queueDestructionOfEntity(p.projectile);
+		}
+	}
+	m_projectileLock.unlock();
+
+}
+
+void PlayerController::processMouseInput(float dt) {
+	PhysicsComponent* physicsComp = m_player->getComponent<PhysicsComponent>();
+
+	// Mouse input
+
+	// Toggle cursor capture on right click
+	if ( Input::WasMouseButtonJustPressed(SAIL_MOUSE_RIGHT_BUTTON) ) {
+		Input::HideCursor(!Input::IsCursorHidden());
+	}
+
+	if ( Input::IsCursorHidden() ) {
+		glm::ivec2& mouseDelta = Input::GetMouseDelta();
+		m_pitch -= mouseDelta.y * m_lookSensitivityMouse;
+		m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
+	}
+
+	//// Shoot gun
+	//// TODO: This should probably be moved elsewhere.
+	////       See if it should be done every tick or every frame and where the projectiles are to be created
+	//if (Input::IsMouseButtonPressed(0)) {
+	//	if (m_projectileSpawnCounter == 0.f) {
+
+	//		// Create projectile entity and attaching components
+	//		auto e = ECS::Instance()->createEntity("new cube");
+	//		e->addComponent<ModelComponent>(m_projectileModel);
+	//		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
+	//		e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.1f));
+	//		e->addComponent<PhysicsComponent>();
+	//		e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
+	//		e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -10.f, 0.f);
+
+	//		// Adding projectile to projectile vector to keep track of current projectiles
+	//		Projectile proj;
+	//		proj.projectile = e;
+	//		m_projectiles.push_back(proj);
+
+	//		// Add entity to scene for rendering, will most likely be changed once scene system is created
+	//		m_scene->addEntity(e);
+
+	//		m_projectileSpawnCounter += dt;
+	//	}
+	//	else {
+	//		m_projectileSpawnCounter += dt;
+	//		if (m_projectileSpawnCounter > 0.05f) {
+	//			m_projectileSpawnCounter = 0.f;
+	//		}
+	//	}
+	//}
+	//else {
+	//	m_projectileSpawnCounter = 0.f;
+	//}
 	// Lock pitch to the range -89 - 89
 	if ( m_pitch >= 89 ) {
 		m_pitch = 89;
@@ -142,28 +195,42 @@ void PlayerController::processMouseInput(float dt) {
 		m_yaw += 360;
 	}
 
+	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
 		std::sin(glm::radians(m_pitch)),
 		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
 	);
 	forwards = glm::normalize(forwards);
+	playerTrans->setForward(forwards);
 
 	glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
 	forward = glm::normalize(forward);
 
-	// Update for all projectiles
-	for (int i = 0; i < m_projectiles.size(); i++) {
-		m_projectiles[i].lifeTime += dt;
-		if (m_projectiles[i].lifeTime > 2.f) {
-			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
-			m_projectiles.erase(m_projectiles.begin() + i);
-			i--;
-		}
-	}
+	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+	right = glm::normalize(right);
 
-	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+
+
+
+	//// Remove old projectiles
+	//for (int i = 0; i < m_projectiles.size(); i++) {
+	//	if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
+	//		ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
+	//		m_projectiles.erase(m_projectiles.begin() + i);
+	//		i--;
+	//	}
+
+
+	//	//m_projectiles[i].lifeTime += dt;
+	//	//if (m_projectiles[i].lifeTime > 2.f) {
+	//	//	ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
+	//	//	m_projectiles.erase(m_projectiles.begin() + i);
+	//	//	i--;
+	//	//}
+	//}
 
 	m_cam->setCameraPosition(playerTrans->getTranslation());
 	// TODO: Replace with transform rotation/direction
@@ -172,6 +239,21 @@ void PlayerController::processMouseInput(float dt) {
 	" " + std::to_string(forwards.y)
 	+ " " + std::to_string(forwards.z));*/
 	m_cam->setCameraDirection(forwards);
+}
+
+void PlayerController::destroyOldProjectiles() {
+	m_projectileLock.lock();
+
+	// Remove old projectiles
+	for (int i = 0; i < m_projectiles.size(); i++) {
+		if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
+			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
+			m_projectiles.erase(m_projectiles.begin() + i);
+			i--;
+		}
+	}
+
+	m_projectileLock.unlock();
 }
 
 // NOTE: Keyboard and mouse input processing has been moved to their own functions above this one

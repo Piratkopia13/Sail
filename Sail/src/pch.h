@@ -23,6 +23,9 @@
 #include <glm/ext.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+
 
 // Thread pool
 #include <ctpl/ctpl_stl.h> // From: https://github.com/vit-vit/ctpl

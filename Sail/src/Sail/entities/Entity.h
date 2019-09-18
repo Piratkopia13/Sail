@@ -8,6 +8,7 @@
 
 class ECS;
 
+
 class Entity {
 public:
 	typedef std::shared_ptr<Entity> SPtr;
@@ -25,6 +26,8 @@ public:
 
 	bool hasComponent(int id) const;
 
+	bool isAboutToBeDestroyed() const;
+	void queueDestruction();
 	void removeAllComponents();
 	
 	void setName(const std::string& name);
@@ -32,6 +35,8 @@ public:
 	int getID() const;
 	Entity(const std::string& name = "");
 
+public:
+	bool tryToAddToSystems = true;
 private:
 	// Only ECS should be able to create entities
 	friend class ECS;
@@ -42,19 +47,22 @@ private:
 
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::string m_name;
+	bool m_destructionQueued = false;
 	int m_id;
 	ECS* m_ecs;
 };
 
 template<typename ComponentType, typename... Targs>
-ComponentType* Entity::addComponent(Targs... args) {
+inline ComponentType* Entity::addComponent(Targs... args) {
 	auto res = m_components.insert({ ComponentType::ID, std::make_unique<ComponentType>(args...) });
 	if (!res.second) {
 		Logger::Warning("Tried to add a duplicate component to an entity");
 	}
 
-	// Place this entity within the correct systems
-	addToSystems();
+	// Place this entity within the correct systems if told to
+	if (tryToAddToSystems) {
+		addToSystems();
+	}
 
 	// Return pointer to the inserted component
 	return static_cast<ComponentType*>(res.first->second.get());
@@ -73,7 +81,7 @@ inline void Entity::removeComponent() {
 }
 
 template<typename ComponentType>
-ComponentType* Entity::getComponent() {
+inline ComponentType* Entity::getComponent() {
 	// If the following line causes compile errors, then a class 
 	// deriving from component is missing public SAIL_COMPONENT macro
 	auto it = m_components.find(ComponentType::ID);

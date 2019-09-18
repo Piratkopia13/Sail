@@ -6,6 +6,33 @@
 
 Application* Application::s_instance = nullptr;
 
+
+// STATIC FUNCTIONS
+std::atomic_uint Application::s_frameIndex = 0;
+UINT Application::s_updateIndex = 0;
+UINT Application::s_renderIndex = 0;
+std::atomic_uint Application::s_queuedUpdates = 0;
+std::atomic_uint Application::s_updateRunning = 0;
+
+
+// To be done at the end of each CPU update and nowhere else	
+void Application::IncrementCurrentUpdateIndex() {
+	s_frameIndex++;
+	s_updateIndex = s_frameIndex.load() % SNAPSHOT_BUFFER_SIZE;
+}
+
+// To be done just before render is called
+void Application::UpdateCurrentRenderIndex() {
+	s_renderIndex = prevInd(s_frameIndex.load());
+}
+
+//#ifdef _DEBUG
+UINT Application::GetUpdateIndex() { return s_updateIndex; }
+UINT Application::GetRenderIndex() { return s_renderIndex; }
+//#endif
+
+// NON-STATIC FUNCTIONS
+
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
 
 	// Set up instance if not set
@@ -18,7 +45,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
 	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
-	m_threadPool = std::unique_ptr<ctpl::thread_pool>(new ctpl::thread_pool(poolSize));
+	m_threadPool = std::unique_ptr<ctpl::thread_pool>(SAIL_NEW ctpl::thread_pool(poolSize));
 
 	// Set up window
 	Window::WindowProps windowProps;
@@ -67,7 +94,7 @@ Application::~Application() {
 // Update and render synchronization is not guaranteed to work without data races when the framerate 
 // is significantly lower than the update rate
 int Application::startGameLoop() {
-	MSG msg = {0};
+	MSG msg = { 0 };
 	m_fps = 0;
 	// Start delta timer
 	m_timer.startTimer();
@@ -102,7 +129,7 @@ int Application::startGameLoop() {
 			currentTime = newTime;
 
 			// Will slow the game down if the CPU can't keep up with the TICKRATE
-			delta = std::min(delta, 4 * TIMESTEP); 
+			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += delta;
@@ -118,7 +145,7 @@ int Application::startGameLoop() {
 			UINT CPU_updatesThisLoop = 0;
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
-				CPU_updatesThisLoop++;
+				s_queuedUpdates++;
 			}
 
 			// Update mouse deltas
@@ -139,26 +166,28 @@ int Application::startGameLoop() {
 			processInput(static_cast<float>(delta));
 
 			// Run update(s) in a separate thread
-			//m_threadPool->push([this, CPU_updatesThisLoop](int id) {
-				UINT updatesRemaining = CPU_updatesThisLoop;
-				while (updatesRemaining > 0) {
-					updatesRemaining--;
-					update(TIMESTEP);
-					Transform::IncrementCurrentUpdateIndex();
+			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
+				// If another thread is already running the update loop then don't do in this thread too
+				if (s_updateRunning == 0) {
+					s_updateRunning = 1;
+					while (s_queuedUpdates > 0) {
+						s_queuedUpdates--;
+						update(TIMESTEP);
+						Application::IncrementCurrentUpdateIndex();
+					}
+					s_updateRunning = 0;
 				}
-				//});
+				});
 
 			// Render
-			Transform::UpdateCurrentRenderIndex();
+			Application::UpdateCurrentRenderIndex();
 			render(static_cast<float>(delta)); // TODO: interpolate between game states with an alpha value
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
 		}
 	}
-
 	return (int)msg.wParam;
-
 }
 
 std::string Application::getPlatformName() {
