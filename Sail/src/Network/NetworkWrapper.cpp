@@ -130,35 +130,17 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// handle chat message.
 
 		// The host sends this message to all clients.
-		if (m_network->isServer())
-		{
-			std::string tempMessage = std::string(nEvent.data->rawMsg);
-			tempMessage.erase(0, 1);
-			message += "m";
-			message += std::to_string(nEvent.clientID);
-			message += std::string(": ");
-			message += tempMessage;
-
-			sendMsgAllClients(message);
-
-			// Print to screen
-			//message = message§1);
-			printf(message.c_str()1);
-		}
-		else
-		{
-			// Print to screen
-			message = nEvent.data->rawMsg + std::string("\n");
-			message.erase(0, 1);
-			printf(message.c_str());
+		if (m_network->isServer()) {
+			sendMsgAllClients(nEvent.data->rawMsg);	// Send out the already formatted message to clients
 		}
 
-//		remnants_m = nEvent.data->msg;
-//		id_m = parseID(remnants);
+		remnants = nEvent.data->rawMsg;
+		id_m = this->parseID(remnants);
+		remnants.erase(0, 1);
 
 		Application::getInstance()->dispatchEvent(NetworkChatEvent(Message{
-			to_string(nEvent.clientID),
-			message
+			to_string(id_m),
+			remnants
 		}));
 
 		break;
@@ -284,7 +266,6 @@ void NetworkWrapper::playerJoined(TCP_CONNECTION_ID id) {
 		m_IdDistribution++;
 		unsigned char newId = m_IdDistribution;
 		m_connectionsMap.insert(pair<TCP_CONNECTION_ID, unsigned char>(id, newId));
-
 
 		//char* int_asChar = reinterpret_cast<char*>(&intid);
 

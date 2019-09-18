@@ -26,7 +26,11 @@ bool LobbyJoinState::onEvent(Event& event) {
 bool LobbyJoinState::onMyTextInput(TextInputEvent& event) {
 	// Add input to current message, If 'enter', send message to host, do not input to chat.
 	if (this->inputToChatLog(event.getMSG())) {
-		m_network->sendChatMsg(this->fetchMessage());
+		string mesgWithId = "";
+		mesgWithId += to_string(m_me.id) + ':';
+		mesgWithId += m_currentmessage;
+		this->fetchMessage();
+		m_network->sendChatMsg(mesgWithId);
 	}
 	
 	return false;

@@ -184,12 +184,6 @@ void LobbyState::addmessageToChat(Message message) {
 	// Add message to chatlog
 	m_messages.push_back(message);
 
-	if (false)
-	{
-		int asdf = 3;
-	}
-
-
 	// New messages replace old
 	if (m_messages.size() > m_messageLimit) {
 		m_messages.pop_front();
@@ -227,8 +221,6 @@ void LobbyState::renderplayerList() {
 
 	for (auto currentplayer : m_players) {
 		std::string temp;
-		temp += " - ";
-		temp += to_string(currentplayer.id);
 		temp += " - ";
 		temp += currentplayer.name.c_str();
 		

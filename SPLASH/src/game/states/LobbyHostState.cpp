@@ -30,8 +30,14 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 		Message temp{ to_string(m_me.id), m_currentmessage };
 		this->addTextToChat(&temp);
 
+		// ... Append my ID to it.
+		string mesgWithId = "";
+		mesgWithId += to_string(m_me.id) + ':';
+		mesgWithId += m_currentmessage;
+		this->fetchMessage();
+
 		// ... Send the message to other clients and reset message
-		m_network->sendChatAllClients(this->fetchMessage());
+		m_network->sendChatAllClients(mesgWithId);
 	}
 
 	return true;

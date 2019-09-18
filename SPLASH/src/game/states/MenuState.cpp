@@ -105,6 +105,8 @@ bool MenuState::renderImgui(float dt) {
 			// Save the package info,
 			// Pop and push into JoinLobbyState.
 
+			this->inputName = "Joiner";
+
 			this->requestStackPop();
 			this->requestStackPush(States::JoinLobby);
 		}
