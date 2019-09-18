@@ -12,7 +12,7 @@ AssimpLoader::~AssimpLoader() {
 
 Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 
-	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_CalcTangentSpace);
 	if ( errorCheck(scene) ) {
 		return nullptr;
 	}
@@ -20,6 +20,7 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 
 	makeOffsets(scene);
 	Mesh::Data meshData;
+	Mesh::Data meshData2;
 	for ( unsigned int i = 0; i < scene->mNumMeshes; i++ ) {
 		meshData.numVertices += scene->mMeshes[i]->mNumVertices;
 		meshData.numIndices += scene->mMeshes[i]->mNumFaces * 3; // assumes 3 indices per face
@@ -34,6 +35,7 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 	meshData.bitangents = SAIL_NEW Mesh::vec3[meshData.numVertices];
 
 	processNode(scene, scene->mRootNode, meshData);
+	meshData2.deepCopy(meshData);
 	std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, shader));
 	Model* model = new Model();
 	model->addMesh(std::move(mesh));

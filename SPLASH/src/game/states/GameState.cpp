@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
+#include "..//Sail/src/Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 #include <sstream>
 #include <iomanip>
@@ -63,6 +64,7 @@ GameState::GameState(StateStack& stack)
 		assuming each system is included in ECS.cpp instead of here
 	*/
 	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
+	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
@@ -159,7 +161,23 @@ GameState::GameState(StateStack& stack)
 	ballbot->addComponent<TransformComponent>();
 	ballbot->getComponent<TransformComponent>()->setScale(0.05f);
 	ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("DEBUG_BALLBOT.fbx", shader));
-	ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("DEBUG_BALLBOT.fbx"));
+	Mesh::Data tempData;
+
+	;
+
+	tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
+	ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("DEBUG_BALLBOT.fbx"), Mesh::Create(tempData,shader));
+	
+	AnimationComponent* ac = ballbot->getComponent<AnimationComponent>();
+	ac->animationIndex = 0;
+	ac->animationSpeed = 1.0f;
+	ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
+	ac->nextAnimation = ac->getAnimationStack()->getAnimation(1);
+	ac->blending = false;
+
+
+	m_scene.addEntity(ballbot);
+
 
 
 	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
@@ -735,6 +753,7 @@ bool GameState::renderImguiProfiler(float dt) {
 
 void GameState::updateComponentSystems(float dt) {
 	m_componentSystems.physicSystem->update(dt);
+	m_componentSystems.animationSystem->update(dt);
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

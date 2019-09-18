@@ -4,6 +4,7 @@
 #include "../controllers/PlayerController.h"
 
 class PhysicSystem;
+class AnimationSystem;
 
 class GameState : public State {
 public:
@@ -32,6 +33,7 @@ private:
 private:
 	struct Systems {
 		PhysicSystem* physicSystem = nullptr;
+		AnimationSystem* animationSystem = nullptr;
 	};
 
 	Application* m_app;

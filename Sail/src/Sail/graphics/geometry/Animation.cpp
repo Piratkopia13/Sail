@@ -15,7 +15,7 @@ Animation::Frame::Frame(const unsigned int size) :
 	}
 }
 Animation::Frame::~Frame() {
-	Memory::SafeDelete(m_limbTransform);
+	Memory::SafeDeleteArr(m_limbTransform);
 }
 void Animation::Frame::setTransform(const unsigned int index, const glm::mat4& transform) {
 #ifdef _DEBUG
@@ -45,6 +45,10 @@ Animation::Animation() :
 
 }
 Animation::~Animation() {
+	for (unsigned int frame = 0; frame <= m_maxFrame; frame++) {
+		Memory::SafeDelete(m_frames[frame]);
+
+	}
 }
 const float Animation::getMaxAnimationTime() {
 	if(exists(m_maxFrame))
@@ -56,7 +60,7 @@ const unsigned int Animation::getMaxAnimationFrame() {
 }
 
 const glm::mat4* Animation::getAnimationTransform(const float time, const FindType type) {
-	const unsigned int frame = getFrameAtTime(time);
+	const unsigned int frame = getFrameAtTime(time, type);
 	return getAnimationTransform(frame);
 }
 const glm::mat4* Animation::getAnimationTransform(const unsigned int frame) {
@@ -178,6 +182,9 @@ AnimationStack::AnimationStack(const unsigned int vertCount) {
 	m_connections = new VertConnection[vertCount];
 }
 AnimationStack::~AnimationStack() {
+	for (unsigned int index = 0; index < m_stack.size(); index++) {
+		Memory::SafeDelete(m_stack[m_names[index]]);
+	}
 	Memory::SafeDeleteArr(m_connections);
 }
 void AnimationStack::addAnimation(const std::string& animationName, Animation* animation) {
@@ -203,8 +210,43 @@ void AnimationStack::setConnectionData(const unsigned int vertexIndex, const uns
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
 }
 
-const Animation* AnimationStack::getAnimation(const std::string& name) {
-	return nullptr;
+Animation* AnimationStack::getAnimation(const std::string& name) {
+	if (m_stack.find(name) == m_stack.end())
+		return nullptr;
+	return m_stack[name];
+}
+Animation* AnimationStack::getAnimation(const unsigned int index) {
+	if (m_names.find(index) == m_names.end())
+		return nullptr;
+	if (m_stack.find(m_names[index]) == m_stack.end())
+		return nullptr;
+
+	return m_stack[m_names[index]];
+}
+
+const glm::mat4* AnimationStack::getTransform(const std::string& name, const float time) {
+	Animation* animation = getAnimation(name);
+	if (!animation)
+		return nullptr;
+	return animation->getAnimationTransform(time);
+}
+const glm::mat4* AnimationStack::getTransform(const std::string& name, const unsigned int frame) {
+	Animation* animation = getAnimation(name);
+	if (!animation)
+		return nullptr;
+	return animation->getAnimationTransform(frame);
+}
+const glm::mat4* AnimationStack::getTransform(const unsigned int index, const float time) {
+	Animation* animation = getAnimation(index);
+	if (!animation)
+		return nullptr;
+	return animation->getAnimationTransform(time);
+}
+const glm::mat4* AnimationStack::getTransform(const unsigned int index, const unsigned int frame) {
+	Animation* animation = getAnimation(index);
+	if (!animation)
+		return nullptr;
+	return animation->getAnimationTransform(frame);
 }
 
 void AnimationStack::checkWeights() {

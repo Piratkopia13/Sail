@@ -74,8 +74,15 @@ public:
 	void addAnimation(const std::string& animationName, Animation* animation);
 	void setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight);
 
-	const Animation* getAnimation(const std::string& name);
-	const Animation* getAnimation(const unsigned int index);
+	Animation* getAnimation(const std::string& name);
+	Animation* getAnimation(const unsigned int index);
+
+	const glm::mat4* getTransform(const std::string& name, const float time);
+	const glm::mat4* getTransform(const std::string& name, const unsigned int frame);
+	const glm::mat4* getTransform(const unsigned int index, const float time);
+	const glm::mat4* getTransform(const unsigned int index, const unsigned int frame);
+
+	
 
 
 
@@ -88,7 +95,6 @@ private:
 
 	std::map<int, std::string> m_names;
 	std::map<std::string, Animation*> m_stack;
-	//std::vector<std::pair<std::string, Animation*>> m_stack;
 
 };
 

@@ -54,6 +54,8 @@ public:
 
 	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;
 
+	const Data& getMeshData();
+
 	Material* getMaterial();
 
 	unsigned int getNumVertices() const;

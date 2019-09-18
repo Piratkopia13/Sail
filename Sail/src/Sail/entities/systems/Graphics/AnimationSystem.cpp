@@ -14,9 +14,12 @@ AnimationSystem::~AnimationSystem() {
 
 void AnimationSystem::update(float dt) {
 	for (auto& e : m_entities) {
+		AnimationComponent* ac = e->getComponent<AnimationComponent>();
+		ModelComponent* mc = e->getComponent<ModelComponent>();
+		//mc->getModel()->getMesh(0)->getMeshData();
 
-
-
+		ac->animationTime += dt;
+		
 
 
 		//TransformComponent* transform = e->getComponent<TransformComponent>();
