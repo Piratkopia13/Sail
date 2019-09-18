@@ -22,11 +22,22 @@ public:
 
 private:
 
-	void processNode(const aiScene* scene, aiNode* node, Model* model, Shader* shader);
+	struct MeshOffset {
+	public:
+		MeshOffset(unsigned int vOffset, unsigned int iOffset) 
+			: vertexOffset(vOffset)
+			, indexOffset(iOffset)
+		{}
+
+		unsigned int vertexOffset;
+		unsigned int indexOffset;
+	};
+
+	void processNode(const aiScene* scene, aiNode* node, Mesh::Data& meshData);
 
 	//FbxVector2 getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMesh* mesh, int polyIndex, int vertIndex) const;
 	//void getGeometry(FbxMesh* mesh, Mesh::Data& buildData);
-	void getGeometry(aiMesh* mesh, Mesh::Data& buildData);
+	void getGeometry(aiMesh* mesh, Mesh::Data& buildData, AssimpLoader::MeshOffset& meshOffset);
 	//void getMaterial(FbxNode* pNode, Material* material);
 	void getMaterial(aiNode* node);
 	
@@ -48,17 +59,19 @@ private:
 	}
 
 	void makeOffsets(const aiScene* scene) {
-		m_meshOffsets.emplace_back(0);
-		size_t old = 0;
-		if (scene->mNumMeshes > 1) {
+		m_meshOffsets.emplace_back(0, 0);
+		unsigned int oldVOffset = 0;
+		unsigned int oldIOffset = 0;
+		if ( scene->mNumMeshes > 1 ) {
 			for (size_t i = 0; i < scene->mNumMeshes; i++) {
-				m_meshOffsets.emplace_back(old + scene->mMeshes[i]->mNumVertices);
-				old = scene->mMeshes[i]->mNumVertices;
+				m_meshOffsets.emplace_back(oldVOffset + scene->mMeshes[i]->mNumVertices, oldIOffset + scene->mMeshes[i]->mNumFaces * 3); // should be 3 indices per face
+				oldVOffset = m_meshOffsets.back().vertexOffset;
+				oldIOffset = m_meshOffsets.back().indexOffset;
 			}
 		}
 	}
 
-	std::vector<int> m_meshOffsets;
+	std::vector<AssimpLoader::MeshOffset> m_meshOffsets;
 	Assimp::Importer m_importer;
 
 };

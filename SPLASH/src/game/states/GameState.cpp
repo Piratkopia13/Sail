@@ -146,10 +146,10 @@ GameState::GameState(StateStack& stack)
 	
 
 	m_app->getResourceManager().loadModel("DEBUG_MODELSKELETON.fbx", shader);
-	m_app->getResourceManager().loadAnimationStack("DEBUG_MODELSKELETON.fbx");
+	//m_app->getResourceManager().loadAnimationStack("DEBUG_MODELSKELETON.fbx");
 
 	m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
-	m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
+	//m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
 	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");

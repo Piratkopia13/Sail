@@ -13,14 +13,34 @@ AssimpLoader::~AssimpLoader() {
 Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 	Model* model = new Model();
 
-	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 	if ( errorCheck(scene) ) {
 		return nullptr;
 	}
 	std::string name = scene->GetShortFilename(path.c_str());
-	//processNode(scene, scene->mRootNode);
 
-	return nullptr;
+	makeOffsets(scene);
+	Mesh::Data meshData;
+	for ( int i = 0; i < scene->mNumMeshes; i++ ) {
+		meshData.numVertices += scene->mMeshes[i]->mNumVertices;
+		meshData.numIndices += scene->mMeshes[i]->mNumFaces * 3; // assumes 3 indices per face
+	}
+
+	meshData.indices = SAIL_NEW unsigned long[meshData.numIndices];
+
+	meshData.positions = SAIL_NEW Mesh::vec3[meshData.numVertices];
+	meshData.normals = SAIL_NEW Mesh::vec3[meshData.numVertices];
+	meshData.texCoords = SAIL_NEW Mesh::vec2[meshData.numVertices];
+	meshData.tangents = SAIL_NEW Mesh::vec3[meshData.numVertices];
+	meshData.bitangents = SAIL_NEW Mesh::vec3[meshData.numVertices];
+
+	processNode(scene, scene->mRootNode, meshData);
+	std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, shader));
+	model->addMesh(std::move(mesh));
+
+	clearData();
+
+	return model;
 }
 
 AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
@@ -60,54 +80,81 @@ std::vector<Model*> AssimpLoader::importScene(const std::string& path, Shader* s
 
 
 
-void AssimpLoader::processNode(const aiScene* scene, aiNode* node, Model* model, Shader* shader) {
+void AssimpLoader::processNode(const aiScene* scene, aiNode* node, Mesh::Data& meshData) {
 	for ( int i = 0; i < node->mNumMeshes; i++ ) {
-		Mesh::Data meshData;
-		getGeometry(scene->mMeshes[node->mMeshes[i]], meshData);
-		std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, shader));
+		getGeometry(scene->mMeshes[node->mMeshes[i]], meshData, m_meshOffsets[node->mMeshes[i]]);
 		//getMaterial(pNode, mesh->getMaterial());
-		model->addMesh(std::move(mesh));
 	}
 
 	for ( int i = 0; i < node->mNumChildren; i++ ) {
-		processNode(scene, node->mChildren[i], model, shader);
+		processNode(scene, node->mChildren[i], meshData);
 	}
 }
 
-void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData) {
-
+void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData, AssimpLoader::MeshOffset& meshOffset) {
 	if ( mesh->HasPositions() && mesh->HasNormals() ) {
-		buildData.numVertices = mesh->mNumVertices;
-		buildData.numIndices = mesh->mNumFaces * 3; // 3 indices per face
+		/*
+			Vertices
+		*/
+		for ( int vertexIndex = 0; vertexIndex < mesh->mNumVertices; vertexIndex++ ) {
+			if ( meshOffset.vertexOffset + vertexIndex > buildData.numVertices ) {
+				Logger::Error("TOOO BIIIIIG VERTEX");
+			}
+			/*
+				Positions
+			*/
+			buildData.positions[meshOffset.vertexOffset + vertexIndex].vec.x = mesh->mVertices[vertexIndex].x;
+			buildData.positions[meshOffset.vertexOffset + vertexIndex].vec.y = mesh->mVertices[vertexIndex].y;
+			buildData.positions[meshOffset.vertexOffset + vertexIndex].vec.z = mesh->mVertices[vertexIndex].z;
 
-		unsigned int vertexIndex = 0;
+			/*
+				Normals
+			*/
+			buildData.normals[meshOffset.vertexOffset + vertexIndex].vec.x = mesh->mNormals[vertexIndex].x;
+			buildData.normals[meshOffset.vertexOffset + vertexIndex].vec.y = mesh->mNormals[vertexIndex].y;
+			buildData.normals[meshOffset.vertexOffset + vertexIndex].vec.z = mesh->mNormals[vertexIndex].z;
 
+			/*
+				UVs
+			*/
+			buildData.texCoords[meshOffset.vertexOffset + vertexIndex].vec.x = mesh->mTextureCoords[0][vertexIndex].x;
+			buildData.texCoords[meshOffset.vertexOffset + vertexIndex].vec.y = mesh->mTextureCoords[0][vertexIndex].y;
+
+
+			/*
+				Tangents and bitangents
+			*/
+			if ( mesh->HasTangentsAndBitangents() ) {
+				/*
+					Tangents
+				*/
+				buildData.tangents[meshOffset.vertexOffset + vertexIndex].vec.x = mesh->mTangents[vertexIndex].x;
+				buildData.tangents[meshOffset.vertexOffset + vertexIndex].vec.y = mesh->mTangents[vertexIndex].y;
+				buildData.tangents[meshOffset.vertexOffset + vertexIndex].vec.z = mesh->mTangents[vertexIndex].z;
+
+				/*
+					Bitangents
+				*/
+				buildData.bitangents[meshOffset.vertexOffset + vertexIndex].vec.x = mesh->mBitangents[vertexIndex].x;
+				buildData.bitangents[meshOffset.vertexOffset + vertexIndex].vec.y = mesh->mBitangents[vertexIndex].y;
+				buildData.bitangents[meshOffset.vertexOffset + vertexIndex].vec.z = mesh->mBitangents[vertexIndex].z;			
+			}
+
+		}
+
+		/*
+			Indices
+		*/
+		int vIndex = 0;
 		for ( int faceIndex = 0; faceIndex < mesh->mNumFaces; faceIndex++ ) {
-			for ( int vertIndex = 0; vertIndex < 3; vertIndex += 3 ) {
-				/*
-					Positions
-				*/
-				buildData.positions[vertexIndex].vec.x = mesh->mVertices[vertexIndex].x;
-				buildData.positions[vertexIndex].vec.y = mesh->mVertices[vertexIndex].y;
-				buildData.positions[vertexIndex].vec.z = mesh->mVertices[vertexIndex].z;
-
-				buildData.positions[vertexIndex + 1].vec.x = mesh->mVertices[vertexIndex + 1].x;
-				buildData.positions[vertexIndex + 1].vec.y = mesh->mVertices[vertexIndex + 1].y;
-				buildData.positions[vertexIndex + 1].vec.z = mesh->mVertices[vertexIndex + 1].z;
-
-				buildData.positions[vertexIndex + 2].vec.x = mesh->mVertices[vertexIndex + 2].x;
-				buildData.positions[vertexIndex + 2].vec.y = mesh->mVertices[vertexIndex + 2].y;
-				buildData.positions[vertexIndex + 2].vec.z = mesh->mVertices[vertexIndex + 2].z;
-
-				/*
-					Tangents and bitangents
-				*/
-				if ( mesh->HasTangentsAndBitangents() ) {
-
+			for ( int iIndex = 0; iIndex < mesh->mFaces[faceIndex].mNumIndices; iIndex++ ) {
+				if ( meshOffset.indexOffset + vIndex > buildData.numIndices ) {
+					Logger::Error("TOOO BIIIIIG INDEX");
 				}
-
+				buildData.indices[meshOffset.indexOffset + vIndex++] = mesh->mFaces[faceIndex].mIndices[iIndex];
 			}
 		}
+
 	} else {
 		Logger::Error("Oh- oh!");
 	}
@@ -154,7 +201,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 
 				for ( size_t weightID = 0; weightID < bone->mNumWeights; weightID++ ) {
 					const aiVertexWeight weight = bone->mWeights[weightID];
-					stack->setConnectionData(m_meshOffsets[node->mMeshes[nodeID]] + weight.mVertexId, index, weight.mWeight);
+					stack->setConnectionData(m_meshOffsets[node->mMeshes[nodeID]].vertexOffset + weight.mVertexId, index, weight.mWeight);
 
 				}
 
