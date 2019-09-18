@@ -179,12 +179,13 @@ void PlayerController::update(float dt) {
 					totalMovement += m_collisionInfo[i].normal * projectionSize; //Limit movement towards wall
 				}
 
-				//Additional check
+				//Tight angle corner special case
 				float dotProduct = glm::dot(m_collisionInfo[i].normal, glm::normalize(sumVec));
-				if (dotProduct < 0.98f && dotProduct > 0.0f) {
+				if (dotProduct < 0.98f && dotProduct > 0.0f) { //Colliding in a tight angle corner
 					glm::vec3 normalToNormal = sumVec - glm::dot(sumVec, m_collisionInfo[i].normal) * m_collisionInfo[i].normal;
 					normalToNormal = glm::normalize(normalToNormal);
 
+					//Stop movement towards corner
 					projectionSize = glm::dot(totalMovement, -normalToNormal);
 
 					if (projectionSize > 0.0f) {
