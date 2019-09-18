@@ -2,7 +2,7 @@
 
 #include <string>
 #include "Network/NetworkStructs.hpp"
-
+#include <map>
 // Forward declaration :)
 class Network;
 
@@ -50,6 +50,12 @@ private:
 	Network* m_network;
 	NetworkWrapper() {}
 
+	// Map of all connection IDs and the assigned ID of each connection of the session.
+	std::map<TCP_CONNECTION_ID, unsigned char> m_connectionsMap;
+	unsigned char m_IdDistribution = 0;
+
+	// TODO: Shutdown function which will be used to re-host or re-join lobbies.
+
 	/*
 		This is the general message decoder who does different things depending on starting letter.
 	*/
@@ -58,9 +64,9 @@ private:
 	/*
 		Only the host will get these messages to then send to each client.
 	*/
-	void playerDisconnected(ConnectionID id);
-	void playerReconnected(ConnectionID id); // This remains unimplemented.
-	void playerJoined(ConnectionID id);
+	void playerDisconnected(TCP_CONNECTION_ID id);
+	void playerReconnected(TCP_CONNECTION_ID id); // This remains unimplemented.
+	void playerJoined(TCP_CONNECTION_ID id);
 
 	/*
 		Depending on event, call the correct function.
@@ -70,7 +76,8 @@ private:
 		 WARNING: These parse functions EXTRACT data, NOT COPY.
 		 They WILL remove the part they extract from data.
 	*/
-	ConnectionID parseID(std::string& data);
+	
+	TCP_CONNECTION_ID parseID(std::string& data);
 	std::string parseName(std::string& data);
 
 

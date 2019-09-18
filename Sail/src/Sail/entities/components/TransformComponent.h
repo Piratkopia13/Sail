@@ -3,12 +3,8 @@
 #include "Component.h"
 #include "../../graphics/geometry/Transform.h"
 
-class TransformComponent : public Component, public Transform {
+class TransformComponent : public Component<TransformComponent>, public Transform {
 public:
-	SAIL_COMPONENT
-	/*static int getStaticID() {
-		return 3;
-	}*/
 	explicit TransformComponent(TransformComponent* parent)
 		: Transform(parent) { }
 	TransformComponent(const glm::vec3& translation, TransformComponent* parent) 

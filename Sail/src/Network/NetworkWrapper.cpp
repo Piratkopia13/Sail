@@ -12,6 +12,7 @@
 
 void NetworkWrapper::Initialize() {
 	m_network = new Network();
+	m_network->initialize();
 }
 
 NetworkWrapper::~NetworkWrapper() {
@@ -24,7 +25,7 @@ bool NetworkWrapper::host(int port) {
 	{
 		//return m_network->setupHost(port);
 	}
-	return m_network->setupHost(port);
+	return m_network->host(port);
 }
 
 bool NetworkWrapper::connectToIP(char* adress) {
@@ -62,11 +63,11 @@ bool NetworkWrapper::connectToIP(char* adress) {
 
 	port = std::atoi(portChar);
 
-	return m_network->setupClient(IP, port);
+	return m_network->join(IP, port);
 }
 
 void NetworkWrapper::sendMsg(std::string msg) {
-	m_network->send(msg.c_str(), msg.length());
+	m_network->send(msg.c_str(), msg.length() +1);
 }
 
 void NetworkWrapper::sendChatMsg(std::string msg) {
@@ -75,7 +76,7 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 	if (m_network->isServer())
 	{
 		msg = std::string("mHost: ") + msg;
-		m_network->send(msg.c_str(), msg.length(), -1);
+		m_network->send(msg.c_str(), msg.length() +1, -1);
 		msg.erase(0, 1);
 		msg = msg + std::string("\n");
 		printf(msg.c_str());
@@ -83,7 +84,7 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 	else
 	{
 		msg = std::string("m") + msg;
-		m_network->send(msg.c_str(), msg.length());
+		m_network->send(msg.c_str(), msg.length() +1);
 	}
 }
 
@@ -101,7 +102,7 @@ void NetworkWrapper::checkForPackages() {
 }
 
 bool NetworkWrapper::isInitialized() {
-	return m_network->isInitialized();
+	return m_network->getInitializeStatus();
 }
 
 bool NetworkWrapper::isHost() {
@@ -123,7 +124,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 	string remnants_m = "";
 	unsigned int id_m;
 
-	switch (nEvent.data->msg[0])
+	switch (nEvent.data->rawMsg[0])
 	{
 	case 'm':
 		// handle chat message.
@@ -131,7 +132,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// The host sends this message to all clients.
 		if (m_network->isServer())
 		{
-			std::string tempMessage = std::string(nEvent.data->msg);
+			std::string tempMessage = std::string(nEvent.data->rawMsg);
 			tempMessage.erase(0, 1);
 			message += "m";
 			message += std::to_string(nEvent.clientID);
@@ -147,7 +148,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		else
 		{
 			// Print to screen
-			message = nEvent.data->msg + std::string("\n");
+			message = nEvent.data->rawMsg + std::string("\n");
 			message.erase(0, 1);
 			printf(message.c_str());
 		}
@@ -167,7 +168,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->msg[1 + i];
+			charAsInt[i] = nEvent.data->rawMsg[1 + i];
 		}
 		userID = reinterpret_cast<int&>(charAsInt);
 
@@ -182,7 +183,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->msg[1 + i];
+			charAsInt[i] = nEvent.data->rawMsg[1 + i];
 		}
 		userID = reinterpret_cast<int&>(charAsInt);
 
@@ -197,19 +198,23 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// This client has recieved a request for its selected name
 		if (!m_network->isServer()) {
-			string ultratemp = nEvent.data->msg;
-			ConnectionID id = parseID(ultratemp);
+			//string ultratemp = nEvent.data->rawMsg;
+			unsigned char id = nEvent.data->rawMsg[1];//parseID(ultratemp);
+			//printf(std::to_string((int)(id)).c_str());
 			Application::getInstance()->dispatchEvent(NetworkNameEvent(to_string(id)));
 		}
 		else {
-			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->msg});
+			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->rawMsg});
 		}
 		break;
+
+		break; 
 
 	case 'w':
 
 		// Parse the welcome-package.
-		remnants = nEvent.data->msg;
+		remnants = nEvent.data->rawMsg;
+
 		while (remnants != "") {
 			currentPlayer.id = this->parseID(remnants);
 			currentPlayer.name = this->parseName(remnants);
@@ -228,19 +233,19 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 	default:
 		printf((std::string("Error: Packet message with key: ") + 
-			nEvent.data->msg[0] + "can't be handled. \n").c_str());
+			nEvent.data->rawMsg[0] + "can't be handled. \n").c_str());
 		break;
 	}
 
 }
 
-void NetworkWrapper::playerDisconnected(ConnectionID id) {
+void NetworkWrapper::playerDisconnected(TCP_CONNECTION_ID id) {
 	/*
 		Send disconnect message to all clients if host.
 	*/
 	if (m_network->isServer())
 	{
-		char msg[64];
+		char msg[64] = {0};
 		int intid = (int)id;
 		char* int_asChar = reinterpret_cast<char*>(&intid);
 
@@ -263,29 +268,36 @@ void NetworkWrapper::playerDisconnected(ConnectionID id) {
 	}
 }
 
-void NetworkWrapper::playerReconnected(ConnectionID id) {
+void NetworkWrapper::playerReconnected(TCP_CONNECTION_ID id) {
 	/*
 		This remains unimplemented.
 	*/
 }
 
-void NetworkWrapper::playerJoined(ConnectionID id) {
+void NetworkWrapper::playerJoined(TCP_CONNECTION_ID id) {
 	if (m_network->isServer())
 	{
-		char msg[64] = { 0 };
-		unsigned int intid = id;
-		char* int_asChar = reinterpret_cast<char*>(&intid);
+		//char msg[64] = { 0 };
 
-		msg[0] = 'j';
-		for (int i = 0; i < 4; i++) {
-			msg[i + 1] = int_asChar[i];
-		}
+		// Generate an ID for the client that joined and send that information.
+		unsigned char test = m_IdDistribution;
+		m_IdDistribution++;
+		unsigned char newId = m_IdDistribution;
+		m_connectionsMap.insert(pair<TCP_CONNECTION_ID, unsigned char>(id, newId));
 
+
+		//char* int_asChar = reinterpret_cast<char*>(&intid);
+
+		//msg[0] = 'j';
+		//msg[1] = newId;
+		
 		// Request a name from the client, which upon recieval will be sent to all clients.
 		char msgRequest[64];
 		msgRequest[0] = '?';
-		msgRequest[1] = *to_string(id).c_str();//*reinterpret_cast<char*>(&id);
+		msgRequest[1] = newId;
 		msgRequest[2] = '\0';
+
+		unsigned char c = msgRequest[1];
 
 		m_network->send(msgRequest, sizeof(msgRequest), id);
 		printf("Greeted ID: %d. Requesting Name... \n", id);
@@ -295,9 +307,9 @@ void NetworkWrapper::playerJoined(ConnectionID id) {
 
 		// Add this user id to the list of players in the lobby.
 		// Print out that this ID joined the lobby.
-		printf((std::to_string(intid) + " joined. \n").c_str());
+		//printf((std::to_string(newId) + " joined. \n").c_str());
 
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ intid, "" }));
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ newId, "" }));
 	}
 }
 
@@ -306,13 +318,13 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 	{
 	case NETWORK_EVENT_TYPE::NETWORK_ERROR:
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_JOINED:
+	case NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED:
 		playerJoined(nEvent.clientID);
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED:
+	case NETWORK_EVENT_TYPE::CONNECTION_CLOSED:
 		playerDisconnected(nEvent.clientID);
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_RECONNECTED:
+	case NETWORK_EVENT_TYPE::CONNECTION_RE_ESTABLISHED:
 		playerReconnected(nEvent.clientID);
 		break;
 	case NETWORK_EVENT_TYPE::MSG_RECEIVED:
@@ -323,9 +335,14 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 	}
 }
 
-ConnectionID NetworkWrapper::parseID(std::string& data) {
+TCP_CONNECTION_ID NetworkWrapper::parseID(std::string& data) {
+	if (data.size() > 63) {
+		printf("Error: parsed string to big.");
+		return 0;
+	}
 	if (data.size() < 1) {
 		return 0;
+		printf("Error: parsed string Empty.");
 	}
 	else {
 		// Remove opening ':' / '?' marker.
@@ -333,7 +350,7 @@ ConnectionID NetworkWrapper::parseID(std::string& data) {
 
 		std::string id_string = "";
 		int lastIndex;
-		for (lastIndex = 0; lastIndex < MAX_PACKAGE_SIZE; lastIndex++) {
+		for (lastIndex = 0; lastIndex < data.size(); lastIndex++) {
 			if (data[lastIndex] == '\0') {
 				break;
 			}
@@ -347,7 +364,7 @@ ConnectionID NetworkWrapper::parseID(std::string& data) {
 
 		data.erase(0, lastIndex);
 		if (id_string != "") {
-			return stoll(id_string);
+			return stoi(id_string);
 		}
 		else {
 			return 0;
