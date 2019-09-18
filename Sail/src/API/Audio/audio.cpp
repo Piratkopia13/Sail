@@ -5,6 +5,9 @@
 #include "Sail/KeyCodes.h"
 #include "API/Audio/GeneralFunctions.h"
 #include <fstream>
+#include <xaudio2.h>
+#include "WaveBankReader.h"
+#include <math.h>
 
 Audio::Audio() {
 
@@ -86,15 +89,6 @@ int Audio::playSound(const std::string &filename) {
 
 }
 
-int Audio::streamSound(const std::string& filename) {
-
-	this->loadSound(filename);
-
-	//m_tempStreamThread = new std::thread(&Audio::streamingLoop, this, (this->m_sourceVoice[this->m_currIndex]));
-
-	return 0;
-}
-
 void Audio::pauseSound(int index) {
 
 	if (m_sourceVoice[index] != nullptr) {
@@ -109,6 +103,15 @@ void Audio::pauseAllSounds() {
 			m_sourceVoice[i]->Stop();
 		}
 	}
+
+	m_isStreaming = false;
+	if (m_streamSoundThread != nullptr && m_streamSoundThread->joinable()) {
+		m_streamSoundThread->join();
+		delete m_streamSoundThread;
+		m_streamSoundThread = nullptr;
+		m_overlapped = { 0 };
+		
+	}
 }
 
 void Audio::updateAudio() {
@@ -122,9 +125,34 @@ void Audio::updateAudio() {
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePress1) {
 		m_singlePress1 = true;
-		this->playSound("../Audio/sampleLarge.wav");
+		if (this->playSound("../Audio/sampleLarge.wav") == 0) {
+			std::cout << "SINGLE-STOPPABLE!! (Press '9')\n";
+		}
 	}
 
+	// 'STREAM' Sound
+	if (Input::IsKeyPressed(SAIL_KEY_2) && m_singlePress2) {
+
+		m_singlePress2 = false;
+		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankLong.xwb", false);
+		//this->streamSound("../Audio/wavebank.xwb");
+	}
+
+	else if (!Input::IsKeyPressed(SAIL_KEY_2) && !m_singlePress2) {
+		m_singlePress2 = true;
+	}
+
+
+	if (Input::IsKeyPressed(SAIL_KEY_3) && m_singlePress3) {
+		m_singlePress3 = false;
+		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankShortFade.xwb", true);
+	}
+
+	else if (!Input::IsKeyPressed(SAIL_KEY_3) && !m_singlePress3) {
+		m_singlePress3 = true;
+	}
+
+	// 'STOPPING' sound
 	if (Input::IsKeyPressed(SAIL_KEY_9)) {
 		this->pauseSound(0);
 	}
@@ -132,267 +160,10 @@ void Audio::updateAudio() {
 	if (Input::IsKeyPressed(SAIL_KEY_0)) {
 		this->pauseAllSounds();
 	}
-
-
-
-	// 'STREAM' Sound
-	if (Input::IsKeyPressed(SAIL_KEY_2) && m_singlePress2) {
-
-		m_singlePress2 = false;
-
-		m_streamedMusic = new StreamEvent(stringToWString("../Audio/sampleLarge.wav"), true, AudioType::MUSIC);
-		this->streamFile(stringToWString("../Audio/sampleLarge.wav"), m_voiceSends, true);
-
-		if (true) {
-
-
-		}
-	}
-
-	else if (!Input::IsKeyPressed(SAIL_KEY_2) && !m_singlePress2) {
-		m_singlePress2 = true;
-	}
 }
 
 void Audio::initialize() {
 
-}
-
-void Audio::loadFile(const std::wstring& filename, std::vector<BYTE>& audioData, WAVEFORMATEX** waveFormatEx, unsigned int& waveLength) {
-	// handle errors
-	HRESULT hr = S_OK;
-
-	// stream index
-	DWORD streamIndex = (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM;
-
-	// create the source reader
-	Microsoft::WRL::ComPtr<IMFSourceReader> sourceReader;
-	hr = MFCreateSourceReaderFromURL(filename.c_str(), m_sourceReaderConfiguration.Get(), sourceReader.GetAddressOf());
-	errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "Failed to create source reader!");
-
-	// select the first audio stream, and deselect all other streams
-	hr = sourceReader->SetStreamSelection((DWORD)MF_SOURCE_READER_ALL_STREAMS, false);
-	errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "Failed to disable streams!");
-
-	hr = sourceReader->SetStreamSelection(streamIndex, true);
-	errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "Failed to enable first audio stream!");
-
-	// query information about the media file
-	Microsoft::WRL::ComPtr<IMFMediaType> nativeMediaType;
-	hr = sourceReader->GetNativeMediaType(streamIndex, 0, nativeMediaType.GetAddressOf());
-	errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "Failed to query media!");
-
-	// make sure that this is really an audio file
-	GUID majorType{};
-	hr = nativeMediaType->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
-	errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "The requested file was not an audio file!");
-
-	// check whether the audio file is compressed or uncompressed
-	GUID subType{};
-	hr = nativeMediaType->GetGUID(MF_MT_MAJOR_TYPE, &subType);
-	if (subType == MFAudioFormat_Float || subType == MFAudioFormat_PCM)
-	{
-		// the audio file is uncompressed
-	}
-	else
-	{
-		// the audio file is compressed; we have to decompress it first
-		// to do so, we inform the SourceReader that we want uncompressed data
-		// this causes the SourceReader to look for decoders to perform our request
-		Microsoft::WRL::ComPtr<IMFMediaType> partialType = nullptr;
-		hr = MFCreateMediaType(partialType.GetAddressOf());
-		errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "Failed to create media type!");
-
-		// set the media type to "audio"
-		hr = partialType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
-		errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "Failed to set media type to audio!");
-
-		// request uncompressed data
-		hr = partialType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
-		errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "Failed to set GUID of media type to 'uncompressed'!");
-
-		hr = sourceReader->SetCurrentMediaType(streamIndex, NULL, partialType.Get());
-		errorCheck(hr, "AUDIO ERROR!", "Audio::loadFile()", "Failed to set current media type!");
-	}
-
-	// uncompress the data and load it into an XAudio2 Buffer
-	Microsoft::WRL::ComPtr<IMFMediaType> uncompressedAudioType = nullptr;
-	hr = sourceReader->GetCurrentMediaType(streamIndex, uncompressedAudioType.GetAddressOf());
-	//if (FAILED(hr))
-	//	return std::runtime_error("Critical error: Unable to retrieve the current media type!");
-
-	//hr = MFCreateWaveFormatExFromMFMediaType(uncompressedAudioType.Get(), waveFormatEx, &waveFormatLength);
-	//if (FAILED(hr))
-	//	return std::runtime_error("Critical error: Unable to create the wave format!");
-
-	// ensure the stream is selected
-	hr = sourceReader->SetStreamSelection(streamIndex, true);
-	//if (FAILED(hr))
-	//	return std::runtime_error("Critical error: Unable to select audio stream!");
-
-	// copy data into byte vector
-	Microsoft::WRL::ComPtr<IMFSample> sample = nullptr;
-	Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer = nullptr;
-	BYTE* localAudioData = NULL;
-	DWORD localAudioDataLength = 0;
-
-	while (true)
-	{
-		DWORD flags = 0;
-		hr = sourceReader->ReadSample(streamIndex, 0, nullptr, &flags, nullptr, sample.GetAddressOf());
-		//if (FAILED(hr))
-		//	return std::runtime_error("Critical error: Unable to read audio sample!");
-
-		// check whether the data is still valid
-		if (flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED)
-			break;
-
-		// check for eof
-		if (flags & MF_SOURCE_READERF_ENDOFSTREAM)
-			break;
-
-		if (sample == nullptr)
-			continue;
-
-		// convert data to contiguous buffer
-		hr = sample->ConvertToContiguousBuffer(buffer.GetAddressOf());
-		//if (FAILED(hr))
-		//	return std::runtime_error("Critical error: Unable to convert audio sample to contiguous buffer!");
-
-		// lock buffer and copy data to local memory
-		hr = buffer->Lock(&localAudioData, nullptr, &localAudioDataLength);
-		//if (FAILED(hr))
-		//	return std::runtime_error("Critical error: Unable to lock the audio buffer!");
-
-		for (size_t i = 0; i < localAudioDataLength; i++)
-			audioData.push_back(localAudioData[i]);
-
-		// unlock the buffer
-		hr = buffer->Unlock();
-		localAudioData = nullptr;
-
-		//if (FAILED(hr))
-		//	return std::runtime_error("Critical error while unlocking the audio buffer!");
-	}
-
-	// return success
-	return;
-}
-
-void Audio::streamFile(const std::wstring& filename, XAUDIO2_VOICE_SENDS& sendList, const bool loop) {
-	HRESULT hr = S_OK;
-
-	DWORD streamIndex = (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM;
-
-	// Create the asynchronous source reader
-	Microsoft::WRL::ComPtr<IMFSourceReader> sourceReader;
-	WAVEFORMATEX waveFormat;
-	createAsyncReader(filename, sourceReader.GetAddressOf(), &waveFormat, sizeof(waveFormat));
-
-	// Create the source voice
-	IXAudio2SourceVoice* sourceVoice;
-	hr = m_xAudio2->CreateSourceVoice(&sourceVoice, &waveFormat, 0, XAUDIO2_DEFAULT_FREQ_RATIO, &m_streamingVoiceCallback, &sendList, nullptr);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamFile()", "Failed to create source voice for streaming!");
-	sourceVoice->Start();
-
-	// Loop
-	loopStream(sourceReader.Get(), sourceVoice, loop);
-
-	sourceReader->Flush(streamIndex);
-	sourceVoice->DestroyVoice();
-	sourceReader = nullptr;
-
-	return;
-}
-
-void Audio::loopStream(IMFSourceReader* const sourceReader, IXAudio2SourceVoice* const sourceVoice, const bool loop) {
-
-	DWORD streamIndex = (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM;
-	DWORD currentStreamBuffer = 0;
-	HRESULT hr = S_OK;
-	size_t bufferSize[m_maxBufferCount] = { 0 };
-	std::unique_ptr<uint8_t[]> buffers[m_maxBufferCount];
-
-	while (true)
-	{
-		if (m_stopStreaming) {
-			break;
-		}
-
-		hr = sourceReader->ReadSample(streamIndex, 0, nullptr, nullptr, nullptr, nullptr);
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loopStream()", "Error reading source sample!");
-
-		WaitForSingleObject(m_sourceReaderCallback.hReadSample, INFINITE);
-
-		if (m_sourceReaderCallback.endOfStream) {
-			if (loop) {
-
-				// Restart the stream
-				m_sourceReaderCallback.Restart();
-				PROPVARIANT var = { 0 };
-				var.vt = VT_I8;
-				hr = sourceReader->SetCurrentPosition(GUID_NULL, var);
-
-				if (SUCCEEDED(hr)) {
-					continue;
-				}
-				else {
-					errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loopStream()", "Error when setting source reader's position!");
-				}
-			}
-		}
-		else {
-			break;
-		}
-
-		Microsoft::WRL::ComPtr<IMFMediaBuffer> mediaBuffer;
-		hr = m_sourceReaderCallback.sample->ConvertToContiguousBuffer(mediaBuffer.GetAddressOf());
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: loopStream()", "Error converting audio data to contiguous buffer!");
-
-		BYTE* audioData = nullptr;
-		DWORD sampleBufferLength = 0;
-
-		hr = mediaBuffer->Lock(&audioData, nullptr, &sampleBufferLength);
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loopStream()", "Error creating the lock for the media buffer!");
-
-		if (bufferSize[currentStreamBuffer] < sampleBufferLength)
-		{
-			buffers[currentStreamBuffer].reset(new uint8_t[sampleBufferLength]);
-			bufferSize[currentStreamBuffer] = sampleBufferLength;
-		}
-
-		memcpy_s(buffers[currentStreamBuffer].get(), sampleBufferLength, audioData, sampleBufferLength);
-
-		hr = mediaBuffer->Unlock();
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loopStream()", "Error unklock the media buffer!");
-
-		// Wait until 'xAudio2' source has played enough data.
-		// Only ('maxBufferCount' - 1) buffers queued
-		// making sure there is always one free buffer for 'Media Foundation' streamer.
-		XAUDIO2_VOICE_STATE state;
-
-		while (true) {
-
-			sourceVoice->GetState(&state);
-			if (state.BuffersQueued < m_maxBufferCount - 1) {
-				break;
-			}
-
-			WaitForSingleObject(m_streamingVoiceCallback.hBufferEndEvent, INFINITE);
-		}
-
-		XAUDIO2_BUFFER buf = { 0 };
-		buf.AudioBytes = sampleBufferLength;
-		buf.pAudioData = buffers[currentStreamBuffer].get();
-		sourceVoice->SubmitSourceBuffer(&buf);
-
-		currentStreamBuffer++;
-		currentStreamBuffer %= m_maxBufferCount;
-	}
-
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loopStream()", "Error looping through the media stream!");
-
-	return;
 }
 
 void Audio::initXAudio2() {
@@ -410,104 +181,198 @@ void Audio::initXAudio2() {
 	m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 }
 
-void Audio::createAsyncReader(const std::wstring& filename, IMFSourceReader** sourceReader, WAVEFORMATEX* wfx, size_t wfxSize) {
+void Audio::streamSound(const std::string& filename, bool loop) {
 
-	HRESULT hr = S_OK;
+	m_isStreaming = true;
+	WCHAR wavebank[MAX_PATH];
+	DirectX::WaveBankReader wbr;
+	StreamingVoiceContext voiceContext;
+	HRESULT hr;
+	int currentChunk = 0;
 
-	// Set source reader to 'asynchronous mode'
-	hr = m_sourceReaderConfiguration->SetUnknown(MF_SOURCE_READER_ASYNC_CALLBACK, &m_sourceReaderCallback);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to setup source reader for asynchronous reading!");
+	hr = FindMediaFileCch(wavebank, MAX_PATH, stringToWString(filename).c_str());
+	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to find the specified '.xwb' file!", 0, true);
 
-	// Create the source reader
-	hr = MFCreateSourceReaderFromURL(filename.c_str(), m_sourceReaderConfiguration.Get(), sourceReader);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to create source reader!");
+	hr = wbr.Open(wavebank);
+	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to open wavebank file!", 0, true);
 
-	// Stream index
-	DWORD streamIndex = (DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM;
-
-	// Deselect all streams
-	hr = (*sourceReader)->SetStreamSelection((DWORD)MF_SOURCE_READER_ALL_STREAMS, false);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to disable streams!");
-
-	// Select chosen stream
-	hr = (*sourceReader)->SetStreamSelection(streamIndex, true);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to select audio stream!");
-
-	// Query Information about the media file
-	Microsoft::WRL::ComPtr<IMFMediaType> nativeMediaType;
-	hr = (*sourceReader)->GetNativeMediaType(streamIndex, 0, nativeMediaType.GetAddressOf());
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Request to get media information failed!");
-
-	// Confirm that it's an audio file
-	GUID majorType{};
-	hr = nativeMediaType->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
-	if (majorType != MFMediaType_Audio) {
-		hr = E_FAIL;
-	}
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "The fetched file was not an audio file!");
-
-	GUID subType{};
-	hr = nativeMediaType->GetGUID(MF_MT_MAJOR_TYPE, &subType);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "'GetGUID' fetch-method failed!");
-
-	// UNCOMPRESSED
-	if (subType == MFAudioFormat_Float || subType == MFAudioFormat_PCM) {
-		//  ----------
-		/*	DO NOTHING	*/
-		//  ----------  //
-	}
-	else {
-
-		// COMPRESSED; must uncompress first
-
-		Microsoft::WRL::ComPtr<IMFMediaType> partialType = nullptr;
-		hr = MFCreateMediaType(partialType.GetAddressOf());
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to create media type!");
-
-		// Set the media type to 'audio'
-		hr = partialType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to set media type to audio!");
-
-		// Request uncompressed data
-		hr = partialType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to set GUID of media type!");
-
-		hr = (*sourceReader)->SetCurrentMediaType(streamIndex, NULL, partialType.Get());
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to set current media type!");
+	if (!wbr.IsStreamingBank()) {
+		errorCheck(E_FAIL, "AUDIO WARNING!", "FUNCTION: Audio::streamSound()", "Tried to stream a non-streamable '.xwb' file! Contact Oliver if you've gotten this message!", 1, false);
+		return;
 	}
 
-	// Uncompress (Extract?) the data
-	Microsoft::WRL::ComPtr<IMFMediaType> uncompressedAudioType = nullptr;
-	hr = (*sourceReader)->GetCurrentMediaType(streamIndex, uncompressedAudioType.GetAddressOf());
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to fetch current media type!");
+	while (m_isStreaming) {
 
-	UINT32 waveFormatSize = 0;
-	WAVEFORMATEX* waveFormat = nullptr;
-	hr = MFCreateWaveFormatExFromMFMediaType(uncompressedAudioType.Get(), &waveFormat, &waveFormatSize);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to create 'wave' format!");
+		for (DWORD i = 0; i < wbr.Count(); i++) {
 
-	// Confirm that the stream is currently selected
-	hr = (*sourceReader)->SetStreamSelection(streamIndex, true);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::createAsyncReader", "Failed to select audio stream!");
+			std::cout << i << "\n";
+			// Get info we need to play this wave (need space fo PCM, ADPCM, and xWMA formats)
+			char formatBuff[64];
+			DirectX::WaveBankReader::Metadata metadata;
+			WAVEFORMATEX* wfx = reinterpret_cast<WAVEFORMATEX*>(&formatBuff);
 
-	// Copy Data
-	memcpy_s(wfx, wfxSize, waveFormat, waveFormatSize);
-	CoTaskMemFree(waveFormat);
+			hr = wbr.GetFormat(i, wfx, 64);
+			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to get wave format for '.xwb' file!", 0, true);
 
-	// SUCCESS!
+			hr = wbr.GetMetadata(i, metadata);
+			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to get meta data for '.xwb' file!", 0, true);
+
+			hr = m_xAudio2->CreateSourceVoice(&m_streamVoice, wfx, 0, 1.0f, &voiceContext);
+			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to create source voice!", 0, true);
+			m_streamVoice->Start();
+
+			// Create the 'overlapped' structure as well as buffers to handle async I/O
+		#if (_WIN32_WINNT >= _WIN32_WINNT_VISTA)
+			m_overlapped.hEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
+		#else
+			m_overlapped.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+		#endif
+
+			if ((STREAMING_BUFFER_SIZE % wfx->nBlockAlign) != 0)
+			{
+				//
+				// non-PCM data will fail here. ADPCM requires a more complicated streaming mechanism to deal with submission in audio frames that do
+				// not necessarily align to the 2K async boundary.
+				//
+				wprintf(L"\nStreaming buffer size (%u) is not aligned with sample block requirements (%u)\n", STREAMING_BUFFER_SIZE, wfx->nBlockAlign);
+				m_isStreaming = false;
+				break;
+			}
+
+			std::unique_ptr<uint8_t[]> buffers[MAX_BUFFER_COUNT];
+			for (size_t j = 0; j < MAX_BUFFER_COUNT; ++j)
+			{
+				buffers[j].reset(new uint8_t[STREAMING_BUFFER_SIZE]);
+			}
+			DWORD currentDiskReadBuffer = 0;
+			DWORD currentPosition = 0;
+
+			HANDLE async = wbr.GetAsyncHandle();
+
+			while ((currentPosition < metadata.lengthBytes) && m_isStreaming)
+			{
+				if (GetAsyncKeyState(VK_ESCAPE))
+				{
+					m_isStreaming = false;
+					while (GetAsyncKeyState(VK_ESCAPE)) {
+						Sleep(10);
+					}
+					break;
+				}
+
+				DWORD cbValid = std::min(STREAMING_BUFFER_SIZE, static_cast<int>(metadata.lengthBytes - static_cast<UINT32>(currentPosition)));
+				m_overlapped.Offset = metadata.offsetBytes + currentPosition;
+
+				bool wait = false;
+				if (!ReadFile(async, buffers[currentDiskReadBuffer].get(), STREAMING_BUFFER_SIZE, nullptr, &m_overlapped))
+				{
+					std::cout << currentChunk << "\n";
+					currentChunk++;
+
+					DWORD error = GetLastError();
+					if (error != ERROR_IO_PENDING)
+					{
+						wprintf(L"\nCouldn't start async read: error %#X\n", HRESULT_FROM_WIN32(error));
+						m_isStreaming = false;
+						break;
+					}
+					wait = true;
+				}
+
+				currentPosition += cbValid;
+
+				//
+				// At this point the read is progressing in the background and we are free to do
+				// other processing while we wait for it to finish. For the purposes of this sample,
+				// however, we'll just go to sleep until the read is done.
+				//
+				if (wait) {
+					WaitForSingleObject(m_overlapped.hEvent, INFINITE);
+				}
+
+				DWORD cb;
+#if (_WIN32_WINNT >= 0x0602 /*_WIN32_WINNT_WIN8*/)
+				BOOL result = GetOverlappedResultEx(async, &m_overlapped, &cb, 0, FALSE);
+#else
+				BOOL result = GetOverlappedResult(async, &ovlCurrentRequest, &cb, FALSE);
+#endif
+
+				if (!result)
+				{
+					wprintf(L"\nFailed waiting for async read: error %#X\n", HRESULT_FROM_WIN32(GetLastError()));
+					m_isStreaming = false;
+					break;
+				}
+
+				//
+				// Now that the event has been signaled, we know we have audio available. The next
+				// question is whether our XAudio2 source voice has played enough data for us to give
+				// it another buffer full of audio. We'd like to keep no more than MAX_BUFFER_COUNT - 1
+				// buffers on the queue, so that one buffer is always free for disk I/O.
+				//
+				XAUDIO2_VOICE_STATE state;
+				for (;;)
+				{
+					m_streamVoice->GetState(&state);
+					if (state.BuffersQueued < MAX_BUFFER_COUNT - 1) {
+						break;
+					}
+					WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
+				}
+
+				//
+				// At this point we have a buffer full of audio and enough room to submit it, so
+				// let's submit it and get another read request going.
+				//
+				XAUDIO2_BUFFER buf = { 0 };
+				buf.AudioBytes = cbValid;
+				buf.pAudioData = buffers[currentDiskReadBuffer].get();
+				if (currentPosition >= metadata.lengthBytes) {
+					buf.Flags = XAUDIO2_END_OF_STREAM;
+				}
+
+				m_streamVoice->SubmitSourceBuffer(&buf);
+
+				currentDiskReadBuffer++;
+				currentDiskReadBuffer %= MAX_BUFFER_COUNT;
+			}
+		}
+
+		if (!loop) {
+			m_isStreaming = false;
+		}
+
+		if (!m_isStreaming)
+		{
+			wprintf(L"done streaming..");
+
+			XAUDIO2_VOICE_STATE state;
+			for (;;)
+			{
+				m_streamVoice->GetState(&state);
+				if (!state.BuffersQueued)
+					break;
+
+				wprintf(L".");
+				WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
+			}
+		}
+
+		currentChunk = 0;
+	}
+	//
+	// Clean up
+	//
+	m_streamVoice->Stop(0);
+	m_streamVoice->DestroyVoice();
+	m_streamVoice = nullptr;
+
+	CloseHandle(m_overlapped.hEvent);
+
+	wprintf(L"stopped\n");
+
 	return;
 }
-
-void Audio::endStream() {
-
-	m_stopStreaming = true;
-
-	if (m_streamingThread->joinable()) {
-		m_streamingThread->join();
-	}
-}
-
-
 
 /////////////////////////////////////
 // BACK-UP FROM THE FIRST ATTEMPT //
@@ -536,3 +401,81 @@ int currentDiskReadBuffer = 0;
 		0,
 		nullptr);
 */
+
+//--------------------------------------------------------------------------------------
+// Helper function to try to find the location of a media file
+//--------------------------------------------------------------------------------------
+_Use_decl_annotations_
+HRESULT Audio::FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename)
+{
+	bool bFound = false;
+
+	if (!strFilename || strFilename[0] == 0 || !strDestPath || cchDest < 10)
+		return E_INVALIDARG;
+
+	// Get the exe name, and exe path
+	WCHAR strExePath[MAX_PATH] = { 0 };
+	WCHAR strExeName[MAX_PATH] = { 0 };
+	WCHAR* strLastSlash = nullptr;
+	GetModuleFileName(nullptr, strExePath, MAX_PATH);
+	strExePath[MAX_PATH - 1] = 0;
+	strLastSlash = wcsrchr(strExePath, TEXT('\\'));
+	if (strLastSlash)
+	{
+		wcscpy_s(strExeName, MAX_PATH, &strLastSlash[1]);
+
+		// Chop the exe name from the exe path
+		*strLastSlash = 0;
+
+		// Chop the .exe from the exe name
+		strLastSlash = wcsrchr(strExeName, TEXT('.'));
+		if (strLastSlash)
+			* strLastSlash = 0;
+	}
+
+	wcscpy_s(strDestPath, cchDest, strFilename);
+	if (GetFileAttributes(strDestPath) != 0xFFFFFFFF)
+		return S_OK;
+
+	// Search all parent directories starting at .\ and using strFilename as the leaf name
+	WCHAR strLeafName[MAX_PATH] = { 0 };
+	wcscpy_s(strLeafName, MAX_PATH, strFilename);
+
+	WCHAR strFullPath[MAX_PATH] = { 0 };
+	WCHAR strFullFileName[MAX_PATH] = { 0 };
+	WCHAR strSearch[MAX_PATH] = { 0 };
+	WCHAR* strFilePart = nullptr;
+
+	GetFullPathName(L".", MAX_PATH, strFullPath, &strFilePart);
+	if (!strFilePart)
+		return E_FAIL;
+
+	while (strFilePart && *strFilePart != '\0')
+	{
+		swprintf_s(strFullFileName, MAX_PATH, L"%s\\%s", strFullPath, strLeafName);
+		if (GetFileAttributes(strFullFileName) != 0xFFFFFFFF)
+		{
+			wcscpy_s(strDestPath, cchDest, strFullFileName);
+			bFound = true;
+			break;
+		}
+
+		swprintf_s(strFullFileName, MAX_PATH, L"%s\\%s\\%s", strFullPath, strExeName, strLeafName);
+		if (GetFileAttributes(strFullFileName) != 0xFFFFFFFF)
+		{
+			wcscpy_s(strDestPath, cchDest, strFullFileName);
+			bFound = true;
+			break;
+		}
+
+		swprintf_s(strSearch, MAX_PATH, L"%s\\..", strFullPath);
+		GetFullPathName(strSearch, MAX_PATH, strFullPath, &strFilePart);
+	}
+	if (bFound)
+		return S_OK;
+
+	// On failure, return the file as the path but also return an error code
+	wcscpy_s(strDestPath, cchDest, strFilename);
+
+	return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
+}

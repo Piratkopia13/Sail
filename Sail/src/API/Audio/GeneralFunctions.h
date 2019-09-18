@@ -1,9 +1,11 @@
 #ifndef GENERAL_FUNCTIONS_H
 #define GENERAL_FUNCTIONS_H
 
+//#define min(a, b)  (((a) < (b)) ? (a) : (b))
+
 #define fourccRIFF 'FFIR'
 #define fourccDATA 'atad'
-#define fourccFMT ' tmf'
+#define fourccFMT  ' tmf'
 #define fourccWAVE 'EVAW'
 #define fourccXWMA 'AMWX'
 #define fourccDPDS 'sdpd'
@@ -92,8 +94,10 @@ static HRESULT readChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD
 
 static void errorCheck(HRESULT hr, std::string titleWindow, std::string titleMessage, std::string message, int errorType = 0, bool exitIfFailed = true) {
 
-	LPCWSTR convertedMessage = stringToWString((titleWindow + "\n\nMESSAGE: " + titleMessage)).c_str();
-	LPCWSTR convertedTitle = stringToWString(titleWindow).c_str();
+	wchar_t convertedMessage[MAX_PATH];
+	wchar_t convertedTitle[MAX_PATH];
+	wsprintfW(convertedMessage, static_cast<LPCWSTR>(stringToWString(titleMessage + "\n\nMESSAGE: " + message).c_str()));
+	wsprintfW(convertedTitle, static_cast<LPCWSTR>(stringToWString(titleWindow).c_str()));
 
 	long errorCode = 0;
 	
@@ -116,7 +120,7 @@ static void errorCheck(HRESULT hr, std::string titleWindow, std::string titleMes
 
 		UNREFERENCED_PARAMETER(e);
 		wchar_t errorMsgBuffer[256];
-		wsprintfW(static_cast<LPWSTR>(errorMsgBuffer), convertedMessage);
+		wsprintfW(errorMsgBuffer, static_cast<LPCWSTR>(convertedMessage));
 		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(convertedTitle), errorType);
 		if (exitIfFailed) {
 			std::exit(0);
