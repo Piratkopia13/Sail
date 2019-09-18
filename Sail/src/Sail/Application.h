@@ -104,8 +104,7 @@ private:
 	Timer m_timer;
 	UINT m_fps;
 
-	static std::mutex s_updateLock;
-
+	static std::atomic_uint s_updateRunning;
 
 	// STATIC SYCHRONIZATION STUFF USED IN SCENE
 	static constexpr int prevInd(int ind) {
