@@ -82,6 +82,13 @@ Entity::SPtr Scene::getEntityByName(std::string name) {
 const std::vector<Entity::SPtr>& Scene::getEntities()const {
 	return m_entities;
 }
+void Scene::draw(void)
+{
+	m_renderer->begin(nullptr);
+	m_renderer->end();
+	m_renderer->present();
+}
+
 bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
