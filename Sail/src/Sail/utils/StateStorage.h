@@ -15,7 +15,7 @@ public:
 	~StateStorage() { }
 
 	void setMenuToLobbyData(MenuToLobbyData data) { menuLobbyData = data; }
-	MenuToLobbyData* getMenuToLobbyData() { return &menuLobbyData; }
+	const MenuToLobbyData* getMenuToLobbyData() { return &menuLobbyData; }
 
 private:
 	MenuToLobbyData menuLobbyData;

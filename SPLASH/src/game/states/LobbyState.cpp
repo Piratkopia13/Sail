@@ -27,7 +27,7 @@ LobbyState::LobbyState(StateStack& stack)
 	m_messageCount = 0;
 
 	// Set name according to data from menustate
-	m_me.name = m_app->getStateStorage().getMenuToLobbyData().name;
+	m_me.name = m_app->getStateStorage().getMenuToLobbyData()->name;
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
