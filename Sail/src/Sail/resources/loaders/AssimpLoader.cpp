@@ -11,7 +11,6 @@ AssimpLoader::~AssimpLoader() {
 }
 
 Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
-	Model* model = new Model();
 
 	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 	if ( errorCheck(scene) ) {
@@ -36,6 +35,7 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 
 	processNode(scene, scene->mRootNode, meshData);
 	std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, shader));
+	Model* model = new Model();
 	model->addMesh(std::move(mesh));
 
 	clearData();
