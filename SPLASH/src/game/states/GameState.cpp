@@ -49,6 +49,20 @@ GameState::GameState(StateStack& stack)
 	});
 #endif
 	
+	// Get the Application instance
+	m_app = Application::getInstance();
+
+	//----Octree creation----
+	//Wireframe shader
+	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
+
+	//Wireframe bounding box model
+	m_boundingBoxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), wireframeShader);
+	m_boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+	//Create octree
+	m_octree = SAIL_NEW Octree(&m_scene, m_boundingBoxModel.get());
+	//-----------------------
 
 	/*
 		Create a PhysicSystem
@@ -57,6 +71,7 @@ GameState::GameState(StateStack& stack)
 		assuming each system is included in ECS.cpp instead of here
 	*/
 	ECS::Instance()->createSystem<PhysicSystem>();
+	ECS::Instance()->getSystem<PhysicSystem>()->provideOctree(m_octree);
 
 	//Create system for updating bounding box
 	ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
@@ -68,8 +83,6 @@ GameState::GameState(StateStack& stack)
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
 
 
-	// Get the Application instance
-	m_app = Application::getInstance();
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
 	// Textures needs to be loaded before they can be used
@@ -135,9 +148,6 @@ GameState::GameState(StateStack& stack)
 
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
-	//Wireframe shader
-	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
-
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
@@ -150,11 +160,6 @@ GameState::GameState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-
-	//Wireframe bounding box model
-	m_boundingBoxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), wireframeShader);
-	m_boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-
 	
 	Model* arenaModel= &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
 	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
@@ -183,11 +188,8 @@ GameState::GameState(StateStack& stack)
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(m_playerController.getEntity());
 
-	//Create octree
-	m_octree = SAIL_NEW Octree(&m_scene, m_boundingBoxModel.get());
-
 	// Temporary projectile model for the player's gun
-	m_playerController.setProjectileModel(m_cubeModel.get());
+	m_playerController.setProjectileModels(m_cubeModel.get(), m_boundingBoxModel.get());
 
 	/*
 		Creation of entitites
@@ -642,10 +644,6 @@ bool GameState::update(float dt) {
 	m_lights.updateBufferData();
 	m_octree->update();
 
-	std::vector<Octree::CollisionInfo> collisions;
-	m_octree->getCollisions(m_playerController.getEntity(), &collisions);
-	m_playerController.giveCollisionData(&collisions);
-
 	return true;
 }
 
@@ -734,7 +732,7 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	auto e = ECS::Instance()->createEntity("new cube");
 	e->addComponent<ModelComponent>(m_cubeModel.get());
 	e->addComponent<TransformComponent>(position);
-	//e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_scene.addEntity(e);
 	m_octree->addEntity(e);
 	return std::string("Added Cube at (" +

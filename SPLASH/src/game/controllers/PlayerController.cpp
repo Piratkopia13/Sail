@@ -98,8 +98,9 @@ void PlayerController::update(float dt) {
 			auto e = ECS::Instance()->createEntity("new cube");
 			e->addComponent<ModelComponent>(m_projectileModel);
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.1f));
+			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.3f));
 			e->addComponent<PhysicsComponent>();
+			e->addComponent<BoundingBoxComponent>(m_projectileWireframeModel);
 			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
 			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -10.f, 0.f);
 
@@ -159,36 +160,6 @@ void PlayerController::update(float dt) {
 		// Calculate total movement
 		glm::vec3 totalMovement = glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement) * speedModifier;
 
-		if (m_collisionInfo.size() > 0) {
-			//Get the combined normals
-			glm::vec3 sumVec(0.0f);
-			for (unsigned int i = 0; i < m_collisionInfo.size(); i++) {
-				sumVec += m_collisionInfo[i].normal;
-			}
-
-			for (unsigned int i = 0; i < m_collisionInfo.size(); i++) {
-				//Stop movement towards triangle
-				float projectionSize = glm::dot(totalMovement, -m_collisionInfo[i].normal);
-
-				if (projectionSize > 0.0f) { //Is pushing against wall
-					totalMovement += m_collisionInfo[i].normal * projectionSize; //Limit movement towards wall
-				}
-
-				//Tight angle corner special case
-				float dotProduct = glm::dot(m_collisionInfo[i].normal, glm::normalize(sumVec));
-				if (dotProduct < 0.98f && dotProduct > 0.0f) { //Colliding in a tight angle corner
-					glm::vec3 normalToNormal = sumVec - glm::dot(sumVec, m_collisionInfo[i].normal) * m_collisionInfo[i].normal;
-					normalToNormal = glm::normalize(normalToNormal);
-
-					//Stop movement towards corner
-					projectionSize = glm::dot(totalMovement, -normalToNormal);
-
-					if (projectionSize > 0.0f) {
-						totalMovement += normalToNormal * projectionSize;
-					}
-				}
-			}
-		}
 		physicsComp->velocity = totalMovement;
 	}
 	else {
@@ -215,10 +186,7 @@ std::shared_ptr<Entity> PlayerController::getEntity() {
 	return m_player;
 }
 
-void PlayerController::setProjectileModel(Model* model) {
+void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) {
 	m_projectileModel = model;
-}
-
-void PlayerController::giveCollisionData(const std::vector<Octree::CollisionInfo>* collisionInfo) {
-	m_collisionInfo = *collisionInfo;
+	m_projectileWireframeModel = wireframeModel;
 }

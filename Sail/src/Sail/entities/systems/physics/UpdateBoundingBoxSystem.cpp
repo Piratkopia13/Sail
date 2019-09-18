@@ -8,7 +8,7 @@
 #include "../../../graphics/geometry/Model.h"
 
 UpdateBoundingBoxSystem::UpdateBoundingBoxSystem() : BaseComponentSystem() {
-	m_requiredComponentTypes.push_back(BoundingBoxComponent::ID);
+	requiredComponentTypes.push_back(BoundingBoxComponent::ID);
 }
 
 UpdateBoundingBoxSystem::~UpdateBoundingBoxSystem() {
@@ -36,7 +36,7 @@ void UpdateBoundingBoxSystem::checkDistances(glm::vec3& minVec, glm::vec3& maxVe
 }
 
 void UpdateBoundingBoxSystem::update(float dt) {
-	for (auto& e : m_entities) {
+	for (auto& e : entities) {
 		BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 
 		TransformComponent* transform = e->getComponent<TransformComponent>();

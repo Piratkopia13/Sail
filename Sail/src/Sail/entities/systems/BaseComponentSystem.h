@@ -1,5 +1,6 @@
 #pragma once
-class Entity;
+
+#include "..//Entity.h"
 
 class BaseComponentSystem
 {
@@ -12,12 +13,12 @@ public:
 	/*
 		Adds an entity to the system
 	*/
-	void addEntity(Entity* entity);
+	virtual void addEntity(Entity::SPtr entity);
 
 	/*
 		Removes an entity from the system
 	*/
-	void removeEntity(Entity* entity);
+	virtual void removeEntity(Entity::SPtr entity);
 
 	/*
 		Returns the indices of all the component types required to be within this system
@@ -25,6 +26,6 @@ public:
 	const std::vector<int>& getRequiredComponentTypes() const;
 
 protected:
-	std::vector<Entity*> m_entities;
-	std::vector<int> m_requiredComponentTypes;
+	std::vector<Entity::SPtr> entities;
+	std::vector<int> requiredComponentTypes;
 };

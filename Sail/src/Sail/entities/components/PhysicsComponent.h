@@ -1,5 +1,6 @@
 #pragma once
 #include "Component.h"
+#include "..//Physics/Physics.h"
 #include <glm/vec3.hpp>
 
 class PhysicsComponent : public Component<PhysicsComponent> {
@@ -10,6 +11,8 @@ public:
 	glm::vec3 velocity;
 	glm::vec3 rotation;		// Should be quaternions instead of Euler angles in the future
 	glm::vec3 acceleration;
+
+	std::vector<Octree::CollisionInfo> collisions; //Contains the info for current collisions
 	//glm::vec3 rotationAxis;
 	//float angularVelocity;
 };

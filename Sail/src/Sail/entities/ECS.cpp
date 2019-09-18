@@ -18,6 +18,8 @@ unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
 }
 
+
+
 Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));
 	return m_entities.back();
@@ -35,7 +37,7 @@ void ECS::destroyEntity(const Entity::SPtr entityToRemove) {
 	}
 }
 
-void ECS::addEntityToSystems(Entity* entity) {
+void ECS::addEntityToSystems(Entity::SPtr entity) {
 	SystemMap::iterator it = m_systems.begin();
 	
 	// Check which systems this entity can be placed in
@@ -58,7 +60,7 @@ void ECS::addEntityToSystems(Entity* entity) {
 	}
 }
 
-void ECS::removeEntityFromSystems(Entity* entity) {
+void ECS::removeEntityFromSystems(Entity::SPtr entity) {
 	SystemMap::iterator it = m_systems.begin();
 
 	for (; it != m_systems.end(); ++it) {
