@@ -109,7 +109,6 @@ bool NetworkWrapper::isHost() {
 }
 
 void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
-
 	// These will be assigned in the switch case.
 	unsigned int userID;
 	std::string message;
@@ -142,9 +141,8 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 			sendMsgAllClients(message);
 
 			// Print to screen
-			message = message + std::string("\n");
-			message.erase(0, 1);
-			printf(message.c_str());
+			//message = message§1);
+			printf(message.c_str()1);
 		}
 		else
 		{
@@ -154,8 +152,8 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 			printf(message.c_str());
 		}
 
-		remnants_m = nEvent.data->msg;
-		id_m = parseID(remnants);
+//		remnants_m = nEvent.data->msg;
+//		id_m = parseID(remnants);
 
 		Application::getInstance()->dispatchEvent(NetworkChatEvent(Message{
 			to_string(nEvent.clientID),
