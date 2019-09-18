@@ -4,35 +4,12 @@
 #include "camera/Camera.h"
 #include "../events/Events.h"
 //#include "postprocessing/PostProcessPipeline.h"
+#include "Sail/graphics/geometry/PerUpdateRenderObject.h"
 
-
-#include "Sail/graphics/geometry/transform/RenderTransform.h"
-
-//TODO: Move elsewhere
 class LightSetup;
 class Renderer;
 class Model;
-class RenderTransform;
-
-//struct PerFrameRenderObject {
-//	Model* m_model = nullptr;
-//	RenderTransform* m_transform = nullptr;
-//
-//	PerFrameRenderObject(Model* model, RenderTransform* transform)
-//		: m_model(model), m_transform(transform) {
-//
-//	
-//	}
-//
-//	virtual ~PerFrameRenderObject() {
-//		if (m_transform) {
-//			delete m_transform;
-//			m_transform = nullptr;
-////			m_transform = nullptr;
-//		}
-//	}
-//};
-
+class PerUpdateRenderObject;
 
 // TODO: make this class virtual and have the actual scene in the demo/game project
 class Scene : public IEventListener {
@@ -43,6 +20,11 @@ public:
 	// Adds an entity to later be drawn
 	// This takes shared ownership of the entity
 	void addEntity(Entity::SPtr entity);
+
+	// Add entity which won't change during runtime and therefore doesn't
+	// need to be copied into a frame packet every tick.
+	void addStaticEntity(Entity::SPtr staticEntity);
+
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera, const float alpha = 1.0f);
 
@@ -57,29 +39,27 @@ private:
 	bool onResize(WindowResizeEvent& event);
 
 private:
-	// Entities are split into game objects and per-frame render objects to prevent
+	// Static object entities that don't need to be double buffered since they're not
+	// modified/added/removed in update. They're just used in render.
+	// Should consist of at least a ModelComponent and a StaticMatrixComponent.
+	std::vector<Entity::SPtr> m_staticObjectEntities;
+
+
+	// Dynamic objects are split into game objects and render objects to prevent
 	// data races when rendering objects that have just been modified/deleted from
 	// the scene.
 
 	// Game objects are used for everything but the rendering pass
 	//
 	// Should include Model, Transform, Physics, Sound, etc.
-	std::vector<Entity::SPtr> m_GameObjectEntities;
+	std::vector<Entity::SPtr> m_gameObjectEntities;
 
 
-
-
-	// Render objects are essentially read only and have only the minimum required data
+	// Render objects are essentially read-only and have only the minimum required data
 	// needed to render the corresponding game object. A list of render objects is created
 	// at the end of each CPU update from the m_GameObjectEntities.
-	//
-	// should be a ring buffer or something similar
-	// should only include Model, transform, and whatever else might be needed to
-	// render the object.
-	//std::vector<Entity::SPtr> m_perFrameRenderObjects[4];
-	std::vector<RenderTransform> m_perFrameRenderObjects[SNAPSHOT_BUFFER_SIZE];
+	std::vector<PerUpdateRenderObject> m_dynamicRenderObjects[SNAPSHOT_BUFFER_SIZE];
 	std::mutex m_perFrameLocks[SNAPSHOT_BUFFER_SIZE];
-
 
 
 	std::unique_ptr<Renderer> m_renderer;

@@ -48,7 +48,7 @@
 
 
 // TODO: move to somewhere else
-const unsigned int SNAPSHOT_BUFFER_SIZE = 10;
+const unsigned int SNAPSHOT_BUFFER_SIZE = 4;
 
 // DirectX Toolkit includes
 //#include <d3d12.h>

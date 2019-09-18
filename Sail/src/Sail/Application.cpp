@@ -8,7 +8,6 @@ Application* Application::s_instance = nullptr;
 
 
 // STATIC FUNCTIONS
-
 std::atomic_uint Application::s_frameIndex = 0;
 UINT Application::s_updateIndex = 0;
 UINT Application::s_renderIndex = 0;
@@ -31,6 +30,8 @@ void Application::UpdateCurrentRenderIndex() {
 UINT Application::GetUpdateIndex() { return s_updateIndex; }
 UINT Application::GetRenderIndex() { return s_renderIndex; }
 //#endif
+
+// NON-STATIC FUNCTIONS
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
 
@@ -166,7 +167,6 @@ int Application::startGameLoop() {
 
 			// Run update(s) in a separate thread
 			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
-				//UINT updatesRemaining = CPU_updatesThisLoop;
 				s_updateLock.lock(); // TODO: Do without mutex
 				while (s_queuedUpdates > 0) {
 					s_queuedUpdates--;
@@ -184,9 +184,7 @@ int Application::startGameLoop() {
 			Input::GetInstance()->endFrame();
 		}
 	}
-
 	return (int)msg.wParam;
-
 }
 
 std::string Application::getPlatformName() {

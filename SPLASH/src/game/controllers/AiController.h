@@ -1,7 +1,7 @@
 #pragma once
 
 class Entity;
-class GameTransformComponent;
+class TransformComponent;
 class PhysicsComponent;
 
 class AiController {
@@ -26,7 +26,7 @@ private:
 
 	std::shared_ptr<Entity> m_controlledEntity;
 	PhysicsComponent* m_physComp;
-	GameTransformComponent* m_transComp;
+	TransformComponent* m_transComp;
 
 	Entity* m_entityTarget;
 

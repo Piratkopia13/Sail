@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Component.h"
-//#include "TransformComponent.h"
-#include "GameTransformComponent.h"
-#include "RenderTransformComponent.h"
+#include "TransformComponent.h"
+#include "StaticMatrixComponent.h"
 #include "ModelComponent.h"
 #include "TextComponent.h"
 #include "PhysicsComponent.h"

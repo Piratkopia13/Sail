@@ -7,6 +7,7 @@
 #include "Sail/Application.h"
 #include "Sail/api/Renderer.h"
 #include "Sail/entities/ECS.h"
+#include "Sail/graphics/geometry/PerUpdateRenderObject.h"
 
 Scene::Scene() 
 	//: m_postProcessPipeline(m_renderer)
@@ -33,7 +34,11 @@ Scene::~Scene() {
 }
 
 void Scene::addEntity(Entity::SPtr entity) {
-	m_GameObjectEntities.push_back(entity);
+	m_gameObjectEntities.push_back(entity);
+}
+
+void Scene::addStaticEntity(Entity::SPtr staticEntity) {
+	m_staticObjectEntities.push_back(staticEntity);
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
@@ -41,70 +46,57 @@ void Scene::setLightSetup(LightSetup* lights) {
 }
 
 
-// TODO: REMOVE, won't be needed with separate render objects
 // NEEDS TO RUN BEFORE EACH UPDATE
 // Copies the game state from the previous tick 
 void Scene::prepareUpdate() {
-	for (auto e : m_GameObjectEntities) {
-		GameTransformComponent* transform = e->getComponent<GameTransformComponent>();
+	for (auto e : m_gameObjectEntities) {
+		TransformComponent* transform = e->getComponent<TransformComponent>();
 		if (transform) { transform->prepareUpdate(); }
 	}
 }
 
-
 // creates a vector of render objects corresponding to the current state of the game objects
 // Should be done at the end of each update tick.
-// TODO: move the update indexes out of transform
 void Scene::prepareRenderObjects() {
-	/*for (auto e : m_perFrameRenderObjects[0]) {
-		ECS::Instance()->destroyEntity(e);
-	}*/
 	const UINT ind = Application::GetUpdateIndex();
-	const UINT t = Application::GetRenderIndex();
 	m_perFrameLocks[ind].lock();
-	m_perFrameRenderObjects[ind].clear();
+	m_dynamicRenderObjects[ind].clear();
 
-	size_t test = m_perFrameRenderObjects[ind].size();
+	size_t test = m_dynamicRenderObjects[ind].size();
 
-	for (auto gameObject : m_GameObjectEntities) {
-		GameTransformComponent* transform = gameObject->getComponent<GameTransformComponent>();
+	// Push dynamic objects' transform snapshots and model pointers to a transient vector
+	for (auto gameObject : m_gameObjectEntities) {
+		TransformComponent* transform = gameObject->getComponent<TransformComponent>();
 		ModelComponent* model = gameObject->getComponent<ModelComponent>();
 		if (transform && model) {
-			//auto e = ECS::Instance()->createEntity("RenderEntity"); // TODO? unique name
-			////Model* model = modelComponent->getModel();
-			//e->addComponent<ModelComponent>(model->getModel());
-			//e->addComponent<RenderTransformComponent>(transform);
-			//
-
-			//RenderTransform* rf = SAIL_NEW RenderTransform(transform);
-
-			//PerFrameRenderObject pfo = PerFrameRenderObject(model->getModel(), rf);
-
-			// TODO: allocate RenderTransforms sequentially in memory
-			m_perFrameRenderObjects[ind].push_back(RenderTransform(transform, model));
+			m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(transform, model));
 		}
 	}
 	m_perFrameLocks[ind].unlock();
 
 }
 
-
-// TODO: loop through renderEntities
 void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
 
+	// Render static objects (essentially the map)
+	// Matrices aren't changed between frames
+	for (Entity::SPtr entity : m_staticObjectEntities) {
+		ModelComponent* model = entity->getComponent<ModelComponent>();
+		StaticMatrixComponent* matrix = entity->getComponent<StaticMatrixComponent>();
+
+		if (model && matrix) {
+			m_renderer->submit(model->getModel(), matrix->getMatrix());
+		}
+	}
+
+	// Render dynamic objects (objects that might move or be added/removed)
+	// Matrices are created from interpolated data each frame
+
 	const UINT ind = Application::GetRenderIndex();
-
 	m_perFrameLocks[ind].lock();
-
-
-	for (RenderTransform& obj : m_perFrameRenderObjects[ind]) {
-		//if (obj.m_model && obj.m_transform) {
-			//RenderTransformComponent* transform = entity->getComponent<RenderTransformComponent>();
-			//if (!obj.m_transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
-
-			m_renderer->submit(obj.getModel(), obj.getMatrix(alpha));
-		//}
+	for (PerUpdateRenderObject& obj : m_dynamicRenderObjects[ind]) {
+		m_renderer->submit(obj.getModel(), obj.getMatrix(alpha));
 	}
 	m_perFrameLocks[ind].unlock();
 
@@ -116,12 +108,12 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
-	//for (Entity::SPtr& entity : m_GameObjectEntities) {
-	//	TextComponent* text = entity->getComponent<TextComponent>();
-	//	if (text) {
-	//		text->draw();
-	//	}
-	//}
+	for (Entity::SPtr& entity : m_gameObjectEntities) {
+		TextComponent* text = entity->getComponent<TextComponent>();
+		if (text) {
+			text->draw();
+		}
+	}
 }
 
 bool Scene::onEvent(Event& event) {

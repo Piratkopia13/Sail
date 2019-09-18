@@ -1,25 +1,20 @@
 #include "pch.h"
-#include "RenderTransform.h"
-#include "GameTransform.h"
+#include "PerUpdateRenderObject.h"
 #include "Sail/graphics/geometry/Model.h"
-#include "Sail/entities/components/GameTransformComponent.h"
+#include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/ModelComponent.h"
 
-RenderTransform::RenderTransform() {
+PerUpdateRenderObject::PerUpdateRenderObject() {
 }
 
-RenderTransform::RenderTransform(GameTransformComponent* gameObject, ModelComponent* model) : m_model(model->getModel()) {
+PerUpdateRenderObject::PerUpdateRenderObject(TransformComponent* gameObject, ModelComponent* model) : m_model(model->getModel()) {
 	createSnapShotFromGameObject(gameObject);
 }
 
-// TODO: delete children etc.
-RenderTransform::~RenderTransform() {
-	//if (m_parent) {
-	//	delete m_parent;
-	//}
-}
+PerUpdateRenderObject::~PerUpdateRenderObject() 
+{}
 
-void RenderTransform::setParent(RenderTransform* parent) {
+void PerUpdateRenderObject::setParent(PerUpdateRenderObject* parent) {
 	if (m_parent) {
 		m_parent->removeChild(this);
 	}
@@ -37,7 +32,7 @@ void RenderTransform::setParent(RenderTransform* parent) {
 	//}
 }
 
-void RenderTransform::removeParent() {
+void PerUpdateRenderObject::removeParent() {
 	if (m_parent) {
 		m_parent->removeChild(this);
 		m_parent = nullptr;
@@ -45,12 +40,12 @@ void RenderTransform::removeParent() {
 }
 
 // TODO: rewrite
-void RenderTransform::createSnapShotFromGameObject(GameTransformComponent* object) {
+void PerUpdateRenderObject::createSnapShotFromGameObject(TransformComponent* object) {
 	m_data = object->getTransformFrame();
 
 	// If the object has a parent transform copy that one as well,
 	// NOTE: this will cause duplication of some transforms
-	if (GameTransform* parent = object->getParent(); parent) {
+	if (Transform* parent = object->getParent(); parent) {
 		setParent(parent->getRenderTransform());
 	}
 }
@@ -58,7 +53,7 @@ void RenderTransform::createSnapShotFromGameObject(GameTransformComponent* objec
 
 
 // NOTE: Not used anywhere at the moment
-void RenderTransform::setMatrix(const glm::mat4& newMatrix) {
+void PerUpdateRenderObject::setMatrix(const glm::mat4& newMatrix) {
 	m_localTransformMatrix = newMatrix;
 	glm::vec3 tempSkew;
 	glm::vec4 tempPerspective;
@@ -76,23 +71,20 @@ void RenderTransform::setMatrix(const glm::mat4& newMatrix) {
 	treeNeedsUpdating();
 }
 
-RenderTransform* RenderTransform::getParent() const {
+PerUpdateRenderObject* PerUpdateRenderObject::getParent() const {
 	return m_parent;
 }
 
-Model* RenderTransform::getModel() const {
+Model* PerUpdateRenderObject::getModel() const {
 	return m_model;
 }
 
 
 // TODO: rewrite with alpha value
 //       Optimize for static objects or make a separate transform type for those
-glm::mat4 RenderTransform::getMatrix(float alpha) {
+glm::mat4 PerUpdateRenderObject::getMatrix(float alpha) {
 	updateLocalMatrix();
 	updateMatrix();
-	
-
-
 
 	//// will always need update because of interpolation
 	////if (m_data.m_current.m_matNeedsUpdate) {
@@ -156,7 +148,7 @@ glm::mat4 RenderTransform::getMatrix(float alpha) {
 //	return m_localTransformMatrix;
 //}
 
-void RenderTransform::updateLocalMatrix() {
+void PerUpdateRenderObject::updateLocalMatrix() {
 	m_localTransformMatrix = glm::mat4(1.0f);
 	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_data.m_current.m_translation);
 	m_rotationMatrix = glm::mat4_cast(m_data.m_current.m_rotationQuat);
@@ -169,25 +161,25 @@ void RenderTransform::updateLocalMatrix() {
 	m_localTransformMatrix = transMatrix * m_rotationMatrix * scaleMatrix;
 }
 
-void RenderTransform::updateMatrix() {
+void PerUpdateRenderObject::updateMatrix() {
 	if (m_parent)
 		m_transformMatrix = m_parent->getMatrix() * m_localTransformMatrix;
 	else
 		m_transformMatrix = m_localTransformMatrix;
 }
 
-void RenderTransform::treeNeedsUpdating() {
+void PerUpdateRenderObject::treeNeedsUpdating() {
 	//m_data.m_current.m_parentUpdated = true;
-	for (RenderTransform* child : m_children) {
+	for (PerUpdateRenderObject* child : m_children) {
 		child->treeNeedsUpdating();
 	}
 }
 
-void RenderTransform::addChild(RenderTransform* transform) {
+void PerUpdateRenderObject::addChild(PerUpdateRenderObject* transform) {
 	m_children.push_back(transform);
 }
 
-void RenderTransform::removeChild(RenderTransform* transform) {
+void PerUpdateRenderObject::removeChild(PerUpdateRenderObject* transform) {
 	for (int i = 0; i < m_children.size(); i++) {
 		if (m_children[i] == transform) {
 			m_children[i] = m_children.back();

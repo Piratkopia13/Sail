@@ -117,7 +117,6 @@ private:
 		return (ind + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
 	}
 	
-
 	static std::atomic_uint s_queuedUpdates;
 
 	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
