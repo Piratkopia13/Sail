@@ -19,7 +19,7 @@ bool LobbyJoinState::onEvent(Event& event) {
 	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onPlayerDisconnected));
 	EventHandler::dispatch<NetworkWelcomeEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onPlayerWelcomed));
 	EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onNameRequest));
-
+	// something
 	return true;
 }
 
