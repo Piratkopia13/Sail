@@ -9,7 +9,7 @@
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
-void NetworkWrapper::Initialize() {
+void NetworkWrapper::initialize() {
 	m_network = new Network();
 }
 

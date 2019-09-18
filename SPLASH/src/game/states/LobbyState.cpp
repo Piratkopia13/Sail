@@ -106,7 +106,7 @@ bool LobbyState::render(float dt) {
 
 bool LobbyState::renderImgui(float dt) {
 	// ------- player LIST ------- 
-	renderplayerList();
+	renderPlayerList();
 
 	// ------- CHAT LOG ------- 
 	renderChat();
@@ -145,7 +145,7 @@ bool LobbyState::playerLeft(unsigned int id) {
 }
 
 void LobbyState::addTextToChat(const string* text) {
-	this->addmessageToChat(text, &m_players.front());
+	this->addMessageToChat(text, &m_players.front());
 }
 
 void LobbyState::resetCurrentMessage() {
@@ -184,11 +184,11 @@ string LobbyState::fetchMessage()
 	return message;
 }
 
-void LobbyState::recievemessage(string text, unsigned int senderID) {
-	addmessageToChat(&text, getplayer(senderID));
+void LobbyState::recieveMessage(string text, unsigned int senderID) {
+	addMessageToChat(&text, getPlayer(senderID));
 }
 
-void LobbyState::addmessageToChat(const string* text, const player* sender) {
+void LobbyState::addMessageToChat(const string* text, const player* sender) {
 	// Add message to chatlog
 	m_messages.push_back(message{
 		sender->name,
@@ -201,7 +201,7 @@ void LobbyState::addmessageToChat(const string* text, const player* sender) {
 	}
 }
 
-player* LobbyState::getplayer(unsigned int id) {
+player* LobbyState::getPlayer(unsigned int id) {
 	for (auto playerIt : m_players) {
 		if (playerIt.id == id) {
 			return &playerIt;
@@ -234,7 +234,7 @@ void LobbyState::addTestData()
 	m_messages.push_back(msg);
 }
 
-void LobbyState::renderplayerList() {
+void LobbyState::renderPlayerList() {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	flags |= ImGuiWindowFlags_NoResize;
 	flags |= ImGuiWindowFlags_NoMove;

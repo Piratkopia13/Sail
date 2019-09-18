@@ -188,11 +188,13 @@ bool Network::send(const char* message, size_t size, ConnectionID receiverID)
 
 bool Network::send(const char* message, size_t size, const Connection &conn)
 {
-	if (!conn.isConnected)
+	if (!conn.isConnected) {
 		return false;
+	}
 
-	if (::send(conn.socket, message, size, 0) == SOCKET_ERROR)
+	if (::send(conn.socket, message, size, 0) == SOCKET_ERROR) {
 		return false;
+	}
 
 	return true;
 }
@@ -209,8 +211,9 @@ void Network::shutdown()
 {
 	m_shutdown = true;
 
-	if (!m_isInitialized)
+	if (!m_isInitialized) {
 		return;
+	}
 
 	if (m_isServer) {
 		::shutdown(m_soc, 2);
@@ -256,8 +259,9 @@ void Network::addNetworkEvent(NetworkEvent n, int dataSize)
 	m_awaitingEvents[m_pend].data = &m_awaitingMessages[m_pend];
 
 	m_pend = (m_pend + 1) % MAX_AWAITING_PACKAGES;
-	if (m_pend == m_pstart)
+	if (m_pend == m_pstart) {
 		m_pstart++;
+	}
 }
 
 void Network::waitForNewConnections()

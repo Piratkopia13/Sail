@@ -62,16 +62,16 @@ protected:
 	void appendMSGToCurrentMessage();
 	void sendMessage();
 	string fetchMessage();
-	void addmessageToChat(const string* text, const player* sender);
+	void addMessageToChat(const string* text, const player* sender);
 
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 	// Front-end functions - Use these!	
 	
-	void recievemessage(string text, unsigned int senderID);
+	void recieveMessage(string text, unsigned int senderID);
 	// Back-end functions
 
-	player* getplayer(unsigned int id);
+	player* getPlayer(unsigned int id);
 	// Back-end variables
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
@@ -92,7 +92,7 @@ private:
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;
 	unsigned int m_textHeight;
-	void renderplayerList();
+	void renderPlayerList();
 	void renderStartButton();
 	void renderSettings();		// Currently empty
 	void renderChat();
