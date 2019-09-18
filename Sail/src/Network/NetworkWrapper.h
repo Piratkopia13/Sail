@@ -54,8 +54,6 @@ private:
 	std::map<TCP_CONNECTION_ID, unsigned char> m_connectionsMap;
 	unsigned char m_IdDistribution = 0;
 
-	// TODO: Shutdown function which will be used to re-host or re-join lobbies.
-
 	/*
 		This is the general message decoder who does different things depending on starting letter.
 	*/

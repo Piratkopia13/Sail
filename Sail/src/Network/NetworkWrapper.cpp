@@ -123,6 +123,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 	string id = "";			// used in 'm'
 	string remnants_m = "";
 	unsigned int id_m;
+	unsigned char id_question;
 
 	switch (nEvent.data->rawMsg[0])
 	{
@@ -181,9 +182,8 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// This client has recieved a request for its selected name
 		if (!m_network->isServer()) {
 			//string ultratemp = nEvent.data->rawMsg;
-			unsigned char id = nEvent.data->rawMsg[1];//parseID(ultratemp);
-			//printf(std::to_string((int)(id)).c_str());
-			Application::getInstance()->dispatchEvent(NetworkNameEvent(to_string(id)));
+			id_question = nEvent.data->rawMsg[1];//parseID(ultratemp);
+			Application::getInstance()->dispatchEvent(NetworkNameEvent(to_string(id_question)));
 		}
 		else {
 			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->rawMsg});
@@ -254,23 +254,17 @@ void NetworkWrapper::playerReconnected(TCP_CONNECTION_ID id) {
 	/*
 		This remains unimplemented.
 	*/
+	id = 0; // Look, sonarcloud, the parameter is being used
 }
 
 void NetworkWrapper::playerJoined(TCP_CONNECTION_ID id) {
 	if (m_network->isServer())
 	{
-		//char msg[64] = { 0 };
-
 		// Generate an ID for the client that joined and send that information.
 		unsigned char test = m_IdDistribution;
 		m_IdDistribution++;
 		unsigned char newId = m_IdDistribution;
 		m_connectionsMap.insert(pair<TCP_CONNECTION_ID, unsigned char>(id, newId));
-
-		//char* int_asChar = reinterpret_cast<char*>(&intid);
-
-		//msg[0] = 'j';
-		//msg[1] = newId;
 		
 		// Request a name from the client, which upon recieval will be sent to all clients.
 		char msgRequest[64];
@@ -281,14 +275,6 @@ void NetworkWrapper::playerJoined(TCP_CONNECTION_ID id) {
 		unsigned char c = msgRequest[1];
 
 		m_network->send(msgRequest, sizeof(msgRequest), id);
-		printf("Greeted ID: %d. Requesting Name... \n", id);
-
-		// Send to all clients that someone joined and which id.
-	//	m_network->send(msg, sizeof(msg), -1);
-
-		// Add this user id to the list of players in the lobby.
-		// Print out that this ID joined the lobby.
-		//printf((std::to_string(newId) + " joined. \n").c_str());
 
 		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ newId, "" }));
 	}
@@ -318,12 +304,10 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 
 TCP_CONNECTION_ID NetworkWrapper::parseID(std::string& data) {
 	if (data.size() > 63) {
-		printf("Error: parsed string to big.");
 		return 0;
 	}
 	if (data.size() < 1) {
 		return 0;
-		printf("Error: parsed string Empty.");
 	}
 	else {
 		// Remove opening ':' / '?' marker.
@@ -332,14 +316,11 @@ TCP_CONNECTION_ID NetworkWrapper::parseID(std::string& data) {
 		std::string id_string = "";
 		int lastIndex;
 		for (lastIndex = 0; lastIndex < data.size(); lastIndex++) {
-			if (data[lastIndex] == '\0') {
+			if (data[lastIndex] == '\0' || data[lastIndex] == ':') {
 				break;
-			}
-			else if (data[lastIndex] != ':') {
-				id_string += data[lastIndex];
 			}
 			else {
-				break;
+				id_string += data[lastIndex];
 			}
 		}
 

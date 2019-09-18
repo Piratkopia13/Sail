@@ -126,7 +126,7 @@ public:
 
 		@return, the ip address compressed into a single int value.
 	*/
-	static ULONG ip_string_to_ip_int(char* ip, int buffersize);
+	static ULONG ip_string_to_ip_int(char* ip);
 
 private:
 
@@ -172,7 +172,6 @@ private:
 	SOCKET m_udp_directMessage_socket = 0;
 	sockaddr_in m_udp_broadcast_address = { 0 };
 	sockaddr_in m_udp_direct_address = { 0 };
-	const char m_lanHostSearchMessage[MAX_PACKAGE_SIZE] = "AnyLanHostsHere?";
 
 	std::thread* m_UDPListener = nullptr;
 
@@ -181,7 +180,6 @@ private:
 
 	USHORT m_hostFlags;
 	TCP_CONNECTION_ID m_nextID = 0; //Only used if m_useRandomIDs == false
-	TCP_CONNECTION_ID m_myClientID = 0; //Used by clients only
 
 	/*Do not access m_connections without mutex lock*/
 	std::unordered_map<size_t, Connection*> m_connections;

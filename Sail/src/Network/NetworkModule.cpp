@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "NetworkModule.hpp"
+#include <random>
 
 Network::Network() {}
 
@@ -113,10 +114,8 @@ bool Network::host(unsigned short port, USHORT hostFlags)
 
 	//Start a new thread that will wait for new connections
 	m_clientAcceptThread = new std::thread(&Network::waitForNewConnections, this);
-	if (m_hostFlags & (USHORT)HostFlags::ENABLE_LAN_SEARCH_VISIBILITY) {
-		if (!startUDPSocket(m_udp_localbroadcastport)) {
+	if (m_hostFlags & (USHORT)HostFlags::ENABLE_LAN_SEARCH_VISIBILITY && !startUDPSocket(m_udp_localbroadcastport)) {
 			return false;
-		}
 	}
 
 
@@ -176,11 +175,6 @@ bool Network::join(const char* IP_adress, unsigned short hostport)
 bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverID)
 {
 	if (receiverID == -1 && m_initializedStatus == INITIALIZED_STATUS::IS_SERVER) {
-		int n = 0;
-		{
-			std::lock_guard<std::mutex> mu(m_mutex_connections);
-			n = m_connections.size();
-		}
 		int success = 0;
 		Connection* conn = nullptr;
 		for (auto it : m_connections)
@@ -249,8 +243,8 @@ bool Network::searchHostsOnLan()
 	udpdata.package.packagetype = UDP_DATA_PACKAGE_TYPE_HOSTINFO_REQUEST;
 
 	if (::sendto(m_udp_broadcast_socket, (char*)& udpdata, sizeof(udpdata), 0, (sockaddr*)& m_udp_broadcast_address, sizeof(m_udp_broadcast_address)) == SOCKET_ERROR) {
-		int err = WSAGetLastError();
 #ifdef DEBUG_NETWORK
+		int err = WSAGetLastError();
 		printf("Send Error: %d", err);
 #endif
 		return false;
@@ -336,15 +330,12 @@ void Network::listenForUDP()
 	UDP_DATA udpdata;
 	sockaddr_in client = { 0 };
 	int clientSize = sizeof(sockaddr_in);
-	//char clientIP[256];
 
 	while (!m_shutdown)
 	{
 		memset(&udpdata, 0, sizeof(udpdata));
 		int bytesRec = recvfrom(m_udp_directMessage_socket, (char*)& udpdata, sizeof(udpdata), 0, (sockaddr*)& client, &clientSize);
 		if (bytesRec > 0) {
-			//ZeroMemory(&clientIP, 256);
-			//inet_ntop(AF_INET, &client.sin_addr, clientIP, sizeof(clientIP));
 			client.sin_port = htons(m_udp_localbroadcastport); //this is might needed to do direct UDP instead of broadcast
 
 			switch (udpdata.package.packagetype)
@@ -364,21 +355,17 @@ void Network::listenForUDP()
 					memcpy(data.HostFoundOnLanData.description, udpdata.package.packageData.hostdata.hostdescription, sizeof(m_serverMetaDesc));
 					nEvent.data = &data;
 
-					char ipAsChar[16];
-					ip_int_to_ip_string(client.sin_addr.S_un.S_addr, ipAsChar, sizeof(ipAsChar));
-					ULONG ipAsULONG = ip_string_to_ip_int(ipAsChar, sizeof(ipAsChar));
-
 					addNetworkEvent(nEvent, sizeof(data));
 				}
 				break;
 			case UDP_DATA_PACKAGE_TYPE_HOSTINFO_REQUEST:
 				if (m_initializedStatus == INITIALIZED_STATUS::IS_SERVER) {
-					UDP_DATA udpdata = { 0 };
-					udpdata.package.packagetype = UDP_DATA_PACKAGE_TYPE_HOSTINFO;
-					udpdata.package.packageData.hostdata.port = m_hostPort;
-					memcpy(udpdata.package.packageData.hostdata.hostdescription, m_serverMetaDesc, sizeof(m_serverMetaDesc));
+					UDP_DATA udpdata2 = { 0 };
+					udpdata2.package.packagetype = UDP_DATA_PACKAGE_TYPE_HOSTINFO;
+					udpdata2.package.packageData.hostdata.port = m_hostPort;
+					memcpy(udpdata2.package.packageData.hostdata.hostdescription, m_serverMetaDesc, sizeof(m_serverMetaDesc));
 
-					if (::sendto(m_udp_broadcast_socket, udpdata.raw_data, sizeof(udpdata), 0, (sockaddr*)& m_udp_broadcast_address, sizeof(sockaddr_in)) == SOCKET_ERROR) {
+					if (::sendto(m_udp_broadcast_socket, udpdata2.raw_data, sizeof(udpdata2), 0, (sockaddr*)& m_udp_broadcast_address, sizeof(sockaddr_in)) == SOCKET_ERROR) {
 #ifdef DEBUG_NETWORK
 						printf("Error sendto udp with error: %d\n", WSAGetLastError());
 #endif // DEBUG_NETWORK
@@ -415,18 +402,20 @@ bool Network::udpSend(sockaddr* addr, char* msg, int msgSize)
 TCP_CONNECTION_ID Network::generateID()
 {
 	TCP_CONNECTION_ID id = 0;
+	std::random_device rd;   // non-deterministic generator
+	std::mt19937 gen(rd());
 
 	if (m_hostFlags & (USHORT)HostFlags::USE_RANDOM_IDS) {
 		int n = sizeof(TCP_CONNECTION_ID) / sizeof(int);
 
 		for (size_t i = 0; i < n; i++)
 		{
-			int r = rand();
+			unsigned int r = gen();
 			id |= (TCP_CONNECTION_ID)r << (i * 32);
 		}
 	}
 	else {
-		id == m_nextID++;
+		id = m_nextID++;
 	}
 
 	return id;
@@ -502,7 +491,7 @@ void Network::ip_int_to_ip_string(ULONG ip, char* buffer, int buffersize)
 	inet_ntop(AF_INET, &ip, buffer, buffersize);
 }
 
-ULONG Network::ip_string_to_ip_int(char* ip, int buffersize)
+ULONG Network::ip_string_to_ip_int(char* ip)
 {
 	int result = 0;
 	inet_pton(AF_INET, ip, &result);
