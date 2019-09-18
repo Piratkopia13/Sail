@@ -18,7 +18,7 @@ void Animation::pushBackFrame(float time, Animation::Frame* frame) {
 AnimationStack::AnimationStack() {
 }
 
-AnimationStack::AnimationStack(const size_t vertCount) {
+AnimationStack::AnimationStack(const unsigned int vertCount) {
 	m_connectionSize = vertCount;
 	m_connections = new VertConnection[vertCount];
 }
@@ -32,7 +32,7 @@ void AnimationStack::addAnimation(const std::string& animationName, Animation* a
 	m_stack.emplace_back(std::pair<std::string, Animation*>(animationName, animation));
 }
 
-void AnimationStack::setConnectionData(const int vertexIndex, const int boneIndex, float weight) {
+void AnimationStack::setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight) {
 #ifdef _DEBUG
 	if (vertexIndex > m_connectionSize) {
 		Logger::Error("AnimationStack::setBoneData: vertexIndex("+ std::to_string(vertexIndex) +") larger than array size("+std::to_string(m_connectionSize) +")." );

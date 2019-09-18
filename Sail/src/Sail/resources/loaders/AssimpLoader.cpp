@@ -31,14 +31,14 @@ AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 	std::string name = scene->GetShortFilename(path.c_str());
 	//processNode(scene, scene->mRootNode);
 
-	size_t vertCount = 0;
+	unsigned int vertCount = 0;
 
 	//	__________________________________MATRIX______________________________
 	m_globalTransform = glm::inverse(mat4_cast(scene->mRootNode->mTransformation));
 	//	_______________________________________________________________________
 
 	makeOffsets(scene);
-	for (size_t i = 0; i < scene->mNumMeshes; i++) {
+	for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
 		vertCount += scene->mMeshes[i]->mNumVertices;
 	}
 	AnimationStack* stack = new AnimationStack(vertCount);
@@ -81,18 +81,18 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 	}
 
 	#endif
-	for (size_t nodeID = 0; nodeID < node->mNumMeshes; nodeID++) {
+	for (unsigned int nodeID = 0; nodeID < node->mNumMeshes; nodeID++) {
 		const aiMesh* mesh = scene->mMeshes[node->mMeshes[nodeID]];
 		
 			#ifdef _DEBUG 
 		Logger::Log("2 "+std::string(mesh->mName.C_Str()));
 			#endif
 		if (mesh->HasBones()) {
-			for (size_t boneID = 0; boneID < mesh->mNumBones; boneID++) {
+			for (unsigned int boneID = 0; boneID < mesh->mNumBones; boneID++) {
 				const aiBone* bone = mesh->mBones[boneID];
 				
 				std::string boneName = bone->mName.C_Str();
-				size_t index = m_boneMap.size();
+				unsigned int index = (unsigned int)m_boneMap.size();
 				if (m_boneMap.find(boneName) == m_boneMap.end()) {
 					m_boneMap[boneName] = { index, node->mName.C_Str(), mat4_cast(bone->mOffsetMatrix)};
 					
@@ -109,7 +109,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 
 
 
-				for (size_t weightID = 0; weightID < bone->mNumWeights; weightID++) {
+				for (unsigned int weightID = 0; weightID < bone->mNumWeights; weightID++) {
 					const aiVertexWeight weight = bone->mWeights[weightID];
 					stack->setConnectionData(m_meshOffsets[node->mMeshes[nodeID]]+weight.mVertexId, index, weight.mWeight);
 
@@ -128,8 +128,8 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 
 
 
-	int size = node->mNumChildren;
-	for (size_t i = 0; i < size; i++) {
+	unsigned int size = node->mNumChildren;
+	for (unsigned int i = 0; i < size; i++) {
 		importBonesFromNode(scene, node->mChildren[i], stack);
 	}
 
@@ -149,28 +149,28 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 #endif
 	mapChannels(scene);
 
-	for (size_t animationIndex = 0; animationIndex < scene->mNumAnimations; animationIndex++) {
+	for (unsigned int animationIndex = 0; animationIndex < scene->mNumAnimations; animationIndex++) {
 		const aiAnimation* animation = scene->mAnimations[animationIndex];
 		Animation* anim = new Animation();
 		
 #ifdef _DEBUG
 		animationz.emplace_back(animation);
 		channels.emplace_back(std::vector<const aiNodeAnim*>());
-		for (int i = 0; i < animation->mNumChannels; i++) {
+		for (unsigned int i = 0; i < animation->mNumChannels; i++) {
 			channels.back().emplace_back(animation->mChannels[i]);
 		}
 		std::string temp = std::to_string(animation->mDuration) + ":" + std::to_string(animation->mTicksPerSecond) + " = " + std::to_string(animation->mDuration / animation->mTicksPerSecond);
 		Logger::Log(temp);
 #endif
 
-		size_t totalFrames = animation->mDuration;
+		unsigned int totalFrames = (unsigned int)animation->mDuration;
 		Logger::Log(std::to_string(totalFrames));
 		float totalDivided = 1.0f / (float)totalFrames;
-		float tickRate = 1.0f/(animation->mTicksPerSecond == 0 ? 24.0f : animation->mTicksPerSecond);
-		float totalTime = totalFrames * (animation->mTicksPerSecond == 0 ? 24.0f : animation->mTicksPerSecond);
-		for (size_t frame = 0; frame < totalFrames; frame++) {
+		float tickRate = 1.0f/(animation->mTicksPerSecond == 0 ? 24.0f : (float)animation->mTicksPerSecond);
+		float totalTime = totalFrames * (animation->mTicksPerSecond == 0 ? 24.0f : (float)animation->mTicksPerSecond);
+		for (unsigned int frame = 0; frame < totalFrames; frame++) {
 			float time = (float)frame * tickRate;
-			Animation::Frame* currentFrame = SAIL_NEW Animation::Frame(m_boneMap.size());
+			Animation::Frame* currentFrame = SAIL_NEW Animation::Frame((unsigned int)m_boneMap.size());
 			//Logger::Log("Added Frame with ");
 			
 			readNodeHierarchy(animationIndex, frame, 0, scene->mRootNode, glm::identity<glm::mat4>(), currentFrame);
@@ -185,7 +185,7 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 	return true;
 }
 
-void AssimpLoader::readNodeHierarchy(const size_t animationID, const size_t frame, const float animationTime, const aiNode* node, const glm::mat4& parent, Animation::Frame* animationFrame) {
+void AssimpLoader::readNodeHierarchy(const unsigned int animationID, const unsigned int frame, const float animationTime, const aiNode* node, const glm::mat4& parent, Animation::Frame* animationFrame) {
 
 	std::string name = node->mName.C_Str();
 	glm::mat4 nodeTransform = mat4_cast(node->mTransformation);
@@ -202,7 +202,7 @@ void AssimpLoader::readNodeHierarchy(const size_t animationID, const size_t fram
 		animationFrame->setTransform(index, m_globalTransform * global * m_boneMap[name].offset);
 	}
 
-	for (int childID = 0; childID < node->mNumChildren; childID++) {
+	for (unsigned int childID = 0; childID < node->mNumChildren; childID++) {
 		readNodeHierarchy(animationID, frame, animationTime, node->mChildren[childID], global, animationFrame);
 
 	}

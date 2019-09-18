@@ -26,7 +26,7 @@ private:
 	Mesh* importMesh(const aiScene* scene, aiNode* node);
 	bool importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack);
 	bool importAnimations(const aiScene* scene, AnimationStack* stack);
-	void readNodeHierarchy(const size_t animationID, const size_t frame, const float animationTime, const aiNode* node, const glm::mat4& parent, Animation::Frame* animationFrame);
+	void readNodeHierarchy(const unsigned int animationID, const unsigned int frame, const float animationTime, const aiNode* node, const glm::mat4& parent, Animation::Frame* animationFrame);
 
 	const bool errorCheck(const aiScene* scene);
 	void clearData();
@@ -44,9 +44,9 @@ private:
 
 	void makeOffsets(const aiScene* scene) {
 		m_meshOffsets.emplace_back(0);
-		size_t old = 0;
+		unsigned int old = 0;
 		if (scene->mNumMeshes > 1) {
-			for (size_t i = 0; i < scene->mNumMeshes; i++) {
+			for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
 				m_meshOffsets.emplace_back(old + scene->mMeshes[i]->mNumVertices);
 				old = m_meshOffsets.back();
 			}
@@ -54,7 +54,7 @@ private:
 	}
 
 	struct BoneInfo {
-		size_t index;
+		unsigned int index;
 		std::string nodeName;
 		glm::mat4 offset;
 	};
@@ -66,10 +66,10 @@ private:
 	glm::mat4 m_globalTransform;
 	void mapChannels(const aiScene* scene) {
 		m_channels.resize(scene->mNumAnimations);
-		for (int i = 0; i < scene->mNumAnimations; i++) {
+		for (unsigned int i = 0; i < scene->mNumAnimations; i++) {
 			const aiAnimation* animation = scene->mAnimations[i];
 
-			for (int channel = 0; channel < animation->mNumChannels; channel++) {
+			for (unsigned int channel = 0; channel < animation->mNumChannels; channel++) {
 				m_channels[i][animation->mChannels[channel]->mNodeName.C_Str()] = animation->mChannels[channel];
 			}
 		}

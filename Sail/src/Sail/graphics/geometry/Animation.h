@@ -43,7 +43,7 @@ private:
 class AnimationStack {
 public:
 	AnimationStack();
-	AnimationStack(const size_t vertCount);
+	AnimationStack(const unsigned int vertCount);
 	~AnimationStack();
 	
 	//void setVertIndices(const int size, int* vertIndices);
@@ -76,18 +76,18 @@ public:
 			count++;
 		}
 		float checkWeights() {
-			double sum = 0;
+			float sum = 0;
 			for (int i = 0; i < count; i++) {
 				sum += weight[i];
 			}
 			return sum;
 		}
 	};
-	void setConnectionData(const int vertexIndex, const int boneIndex, float weight);
+	void setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight);
 
 
 	void checkWeights() {
-		for (int i = 0; i < m_connectionSize; i++) {
+		for (unsigned int i = 0; i < m_connectionSize; i++) {
 			float value = m_connections[i].checkWeights();
 			if (value > 1.001 || value < 0.999) {
 				Logger::Warning("Weights fucked: " + std::to_string(i)+ "(" + std::to_string(value)+")");
@@ -97,7 +97,7 @@ public:
 
 private:
 
-	size_t m_connectionSize;
+	unsigned int m_connectionSize;
 	VertConnection* m_connections;
 	std::vector<std::pair<std::string, Animation*>> m_stack;
 
