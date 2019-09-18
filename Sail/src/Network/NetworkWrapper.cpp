@@ -8,9 +8,9 @@
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
-#include "../../SPLASH/SPLASH/src/game/states/LobbyState.h"
+#include "../../SPLASH/src/game/states/LobbyState.h"
 
-void NetworkWrapper::Initialize() {
+void NetworkWrapper::initialize() {
 	m_network = new Network();
 	m_network->initialize();
 }

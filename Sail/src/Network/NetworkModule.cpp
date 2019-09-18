@@ -518,8 +518,9 @@ void Network::addNetworkEvent(NetworkEvent n, int dataSize)
 	m_awaitingEvents[m_pend].data = &m_awaitingMessages[m_pend];
 
 	m_pend = (m_pend + 1) % MAX_AWAITING_PACKAGES;
-	if (m_pend == m_pstart)
+	if (m_pend == m_pstart) {
 		m_pstart++;
+	}
 }
 
 void Network::waitForNewConnections()

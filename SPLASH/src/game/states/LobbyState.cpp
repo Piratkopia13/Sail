@@ -106,13 +106,13 @@ bool LobbyState::update(float dt) {
 
 bool LobbyState::render(float dt) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-
+	m_scene.draw();
 	return false;
 }
 
 bool LobbyState::renderImgui(float dt) {
 	// ------- player LIST ------- 
-	renderplayerList();
+	renderPlayerList();
 
 	// ------- CHAT LOG ------- 
 	renderChat();
@@ -174,7 +174,7 @@ string LobbyState::fetchMessage()
 	return message;
 }
 
-void LobbyState::addmessageToChat(Message message) {
+void LobbyState::addMessageToChat(Message message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
 	Player* playa = this->getplayer(stoi(message.sender));
@@ -190,7 +190,7 @@ void LobbyState::addmessageToChat(Message message) {
 	}
 }
 
-Player* LobbyState::getplayer(unsigned int id) {
+Player* LobbyState::getPlayer(unsigned int id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {
@@ -203,7 +203,7 @@ Player* LobbyState::getplayer(unsigned int id) {
 	return foundPlayer;
 }
 
-void LobbyState::renderplayerList() {
+void LobbyState::renderPlayerList() {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	flags |= ImGuiWindowFlags_NoResize;
 	flags |= ImGuiWindowFlags_NoMove;

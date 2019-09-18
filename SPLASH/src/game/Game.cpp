@@ -17,7 +17,7 @@ Game::Game(HINSTANCE hInstance)
 	m_stateStack.pushState(States::MainMenu);
 	
 	// Initialize the Network wrapper instance.
-	NetworkWrapper::getInstance().Initialize();
+	NetworkWrapper::getInstance().initialize();
 }
 
 Game::~Game() {

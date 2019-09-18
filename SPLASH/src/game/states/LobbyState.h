@@ -64,7 +64,7 @@ protected:
 	void resetCurrentMessage();
 
 	string fetchMessage();
-	void addmessageToChat(Message message);
+	void addMessageToChat(Message message);
 
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
@@ -79,13 +79,14 @@ private:
 	bool m_firstFrame = true;	// Used solely for ImGui
 	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
+	Scene m_scene;
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	unsigned int m_outerPadding;
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;
 	unsigned int m_textHeight;
-	void renderplayerList();
+	void renderPlayerList();
 	void renderStartButton();
 	void renderSettings();		// Currently empty
 	void renderChat();

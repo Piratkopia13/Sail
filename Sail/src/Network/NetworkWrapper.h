@@ -19,7 +19,7 @@ public:
 	NetworkWrapper(NetworkWrapper const&) = delete;
 	void operator=(NetworkWrapper const&) = delete;
 
-	void Initialize();
+	void initialize();
 	
 	~NetworkWrapper();
 
