@@ -3,35 +3,13 @@
 #include "events/WindowResizeEvent.h"
 #include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
+#include "Sail/graphics/Scene.h"
+
 
 Application* Application::s_instance = nullptr;
-
-
-// STATIC FUNCTIONS
-std::atomic_uint Application::s_frameIndex = 0;
-UINT Application::s_updateIndex = 0;
-UINT Application::s_renderIndex = 0;
 std::atomic_uint Application::s_queuedUpdates = 0;
 std::mutex Application::s_updateLock;
 
-
-// To be done at the end of each CPU update and nowhere else	
-void Application::IncrementCurrentUpdateIndex() {
-	s_frameIndex++;
-	s_updateIndex = s_frameIndex.load() % SNAPSHOT_BUFFER_SIZE;
-}
-
-// To be done just before render is called
-void Application::UpdateCurrentRenderIndex() {
-	s_renderIndex = prevInd(s_frameIndex.load());
-}
-
-//#ifdef _DEBUG
-UINT Application::GetUpdateIndex() { return s_updateIndex; }
-UINT Application::GetRenderIndex() { return s_renderIndex; }
-//#endif
-
-// NON-STATIC FUNCTIONS
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
 
@@ -171,13 +149,13 @@ int Application::startGameLoop() {
 				while (s_queuedUpdates > 0) {
 					s_queuedUpdates--;
 					update(TIMESTEP);
-					Application::IncrementCurrentUpdateIndex();
+					Scene::IncrementCurrentUpdateIndex();
 				}
 				s_updateLock.unlock();
 				});
 
 			// Render
-			Application::UpdateCurrentRenderIndex();
+			Scene::UpdateCurrentRenderIndex();
 			render(static_cast<float>(delta)); // TODO: interpolate between game states with an alpha value
 
 			// Reset just pressed keys

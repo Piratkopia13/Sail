@@ -8,7 +8,32 @@
 #include "Sail/api/Renderer.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/graphics/geometry/PerUpdateRenderObject.h"
-//
+
+
+// STATIC FUNCTIONS
+std::atomic_uint Scene::s_frameIndex = 0;
+UINT Scene::s_updateIndex = 0;
+UINT Scene::s_renderIndex = 0;
+
+// To be done at the end of each CPU update and nowhere else	
+void Scene::IncrementCurrentUpdateIndex() {
+	s_frameIndex++;
+	s_updateIndex = s_frameIndex.load() % SNAPSHOT_BUFFER_SIZE;
+}
+
+// To be done just before render is called
+void Scene::UpdateCurrentRenderIndex() {
+	s_renderIndex = prevInd(s_frameIndex.load());
+}
+
+//#ifdef _DEBUG
+UINT Scene::GetUpdateIndex() { return s_updateIndex; }
+UINT Scene::GetRenderIndex() { return s_renderIndex; }
+//#endif
+
+
+// NON-STATIC FUNCTIONS
+
 Scene::Scene() 
 	//: m_postProcessPipeline(m_renderer)
 {
@@ -58,7 +83,7 @@ void Scene::prepareUpdate() {
 // creates a vector of render objects corresponding to the current state of the game objects
 // Should be done at the end of each update tick.
 void Scene::prepareRenderObjects() {
-	const UINT ind = Application::GetUpdateIndex();
+	const UINT ind = Scene::GetUpdateIndex();
 	m_perFrameLocks[ind].lock();
 	m_dynamicRenderObjects[ind].clear();
 
@@ -93,7 +118,7 @@ void Scene::draw(Camera& camera, const float alpha) {
 	// Render dynamic objects (objects that might move or be added/removed)
 	// Matrices are created from interpolated data each frame
 
-	const UINT ind = Application::GetRenderIndex();
+	const UINT ind = Scene::GetRenderIndex();
 	m_perFrameLocks[ind].lock();
 	for (PerUpdateRenderObject& obj : m_dynamicRenderObjects[ind]) {
 		m_renderer->submit(obj.getModel(), obj.getMatrix(alpha));

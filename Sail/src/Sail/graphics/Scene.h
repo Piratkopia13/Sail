@@ -11,6 +11,9 @@ class Renderer;
 class Model;
 class PerUpdateRenderObject;
 
+
+constexpr UINT SNAPSHOT_BUFFER_SIZE = 4;
+
 // TODO: make this class virtual and have the actual scene in the demo/game project
 class Scene : public IEventListener {
 public:
@@ -37,6 +40,18 @@ public:
 
 	virtual bool onEvent(Event& event) override;
 
+
+	// STATIC SYCHRONIZATION STUFF
+	// To be done at the end of each CPU update and nowhere else	
+	static void IncrementCurrentUpdateIndex();
+
+	// To be done just before render is called
+	static void UpdateCurrentRenderIndex();
+
+	//#ifdef _DEBUG
+	static UINT GetUpdateIndex();
+	static UINT GetRenderIndex();
+	//#endif
 private:
 	bool onResize(WindowResizeEvent& event);
 
@@ -69,4 +84,26 @@ private:
 	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
 	//PostProcessPipeline m_postProcessPipeline;
 
+
+
+	// STATIC SYCHRONIZATION STUFF USED IN SCENE
+	static constexpr int prevInd(int ind) {
+		return (ind + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
+	}
+
+	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
+	// you leave the game running for like a year or two.
+	// Note: atomic since it's written to in every update and read from in every update and render
+	static std::atomic_uint s_frameIndex;
+
+	// the index in the snapshot buffer that is used in the update loop on the CPU.
+	// [0, SNAPSHOT_BUFFER_SIZE-1]
+	// Note: Updated once at the start of update and read-only in update so no atomics needed
+	static UINT s_updateIndex;
+
+
+	// If CPU update is working on index 3 then prepare render will safely interpolate between
+	// index 1 and 2 without any data races
+	// Note: Updated once at the start of render and read-only in render so no atomics needed
+	static UINT s_renderIndex;
 };
