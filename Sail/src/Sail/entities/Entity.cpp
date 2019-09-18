@@ -32,6 +32,11 @@ bool Entity::hasComponent(int id) const
 	return (m_components.find(id) != m_components.end());
 }
 
+void Entity::removeAllComponents() {
+	m_components.clear();
+	removeFromSystems();
+}
+
 void Entity::setName(const std::string& name) {
 	m_name = name;
 }

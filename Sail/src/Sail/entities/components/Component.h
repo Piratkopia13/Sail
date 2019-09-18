@@ -1,6 +1,18 @@
 #pragma once
 #include <memory>
 
+
+/*
+	Any component of type T created should inherit from Component<T>.
+	Their IDs will automatically be assigned, and can be accessed via T::ID.
+	They must have a default constructor, but can have default arguments or other constructors as well.
+	No logic SHOULD be within each component, only raw data.
+
+	Example: See PhysicsComponent.h
+*/
+
+
+
 typedef int ComponentTypeID;
 
 /*
@@ -34,6 +46,9 @@ public:
 	static int nrOfComponentTypes() {
 		return global_componentID;
 	}
+
+	unsigned int entityID;
+
 protected:
 	BaseComponent() {}
 };
