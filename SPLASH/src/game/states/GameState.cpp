@@ -632,7 +632,7 @@ bool GameState::renderImguiProfiler(float dt) {
 			m_profilerTimer += dt;
 			if (m_profilerTimer > 0.2f) {
 				m_profilerTimer = 0.f;
-				if (m_profilerCounter <= 100) {
+				if (m_profilerCounter < 100) {
 
 					// Uncomment this to enable vram budget visualization
 
