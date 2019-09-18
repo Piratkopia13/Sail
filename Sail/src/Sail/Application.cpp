@@ -8,7 +8,7 @@
 
 Application* Application::s_instance = nullptr;
 std::atomic_uint Application::s_queuedUpdates = 0;
-std::mutex Application::s_updateLock;
+std::atomic_uint Application::s_updateRunning = 0;
 
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
@@ -72,7 +72,7 @@ Application::~Application() {
 // Update and render synchronization is not guaranteed to work without data races when the framerate 
 // is significantly lower than the update rate
 int Application::startGameLoop() {
-	MSG msg = {0};
+	MSG msg = { 0 };
 	m_fps = 0;
 	// Start delta timer
 	m_timer.startTimer();
@@ -107,7 +107,7 @@ int Application::startGameLoop() {
 			currentTime = newTime;
 
 			// Will slow the game down if the CPU can't keep up with the TICKRATE
-			delta = std::min(delta, 4 * TIMESTEP); 
+			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += delta;
@@ -145,13 +145,16 @@ int Application::startGameLoop() {
 
 			// Run update(s) in a separate thread
 			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
-				s_updateLock.lock(); // TODO: Do without mutex
-				while (s_queuedUpdates > 0) {
-					s_queuedUpdates--;
-					update(TIMESTEP);
-					Scene::IncrementCurrentUpdateIndex();
+				// If another thread is already running the update loop then don't do in this thread too
+				if (s_updateRunning == 0) {
+					s_updateRunning = 1;
+					while (s_queuedUpdates > 0) {
+						s_queuedUpdates--;
+						update(TIMESTEP);
+						Application::IncrementCurrentUpdateIndex();
+					}
+					s_updateRunning = 0;
 				}
-				s_updateLock.unlock();
 				});
 
 			// Render

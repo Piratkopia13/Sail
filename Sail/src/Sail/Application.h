@@ -78,18 +78,6 @@ public:
 	ResourceManager& getResourceManager();
 	const UINT getFPS() const;
 
-
-//	// STATIC SYCHRONIZATION STUFF USED IN SCENE
-//	// To be done at the end of each CPU update and nowhere else	
-//	static void IncrementCurrentUpdateIndex();
-//	
-//	// To be done just before render is called
-//	static void UpdateCurrentRenderIndex();
-//	
-////#ifdef _DEBUG
-//	static UINT GetUpdateIndex();
-//	static UINT GetRenderIndex();
-////#endif
 private:
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
@@ -102,6 +90,6 @@ private:
 	Timer m_timer;
 	UINT m_fps;
 
-	static std::mutex s_updateLock;	
+	static std::atomic_uint s_updateRunning;	
 	static std::atomic_uint s_queuedUpdates;
 };
