@@ -46,6 +46,8 @@ void Scene::draw(Camera& camera) {
 
 	for (Entity::SPtr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
+
+
 		if (model) {
 			TransformComponent* transform = entity->getComponent<TransformComponent>();
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");

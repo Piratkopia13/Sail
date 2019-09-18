@@ -5,37 +5,51 @@
 
 class Animation {
 public:
-	Animation();
-	~Animation();
-
-
-	
 	class Frame {
 	public:
 		Frame();
 		Frame(const unsigned int size);
 		~Frame();
-		void setTransform(const unsigned int index, const glm::mat4& transform) {
-			#ifdef _DEBUG
-				if (index >= m_transformSize || index < 0) {
-					Logger::Error("Tried to add transform to index(" + std::to_string(index) + ") maxSize(" + std::to_string(m_transformSize));
-					return;
-				}
-			#endif
-			m_limbTransform[index] = transform;
-		};
-
-
+		void setTransform(const unsigned int index, const glm::mat4& transform);
+		const unsigned int getTransformListSize();
+		const glm::mat4* getTransformList();
 	private:
 		unsigned int m_transformSize;
 		glm::mat4* m_limbTransform;
 	};
+
+
 	
-	void pushBackFrame(float time, Animation::Frame* frame);
+
+	// TODO: rename behind variable to better describe it. (if frame behind or infront of time should be returned.)
+	enum FindType {
+		BEHIND,
+		CLOSEST,
+		INFRONT
+	};
+
+	Animation();
+	~Animation();
+	const float getMaxAnimationTime();
+	const unsigned int getMaxAnimationFrame();
+	const glm::mat4* getAnimationTransform(const float time, const FindType type = BEHIND);
+	const glm::mat4* getAnimationTransform(const unsigned int frame);
+	const unsigned int getAnimationTransformSize(const float time);
+	const unsigned int getAnimationTransformSize(const unsigned int frame);
+	const float getTimeAtFrame(const unsigned int frame);
+	const unsigned int getFrameAtTime(const float time, const FindType type = BEHIND);
+	void addFrame(const unsigned int frame, const float time, Animation::Frame* data);
 
 	
 private:
-	std::vector<std::pair<float, Animation::Frame*>> m_frames;
+	
+	float m_maxFrameTime;
+	unsigned int m_maxFrame;
+
+	inline const bool exists(const unsigned int frame);
+
+	std::map<unsigned int, float> m_frameTimes;
+	std::map<unsigned int, Animation::Frame*> m_frames;
 };
 
 

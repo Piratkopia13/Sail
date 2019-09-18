@@ -57,7 +57,6 @@ AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 	m_globalTransform = glm::inverse(mat4_cast(scene->mRootNode->mTransformation));
 	//	_______________________________________________________________________
 
-	size_t vertCount = 0;
 
 	makeOffsets(scene);
 	for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
@@ -276,7 +275,7 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 			//Logger::Log("Added Frame with ");
 			
 			readNodeHierarchy(animationIndex, frame, 0, scene->mRootNode, glm::identity<glm::mat4>(), currentFrame);
-			anim->pushBackFrame(time, currentFrame);
+			anim->addFrame(frame, time, currentFrame);
 		}
 
 		stack->addAnimation(animation->mName.C_Str(),anim);
