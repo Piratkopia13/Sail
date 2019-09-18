@@ -5,7 +5,12 @@ public:
 	enum Type {
 		WINDOW_RESIZE,
 		WINDOW_FOCUS_CHANGED,
-		POTATO
+		POTATO,
+		TEXTINPUT,
+		NETWORK_JOINED,
+		NETWORK_DISCONNECT,
+		NETWORK_CHAT,
+		NETWORK_WELCOME
 	};
 public:
 	Event(Type type);
