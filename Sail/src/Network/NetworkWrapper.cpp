@@ -10,6 +10,8 @@
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
+using namespace std;
+
 void NetworkWrapper::initialize() {
 	m_network = new Network();
 	m_network->initialize();
@@ -79,7 +81,6 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 		m_network->send(msg.c_str(), msg.length() +1, -1);
 		msg.erase(0, 1);
 		msg = msg + std::string("\n");
-		printf(msg.c_str());
 	}
 	else
 	{
@@ -157,7 +158,6 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// TODO:
 		// Remove the user with this ID from the lobby and print out that it disconnected.
-		printf((std::to_string(userID) + " disconnected. \n").c_str());
 		Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(userID));
 		break;
 
@@ -173,7 +173,6 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// TODO:
 		// Add this user id to the list of players in the lobby.
 		// Print out that this ID joined the lobby.
-		printf((std::to_string(userID) + " joined. \n").c_str());
 		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ userID, "who?" }));
 		break;
 
@@ -189,8 +188,6 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->rawMsg});
 		}
 		break;
-
-		break; 
 
 	case 'w':
 
@@ -214,8 +211,6 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		break;
 
 	default:
-		printf((std::string("Error: Packet message with key: ") + 
-			nEvent.data->rawMsg[0] + "can't be handled. \n").c_str());
 		break;
 	}
 
@@ -239,14 +234,8 @@ void NetworkWrapper::playerDisconnected(TCP_CONNECTION_ID id) {
 		// Send to all clients that soneone disconnected and which id.
 		m_network->send(msg, sizeof(msg), -1);
 
-		printf((std::to_string(intid) + " disconnected. \n").c_str());
-
 		// Send id to menu / game state
 		Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(intid));
-	}
-	else
-	{
-		printf("Host disconnected. \n");
 	}
 }
 
@@ -258,8 +247,7 @@ void NetworkWrapper::playerReconnected(TCP_CONNECTION_ID id) {
 }
 
 void NetworkWrapper::playerJoined(TCP_CONNECTION_ID id) {
-	if (m_network->isServer())
-	{
+	if (m_network->isServer())	{
 		// Generate an ID for the client that joined and send that information.
 		unsigned char test = m_IdDistribution;
 		m_IdDistribution++;

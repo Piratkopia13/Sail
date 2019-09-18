@@ -4,6 +4,8 @@
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "Network/NetworkWrapper.h"
 
+using namespace std;
+
 LobbyJoinState::LobbyJoinState(StateStack& stack)
 	: LobbyState(stack)
 {
@@ -51,7 +53,8 @@ bool LobbyJoinState::onPlayerJoined(NetworkJoinedEvent& event) {
 
 bool LobbyJoinState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Remove the player from the player list
-	this->playerLeft(event.getPlayerID());
+	unsigned int id = event.getPlayerID();
+	this->playerLeft(id);
 
 	return false;
 }

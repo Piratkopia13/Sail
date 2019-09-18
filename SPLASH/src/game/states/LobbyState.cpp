@@ -126,7 +126,7 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-bool LobbyState::playerJoined(Player player) {
+bool LobbyState::playerJoined(Player& player) {
 	if (m_playerCount < m_playerLimit) {
 		m_players.push_back(player);
 		m_playerCount++;
@@ -135,7 +135,7 @@ bool LobbyState::playerJoined(Player player) {
 	return false;
 }
 
-bool LobbyState::playerLeft(unsigned int id) {
+bool LobbyState::playerLeft(unsigned int& id) {
 	// Linear search to get target 'player' struct, then erase that from the list
 	Player* toBeRemoved = nullptr;
 	int pos = 0;
@@ -174,10 +174,11 @@ string LobbyState::fetchMessage()
 	return message;
 }
 
-void LobbyState::addMessageToChat(Message message) {
+void LobbyState::addMessageToChat(Message& message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
-	Player* playa = this->getPlayer(stoi(message.sender));
+	unsigned int id = stoi(message.sender);
+	Player* playa = this->getPlayer(id);
 	string msg = playa->name + ": ";
 	message.content.insert(0, msg);
 
@@ -190,7 +191,7 @@ void LobbyState::addMessageToChat(Message message) {
 	}
 }
 
-Player* LobbyState::getPlayer(unsigned int id) {
+Player* LobbyState::getPlayer(unsigned int& id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {

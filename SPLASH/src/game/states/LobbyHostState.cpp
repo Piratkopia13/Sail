@@ -1,6 +1,8 @@
 #include "LobbyHostState.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
 
+using namespace std;
+
 LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack)
 {
@@ -65,7 +67,8 @@ bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 
 bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Remove player from player list
-	this->playerLeft(event.getPlayerID());
+	unsigned int id = event.getPlayerID();
+	this->playerLeft(id);
 
 	// Send out 'playerdisconnected'
 	// --- Wrapper already does this
