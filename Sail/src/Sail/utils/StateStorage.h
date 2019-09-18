@@ -3,7 +3,7 @@
 #include <string>
 
 struct MenuToLobbyData {
-	string name;
+	std::string name;
 };
 
 class StateStorage {
