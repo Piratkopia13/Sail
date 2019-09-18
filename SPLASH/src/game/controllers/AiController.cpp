@@ -17,7 +17,7 @@ AiController::AiController()
 	, m_targetReachedThreshold(0.3f)
 	, m_reachedTarget(true)
 	, m_maxSteeringForce(0.3f)
-	, m_mass(5.f)
+	, m_mass(1.f)
 {
 }
 

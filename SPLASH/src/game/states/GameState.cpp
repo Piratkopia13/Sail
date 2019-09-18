@@ -386,16 +386,21 @@ GameState::GameState(StateStack& stack)
 	//connections.push_back(conn3);
 
 	std::vector<unsigned int> conns;
-	int x_max = 20;
-	int z_max = 20;
+	int x_max = 22;
+	int z_max = 22;
 	int x_cur = 0;
 	int z_cur = 0;
 	int size = x_max * z_max;
+
+	int padding = 4;
+	float offsetX = x_max * padding * 0.5f;
+	float offsetZ = z_max * padding * 0.5f;
+
 	for (size_t i = 0; i < size; i++) {	
 		conns.clear();
 		x_cur = i % x_max;
 		z_cur = floor(i / x_max);
-		nodes.push_back(glm::vec3(x_cur * 4, 3.f, z_cur * 4));
+		nodes.push_back(glm::vec3(x_cur * padding - offsetX, 3.f, z_cur * padding - offsetZ));
 		
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
@@ -405,7 +410,7 @@ GameState::GameState(StateStack& stack)
 				int nx = x_cur + dx;
 				int nz = z_cur + dz;
 				if (nx >= 0 && nx < x_max && nz >= 0 && nz < z_max) {
-					int ni = nx * x_max + nz;
+					int ni = nx + nz * x_max;
 					conns.push_back(ni);
 				}
 			}

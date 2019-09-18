@@ -12,6 +12,24 @@
 class Model;
 class Scene;
 
+/*
+	Checks if container of type U<X> contains element of type X.
+
+	Examples of usage:
+	Can be used to see if std::list<int> contains a specific int.
+	Can also be used to see if std::vector<char> contains a specific char.
+	etc.
+	etc.
+*/
+template<template<class T> class U, class X> bool contains(U<X>& container, X& element) {
+	for (X& x : container) {
+		if (x == element) {
+			return true;
+		}
+	}
+	return false;
+};
+
 class NodeSystem {
 public:
 	struct Node {
@@ -25,17 +43,18 @@ public:
 	};
 
 private:
-	class Graph {
-	public:
-		explicit Graph(const unsigned int numNodes);
-		~Graph();
+	//class Graph {
+	//public:
+	//	explicit Graph(const unsigned int numNodes);
+	//	~Graph();
 
 		void addEdge(const unsigned int src, const unsigned int dest);
 		std::vector<unsigned int> BFS(const unsigned int from, const unsigned int to);
+		std::vector<unsigned int> aStar(const unsigned int from, const unsigned int to);
 
-	private:
-		std::vector<std::list<unsigned int>> m_connections;
-	};
+	//private:
+		std::vector<std::vector<unsigned int>> m_connections;
+	//};
 
 public:
 	NodeSystem();
@@ -47,6 +66,7 @@ public:
 	std::vector<NodeSystem::Node> getPath(const glm::vec3& from, const glm::vec3& to);
 
 	const NodeSystem::Node& getNearestNode(const glm::vec3& position) const;
+	unsigned int getDistence(unsigned int n1, unsigned int n2) const;
 
 #ifdef _DEBUG_NODESYSTEM
 	void setDebugModelAndScene(Model* model, Scene* scene);
@@ -55,7 +75,7 @@ public:
 private:
 	std::vector<NodeSystem::Node> m_nodes;
 
-	NodeSystem::Graph* m_graph;
+	//NodeSystem::Graph* m_graph;
 
 #ifdef _DEBUG_NODESYSTEM
 	Model* m_nodeModel;
