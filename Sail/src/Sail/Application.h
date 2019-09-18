@@ -18,7 +18,7 @@ namespace ctpl {
 }
 
 // TODO? Move elsewhere
-const double TICKRATE = 128.0;
+const double TICKRATE = 2.0;
 const double TIMESTEP = 1.0 / TICKRATE;
 
 class Application : public IEventDispatcher {
@@ -38,7 +38,7 @@ public:
 	virtual int run() = 0;
 	virtual void processInput(float dt) = 0;
 	virtual void update(float dt) = 0;
-	virtual void render(float dt) = 0;
+	virtual void render(float dt, float alpha) = 0;
 	virtual void dispatchEvent(Event& event) override;
 
 	template<typename T>

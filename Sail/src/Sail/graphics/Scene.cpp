@@ -101,6 +101,7 @@ void Scene::prepareRenderObjects() {
 
 }
 
+// alpha is a the interpolation value (range [0,1]) between the last two snapshots
 void Scene::draw(Camera& camera, const float alpha) {
 	m_renderer->begin(&camera);
 

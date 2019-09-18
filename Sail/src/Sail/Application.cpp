@@ -150,8 +150,8 @@ int Application::startGameLoop() {
 					s_updateRunning = 1;
 					while (s_queuedUpdates > 0) {
 						s_queuedUpdates--;
+						Scene::IncrementCurrentUpdateIndex();
 						update(TIMESTEP);
-						Application::IncrementCurrentUpdateIndex();
 					}
 					s_updateRunning = 0;
 				}
@@ -159,7 +159,11 @@ int Application::startGameLoop() {
 
 			// Render
 			Scene::UpdateCurrentRenderIndex();
-			render(static_cast<float>(delta)); // TODO: interpolate between game states with an alpha value
+
+			// TODO: use something other than accumulator
+			double alpha = accumulator/TIMESTEP;
+
+			render(delta, alpha);
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();

@@ -280,15 +280,24 @@ GameState::GameState(StateStack& stack)
 		e = ECS::Instance()->createEntity("Character1");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<PhysicsComponent>();
+		m_aiControllers.push_back(e);
 		m_scene.addEntity(e);
+
 		e = ECS::Instance()->createEntity("Character2");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<PhysicsComponent>();
+		m_aiControllers.push_back(e);
 		m_scene.addEntity(e);
+
 		e = ECS::Instance()->createEntity("Character3");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<PhysicsComponent>();
+		m_aiControllers.push_back(e);
 		m_scene.addEntity(e);
+
 
 		//creates light with model and pointlight
 		e = ECS::Instance()->createEntity("Candle1");
@@ -355,8 +364,7 @@ bool GameState::processInput(float dt) {
 		for ( int i = 0; i < m_aiControllers.size(); i++ ) {
 			if ( m_aiControllers[i].getTargetEntity() == nullptr ) {
 				m_aiControllers[i].chaseEntity(m_playerController.getEntity().get());
-			}
-			else {
+			} else {
 				m_aiControllers[i].chaseEntity(nullptr);
 			}
 		}
@@ -521,8 +529,8 @@ bool GameState::update(float dt) {
 }
 
 // Renders the state
-// Note: will use alpha (the interpolation value between two game states) instead of dt
-bool GameState::render(float alpha) {
+// alpha is a the interpolation value (range [0,1]) between the last two snapshots
+bool GameState::render(float dt, float alpha) {
 	// TODO: make a system or something for this
 	m_playerController.destroyOldProjectiles();
 
@@ -578,17 +586,10 @@ bool GameState::renderImguiConsole(float dt) {
 				m_cc.setTextField(std::string(buf));
 			}
 			ImGui::End();
-		}
-		else {
-		
+		} else {
 			ImGui::End();
 		}
-
 	}
-
-
-
-
 
 
 	return false;

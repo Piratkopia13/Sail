@@ -1,6 +1,4 @@
 #pragma once
-
-#include "pch.h" // for SNAPSHOT_BUFFER_IND
 #include "Transform.h"
 
 // Forward declare

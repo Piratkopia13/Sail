@@ -33,7 +33,7 @@ class StateStack {
 		// Updates the states in the stack
 		virtual void update(float dt);
 		// Renders the states in the stack
-		virtual void render(float dt);
+		virtual void render(float dt, float alpha);
 
 		// Pushes a new state the next update
 		void pushState(States::ID stateID);
