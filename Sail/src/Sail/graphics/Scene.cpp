@@ -8,7 +8,7 @@
 #include "Sail/api/Renderer.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/graphics/geometry/PerUpdateRenderObject.h"
-
+//
 Scene::Scene() 
 	//: m_postProcessPipeline(m_renderer)
 {
