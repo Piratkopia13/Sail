@@ -151,7 +151,7 @@ bool LobbyState::playerLeft(unsigned int id) {
 }
 
 void LobbyState::addTextToChat(Message* message) {
-	this->addmessageToChat(*message);
+	this->addMessageToChat(*message);
 }
 
 void LobbyState::resetCurrentMessage() {
@@ -177,7 +177,7 @@ string LobbyState::fetchMessage()
 void LobbyState::addMessageToChat(Message message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
-	Player* playa = this->getplayer(stoi(message.sender));
+	Player* playa = this->getPlayer(stoi(message.sender));
 	string msg = playa->name + ": ";
 	message.content.insert(0, msg);
 

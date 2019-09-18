@@ -53,7 +53,7 @@ protected:
 	Player m_me;
 	std::list<Message> m_messages;
 	std::list<Player> m_players;
-	Player* getplayer(unsigned int id);
+	Player* getPlayer(unsigned int id);
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
