@@ -92,6 +92,13 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
 
+	// All threads must bind the render target
+	if (postProcessPipeline) {
+		m_outputTexture->begin(cmdList.Get());
+	} else {
+		m_context->renderToBackBuffer(cmdList.Get());
+	}
+
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	if (threadID == 0) {
@@ -104,15 +111,25 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	}
 #else
 	if (threadID == 0) {
+
+		// Init all textures - this needs to be done on ONE thread
+		// TODO: optimize!
+		for (auto& renderCommand : commandQueue) {
+			for (int i = 0; i < 3; i++) {
+				auto* tex = static_cast<DX12Texture*>(renderCommand.mesh->getMaterial()->getTexture(i));
+				if (tex && !tex->hasBeenInitialized()) {
+					tex->initBuffers(cmdList.Get());
+				}
+			}
+		}
+
+
 		// Transition output texture to render target
 		if (postProcessPipeline) {
-			m_outputTexture->begin(cmdList.Get());
 			m_outputTexture->clear({ 0.1f, 0.2f, 0.3f, 1.0f }, cmdList.Get());
-}
-		else {
-			m_context->renderToBackBuffer(cmdList.Get());
+		} else {
 			m_context->prepareToRender(cmdList.Get());
-			m_context->clear(cmdList.Get());
+			m_context->clear(cmdList.Get(), { 0.1f, 0.2f, 0.3f, 1.0f });
 		}
 		
 	}

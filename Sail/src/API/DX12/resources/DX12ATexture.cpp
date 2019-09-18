@@ -11,15 +11,22 @@ DX12ATexture::DX12ATexture()
 	context = Application::getInstance()->getAPI<DX12API>();
 	const auto& numSwapBuffers = context->getNumSwapBuffers();
 
+	// States needs to be handled on a per-thread basis
+	// They are therefore contained in a 2D vector as states[threadID][frameIndex]
+
+	state.resize(numSwapBuffers);
 	srvHeapCDHs.resize(numSwapBuffers);
 	uavHeapCDHs.resize(numSwapBuffers);
-	states.resize(numSwapBuffers);
 	textureDefaultBuffers.resize(numSwapBuffers);
 	// Store the cpu descriptor handle that will contain the srv for this texture
 	for (unsigned int i = 0; i < numSwapBuffers; i++) {
 		srvHeapCDHs[i] = cpuDescHeap.getCPUDescriptorHandleForIndex(i * 2 + 0);
 		uavHeapCDHs[i] = cpuDescHeap.getCPUDescriptorHandleForIndex(i * 2 + 1);
 	}
+}
+
+DX12ATexture::~DX12ATexture() {
+	
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getSrvCDH() const {
@@ -32,12 +39,31 @@ D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH() const {
 	return uavHeapCDHs[context->getFrameIndex()];
 }
 
-void DX12ATexture::transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState) {
-	auto index = (useOneResource) ? 0 : context->getFrameIndex();
-	if (states[index] == newState) return;
+//void DX12ATexture::resetStates(const std::thread::id& resetTo) {
+//	// Assume thread 0 contains the correct state
+//	//if (states.find(resetTo) != states.end()) {
+//		//startState = states[resetTo][context->getFrameIndex()];
+//	if (!states.empty()) {
+//		startState = (*states.begin()).second;
+//	}
+//	//}
+//
+//	states.clear();
+//	/*for (unsigned int threadID = 0; threadID < numThreads; threadID++) {
+//		for (unsigned int frameIndex = 0; frameIndex < context->getNumSwapBuffers(); frameIndex++) {
+//			states[threadID][frameIndex] = currentState;
+//		}
+//	}*/
+//}
 
-	DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[index].Get(), states[index], newState);
-	states[index] = newState;
+void DX12ATexture::transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState) {
+	unsigned int frameIndex = context->getFrameIndex();
+	auto index = (useOneResource) ? 0 : frameIndex;
+
+	if (state[index] == newState) return;
+
+	DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[index].Get(), state[index], newState);
+	state[index] = newState;
 }
 
 bool DX12ATexture::isRenderable() const {

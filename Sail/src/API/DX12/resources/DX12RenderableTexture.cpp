@@ -61,6 +61,8 @@ void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 	clearColor[2] = color.b;
 	clearColor[3] = color.a;
 
+	// Resource state must be set to render target before clearing
+	transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	dxCmdList->ClearRenderTargetView(m_rtvHeapCDHs[context->getFrameIndex()], clearColor, 0, nullptr);
 	if (m_hasDepthTextures) {
 		dxCmdList->ClearDepthStencilView(m_dsvHeapCDHs[context->getFrameIndex()], D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
@@ -98,9 +100,9 @@ void DX12RenderableTexture::createTextures() {
 
 		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, { 0.1f, 0.2f, 0.3f, 1.0f } };
 
-		states[i] = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		state[i] = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		// A texture rarely updates its data, if at all, so it is stored in a default heap
-		ThrowIfFailed(context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &textureDesc, states[i], &clearValue, IID_PPV_ARGS(&textureDefaultBuffers[i])));
+		ThrowIfFailed(context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &textureDesc, state[i], &clearValue, IID_PPV_ARGS(&textureDefaultBuffers[i])));
 		textureDefaultBuffers[i]->SetName(L"Renderable texture default buffer");
 
 		// Create a shader resource view (descriptor that points to the texture and describes it)

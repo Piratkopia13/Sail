@@ -28,8 +28,8 @@ DX12Texture::DX12Texture(const std::string& filename)
 	m_textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
 	// A texture rarely updates its data, if at all, so it is stored in a default heap
-	states[0] = D3D12_RESOURCE_STATE_COPY_DEST;
-	ThrowIfFailed(context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &m_textureDesc, states[0], nullptr, IID_PPV_ARGS(&textureDefaultBuffers[0])));
+	state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
+	ThrowIfFailed(context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &m_textureDesc, state[0], nullptr, IID_PPV_ARGS(&textureDefaultBuffers[0])));
 	textureDefaultBuffers[0]->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filename.begin(), filename.end())).c_str());
 
 	// Create a shader resource view (descriptor that points to the texture and describes it)

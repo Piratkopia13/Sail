@@ -37,7 +37,6 @@ protected:
 	virtual void finish() override;
 
 private:
-
 	DX12API* m_context;
 
 	static std::unique_ptr<DXILShaderCompiler> m_dxilCompiler; // Class Singleton
