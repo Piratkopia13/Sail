@@ -39,7 +39,7 @@ DX12RenderableTexture::~DX12RenderableTexture() {
 void DX12RenderableTexture::begin(void* cmdList) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
-	transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	//transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE* dsvCdh = (m_hasDepthTextures) ? &m_dsvHeapCDHs[context->getFrameIndex()] : &context->getDepthStencilViewCDH();
 	dxCmdList->OMSetRenderTargets(1, &m_rtvHeapCDHs[context->getFrameIndex()], true, dsvCdh);

@@ -126,6 +126,7 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 		// Transition output texture to render target
 		if (postProcessPipeline) {
+			m_outputTexture->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 			m_outputTexture->clear({ 0.1f, 0.2f, 0.3f, 1.0f }, cmdList.Get());
 		} else {
 			m_context->prepareToRender(cmdList.Get());
