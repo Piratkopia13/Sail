@@ -166,11 +166,6 @@ void PlayerController::update(float dt) {
 				sumVec += m_collisionInfo[i].normal;
 			}
 
-			//Sort the collisions to do them in the right order
-			std::sort(m_collisionInfo.begin(), m_collisionInfo.end(), [&](const Octree::CollisionInfo& a, const Octree::CollisionInfo& b) {
-				return glm::dot(-a.normal, totalMovement) > glm::dot(-b.normal, totalMovement);
-				});
-
 			for (unsigned int i = 0; i < m_collisionInfo.size(); i++) {
 				//Stop movement towards triangle
 				float projectionSize = glm::dot(totalMovement, -m_collisionInfo[i].normal);
