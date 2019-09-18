@@ -33,6 +33,11 @@ bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 	glm::vec3 newV0 = v0 - center;
 	glm::vec3 newV1 = v1 - center;
 	glm::vec3 newV2 = v2 - center;
+
+	//Don't intersect with triangles faceing away from the boundingBox
+	if (glm::dot(newV0, triNormal) > 0.0f) {
+		return false;
+	}
 	
 	// Calculate the plane that the triangle is on
 	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - v0;

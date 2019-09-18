@@ -159,13 +159,38 @@ void PlayerController::update(float dt) {
 		// Calculate total movement
 		glm::vec3 totalMovement = glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement) * speedModifier;
 
+		if (m_collisionInfo.size() > 0) {
+			//Get the combined normals
+			glm::vec3 sumVec(0.0f);
+			for (unsigned int i = 0; i < m_collisionInfo.size(); i++) {
+				sumVec += m_collisionInfo[i].normal;
+			}
 
-		for (unsigned int i = 0; i < m_collisionInfo.size(); i++) {
-			//Stop movement towards triangle
-			float projectionSize = glm::dot(totalMovement, -m_collisionInfo[i].normal);
+			//Sort the collisions to do them in the right order
+			std::sort(m_collisionInfo.begin(), m_collisionInfo.end(), [&](const Octree::CollisionInfo& a, const Octree::CollisionInfo& b) {
+				return glm::dot(-a.normal, totalMovement) > glm::dot(-b.normal, totalMovement);
+				});
 
-			if (projectionSize > 0.0f) { //Is pushing against wall
-				totalMovement += m_collisionInfo[i].normal * projectionSize; //Limit movement towards wall
+			for (unsigned int i = 0; i < m_collisionInfo.size(); i++) {
+				//Stop movement towards triangle
+				float projectionSize = glm::dot(totalMovement, -m_collisionInfo[i].normal);
+
+				if (projectionSize > 0.0f) { //Is pushing against wall
+					totalMovement += m_collisionInfo[i].normal * projectionSize; //Limit movement towards wall
+				}
+
+				//Additional check
+				float dotProduct = glm::dot(m_collisionInfo[i].normal, glm::normalize(sumVec));
+				if (dotProduct < 0.98f && dotProduct > 0.0f) {
+					glm::vec3 normalToNormal = sumVec - glm::dot(sumVec, m_collisionInfo[i].normal) * m_collisionInfo[i].normal;
+					normalToNormal = glm::normalize(normalToNormal);
+
+					projectionSize = glm::dot(totalMovement, -normalToNormal);
+
+					if (projectionSize > 0.0f) {
+						totalMovement += normalToNormal * projectionSize;
+					}
+				}
 			}
 		}
 		physicsComp->velocity = totalMovement;
