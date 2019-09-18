@@ -7,10 +7,12 @@
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
+#include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
 void NetworkWrapper::initialize() {
 	m_network = new Network();
+	m_network->initialize();
 }
 
 NetworkWrapper::~NetworkWrapper() {
@@ -23,7 +25,7 @@ bool NetworkWrapper::host(int port) {
 	{
 		//return m_network->setupHost(port);
 	}
-	return m_network->setupHost(port);
+	return m_network->host(port);
 }
 
 bool NetworkWrapper::connectToIP(char* adress) {
@@ -61,11 +63,11 @@ bool NetworkWrapper::connectToIP(char* adress) {
 
 	port = std::atoi(portChar);
 
-	return m_network->setupClient(IP, port);
+	return m_network->join(IP, port);
 }
 
 void NetworkWrapper::sendMsg(std::string msg) {
-	m_network->send(msg.c_str(), msg.length());
+	m_network->send(msg.c_str(), msg.length() +1);
 }
 
 void NetworkWrapper::sendChatMsg(std::string msg) {
@@ -74,7 +76,7 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 	if (m_network->isServer())
 	{
 		msg = std::string("mHost: ") + msg;
-		m_network->send(msg.c_str(), msg.length(), -1);
+		m_network->send(msg.c_str(), msg.length() +1, -1);
 		msg.erase(0, 1);
 		msg = msg + std::string("\n");
 		printf(msg.c_str());
@@ -82,17 +84,17 @@ void NetworkWrapper::sendChatMsg(std::string msg) {
 	else
 	{
 		msg = std::string("m") + msg;
-		m_network->send(msg.c_str(), msg.length());
+		m_network->send(msg.c_str(), msg.length() +1);
 	}
 }
 
 void NetworkWrapper::sendMsgAllClients(std::string msg) {
-	m_network->send(msg.c_str(), msg.length(), -1);
+	m_network->send(msg.c_str(), msg.length() + 1, -1);
 }
 
 void NetworkWrapper::sendChatAllClients(std::string msg) {
 	msg = std::string("m") + msg;
-	m_network->send(msg.c_str(), msg.length(), -1);
+	m_network->send(msg.c_str(), msg.length() + 1, -1);
 }
 
 void NetworkWrapper::checkForPackages() {
@@ -100,7 +102,7 @@ void NetworkWrapper::checkForPackages() {
 }
 
 bool NetworkWrapper::isInitialized() {
-	return m_network->isInitialized();
+	return m_network->getInitializeStatus();
 }
 
 bool NetworkWrapper::isHost() {
@@ -108,44 +110,39 @@ bool NetworkWrapper::isHost() {
 }
 
 void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
-
 	// These will be assigned in the switch case.
 	unsigned int userID;
 	std::string message;
 	char charAsInt[4] = { 0 };
-	std::list<player> playerList;	// Only used in 'w'-case but needs to be initialized
-	player currentPlayer{ -1, "" };	// up here
+	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
+	Player currentPlayer{ -1, "" };	// 
 	int charCounter = 0;			//
+	string id_string = "";				//
+	string remnants = "";				//
+	unsigned int id_number = 0;			//
+	string id = "";			// used in 'm'
+	string remnants_m = "";
+	unsigned int id_m;
+	unsigned char id_question;
 
-	switch (nEvent.data->msg[0])
+	switch (nEvent.data->rawMsg[0])
 	{
 	case 'm':
 		// handle chat message.
 
 		// The host sends this message to all clients.
-		if (m_network->isServer())
-		{
-			std::string tempMessage = std::string(nEvent.data->msg);
-			tempMessage.erase(0, 1);
-			message = std::string("m") + std::to_string(nEvent.clientID) + 
-				std::string(": ") + tempMessage;
-
-			sendMsgAllClients(message);
-
-			// Print to screen
-			message = message + std::string("\n");
-			message.erase(0, 1);
-			printf(message.c_str());
-		}
-		else
-		{
-			// Print to screen
-			message = nEvent.data->msg + std::string("\n");
-			message.erase(0, 1);
-			printf(message.c_str());
+		if (m_network->isServer()) {
+			sendMsgAllClients(nEvent.data->rawMsg);	// Send out the already formatted message to clients
 		}
 
-		Application::getInstance()->dispatchEvent(NetworkChatEvent(message));
+		remnants = nEvent.data->rawMsg;
+		id_m = this->parseID(remnants);
+		remnants.erase(0, 1);
+
+		Application::getInstance()->dispatchEvent(NetworkChatEvent(Message{
+			to_string(id_m),
+			remnants
+		}));
 
 		break;
 
@@ -154,7 +151,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->msg[1 + i];
+			charAsInt[i] = nEvent.data->rawMsg[1 + i];
 		}
 		userID = reinterpret_cast<int&>(charAsInt);
 
@@ -169,7 +166,7 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->msg[1 + i];
+			charAsInt[i] = nEvent.data->rawMsg[1 + i];
 		}
 		userID = reinterpret_cast<int&>(charAsInt);
 
@@ -177,62 +174,60 @@ void NetworkWrapper::decodeMessage(NetworkEvent nEvent) {
 		// Add this user id to the list of players in the lobby.
 		// Print out that this ID joined the lobby.
 		printf((std::to_string(userID) + " joined. \n").c_str());
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(player{ userID, "who?" }));
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ userID, "who?" }));
 		break;
+
+	case '?':
+
+		// This client has recieved a request for its selected name
+		if (!m_network->isServer()) {
+			//string ultratemp = nEvent.data->rawMsg;
+			id_question = nEvent.data->rawMsg[1];//parseID(ultratemp);
+			Application::getInstance()->dispatchEvent(NetworkNameEvent(to_string(id_question)));
+		}
+		else {
+			Application::getInstance()->dispatchEvent(NetworkNameEvent{nEvent.data->rawMsg});
+		}
+		break;
+
+		break; 
 
 	case 'w':
 
-		// Parse the welcome-package. Hosts should never recieve welcome packages
-		// Parse first player
-		charCounter = 1; // Content starts after the 'w'
-		for (; true; charCounter++)
-		{
-			if (nEvent.data->msg[charCounter] == ':') {
+		// Parse the welcome-package.
+		remnants = nEvent.data->rawMsg;
+
+		while (remnants != "") {
+			currentPlayer.id = this->parseID(remnants);
+			currentPlayer.name = this->parseName(remnants);
+
+			// Only add players with full names.
+			if (currentPlayer.name != "") { 
 				playerList.push_back(currentPlayer);
-				currentPlayer.name = "";
-				charCounter++;
-				break;	// First name has been found
-			}
-			else {
-				currentPlayer.name += nEvent.data->msg[charCounter];
 			}
 		}
 
-		for (; charCounter < MAX_PACKAGE_SIZE; charCounter++)
-		{
-			// If delimiter, we just finished with a player name
-			if (nEvent.data->msg[charCounter] == ':') {
-				playerList.push_back(currentPlayer);
-				currentPlayer.name = "";
-			}
-			// If nullterminator, the msg is over.
-			else if (nEvent.data->msg[charCounter] == '\0') {
-				break;
-			}
-			// If neither above, add char to currentplayer
-			else {
-				currentPlayer.name += nEvent.data->msg[charCounter];
-			}
+		if (playerList.size() > 0) {
+			Application::getInstance()->dispatchEvent(NetworkWelcomeEvent(playerList));
 		}
-
-		Application::getInstance()->dispatchEvent(NetworkWelcomeEvent(playerList));
+		
 		break;
 
 	default:
 		printf((std::string("Error: Packet message with key: ") + 
-			nEvent.data->msg[0] + "can't be handled. \n").c_str());
+			nEvent.data->rawMsg[0] + "can't be handled. \n").c_str());
 		break;
 	}
 
 }
 
-void NetworkWrapper::playerDisconnected(ConnectionID id) {
+void NetworkWrapper::playerDisconnected(TCP_CONNECTION_ID id) {
 	/*
 		Send disconnect message to all clients if host.
 	*/
 	if (m_network->isServer())
 	{
-		char msg[64];
+		char msg[64] = {0};
 		int intid = (int)id;
 		char* int_asChar = reinterpret_cast<char*>(&intid);
 
@@ -255,32 +250,33 @@ void NetworkWrapper::playerDisconnected(ConnectionID id) {
 	}
 }
 
-void NetworkWrapper::playerReconnected(ConnectionID id) {
+void NetworkWrapper::playerReconnected(TCP_CONNECTION_ID id) {
 	/*
 		This remains unimplemented.
 	*/
+	id = 0; // Look, sonarcloud, the parameter is being used
 }
 
-void NetworkWrapper::playerJoined(ConnectionID id) {
+void NetworkWrapper::playerJoined(TCP_CONNECTION_ID id) {
 	if (m_network->isServer())
 	{
-		char msg[64] = { 0 };
-		unsigned int intid = id;
-		char* int_asChar = reinterpret_cast<char*>(&intid);
+		// Generate an ID for the client that joined and send that information.
+		unsigned char test = m_IdDistribution;
+		m_IdDistribution++;
+		unsigned char newId = m_IdDistribution;
+		m_connectionsMap.insert(pair<TCP_CONNECTION_ID, unsigned char>(id, newId));
+		
+		// Request a name from the client, which upon recieval will be sent to all clients.
+		char msgRequest[64];
+		msgRequest[0] = '?';
+		msgRequest[1] = newId;
+		msgRequest[2] = '\0';
 
-		msg[0] = 'j';
-		for (int i = 0; i < 4; i++) {
-			msg[i + 1] = int_asChar[i];
-		}
+		unsigned char c = msgRequest[1];
 
-		// Send to all clients that someone joined and which id.
-		m_network->send(msg, sizeof(msg), -1);
+		m_network->send(msgRequest, sizeof(msgRequest), id);
 
-		// Add this user id to the list of players in the lobby.
-		// Print out that this ID joined the lobby.
-		printf((std::to_string(intid) + " joined. \n").c_str());
-
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(player{ intid, "" }));
+		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ newId, "" }));
 	}
 }
 
@@ -289,13 +285,13 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 	{
 	case NETWORK_EVENT_TYPE::NETWORK_ERROR:
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_JOINED:
+	case NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED:
 		playerJoined(nEvent.clientID);
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_DISCONNECTED:
+	case NETWORK_EVENT_TYPE::CONNECTION_CLOSED:
 		playerDisconnected(nEvent.clientID);
 		break;
-	case NETWORK_EVENT_TYPE::CLIENT_RECONNECTED:
+	case NETWORK_EVENT_TYPE::CONNECTION_RE_ESTABLISHED:
 		playerReconnected(nEvent.clientID);
 		break;
 	case NETWORK_EVENT_TYPE::MSG_RECEIVED:
@@ -303,5 +299,62 @@ void NetworkWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 		break;
 	default:
 		break;
+	}
+}
+
+TCP_CONNECTION_ID NetworkWrapper::parseID(std::string& data) {
+	if (data.size() > 63) {
+		return 0;
+	}
+	if (data.size() < 1) {
+		return 0;
+	}
+	else {
+		// Remove opening ':' / '?' marker.
+		data.erase(0, 1);
+
+		std::string id_string = "";
+		int lastIndex;
+		for (lastIndex = 0; lastIndex < data.size(); lastIndex++) {
+			if (data[lastIndex] == '\0' || data[lastIndex] == ':') {
+				break;
+			}
+			else {
+				id_string += data[lastIndex];
+			}
+		}
+
+		data.erase(0, lastIndex);
+		if (id_string != "") {
+			return stoi(id_string);
+		}
+		else {
+			return 0;
+		}
+		
+	}
+}
+
+std::string NetworkWrapper::parseName(std::string& data) {
+	if (data.size() < 1) {
+		return data;
+	}
+	else {
+		// Remove first ':' marker
+		data.erase(0, 1);
+
+		int lastIndex;
+		std::string parsedName = "";
+		for (lastIndex = 0; lastIndex < MAX_PACKAGE_SIZE; lastIndex++) {
+			if (data[lastIndex] == ':') { // Does parseID also remove the last ':'? no?
+				break;
+			}
+			else {
+				parsedName += data[lastIndex];
+			}
+		}
+
+		data.erase(0, lastIndex);
+		return parsedName;
 	}
 }

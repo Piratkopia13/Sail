@@ -83,7 +83,7 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::Begin("Host Game");
 	if (ImGui::Button("S.P.L.A.S.H over here")) {
 		if (m_network->host()) {
-			printf("Setting up host.");
+			printf("Setting up host.\n");
 			this->requestStackPop();
 			this->requestStackPush(States::HostLobby);
 		}
@@ -92,6 +92,7 @@ bool MenuState::renderImgui(float dt) {
 
 	ImGui::Begin("Name:");
 	ImGui::InputText("", inputName, 100);
+	m_app->getStateStorage().setMenuToLobbyData(MenuToLobbyData{ inputName });
 	ImGui::End();
 
 	// 
@@ -104,6 +105,8 @@ bool MenuState::renderImgui(float dt) {
 			// Wait until welcome-package is recieved,
 			// Save the package info,
 			// Pop and push into JoinLobbyState.
+
+			this->inputName = "Joiner";
 
 			this->requestStackPop();
 			this->requestStackPush(States::JoinLobby);

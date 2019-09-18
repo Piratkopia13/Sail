@@ -2,7 +2,7 @@
 
 #include <string>
 #include "Network/NetworkStructs.hpp"
-
+#include <map>
 // Forward declaration :)
 class Network;
 
@@ -48,19 +48,11 @@ public:
 
 private:
 	Network* m_network;
-	//struct HConnectedPlayer { U can delete if u want to
-	//	string name;
-	//	unsigned int ID;
-	//	unsigned int ConnectionID;
-	//};
-	//struct ConnectedPlayer {
-	//	string name;
-	//	unsigned int ID;
-	//};
-	//std::vector<ConnectedPlayer> connections;
-	//std::vector<ConnectedPlayer> Hconnections;
-
 	NetworkWrapper() {}
+
+	// Map of all connection IDs and the assigned ID of each connection of the session.
+	std::map<TCP_CONNECTION_ID, unsigned char> m_connectionsMap;
+	unsigned char m_IdDistribution = 0;
 
 	/*
 		This is the general message decoder who does different things depending on starting letter.
@@ -70,14 +62,22 @@ private:
 	/*
 		Only the host will get these messages to then send to each client.
 	*/
-	void playerDisconnected(ConnectionID id);
-	void playerReconnected(ConnectionID id); // This remains unimplemented.
-	void playerJoined(ConnectionID id);
+	void playerDisconnected(TCP_CONNECTION_ID id);
+	void playerReconnected(TCP_CONNECTION_ID id); // This remains unimplemented.
+	void playerJoined(TCP_CONNECTION_ID id);
 
 	/*
 		Depending on event, call the correct function.
 	*/
 	void handleNetworkEvents(NetworkEvent nEvents);
+	/*
+		 WARNING: These parse functions EXTRACT data, NOT COPY.
+		 They WILL remove the part they extract from data.
+	*/
+	
+	TCP_CONNECTION_ID parseID(std::string& data);
+	std::string parseName(std::string& data);
+
 
 };
 

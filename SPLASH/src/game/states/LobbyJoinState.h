@@ -8,6 +8,7 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../SPLASH/src/game/events/NetworkWelcomeEvent.h"
+#include "../SPLASH/src/game/events/NetworkNameEvent.h"
 
 class LobbyJoinState : public LobbyState {
 public:
@@ -22,4 +23,5 @@ private:
 	bool onPlayerJoined(NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(NetworkDisconnectEvent& event);
 	bool onPlayerWelcomed(NetworkWelcomeEvent& event);
+	bool onNameRequest(NetworkNameEvent& event);
 };

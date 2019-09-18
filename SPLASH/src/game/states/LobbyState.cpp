@@ -26,16 +26,12 @@ LobbyState::LobbyState(StateStack& stack)
 	m_playerCount = 0;
 	m_messageCount = 0;
 
-	// Add local player as the first.
-	m_myName = "Daniel";
-	playerJoined(player{ m_tempID++, m_myName });
+	// Set name according to data from menustate
+	m_me.name = m_app->getStateStorage().getMenuToLobbyData()->name;
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = new char[m_messageSizeLimit] { 0 };
-
-	// -------- test -------- 
-	//addTestData();
 }
 
 LobbyState::~LobbyState() {
@@ -76,6 +72,12 @@ bool LobbyState::inputToChatLog(MSG& msg)
 	return false;
 }
 
+void LobbyState::resetPlayerList()
+{
+	m_players.clear();
+	m_playerCount = 0;
+}
+
 bool LobbyState::update(float dt) {
 	// Update screen dimensions & ImGui related
 	// (Sure, events, but the only thing consuming resources is the LobbyState)
@@ -83,11 +85,15 @@ bool LobbyState::update(float dt) {
 	this->m_screenHeight = m_app->getWindow()->getWindowHeight();
 
 	// Did we send something?
+
 	// ---
-	if (NetworkWrapper::getInstance().isInitialized())
-	{
+	if (NetworkWrapper::getInstance().isInitialized()) {
 		NetworkWrapper::getInstance().checkForPackages();
 	}
+
+
+
+
 
 	// Did we recieve something?
 	// ---
@@ -120,7 +126,7 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-bool LobbyState::playerJoined(player player) {
+bool LobbyState::playerJoined(Player player) {
 	if (m_playerCount < m_playerLimit) {
 		m_players.push_back(player);
 		m_playerCount++;
@@ -131,7 +137,7 @@ bool LobbyState::playerJoined(player player) {
 
 bool LobbyState::playerLeft(unsigned int id) {
 	// Linear search to get target 'player' struct, then erase that from the list
-	player* toBeRemoved = nullptr;
+	Player* toBeRemoved = nullptr;
 	int pos = 0;
 	for (auto playerIt : m_players) {
 		if (playerIt.id == id) {
@@ -144,30 +150,14 @@ bool LobbyState::playerLeft(unsigned int id) {
 	return false;
 }
 
-void LobbyState::addTextToChat(const string* text) {
-	this->addMessageToChat(text, &m_players.front());
+void LobbyState::addTextToChat(Message* message) {
+	this->addMessageToChat(*message);
 }
 
 void LobbyState::resetCurrentMessage() {
 	m_currentmessageIndex = 0;
 	for (size_t i = 0; i < m_messageSizeLimit; i++) {
 		m_currentmessage[i] = '\0';
-	}
-}
-
-void LobbyState::appendMSGToCurrentMessage()
-{
-}
-
-void LobbyState::sendMessage() {
-	if (m_currentmessageIndex != 0) { // If the message isn't empty
-		//this->addmessageToChat(text, &m_players.front());
-
-		// Reset currentMessage
-		m_currentmessageIndex = 0;
-		for (size_t i = 0; i < m_messageSizeLimit; i++) {
-			m_currentmessage[i] = '\0';
-		}
 	}
 }
 
@@ -184,16 +174,15 @@ string LobbyState::fetchMessage()
 	return message;
 }
 
-void LobbyState::recieveMessage(string text, unsigned int senderID) {
-	addMessageToChat(&text, getPlayer(senderID));
-}
+void LobbyState::addMessageToChat(Message message) {
+	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
+	// Add sender to the text
+	Player* playa = this->getPlayer(stoi(message.sender));
+	string msg = playa->name + ": ";
+	message.content.insert(0, msg);
 
-void LobbyState::addMessageToChat(const string* text, const player* sender) {
 	// Add message to chatlog
-	m_messages.push_back(message{
-		sender->name,
-		*text
-		});
+	m_messages.push_back(message);
 
 	// New messages replace old
 	if (m_messages.size() > m_messageLimit) {
@@ -201,37 +190,17 @@ void LobbyState::addMessageToChat(const string* text, const player* sender) {
 	}
 }
 
-player* LobbyState::getPlayer(unsigned int id) {
-	for (auto playerIt : m_players) {
-		if (playerIt.id == id) {
-			return &playerIt;
+Player* LobbyState::getPlayer(unsigned int id) {
+	Player* foundPlayer = nullptr;
+	for (Player& player : m_players) {
+		if (player.id == id) {
+			foundPlayer = &player;
+			break;
+			//return foundPlayer;
 		}
 	}
-	return nullptr;
-}
-
-void LobbyState::addTestData()
-{
-	// Set up players
-//	playerJoined("Ollie", m_tempID++);
-//	playerJoined("David", m_tempID++);
-	//playerJoined("Press 0 to switch between enter msg and going to gamestate with mouse (MouseClick by default)");
-	//playerJoined("The cause of this is an IMGUI-bug where keyboard focus prevents buttons from working");
-	//playerJoined("This tape is since we'll switch from imgui later anyway, so why patch shit that's only an imgui bug");
-	//playerJoined("If u want to look at it: https://github.com/ocornut/imgui/issues/455#event-1428367449");
-
-	message msg;
-	msg.sender = "Daniel";
-	msg.content = "msg1";
-	m_messages.push_back(msg);
-
-	msg.sender = "Ollie";
-	msg.content = "message Two";
-	m_messages.push_back(msg);
-
-	msg.sender = "David";
-	msg.content = "msg 3 mr.boss";
-	m_messages.push_back(msg);
+	
+	return foundPlayer;
 }
 
 void LobbyState::renderPlayerList() {
@@ -251,9 +220,11 @@ void LobbyState::renderPlayerList() {
 	ImGui::Begin("players in lobby:", NULL, flags);
 
 	for (auto currentplayer : m_players) {
-		ImGui::Text(
-			std::string("- ").append(currentplayer.name.c_str()).c_str()
-		);
+		std::string temp;
+		temp += " - ";
+		temp += currentplayer.name.c_str();
+		
+		ImGui::Text(temp.c_str());
 	}
 	ImGui::End();
 }

@@ -6,6 +6,7 @@
 #include "../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
+#include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../events/NetworkWelcomeEvent.h"
 
 class LobbyHostState : public LobbyState {
@@ -20,4 +21,6 @@ private:
 	bool onRecievedText(NetworkChatEvent& event);
 	bool onPlayerJoined(NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(NetworkDisconnectEvent& event);
+	bool onNameRequest(NetworkNameEvent& event);
+
 };
