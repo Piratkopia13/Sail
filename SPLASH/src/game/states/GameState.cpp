@@ -331,8 +331,8 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
 		PointLight pl;
 		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+		pl.setPosition(glm::vec3(lightPos.x-0.02f, lightPos.y + 3.1f, lightPos.z));
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
@@ -342,12 +342,27 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<ModelComponent>(lightModel);
 		e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 		lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+		pl.setPosition(glm::vec3(lightPos.x - 0.02f, lightPos.y + 3.1f, lightPos.z));
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(1);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
+
+		//creates light for the player
+		m_playerController.createCandle(lightModel);
+		//e = m_playerController.m_candle;//ECS::Instance()->createEntity("PlayerCandle");
+		//e->addComponent<ModelComponent>(lightModel);
+		//e->addComponent<TransformComponent>(glm::vec3(-1.f, -3.f, 1.f), m_playerController.getEntity()->getComponent<TransformComponent>());
+		//e->getComponent<TransformComponent>()->setParent(m_playerController.getEntity()->getComponent<TransformComponent>());
+
+		////lightPos = e->getComponent<TransformComponent>()->getTranslation();
+		////pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		////pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		////pl.setAttenuation(.0f, 0.1f, 0.02f);
+		////pl.setIndex(2);
+		////e->addComponent<LightComponent>(pl);
+		//m_scene.addEntity(e);
 	}
 	//m_physSystem.registerEntity(m_playerController.getEntity());
 //>>>>>>> dev
@@ -430,8 +445,8 @@ bool GameState::processInput(float dt) {
 		if (!m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
 			PointLight pl;
 			glm::vec3 pos = m_scene.getEntityByName("Candle1")->getComponent<TransformComponent>()->getTranslation();
-			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+			pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+			pl.setPosition(glm::vec3(pos.x-0.02f, pos.y + 3.1, pos.z));
 			pl.setAttenuation(.0f, 0.1f, 0.02f);
 			pl.setIndex(0);
 			m_scene.getEntityByName("Candle1")->addComponent<LightComponent>(pl);
@@ -442,8 +457,8 @@ bool GameState::processInput(float dt) {
 		if (!m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
 			PointLight pl;
 			glm::vec3 pos = m_scene.getEntityByName("Candle2")->getComponent<TransformComponent>()->getTranslation();
-			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+			pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+			pl.setPosition(glm::vec3(pos.x-0.02f, pos.y + 3.1, pos.z));
 			pl.setAttenuation(.0f, 0.1f, 0.02f);
 			pl.setIndex(1);
 			m_scene.getEntityByName("Candle2")->addComponent<LightComponent>(pl);
@@ -511,7 +526,6 @@ bool GameState::update(float dt) {
 		Updates all Component Systems in order
 	*/
 	ECS::Instance()->update(dt);
-
 	if (m_texturedCubeEntity) {
 		/*
 			Translations, rotations and scales done here are non-constant, meaning they change between updates
@@ -535,10 +549,12 @@ bool GameState::update(float dt) {
 		if (size > 1.2f || size < 0.7f)
 			change *= -1.0f;
 	}
-
+	//unless lights get cleared components are useless
+	//since the LightSetup stores everything in vectors
+	m_lights.clearPointLights();
 	//check and update all lights for all entities
 	std::vector<Entity::SPtr> entities = m_scene.getEntities();
-	m_lights.clearPointLights();
+	m_lights.addPointLight(m_playerController.getCandle()->getComponent<LightComponent>()->m_pointLight);
 	for (int i = 0; i < entities.size();i++) {
 		if (entities[i]->hasComponent<LightComponent>()) {
 			m_lights.addPointLight(entities[i]->getComponent<LightComponent>()->m_pointLight);
