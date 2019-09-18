@@ -36,7 +36,7 @@ void PlayerController::update(float dt) {
 
 	// Increase speed if shift or right trigger is pressed
 	if ( Input::IsKeyPressed(SAIL_KEY_SHIFT) ) {
-		speedModifier = 5.f;
+		speedModifier = 30.f;
 	}
 
 	//

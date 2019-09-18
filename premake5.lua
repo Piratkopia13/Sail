@@ -54,11 +54,13 @@ project "SPLASH"
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"Physics"
 	}
 
 	links {
-		"Sail"
+		"Sail",
+		"Physics"
 	}
 
 	filter "system:windows"
@@ -174,6 +176,40 @@ project "Sail"
 			"GLFW_INCLUDE_NONE"
 		}
 
+	filter "configurations:Debug"
+		defines { "DEBUG" }
+		symbols "On"
+
+	filter "configurations:Release"
+		defines { "NDEBUG" }
+		optimize "On"
+
+project "Physics"
+	location "Physics"
+	kind "StaticLib"
+	language "C++"
+	targetdir "bin/%{cfg.platform}-%{cfg.buildcfg}"
+	objdir (intermediatesDir)
+	cppdialect "C++17"
+	staticruntime "on"
+	
+	pchheader "PhysicsPCH.h"
+	pchsource "Physics/PhysicsPCH.cpp"
+
+	files { 
+		"%{prj.name}/**.h",
+		"%{prj.name}/**.cpp"
+	}
+
+	includedirs {
+		"libraries",
+		"Sail/src"
+	}
+
+	links {
+		"Sail"
+	}
+	
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		symbols "On"

@@ -31,6 +31,7 @@
 //#include "Sail/graphics/shader/basic/CubeMapShader.h"
 //#include "Sail/graphics/shader/basic/DepthShader.h"
 #include "Sail/graphics/shader/material/MaterialShader.h"
+#include "Sail/graphics/shader/material/WireframeShader.h"
 //#include "Sail/graphics/shader/instanced/ParticleShader.h"
 //#include "Sail/graphics/shader/deferred/DynBlockDeferredInstancedGeometryShader.h"
 //#include "Sail/graphics/shader/deferred/DeferredInstancedGeometryShader.h"

@@ -17,6 +17,7 @@ public:
 	// This takes shared ownership of the entity
 	void addEntity(Entity::SPtr entity);
 	void setLightSetup(LightSetup* lights);
+	void showBoundingBoxes(bool val);
 	void draw(Camera& camera);
 	Entity::SPtr getEntityByName(std::string name);
 	const std::vector<Entity::SPtr>& getEntities()const;
@@ -31,5 +32,5 @@ private:
 	//DeferredRenderer m_renderer;
 	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
 	//PostProcessPipeline m_postProcessPipeline;
-
+	bool m_showBoundingBoxes;
 };

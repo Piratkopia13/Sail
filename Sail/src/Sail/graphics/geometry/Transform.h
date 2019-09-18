@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+#include <vector>
 
 class Transform {
 
@@ -71,6 +72,7 @@ private:
 	bool m_matNeedsUpdate;
 	bool m_parentUpdated;
 	bool m_updateDirections;
+	bool m_hasChanged;
 
 	Transform* m_parent;
 	std::vector<Transform*> m_children;
@@ -80,4 +82,8 @@ private:
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);
+
+private:
+	friend class UpdateBoundingBoxSystem;
+	const bool getChange(); //Only access this from UpdateBoundingBoxSystem::update()
 };

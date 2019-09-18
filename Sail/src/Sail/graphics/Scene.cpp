@@ -26,6 +26,7 @@ Scene::Scene()
 
 	//m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(SAIL_NEW DX11RenderableTexture(1U, width, height, false));
 
+	m_showBoundingBoxes = false;
 }
 
 Scene::~Scene() {
@@ -40,6 +41,10 @@ void Scene::setLightSetup(LightSetup* lights) {
 	m_renderer->setLightSetup(lights);
 }
 
+void Scene::showBoundingBoxes(bool val) {
+	m_showBoundingBoxes = val;
+}
+
 void Scene::draw(Camera& camera) {
 
 	m_renderer->begin(&camera);
@@ -52,6 +57,13 @@ void Scene::draw(Camera& camera) {
 
 			m_renderer->submit(model->getModel(), transform->getMatrix());
 		}
+
+		if (m_showBoundingBoxes) {
+			BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
+			if (boundingBox) {
+				m_renderer->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
+			}
+		}
 	}
 
 	m_renderer->end();
@@ -62,12 +74,12 @@ void Scene::draw(Camera& camera) {
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
-	for (Entity::SPtr& entity : m_entities) {
+	/*for (Entity::SPtr& entity : m_entities) {
 		TextComponent* text = entity->getComponent<TextComponent>();
 		if (text) {
 			text->draw();
 		}
-	}
+	}*/
 }
 
 //TODO add failsafe
