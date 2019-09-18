@@ -4,6 +4,7 @@
 #include "Sail/api/Texture.h"
 #include "../DX12API.h"
 #include "DescriptorHeap.h"
+#include <mutex>
 
 class DX12Texture : public Texture {
 public:
@@ -25,6 +26,7 @@ private:
 	DescriptorHeap m_cpuDescHeap;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_heapCDH;
 
+	std::mutex m_initializeMutex;
 	bool m_isInitialized;
 
 };

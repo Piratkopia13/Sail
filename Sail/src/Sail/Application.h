@@ -12,7 +12,6 @@
 #include "resources/ResourceManager.h"
 #include "events/IEventDispatcher.h"
 
-// used in template functions
 #include <future>
 
 // Forward declarations
@@ -20,11 +19,9 @@ namespace ctpl {
 	class thread_pool;
 }
 
-
 // TODO? Move elsewhere
 const double TICKRATE = 128.0;
 const double TIMESTEP = 1.0 / TICKRATE;
-
 
 class Application : public IEventDispatcher {
 
@@ -53,7 +50,6 @@ public:
 	template<typename T>
 	T* const getWindow() { return static_cast<T*>(m_window.get()); }
 	Window* const getWindow();
-
 
 	// Pass-through functions for pushing jobs (functions, lambdas, etc.) to the thread pool.
 	// The first parameter of all jobs must be int id which becomes the id of the running thread.
@@ -103,7 +99,6 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
-
 
 	// Timer
 	Timer m_timer;

@@ -7,11 +7,10 @@ Texture* Texture::Create(const std::string& filename) {
 	return new DX12Texture(filename);
 }
 
-DX12Texture::DX12Texture(const std::string& filename) 
+DX12Texture::DX12Texture(const std::string& filename)
 	: m_cpuDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1)
 	, m_isInitialized(false)
-	, m_textureData(getTextureData(filename))
-{
+	, m_textureData(getTextureData(filename)) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	m_textureDesc = {};
@@ -40,7 +39,7 @@ DX12Texture::DX12Texture(const std::string& filename)
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 	m_context->getDevice()->CreateShaderResourceView(m_textureDefaultBuffer.Get(), &srvDesc, m_heapCDH);
-	
+
 }
 
 DX12Texture::~DX12Texture() {
@@ -48,6 +47,11 @@ DX12Texture::~DX12Texture() {
 }
 
 void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
+	//The lock_guard will make sure multiple threads wont try to initialize the same texture
+	std::lock_guard<std::mutex> lock(m_initializeMutex);
+	if (m_isInitialized)
+		return;
+
 	UINT64 textureUploadBufferSize;
 	// this function gets the size an upload buffer needs to be to upload a texture to the gpu.
 	// each row must be 256 byte aligned except for the last row, which can just be the size in bytes of the row

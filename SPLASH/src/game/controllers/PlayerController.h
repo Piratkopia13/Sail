@@ -4,8 +4,6 @@ class CameraController;
 class Camera;
 class Entity;
 
-constexpr float RUN_SPEED = 2.0f;
-
 class Scene;
 class Model;
 
@@ -38,7 +36,7 @@ public:
 	void destroyOldProjectiles();
 private:
 	float m_movementSpeed = 20.f;
-
+	float RUN_SPEED = 2.0f;
 
 	// "Attached" camera
 	CameraController* m_cam;

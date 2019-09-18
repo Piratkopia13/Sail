@@ -21,6 +21,7 @@ Material::Material(Shader* shader)
 }
 Material::~Material() { }
 
+/*Not safe for multithreaded commandlist recording(d3d12)*/
 void Material::bind(void* cmdList) {
 	ShaderPipeline* pipeline = m_shader->getPipeline();
 	pipeline->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
@@ -106,6 +107,11 @@ const Material::PhongSettings& Material::getPhongSettings() const {
 
 Shader* Material::getShader() const {
 	return m_shader;
+}
+
+Texture* Material::getTexture(int i) const
+{
+	return m_textures[i];
 }
 
 // TODO: remove
