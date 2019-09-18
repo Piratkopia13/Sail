@@ -4,7 +4,7 @@
 #include <memory>
 #include "TextureData.h"
 #include "Sail/api/Texture.h"
-#include "ParsedScene.h"
+//#include "ParsedScene.h"
 #include "loaders/AssimpLoader.h"
 
 //class DeferredGeometryShader;
@@ -81,7 +81,7 @@ private:
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
-	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
+	//std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	std::map < std::string, std::unique_ptr<Model>> m_models;
 	std::map < std::string, std::unique_ptr<AnimationStack>> m_animationStacks;
 	// ShaderSets mapped to their identifiers

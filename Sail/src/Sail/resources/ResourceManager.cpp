@@ -60,23 +60,25 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 
 void ResourceManager::loadModel(const std::string& filename, Shader* shader) {
 	// Insert the new model
-	Model* temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION +filename, shader);
-	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shader) });
+	//Model* temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION +filename, shader);
+	Model* temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION + filename, shader);
+	//m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shader) });
+	m_models.insert({ filename, std::unique_ptr<Model>(temp) });
 }
 Model& ResourceManager::getModel(const std::string& filename, Shader* shader) {
-	auto pos = m_fbxModels.find(filename);
-	if (pos == m_fbxModels.end()) {
+	auto pos = m_models.find(filename);
+	if (pos == m_models.end()) {
 		// Model was not yet loaded, load it and return
 		loadModel(filename, shader);
 		
-		return *m_fbxModels.find(filename)->second->getModel();
+		return *m_models.find(filename)->second;
 		//Logger::Error("Tried to access an fbx model that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadFBXModel(" + filename + ") before accessing it.");
 	}
 
-	return *pos->second->getModel();
+	return *pos->second;
 }
 bool ResourceManager::hasModel(const std::string& filename) {
-	return m_fbxModels.find(filename) != m_fbxModels.end();
+	return m_models.find(filename) != m_models.end();
 }
 
 void ResourceManager::loadAnimationStack(const std::string& fileName) {
