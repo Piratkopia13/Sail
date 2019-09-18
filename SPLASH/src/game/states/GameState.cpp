@@ -148,6 +148,9 @@ GameState::GameState(StateStack& stack)
 	m_app->getResourceManager().loadModel("DEBUG_MODELSKELETON.fbx", shader);
 	m_app->getResourceManager().loadAnimationStack("DEBUG_MODELSKELETON.fbx");
 
+	m_app->getResourceManager().loadModel("DEBUG_WALKINGANIMATION.fbx", shader);
+	m_app->getResourceManager().loadAnimationStack("DEBUG_WALKINGANIMATION.fbx");
+
 	m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
 	m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
 	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);

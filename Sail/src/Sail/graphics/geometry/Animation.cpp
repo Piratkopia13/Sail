@@ -9,19 +9,11 @@ Animation::Animation()
 Animation::~Animation() {
 }
 
-void Animation::pushBackFrame(float time, Animation::Frame& frame) {
-	m_frames.emplace_back(std::pair<float, Animation::Frame>(time, frame));
+void Animation::pushBackFrame(float time, Animation::Frame* frame) {
+	m_frames.emplace_back(std::pair<float, Animation::Frame*>(time, frame));
 }
 
-void Animation::addFrame(Animation::Frame& frame) {
 
-
-}
-
-void Animation::addFrame(int* index, int* limb, float* limbWeight, glm::mat4* limbTransform, int indexSize, int limbSize, int transformSize) {
-
-
-}
 
 AnimationStack::AnimationStack() {
 }
@@ -61,12 +53,15 @@ m_limbTransform(nullptr)
 
 }
 
-Animation::Frame::Frame(size_t size) :
+Animation::Frame::Frame(const unsigned int size) :
 m_transformSize(size)
 {
 	m_limbTransform = SAIL_NEW glm::mat4[size];
+	for (unsigned int i = 0; i < m_transformSize; i++) {
+		m_limbTransform[i] = glm::identity<glm::mat4>();
+	}
 }
 
 Animation::Frame::~Frame() {
-	Memory::SafeDeleteArr(m_limbTransform);
+	Memory::SafeDelete(m_limbTransform);
 }

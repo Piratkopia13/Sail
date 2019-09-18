@@ -48,7 +48,7 @@ private:
 		if (scene->mNumMeshes > 1) {
 			for (size_t i = 0; i < scene->mNumMeshes; i++) {
 				m_meshOffsets.emplace_back(old + scene->mMeshes[i]->mNumVertices);
-				old = scene->mMeshes[i]->mNumVertices;
+				old = m_meshOffsets.back();
 			}
 		}
 	}
@@ -56,9 +56,6 @@ private:
 	struct BoneInfo {
 		size_t index;
 		std::string nodeName;
-		BoneInfo* parent;
-		std::vector<BoneInfo*> children;
-		size_t parentIndex;
 		glm::mat4 offset;
 	};
 	std::unordered_map<std::string, const aiNode*> m_nodes;
@@ -66,6 +63,7 @@ private:
 	std::vector<int> m_meshOffsets;
 	Assimp::Importer m_importer;
 	std::vector<std::map<std::string, const aiNodeAnim*>> m_channels;
+	glm::mat4 m_globalTransform;
 	void mapChannels(const aiScene* scene) {
 		m_channels.resize(scene->mNumAnimations);
 		for (int i = 0; i < scene->mNumAnimations; i++) {

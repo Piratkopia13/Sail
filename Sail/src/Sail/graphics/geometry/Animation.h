@@ -13,36 +13,29 @@ public:
 	class Frame {
 	public:
 		Frame();
-		Frame(size_t size);
+		Frame(const unsigned int size);
 		~Frame();
-		void setTransform(size_t index, const glm::mat4& transform) {
-#ifdef _DEBUG
-			if (index >= m_transformSize) {
-				Logger::Error("Tried to add transform to index(" + std::to_string(index) + ") maxSize(" + std::to_string(m_transformSize));
-				return;
-			}
-#endif
+		void setTransform(const unsigned int index, const glm::mat4& transform) {
+			#ifdef _DEBUG
+				if (index >= m_transformSize || index < 0) {
+					Logger::Error("Tried to add transform to index(" + std::to_string(index) + ") maxSize(" + std::to_string(m_transformSize));
+					return;
+				}
+			#endif
 			m_limbTransform[index] = transform;
 		};
 
 
 	private:
-		size_t m_transformSize;
-
+		unsigned int m_transformSize;
 		glm::mat4* m_limbTransform;
 	};
 	
-	void pushBackFrame(float time, Animation::Frame& frame);
-	void addFrame(Animation::Frame& frame);
-	void addFrame(int* index, int* limb, float* limbWeight, glm::mat4* limbTransform, int indexSize, int limbSize, int transformSize);
-
+	void pushBackFrame(float time, Animation::Frame* frame);
 
 	
 private:
-
-
-	std::vector<std::pair<float, Animation::Frame>> m_frames;
-
+	std::vector<std::pair<float, Animation::Frame*>> m_frames;
 };
 
 
