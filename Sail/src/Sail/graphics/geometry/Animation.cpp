@@ -134,6 +134,41 @@ inline const bool Animation::exists(const unsigned int frame) {
 
 #pragma endregion
 
+#pragma region VERTCONNECTION
+
+AnimationStack::VertConnection::VertConnection() :
+	count(0)
+{
+	for (unsigned int i = 0; i < SAIL_BONES_PER_VERTEX; i++) {
+		transform[i] = 0;
+		weight[i] = 0.0f;
+	}
+}
+
+void AnimationStack::VertConnection::addConnection(const unsigned int _transform, const float _weight) {
+	if (count >= SAIL_BONES_PER_VERTEX) {
+		#ifdef _DEBUG
+			Logger::Error("AnimationStack:VertConnection: Too many existing connections(" + std::to_string(count) + ")");
+		#endif
+		return;
+	}
+	transform[count] = _transform;
+	weight[count] = _weight;
+	count++;
+}
+
+const float AnimationStack::VertConnection::checkWeights() {
+	float sum = 0;
+	for (int i = 0; i < count; i++) {
+		sum += weight[i];
+	}
+	return sum;
+}
+
+
+
+#pragma endregion
+
 #pragma region ANIMATIONSTACK
 
 AnimationStack::AnimationStack() {
@@ -146,8 +181,14 @@ AnimationStack::~AnimationStack() {
 	Memory::SafeDeleteArr(m_connections);
 }
 void AnimationStack::addAnimation(const std::string& animationName, Animation* animation) {
-
-	m_stack.emplace_back(std::pair<std::string, Animation*>(animationName, animation));
+	if (m_stack.find(animationName) == m_stack.end()) {
+		m_names[m_stack.size()] = animationName;
+		m_stack[animationName] = animation;
+	}
+	else {
+		Logger::Warning("Replacing animation " + animationName);
+		m_stack[animationName] = animation;
+	}
 }
 void AnimationStack::setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight) {
 #ifdef _DEBUG
@@ -162,4 +203,18 @@ void AnimationStack::setConnectionData(const unsigned int vertexIndex, const uns
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
 }
 
+const Animation* AnimationStack::getAnimation(const std::string& name) {
+	return nullptr;
+}
+
+void AnimationStack::checkWeights() {
+	for (unsigned int i = 0; i < m_connectionSize; i++) {
+		float value = m_connections[i].checkWeights();
+		if (value > 1.001 || value < 0.999) {
+			Logger::Warning("Weights fucked: " + std::to_string(i) + "(" + std::to_string(value) + ")");
+		}
+	}
+}
+
 #pragma endregion
+

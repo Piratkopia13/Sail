@@ -36,7 +36,7 @@ public:
 
 	// Animations
 	void loadAnimationStack(const std::string& fileName);
-	//AnimationStack& getAnimationStack(const std::string& fileName);
+	AnimationStack& getAnimationStack(const std::string& fileName);
 	bool hasAnimationStack(const std::string& fileName);
 
 	// ShaderSets

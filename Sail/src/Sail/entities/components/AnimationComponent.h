@@ -6,7 +6,7 @@
 class AnimationComponent : public Component<AnimationComponent> {
 public:
 	//SAIL_COMPONENT 
-	AnimationComponent(AnimationStack* animationStack) {}
+	AnimationComponent(AnimationStack* animationStack) { stack = animationStack; }
 	~AnimationComponent() {}
 
 

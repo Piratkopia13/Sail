@@ -278,7 +278,7 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 			anim->addFrame(frame, time, currentFrame);
 		}
 
-		stack->addAnimation(animation->mName.C_Str(),anim);
+		stack->addAnimation(animation->mName.C_Str(), anim);
 	}
 	
 

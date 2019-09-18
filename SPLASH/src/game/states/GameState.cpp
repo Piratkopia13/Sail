@@ -153,6 +153,15 @@ GameState::GameState(StateStack& stack)
 
 	m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
 	m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
+
+
+	auto ballbot = ECS::Instance()->createEntity("BALLBOT");
+	ballbot->addComponent<TransformComponent>();
+	ballbot->getComponent<TransformComponent>()->setScale(0.05f);
+	ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("DEBUG_BALLBOT.fbx", shader));
+	ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("DEBUG_BALLBOT.fbx"));
+
+
 	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");

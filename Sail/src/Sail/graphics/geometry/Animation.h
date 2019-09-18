@@ -56,64 +56,39 @@ private:
 
 class AnimationStack {
 public:
+	class VertConnection {
+	public:
+		VertConnection();
+		void addConnection(const unsigned int _transform, const float _weight);
+		const float checkWeights();
+
+		unsigned int count;
+		unsigned int transform[SAIL_BONES_PER_VERTEX];
+		float weight[SAIL_BONES_PER_VERTEX];
+	};
+
 	AnimationStack();
 	AnimationStack(const unsigned int vertCount);
 	~AnimationStack();
-	
-	//void setVertIndices(const int size, int* vertIndices);
-	//void setLimbIndices
+
 	void addAnimation(const std::string& animationName, Animation* animation);
-
-	struct VertConnection {
-		int count;
-		int transform[SAIL_BONES_PER_VERTEX];
-		float weight[SAIL_BONES_PER_VERTEX];
-
-		VertConnection() {
-			count = 0;
-			for (int i = 0; i < SAIL_BONES_PER_VERTEX; i++) {
-				transform[i] = -1;
-				weight[i] = 0;
-			}
-		}
-		void addConnection(const int _transform, const float _weight) {
-#ifdef _DEBUG
-			if (count >= SAIL_BONES_PER_VERTEX) {
-				Logger::Error("AnimationStack:VertConnection: Too many existing connections(" + std::to_string(count) + ")");
-			}
-#endif
-			if (count >= SAIL_BONES_PER_VERTEX) {
-				return;
-			}
-			transform[count] = _transform;
-			weight[count] = _weight;
-			count++;
-		}
-		float checkWeights() {
-			float sum = 0;
-			for (int i = 0; i < count; i++) {
-				sum += weight[i];
-			}
-			return sum;
-		}
-	};
 	void setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight);
 
+	const Animation* getAnimation(const std::string& name);
+	const Animation* getAnimation(const unsigned int index);
 
-	void checkWeights() {
-		for (unsigned int i = 0; i < m_connectionSize; i++) {
-			float value = m_connections[i].checkWeights();
-			if (value > 1.001 || value < 0.999) {
-				Logger::Warning("Weights fucked: " + std::to_string(i)+ "(" + std::to_string(value)+")");
-			}
-		}
-	}
 
+
+	void checkWeights();
 private:
 
 	unsigned int m_connectionSize;
 	VertConnection* m_connections;
-	std::vector<std::pair<std::string, Animation*>> m_stack;
+	
+
+	std::map<int, std::string> m_names;
+	std::map<std::string, Animation*> m_stack;
+	//std::vector<std::pair<std::string, Animation*>> m_stack;
 
 };
 
