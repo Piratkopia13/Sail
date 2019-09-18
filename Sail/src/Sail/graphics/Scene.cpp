@@ -116,6 +116,18 @@ void Scene::draw(Camera& camera, const float alpha) {
 	}
 }
 
+//TODO add failsafe
+Entity::SPtr Scene::getEntityByName(std::string name) {
+	for (int i = 0; i < m_entities.size(); i++) {
+		if (m_entities[i]->getName() == name) {
+			return m_entities[i];
+		}
+	}
+	return NULL;
+}
+const std::vector<Entity::SPtr>& Scene::getEntities()const {
+	return m_entities;
+}
 bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 

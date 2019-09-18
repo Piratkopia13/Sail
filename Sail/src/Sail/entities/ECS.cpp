@@ -2,17 +2,18 @@
 #include "ECS.h"
 
 ECS::ECS() {
+
 }
 
 ECS::~ECS() {
 }
 
-void ECS::update(float dt) {
-	SystemMap::iterator it = m_systems.begin();
-	for (; it != m_systems.end(); ++it) {
-		it->second->update(dt);
-	}
-}
+//void ECS::update(float dt) {
+//	SystemMap::iterator it = m_systems.begin();
+//	for (; it != m_systems.end(); ++it) {
+//		it->second->update(dt);
+//	}
+//}
 
 unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();

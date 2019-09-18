@@ -26,6 +26,8 @@ public:
 	void addStaticEntity(Entity::SPtr staticEntity);
 
 	void setLightSetup(LightSetup* lights);
+	Entity::SPtr getEntityByName(std::string name);
+	const std::vector<Entity::SPtr>& getEntities()const;
 	void draw(Camera& camera, const float alpha = 1.0f);
 
 
