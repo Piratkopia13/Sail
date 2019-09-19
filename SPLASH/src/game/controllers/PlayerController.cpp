@@ -152,6 +152,22 @@ void PlayerController::processMouseInput(float dt) {
 	glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
 	forward = glm::normalize(forward);
+	
+	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+	right = glm::normalize(right);
+
+
+	// Prevent division by zero
+	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
+
+		// Calculate total movement
+		physicsComp->velocity =
+			glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
+			* (m_movementSpeed * speedModifier);
+	}
+	else {
+		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+	}
 
 	// Update for all projectiles
 	for (int i = 0; i < m_projectiles.size(); i++) {

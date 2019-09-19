@@ -9,6 +9,7 @@
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
 #include "events/IEventDispatcher.h"
+#include "utils/StateStorage.h"
 
 #include <future>
 
@@ -76,6 +77,7 @@ public:
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
+	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 private:
 	static Application* s_instance;
@@ -84,6 +86,7 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
+	StateStorage m_stateStorage;
 
 	// Timer
 	Timer m_timer;

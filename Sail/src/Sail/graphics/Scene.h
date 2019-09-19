@@ -17,6 +17,9 @@ public:
 	// This takes shared ownership of the entity
 	void addEntity(Entity::SPtr entity);
 	void setLightSetup(LightSetup* lights);
+	Entity::SPtr getEntityByName(std::string name);
+	const std::vector<Entity::SPtr>& getEntities()const;
+	void draw(void);
 	void draw(Camera& camera, const float alpha = 1.0f);
 
 

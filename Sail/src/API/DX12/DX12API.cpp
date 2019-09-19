@@ -643,13 +643,13 @@ void DX12API::present(bool vsync) {
 unsigned int DX12API::getMemoryUsage() const {
 	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.CurrentUsage / 1000000;
+	return info.CurrentUsage / (1024*1024);
 }
 
 unsigned int DX12API::getMemoryBudget() const {
 	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.Budget / 1000000;
+	return info.Budget / (1024*1024);
 }
 
 ID3D12Device5* DX12API::getDevice() const {
