@@ -181,7 +181,6 @@ namespace
 				uint32_t samplesPerAdpcmBlock = AdpcmSamplesPerBlock();
 				return blockAlign * nSamplesPerSec / samplesPerAdpcmBlock;
 			}
-			break;
 
 			case TAG_WMA:
 			{

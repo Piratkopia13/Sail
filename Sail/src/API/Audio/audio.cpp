@@ -135,9 +135,9 @@ void Audio::updateAudio() {
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePress1) {
 		m_singlePress1 = true;
-		std::cout << "\nSONG PLAYING: ../Audio/sampleLarge.wav\n";
+		std::cout << "SONG PLAYING: ../Audio/sampleLarge.wav\n";
 		if (this->playSound("../Audio/sampleLarge.wav") == 0) {
-			std::cout << "\t\t(Press '9' to STOP)\n";
+			std::cout << "\n\t\t(Press '9' to STOP)\n";
 		}
 	}
 
