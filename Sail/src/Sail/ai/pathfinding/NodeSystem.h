@@ -3,6 +3,7 @@
 #include <map>
 #include <list>
 
+//Keep this define in case debugging is needed
 //#define _DEBUG_NODESYSTEM
 
 #ifdef _DEBUG_NODESYSTEM
@@ -43,21 +44,6 @@ public:
 		{}
 	};
 
-private:
-	//class Graph {
-	//public:
-	//	explicit Graph(const unsigned int numNodes);
-	//	~Graph();
-
-		void addEdge(const unsigned int src, const unsigned int dest);
-		std::vector<unsigned int> BFS(const unsigned int from, const unsigned int to);
-		std::vector<unsigned int> aStar(const unsigned int from, const unsigned int to);
-
-	//private:
-		std::vector<std::vector<unsigned int>> m_connections;
-	//};
-
-public:
 	NodeSystem();
 	~NodeSystem();
 
@@ -71,16 +57,14 @@ public:
 
 #ifdef _DEBUG_NODESYSTEM
 	void setDebugModelAndScene(Model* model, Scene* scene);
-#endif
-
-private:
-	std::vector<NodeSystem::Node> m_nodes;
-
-	//NodeSystem::Graph* m_graph;
-
-#ifdef _DEBUG_NODESYSTEM
 	Model* m_nodeModel;
 	Scene* m_scene;
 	std::vector<Entity::SPtr> m_nodeEntities;
 #endif
+
+private:
+		std::vector<unsigned int> BFS(const unsigned int from, const unsigned int to);
+		std::vector<unsigned int> aStar(const unsigned int from, const unsigned int to);
+		std::vector<std::vector<unsigned int>> m_connections;
+		std::vector<NodeSystem::Node> m_nodes;
 };

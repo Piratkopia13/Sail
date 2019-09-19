@@ -7,14 +7,11 @@
 #endif
 
 NodeSystem::NodeSystem() {
-	//m_graph = nullptr;
+
 }
 
 NodeSystem::~NodeSystem() {
-	//if ( m_graph ) {
-	//	delete m_graph;
-	//	m_graph = nullptr;
-	//}
+
 }
 
 void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
@@ -23,10 +20,6 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		Logger::Error("Node model and scene need to be set in the node system during debug.");
 	}
 #endif
-	//unsigned int index = 0;
-	//for ( auto node : nodes ) {
-	//	m_nodes.emplace_back(node.position, node.blocked, index++);
-	//}
 
 	m_nodes = nodes;
 	m_connections = connections;
@@ -86,22 +79,6 @@ void NodeSystem::setDebugModelAndScene(Model* model, Scene* scene) {
 }
 #endif
 
-/*
----------------
-	 GRAPH
----------------
-*/
-//NodeSystem::Graph::Graph(const unsigned int numNodes) {
-//	m_connections = std::vector<std::list<unsigned int>>(numNodes);
-//}
-
-//NodeSystem::Graph::~Graph() {}
-
-//void NodeSystem::Graph::addEdge(const unsigned int src, const unsigned int dest) {
-//	
-//	m_connections[src].push_back(dest);
-//}
-
 std::vector<unsigned int> NodeSystem::BFS(const unsigned int from, const unsigned int to) {
 	std::list<unsigned int> queue;
 	std::vector<unsigned int> visited = std::vector<unsigned int>(m_connections.size());
@@ -142,6 +119,9 @@ std::vector<unsigned int> NodeSystem::BFS(const unsigned int from, const unsigne
 	return path;
 }
 
+/*
+Can be optimized
+*/
 std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsigned int to) {
 	std::list<unsigned int> openSet;
 	std::list<unsigned int> closedSet;
@@ -162,9 +142,6 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 	camefrom[from] = from;
 
 	while (!openSet.empty()) {
-		//Sort openlist
-		//openSet.sort();
-
 		current = openSet.front();
 		for (unsigned int n : openSet) {
 			if (fScores[n] < fScores[current]) {
