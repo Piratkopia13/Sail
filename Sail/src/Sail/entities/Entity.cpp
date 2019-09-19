@@ -7,16 +7,17 @@ static int s_id = 0;
 Entity::SPtr Entity::Create(ECS* ecs, const std::string& name) {
 	Entity::SPtr temp = std::make_shared<Entity>(name);
 	temp->m_ecs = ecs;
+	temp->m_mySPtr = temp;
 	return temp;
 }
 
 void Entity::addToSystems() {
-	m_ecs->addEntityToSystems(this);
+	m_ecs->addEntityToSystems(m_mySPtr);
 }
 
 void Entity::removeFromSystems()
 {
-	m_ecs->removeEntityFromSystems(this);
+	m_ecs->removeEntityFromSystems(m_mySPtr);
 }
 
 Entity::Entity(const std::string& name) : m_name(name) {

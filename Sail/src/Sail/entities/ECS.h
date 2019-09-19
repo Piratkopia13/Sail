@@ -39,6 +39,12 @@ public:
 	void createSystem();
 
 	/*
+		Returns a system
+	*/
+	template<typename SystemType>
+	SystemType* getSystem();
+
+	/*
 		Updates every system
 	*/
 	void update(float dt);
@@ -52,8 +58,8 @@ public:
 		Should NOT be called by the game developer
 		These are called internally by Entity
 	*/
-	void addEntityToSystems(Entity* entity);
-	void removeEntityFromSystems(Entity* entity);
+	void addEntityToSystems(Entity::SPtr entity);
+	void removeEntityFromSystems(Entity::SPtr entity);
 
 private:
 	typedef std::unordered_map<std::type_index, std::unique_ptr<BaseComponentSystem>> SystemMap;
@@ -79,4 +85,14 @@ inline void ECS::createSystem() {
 	if (it == m_systems.end()) {
 		m_systems[typeid(T)] = std::make_unique<T>();
 	}
+}
+
+template<typename SystemType>
+inline SystemType* ECS::getSystem() {
+	SystemMap::iterator it = m_systems.find(typeid(SystemType));
+	if (it != m_systems.end()) {
+		return static_cast<SystemType*>(it->second.get());
+	}
+
+	return nullptr;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Octree.h"
+
 class CameraController;
 class Camera;
 class Entity;
@@ -22,7 +24,7 @@ public:
 
 	std::shared_ptr<Entity> getEntity();
 
-	void setProjectileModel(Model* model);
+	void setProjectileModels(Model* model, Model* wireframeModel);
 
 private:
 	float m_movementSpeed = 5.f;
@@ -34,6 +36,7 @@ private:
 	Scene* m_scene;
 
 	Model* m_projectileModel;
+	Model* m_projectileWireframeModel;
 	std::vector<Projectile> m_projectiles;
 
 	std::shared_ptr<Entity> m_player;

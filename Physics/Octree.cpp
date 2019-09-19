@@ -109,7 +109,7 @@ bool Octree::addEntityRec(Entity::SPtr newEntity, Node* currentNode) {
 
 				if (entityAdded) {
 					//Mesh was added to child node. Break loop. No need to try the rest of the children
-					i = (unsigned int) currentNode->childNodes.size();
+					i = (unsigned int)currentNode->childNodes.size();
 				}
 			}
 
@@ -186,7 +186,7 @@ bool Octree::removeEntityRec(Entity::SPtr entityToRemove, Node* currentNode) {
 			if (removeEntityRec(entityToRemove, &currentNode->childNodes[i])) {
 				//Mesh was removed by one of the children, break the loop
 				entityRemoved = true;
-				i = (unsigned int) currentNode->childNodes.size();
+				i = (unsigned int)currentNode->childNodes.size();
 			}
 		}
 	}
@@ -221,7 +221,7 @@ void Octree::getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, cons
 		//Calculate normal for triangle
 		glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
-		tempInfo.normal = triNormal; 
+		tempInfo.normal = triNormal;
 
 		tempInfo.positions[0] = v0;
 		tempInfo.positions[1] = v1;
@@ -231,7 +231,7 @@ void Octree::getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, cons
 
 		outCollisionData->push_back(tempInfo);
 
-		Logger::Log("Collision detected with " + meshEntity->getName());
+		//Logger::Log("Collision detected with " + meshEntity->getName());
 	}
 }
 
@@ -239,35 +239,37 @@ void Octree::getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vecto
 	if (Intersection::aabbWithAabb(*entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Bounding box collides with the current node
 		//Check against entities
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
-			if (Intersection::aabbWithAabb(*entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Bounding box collides with entity bounding box
-				//Get collision
-				ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
-				TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
-				if (model) {
-					//Entity has a model. Check collision with meshes
-					for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
-						const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
-						if (meshData.indices) { //Has indices
-							for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
-								glm::vec3 v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
-								glm::vec3 v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
-								glm::vec3 v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
-								getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
+			if (entity != currentNode->entities[i]) { //Don't let an entity collide with itself
+				if (Intersection::aabbWithAabb(*entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Bounding box collides with entity bounding box
+					//Get collision
+					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
+					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
+					if (model) {
+						//Entity has a model. Check collision with meshes
+						for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
+							const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
+							if (meshData.indices) { //Has indices
+								for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
+									glm::vec3 v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
+									glm::vec3 v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
+									glm::vec3 v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+									getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
+								}
 							}
-						}
-						else { //Does not have indices
-							for (unsigned int k = 0; k < meshData.numVertices; k += 3) {
-								glm::vec3 v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
-								glm::vec3 v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
-								glm::vec3 v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
-								getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
+							else { //Does not have indices
+								for (unsigned int k = 0; k < meshData.numVertices; k += 3) {
+									glm::vec3 v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
+									glm::vec3 v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
+									glm::vec3 v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+									getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
+								}
 							}
 						}
 					}
-				}
-				else { //No model
-					//Collided with bounding box
-					Logger::Log("Collision detected with " + currentNode->entities[i]->getName() + ", no model was found so no collision information was stored");
+					else { //No model
+						//Collided with bounding box
+						Logger::Log("Collision detected with " + currentNode->entities[i]->getName() + ", no model was found so no collision information was stored");
+					}
 				}
 			}
 		}
@@ -277,43 +279,6 @@ void Octree::getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vecto
 			getCollisionsRec(entity, &currentNode->childNodes[i], outCollisionData);
 		}
 	}
-}
-
-float Octree::getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode) {
-	float returnValue = -1.0f;
-
-	/*if (Intersection::rayWithAabb(rayOrigin, rayDirection, currentNode->bb) >= 0.0f) { //Ray intersects this node
-		//Check against meshes
-		for (int i = 0; i < currentNode->nrOfMeshes; i++) {
-			if (Intersection::rayWithAabb(rayOrigin, rayDirection, currentNode->entities[i])) {
-				//Test for intersection
-				for (int j = 0; j < currentNode->entities[i]->getNumberOfVertices(); j += 3) {
-					float tempIntersection;
-					glm::vec3 triangle[3] = { currentNode->entities[i]->getVertexPosition(j), currentNode->entities[i]->getVertexPosition(j + 1), currentNode->entities[i]->getVertexPosition(j + 2) };
-					tempIntersection = Intersection::rayWithTri(rayOrigin, rayDirection, triangle);
-
-					//Save if closer than previous hit
-					if (glm::length(tempIntersection) < returnValue || (returnValue < 0.0f && tempIntersection >= 0.0f)) {
-						returnValue = tempIntersection;
-					}
-				}
-			}
-		}
-
-		//Check for children
-		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-			float tempIntersection = getRayIntersectionRec(rayOrigin, rayDirection, &currentNode->childNodes[i]);
-
-			//Save if closer than previous hit
-			if (glm::length(tempIntersection) < returnValue || (returnValue < 0.0f && tempIntersection >= 0.0f)) {
-				returnValue = tempIntersection;
-			}
-		}
-	}*/
-
-	assert(false); //Not implemented yet
-
-	return returnValue;
 }
 
 int Octree::pruneTreeRec(Node* currentNode) {
@@ -389,8 +354,4 @@ void Octree::update() {
 
 void Octree::getCollisions(Entity::SPtr entity, std::vector<CollisionInfo>* outCollisionData) {
 	getCollisionsRec(entity, &m_baseNode, outCollisionData);
-}
-
-float Octree::getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection) {
-	return getRayIntersectionRec(rayOrigin, rayDirection, &m_baseNode);
 }
