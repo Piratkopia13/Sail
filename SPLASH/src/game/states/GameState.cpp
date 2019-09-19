@@ -4,15 +4,17 @@
 #include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
-
+#include <sstream>
+#include <iomanip>
 
 GameState::GameState(StateStack& stack)
-	: State(stack)
-	//, m_cam(20.f, 20.f, 0.1f, 5000.f)
-	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-	//, m_camController(&m_cam)
-	, m_playerController(&m_cam, &m_scene)
-	, m_cc(true)
+: State(stack)
+//, m_cam(20.f, 20.f, 0.1f, 5000.f)
+, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
+//, m_camController(&m_cam)
+, m_playerController(&m_cam, &m_scene)
+, m_cc(true)
+, m_profiler(true)
 {
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -325,47 +327,6 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		m_scene.addEntity(e);
 
-		//auto e = Entity::Create("Static cube");
-		//e->addComponent<ModelComponent>(m_cubeModel.get());
-		//e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-		//m_scene.addEntity(e);
-
-		//e = Entity::Create("Floor");
-		//e->addComponent<ModelComponent>(m_planeModel.get());
-		//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		//m_scene.addEntity(e);
-
-		//e = Entity::Create("Clingy cube");
-		//e->addComponent<ModelComponent>(m_cubeModel.get());
-		//e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-		//m_scene.addEntity(e);
-
-		//// Add some cubes which are connected through parenting
-		//m_texturedCubeEntity = Entity::Create("Textured parent cube");
-		//m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-		//m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
-		//m_texturedCubeEntity->setName("MovingCube");
-		//m_scene.addEntity(m_texturedCubeEntity);
-		//e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
-
-		//e = Entity::Create("CubeRoot");
-		//e->addComponent<ModelComponent>(m_cubeModel.get());
-		//e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-		//m_scene.addEntity(e);
-		//m_transformTestEntities.push_back(e);
-
-		//e = Entity::Create("CubeChild");
-		//e->addComponent<ModelComponent>(m_cubeModel.get());
-		//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
-		//m_scene.addEntity(e);
-		//m_transformTestEntities.push_back(e);
-
-		//e = Entity::Create("CubeChildChild");
-		//e->addComponent<ModelComponent>(m_cubeModel.get());
-		//e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
-		//m_scene.addEntity(e);
-		//m_transformTestEntities.push_back(e);
-
 		//creates light with model and pointlight
 		e = ECS::Instance()->createEntity("Candle1");
 		e->addComponent<ModelComponent>(lightModel);
@@ -391,6 +352,15 @@ GameState::GameState(StateStack& stack)
 		pl.setIndex(1);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
+
+
+		m_virtRAMHistory = SAIL_NEW float[100];
+		m_physRAMHistory = SAIL_NEW float[100];
+		// Uncomment this to enable vram budget visualization
+		//m_vramBudgetHistory = SAIL_NEW float[100];
+		m_vramUsageHistory = SAIL_NEW float[100];
+		m_cpuHistory = SAIL_NEW float[100];
+		m_frameTimesHistory = SAIL_NEW float[100];
 	}
 	//m_physSystem.registerEntity(m_playerController.getEntity());
 //>>>>>>> dev
@@ -410,6 +380,13 @@ GameState::GameState(StateStack& stack)
 }
 
 GameState::~GameState() {
+	delete m_virtRAMHistory;
+	delete m_physRAMHistory;
+	// Uncomment this to enable vram budget visualization
+	//delete m_vramBudgetHistory;
+	delete m_vramUsageHistory;
+	delete m_cpuHistory;
+	delete m_frameTimesHistory;
 	delete m_octree;
 }
 
@@ -427,40 +404,6 @@ bool GameState::processInput(float dt) {
 		//m_lights.addPointLight(pl);
 	}
 
-	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
-		if (m_transformTestEntities.size() >= 3) {
-			Logger::Log("Setting parent");
-			m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>());
-		}
-	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
-		if (m_transformTestEntities.size() >= 3) {
-			Logger::Log("Removing parent");
-			m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
-		}
-	}
-
-
-	/*
-		Test:
-		Will add or remove the PhysicsComponent on the first entity in m_transformTestEntities
-		If that entity already has the component, the first press will write a warning to the console
-	*/
-	if (Input::WasKeyJustPressed(SAIL_KEY_J)) {
-		static bool hasPhysics = false;
-		hasPhysics = !hasPhysics;
-
-		if (m_transformTestEntities.size() >= 1) {
-			switch (hasPhysics) {
-			case true:
-				m_transformTestEntities[0]->addComponent<PhysicsComponent>(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(9.82f, 0, 0));
-				break;
-			case false:
-				m_transformTestEntities[0]->removeComponent<PhysicsComponent>();
-				break;
-			}
-		}
-	}
 #endif
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
@@ -469,6 +412,7 @@ bool GameState::processInput(float dt) {
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_OEM_5)) {
 		m_cc.toggle();
+		m_profiler.toggle();
 	}
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
@@ -480,7 +424,7 @@ bool GameState::processInput(float dt) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
 		Event e(Event::POTATO);
 		m_app->dispatchEvent(e);
-		}
+	}
 
 	//checks if candle entity has light and if not, adds one 
 	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
@@ -550,8 +494,6 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
-
-
 bool GameState::update(float dt) {
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
@@ -564,17 +506,13 @@ bool GameState::update(float dt) {
 
 	counter += dt * 2;
 
-	/*
-		Updates all Component Systems in order
-	*/
-	ECS::Instance()->update(dt);
+	updateComponentSystems(dt);
 
-	if (m_texturedCubeEntity) {
-		/*
-			Translations, rotations and scales done here are non-constant, meaning they change between updates
-			All constant transformations can be set in the PhysicsComponent and will then be updated automatically
-		*/
-
+	/*if (m_texturedCubeEntity) {
+		//Translations, rotations and scales done here are non-constant, meaning they change between updates
+		//All constant transformations can be set in the PhysicsComponent and will then be updated automatically
+		
+		
 		// Move the cubes around
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
 		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
@@ -591,7 +529,7 @@ bool GameState::update(float dt) {
 		size += change * dt;
 		if (size > 1.2f || size < 0.7f)
 			change *= -1.0f;
-	}
+	}*/
 
 	if (Input::IsKeyPressed(SAIL_KEY_B)) {
 		m_scene.showBoundingBoxes(true);
@@ -642,12 +580,9 @@ bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
 	renderImguiConsole(dt);
+	renderImguiProfiler(dt);
 	return false;
 }
-
-
-
-
 
 bool GameState::renderImguiConsole(float dt) {
 
@@ -693,6 +628,156 @@ bool GameState::renderImguiConsole(float dt) {
 			ImGui::End();
 		}
 		else {
+		
+			ImGui::End();
+		}
+
+	}
+
+
+
+
+
+
+	return false;
+}
+
+bool GameState::renderImguiProfiler(float dt) {
+
+
+	bool open = m_profiler.windowOpen();
+	if (open) {
+		if (ImGui::Begin("Profiler", &open)) {
+			m_profiler.windowState(open);
+			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
+			std::string header;
+
+			header = "CPU (" + m_cpuCount + "%%)";
+			ImGui::Text(header.c_str());
+
+			header = "Frame time (" + m_ftCount + " seconds)";
+			ImGui::Text(header.c_str());
+
+			header = "Virtual RAM (" + m_virtCount + " MB)";
+			ImGui::Text(header.c_str());
+
+			header = "Physical RAM (" + m_physCount + " MB)";
+			ImGui::Text(header.c_str());
+
+			header = "VRAM (" + m_vramUCount + " MB)";
+			ImGui::Text(header.c_str());
+
+			// Uncomment this to enable vram budget visualization
+
+			/*header = "VRAM Available (" + m_vramBCount + " MB)";
+			ImGui::Text(header.c_str());*/
+
+
+			ImGui::Separator();
+			if (ImGui::CollapsingHeader("CPU Graph")) {
+				header = "\n\n\n" + m_cpuCount + "(%)";
+				ImGui::PlotLines(header.c_str(), m_cpuHistory, 100, 0, "", 0.f, 100.f, ImVec2(0, 100));
+			}
+			if (ImGui::CollapsingHeader("Frame Times Graph")) {
+				header = "\n\n\n" + m_ftCount + "(s)";
+				ImGui::PlotLines(header.c_str(), m_frameTimesHistory, 100, 0, "", 0.f, 0.01f, ImVec2(0, 100));
+			}
+			if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
+				header = "\n\n\n" + m_virtCount + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+
+			}
+			if (ImGui::CollapsingHeader("Physical RAM Graph")) {
+				header = "\n\n\n" + m_physCount + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_physRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+			}
+			if (ImGui::CollapsingHeader("VRAM Graph")) {
+				header = "\n\n\n" + m_vramUCount + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+			}
+
+			// Uncomment this to enable vram budget visualization
+
+			/*if (ImGui::CollapsingHeader("VRAM Budget Graph")) {
+				header = "\n\n\n" + m_vramBCount + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_vramBudgetHistory, 100, 0, "", 0.f, 6000.f, ImVec2(0, 100));
+			}*/
+
+
+
+			ImGui::EndChild();
+
+			m_profilerTimer += dt;
+			if (m_profilerTimer > 0.2f) {
+				m_profilerTimer = 0.f;
+				if (m_profilerCounter < 100) {
+
+					// Uncomment this to enable vram budget visualization
+
+					//m_vramBudgetHistory[m_profilerCounter] = m_profiler.vramBudget();
+					//m_vramBCount = "\n\n\n" + std::to_string(m_profiler.vramBudget());
+
+					m_virtRAMHistory[m_profilerCounter] = m_profiler.virtMemUsage();
+					m_physRAMHistory[m_profilerCounter] = m_profiler.workSetUsage();
+					m_vramUsageHistory[m_profilerCounter] = m_profiler.vramUsage();
+					m_frameTimesHistory[m_profilerCounter] = dt;
+					m_cpuHistory[m_profilerCounter++] = m_profiler.processUsage();
+					m_virtCount = std::to_string(m_profiler.virtMemUsage());
+					m_physCount = std::to_string(m_profiler.workSetUsage());
+					m_vramUCount = std::to_string(m_profiler.vramUsage());
+					m_cpuCount = std::to_string(m_profiler.processUsage());
+					m_ftCount = std::to_string(dt);
+
+				}
+				else {
+					float* tempFloatArr = SAIL_NEW float[100];
+					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
+					tempFloatArr[99] = m_profiler.virtMemUsage();
+					delete m_virtRAMHistory;
+					m_virtRAMHistory = tempFloatArr;
+					m_virtCount = std::to_string(m_profiler.virtMemUsage());
+
+					float* tempFloatArr1 = SAIL_NEW float[100];
+					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 100, tempFloatArr1);
+					tempFloatArr1[99] = m_profiler.workSetUsage();
+					delete m_physRAMHistory;
+					m_physRAMHistory = tempFloatArr1;
+					m_physCount = std::to_string(m_profiler.workSetUsage());
+
+					// Uncomment this to enable vram budget visualization
+
+					/*float* tempFloatArr2 = SAIL_NEW float[100];
+					std::copy(m_vramBudgetHistory + 1, m_vramBudgetHistory + 101, tempFloatArr2);
+					tempFloatArr2[99] = m_profiler.vramBudget();
+					delete m_vramBudgetHistory;
+					m_vramBudgetHistory = tempFloatArr2;
+					m_vramBCount = std::to_string(m_profiler.vramBudget());*/
+
+					float* tempFloatArr3 = SAIL_NEW float[100];
+					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
+					tempFloatArr3[99] = m_profiler.vramUsage();
+					delete m_vramUsageHistory;
+					m_vramUsageHistory = tempFloatArr3;
+					m_vramUCount = std::to_string(m_profiler.vramUsage());
+
+					float* tempFloatArr4 = SAIL_NEW float[100];
+					std::copy(m_cpuHistory + 1, m_cpuHistory + 100, tempFloatArr4);
+					tempFloatArr4[99] = m_profiler.processUsage();
+					delete m_cpuHistory;
+					m_cpuHistory = tempFloatArr4;
+					m_cpuCount = std::to_string(m_profiler.processUsage());
+
+					float* tempFloatArr5 = SAIL_NEW float[100];
+					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 100, tempFloatArr5);
+					tempFloatArr5[99] = dt;
+					delete m_frameTimesHistory;
+					m_frameTimesHistory = tempFloatArr5;
+					m_ftCount = std::to_string(dt);
+				}
+			}
+			ImGui::End();
+		}
+		else {
 
 			ImGui::End();
 		}
@@ -705,6 +790,10 @@ bool GameState::renderImguiConsole(float dt) {
 
 
 	return false;
+}
+
+void GameState::updateComponentSystems(float dt) {
+	m_componentSystems.physicSystem->update(dt);
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

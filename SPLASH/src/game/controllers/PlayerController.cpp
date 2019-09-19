@@ -1,13 +1,13 @@
 #include "pch.h"
 #include "PlayerController.h"
 #include "Sail.h"
-#include "..//Physics/Intersection.h"
 
 PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_cam = SAIL_NEW CameraController(cam);
 	m_scene = scene;
 	m_player = ECS::Instance()->createEntity("player_entity");
-
+	
+	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 
 	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(0.0f, 3.f, 0.f));
@@ -150,7 +150,7 @@ void PlayerController::update(float dt) {
 	glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
 	forward = glm::normalize(forward);
-
+	
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 	right = glm::normalize(right);
 
@@ -158,9 +158,9 @@ void PlayerController::update(float dt) {
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
 		// Calculate total movement
-		glm::vec3 totalMovement = glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement) * speedModifier;
-
-		physicsComp->velocity = totalMovement;
+		physicsComp->velocity =
+			glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
+			* (m_movementSpeed * speedModifier);
 	}
 	else {
 		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -179,6 +179,11 @@ void PlayerController::update(float dt) {
 
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 	m_cam->setCameraPosition(playerTrans->getTranslation());
+	// TODO: Replace with transform rotation/direction
+	/*Logger::Warning("totM: " + std::to_string(totM) + 
+					" fowards: " + std::to_string(forwards.x) + 
+					" " + std::to_string(forwards.y)
+					+ " " + std::to_string(forwards.z));*/
 	m_cam->setCameraDirection(forwards);
 }
 

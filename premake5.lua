@@ -40,6 +40,7 @@ project "SPLASH"
 		"%{prj.name}/SPLASH.rc",    -- For icon
 		"%{prj.name}/resource.h", -- For icon
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
@@ -99,6 +100,7 @@ project "Sail"
 
 	files { 
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 

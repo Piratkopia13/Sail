@@ -3,6 +3,8 @@
 #include "Sail.h"
 #include "Physics.h"
 
+class NetworkWrapper;
+
 class Game : public Application {
 
 public:
@@ -20,5 +22,4 @@ private:
 	void registerStates();
 
 	StateStack m_stateStack;
-
 };

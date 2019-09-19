@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
+#include "../../SPLASH/src/game/events/TextInputEvent.h" // ONLY 2 BITCH
 #include "KeyCodes.h"
 
 Application* Application::m_instance = nullptr;
@@ -80,6 +81,11 @@ int Application::startGameLoop() {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+
+			if (msg.message == WM_KEYDOWN) {
+				dispatchEvent(TextInputEvent(msg));
+			}
+		
 		} else {
 
 			// Handle window resizing
@@ -178,6 +184,9 @@ ImGuiHandler* const Application::getImGuiHandler() {
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
+}
+StateStorage& Application::getStateStorage() {
+	return this->m_stateStorage;
 }
 const UINT Application::getFPS() const {
 	return m_fps;
