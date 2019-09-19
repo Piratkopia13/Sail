@@ -87,13 +87,26 @@ public:
 	//const glm::vec3& getForward();
 	//const glm::vec3& getRight();
 	//const glm::vec3& getUp();
+
+	glm::mat4 getMatrix();
+
 private:
 	TransformFrame m_data;
+
+	// TODO: make matrix into its own component
+	// matrices here are only used for bounding boxes and CPU-side code
+	glm::mat4 m_transformMatrix;
+	glm::mat4 m_localTransformMatrix;
+
+	bool m_matNeedsUpdate;
+	bool m_parentUpdated;
 
 	Transform* m_parent = nullptr;
 
 	std::vector<Transform*> m_children;
 private:
+	void updateLocalMatrix();
+	void updateMatrix();
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);

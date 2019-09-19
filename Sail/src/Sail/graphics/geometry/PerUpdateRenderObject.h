@@ -14,7 +14,6 @@ public:
 
 	void createSnapShotFromGameObject(TransformComponent* object);
 
-	void setMatrix(const glm::mat4& newMatrix);
 	glm::mat4 getMatrix(float alpha = 1.0f);
 	Model* getModel() const;
 
@@ -37,7 +36,6 @@ private:
 	void updateLocalMatrix();
 	void updateMatrix();
 
-	void treeNeedsUpdating();
 	void addChild(PerUpdateRenderObject* transform);
 	void removeChild(PerUpdateRenderObject* transform);
 };
