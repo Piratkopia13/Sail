@@ -10,9 +10,11 @@ class PerUpdateRenderObject {
 public:
 	explicit PerUpdateRenderObject();
 	explicit PerUpdateRenderObject(TransformComponent* gameObject, ModelComponent* model);
+	explicit PerUpdateRenderObject(Transform* transform, Model* model);
 	virtual ~PerUpdateRenderObject();
 
 	void createSnapShotFromGameObject(TransformComponent* object);
+	void createSnapShotFromGameObject(Transform* object);
 
 	glm::mat4 getMatrix(float alpha = 1.0f);
 	Model* getModel() const;

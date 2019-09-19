@@ -203,13 +203,35 @@ project "Physics"
 
 	includedirs {
 		"libraries",
-		"Sail/src"
+		"Sail/src",
+		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.ImGui}"
 	}
 
 	links {
-		"Sail"
+		"Sail",
+		"libfbxsdk",
+		"GLFW",
+		"ImGui"
 	}
-	
+	filter { "action:vs2017 or vs2019", "platforms:*64" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+		}
+	filter { "action:vs2017 or vs2019", "platforms:*86" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+		}
+
+	filter "system:windows"
+		systemversion "latest"
+
+		defines {
+			"FBXSDK_SHARED",
+			"GLFW_INCLUDE_NONE"
+		}
+		
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		symbols "On"

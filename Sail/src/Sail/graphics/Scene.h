@@ -93,7 +93,7 @@ private:
 	std::unique_ptr<Renderer>* m_currentRenderer;
 	PostProcessPipeline m_postProcessPipeline;
 	bool m_doPostProcessing;
-
+	bool m_showBoundingBoxes;
 
 
 	// STATIC SYCHRONIZATION STUFF USED IN SCENE

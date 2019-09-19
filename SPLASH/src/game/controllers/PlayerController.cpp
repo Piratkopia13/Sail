@@ -6,11 +6,11 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_cam = SAIL_NEW CameraController(cam);
 	m_scene = scene;
 	m_player = ECS::Instance()->createEntity("player_entity");
-	
+
 	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 3.f, 0.f));
-	
+
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
@@ -76,7 +76,8 @@ void PlayerController::processKeyboardInput(float dt) {
 		physicsComp->velocity =
 			glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
 			* m_movementSpeed * speedModifier;
-	} else {
+	}
+	else {
 		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	}
 
@@ -108,19 +109,21 @@ void PlayerController::processKeyboardInput(float dt) {
 			m_scene->addEntity(e);
 
 			m_projectileSpawnCounter += TIMESTEP;
-		} else {
+		}
+		else {
 			m_projectileSpawnCounter += TIMESTEP;
 			if (m_projectileSpawnCounter > 0.05f) {
 				m_projectileSpawnCounter = 0.f;
 			}
 		}
-	} else {
+	}
+	else {
 		m_projectileSpawnCounter = 0.f;
 	}
 
 	// Update for all projectiles
 	//for (int i = 0; i < m_projectiles.size(); i++) {
-	for (Projectile &p : m_projectiles) {
+	for (Projectile& p : m_projectiles) {
 		p.lifeTime += TIMESTEP;
 		if (p.lifeTime > 2.f) {
 			ECS::Instance()->queueDestructionOfEntity(p.projectile);
@@ -135,28 +138,30 @@ void PlayerController::processMouseInput(float dt) {
 	// Mouse input
 
 	// Toggle cursor capture on right click
-	if ( Input::WasMouseButtonJustPressed(SAIL_MOUSE_RIGHT_BUTTON) ) {
+	if (Input::WasMouseButtonJustPressed(SAIL_MOUSE_RIGHT_BUTTON)) {
 		Input::HideCursor(!Input::IsCursorHidden());
 	}
 
-	if ( Input::IsCursorHidden() ) {
+	if (Input::IsCursorHidden()) {
 		glm::ivec2& mouseDelta = Input::GetMouseDelta();
 		m_pitch -= mouseDelta.y * m_lookSensitivityMouse;
 		m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 	}
 
-	
+
 	// Lock pitch to the range -89 - 89
 	if (m_pitch >= 89) {
 		m_pitch = 89;
-	} else if ( m_pitch <= -89 ) {
+	}
+	else if (m_pitch <= -89) {
 		m_pitch = -89;
 	}
 
 	// Lock yaw to the range 0 - 360
 	if (m_yaw >= 360) {
 		m_yaw -= 360;
-	} else if ( m_yaw <= 0 ) {
+	}
+	else if (m_yaw <= 0) {
 		m_yaw += 360;
 	}
 }
@@ -186,20 +191,7 @@ void PlayerController::updateCameraPosition(float alpha) {
 void PlayerController::destroyOldProjectiles() {
 	// Remove old projectiles
 	for (int i = 0; i < m_projectiles.size(); i++) {
-		for (unsigned int j = 0; j < m_candles->size(); j++) {
-			auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
-			for (unsigned int k = 0; k < collisions.size(); k++) {
-				if (collisions[k].entity == m_candles->at(j)) {
-					m_candles->at(j)->removeComponent<LightComponent>();
-				}
-			}
-		}
-
 		if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
-		
-
-		m_projectiles[i].lifeTime += dt;
-		if (m_projectiles[i].lifeTime > 2.f) {
 			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
 			m_projectiles.erase(m_projectiles.begin() + i);
 			i--;
@@ -208,8 +200,18 @@ void PlayerController::destroyOldProjectiles() {
 }
 
 // NOTE: Keyboard and mouse input processing has been moved to their own functions above this one
-void PlayerController::update(float dt) 
-{}
+void PlayerController::update(float dt) {
+	for (int i = 0; i < m_projectiles.size(); i++) {
+		for (unsigned int j = 0; j < m_candles->size(); j++) {
+			auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
+			for (unsigned int k = 0; k < collisions.size(); k++) {
+				if (collisions[k].entity == m_candles->at(j)) {
+					m_candles->at(j)->removeComponent<LightComponent>();
+				}
+			}
+		}
+	}
+}
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
 	return m_player;

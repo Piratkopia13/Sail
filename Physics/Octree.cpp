@@ -244,23 +244,41 @@ void Octree::getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vecto
 					//Get collision
 					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
 					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
+					StaticMatrixComponent *staticMatrix = currentNode->entities[i]->getComponent<StaticMatrixComponent>();
+
 					if (model) {
 						//Entity has a model. Check collision with meshes
 						for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
 							const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
 							if (meshData.indices) { //Has indices
 								for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
-									glm::vec3 v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
-									glm::vec3 v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
-									glm::vec3 v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+									glm::vec3 v0, v1, v2;
+									if (transform) {
+										v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
+										v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
+										v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+									} 
+									else {
+										v0 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
+										v1 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
+										v2 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+									}
 									getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
 								}
 							}
 							else { //Does not have indices
 								for (unsigned int k = 0; k < meshData.numVertices; k += 3) {
-									glm::vec3 v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
-									glm::vec3 v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
-									glm::vec3 v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+									glm::vec3 v0, v1, v2;
+									if (transform) {
+										v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
+										v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
+										v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+									}
+									else {
+										v0 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
+										v1 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
+										v2 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+									}
 									getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
 								}
 							}
@@ -305,23 +323,18 @@ int Octree::pruneTreeRec(Node* currentNode) {
 }
 
 void Octree::addEntity(Entity::SPtr newEntity) {
-	if (newEntity->hasComponent<BoundingBoxComponent>()) {
-		//See if the base node needs to be bigger
-		glm::vec3 directionVec = findCornerOutside(newEntity, &m_baseNode);
+	//See if the base node needs to be bigger
+	glm::vec3 directionVec = findCornerOutside(newEntity, &m_baseNode);
 
-		if (glm::length(directionVec) != 0.0f) {
-			//Entity is outside base node
-			//Create bigger base node
-			expandBaseNode(directionVec);
-			//Recall this function to try to add the mesh again
-			addEntity(newEntity);
-		}
-		else {
-			addEntityRec(newEntity, &m_baseNode);
-		}
+	if (glm::length(directionVec) != 0.0f) {
+		//Entity is outside base node
+		//Create bigger base node
+		expandBaseNode(directionVec);
+		//Recall this function to try to add the mesh again
+		addEntity(newEntity);
 	}
 	else {
-		Logger::Warning("Entity does not have a BoundingBoxComponent so it was not added to the octree");
+		addEntityRec(newEntity, &m_baseNode);
 	}
 }
 

@@ -99,8 +99,16 @@ void Scene::prepareRenderObjects() {
 		if (transform && model) {
 			m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(transform, model));
 		}
+
+		if (m_showBoundingBoxes) {
+			BoundingBoxComponent* boundingBox = gameObject->getComponent<BoundingBoxComponent>();
+			if (boundingBox) {
+				m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), boundingBox->getWireframeModel()));
+			}
+		}
 	}
 	m_perFrameLocks[ind].unlock();
+}
 
 void Scene::showBoundingBoxes(bool val) {
 	m_showBoundingBoxes = val;

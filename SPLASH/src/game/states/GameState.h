@@ -78,11 +78,5 @@ private:
 	std::unique_ptr<Model> m_boundingBoxModel;
 
 	Octree* m_octree;
-
-	std::vector<Entity::SPtr> m_testBoundingBoxes;
 	std::vector<Entity::SPtr> m_candles;
-
-	Entity::SPtr m_keepCharacterPointerForTesting;
-
-	float m_testAngle;
 };
