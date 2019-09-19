@@ -142,13 +142,6 @@ void DX12API::createDevice() {
 		float dedicatedSystemMemory = adapterDesc.DedicatedSystemMemory / 1073741824.0f;
 		float sharedSystemMemory = adapterDesc.SharedSystemMemory / 1073741824.0f;
 
-		std::cout << "GPU info:" << std::endl;
-		std::cout << "\tDesc: " << description << std::endl;
-		std::cout << "\tDedicatedVideoMem: " << dedicatedVideoMemory << std::endl;
-		std::cout << "\tDedicatedSystemMem: " << dedicatedSystemMemory << std::endl;
-		std::cout << "\tSharedSystemMem: " << sharedSystemMemory << std::endl;
-		std::cout << "\tRevision: " << adapterDesc.Revision << std::endl;
-
 		m_adapter3 = (IDXGIAdapter3*)adapter;
 
 		//SafeRelease(&adapter);

@@ -34,14 +34,6 @@ Audio::Audio() {
 	for (int i = 0; i < SOUND_COUNT; i++) {
 		m_sourceVoice[i] = nullptr;
 	}
-
-	std::cout << "\n\n";
-	std::cout << "AVAILABLE AUDIO-ENGINE TESTS:\n";
-	std::cout << "\tPRESS '1': Fully load & play a short song.\n";
-	std::cout << "\tPRESS '2': Stream-from-file, WITHOUT LOOPING, a long song.\n";
-	std::cout << "\tPRESS '3': Stream-from-file, WITH LOOPING, a short song.\n";
-	std::cout << "\tPRESS '9': Stops the 1st, 4th, 7th, ... already-loaded song from pressing '1'.\n";
-	std::cout << "\tPRESS '0': Stops ALL songs that are playing & streaming.\n\n";
 }
 
 Audio::~Audio(){
@@ -73,15 +65,20 @@ int Audio::playSound(const std::string &filename) {
 				// ... for ADPC-WAV compressed file-type
 				//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::playSound()", "Failed to create the actual 'SourceVoice' for a sound file!");
+		if (hr != S_OK) {
+			Logger::Error("Failed to create the actual 'SourceVoice' for a sound file!");
+		}
 
 		hr = m_sourceVoice[m_currIndex]->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
 
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::playSound()", "Failed to submit the 'sourceBuffer' to the 'sourceVoice' for a sound file!");
+		if (hr != S_OK) {
+			Logger::Error("Failed to submit the 'sourceBuffer' to the 'sourceVoice' for a sound file!");
+		}
 
 		hr = m_sourceVoice[m_currIndex]->Start(0);
-
-		errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::loadSound()", "Failed submit processed audio data to data buffer for a audio file");
+		if (hr != S_OK) {
+			Logger::Error("Failed submit processed audio data to data buffer for a audio file");
+		}
 
 		m_currIndex++;
 		m_currIndex %= SOUND_COUNT;
@@ -90,8 +87,7 @@ int Audio::playSound(const std::string &filename) {
 	}
 
 	else {
-
-		errorCheck(E_FAIL, "AUDIO WARNING!", "FUNCTION: Audio::playSound()", "That audio file has NOT been loaded yet!", 1, false);
+		Logger::Error("That audio file has NOT been loaded yet!");
 		return (-1);
 	}
 
@@ -130,15 +126,11 @@ void Audio::updateAudio() {
 
 		m_singlePress1 = false;
 		this->loadSound("../Audio/sampleLarge.wav");
-		std::cout << "\n\nSONG LOADED: ../Audio/sampleLarge.wav\n";
 	}
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePress1) {
+		this->playSound("../Audio/sampleLarge.wav");
 		m_singlePress1 = true;
-		std::cout << "SONG PLAYING: ../Audio/sampleLarge.wav\n";
-		if (this->playSound("../Audio/sampleLarge.wav") == 0) {
-			std::cout << "\n\t\t(Press '9' to STOP)\n";
-		}
 	}
 
 	// 'STREAM' Sound
@@ -146,7 +138,6 @@ void Audio::updateAudio() {
 
 		m_singlePress2 = false;
 		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankLong.xwb", false);
-		std::cout << "\n\nSTARTED STREAMING (LOOP == FALSE): ../Audio/wavebankLong.xwb\n";
 		//this->streamSound("../Audio/wavebank.xwb");
 	}
 
@@ -158,7 +149,6 @@ void Audio::updateAudio() {
 	if (Input::IsKeyPressed(SAIL_KEY_3) && m_singlePress3) {
 		m_singlePress3 = false;
 		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankShortFade.xwb", true);
-		std::cout << "\n\nSTARTED STREAMING (LOOP == TRUE): ../Audio/wavebankShortFade.xwb\n";
 	}
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_3) && !m_singlePress3) {
@@ -184,12 +174,14 @@ void Audio::initXAudio2() {
 	HRESULT hr;
 
 	hr = XAudio2Create(&m_xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
-
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::initXAudio2()", "Creating the 'IXAudio2' object failed!");
+	if (hr != S_OK) {
+		Logger::Error("Creating the 'IXAudio2' object failed!");
+	}
 
 	hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice);
-
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::initXAudio2()", "Creating the 'IXAudio2MasterVoice' failed!");
+	if (hr != S_OK) {
+		Logger::Error("Creating the 'IXAudio2MasterVoice' failed!");
+	}
 }
 
 void Audio::streamSound(const std::string& filename, bool loop) {
@@ -208,13 +200,17 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 	int currentChunk = 0;
 
 	hr = FindMediaFileCch(wavebank, MAX_PATH, stringToWString(filename).c_str());
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to find the specified '.xwb' file!", 0, true);
+	if (hr != S_OK) {
+		Logger::Error("Failed to find the specified '.xwb' file!");
+	}
 
 	hr = wbr.Open(wavebank);
-	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to open wavebank file!", 0, true);
+	if (hr != S_OK) {
+		Logger::Error("Failed to open wavebank file!");
+	}
 
 	if (!wbr.IsStreamingBank()) {
-		errorCheck(E_FAIL, "AUDIO WARNING!", "FUNCTION: Audio::streamSound()", "Tried to stream a non-streamable '.xwb' file! Contact Oliver if you've gotten this message!", 1, false);
+		Logger::Error("Tried to stream a non-streamable '.xwb' file! Contact Oliver if you've gotten this message!");
 		return;
 	}
 
@@ -225,13 +221,19 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 			// Get info we need to play this wave (need space fo PCM, ADPCM, and xWMA formats)
 			wfx = reinterpret_cast<WAVEFORMATEX*>(&formatBuff);
 			hr = wbr.GetFormat(i, wfx, 64);
-			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to get wave format for '.xwb' file!", 0, true);
+			if (hr != S_OK) {
+				Logger::Error("Failed to get wave format for '.xwb' file!");
+			}
 
 			hr = wbr.GetMetadata(i, metadata);
-			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to get meta data for '.xwb' file!", 0, true);
+			if (hr != S_OK) {
+				Logger::Error("Failed to get meta data for '.xwb' file!");
+			}
 
 			hr = m_xAudio2->CreateSourceVoice(&m_streamVoice, wfx, 0, 1.0f, &voiceContext);
-			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to create source voice!", 0, true);
+			if (hr != S_OK) {
+				Logger::Error("Failed to create source voice!");
+			}
 		
 			totalChunks = ((wbr.BankAudioSize() / 32768) - 2);
 
@@ -251,7 +253,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 				// non-PCM data will fail here. ADPCM requires a more complicated streaming mechanism to deal with submission in audio frames that do
 				// not necessarily align to the 2K async boundary.
 				//
-				wprintf(L"\nStreaming buffer size (%u) is not aligned with sample block requirements (%u)\n", STREAMING_BUFFER_SIZE, wfx->nBlockAlign);
 				m_isStreaming = false;
 				break;
 			}
@@ -285,7 +286,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 					DWORD error = GetLastError();
 					if (error != ERROR_IO_PENDING)
 					{
-						wprintf(L"\nCouldn't start async read: error %#X\n", HRESULT_FROM_WIN32(error));
 						m_isStreaming = false;
 						break;
 					}
@@ -312,7 +312,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 
 				if (!result)
 				{
-					wprintf(L"\nFailed waiting for async read: error %#X\n", HRESULT_FROM_WIN32(GetLastError()));
 					m_isStreaming = false;
 					break;
 				}
@@ -337,7 +336,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 						m_streamVoice->SetVolume(currentVolume);
 					}
 
-					std::cout << "LOADED: Chunk " << currentChunk << " / " << totalChunks << "\n";
 					currentChunk++;
 					WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
 				}
@@ -367,7 +365,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 		if (!m_isStreaming)
 		{
 			m_streamVoice->SetVolume(0);
-			wprintf(L"\n\nDone streaming...");
 
 			XAUDIO2_VOICE_STATE state;
 			for (;;)
@@ -376,7 +373,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 				if (!state.BuffersQueued)
 					break;
 
-				wprintf(L".");
 				WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
 			}
 		}
@@ -393,8 +389,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 	m_streamVoice = nullptr;
 
 	CloseHandle(m_overlapped.hEvent);
-
-	wprintf(L"stopped\n");
 
 	return;
 }

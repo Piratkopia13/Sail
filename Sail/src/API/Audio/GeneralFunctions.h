@@ -92,40 +92,4 @@ static HRESULT readChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD
 	return hr;
 }
 
-static void errorCheck(HRESULT hr, std::string titleWindow, std::string titleMessage, std::string message, int errorType = 0, bool exitIfFailed = true) {
-
-	wchar_t convertedMessage[MAX_PATH];
-	wchar_t convertedTitle[MAX_PATH];
-	wsprintfW(convertedMessage, static_cast<LPCWSTR>(stringToWString(titleMessage + "\n\nMESSAGE: " + message).c_str()));
-	wsprintfW(convertedTitle, static_cast<LPCWSTR>(stringToWString(titleWindow).c_str()));
-
-	long errorCode = 0;
-	
-	if (errorType == 0) {
-		errorCode = MB_ICONERROR;
-	}
-	else if (errorType == 1) {
-		errorCode = MB_ICONWARNING;
-	}
-	else if (errorType == 2) {
-		errorCode = MB_ICONEXCLAMATION;
-	}
-
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(errorMsgBuffer, static_cast<LPCWSTR>(convertedMessage));
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(convertedTitle), errorType);
-		if (exitIfFailed) {
-			std::exit(0);
-		}
-	}
-}
-
 #endif
