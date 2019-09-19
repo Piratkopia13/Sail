@@ -231,7 +231,7 @@ void Octree::getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, cons
 
 		outCollisionData->push_back(tempInfo);
 
-		Logger::Log("Collision detected with " + meshEntity->getName());
+		//Logger::Log("Collision detected with " + meshEntity->getName());
 	}
 }
 
@@ -267,7 +267,7 @@ void Octree::getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vecto
 				}
 				else { //No model
 					//Collided with bounding box
-					Logger::Log("Collision detected with " + currentNode->entities[i]->getName() + ", no model was found so no collision information was stored");
+					//Logger::Log("Collision detected with " + currentNode->entities[i]->getName() + ", no model was found so no collision information was stored");
 				}
 			}
 		}

@@ -17,28 +17,18 @@ NodeSystem::~NodeSystem() {
 	//}
 }
 
-void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
+void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
 #ifdef _DEBUG_NODESYSTEM
 	if ( m_nodeModel == nullptr || m_scene == nullptr ) {
 		Logger::Error("Node model and scene need to be set in the node system during debug.");
 	}
 #endif
-	//if ( m_graph != nullptr ) {
-	//	delete m_graph;
-	//	m_graph = nullptr;
+	//unsigned int index = 0;
+	//for ( auto node : nodes ) {
+	//	m_nodes.emplace_back(node.position, node.blocked, index++);
 	//}
 
-	//m_graph = new Graph(unsigned int(nodes.size()));
-
-	for ( auto node : nodes ) {
-		unsigned int index = unsigned int(m_nodes.size());
-		m_nodes.emplace_back(node, index);
-		//for ( auto c : connections[index] ) {
-		//	m_graph->addEdge(index, c);
-		//	// m_graph.addEdge(c, index); <-- should probably be done
-		//}
-	}
-
+	m_nodes = nodes;
 	m_connections = connections;
 
 #ifdef _DEBUG_NODESYSTEM
@@ -56,7 +46,7 @@ void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector
 }
 
 std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
-	auto path = aStar(from.index, to.index);
+ 	auto path = aStar(from.index, to.index);
 	
 	std::vector<NodeSystem::Node> nPath;
 	for ( int i = path.size() - 1; i > -1; i-- ) {
@@ -76,7 +66,7 @@ const NodeSystem::Node& NodeSystem::getNearestNode(const glm::vec3& position) co
 
 	for ( unsigned int i = 0; i < m_nodes.size(); i++ ) {
 		float d = glm::distance(m_nodes[i].position, position);
-		if ( d < dist ) {
+		if ( d < dist && !m_nodes[i].blocked) {
 			index = i;
 			dist = d;
 		}
@@ -158,14 +148,14 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 	std::vector<unsigned int> path;
 
 	openSet.push_back(from);
-	int current = -1;
-	int maxNodes = m_nodes.size();
+	unsigned int current = from;
+	unsigned int maxNodes = m_nodes.size();
 	unsigned int* camefrom = new unsigned int[maxNodes];
 	unsigned int* gScores = new unsigned int[maxNodes];
 	unsigned int* fScores = new unsigned int[maxNodes];
 
-	memset(gScores, UINT_MAX, maxNodes);
-	memset(fScores, UINT_MAX, maxNodes);
+	memset(gScores, UCHAR_MAX, maxNodes * sizeof(unsigned int));
+	memset(fScores, UCHAR_MAX, maxNodes * sizeof(unsigned int));
 
 	gScores[from] = 0;
 	fScores[from] = 0;
@@ -173,8 +163,15 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 
 	while (!openSet.empty()) {
 		//Sort openlist
-		openSet.sort();
+		//openSet.sort();
+
 		current = openSet.front();
+		for (unsigned int n : openSet) {
+			if (fScores[n] < fScores[current]) {
+				current = n;
+			}
+		}
+
 		if (current == to) {
 			path.push_back(to);
 
@@ -186,11 +183,11 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 
 			break;
 		} else {
-			openSet.pop_front();
+			openSet.remove((unsigned int)(current));
 			closedSet.push_back(current);
-
+			
 			for (auto neighbor : m_connections[current]) {
-				if (contains<std::list, unsigned int>(closedSet, neighbor)) {
+				if (m_nodes[neighbor].blocked || contains<std::list, unsigned int>(closedSet, neighbor)) {
 					continue;
 				} else {
 					//Distence From Start To Neighbor Through Current
@@ -213,5 +210,5 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 	delete[] gScores;
 	delete[] fScores;
 
-	return path;
+ 	return path;
 }

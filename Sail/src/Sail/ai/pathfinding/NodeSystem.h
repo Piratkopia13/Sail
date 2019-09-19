@@ -3,7 +3,7 @@
 #include <map>
 #include <list>
 
-#define _DEBUG_NODESYSTEM
+//#define _DEBUG_NODESYSTEM
 
 #ifdef _DEBUG_NODESYSTEM
 #include "Sail/entities/Entity.h"
@@ -34,10 +34,11 @@ class NodeSystem {
 public:
 	struct Node {
 		glm::vec3 position;
+		bool blocked;
 		unsigned int index;
-
-		Node(glm::vec3 pos, unsigned int i)
+		Node(glm::vec3 pos, bool blocked, unsigned int i)
 			: position(pos)
+			, blocked(blocked)
 			, index(i)
 		{}
 	};
@@ -60,7 +61,7 @@ public:
 	NodeSystem();
 	~NodeSystem();
 
-	void setNodes(const std::vector<glm::vec3>& nodes, const std::vector<std::vector<unsigned int>>& connections);
+	void setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections);
 
 	std::vector<NodeSystem::Node> getPath(const NodeSystem::Node& from, const NodeSystem::Node& to);
 	std::vector<NodeSystem::Node> getPath(const glm::vec3& from, const glm::vec3& to);
