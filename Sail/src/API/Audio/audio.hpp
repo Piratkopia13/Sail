@@ -21,7 +21,7 @@ enum AudioType {MUSIC};
 #pragma comment(lib, "mfuuid")
 
 #define SOUND_COUNT 3
-#define STREAMING_BUFFER_SIZE 65536
+#define STREAMING_BUFFER_SIZE 32768
 #define MAX_BUFFER_COUNT 3
 
 struct StreamingVoiceContext : public IXAudio2VoiceCallback

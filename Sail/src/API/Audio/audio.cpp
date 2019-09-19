@@ -105,6 +105,7 @@ void Audio::pauseAllSounds() {
 	}
 
 	m_isStreaming = false;
+	//m_streamVoice->Stop();
 	if (m_streamSoundThread != nullptr && m_streamSoundThread->joinable()) {
 		m_streamSoundThread->join();
 		delete m_streamSoundThread;
@@ -177,8 +178,6 @@ void Audio::initXAudio2() {
 	hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice);
 
 	errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::initXAudio2()", "Creating the 'IXAudio2MasterVoice' failed!");
-
-	m_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 }
 
 void Audio::streamSound(const std::string& filename, bool loop) {
@@ -188,6 +187,11 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 	DirectX::WaveBankReader wbr;
 	StreamingVoiceContext voiceContext;
 	HRESULT hr;
+	char formatBuff[64];
+	WAVEFORMATEX* wfx = nullptr;
+	DirectX::WaveBankReader::Metadata metadata;
+	std::unique_ptr<uint8_t[]> buffers[MAX_BUFFER_COUNT];
+	float currentVolume = 0.0f;
 	int currentChunk = 0;
 
 	hr = FindMediaFileCch(wavebank, MAX_PATH, stringToWString(filename).c_str());
@@ -205,12 +209,8 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 
 		for (DWORD i = 0; i < wbr.Count(); i++) {
 
-			std::cout << i << "\n";
 			// Get info we need to play this wave (need space fo PCM, ADPCM, and xWMA formats)
-			char formatBuff[64];
-			DirectX::WaveBankReader::Metadata metadata;
-			WAVEFORMATEX* wfx = reinterpret_cast<WAVEFORMATEX*>(&formatBuff);
-
+			wfx = reinterpret_cast<WAVEFORMATEX*>(&formatBuff);
 			hr = wbr.GetFormat(i, wfx, 64);
 			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to get wave format for '.xwb' file!", 0, true);
 
@@ -219,7 +219,9 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 
 			hr = m_xAudio2->CreateSourceVoice(&m_streamVoice, wfx, 0, 1.0f, &voiceContext);
 			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to create source voice!", 0, true);
-			m_streamVoice->Start();
+		
+			m_streamVoice->SetVolume(0);
+			//m_streamVoice->Start();
 
 			// Create the 'overlapped' structure as well as buffers to handle async I/O
 		#if (_WIN32_WINNT >= _WIN32_WINNT_VISTA)
@@ -239,7 +241,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 				break;
 			}
 
-			std::unique_ptr<uint8_t[]> buffers[MAX_BUFFER_COUNT];
 			for (size_t j = 0; j < MAX_BUFFER_COUNT; ++j)
 			{
 				buffers[j].reset(new uint8_t[STREAMING_BUFFER_SIZE]);
@@ -266,9 +267,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 				bool wait = false;
 				if (!ReadFile(async, buffers[currentDiskReadBuffer].get(), STREAMING_BUFFER_SIZE, nullptr, &m_overlapped))
 				{
-					std::cout << currentChunk << "\n";
-					currentChunk++;
-
 					DWORD error = GetLastError();
 					if (error != ERROR_IO_PENDING)
 					{
@@ -317,6 +315,15 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 					if (state.BuffersQueued < MAX_BUFFER_COUNT - 1) {
 						break;
 					}
+
+					m_streamVoice->Start();
+					if (currentVolume != 0.70f) {
+						currentVolume += 0.1f;
+						m_streamVoice->SetVolume(currentVolume);
+					}
+
+					std::cout << currentChunk << "\n";
+					currentChunk++;
 					WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
 				}
 
@@ -344,6 +351,7 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 
 		if (!m_isStreaming)
 		{
+			m_streamVoice->SetVolume(0);
 			wprintf(L"done streaming..");
 
 			XAUDIO2_VOICE_STATE state;
@@ -359,6 +367,8 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 		}
 
 		currentChunk = 0;
+		currentVolume = 0;
+		m_streamVoice->Stop();
 	}
 	//
 	// Clean up
