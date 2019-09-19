@@ -7,7 +7,7 @@ public:
 	UpdateBoundingBoxSystem();
 	~UpdateBoundingBoxSystem();
 
-	void addEntity(Entity::SPtr entity);
+	void addEntity(Entity* entity);
 
 	void update(float dt) override;
 

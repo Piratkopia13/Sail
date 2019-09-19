@@ -441,20 +441,6 @@ bool GameState::processInput(float dt) {
 		//m_lights.addPointLight(pl);
 	}
 
-	//removes light from candle entities if they have it
-	if (Input::WasKeyJustPressed(SAIL_KEY_M)) {
-		if (m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
-			m_scene.getEntityByName("Candle1")->removeComponent<LightComponent>();
-		}
-		//m_lights.removePLByIndex(0);
-	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_N)) {
-		if (m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
-			m_scene.getEntityByName("Candle2")->removeComponent<LightComponent>();
-		}
-		//m_lights.removePLByIndex(1);
-	}
-
 #endif
 	//Toggle bounding boxes rendering
 	if (Input::IsKeyPressed(SAIL_KEY_1)) {

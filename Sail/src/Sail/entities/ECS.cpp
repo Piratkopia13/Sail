@@ -49,7 +49,7 @@ void ECS::destroyEntity(const Entity::SPtr entityToRemove) {
 	}
 }
 
-void ECS::addEntityToSystems(Entity::SPtr entity) {
+void ECS::addEntityToSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 	
 	// Check which systems this entity can be placed in
@@ -72,7 +72,7 @@ void ECS::addEntityToSystems(Entity::SPtr entity) {
 	}
 }
 
-void ECS::removeEntityFromSystems(Entity::SPtr entity) {
+void ECS::removeEntityFromSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 
 	for (; it != m_systems.end(); ++it) {

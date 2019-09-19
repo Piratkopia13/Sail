@@ -11,9 +11,9 @@ public:
 
 	void provideOctree(Octree* octree);
 
-	void addEntity(Entity::SPtr entity) override;
+	void addEntity(Entity* entity) override;
 
-	void removeEntity(Entity::SPtr entity) override;
+	void removeEntity(Entity* entity) override;
 
 	void update(float dt) override;
 

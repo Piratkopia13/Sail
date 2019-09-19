@@ -11,12 +11,13 @@ MenuState::MenuState(StateStack& stack)
 	m_network = &NetworkWrapper::getInstance();
 	m_app = Application::getInstance();
 
-	this->inputIP = new char[100]{ "127.0.0.1:54000" };
-	this->inputName = new char[100]{ "Gottem420" };
+	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
+	this->inputName = SAIL_NEW char[100]{ "Gottem420" };
 }
 
 MenuState::~MenuState() {
 	delete this->inputIP;
+	delete this->inputName;
 }
 
 bool MenuState::processInput(float dt) {

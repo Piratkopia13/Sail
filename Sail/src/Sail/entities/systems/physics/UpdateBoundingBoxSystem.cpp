@@ -36,7 +36,7 @@ void UpdateBoundingBoxSystem::checkDistances(glm::vec3& minVec, glm::vec3& maxVe
 	}
 }
 
-void UpdateBoundingBoxSystem::addEntity(Entity::SPtr entity) {
+void UpdateBoundingBoxSystem::addEntity(Entity* entity) {
 	BaseComponentSystem::addEntity(entity);
 
 

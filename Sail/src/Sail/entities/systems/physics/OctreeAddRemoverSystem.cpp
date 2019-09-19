@@ -20,7 +20,7 @@ void OctreeAddRemoverSystem::provideOctree(Octree* octree) {
 	m_octree->addEntities(&entities);
 }
 
-void OctreeAddRemoverSystem::addEntity(Entity::SPtr entity) {
+void OctreeAddRemoverSystem::addEntity(Entity* entity) {
 	BaseComponentSystem::addEntity(entity);
 
 	if (m_octree) {
@@ -28,7 +28,7 @@ void OctreeAddRemoverSystem::addEntity(Entity::SPtr entity) {
 	}
 }
 
-void OctreeAddRemoverSystem::removeEntity(Entity::SPtr entity) {
+void OctreeAddRemoverSystem::removeEntity(Entity* entity) {
 	BaseComponentSystem::removeEntity(entity);
 
 	if (m_octree) {

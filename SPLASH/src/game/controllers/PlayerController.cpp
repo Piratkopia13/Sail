@@ -205,7 +205,7 @@ void PlayerController::update(float dt) {
 		for (unsigned int j = 0; j < m_candles->size(); j++) {
 			auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
 			for (unsigned int k = 0; k < collisions.size(); k++) {
-				if (collisions[k].entity == m_candles->at(j)) {
+				if (collisions[k].entity == m_candles->at(j).get()) {
 					m_candles->at(j)->removeComponent<LightComponent>();
 				}
 			}
