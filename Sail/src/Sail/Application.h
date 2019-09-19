@@ -11,6 +11,7 @@
 #include "resources/ResourceManager.h"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "events/IEventDispatcher.h"
+#include "utils/StateStorage.h"
 
 class Application : public IEventDispatcher {
 
@@ -46,6 +47,7 @@ public:
 	ResourceManager& getResourceManager();
 	MemoryManager& getMemoryManager();
 	Audio* getAudioManager();
+	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
 private:
@@ -56,6 +58,7 @@ private:
 	ResourceManager m_resourceManager;
 	MemoryManager m_memoryManager;
 	Audio m_audioManager;
+	StateStorage m_stateStorage;
 
 	Timer m_timer;
 	UINT m_fps;

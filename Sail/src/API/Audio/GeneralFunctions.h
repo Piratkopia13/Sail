@@ -1,9 +1,11 @@
 #ifndef GENERAL_FUNCTIONS_H
 #define GENERAL_FUNCTIONS_H
 
+//#define min(a, b)  (((a) < (b)) ? (a) : (b))
+
 #define fourccRIFF 'FFIR'
 #define fourccDATA 'atad'
-#define fourccFMT ' tmf'
+#define fourccFMT  ' tmf'
 #define fourccWAVE 'EVAW'
 #define fourccXWMA 'AMWX'
 #define fourccDPDS 'sdpd'
@@ -88,40 +90,6 @@ static HRESULT readChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD
 	if (0 == ReadFile(hFile, buffer, buffersize, &dwRead, NULL))
 		hr = HRESULT_FROM_WIN32(GetLastError());
 	return hr;
-}
-
-static void errorCheck(HRESULT hr, std::string titleWindow, std::string titleMessage, std::string message, int errorType, bool exitIfFailed) {
-
-	LPCWSTR convertedMessage = stringToWString((titleWindow + "\n\nMESSAGE: " + titleMessage)).c_str();
-	LPCWSTR convertedTitle = stringToWString(titleWindow).c_str();
-
-	long errorCode = 0;
-	
-	if (errorType == 0) {
-		errorCode = MB_ICONERROR;
-	}
-	else if (errorType == 1) {
-		errorCode = MB_ICONWARNING;
-	}
-	else if (errorType == 2) {
-		errorCode = MB_ICONEXCLAMATION;
-	}
-
-	try {
-		if (hr != S_OK) {
-			throw std::invalid_argument(nullptr);
-		}
-	}
-	catch (const std::invalid_argument& e) {
-
-		UNREFERENCED_PARAMETER(e);
-		wchar_t errorMsgBuffer[256];
-		wsprintfW(static_cast<LPWSTR>(errorMsgBuffer), convertedMessage);
-		MessageBox(NULL, errorMsgBuffer, static_cast<LPCWSTR>(convertedTitle), errorType);
-		if (exitIfFailed) {
-			std::exit(0);
-		}
-	}
 }
 
 #endif

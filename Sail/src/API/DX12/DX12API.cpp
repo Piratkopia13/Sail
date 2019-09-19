@@ -142,13 +142,6 @@ void DX12API::createDevice() {
 		float dedicatedSystemMemory = adapterDesc.DedicatedSystemMemory / 1073741824.0f;
 		float sharedSystemMemory = adapterDesc.SharedSystemMemory / 1073741824.0f;
 
-		std::cout << "GPU info:" << std::endl;
-		std::cout << "\tDesc: " << description << std::endl;
-		std::cout << "\tDedicatedVideoMem: " << dedicatedVideoMemory << std::endl;
-		std::cout << "\tDedicatedSystemMem: " << dedicatedSystemMemory << std::endl;
-		std::cout << "\tSharedSystemMem: " << sharedSystemMemory << std::endl;
-		std::cout << "\tRevision: " << adapterDesc.Revision << std::endl;
-
 		m_adapter3 = (IDXGIAdapter3*)adapter;
 
 		//SafeRelease(&adapter);
@@ -606,17 +599,15 @@ void DX12API::present(bool vsync) {
 }
 
 unsigned int DX12API::getMemoryUsage() const {
-	/*DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.CurrentUsage / 1000000;*/
-	return -1;
+	return info.CurrentUsage / (1024*1024);
 }
 
 unsigned int DX12API::getMemoryBudget() const {
-	/*DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.Budget / 1000000;*/
-	return -1;
+	return info.Budget / (1024*1024);
 }
 
 ID3D12Device5* DX12API::getDevice() const {
