@@ -120,7 +120,6 @@ int Application::startGameLoop() {
 			}
 
 			// Queue multiple updates if the game has fallen behind to make sure that it catches back up to the current time.
-			UINT CPU_updatesThisLoop = 0;
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
 				s_queuedUpdates++;
@@ -143,10 +142,10 @@ int Application::startGameLoop() {
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
 			processInput(static_cast<float>(delta));
 
-			// Run update(s) in a separate thread
-			m_threadPool->push([this, CPU_updatesThisLoop](int id) {
-				// If another thread is already running the update loop then don't do in this thread too
-				if (s_updateRunning == 0) {
+			// Don't create a new update thread if another one is already running the update loop
+			if (s_updateRunning == 0) {
+				// Run update(s) in a separate thread
+				m_threadPool->push([this](int id) {
 					s_updateRunning = 1;
 					while (s_queuedUpdates > 0) {
 						s_queuedUpdates--;
@@ -154,8 +153,8 @@ int Application::startGameLoop() {
 						update(TIMESTEP);
 					}
 					s_updateRunning = 0;
-				}
-				});
+					});
+			}
 
 			// Render
 			Scene::UpdateCurrentRenderIndex();
