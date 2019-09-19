@@ -346,6 +346,7 @@ GameState::~GameState() {
 }
 
 // Process input for the state
+// NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
@@ -475,6 +476,9 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2.0f;
 
+	// TODO: make a system or something for this
+	m_playerController.destroyOldProjectiles();
+
 	m_scene.prepareUpdate(); // Copy game state from previous tick
 	m_playerController.prepareUpdate(); // Copy player position from previous tick
 
@@ -531,8 +535,8 @@ bool GameState::update(float dt) {
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 bool GameState::render(float dt, float alpha) {
-	// TODO: make a system or something for this
-	m_playerController.destroyOldProjectiles();
+	//// TODO: make a system or something for this
+	//m_playerController.destroyOldProjectiles();
 
 
 	// Clear back buffer

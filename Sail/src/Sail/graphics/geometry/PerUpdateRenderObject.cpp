@@ -95,7 +95,7 @@ glm::mat4 PerUpdateRenderObject::getMatrix(float alpha) {
 		int bfda = 432;
 	}
 
-	if (alpha <= 0.0f || alpha >= 1.0f) {
+	if (alpha <= 0.0f || alpha > 1.0f) {
 		int broken = 4;
 	}
 

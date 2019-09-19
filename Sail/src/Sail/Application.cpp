@@ -144,9 +144,9 @@ int Application::startGameLoop() {
 
 			// Don't create a new update thread if another one is already running the update loop
 			if (s_updateRunning == 0) {
+				s_updateRunning = 1;
 				// Run update(s) in a separate thread
 				m_threadPool->push([this](int id) {
-					s_updateRunning = 1;
 					while (s_queuedUpdates > 0) {
 						s_queuedUpdates--;
 						Scene::IncrementCurrentUpdateIndex();
