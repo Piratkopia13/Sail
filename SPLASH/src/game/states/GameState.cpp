@@ -272,15 +272,15 @@ GameState::GameState(StateStack& stack)
 
 		e = ECS::Instance()->createEntity("Character1");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(15.f,0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		m_scene.addEntity(e);
 		e = ECS::Instance()->createEntity("Character2");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 15.f), glm::vec3(0.f, 0.f, 0.f));
 		m_scene.addEntity(e);
 		e = ECS::Instance()->createEntity("Character3");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(15.f, 0.f, 15.f), glm::vec3(0.f, 0.f, 0.f));
 		m_scene.addEntity(e);
 
 		//creates light with model and pointlight
@@ -482,7 +482,7 @@ bool GameState::update(float dt) {
 		size += change * dt;
 		if (size > 1.2f || size < 0.7f)
 			change *= -1.0f;
-	//}
+	}*/
 	//unless lights get cleared components are useless
 	//since the LightSetup stores everything in vectors
 	m_lights.clearPointLights();

@@ -276,7 +276,7 @@ void PlayerController::createCandle(Model* model) {
 	m_candle = e;
 	PointLight pl;
 	glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
-	pl.setColor(glm::vec3(0.1f, 0.1f, 0.1f));
+	pl.setColor(glm::vec3(0.5f, 0.5f, 0.5f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
 	pl.setAttenuation(.0f, 0.1f, 0.02f);
 	pl.setIndex(2);
