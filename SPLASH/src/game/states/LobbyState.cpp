@@ -31,7 +31,7 @@ LobbyState::LobbyState(StateStack& stack)
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
-	m_currentmessage = new char[m_messageSizeLimit] { 0 };
+	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
 }
 
 LobbyState::~LobbyState() {

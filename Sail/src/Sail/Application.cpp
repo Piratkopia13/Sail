@@ -10,6 +10,7 @@
 Application* Application::s_instance = nullptr;
 std::atomic_uint Application::s_queuedUpdates = 0;
 std::atomic_uint Application::s_updateRunning = 0;
+std::atomic_bool Application::s_isRunning = true;
 
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
@@ -155,7 +156,7 @@ int Application::startGameLoop() {
 				s_updateRunning = 1;
 				// Run update(s) in a separate thread
 				m_threadPool->push([this](int id) {
-					while (s_queuedUpdates > 0) {
+					while (s_queuedUpdates > 0 && s_isRunning) {
 						s_queuedUpdates--;
 						Scene::IncrementCurrentUpdateIndex();
 						update(TIMESTEP);
@@ -174,6 +175,8 @@ int Application::startGameLoop() {
 			Input::GetInstance()->endFrame();
 		}
 	}
+	s_isRunning = false;
+	m_threadPool->stop();
 	return (int)msg.wParam;
 }
 

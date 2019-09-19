@@ -54,6 +54,7 @@ Scene::Scene()
 
 	//m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(SAIL_NEW DX11RenderableTexture(1U, width, height, false));
 
+	m_showBoundingBoxes = false;
 }
 
 Scene::~Scene() {
@@ -98,9 +99,19 @@ void Scene::prepareRenderObjects() {
 		if (transform && model) {
 			m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(transform, model));
 		}
+
+		if (m_showBoundingBoxes) {
+			BoundingBoxComponent* boundingBox = gameObject->getComponent<BoundingBoxComponent>();
+			if (boundingBox) {
+				m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), boundingBox->getWireframeModel()));
+			}
+		}
 	}
 	m_perFrameLocks[ind].unlock();
+}
 
+void Scene::showBoundingBoxes(bool val) {
+	m_showBoundingBoxes = val;
 }
 
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
@@ -115,6 +126,13 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 		if (model && matrix) {
 			(*m_currentRenderer)->submit(model->getModel(), matrix->getMatrix());
+		}
+
+		if (m_showBoundingBoxes) {
+			BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
+			if (boundingBox) {
+				(*m_currentRenderer)->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
+			}
 		}
 	}
 
@@ -133,12 +151,12 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
-	for (Entity::SPtr& entity : m_gameObjectEntities) {
+	/*for (Entity::SPtr& entity : m_entities) {
 		TextComponent* text = entity->getComponent<TextComponent>();
 		if (text) {
 			text->draw();
 		}
-	}
+	}*/
 }
 
 //TODO add failsafe

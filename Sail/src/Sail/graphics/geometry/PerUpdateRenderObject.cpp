@@ -14,6 +14,10 @@ PerUpdateRenderObject::PerUpdateRenderObject(TransformComponent* gameObject, Mod
 	createSnapShotFromGameObject(gameObject);
 }
 
+PerUpdateRenderObject::PerUpdateRenderObject(Transform* transform, Model* model) : m_model(model) {
+	createSnapShotFromGameObject(transform);
+}
+
 PerUpdateRenderObject::~PerUpdateRenderObject() 
 {}
 
@@ -23,16 +27,6 @@ void PerUpdateRenderObject::setParent(PerUpdateRenderObject* parent) {
 	}
 	m_parent = parent;
 	parent->addChild(this);
-	//for (auto& ts : m_transformSnapshots) {
-	//	ts.m_parentUpdated = true;
-	//}
-	//m_data.m_current.m_parentUpdated = true;
-	//m_data.m_previous.m_parentUpdated = true;
-
-	treeNeedsUpdating();
-	//for (int i = 0; i < SNAPSHOT_BUFFER_SIZE; i++) {
-	//	treeNeedsUpdating();
-	//}
 }
 
 void PerUpdateRenderObject::removeParent() {
@@ -52,25 +46,14 @@ void PerUpdateRenderObject::createSnapShotFromGameObject(TransformComponent* obj
 	}
 }
 
+void PerUpdateRenderObject::createSnapShotFromGameObject(Transform* object) {
+	m_data = object->getTransformFrame();
 
-
-// NOTE: Not used anywhere at the moment
-void PerUpdateRenderObject::setMatrix(const glm::mat4& newMatrix) {
-	m_localTransformMatrix = newMatrix;
-	glm::vec3 tempSkew;
-	glm::vec4 tempPerspective;
-	glm::quat tempRotation;
-	glm::decompose(newMatrix, 
-		m_data.m_current.m_scale, 
-		tempRotation, 
-		m_data.m_current.m_translation, 
-		tempSkew, tempPerspective);
-	// TODO: Check that rotation is valid
-	m_data.m_current.m_rotation = glm::eulerAngles(tempRotation);
-	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
-
-	//m_data.m_current.m_matNeedsUpdate = false;
-	treeNeedsUpdating();
+	// If the object has a parent transform copy that one as well,
+	// NOTE: this will cause duplication of some transforms
+	if (Transform * parent = object->getParent(); parent) {
+		setParent(parent->getRenderTransform());
+	}
 }
 
 PerUpdateRenderObject* PerUpdateRenderObject::getParent() const {
@@ -96,11 +79,6 @@ glm::mat4 PerUpdateRenderObject::getMatrix(float alpha) {
 	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, trans);
 	m_rotationMatrix = glm::mat4_cast(rot);
 	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_data.m_current.m_scale);
-	//m_localTransformMatrix = glm::translate(m_localTransformMatrix, m_translation);
-	/*m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.x, glm::vec3(1.f, 0.f, 0.f));
-	m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.y, glm::vec3(0.f, 1.f, 0.f));
-	m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.z, glm::vec3(0.f, 0.f, 1.f));*/
-	//m_localTransformMatrix = glm::scale(m_localTransformMatrix, m_scale);
 	m_localTransformMatrix = transMatrix * m_rotationMatrix * scaleMatrix;
 	m_transformMatrix = m_localTransformMatrix;
 
@@ -108,29 +86,12 @@ glm::mat4 PerUpdateRenderObject::getMatrix(float alpha) {
 	return m_transformMatrix;
 }
 
-// Not used anywhere
-//glm::mat4 RenderTransform::getLocalMatrix() {
-//	/*if (m_transformSnapshots[s_renderIndex].m_matNeedsUpdate) {
-//	updateLocalMatrix();
-//	m_transformSnapshots[s_renderIndex].m_matNeedsUpdate = false;
-//	}*/	
-//	if (m_data.m_current.m_matNeedsUpdate) {
-//		updateLocalMatrix();
-//		m_data.m_current.m_matNeedsUpdate = false;
-//	}
-//	return m_localTransformMatrix;
-//}
-
 void PerUpdateRenderObject::updateLocalMatrix() {
 	m_localTransformMatrix = glm::mat4(1.0f);
 	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_data.m_current.m_translation);
 	m_rotationMatrix = glm::mat4_cast(m_data.m_current.m_rotationQuat);
 	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_data.m_current.m_scale);
-	//m_localTransformMatrix = glm::translate(m_localTransformMatrix, m_translation);
-	/*m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.x, glm::vec3(1.f, 0.f, 0.f));
-	m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.y, glm::vec3(0.f, 1.f, 0.f));
-	m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.z, glm::vec3(0.f, 0.f, 1.f));*/
-	//m_localTransformMatrix = glm::scale(m_localTransformMatrix, m_scale);
+
 	m_localTransformMatrix = transMatrix * m_rotationMatrix * scaleMatrix;
 }
 
@@ -139,13 +100,6 @@ void PerUpdateRenderObject::updateMatrix() {
 		m_transformMatrix = m_parent->getMatrix() * m_localTransformMatrix;
 	else
 		m_transformMatrix = m_localTransformMatrix;
-}
-
-void PerUpdateRenderObject::treeNeedsUpdating() {
-	//m_data.m_current.m_parentUpdated = true;
-	for (PerUpdateRenderObject* child : m_children) {
-		child->treeNeedsUpdating();
-	}
 }
 
 void PerUpdateRenderObject::addChild(PerUpdateRenderObject* transform) {
