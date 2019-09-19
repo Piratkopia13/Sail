@@ -34,6 +34,14 @@ Audio::Audio() {
 	for (int i = 0; i < SOUND_COUNT; i++) {
 		m_sourceVoice[i] = nullptr;
 	}
+
+	std::cout << "\n\n";
+	std::cout << "AVAILABLE AUDIO-ENGINE TESTS:\n";
+	std::cout << "\tPRESS '1': Fully load & play a short song.\n";
+	std::cout << "\tPRESS '2': Stream-from-file, WITHOUT LOOPING, a long song.\n";
+	std::cout << "\tPRESS '3': Stream-from-file, WITH LOOPING, a short song.\n";
+	std::cout << "\tPRESS '9': Stops the 1st, 4th, 7th, ... already-loaded song from pressing '1'.\n";
+	std::cout << "\tPRESS '0': Stops ALL songs that are playing & streaming.\n\n";
 }
 
 Audio::~Audio(){
@@ -122,12 +130,14 @@ void Audio::updateAudio() {
 
 		m_singlePress1 = false;
 		this->loadSound("../Audio/sampleLarge.wav");
+		std::cout << "\n\nSONG LOADED: ../Audio/sampleLarge.wav\n";
 	}
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePress1) {
 		m_singlePress1 = true;
+		std::cout << "\nSONG PLAYING: ../Audio/sampleLarge.wav\n";
 		if (this->playSound("../Audio/sampleLarge.wav") == 0) {
-			std::cout << "SINGLE-STOPPABLE!! (Press '9')\n";
+			std::cout << "\t\t(Press '9' to STOP)\n";
 		}
 	}
 
@@ -136,6 +146,7 @@ void Audio::updateAudio() {
 
 		m_singlePress2 = false;
 		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankLong.xwb", false);
+		std::cout << "\n\nSTARTED STREAMING (LOOP == FALSE): ../Audio/wavebankLong.xwb\n";
 		//this->streamSound("../Audio/wavebank.xwb");
 	}
 
@@ -147,6 +158,7 @@ void Audio::updateAudio() {
 	if (Input::IsKeyPressed(SAIL_KEY_3) && m_singlePress3) {
 		m_singlePress3 = false;
 		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankShortFade.xwb", true);
+		std::cout << "\n\nSTARTED STREAMING (LOOP == TRUE): ../Audio/wavebankShortFade.xwb\n";
 	}
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_3) && !m_singlePress3) {
@@ -192,6 +204,7 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 	DirectX::WaveBankReader::Metadata metadata;
 	std::unique_ptr<uint8_t[]> buffers[MAX_BUFFER_COUNT];
 	float currentVolume = 0.0f;
+	int totalChunks = 0;
 	int currentChunk = 0;
 
 	hr = FindMediaFileCch(wavebank, MAX_PATH, stringToWString(filename).c_str());
@@ -220,6 +233,8 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 			hr = m_xAudio2->CreateSourceVoice(&m_streamVoice, wfx, 0, 1.0f, &voiceContext);
 			errorCheck(hr, "AUDIO ERROR!", "FUNCTION: Audio::streamSound()", "Failed to create source voice!", 0, true);
 		
+			totalChunks = ((wbr.BankAudioSize() / 32768) - 2);
+
 			m_streamVoice->SetVolume(0);
 			//m_streamVoice->Start();
 
@@ -317,12 +332,12 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 					}
 
 					m_streamVoice->Start();
-					if (currentVolume != 0.70f) {
+					if (currentVolume < 0.80f) {
 						currentVolume += 0.1f;
 						m_streamVoice->SetVolume(currentVolume);
 					}
 
-					std::cout << currentChunk << "\n";
+					std::cout << "LOADED: Chunk " << currentChunk << " / " << totalChunks << "\n";
 					currentChunk++;
 					WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
 				}
@@ -352,7 +367,7 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 		if (!m_isStreaming)
 		{
 			m_streamVoice->SetVolume(0);
-			wprintf(L"done streaming..");
+			wprintf(L"\n\nDone streaming...");
 
 			XAUDIO2_VOICE_STATE state;
 			for (;;)
@@ -383,34 +398,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 
 	return;
 }
-
-/////////////////////////////////////
-// BACK-UP FROM THE FIRST ATTEMPT //
-///////////////////////////////////
-/*
-int currentDiskReadBuffer = 0;
-	int currentPos = 0;
-
-	AudioData* tempAudioData = &Application::getInstance()->getResourceManager().getAudioData(filename);
-	int samplesPerSec = tempAudioData->getFormat()->Format.nSamplesPerSec;
-	int bitsPerSample = tempAudioData->getFormat()->Format.wBitsPerSample;
-	double soundDuration = static_cast<double>(tempAudioData->getSoundBuffer()->AudioBytes / static_cast<UINT32>(tempAudioData->getFormat()->Format.nAvgBytesPerSec));
-
-	long cbWaveSize = 0.1;
-	DWORD cbValid;
-	DWORD dwRead;
-	
-	std::wstring fileNameWSTR = stringToWString(filename);
-	LPCWSTR fileNameLPCWSTR = fileNameWSTR.c_str();
-	HANDLE hFile = CreateFile(
-		fileNameLPCWSTR,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		0,
-		nullptr);
-*/
 
 //--------------------------------------------------------------------------------------
 // Helper function to try to find the location of a media file
