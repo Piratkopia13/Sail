@@ -23,10 +23,12 @@ public:
 	}
 	const Attenuation& getAttenuation() const { return m_attenuation; }
 	float getRadius() const { return m_radius; }
-	void setIndex(const int index) {
+	void setIndex(size_t index) {
 		m_index = index;
 	}
-	 int getIndex()const { return m_index; }
+	size_t getIndex() const { 
+		return m_index; 
+	}
 private:
 	void calculateRadius() {
 		// Derived from attenuation formula used in light shader
@@ -36,6 +38,6 @@ private:
 	glm::vec3 m_color;
 	glm::vec3 m_position;
 	Attenuation m_attenuation;
-	int m_index;
+	size_t m_index;
 	float m_radius;
 };

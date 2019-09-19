@@ -67,8 +67,6 @@ void Transform::removeParent() {
 // NOTE: Has to be done at the beginning of each update
 // copies current state into previous state
 void Transform::prepareUpdate() {
-	//m_data.m_previous = m_data.m_current;
-	//m_data.m_previous.m_translation = m_data.m_current.m_translation;
 	m_data.m_previous = m_data.m_current;
 }
 

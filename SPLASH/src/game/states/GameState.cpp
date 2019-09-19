@@ -534,11 +534,9 @@ bool GameState::update(float dt) {
 }
 
 // Renders the state
+// DO NOT CREATE OR DESTROY ANY gameObjects HERE
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 bool GameState::render(float dt, float alpha) {
-	//// TODO: make a system or something for this
-	//m_playerController.destroyOldProjectiles();
-
 	// Interpolate the player's camera position (but not rotation)
 	m_playerController.updateCameraPosition(alpha);
 

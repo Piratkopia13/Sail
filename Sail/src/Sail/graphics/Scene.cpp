@@ -80,7 +80,7 @@ void Scene::prepareUpdate() {
 	}
 }
 
-// creates a vector of render objects corresponding to the current state of the game objects
+// creates a vector of render objects corresponding to the current state of the game objects.
 // Should be done at the end of each update tick.
 void Scene::prepareRenderObjects() {
 	const UINT ind = Scene::GetUpdateIndex();
@@ -118,7 +118,6 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 	// Render dynamic objects (objects that might move or be added/removed)
 	// Matrices are created from interpolated data each frame
-
 	const UINT ind = Scene::GetRenderIndex();
 	m_perFrameLocks[ind].lock();
 	for (PerUpdateRenderObject& obj : m_dynamicRenderObjects[ind]) {

@@ -92,8 +92,6 @@ private:
 
 	Transform* m_parent = nullptr;
 
-	// Transform is not responsible for the destruction of its children
-	// since they are connected to their own entities.
 	std::vector<Transform*> m_children;
 private:
 	void treeNeedsUpdating();

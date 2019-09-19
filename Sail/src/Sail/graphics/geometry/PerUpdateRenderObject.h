@@ -1,12 +1,11 @@
 #pragma once
 #include "Transform.h"
 
-// Forward declare
+// Forward declares
 class TransformComponent;
 class ModelComponent;
 class Model;
 
-// TODO: Rename to something more fitting like objectFramePacket or something
 class PerUpdateRenderObject {
 public:
 	explicit PerUpdateRenderObject();
@@ -33,8 +32,6 @@ private:
 
 	PerUpdateRenderObject* m_parent = nullptr;
 
-	// RenderTransform IS responsible for the destruction of its children
-	// since they are local copies and not saved anywhere else
 	std::vector<PerUpdateRenderObject*> m_children;
 private:
 	void updateLocalMatrix();

@@ -42,7 +42,6 @@ void PerUpdateRenderObject::removeParent() {
 	}
 }
 
-// TODO: rewrite
 void PerUpdateRenderObject::createSnapShotFromGameObject(TransformComponent* object) {
 	m_data = object->getTransformFrame();
 
@@ -83,27 +82,15 @@ Model* PerUpdateRenderObject::getModel() const {
 }
 
 
-// TODO: rewrite with alpha value
-//       Optimize for static objects or make a separate transform type for those
+// returns a transform matrix with linearly interpolated translation, rotation, and scale 
 glm::mat4 PerUpdateRenderObject::getMatrix(float alpha) {
 
 	m_transformMatrix = glm::mat4(1.0f);
 
-	//alpha = 1.0f;
-
-	if (Scene::GetRenderIndex() == Scene::GetUpdateIndex()) {
-		int bfda = 432;
-	}
-
-	if (alpha <= 0.0f || alpha > 1.0f) {
-		int broken = 4;
-	}
-
 	// Linear interpolation between the two most recent snapshots
-	//glm::vec3 trans = m_data.m_current.m_translation;
 	glm::vec3 trans = (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
 	glm::quat rot = (alpha * m_data.m_current.m_rotationQuat) + ((1.0f - alpha) * m_data.m_previous.m_rotationQuat);
-	//glm::vec3 scale = alpha * m_data.m_current.m_scale + (1.0f - alpha) * m_data.m_previous.m_scale;
+	glm::vec3 scale = (alpha * m_data.m_current.m_scale) + (1.0f - alpha) * m_data.m_previous.m_scale;
 
 	m_localTransformMatrix = glm::mat4(1.0f);
 	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, trans);
@@ -117,53 +104,6 @@ glm::mat4 PerUpdateRenderObject::getMatrix(float alpha) {
 	m_localTransformMatrix = transMatrix * m_rotationMatrix * scaleMatrix;
 	m_transformMatrix = m_localTransformMatrix;
 
-
-	//updateLocalMatrix();
-	//updateMatrix();
-
-	//// will always need update because of interpolation
-	////if (m_data.m_current.m_matNeedsUpdate) {
-	//updateLocalMatrix();
-	////m_data.m_current.m_matNeedsUpdate = false;
-	////m_data.m_current.m_updatedDirections = true;
-	////}
-	//if (m_data.m_current.m_parentUpdated || !m_parent) {
-	//	updateMatrix();
-	//	m_data.m_current.m_parentUpdated = false;
-	//	m_data.m_current.m_updatedDirections = true;
-	//}
-	//if (m_data.m_current.m_updatedDirections) {
-	//	m_data.m_current.m_up = glm::vec3(glm::vec4(0.f, 1.f, 0.f, 1.f) * m_rotationMatrix);
-	//	//m_up = glm::normalize(m_up);
-	//	m_data.m_current.m_right = glm::vec3(glm::vec4(1.f, 0.f, 0.f, 1.f) * m_rotationMatrix);
-	//	//m_right = glm::normalize(m_right);
-	//	m_data.m_current.m_forward = glm::vec3(glm::vec4(0.f, 0.f, 1.f, 1.f) * m_rotationMatrix);
-	//	float x = m_data.m_current.m_forward.x;
-	//	m_data.m_current.m_forward.x = m_data.m_current.m_forward.z;
-	//	m_data.m_current.m_forward.z = x;
-	//	//m_forward = glm::normalize(m_forward); 
-	//}
-	////if (m_data.m_current.m_matNeedsUpdate) {
-	////	updateLocalMatrix();
-	////	m_transformSnapshots[s_renderIndex].m_matNeedsUpdate = false;
-	////	m_transformSnapshots[s_renderIndex].m_updatedDirections = true;
-	////}
-	////if (m_transformSnapshots[s_renderIndex].m_parentUpdated || !m_parent) {
-	////	updateMatrix();
-	////	m_transformSnapshots[s_renderIndex].m_parentUpdated = false;
-	////	m_transformSnapshots[s_renderIndex].m_updatedDirections = true;
-	////}
-	////if (m_transformSnapshots[s_renderIndex].m_updatedDirections) {
-	////	m_transformSnapshots[s_renderIndex].m_up = glm::vec3(glm::vec4(0.f, 1.f, 0.f, 1.f) * m_rotationMatrix);
-	////	//m_up = glm::normalize(m_up);
-	////	m_transformSnapshots[s_renderIndex].m_right = glm::vec3(glm::vec4(1.f, 0.f, 0.f, 1.f) * m_rotationMatrix);
-	////	//m_right = glm::normalize(m_right);
-	////	m_transformSnapshots[s_renderIndex].m_forward = glm::vec3(glm::vec4(0.f, 0.f, 1.f, 1.f) * m_rotationMatrix);
-	////	float x = m_transformSnapshots[s_renderIndex].m_forward.x;
-	////	m_transformSnapshots[s_renderIndex].m_forward.x = m_transformSnapshots[s_renderIndex].m_forward.z;
-	////	m_transformSnapshots[s_renderIndex].m_forward.z = x;
-	////	//m_forward = glm::normalize(m_forward);
-	////}
 
 	return m_transformMatrix;
 }

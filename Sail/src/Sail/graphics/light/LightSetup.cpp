@@ -9,7 +9,7 @@ LightSetup::~LightSetup() {}
 void LightSetup::addPointLight(const PointLight& pl) {
 	m_pls.push_back(pl);
 	if (pl.getIndex() < 0) {
-		m_pls.back().setIndex(m_pls.size()+12);
+		m_pls.back().setIndex(m_pls.size() + 12);
 	}
 	//std::cout << "added ligth " << m_pls.size() << std::endl;
 	//updateBufferData();

@@ -148,41 +148,7 @@ void PlayerController::processMouseInput(float dt) {
 		m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 	}
 
-	//// Shoot gun
-	//// TODO: This should probably be moved elsewhere.
-	////       See if it should be done every tick or every frame and where the projectiles are to be created
-	//if (Input::IsMouseButtonPressed(0)) {
-	//	if (m_projectileSpawnCounter == 0.f) {
-
-	//		// Create projectile entity and attaching components
-	//		auto e = ECS::Instance()->createEntity("new cube");
-	//		e->addComponent<ModelComponent>(m_projectileModel);
-	//		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-	//		e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.1f));
-	//		e->addComponent<PhysicsComponent>();
-	//		e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
-	//		e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -10.f, 0.f);
-
-	//		// Adding projectile to projectile vector to keep track of current projectiles
-	//		Projectile proj;
-	//		proj.projectile = e;
-	//		m_projectiles.push_back(proj);
-
-	//		// Add entity to scene for rendering, will most likely be changed once scene system is created
-	//		m_scene->addEntity(e);
-
-	//		m_projectileSpawnCounter += dt;
-	//	}
-	//	else {
-	//		m_projectileSpawnCounter += dt;
-	//		if (m_projectileSpawnCounter > 0.05f) {
-	//			m_projectileSpawnCounter = 0.f;
-	//		}
-	//	}
-	//}
-	//else {
-	//	m_projectileSpawnCounter = 0.f;
-	//}
+	
 	// Lock pitch to the range -89 - 89
 	if ( m_pitch >= 89 ) {
 		m_pitch = 89;
@@ -196,55 +162,6 @@ void PlayerController::processMouseInput(float dt) {
 	} else if ( m_yaw <= 0 ) {
 		m_yaw += 360;
 	}
-
-	/*TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
-
-	glm::vec3 forwards(
-		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
-		std::sin(glm::radians(m_pitch)),
-		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
-	);
-	forwards = glm::normalize(forwards);
-	playerTrans->setForward(forwards);
-
-	glm::vec3 forward = m_cam->getCameraDirection();
-	forward.y = 0.f;
-	forward = glm::normalize(forward);
-
-	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-	right = glm::normalize(right);*/
-
-
-
-
-	//// Remove old projectiles
-	//for (int i = 0; i < m_projectiles.size(); i++) {
-	//	if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
-	//		ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
-	//		m_projectiles.erase(m_projectiles.begin() + i);
-	//		i--;
-	//	}
-
-
-	//	//m_projectiles[i].lifeTime += dt;
-	//	//if (m_projectiles[i].lifeTime > 2.f) {
-	//	//	ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
-	//	//	m_projectiles.erase(m_projectiles.begin() + i);
-	//	//	i--;
-	//	//}
-	//}
-
-	//// move to per-tick update
-	//m_cam->setCameraPosition(playerTrans->getTranslation());
-	
-
-
-	// TODO: Replace with transform rotation/direction
-	/*Logger::Warning("totM: " + std::to_string(totM) + 
-	" forwards: " + std::to_string(forwards.x) + 
-	" " + std::to_string(forwards.y)
-	+ " " + std::to_string(forwards.z));*/
-	/*m_cam->setCameraDirection(forwards);*/
 }
 
 void PlayerController::updateCameraPosition(float alpha) {
@@ -256,14 +173,14 @@ void PlayerController::updateCameraPosition(float alpha) {
 		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
 	);
 	forwards = glm::normalize(forwards);
-	playerTrans->setForward(forwards);
+	//playerTrans->setForward(forwards); //needed?
 
-	glm::vec3 forward = m_cam->getCameraDirection();
+	/*glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
 	forward = glm::normalize(forward);
 
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-	right = glm::normalize(right);
+	right = glm::normalize(right);*/
 
 	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha));
 	m_cam->setCameraDirection(forwards);

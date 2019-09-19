@@ -69,7 +69,7 @@ Application::~Application() {
 
 
 // CAUTION: HERE BE DRAGONS!
-// Moving around functions calls in this function is likely to cause bugs and crashes
+// Moving around function calls in this function is likely to cause bugs and crashes
 int Application::startGameLoop() {
 	MSG msg = { 0 };
 	m_fps = 0;
@@ -77,12 +77,12 @@ int Application::startGameLoop() {
 	m_timer.startTimer();
 	const INT64 startTime = m_timer.getStartTime();
 
-	double currentTime = m_timer.getTimeSince(startTime);
-	double newTime = 0.0;
-	double delta = 0.0;
-	double accumulator = 0.0;
-	double secCounter = 0.0;
-	double elapsedTime = 0.0;
+	float currentTime = m_timer.getTimeSince<float>(startTime);
+	float newTime = 0.0f;
+	float delta = 0.0f;
+	float accumulator = 0.0f;
+	float secCounter = 0.0f;
+	float elapsedTime = 0.0f;
 	UINT frameCounter = 0;
 
 	// Render loop, each iteration of it results in one rendered frame
@@ -101,7 +101,7 @@ int Application::startGameLoop() {
 			}
 
 			// Get delta time from last frame
-			newTime = m_timer.getTimeSince(startTime);
+			newTime = m_timer.getTimeSince<float>(startTime);
 			delta = newTime - currentTime;
 			currentTime = newTime;
 
@@ -119,13 +119,7 @@ int Application::startGameLoop() {
 			}
 
 			// alpha value used for the interpolation later on
-			double alpha = accumulator/TIMESTEP;
-
-			// TODO: REMOVE
-			if (alpha > 1.0) {
-				Logger::Log("alpha value: " + std::to_string(alpha));
-			}
-
+			float alpha = accumulator/TIMESTEP;
 
 			// Queue multiple updates if the game has fallen behind to make sure that it catches back up to the current time.
 			while (accumulator >= TIMESTEP) {
@@ -148,7 +142,7 @@ int Application::startGameLoop() {
 #endif
 			// Process state specific input
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
-			processInput(static_cast<float>(delta));
+			processInput(delta);
 
 			// Don't create a new update thread if another one is already running the update loop
 			if (s_updateRunning == 0) {
@@ -168,6 +162,7 @@ int Application::startGameLoop() {
 			Scene::UpdateCurrentRenderIndex();
 
 			render(delta, alpha);
+			//render(delta, 1.0f); // disable interpolation
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
