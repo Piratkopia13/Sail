@@ -86,14 +86,15 @@ Entity::SPtr Scene::getEntityByName(std::string name) {
 	}
 	return NULL;
 }
+
 const std::vector<Entity::SPtr>& Scene::getEntities()const {
 	return m_entities;
 }
-void Scene::draw(void)
-{
-	m_renderer->begin(nullptr);
-	m_renderer->end();
-	m_renderer->present();
+
+void Scene::draw(void) {
+	(*m_currentRenderer)->begin(nullptr);
+	(*m_currentRenderer)->end();
+	(*m_currentRenderer)->present();
 }
 
 bool Scene::onEvent(Event& event) {

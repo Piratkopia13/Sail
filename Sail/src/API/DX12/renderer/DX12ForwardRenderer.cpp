@@ -48,6 +48,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	} else if (nThreadsToUse > MAX_RECORD_THREADS) {
 		nThreadsToUse = MAX_RECORD_THREADS;
 	}
+	nThreadsToUse = glm::max(1, nThreadsToUse);
 
 	std::future<void> fut[MAX_RECORD_THREADS];
 
