@@ -49,6 +49,6 @@ void Game::update(float dt) {
 	m_stateStack.update(dt);
 }
 
-void Game::render(float dt) {
-	m_stateStack.render(dt);
+void Game::render(float dt, float alpha) {
+	m_stateStack.render(dt, alpha);
 }

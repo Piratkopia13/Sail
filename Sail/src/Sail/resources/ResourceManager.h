@@ -80,7 +80,8 @@ private:
 	// Textures mapped to their filenames
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
-	// Models mapped to their filenames
+	// Models mapped to their filenames,
+	// NOTE: Deleting during runtime will cause issues with the rendering
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;

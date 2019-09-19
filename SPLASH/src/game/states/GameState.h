@@ -2,6 +2,7 @@
 
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
+#include "../controllers/AiController.h"
 
 class PhysicSystem;
 
@@ -17,7 +18,7 @@ public:
 	// Updates the state
 	virtual bool update(float dt) override;
 	// Renders the state
-	virtual bool render(float dt) override;
+	virtual bool render(float dt, float alpha) override;
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
 
@@ -25,6 +26,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
+	bool renderImGuiRenderSettings(float dt);
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updateComponentSystems(float dt);
 
@@ -39,6 +41,7 @@ private:
 	PerspectiveCamera m_cam;
 	//FlyingCameraController m_camController;
 	PlayerController m_playerController;
+	std::vector<AiController> m_aiControllers;
 
 	const std::string createCube(const glm::vec3& position);
 

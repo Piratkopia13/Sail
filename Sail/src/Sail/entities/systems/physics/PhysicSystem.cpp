@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "PhysicSystem.h"
-#include "..//..//Entity.h"
-#include "..//..//components/TransformComponent.h"
-#include "..//..//components/PhysicsComponent.h"
+#include "Sail/entities/Entity.h"
+#include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/PhysicsComponent.h"
 
 PhysicSystem::PhysicSystem() : BaseComponentSystem() {
 	m_requiredComponentTypes.push_back(TransformComponent::ID);

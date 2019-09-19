@@ -3,17 +3,28 @@
 #include "events/WindowResizeEvent.h"
 #include "../../SPLASH/src/game/events/TextInputEvent.h" // ONLY 2 BITCH
 #include "KeyCodes.h"
+#include "graphics/geometry/Transform.h"
+#include "Sail/graphics/Scene.h"
 
-Application* Application::m_instance = nullptr;
+
+Application* Application::s_instance = nullptr;
+std::atomic_uint Application::s_queuedUpdates = 0;
+std::atomic_uint Application::s_updateRunning = 0;
+
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
 
 	// Set up instance if not set
-	if (m_instance) {
+	if (s_instance) {
 		Logger::Error("Only one application can exist!");
 		return;
 	}
-	m_instance = this;
+	s_instance = this;
+
+	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
+	// Note: this value might need future optimization
+	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
+	m_threadPool = std::unique_ptr<ctpl::thread_pool>(SAIL_NEW ctpl::thread_pool(poolSize));
 
 	// Set up window
 	Window::WindowProps windowProps;
@@ -28,7 +39,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Set up imgui handler
 	m_imguiHandler = std::unique_ptr<ImGuiHandler>(ImGuiHandler::Create());
 
-	// Initalize the window
+	// Initialize the window
 	if (!m_window->initialize()) {
 		OutputDebugString(L"\nFailed to initialize Win32Window\n");
 		Logger::Error("Failed to initialize Win32Window!");
@@ -38,7 +49,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Initialize the graphics API
 	if (!m_api->init(m_window.get())) {
 		OutputDebugString(L"\nFailed to initialize the graphics API\n");
-		Logger::Error("Failed to initialize the grahics API!");
+		Logger::Error("Failed to initialize the graphics API!");
 		return;
 	}
 
@@ -75,27 +86,26 @@ Application::~Application() {
 	delete Input::GetInstance();
 }
 
-int Application::startGameLoop() {
 
+// CAUTION: HERE BE DRAGONS!
+// Moving around function calls in this function is likely to cause bugs and crashes
+int Application::startGameLoop() {
+	MSG msg = { 0 };
+	m_fps = 0;
 	// Start delta timer
 	m_timer.startTimer();
-	
-	MSG msg = {0};
+	const INT64 startTime = m_timer.getStartTime();
 
-	m_fps = 0;
-
-	float secCounter = 0.f;
-	float elapsedTime = 0.f;
+	float currentTime = m_timer.getTimeSince<float>(startTime);
+	float newTime = 0.0f;
+	float delta = 0.0f;
+	float accumulator = 0.0f;
+	float secCounter = 0.0f;
+	float elapsedTime = 0.0f;
 	UINT frameCounter = 0;
 
-	float updateTimer = 0.f;
-	float timeBetweenUpdates = 1.f / 60.f;
-
-	// TODO: move windows loop to api specific section
-
-	// Main message loop
+	// Render loop, each iteration of it results in one rendered frame
 	while (msg.message != WM_QUIT) {
-
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -105,7 +115,6 @@ int Application::startGameLoop() {
 			}
 		
 		} else {
-
 			// Handle window resizing
 			if (m_window->hasBeenResized()) {
 				UINT newWidth = m_window->getWindowWidth();
@@ -114,23 +123,33 @@ int Application::startGameLoop() {
 				// Send resize event
 				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
-			
+
 			// Get delta time from last frame
-			float delta = static_cast<float>(m_timer.getFrameTime());
-			delta = std::min(delta, 0.04f);
+			newTime = m_timer.getTimeSince<float>(startTime);
+			delta = newTime - currentTime;
+			currentTime = newTime;
+
+			// Will slow the game down if the CPU can't keep up with the TICKRATE
+			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += delta;
+			accumulator += delta;
 			frameCounter++;
-
-			if (secCounter >= 1) {
+			if (secCounter >= 1.0) {
 				m_fps = frameCounter;
 				frameCounter = 0;
-				secCounter = 0.f;
+				secCounter = 0.0;
 			}
 
-			// Update input states
-			//m_input.updateStates();
+			// alpha value used for the interpolation later on
+			float alpha = accumulator/TIMESTEP;
+
+			// Queue multiple updates if the game has fallen behind to make sure that it catches back up to the current time.
+			while (accumulator >= TIMESTEP) {
+				accumulator -= TIMESTEP;
+				s_queuedUpdates++;
+			}
 
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
@@ -142,41 +161,41 @@ int Application::startGameLoop() {
 			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
 				PostQuitMessage(0);
 
-			processInput(delta);
-
-			// Update
 #ifdef _DEBUG
 			/*if (m_input.getKeyboardState().Escape)
-				PostQuitMessage(0);*/
-
-
+			PostQuitMessage(0);*/
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
-			updateTimer += delta;
+			// Process state specific input
+			// NOTE: player movement is processed in update() except for mouse movement which is processed here
+			processInput(delta);
 
-			int maxCounter = 0;
-		
-
-			while (updateTimer >= timeBetweenUpdates) {
-				if (maxCounter >= 4)
-					break;
-				update(timeBetweenUpdates);
-				updateTimer -= timeBetweenUpdates;
-				maxCounter++;
+			// Don't create a new update thread if another one is already running the update loop
+			if (s_updateRunning == 0) {
+				s_updateRunning = 1;
+				// Run update(s) in a separate thread
+				m_threadPool->push([this](int id) {
+					while (s_queuedUpdates > 0) {
+						s_queuedUpdates--;
+						Scene::IncrementCurrentUpdateIndex();
+						update(TIMESTEP);
+					}
+					s_updateRunning = 0;
+					});
 			}
 
 			// Render
-			render(delta);
-			
+			Scene::UpdateCurrentRenderIndex();
+
+			render(delta, alpha);
+			//render(delta, 1.0f); // disable interpolation
+
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
 		}
-
 	}
-
 	return (int)msg.wParam;
-
 }
 
 std::string Application::getPlatformName() {
@@ -184,9 +203,9 @@ std::string Application::getPlatformName() {
 }
 
 Application* Application::getInstance() {
-	if (!m_instance)
+	if (!s_instance)
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
-	return m_instance;
+	return s_instance;
 }
 
 void Application::dispatchEvent(Event& event) {
@@ -218,3 +237,5 @@ StateStorage& Application::getStateStorage() {
 const UINT Application::getFPS() const {
 	return m_fps;
 }
+
+

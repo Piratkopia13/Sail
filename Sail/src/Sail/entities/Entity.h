@@ -26,6 +26,8 @@ public:
 
 	bool hasComponent(int id) const;
 
+	bool isAboutToBeDestroyed() const;
+	void queueDestruction();
 	void removeAllComponents();
 	
 	void setName(const std::string& name);
@@ -45,6 +47,7 @@ private:
 
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::string m_name;
+	bool m_destructionQueued = false;
 	int m_id;
 	ECS* m_ecs;
 };
