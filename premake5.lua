@@ -40,6 +40,7 @@ project "SPLASH"
 		"%{prj.name}/SPLASH.rc",    -- For icon
 		"%{prj.name}/resource.h", -- For icon
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
@@ -97,6 +98,7 @@ project "Sail"
 
 	files { 
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
@@ -111,14 +113,12 @@ project "Sail"
 		"**/Skybox.*",
 		"**/ParticleEmitter.*",
 		"%{prj.name}/src/Sail/graphics/shadows/**",
-		"%{prj.name}/src/Sail/graphics/shader/postprocess/**",
 		"%{prj.name}/src/Sail/graphics/shader/instanced/**",
 		"%{prj.name}/src/Sail/graphics/shader/deferred/**",
 		"%{prj.name}/src/Sail/graphics/shader/component/ConstantBuffer**",
 		"%{prj.name}/src/Sail/graphics/shader/component/Sampler**",
 		"%{prj.name}/src/Sail/graphics/shader/basic/**",
 		"%{prj.name}/src/Sail/graphics/renderer/**",
-		"%{prj.name}/src/Sail/graphics/postprocessing/**",
 		"**/Quadtree.*"
 	}
 

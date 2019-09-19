@@ -42,3 +42,7 @@ void DX12IndexBuffer::bind(void* cmdList) const {
 	// Later update to just put in a buffer on the renderer to set multiple vertex buffers at once
 	dxCmdList->IASetIndexBuffer(&ibView);
 }
+
+ID3D12Resource1* DX12IndexBuffer::getBuffer() const {
+	return m_indexBuffer.Get();
+}

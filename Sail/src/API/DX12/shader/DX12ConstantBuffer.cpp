@@ -93,6 +93,10 @@ namespace ShaderComponent {
 		}
 	}
 
+	ID3D12Resource* DX12ConstantBuffer::getBuffer() const {
+		return m_constantBufferUploadHeap[m_context->getFrameIndex()].Get();
+	}
+
 	void DX12ConstantBuffer::createBuffers() {
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
 		static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();

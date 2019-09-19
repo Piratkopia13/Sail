@@ -3,7 +3,7 @@
 #include "../entities/Entity.h"
 #include "camera/Camera.h"
 #include "../events/Events.h"
-//#include "postprocessing/PostProcessPipeline.h"
+#include "postprocessing/PostProcessPipeline.h"
 #include "Sail/graphics/geometry/PerUpdateRenderObject.h"
 
 class LightSetup;
@@ -31,6 +31,7 @@ public:
 	void setLightSetup(LightSetup* lights);
 	Entity::SPtr getGameObjectEntityByName(std::string name);
 	const std::vector<Entity::SPtr>& getGameObjectEntities()const;
+	void draw(void);
 	void draw(Camera& camera, const float alpha = 1.0f);
 
 
@@ -39,6 +40,8 @@ public:
 	void prepareRenderObjects();
 
 	virtual bool onEvent(Event& event) override;
+	void changeRenderer(unsigned int index);
+	bool& getDoProcessing();
 
 
 	// STATIC SYCHRONIZATION STUFF
@@ -65,7 +68,6 @@ private:
 	// Dynamic objects are split into game objects and render objects to prevent
 	// data races when rendering objects that have just been modified/deleted from
 	// the scene.
-
 	// Game objects are used for everything but the rendering pass
 	//
 	// Should include Model, Transform, Physics, Sound, etc.
@@ -83,6 +85,13 @@ private:
 	//DeferredRenderer m_renderer;
 	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
 	//PostProcessPipeline m_postProcessPipeline;
+
+
+	std::unique_ptr<Renderer> m_rendererRaster;
+	std::unique_ptr<Renderer> m_rendererRaytrace;
+	std::unique_ptr<Renderer>* m_currentRenderer;
+	PostProcessPipeline m_postProcessPipeline;
+	bool m_doPostProcessing;
 
 
 

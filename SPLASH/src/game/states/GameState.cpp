@@ -487,30 +487,6 @@ bool GameState::update(float dt) {
 
 	updateComponentSystems(dt);
 
-	/*if (m_texturedCubeEntity) {
-		//Translations, rotations and scales done here are non-constant, meaning they change between updates
-		//All constant transformations can be set in the PhysicsComponent and will then be updated automatically
-		
-		
-		// Move the cubes around
-		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
-
-		// Set translation and scale to show how parenting affects transforms
-		//for (Entity::SPtr item : m_transformTestEntities) {
-		for (size_t i = 1; i < m_transformTestEntities.size(); i++) {
-			Entity::SPtr item = m_transformTestEntities[i];
-
-			item->getComponent<TransformComponent>()->setScale(size);
-			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
-		}
-		//m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
-
-		size += change * dt;
-		if (size > 1.2f || size < 0.7f)
-			change *= -1.0f;
-	}*/
-
 	//check and update all lights for all entities
 	std::vector<Entity::SPtr> entities = m_scene.getGameObjectEntities();
 	m_lights.clearPointLights();
@@ -554,6 +530,7 @@ bool GameState::renderImgui(float dt) {
 	ImGui::ShowDemoWindow();
 	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
+	renderImGuiRenderSettings(dt);
 	return false;
 }
 
@@ -601,8 +578,6 @@ bool GameState::renderImguiConsole(float dt) {
 }
 
 bool GameState::renderImguiProfiler(float dt) {
-
-
 	bool open = m_profiler.windowOpen();
 	if (open) {
 		if (ImGui::Begin("Profiler", &open)) {
@@ -668,7 +643,7 @@ bool GameState::renderImguiProfiler(float dt) {
 			m_profilerTimer += dt;
 			if (m_profilerTimer > 0.2f) {
 				m_profilerTimer = 0.f;
-				if (m_profilerCounter <= 100) {
+				if (m_profilerCounter < 100) {
 
 					// Uncomment this to enable vram budget visualization
 
@@ -686,8 +661,7 @@ bool GameState::renderImguiProfiler(float dt) {
 					m_cpuCount = std::to_string(m_profiler.processUsage());
 					m_ftCount = std::to_string(dt);
 
-				}
-				else {
+				} else {
 					float* tempFloatArr = SAIL_NEW float[100];
 					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
 					tempFloatArr[99] = m_profiler.virtMemUsage();
@@ -738,6 +712,19 @@ bool GameState::renderImguiProfiler(float dt) {
 			ImGui::End();
 		}
 	}
+
+	return false;
+}
+
+bool GameState::renderImGuiRenderSettings(float dt) {
+	ImGui::Begin("Rendering settings");
+	const char* items[] = { "Forward raster", "Raytraced" };
+	static int selectedRenderer = 0;
+	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
+		m_scene.changeRenderer(selectedRenderer);
+	}
+	ImGui::Checkbox("Enable post processing", &m_scene.getDoProcessing());
+	ImGui::End();
 
 	return false;
 }

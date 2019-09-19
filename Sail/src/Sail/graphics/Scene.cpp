@@ -35,9 +35,11 @@ UINT Scene::GetRenderIndex() { return s_renderIndex; }
 // NON-STATIC FUNCTIONS
 
 Scene::Scene() 
-	//: m_postProcessPipeline(m_renderer)
+	: m_doPostProcessing(false)
 {
-	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
+	m_currentRenderer = &m_rendererRaster;
 
 	// TODO: the following method ish
 	//m_postProcessPipeline.add<FXAAStage>();
@@ -67,7 +69,7 @@ void Scene::addStaticEntity(Entity::SPtr staticEntity) {
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
-	m_renderer->setLightSetup(lights);
+	(*m_currentRenderer)->setLightSetup(lights);
 }
 
 
@@ -103,7 +105,7 @@ void Scene::prepareRenderObjects() {
 
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 void Scene::draw(Camera& camera, const float alpha) {
-	m_renderer->begin(&camera);
+	(*m_currentRenderer)->begin(&camera);
 
 	// Render static objects (essentially the map)
 	// Matrices aren't changed between frames
@@ -112,7 +114,7 @@ void Scene::draw(Camera& camera, const float alpha) {
 		StaticMatrixComponent* matrix = entity->getComponent<StaticMatrixComponent>();
 
 		if (model && matrix) {
-			m_renderer->submit(model->getModel(), matrix->getMatrix());
+			(*m_currentRenderer)->submit(model->getModel(), matrix->getMatrix());
 		}
 	}
 
@@ -121,15 +123,13 @@ void Scene::draw(Camera& camera, const float alpha) {
 	const UINT ind = Scene::GetRenderIndex();
 	m_perFrameLocks[ind].lock();
 	for (PerUpdateRenderObject& obj : m_dynamicRenderObjects[ind]) {
-		m_renderer->submit(obj.getModel(), obj.getMatrix(alpha));
+		(*m_currentRenderer)->submit(obj.getModel(), obj.getMatrix(alpha));
 	}
 	m_perFrameLocks[ind].unlock();
 
 
-	m_renderer->end();
-	m_renderer->present();
-
-	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
+	(*m_currentRenderer)->end();
+	(*m_currentRenderer)->present((m_doPostProcessing) ? &m_postProcessPipeline : nullptr);
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
@@ -155,14 +155,33 @@ const std::vector<Entity::SPtr>& Scene::getGameObjectEntities() const {
 	return m_gameObjectEntities;
 }
 
+void Scene::draw(void) {
+	(*m_currentRenderer)->begin(nullptr);
+	(*m_currentRenderer)->end();
+	(*m_currentRenderer)->present();
+}
+
 bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
 	// Forward events
-	m_renderer->onEvent(event);
+	m_rendererRaster->onEvent(event);
+	m_rendererRaytrace->onEvent(event);
 	//m_postProcessPipeline.onEvent(event);
 
 	return true;
+}
+
+void Scene::changeRenderer(unsigned int index) {
+	if (index == 0) {
+		m_currentRenderer = &m_rendererRaster;
+	} else {
+		m_currentRenderer = &m_rendererRaytrace;
+	}
+}
+
+bool& Scene::getDoProcessing() {
+	return m_doPostProcessing;
 }
 
 bool Scene::onResize(WindowResizeEvent & event) {

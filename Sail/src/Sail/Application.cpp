@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
+#include "../../SPLASH/src/game/events/TextInputEvent.h" // ONLY 2 BITCH
 #include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
 #include "Sail/graphics/Scene.h"
@@ -90,6 +91,11 @@ int Application::startGameLoop() {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+
+			if (msg.message == WM_KEYDOWN) {
+				dispatchEvent(TextInputEvent(msg));
+			}
+		
 		} else {
 			// Handle window resizing
 			if (m_window->hasBeenResized()) {
@@ -197,6 +203,9 @@ ImGuiHandler* const Application::getImGuiHandler() {
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
+}
+StateStorage& Application::getStateStorage() {
+	return this->m_stateStorage;
 }
 const UINT Application::getFPS() const {
 	return m_fps;
