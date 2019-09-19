@@ -7,11 +7,12 @@
 #include "Sail/Application.h"
 #include "Sail/api/Renderer.h"
 
-
 Scene::Scene() 
-	//: m_postProcessPipeline(m_renderer)
+	: m_doPostProcessing(false)
 {
-	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
+	m_currentRenderer = &m_rendererRaster;
 
 	// TODO: the following method ish
 	//m_postProcessPipeline.add<FXAAStage>();
@@ -37,12 +38,12 @@ void Scene::addEntity(Entity::SPtr entity) {
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
-	m_renderer->setLightSetup(lights);
+	(*m_currentRenderer)->setLightSetup(lights);
 }
 
-void Scene::draw(Camera& camera) {
 
-	m_renderer->begin(&camera);
+void Scene::draw(Camera& camera, const float alpha) {
+	(*m_currentRenderer)->begin(&camera);
 
 	for (Entity::SPtr& entity : m_entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
@@ -50,15 +51,12 @@ void Scene::draw(Camera& camera) {
 			TransformComponent* transform = entity->getComponent<TransformComponent>();
 			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-			m_renderer->submit(model->getModel(), transform->getMatrix());
+			(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
 		}
 	}
 
-	m_renderer->end();
-	m_renderer->present();
-	//m_renderer->present(m_deferredOutputTex.get());
-
-	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
+	(*m_currentRenderer)->end();
+	(*m_currentRenderer)->present((m_doPostProcessing) ? &m_postProcessPipeline : nullptr);
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
@@ -67,6 +65,15 @@ void Scene::draw(Camera& camera) {
 		if (text) {
 			text->draw();
 		}
+	}
+}
+
+// NEEDS TO RUN BEFORE EACH UPDATE
+// Copies the game state from the previous tick 
+void Scene::prepareUpdate() {
+	for (auto e : m_entities) {
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+		if (transform) { transform->copyDataFromPrevUpdate(); }
 	}
 }
 
@@ -79,24 +86,38 @@ Entity::SPtr Scene::getEntityByName(std::string name) {
 	}
 	return NULL;
 }
+
 const std::vector<Entity::SPtr>& Scene::getEntities()const {
 	return m_entities;
 }
-void Scene::draw(void)
-{
-	m_renderer->begin(nullptr);
-	m_renderer->end();
-	m_renderer->present();
+
+void Scene::draw(void) {
+	(*m_currentRenderer)->begin(nullptr);
+	(*m_currentRenderer)->end();
+	(*m_currentRenderer)->present();
 }
 
 bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
 	// Forward events
-	m_renderer->onEvent(event);
+	m_rendererRaster->onEvent(event);
+	m_rendererRaytrace->onEvent(event);
 	//m_postProcessPipeline.onEvent(event);
 
 	return true;
+}
+
+void Scene::changeRenderer(unsigned int index) {
+	if (index == 0) {
+		m_currentRenderer = &m_rendererRaster;
+	} else {
+		m_currentRenderer = &m_rendererRaytrace;
+	}
+}
+
+bool& Scene::getDoProcessing() {
+	return m_doPostProcessing;
 }
 
 bool Scene::onResize(WindowResizeEvent & event) {

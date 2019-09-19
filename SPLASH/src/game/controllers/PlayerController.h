@@ -20,13 +20,19 @@ public:
 
 	void update(float dt);
 
+	void setStartPosition(const glm::vec3& pos);
+	void prepareUpdate();
+
+	void processKeyboardInput(float dt);
+	void processMouseInput(float dt);
+
 	std::shared_ptr<Entity> getEntity();
 
 	void setProjectileModel(Model* model);
 
 private:
-	float m_movementSpeed = 5.f;
-
+	float m_movementSpeed = 20.f;
+	float RUN_SPEED = 2.0f;
 
 	// "Attached" camera
 	CameraController* m_cam;
@@ -38,6 +44,7 @@ private:
 
 	std::shared_ptr<Entity> m_player;
 
+	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
 
 	float m_lookSensitivityMouse = 0.1f;
