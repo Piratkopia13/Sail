@@ -68,7 +68,8 @@ void Transform::removeParent() {
 // copies current state into previous state
 void Transform::prepareUpdate() {
 	//m_data.m_previous = m_data.m_current;
-	m_data.m_previous.m_translation = m_data.m_current.m_translation;
+	//m_data.m_previous.m_translation = m_data.m_current.m_translation;
+	m_data.m_previous = m_data.m_current;
 }
 
 
@@ -263,6 +264,12 @@ const glm::vec3& Transform::getRotations() const {
 const glm::vec3& Transform::getScale() const {
 	return m_data.m_current.m_scale;
 }
+
+const glm::vec3 Transform::getInterpolatedTranslation(float alpha) const {
+	return (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
+}
+
+
 //
 //const glm::vec3& Transform::getForward() {
 //	getMatrix();

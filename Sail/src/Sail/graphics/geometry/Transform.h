@@ -81,6 +81,9 @@ public:
 	const glm::vec3& getTranslation() const;
 	const glm::vec3& getRotations() const;
 	const glm::vec3& getScale() const;
+
+	const glm::vec3 getInterpolatedTranslation(float alpha) const;
+
 	//const glm::vec3& getForward();
 	//const glm::vec3& getRight();
 	//const glm::vec3& getUp();

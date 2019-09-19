@@ -275,6 +275,7 @@ GameState::GameState(StateStack& stack)
 		e = ECS::Instance()->createEntity("Character");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<PhysicsComponent>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character1");
@@ -538,6 +539,8 @@ bool GameState::render(float dt, float alpha) {
 	//// TODO: make a system or something for this
 	//m_playerController.destroyOldProjectiles();
 
+	// Interpolate the player's camera position (but not rotation)
+	m_playerController.updateCameraPosition(alpha);
 
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});

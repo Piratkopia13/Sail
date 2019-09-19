@@ -66,6 +66,10 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 
+	// the player's transform will be modified in the physicSystem so save the player's current
+	// position for interpolation later.
+	playerTrans->prepareUpdate();
+
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
 		// Calculate total movement
@@ -75,8 +79,6 @@ void PlayerController::processKeyboardInput(float dt) {
 	} else {
 		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	}
-
-
 
 
 	// Shooting
@@ -195,7 +197,7 @@ void PlayerController::processMouseInput(float dt) {
 		m_yaw += 360;
 	}
 
-	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+	/*TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
@@ -210,7 +212,7 @@ void PlayerController::processMouseInput(float dt) {
 	forward = glm::normalize(forward);
 
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-	right = glm::normalize(right);
+	right = glm::normalize(right);*/
 
 
 
@@ -232,12 +234,38 @@ void PlayerController::processMouseInput(float dt) {
 	//	//}
 	//}
 
-	m_cam->setCameraPosition(playerTrans->getTranslation());
+	//// move to per-tick update
+	//m_cam->setCameraPosition(playerTrans->getTranslation());
+	
+
+
 	// TODO: Replace with transform rotation/direction
 	/*Logger::Warning("totM: " + std::to_string(totM) + 
 	" forwards: " + std::to_string(forwards.x) + 
 	" " + std::to_string(forwards.y)
 	+ " " + std::to_string(forwards.z));*/
+	/*m_cam->setCameraDirection(forwards);*/
+}
+
+void PlayerController::updateCameraPosition(float alpha) {
+	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+
+	glm::vec3 forwards(
+		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
+		std::sin(glm::radians(m_pitch)),
+		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
+	);
+	forwards = glm::normalize(forwards);
+	playerTrans->setForward(forwards);
+
+	glm::vec3 forward = m_cam->getCameraDirection();
+	forward.y = 0.f;
+	forward = glm::normalize(forward);
+
+	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+	right = glm::normalize(right);
+
+	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha));
 	m_cam->setCameraDirection(forwards);
 }
 

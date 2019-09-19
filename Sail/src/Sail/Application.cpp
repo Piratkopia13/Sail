@@ -69,8 +69,7 @@ Application::~Application() {
 
 
 // CAUTION: HERE BE DRAGONS!
-// Update and render synchronization is not guaranteed to work without data races when the framerate 
-// is significantly lower than the update rate
+// Moving around functions calls in this function is likely to cause bugs and crashes
 int Application::startGameLoop() {
 	MSG msg = { 0 };
 	m_fps = 0;
@@ -119,8 +118,10 @@ int Application::startGameLoop() {
 				secCounter = 0.0;
 			}
 
+			// alpha value used for the interpolation later on
 			double alpha = accumulator/TIMESTEP;
 
+			// TODO: REMOVE
 			if (alpha > 1.0) {
 				Logger::Log("alpha value: " + std::to_string(alpha));
 			}
@@ -165,8 +166,6 @@ int Application::startGameLoop() {
 
 			// Render
 			Scene::UpdateCurrentRenderIndex();
-
-			// TODO: use something other than accumulator
 
 			render(delta, alpha);
 

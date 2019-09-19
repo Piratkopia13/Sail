@@ -26,6 +26,8 @@ public:
 	void processKeyboardInput(float dt);
 	void processMouseInput(float dt);
 
+	void updateCameraPosition(float alpha);
+
 	std::shared_ptr<Entity> getEntity();
 
 	void setProjectileModel(Model* model);

@@ -102,11 +102,12 @@ glm::mat4 PerUpdateRenderObject::getMatrix(float alpha) {
 	// Linear interpolation between the two most recent snapshots
 	//glm::vec3 trans = m_data.m_current.m_translation;
 	glm::vec3 trans = (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
+	glm::quat rot = (alpha * m_data.m_current.m_rotationQuat) + ((1.0f - alpha) * m_data.m_previous.m_rotationQuat);
 	//glm::vec3 scale = alpha * m_data.m_current.m_scale + (1.0f - alpha) * m_data.m_previous.m_scale;
 
 	m_localTransformMatrix = glm::mat4(1.0f);
 	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, trans);
-	m_rotationMatrix = glm::mat4_cast(m_data.m_current.m_rotationQuat);
+	m_rotationMatrix = glm::mat4_cast(rot);
 	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_data.m_current.m_scale);
 	//m_localTransformMatrix = glm::translate(m_localTransformMatrix, m_translation);
 	/*m_localTransformMatrix = glm::rotate(m_localTransformMatrix, m_rotation.x, glm::vec3(1.f, 0.f, 0.f));
