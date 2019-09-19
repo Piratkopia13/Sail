@@ -12,7 +12,7 @@ AssimpLoader::~AssimpLoader() {
 
 Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 
-	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_CalcTangentSpace);
+	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs  | aiProcess_CalcTangentSpace | aiProcess_MakeLeftHanded);
 	if ( errorCheck(scene) ) {
 		return nullptr;
 	}
@@ -45,7 +45,7 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 }
 
 AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
-	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs  | aiProcess_MakeLeftHanded);
 	if ( errorCheck(scene) ) {
 		return nullptr;
 	}
@@ -55,7 +55,7 @@ AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 	unsigned int vertCount = 0;
 
 	//	__________________________________MATRIX______________________________
-	m_globalTransform = glm::inverse(mat4_cast(scene->mRootNode->mTransformation));
+	m_globalTransform = (mat4_cast(scene->mRootNode->mTransformation));
 	//	________________glm::inverse_______________________________________________________
 
 
@@ -198,9 +198,6 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 				unsigned int index = (unsigned int)m_boneMap.size();
 				if (m_boneMap.find(boneName) == m_boneMap.end()) {
 
-					glm::mat4 tempM = mat4_cast(bone->mOffsetMatrix);
-					glm::mat4 tempT = mat4_castT(bone->mOffsetMatrix);
-					glm::mat4 tempW = glm::inverse(tempM);
 
 					m_boneMap[boneName] = { index, node->mName.C_Str(), mat4_cast(bone->mOffsetMatrix)};
 					
@@ -280,7 +277,7 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 			Animation::Frame* currentFrame = SAIL_NEW Animation::Frame((unsigned int)m_boneMap.size());
 			//Logger::Log("Added Frame with ");
 			
-			readNodeHierarchy(animationIndex, frame, time, scene->mRootNode, glm::identity<glm::mat4>(), currentFrame);
+			readNodeHierarchy(animationIndex, frame, frame, scene->mRootNode, glm::identity<glm::mat4>(), currentFrame);
 			anim->addFrame(frame, time, currentFrame);
 		}
 
@@ -312,15 +309,15 @@ void AssimpLoader::readNodeHierarchy(const unsigned int animationID, const unsig
 		//aiMatrix4x4 rotationM = aiMatrix4x4(RotationQ.GetMatrix());
 
 		glm::quat rotation = quat_cast(RotationQ);
-		glm::mat4 rotationM = glm::toMat4(rotation);
+		glm::mat4 rotationM = (glm::toMat4(rotation));
 
 		// Interpolate translation and generate translation transformation matrix
 		aiVector3D Translation;
 		calcInterpolatedPosition(Translation, animationTime, nodeAnim);
 		glm::mat4 translationM = glm::translate(glm::identity<glm::mat4>(), glm::vec3(Translation.x, Translation.y, Translation.z));
 
+		//nodeTransform = scalingM * rotationM * translationM;
 		nodeTransform = translationM * rotationM * scalingM;
-
 		// Combine the above transformations
 		//NodeTransformation = TranslationM * RotationM * ScalingM;
 
@@ -393,7 +390,6 @@ void AssimpLoader::calcInterpolatedPosition(aiVector3D& out, const float animati
 	out = Start + Factor * Delta;
 
 }
-
 void AssimpLoader::calcInterpolatedRotation(aiQuaternion& out, const float animationTime, const aiNodeAnim* node) {
 	// we need at least two values to interpolate...
 	if (node->mNumRotationKeys == 1) {
@@ -413,7 +409,6 @@ void AssimpLoader::calcInterpolatedRotation(aiQuaternion& out, const float anima
 	out = out.Normalize();
 
 }
-
 void AssimpLoader::calcInterpolatedScale(aiVector3D& out, const float animationTime, const aiNodeAnim* node) {
 	if (node->mNumScalingKeys == 1) {
 		out = node->mScalingKeys[0].mValue;

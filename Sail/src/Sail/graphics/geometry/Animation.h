@@ -1,7 +1,7 @@
 #pragma once
 #include "Sail/utils/Utils.h"
 #include <map>
-#define SAIL_BONES_PER_VERTEX 4
+#define SAIL_BONES_PER_VERTEX 5
 
 class Animation {
 public:

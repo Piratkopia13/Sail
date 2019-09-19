@@ -157,38 +157,114 @@ GameState::GameState(StateStack& stack)
 	//m_app->getResourceManager().loadModel("DEBUG_WALKINGANIMATION.fbx", shader);
 	//m_app->getResourceManager().loadAnimationStack("DEBUG_WALKINGANIMATION.fbx");
 
-	//m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
-	//m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
 
 
 
-	m_app->getResourceManager().loadModel("walkingAnimationBaked.fbx", shader);
-	m_app->getResourceManager().loadAnimationStack("walkingAnimationBaked.fbx");
-	auto humanModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader);
-	humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-	auto human = ECS::Instance()->createEntity("character");
-	human->addComponent<TransformComponent>();
-	human->getComponent<TransformComponent>()->setScale(1.0f);
-	human->getComponent<TransformComponent>()->setTranslation(3, 3, 18);
-	human->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader));
-	//Mesh::Data tempData;
+	// ANIMATION DEBUGGING
+	{
+		m_app->getResourceManager().loadModel("walkingAnimationBaked.fbx", shader);
+		m_app->getResourceManager().loadAnimationStack("walkingAnimationBaked.fbx");
+		auto humanModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader);
+		humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-	//tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
-	human->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx"));
+		auto human = ECS::Instance()->createEntity("character");
+		human->addComponent<TransformComponent>();
+		human->getComponent<TransformComponent>()->setScale(1.0f);
+		human->getComponent<TransformComponent>()->setTranslation(3, 3, 18);
+		human->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader));
+		//Mesh::Data tempData;
+
+		//tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
+		human->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx"));
 	
-	AnimationComponent* ac = human->getComponent<AnimationComponent>();
-	ac->animationIndex = 0;
-	ac->animationSpeed = 1.0f;
-	ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
-	ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
-	ac->blending = false;
+		AnimationComponent* ac = human->getComponent<AnimationComponent>();
+		ac->animationIndex = 0;
+		ac->animationSpeed = 1.0f;
+		ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
+		ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
+		ac->blending = false;
+		m_scene.addEntity(human);
+
+#ifdef _DEBUG
+		m_app->getResourceManager().loadModel("model_translation_only.fbx", shader);
+		m_app->getResourceManager().loadAnimationStack("model_translation_only.fbx");
+		auto ballbotModel = &m_app->getResourceManager().getModel("model_translation_only.fbx", shader);
+		//humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+
+		auto ballbot = ECS::Instance()->createEntity("model_translation_only");
+		ballbot->addComponent<TransformComponent>();
+		ballbot->getComponent<TransformComponent>()->setScale(1.0f);
+		ballbot->getComponent<TransformComponent>()->setTranslation(3, 10, 10);
+		ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("model_translation_only.fbx", shader));
+		//Mesh::Data tempData;
+
+		//tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
+		ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("model_translation_only.fbx"));
+
+		ac = ballbot->getComponent<AnimationComponent>();
+		ac->animationIndex = 0;
+		ac->animationSpeed = 1.0f;
+		ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
+		ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
+		ac->blending = false;
+		m_scene.addEntity(ballbot);
+
+		//		m_app->getResourceManager().loadModel("model_cube_arm.fbx", shader);
+		//m_app->getResourceManager().loadAnimationStack("model_cube_arm.fbx");
+		//auto ballbotModel = &m_app->getResourceManager().getModel("model_cube_arm.fbx", shader);
+		////humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+
+		//auto ballbot = ECS::Instance()->createEntity("model_cube_arm");
+		//ballbot->addComponent<TransformComponent>();
+		//ballbot->getComponent<TransformComponent>()->setScale(1.0f);
+		//ballbot->getComponent<TransformComponent>()->setTranslation(3, 10, 10);
+		//ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("model_cube_arm.fbx", shader));
+		////Mesh::Data tempData;
+
+		////tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
+		//ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("model_cube_arm.fbx"));
+
+		//ac = ballbot->getComponent<AnimationComponent>();
+		//ac->animationIndex = 0;
+		//ac->animationSpeed = 1.0f;
+		//ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
+		//ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
+		//ac->blending = false;
+		//m_scene.addEntity(ballbot);
 
 
-	m_scene.addEntity(human);
+		//m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
+		//m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
+		//auto ballbotModel = &m_app->getResourceManager().getModel("DEBUG_BALLBOT.fbx", shader);
+		////humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+
+		//auto ballbot = ECS::Instance()->createEntity("DEBUG_BALLBOT");
+		//ballbot->addComponent<TransformComponent>();
+		//ballbot->getComponent<TransformComponent>()->setScale(0.00005f);
+		//ballbot->getComponent<TransformComponent>()->setTranslation(3, 10, 10);
+		//ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("DEBUG_BALLBOT.fbx", shader));
+		////Mesh::Data tempData;
+
+		////tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
+		//ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("DEBUG_BALLBOT.fbx"));
+
+		//ac = ballbot->getComponent<AnimationComponent>();
+		//ac->animationIndex = 0;
+		//ac->animationSpeed = 1.0f;
+		//ac->currentAnimation = ac->getAnimationStack()->getAnimation(2);
+		//ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
+		//ac->blending = false;
+		//m_scene.addEntity(ballbot);
 
 
 
+
+#endif
+
+
+
+	}
 	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
 	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
