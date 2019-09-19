@@ -2,10 +2,10 @@
 
 #include "Component.h"
 
-class PlayerComponent : public Component {
+class PlayerComponent : public Component<PlayerComponent> {
 public:
-	SAIL_COMPONENT 
-		PlayerComponent() {}
+	//SAIL_COMPONENT 
+	PlayerComponent() {}
 	~PlayerComponent() {}
 
 private:

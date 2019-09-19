@@ -1,27 +1,76 @@
 #pragma once
-
 #include <memory>
 
 
-// This method only works in debug without optimisations
-//#define SAIL_COMPONENT static int getStaticID() { \
-//	return reinterpret_cast<int>(&getStaticID); \
-//}
+/*
+	Any component of type T created should inherit from Component<T>.
+	Their IDs will automatically be assigned, and can be accessed via T::ID.
+	They must have a default constructor, but can have default arguments or other constructors as well.
+	No logic SHOULD be within each component, only raw data.
 
-// Creates a unique id for each class which derives from component
-// This method uses the gcc defined __COUNTER__ macro that increments with every use
-#define SAIL_COMPONENT static int getStaticID() { \
-	return __COUNTER__; \
-}
+	Example: See PhysicsComponent.h
+*/
 
 
-class Component {
+
+typedef int ComponentTypeID;
+
+/*
+	Counter for assigning IDs to component types at compile time
+	Defined in Component.cpp
+*/
+extern ComponentTypeID global_componentID;
+
+/*
+	Base component class
+	Created components should NOT inherit from this
+	This should be hidden in the future
+*/
+class BaseComponent {
 public:
-	typedef std::unique_ptr<Component> Ptr;
-public:
-	Component() {}
-	virtual ~Component() {}
+	typedef std::unique_ptr<BaseComponent> Ptr;
 
-private:
+	virtual ~BaseComponent() {}
+	
+	/*
+		Called by Component<T> below to assign IDs to the different types
+		Should not be called anywhere else
+	*/
+	static ComponentTypeID createID() {
+		return global_componentID++;
+	}
+
+	/*
+		Retrieves the number of component types
+	*/
+	static int nrOfComponentTypes() {
+		return global_componentID;
+	}
+
+	unsigned int entityID;
+
+protected:
+	BaseComponent() {}
 };
 
+
+/*
+	Component class
+	Created components should inherit from this and pass their own type as template
+	Their type ID will be assigned automatically
+*/
+template<typename ComponentType>
+class Component : public BaseComponent {
+public:
+	virtual ~Component() {}
+
+	static const ComponentTypeID ID;
+protected:
+	Component() {}
+};
+
+/*
+	Defines the constant static ID of each component type at compile time
+*/
+template<typename ComponentType>
+const ComponentTypeID Component<ComponentType>::ID = BaseComponent::createID();
