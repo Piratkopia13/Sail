@@ -7,37 +7,29 @@
 #endif
 
 NodeSystem::NodeSystem() {
-	m_graph = nullptr;
+	//m_graph = nullptr;
 }
 
 NodeSystem::~NodeSystem() {
-	if ( m_graph ) {
-		delete m_graph;
-		m_graph = nullptr;
-	}
+	//if ( m_graph ) {
+	//	delete m_graph;
+	//	m_graph = nullptr;
+	//}
 }
 
-void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
+void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
 #ifdef _DEBUG_NODESYSTEM
 	if ( m_nodeModel == nullptr || m_scene == nullptr ) {
 		Logger::Error("Node model and scene need to be set in the node system during debug.");
 	}
 #endif
-	if ( m_graph != nullptr ) {
-		delete m_graph;
-		m_graph = nullptr;
-	}
+	//unsigned int index = 0;
+	//for ( auto node : nodes ) {
+	//	m_nodes.emplace_back(node.position, node.blocked, index++);
+	//}
 
-	m_graph = new Graph(unsigned int(nodes.size()));
-
-	for ( auto node : nodes ) {
-		unsigned int index = unsigned int(m_nodes.size());
-		m_nodes.emplace_back(node, index);
-		for ( auto c : connections[index] ) {
-			m_graph->addEdge(index, c);
-			// m_graph.addEdge(c, index); <-- should probably be done
-		}
-	}
+	m_nodes = nodes;
+	m_connections = connections;
 
 #ifdef _DEBUG_NODESYSTEM
 	for ( int i = 0; i < m_nodeEntities.size(); i++ ) {
@@ -54,7 +46,7 @@ void NodeSystem::setNodes(const std::vector<glm::vec3>& nodes, const std::vector
 }
 
 std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
-	auto path = m_graph->BFS(from.index, to.index);
+ 	auto path = aStar(from.index, to.index);
 	
 	std::vector<NodeSystem::Node> nPath;
 	for ( int i = path.size() - 1; i > -1; i-- ) {
@@ -74,13 +66,17 @@ const NodeSystem::Node& NodeSystem::getNearestNode(const glm::vec3& position) co
 
 	for ( unsigned int i = 0; i < m_nodes.size(); i++ ) {
 		float d = glm::distance(m_nodes[i].position, position);
-		if ( d < dist ) {
+		if ( d < dist && !m_nodes[i].blocked) {
 			index = i;
 			dist = d;
 		}
 	}
 
 	return m_nodes[index];
+}
+
+unsigned int NodeSystem::getDistence(unsigned int n1, unsigned int n2) const {
+	return glm::distance(m_nodes[n1].position, m_nodes[n2].position);
 }
 
 #ifdef _DEBUG_NODESYSTEM
@@ -95,18 +91,18 @@ void NodeSystem::setDebugModelAndScene(Model* model, Scene* scene) {
 	 GRAPH
 ---------------
 */
-NodeSystem::Graph::Graph(const unsigned int numNodes) {
-	m_connections = std::vector<std::list<unsigned int>>(numNodes);
-}
+//NodeSystem::Graph::Graph(const unsigned int numNodes) {
+//	m_connections = std::vector<std::list<unsigned int>>(numNodes);
+//}
 
-NodeSystem::Graph::~Graph() {}
+//NodeSystem::Graph::~Graph() {}
 
-void NodeSystem::Graph::addEdge(const unsigned int src, const unsigned int dest) {
-	
-	m_connections[src].push_back(dest);
-}
+//void NodeSystem::Graph::addEdge(const unsigned int src, const unsigned int dest) {
+//	
+//	m_connections[src].push_back(dest);
+//}
 
-std::vector<unsigned int> NodeSystem::Graph::BFS(const unsigned int from, const unsigned int to) {
+std::vector<unsigned int> NodeSystem::BFS(const unsigned int from, const unsigned int to) {
 	std::list<unsigned int> queue;
 	std::vector<unsigned int> visited = std::vector<unsigned int>(m_connections.size());
 	std::vector<unsigned int> path;
@@ -144,4 +140,75 @@ std::vector<unsigned int> NodeSystem::Graph::BFS(const unsigned int from, const 
 	path.emplace_back(from);
 
 	return path;
+}
+
+std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsigned int to) {
+	std::list<unsigned int> openSet;
+	std::list<unsigned int> closedSet;
+	std::vector<unsigned int> path;
+
+	openSet.push_back(from);
+	unsigned int current = from;
+	unsigned int maxNodes = m_nodes.size();
+	unsigned int* camefrom = new unsigned int[maxNodes];
+	unsigned int* gScores = new unsigned int[maxNodes];
+	unsigned int* fScores = new unsigned int[maxNodes];
+
+	memset(gScores, UCHAR_MAX, maxNodes * sizeof(unsigned int));
+	memset(fScores, UCHAR_MAX, maxNodes * sizeof(unsigned int));
+
+	gScores[from] = 0;
+	fScores[from] = 0;
+	camefrom[from] = from;
+
+	while (!openSet.empty()) {
+		//Sort openlist
+		//openSet.sort();
+
+		current = openSet.front();
+		for (unsigned int n : openSet) {
+			if (fScores[n] < fScores[current]) {
+				current = n;
+			}
+		}
+
+		if (current == to) {
+			path.push_back(to);
+
+			int cur = to;
+			while (camefrom[cur] != cur) {
+				path.push_back(camefrom[cur]);
+				cur = camefrom[cur];
+			}
+
+			break;
+		} else {
+			openSet.remove((unsigned int)(current));
+			closedSet.push_back(current);
+			
+			for (auto neighbor : m_connections[current]) {
+				if (m_nodes[neighbor].blocked || contains<std::list, unsigned int>(closedSet, neighbor)) {
+					continue;
+				} else {
+					//Distence From Start To Neighbor Through Current
+					unsigned int dist = gScores[current] + getDistence(current, neighbor);
+					if (dist < gScores[neighbor]) {
+						camefrom[neighbor] = current;
+						gScores[neighbor] = dist;
+						fScores[neighbor] = dist + getDistence(neighbor, to);
+						
+						if (!contains<std::list, unsigned int>(openSet, neighbor)) {
+							openSet.push_back(neighbor);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	delete[] camefrom;
+	delete[] gScores;
+	delete[] fScores;
+
+ 	return path;
 }

@@ -4,6 +4,8 @@
 #include "../controllers/PlayerController.h"
 #include "../controllers/AiController.h"
 
+#include "Physics.h"
+
 class GameState : public State {
 public:
 	GameState(StateStack& stack);
@@ -45,4 +47,13 @@ private:
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 
+	std::unique_ptr<Model> m_boundingBoxModel;
+
+	Octree* m_octree;
+
+	std::vector<Entity::SPtr> m_testBoundingBoxes;
+
+	Entity::SPtr m_keepCharacterPointerForTesting;
+
+	float m_testAngle;
 };

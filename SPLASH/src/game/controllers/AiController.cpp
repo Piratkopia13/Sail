@@ -7,7 +7,7 @@ AiController::AiController()
 	, m_timeBetweenPathUpdate(1.0f /*seconds*/)
 	, m_timeTaken(0.f)
 	, m_currNodeIndex(-1)
-	, m_lastVisitedNode(NodeSystem::Node(glm::vec3(10000.f, 10000.f, 10000.f), 2381831))
+	, m_lastVisitedNode(NodeSystem::Node(glm::vec3(10000.f, 10000.f, 10000.f), false, 2381831))
 	, m_controlledEntity(nullptr)
 	, m_physComp(nullptr)
 	, m_transComp(nullptr)
@@ -17,7 +17,7 @@ AiController::AiController()
 	, m_targetReachedThreshold(0.3f)
 	, m_reachedTarget(true)
 	, m_maxSteeringForce(0.3f)
-	, m_mass(5.f)
+	, m_mass(1.f)
 {
 }
 
@@ -38,6 +38,10 @@ void AiController::update(float dt) {
 			m_timeTaken = 0.f;
 			moveTo(m_entityTarget->getComponent<TransformComponent>()->getTranslation());
 		}
+	}
+
+	if (m_currPath.empty()) {
+		return;
 	}
 
 	if ( m_reachedTarget && m_currNodeIndex < m_currPath.size() - 1 ) {

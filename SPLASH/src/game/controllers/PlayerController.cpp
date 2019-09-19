@@ -36,7 +36,7 @@ void PlayerController::update(float dt) {
 
 	// Increase speed if shift or right trigger is pressed
 	if ( Input::IsKeyPressed(SAIL_KEY_SHIFT) ) {
-		speedModifier = 5.f;
+		speedModifier = 30.f;
 	}
 
 	//
@@ -192,7 +192,7 @@ void PlayerController::update(float dt) {
 		// Calculate total movement
 		physicsComp->velocity =
 			glm::normalize(right * rightMovement + forward * forwardMovement + glm::vec3(0.0f, 1.0f, 0.0f) * upMovement)
-			* speedModifier;
+			* speedModifier * m_movementSpeed;
 	}
 	else {
 		physicsComp->velocity = glm::vec3(0.0f, 0.0f, 0.0f);
