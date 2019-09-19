@@ -4,11 +4,11 @@
 #include "..//../Physics/Physics.h"
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/BoundingBoxComponent.h"
+#include "..//..//components/CollidableComponent.h"
 
 OctreeAddRemoverSystem::OctreeAddRemoverSystem() {
-	requiredComponentTypes.push_back(TransformComponent::ID);
 	requiredComponentTypes.push_back(BoundingBoxComponent::ID);
-	//TODO: Add a component that is specifically for if the entity should be added to octree
+	requiredComponentTypes.push_back(CollidableComponent::ID);
 }
 
 OctreeAddRemoverSystem::~OctreeAddRemoverSystem() {
