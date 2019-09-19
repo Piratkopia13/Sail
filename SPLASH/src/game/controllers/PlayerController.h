@@ -26,10 +26,15 @@ public:
 	void processKeyboardInput(float dt);
 	void processMouseInput(float dt);
 
+	void updateCameraPosition(float alpha);
+
 	std::shared_ptr<Entity> getEntity();
 
 	void setProjectileModel(Model* model);
 
+
+	// Should be called at the start of the update loop and nowhere else
+	void destroyOldProjectiles();
 private:
 	float m_movementSpeed = 20.f;
 	float RUN_SPEED = 2.0f;
@@ -40,6 +45,7 @@ private:
 	Scene* m_scene;
 
 	Model* m_projectileModel;
+	
 	std::vector<Projectile> m_projectiles;
 
 	std::shared_ptr<Entity> m_player;

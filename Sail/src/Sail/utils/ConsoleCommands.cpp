@@ -42,23 +42,23 @@ const bool ConsoleCommands::execute() {
 		return true;
 	}
 	std::string parsedCommand = parseCommand(cmd);
-	if (intMatch(cmd, parsedCommand)) {
+	if (intMatch(m_textField, parsedCommand)) {
 		m_textField = "";
 		return true;
 	}
-	if (floatMatch(cmd, parsedCommand)) {
+	if (floatMatch(m_textField, parsedCommand)) {
 		m_textField = "";
 		return true;
 	}
-	if (stringMatch(cmd, parsedCommand)) {
+	if (stringMatch(m_textField, parsedCommand)) {
 		m_textField = "";
 		return true;
 	}
-	if (intArrayMatch(cmd, parsedCommand)) {
+	if (intArrayMatch(m_textField, parsedCommand)) {
 		m_textField = "";
 		return true;
 	}
-	if (floatArrayMatch(cmd, parsedCommand)) {
+	if (floatArrayMatch(m_textField, parsedCommand)) {
 		m_textField = "";
 		return true;
 	}

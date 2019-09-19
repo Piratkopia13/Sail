@@ -23,21 +23,21 @@ public:
 		return m_counterStart;
 	}
 
-	double getTime() {
-
+	template <typename T>
+	T getTime() {
 		LARGE_INTEGER currentTime;
 		QueryPerformanceCounter(&currentTime);
 
-		return static_cast<double>((currentTime.QuadPart - m_counterStart) / m_countsPerSecond);
-
+		return static_cast<T>((currentTime.QuadPart - m_counterStart) / m_countsPerSecond);
 	}
 
 	// returns time in seconds from time
-	double getTimeSince(const INT64 time) {
+	template <typename T>
+	T getTimeSince(const INT64 time) {
 		LARGE_INTEGER currentTime;
 		QueryPerformanceCounter(&currentTime);
 
-		return static_cast<double>((currentTime.QuadPart - time) / m_countsPerSecond);
+		return static_cast<T>((currentTime.QuadPart - time) / m_countsPerSecond);
 	}
 
 	double getFrameTime() {

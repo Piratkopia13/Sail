@@ -19,8 +19,8 @@ namespace ctpl {
 }
 
 // TODO? Move elsewhere
-const double TICKRATE = 128.0;
-const double TIMESTEP = 1.0 / TICKRATE;
+const float TICKRATE = 100.0f;
+const float TIMESTEP = 1.0f / TICKRATE;
 
 class Application : public IEventDispatcher {
 
@@ -39,7 +39,7 @@ public:
 	virtual int run() = 0;
 	virtual void processInput(float dt) = 0;
 	virtual void update(float dt) = 0;
-	virtual void render(float dt) = 0;
+	virtual void render(float dt, float alpha) = 0;
 	virtual void dispatchEvent(Event& event) override;
 
 	template<typename T>
@@ -79,6 +79,7 @@ public:
 	ResourceManager& getResourceManager();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
+
 private:
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
@@ -91,4 +92,7 @@ private:
 	// Timer
 	Timer m_timer;
 	UINT m_fps;
+
+	static std::atomic_uint s_updateRunning;	
+	static std::atomic_uint s_queuedUpdates;
 };

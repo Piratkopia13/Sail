@@ -1,7 +1,8 @@
 #include "GameState.h"
 #include "imgui.h"
-#include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
-#include "..//Sail/src/Sail/entities/ECS.h"
+#include "Sail/entities/systems/physics/PhysicSystem.h"
+#include "Sail/entities/ECS.h"
+#include "Sail/entities/components/Components.h"
 #include <sstream>
 #include <iomanip>
 
@@ -177,112 +178,127 @@ GameState::GameState(StateStack& stack)
 	m_playerController.setProjectileModel(m_cubeModel.get());
 
 	/*
-		Creation of entitites
+		Creation of entities
 	*/
+
+	// STATIC ENTITIES (never added/deleted/modified during runtime)
+	// Use .addStaticEntity() and StaticMatrixComponent instead of TransformComponent since static objects's transforms 
+	// don't need to be interpolated between updates.
 	{
 		auto e = ECS::Instance()->createEntity("Arena");
 		e->addComponent<ModelComponent>(arenaModel);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<LightListComponent>();
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Barrier1");
 		e->addComponent<ModelComponent>(barrierModel);
-		e->addComponent<TransformComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f, -0.79f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f, -0.79f, 0.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Barrier2");
 		e->addComponent<ModelComponent>(barrierModel);
-		e->addComponent<TransformComponent>(glm::vec3(-4.54f, 0.f, 8.06f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(-4.54f, 0.f, 8.06f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Barrier3");
 		e->addComponent<ModelComponent>(barrierModel);
-		e->addComponent<TransformComponent>(glm::vec3(8.46f, 0.f, 8.06f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(8.46f, 0.f, 8.06f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Container1");
 		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(6.95f, 0.f, 25.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(6.95f, 0.f, 25.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Container2");
 		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(-25.f, 0.f, 12.43f), glm::vec3(0.f, 1.57f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(-25.f, 0.f, 12.43f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Container3");
 		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(-25.f, 8.f, -7.73f), glm::vec3(0.f, 1.57f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(-25.f, 8.f, -7.73f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Container4");
 		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Container5");
 		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(-0.f, 0.f, -14.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Container6");
 		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.20f, 0.f, -8.f), glm::vec3(0.f, 1.57f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(24.20f, 0.f, -8.f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Container7");
 		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.2f, 8.f, -22.8f), glm::vec3(0.f, 1.57f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(24.2f, 8.f, -22.8f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Container8");
 		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.36f, 0.f, -32.41f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(24.36f, 0.f, -32.41f));
+		m_scene.addStaticEntity(e);
 
 		e = ECS::Instance()->createEntity("Ramp1");
 		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addStaticEntity(e);
 		e = ECS::Instance()->createEntity("Ramp2");
 		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addStaticEntity(e);
 		e = ECS::Instance()->createEntity("Ramp3");
 		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addStaticEntity(e);
 		e = ECS::Instance()->createEntity("Ramp4");
 		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
+		m_scene.addStaticEntity(e);
 		e = ECS::Instance()->createEntity("Ramp5");
 		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(-16.f, 0.f, 20.f), glm::vec3(0.f, 3.14f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(-16.f, 0.f, 20.f), glm::vec3(0.f, 3.14f, 0.f));
+		m_scene.addStaticEntity(e);
 		e = ECS::Instance()->createEntity("Ramp6");
 		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(-34.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
-		m_scene.addEntity(e);
+		e->addComponent<StaticMatrixComponent>(glm::vec3(-34.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		m_scene.addStaticEntity(e);
 
+		// DYNAMIC ENTITIES
+		// Use TransformComponent and .addEntity() so that they're interpolated
 		e = ECS::Instance()->createEntity("Character");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<PhysicsComponent>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character1");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<PhysicsComponent>();
+		m_aiControllers.push_back(e);
 		m_scene.addEntity(e);
+
 		e = ECS::Instance()->createEntity("Character2");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<PhysicsComponent>();
+		m_aiControllers.push_back(e);
 		m_scene.addEntity(e);
+
 		e = ECS::Instance()->createEntity("Character3");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<PhysicsComponent>();
+		m_aiControllers.push_back(e);
 		m_scene.addEntity(e);
+
 
 		//creates light with model and pointlight
 		e = ECS::Instance()->createEntity("Candle1");
@@ -295,6 +311,7 @@ GameState::GameState(StateStack& stack)
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
+		e->addComponent<LightListComponent>(); // Candle1 holds all lights you can place in debug
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Candle2");
@@ -330,6 +347,7 @@ GameState::~GameState() {
 }
 
 // Process input for the state
+// NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
@@ -339,11 +357,20 @@ bool GameState::processInput(float dt) {
 		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl.setPosition(m_cam.getPosition());
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.push_back(pl);
+		m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.push_back(pl);
 		//m_lights.addPointLight(pl);
 	}
 
 #endif
+	if ( Input::WasKeyJustPressed(SAIL_KEY_H) ) {
+		for ( int i = 0; i < m_aiControllers.size(); i++ ) {
+			if ( m_aiControllers[i].getTargetEntity() == nullptr ) {
+				m_aiControllers[i].chaseEntity(m_playerController.getEntity().get());
+			} else {
+				m_aiControllers[i].chaseEntity(nullptr);
+			}
+		}
+	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_G)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
@@ -355,7 +382,12 @@ bool GameState::processInput(float dt) {
 	}
 
 	// Update the camera controller from input devices
+	//m_camController.update(dt);
 	m_playerController.processMouseInput(dt);
+	for ( auto ai : m_aiControllers ) {
+		ai.update();
+	}
+	//m_physSystem.execute(dt);
 
 
 	// Reload shaders
@@ -367,26 +399,26 @@ bool GameState::processInput(float dt) {
 
 	//checks if candle entity has light and if not, adds one 
 	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
-		if (!m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
+		if (!m_scene.getGameObjectEntityByName("Candle1")->hasComponent<LightComponent>()) {
 			PointLight pl;
-			glm::vec3 pos = m_scene.getEntityByName("Candle1")->getComponent<TransformComponent>()->getTranslation();
+			glm::vec3 pos = m_scene.getGameObjectEntityByName("Candle1")->getComponent<TransformComponent>()->getTranslation();
 			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
 			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
 			pl.setAttenuation(.0f, 0.1f, 0.02f);
 			pl.setIndex(0);
-			m_scene.getEntityByName("Candle1")->addComponent<LightComponent>(pl);
+			m_scene.getGameObjectEntityByName("Candle1")->addComponent<LightComponent>(pl);
 			//m_lights.addPointLight(pl);
 		}
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
-		if (!m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
+		if (!m_scene.getGameObjectEntityByName("Candle2")->hasComponent<LightComponent>()) {
 			PointLight pl;
-			glm::vec3 pos = m_scene.getEntityByName("Candle2")->getComponent<TransformComponent>()->getTranslation();
+			glm::vec3 pos = m_scene.getGameObjectEntityByName("Candle2")->getComponent<TransformComponent>()->getTranslation();
 			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
 			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
 			pl.setAttenuation(.0f, 0.1f, 0.02f);
 			pl.setIndex(1);
-			m_scene.getEntityByName("Candle2")->addComponent<LightComponent>(pl);
+			m_scene.getGameObjectEntityByName("Candle2")->addComponent<LightComponent>(pl);
 			//m_lights.addPointLight(pl);
 		}
 	}
@@ -394,8 +426,8 @@ bool GameState::processInput(float dt) {
 	//removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
 
-		if (m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.size() > 0) {
-			m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.erase(m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.begin());
+		if (m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.size() > 0) {
+			m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.erase(m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.begin());
 		}
 
 		//m_lights.removePointLight();
@@ -403,14 +435,14 @@ bool GameState::processInput(float dt) {
 
 	//removes light from candle entities if they have it
 	if (Input::WasKeyJustPressed(SAIL_KEY_M)) {
-		if (m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
-			m_scene.getEntityByName("Candle1")->removeComponent<LightComponent> ();
+		if (m_scene.getGameObjectEntityByName("Candle1")->hasComponent<LightComponent>()) {
+			m_scene.getGameObjectEntityByName("Candle1")->removeComponent<LightComponent> ();
 		}
 		//m_lights.removePLByIndex(0);
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_N)) {
-		if (m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
-			m_scene.getEntityByName("Candle2")->removeComponent<LightComponent>();
+		if (m_scene.getGameObjectEntityByName("Candle2")->hasComponent<LightComponent>()) {
+			m_scene.getGameObjectEntityByName("Candle2")->removeComponent<LightComponent>();
 		}
 		//m_lights.removePLByIndex(1);
 	}
@@ -445,6 +477,9 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2.0f;
 
+	// TODO: make a system or something for this
+	m_playerController.destroyOldProjectiles();
+
 	m_scene.prepareUpdate(); // Copy game state from previous tick
 	m_playerController.prepareUpdate(); // Copy player position from previous tick
 
@@ -453,7 +488,7 @@ bool GameState::update(float dt) {
 	updateComponentSystems(dt);
 
 	//check and update all lights for all entities
-	std::vector<Entity::SPtr> entities = m_scene.getEntities();
+	std::vector<Entity::SPtr> entities = m_scene.getGameObjectEntities();
 	m_lights.clearPointLights();
 	for (int i = 0; i < entities.size();i++) {
 		if (entities[i]->hasComponent<LightComponent>()) {
@@ -466,12 +501,21 @@ bool GameState::update(float dt) {
 		}
 	}
 	m_lights.updateBufferData();
+
+	// copy per-frame render objects to their own list so that they can be rendered without
+	// any interference from the update loop
+	m_scene.prepareRenderObjects();
+
 	return true;
 }
 
 // Renders the state
-// Note: will use alpha (the interpolation value between two game states) instead of dt
-bool GameState::render(float alpha) {
+// DO NOT CREATE OR DESTROY ANY gameObjects HERE
+// alpha is a the interpolation value (range [0,1]) between the last two snapshots
+bool GameState::render(float dt, float alpha) {
+	// Interpolate the player's camera position (but not rotation)
+	m_playerController.updateCameraPosition(alpha);
+
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
 
@@ -524,12 +568,12 @@ bool GameState::renderImguiConsole(float dt) {
 				m_cc.setTextField(std::string(buf));
 			}
 			ImGui::End();
-		}
-		else {
+		} else {
 			ImGui::End();
 		}
-
 	}
+
+
 	return false;
 }
 
