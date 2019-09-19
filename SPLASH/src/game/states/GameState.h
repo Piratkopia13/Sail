@@ -3,6 +3,8 @@
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
 
+class UpdateBoundingBoxSystem;
+class OctreeAddRemoverSystem;
 class PhysicSystem;
 
 class GameState : public State {
@@ -31,6 +33,8 @@ private:
 
 private:
 	struct Systems {
+		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
 	};
 

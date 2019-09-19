@@ -75,13 +75,16 @@ GameState::GameState(StateStack& stack)
 	*/
 	ECS::Instance()->createSystem<PhysicSystem>();
 	ECS::Instance()->getSystem<PhysicSystem>()->provideOctree(m_octree);
+	m_componentSystems.physicSystem = ECS::Instance()->getSystem<PhysicSystem>();
 
 	//Create system for updating bounding box
 	ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
+	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->getSystem<UpdateBoundingBoxSystem>();
 
 	//Create system for handeling octree
 	ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
 	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->provideOctree(m_octree);
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->getSystem<OctreeAddRemoverSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
@@ -793,6 +796,8 @@ bool GameState::renderImguiProfiler(float dt) {
 }
 
 void GameState::updateComponentSystems(float dt) {
+	m_componentSystems.updateBoundingBoxSystem->update(dt);
+	m_componentSystems.octreeAddRemoverSystem->update(dt);
 	m_componentSystems.physicSystem->update(dt);
 }
 
