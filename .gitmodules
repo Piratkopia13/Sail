@@ -9,6 +9,3 @@
 [submodule "libraries/MemoryManager"]
 	path = libraries/MemoryManager
 	url = https://github.com/Skratzy/MemoryManager
-[submodule "libraries/minirm"]
-	path = libraries/minirm
-	url = https://github.com/skratzy/minirm
