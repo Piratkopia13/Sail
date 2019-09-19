@@ -29,10 +29,12 @@ cbuffer VSPSSystemCBuffer : register(b0) {
 
 struct PointLightInput {
 	float3 color;
+	float padding;
 	float3 position;
     float attConstant;
-    //float attLinear;
-    //float attQuadratic;
+    float attLinear;
+    float attQuadratic;
+	float padding2[2];
 };
 cbuffer VSLights : register(b1) {
 	DirectionalLight dirLight;
@@ -45,13 +47,15 @@ PSIn VSMain(VSIn input) {
 	// Copy over the directional light
 	output.lights.dirLight = dirLight;
 	// Copy over point lights
-    for (uint i = 0; i < dirLight.direction.x; i++) {
-        output.lights.pointLights[i].attConstant = pointLights[i].attConstant;
-        output.lights.pointLights[i].attLinear = 0.1f;
+    for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+        // output.lights.pointLights[i].attConstant = pointLights[i].attConstant;
+		output.lights.pointLights[i].attConstant = 0.0f;
+		output.lights.pointLights[i].attLinear = 0.1f;
         output.lights.pointLights[i].attQuadratic = 0.02f;
-        //output.lights.pointLights[i].attLinear = pointLights[i].attLinear;
-        //output.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
+        // output.lights.pointLights[i].attLinear = pointLights[i].attLinear;
+        // output.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
         output.lights.pointLights[i].color = pointLights[i].color;
+        // output.lights.pointLights[i].color = float3(0.0f, 0.0f, 0.0f);
     }
 
 	input.position.w = 1.f;

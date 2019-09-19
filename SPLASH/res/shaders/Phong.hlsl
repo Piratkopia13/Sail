@@ -7,11 +7,14 @@ struct PointLight {
     float attConstant;
     float attLinear;
     float attQuadratic;
+	float padding[2];
 };
 
 struct DirectionalLight {
 	float3 color;
+	float padding;
 	float3 direction;
+	float padding2;	
 };
 
 struct LightList {
@@ -83,7 +86,7 @@ float4 phongShade(PhongInput input) {
 
 		}
 
-		//float attenuation = 1.f / (1.f + p.attenuation * pow(p.distanceToLight, 2.f));
+		// float attenuation = 1.f / (1.f + p.attenuation * pow(p.distanceToLight, 2.f));
         float attenuation = 1.f / (p.attConstant + p.attLinear * p.distanceToLight + p.attQuadratic * pow(p.distanceToLight, 2.f));
 
 		totalColor += (input.mat.kd * diffuseCoefficient + input.mat.ks * specularCoefficient) * input.diffuseColor.rgb * p.color * attenuation;

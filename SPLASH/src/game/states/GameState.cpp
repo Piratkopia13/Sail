@@ -139,15 +139,15 @@ GameState::GameState(StateStack& stack)
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(3.0f));
-	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-	
-	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
-	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	//m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(3.0f));
+	//m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	//m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	//m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	//
+	//Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
+	//fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	//fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	//fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 
 	Model* arenaModel= &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
@@ -455,7 +455,7 @@ bool GameState::update(float dt) {
 	//check and update all lights for all entities
 	std::vector<Entity::SPtr> entities = m_scene.getEntities();
 	m_lights.clearPointLights();
-	for (int i = 0; i < entities.size();i++) {
+	for (int i = 0; i < entities.size(); i++) {
 		if (entities[i]->hasComponent<LightComponent>()) {
 			m_lights.addPointLight(entities[i]->getComponent<LightComponent>()->m_pointLight);
 		}
@@ -481,12 +481,39 @@ bool GameState::render(float alpha) {
 	return true;
 }
 
+static int selectedRenderer = 0;
+
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
 	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
+
+	if (!m_lights.getPLs().empty()) {
+		auto& pl = m_lights.getPLs()[0];
+
+		static glm::vec3 color = pl.getColor(); // = 1.0f
+		static glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
+		static float attConstant = pl.getAttenuation().constant; // 0.0f;
+		static float attLinear = pl.getAttenuation().linear; // 0.1f;
+		static float attQuadratic = pl.getAttenuation().quadratic; // 0.02f;
+
+		ImGui::Begin("Light debug");
+		ImGui::SliderFloat3("Color", &color[0], 0.f, 1.0f);
+		ImGui::SliderFloat3("Position", &position[0], -40.f, 40.0f);
+		ImGui::SliderFloat("AttConstant", &attConstant, 0.f, 1.f);
+		ImGui::SliderFloat("AttLinear", &attLinear, 0.f, 1.f);
+		ImGui::SliderFloat("AttQuadratic", &attQuadratic, 0.f, 0.2f);
+		ImGui::End();
+
+	//if (selectedRenderer == 1) {
+		pl.setAttenuation(attConstant, attLinear, attQuadratic);
+		pl.setColor(color);
+		pl.setPosition(position);
+		m_lights.updateBufferData();
+	}
+
 	return false;
 }
 
@@ -675,7 +702,6 @@ bool GameState::renderImguiProfiler(float dt) {
 bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Begin("Rendering settings");
 	const char* items[] = { "Forward raster", "Raytraced" };
-	static int selectedRenderer = 0;
 	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
 		m_scene.changeRenderer(selectedRenderer);
 	}

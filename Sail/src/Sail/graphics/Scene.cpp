@@ -38,7 +38,8 @@ void Scene::addEntity(Entity::SPtr entity) {
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
-	(*m_currentRenderer)->setLightSetup(lights);
+	m_rendererRaster->setLightSetup(lights);
+	m_rendererRaytrace->setLightSetup(lights);
 }
 
 
