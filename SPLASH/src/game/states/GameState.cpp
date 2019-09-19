@@ -189,49 +189,49 @@ GameState::GameState(StateStack& stack)
 #ifdef _DEBUG
 		m_app->getResourceManager().loadModel("model_translation_only.fbx", shader);
 		m_app->getResourceManager().loadAnimationStack("model_translation_only.fbx");
-		auto ballbotModel = &m_app->getResourceManager().getModel("model_translation_only.fbx", shader);
+		auto translationModel = &m_app->getResourceManager().getModel("model_translation_only.fbx", shader);
 		//humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-		auto ballbot = ECS::Instance()->createEntity("model_translation_only");
-		ballbot->addComponent<TransformComponent>();
-		ballbot->getComponent<TransformComponent>()->setScale(1.0f);
-		ballbot->getComponent<TransformComponent>()->setTranslation(3, 10, 10);
-		ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("model_translation_only.fbx", shader));
+		auto translationTest = ECS::Instance()->createEntity("model_translation_only");
+		translationTest->addComponent<TransformComponent>();
+		translationTest->getComponent<TransformComponent>()->setScale(1.0f);
+		translationTest->getComponent<TransformComponent>()->setTranslation(3, 10, 10);
+		translationTest->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("model_translation_only.fbx", shader));
 		//Mesh::Data tempData;
 
 		//tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
-		ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("model_translation_only.fbx"));
+		translationTest->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("model_translation_only.fbx"));
 
-		ac = ballbot->getComponent<AnimationComponent>();
+		ac = translationTest->getComponent<AnimationComponent>();
 		ac->animationIndex = 0;
 		ac->animationSpeed = 1.0f;
 		ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
 		ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
 		ac->blending = false;
-		m_scene.addEntity(ballbot);
+		m_scene.addEntity(translationTest);
 
-		//		m_app->getResourceManager().loadModel("model_cube_arm.fbx", shader);
-		//m_app->getResourceManager().loadAnimationStack("model_cube_arm.fbx");
-		//auto ballbotModel = &m_app->getResourceManager().getModel("model_cube_arm.fbx", shader);
-		////humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+		m_app->getResourceManager().loadModel("model_cube_arm.fbx", shader);
+		m_app->getResourceManager().loadAnimationStack("model_cube_arm.fbx");
+		auto armModel = &m_app->getResourceManager().getModel("model_cube_arm.fbx", shader);
+		//humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-		//auto ballbot = ECS::Instance()->createEntity("model_cube_arm");
-		//ballbot->addComponent<TransformComponent>();
-		//ballbot->getComponent<TransformComponent>()->setScale(1.0f);
-		//ballbot->getComponent<TransformComponent>()->setTranslation(3, 10, 10);
-		//ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("model_cube_arm.fbx", shader));
-		////Mesh::Data tempData;
+		auto rotationTest = ECS::Instance()->createEntity("model_cube_arm");
+		rotationTest->addComponent<TransformComponent>();
+		rotationTest->getComponent<TransformComponent>()->setScale(1.0f);
+		rotationTest->getComponent<TransformComponent>()->setTranslation(3, 10, 4);
+		rotationTest->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("model_cube_arm.fbx", shader));
+		//Mesh::Data tempData;
 
-		////tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
-		//ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("model_cube_arm.fbx"));
+		//tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
+		rotationTest->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("model_cube_arm.fbx"));
 
-		//ac = ballbot->getComponent<AnimationComponent>();
-		//ac->animationIndex = 0;
-		//ac->animationSpeed = 1.0f;
-		//ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
-		//ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
-		//ac->blending = false;
-		//m_scene.addEntity(ballbot);
+		ac = rotationTest->getComponent<AnimationComponent>();
+		ac->animationIndex = 0;
+		ac->animationSpeed = 1.0f;
+		ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
+		ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
+		ac->blending = false;
+		m_scene.addEntity(rotationTest);
 
 
 		//m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
@@ -256,6 +256,31 @@ GameState::GameState(StateStack& stack)
 		//ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
 		//ac->blending = false;
 		//m_scene.addEntity(ballbot);
+
+#else
+	m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
+	m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
+	auto ballbotModel = &m_app->getResourceManager().getModel("DEBUG_BALLBOT.fbx", shader);
+	//humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+
+	auto ballbot = ECS::Instance()->createEntity("DEBUG_BALLBOT");
+	ballbot->addComponent<TransformComponent>();
+	ballbot->getComponent<TransformComponent>()->setScale(0.00005f);
+	ballbot->getComponent<TransformComponent>()->setTranslation(3, 10, 10);
+	ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("DEBUG_BALLBOT.fbx", shader));
+	//Mesh::Data tempData;
+
+	//tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
+	ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("DEBUG_BALLBOT.fbx"));
+
+	ac = ballbot->getComponent<AnimationComponent>();
+	ac->animationIndex = 0;
+	ac->animationSpeed = 1.0f;
+	ac->currentAnimation = ac->getAnimationStack()->getAnimation(2);
+	ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
+	ac->blending = false;
+	m_scene.addEntity(ballbot);
+
 
 
 

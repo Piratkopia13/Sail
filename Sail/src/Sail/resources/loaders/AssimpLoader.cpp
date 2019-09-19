@@ -7,7 +7,7 @@ AssimpLoader::AssimpLoader() :
 }
 
 AssimpLoader::~AssimpLoader() {
-	//delete m_importer;
+
 }
 
 Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
@@ -55,7 +55,7 @@ AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 	unsigned int vertCount = 0;
 
 	//	__________________________________MATRIX______________________________
-	m_globalTransform = (mat4_cast(scene->mRootNode->mTransformation));
+	m_globalTransform = glm::inverse(mat4_cast(scene->mRootNode->mTransformation));
 	//	________________glm::inverse_______________________________________________________
 
 
@@ -177,12 +177,9 @@ Mesh* AssimpLoader::importMesh(const aiScene* scene, aiNode* node) {
 bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack) {
 	#ifdef _DEBUG 
 	Logger::Log("1"+std::string(node->mName.C_Str())); 
-	
-
-	if (m_nodes.find(node->mName.C_Str()) == m_nodes.end()) {
-		m_nodes[node->mName.C_Str()] = node;
-	}
-
+		if (m_nodes.find(node->mName.C_Str()) == m_nodes.end()) {
+			m_nodes[node->mName.C_Str()] = node;
+		}
 	#endif
 	for (unsigned int nodeID = 0; nodeID < node->mNumMeshes; nodeID++) {
 		const aiMesh* mesh = scene->mMeshes[node->mMeshes[nodeID]];
@@ -199,7 +196,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 				if (m_boneMap.find(boneName) == m_boneMap.end()) {
 
 
-					m_boneMap[boneName] = { index, node->mName.C_Str(), mat4_cast(bone->mOffsetMatrix)};
+					m_boneMap[boneName] = { index, node->mName.C_Str(), (mat4_cast(bone->mOffsetMatrix))};
 					
 				}
 				else {
@@ -293,7 +290,7 @@ void AssimpLoader::readNodeHierarchy(const unsigned int animationID, const unsig
 
 	std::string name = node->mName.C_Str();
 	//glm::mat4 transform2 = mat4_castT(node->mTransformation);
-	glm::mat4 nodeTransform = mat4_cast(node->mTransformation);
+	glm::mat4 nodeTransform =(mat4_cast(node->mTransformation));
 	const aiNodeAnim* nodeAnim = m_channels[animationID][name];
 
 
@@ -301,36 +298,38 @@ void AssimpLoader::readNodeHierarchy(const unsigned int animationID, const unsig
 		// Interpolate scaling and generate scaling transformation matrix
 		aiVector3D Scaling;
 		calcInterpolatedScale(Scaling, animationTime, nodeAnim);
-		glm::mat4 scalingM = glm::scale(glm::identity<glm::mat4>(), glm::vec3(Scaling.x, Scaling.y, Scaling.z));
+		//glm::mat4 scalingM = glm::scale(glm::identity<glm::mat4>(), glm::vec3(1,1,1));
+		glm::mat4 scalingM = (glm::scale(glm::identity<glm::mat4>(), glm::vec3(Scaling.x, Scaling.y, Scaling.z)));
 
 		// Interpolate rotation and generate rotation transformation matrix
 		aiQuaternion RotationQ;
 		calcInterpolatedRotation(RotationQ, animationTime, nodeAnim);
-		//aiMatrix4x4 rotationM = aiMatrix4x4(RotationQ.GetMatrix());
+		//aiMatrix4x4 rotationMa = aiMatrix4x4(RotationQ.GetMatrix());
 
 		glm::quat rotation = quat_cast(RotationQ);
 		glm::mat4 rotationM = (glm::toMat4(rotation));
-
+		
 		// Interpolate translation and generate translation transformation matrix
 		aiVector3D Translation;
 		calcInterpolatedPosition(Translation, animationTime, nodeAnim);
-		glm::mat4 translationM = glm::translate(glm::identity<glm::mat4>(), glm::vec3(Translation.x, Translation.y, Translation.z));
+		glm::mat4 translationM = (glm::translate(glm::identity<glm::mat4>(), glm::vec3(Translation.x, Translation.y, Translation.z)));
+		//glm::mat4 translationM = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0,0,0));
 
 		//nodeTransform = scalingM * rotationM * translationM;
 		nodeTransform = translationM * rotationM * scalingM;
 		// Combine the above transformations
 		//NodeTransformation = TranslationM * RotationM * ScalingM;
 
-
+		
 	}
 
 
-	glm::mat4 global = parent * nodeTransform;
+	glm::mat4 global = (parent * nodeTransform);
 	//glm::mat4 global = nodeTransform * parent;
 
 	if (m_boneMap.find(name) != m_boneMap.end()) {
 		unsigned int index = m_boneMap[name].index;
-		animationFrame->setTransform(index, m_globalTransform * global * m_boneMap[name].offset);
+		animationFrame->setTransform(index, (m_globalTransform * global * m_boneMap[name].offset));
 		//animationFrame->setTransform(index, m_boneMap[name].offset * global * m_globalTransform);
 	}
 

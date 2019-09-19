@@ -61,7 +61,7 @@ void AnimationSystem::update(float dt) {
 						mat += transforms[connections[connectionIndex].transform[countIndex]] * connections[connectionIndex].weight[countIndex];
 					}
 				
-					animationC->data.positions[connectionIndex].vec = glm::vec3( mat * glm::vec4(pos[connectionIndex].vec,1));
+					animationC->data.positions[connectionIndex].vec = glm::vec3(mat * glm::vec4(pos[connectionIndex].vec,1));
 					animationC->data.normals[connectionIndex].vec = glm::vec3( mat * glm::vec4(norm[connectionIndex].vec,1));
 					//animationC->data.positions[connectionIndex].vec = pos[connectionIndex].vec;
 					//animationC->data.normals[connectionIndex].vec = norm[connectionIndex].vec;
