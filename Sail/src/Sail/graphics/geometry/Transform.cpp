@@ -91,6 +91,7 @@ void Transform::translate(const glm::vec3& move) {
 
 void Transform::setStartTranslation(const glm::vec3& translation) {
 	m_data.m_previous.m_translation = translation;
+	m_data.m_current.m_translation = translation;
 	m_matNeedsUpdate = true;
 
 	/*for (auto& ts : m_transformSnapshots) {
