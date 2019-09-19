@@ -7,6 +7,9 @@
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "Network/NetworkWrapper.h"
+#include "Network/NWrapperSingleton.h"	// New network
+#include "Network/NWrapper.h"			// 
+
 
 #include <string>
 using namespace std;
@@ -17,7 +20,7 @@ LobbyState::LobbyState(StateStack& stack)
 	// ImGui is already initiated and set up, thanks alex!
 	m_app = Application::getInstance();
 	m_input = Input::GetInstance();
-	m_network = &NetworkWrapper::getInstance();
+	m_network = NWrapperSingleton::getInstance().getNetworkWrapper();
 	m_textHeight = 52;
 	m_outerPadding = 15;
 
@@ -88,8 +91,11 @@ bool LobbyState::update(float dt) {
 
 	// ---
 	if (NetworkWrapper::getInstance().isInitialized()) {
-		NetworkWrapper::getInstance().checkForPackages();
+		//NetworkWrapper::getInstance().checkForPackages();
 	}
+
+	// It will always be initialized here, why waste time on an if-case?
+	m_network->checkForPackages();
 
 
 

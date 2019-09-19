@@ -4,11 +4,14 @@
 #include "Network/NetworkWrapper.h"
 #include "../libraries/imgui/imgui.h"
 
+#include "Network/NWrapperSingleton.h"
+#include "Network/NWrapper.h"
+
 MenuState::MenuState(StateStack& stack) 
 	: State(stack)
 {
 	m_input = Input::GetInstance();
-	m_network = &NetworkWrapper::getInstance();
+	m_network = &NWrapperSingleton::getInstance();
 	m_app = Application::getInstance();
 
 	this->inputIP = new char[100]{ "127.0.0.1:54000" };
@@ -17,6 +20,8 @@ MenuState::MenuState(StateStack& stack)
 
 MenuState::~MenuState() {
 	delete this->inputIP;
+	delete this->inputName;
+	//delete m_network;
 }
 
 bool MenuState::processInput(float dt) {
@@ -105,9 +110,7 @@ bool MenuState::renderImgui(float dt) {
 			// Wait until welcome-package is recieved,
 			// Save the package info,
 			// Pop and push into JoinLobbyState.
-
-			this->inputName = "Joiner";
-
+			
 			this->requestStackPop();
 			this->requestStackPush(States::JoinLobby);
 		}

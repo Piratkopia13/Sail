@@ -1,36 +1,43 @@
 #pragma once
 
-
-
 #include "Network/NetworkStructs.hpp"
+#include "../../SPLASH/src/game/states/LobbyState.h"	// Needed for 'Message'
+#include "Sail.h"
+#include <string>
 
 class Network;
 
 class NWrapper : public NetworkEventHandler {
 public:
-	NWrapper() {}
-	~NWrapper() {}
+	NWrapper();
+	virtual ~NWrapper();
 
-	NWrapper(NWrapper const&) = delete;
-	void operator=(NWrapper const&) = delete;
+	virtual bool host(int port = 54000) = 0;
+	virtual bool connectToIP(char* = "127.0.0.1:54000") = 0;
+	void checkForPackages();
 
-
-
-	static void initAsHost();
-	static void initAsClient();
-
-	static NWrapper* getInstance();
-
-
-	void handleNetworkEvents(NetworkEvent nEvent);
+	void sendMsg(std::string msg);					// Some of these probably only get used
+	void sendMsgAllClients(std::string msg);		// by either client or host
+	void sendChatAllClients(std::string msg);		//
+	virtual void sendChatMsg(std::string msg) = 0;
 
 protected:
-	Network* m_network;
+	Network* m_network = nullptr;
+	Application* m_app = nullptr;	
+
+	// Parsing functions | Will alter 'data' upon being used.
+	TCP_CONNECTION_ID parseID(std::string& data);	//
+	std::string parseName(std::string& data);		//
+	Message processChatMessage(std::string& message);
+
+	// Formatting Functions
+	void compressDCMessage();
+	void decompressDCmessage();
 
 private:
-	NWrapper() {}
-	static bool isHost;
-	static bool isInitialized;
+	void initialize();
+	void shutDown();
+	void handleNetworkEvents(NetworkEvent nEvent);
 
 	virtual void playerJoined(TCP_CONNECTION_ID id) = 0;
 	virtual void playerDisconnected(TCP_CONNECTION_ID id) = 0;

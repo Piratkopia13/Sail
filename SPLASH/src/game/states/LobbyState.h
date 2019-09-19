@@ -3,8 +3,8 @@
 #include "Sail.h"
 #include <string>
 #include <list>
-#include "Network/NetworkWrapper.h"
 
+class NWrapper;
 class TextInputEvent;
 class NetworkJoinedEvent;
 
@@ -47,7 +47,7 @@ public:
 protected:
 	Application* m_app = nullptr;
 	Input* m_input = nullptr;
-	NetworkWrapper* m_network = nullptr;
+	NWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
 	Player m_me;
 	std::list<Message> m_messages;

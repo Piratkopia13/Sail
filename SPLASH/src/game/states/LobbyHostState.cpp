@@ -1,5 +1,8 @@
 #include "LobbyHostState.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
+#include "Network/NetworkWrapper.h"
+#include "Network/NWrapper.h"
+#include "Network/NWrapperHost.h"
 
 using namespace std;
 
@@ -49,18 +52,12 @@ bool LobbyHostState::onRecievedText(NetworkChatEvent& event) {
 	// Add recieved text to chat log
 	this->addTextToChat(&event.getMessage());
 
-	// Send out the recieved text to joined players
-	// --- Wrapper already does this
-
 	return false;
 }
 
 bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add player to player list
 	//this->playerJoined(event.getPlayer());
-
-	// Send out 'playerjoined'
-	// --- Wrapper already does this
 
 	return true;
 }
@@ -69,9 +66,6 @@ bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Remove player from player list
 	unsigned int id = event.getPlayerID();
 	this->playerLeft(id);
-
-	// Send out 'playerdisconnected'
-	// --- Wrapper already does this
 	
 	return false;
 }

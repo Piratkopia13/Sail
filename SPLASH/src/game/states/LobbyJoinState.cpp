@@ -3,6 +3,8 @@
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "Network/NetworkWrapper.h"
+#include "Network/NWrapper.h"
+#include "Network/NWrapperClient.h"
 
 using namespace std;
 
