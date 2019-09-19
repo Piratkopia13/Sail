@@ -72,6 +72,10 @@ GameState::GameState(StateStack& stack)
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
 	// Get the Application instance
 	m_app = Application::getInstance();
+
+
+
+
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
 	// Textures needs to be loaded before they can be used
@@ -147,36 +151,41 @@ GameState::GameState(StateStack& stack)
 	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 	
 
-	m_app->getResourceManager().loadModel("DEBUG_MODELSKELETON.fbx", shader);
-	m_app->getResourceManager().loadAnimationStack("DEBUG_MODELSKELETON.fbx");
+	//m_app->getResourceManager().loadModel("DEBUG_MODELSKELETON.fbx", shader);
+	//m_app->getResourceManager().loadAnimationStack("DEBUG_MODELSKELETON.fbx");
 
-	m_app->getResourceManager().loadModel("DEBUG_WALKINGANIMATION.fbx", shader);
-	m_app->getResourceManager().loadAnimationStack("DEBUG_WALKINGANIMATION.fbx");
+	//m_app->getResourceManager().loadModel("DEBUG_WALKINGANIMATION.fbx", shader);
+	//m_app->getResourceManager().loadAnimationStack("DEBUG_WALKINGANIMATION.fbx");
 
-	m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
-	m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
+	//m_app->getResourceManager().loadModel("DEBUG_BALLBOT.fbx", shader);
+	//m_app->getResourceManager().loadAnimationStack("DEBUG_BALLBOT.fbx");
 
 
-	auto ballbot = ECS::Instance()->createEntity("BALLBOT");
-	ballbot->addComponent<TransformComponent>();
-	ballbot->getComponent<TransformComponent>()->setScale(0.05f);
-	ballbot->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("DEBUG_BALLBOT.fbx", shader));
-	Mesh::Data tempData;
 
-	;
+	m_app->getResourceManager().loadModel("walkingAnimationBaked.fbx", shader);
+	m_app->getResourceManager().loadAnimationStack("walkingAnimationBaked.fbx");
+	auto humanModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader);
+	humanModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-	tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
-	ballbot->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("DEBUG_BALLBOT.fbx"), Mesh::Create(tempData,shader));
+	auto human = ECS::Instance()->createEntity("character");
+	human->addComponent<TransformComponent>();
+	human->getComponent<TransformComponent>()->setScale(1.0f);
+	human->getComponent<TransformComponent>()->setTranslation(3, 3, 18);
+	human->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader));
+	//Mesh::Data tempData;
+
+	//tempData.deepCopy(ballbot->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMeshData());
+	human->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx"));
 	
-	AnimationComponent* ac = ballbot->getComponent<AnimationComponent>();
+	AnimationComponent* ac = human->getComponent<AnimationComponent>();
 	ac->animationIndex = 0;
 	ac->animationSpeed = 1.0f;
 	ac->currentAnimation = ac->getAnimationStack()->getAnimation(0);
-	ac->nextAnimation = ac->getAnimationStack()->getAnimation(1);
+	ac->nextAnimation = ac->getAnimationStack()->getAnimation(0);
 	ac->blending = false;
 
 
-	m_scene.addEntity(ballbot);
+	m_scene.addEntity(human);
 
 
 
@@ -353,6 +362,19 @@ GameState::GameState(StateStack& stack)
 		m_cpuHistory = SAIL_NEW float[100];
 		m_frameTimesHistory = SAIL_NEW float[100];
 	}
+
+	m_cc.addCommand(std::string("TP <int> <int> <int>"), [&](std::vector<int> in) {
+
+		if (in.size() == 3) {
+			m_playerController.getEntity()->getComponent<TransformComponent>()->setTranslation(in[0], in[1], in[2]);
+			return std::string("Moved player to (" + std::to_string(in[0]) + "," + std::to_string(in[1]) + "," + std::to_string(in[2]) + ").");
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+		});
+
 }
 
 GameState::~GameState() {

@@ -6,9 +6,9 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/Application.h"
 
-Mesh::Mesh(Data& buildData, Shader* shader)
+Mesh::Mesh(Data& buildData, Shader* shader) : 
+	meshData(buildData)
 {
-	meshData.deepCopy(buildData);
 }
 
 
@@ -43,7 +43,7 @@ unsigned int Mesh::getNumIndices() const {
 unsigned int Mesh::getNumInstances() const {
 	return meshData.numInstances;
 }
-const VertexBuffer& Mesh::getVertexBuffer() const {
+VertexBuffer& Mesh::getVertexBuffer() const {
 	return *vertexBuffer;
 }
 const IndexBuffer& Mesh::getIndexBuffer() const {

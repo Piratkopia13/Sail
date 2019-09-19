@@ -43,3 +43,17 @@ void DX12VertexBuffer::bind(void* cmdList) const {
 	// Later update to just put in a buffer on the renderer to set multiple vertex buffers at once
 	dxCmdList->IASetVertexBuffers(0, 1, &vbView);
 }
+
+void DX12VertexBuffer::update(Mesh::Data& data) {
+
+	void* vertices = getVertexData(data);
+	// Place verticies in the buffer
+	void* pData;
+	D3D12_RANGE readRange{ 0, 0 };
+	ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, &pData));
+	memcpy(pData, vertices, getVertexDataSize());
+	m_vertexBuffer->Unmap(0, nullptr);
+
+
+	free(vertices);
+}

@@ -249,6 +249,14 @@ const glm::mat4* AnimationStack::getTransform(const unsigned int index, const un
 	return animation->getAnimationTransform(frame);
 }
 
+AnimationStack::VertConnection* AnimationStack::getConnections() {
+	return m_connections;
+}
+
+const unsigned int AnimationStack::getConnectionSize() {
+	return m_connectionSize;
+}
+
 void AnimationStack::checkWeights() {
 	for (unsigned int i = 0; i < m_connectionSize; i++) {
 		float value = m_connections[i].checkWeights();

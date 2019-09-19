@@ -82,7 +82,8 @@ public:
 	const glm::mat4* getTransform(const unsigned int index, const float time);
 	const glm::mat4* getTransform(const unsigned int index, const unsigned int frame);
 
-	
+	VertConnection* getConnections();
+	const unsigned int getConnectionSize();
 
 
 

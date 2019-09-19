@@ -20,7 +20,7 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 
 	makeOffsets(scene);
 	Mesh::Data meshData;
-	Mesh::Data meshData2;
+
 	for ( unsigned int i = 0; i < scene->mNumMeshes; i++ ) {
 		meshData.numVertices += scene->mMeshes[i]->mNumVertices;
 		meshData.numIndices += scene->mMeshes[i]->mNumFaces * 3; // assumes 3 indices per face
@@ -35,7 +35,6 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 	meshData.bitangents = SAIL_NEW Mesh::vec3[meshData.numVertices];
 
 	processNode(scene, scene->mRootNode, meshData);
-	meshData2.deepCopy(meshData);
 	std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, shader));
 	Model* model = new Model();
 	model->addMesh(std::move(mesh));
@@ -57,7 +56,7 @@ AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 
 	//	__________________________________MATRIX______________________________
 	m_globalTransform = glm::inverse(mat4_cast(scene->mRootNode->mTransformation));
-	//	_______________________________________________________________________
+	//	________________glm::inverse_______________________________________________________
 
 
 	makeOffsets(scene);
@@ -106,7 +105,7 @@ void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData, AssimpLoader
 		/*
 			Vertices
 		*/
-		for ( int vertexIndex = 0; vertexIndex < mesh->mNumVertices; vertexIndex++ ) {
+		for ( unsigned int vertexIndex = 0; vertexIndex < mesh->mNumVertices; vertexIndex++ ) {
 			if ( meshOffset.vertexOffset + vertexIndex > buildData.numVertices ) {
 				Logger::Error("TOOO BIIIIIG VERTEX");
 			}
@@ -198,6 +197,11 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 				std::string boneName = bone->mName.C_Str();
 				unsigned int index = (unsigned int)m_boneMap.size();
 				if (m_boneMap.find(boneName) == m_boneMap.end()) {
+
+					glm::mat4 tempM = mat4_cast(bone->mOffsetMatrix);
+					glm::mat4 tempT = mat4_castT(bone->mOffsetMatrix);
+					glm::mat4 tempW = glm::inverse(tempM);
+
 					m_boneMap[boneName] = { index, node->mName.C_Str(), mat4_cast(bone->mOffsetMatrix)};
 					
 				}
@@ -276,7 +280,7 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 			Animation::Frame* currentFrame = SAIL_NEW Animation::Frame((unsigned int)m_boneMap.size());
 			//Logger::Log("Added Frame with ");
 			
-			readNodeHierarchy(animationIndex, frame, 0, scene->mRootNode, glm::identity<glm::mat4>(), currentFrame);
+			readNodeHierarchy(animationIndex, frame, time, scene->mRootNode, glm::identity<glm::mat4>(), currentFrame);
 			anim->addFrame(frame, time, currentFrame);
 		}
 
@@ -291,24 +295,142 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 void AssimpLoader::readNodeHierarchy(const unsigned int animationID, const unsigned int frame, const float animationTime, const aiNode* node, const glm::mat4& parent, Animation::Frame* animationFrame) {
 
 	std::string name = node->mName.C_Str();
+	//glm::mat4 transform2 = mat4_castT(node->mTransformation);
 	glm::mat4 nodeTransform = mat4_cast(node->mTransformation);
 	const aiNodeAnim* nodeAnim = m_channels[animationID][name];
 
+
 	if (nodeAnim) {
-		/// DO STUFFFFFFF
+		// Interpolate scaling and generate scaling transformation matrix
+		aiVector3D Scaling;
+		calcInterpolatedScale(Scaling, animationTime, nodeAnim);
+		glm::mat4 scalingM = glm::scale(glm::identity<glm::mat4>(), glm::vec3(Scaling.x, Scaling.y, Scaling.z));
+
+		// Interpolate rotation and generate rotation transformation matrix
+		aiQuaternion RotationQ;
+		calcInterpolatedRotation(RotationQ, animationTime, nodeAnim);
+		//aiMatrix4x4 rotationM = aiMatrix4x4(RotationQ.GetMatrix());
+
+		glm::quat rotation = quat_cast(RotationQ);
+		glm::mat4 rotationM = glm::toMat4(rotation);
+
+		// Interpolate translation and generate translation transformation matrix
+		aiVector3D Translation;
+		calcInterpolatedPosition(Translation, animationTime, nodeAnim);
+		glm::mat4 translationM = glm::translate(glm::identity<glm::mat4>(), glm::vec3(Translation.x, Translation.y, Translation.z));
+
+		nodeTransform = translationM * rotationM * scalingM;
+
+		// Combine the above transformations
+		//NodeTransformation = TranslationM * RotationM * ScalingM;
+
 
 	}
 
+
 	glm::mat4 global = parent * nodeTransform;
+	//glm::mat4 global = nodeTransform * parent;
+
 	if (m_boneMap.find(name) != m_boneMap.end()) {
 		unsigned int index = m_boneMap[name].index;
 		animationFrame->setTransform(index, m_globalTransform * global * m_boneMap[name].offset);
+		//animationFrame->setTransform(index, m_boneMap[name].offset * global * m_globalTransform);
 	}
 
 	for (unsigned int childID = 0; childID < node->mNumChildren; childID++) {
 		readNodeHierarchy(animationID, frame, animationTime, node->mChildren[childID], global, animationFrame);
 
 	}
+}
+
+const unsigned int AssimpLoader::getPositionFrame(const float animationTime, const aiNodeAnim* node) {
+	for (unsigned int i = 0; i < node->mNumPositionKeys - 1; i++) {
+		if (animationTime < (float)node->mPositionKeys[i + 1].mTime) {
+			return i;
+		}
+	}
+	assert(0);
+	return 0;
+}
+const unsigned int AssimpLoader::getRotationFrame(const float animationTime, const aiNodeAnim* node) {
+	assert(node->mNumRotationKeys > 0);
+
+	for (unsigned int i = 0; i < node->mNumRotationKeys - 1; i++) {
+		if (animationTime < (float)node->mRotationKeys[i + 1].mTime) {
+			return i;
+		}
+	}
+	assert(0);
+	return 0;
+}
+const unsigned int AssimpLoader::getScaleFrame(const float animationTime, const aiNodeAnim* node) {
+	assert(node->mNumScalingKeys > 0);
+
+	for (unsigned int i = 0; i < node->mNumScalingKeys - 1; i++) {
+		if (animationTime < (float)node->mScalingKeys[i + 1].mTime) {
+			return i;
+		}
+	}
+	assert(0);
+	return 0;
+}
+
+void AssimpLoader::calcInterpolatedPosition(aiVector3D& out, const float animationTime, const aiNodeAnim* node) {
+	if (node->mNumPositionKeys == 1) {
+		out = node->mPositionKeys[0].mValue;
+		return;
+	}
+
+	unsigned int PositionIndex = getPositionFrame(animationTime, node);
+	unsigned int NextPositionIndex = (PositionIndex + 1);
+	assert(NextPositionIndex < node->mNumPositionKeys);
+	float DeltaTime = (float)(node->mPositionKeys[NextPositionIndex].mTime - node->mPositionKeys[PositionIndex].mTime);
+	float Factor = (animationTime - (float)node->mPositionKeys[PositionIndex].mTime) / DeltaTime;
+	assert(Factor >= 0.0f && Factor <= 1.0f);
+	const aiVector3D& Start = node->mPositionKeys[PositionIndex].mValue;
+	const aiVector3D& End = node->mPositionKeys[NextPositionIndex].mValue;
+	aiVector3D Delta = End - Start;
+	out = Start + Factor * Delta;
+
+}
+
+void AssimpLoader::calcInterpolatedRotation(aiQuaternion& out, const float animationTime, const aiNodeAnim* node) {
+	// we need at least two values to interpolate...
+	if (node->mNumRotationKeys == 1) {
+		out = node->mRotationKeys[0].mValue;
+		return;
+	}
+
+	unsigned int RotationIndex = getRotationFrame(animationTime, node);
+	unsigned int NextRotationIndex = (RotationIndex + 1);
+	assert(NextRotationIndex < node->mNumRotationKeys);
+	float DeltaTime = (float)(node->mRotationKeys[NextRotationIndex].mTime - node->mRotationKeys[RotationIndex].mTime);
+	float Factor = (animationTime - (float)node->mRotationKeys[RotationIndex].mTime) / DeltaTime;
+	assert(Factor >= 0.0f && Factor <= 1.0f);
+	const aiQuaternion& StartRotationQ = node->mRotationKeys[RotationIndex].mValue;
+	const aiQuaternion& EndRotationQ = node->mRotationKeys[NextRotationIndex].mValue;
+	aiQuaternion::Interpolate(out, StartRotationQ, EndRotationQ, Factor);
+	out = out.Normalize();
+
+}
+
+void AssimpLoader::calcInterpolatedScale(aiVector3D& out, const float animationTime, const aiNodeAnim* node) {
+	if (node->mNumScalingKeys == 1) {
+		out = node->mScalingKeys[0].mValue;
+		return;
+	}
+
+	unsigned int ScalingIndex = getScaleFrame(animationTime, node);
+	unsigned int NextScalingIndex = (ScalingIndex + 1);
+	assert(NextScalingIndex < node->mNumScalingKeys);
+	float DeltaTime = (float)(node->mScalingKeys[NextScalingIndex].mTime - node->mScalingKeys[ScalingIndex].mTime);
+	float Factor = (animationTime - (float)node->mScalingKeys[ScalingIndex].mTime) / DeltaTime;
+	assert(Factor >= 0.0f && Factor <= 1.0f);
+	const aiVector3D& Start = node->mScalingKeys[ScalingIndex].mValue;
+	const aiVector3D& End = node->mScalingKeys[NextScalingIndex].mValue;
+	aiVector3D Delta = End - Start;
+	out = Start + Factor * Delta;
+
 }
 
 //Animation* AssimpLoader::importAnimation(const aiScene* scene, aiNode* node) {

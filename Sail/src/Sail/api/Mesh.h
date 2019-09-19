@@ -61,7 +61,7 @@ public:
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;
 	unsigned int getNumInstances() const;
-	const VertexBuffer& getVertexBuffer() const;
+	VertexBuffer& getVertexBuffer() const;
 	const IndexBuffer& getIndexBuffer() const;
 
 protected:
