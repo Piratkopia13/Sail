@@ -366,6 +366,7 @@ GameState::GameState(StateStack& stack)
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
+		m_candles.push_back(e);
 
 		e = ECS::Instance()->createEntity("Candle2");
 		e->addComponent<ModelComponent>(lightModel);
@@ -379,6 +380,7 @@ GameState::GameState(StateStack& stack)
 		pl.setIndex(1);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
+		m_candles.push_back(e);
 
 
 		m_virtRAMHistory = SAIL_NEW float[100];
@@ -405,6 +407,8 @@ GameState::GameState(StateStack& stack)
 	m_octree->addEntities(&m_testBoundingBoxes);
 
 	m_testAngle = 0.0f;
+
+	m_playerController.provideCandles(&m_candles);
 }
 
 GameState::~GameState() {
@@ -430,6 +434,20 @@ bool GameState::processInput(float dt) {
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		m_scene.getEntityByName("Arena")->getComponent<LightListComponent>()->m_pls.push_back(pl);
 		//m_lights.addPointLight(pl);
+	}
+
+	//removes light from candle entities if they have it
+	if (Input::WasKeyJustPressed(SAIL_KEY_M)) {
+		if (m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
+			m_scene.getEntityByName("Candle1")->removeComponent<LightComponent>();
+		}
+		//m_lights.removePLByIndex(0);
+	}
+	if (Input::WasKeyJustPressed(SAIL_KEY_N)) {
+		if (m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
+			m_scene.getEntityByName("Candle2")->removeComponent<LightComponent>();
+		}
+		//m_lights.removePLByIndex(1);
 	}
 
 #endif
@@ -488,20 +506,6 @@ bool GameState::processInput(float dt) {
 		}
 
 		//m_lights.removePointLight();
-	}
-
-	//removes light from candle entities if they have it
-	if (Input::WasKeyJustPressed(SAIL_KEY_M)) {
-		if (m_scene.getEntityByName("Candle1")->hasComponent<LightComponent>()) {
-			m_scene.getEntityByName("Candle1")->removeComponent<LightComponent>();
-		}
-		//m_lights.removePLByIndex(0);
-	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_N)) {
-		if (m_scene.getEntityByName("Candle2")->hasComponent<LightComponent>()) {
-			m_scene.getEntityByName("Candle2")->removeComponent<LightComponent>();
-		}
-		//m_lights.removePLByIndex(1);
 	}
 	return true;
 	}

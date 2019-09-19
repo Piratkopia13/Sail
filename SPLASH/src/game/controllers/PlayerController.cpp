@@ -167,7 +167,16 @@ void PlayerController::update(float dt) {
 	}
 
 	// Update for all projectiles
-	for (int i = 0; i < m_projectiles.size(); i++) {
+	for (unsigned int i = 0; i < m_projectiles.size(); i++) {
+		for (unsigned int j = 0; j < m_candles->size(); j++) {
+			auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
+			for (unsigned int k = 0; k < collisions.size(); k++) {
+				if (collisions[k].entity == m_candles->at(j)) {
+					m_candles->at(j)->removeComponent<LightComponent>();
+				}
+			}
+		}
+
 		m_projectiles[i].lifeTime += dt;
 		if (m_projectiles[i].lifeTime > 2.f) {
 			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
@@ -194,4 +203,8 @@ std::shared_ptr<Entity> PlayerController::getEntity() {
 void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) {
 	m_projectileModel = model;
 	m_projectileWireframeModel = wireframeModel;
+}
+
+void PlayerController::provideCandles(std::vector<Entity::SPtr>* candles) {
+	m_candles = candles;
 }
