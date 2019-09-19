@@ -86,9 +86,6 @@ void PlayerController::processKeyboardInput(float dt) {
 	// Shoot gun
 	// TODO: This should probably be moved elsewhere.
 	//       See if it should be done every tick or every frame and where the projectiles are to be created
-
-	m_projectileLock.lock();
-
 	if (Input::IsMouseButtonPressed(0)) {
 		if (m_projectileSpawnCounter == 0.f) {
 
@@ -128,7 +125,6 @@ void PlayerController::processKeyboardInput(float dt) {
 			ECS::Instance()->queueDestructionOfEntity(p.projectile);
 		}
 	}
-	m_projectileLock.unlock();
 
 }
 
@@ -187,8 +183,6 @@ void PlayerController::updateCameraPosition(float alpha) {
 }
 
 void PlayerController::destroyOldProjectiles() {
-	m_projectileLock.lock();
-
 	// Remove old projectiles
 	for (int i = 0; i < m_projectiles.size(); i++) {
 		if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
@@ -197,8 +191,6 @@ void PlayerController::destroyOldProjectiles() {
 			i--;
 		}
 	}
-
-	m_projectileLock.unlock();
 }
 
 // NOTE: Keyboard and mouse input processing has been moved to their own functions above this one
