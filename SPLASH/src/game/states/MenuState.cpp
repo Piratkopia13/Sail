@@ -83,7 +83,6 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::Begin("Host Game");
 	if (ImGui::Button("S.P.L.A.S.H over here")) {
 		if (m_network->host()) {
-			printf("Setting up host.\n");
 			this->requestStackPop();
 			this->requestStackPush(States::HostLobby);
 		}
@@ -100,8 +99,6 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::InputText("IP:", inputIP, 100);
 	if (ImGui::Button("S.P.L.A.S.H over there")) {
 		if (m_network->connectToIP(inputIP)) {
-			printf("Connecting to 192.168.1.55. \n");
-
 			// Wait until welcome-package is recieved,
 			// Save the package info,
 			// Pop and push into JoinLobbyState.
