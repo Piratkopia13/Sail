@@ -119,6 +119,13 @@ int Application::startGameLoop() {
 				secCounter = 0.0;
 			}
 
+			double alpha = accumulator/TIMESTEP;
+
+			if (alpha > 1.0) {
+				Logger::Log("alpha value: " + std::to_string(alpha));
+			}
+
+
 			// Queue multiple updates if the game has fallen behind to make sure that it catches back up to the current time.
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
@@ -160,7 +167,6 @@ int Application::startGameLoop() {
 			Scene::UpdateCurrentRenderIndex();
 
 			// TODO: use something other than accumulator
-			double alpha = accumulator/TIMESTEP;
 
 			render(delta, alpha);
 

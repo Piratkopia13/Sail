@@ -100,8 +100,8 @@ glm::mat4 PerUpdateRenderObject::getMatrix(float alpha) {
 	}
 
 	// Linear interpolation between the two most recent snapshots
-	glm::vec3 trans = m_data.m_current.m_translation;
-	//glm::vec3 trans = (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
+	//glm::vec3 trans = m_data.m_current.m_translation;
+	glm::vec3 trans = (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
 	//glm::vec3 scale = alpha * m_data.m_current.m_scale + (1.0f - alpha) * m_data.m_previous.m_scale;
 
 	m_localTransformMatrix = glm::mat4(1.0f);
