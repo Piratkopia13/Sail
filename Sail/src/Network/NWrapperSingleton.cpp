@@ -1,11 +1,21 @@
 #include "pch.h"
 #include "NWrapperSingleton.h"
+#include "Network/NetworkModule.hpp"
+#include "Network/NetworkStructs.hpp"
 #include "Sail.h"
 
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
 		delete m_wrapper;
+		if (m_network != nullptr) {
+			m_network->shutdown();
+			delete m_network;
+		}
 	}
+}
+
+NWrapperSingleton::NWrapperSingleton() {
+	m_network = new Network;
 }
 
 bool NWrapperSingleton::host(int port) {
@@ -42,11 +52,17 @@ void NWrapperSingleton::initialize(bool asHost) {
 
 		if (asHost) {
 			m_isHost = true;
-			m_wrapper = new NWrapperHost();
+			m_wrapper = new NWrapperHost(m_network);
 		}
 		else {
 			m_isHost = false;
-			m_wrapper = new NWrapperClient();
+			m_wrapper = new NWrapperClient(m_network);
 		}
 	}
+}
+
+void NWrapperSingleton::resetNetwork() {
+	m_isInitialized = false;
+	m_isHost = false;
+	delete this->m_wrapper;
 }

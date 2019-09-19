@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Sail.h"
-#include "Network/NetworkWrapper.h"
 #include "Network/NWrapperSingleton.h"
 #include "Network/NWrapperHost.h"
 

@@ -1,7 +1,5 @@
 #pragma once
 
-
-#include "NetworkWrapper.h"
 #include "NWrapperHost.h"
 #include "NWrapperClient.h"
 
@@ -22,13 +20,14 @@ public:
 	// Initializes NetworkWrapper as NetworkWrapperClient
 	bool connectToIP(char* = "127.0.0.1:54000");
 	bool isHost();
+	void resetNetwork();
 	NWrapper* getNetworkWrapper();
 
 private:
-	NWrapperSingleton() { }
+	NWrapperSingleton();
 	// Called by 'host' & 'connectToIP'
 	void initialize(bool asHost);
-
+	Network* m_network = nullptr;
 	NWrapper* m_wrapper = nullptr;
 	bool m_isInitialized = false;
 	bool m_isHost = false;

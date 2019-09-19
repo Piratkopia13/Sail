@@ -1,7 +1,6 @@
 #include "MenuState.h"
 
 #include "Sail.h"
-#include "Network/NetworkWrapper.h"
 #include "../libraries/imgui/imgui.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -25,50 +24,6 @@ MenuState::~MenuState() {
 }
 
 bool MenuState::processInput(float dt) {
-	//// TEMPORARY TESTING FOR NETWORK
-	//if (NetworkWrapper::getInstance().isInitialized())
-	//{
-	//	NetworkWrapper::getInstance().checkForPackages();
-	//}
-
-	//// -------- HOST -----------
-	//if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_H)) {
-
-	//	if (NetworkWrapper::getInstance().host())
-	//	{
-	//		printf("Setting up host.");
-	//		
-	//		this->requestStackPop();
-	//		this->requestStackPush(States::HostLobby);
-	//	}
-	//	else
-	//	{
-	//		printf("Failed to set up Host.");
-	//	}
-	//}
-	//// -------- JOIN -----------
-	//if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_J))
-	//{
-
-	//	printf("Attempting connection... \n");
-
-	//	if (NetworkWrapper::getInstance().connectToIP("127.0.0.1:54000"))
-	//	{
-	//		printf("Connecting to 192.168.1.55. \n");
-	//		this->requestStackPop();
-	//		this->requestStackPush(States::JoinLobby);
-	//	}
-	//	else
-	//	{
-	//		printf("Failed to connect. \n");
-	//	}
-	//}
-	//// -------- MESSAGE -----------
-	//if (Input::GetInstance()->IsKeyPressed(SAIL_KEY_M))
-	//{
-	//	NetworkWrapper::getInstance().sendChatMsg("Kanel finns nu.");
-	//}
-
 	return false;
 }
 

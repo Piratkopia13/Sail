@@ -9,7 +9,7 @@ class Network;
 
 class NWrapper : public NetworkEventHandler {
 public:
-	NWrapper();
+	NWrapper(Network* pNetwork);
 	virtual ~NWrapper();
 
 	virtual bool host(int port = 54000) = 0;
@@ -30,12 +30,8 @@ protected:
 	std::string parseName(std::string& data);		//
 	Message processChatMessage(std::string& message);
 
-	// Formatting Functions
-	void compressDCMessage();
-	void decompressDCmessage();
-
 private:
-	void initialize();
+	void initialize(Network* pNetwork);
 	void shutDown();
 	void handleNetworkEvents(NetworkEvent nEvent);
 

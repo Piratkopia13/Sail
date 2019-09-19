@@ -9,11 +9,12 @@
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
+#include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 
-class LobbyJoinState : public LobbyState {
+class LobbyClientState : public LobbyState {
 public:
-	LobbyJoinState(StateStack& stack);
-	~LobbyJoinState();
+	LobbyClientState(StateStack& stack);
+	~LobbyClientState();
 
 	bool onEvent(Event& event);
 
@@ -24,4 +25,5 @@ private:
 	bool onPlayerDisconnected(NetworkDisconnectEvent& event);
 	bool onPlayerWelcomed(NetworkWelcomeEvent& event);
 	bool onNameRequest(NetworkNameEvent& event);
+	bool onDropped(NetworkDroppedEvent& event);
 };

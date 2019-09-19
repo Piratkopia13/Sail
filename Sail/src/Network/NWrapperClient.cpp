@@ -8,6 +8,7 @@
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
+#include "../../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
 bool NWrapperClient::host(int port) {
@@ -63,6 +64,7 @@ void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
 
 void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id) {
 	// Host disconnected, lobby is shut down, go back to main menu.
+	m_app->dispatchEvent(NetworkDroppedEvent());
 }
 
 void NWrapperClient::playerReconnected(TCP_CONNECTION_ID id) {
@@ -71,8 +73,7 @@ void NWrapperClient::playerReconnected(TCP_CONNECTION_ID id) {
 
 void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	// These will be assigned in the switch case.
-	unsigned int userID;
-	std::string message;
+	unsigned char userID;
 	char charAsInt[4] = { 0 };
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
 	Player currentPlayer{ -1, "" };	// 
@@ -101,12 +102,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case 'd':
 		// A player disconnected from the host...
 		// Get the user ID from the event data.
-		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->rawMsg[1 + i];
-		}
-		userID = reinterpret_cast<int&>(charAsInt);
-
-		UserID = this->decompressDisconnectMessage();
+		userID = this->decompressDCMessage(std::string(nEvent.data->rawMsg));
 
 		// Dispatch the ID to lobby
 		Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(userID));
@@ -157,4 +153,16 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	default:
 		break;
 	}
+}
+
+unsigned int NWrapperClient::decompressDCMessage(std::string messageData) {
+	unsigned char userID;
+	char charAsInt[4] = { 0 };
+
+	for (int i = 0; i < 4; i++) {
+		charAsInt[i] = messageData[1 + i];
+	}
+	userID = reinterpret_cast<int&>(charAsInt);
+
+	return userID;
 }

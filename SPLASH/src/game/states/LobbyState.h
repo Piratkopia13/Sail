@@ -14,7 +14,7 @@ struct Message {
 };
 
 struct Player {
-	unsigned int id;
+	unsigned char id;
 	std::string name;
 
 	bool friend operator==(const Player& left, const Player& right) {
@@ -52,13 +52,13 @@ protected:
 	Player m_me;
 	std::list<Message> m_messages;
 	std::list<Player> m_players;
-	Player* getPlayer(unsigned int& id);
+	Player* getPlayer(unsigned char& id);
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
 	void resetPlayerList();
 	bool playerJoined(Player& player);
-	bool playerLeft(unsigned int& id);
+	bool playerLeft(unsigned char& id);
 	void addTextToChat(Message* text);
 	void resetCurrentMessage();
 

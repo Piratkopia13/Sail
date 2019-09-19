@@ -2,23 +2,23 @@
 #include "NWrapper.h"
 #include "Network/NetworkModule.hpp"
 
-NWrapper::NWrapper() {
-	this->initialize();
+NWrapper::NWrapper(Network* pNetwork) {
+	this->initialize(pNetwork);
 }
 
 NWrapper::~NWrapper() {
 	this->shutDown();
 }
 
-void NWrapper::initialize() {
-	m_network = new Network();
+void NWrapper::initialize(Network* pNetwork) {
+	m_network = pNetwork;
 	m_network->initialize();
 	m_app = Application::getInstance();
 }
 
 void NWrapper::shutDown() {
+	// NO DELETION OF NETWORK, it is the responisibility of the NWrapperSingleton!
 	m_network->shutdown();
-	delete m_network;
 }
 
 void NWrapper::handleNetworkEvents(NetworkEvent nEvent) {
@@ -109,6 +109,8 @@ Message NWrapper::processChatMessage(std::string& message) {
 		remnants
 	};
 }
+
+
 
 void NWrapper::sendMsg(std::string msg) {
 	m_network->send(msg.c_str(), msg.length() + 1);

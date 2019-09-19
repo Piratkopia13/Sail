@@ -1,6 +1,5 @@
 #include "LobbyHostState.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
-#include "Network/NetworkWrapper.h"
 #include "Network/NWrapper.h"
 #include "Network/NWrapperHost.h"
 
@@ -64,7 +63,7 @@ bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 
 bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Remove player from player list
-	unsigned int id = event.getPlayerID();
+	unsigned char id = event.getPlayerID();
 	this->playerLeft(id);
 	
 	return false;
@@ -74,7 +73,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	// Parse the message | ?12:DANIEL
 	string message = event.getRepliedName(); 
 	string id_string = "";
-	unsigned int id_int = 0;
+	unsigned char id_int = 0;
 
 	// Get ID...
 	for (int i = 1; i < 64; i++) {

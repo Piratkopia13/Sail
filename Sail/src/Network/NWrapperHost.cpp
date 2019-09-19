@@ -46,25 +46,15 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID id) {
 }
 
 void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID id) {
+	unsigned char convertedId = m_connectionsMap.at(id);
+	char compressedMessage[64] = { 0 };
 
-	unsigned char convertedId = m_connectionsMap.at(intid);
-
-	m_network->send(this->compressDisconnectMessage(id));
-
-	char msg[64] = { 0 };
-	int intid = (int)id;
-	char* int_asChar = reinterpret_cast<char*>(&convertedId);
-
-	msg[0] = 'd';
-	for (int i = 0; i < 4; i++) {
-		msg[i + 1] = int_asChar[i];
-	}
+	this->compressDCMessage(convertedId, compressedMessage);
 
 	// Send to all clients that soneone disconnected and which id.
-	m_network->send(msg, sizeof(msg), -1);
+	m_network->send(compressedMessage, sizeof(compressedMessage), -1);
 
 	// Send id to menu / game state
-	
 	Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(convertedId));
 }
 
@@ -129,5 +119,16 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		break;
 	}
 
-
+	
 }
+
+
+void NWrapperHost::compressDCMessage(unsigned char& convertedId, char pDestination[64]) {
+	char* int_asChar = reinterpret_cast<char*>(&convertedId);
+
+	pDestination[0] = 'd';
+	for (int i = 0; i < 4; i++) {
+		pDestination[i + 1] = int_asChar[i];
+	}
+}
+

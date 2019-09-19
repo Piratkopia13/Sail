@@ -6,7 +6,6 @@
 #include "../Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
-#include "Network/NetworkWrapper.h"
 #include "Network/NWrapperSingleton.h"	// New network
 #include "Network/NWrapper.h"			// 
 
@@ -87,25 +86,7 @@ bool LobbyState::update(float dt) {
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
 	this->m_screenHeight = m_app->getWindow()->getWindowHeight();
 
-	// Did we send something?
-
-	// ---
-	if (NetworkWrapper::getInstance().isInitialized()) {
-		//NetworkWrapper::getInstance().checkForPackages();
-	}
-
-	// It will always be initialized here, why waste time on an if-case?
 	m_network->checkForPackages();
-
-
-
-
-
-	// Did we recieve something?
-	// ---
-
-	// Is anything going on in the background?
-	// ---
 
 	return false;
 }
@@ -141,7 +122,7 @@ bool LobbyState::playerJoined(Player& player) {
 	return false;
 }
 
-bool LobbyState::playerLeft(unsigned int& id) {
+bool LobbyState::playerLeft(unsigned char& id) {
 	// Linear search to get target 'player' struct, then erase that from the list
 	Player* toBeRemoved = nullptr;
 	int pos = 0;
@@ -183,7 +164,7 @@ string LobbyState::fetchMessage()
 void LobbyState::addMessageToChat(Message& message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
-	unsigned int id = stoi(message.sender);
+	unsigned char id = stoi(message.sender);
 	Player* playa = this->getPlayer(id);
 	string msg = playa->name + ": ";
 	message.content.insert(0, msg);
@@ -197,7 +178,7 @@ void LobbyState::addMessageToChat(Message& message) {
 	}
 }
 
-Player* LobbyState::getPlayer(unsigned int& id) {
+Player* LobbyState::getPlayer(unsigned char& id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {
@@ -230,6 +211,10 @@ void LobbyState::renderPlayerList() {
 		std::string temp;
 		temp += " - ";
 		temp += currentplayer.name.c_str();
+
+		if (currentplayer.id == m_me.id) {
+			temp += " (You)";
+		}
 		
 		ImGui::Text(temp.c_str());
 	}

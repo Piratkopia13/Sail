@@ -4,7 +4,7 @@
 
 class NWrapperHost : public NWrapper {
 public:
-	NWrapperHost() {}
+	NWrapperHost(Network* pNetwork) : NWrapper(pNetwork) {}
 	virtual ~NWrapperHost() {}
 
 	bool host(int port = 54000);
@@ -21,4 +21,6 @@ private:
 	void playerReconnected(TCP_CONNECTION_ID id);
 	void decodeMessage(NetworkEvent nEvent);
 
+	// Formatting Functions
+	void compressDCMessage(unsigned char& convertedId, char pDestination[64]);
 };
