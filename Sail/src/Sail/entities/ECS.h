@@ -65,6 +65,7 @@ public:
 	/*
 		Destroys an entity and removes it from the systems it was stored in
 	*/
+	void queueDestructionOfEntity(const Entity::SPtr entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
 
 	/*

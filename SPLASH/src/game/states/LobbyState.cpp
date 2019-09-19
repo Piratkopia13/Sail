@@ -104,7 +104,7 @@ bool LobbyState::update(float dt) {
 	return false;
 }
 
-bool LobbyState::render(float dt) {
+bool LobbyState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
 	m_scene.draw();
 	return false;

@@ -22,18 +22,32 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+
+
+// Thread pool
+#include <ctpl/ctpl_stl.h> // From: https://github.com/vit-vit/ctpl
 
 //#include <windows.h>
 
-#include <memory>
-#include <comdef.h> 
-#include <string>
-#include <Memory>
+
+
 #include <algorithm>
+#include <atomic>
+#include <comdef.h> 
+#include <future>
 #include <iostream>
-#include <vector>
-#include <unordered_map>
+#include <memory>
+#include <Memory>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+
+
 
 // DirectX Toolkit includes
 //#include <d3d12.h>

@@ -9,7 +9,7 @@ public:
 		: velocity(_velocity), rotation(_rotation), acceleration(_acceleration) {
 	}
 	glm::vec3 velocity;
-	glm::vec3 rotation;		// Should be quaternions instead of Euler angles in the future
+	glm::vec3 rotation;		// Should probably be quaternions instead of Euler angles in the future
 	glm::vec3 acceleration;
 
 	std::vector<Octree::CollisionInfo> collisions; //Contains the info for current collisions
