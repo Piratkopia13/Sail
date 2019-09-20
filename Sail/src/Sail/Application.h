@@ -81,6 +81,7 @@ public:
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
+
 	MemoryManager& getMemoryManager();
 	Audio* getAudioManager();
 	NodeSystem* getNodeSystem();
@@ -94,6 +95,7 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
+
 	MemoryManager m_memoryManager;
 	Audio m_audioManager;
 	std::unique_ptr<NodeSystem> m_nodeSystem;
