@@ -1,29 +1,33 @@
-#include "LobbyJoinState.h"
+#include "LobbyClientState.h"
 
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
-#include "Network/NetworkWrapper.h"
+#include "Network/NWrapper.h"
+#include "Network/NWrapperClient.h"
+#include "Network/NWrapperSingleton.h"
 
-LobbyJoinState::LobbyJoinState(StateStack& stack)
+using namespace std;
+
+LobbyClientState::LobbyClientState(StateStack& stack)
 	: LobbyState(stack)
 {
 }
 
-LobbyJoinState::~LobbyJoinState() {
+LobbyClientState::~LobbyClientState() {
 }
 
-bool LobbyJoinState::onEvent(Event& event) {
-	EventHandler::dispatch<TextInputEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onMyTextInput));
-	EventHandler::dispatch<NetworkChatEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onRecievedText));
-	EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onPlayerJoined));
-	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onPlayerDisconnected));
-	EventHandler::dispatch<NetworkWelcomeEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onPlayerWelcomed));
-	EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&LobbyJoinState::onNameRequest));
-	// something
+bool LobbyClientState::onEvent(Event& event) {
+	EventHandler::dispatch<TextInputEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onMyTextInput));
+	EventHandler::dispatch<NetworkChatEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onRecievedText));
+	EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onPlayerJoined));
+	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onPlayerDisconnected));
+	EventHandler::dispatch<NetworkWelcomeEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onPlayerWelcomed));
+	EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onNameRequest));
+	EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onDropped));
 	return true;
 }
 
-bool LobbyJoinState::onMyTextInput(TextInputEvent& event) {
+bool LobbyClientState::onMyTextInput(TextInputEvent& event) {
 	// Add input to current message, If 'enter', send message to host, do not input to chat.
 	if (this->inputToChatLog(event.getMSG())) {
 		string mesgWithId = "";
@@ -36,27 +40,28 @@ bool LobbyJoinState::onMyTextInput(TextInputEvent& event) {
 	return false;
 }
 
-bool LobbyJoinState::onRecievedText(NetworkChatEvent& event) {
+bool LobbyClientState::onRecievedText(NetworkChatEvent& event) {
 	// Only add the recieved message to the chat
 	this->addTextToChat(&event.getMessage());
 
 	return false;
 }
 
-bool LobbyJoinState::onPlayerJoined(NetworkJoinedEvent& event) {
+bool LobbyClientState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add the player to the player list
 	this->playerJoined(event.getPlayer());
 	return false;
 }
 
-bool LobbyJoinState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
+bool LobbyClientState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Remove the player from the player list
-	this->playerLeft(event.getPlayerID());
+	unsigned char id = event.getPlayerID();
+	this->playerLeft(id);
 
 	return false;
 }
 
-bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
+bool LobbyClientState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 	// Update local list of players.
 	std::list<Player> &list = event.getListOfPlayers();
 	if (list.size() >= 2) {
@@ -81,7 +86,7 @@ bool LobbyJoinState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 	return false;
 }
 
-bool LobbyJoinState::onNameRequest(NetworkNameEvent& event) {
+bool LobbyClientState::onNameRequest(NetworkNameEvent& event) {
 	// Save the ID which the host has blessed us with
 	string temp = event.getRepliedName();	// And replace our current HOSTID
 	int newId = stoi(temp);					//
@@ -93,5 +98,13 @@ bool LobbyJoinState::onNameRequest(NetworkNameEvent& event) {
 	message += event.getRepliedName();
 	message += ":" + m_me.name + ":";
 	m_network->sendMsg(message);
+	return false;
+}
+
+bool LobbyClientState::onDropped(NetworkDroppedEvent& event) {
+	this->requestStackPop();
+	this->requestStackPush(States::MainMenu);
+	NWrapperSingleton::getInstance().resetNetwork();
+
 	return false;
 }

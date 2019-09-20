@@ -128,10 +128,10 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		// Transition output texture to render target
 		if (postProcessPipeline) {
 			m_outputTexture->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-			m_outputTexture->clear({ 0.1f, 0.2f, 0.3f, 1.0f }, cmdList.Get());
+			m_outputTexture->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
 		} else {
 			m_context->prepareToRender(cmdList.Get());
-			m_context->clear(cmdList.Get(), { 0.1f, 0.2f, 0.3f, 1.0f });
+			m_context->clear(cmdList.Get(), { 0.01f, 0.01f, 0.01f, 1.0f });
 		}
 		
 	}
