@@ -434,6 +434,9 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
+// TODO: remove - this is mostly used in imgui renderer
+static int selectedRenderer = 0;
+
 bool GameState::update(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
@@ -452,20 +455,22 @@ bool GameState::update(float dt) {
 
 	updateComponentSystems(dt);
 
-	//check and update all lights for all entities
-	std::vector<Entity::SPtr> entities = m_scene.getEntities();
-	m_lights.clearPointLights();
-	for (int i = 0; i < entities.size(); i++) {
-		if (entities[i]->hasComponent<LightComponent>()) {
-			m_lights.addPointLight(entities[i]->getComponent<LightComponent>()->m_pointLight);
-		}
-		if (entities[i]->hasComponent<LightListComponent>()) {
-			for (int j = 0; j < entities[i]->getComponent<LightListComponent>()->m_pls.size(); j++) {
-				m_lights.addPointLight(entities[i]->getComponent<LightListComponent>()->m_pls[j]);
+	if (selectedRenderer == 0) {
+		//check and update all lights for all entities
+		std::vector<Entity::SPtr> entities = m_scene.getEntities();
+		m_lights.clearPointLights();
+		for (int i = 0; i < entities.size(); i++) {
+			if (entities[i]->hasComponent<LightComponent>()) {
+				m_lights.addPointLight(entities[i]->getComponent<LightComponent>()->m_pointLight);
+			}
+			if (entities[i]->hasComponent<LightListComponent>()) {
+				for (int j = 0; j < entities[i]->getComponent<LightListComponent>()->m_pls.size(); j++) {
+					m_lights.addPointLight(entities[i]->getComponent<LightListComponent>()->m_pls[j]);
+				}
 			}
 		}
+		m_lights.updateBufferData();
 	}
-	m_lights.updateBufferData();
 	return true;
 }
 
@@ -481,8 +486,6 @@ bool GameState::render(float alpha) {
 	return true;
 }
 
-static int selectedRenderer = 0;
-
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
@@ -490,28 +493,29 @@ bool GameState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 
-	if (!m_lights.getPLs().empty()) {
-		auto& pl = m_lights.getPLs()[0];
+	if (selectedRenderer == 1) {
+		if (!m_lights.getPLs().empty()) {
+			auto& pl = m_lights.getPLs()[0];
 
-		static glm::vec3 color = pl.getColor(); // = 1.0f
-		static glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
-		static float attConstant = pl.getAttenuation().constant; // 0.0f;
-		static float attLinear = pl.getAttenuation().linear; // 0.1f;
-		static float attQuadratic = pl.getAttenuation().quadratic; // 0.02f;
+			static glm::vec3 color = pl.getColor(); // = 1.0f
+			static glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
+			static float attConstant = pl.getAttenuation().constant; // 0.0f;
+			static float attLinear = pl.getAttenuation().linear; // 0.1f;
+			static float attQuadratic = pl.getAttenuation().quadratic; // 0.02f;
 
-		ImGui::Begin("Light debug");
-		ImGui::SliderFloat3("Color", &color[0], 0.f, 1.0f);
-		ImGui::SliderFloat3("Position", &position[0], -40.f, 40.0f);
-		ImGui::SliderFloat("AttConstant", &attConstant, 0.f, 1.f);
-		ImGui::SliderFloat("AttLinear", &attLinear, 0.f, 1.f);
-		ImGui::SliderFloat("AttQuadratic", &attQuadratic, 0.f, 0.2f);
-		ImGui::End();
+			ImGui::Begin("Light debug");
+			ImGui::SliderFloat3("Color", &color[0], 0.f, 1.0f);
+			ImGui::SliderFloat3("Position", &position[0], -40.f, 40.0f);
+			ImGui::SliderFloat("AttConstant", &attConstant, 0.f, 1.f);
+			ImGui::SliderFloat("AttLinear", &attLinear, 0.f, 1.f);
+			ImGui::SliderFloat("AttQuadratic", &attQuadratic, 0.f, 0.2f);
+			ImGui::End();
 
-	//if (selectedRenderer == 1) {
-		pl.setAttenuation(attConstant, attLinear, attQuadratic);
-		pl.setColor(color);
-		pl.setPosition(position);
-		m_lights.updateBufferData();
+			pl.setAttenuation(attConstant, attLinear, attQuadratic);
+			pl.setColor(color);
+			pl.setPosition(position);
+			m_lights.updateBufferData();
+		}
 	}
 
 	return false;
