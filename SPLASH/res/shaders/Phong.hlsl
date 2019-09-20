@@ -12,9 +12,7 @@ struct PointLight {
 
 struct DirectionalLight {
 	float3 color;
-	float padding;
 	float3 direction;
-	float padding2;	
 };
 
 struct LightList {
@@ -77,7 +75,7 @@ float4 phongShade(PhongInput input) {
 
 		diffuseCoefficient = saturate(dot(input.normal, p.fragToLight));
 
-		specularCoefficient = float3(0.f, 0.f, 0.f);
+		specularCoefficient = float3(0.f, 0.f, 0.f + p.padding[0] + p.padding[1]);
 		if (diffuseCoefficient > 0.f) {
 
 			float3 r = reflect(-p.fragToLight, input.normal);

@@ -27,7 +27,7 @@ void LightSetup::setDirectionalLight(const DirectionalLight& dl) {
 const DirectionalLight& LightSetup::getDL() const {
 	return m_dl;
 }
-const std::vector<PointLight>& LightSetup::getPLs() const {
+std::vector<PointLight>& LightSetup::getPLs() {
 	return m_pls[Scene::GetRenderIndex()];
 }
 
@@ -72,8 +72,8 @@ void LightSetup::updateBufferData() {
 		for (unsigned int i = 0; i < MAX_POINTLIGHTS_FORWARD_RENDERING; i++) {
 			if (i < m_pls[ind].size()) {// break;
 				m_plData.pLights[i].attConstant = m_pls[ind][i].getAttenuation().constant;
-				m_plData.pLights[i].attLinear = m_pls[i].getAttenuation().linear;
-				m_plData.pLights[i].attQuadratic = m_pls[i].getAttenuation().quadratic;
+				m_plData.pLights[i].attLinear = m_pls[ind][i].getAttenuation().linear;
+				m_plData.pLights[i].attQuadratic = m_pls[ind][i].getAttenuation().quadratic;
 				m_plData.pLights[i].color = m_pls[ind][i].getColor();
 				m_plData.pLights[i].position = m_pls[ind][i].getPosition();
 			} else {
