@@ -19,6 +19,8 @@ unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
 }
 
+
+
 Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));
 	return m_entities.back();

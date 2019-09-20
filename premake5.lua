@@ -60,12 +60,12 @@ project "SPLASH"
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.MiniMM}",
-		"%{IncludeDir.MiniRM}"
+		"Physics"
 	}
 
 	links {
-		"Sail"
+		"Sail",
+		"Physics"
 	}
 
 	filter "system:windows"
@@ -183,6 +183,62 @@ project "Sail"
 			"GLFW_INCLUDE_NONE"
 		}
 
+	filter "configurations:Debug"
+		defines { "DEBUG" }
+		symbols "On"
+
+	filter "configurations:Release"
+		defines { "NDEBUG" }
+		optimize "On"
+
+project "Physics"
+	location "Physics"
+	kind "StaticLib"
+	language "C++"
+	targetdir "bin/%{cfg.platform}-%{cfg.buildcfg}"
+	objdir (intermediatesDir)
+	cppdialect "C++17"
+	staticruntime "on"
+	
+	pchheader "PhysicsPCH.h"
+	pchsource "Physics/PhysicsPCH.cpp"
+
+	files { 
+		"%{prj.name}/**.h",
+		"%{prj.name}/**.cpp"
+	}
+
+	includedirs {
+		"libraries",
+		"Sail/src",
+		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.ImGui}"
+	}
+
+	links {
+		"Sail",
+		"libfbxsdk",
+		"GLFW",
+		"ImGui"
+	}
+	filter { "action:vs2017 or vs2019", "platforms:*64" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+		}
+	filter { "action:vs2017 or vs2019", "platforms:*86" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+		}
+
+	filter "system:windows"
+		systemversion "latest"
+
+		defines {
+			"FBXSDK_SHARED",
+			"GLFW_INCLUDE_NONE"
+		}
+		
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		symbols "On"

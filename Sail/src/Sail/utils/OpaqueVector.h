@@ -41,7 +41,7 @@ public:
 private:
 	void expand() {
 		m_capacity += 8U;
-		uint8* newData = new uint8[m_elementSize * m_capacity];
+		uint8* newData = SAIL_NEW uint8[m_elementSize * m_capacity];
 		if (m_data) {
 			memcpy(newData, m_data, m_elementSize * m_size);
 			delete[] m_data;

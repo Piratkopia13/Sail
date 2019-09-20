@@ -11,7 +11,7 @@
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
 void NetworkWrapper::initialize() {
-	m_network = new Network();
+	m_network = SAIL_NEW Network();
 	m_network->initialize();
 }
 

@@ -11,12 +11,13 @@ MenuState::MenuState(StateStack& stack)
 	m_network = &NetworkWrapper::getInstance();
 	m_app = Application::getInstance();
 
-	this->inputIP = new char[100]{ "127.0.0.1:54000" };
-	this->inputName = new char[100]{ "Gottem420" };
+	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
+	this->inputName = SAIL_NEW char[100]{ "Gottem420" };
 }
 
 MenuState::~MenuState() {
 	delete this->inputIP;
+	delete this->inputName;
 }
 
 bool MenuState::processInput(float dt) {
@@ -83,7 +84,6 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::Begin("Host Game");
 	if (ImGui::Button("S.P.L.A.S.H over here")) {
 		if (m_network->host()) {
-			printf("Setting up host.\n");
 			this->requestStackPop();
 			this->requestStackPush(States::HostLobby);
 		}
@@ -100,8 +100,6 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::InputText("IP:", inputIP, 100);
 	if (ImGui::Button("S.P.L.A.S.H over there")) {
 		if (m_network->connectToIP(inputIP)) {
-			printf("Connecting to 192.168.1.55. \n");
-
 			// Wait until welcome-package is recieved,
 			// Save the package info,
 			// Pop and push into JoinLobbyState.

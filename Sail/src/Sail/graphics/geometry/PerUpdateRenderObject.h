@@ -10,11 +10,12 @@ class PerUpdateRenderObject {
 public:
 	explicit PerUpdateRenderObject();
 	explicit PerUpdateRenderObject(TransformComponent* gameObject, ModelComponent* model);
+	explicit PerUpdateRenderObject(Transform* transform, Model* model);
 	virtual ~PerUpdateRenderObject();
 
 	void createSnapShotFromGameObject(TransformComponent* object);
+	void createSnapShotFromGameObject(Transform* object);
 
-	void setMatrix(const glm::mat4& newMatrix);
 	glm::mat4 getMatrix(float alpha = 1.0f);
 	Model* getModel() const;
 
@@ -37,7 +38,6 @@ private:
 	void updateLocalMatrix();
 	void updateMatrix();
 
-	void treeNeedsUpdating();
 	void addChild(PerUpdateRenderObject* transform);
 	void removeChild(PerUpdateRenderObject* transform);
 };
