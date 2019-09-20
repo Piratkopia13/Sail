@@ -39,7 +39,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
 	auto frameIndex = m_context->getFrameIndex();
-	size_t count = commandQueue.size();
+	int count = static_cast<int>(commandQueue.size());
 
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 	int nThreadsToUse = (count / MIN_COMMANDS_PER_THREAD) + (count % MIN_COMMANDS_PER_THREAD > 0);
@@ -73,7 +73,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 
 	for (size_t i = 0; i < mainThreadIndex; i++) {
 #ifndef DEBUG_MULTI_THREADED_COMMAND_RECORDING
-		fut[i].get(); //Wait for all recording threads to finnish
+		fut[i].get(); //Wait for all recording threads to finish
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		commandlists[i] = m_command[i].list.Get();
 	}

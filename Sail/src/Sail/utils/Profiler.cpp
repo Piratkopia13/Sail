@@ -62,7 +62,7 @@ double Profiler::processUsage(){
 	GetProcessTimes(m_self, &ftime, &ftime, &fsys, &fuser);
 	memcpy(&sys, &fsys, sizeof(FILETIME));
 	memcpy(&user, &fuser, sizeof(FILETIME));
-	percent = (sys.QuadPart - m_lastSysCPU.QuadPart) + (user.QuadPart - m_lastUserCPU.QuadPart);
+	percent = static_cast<double>((sys.QuadPart - m_lastSysCPU.QuadPart) + (user.QuadPart - m_lastUserCPU.QuadPart));
 	percent /= (now.QuadPart - m_lastCPU.QuadPart);
 	percent /= m_numProcessors;
 	m_lastCPU = now;

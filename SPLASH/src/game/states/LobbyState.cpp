@@ -31,7 +31,7 @@ LobbyState::LobbyState(StateStack& stack)
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
-	m_currentmessage = new char[m_messageSizeLimit] { 0 };
+	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
 }
 
 LobbyState::~LobbyState() {
@@ -104,7 +104,7 @@ bool LobbyState::update(float dt) {
 	return false;
 }
 
-bool LobbyState::render(float dt) {
+bool LobbyState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
 	m_scene.draw();
 	return false;

@@ -41,6 +41,9 @@ const VertexBuffer& Mesh::getVertexBuffer() const {
 const IndexBuffer& Mesh::getIndexBuffer() const {
 	return *indexBuffer;
 }
+const Mesh::Data& Mesh::getData() const {
+	return meshData;
+}
 
 void Mesh::Data::deepCopy(const Data& other) {
 	this->numIndices = other.numIndices;

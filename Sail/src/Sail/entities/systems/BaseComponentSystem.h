@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
-
-class Entity;
+#include "..//Entity.h"
 
 /*
 	Created systems must inherit from this class.
@@ -12,6 +11,7 @@ class Entity;
 
 	Example: See PhysicSystem.h and PhysicSystem.cpp
 */
+
 class BaseComponentSystem
 {
 public:
@@ -23,12 +23,12 @@ public:
 	/*
 		Adds an entity to the system
 	*/
-	void addEntity(Entity* entity);
+	virtual void addEntity(Entity* entity);
 
 	/*
 		Removes an entity from the system
 	*/
-	void removeEntity(Entity* entity);
+	virtual void removeEntity(Entity* entity);
 
 	/*
 		Returns the indices of all the component types required to be within this system
@@ -36,6 +36,6 @@ public:
 	const std::vector<int>& getRequiredComponentTypes() const;
 
 protected:
-	std::vector<Entity*> m_entities;
-	std::vector<int> m_requiredComponentTypes;
+	std::vector<Entity*> entities;
+	std::vector<int> requiredComponentTypes;
 };

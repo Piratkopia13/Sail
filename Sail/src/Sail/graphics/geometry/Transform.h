@@ -1,37 +1,56 @@
 #pragma once
+#include <glm/vec3.hpp>
 
-#include "pch.h" // for SNAPSHOT_BUFFER_IND
+// forward declaration
+class PerUpdateRenderObject;
+
+// Structs for storing transform data from two consecutive updates
+// so that they can be interpolated between.
+// Should be optimized more in the future.
+struct TransformSnapshot {
+	glm::vec3 m_translation;
+	glm::vec3 m_rotation;
+	glm::quat m_rotationQuat;
+	glm::vec3 m_scale;
+	glm::vec3 m_forward;
+	glm::vec3 m_right;
+	glm::vec3 m_up;
+
+};
+
+struct TransformFrame {
+	TransformSnapshot m_current;
+	TransformSnapshot m_previous;
+
+	bool m_updatedDirections;
+};
 
 class Transform {
 
 public:
-	// To be done at the end of each CPU update and nowhere else	
-	static void IncrementCurrentUpdateIndex();
-
-	// To be done just before render is called
-	static void UpdateCurrentRenderIndex();
-
-#ifdef _DEBUG
-	static UINT GetUpdateIndex();
-	static UINT GetRenderIndex();
-#endif
-
 	explicit Transform(Transform* parent);
+	//Transform(TransformSnapshot current, TransformSnapshot prev);
 	Transform(const glm::vec3& translation, Transform* parent = nullptr);
-	Transform(const glm::vec3& translation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f }, const glm::vec3& scale = { 1.0f, 1.0f, 1.0f }, Transform* parent = nullptr);
+	Transform(const glm::vec3& translation = { 0.0f, 0.0f, 0.0f },
+		const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f },
+		const glm::vec3& scale = { 1.0f, 1.0f, 1.0f },
+		Transform* parent = nullptr);
 	virtual ~Transform();
 
 	void setParent(Transform* parent);
 	void removeParent();
 
-	void copyDataFromPrevUpdate();
+	void prepareUpdate();
+	TransformSnapshot getCurrentTransformState() const;
+	TransformSnapshot getPreviousTransformState() const;
+
+	TransformFrame getTransformFrame() const;
 
 	void setStartTranslation(const glm::vec3& translation);
 
-
 	void translate(const glm::vec3& move);
 	void translate(const float x, const float y, const float z);
-	
+
 	void scale(const float factor);
 	void scale(const glm::vec3& scale);
 
@@ -53,34 +72,39 @@ public:
 	void setScale(const float x, const float y, const float z);
 	void setScale(const glm::vec3& scale);
 
-	void setMatrix(const glm::mat4& newMatrix);
+	/* Forward should always be a normalized vector */
+	void setForward(const glm::vec3& forward);
 
+	PerUpdateRenderObject* getRenderTransform() const;
+	Transform* getParent() const;
 
 	const glm::vec3& getTranslation() const;
 	const glm::vec3& getRotations() const;
 	const glm::vec3& getScale() const;
 
-	glm::mat4 getMatrix(float alpha = 1.0f);
-	glm::mat4 getLocalMatrix();
+	const glm::vec3 getInterpolatedTranslation(float alpha) const;
+
+	//const glm::vec3& getForward();
+	//const glm::vec3& getRight();
+	//const glm::vec3& getUp();
+
+	glm::mat4 getMatrix();
 
 private:
-	struct TransformSnapshot {
-		glm::vec3 m_translation;
-		glm::vec3 m_rotation;
-		glm::vec3 m_scale;
+	TransformFrame m_data;
 
-		bool m_matNeedsUpdate;
-		bool m_parentUpdated;
-	};
-	TransformSnapshot m_transformSnapshots[SNAPSHOT_BUFFER_SIZE];
-
+	// TODO: make matrix into its own component
+	// matrices here are only used for bounding boxes and CPU-side code
 	glm::mat4 m_transformMatrix;
 	glm::mat4 m_localTransformMatrix;
 
-	Transform* m_parent;
+	bool m_matNeedsUpdate;
+	bool m_parentUpdated;
+	bool m_hasChanged;
+
+	Transform* m_parent = nullptr;
+
 	std::vector<Transform*> m_children;
-
-
 private:
 	void updateLocalMatrix();
 	void updateMatrix();
@@ -88,24 +112,7 @@ private:
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);
 
-
-	static constexpr int prevInd(int ind) {
-		return (ind + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
-	}
-
-	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
-	// you leave the game running for like a year or two.
-	// Note: atomic since it's written to in every update and read from in every update and render
-	static std::atomic_uint s_frameIndex;
-	
-	// the index in the snapshot buffer that is used in the update loop on the CPU.
-	// [0, SNAPSHOT_BUFFER_SIZE-1]
-	// Note: Updated once at the start of update and read-only in update so no atomics needed
-	static UINT s_updateIndex;
-	
-	
-	// If CPU update is working on index 3 then prepare render will safely interpolate between
-	// index 1 and 2 without any data races
-	// Note: Updated once at the start of render and read-only in render so no atomics needed
-	static UINT s_renderIndex;
+private:
+	friend class UpdateBoundingBoxSystem;
+	const bool getChange(); //Only access this from UpdateBoundingBoxSystem::update()
 };

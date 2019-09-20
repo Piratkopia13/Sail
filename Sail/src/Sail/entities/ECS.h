@@ -65,6 +65,7 @@ public:
 	/*
 		Destroys an entity and removes it from the systems it was stored in
 	*/
+	void queueDestructionOfEntity(const Entity::SPtr entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
 
 	/*
@@ -100,11 +101,6 @@ public:
 		This are called internally by Entity
 	*/
 	void addEntityToSystems(Entity* entity);
-
-	/*
-		Should NOT be called by the game developer
-		This are called internally by Entity
-	*/
 	void removeEntityFromSystems(Entity* entity);
 
 private:

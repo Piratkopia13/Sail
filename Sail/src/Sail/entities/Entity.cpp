@@ -32,6 +32,16 @@ bool Entity::hasComponent(int id) const
 	return (m_components.find(id) != m_components.end());
 }
 
+bool Entity::isAboutToBeDestroyed() const {
+	return m_destructionQueued;
+}
+
+void Entity::queueDestruction() {
+	m_destructionQueued = true;
+}
+
+
+// TODO: should only be able to be called on entities with m_destructionQueued == true
 void Entity::removeAllComponents() {
 	m_components.clear();
 	removeFromSystems();

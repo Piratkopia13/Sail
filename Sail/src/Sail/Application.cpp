@@ -4,8 +4,14 @@
 #include "../../SPLASH/src/game/events/TextInputEvent.h" // ONLY 2 BITCH
 #include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
+#include "Sail/graphics/Scene.h"
+
 
 Application* Application::s_instance = nullptr;
+std::atomic_uint Application::s_queuedUpdates = 0;
+std::atomic_uint Application::s_updateRunning = 0;
+std::atomic_bool Application::s_isRunning = true;
+
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
 
@@ -19,7 +25,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
 	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
-	m_threadPool = std::unique_ptr<ctpl::thread_pool>(new ctpl::thread_pool(poolSize));
+	m_threadPool = std::unique_ptr<ctpl::thread_pool>(SAIL_NEW ctpl::thread_pool(poolSize));
 
 	// Set up window
 	Window::WindowProps windowProps;
@@ -65,21 +71,20 @@ Application::~Application() {
 
 
 // CAUTION: HERE BE DRAGONS!
-// Update and render synchronization is not guaranteed to work without data races when the framerate 
-// is significantly lower than the update rate
+// Moving around function calls in this function is likely to cause bugs and crashes
 int Application::startGameLoop() {
-	MSG msg = {0};
+	MSG msg = { 0 };
 	m_fps = 0;
 	// Start delta timer
 	m_timer.startTimer();
 	const INT64 startTime = m_timer.getStartTime();
 
-	double currentTime = m_timer.getTimeSince(startTime);
-	double newTime = 0.0;
-	double delta = 0.0;
-	double accumulator = 0.0;
-	double secCounter = 0.0;
-	double elapsedTime = 0.0;
+	float currentTime = m_timer.getTimeSince<float>(startTime);
+	float newTime = 0.0f;
+	float delta = 0.0f;
+	float accumulator = 0.0f;
+	float secCounter = 0.0f;
+	float elapsedTime = 0.0f;
 	UINT frameCounter = 0;
 
 	// Render loop, each iteration of it results in one rendered frame
@@ -103,12 +108,12 @@ int Application::startGameLoop() {
 			}
 
 			// Get delta time from last frame
-			newTime = m_timer.getTimeSince(startTime);
+			newTime = m_timer.getTimeSince<float>(startTime);
 			delta = newTime - currentTime;
 			currentTime = newTime;
 
 			// Will slow the game down if the CPU can't keep up with the TICKRATE
-			delta = std::min(delta, 4 * TIMESTEP); 
+			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += delta;
@@ -120,11 +125,13 @@ int Application::startGameLoop() {
 				secCounter = 0.0;
 			}
 
+			// alpha value used for the interpolation later on
+			float alpha = accumulator/TIMESTEP;
+
 			// Queue multiple updates if the game has fallen behind to make sure that it catches back up to the current time.
-			UINT CPU_updatesThisLoop = 0;
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
-				CPU_updatesThisLoop++;
+				s_queuedUpdates++;
 			}
 
 			// Update mouse deltas
@@ -142,29 +149,35 @@ int Application::startGameLoop() {
 #endif
 			// Process state specific input
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
-			processInput(static_cast<float>(delta));
+			processInput(delta);
 
-			// Run update(s) in a separate thread
-			//m_threadPool->push([this, CPU_updatesThisLoop](int id) {
-				UINT updatesRemaining = CPU_updatesThisLoop;
-				while (updatesRemaining > 0) {
-					updatesRemaining--;
-					update(TIMESTEP);
-					Transform::IncrementCurrentUpdateIndex();
-				}
-				//});
+			// Don't create a new update thread if another one is already running the update loop
+			if (s_updateRunning == 0) {
+				s_updateRunning = 1;
+				// Run update(s) in a separate thread
+				m_threadPool->push([this](int id) {
+					while (s_queuedUpdates > 0 && s_isRunning) {
+						s_queuedUpdates--;
+						Scene::IncrementCurrentUpdateIndex();
+						update(TIMESTEP);
+					}
+					s_updateRunning = 0;
+					});
+			}
 
 			// Render
-			Transform::UpdateCurrentRenderIndex();
-			render(static_cast<float>(delta)); // TODO: interpolate between game states with an alpha value
+			Scene::UpdateCurrentRenderIndex();
+
+			render(delta, alpha);
+			//render(delta, 1.0f); // disable interpolation
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
 		}
 	}
-
+	s_isRunning = false;
+	m_threadPool->stop();
 	return (int)msg.wParam;
-
 }
 
 std::string Application::getPlatformName() {

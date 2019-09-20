@@ -19,9 +19,22 @@ unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
 }
 
+
+
 Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));
 	return m_entities.back();
+}
+
+void ECS::queueDestructionOfEntity(const Entity::SPtr entity) {
+	//Loop through and find entity
+	for (auto e : m_entities) {
+	//for (unsigned int i = 0; i < m_entities.size(); i++) {
+		if (e == entity) { //Entity found
+			e->queueDestruction();
+			break;
+		}
+	}
 }
 
 void ECS::destroyEntity(const Entity::SPtr entityToRemove) {

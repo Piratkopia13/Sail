@@ -39,7 +39,7 @@ public:
 	// Updates the state
 	virtual bool update(float dt);
 	// Renders the state
-	bool render(float dt);
+	bool render(float dt, float alpha = 1.0f);
 	// Renders imgui
 	bool renderImgui(float dt);
 	// Sends events to the state
