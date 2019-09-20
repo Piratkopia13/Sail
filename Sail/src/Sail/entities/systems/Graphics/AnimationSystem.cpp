@@ -9,15 +9,15 @@
 
 
 AnimationSystem::AnimationSystem() : BaseComponentSystem() {
-	m_requiredComponentTypes.push_back(AnimationComponent::ID);
-	m_requiredComponentTypes.push_back(ModelComponent::ID);
+	requiredComponentTypes.push_back(AnimationComponent::ID);
+	requiredComponentTypes.push_back(ModelComponent::ID);
 }
 
 AnimationSystem::~AnimationSystem() {
 }
 
 void AnimationSystem::update(float dt) {
-	for (auto& e : m_entities) {
+	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		ModelComponent* modelC = e->getComponent<ModelComponent>();
 		animationC->animationTime += dt;

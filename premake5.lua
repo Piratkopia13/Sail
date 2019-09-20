@@ -171,11 +171,13 @@ project "Sail"
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x64"
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x86"
 		}
 
 	filter "system:windows"
@@ -202,11 +204,11 @@ project "Physics"
 	objdir (intermediatesDir)
 	cppdialect "C++17"
 	staticruntime "on"
-	
+
 	pchheader "PhysicsPCH.h"
 	pchsource "Physics/PhysicsPCH.cpp"
 
-	files { 
+	files {
 		"%{prj.name}/**.h",
 		"%{prj.name}/**.cpp"
 	}
@@ -216,14 +218,16 @@ project "Physics"
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.Assimp}"
 	}
 
 	links {
 		"Sail",
 		"libfbxsdk",
 		"GLFW",
-		"ImGui"
+		"ImGui",
+		"assimp-vc140-mt"
 	}
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
@@ -243,7 +247,7 @@ project "Physics"
 			"FBXSDK_SHARED",
 			"GLFW_INCLUDE_NONE"
 		}
-		
+
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		symbols "On"
