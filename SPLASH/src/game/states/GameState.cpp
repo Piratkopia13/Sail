@@ -118,10 +118,10 @@ GameState::GameState(StateStack& stack)
 	
 
 	// Add a directional light
-	glm::vec3 color(0.1f, 0.1f, 0.1f);
+	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
-	//m_lights.setDirectionalLight(DirectionalLight(color, direction));
+	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	// Add four point lights
 	{
 		//PointLight pl;
@@ -593,7 +593,7 @@ bool GameState::render(float dt, float alpha) {
 	m_playerController.updateCameraPosition(alpha);
 
 	// Clear back buffer
-	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
+	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene
 	m_scene.draw(m_cam, alpha);
