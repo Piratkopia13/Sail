@@ -19,6 +19,6 @@ public:
 	const MenuToLobbyData* getMenuToLobbyData() { return &menuLobbyData; }
 
 private:
-	MenuToLobbyData menuLobbyData; //
+	MenuToLobbyData menuLobbyData; // //
 
 };
