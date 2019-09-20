@@ -1,18 +1,17 @@
 #pragma once
-
 #include "Component.h"
 class Model;
 
-class ModelComponent : public Component {
+class ModelComponent : public Component<ModelComponent> {
 public:
-	SAIL_COMPONENT
-	/*static int getStaticID() {
-		return 1;
-	}*/
-	ModelComponent(Model* model)
+	ModelComponent(Model* model = nullptr)
 		: m_model(model)
 	{ }
 	~ModelComponent() { }
+
+	void setModel(Model* model) {
+		m_model = model;
+	}
 
 	Model* getModel() {
 		return m_model;

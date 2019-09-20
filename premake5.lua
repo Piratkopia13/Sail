@@ -1,6 +1,7 @@
 -- premake5.lua
 workspace "Sail"
 	configurations { "Debug", "Release" }
+	startproject "SPLASH"
 	platforms { "DX11 x64", "DX11 x86",
 				"DX12 x64", "DX12 x86"
 				-- "Vulkan x64", "Vulkan x86",
@@ -25,8 +26,8 @@ include "libraries/glfw"
 include "libraries/imgui"
 
 group ""
-project "Demo"
-	location "Demo"
+project "SPLASH"
+	location "SPLASH"
 	kind "WindowedApp"
 	language "C++"
 	cppdialect "C++17"
@@ -36,9 +37,10 @@ project "Demo"
 	objdir (intermediatesDir)
 
 	files { 
-		"%{prj.name}/Demo.rc",    -- For icon
+		"%{prj.name}/SPLASH.rc",    -- For icon
 		"%{prj.name}/resource.h", -- For icon
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
@@ -53,11 +55,13 @@ project "Demo"
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"Physics"
 	}
 
 	links {
-		"Sail"
+		"Sail",
+		"Physics"
 	}
 
 	filter "system:windows"
@@ -96,6 +100,7 @@ project "Sail"
 
 	files { 
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
@@ -110,14 +115,12 @@ project "Sail"
 		"**/Skybox.*",
 		"**/ParticleEmitter.*",
 		"%{prj.name}/src/Sail/graphics/shadows/**",
-		"%{prj.name}/src/Sail/graphics/shader/postprocess/**",
 		"%{prj.name}/src/Sail/graphics/shader/instanced/**",
 		"%{prj.name}/src/Sail/graphics/shader/deferred/**",
 		"%{prj.name}/src/Sail/graphics/shader/component/ConstantBuffer**",
 		"%{prj.name}/src/Sail/graphics/shader/component/Sampler**",
 		"%{prj.name}/src/Sail/graphics/shader/basic/**",
 		"%{prj.name}/src/Sail/graphics/renderer/**",
-		"%{prj.name}/src/Sail/graphics/postprocessing/**",
 		"**/Quadtree.*"
 	}
 
@@ -173,6 +176,62 @@ project "Sail"
 			"GLFW_INCLUDE_NONE"
 		}
 
+	filter "configurations:Debug"
+		defines { "DEBUG" }
+		symbols "On"
+
+	filter "configurations:Release"
+		defines { "NDEBUG" }
+		optimize "On"
+
+project "Physics"
+	location "Physics"
+	kind "StaticLib"
+	language "C++"
+	targetdir "bin/%{cfg.platform}-%{cfg.buildcfg}"
+	objdir (intermediatesDir)
+	cppdialect "C++17"
+	staticruntime "on"
+	
+	pchheader "PhysicsPCH.h"
+	pchsource "Physics/PhysicsPCH.cpp"
+
+	files { 
+		"%{prj.name}/**.h",
+		"%{prj.name}/**.cpp"
+	}
+
+	includedirs {
+		"libraries",
+		"Sail/src",
+		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.ImGui}"
+	}
+
+	links {
+		"Sail",
+		"libfbxsdk",
+		"GLFW",
+		"ImGui"
+	}
+	filter { "action:vs2017 or vs2019", "platforms:*64" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+		}
+	filter { "action:vs2017 or vs2019", "platforms:*86" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+		}
+
+	filter "system:windows"
+		systemversion "latest"
+
+		defines {
+			"FBXSDK_SHARED",
+			"GLFW_INCLUDE_NONE"
+		}
+		
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		symbols "On"
