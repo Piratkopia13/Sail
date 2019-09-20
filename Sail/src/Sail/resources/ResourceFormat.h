@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Xaudio2.h"
+
 namespace ResourceFormat {
 
 	struct TextureData {
@@ -7,6 +9,11 @@ namespace ResourceFormat {
 		unsigned int height;
 		unsigned int channels;
 		unsigned char* textureData;
+	};
+
+	struct AudioData {
+		XAUDIO2_BUFFER m_soundBuffer = { 0 };
+		WAVEFORMATEXTENSIBLE m_formatWAV = { 0 };
 	};
 
 }

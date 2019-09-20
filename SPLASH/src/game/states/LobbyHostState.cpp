@@ -1,5 +1,9 @@
 #include "LobbyHostState.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
+#include "Network/NWrapper.h"
+#include "Network/NWrapperHost.h"
+
+using namespace std;
 
 LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack)
@@ -47,9 +51,6 @@ bool LobbyHostState::onRecievedText(NetworkChatEvent& event) {
 	// Add recieved text to chat log
 	this->addTextToChat(&event.getMessage());
 
-	// Send out the recieved text to joined players
-	// --- Wrapper already does this
-
 	return false;
 }
 
@@ -57,18 +58,13 @@ bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add player to player list
 	//this->playerJoined(event.getPlayer());
 
-	// Send out 'playerjoined'
-	// --- Wrapper already does this
-
 	return true;
 }
 
 bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Remove player from player list
-	this->playerLeft(event.getPlayerID());
-
-	// Send out 'playerdisconnected'
-	// --- Wrapper already does this
+	unsigned char id = event.getPlayerID();
+	this->playerLeft(id);
 	
 	return false;
 }
@@ -77,7 +73,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	// Parse the message | ?12:DANIEL
 	string message = event.getRepliedName(); 
 	string id_string = "";
-	unsigned int id_int = 0;
+	unsigned char id_int = 0;
 
 	// Get ID...
 	for (int i = 1; i < 64; i++) {

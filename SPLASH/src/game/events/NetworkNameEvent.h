@@ -2,11 +2,10 @@
 
 #include "../../../../Sail/src/Sail/events/Event.h"
 #include <string>
-using namespace std;
 
 class NetworkNameEvent : public Event {
 public:
-	NetworkNameEvent(string name) 
+	NetworkNameEvent(std::string name)
 		: Event(Event::NETWORK_NAME)
 		, m_repliedName(name)
 	{
@@ -15,13 +14,13 @@ public:
 	~NetworkNameEvent() {}
 
 	// When host calls it replies name, otherwise id.
-	inline string getRepliedName() { return m_repliedName; }
+	inline std::string getRepliedName() { return m_repliedName; }
 
 	static Type getStaticType() {
 		return Event::NETWORK_NAME;
 	}
 
 private:
-	string m_repliedName;
+	std::string m_repliedName;
 
 };

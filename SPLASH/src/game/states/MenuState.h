@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Sail.h"
-#include "Network/NetworkWrapper.h"
+#include "Network/NWrapperSingleton.h"
+#include "Network/NWrapperHost.h"
 
 
 class MenuState : public State, public NetworkEvent {
@@ -26,7 +27,8 @@ public:
 
 private:
 	Input* m_input = nullptr;
-	NetworkWrapper* m_network = nullptr;
+	// NetworkWrapper | NWrapperSingleton | NWrapperHost
+	NWrapperSingleton* m_network = nullptr;
 	Application* m_app = nullptr;
 	// For ImGui Input
 	char* inputIP = nullptr;
