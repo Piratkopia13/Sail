@@ -211,6 +211,7 @@ ImGuiHandler* const Application::getImGuiHandler() {
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
 }
+
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }
