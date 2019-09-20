@@ -593,7 +593,7 @@ bool GameState::update(float dt) {
 			}
 		}
 	}
-	m_lights.updateBufferData();
+	/*m_lights.updateBufferData();*/
 
 	// copy per-frame render objects to their own list so that they can be rendered without
 	// any interference from the update loop
@@ -608,6 +608,9 @@ bool GameState::update(float dt) {
 bool GameState::render(float dt, float alpha) {
 	// Interpolate the player's camera position (but not rotation)
 	m_playerController.updateCameraPosition(alpha);
+
+	m_lights.updateBufferData();
+
 
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });

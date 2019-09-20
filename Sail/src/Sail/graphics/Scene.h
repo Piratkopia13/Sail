@@ -85,6 +85,8 @@ private:
 	std::mutex m_perFrameLocks[SNAPSHOT_BUFFER_SIZE];
 
 
+
+
 	std::unique_ptr<Renderer> m_renderer;
 	//DeferredRenderer m_renderer;
 	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
