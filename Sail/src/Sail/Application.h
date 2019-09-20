@@ -23,6 +23,7 @@ namespace ctpl {
 // TODO? Move elsewhere
 const float TICKRATE = 100.0f;
 const float TIMESTEP = 1.0f / TICKRATE;
+#include "ai/pathfinding/NodeSystem.h"
 
 class Application : public IEventDispatcher {
 
@@ -81,6 +82,7 @@ public:
 	ResourceManager& getResourceManager();
 	MemoryManager& getMemoryManager();
 	Audio* getAudioManager();
+	NodeSystem* getNodeSystem();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
@@ -93,6 +95,7 @@ private:
 	ResourceManager m_resourceManager;
 	MemoryManager m_memoryManager;
 	Audio m_audioManager;
+	std::unique_ptr<NodeSystem> m_nodeSystem;
 	StateStorage m_stateStorage;
 
 	// Timer

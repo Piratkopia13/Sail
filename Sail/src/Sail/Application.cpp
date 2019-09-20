@@ -63,24 +63,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
 
-
-	/*
-	TODO: This has to be designed for the application, only a temporary implementation
-		struct PoolInstance {
-			unsigned int sizeBytesEachEntry;
-			unsigned int numEntries;
-			unsigned int numQuadrants;
-		};
-
-		struct StackInstance {
-			unsigned int sizeBytes;
-		};
-	*/
-	std::vector<PoolInstance> poolInstances;
-	std::vector<StackInstance> stackInstances;
-	stackInstances.emplace_back(StackInstance{ 50 * 1000 * 1000 });
-	m_memoryManager.init(stackInstances, poolInstances);
-
+	m_nodeSystem = std::make_unique<NodeSystem>();
 }
 
 Application::~Application() {
@@ -233,6 +216,9 @@ MemoryManager& Application::getMemoryManager() {
 }
 Audio* Application::getAudioManager() {
 	return &m_audioManager;
+}
+NodeSystem* Application::getNodeSystem() {
+	return m_nodeSystem.get();
 }
 StateStorage& Application::getStateStorage() {
 	return this->m_stateStorage;
