@@ -63,4 +63,5 @@ private:
 
 	float m_projectileSpawnCounter = 0.f;
 
+	bool m_wasSpacePressed = false;
 };
