@@ -2,6 +2,8 @@
 #include <assimp/scene.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include "../../graphics/geometry/Model.h"
 #include "../../graphics/geometry/Animation.h"
 #include <map>
@@ -44,12 +46,24 @@ private:
 	Mesh* importMesh(const aiScene* scene, aiNode* node);
 	bool importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack);
 	bool importAnimations(const aiScene* scene, AnimationStack* stack);
+	void readNodeHierarchy(const unsigned int animationID, const unsigned int frame, const float animationTime, const aiNode* node, const glm::mat4& parent, Animation::Frame* animationFrame);
+
+	const unsigned int getPositionFrame(const float animationTime, const aiNodeAnim* node);
+	const unsigned int getRotationFrame(const float animationTime, const aiNodeAnim* node);
+	const unsigned int getScaleFrame(const float animationTime, const aiNodeAnim* node);
+
+	void calcInterpolatedPosition(aiVector3D& out, const float animationTime, const aiNodeAnim* node);
+	void calcInterpolatedRotation(aiQuaternion& out, const float animationTime, const aiNodeAnim* node);
+	void calcInterpolatedScale(aiVector3D& out, const float animationTime, const aiNodeAnim* node);
+
+
+
 	const bool errorCheck(const aiScene* scene);
 	void clearData();
 	//static inline glm::mat4 mat4_cast(const aiMatrix4x4& m) { 
 	//	return glm::transpose(glm::make_mat4(&m.a1)); 
 	//}
-	glm::mat4 mat4_cast(const aiMatrix4x4& aiMat) {
+	glm::mat4 mat4_castT(const aiMatrix4x4& aiMat) {
 		return {
 		aiMat.a1, aiMat.b1, aiMat.c1, aiMat.d1,
 		aiMat.a2, aiMat.b2, aiMat.c2, aiMat.d2,
@@ -57,6 +71,11 @@ private:
 		aiMat.a4, aiMat.b4, aiMat.c4, aiMat.d4
 		};
 	}
+	static inline glm::vec3 vec3_cast(const aiVector3D& v) { return glm::vec3(v.x, v.y, v.z); }
+	static inline glm::vec2 vec2_cast(const aiVector3D& v) { return glm::vec2(v.x, v.y); }
+	static inline glm::quat quat_cast(const aiQuaternion& q) { return glm::quat(q.w, q.x, q.y, q.z); }
+	static inline glm::mat4 mat4_cast(const aiMatrix4x4& m) { return glm::transpose(glm::make_mat4(&m.a1)); }
+	static inline glm::mat4 mat4_cast(const aiMatrix3x3& m) { return glm::transpose(glm::make_mat3(&m.a1)); }
 
 	void makeOffsets(const aiScene* scene) {
 		m_meshOffsets.emplace_back(0, 0);
@@ -71,7 +90,26 @@ private:
 		}
 	}
 
+	struct BoneInfo {
+		unsigned int index;
+		std::string nodeName;
+		glm::mat4 offset;
+	};
+	std::unordered_map<std::string, const aiNode*> m_nodes;
+	std::unordered_map<std::string, AssimpLoader::BoneInfo> m_boneMap;
+	//std::vector<int> m_meshOffsets;
 	std::vector<AssimpLoader::MeshOffset> m_meshOffsets;
 	Assimp::Importer m_importer;
+	std::vector<std::map<std::string, const aiNodeAnim*>> m_channels;
+	glm::mat4 m_globalTransform;
+	void mapChannels(const aiScene* scene) {
+		m_channels.resize(scene->mNumAnimations);
+		for (unsigned int i = 0; i < scene->mNumAnimations; i++) {
+			const aiAnimation* animation = scene->mAnimations[i];
 
+			for (unsigned int channel = 0; channel < animation->mNumChannels; channel++) {
+				m_channels[i][animation->mChannels[channel]->mNodeName.C_Str()] = animation->mChannels[channel];
+			}
+		}
+	}
 };

@@ -82,14 +82,16 @@ bool ResourceManager::hasModel(const std::string& filename) {
 }
 
 void ResourceManager::loadAnimationStack(const std::string& fileName) {
-	AnimationStack* stack = m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName);
-
+	m_animationStacks.insert({ fileName, std::unique_ptr<AnimationStack>(m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName))});
 }
 
-//AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) {
-//	// TODO: insert return statement here
-//	return 
-//}
+AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) {
+	//TODO : make more reliable
+	if (m_animationStacks.find(fileName) == m_animationStacks.end()) {
+		loadAnimationStack(fileName);
+	}
+	return *m_animationStacks[fileName].get();
+}
 
 bool ResourceManager::hasAnimationStack(const std::string& fileName) {
 	return false;

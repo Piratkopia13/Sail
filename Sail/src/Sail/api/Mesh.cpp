@@ -6,11 +6,13 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/Application.h"
 
-Mesh::Mesh(Data& buildData, Shader* shader)
-	: meshData(buildData) 
+Mesh::Mesh(Data& buildData, Shader* shader) : 
+	meshData(buildData)
 {
-	
 }
+
+
+
 
 Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.indices);
@@ -20,6 +22,12 @@ Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.colors);
 	Memory::SafeDeleteArr(meshData.tangents);
 	Memory::SafeDeleteArr(meshData.texCoords);
+}
+
+
+
+const Mesh::Data& Mesh::getMeshData() {
+	return meshData;
 }
 
 Material* Mesh::getMaterial() {
@@ -35,7 +43,7 @@ unsigned int Mesh::getNumIndices() const {
 unsigned int Mesh::getNumInstances() const {
 	return meshData.numInstances;
 }
-const VertexBuffer& Mesh::getVertexBuffer() const {
+VertexBuffer& Mesh::getVertexBuffer() const {
 	return *vertexBuffer;
 }
 const IndexBuffer& Mesh::getIndexBuffer() const {
@@ -51,7 +59,7 @@ void Mesh::Data::deepCopy(const Data& other) {
 		for (unsigned int i = 0; i < other.numIndices; i++)
 			this->indices[i] = other.indices[i];
 	}
-	unsigned int numVerts = (other.numIndices > 0) ? other.numIndices : other.numVertices;
+	unsigned int numVerts = (other.numIndices > 0) ? other.numVertices : other.numIndices;
 	if (other.positions) {
 		this->positions = SAIL_NEW Mesh::vec3[numVerts];
 		for (unsigned int i = 0; i < numVerts; i++)

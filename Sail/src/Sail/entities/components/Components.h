@@ -9,3 +9,4 @@
 #include "PlayerComponent.h"
 #include "LightComponent.h"
 #include "LightListComponent.h"
+#include "AnimationComponent.h"

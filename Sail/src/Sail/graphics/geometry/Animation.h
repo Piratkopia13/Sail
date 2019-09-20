@@ -1,104 +1,101 @@
 #pragma once
 #include "Sail/utils/Utils.h"
 #include <map>
-#define SAIL_BONES_PER_VERTEX 4
+#define SAIL_BONES_PER_VERTEX 5
 
 class Animation {
 public:
-	Animation();
-	~Animation();
-
-
-	
 	class Frame {
 	public:
 		Frame();
+		Frame(const unsigned int size);
 		~Frame();
-	
+		void setTransform(const unsigned int index, const glm::mat4& transform);
+		const unsigned int getTransformListSize();
+		const glm::mat4* getTransformList();
 	private:
-		int m_transformSize;
-
+		unsigned int m_transformSize;
 		glm::mat4* m_limbTransform;
 	};
-	
-	void pushBackFrame(float time, Animation::Frame& frame);
-	void addFrame(Animation::Frame& frame);
-	void addFrame(int* index, int* limb, float* limbWeight, glm::mat4* limbTransform, int indexSize, int limbSize, int transformSize);
 
+
+	
+
+	// TODO: rename behind variable to better describe it. (if frame behind or infront of time should be returned.)
+	enum FindType {
+		BEHIND,
+		CLOSEST,
+		INFRONT
+	};
+
+	Animation();
+	~Animation();
+	const float getMaxAnimationTime();
+	const unsigned int getMaxAnimationFrame();
+	const glm::mat4* getAnimationTransform(const float time, const FindType type = BEHIND);
+	const glm::mat4* getAnimationTransform(const unsigned int frame);
+	const unsigned int getAnimationTransformSize(const float time);
+	const unsigned int getAnimationTransformSize(const unsigned int frame);
+	const float getTimeAtFrame(const unsigned int frame);
+	const unsigned int getFrameAtTime(const float time, const FindType type = BEHIND);
+	void addFrame(const unsigned int frame, const float time, Animation::Frame* data);
 
 	
 private:
+	
+	float m_maxFrameTime;
+	unsigned int m_maxFrame;
 
+	inline const bool exists(const unsigned int frame);
 
-	std::vector<std::pair<float, Animation::Frame>> m_frames;
-
+	std::map<unsigned int, float> m_frameTimes;
+	std::map<unsigned int, Animation::Frame*> m_frames;
 };
 
 
 
 class AnimationStack {
 public:
-	AnimationStack();
-	AnimationStack(const size_t vertCount);
-	~AnimationStack();
-	
-	//void setVertIndices(const int size, int* vertIndices);
-	//void setLimbIndices
-	void addAnimation(const std::string& animationName, Animation* animation);
+	class VertConnection {
+	public:
+		VertConnection();
+		void addConnection(const unsigned int _transform, const float _weight);
+		const float checkWeights();
 
-	struct VertConnection {
-		int count;
-		int transform[SAIL_BONES_PER_VERTEX];
+		unsigned int count;
+		unsigned int transform[SAIL_BONES_PER_VERTEX];
 		float weight[SAIL_BONES_PER_VERTEX];
-
-		VertConnection() {
-			count = 0;
-			for (int i = 0; i < SAIL_BONES_PER_VERTEX; i++) {
-				transform[i] = -1;
-				weight[i] = 0;
-			}
-		}
-		void addConnection(const int _transform, const float _weight) {
-#ifdef _DEBUG
-			if (count >= SAIL_BONES_PER_VERTEX) {
-				Logger::Error("AnimationStack:VertConnection: Too many existing connections(" + std::to_string(count) + ")");
-				return;
-			}
-#endif
-			transform[count] = _transform;
-			weight[count] = _weight;
-			count++;
-		}
-		float checkWeights() {
-			double sum = 0;
-			for (int i = 0; i < count; i++) {
-				sum += weight[i];
-			}
-			return sum;
-		}
 	};
-	void setConnectionData(const int vertexIndex, const int boneIndex, float weight);
+
+	AnimationStack();
+	AnimationStack(const unsigned int vertCount);
+	~AnimationStack();
+
+	void addAnimation(const std::string& animationName, Animation* animation);
+	void setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight);
+
+	Animation* getAnimation(const std::string& name);
+	Animation* getAnimation(const unsigned int index);
+
+	const glm::mat4* getTransform(const std::string& name, const float time);
+	const glm::mat4* getTransform(const std::string& name, const unsigned int frame);
+	const glm::mat4* getTransform(const unsigned int index, const float time);
+	const glm::mat4* getTransform(const unsigned int index, const unsigned int frame);
+
+	VertConnection* getConnections();
+	const unsigned int getConnectionSize();
 
 
-	void checkWeights() {
-		for (int i = 0; i < m_connectionSize; i++) {
-			float value = m_connections[i].checkWeights();
-			if (value > 1.001 || value < 0.999) {
-				Logger::Warning("Weights fucked: " + std::to_string(i)+ "(" + std::to_string(value)+")");
-			}
-		}
-	}
 
-	struct BoneInfo {
-		size_t index;
-		glm::mat4 offset;
-	};
-	std::map<std::string, AnimationStack::BoneInfo> m_boneMap;
+	void checkWeights();
 private:
 
-	size_t m_connectionSize;
+	unsigned int m_connectionSize;
 	VertConnection* m_connections;
-	std::vector<std::pair<std::string, Animation*>> m_stack;
+	
+
+	std::map<int, std::string> m_names;
+	std::map<std::string, Animation*> m_stack;
 
 };
 
