@@ -179,6 +179,7 @@ void PlayerController::processMouseInput(float dt) {
 
 void PlayerController::updateCameraPosition(float alpha) {
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
+	BoundingBoxComponent* playerBB = m_player->getComponent<BoundingBoxComponent>();
 
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
@@ -195,7 +196,7 @@ void PlayerController::updateCameraPosition(float alpha) {
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 	right = glm::normalize(right);*/
 
-	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha));
+	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.0f, playerBB->getBoundingBox()->getHalfSize().y * 0.8f, 0.0f));
 	m_cam->setCameraDirection(forwards);
 }
 
