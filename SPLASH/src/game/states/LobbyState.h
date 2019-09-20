@@ -3,20 +3,19 @@
 #include "Sail.h"
 #include <string>
 #include <list>
-#include "Network/NetworkWrapper.h"
-using namespace std;
 
+class NWrapper;
 class TextInputEvent;
 class NetworkJoinedEvent;
 
 struct Message {
-	string sender;
-	string content;
+	std::string sender;
+	std::string content;
 };
 
 struct Player {
-	unsigned int id;
-	string name;
+	unsigned char id;
+	std::string name;
 
 	bool friend operator==(const Player& left, const Player& right) {
 		if (left.id == right.id &&
@@ -48,23 +47,23 @@ public:
 protected:
 	Application* m_app = nullptr;
 	Input* m_input = nullptr;
-	NetworkWrapper* m_network = nullptr;
+	NWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
 	Player m_me;
 	std::list<Message> m_messages;
 	std::list<Player> m_players;
-	Player* getPlayer(unsigned int id);
+	Player* getPlayer(unsigned char& id);
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
 	void resetPlayerList();
-	bool playerJoined(Player player);
-	bool playerLeft(unsigned int id);
+	bool playerJoined(Player& player);
+	bool playerLeft(unsigned char& id);
 	void addTextToChat(Message* text);
 	void resetCurrentMessage();
 
-	string fetchMessage();
-	void addMessageToChat(Message message);
+	std::string fetchMessage();
+	void addMessageToChat(Message& message);
 
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;

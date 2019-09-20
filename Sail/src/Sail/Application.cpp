@@ -138,6 +138,9 @@ int Application::startGameLoop() {
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
+			//UPDATES ALL CURRENTLY-WORKING AUDIO FUNCTIONALITY (TL;DR - Press '9' and '0')
+			Application::getAudioManager()->updateAudio();
+
 			// Quit on alt-f4
 			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
 				PostQuitMessage(0);
@@ -207,6 +210,13 @@ ImGuiHandler* const Application::getImGuiHandler() {
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
+}
+
+MemoryManager& Application::getMemoryManager() {
+	return m_memoryManager;
+}
+Audio* Application::getAudioManager() {
+	return &m_audioManager;
 }
 NodeSystem* Application::getNodeSystem() {
 	return m_nodeSystem.get();

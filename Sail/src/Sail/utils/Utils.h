@@ -103,7 +103,7 @@ public:
 
 
 	inline static void Warning(const std::string& msg) {
-		
+
 		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 		// Save currently set color
@@ -117,7 +117,7 @@ public:
 		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 #ifdef _SAIL_BREAK_ON_WARNING
- 		__debugbreak();
+		__debugbreak();
 #endif
 	}
 

@@ -15,6 +15,29 @@ ResourceManager::~ResourceManager() {
 }
 
 //
+// AudioData
+//
+
+void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {
+	if (!this->hasAudioData(filename)) {
+		m_audioDataAll.insert({ filename, std::make_unique<AudioData>(filename, xAudio2) });
+	} 
+}
+
+AudioData& ResourceManager::getAudioData(const std::string& filename) {
+	auto pos = m_audioDataAll.find(filename);
+	if (pos == m_audioDataAll.end()) {
+		Logger::Error("Tried to access an audio resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadAudioData(\"filename\") before accessing it.");
+	}
+
+	return *pos->second;
+}
+
+bool ResourceManager::hasAudioData(const std::string& filename) {
+	return m_audioDataAll.find(filename) != m_audioDataAll.end();
+}
+
+//
 // TextureData
 //
 
