@@ -37,13 +37,7 @@ Audio::Audio() {
 }
 
 Audio::~Audio(){
-	for (int i = 0; i < SOUND_COUNT; i++) {
-		if (m_sourceVoice[i] != nullptr) {
-	
-			m_sourceVoice[i]->Stop();
-			m_sourceVoice[i]->DestroyVoice();
-		}
-	}
+	this->stopAllSounds();
 }
 
 void Audio::loadSound(const std::string& filename) {
@@ -100,7 +94,7 @@ void Audio::pauseSound(int index) {
 	}
 }
 
-void Audio::pauseAllSounds() {
+void Audio::stopAllSounds() {
 
 	for (int i = 0; i < SOUND_COUNT; i++) {
 		if (m_sourceVoice[i] != nullptr) {
@@ -109,13 +103,15 @@ void Audio::pauseAllSounds() {
 	}
 
 	m_isStreaming = false;
-	//m_streamVoice->Stop();
-	if (m_streamSoundThread != nullptr && m_streamSoundThread->joinable()) {
-		m_streamSoundThread->join();
-		delete m_streamSoundThread;
-		m_streamSoundThread = nullptr;
-		m_overlapped = { 0 };
-		
+
+	if (m_streamSoundThread != nullptr) {
+		if (m_streamSoundThread->joinable()) {
+
+			m_streamSoundThread->join();
+			delete m_streamSoundThread;
+			m_streamSoundThread = nullptr;
+			m_overlapped = { 0 };
+		}
 	}
 }
 
@@ -137,6 +133,12 @@ void Audio::updateAudio() {
 	if (Input::IsKeyPressed(SAIL_KEY_2) && m_singlePress2) {
 
 		m_singlePress2 = false;
+		if (this->m_streamSoundThread != nullptr) {
+			if (m_streamSoundThread->joinable()) {
+				m_streamSoundThread->join();
+				delete m_streamSoundThread;
+			}
+		}
 		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankLong.xwb", false);
 		//this->streamSound("../Audio/wavebank.xwb");
 	}
@@ -161,7 +163,7 @@ void Audio::updateAudio() {
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_0)) {
-		this->pauseAllSounds();
+		this->stopAllSounds();
 	}
 }
 
@@ -386,8 +388,6 @@ void Audio::streamSound(const std::string& filename, bool loop) {
 	//
 	m_streamVoice->Stop(0);
 	m_streamVoice->DestroyVoice();
-	m_streamVoice = nullptr;
-
 	CloseHandle(m_overlapped.hEvent);
 
 	return;

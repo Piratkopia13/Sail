@@ -5,7 +5,7 @@
 
 namespace Fileloader {
 
-	WAVLoader::WAVLoader(std::string filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData) {
+	WAVLoader::WAVLoader(const std::string& filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData) {
 		std::string fileExt = "";
 		fileExt = getFileExtension(filename);
 
@@ -28,7 +28,7 @@ namespace Fileloader {
 
 	}
 
-	bool WAVLoader::loadWAV(std::string filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData) {
+	bool WAVLoader::loadWAV(const std::string& filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData) {
 
 		// PROBABLY ISN'T NEEDED ANYMORE!
 		//-------------------------------

@@ -75,7 +75,7 @@ public:
 	int playSound(const std::string& filename);
 	//void streamSound(const std::string& filename);
 	void pauseSound(int index);
-	void pauseAllSounds();
+	void stopAllSounds();
 
 	void updateAudio();
 

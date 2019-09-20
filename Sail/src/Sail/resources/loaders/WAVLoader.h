@@ -11,11 +11,11 @@ namespace Fileloader {
 	class WAVLoader {
 
 	public:
-		WAVLoader(std::string filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData);
+		WAVLoader(const std::string& filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData);
 		~WAVLoader();
 
 	private:
-		bool loadWAV(std::string filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData);
+		bool loadWAV(const std::string& filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData);
 		//bool loadADPC(std::string filename, IXAudio2* xAudio2, ResourceFormat::AudioData& audioData);
 
 		// PRIVATE FUNCTIONS

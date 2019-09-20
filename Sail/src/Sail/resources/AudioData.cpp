@@ -11,7 +11,7 @@ AudioData::AudioData(const std::string& filename, IXAudio2* xAudio2) {
 }
 
 AudioData::~AudioData() {
-
+	delete m_data.m_soundBuffer.pAudioData;
 }
 
 void AudioData::load(const std::string& filename, IXAudio2* xAudio2) {
