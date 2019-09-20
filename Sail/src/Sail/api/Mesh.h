@@ -34,6 +34,7 @@ public:
 
 	struct Data {
 		Data() : numIndices(0), numInstances(0), indices(nullptr), numVertices(0), normals(nullptr), positions(nullptr), colors(nullptr), texCoords(nullptr), tangents(nullptr), bitangents(nullptr) {};
+		
 		void deepCopy(const Data& other);
 		unsigned int numIndices;
 		unsigned long* indices;

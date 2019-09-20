@@ -34,6 +34,16 @@ public:
 		//Memory::SafeDeleteArr(transformedNormals);
 		//Memory::SafeDeleteArr(transformedTangents);
 		//Memory::SafeDeleteArr(transformedBitangents);
+
+		Memory::SafeDeleteArr(data.indices);
+		Memory::SafeDeleteArr(data.positions);
+		Memory::SafeDeleteArr(data.normals);
+		Memory::SafeDeleteArr(data.bitangents);
+		Memory::SafeDeleteArr(data.colors);
+		Memory::SafeDeleteArr(data.tangents);
+		Memory::SafeDeleteArr(data.texCoords);
+
+
 	}
 	unsigned int dataSize;
 	void resizeData(const unsigned int size) {
