@@ -64,7 +64,6 @@ AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 		vertCount += scene->mMeshes[i]->mNumVertices;
 	}
 	AnimationStack* stack = new AnimationStack(vertCount);
-	scene->mMeshes[scene->mRootNode->mMeshes[0]]->mBones[0];
 	
 	if (!importBonesFromNode(scene, scene->mRootNode, stack)) {
 		Memory::SafeDelete(stack);
