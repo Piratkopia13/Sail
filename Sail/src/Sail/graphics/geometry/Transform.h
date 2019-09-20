@@ -100,6 +100,7 @@ private:
 
 	bool m_matNeedsUpdate;
 	bool m_parentUpdated;
+	bool m_hasChanged;
 
 	Transform* m_parent = nullptr;
 
@@ -110,4 +111,8 @@ private:
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);
+
+private:
+	friend class UpdateBoundingBoxSystem;
+	const bool getChange(); //Only access this from UpdateBoundingBoxSystem::update()
 };

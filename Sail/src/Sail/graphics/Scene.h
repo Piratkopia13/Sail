@@ -33,6 +33,7 @@ public:
 	void setLightSetup(LightSetup* lights);
 	Entity::SPtr getGameObjectEntityByName(std::string name);
 	const std::vector<Entity::SPtr>& getGameObjectEntities()const;
+	void showBoundingBoxes(bool val);
 	void draw(void);
 	void draw(Camera& camera, const float alpha = 1.0f);
 
@@ -95,7 +96,7 @@ private:
 	std::unique_ptr<Renderer>* m_currentRenderer;
 	PostProcessPipeline m_postProcessPipeline;
 	bool m_doPostProcessing;
-
+	bool m_showBoundingBoxes;
 
 
 	// STATIC SYCHRONIZATION STUFF USED IN SCENE

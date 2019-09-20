@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Octree.h"
+
 class CameraController;
 class Camera;
 class Entity;
@@ -30,6 +32,9 @@ public:
 
 	std::shared_ptr<Entity> getEntity();
 
+	void setProjectileModels(Model* model, Model* wireframeModel);
+
+	void provideCandles(std::vector<Entity::SPtr>* candles);
 	void setProjectileModel(Model* model);
 	std::shared_ptr<Entity> getCandle();
 	void createCandle(Model* model);
@@ -47,10 +52,12 @@ private:
 	Scene* m_scene;
 
 	Model* m_projectileModel;
-	
+	Model* m_projectileWireframeModel;
 	std::vector<Projectile> m_projectiles;
 
 	std::shared_ptr<Entity> m_player;
+
+	std::vector<Entity::SPtr>* m_candles;
 
 	std::shared_ptr<Entity> m_candle;
 

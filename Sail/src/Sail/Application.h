@@ -95,4 +95,5 @@ private:
 
 	static std::atomic_uint s_updateRunning;	
 	static std::atomic_uint s_queuedUpdates;
+	static std::atomic_bool s_isRunning;
 };

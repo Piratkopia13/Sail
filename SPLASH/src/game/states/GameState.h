@@ -4,6 +4,8 @@
 #include "../controllers/PlayerController.h"
 #include "../controllers/AiController.h"
 
+class UpdateBoundingBoxSystem;
+class OctreeAddRemoverSystem;
 class PhysicSystem;
 
 class GameState : public State {
@@ -33,6 +35,8 @@ private:
 
 private:
 	struct Systems {
+		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
 	};
 
@@ -71,4 +75,8 @@ private:
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
 
+	std::unique_ptr<Model> m_boundingBoxModel;
+
+	Octree* m_octree;
+	std::vector<Entity::SPtr> m_candles;
 };

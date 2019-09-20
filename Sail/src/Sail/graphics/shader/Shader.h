@@ -39,6 +39,8 @@ public:
 	// Graphics specific
 	virtual void bind();
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
+	virtual void setWireframe(bool wireframe);
+	virtual void setCullMode(GraphicsAPI::Culling cullMode);
 
 	// Compute specific
 	virtual const ComputeSettings* getComputeSettings() const { return nullptr; };
@@ -53,5 +55,4 @@ protected:
 	ShaderPipeline* shaderPipeline;
 private:
 	bool m_finished;
-
 };

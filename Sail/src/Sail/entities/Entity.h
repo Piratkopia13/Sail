@@ -50,6 +50,7 @@ private:
 	bool m_destructionQueued = false;
 	int m_id;
 	ECS* m_ecs;
+	Entity::SPtr m_mySPtr;
 };
 
 template<typename ComponentType, typename... Targs>

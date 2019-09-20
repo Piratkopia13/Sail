@@ -14,6 +14,10 @@ PerUpdateRenderObject::PerUpdateRenderObject(TransformComponent* gameObject, Mod
 	createSnapShotFromGameObject(gameObject);
 }
 
+PerUpdateRenderObject::PerUpdateRenderObject(Transform* transform, Model* model) : m_model(model) {
+	createSnapShotFromGameObject(transform);
+}
+
 PerUpdateRenderObject::~PerUpdateRenderObject() 
 {}
 
@@ -42,6 +46,15 @@ void PerUpdateRenderObject::createSnapShotFromGameObject(TransformComponent* obj
 	}
 }
 
+void PerUpdateRenderObject::createSnapShotFromGameObject(Transform* object) {
+	m_data = object->getTransformFrame();
+
+	// If the object has a parent transform copy that one as well,
+	// NOTE: this will cause duplication of some transforms
+	if (Transform * parent = object->getParent(); parent) {
+		setParent(parent->getRenderTransform());
+	}
+}
 
 PerUpdateRenderObject* PerUpdateRenderObject::getParent() const {
 	return m_parent;
