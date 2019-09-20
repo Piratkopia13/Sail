@@ -35,6 +35,9 @@ public:
 	void setProjectileModels(Model* model, Model* wireframeModel);
 
 	void provideCandles(std::vector<Entity::SPtr>* candles);
+	void setProjectileModel(Model* model);
+	std::shared_ptr<Entity> getCandle();
+	void createCandle(Model* model);
 
 
 	// Should be called at the start of the update loop and nowhere else
@@ -55,6 +58,8 @@ private:
 	std::shared_ptr<Entity> m_player;
 
 	std::vector<Entity::SPtr>* m_candles;
+
+	std::shared_ptr<Entity> m_candle;
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
