@@ -14,12 +14,12 @@ MenuState::MenuState(StateStack& stack)
 	m_app = Application::getInstance();
 
 	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
-	this->inputName = SAIL_NEW char[100]{ "Gottem420" };
+	this->inputName = SAIL_NEW char[100]{ "Hans" };
 }
 
 MenuState::~MenuState() {
-	delete this->inputIP;
-	delete this->inputName;
+	delete[] this->inputIP;
+	delete[] this->inputName;
 }
 
 bool MenuState::processInput(float dt) {
@@ -61,7 +61,6 @@ bool MenuState::renderImgui(float dt) {
 			// Wait until welcome-package is recieved,
 			// Save the package info,
 			// Pop and push into JoinLobbyState.
-			
 			this->requestStackPop();
 			this->requestStackPush(States::JoinLobby);
 		}

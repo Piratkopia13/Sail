@@ -90,6 +90,7 @@ GameState::GameState(StateStack& stack)
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -30.0f, 0.0f);
 
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -117,10 +118,10 @@ GameState::GameState(StateStack& stack)
 	
 
 	// Add a directional light
-	glm::vec3 color(0.1f, 0.1f, 0.1f);
+	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
-	//m_lights.setDirectionalLight(DirectionalLight(color, direction));
+	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	// Add four point lights
 	{
 		//PointLight pl;
@@ -196,6 +197,7 @@ GameState::GameState(StateStack& stack)
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	m_playerController.getEntity()->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, 3.0f, 0.7f));
 	m_scene.addEntity(m_playerController.getEntity());
 
 	// Temporary projectile model for the player's gun
@@ -673,7 +675,7 @@ bool GameState::render(float dt, float alpha) {
 	m_playerController.updateCameraPosition(alpha);
 
 	// Clear back buffer
-	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
+	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene
 	m_scene.draw(m_cam, alpha);
