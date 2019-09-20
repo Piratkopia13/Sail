@@ -64,6 +64,7 @@ public:
 	unsigned int getNumInstances() const;
 	VertexBuffer& getVertexBuffer() const;
 	const IndexBuffer& getIndexBuffer() const;
+	const Mesh::Data& getData() const;
 
 protected:
 	Material::SPtr material;

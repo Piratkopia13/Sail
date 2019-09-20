@@ -9,9 +9,8 @@ LightSetup::~LightSetup() {}
 void LightSetup::addPointLight(const PointLight& pl) {
 	m_pls.push_back(pl);
 	if (pl.getIndex() < 0) {
-		m_pls.back().setIndex(m_pls.size()+12);
+		m_pls.back().setIndex(m_pls.size() + 12);
 	}
-	//std::cout << "added ligth " << m_pls.size() << std::endl;
 	//updateBufferData();
 }
 void LightSetup::setDirectionalLight(const DirectionalLight& dl) {
@@ -42,7 +41,6 @@ void LightSetup::clearPointLights() {
 void LightSetup::removePointLight() {
 	if (m_pls.size() > 0) {
 		m_pls.erase(m_pls.begin());
-		std::cout << "removed light " << m_pls.size() << std::endl;
 		//updateBufferData();
 	}
 }
@@ -51,7 +49,6 @@ void LightSetup::removePLByIndex(int index) {
 	for (unsigned int i = 0; i < m_pls.size(); i++) {
 		if (m_pls[i].getIndex() == index) {
 			m_pls.erase(m_pls.begin()+i);
-			std::cout << "removed lightIndex " << i<<std::endl;
 		}
 	}
 	//updateBufferData();

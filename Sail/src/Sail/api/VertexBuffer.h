@@ -11,11 +11,11 @@ public:
 
 	virtual void bind(void* cmdList = nullptr) const = 0;
 	virtual void update(Mesh::Data& data) = 0;
+	unsigned int getVertexDataStride() const;
 
 protected:
 	void* getVertexData(Mesh::Data& modelData);
 	unsigned int getVertexDataSize() const;
-	unsigned int getVertexDataStride() const;
 protected:
 	const InputLayout& inputLayout;
 
