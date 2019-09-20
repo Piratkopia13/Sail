@@ -45,7 +45,7 @@ void AnimationSystem::update(float dt) {
 			const unsigned int frame = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
 			const unsigned int transformSize = animationC->currentAnimation->getAnimationTransformSize(frame);
 			const glm::mat4* transforms = animationC->currentAnimation->getAnimationTransform(frame);
-			Logger::Log(std::to_string(frame));
+			//Logger::Log(std::to_string(frame));
 
 
 			AnimationStack::VertConnection* connections = animationC->getAnimationStack()->getConnections();
@@ -68,18 +68,14 @@ void AnimationSystem::update(float dt) {
 					animationC->data.tangents[connectionIndex].vec = glm::vec3( mat * glm::vec4(tangent[connectionIndex].vec,1));
 					animationC->data.bitangents[connectionIndex].vec = glm::vec3( mat * glm::vec4(bitangent[connectionIndex].vec,1));
 					animationC->data.texCoords[connectionIndex].vec = uv[connectionIndex].vec;
-					#ifdef _DEBUG
-						if (connectionIndex == 0) {
-						const int x = animationC->data.positions[connectionIndex].vec.x;
-						const int y = animationC->data.positions[connectionIndex].vec.y;
-						const int z = animationC->data.positions[connectionIndex].vec.z;
-						Logger::Log("   (" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(z)+")");
-
-
-
-
-					}
-					#endif
+					//#ifdef _DEBUG
+					//	if (connectionIndex == 0) {
+					//	const int x = animationC->data.positions[connectionIndex].vec.x;
+					//	const int y = animationC->data.positions[connectionIndex].vec.y;
+					//	const int z = animationC->data.positions[connectionIndex].vec.z;
+					//	Logger::Log("   (" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(z)+")");
+					//}
+					//#endif
 
 				}
 
