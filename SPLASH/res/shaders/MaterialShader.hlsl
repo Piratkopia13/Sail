@@ -14,30 +14,26 @@ struct PSIn {
 	float2 texCoords : TEXCOORD0;
 	float clip : SV_ClipDistance0;
 	float3 toCam : TOCAM;
-	float3 fragPos : FRAGPOS;
 	//Material material : MAT;
-	// LightList lights : LIGHTS;
+	LightList lights : LIGHTS;
 };
 
 cbuffer VSPSSystemCBuffer : register(b0) {
 	matrix sys_mWorld;
     matrix sys_mVP;
     Material sys_material;
-    //float padding;
     float4 sys_clippingPlane;
     float3 sys_cameraPos;
 }
 
 struct PointLightInput {
 	float3 color;
-	float padding;
 	float3 position;
     float attConstant;
     float attLinear;
     float attQuadratic;
-	float padding2[2];
 };
-cbuffer PSLights : register(b1) {
+cbuffer VSLights : register(b1) {
 	DirectionalLight dirLight;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 }
@@ -46,15 +42,19 @@ PSIn VSMain(VSIn input) {
 	PSIn output;
 
 	// Copy over the directional light
-	// output.lights.dirLight = dirLight;
+	output.lights.dirLight = dirLight;
 	// Copy over point lights
-    // for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-
-    // }
+    for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+        output.lights.pointLights[i].attConstant = pointLights[i].attConstant;
+        // output.lights.pointLights[i].attLinear = 0.1f;
+        // output.lights.pointLights[i].attQuadratic = 0.02f;
+        output.lights.pointLights[i].attLinear = pointLights[i].attLinear;
+        output.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
+        output.lights.pointLights[i].color = pointLights[i].color;
+    }
 
 	input.position.w = 1.f;
 	output.position = mul(sys_mWorld, input.position);
-	output.fragPos = input.position;
 
 	// Calculate the distance from the vertex to the clipping plane
 	// This needs to be done with world coordinates
@@ -63,22 +63,12 @@ PSIn VSMain(VSIn input) {
 	// World space vector pointing from the vertex position to the camera
     output.toCam = sys_cameraPos - output.position.xyz;
 
-    // for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-	// 	output.lights.pointLights[i].attConstant = pointLights[i].attConstant;
-    //     output.lights.pointLights[i].attLinear = 0.1f;
-    //     output.lights.pointLights[i].attQuadratic = 0.02f;
-    //     // output.lights.pointLights[i].attLinear = pointLights[i].attLinear;
-    //     // output.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
-    //     output.lights.pointLights[i].color = pointLights[i].color;
-	// 	output.lights.pointLights[i].padding[0] = 0.0f;
-	// 	output.lights.pointLights[i].padding[1] = 0.0f;
-    //     // output.lights.pointLights[i].color = float3(0.0f, 0.0f, 0.0f);
-
-	// 	// World space vector poiting from the vertex position to the point light
-    //     output.lights.pointLights[i].fragToLight = pointLights[i].position - output.position.xyz;
-	// 	// The world space distance from the vertex to the light
-    //     output.lights.pointLights[i].distanceToLight = length(output.lights.pointLights[i].fragToLight);
-    // }
+    for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+		// World space vector poiting from the vertex position to the point light
+        output.lights.pointLights[i].fragToLight = pointLights[i].position - output.position.xyz;
+		// The world space distance from the vertex to the light
+        output.lights.pointLights[i].distanceToLight = length(output.lights.pointLights[i].fragToLight);
+    }
 
 
     output.position = mul(sys_mVP, output.position);
@@ -93,9 +83,9 @@ PSIn VSMain(VSIn input) {
 		TBN = transpose(TBN);
 
 		output.toCam = mul(output.toCam, TBN);
-		// output.lights.dirLight.direction = mul(output.lights.dirLight.direction, TBN);
-        // for (int i = 0; i < NUM_POINT_LIGHTS; i++)
-            // output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
+		output.lights.dirLight.direction = mul(output.lights.dirLight.direction, TBN);
+        for (int i = 0; i < NUM_POINT_LIGHTS; i++)
+            output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
     }
 
 	output.normal = mul((float3x3) sys_mWorld, input.normal);
@@ -117,25 +107,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	PhongInput phongInput;
 	phongInput.mat = sys_material;
 	phongInput.fragToCam = input.toCam;
-	// phongInput.lights = input.lights;
-
-	phongInput.lights.dirLight = dirLight;
-	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-		phongInput.lights.pointLights[i].attConstant = pointLights[i].attConstant;
-        phongInput.lights.pointLights[i].attLinear = 0.1f;
-        phongInput.lights.pointLights[i].attQuadratic = 0.02f;
-        // phongInput.lights.pointLights[i].attLinear = pointLights[i].attLinear;
-        // phongInput.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
-        phongInput.lights.pointLights[i].color = pointLights[i].color;
-		phongInput.lights.pointLights[i].padding[0] = 0.0f;
-		phongInput.lights.pointLights[i].padding[1] = 0.0f;
-        // phongInput.lights.pointLights[i].color = float3(0.0f, 0.0f, 0.0f);
-
-		// World space vector poiting from the vertex position to the point light
-        phongInput.lights.pointLights[i].fragToLight = pointLights[i].position - input.fragPos;
-		// The world space distance from the vertex to the light
-        phongInput.lights.pointLights[i].distanceToLight = length(phongInput.lights.pointLights[i].fragToLight);
-    }
+	phongInput.lights = input.lights;
 
 	phongInput.diffuseColor = sys_material.modelColor;
 	if (sys_material.hasDiffuseTexture)

@@ -7,7 +7,6 @@ struct PointLight {
     float attConstant;
     float attLinear;
     float attQuadratic;
-	float padding[2];
 };
 
 struct DirectionalLight {
@@ -43,7 +42,7 @@ struct PhongInput {
 
 float4 phongShade(PhongInput input) {
 
-	float3 ambientCoefficient = float3(0.3f, 0.3f, 0.3f);
+	float3 ambientCoefficient = float3(0.01f, 0.01f, 0.01f);
 
 	float3 totalColor = float3(0.f, 0.f, 0.f);
 
@@ -75,7 +74,7 @@ float4 phongShade(PhongInput input) {
 
 		diffuseCoefficient = saturate(dot(input.normal, p.fragToLight));
 
-		specularCoefficient = float3(0.f, 0.f, 0.f + p.padding[0] + p.padding[1]);
+		specularCoefficient = float3(0.f, 0.f, 0.f);
 		if (diffuseCoefficient > 0.f) {
 
 			float3 r = reflect(-p.fragToLight, input.normal);
@@ -84,7 +83,7 @@ float4 phongShade(PhongInput input) {
 
 		}
 
-		// float attenuation = 1.f / (1.f + p.attenuation * pow(p.distanceToLight, 2.f));
+		//float attenuation = 1.f / (1.f + p.attenuation * pow(p.distanceToLight, 2.f));
         float attenuation = 1.f / (p.attConstant + p.attLinear * p.distanceToLight + p.attQuadratic * pow(p.distanceToLight, 2.f));
 
 		totalColor += (input.mat.kd * diffuseCoefficient + input.mat.ks * specularCoefficient) * input.diffuseColor.rgb * p.color * attenuation;
