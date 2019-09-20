@@ -29,8 +29,8 @@ bool Network::initialize()
 		return false;
 	}
 
-	m_awaitingMessages = new NetworkEventData[MAX_AWAITING_PACKAGES];
-	m_awaitingEvents = new NetworkEvent[MAX_AWAITING_PACKAGES];
+	m_awaitingMessages = SAIL_NEW NetworkEventData[MAX_AWAITING_PACKAGES];
+	m_awaitingEvents = SAIL_NEW NetworkEvent[MAX_AWAITING_PACKAGES];
 
 	m_initializedStatus = INITIALIZED_STATUS::INITIALIZED;
 	m_shutdown = false;
@@ -113,7 +113,7 @@ bool Network::host(unsigned short port, USHORT hostFlags)
 	m_initializedStatus = INITIALIZED_STATUS::IS_SERVER;
 
 	//Start a new thread that will wait for new connections
-	m_clientAcceptThread = new std::thread(&Network::waitForNewConnections, this);
+	m_clientAcceptThread = SAIL_NEW std::thread(&Network::waitForNewConnections, this);
 	if (m_hostFlags & (USHORT)HostFlags::ENABLE_LAN_SEARCH_VISIBILITY && !startUDPSocket(m_udp_localbroadcastport)) {
 			return false;
 	}
@@ -158,13 +158,13 @@ bool Network::join(const char* IP_adress, unsigned short hostport)
 		return false;
 	}
 
-	Connection* conn = new Connection;
+	Connection* conn = SAIL_NEW Connection;
 	conn->isConnected = true;
 	conn->socket = m_soc;
 	conn->ip = "";
 	conn->port = ntohs(m_myAddr.sin_port);
 	conn->id = 0;
-	conn->thread = new std::thread(&Network::listen, this, conn); //Create new listening thread listening for the host
+	conn->thread = SAIL_NEW std::thread(&Network::listen, this, conn); //Create new listening thread listening for the host
 	m_connections[conn->id] = conn;
 
 	m_initializedStatus = INITIALIZED_STATUS::IS_CLIENT;
@@ -320,7 +320,7 @@ bool Network::startUDPSocket(unsigned short port)
 		return false;
 	}
 
-	m_UDPListener = new std::thread(&Network::listenForUDP, this);
+	m_UDPListener = SAIL_NEW std::thread(&Network::listenForUDP, this);
 
 	return true;
 }
@@ -530,7 +530,7 @@ void Network::waitForNewConnections()
 		inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
 
 		if (true) {
-			Connection* conn = new Connection;
+			Connection* conn = SAIL_NEW Connection;
 			conn->isConnected = true;
 			conn->socket = clientSocket;
 			conn->ip = host;
@@ -544,7 +544,7 @@ void Network::waitForNewConnections()
 				}
 			} while (!ok);
 
-			conn->thread = new std::thread(&Network::listen, this, conn); //Create new listening thread for the new connection
+			conn->thread = SAIL_NEW std::thread(&Network::listen, this, conn); //Create new listening thread for the new connection
 			m_connections[conn->id] = conn;
 		}
 	}

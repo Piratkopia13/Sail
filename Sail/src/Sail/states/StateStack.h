@@ -33,7 +33,7 @@ class StateStack {
 		// Updates the states in the stack
 		virtual void update(float dt);
 		// Renders the states in the stack
-		virtual void render(float dt);
+		virtual void render(float dt, float alpha);
 
 		// Pushes a new state the next update
 		void pushState(States::ID stateID);
@@ -79,7 +79,7 @@ template <typename T>
 void StateStack::registerState(States::ID stateID) {
 	// Store a function to initialize a new pointer to the state
 	m_factories[stateID] = [this]() {
-		return State::Ptr(new T(*this));
+		return State::Ptr(SAIL_NEW T(*this));
 	};
 
 }

@@ -3,6 +3,7 @@
 #include <Map>
 #include <memory>
 #include "TextureData.h"
+#include "AudioData.h"
 #include "Sail/api/Texture.h"
 #include "ParsedScene.h"
 
@@ -15,6 +16,11 @@ class ResourceManager {
 public:
 	ResourceManager();
 	~ResourceManager();
+
+	// AudioData
+	void loadAudioData(const std::string& filename, IXAudio2* xAudio2);
+	AudioData& getAudioData(const std::string& filename);
+	bool hasAudioData(const std::string& filename);
 
 	// TextureData
 	void loadTextureData(const std::string& filename);
@@ -69,10 +75,13 @@ public:
 	//SoundManager* getSoundManager();
 
 private:
+	// Audio files/data mapped to their filenames
+	std::map<std::string, std::unique_ptr<AudioData>> m_audioDataAll;
 	// Textures mapped to their filenames
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
-	// Models mapped to their filenames
+	// Models mapped to their filenames,
+	// NOTE: Deleting during runtime will cause issues with the rendering
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;

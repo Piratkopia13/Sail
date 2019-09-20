@@ -6,12 +6,40 @@
 #include "../utils/Utils.h"
 #include "Sail/Application.h"
 #include "Sail/api/Renderer.h"
+#include "Sail/entities/ECS.h"
+#include "Sail/graphics/geometry/PerUpdateRenderObject.h"
 
+
+// STATIC FUNCTIONS
+std::atomic_uint Scene::s_frameIndex = 0;
+UINT Scene::s_updateIndex = 0;
+UINT Scene::s_renderIndex = 0;
+
+// To be done at the end of each CPU update and nowhere else	
+void Scene::IncrementCurrentUpdateIndex() {
+	s_frameIndex++;
+	s_updateIndex = s_frameIndex.load() % SNAPSHOT_BUFFER_SIZE;
+}
+
+// To be done just before render is called
+void Scene::UpdateCurrentRenderIndex() {
+	s_renderIndex = prevInd(s_frameIndex.load());
+}
+
+//#ifdef _DEBUG
+UINT Scene::GetUpdateIndex() { return s_updateIndex; }
+UINT Scene::GetRenderIndex() { return s_renderIndex; }
+//#endif
+
+
+// NON-STATIC FUNCTIONS
 
 Scene::Scene() 
-	//: m_postProcessPipeline(m_renderer)
+	: m_doPostProcessing(false)
 {
-	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
+	m_currentRenderer = &m_rendererRaster;
 
 	// TODO: the following method ish
 	//m_postProcessPipeline.add<FXAAStage>();
@@ -26,6 +54,7 @@ Scene::Scene()
 
 	//m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(SAIL_NEW DX11RenderableTexture(1U, width, height, false));
 
+	m_showBoundingBoxes = false;
 }
 
 Scene::~Scene() {
@@ -33,70 +62,144 @@ Scene::~Scene() {
 }
 
 void Scene::addEntity(Entity::SPtr entity) {
-	m_entities.push_back(entity);
+	m_gameObjectEntities.push_back(entity);
+}
+
+void Scene::addStaticEntity(Entity::SPtr staticEntity) {
+	m_staticObjectEntities.push_back(staticEntity);
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
-	m_renderer->setLightSetup(lights);
+	(*m_currentRenderer)->setLightSetup(lights);
 }
 
-void Scene::draw(Camera& camera) {
 
-	m_renderer->begin(&camera);
+// NEEDS TO RUN BEFORE EACH UPDATE
+// Copies the game state from the previous tick 
+void Scene::prepareUpdate() {
+	for (auto e : m_gameObjectEntities) {
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+		if (transform) { transform->prepareUpdate(); }
+	}
+}
 
-	for (Entity::SPtr& entity : m_entities) {
+// creates a vector of render objects corresponding to the current state of the game objects.
+// Should be done at the end of each update tick.
+void Scene::prepareRenderObjects() {
+	const UINT ind = Scene::GetUpdateIndex();
+	m_perFrameLocks[ind].lock();
+	m_dynamicRenderObjects[ind].clear();
+
+	size_t test = m_dynamicRenderObjects[ind].size();
+
+	// Push dynamic objects' transform snapshots and model pointers to a transient vector
+	for (auto gameObject : m_gameObjectEntities) {
+		TransformComponent* transform = gameObject->getComponent<TransformComponent>();
+		ModelComponent* model = gameObject->getComponent<ModelComponent>();
+		if (transform && model) {
+			m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(transform, model));
+		}
+
+		if (m_showBoundingBoxes) {
+			BoundingBoxComponent* boundingBox = gameObject->getComponent<BoundingBoxComponent>();
+			if (boundingBox) {
+				m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), boundingBox->getWireframeModel()));
+			}
+		}
+	}
+	m_perFrameLocks[ind].unlock();
+}
+
+void Scene::showBoundingBoxes(bool val) {
+	m_showBoundingBoxes = val;
+}
+
+// alpha is a the interpolation value (range [0,1]) between the last two snapshots
+void Scene::draw(Camera& camera, const float alpha) {
+	(*m_currentRenderer)->begin(&camera);
+
+	// Render static objects (essentially the map)
+	// Matrices aren't changed between frames
+	for (Entity::SPtr entity : m_staticObjectEntities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
-		if (model) {
-			TransformComponent* transform = entity->getComponent<TransformComponent>();
-			if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
+		StaticMatrixComponent* matrix = entity->getComponent<StaticMatrixComponent>();
 
-			m_renderer->submit(model->getModel(), transform->getMatrix());
+		if (model && matrix) {
+			(*m_currentRenderer)->submit(model->getModel(), matrix->getMatrix());
+		}
+
+		if (m_showBoundingBoxes) {
+			BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
+			if (boundingBox) {
+				(*m_currentRenderer)->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
+			}
 		}
 	}
 
-	m_renderer->end();
-	m_renderer->present();
-	//m_renderer->present(m_deferredOutputTex.get());
+	// Render dynamic objects (objects that might move or be added/removed)
+	// Matrices are created from interpolated data each frame
+	const UINT ind = Scene::GetRenderIndex();
+	m_perFrameLocks[ind].lock();
+	for (PerUpdateRenderObject& obj : m_dynamicRenderObjects[ind]) {
+		(*m_currentRenderer)->submit(obj.getModel(), obj.getMatrix(alpha));
+	}
+	m_perFrameLocks[ind].unlock();
 
-	//m_postProcessPipeline.run(*m_deferredOutputTex, nullptr);
+
+	(*m_currentRenderer)->end();
+	(*m_currentRenderer)->present((m_doPostProcessing) ? &m_postProcessPipeline : nullptr);
 
 	// Draw text last
 	// TODO: sort entity list instead of iterating entire list twice
-	for (Entity::SPtr& entity : m_entities) {
+	/*for (Entity::SPtr& entity : m_entities) {
 		TextComponent* text = entity->getComponent<TextComponent>();
 		if (text) {
 			text->draw();
 		}
-	}
+	}*/
 }
 
 //TODO add failsafe
-Entity::SPtr Scene::getEntityByName(std::string name) {
-	for (int i = 0; i < m_entities.size(); i++) {
-		if (m_entities[i]->getName() == name) {
-			return m_entities[i];
+Entity::SPtr Scene::getGameObjectEntityByName(std::string name) {
+	for (auto e : m_gameObjectEntities) {
+		if (e->getName() == name) {
+			return e;
 		}
 	}
 	return NULL;
 }
-const std::vector<Entity::SPtr>& Scene::getEntities()const {
-	return m_entities;
+
+const std::vector<Entity::SPtr>& Scene::getGameObjectEntities() const {
+	return m_gameObjectEntities;
 }
-void Scene::draw(void)
-{
-	m_renderer->begin(nullptr);
-	m_renderer->end();
-	m_renderer->present();
+
+void Scene::draw(void) {
+	(*m_currentRenderer)->begin(nullptr);
+	(*m_currentRenderer)->end();
+	(*m_currentRenderer)->present();
 }
 
 bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
 	// Forward events
-	m_renderer->onEvent(event);
+	m_rendererRaster->onEvent(event);
+	m_rendererRaytrace->onEvent(event);
 	//m_postProcessPipeline.onEvent(event);
 
 	return true;
+}
+
+void Scene::changeRenderer(unsigned int index) {
+	if (index == 0) {
+		m_currentRenderer = &m_rendererRaster;
+	} else {
+		m_currentRenderer = &m_rendererRaytrace;
+	}
+}
+
+bool& Scene::getDoProcessing() {
+	return m_doPostProcessing;
 }
 
 bool Scene::onResize(WindowResizeEvent & event) {
