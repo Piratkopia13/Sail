@@ -7,6 +7,8 @@ public:
 	UpdateBoundingBoxSystem();
 	~UpdateBoundingBoxSystem();
 
+	void addEntity(Entity* entity);
+
 	void update(float dt) override;
 
 private:

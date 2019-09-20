@@ -40,6 +40,7 @@ project "SPLASH"
 		"%{prj.name}/SPLASH.rc",    -- For icon
 		"%{prj.name}/resource.h", -- For icon
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
@@ -99,6 +100,7 @@ project "Sail"
 
 	files { 
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
@@ -113,14 +115,12 @@ project "Sail"
 		"**/Skybox.*",
 		"**/ParticleEmitter.*",
 		"%{prj.name}/src/Sail/graphics/shadows/**",
-		"%{prj.name}/src/Sail/graphics/shader/postprocess/**",
 		"%{prj.name}/src/Sail/graphics/shader/instanced/**",
 		"%{prj.name}/src/Sail/graphics/shader/deferred/**",
 		"%{prj.name}/src/Sail/graphics/shader/component/ConstantBuffer**",
 		"%{prj.name}/src/Sail/graphics/shader/component/Sampler**",
 		"%{prj.name}/src/Sail/graphics/shader/basic/**",
 		"%{prj.name}/src/Sail/graphics/renderer/**",
-		"%{prj.name}/src/Sail/graphics/postprocessing/**",
 		"**/Quadtree.*"
 	}
 
@@ -203,13 +203,35 @@ project "Physics"
 
 	includedirs {
 		"libraries",
-		"Sail/src"
+		"Sail/src",
+		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.ImGui}"
 	}
 
 	links {
-		"Sail"
+		"Sail",
+		"libfbxsdk",
+		"GLFW",
+		"ImGui"
 	}
-	
+	filter { "action:vs2017 or vs2019", "platforms:*64" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+		}
+	filter { "action:vs2017 or vs2019", "platforms:*86" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+		}
+
+	filter "system:windows"
+		systemversion "latest"
+
+		defines {
+			"FBXSDK_SHARED",
+			"GLFW_INCLUDE_NONE"
+		}
+		
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		symbols "On"

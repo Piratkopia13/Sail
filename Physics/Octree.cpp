@@ -16,11 +16,11 @@ Octree::Octree(Scene* scene, Model* boundingBoxModel) {
 	m_minimumNodeHalfSize = 10.0f;
 
 	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+	m_scene->addEntity(m_baseNode.bbEntity);
 	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* tempBoundingBox = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	tempBoundingBox->setPosition(glm::vec3(0.0f));
 	tempBoundingBox->setHalfSize(glm::vec3(50.0f, 50.0f, 50.0f));
-	m_scene->addEntity(m_baseNode.bbEntity);
 	m_baseNode.parentNode = nullptr;
 	m_baseNode.nrOfEntities = 0;
 }
@@ -39,11 +39,11 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 	Node newBaseNode;
 	const BoundingBox* baseNodeBB = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+	m_scene->addEntity(newBaseNode.bbEntity);
 	newBaseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* newBaseNodeBoundingBox = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNodeBoundingBox->setPosition(baseNodeBB->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(x * baseNodeBB->getHalfSize().x * 2.0f, y * baseNodeBB->getHalfSize().y * 2.0f, z * baseNodeBB->getHalfSize().z * 2.0f));
 	newBaseNodeBoundingBox->setHalfSize(baseNodeBB->getHalfSize() * 2.0f);
-	m_scene->addEntity(newBaseNode.bbEntity);
 	newBaseNode.nrOfEntities = 0;
 	newBaseNode.parentNode = nullptr;
 
@@ -56,11 +56,11 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 				}
 				else {
 					tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+					m_scene->addEntity(tempChildNode.bbEntity);
 					tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 					BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 					tempChildBoundingBox->setHalfSize(baseNodeBB->getHalfSize());
 					tempChildBoundingBox->setPosition(newBaseNodeBoundingBox->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(tempChildBoundingBox->getHalfSize().x * 2.0f * i, tempChildBoundingBox->getHalfSize().y * 2.0f * j, tempChildBoundingBox->getHalfSize().z * 2.0f * k));
-					m_scene->addEntity(tempChildNode.bbEntity);
 					tempChildNode.nrOfEntities = 0;
 				}
 				tempChildNode.parentNode = &newBaseNode;
@@ -73,7 +73,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 }
 
 
-glm::vec3 Octree::findCornerOutside(Entity::SPtr entity, Node* testNode) {
+glm::vec3 Octree::findCornerOutside(Entity* entity, Node* testNode) {
 	//Find if any corner of a entity's bounding box is outside of node. Returns a vector towards the outside corner if one is found. Otherwise a 0.0f vec is returned.
 	glm::vec3 directionVec(0.0f, 0.0f, 0.0f);
 
@@ -94,7 +94,7 @@ glm::vec3 Octree::findCornerOutside(Entity::SPtr entity, Node* testNode) {
 	return directionVec;
 }
 
-bool Octree::addEntityRec(Entity::SPtr newEntity, Node* currentNode) {
+bool Octree::addEntityRec(Entity* newEntity, Node* currentNode) {
 	bool entityAdded = false;
 
 	glm::vec3 isInsideVec = findCornerOutside(newEntity, currentNode);
@@ -109,7 +109,7 @@ bool Octree::addEntityRec(Entity::SPtr newEntity, Node* currentNode) {
 
 				if (entityAdded) {
 					//Mesh was added to child node. Break loop. No need to try the rest of the children
-					i = (unsigned int) currentNode->childNodes.size();
+					i = (unsigned int)currentNode->childNodes.size();
 				}
 			}
 
@@ -135,11 +135,11 @@ bool Octree::addEntityRec(Entity::SPtr newEntity, Node* currentNode) {
 							const BoundingBox* currentNodeBB = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							Node tempChildNode;
 							tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+							m_scene->addEntity(tempChildNode.bbEntity);
 							tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 							BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							tempChildBoundingBox->setHalfSize(currentNodeBB->getHalfSize() / 2.0f);
 							tempChildBoundingBox->setPosition(currentNodeBB->getPosition() - tempChildBoundingBox->getHalfSize() + glm::vec3(tempChildBoundingBox->getHalfSize().x * 2.0f * i, tempChildBoundingBox->getHalfSize().y * 2.0f * j, tempChildBoundingBox->getHalfSize().z * 2.0f * k));
-							m_scene->addEntity(tempChildNode.bbEntity);
 							tempChildNode.nrOfEntities = 0;
 							tempChildNode.parentNode = currentNode;
 							currentNode->childNodes.push_back(tempChildNode);
@@ -166,7 +166,7 @@ bool Octree::addEntityRec(Entity::SPtr newEntity, Node* currentNode) {
 	return entityAdded;
 }
 
-bool Octree::removeEntityRec(Entity::SPtr entityToRemove, Node* currentNode) {
+bool Octree::removeEntityRec(Entity* entityToRemove, Node* currentNode) {
 	bool entityRemoved = false;
 
 	//Look for mesh in this node
@@ -186,7 +186,7 @@ bool Octree::removeEntityRec(Entity::SPtr entityToRemove, Node* currentNode) {
 			if (removeEntityRec(entityToRemove, &currentNode->childNodes[i])) {
 				//Mesh was removed by one of the children, break the loop
 				entityRemoved = true;
-				i = (unsigned int) currentNode->childNodes.size();
+				i = (unsigned int)currentNode->childNodes.size();
 			}
 		}
 	}
@@ -194,11 +194,11 @@ bool Octree::removeEntityRec(Entity::SPtr entityToRemove, Node* currentNode) {
 	return entityRemoved;
 }
 
-void Octree::updateRec(Node* currentNode, std::vector<Entity::SPtr>* entitiesToReAdd) {
+void Octree::updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd) {
 	for (int i = 0; i < currentNode->nrOfEntities; i++) {
 		if (currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->getChange()) { //Entity has changed
 			//Re-add the entity to get it in the right node
-			Entity::SPtr tempEntity = currentNode->entities[i];
+			Entity* tempEntity = currentNode->entities[i];
 			//First remove the entity from this node to avoid duplicates
 			bool removed = removeEntityRec(currentNode->entities[i], currentNode);
 
@@ -215,13 +215,13 @@ void Octree::updateRec(Node* currentNode, std::vector<Entity::SPtr>* entitiesToR
 	}
 }
 
-void Octree::getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, std::vector<CollisionInfo>* outCollisionData) {
+void Octree::getCollisionData(Entity* entity, Entity* meshEntity, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, std::vector<CollisionInfo>* outCollisionData) {
 	if (Intersection::aabbWithTriangle(*entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), v0, v1, v2)) {
 		CollisionInfo tempInfo;
 		//Calculate normal for triangle
 		glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
-		tempInfo.normal = triNormal; 
+		tempInfo.normal = triNormal;
 
 		tempInfo.positions[0] = v0;
 		tempInfo.positions[1] = v1;
@@ -235,39 +235,59 @@ void Octree::getCollisionData(Entity::SPtr entity, Entity::SPtr meshEntity, cons
 	}
 }
 
-void Octree::getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vector<CollisionInfo>* outCollisionData) {
+void Octree::getCollisionsRec(Entity* entity, Node* currentNode, std::vector<CollisionInfo>* outCollisionData) {
 	if (Intersection::aabbWithAabb(*entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Bounding box collides with the current node
 		//Check against entities
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
-			if (Intersection::aabbWithAabb(*entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Bounding box collides with entity bounding box
-				//Get collision
-				ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
-				TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
-				if (model) {
-					//Entity has a model. Check collision with meshes
-					for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
-						const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
-						if (meshData.indices) { //Has indices
-							for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
-								glm::vec3 v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
-								glm::vec3 v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
-								glm::vec3 v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
-								getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
+			if (entity != currentNode->entities[i]) { //Don't let an entity collide with itself
+				if (Intersection::aabbWithAabb(*entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Bounding box collides with entity bounding box
+					//Get collision
+					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
+					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
+					StaticMatrixComponent *staticMatrix = currentNode->entities[i]->getComponent<StaticMatrixComponent>();
+
+					if (model) {
+						//Entity has a model. Check collision with meshes
+						for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
+							const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
+							if (meshData.indices) { //Has indices
+								for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
+									glm::vec3 v0, v1, v2;
+									if (transform) {
+										v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
+										v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
+										v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+									} 
+									else {
+										v0 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
+										v1 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
+										v2 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+									}
+									getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
+								}
 							}
-						}
-						else { //Does not have indices
-							for (unsigned int k = 0; k < meshData.numVertices; k += 3) {
-								glm::vec3 v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
-								glm::vec3 v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
-								glm::vec3 v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
-								getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
+							else { //Does not have indices
+								for (unsigned int k = 0; k < meshData.numVertices; k += 3) {
+									glm::vec3 v0, v1, v2;
+									if (transform) {
+										v0 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
+										v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
+										v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+									}
+									else {
+										v0 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
+										v1 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
+										v2 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+									}
+									getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
+								}
 							}
 						}
 					}
-				}
-				else { //No model
-					//Collided with bounding box
-					//Logger::Log("Collision detected with " + currentNode->entities[i]->getName() + ", no model was found so no collision information was stored");
+					else { //No model
+						//Collided with bounding box
+						Logger::Log("Collision detected with " + currentNode->entities[i]->getName() + ", no model was found so no collision information was stored");
+					}
 				}
 			}
 		}
@@ -277,43 +297,6 @@ void Octree::getCollisionsRec(Entity::SPtr entity, Node* currentNode, std::vecto
 			getCollisionsRec(entity, &currentNode->childNodes[i], outCollisionData);
 		}
 	}
-}
-
-float Octree::getRayIntersectionRec(glm::vec3 rayOrigin, glm::vec3 rayDirection, Node* currentNode) {
-	float returnValue = -1.0f;
-
-	/*if (Intersection::rayWithAabb(rayOrigin, rayDirection, currentNode->bb) >= 0.0f) { //Ray intersects this node
-		//Check against meshes
-		for (int i = 0; i < currentNode->nrOfMeshes; i++) {
-			if (Intersection::rayWithAabb(rayOrigin, rayDirection, currentNode->entities[i])) {
-				//Test for intersection
-				for (int j = 0; j < currentNode->entities[i]->getNumberOfVertices(); j += 3) {
-					float tempIntersection;
-					glm::vec3 triangle[3] = { currentNode->entities[i]->getVertexPosition(j), currentNode->entities[i]->getVertexPosition(j + 1), currentNode->entities[i]->getVertexPosition(j + 2) };
-					tempIntersection = Intersection::rayWithTri(rayOrigin, rayDirection, triangle);
-
-					//Save if closer than previous hit
-					if (glm::length(tempIntersection) < returnValue || (returnValue < 0.0f && tempIntersection >= 0.0f)) {
-						returnValue = tempIntersection;
-					}
-				}
-			}
-		}
-
-		//Check for children
-		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-			float tempIntersection = getRayIntersectionRec(rayOrigin, rayDirection, &currentNode->childNodes[i]);
-
-			//Save if closer than previous hit
-			if (glm::length(tempIntersection) < returnValue || (returnValue < 0.0f && tempIntersection >= 0.0f)) {
-				returnValue = tempIntersection;
-			}
-		}
-	}*/
-
-	assert(false); //Not implemented yet
-
-	return returnValue;
 }
 
 int Octree::pruneTreeRec(Node* currentNode) {
@@ -339,45 +322,40 @@ int Octree::pruneTreeRec(Node* currentNode) {
 	return returnValue;
 }
 
-void Octree::addEntity(Entity::SPtr newEntity) {
-	if (newEntity->hasComponent<BoundingBoxComponent>()) {
-		//See if the base node needs to be bigger
-		glm::vec3 directionVec = findCornerOutside(newEntity, &m_baseNode);
+void Octree::addEntity(Entity* newEntity) {
+	//See if the base node needs to be bigger
+	glm::vec3 directionVec = findCornerOutside(newEntity, &m_baseNode);
 
-		if (glm::length(directionVec) != 0.0f) {
-			//Entity is outside base node
-			//Create bigger base node
-			expandBaseNode(directionVec);
-			//Recall this function to try to add the mesh again
-			addEntity(newEntity);
-		}
-		else {
-			addEntityRec(newEntity, &m_baseNode);
-		}
+	if (glm::length(directionVec) != 0.0f) {
+		//Entity is outside base node
+		//Create bigger base node
+		expandBaseNode(directionVec);
+		//Recall this function to try to add the mesh again
+		addEntity(newEntity);
 	}
 	else {
-		Logger::Warning("Entity does not have a BoundingBoxComponent so it was not added to the octree");
+		addEntityRec(newEntity, &m_baseNode);
 	}
 }
 
-void Octree::addEntities(std::vector<Entity::SPtr>* newEntities) {
+void Octree::addEntities(std::vector<Entity*>* newEntities) {
 	for (unsigned int i = 0; i < newEntities->size(); i++) {
 		addEntity(newEntities->at(i));
 	}
 }
 
-void Octree::removeEntity(Entity::SPtr entityToRemove) {
+void Octree::removeEntity(Entity* entityToRemove) {
 	removeEntityRec(entityToRemove, &m_baseNode);
 }
 
-void Octree::removeEntities(std::vector<Entity::SPtr> entitiesToRemove) {
+void Octree::removeEntities(std::vector<Entity*> entitiesToRemove) {
 	for (unsigned int i = 0; i < entitiesToRemove.size(); i++) {
 		removeEntity(entitiesToRemove[i]);
 	}
 }
 
 void Octree::update() {
-	std::vector<Entity::SPtr> entitiesToReAdd;
+	std::vector<Entity*> entitiesToReAdd;
 	updateRec(&m_baseNode, &entitiesToReAdd);
 
 	addEntities(&entitiesToReAdd);
@@ -387,10 +365,6 @@ void Octree::update() {
 	pruneTreeRec(&m_baseNode);
 }
 
-void Octree::getCollisions(Entity::SPtr entity, std::vector<CollisionInfo>* outCollisionData) {
+void Octree::getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollisionData) {
 	getCollisionsRec(entity, &m_baseNode, outCollisionData);
-}
-
-float Octree::getRayIntersection(glm::vec3 rayOrigin, glm::vec3 rayDirection) {
-	return getRayIntersectionRec(rayOrigin, rayDirection, &m_baseNode);
 }
