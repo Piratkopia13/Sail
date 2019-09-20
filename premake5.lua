@@ -21,13 +21,11 @@ IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["ImGui"] = "libraries/imgui"
 IncludeDir["MiniMM"] = "libraries/MemoryManager"
-IncludeDir["MiniRM"] = "libraries/minirm"
 
 group "Libraries"
 include "libraries/glfw"
 include "libraries/imgui"
 include "libraries/MemoryManager"
-include "libraries/minirm"
 
 group ""
 project "SPLASH"
@@ -134,8 +132,7 @@ project "Sail"
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.MiniMM}",
-		"%{IncludeDir.MiniRM}"
+		"%{IncludeDir.MiniMM}"
 	}
 
 	links {
