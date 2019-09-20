@@ -91,6 +91,7 @@ GameState::GameState(StateStack& stack)
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -25.0f, 0.0f);
 
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -197,6 +198,7 @@ GameState::GameState(StateStack& stack)
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	m_playerController.getEntity()->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(2.0f, 4.0f, 2.0f));
 	m_scene.addEntity(m_playerController.getEntity());
 
 	// Temporary projectile model for the player's gun
