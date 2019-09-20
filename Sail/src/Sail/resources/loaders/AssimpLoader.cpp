@@ -12,7 +12,7 @@ AssimpLoader::~AssimpLoader() {
 
 Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 
-	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs  | aiProcess_CalcTangentSpace | aiProcess_MakeLeftHanded);
+	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs  | aiProcess_CalcTangentSpace);
 	if ( errorCheck(scene) ) {
 		return nullptr;
 	}
@@ -45,7 +45,7 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 }
 
 AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
-	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs  | aiProcess_MakeLeftHanded);
+	const aiScene* scene = m_importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs );
 	if ( errorCheck(scene) ) {
 		return nullptr;
 	}
