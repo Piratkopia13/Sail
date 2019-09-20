@@ -41,28 +41,14 @@ LobbyState::~LobbyState() {
 }
 
 bool LobbyState::processInput(float dt) {
-	// Did user want to enter anything in the chatbox?
-	// Did user want to send the message?
-	// ---
-
 	if (m_input->IsMouseButtonPressed(0)) {
 		m_chatFocus = false;
 	}
 
-	// Purely a function for testing
-//	this->doTestStuff();
-
-	// Did user want to change some setting?
-	// ---
-
-	// Did user want to start the game?
-	// ---
-
 	return false;
 }
 
-bool LobbyState::inputToChatLog(MSG& msg)
-{
+bool LobbyState::inputToChatLog(MSG& msg) {
 	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != SAIL_KEY_RETURN) {
 		// Add whichever button that was inputted to the current message
 		// --- OBS : doesn't account for capslock, etc.
