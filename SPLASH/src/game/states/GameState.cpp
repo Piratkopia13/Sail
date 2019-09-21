@@ -7,6 +7,7 @@
 #include "Sail/entities/components/Components.h"
 #include <sstream>
 #include <iomanip>
+#include "Sail/ai/pathfinding/NodeSystem.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -35,8 +36,7 @@ GameState::GameState(StateStack& stack)
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
-		}
-		else {
+		} else {
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
@@ -45,8 +45,7 @@ GameState::GameState(StateStack& stack)
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
-		}
-		else {
+		} else {
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
@@ -91,6 +90,7 @@ GameState::GameState(StateStack& stack)
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -30.0f, 0.0f);
 
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -118,10 +118,10 @@ GameState::GameState(StateStack& stack)
 	
 
 	// Add a directional light
-	glm::vec3 color(0.1f, 0.1f, 0.1f);
+	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
-	//m_lights.setDirectionalLight(DirectionalLight(color, direction));
+	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	// Add four point lights
 	{
 		//PointLight pl;
@@ -198,6 +198,7 @@ GameState::GameState(StateStack& stack)
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	m_playerController.getEntity()->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, 3.0f, 0.7f));
 	m_scene.addEntity(m_playerController.getEntity());
 
 	// Temporary projectile model for the player's gun
@@ -218,114 +219,114 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Barrier1");
+		e = ECS::Instance()->createEntity("Map_Barrier1");
 		e->addComponent<ModelComponent>(barrierModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(-16.15f, 0.f, 3.83f), glm::vec3(0.f, -0.79f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Barrier2");
+		e = ECS::Instance()->createEntity("Map_Barrier2");
 		e->addComponent<ModelComponent>(barrierModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(-4.54f, 0.f, 8.06f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Barrier3");
+		e = ECS::Instance()->createEntity("Map_Barrier3");
 		e->addComponent<ModelComponent>(barrierModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(8.46f, 0.f, 8.06f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Container1");
+		e = ECS::Instance()->createEntity("Map_Container1");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(6.95f, 0.f, 25.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Container2");
+		e = ECS::Instance()->createEntity("Map_Container2");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(-25.f, 0.f, 12.43f), glm::vec3(0.f, 1.57f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Container3");
+		e = ECS::Instance()->createEntity("Map_Container3");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(-25.f, 8.f, -7.73f), glm::vec3(0.f, 1.57f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Container4");
+		e = ECS::Instance()->createEntity("Map_Container4");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(-19.67f, 0.f, -24.83f), glm::vec3(0.f, 0.79f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Container5");
+		e = ECS::Instance()->createEntity("Map_Container5");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(-0.f, 0.f, -14.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Container6");
+		e = ECS::Instance()->createEntity("Map_Container6");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(24.20f, 0.f, -8.f), glm::vec3(0.f, 1.57f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Container7");
+		e = ECS::Instance()->createEntity("Map_Container7");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(24.2f, 8.f, -22.8f), glm::vec3(0.f, 1.57f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Container8");
+		e = ECS::Instance()->createEntity("Map_Container8");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(24.36f, 0.f, -32.41f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
 
-		e = ECS::Instance()->createEntity("Ramp1");
+		e = ECS::Instance()->createEntity("Map_Ramp1");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(5.2f, 0.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
-		e = ECS::Instance()->createEntity("Ramp2");
+		e = ECS::Instance()->createEntity("Map_Ramp2");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(15.2f, 8.f, -32.25f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
-		e = ECS::Instance()->createEntity("Ramp3");
+		e = ECS::Instance()->createEntity("Map_Ramp3");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(24.f, 8.f, -5.5f), glm::vec3(0.f, 1.57f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
-		e = ECS::Instance()->createEntity("Ramp4");
+		e = ECS::Instance()->createEntity("Map_Ramp4");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(24.f, 0.f, 9.f), glm::vec3(0.f, 1.57f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
-		e = ECS::Instance()->createEntity("Ramp5");
+		e = ECS::Instance()->createEntity("Map_Ramp5");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(-16.f, 0.f, 20.f), glm::vec3(0.f, 3.14f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		m_scene.addStaticEntity(e);
-		e = ECS::Instance()->createEntity("Ramp6");
+		e = ECS::Instance()->createEntity("Map_Ramp6");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<StaticMatrixComponent>(glm::vec3(-34.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -371,7 +372,7 @@ GameState::GameState(StateStack& stack)
 
 
 		//creates light with model and pointlight
-		e = ECS::Instance()->createEntity("Candle1");
+		e = ECS::Instance()->createEntity("Map_Candle1");
 		e->addComponent<ModelComponent>(lightModel);
 		e->addComponent<TransformComponent>(glm::vec3(3.f, 0.f, 3.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -387,7 +388,7 @@ GameState::GameState(StateStack& stack)
 		m_scene.addEntity(e);
 		m_candles.push_back(e);
 
-		e = ECS::Instance()->createEntity("Candle2");
+		e = ECS::Instance()->createEntity("Map_Candle2");
 		e->addComponent<ModelComponent>(lightModel);
 		e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -425,8 +426,89 @@ GameState::GameState(StateStack& stack)
 		m_cpuHistory = SAIL_NEW float[100];
 		m_frameTimesHistory = SAIL_NEW float[100];
 	}
-	//m_physSystem.registerEntity(m_playerController.getEntity());
-//>>>>>>> dev
+	/* "Unit test" for NodeSystem */
+	NodeSystem* test = m_app->getNodeSystem();
+#ifdef _DEBUG_NODESYSTEM
+	Model* nodeSystemModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
+	nodeSystemModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
+	test->setDebugModelAndScene(nodeSystemModel, &m_scene);
+#endif
+
+	std::vector<NodeSystem::Node> nodes;
+	std::vector<std::vector<unsigned int>> connections;
+
+	std::vector<unsigned int> conns;
+	int x_max = 60;
+	int z_max = 60;
+	int x_cur = 0;
+	int z_cur = 0;
+	int size = x_max * z_max;
+
+	int padding = 2;
+	float offsetX = x_max * padding * 0.5f;
+	float offsetZ = z_max * padding * 0.5f;
+	float offsetY = 0;
+	bool* walkable = new bool[size];
+
+	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
+	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	//e->addComponent<ModelComponent>(m_boundingBoxModel.get());
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	//m_scene.addEntity(e);
+
+
+	/*Nodesystem*/
+	//ECS::Instance()->update(0.0f); // Update Boundingboxes/octree system here
+	ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.f);
+	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->update(0.f);
+	for (size_t i = 0; i < size; i++) {
+		conns.clear();
+		x_cur = i % x_max;
+		z_cur = floor(i / x_max);
+		glm::vec3 pos(x_cur* padding - offsetX, offsetY, z_cur* padding - offsetZ);
+		
+		bool blocked = false;
+		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(pos);
+		std::vector < Octree::CollisionInfo> vec;
+		m_octree->getCollisions(e.get(), &vec);
+
+		for (Octree::CollisionInfo& info : vec) {
+			int i = (info.entity->getName().compare("Map_"));
+			if (i >= 0) {
+				//Not walkable
+				//auto e2 = ECS::Instance()->createEntity("blockedGroundMarker");
+				//e2->addComponent<TransformComponent>(pos);
+				//e2->addComponent<ModelComponent>(m_boundingBoxModel.get());
+				//m_scene.addEntity(e2);
+
+				blocked = true;
+				break;
+			}
+		}
+
+		nodes.emplace_back(pos, blocked, i);
+
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				if (dx == 0 && dz == 0)
+					continue;
+
+				int nx = x_cur + dx;
+				int nz = z_cur + dz;
+				if (nx >= 0 && nx < x_max && nz >= 0 && nz < z_max) {
+					int ni = nx + nz * x_max;
+					conns.push_back(ni);
+				}
+			}
+		}
+
+		connections.push_back(conns);
+	}
+
+	//Delete "DeleteMeFirstFrameDummy"
+	ECS::Instance()->destroyEntity(e);
+
+	test->setNodes(nodes, connections);
 
 	m_playerController.provideCandles(&m_candles);
 }
@@ -488,8 +570,8 @@ bool GameState::processInput(float dt) {
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
 	m_playerController.processMouseInput(dt);
-	for ( auto ai : m_aiControllers ) {
-		ai.update();
+	for ( auto& ai : m_aiControllers ) {
+		ai.update(dt);
 	}
 	//m_physSystem.execute(dt);
 
@@ -617,7 +699,7 @@ bool GameState::render(float dt, float alpha) {
 	m_lights.updateBufferData();
 	
 	// Clear back buffer
-	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
+	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene
 	m_scene.draw(m_cam, alpha);
