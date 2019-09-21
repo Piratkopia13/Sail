@@ -64,24 +64,24 @@ void LightSetup::removePLByIndex(int index) {
 	//updateBufferData();
 }
 
-void LightSetup::updateBufferData() {
-	UINT ind = Scene::GetRenderIndex();
+void LightSetup::updateBufferData(int ind) {
+	if (ind == -1) { ind = Scene::GetRenderIndex(); }
 	m_dlData.color = m_dl.getColor();
 	m_dlData.direction = m_dl.getDirection();
 	// Copy the x first lights into the buffer
-		for (unsigned int i = 0; i < MAX_POINTLIGHTS_FORWARD_RENDERING; i++) {
-			if (i < m_pls[ind].size()) {// break;
-				m_plData.pLights[i].attConstant = m_pls[ind][i].getAttenuation().constant;
-				m_plData.pLights[i].attLinear = m_pls[ind][i].getAttenuation().linear;
-				m_plData.pLights[i].attQuadratic = m_pls[ind][i].getAttenuation().quadratic;
-				m_plData.pLights[i].color = m_pls[ind][i].getColor();
-				m_plData.pLights[i].position = m_pls[ind][i].getPosition();
-			} else {
-				m_plData.pLights[i].attConstant = 0.0f;
-				m_plData.pLights[i].attLinear = 0.1f;
-				m_plData.pLights[i].attQuadratic = 0.02f;
-				m_plData.pLights[i].color = glm::vec3(0.f, 0.f, 0.f);
-				m_plData.pLights[i].position = glm::vec3(0.f, 0.f, 0.f);
-			}
+	for (unsigned int i = 0; i < MAX_POINTLIGHTS_FORWARD_RENDERING; i++) {
+		if (i < m_pls[ind].size()) {// break;
+			m_plData.pLights[i].attConstant = m_pls[ind][i].getAttenuation().constant;
+			m_plData.pLights[i].attLinear = m_pls[ind][i].getAttenuation().linear;
+			m_plData.pLights[i].attQuadratic = m_pls[ind][i].getAttenuation().quadratic;
+			m_plData.pLights[i].color = m_pls[ind][i].getColor();
+			m_plData.pLights[i].position = m_pls[ind][i].getPosition();
+		} else {
+			m_plData.pLights[i].attConstant = 0.312f;
+			m_plData.pLights[i].attLinear = 0.0f;
+			m_plData.pLights[i].attQuadratic = 0.0009f;
+			m_plData.pLights[i].color = glm::vec3(0.f, 0.f, 0.f);
+			m_plData.pLights[i].position = glm::vec3(0.f, 0.f, 0.f);
 		}
+	}
 }

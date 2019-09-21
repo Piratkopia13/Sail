@@ -380,7 +380,7 @@ GameState::GameState(StateStack& stack)
 		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
 		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		pl.setPosition(glm::vec3(lightPos.x-0.02f, lightPos.y + 3.1f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		//pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
 		e->addComponent<LightListComponent>(); // Candle1 holds all lights you can place in debug
@@ -395,7 +395,7 @@ GameState::GameState(StateStack& stack)
 		lightPos = e->getComponent<TransformComponent>()->getTranslation();
 		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		pl.setPosition(glm::vec3(lightPos.x - 0.02f, lightPos.y + 3.1f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		//pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(1);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
@@ -615,8 +615,7 @@ bool GameState::render(float dt, float alpha) {
 	m_playerController.updateCameraPosition(alpha);
 
 	m_lights.updateBufferData();
-
-
+	
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
 
@@ -632,31 +631,7 @@ bool GameState::renderImgui(float dt) {
 	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
-
-	if (selectedRenderer == 1) {
-		if (!m_lights.getPLs().empty()) {
-			auto& pl = m_lights.getPLs()[0];
-
-			static glm::vec3 color = pl.getColor(); // = 1.0f
-			static glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
-			static float attConstant = pl.getAttenuation().constant; // 0.0f;
-			static float attLinear = pl.getAttenuation().linear; // 0.1f;
-			static float attQuadratic = pl.getAttenuation().quadratic; // 0.02f;
-
-			ImGui::Begin("Light debug");
-			ImGui::SliderFloat3("Color", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position", &position[0], -40.f, 40.0f);
-			ImGui::SliderFloat("AttConstant", &attConstant, 0.f, 1.f);
-			ImGui::SliderFloat("AttLinear", &attLinear, 0.f, 1.f);
-			ImGui::SliderFloat("AttQuadratic", &attQuadratic, 0.f, 0.2f);
-			ImGui::End();
-
-			pl.setAttenuation(attConstant, attLinear, attQuadratic);
-			pl.setColor(color);
-			pl.setPosition(position);
-			m_lights.updateBufferData();
-		}
-	}
+	renderImGuiLightDebug(dt);
 
 	return false;
 }
@@ -853,6 +828,40 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::End();
 
 	return false;
+}
+
+bool GameState::renderImGuiLightDebug(float dt) {
+	ImGui::Begin("Light debug");
+	unsigned int i = 0;
+	for (auto& pl : m_lights.getPLs()) {
+		ImGui::PushID(i);
+		std::string label("Point light ");
+		label += std::to_string(i);
+		if (ImGui::CollapsingHeader(label.c_str())) {
+
+			glm::vec3 color = pl.getColor(); // = 1.0f
+			glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
+			float attConstant = pl.getAttenuation().constant; // 0.312f;
+			float attLinear = pl.getAttenuation().linear; // 0.0f;
+			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
+
+			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
+			ImGui::SliderFloat3("Position##", &position[0], -40.f, 40.0f);
+			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
+			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
+			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
+
+			pl.setAttenuation(attConstant, attLinear, attQuadratic);
+			pl.setColor(color);
+			pl.setPosition(position);
+
+		}
+		i++;
+		ImGui::PopID();
+	}
+	//m_lights.updateBufferData();
+	ImGui::End();
+	return true;
 }
 
 void GameState::updateComponentSystems(float dt) {

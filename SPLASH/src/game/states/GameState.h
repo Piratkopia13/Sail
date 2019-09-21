@@ -29,6 +29,7 @@ private:
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
+	bool renderImGuiLightDebug(float dt);
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updateComponentSystems(float dt);
 

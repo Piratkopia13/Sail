@@ -81,6 +81,8 @@ float4 getColor(MeshData data, float2 texCoords) {
 void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
 	payload.recursionDepth++;
 
+	// TODO: move to shadow shader 
+	// If this is the second bounce, return as hit and do nothing else
 	if (payload.recursionDepth == 2) {
 		payload.hit = 1;
 		return;
@@ -118,14 +120,6 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	// 	payload.color = getColor(CB_MeshData.data[instanceID], texCoords);
 	// }
 
-	if (payload.recursionDepth < 2) {
-		float3 towardsLight = CB_SceneData.pointLights[0].position - Utils::HitWorldPosition();
-		float dstToLight = length(towardsLight);
-
-		payload.hit = 0;
-	 	TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, 0, Utils::getRayDesc(normalize(towardsLight), dstToLight), payload);
-	}
-
 	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
 	float3 shadedColor = float3(0.f, 0.f, 0.f);
 	
@@ -137,31 +131,44 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	float ka = 1.0f;
 	float ks = 1.0f;
 
-	if (payload.hit == 0) {
-    	for (uint i = 0; i < 1; i++) {
-			PointLightInput p = CB_SceneData.pointLights[i];
+	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+		PointLightInput p = CB_SceneData.pointLights[i];
 
-			if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
-				continue;
-			}
-
-			float3 hitToLight = p.position - Utils::HitWorldPosition();
-			float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
-			float distanceToLight = length(hitToLight);
-
-			float diffuseCoefficient = saturate(dot(normalInWorldSpace, hitToLight));
-
-			float3 specularCoefficient = float3(0.f, 0.f, 0.f);
-			if (diffuseCoefficient > 0.f) {
-				float3 r = reflect(-hitToLight, normalInWorldSpace);
-				r = normalize(r);
-				specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
-			}
-
-			float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
-
-			shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor.rgb * p.color * attenuation;
+		// Treat pointlights with no color as no light
+		if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
+			continue;
 		}
+
+		// Shoot a ray towards the point light to figure out if in shadow or not
+		float3 towardsLight = p.position - Utils::HitWorldPosition();
+		float dstToLight = length(towardsLight);
+
+		RayPayload shadowPayload;
+		shadowPayload.recursionDepth = 1;
+		shadowPayload.hit = 0;
+		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, 0, Utils::getRayDesc(normalize(towardsLight), dstToLight), shadowPayload);
+
+		// Dont do any shading if in shadow
+		if (shadowPayload.hit == 1) {
+			continue;
+		}
+
+		float3 hitToLight = p.position - Utils::HitWorldPosition();
+		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
+		float distanceToLight = length(hitToLight);
+
+		float diffuseCoefficient = saturate(dot(normalInWorldSpace, hitToLight));
+
+		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
+		if (diffuseCoefficient > 0.f) {
+			float3 r = reflect(-hitToLight, normalInWorldSpace);
+			r = normalize(r);
+			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
+		}
+
+		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
+
+		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor.rgb * p.color * attenuation;
 	}
 
 	float3 ambient = diffuseColor.rgb * ka * ambientCoefficient;

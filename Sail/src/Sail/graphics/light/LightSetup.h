@@ -48,7 +48,7 @@ public:
 	void clearPointLights();
 	void removePointLight();
 	void removePLByIndex(int index);
-	void updateBufferData();
+	void updateBufferData(int ind = -1);
 private:
 
 	DirectionalLight m_dl; //not threadsafe

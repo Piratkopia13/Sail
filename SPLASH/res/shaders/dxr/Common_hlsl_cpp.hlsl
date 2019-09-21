@@ -21,7 +21,7 @@ namespace DXRShaderCommon {
 #endif
 
 
-#define MAX_RAY_RECURSION_DEPTH 30
+#define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 8
 
@@ -52,7 +52,7 @@ struct PointLightInput {
     float attConstant;
     float attLinear;
     float attQuadratic;
-	float padding2[2];
+	float2 padding2;
 };
 
 // Properties set once for the scene
