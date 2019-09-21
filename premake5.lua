@@ -70,7 +70,7 @@ project "SPLASH"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines { "DEBUG", "_ITERATOR_DEBUG_LEVEL=0" }
+		defines { "DEBUG" }
 		symbols "On"
 
 	filter "configurations:Release"
@@ -181,7 +181,7 @@ project "Sail"
 		}
 
 	filter "configurations:Debug"
-		defines { "DEBUG", "_ITERATOR_DEBUG_LEVEL=0" }
+		defines { "DEBUG" }
 		symbols "On"
 
 	filter "configurations:Release"
@@ -237,7 +237,7 @@ project "Physics"
 		}
 		
 	filter "configurations:Debug"
-		defines { "DEBUG", "_ITERATOR_DEBUG_LEVEL=0" }
+		defines { "DEBUG" }
 		symbols "On"
 
 	filter "configurations:Release"
