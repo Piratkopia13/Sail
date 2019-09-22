@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
 #include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
+#include "..//Sail/src/Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
@@ -76,6 +77,7 @@ GameState::GameState(StateStack& stack)
 	ECS::Instance()->createSystem<PhysicSystem>();
 	ECS::Instance()->getSystem<PhysicSystem>()->provideOctree(m_octree);
 	m_componentSystems.physicSystem = ECS::Instance()->getSystem<PhysicSystem>();
+	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
 
 	//Create system for updating bounding box
 	ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
@@ -160,6 +162,7 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
 	// Create/load models
+
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(3.0f));
@@ -193,7 +196,6 @@ GameState::GameState(StateStack& stack)
 	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
 
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -206,6 +208,20 @@ GameState::GameState(StateStack& stack)
 	/*
 		Creation of entities
 	*/
+
+	
+	Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
+	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
+	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+
+	auto animationEntity = ECS::Instance()->createEntity("animatedModel");
+	animationEntity->addComponent<TransformComponent>();
+	animationEntity->addComponent<ModelComponent>(animatedModel);
+	animationEntity->addComponent<AnimationComponent>(animationStack);
+	animationEntity->getComponent<AnimationComponent>()->currentAnimation = animationStack->getAnimation(0);
+
+	m_scene.addEntity(animationEntity);
 
 	// STATIC ENTITIES (never added/deleted/modified during runtime)
 	// Use .addStaticEntity() and StaticMatrixComponent instead of TransformComponent since static objects's transforms 
@@ -891,6 +907,7 @@ void GameState::updateComponentSystems(float dt) {
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 	m_componentSystems.physicSystem->update(dt);
+	m_componentSystems.animationSystem->update(dt);
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

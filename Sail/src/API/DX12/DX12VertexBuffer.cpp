@@ -46,3 +46,17 @@ void DX12VertexBuffer::bind(void* cmdList) const {
 ID3D12Resource1* DX12VertexBuffer::getBuffer() const {
 	return m_vertexBuffer.Get();
 }
+
+void DX12VertexBuffer::update(Mesh::Data& data) {
+
+	void* vertices = getVertexData(data);
+	// Place verticies in the buffer
+	void* pData;
+	D3D12_RANGE readRange{ 0, 0 };
+	ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, &pData));
+	memcpy(pData, vertices, getVertexDataSize());
+	m_vertexBuffer->Unmap(0, nullptr);
+
+
+	free(vertices);
+}
