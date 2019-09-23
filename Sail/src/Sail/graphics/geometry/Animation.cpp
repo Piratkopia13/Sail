@@ -179,7 +179,7 @@ AnimationStack::AnimationStack() {
 }
 AnimationStack::AnimationStack(const unsigned int vertCount) {
 	m_connectionSize = vertCount;
-	m_connections = new VertConnection[vertCount];
+	m_connections = SAIL_NEW VertConnection[vertCount];
 }
 AnimationStack::~AnimationStack() {
 	for (unsigned int index = 0; index < m_stack.size(); index++) {

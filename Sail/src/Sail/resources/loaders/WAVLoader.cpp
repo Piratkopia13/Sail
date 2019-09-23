@@ -119,7 +119,7 @@ namespace Fileloader {
 			Logger::Error("Failed to find the desired data chunk!");
 		}
 
-		BYTE* pDataBuffer = new BYTE[dwChunkSize];
+		BYTE* pDataBuffer = SAIL_NEW BYTE[dwChunkSize];
 
 		hr = readChunkData(hFile, pDataBuffer, dwChunkSize, dwChunkPosition);
 		if (hr != S_OK) {
