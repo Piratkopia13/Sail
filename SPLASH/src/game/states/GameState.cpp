@@ -601,26 +601,26 @@ bool GameState::processInput(float dt) {
 
 	//checks if candle entity has light and if not, adds one 
 	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
-		if (!m_scene.getGameObjectEntityByName("Candle1")->hasComponent<LightComponent>()) {
+		if (!m_scene.getGameObjectEntityByName("Map_Candle1")->hasComponent<LightComponent>()) {
 			PointLight pl;
-			glm::vec3 pos = m_scene.getGameObjectEntityByName("Candle1")->getComponent<TransformComponent>()->getTranslation();
+			glm::vec3 pos = m_scene.getGameObjectEntityByName("Map_Candle1")->getComponent<TransformComponent>()->getTranslation();
 			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
 			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
 			pl.setAttenuation(.0f, 0.1f, 0.02f);
 			pl.setIndex(0);
-			m_scene.getGameObjectEntityByName("Candle1")->addComponent<LightComponent>(pl);
+			m_scene.getGameObjectEntityByName("Map_Candle1")->addComponent<LightComponent>(pl);
 			//m_lights.addPointLight(pl);
 		}
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
-		if (!m_scene.getGameObjectEntityByName("Candle2")->hasComponent<LightComponent>()) {
+		if (!m_scene.getGameObjectEntityByName("Map_Candle2")->hasComponent<LightComponent>()) {
 			PointLight pl;
-			glm::vec3 pos = m_scene.getGameObjectEntityByName("Candle2")->getComponent<TransformComponent>()->getTranslation();
+			glm::vec3 pos = m_scene.getGameObjectEntityByName("Map_Candle2")->getComponent<TransformComponent>()->getTranslation();
 			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
 			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
 			pl.setAttenuation(.0f, 0.1f, 0.02f);
 			pl.setIndex(1);
-			m_scene.getGameObjectEntityByName("Candle2")->addComponent<LightComponent>(pl);
+			m_scene.getGameObjectEntityByName("Map_Candle2")->addComponent<LightComponent>(pl);
 			//m_lights.addPointLight(pl);
 		}
 	}
@@ -628,8 +628,8 @@ bool GameState::processInput(float dt) {
 	//removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
 
-		if (m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.size() > 0) {
-			m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.erase(m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.begin());
+		if (m_scene.getGameObjectEntityByName("Map_Candle1")->getComponent<LightListComponent>()->m_pls.size() > 0) {
+			m_scene.getGameObjectEntityByName("Map_Candle1")->getComponent<LightListComponent>()->m_pls.erase(m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.begin());
 		}
 
 		//m_lights.removePointLight();
@@ -639,7 +639,6 @@ bool GameState::processInput(float dt) {
 
 
 bool GameState::onEvent(Event& event) {
-	Logger::Log("Received event: " + std::to_string(event.getType()));
 
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 
