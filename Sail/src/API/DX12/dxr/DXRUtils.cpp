@@ -147,8 +147,8 @@ DXRUtils::ShaderTableBuilder::ShaderTableBuilder(LPCWSTR shaderName, ID3D12State
 	// Get the properties of the pre-built pipeline state object
 	ThrowIfFailed(pso->QueryInterface(IID_PPV_ARGS(&m_soProps)));
 
-	m_data = new void* [numInstances];
-	m_dataOffsets = new UINT[numInstances];
+	m_data = SAIL_NEW void* [numInstances];
+	m_dataOffsets = SAIL_NEW UINT[numInstances];
 	for (UINT i = 0; i < numInstances; i++) {
 		m_data[i] = malloc(maxBytesPerInstance);
 		m_dataOffsets[i] = 0;
