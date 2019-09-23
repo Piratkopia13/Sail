@@ -4,7 +4,7 @@
 namespace ShaderComponent {
 
 	Sampler* Sampler::Create(Texture::ADDRESS_MODE addressMode, Texture::FILTER filter, BIND_SHADER bindShader, unsigned int slot) {
-		return new DX12Sampler(addressMode, filter, bindShader, slot);
+		return SAIL_NEW DX12Sampler(addressMode, filter, bindShader, slot);
 	}
 
 	DX12Sampler::~DX12Sampler() {

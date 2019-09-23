@@ -36,7 +36,7 @@ Model* AssimpLoader::importModel(const std::string& path, Shader* shader) {
 
 	processNode(scene, scene->mRootNode, meshData);
 	std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, shader));
-	Model* model = new Model();
+	Model* model = SAIL_NEW Model();
 	model->addMesh(std::move(mesh));
 
 	clearData();
@@ -63,7 +63,7 @@ AnimationStack* AssimpLoader::importAnimationStack(const std::string& path) {
 	for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
 		vertCount += scene->mMeshes[i]->mNumVertices;
 	}
-	AnimationStack* stack = new AnimationStack(vertCount);
+	AnimationStack* stack = SAIL_NEW AnimationStack(vertCount);
 	
 	if (!importBonesFromNode(scene, scene->mRootNode, stack)) {
 		Memory::SafeDelete(stack);
@@ -251,7 +251,7 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 
 	for (unsigned int animationIndex = 0; animationIndex < scene->mNumAnimations; animationIndex++) {
 		const aiAnimation* animation = scene->mAnimations[animationIndex];
-		Animation* anim = new Animation();
+		Animation* anim = SAIL_NEW Animation();
 		
 #ifdef _DEBUG
 		animationz.emplace_back(animation);

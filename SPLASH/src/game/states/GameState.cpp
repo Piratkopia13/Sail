@@ -156,6 +156,7 @@ GameState::GameState(StateStack& stack)
 	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
 
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
+	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -172,7 +173,6 @@ GameState::GameState(StateStack& stack)
 	
 	Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
-	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	auto animationEntity = ECS::Instance()->createEntity("animatedModel");
@@ -408,7 +408,7 @@ GameState::GameState(StateStack& stack)
 	float offsetX = x_max * padding * 0.5f;
 	float offsetZ = z_max * padding * 0.5f;
 	float offsetY = 0;
-	bool* walkable = new bool[size];
+	bool* walkable = SAIL_NEW bool[size];
 
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
 	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
@@ -464,11 +464,11 @@ GameState::GameState(StateStack& stack)
 
 		connections.push_back(conns);
 	}
-
 	//Delete "DeleteMeFirstFrameDummy"
 	ECS::Instance()->destroyEntity(e);
 
 	test->setNodes(nodes, connections);
+	Memory::SafeDeleteArr(walkable);
 
 	m_playerController.provideCandles(&m_candles);
 }

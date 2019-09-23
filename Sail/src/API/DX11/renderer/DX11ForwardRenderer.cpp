@@ -7,7 +7,7 @@
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
 	case FORWARD:
-		return new DX11ForwardRenderer();
+		return SAIL_NEW DX11ForwardRenderer();
 	default:
 		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + type);
 	}

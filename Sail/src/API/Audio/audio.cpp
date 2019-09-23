@@ -139,7 +139,7 @@ void Audio::updateAudio() {
 				delete m_streamSoundThread;
 			}
 		}
-		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankLong.xwb", false);
+		m_streamSoundThread = SAIL_NEW std::thread(&Audio::streamSound, this, "../Audio/wavebankLong.xwb", false);
 		//this->streamSound("../Audio/wavebank.xwb");
 	}
 
@@ -150,7 +150,7 @@ void Audio::updateAudio() {
 
 	if (Input::IsKeyPressed(SAIL_KEY_3) && m_singlePress3) {
 		m_singlePress3 = false;
-		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankShortFade.xwb", true);
+		m_streamSoundThread = SAIL_NEW std::thread(&Audio::streamSound, this, "../Audio/wavebankShortFade.xwb", true);
 	}
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_3) && !m_singlePress3) {

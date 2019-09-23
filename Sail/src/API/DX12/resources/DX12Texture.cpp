@@ -4,7 +4,7 @@
 #include "../DX12Utils.h"
 
 Texture* Texture::Create(const std::string& filename) {
-	return new DX12Texture(filename);
+	return SAIL_NEW DX12Texture(filename);
 }
 
 DX12Texture::DX12Texture(const std::string& filename) 
