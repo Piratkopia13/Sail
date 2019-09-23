@@ -235,8 +235,7 @@ void Octree::getCollisionData(BoundingBox* entityBoundingBox, Entity* meshEntity
 	}
 }
 
-void Octree::getCollisionsRec(Entity* entity, Node* currentNode, std::vector<CollisionInfo>* outCollisionData) {
-	BoundingBox* entityBoundingBox = entity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, Node* currentNode, std::vector<CollisionInfo>* outCollisionData) {
 	if (Intersection::aabbWithAabb(*entityBoundingBox, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Bounding box collides with the current node
 		//Check against entities
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
@@ -289,7 +288,7 @@ void Octree::getCollisionsRec(Entity* entity, Node* currentNode, std::vector<Col
 
 		//Check for children
 		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-			getCollisionsRec(entity, &currentNode->childNodes[i], outCollisionData);
+			getCollisionsRec(entity, entityBoundingBox, &currentNode->childNodes[i], outCollisionData);
 		}
 	}
 }
@@ -361,5 +360,5 @@ void Octree::update() {
 }
 
 void Octree::getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollisionData) {
-	getCollisionsRec(entity, &m_baseNode, outCollisionData);
+	getCollisionsRec(entity, entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), &m_baseNode, outCollisionData);
 }

@@ -37,7 +37,7 @@ private:
 	bool removeEntityRec(Entity* entityToRemove, Node* currentNode);
 	void updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd);
 	void getCollisionData(BoundingBox* entityBoundingBox, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, std::vector<Octree::CollisionInfo>* outCollisionData);
-	void getCollisionsRec(Entity* entity, Node* currentNode, std::vector<Octree::CollisionInfo>* outCollisionData);
+	void getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, Node* currentNode, std::vector<Octree::CollisionInfo>* outCollisionData);
 	int pruneTreeRec(Node* currentNode);
 
 public:
