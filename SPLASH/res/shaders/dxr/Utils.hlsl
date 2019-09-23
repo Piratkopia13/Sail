@@ -5,12 +5,12 @@ namespace Utils {
         return WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
     }
 
-    RayDesc getRayDesc(float3 direction) {
+    RayDesc getRayDesc(float3 direction, float tmax = 100000) {
         RayDesc ray;
         ray.Origin = HitWorldPosition();
         ray.Direction = direction;
         ray.TMin = 0.0001;
-        ray.TMax = 100000;
+        ray.TMax = tmax;
         return ray;
     }
 
