@@ -487,6 +487,8 @@ GameState::GameState(StateStack& stack)
 		connections.push_back(conns);
 	}
 
+	delete[] walkable;
+
 	//Delete "DeleteMeFirstFrameDummy"
 	ECS::Instance()->destroyEntity(e);
 

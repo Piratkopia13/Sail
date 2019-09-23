@@ -44,8 +44,10 @@ void Audio::loadSound(const std::string& filename) {
 	Application::getInstance()->getResourceManager().loadAudioData(filename, m_xAudio2);
 }
 
-int Audio::playSound(const std::string &filename) {
-
+int Audio::playSound(const std::string& filename) {
+	if (m_masterVoice == nullptr) {
+		return -1;
+	}
 	if (Application::getInstance()->getResourceManager().hasAudioData(filename)) {
 
 		if (m_sourceVoice[m_currIndex] != nullptr) {
@@ -54,7 +56,7 @@ int Audio::playSound(const std::string &filename) {
 
 		// creating a 'sourceVoice' for WAV file-type
 		HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sourceVoice[m_currIndex], (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-			
+
 		// THIS IS THE OTHER VERSION FOR ADPC
 				// ... for ADPC-WAV compressed file-type
 				//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
@@ -84,7 +86,6 @@ int Audio::playSound(const std::string &filename) {
 		Logger::Error("That audio file has NOT been loaded yet!");
 		return (-1);
 	}
-
 }
 
 void Audio::pauseSound(int index) {
@@ -135,6 +136,7 @@ void Audio::updateAudio() {
 		m_singlePress2 = false;
 		if (this->m_streamSoundThread != nullptr) {
 			if (m_streamSoundThread->joinable()) {
+				m_isStreaming = false;
 				m_streamSoundThread->join();
 				delete m_streamSoundThread;
 			}
@@ -149,7 +151,15 @@ void Audio::updateAudio() {
 
 
 	if (Input::IsKeyPressed(SAIL_KEY_3) && m_singlePress3) {
+		
 		m_singlePress3 = false;
+		if (this->m_streamSoundThread != nullptr) {
+			if (m_streamSoundThread->joinable()) {
+				m_isStreaming = false;
+				m_streamSoundThread->join();
+				delete m_streamSoundThread;
+			}
+		}
 		m_streamSoundThread = new std::thread(&Audio::streamSound, this, "../Audio/wavebankShortFade.xwb", true);
 	}
 
@@ -187,6 +197,9 @@ void Audio::initXAudio2() {
 }
 
 void Audio::streamSound(const std::string& filename, bool loop) {
+	if (m_masterVoice == nullptr) {
+		return;
+	}
 
 	m_isStreaming = true;
 	WCHAR wavebank[MAX_PATH];
