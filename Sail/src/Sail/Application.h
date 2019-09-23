@@ -15,6 +15,8 @@
 
 #include <future>
 
+#include "ai/pathfinding/NodeSystem.h"
+#include "resources/loaders/AssimpLoader.h"
 // Forward declarations
 namespace ctpl {
 	class thread_pool;
@@ -23,7 +25,6 @@ namespace ctpl {
 // TODO? Move elsewhere
 const float TICKRATE = 100.0f;
 const float TIMESTEP = 1.0f / TICKRATE;
-#include "ai/pathfinding/NodeSystem.h"
 
 class Application : public IEventDispatcher {
 
