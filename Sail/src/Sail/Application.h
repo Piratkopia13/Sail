@@ -23,7 +23,7 @@ namespace ctpl {
 }
 
 // TODO? Move elsewhere
-const float TICKRATE = 100.0f;
+const float TICKRATE = 50.0f;
 const float TIMESTEP = 1.0f / TICKRATE;
 
 class Application : public IEventDispatcher {

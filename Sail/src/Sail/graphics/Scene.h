@@ -28,6 +28,8 @@ public:
 	// need to be copied into a frame packet every tick.
 	void addStaticEntity(Entity::SPtr staticEntity);
 
+	void setPlayerCandle(Entity::SPtr candle);
+
 	void setLightSetup(LightSetup* lights);
 	Entity::SPtr getGameObjectEntityByName(std::string name);
 	const std::vector<Entity::SPtr>& getGameObjectEntities()const;
@@ -74,12 +76,15 @@ private:
 	// Should include Model, Transform, Physics, Sound, etc.
 	std::vector<Entity::SPtr> m_gameObjectEntities;
 
+	Entity::SPtr m_playerCandle;
 
 	// Render objects are essentially read-only and have only the minimum required data
 	// needed to render the corresponding game object. A list of render objects is created
 	// at the end of each CPU update from the m_GameObjectEntities.
 	std::vector<PerUpdateRenderObject> m_dynamicRenderObjects[SNAPSHOT_BUFFER_SIZE];
 	std::mutex m_perFrameLocks[SNAPSHOT_BUFFER_SIZE];
+
+
 
 
 	std::unique_ptr<Renderer> m_renderer;
