@@ -141,6 +141,24 @@ void PlayerController::processKeyboardInput(float dt) {
 		}
 	}
 
+	////moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns
+	//forward = m_cam->getCameraDirection();
+	//forward.y = 0.f;
+	//forward = glm::normalize(forward);
+
+	//right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+	//right = glm::normalize(right);
+	//m_candle->getComponent<TransformComponent>()->prepareUpdate();
+	//glm::vec3 playerToCandle = forward - right;
+	//glm::vec3 candlePos = m_player->getComponent<TransformComponent>()->getTranslation() 
+	//	+ playerToCandle - glm::vec3(0, 3.5f, 0);
+	//m_candle->getComponent<TransformComponent>()->setTranslation(candlePos);
+	//glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
+	//m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
+	//glm::vec3 flamePos = candlePos + glm::vec3(0, 3.22f, 0);
+	//glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
+	//m_candle->getComponent<LightComponent>()->m_pointLight.setPosition(plPos);
+
 }
 
 void PlayerController::processMouseInput(float dt) {
@@ -189,15 +207,26 @@ void PlayerController::updateCameraPosition(float alpha) {
 	forwards = glm::normalize(forwards);
 	//playerTrans->setForward(forwards); //needed?
 
-	/*glm::vec3 forward = m_cam->getCameraDirection();
+
+	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha));
+	m_cam->setCameraDirection(forwards);
+
+	//moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns
+	glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
 	forward = glm::normalize(forward);
 
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-	right = glm::normalize(right);*/
-
-	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.0f, playerBB->getBoundingBox()->getHalfSize().y * 0.8f, 0.0f));
-	m_cam->setCameraDirection(forwards);
+	right = glm::normalize(right);
+	glm::vec3 playerToCandle = forward - right;
+	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 3.5f, 0);
+	m_candle->getComponent<TransformComponent>()->setTranslation(candlePos);
+	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
+	m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
+	m_candle->getComponent<TransformComponent>()->prepareUpdate();
+	glm::vec3 flamePos = candlePos + glm::vec3(0, 3.22f, 0);
+	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
+	m_candle->getComponent<LightComponent>()->m_pointLight.setPosition(plPos);
 }
 
 void PlayerController::destroyOldProjectiles() {
@@ -236,4 +265,30 @@ void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) 
 
 void PlayerController::provideCandles(std::vector<Entity::SPtr>* candles) {
 	m_candles = candles;
+}
+
+std::shared_ptr<Entity> PlayerController::getCandle() {
+	return m_candle;
+}
+
+//creates and binds the candle model and a pointlight for the player.
+void PlayerController::createCandle(Model* model) {
+	auto e = ECS::Instance()->createEntity("PlayerCandle");//;//ECS::Instance()->createEntity("PlayerCandle");
+	e->addComponent<ModelComponent>(model);
+	glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
+	//camRight = glm::normalize(camRight);
+	glm::vec3 candlePos = -m_cam->getCameraDirection() + camRight;// -m_cam->getCameraUp();
+	e->addComponent<TransformComponent>(candlePos);// , m_player->getComponent<TransformComponent>());
+	//e->addComponent<TransformComponent>(glm::vec3(-1.f, -3.f, 1.f), m_player->getComponent<TransformComponent>());
+	//e->getComponent<TransformComponent>()->setParent(m_player->getComponent<TransformComponent>());
+	m_candle = e;
+	PointLight pl;
+	glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
+	pl.setColor(glm::vec3(0.5f, 0.5f, 0.5f));
+	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+	pl.setAttenuation(.0f, 0.1f, 0.02f);
+	pl.setIndex(2);
+	e->addComponent<LightComponent>(pl);
+	m_scene->setPlayerCandle(e);
+
 }
