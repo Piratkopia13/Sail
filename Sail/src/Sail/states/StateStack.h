@@ -33,7 +33,7 @@ class StateStack {
 		// Updates the states in the stack
 		virtual void update(float dt);
 		// Renders the states in the stack
-		virtual void render(float dt);
+		virtual void render(float dt, float alpha);
 
 		// Pushes a new state the next update
 		void pushState(States::ID stateID);
@@ -45,11 +45,13 @@ class StateStack {
 		// Returns whether or not the stack is empty
 		bool isEmpty() const;
 
+		// Applies all pending actions to the stack
+		void applyPendingChanges();
+
 	private:
 		// Creates a new state instance from the id
 		State::Ptr createState(States::ID stateID);
-		// Applies all pending actions to the stack
-		void applyPendingChanges();
+		
 
 	private:
 		// Struct with information about a change
@@ -77,10 +79,9 @@ public:
 
 template <typename T>
 void StateStack::registerState(States::ID stateID) {
-	
 	// Store a function to initialize a new pointer to the state
 	m_factories[stateID] = [this]() {
-		return State::Ptr(new T(*this));
+		return State::Ptr(SAIL_NEW T(*this));
 	};
 
 }

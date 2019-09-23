@@ -10,7 +10,7 @@ public:
 		float quadratic;
 	};
 public:
-	PointLight() : m_color(glm::vec3(0.f)), m_position(glm::vec3(0.f)), m_attenuation({ 1.f, 1.f, 1.f }) { }
+	PointLight() : m_color(glm::vec3(0.f)), m_position(glm::vec3(0.f)), m_attenuation({ 0.312f, 0.0f, 0.0009f }), m_index(-1) { }
 	void setColor(const glm::vec3& color) { m_color = color; }
 	const glm::vec3& getColor() const { return m_color; }
 	void setPosition(const glm::vec3& position) { m_position = position; }
@@ -23,6 +23,12 @@ public:
 	}
 	const Attenuation& getAttenuation() const { return m_attenuation; }
 	float getRadius() const { return m_radius; }
+	void setIndex(size_t index) {
+		m_index = index;
+	}
+	size_t getIndex() const { 
+		return m_index; 
+	}
 private:
 	void calculateRadius() {
 		// Derived from attenuation formula used in light shader
@@ -32,5 +38,6 @@ private:
 	glm::vec3 m_color;
 	glm::vec3 m_position;
 	Attenuation m_attenuation;
+	size_t m_index;
 	float m_radius;
 };

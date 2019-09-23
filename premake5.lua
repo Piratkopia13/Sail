@@ -20,10 +20,13 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["ImGui"] = "libraries/imgui"
+IncludeDir["MiniMM"] = "libraries/MemoryManager"
+IncludeDir["Assimp"] = "libraries/assimp/include"
 
 group "Libraries"
 include "libraries/glfw"
 include "libraries/imgui"
+include "libraries/MemoryManager"
 
 group ""
 project "SPLASH"
@@ -36,15 +39,16 @@ project "SPLASH"
 	targetdir (binDir)
 	objdir (intermediatesDir)
 
-	files { 
+	files {
 		"%{prj.name}/SPLASH.rc",    -- For icon
 		"%{prj.name}/resource.h", -- For icon
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
 	-- include and fix these as soon as new cross-platform architecture is finished
-	removefiles { 
+	removefiles {
 		"**/ParticleHandler.*",
 		"**/PlayerCameraController.*",
 		"**/Scene.*"
@@ -54,11 +58,14 @@ project "SPLASH"
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.Assimp}",
+		"Physics"
 	}
 
 	links {
-		"Sail"
+		"Sail",
+		"Physics"
 	}
 
 	filter "system:windows"
@@ -72,14 +79,16 @@ project "SPLASH"
 		defines { "NDEBUG" }
 		optimize "On"
 
-	-- Copy fbxsdk dll to executable path
+	-- Copy dlls to executable path
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/assimp/lib/x64/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/assimp/lib/x86/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 
 
@@ -95,13 +104,14 @@ project "Sail"
 	pchheader "pch.h"
 	pchsource "Sail/src/pch.cpp"
 
-	files { 
+	files {
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
 	-- include and fix these as soon as new cross-platform architecture is finished
-	removefiles { 
+	removefiles {
 		"%{prj.name}/src/API/DX11/**",
 		"%{prj.name}/src/API/DX12/**",
 		"%{prj.name}/src/API/VULKAN/**",
@@ -111,14 +121,12 @@ project "Sail"
 		"**/Skybox.*",
 		"**/ParticleEmitter.*",
 		"%{prj.name}/src/Sail/graphics/shadows/**",
-		"%{prj.name}/src/Sail/graphics/shader/postprocess/**",
 		"%{prj.name}/src/Sail/graphics/shader/instanced/**",
 		"%{prj.name}/src/Sail/graphics/shader/deferred/**",
 		"%{prj.name}/src/Sail/graphics/shader/component/ConstantBuffer**",
 		"%{prj.name}/src/Sail/graphics/shader/component/Sampler**",
 		"%{prj.name}/src/Sail/graphics/shader/basic/**",
 		"%{prj.name}/src/Sail/graphics/renderer/**",
-		"%{prj.name}/src/Sail/graphics/postprocessing/**",
 		"**/Quadtree.*"
 	}
 
@@ -127,13 +135,17 @@ project "Sail"
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.MiniMM}",
+		"%{IncludeDir.Assimp}"
 	}
 
 	links {
 		"libfbxsdk",
 		"GLFW",
-		"ImGui"
+		"ImGui",
+		"MemoryManager",
+		"assimp-vc140-mt"
 	}
 
 	defines {
@@ -159,11 +171,73 @@ project "Sail"
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x64"
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x86"
+		}
+
+	filter "system:windows"
+		systemversion "latest"
+
+		defines {
+			"FBXSDK_SHARED",
+			"GLFW_INCLUDE_NONE"
+		}
+
+	filter "configurations:Debug"
+		defines { "DEBUG" }
+		symbols "On"
+
+	filter "configurations:Release"
+		defines { "NDEBUG" }
+		optimize "On"
+
+project "Physics"
+	location "Physics"
+	kind "StaticLib"
+	language "C++"
+	targetdir "bin/%{cfg.platform}-%{cfg.buildcfg}"
+	objdir (intermediatesDir)
+	cppdialect "C++17"
+	staticruntime "on"
+
+	pchheader "PhysicsPCH.h"
+	pchsource "Physics/PhysicsPCH.cpp"
+
+	files {
+		"%{prj.name}/**.h",
+		"%{prj.name}/**.cpp"
+	}
+
+	includedirs {
+		"libraries",
+		"Sail/src",
+		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.Assimp}"
+	}
+
+	links {
+		"Sail",
+		"libfbxsdk",
+		"GLFW",
+		"ImGui",
+		"assimp-vc140-mt"
+	}
+	filter { "action:vs2017 or vs2019", "platforms:*64" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x64"
+		}
+	filter { "action:vs2017 or vs2019", "platforms:*86" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x86"
 		}
 
 	filter "system:windows"

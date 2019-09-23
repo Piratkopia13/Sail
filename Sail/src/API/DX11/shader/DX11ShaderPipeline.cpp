@@ -110,31 +110,26 @@ void DX11ShaderPipeline::compile() {
 
 	// Emulate pipeline with individual shader objects
 	if (vsBlob) {
-		//std::cout << "has vs" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(vsBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateVertexShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_vs));
 		//Memory::safeRelease(compiledShader);
 	}
 	if (psBlob) {
-		//std::cout << "has ps" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(psBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreatePixelShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ps));
 		Memory::SafeRelease(compiledShader);
 	}
 	if (gsBlob) {
-		//std::cout << "has gs" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(gsBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateGeometryShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_gs));
 		Memory::SafeRelease(compiledShader);
 	}
 	if (dsBlob) {
-		//std::cout << "has ds" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(dsBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateDomainShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ds));
 		Memory::SafeRelease(compiledShader);
 	}
 	if (hsBlob) {
-		//std::cout << "has hs" << std::endl;
 		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(hsBlob);
 		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateHullShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_hs));
 		Memory::SafeRelease(compiledShader);

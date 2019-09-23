@@ -8,6 +8,8 @@ public:
 	~DX12VertexBuffer();
 
 	virtual void bind(void* cmdList) const override;
+	ID3D12Resource1* getBuffer() const;
+	void update(Mesh::Data& data);
 
 private:
 	wComPtr<ID3D12Resource1> m_vertexBuffer;

@@ -22,7 +22,6 @@ cbuffer VSPSSystemCBuffer : register(b0) {
 	matrix sys_mWorld;
     matrix sys_mVP;
     Material sys_material;
-    //float padding;
     float4 sys_clippingPlane;
     float3 sys_cameraPos;
 }
@@ -31,8 +30,8 @@ struct PointLightInput {
 	float3 color;
 	float3 position;
     float attConstant;
-    //float attLinear;
-    //float attQuadratic;
+    float attLinear;
+    float attQuadratic;
 };
 cbuffer VSLights : register(b1) {
 	DirectionalLight dirLight;
@@ -47,10 +46,10 @@ PSIn VSMain(VSIn input) {
 	// Copy over point lights
     for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
         output.lights.pointLights[i].attConstant = pointLights[i].attConstant;
-        output.lights.pointLights[i].attLinear = 0.1f;
-        output.lights.pointLights[i].attQuadratic = 0.02f;
-        //output.lights.pointLights[i].attLinear = pointLights[i].attLinear;
-        //output.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
+        // output.lights.pointLights[i].attLinear = 0.1f;
+        // output.lights.pointLights[i].attQuadratic = 0.02f;
+        output.lights.pointLights[i].attLinear = pointLights[i].attLinear;
+        output.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
         output.lights.pointLights[i].color = pointLights[i].color;
     }
 
@@ -97,7 +96,6 @@ PSIn VSMain(VSIn input) {
 	return output;
 
 }
-
 
 Texture2D sys_texDiffuse : register(t0);
 Texture2D sys_texNormal : register(t1);
