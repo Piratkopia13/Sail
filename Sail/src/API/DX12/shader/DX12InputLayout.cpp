@@ -3,7 +3,7 @@
 #include "Sail/utils/Utils.h"
 
 InputLayout* InputLayout::Create() {
-	return new DX12InputLayout();
+	return SAIL_NEW DX12InputLayout();
 }
 
 DX12InputLayout::DX12InputLayout() {

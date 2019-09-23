@@ -7,15 +7,16 @@
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
 		delete m_wrapper;
-		if (m_network != nullptr) {
-			m_network->shutdown();
-			delete m_network;
-		}
+		
 	}
+
+	Memory::SafeDelete(m_network);
+
 }
 
 NWrapperSingleton::NWrapperSingleton() {
-	m_network = new Network;
+	m_network = SAIL_NEW Network;
+	m_network->initialize();
 }
 
 bool NWrapperSingleton::host(int port) {
@@ -52,11 +53,11 @@ void NWrapperSingleton::initialize(bool asHost) {
 
 		if (asHost) {
 			m_isHost = true;
-			m_wrapper = new NWrapperHost(m_network);
+			m_wrapper = SAIL_NEW NWrapperHost(m_network);
 		}
 		else {
 			m_isHost = false;
-			m_wrapper = new NWrapperClient(m_network);
+			m_wrapper = SAIL_NEW NWrapperClient(m_network);
 		}
 	}
 }
