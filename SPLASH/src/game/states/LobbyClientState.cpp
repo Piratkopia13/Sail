@@ -2,6 +2,7 @@
 
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
+#include "../SPLASH/src/game/events/NetworkStartGameEvent.h"
 #include "Network/NWrapper.h"
 #include "Network/NWrapperClient.h"
 #include "Network/NWrapperSingleton.h"
@@ -24,6 +25,7 @@ bool LobbyClientState::onEvent(Event& event) {
 	EventHandler::dispatch<NetworkWelcomeEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onPlayerWelcomed));
 	EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onNameRequest));
 	EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onDropped));
+	EventHandler::dispatch<NetworkStartGameEvent>(event, SAIL_BIND_EVENT(&LobbyClientState::onStartGame));
 	return true;
 }
 
@@ -107,4 +109,12 @@ bool LobbyClientState::onDropped(NetworkDroppedEvent& event) {
 	NWrapperSingleton::getInstance().resetNetwork();
 
 	return false;
+}
+
+bool LobbyClientState::onStartGame(NetworkStartGameEvent& event) {
+	
+	this->requestStackPop();
+	this->requestStackPush(States::Game);
+
+	return true;
 }

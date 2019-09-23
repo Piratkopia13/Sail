@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Sail.h"
-#include "Physics.h"
+//#include "Physics.h"
 
 class NetworkWrapper;
 
@@ -16,6 +16,7 @@ public:
 	virtual void update(float dt) override;
 	virtual void render(float dt, float alpha) override;
 	virtual void dispatchEvent(Event& event) override;
+	virtual void applyPendingStateChanges() override;
 
 private:
 	// Register the different states
