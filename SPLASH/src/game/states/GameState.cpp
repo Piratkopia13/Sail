@@ -679,6 +679,8 @@ bool GameState::update(float dt) {
 	updateComponentSystems(dt);
 
 	//check and update all lights for all entities
+
+	// MOVED TO LIGHT SYSTEM
 	std::vector<Entity::SPtr> entities = m_scene.getGameObjectEntities();
 	m_lights.addPointLight(m_playerController.getCandle()->getComponent<LightComponent>()->m_pointLight);
 	for (int i = 0; i < entities.size();i++) {

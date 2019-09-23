@@ -56,6 +56,8 @@ private:
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
+
+
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
 	int m_profilerCounter = 0;
@@ -81,5 +83,7 @@ private:
 	std::unique_ptr<Model> m_boundingBoxModel;
 
 	Octree* m_octree;
+
+	// TODO: Make a system for these entities
 	std::vector<Entity::SPtr> m_candles;
 };
