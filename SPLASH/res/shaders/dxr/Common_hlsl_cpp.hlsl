@@ -21,8 +21,9 @@ namespace DXRShaderCommon {
 #endif
 
 
-#define MAX_RAY_RECURSION_DEPTH 30
+#define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
+#define NUM_POINT_LIGHTS 8
 
 static const uint MESH_NO_FLAGS	 			= 	0;
 static const uint MESH_USE_INDICES 			= 	1 << 0;
@@ -44,10 +45,22 @@ struct Vertex {
 	float3 bitangent;
 };
 
+struct PointLightInput {
+	float3 color;
+	float padding;
+	float3 position;
+    float attConstant;
+    float attLinear;
+    float attQuadratic;
+	float2 padding2;
+};
+
 // Properties set once for the scene
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
 	float3 cameraPosition;
+	float padding;
+    PointLightInput pointLights[NUM_POINT_LIGHTS];
 };
 
 // Properties set once per BLAS/Mesh
