@@ -9,6 +9,7 @@
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDroppedEvent.h"
+#include "../../SPLASH/src/game/events/NetworkStartGameEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
 bool NWrapperClient::host(int port) {
@@ -127,6 +128,11 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 
 		// Dispatch ID to lobby where my chosen name will be replied back.
 		Application::getInstance()->dispatchEvent(NetworkNameEvent(std::to_string(id_question)));
+		break;
+
+	case 't':
+
+		Application::getInstance()->dispatchEvent(NetworkStartGameEvent());
 		break;
 
 	case 'w':

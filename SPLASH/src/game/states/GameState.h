@@ -25,6 +25,8 @@ public:
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
 
+
+
 private:
 	bool onResize(WindowResizeEvent& event);
 	bool renderImguiConsole(float dt);
