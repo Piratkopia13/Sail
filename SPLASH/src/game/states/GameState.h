@@ -83,4 +83,5 @@ private:
 
 	Octree* m_octree;
 	std::vector<Entity::SPtr> m_candles;
+	bool m_disableLightComponents;
 };
