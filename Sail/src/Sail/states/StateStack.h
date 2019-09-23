@@ -45,11 +45,13 @@ class StateStack {
 		// Returns whether or not the stack is empty
 		bool isEmpty() const;
 
+		// Applies all pending actions to the stack
+		void applyPendingChanges();
+
 	private:
 		// Creates a new state instance from the id
 		State::Ptr createState(States::ID stateID);
-		// Applies all pending actions to the stack
-		void applyPendingChanges();
+		
 
 	private:
 		// Struct with information about a change
