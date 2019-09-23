@@ -14,7 +14,6 @@ void LightSetup::addPointLight(const PointLight& pl) {
 	if (pl.getIndex() < 0) {
 		m_pls[ind].back().setIndex(m_pls[ind].size() + 12);
 	}
-	//std::cout << "added ligth " << m_pls.size() << std::endl;
 	//updateBufferData();
 }
 void LightSetup::setDirectionalLight(const DirectionalLight& dl) {

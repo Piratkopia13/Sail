@@ -5,14 +5,18 @@
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
 #include "api/ImGuiHandler.h"
+#include "api/Audio/audio.hpp"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
+#include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "events/IEventDispatcher.h"
 #include "utils/StateStorage.h"
 
 #include <future>
 
+#include "ai/pathfinding/NodeSystem.h"
+#include "resources/loaders/AssimpLoader.h"
 // Forward declarations
 namespace ctpl {
 	class thread_pool;
@@ -77,6 +81,10 @@ public:
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
+
+	MemoryManager& getMemoryManager();
+	Audio* getAudioManager();
+	NodeSystem* getNodeSystem();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
@@ -87,6 +95,10 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
+
+	MemoryManager m_memoryManager;
+	Audio m_audioManager;
+	std::unique_ptr<NodeSystem> m_nodeSystem;
 	StateStorage m_stateStorage;
 
 	// Timer

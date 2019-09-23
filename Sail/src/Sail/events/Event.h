@@ -11,7 +11,8 @@ public:
 		NETWORK_DISCONNECT,
 		NETWORK_CHAT,
 		NETWORK_WELCOME,
-		NETWORK_NAME
+		NETWORK_NAME,
+		NETWORK_DROPPED
 	};
 public:
 	Event(Type type);

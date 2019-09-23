@@ -42,7 +42,7 @@ struct PhongInput {
 
 float4 phongShade(PhongInput input) {
 
-	float3 ambientCoefficient = float3(0.3f, 0.3f, 0.3f);
+	float3 ambientCoefficient = float3(0.f, 0.f, 0.f);
 
 	float3 totalColor = float3(0.f, 0.f, 0.f);
 

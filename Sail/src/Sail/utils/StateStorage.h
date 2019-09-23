@@ -15,10 +15,10 @@ public:
 	~StateStorage() { }
 
 	// something
-	void setMenuToLobbyData(MenuToLobbyData data) { menuLobbyData = data; }
+	void setMenuToLobbyData(MenuToLobbyData& data) { menuLobbyData = data; }
 	const MenuToLobbyData* getMenuToLobbyData() { return &menuLobbyData; }
 
 private:
-	MenuToLobbyData menuLobbyData;
+	MenuToLobbyData menuLobbyData; // //
 
 };

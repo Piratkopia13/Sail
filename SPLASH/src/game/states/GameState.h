@@ -7,6 +7,7 @@
 class UpdateBoundingBoxSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
+class AnimationSystem;
 
 class GameState : public State {
 public:
@@ -38,6 +39,7 @@ private:
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
+		AnimationSystem* animationSystem = nullptr;
 	};
 
 	Application* m_app;
@@ -74,6 +76,7 @@ private:
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
+	
 
 	std::unique_ptr<Model> m_boundingBoxModel;
 
