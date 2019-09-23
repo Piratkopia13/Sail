@@ -196,6 +196,7 @@ GameState::GameState(StateStack& stack)
 	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
 
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
+	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -212,7 +213,6 @@ GameState::GameState(StateStack& stack)
 	
 	Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
-	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	auto animationEntity = ECS::Instance()->createEntity("animatedModel");
@@ -360,7 +360,7 @@ GameState::GameState(StateStack& stack)
 
 		e = ECS::Instance()->createEntity("Character1");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(15.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
@@ -369,7 +369,7 @@ GameState::GameState(StateStack& stack)
 
 		e = ECS::Instance()->createEntity("Character2");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 15.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
@@ -378,7 +378,7 @@ GameState::GameState(StateStack& stack)
 
 		e = ECS::Instance()->createEntity("Character3");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(20.f, 0.f, 20.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(15.f, 0.f,15.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
@@ -394,8 +394,8 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		PointLight pl;
 		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+		pl.setPosition(glm::vec3(lightPos.x-0.02f, lightPos.y + 3.1f, lightPos.z));
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
@@ -409,13 +409,28 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+		pl.setPosition(glm::vec3(lightPos.x - 0.02f, lightPos.y + 3.1f, lightPos.z));
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(1);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
 		m_candles.push_back(e);
+
+		//creates light for the player
+		m_playerController.createCandle(lightModel);
+		//e = m_playerController.m_candle;//ECS::Instance()->createEntity("PlayerCandle");
+		//e->addComponent<ModelComponent>(lightModel);
+		//e->addComponent<TransformComponent>(glm::vec3(-1.f, -3.f, 1.f), m_playerController.getEntity()->getComponent<TransformComponent>());
+		//e->getComponent<TransformComponent>()->setParent(m_playerController.getEntity()->getComponent<TransformComponent>());
+
+		////lightPos = e->getComponent<TransformComponent>()->getTranslation();
+		////pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		////pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
+		////pl.setAttenuation(.0f, 0.1f, 0.02f);
+		////pl.setIndex(2);
+		////e->addComponent<LightComponent>(pl);
+		//m_scene.addEntity(e);
 
 
 		m_virtRAMHistory = SAIL_NEW float[100];
@@ -448,7 +463,7 @@ GameState::GameState(StateStack& stack)
 	float offsetX = x_max * padding * 0.5f;
 	float offsetZ = z_max * padding * 0.5f;
 	float offsetY = 0;
-	bool* walkable = new bool[size];
+	bool* walkable = SAIL_NEW bool[size];
 
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
 	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
@@ -504,11 +519,11 @@ GameState::GameState(StateStack& stack)
 
 		connections.push_back(conns);
 	}
-
 	//Delete "DeleteMeFirstFrameDummy"
 	ECS::Instance()->destroyEntity(e);
 
 	test->setNodes(nodes, connections);
+	Memory::SafeDeleteArr(walkable);
 
 	m_playerController.provideCandles(&m_candles);
 }
@@ -659,12 +674,14 @@ bool GameState::update(float dt) {
 
 	m_playerController.processKeyboardInput(TIMESTEP);
 
+
+	m_lights.clearPointLights();
 	updateComponentSystems(dt);
 
 	//check and update all lights for all entities
 	std::vector<Entity::SPtr> entities = m_scene.getGameObjectEntities();
-	m_lights.clearPointLights();
-	for (int i = 0; i < entities.size(); i++) {
+	m_lights.addPointLight(m_playerController.getCandle()->getComponent<LightComponent>()->m_pointLight);
+	for (int i = 0; i < entities.size();i++) {
 		if (entities[i]->hasComponent<LightComponent>()) {
 			m_lights.addPointLight(entities[i]->getComponent<LightComponent>()->m_pointLight);
 		}
@@ -674,7 +691,7 @@ bool GameState::update(float dt) {
 			}
 		}
 	}
-	m_lights.updateBufferData();
+	/*m_lights.updateBufferData();*/
 
 	// copy per-frame render objects to their own list so that they can be rendered without
 	// any interference from the update loop
@@ -689,6 +706,9 @@ bool GameState::update(float dt) {
 bool GameState::render(float dt, float alpha) {
 	// Interpolate the player's camera position (but not rotation)
 	m_playerController.updateCameraPosition(alpha);
+
+	m_lights.updateBufferData();
+
 
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });

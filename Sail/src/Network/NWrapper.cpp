@@ -12,7 +12,6 @@ NWrapper::~NWrapper() {
 
 void NWrapper::initialize(Network* pNetwork) {
 	m_network = pNetwork;
-	m_network->initialize();
 	m_app = Application::getInstance();
 }
 

@@ -15,7 +15,7 @@
 
 
 ImGuiHandler* ImGuiHandler::Create() {
-	return new DX12ImGuiHandler();
+	return SAIL_NEW DX12ImGuiHandler();
 }
 
 DX12ImGuiHandler::DX12ImGuiHandler() {

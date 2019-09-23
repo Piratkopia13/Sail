@@ -158,14 +158,14 @@ int Application::startGameLoop() {
 			if (s_updateRunning == 0) {
 				s_updateRunning = 1;
 				// Run update(s) in a separate thread
-				m_threadPool->push([this](int id) {
-					while (s_queuedUpdates > 0 && s_isRunning) {
+				//m_threadPool->push([this](int id) {
+					if (s_queuedUpdates > 0 && s_isRunning) {
 						s_queuedUpdates--;
 						Scene::IncrementCurrentUpdateIndex();
 						update(TIMESTEP);
 					}
 					s_updateRunning = 0;
-					});
+					//});
 			}
 
 			// Render
