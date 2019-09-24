@@ -61,8 +61,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
-
-	m_nodeSystem = std::make_unique<NodeSystem>();
 }
 
 Application::~Application() {
@@ -222,9 +220,6 @@ MemoryManager& Application::getMemoryManager() {
 }
 Audio* Application::getAudioManager() {
 	return &m_audioManager;
-}
-NodeSystem* Application::getNodeSystem() {
-	return m_nodeSystem.get();
 }
 StateStorage& Application::getStateStorage() {
 	return this->m_stateStorage;
