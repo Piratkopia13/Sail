@@ -247,8 +247,8 @@ float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 		if (tMin > 0) { //tMin is bigger than 0 so it is the first intersection
 			returnValue = tMin;
 		}
-		else { //tMin is smaller than 0 so try with tMax.
-			returnValue = tMax;
+		else if (tMax > 0) { //tMin is smaller than 0 so try with tMax.
+			returnValue = 0.0f; //Ray started in AABB, instant hit. Distance is 0
 		}
 	}
 	return returnValue;

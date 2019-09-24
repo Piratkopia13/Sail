@@ -108,9 +108,11 @@ void Scene::prepareRenderObjects() {
 
 		if (m_showBoundingBoxes) {
 			BoundingBoxComponent* boundingBox = gameObject->getComponent<BoundingBoxComponent>();
-			Model* wireframeModel = boundingBox->getWireframeModel();
-			if (boundingBox && wireframeModel) {
-				m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), boundingBox->getWireframeModel()));
+			if (boundingBox) {
+				Model* wireframeModel = boundingBox->getWireframeModel();
+				if (wireframeModel) {
+					m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), wireframeModel));
+				}
 			}
 		}
 	}
@@ -137,9 +139,11 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 		if (m_showBoundingBoxes) {
 			BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
-			Model* wireframeModel = boundingBox->getWireframeModel();
-			if (boundingBox && wireframeModel) {
-				(*m_currentRenderer)->submit(wireframeModel, boundingBox->getTransform()->getMatrix());
+			if (boundingBox) {
+				Model* wireframeModel = boundingBox->getWireframeModel();
+				if (wireframeModel) {
+					(*m_currentRenderer)->submit(wireframeModel, boundingBox->getTransform()->getMatrix());
+				}
 			}
 		}
 	}

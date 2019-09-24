@@ -15,8 +15,8 @@ public:
 	};
 
 	struct RayIntersectionInfo {
-		float distance = -1;
-		Entity* entity;
+		float closestHit = -1;
+		Entity* entity = nullptr;
 	};
 
 private:
