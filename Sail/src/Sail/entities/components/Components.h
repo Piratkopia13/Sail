@@ -14,3 +14,4 @@
 #include "LightListComponent.h"
 #include "AnimationComponent.h"
 #include "LifeTimeComponent.h"
+#include "AiComponent.h"

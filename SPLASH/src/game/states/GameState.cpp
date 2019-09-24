@@ -6,11 +6,11 @@
 #include "..//Sail/src/Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "..//Sail/src/Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "..//Sail/src/Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
+#include "Sail/entities/systems/gameplay/AiSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include <sstream>
 #include <iomanip>
-#include "Sail/ai/pathfinding/NodeSystem.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -94,6 +94,10 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
+  
+	// TODO: create ai system
+	ECS::Instance()->createSystem<AiSystem>();
+	m_componentSystems.aiSystem = ECS::Instance()->getSystem<AiSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
@@ -330,7 +334,9 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
-		m_aiControllers.push_back(e);
+		e->addComponent<AiComponent>();
+		// Add ai to ai system
+		m_componentSystems.aiSystem->addEntity(e.get());
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character2");
@@ -339,7 +345,9 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
-		m_aiControllers.push_back(e);
+		e->addComponent<AiComponent>();
+		// Add ai to ai system
+		m_componentSystems.aiSystem->addEntity(e.get());
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character3");
@@ -348,7 +356,9 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
-		m_aiControllers.push_back(e);
+		e->addComponent<AiComponent>();
+		// Add ai to ai system
+		m_componentSystems.aiSystem->addEntity(e.get());
 		m_scene.addEntity(e);
 
 
@@ -394,89 +404,14 @@ GameState::GameState(StateStack& stack)
 		m_cpuHistory = SAIL_NEW float[100];
 		m_frameTimesHistory = SAIL_NEW float[100];
 	}
-	/* "Unit test" for NodeSystem */
-	NodeSystem* test = m_app->getNodeSystem();
+
+
+	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 #ifdef _DEBUG_NODESYSTEM
-	Model* nodeSystemModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
-	nodeSystemModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
-	test->setDebugModelAndScene(nodeSystemModel, &m_scene);
+	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader, &m_scene);
+#else
+	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
-
-	std::vector<NodeSystem::Node> nodes;
-	std::vector<std::vector<unsigned int>> connections;
-
-	std::vector<unsigned int> conns;
-	int x_max = 60;
-	int z_max = 60;
-	int x_cur = 0;
-	int z_cur = 0;
-	int size = x_max * z_max;
-
-	int padding = 2;
-	float offsetX = x_max * padding * 0.5f;
-	float offsetZ = z_max * padding * 0.5f;
-	float offsetY = 0;
-	bool* walkable = SAIL_NEW bool[size];
-
-	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
-	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	//e->addComponent<ModelComponent>(m_boundingBoxModel.get());
-	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	//m_scene.addEntity(e);
-
-
-	/*Nodesystem*/
-	//ECS::Instance()->update(0.0f); // Update Boundingboxes/octree system here
-	ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.f);
-	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->update(0.f);
-	for (size_t i = 0; i < size; i++) {
-		conns.clear();
-		x_cur = i % x_max;
-		z_cur = floor(i / x_max);
-		glm::vec3 pos(x_cur* padding - offsetX, offsetY, z_cur* padding - offsetZ);
-		
-		bool blocked = false;
-		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(pos);
-		std::vector < Octree::CollisionInfo> vec;
-		m_octree->getCollisions(e.get(), &vec);
-
-		for (Octree::CollisionInfo& info : vec) {
-			int i = (info.entity->getName().compare("Map_"));
-			if (i >= 0) {
-				//Not walkable
-				//auto e2 = ECS::Instance()->createEntity("blockedGroundMarker");
-				//e2->addComponent<TransformComponent>(pos);
-				//e2->addComponent<ModelComponent>(m_boundingBoxModel.get());
-				//m_scene.addEntity(e2);
-
-				blocked = true;
-				break;
-			}
-		}
-
-		nodes.emplace_back(pos, blocked, i);
-
-		for (int dx = -1; dx <= 1; dx++) {
-			for (int dz = -1; dz <= 1; dz++) {
-				if (dx == 0 && dz == 0)
-					continue;
-
-				int nx = x_cur + dx;
-				int nz = z_cur + dz;
-				if (nx >= 0 && nx < x_max && nz >= 0 && nz < z_max) {
-					int ni = nx + nz * x_max;
-					conns.push_back(ni);
-				}
-			}
-		}
-
-		connections.push_back(conns);
-	}
-	//Delete "DeleteMeFirstFrameDummy"
-	ECS::Instance()->destroyEntity(e);
-
-	test->setNodes(nodes, connections);
-	Memory::SafeDeleteArr(walkable);
 
 	m_playerController.provideCandles(&m_candles);
 }
@@ -517,11 +452,13 @@ bool GameState::processInput(float dt) {
 	}
 
 	if (Input::WasKeyJustPressed(SAIL_KEY_H)) {
-		for ( int i = 0; i < m_aiControllers.size(); i++ ) {
-			if ( m_aiControllers[i].getTargetEntity() == nullptr ) {
-				m_aiControllers[i].chaseEntity(m_playerController.getEntity().get());
+		auto entities = m_componentSystems.aiSystem->getEntities();
+		for ( int i = 0; i < entities.size(); i++ ) {
+			auto aiComp = entities[i]->getComponent<AiComponent>();
+			if ( aiComp->entityTarget == nullptr ) {
+				aiComp->setTarget(m_playerController.getEntity().get());
 			} else {
-				m_aiControllers[i].chaseEntity(nullptr);
+				aiComp->setTarget(nullptr);
 			}
 		}
 	}
@@ -538,9 +475,6 @@ bool GameState::processInput(float dt) {
 	// Update the camera controller from input devices
 	//m_camController.update(dt);
 	m_playerController.processMouseInput(dt);
-	for ( auto& ai : m_aiControllers ) {
-		ai.update(dt);
-	}
 	//m_physSystem.execute(dt);
 
 
@@ -916,6 +850,7 @@ void GameState::updateComponentSystems(float dt) {
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 	m_componentSystems.physicSystem->update(dt);
 	m_componentSystems.animationSystem->update(dt);
+	m_componentSystems.aiSystem->update(dt);
 	m_componentSystems.lifeTimeSystem->update(dt);
 
 
