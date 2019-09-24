@@ -99,20 +99,9 @@ GameState::GameState(StateStack& stack)
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
-	//// Create the level generator system and put it into the datatype.
-	//m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-	//m_componentSystems.levelGeneratorSystem;
 
-	//// load each tile type
-	//Model* tile1 = &m_app->getResourceManager().getModel("tile1.fbx", shader);
-	//tile1->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.2f, 1.0f, 1.0f));
 
-	//auto tmpEntity = ECS::Instance()->createEntity("tile1");
-	//tmpEntity->addComponent<ModelComponent>(tile1);
-	//tmpEntity->addComponent<StaticMatrixComponent>(glm::vec3(0.f, 0.f, 0.f));
-	//tmpEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	//tmpEntity->addComponent<CollidableComponent>();
-	//m_scene.addStaticEntity(tmpEntity);
+	
 
 
 	// Textures needs to be loaded before they can be used
@@ -175,6 +164,10 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
+	// load each tile type for the map
+	Model* tile1 = &m_app->getResourceManager().getModel("tiler1.fbx", shader);
+	tile1->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.2f, 1.0f, 1.0f));
+
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	m_playerController.getEntity()->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
@@ -187,6 +180,9 @@ GameState::GameState(StateStack& stack)
 		Creation of entities
 	*/
 
+	// Create the level generator system and put it into the datatype.
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tile1);
 	
 	Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
