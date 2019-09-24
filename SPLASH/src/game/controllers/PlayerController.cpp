@@ -9,7 +9,7 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 
 	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 3.f, 0.f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -108,13 +108,14 @@ void PlayerController::processKeyboardInput(float dt) {
 			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.3f));
 			e->addComponent<PhysicsComponent>();
 			e->addComponent<BoundingBoxComponent>(m_projectileWireframeModel);
-			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 20.f;
-			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -25.f, 0.f);
+			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
+			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -9.82f, 0.f);
+			e->addComponent<LifeTimeComponent>(1.0f);
 
 			// Adding projectile to projectile vector to keep track of current projectiles
-			Projectile proj;
+			/*Projectile proj;
 			proj.projectile = e;
-			m_projectiles.push_back(proj);
+			m_projectiles.push_back(proj);*/
 
 			// Add entity to scene for rendering, will most likely be changed once scene system is created
 			m_scene->addEntity(e);
@@ -134,12 +135,13 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	// Update for all projectiles
 	//for (int i = 0; i < m_projectiles.size(); i++) {
-	for (Projectile& p : m_projectiles) {
-		p.lifeTime += TIMESTEP;
-		if (p.lifeTime > 2.f) {
-			ECS::Instance()->queueDestructionOfEntity(p.projectile);
-		}
-	}
+	//for (Projectile& p : m_projectiles) {
+	//	p.lifeTime += TIMESTEP;
+	//	if (p.lifeTime > 2.f) {
+	//		p.projectile->queueDestruction();
+	//		//ECS::Instance()->queueDestructionOfEntity(p.projectile);
+	//	}
+	//}
 }
 
 void PlayerController::processMouseInput(float dt) {
@@ -189,7 +191,7 @@ void PlayerController::updateCameraPosition(float alpha) {
 	//playerTrans->setForward(forwards); //needed?
 
 
-	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha));
+	m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f,playerBB->getBoundingBox()->getHalfSize().y*0.8f,0.f)));
 	m_cam->setCameraDirection(forwards);
 
 	//moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns
@@ -199,31 +201,31 @@ void PlayerController::updateCameraPosition(float alpha) {
 
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 	right = glm::normalize(right);
-	glm::vec3 playerToCandle = forward - right;
-	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 3.5f, 0);
+	glm::vec3 playerToCandle = glm::vec3((forward - right)*0.2f);
+	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 0.35f, 0);
 	m_candle->getComponent<TransformComponent>()->setTranslation(candlePos);
 	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
 	m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
 	m_candle->getComponent<TransformComponent>()->prepareUpdate();
-	glm::vec3 flamePos = candlePos + glm::vec3(0, 3.5f, 0);
+	glm::vec3 flamePos = candlePos + glm::vec3(0, 0.37f, 0);
 	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
 	m_candle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);
 }
 
 void PlayerController::destroyOldProjectiles() {
 	// Remove old projectiles
-	for (int i = 0; i < m_projectiles.size(); i++) {
+	/*for (int i = 0; i < m_projectiles.size(); i++) {
 		if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
 			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
 			m_projectiles.erase(m_projectiles.begin() + i);
 			i--;
 		}
-	}
+	}*/
 }
 
 // NOTE: Keyboard and mouse input processing has been moved to their own functions above this one
 void PlayerController::update(float dt) {
-	for (int i = 0; i < m_projectiles.size(); i++) {
+	/*for (int i = 0; i < m_projectiles.size(); i++) {
 		for (unsigned int j = 0; j < m_candles->size(); j++) {
 			auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
 			for (unsigned int k = 0; k < collisions.size(); k++) {
@@ -232,7 +234,7 @@ void PlayerController::update(float dt) {
 				}
 			}
 		}
-	}
+	}*/
 }
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
