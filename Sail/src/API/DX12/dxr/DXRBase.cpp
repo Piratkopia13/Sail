@@ -338,8 +338,9 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	asDesc.Inputs = inputs;
 	asDesc.ScratchAccelerationStructureData = bottomBuffer.scratch->GetGPUVirtualAddress();
 	asDesc.DestAccelerationStructureData = bottomBuffer.result->GetGPUVirtualAddress();
-	if (inputs.Flags & D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE)
+	if (inputs.Flags & D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE) {
 		asDesc.SourceAccelerationStructureData = sourceBufferForUpdate->result->GetGPUVirtualAddress();
+	}
 
 	cmdList->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
 
@@ -435,8 +436,9 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 
 		MeshHandles handles;
 		handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
-		if (mesh->getNumIndices() > 0)
+		if (mesh->getNumIndices() > 0) {
 			handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
+		}
 
 		// Three textures
 		for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
