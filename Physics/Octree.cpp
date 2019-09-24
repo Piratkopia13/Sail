@@ -246,16 +246,16 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
 					StaticMatrixComponent* staticMatrix = currentNode->entities[i]->getComponent<StaticMatrixComponent>();
 
-					glm::mat4 transformMatrix;
-					if (transform) {
-						transformMatrix = transform->getMatrix();
-					}
-					else {
-						transformMatrix = staticMatrix->getMatrix();
-					}
-
 					if (model) {
 						//Entity has a model. Check collision with meshes
+						glm::mat4 transformMatrix;
+						if (transform) {
+							transformMatrix = transform->getMatrix();
+						}
+						else {
+							transformMatrix = staticMatrix->getMatrix();
+						}
+
 						for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
 							const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
 							if (meshData.indices) { //Has indices
