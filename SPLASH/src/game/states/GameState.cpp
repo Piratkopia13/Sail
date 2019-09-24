@@ -4,6 +4,7 @@
 #include "..//Sail/src/Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
+#include "..//Sail/src/Sail/entities/systems/LevelGeneratorSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include <sstream>
@@ -97,6 +98,22 @@ GameState::GameState(StateStack& stack)
 
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
+
+	//// Create the level generator system and put it into the datatype.
+	//m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+	//m_componentSystems.levelGeneratorSystem;
+
+	//// load each tile type
+	//Model* tile1 = &m_app->getResourceManager().getModel("tile1.fbx", shader);
+	//tile1->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.2f, 1.0f, 1.0f));
+
+	//auto tmpEntity = ECS::Instance()->createEntity("tile1");
+	//tmpEntity->addComponent<ModelComponent>(tile1);
+	//tmpEntity->addComponent<StaticMatrixComponent>(glm::vec3(0.f, 0.f, 0.f));
+	//tmpEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	//tmpEntity->addComponent<CollidableComponent>();
+	//m_scene.addStaticEntity(tmpEntity);
+
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
