@@ -218,13 +218,13 @@ void PlayerController::updateCameraPosition(float alpha) {
 
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 	right = glm::normalize(right);
-	glm::vec3 playerToCandle = forward - right;
-	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 3.5f, 0);
+	glm::vec3 playerToCandle = glm::vec3((forward - right)*0.2f);
+	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 0.35f, 0);
 	m_candle->getComponent<TransformComponent>()->setTranslation(candlePos);
 	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
 	m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
 	m_candle->getComponent<TransformComponent>()->prepareUpdate();
-	glm::vec3 flamePos = candlePos + glm::vec3(0, 3.22f, 0);
+	glm::vec3 flamePos = candlePos + glm::vec3(0, 0.37f, 0);
 	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
 	m_candle->getComponent<LightComponent>()->m_pointLight.setPosition(plPos);
 }
