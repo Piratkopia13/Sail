@@ -508,6 +508,15 @@ bool GameState::processInput(float dt) {
 		m_scene.showBoundingBoxes(false);
 	}
 
+	//Test ray intersection
+	if (Input::IsKeyPressed(SAIL_KEY_O)) {
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		if (tempInfo.entity) {
+			Logger::Log("Ray intersection with " + tempInfo.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		}
+	}
+
 	if (Input::WasKeyJustPressed(SAIL_KEY_H)) {
 		for ( int i = 0; i < m_aiControllers.size(); i++ ) {
 			if ( m_aiControllers[i].getTargetEntity() == nullptr ) {
@@ -634,14 +643,6 @@ bool GameState::update(float dt) {
 					m_lights.addPointLight(light);
 				}
 			}
-		}
-	}
-
-	if (Input::IsKeyPressed(SAIL_KEY_O)) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.entity) {
-			Logger::Log("Ray intersection with " + tempInfo.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
 
