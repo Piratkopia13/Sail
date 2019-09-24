@@ -52,7 +52,6 @@ void StateStack::update(float dt) {
 			break;
 
 	}
-	applyPendingChanges();
 
 }
 

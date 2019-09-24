@@ -18,6 +18,7 @@ GameState::GameState(StateStack& stack)
 , m_playerController(&m_cam, &m_scene)
 , m_cc(true)
 , m_profiler(true)
+, m_disableLightComponents(false)
 {
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -124,33 +125,6 @@ GameState::GameState(StateStack& stack)
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
-	// Add four point lights
-	{
-		//PointLight pl;
-		//pl.setAttenuation(.0f, 0.1f, 0.02f);
-		//pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-		//pl.setPosition(glm::vec3(3.0f, 3.1f, 3.0f));
-		//pl.setIndex(0);
-		//m_lights.addPointLight(pl);
-
-		//pl.setColor(glm::vec3(1.f,1.f,1.f));
-		//pl.setPosition(glm::vec3(1.0f, 3.1f, 1.0f));
-		//pl.setIndex(1);
-		//m_lights.addPointLight(pl);
-
-
-		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		//pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
-		//m_lights.addPointLight(pl);
-
-		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		//pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
-		//m_lights.addPointLight(pl);
-
-		//pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		//pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
-		//m_lights.addPointLight(pl);
-	}
 
 	// Set up the scene
 	//m_scene->addSkybox(L"skybox_space_512.dds"); //TODO
@@ -165,15 +139,6 @@ GameState::GameState(StateStack& stack)
 
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(3.0f));
-	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-
-	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
-	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
 	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
@@ -186,11 +151,6 @@ GameState::GameState(StateStack& stack)
 
 	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
 	rampModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/rampBasicTexture.tga");
-
-	//For testing purposes only
-	//Model* boxOrientation = &m_app->getResourceManager().getModel("boxOrientation.fbx", shader);
-	//boxOrientation->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/boxOrientationTexture.tga");
-	//Model* lrTest= &m_app->getResourceManager().getModel("lrTest.fbx", shader);
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
@@ -396,7 +356,6 @@ GameState::GameState(StateStack& stack)
 		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
 		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		pl.setPosition(glm::vec3(lightPos.x-0.02f, lightPos.y + 3.1f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
 		e->addComponent<LightListComponent>(); // Candle1 holds all lights you can place in debug
@@ -411,7 +370,6 @@ GameState::GameState(StateStack& stack)
 		lightPos = e->getComponent<TransformComponent>()->getTranslation();
 		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		pl.setPosition(glm::vec3(lightPos.x - 0.02f, lightPos.y + 3.1f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(1);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
@@ -419,19 +377,6 @@ GameState::GameState(StateStack& stack)
 
 		//creates light for the player
 		m_playerController.createCandle(lightModel);
-		//e = m_playerController.m_candle;//ECS::Instance()->createEntity("PlayerCandle");
-		//e->addComponent<ModelComponent>(lightModel);
-		//e->addComponent<TransformComponent>(glm::vec3(-1.f, -3.f, 1.f), m_playerController.getEntity()->getComponent<TransformComponent>());
-		//e->getComponent<TransformComponent>()->setParent(m_playerController.getEntity()->getComponent<TransformComponent>());
-
-		////lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		////pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-		////pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
-		////pl.setAttenuation(.0f, 0.1f, 0.02f);
-		////pl.setIndex(2);
-		////e->addComponent<LightComponent>(pl);
-		//m_scene.addEntity(e);
-
 
 		m_virtRAMHistory = SAIL_NEW float[100];
 		m_physRAMHistory = SAIL_NEW float[100];
@@ -550,7 +495,7 @@ bool GameState::processInput(float dt) {
 		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl.setPosition(m_cam.getPosition());
 		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.push_back(pl);
+		m_scene.getGameObjectEntityByName("Map_Candle1")->getComponent<LightListComponent>()->getLightList().push_back(pl);
 		//m_lights.addPointLight(pl);
 	}
 
@@ -563,7 +508,7 @@ bool GameState::processInput(float dt) {
 		m_scene.showBoundingBoxes(false);
 	}
 
-	if ( Input::WasKeyJustPressed(SAIL_KEY_H) ) {
+	if (Input::WasKeyJustPressed(SAIL_KEY_H)) {
 		for ( int i = 0; i < m_aiControllers.size(); i++ ) {
 			if ( m_aiControllers[i].getTargetEntity() == nullptr ) {
 				m_aiControllers[i].chaseEntity(m_playerController.getEntity().get());
@@ -600,46 +545,42 @@ bool GameState::processInput(float dt) {
 
 	//checks if candle entity has light and if not, adds one 
 	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
-		if (!m_scene.getGameObjectEntityByName("Candle1")->hasComponent<LightComponent>()) {
+		auto& candleEntity = m_scene.getGameObjectEntityByName("Map_Candle1");
+		if (!candleEntity->hasComponent<LightComponent>()) {
 			PointLight pl;
-			glm::vec3 pos = m_scene.getGameObjectEntityByName("Candle1")->getComponent<TransformComponent>()->getTranslation();
+			glm::vec3 pos = candleEntity->getComponent<TransformComponent>()->getTranslation();
 			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
 			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
 			pl.setAttenuation(.0f, 0.1f, 0.02f);
 			pl.setIndex(0);
-			m_scene.getGameObjectEntityByName("Candle1")->addComponent<LightComponent>(pl);
-			//m_lights.addPointLight(pl);
+			candleEntity->addComponent<LightComponent>(pl);
 		}
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
-		if (!m_scene.getGameObjectEntityByName("Candle2")->hasComponent<LightComponent>()) {
+		auto& candleEntity = m_scene.getGameObjectEntityByName("Map_Candle2");
+		if (!candleEntity->hasComponent<LightComponent>()) {
 			PointLight pl;
-			glm::vec3 pos = m_scene.getGameObjectEntityByName("Candle2")->getComponent<TransformComponent>()->getTranslation();
+			glm::vec3 pos = candleEntity->getComponent<TransformComponent>()->getTranslation();
 			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
 			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
 			pl.setAttenuation(.0f, 0.1f, 0.02f);
 			pl.setIndex(1);
-			m_scene.getGameObjectEntityByName("Candle2")->addComponent<LightComponent>(pl);
-			//m_lights.addPointLight(pl);
+			candleEntity->addComponent<LightComponent>(pl);
 		}
 	}
 
-	//removes first added pointlight in arena
+	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
-
-		if (m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.size() > 0) {
-			m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.erase(m_scene.getGameObjectEntityByName("Candle1")->getComponent<LightListComponent>()->m_pls.begin());
+		auto* candleEntity = m_scene.getGameObjectEntityByName("Map_Candle1")->getComponent<LightListComponent>();
+		if (candleEntity->getLightList().size() > 0) {
+			candleEntity->getLightList().erase(candleEntity->getLightList().begin());
 		}
-
-		//m_lights.removePointLight();
 	}
 	return true;
 	}
 
 
 bool GameState::onEvent(Event& event) {
-	Logger::Log("Received event: " + std::to_string(event.getType()));
-
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 
 	// Forward events
@@ -674,26 +615,28 @@ bool GameState::update(float dt) {
 
 	m_playerController.processKeyboardInput(TIMESTEP);
 
-
-	m_lights.clearPointLights();
 	updateComponentSystems(dt);
-
-	//check and update all lights for all entities
-
-	// MOVED TO LIGHT SYSTEM
-	std::vector<Entity::SPtr> entities = m_scene.getGameObjectEntities();
-	m_lights.addPointLight(m_playerController.getCandle()->getComponent<LightComponent>()->m_pointLight);
-	for (int i = 0; i < entities.size();i++) {
-		if (entities[i]->hasComponent<LightComponent>()) {
-			m_lights.addPointLight(entities[i]->getComponent<LightComponent>()->m_pointLight);
-		}
-		if (entities[i]->hasComponent<LightListComponent>()) {
-			for (int j = 0; j < entities[i]->getComponent<LightListComponent>()->m_pls.size(); j++) {
-				m_lights.addPointLight(entities[i]->getComponent<LightListComponent>()->m_pls[j]);
+	// MOVE TO LIGHTSYSTEM
+	// There is an imgui debug toggle to override lights
+	if (!m_disableLightComponents) {
+		m_lights.clearPointLights();
+		//check and update all lights for all entities
+		std::vector<Entity::SPtr> entities = m_scene.getGameObjectEntities();
+		m_lights.addPointLight(m_playerController.getCandle()->getComponent<LightComponent>()->getPointLight());
+		for (int i = 0; i < entities.size(); i++) {
+			auto* lightComp = entities[i]->getComponent<LightComponent>();
+			if (lightComp) {
+				m_lights.addPointLight(lightComp->getPointLight());
+			}
+			auto* lightListComp = entities[i]->getComponent<LightListComponent>();
+			if (lightListComp) {
+				for (auto& light : lightListComp->getLightList()) {
+					m_lights.addPointLight(light);
+				}
 			}
 		}
 	}
-	/*m_lights.updateBufferData();*/
+
 
 	// copy per-frame render objects to their own list so that they can be rendered without
 	// any interference from the update loop
@@ -710,8 +653,7 @@ bool GameState::render(float dt, float alpha) {
 	m_playerController.updateCameraPosition(alpha);
 
 	m_lights.updateBufferData();
-
-
+	
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
@@ -727,6 +669,8 @@ bool GameState::renderImgui(float dt) {
 	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
+	renderImGuiLightDebug(dt);
+
 	return false;
 }
 
@@ -913,9 +857,9 @@ bool GameState::renderImguiProfiler(float dt) {
 }
 
 bool GameState::renderImGuiRenderSettings(float dt) {
+	static int selectedRenderer = 0;
 	ImGui::Begin("Rendering settings");
 	const char* items[] = { "Forward raster", "Raytraced" };
-	static int selectedRenderer = 0;
 	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
 		m_scene.changeRenderer(selectedRenderer);
 	}
@@ -923,6 +867,41 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::End();
 
 	return false;
+}
+
+bool GameState::renderImGuiLightDebug(float dt) {
+	ImGui::Begin("Light debug");
+	ImGui::Checkbox("Manual override", &m_disableLightComponents);
+	unsigned int i = 0;
+	for (auto& pl : m_lights.getPLs()) {
+		ImGui::PushID(i);
+		std::string label("Point light ");
+		label += std::to_string(i);
+		if (ImGui::CollapsingHeader(label.c_str())) {
+
+			glm::vec3 color = pl.getColor(); // = 1.0f
+			glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
+			float attConstant = pl.getAttenuation().constant; // 0.312f;
+			float attLinear = pl.getAttenuation().linear; // 0.0f;
+			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
+
+			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
+			ImGui::SliderFloat3("Position##", &position[0], -40.f, 40.0f);
+			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
+			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
+			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
+
+			pl.setAttenuation(attConstant, attLinear, attQuadratic);
+			pl.setColor(color);
+			pl.setPosition(position);
+
+		}
+		i++;
+		ImGui::PopID();
+	}
+	//m_lights.updateBufferData();
+	ImGui::End();
+	return true;
 }
 
 void GameState::updateComponentSystems(float dt) {

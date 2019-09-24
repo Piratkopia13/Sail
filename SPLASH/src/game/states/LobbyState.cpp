@@ -208,27 +208,31 @@ void LobbyState::renderPlayerList() {
 }
 
 void LobbyState::renderStartButton() {
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-	flags |= ImGuiWindowFlags_NoResize;
-	flags |= ImGuiWindowFlags_NoMove;
-	flags |= ImGuiWindowFlags_NoNav;
-	flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
-	flags |= ImGuiWindowFlags_NoSavedSettings;
-	ImGui::SetNextWindowPos(ImVec2(
-		m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
-		m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
-	));
-	ImGui::Begin("Press 0 once");
 
-	// SetKeyBoardFocusHere on the chatbox prevents the button from working,
-	// so if we click with the mouse, temporarily set focus to the button.
+	if (NWrapperSingleton::getInstance().isHost()) {
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
+		flags |= ImGuiWindowFlags_NoResize;
+		flags |= ImGuiWindowFlags_NoMove;
+		flags |= ImGuiWindowFlags_NoNav;
+		flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+		flags |= ImGuiWindowFlags_NoSavedSettings;
+		ImGui::SetNextWindowPos(ImVec2(
+			m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
+			m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
+		));
+		ImGui::Begin("Start Game");
 
-	if (ImGui::Button("S.P.L.A.S.H")) {
-		// Queue a removal of LobbyState, then a push of gamestate
-		this->requestStackPop();
-		this->requestStackPush(States::Game);
+		// SetKeyBoardFocusHere on the chatbox prevents the button from working,
+		// so if we click with the mouse, temporarily set focus to the button.
+
+		if (ImGui::Button("S.P.L.A.S.H")) {
+			// Queue a removal of LobbyState, then a push of gamestate
+			m_network->sendMsgAllClients("t");
+			this->requestStackPop();
+			this->requestStackPush(States::Game);
+		}
+		ImGui::End();
 	}
-	ImGui::End();
 }
 
 void LobbyState::renderSettings() {

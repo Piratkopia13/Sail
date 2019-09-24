@@ -40,6 +40,10 @@ void Game::dispatchEvent(Event& event) {
 	m_stateStack.onEvent(event);
 }
 
+void Game::applyPendingStateChanges() {
+	this->m_stateStack.applyPendingChanges();
+}
+
 void Game::processInput(float dt) {
 	m_stateStack.processInput(dt);
 }
