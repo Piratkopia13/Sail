@@ -14,13 +14,21 @@ void Entity::addToSystems() {
 	m_ecs->addEntityToSystems(this);
 }
 
-void Entity::removeFromSystems()
-{
+void Entity::removeFromSystems() {
 	m_ecs->removeEntityFromSystems(this);
+}
+
+void Entity::setECSIndex(int index) {
+	m_ECSIndex = index;
+}
+
+int Entity::getECSIndex() const {
+	return m_ECSIndex;
 }
 
 Entity::Entity(const std::string& name) : m_name(name) {
 	m_id = s_id++;
+	m_ECSIndex = -1;
 }
 
 Entity::~Entity() {
@@ -38,6 +46,7 @@ bool Entity::isAboutToBeDestroyed() const {
 
 void Entity::queueDestruction() {
 	m_destructionQueued = true;
+	m_ecs->queueDestructionOfEntity(this);
 }
 
 

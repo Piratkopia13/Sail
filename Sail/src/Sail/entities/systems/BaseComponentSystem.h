@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
-#include "..//Entity.h"
+
+class Entity;
 
 /*
 	Created systems must inherit from this class.

@@ -45,10 +45,14 @@ private:
 	void addToSystems();
 	void removeFromSystems();
 
+	void setECSIndex(int index);
+	int getECSIndex() const;
+
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::string m_name;
 	bool m_destructionQueued = false;
 	int m_id;
+	int m_ECSIndex;
 	ECS* m_ecs;
 	Entity::SPtr m_mySPtr;
 };

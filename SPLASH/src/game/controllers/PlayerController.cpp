@@ -137,7 +137,8 @@ void PlayerController::processKeyboardInput(float dt) {
 	for (Projectile& p : m_projectiles) {
 		p.lifeTime += TIMESTEP;
 		if (p.lifeTime > 2.f) {
-			ECS::Instance()->queueDestructionOfEntity(p.projectile);
+			p.projectile->queueDestruction();
+			//ECS::Instance()->queueDestructionOfEntity(p.projectile);
 		}
 	}
 }

@@ -4,6 +4,7 @@
 #include "..//Sail/src/Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
+#include "..//Sail/src/Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include <sstream>
@@ -605,8 +606,7 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2.0f;
 
-	// TODO: make a system or something for this
-	m_playerController.destroyOldProjectiles();
+	ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
 
 	m_playerController.update(dt);
 

@@ -1,19 +1,14 @@
 #include "pch.h"
 #include "ECS.h"
+#include "systems/Cleanup/EntityRemovalSystem.h"
 
 ECS::ECS() {
-
+	// Add the cleanup system
+	m_systems[typeid(EntityRemovalSystem)] = std::make_unique<EntityRemovalSystem>();
 }
 
 ECS::~ECS() {
 }
-
-//void ECS::update(float dt) {
-//	SystemMap::iterator it = m_systems.begin();
-//	for (; it != m_systems.end(); ++it) {
-//		it->second->update(dt);
-//	}
-//}
 
 unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
@@ -23,30 +18,33 @@ unsigned ECS::nrOfComponentTypes() const {
 
 Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));
+	m_entities.back()->setECSIndex(m_entities.size() - 1);
 	return m_entities.back();
 }
 
-void ECS::queueDestructionOfEntity(const Entity::SPtr entity) {
-	//Loop through and find entity
-	for (auto e : m_entities) {
-	//for (unsigned int i = 0; i < m_entities.size(); i++) {
-		if (e == entity) { //Entity found
-			e->queueDestruction();
-			break;
-		}
-	}
+void ECS::queueDestructionOfEntity(Entity* entity) {
+	// Add entity to removal system
+	m_systems.at(typeid(EntityRemovalSystem)).get()->addEntity(entity);
 }
 
 void ECS::destroyEntity(const Entity::SPtr entityToRemove) {
 	//Loop through and find entity
-	for (unsigned int i = 0; i < m_entities.size(); i++) {
-		if (m_entities[i] == entityToRemove) { //Entity found
-			//Destroy it
-			m_entities[i]->removeAllComponents();
-			m_entities.erase(m_entities.begin() + i);
-			break;
-		}
-	}
+	
+	// Find the index of the entity in the vector
+	int index = entityToRemove->getECSIndex();
+
+	// Remove all of its components
+	// Also removes it from the systems
+	m_entities[index]->removeAllComponents();
+
+	// Move the last entity in the vector
+	m_entities[index] = m_entities.back();
+
+	// Set the index of the moved entity
+	m_entities[index]->setECSIndex(index);
+
+	// Remove the redundant copy of the moved entity
+	m_entities.pop_back();
 }
 
 void ECS::addEntityToSystems(Entity* entity) {
