@@ -70,6 +70,15 @@ bool DX12RaytracingRenderer::onEvent(Event& event) {
 	return true;
 }
 
+void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix) {
+	RenderCommand cmd;
+	cmd.mesh = mesh;
+	cmd.transform = glm::transpose(modelMatrix);
+	// Resize to match numSwapBuffers (specific to dx12)
+	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), true);
+	commandQueue.push_back(cmd);
+}
+
 bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {
 	m_outputTexture->resize(event.getWidth(), event.getHeight());
 	return true;
