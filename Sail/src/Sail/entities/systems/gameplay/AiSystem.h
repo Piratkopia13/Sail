@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BaseComponentSystem.h"
+#include "Sail/ai/pathfinding/NodeSystem.h"
 
 class TransformComponent;
 class PhysicsComponent;
@@ -9,12 +10,20 @@ class NodeSystem;
 class Model;
 class Octree;
 
+#ifdef _DEBUG_NODESYSTEM
+class Shader;
+class Scene;
+#endif
+
 class AiSystem final : public BaseComponentSystem {
 public:
 	AiSystem();
 	~AiSystem();
 
 	void initNodeSystem(Model* bbModel, Octree* octree);
+#ifdef _DEBUG_NODESYSTEM
+	void initNodeSystem(Model* bbModel, Octree* octree, Shader* shader, Scene* scene);
+#endif
 
 	/*
 		Adds an entity to the system

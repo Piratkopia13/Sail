@@ -399,7 +399,13 @@ GameState::GameState(StateStack& stack)
 		m_frameTimesHistory = SAIL_NEW float[100];
 	}
 
-	m_componentSystems.aiSystem->initNodeSystem(m_boundingBoxModel.get(), m_octree);
+
+	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
+#ifdef _DEBUG_NODESYSTEM
+	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader, &m_scene);
+#else
+	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
+#endif
 
 	m_playerController.provideCandles(&m_candles);
 }

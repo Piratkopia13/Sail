@@ -11,31 +11,33 @@
 #include "../physics/OctreeAddRemoverSystem.h"
 #include "Sail/utils/Utils.h"
 #include "../Physics/Octree.h"
+#include "Sail/Application.h"
 
 AiSystem::AiSystem() {
 	requiredComponentTypes.push_back(TransformComponent::ID);
 	requiredComponentTypes.push_back(PhysicsComponent::ID);
 	requiredComponentTypes.push_back(AiComponent::ID);
+
+	m_nodeSystem = std::make_unique<NodeSystem>();
 }
 
 AiSystem::~AiSystem() {}
 
-void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
-	/* "Unit test" for NodeSystem */
-	m_nodeSystem = std::make_unique<NodeSystem>();
-
 #ifdef _DEBUG_NODESYSTEM
-	Model* nodeSystemModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
-	nodeSystemModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
-	test->setDebugModelAndScene(nodeSystemModel, &m_scene);
+void AiSystem::initNodeSystem(Model* bbModel, Octree* octree, Shader* shader, Scene* scene) {
+	m_nodeSystem->setDebugModelAndScene(shader, scene);
+	initNodeSystem(bbModel, octree);
+}
 #endif
+
+void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 
 	std::vector<NodeSystem::Node> nodes;
 	std::vector<std::vector<unsigned int>> connections;
 
 	std::vector<unsigned int> conns;
-	int x_max = 60;
-	int z_max = 60;
+	int x_max = 15;
+	int z_max = 15;
 	int x_cur = 0;
 	int z_cur = 0;
 	int size = x_max * z_max;
@@ -47,14 +49,10 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	bool* walkable = SAIL_NEW bool[size];
 
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
-	//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	//e->addComponent<ModelComponent>(m_boundingBoxModel.get());
 	e->addComponent<BoundingBoxComponent>(bbModel);
-	//m_scene.addEntity(e);
 
 
 	/*Nodesystem*/
-	//ECS::Instance()->update(0.0f); // Update Boundingboxes/octree system here
 	ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.f);
 	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->update(0.f);
 	for ( size_t i = 0; i < size; i++ ) {
@@ -143,7 +141,7 @@ void AiSystem::update(float dt) {
 		}
 
 		if ( entity.second.aiComp->currPath.empty() ) {
-			return;
+			continue;
 		}
 
 		if ( entity.second.aiComp->reachedTarget && entity.second.aiComp->currNodeIndex < entity.second.aiComp->currPath.size() - 1 ) {
