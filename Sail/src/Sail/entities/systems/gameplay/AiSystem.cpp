@@ -106,7 +106,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 }
 
 
-void AiSystem::addEntity(Entity* entity) {
+bool AiSystem::addEntity(Entity* entity) {
 	BaseComponentSystem::addEntity(entity);
 
 	AiEntity aiEntity;
