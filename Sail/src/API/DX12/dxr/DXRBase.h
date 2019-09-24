@@ -23,7 +23,7 @@ public:
 	~DXRBase();
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateCamera(Camera& cam);
+	void updateSceneData(Camera& cam, LightSetup& lights);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	virtual bool onEvent(Event& event) override;
@@ -49,15 +49,7 @@ private:
 	DX12API* m_context;
 	std::string m_shaderFilename;
 
-	//union AlignedSceneConstantBuffer { 	// TODO: Use this instead of SceneConstantBuffer
-	//	SceneConstantBuffer* constants;
-	//	uint8_t alignmentPadding[D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT];
-	//};
-	//AlignedSceneConstantBuffer* m_mappedSceneCBData; // TODO: Fix memory leak
-	//SceneConstantBuffer* m_sceneCBData; // TODO: Fix memory leak
-	//RayGenSettings m_rayGenCBData;
-
-	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_cameraCB;
+	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_sceneCB;
 	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_meshCB;
 
 	struct AccelerationStructureBuffers {

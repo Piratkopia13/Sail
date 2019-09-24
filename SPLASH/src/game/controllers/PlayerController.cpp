@@ -147,25 +147,6 @@ void PlayerController::processKeyboardInput(float dt) {
 			ECS::Instance()->queueDestructionOfEntity(p.projectile);
 		}
 	}
-
-	////moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns
-	//forward = m_cam->getCameraDirection();
-	//forward.y = 0.f;
-	//forward = glm::normalize(forward);
-
-	//right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-	//right = glm::normalize(right);
-	//m_candle->getComponent<TransformComponent>()->prepareUpdate();
-	//glm::vec3 playerToCandle = forward - right;
-	//glm::vec3 candlePos = m_player->getComponent<TransformComponent>()->getTranslation() 
-	//	+ playerToCandle - glm::vec3(0, 3.5f, 0);
-	//m_candle->getComponent<TransformComponent>()->setTranslation(candlePos);
-	//glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
-	//m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
-	//glm::vec3 flamePos = candlePos + glm::vec3(0, 3.22f, 0);
-	//glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
-	//m_candle->getComponent<LightComponent>()->m_pointLight.setPosition(plPos);
-
 }
 
 void PlayerController::processMouseInput(float dt) {
@@ -231,9 +212,9 @@ void PlayerController::updateCameraPosition(float alpha) {
 	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
 	m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
 	m_candle->getComponent<TransformComponent>()->prepareUpdate();
-	glm::vec3 flamePos = candlePos + glm::vec3(0, 3.22f, 0);
+	glm::vec3 flamePos = candlePos + glm::vec3(0, 3.5f, 0);
 	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
-	m_candle->getComponent<LightComponent>()->m_pointLight.setPosition(plPos);
+	m_candle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);
 }
 
 void PlayerController::destroyOldProjectiles() {
@@ -293,7 +274,7 @@ void PlayerController::createCandle(Model* model) {
 	glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
 	pl.setColor(glm::vec3(0.5f, 0.5f, 0.5f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
-	pl.setAttenuation(.0f, 0.1f, 0.02f);
+	//pl.setAttenuation(.0f, 0.1f, 0.02f);
 	pl.setIndex(2);
 	e->addComponent<LightComponent>(pl);
 	m_scene->setPlayerCandle(e);

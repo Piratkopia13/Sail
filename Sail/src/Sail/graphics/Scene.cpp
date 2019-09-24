@@ -75,7 +75,8 @@ void Scene::setPlayerCandle(Entity::SPtr candle) {
 
 
 void Scene::setLightSetup(LightSetup* lights) {
-	(*m_currentRenderer)->setLightSetup(lights);
+	m_rendererRaster->setLightSetup(lights);
+	m_rendererRaytrace->setLightSetup(lights);
 }
 
 
