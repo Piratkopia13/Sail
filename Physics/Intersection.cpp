@@ -226,10 +226,12 @@ float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 				t2 = t1;
 				t1 = tempT;
 			}
-			if (t1 > tMin) //Replaces tMin if t1 is bigger
+			if (t1 > tMin) {//Replaces tMin if t1 is bigger
 				tMin = t1;
-			if (t2 < tMax) //Replaces tMax if t2 is smaller
+			}
+			if (t2 < tMax) {//Replaces tMax if t2 is smaller
 				tMax = t2;
+			}
 			if (tMin > tMax || tMax < 0) { //tMin > tMax - A slab was exited before all slabs had been entered. tMax < 0 - the AABB is "behind" the ray start
 				//Exit test, no hit.
 				i = 3;
