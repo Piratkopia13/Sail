@@ -43,7 +43,7 @@ public:
 	// Should be called at the start of the update loop and nowhere else
 	void destroyOldProjectiles();
 private:
-	float m_movementSpeed = 20.f;
+	float m_movementSpeed = 10.f;
 	float RUN_SPEED = 2.0f;
 
 	// "Attached" camera
