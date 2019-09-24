@@ -293,6 +293,71 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 	}
 }
 
+void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData) {
+	float intersectionDistance = Intersection::rayWithTriangle(rayStart, rayDir, v1, v2, v3);
+	if (intersectionDistance > 0.0f && intersectionDistance < outIntersectionData->distance) {
+		outIntersectionData->distance = intersectionDistance;
+		outIntersectionData->entity = meshEntity;
+	}
+}
+
+void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData) {
+	float intersectionDistance = Intersection::rayWithAabb(rayStart, rayDir, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox());
+	if (intersectionDistance > 0.0f) { //Ray intersects with the current node
+		//Check against entities
+		for (int i = 0; i < currentNode->nrOfEntities; i++) {
+			if (Intersection::rayWithAabb(rayStart, rayDir, *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Ray intersects the entity bounding box
+				//Get Intersection
+				ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
+				TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
+				StaticMatrixComponent* staticMatrix = currentNode->entities[i]->getComponent<StaticMatrixComponent>();
+
+				if (model) {
+					//Entity has a model. Check ray against meshes
+					glm::mat4 transformMatrix;
+					if (transform) {
+						transformMatrix = transform->getMatrix();
+					}
+					else {
+						transformMatrix = staticMatrix->getMatrix();
+					}
+
+					for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
+						const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
+						if (meshData.indices) { //Has indices
+							for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
+								glm::vec3 v0, v1, v2;
+								v0 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
+								v1 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
+								v2 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+								getIntersectionData(rayStart, rayDir, currentNode->entities[i], v0, v1, v2, outIntersectionData);
+							}
+						}
+						else { //Does not have indices
+							for (unsigned int k = 0; k < meshData.numVertices; k += 3) {
+								glm::vec3 v0, v1, v2;
+								v0 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k].vec, 1.0f));
+								v1 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
+								v2 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+								getIntersectionData(rayStart, rayDir, currentNode->entities[i], v0, v1, v2, outIntersectionData);
+							}
+						}
+					}
+				}
+				else { //No model
+					//Intersected with bounding box
+					Logger::Log("Ray intersected with " + currentNode->entities[i]->getName() + ", no model was found so no intersection information was stored");
+				}
+			}
+		}
+
+		//Check for children
+		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
+			getRayIntersectionRec(rayStart, rayDir, &currentNode->childNodes[i], outIntersectionData);
+		}
+	}
+}
+
 int Octree::pruneTreeRec(Node* currentNode) {
 	int returnValue = 0;
 
@@ -361,4 +426,8 @@ void Octree::update() {
 
 void Octree::getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollisionData) {
 	getCollisionsRec(entity, entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), &m_baseNode, outCollisionData);
+}
+
+void Octree::getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData) {
+	getRayIntersectionRec(rayStart, rayDir, &m_baseNode, outIntersectionData);
 }

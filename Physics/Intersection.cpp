@@ -254,24 +254,25 @@ float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 	return returnValue;
 }
 
-float Intersection::rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3 triangleCorners[3]) {
+float Intersection::rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
 	float returnValue = -1.0f;
-	glm::vec3 normalizedRay = glm::normalize(rayVec); //Normalize ray direction vec just to be sure
+	glm::vec3 normalizedRay = glm::normalize(rayDir); //Normalize ray direction vec just to be sure
 
 	//Calculate triangle edges
-	glm::vec3 edge0 = triangleCorners[1] - triangleCorners[0];
-	glm::vec3 edge1 = triangleCorners[2] - triangleCorners[0];
+	glm::vec3 edge0 = v2 - v1;
+	glm::vec3 edge1 = v3 - v1;
 
 	//Determines s to use in cramer's rule
-	glm::vec3 cramersS = rayStart - triangleCorners[0];
+	glm::vec3 cramersS = rayStart - v1;
 
 	glm::vec4 tuvw(-1.0f);
 
 	normalizedRay *= -1.0f;
 
-	if (glm::determinant(glm::mat3(normalizedRay, edge0, edge1)) != 0) { //Makes sure no division by 0
+	float determinantVal = glm::determinant(glm::mat3(normalizedRay, edge0, edge1));
+	if (determinantVal != 0) { //Makes sure no division by 0
 		glm::vec3 detVec(glm::determinant(glm::mat3(cramersS, edge0, edge1)), glm::determinant(glm::mat3(normalizedRay, cramersS, edge1)), glm::determinant(glm::mat3(normalizedRay, edge0, cramersS))); //Vector containing determinant of the three matrixes
-		glm::vec3 tuv = detVec * (1 / glm::determinant(glm::mat3(normalizedRay, edge0, edge1)));
+		glm::vec3 tuv = detVec * (1 / determinantVal);
 		tuvw = glm::vec4(tuv.x, tuv.y, tuv.z, 1 - tuv.y - tuv.z);
 	}
 
