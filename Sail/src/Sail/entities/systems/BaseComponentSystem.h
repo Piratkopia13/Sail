@@ -23,7 +23,7 @@ public:
 	/*
 		Adds an entity to the system
 	*/
-	virtual void addEntity(Entity* entity);
+	virtual bool addEntity(Entity* entity);
 
 	/*
 		Removes an entity from the system
