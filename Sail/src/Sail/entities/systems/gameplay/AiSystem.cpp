@@ -107,7 +107,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 
 
 bool AiSystem::addEntity(Entity* entity) {
-	BaseComponentSystem::addEntity(entity);
+	bool returnValue = BaseComponentSystem::addEntity(entity);
 
 	AiEntity aiEntity;
 	aiEntity.transComp = entity->getComponent<TransformComponent>();
@@ -115,6 +115,8 @@ bool AiSystem::addEntity(Entity* entity) {
 	aiEntity.aiComp = entity->getComponent<AiComponent>();
 
 	m_aiEntities.try_emplace(entity->getID(), aiEntity);
+
+	return returnValue;
 }
 
 void AiSystem::removeEntity(Entity* entity) {
