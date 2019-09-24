@@ -637,6 +637,13 @@ bool GameState::update(float dt) {
 		}
 	}
 
+	if (Input::IsKeyPressed(SAIL_KEY_O)) {
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		if (tempInfo.entity) {
+			Logger::Log("Ray intersection with " + tempInfo.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		}
+	}
 
 	// copy per-frame render objects to their own list so that they can be rendered without
 	// any interference from the update loop

@@ -257,7 +257,7 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 						}
 
 						for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
-							const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
+							const Mesh::Data& meshData = model->getModel()->getMesh(j)->getData();
 							if (meshData.indices) { //Has indices
 								for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
 									glm::vec3 v0, v1, v2;
@@ -295,18 +295,19 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 
 void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData) {
 	float intersectionDistance = Intersection::rayWithTriangle(rayStart, rayDir, v1, v2, v3);
-	if (intersectionDistance > 0.0f && intersectionDistance < outIntersectionData->distance) {
-		outIntersectionData->distance = intersectionDistance;
+	if (intersectionDistance >= 0.0f && (intersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) {
+		outIntersectionData->closestHit = intersectionDistance;
 		outIntersectionData->entity = meshEntity;
 	}
 }
 
 void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData) {
-	float intersectionDistance = Intersection::rayWithAabb(rayStart, rayDir, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox());
-	if (intersectionDistance > 0.0f) { //Ray intersects with the current node
+	float nodeIntersectionDistance = Intersection::rayWithAabb(rayStart, rayDir, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox());
+	if (nodeIntersectionDistance >= 0.0f  && (nodeIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects with the current node closer than the closest hit
 		//Check against entities
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
-			if (Intersection::rayWithAabb(rayStart, rayDir, *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox())) { //Ray intersects the entity bounding box
+			float entityIntersectionDistance = Intersection::rayWithAabb(rayStart, rayDir, *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox());
+			if (entityIntersectionDistance >= 0.0f && (entityIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects the entity bounding box closer than the closest hit
 				//Get Intersection
 				ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
 				TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
@@ -323,7 +324,7 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 					}
 
 					for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
-						const Mesh::Data& meshData = currentNode->entities[i]->getComponent<ModelComponent>()->getModel()->getMesh(j)->getData();
+						const Mesh::Data& meshData = model->getModel()->getMesh(j)->getData();
 						if (meshData.indices) { //Has indices
 							for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
 								glm::vec3 v0, v1, v2;
