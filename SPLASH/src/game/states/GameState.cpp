@@ -4,6 +4,7 @@
 #include "..//Sail/src/Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
+#include "..//Sail/src/Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include <sstream>
@@ -89,11 +90,15 @@ GameState::GameState(StateStack& stack)
 	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->provideOctree(m_octree);
 	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->getSystem<OctreeAddRemoverSystem>();
 
+	ECS::Instance()->createSystem<ProjectileSystem>();
+	m_componentSystems.projectileSystem = ECS::Instance()->getSystem<ProjectileSystem>();
+
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
 	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -30.0f, 0.0f);
+
 
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -909,6 +914,8 @@ void GameState::updateComponentSystems(float dt) {
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 	m_componentSystems.physicSystem->update(dt);
 	m_componentSystems.animationSystem->update(dt);
+	m_componentSystems.projectileSystem->update(dt, m_cam, &m_scene);
+	
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

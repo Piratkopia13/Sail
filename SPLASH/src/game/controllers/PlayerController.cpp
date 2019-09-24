@@ -99,6 +99,12 @@ void PlayerController::processKeyboardInput(float dt) {
 	// TODO: This should probably be moved elsewhere.
 	//       See if it should be done every tick or every frame and where the projectiles are to be created
 	if (Input::IsMouseButtonPressed(0)) {
+		// TODO: add and tweak guncomponent+projectile system once playercontroller is changed to a system
+		//m_player->getComponent<GunComponent>()->firing = true;
+	//{
+	//else {
+	//	m_player->getComponent<GunComponent>()->firing = false;
+	//}
 		if (m_projectileSpawnCounter == 0.f) {
 
 			// Create projectile entity and attaching components
@@ -131,6 +137,7 @@ void PlayerController::processKeyboardInput(float dt) {
 	else {
 		m_projectileSpawnCounter = 0.f;
 	}
+
 
 	// Update for all projectiles
 	//for (int i = 0; i < m_projectiles.size(); i++) {
@@ -242,6 +249,7 @@ std::shared_ptr<Entity> PlayerController::getEntity() {
 void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) {
 	m_projectileModel = model;
 	m_projectileWireframeModel = wireframeModel;
+	m_player->addComponent<GunComponent>(m_projectileModel);
 }
 
 void PlayerController::provideCandles(std::vector<Entity::SPtr>* candles) {
