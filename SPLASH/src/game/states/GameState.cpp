@@ -1,10 +1,13 @@
 #include "GameState.h"
 #include "imgui.h"
-#include "..//Sail/src/Sail/entities/systems/physics/PhysicSystem.h"
-#include "..//Sail/src/Sail/entities/systems/Graphics/AnimationSystem.h"
-#include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
-#include "..//Sail/src/Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "..//Sail/src/Sail/entities/ECS.h"
+#include "Sail/entities/systems/candles/CandleSystem.h"
+#include "Sail/entities/systems/light/LightSystem.h"
+#include "Sail/entities/systems/Graphics/AnimationSystem.h"
+#include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
+#include "Sail/entities/systems/physics/PhysicSystem.h"
+#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
+
+#include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include <sstream>
 #include <iomanip>
@@ -84,10 +87,15 @@ GameState::GameState(StateStack& stack)
 	ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->getSystem<UpdateBoundingBoxSystem>();
 
-	//Create system for handeling octree
+	//Create system for handling octree
 	ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
 	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->provideOctree(m_octree);
 	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->getSystem<OctreeAddRemoverSystem>();
+
+	//Create system for the candles/lights
+	ECS::Instance()->createSystem<LightSystem>();
+	m_componentSystems.lightSystem = ECS::Instance()->getSystem<LightSystem>();
+
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
@@ -358,9 +366,12 @@ GameState::GameState(StateStack& stack)
 		pl.setPosition(glm::vec3(lightPos.x-0.02f, lightPos.y + 3.1f, lightPos.z));
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
-		e->addComponent<LightListComponent>(); // Candle1 holds all lights you can place in debug
 		m_scene.addEntity(e);
 		m_candles.push_back(e);
+#ifdef _DEBUG
+		// Candle1 holds all lights you can place in debug
+		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
+#endif
 
 		e = ECS::Instance()->createEntity("Map_Candle2");
 		e->addComponent<ModelComponent>(lightModel);
@@ -489,14 +500,9 @@ GameState::~GameState() {
 bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
-	// Add point light at camera pos by adding it to component
+	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(SAIL_KEY_E)) {
-		PointLight pl;
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(m_cam.getPosition());
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		m_scene.getGameObjectEntityByName("Map_Candle1")->getComponent<LightListComponent>()->getLightList().push_back(pl);
-		//m_lights.addPointLight(pl);
+		m_componentSystems.lightSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
 #endif
@@ -545,37 +551,38 @@ bool GameState::processInput(float dt) {
 
 	//checks if candle entity has light and if not, adds one 
 	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
-		auto& candleEntity = m_scene.getGameObjectEntityByName("Map_Candle1");
-		if (!candleEntity->hasComponent<LightComponent>()) {
-			PointLight pl;
-			glm::vec3 pos = candleEntity->getComponent<TransformComponent>()->getTranslation();
-			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
-			pl.setAttenuation(.0f, 0.1f, 0.02f);
-			pl.setIndex(0);
-			candleEntity->addComponent<LightComponent>(pl);
-		}
+		//auto& candleEntity = m_scene.getGameObjectEntityByName("Map_Candle1");
+		//if (!candleEntity->hasComponent<LightComponent>()) {
+		//	PointLight pl;
+		//	glm::vec3 pos = candleEntity->getComponent<TransformComponent>()->getTranslation();
+		//	pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		//	pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+		//	pl.setAttenuation(.0f, 0.1f, 0.02f);
+		//	pl.setIndex(0);
+		//	candleEntity->addComponent<LightComponent>(pl);
+		//}
+		m_componentSystems.candleSystem->addLightToCandle("Map_Candle1");
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
-		auto& candleEntity = m_scene.getGameObjectEntityByName("Map_Candle2");
-		if (!candleEntity->hasComponent<LightComponent>()) {
-			PointLight pl;
-			glm::vec3 pos = candleEntity->getComponent<TransformComponent>()->getTranslation();
-			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-			pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
-			pl.setAttenuation(.0f, 0.1f, 0.02f);
-			pl.setIndex(1);
-			candleEntity->addComponent<LightComponent>(pl);
-		}
+		//auto& candleEntity = m_scene.getGameObjectEntityByName("Map_Candle2");
+		//if (!candleEntity->hasComponent<LightComponent>()) {
+		//	PointLight pl;
+		//	glm::vec3 pos = candleEntity->getComponent<TransformComponent>()->getTranslation();
+		//	pl.setColor(glm::vec3(1.f, 1.f, 1.f));
+		//	pl.setPosition(glm::vec3(pos.x, pos.y + 3.1, pos.z));
+		//	pl.setAttenuation(.0f, 0.1f, 0.02f);
+		//	pl.setIndex(1);
+		//	candleEntity->addComponent<LightComponent>(pl);
+		//}
+		m_componentSystems.candleSystem->addLightToCandle("Map_Candle2");
 	}
 
+#ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
-		auto* candleEntity = m_scene.getGameObjectEntityByName("Map_Candle1")->getComponent<LightListComponent>();
-		if (candleEntity->getLightList().size() > 0) {
-			candleEntity->getLightList().erase(candleEntity->getLightList().begin());
-		}
+		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
 	}
+#endif
 	return true;
 	}
 
@@ -616,25 +623,13 @@ bool GameState::update(float dt) {
 	m_playerController.processKeyboardInput(TIMESTEP);
 
 	updateComponentSystems(dt);
-	// MOVE TO LIGHTSYSTEM
+
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {
 		m_lights.clearPointLights();
+
 		//check and update all lights for all entities
-		std::vector<Entity::SPtr> entities = m_scene.getGameObjectEntities();
-		m_lights.addPointLight(m_playerController.getCandle()->getComponent<LightComponent>()->getPointLight());
-		for (int i = 0; i < entities.size(); i++) {
-			auto* lightComp = entities[i]->getComponent<LightComponent>();
-			if (lightComp) {
-				m_lights.addPointLight(lightComp->getPointLight());
-			}
-			auto* lightListComp = entities[i]->getComponent<LightListComponent>();
-			if (lightListComp) {
-				for (auto& light : lightListComp->getLightList()) {
-					m_lights.addPointLight(light);
-				}
-			}
-		}
+		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
 
 

@@ -53,6 +53,7 @@ void LightSetup::removePointLight() {
 	}
 }
 
+// Not used at the moment
 void LightSetup::removePLByIndex(int index) {
 	UINT ind = Scene::GetUpdateIndex();
 	for (unsigned int i = 0; i < m_pls[ind].size(); i++) {

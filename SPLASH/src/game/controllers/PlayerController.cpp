@@ -228,7 +228,8 @@ void PlayerController::update(float dt) {
 			auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
 			for (unsigned int k = 0; k < collisions.size(); k++) {
 				if (collisions[k].entity == m_candles->at(j).get()) {
-					m_candles->at(j)->removeComponent<LightComponent>();
+					// Tell the candle that it has been hit by water
+					m_candles->at(j)->getComponent<CandleComponent>()->hitWithWater();
 				}
 			}
 		}
@@ -253,6 +254,8 @@ std::shared_ptr<Entity> PlayerController::getCandle() {
 }
 
 //creates and binds the candle model and a pointlight for the player.
+
+// TODO: Move
 void PlayerController::createCandle(Model* model) {
 	auto e = ECS::Instance()->createEntity("PlayerCandle");//;//ECS::Instance()->createEntity("PlayerCandle");
 	e->addComponent<ModelComponent>(model);

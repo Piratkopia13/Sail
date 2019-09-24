@@ -4,10 +4,12 @@
 #include "../controllers/PlayerController.h"
 #include "../controllers/AiController.h"
 
-class UpdateBoundingBoxSystem;
+class AnimationSystem;
+class CandleSystem;
+class LightSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
-class AnimationSystem;
+class UpdateBoundingBoxSystem;
 
 class GameState : public State {
 public:
@@ -39,10 +41,12 @@ private:
 
 private:
 	struct Systems {
-		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+		AnimationSystem* animationSystem = nullptr;
+		CandleSystem* candleSystem = nullptr;
+		LightSystem* lightSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
-		AnimationSystem* animationSystem = nullptr;
+		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 	};
 
 	Application* m_app;

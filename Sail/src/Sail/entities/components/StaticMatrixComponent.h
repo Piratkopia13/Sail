@@ -1,5 +1,6 @@
 #pragma once
-#include "pch.h"
+#include "glm/vec3.hpp"
+#include "glm/mat4x4.hpp"
 #include "Component.h"
 
 // Transform matrix that is set once and never changed
