@@ -9,7 +9,7 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 
 	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 3.f, 0.f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -108,8 +108,8 @@ void PlayerController::processKeyboardInput(float dt) {
 			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.3f));
 			e->addComponent<PhysicsComponent>();
 			e->addComponent<BoundingBoxComponent>(m_projectileWireframeModel);
-			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 20.f;
-			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -25.f, 0.f);
+			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
+			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -9.82f, 0.f);
 
 			// Adding projectile to projectile vector to keep track of current projectiles
 			Projectile proj;
@@ -189,7 +189,7 @@ void PlayerController::updateCameraPosition(float alpha) {
 	//playerTrans->setForward(forwards); //needed?
 
 
-	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha));
+	m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f,playerBB->getBoundingBox()->getHalfSize().y*0.8f,0.f)));
 	m_cam->setCameraDirection(forwards);
 
 	//moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns

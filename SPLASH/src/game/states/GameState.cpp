@@ -114,10 +114,10 @@ GameState::GameState(StateStack& stack)
 
 
 	// Set up camera with controllers
-	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 7.4f));
+	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	//m_camController.lookAt(glm::vec3(0.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 1.8f, 7.4f));
+	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 	
 
 	// Add a directional light
@@ -160,7 +160,7 @@ GameState::GameState(StateStack& stack)
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	m_playerController.getEntity()->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, 3.0f, 0.7f));
+	m_playerController.getEntity()->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 	m_scene.addEntity(m_playerController.getEntity());
 
 	// Temporary projectile model for the player's gun
