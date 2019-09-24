@@ -198,18 +198,7 @@ bool Octree::removeEntityRec(Entity* entityToRemove, Node* currentNode) {
 
 void Octree::updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd) {
 	for (int i = 0; i < currentNode->nrOfEntities; i++) {
-
-
-		/////// Quick fix to prevent crash, will be changed or not needed later ///////////
-		BoundingBoxComponent* bbc = currentNode->entities[i]->getComponent<BoundingBoxComponent>();
-		if (!bbc) {
-			continue;
-		}
-		if (bbc->getBoundingBox()->getChange()) { //Entity has changed
-		/////// Quick fix to prevent crash, will be changed or not needed later ///////////
-
-
-		//if (currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->getChange()) { //Entity has changed
+		if (currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->getChange()) { //Entity has changed
 			//Re-add the entity to get it in the right node
 			Entity* tempEntity = currentNode->entities[i];
 			//First remove the entity from this node to avoid duplicates
