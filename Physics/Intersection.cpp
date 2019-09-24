@@ -11,8 +11,8 @@ bool Intersection::aabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aab
 	glm::vec3 halfWidth1 = aabb1.getHalfSize();
 	glm::vec3 halfWidth2 = aabb2.getHalfSize();
 
-	if (glm::abs(center1.x - center2.x) > (halfWidth1.x + halfWidth2.x)) { 
-		return false; 
+	if (glm::abs(center1.x - center2.x) > (halfWidth1.x + halfWidth2.x)) {
+		return false;
 	}
 	if (glm::abs(center1.y - center2.y) > (halfWidth1.y + halfWidth2.y)) {
 		return false;
@@ -24,11 +24,11 @@ bool Intersection::aabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aab
 }
 
 bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
-	
+
 	glm::vec3 center = aabb.getPosition();
 	//Calculate normal for triangle
 	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
-	
+
 	// Calculate triangle points relative to the AABB
 	glm::vec3 newV0 = v0 - center;
 	glm::vec3 newV1 = v1 - center;
@@ -38,11 +38,11 @@ bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 	if (glm::dot(newV0, triNormal) > 0.0f) {
 		return false;
 	}
-	
+
 	// Calculate the plane that the triangle is on
 	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - v0;
 	float distance = -glm::dot(triangleToWorldOrigo, triNormal);
-	
+
 	// Test the AABB against the plane that the triangle is on
 	if (aabbWithPlane(aabb, triNormal, distance)) {
 		// Testing AABB with triangle using separating axis theorem(SAT)
@@ -50,7 +50,7 @@ bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
 		e[1] = glm::vec3(0.f, 1.f, 0.f);
 		e[2] = glm::vec3(0.f, 0.f, 1.f);
-		
+
 		glm::vec3 f[3];
 		f[0] = newV1 - newV0;
 		f[1] = newV2 - newV1;
@@ -78,7 +78,7 @@ bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 bool Intersection::aabbWithPlane(const BoundingBox& aabb, const glm::vec3& normal, const float& distance) {
 	//Actually creates a sphere from the aabb half size and tests sphere with plane
 	float radius = glm::length(aabb.getHalfSize());
-	
+
 	if (glm::abs(glm::dot(normal, aabb.getPosition()) - distance) <= radius) {
 		return true;
 	}
@@ -205,8 +205,53 @@ bool Intersection::triangleWithTriangleSupport(const glm::vec3 U[3], const glm::
 }
 
 float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb) {
-	assert(false); //Not implemented yet
-	return -1.0f;
+	float returnValue = -1.0f;
+	bool noHit = false; //Boolean for early exits from the for-loop
+	float tMin = -std::numeric_limits<float>::infinity(); //tMin initialized at negative infinity
+	float tMax = std::numeric_limits<float>::infinity(); //tMax initialized at positive infinity
+	glm::vec3 p = aabb.getPosition() - rayStart; //Vector to center off AABB
+	for (int i = 0; i < 3; i++) {
+		float tempH = aabb.getHalfSize()[i]; //Temporary variable to store the current half axis
+
+		float e = p[i];
+		float f = rayVec[i];
+		if (f != 0.0f) { //Ray is not parallel to slab
+			float tempF = 1 / f; //temporary variable to avoid calculating division with the (possibly) very small value f multiple times since it is an expensive calculation
+
+			//Finds the entering and exiting points of the current slab.
+			float t1 = (e + tempH) * tempF;
+			float t2 = (e - tempH) * tempF;
+			if (t1 > t2) { //Swaps values if t1 is bigger than t2
+				float tempT = t2;
+				t2 = t1;
+				t1 = tempT;
+			}
+			if (t1 > tMin) //Replaces tMin if t1 is bigger
+				tMin = t1;
+			if (t2 < tMax) //Replaces tMax if t2 is smaller
+				tMax = t2;
+			if (tMin > tMax || tMax < 0) { //tMin > tMax - A slab was exited before all slabs had been entered. tMax < 0 - the AABB is "behind" the ray start
+				//Exit test, no hit.
+				i = 3;
+				noHit = true;
+			}
+		}
+		else if (-e - tempH > 0 || -e + tempH < 0) { //Ray is parallel to slab and it does not go through OBB
+			//Exit test, no hit.
+			i = 3;
+			noHit = true;
+		}
+	}
+
+	if (noHit == false) { //The OBB was hit by the ray
+		if (tMin > 0) { //tMin is bigger than 0 so it is the first intersection point in camera view.
+			returnValue = tMin;
+		}
+		else { //tMin is smaller than 0 so try with tMax.
+			returnValue = tMax;
+		}
+	}
+	return returnValue;
 }
 
 float Intersection::rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3 triangleCorners[3]) {

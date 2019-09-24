@@ -127,6 +127,13 @@ void PlayerController::processKeyboardInput(float dt) {
 				m_projectileSpawnCounter = 0.f;
 			}
 		}
+
+		for (unsigned int i = 0; i < m_candles->size(); i++) {
+			float intersection = Intersection::rayWithAabb(m_cam->getCameraPosition(), m_cam->getCameraDirection(), *m_candles->at(i)->getComponent<BoundingBoxComponent>()->getBoundingBox());
+			if (intersection > 0.0f) {
+				Logger::Log("Ray hit candle " + std::to_string(intersection) + "meters away");
+			}
+		}
 	}
 	else {
 		m_projectileSpawnCounter = 0.f;

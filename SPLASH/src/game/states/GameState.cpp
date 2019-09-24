@@ -211,7 +211,7 @@ GameState::GameState(StateStack& stack)
 	*/
 
 	
-	Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
+	/*Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
 	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
@@ -221,7 +221,7 @@ GameState::GameState(StateStack& stack)
 	animationEntity->addComponent<AnimationComponent>(animationStack);
 	animationEntity->getComponent<AnimationComponent>()->currentAnimation = animationStack->getAnimation(0);
 
-	m_scene.addEntity(animationEntity);
+	m_scene.addEntity(animationEntity);*/
 
 	// STATIC ENTITIES (never added/deleted/modified during runtime)
 	// Use .addStaticEntity() and StaticMatrixComponent instead of TransformComponent since static objects's transforms 
