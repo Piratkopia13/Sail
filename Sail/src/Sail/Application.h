@@ -88,6 +88,7 @@ public:
 	const UINT getFPS() const;
 
 private:
+	Audio m_audioManager;
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
@@ -96,7 +97,6 @@ private:
 	ResourceManager m_resourceManager;
 
 	MemoryManager m_memoryManager;
-	Audio m_audioManager;
 	StateStorage m_stateStorage;
 
 	// Timer
