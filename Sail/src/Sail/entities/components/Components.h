@@ -12,6 +12,6 @@
 //#include "MovementComponent.h"
 #include "PhysicsComponent.h"
 #include "PlayerComponent.h"
-#include "StaticMatrixComponent.h"
+//#include "StaticMatrixComponent.h"
 //#include "TextComponent.h"
 #include "TransformComponent.h"

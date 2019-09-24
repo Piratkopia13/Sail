@@ -26,9 +26,9 @@ public:
 
 	// Add entity which won't change during runtime and therefore doesn't
 	// need to be copied into a frame packet every tick.
-	void addStaticEntity(Entity::SPtr staticEntity);
+	//void addStaticEntity(Entity::SPtr staticEntity);
 
-	void setPlayerCandle(Entity::SPtr candle);
+	//void setPlayerCandle(Entity::SPtr candle);
 
 	void setLightSetup(LightSetup* lights);
 	Entity::SPtr getGameObjectEntityByName(std::string name);
@@ -40,32 +40,35 @@ public:
 
 	void prepareUpdate();
 
-	void prepareRenderObjects();
+	//void prepareRenderObjects();
 
 	virtual bool onEvent(Event& event) override;
 	void changeRenderer(unsigned int index);
 	bool& getDoProcessing();
 
 
-	// STATIC SYCHRONIZATION STUFF
-	// To be done at the end of each CPU update and nowhere else	
-	static void IncrementCurrentUpdateIndex();
+	//// STATIC SYCHRONIZATION STUFF
+	//// To be done at the end of each CPU update and nowhere else	
+	//static void IncrementCurrentUpdateIndex();
 
-	// To be done just before render is called
-	static void UpdateCurrentRenderIndex();
+	//// To be done just before render is called
+	//static void UpdateCurrentRenderIndex();
 
-	//#ifdef _DEBUG
-	static UINT GetUpdateIndex();
-	static UINT GetRenderIndex();
-	//#endif
+	////#ifdef _DEBUG
+	//static UINT GetUpdateIndex();
+	//static UINT GetRenderIndex();
+	////#endif
 private:
 	bool onResize(WindowResizeEvent& event);
 
 private:
+	// TODO: REMOVE OLD SYSTEM
+	// Work only on m_gameObjectEntities
+	
 	// Static object entities that don't need to be double buffered since they're not
 	// modified/added/removed in update. They're just used in render.
 	// Should consist of at least a ModelComponent and a StaticMatrixComponent.
-	std::vector<Entity::SPtr> m_staticObjectEntities;
+	//std::vector<Entity::SPtr> m_staticObjectEntities;
 
 
 	// Dynamic objects are split into game objects and render objects to prevent
@@ -74,15 +77,17 @@ private:
 	// Game objects are used for everything but the rendering pass
 	//
 	// Should include Model, Transform, Physics, Sound, etc.
-	std::vector<Entity::SPtr> m_gameObjectEntities;
 
-	Entity::SPtr m_playerCandle;
+	// The objects in the scene that should be rendered
+	std::vector<Entity::SPtr> m_sceneEntities;
+
+	//Entity::SPtr m_playerCandle;
 
 	// Render objects are essentially read-only and have only the minimum required data
 	// needed to render the corresponding game object. A list of render objects is created
 	// at the end of each CPU update from the m_GameObjectEntities.
-	std::vector<PerUpdateRenderObject> m_dynamicRenderObjects[SNAPSHOT_BUFFER_SIZE];
-	std::mutex m_perFrameLocks[SNAPSHOT_BUFFER_SIZE];
+	//std::vector<PerUpdateRenderObject> m_dynamicRenderObjects[SNAPSHOT_BUFFER_SIZE];
+	//std::mutex m_perFrameLocks[SNAPSHOT_BUFFER_SIZE];
 
 
 
@@ -101,24 +106,24 @@ private:
 	bool m_showBoundingBoxes;
 
 
-	// STATIC SYCHRONIZATION STUFF USED IN SCENE
-	static constexpr int prevInd(int ind) {
-		return (ind + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
-	}
+	//// STATIC SYCHRONIZATION STUFF USED IN SCENE
+	//static constexpr int prevInd(int ind) {
+	//	return (ind + SNAPSHOT_BUFFER_SIZE - 1) % SNAPSHOT_BUFFER_SIZE;
+	//}
 
-	// first frame is 0 and it continues from there, integer overflow isn't a problem unless
-	// you leave the game running for like a year or two.
-	// Note: atomic since it's written to in every update and read from in every update and render
-	static std::atomic_uint s_frameIndex;
+	//// first frame is 0 and it continues from there, integer overflow isn't a problem unless
+	//// you leave the game running for like a year or two.
+	//// Note: atomic since it's written to in every update and read from in every update and render
+	//static std::atomic_uint s_frameIndex;
 
-	// the index in the snapshot buffer that is used in the update loop on the CPU.
-	// [0, SNAPSHOT_BUFFER_SIZE-1]
-	// Note: Updated once at the start of update and read-only in update so no atomics needed
-	static UINT s_updateIndex;
+	//// the index in the snapshot buffer that is used in the update loop on the CPU.
+	//// [0, SNAPSHOT_BUFFER_SIZE-1]
+	//// Note: Updated once at the start of update and read-only in update so no atomics needed
+	//static UINT s_updateIndex;
 
 
-	// If CPU update is working on index 3 then prepare render will safely interpolate between
-	// index 1 and 2 without any data races
-	// Note: Updated once at the start of render and read-only in render so no atomics needed
-	static UINT s_renderIndex;
+	//// If CPU update is working on index 3 then prepare render will safely interpolate between
+	//// index 1 and 2 without any data races
+	//// Note: Updated once at the start of render and read-only in render so no atomics needed
+	//static UINT s_renderIndex;
 };

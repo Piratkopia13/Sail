@@ -11,25 +11,25 @@
 
 
 // STATIC FUNCTIONS
-std::atomic_uint Scene::s_frameIndex = 0;
-UINT Scene::s_updateIndex = 0;
-UINT Scene::s_renderIndex = 0;
-
-// To be done at the end of each CPU update and nowhere else	
-void Scene::IncrementCurrentUpdateIndex() {
-	s_frameIndex++;
-	s_updateIndex = s_frameIndex.load() % SNAPSHOT_BUFFER_SIZE;
-}
-
-// To be done just before render is called
-void Scene::UpdateCurrentRenderIndex() {
-	s_renderIndex = prevInd(s_frameIndex.load());
-}
-
-//#ifdef _DEBUG
-UINT Scene::GetUpdateIndex() { return s_updateIndex; }
-UINT Scene::GetRenderIndex() { return s_renderIndex; }
-//#endif
+//std::atomic_uint Scene::s_frameIndex = 0;
+//UINT Scene::s_updateIndex = 0;
+//UINT Scene::s_renderIndex = 0;
+//
+//// To be done at the end of each CPU update and nowhere else	
+//void Scene::IncrementCurrentUpdateIndex() {
+//	s_frameIndex++;
+//	s_updateIndex = s_frameIndex.load() % SNAPSHOT_BUFFER_SIZE;
+//}
+//
+//// To be done just before render is called
+//void Scene::UpdateCurrentRenderIndex() {
+//	s_renderIndex = prevInd(s_frameIndex.load());
+//}
+//
+////#ifdef _DEBUG
+//UINT Scene::GetUpdateIndex() { return s_updateIndex; }
+//UINT Scene::GetRenderIndex() { return s_renderIndex; }
+////#endif
 
 
 // NON-STATIC FUNCTIONS
@@ -62,16 +62,16 @@ Scene::~Scene() {
 }
 
 void Scene::addEntity(Entity::SPtr entity) {
-	m_gameObjectEntities.push_back(entity);
+	m_sceneEntities.push_back(entity);
 }
 
-void Scene::addStaticEntity(Entity::SPtr staticEntity) {
-	m_staticObjectEntities.push_back(staticEntity);
-}
-
-void Scene::setPlayerCandle(Entity::SPtr candle) {
-	m_playerCandle = candle;
-}
+//void Scene::addStaticEntity(Entity::SPtr staticEntity) {
+//	m_staticObjectEntities.push_back(staticEntity);
+//}
+//
+//void Scene::setPlayerCandle(Entity::SPtr candle) {
+//	m_playerCandle = candle;
+//}
 
 
 void Scene::setLightSetup(LightSetup* lights) {
@@ -83,7 +83,7 @@ void Scene::setLightSetup(LightSetup* lights) {
 // NEEDS TO RUN BEFORE EACH UPDATE
 // Copies the game state from the previous tick 
 void Scene::prepareUpdate() {
-	for (auto e : m_gameObjectEntities) {
+	for (auto e : m_sceneEntities) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		if (transform) { transform->prepareUpdate(); }
 	}
@@ -91,30 +91,32 @@ void Scene::prepareUpdate() {
 
 // creates a vector of render objects corresponding to the current state of the game objects.
 // Should be done at the end of each update tick.
-void Scene::prepareRenderObjects() {
-	const UINT ind = Scene::GetUpdateIndex();
-	m_perFrameLocks[ind].lock();
-	m_dynamicRenderObjects[ind].clear();
 
-	size_t test = m_dynamicRenderObjects[ind].size();
-
-	// Push dynamic objects' transform snapshots and model pointers to a transient vector
-	for (auto gameObject : m_gameObjectEntities) {
-		TransformComponent* transform = gameObject->getComponent<TransformComponent>();
-		ModelComponent* model = gameObject->getComponent<ModelComponent>();
-		if (transform && model) {
-			m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(transform, model));
-		}
-
-		if (m_showBoundingBoxes) {
-			BoundingBoxComponent* boundingBox = gameObject->getComponent<BoundingBoxComponent>();
-			if (boundingBox) {
-				m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), boundingBox->getWireframeModel()));
-			}
-		}
-	}
-	m_perFrameLocks[ind].unlock();
-}
+//// TODO: REMOVE
+//void Scene::prepareRenderObjects() {
+//	const UINT ind = Scene::GetUpdateIndex();
+//	m_perFrameLocks[ind].lock();
+//	m_dynamicRenderObjects[ind].clear();
+//
+//	size_t test = m_dynamicRenderObjects[ind].size();
+//
+//	// Push dynamic objects' transform snapshots and model pointers to a transient vector
+//	for (auto gameObject : m_gameObjectEntities) {
+//		TransformComponent* transform = gameObject->getComponent<TransformComponent>();
+//		ModelComponent* model = gameObject->getComponent<ModelComponent>();
+//		if (transform && model) {
+//			m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(transform, model));
+//		}
+//
+//		if (m_showBoundingBoxes) {
+//			BoundingBoxComponent* boundingBox = gameObject->getComponent<BoundingBoxComponent>();
+//			if (boundingBox) {
+//				m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), boundingBox->getWireframeModel()));
+//			}
+//		}
+//	}
+//	m_perFrameLocks[ind].unlock();
+//}
 
 void Scene::showBoundingBoxes(bool val) {
 	m_showBoundingBoxes = val;
@@ -124,39 +126,75 @@ void Scene::showBoundingBoxes(bool val) {
 void Scene::draw(Camera& camera, const float alpha) {
 	(*m_currentRenderer)->begin(&camera);
 
-	// Render static objects (essentially the map)
-	// Matrices aren't changed between frames
-	for (Entity::SPtr entity : m_staticObjectEntities) {
+	for (Entity::SPtr entity : m_sceneEntities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
-		StaticMatrixComponent* matrix = entity->getComponent<StaticMatrixComponent>();
+		TransformComponent* transform = entity->getComponent<TransformComponent>();
 
-		if (model && matrix) {
-			(*m_currentRenderer)->submit(model->getModel(), matrix->getMatrix());
+		if (model && transform) {
+			(*m_currentRenderer)->submit(model->getModel(), transform->getRenderMatrix(1.0f));
 		}
 
 		if (m_showBoundingBoxes) {
 			BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
 			if (boundingBox) {
-				(*m_currentRenderer)->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
+				(*m_currentRenderer)->submit(
+					boundingBox->getWireframeModel(), 
+					boundingBox->getTransform()->getRenderMatrix(alpha));
 			}
 		}
 	}
 
-	TransformComponent* transform = m_playerCandle->getComponent<TransformComponent>();
-	ModelComponent* model = m_playerCandle->getComponent<ModelComponent>();
-	if (transform && model) {
-		(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
-	}
+
+	// Render static objects (essentially the map)
+	// Matrices aren't changed between frames
+	//for (Entity::SPtr entity : m_staticObjectEntities) {
+	//	ModelComponent* model = entity->getComponent<ModelComponent>();
+	//	TransformComponent* transform = entity->getComponent<TransformComponent>();
+
+	//	if (model && transform) {
+	//		(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
+	//	}
+
+	//	if (m_showBoundingBoxes) {
+	//		BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
+	//		if (boundingBox) {
+	//			(*m_currentRenderer)->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
+	//		}
+	//	}
+	//}
+
+	// TODO: Make sure that the candle is drawn
+	//TransformComponent* transform = m_playerCandle->getComponent<TransformComponent>();
+	//ModelComponent* model = m_playerCandle->getComponent<ModelComponent>();
+	//if (transform && model) {
+	//	(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
+	//}
 
 	// Render dynamic objects (objects that might move or be added/removed)
 	// Matrices are created from interpolated data each frame
-	const UINT ind = Scene::GetRenderIndex();
-	m_perFrameLocks[ind].lock();
-	for (PerUpdateRenderObject& obj : m_dynamicRenderObjects[ind]) {
-		(*m_currentRenderer)->submit(obj.getModel(), obj.getMatrix(alpha));
-	}
-	m_perFrameLocks[ind].unlock();
+	//const UINT ind = Scene::GetRenderIndex();
+	//m_perFrameLocks[ind].lock();
+	//for (PerUpdateRenderObject& obj : m_dynamicRenderObjects[ind]) {
+	//	(*m_currentRenderer)->submit(obj.getModel(), obj.getMatrix(alpha));
+	//}
+	//m_perFrameLocks[ind].unlock();
 
+	//for (Entity::SPtr entity : m_gameObjectEntities) {
+	//	ModelComponent* model = entity->getComponent<ModelComponent>();
+	//	StaticMatrixComponent* matrix = entity->getComponent<StaticMatrixComponent>();
+
+	//	if (model && matrix) {
+	//		(*m_currentRenderer)->submit(model->getModel(), matrix->getMatrix());
+	//	}
+
+	//	if (m_showBoundingBoxes) {
+	//		BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
+	//		if (boundingBox) {
+	//			(*m_currentRenderer)->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
+	//		}
+	//	}
+	//}
+	
 
 	(*m_currentRenderer)->end();
 	(*m_currentRenderer)->present((m_doPostProcessing) ? &m_postProcessPipeline : nullptr);
@@ -173,7 +211,7 @@ void Scene::draw(Camera& camera, const float alpha) {
 
 //TODO add failsafe
 Entity::SPtr Scene::getGameObjectEntityByName(std::string name) {
-	for (auto e : m_gameObjectEntities) {
+	for (auto e : m_sceneEntities) {
 		if (e->getName() == name) {
 			return e;
 		}
@@ -182,7 +220,7 @@ Entity::SPtr Scene::getGameObjectEntityByName(std::string name) {
 }
 
 const std::vector<Entity::SPtr>& Scene::getGameObjectEntities() const {
-	return m_gameObjectEntities;
+	return m_sceneEntities;
 }
 
 void Scene::draw(void) {

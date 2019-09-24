@@ -48,11 +48,11 @@ public:
 	void clearPointLights();
 	void removePointLight();
 	void removePLByIndex(int index);
-	void updateBufferData(int ind = -1);
+	void updateBufferData();
 private:
 
-	DirectionalLight m_dl; //not threadsafe
-	std::vector<PointLight> m_pls[SNAPSHOT_BUFFER_SIZE];
+	DirectionalLight m_dl;
+	std::vector<PointLight> m_pls;
 	int m_numPls;
 
 	DirLightBuffer m_dlData;

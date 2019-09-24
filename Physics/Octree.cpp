@@ -244,7 +244,7 @@ void Octree::getCollisionsRec(Entity* entity, Node* currentNode, std::vector<Col
 					//Get collision
 					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
 					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
-					StaticMatrixComponent *staticMatrix = currentNode->entities[i]->getComponent<StaticMatrixComponent>();
+					//StaticMatrixComponent *staticMatrix = currentNode->entities[i]->getComponent<StaticMatrixComponent>();
 
 					if (model) {
 						//Entity has a model. Check collision with meshes
@@ -258,11 +258,11 @@ void Octree::getCollisionsRec(Entity* entity, Node* currentNode, std::vector<Col
 										v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
 										v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
 									} 
-									else {
-										v0 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
-										v1 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
-										v2 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
-									}
+									//else {
+									//	v0 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
+									//	v1 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
+									//	v2 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+									//}
 									getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
 								}
 							}
@@ -274,11 +274,11 @@ void Octree::getCollisionsRec(Entity* entity, Node* currentNode, std::vector<Col
 										v1 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
 										v2 = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
 									}
-									else {
-										v0 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
-										v1 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
-										v2 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
-									}
+									//else {
+									//	v0 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k].vec, 1.0f));
+									//	v1 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
+									//	v2 = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+									//}
 									getCollisionData(entity, currentNode->entities[i], v0, v1, v2, outCollisionData);
 								}
 							}

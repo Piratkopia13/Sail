@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Sail/entities/systems/BaseComponentSystem.h"
+#include "Sail/entities/Entity.h"
 
+class CameraController;
 class LightSetup;
 class PerspectiveCamera;
 
@@ -10,13 +12,16 @@ public:
 	CandleSystem();
 	virtual ~CandleSystem();
 
-	void setPlayerCandle(Entity* candle);
+	void setPlayerCandle(Entity::SPtr candle);
 
-	void addLightToCandle(std::string name);
+	void lightCandle(std::string name);
+
+	void checkProjectileCollisions(const std::vector<Entity::SPtr> &projectiles);
 
 	void update(float dt) override;
 
+	void updatePlayerCandle(CameraController* cam, const float yaw);
 private:
-	Entity* m_playerCandle = nullptr;
+	Entity::SPtr m_playerCandle;
 
 };

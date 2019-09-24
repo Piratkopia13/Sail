@@ -92,6 +92,6 @@ private:
 	Octree* m_octree;
 
 	// TODO: Make a system for these entities
-	std::vector<Entity::SPtr> m_candles;
+	//std::vector<Entity::SPtr> m_candles;
 	bool m_disableLightComponents;
 };

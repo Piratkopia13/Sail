@@ -40,11 +40,11 @@ void LightSystem::updateLights(LightSetup* lightSetup) {
 }
 
 #ifdef _DEBUG
-
 void LightSystem::setDebugLightListEntity(std::string name) {
 	for (auto e : entities) {
 		if (e->getName() == name) {
 			e->addComponent<LightListComponent>();
+			m_debugLightListEntity = e;
 			break;
 		}
 	}
@@ -75,6 +75,5 @@ void LightSystem::removePointLightFromDebugEntity() {
 		}
 	}
 }
-
 #endif
 

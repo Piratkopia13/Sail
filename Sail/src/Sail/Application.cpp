@@ -161,7 +161,7 @@ int Application::startGameLoop() {
 				//m_threadPool->push([this](int id) {
 					if (s_queuedUpdates > 0 && s_isRunning) {
 						s_queuedUpdates--;
-						Scene::IncrementCurrentUpdateIndex();
+						//Scene::IncrementCurrentUpdateIndex();
 						update(TIMESTEP);
 					}
 					s_updateRunning = 0;
@@ -169,7 +169,7 @@ int Application::startGameLoop() {
 			}
 
 			// Render
-			Scene::UpdateCurrentRenderIndex();
+			//Scene::UpdateCurrentRenderIndex();
 
 			render(delta, alpha);
 			//render(delta, 1.0f); // disable interpolation

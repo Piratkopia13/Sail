@@ -32,6 +32,7 @@ Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, co
 
 	m_matNeedsUpdate = true;
 	m_parentUpdated = parent;
+	m_parentRenderUpdated = parent;
 	m_hasChanged = true;
 
 	if (m_parent)
@@ -69,6 +70,7 @@ void Transform::removeParent() {
 // copies current state into previous state
 void Transform::prepareUpdate() {
 	m_data.m_previous = m_data.m_current;
+	m_hasChanged = false;
 }
 
 
@@ -302,31 +304,107 @@ glm::mat4 Transform::getMatrix() {
 	}
 	if (m_parentUpdated || !m_parent) {
 		updateMatrix();
-		m_parentUpdated = false;
+		m_parentUpdated;
 	}
 
 	return m_transformMatrix;
 }
 
+glm::mat4 Transform::getRenderMatrix(float alpha) {
+	
+	// Always update matrix with interpolated data if any data was changed between
+	// the two snapshots
+
+	// If data hasn't changed use the CPU side transformMatrix
+	if (!m_hasChanged && !m_parentRenderUpdated) {
+		m_renderMatrix = getMatrix();
+	} else {
+		updateRenderMatrix(alpha); // if it has then interpolate
+		if (m_parentRenderUpdated || !m_parent) {
+			updateRenderMatrix(alpha);
+			m_parentRenderUpdated = true;
+		}
+	}
+
+	//if (m_hasChanged) {
+	//	updateLocalRenderMatrix(alpha);
+	//} else if (m_matNeedsUpdate) { // if data hasn't changed only update the matrix if it hasn't been done yet
+	//	// if data hasn't changed then copy the CPU side matrix
+
+
+
+	//	updateLocalRenderMatrix(1.0f); // No need to interpolate since current == prev
+	//	m_interMatNeedsUpdate = false;
+	//}
+
+	//if (m_parentRenderUpdated || !m_parent) {
+	//	updateRenderMatrix(alpha);
+	//	m_parentRenderUpdated = false;
+	//}
+
+
+	//if (m_matNeedsUpdate) {
+	//	updateLocalMatrix();
+	//	m_matNeedsUpdate = false;
+	//}
+	//if (m_parentUpdated || !m_parent) {
+	//	updateMatrix();
+	//	m_parentUpdated = false;
+	//}
+
+	return m_renderMatrix;
+}
+
+void Transform::updateLocalRenderMatrix(float alpha) {
+	m_localTransformMatrix = glm::mat4(1.0f);
+
+	// Linear interpolation between the two most recent snapshots
+	glm::vec3 trans = (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
+	glm::quat rot = (alpha * m_data.m_current.m_rotationQuat) + ((1.0f - alpha) * m_data.m_previous.m_rotationQuat);
+	glm::vec3 scale = (alpha * m_data.m_current.m_scale) + (1.0f - alpha) * m_data.m_previous.m_scale;
+
+	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, trans);
+	glm::mat4 rotationMatrix = glm::mat4_cast(rot);
+	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, scale);
+	m_localTransformMatrix = transMatrix * rotationMatrix * scaleMatrix;
+
+	//m_localTransformMatrix = glm::mat4(1.0f);
+	//glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_data.m_current.m_translation);
+	//glm::mat4 rotationMatrix = glm::mat4_cast(m_data.m_current.m_rotationQuat);
+	//glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_data.m_current.m_scale);
+
+	//m_localTransformMatrix = transMatrix * rotationMatrix * scaleMatrix;
+}
+
+void Transform::updateRenderMatrix(float alpha) {
+	if (m_parent) {
+		m_renderMatrix = m_parent->getRenderMatrix(alpha) * m_renderMatrix;
+	} else {
+		m_renderMatrix = m_renderMatrix;
+	}
+}
+
 void Transform::updateLocalMatrix() {
 	m_localTransformMatrix = glm::mat4(1.0f);
+
 	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_data.m_current.m_translation);
 	glm::mat4 rotationMatrix = glm::mat4_cast(m_data.m_current.m_rotationQuat);
 	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_data.m_current.m_scale);
-
 	m_localTransformMatrix = transMatrix * rotationMatrix * scaleMatrix;
 }
 
 void Transform::updateMatrix() {
-	if (m_parent)
+	if (m_parent) {
 		m_transformMatrix = m_parent->getMatrix() * m_localTransformMatrix;
-	else
+	} else {
 		m_transformMatrix = m_localTransformMatrix;
+	}
 }
 
 // Not used, all transforms are updated 
 void Transform::treeNeedsUpdating() {
 	m_parentUpdated = true;
+	m_parentRenderUpdated = true;
 	for (Transform* child : m_children) {
 		child->treeNeedsUpdating();
 	}
