@@ -9,7 +9,7 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 
 	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 3.f, 0.f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -108,8 +108,8 @@ void PlayerController::processKeyboardInput(float dt) {
 			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.3f));
 			e->addComponent<PhysicsComponent>();
 			e->addComponent<BoundingBoxComponent>(m_projectileWireframeModel);
-			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 20.f;
-			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -25.f, 0.f);
+			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
+			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -9.82f, 0.f);
 			e->addComponent<LifeTimeComponent>(1.0f);
 
 			// Adding projectile to projectile vector to keep track of current projectiles
@@ -191,7 +191,7 @@ void PlayerController::updateCameraPosition(float alpha) {
 	//playerTrans->setForward(forwards); //needed?
 
 
-	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha));
+	m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f,playerBB->getBoundingBox()->getHalfSize().y*0.8f,0.f)));
 	m_cam->setCameraDirection(forwards);
 
 	//moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns
@@ -201,13 +201,13 @@ void PlayerController::updateCameraPosition(float alpha) {
 
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 	right = glm::normalize(right);
-	glm::vec3 playerToCandle = forward - right;
-	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 3.5f, 0);
+	glm::vec3 playerToCandle = glm::vec3((forward - right)*0.2f);
+	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 0.35f, 0);
 	m_candle->getComponent<TransformComponent>()->setTranslation(candlePos);
 	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
 	m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
 	m_candle->getComponent<TransformComponent>()->prepareUpdate();
-	glm::vec3 flamePos = candlePos + glm::vec3(0, 3.5f, 0);
+	glm::vec3 flamePos = candlePos + glm::vec3(0, 0.37f, 0);
 	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
 	m_candle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);
 }
