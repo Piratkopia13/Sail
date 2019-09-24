@@ -78,8 +78,6 @@ private:
 	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_meshCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
-
-	//std::vector<std::vector<AccelerationStructureBuffers>> m_DXR_BottomBuffers; // TODO: remove, replaced by above
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
 
 	wComPtr<ID3D12StateObject> m_rtPipelineState;
