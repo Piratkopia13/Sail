@@ -55,7 +55,7 @@ private:
 
 private:
 	// Acceleration structures
-	void createTLAS(unsigned int numBLASes, unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList);
+	void createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList);
 	void createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate = nullptr);
 
 	void updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList);
@@ -79,7 +79,7 @@ private:
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 
-	std::vector<std::vector<AccelerationStructureBuffers>> m_DXR_BottomBuffers; // TODO: remove, replaced by above
+	//std::vector<std::vector<AccelerationStructureBuffers>> m_DXR_BottomBuffers; // TODO: remove, replaced by above
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
 
 	wComPtr<ID3D12StateObject> m_rtPipelineState;

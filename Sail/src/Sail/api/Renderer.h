@@ -27,7 +27,7 @@ public:
 	struct RenderCommand {
 		Mesh* mesh;
 		glm::mat4 transform; // TODO: find out why having a const ptr here doesnt work
-		RenderFlag flags = MESH_DYNAMIC;
+		RenderFlag flags = MESH_STATIC;
 		std::vector<bool> hasUpdatedSinceLastRender;
 	};
 public:

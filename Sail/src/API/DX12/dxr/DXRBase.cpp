@@ -15,7 +15,6 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 	// Create frame resources (one per swap buffer)
 	// Only one TLAS is used for the whole scene
 	m_DXR_TopBuffer = m_context->createFrameResource<AccelerationStructureBuffers>();
-	m_DXR_BottomBuffers = m_context->createFrameResource<std::vector<AccelerationStructureBuffers>>();
 	m_bottomBuffers = m_context->createFrameResource<std::unordered_map<Mesh*, InstanceList>>();
 	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
@@ -34,9 +33,9 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 
 DXRBase::~DXRBase() {
 	m_rtPipelineState->Release();
-	for (auto& blasList : m_DXR_BottomBuffers) {
+	for (auto& blasList : m_bottomBuffers) {
 		for (auto& blas : blasList) {
-			blas.release();
+			blas.second.blas.release();
 		}
 	}
 	for (auto& tlas : m_DXR_TopBuffer) {
@@ -63,6 +62,12 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	auto flagFastTrace = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
 	auto flagFastBuild = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
 	auto flagAllowUpdate = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+
+	// Clear old instance lists
+	for (auto& it : m_bottomBuffers[frameIndex]) {
+		it.second.instanceTransforms.clear();
+	}
+
 
 	// Iterate all static meshes
 	for (auto& renderCommand : sceneGeometry) {
@@ -101,6 +106,9 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 			} else {
 				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
 					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
+				} else {
+					// Mesh already has a BLAS - add transform to instance list
+					searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
 				}
 			}
 
@@ -109,27 +117,24 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	}
 
 	// Destroy BLASes that are no longer part of the scene
-	for (auto& renderCommand : sceneGeometry) {
-		Mesh* mesh = renderCommand.mesh;
-		auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
-		if (searchResult != m_bottomBuffers[frameIndex].end()) {
-			searchResult->second.blas.release();
-			m_bottomBuffers[frameIndex].erase(searchResult);
+	for (auto it = m_bottomBuffers[frameIndex].begin(); it != m_bottomBuffers[frameIndex].end();) {
+		bool destroy = true;
+		for (auto& renderCommand : sceneGeometry) {
+			if (it->first == renderCommand.mesh) { 
+				destroy = false;
+				++it;
+				break; 
+			}
+		}
+		if (destroy) {
+			it->second.blas.release();
+			it = m_bottomBuffers[frameIndex].erase(it);
 		}
 	}
 
-	createTLAS(m_bottomBuffers[frameIndex].size(), totalNumInstances, cmdList);
+	createTLAS(totalNumInstances, cmdList);
 	updateDescriptorHeap(cmdList);
 	updateShaderTables();
-
-	////static int frames = 0;
-	////if (frames < 3) {
-	//	// TODO: run this on an async compute queue
-	//	createBLAS(sceneGeometry, cmdList);
-	//	//frames++;
-	////}
-	//createTLAS(sceneGeometry, cmdList);
-	//updateShaderTables(sceneGeometry);
 
 }
 
@@ -201,7 +206,7 @@ bool DXRBase::onEvent(Event& event) {
 	return true;
 }
 
-void DXRBase::createTLAS(unsigned int numBLASes, unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList) {
 
 	// Always rebuilds TLAS instead of updating it according to nvidia recommendations
 
@@ -211,7 +216,7 @@ void DXRBase::createTLAS(unsigned int numBLASes, unsigned int numInstanceDescrip
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
 	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	inputs.NumDescs = numBLASes;
+	inputs.NumDescs = numInstanceDescriptors;
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
 	m_DXR_TopBuffer[frameIndex].release();
@@ -238,12 +243,12 @@ void DXRBase::createTLAS(unsigned int numBLASes, unsigned int numInstanceDescrip
 	m_DXR_TopBuffer[frameIndex].instanceDesc->Map(0, nullptr, (void**)& pInstanceDesc);
 
 	unsigned int blasIndex = 0;
+	unsigned int instanceID = 0;
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
 
-		unsigned int instanceIndex = 0;
 		for (auto& transform : instanceList.instanceTransforms) {
-			pInstanceDesc->InstanceID = blasIndex * instanceIndex;			// exposed to the shader via InstanceID()
+			pInstanceDesc->InstanceID = blasIndex;			// exposed to the shader via InstanceID() - currently same for all instances of same material
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
@@ -254,8 +259,6 @@ void DXRBase::createTLAS(unsigned int numBLASes, unsigned int numInstanceDescrip
 			pInstanceDesc->InstanceMask = 0xFF;
 
 			pInstanceDesc++;
-			
-			instanceIndex++;
 		}
 		blasIndex++;
 	}
