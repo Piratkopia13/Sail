@@ -108,7 +108,6 @@ void PlayerController::processKeyboardInput(float dt) {
 			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.3f));
 			e->addComponent<PhysicsComponent>();
 			e->addComponent<BoundingBoxComponent>(m_projectileWireframeModel);
-			e->addComponent<CollidableComponent>();
 			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
 			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -9.82f, 0.f);
 
