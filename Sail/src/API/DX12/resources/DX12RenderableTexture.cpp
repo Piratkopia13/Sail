@@ -98,7 +98,7 @@ void DX12RenderableTexture::createTextures() {
 		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
-		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, { 0.1f, 0.2f, 0.3f, 1.0f } };
+		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, { 0.01f, 0.01f, 0.01f, 1.0f } };
 
 		state[i] = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		// A texture rarely updates its data, if at all, so it is stored in a default heap

@@ -130,9 +130,9 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 	openSet.push_back(from);
 	unsigned int current = from;
 	unsigned int maxNodes = m_nodes.size();
-	unsigned int* camefrom = new unsigned int[maxNodes];
-	unsigned int* gScores = new unsigned int[maxNodes];
-	unsigned int* fScores = new unsigned int[maxNodes];
+	unsigned int* camefrom = SAIL_NEW unsigned int[maxNodes];
+	unsigned int* gScores = SAIL_NEW unsigned int[maxNodes];
+	unsigned int* fScores = SAIL_NEW unsigned int[maxNodes];
 
 	memset(gScores, UCHAR_MAX, maxNodes * sizeof(unsigned int));
 	memset(fScores, UCHAR_MAX, maxNodes * sizeof(unsigned int));

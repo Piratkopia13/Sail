@@ -1,11 +1,10 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
-#include "../../SPLASH/src/game/events/TextInputEvent.h" // ONLY 2 BITCH
+#include "../../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
 #include "Sail/graphics/Scene.h"
-
 
 Application* Application::s_instance = nullptr;
 std::atomic_uint Application::s_queuedUpdates = 0;
@@ -139,7 +138,7 @@ int Application::startGameLoop() {
 			Input::GetInstance()->beginFrame();
 
 			//UPDATES ALL CURRENTLY-WORKING AUDIO FUNCTIONALITY (TL;DR - Press '9' and '0')
-			Application::getAudioManager()->updateAudio();
+			//Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
 			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
@@ -177,6 +176,9 @@ int Application::startGameLoop() {
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
+			
+			// Do changes on the stack between states
+			applyPendingStateChanges();
 		}
 	}
 	s_isRunning = false;
