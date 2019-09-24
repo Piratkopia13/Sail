@@ -33,6 +33,7 @@ public:
 	void setName(const std::string& name);
 	const std::string& getName() const;
 	int getID() const;
+	int getECSIndex() const;
 	Entity(const std::string& name = "");
 
 public:
@@ -46,7 +47,6 @@ private:
 	void removeFromSystems();
 
 	void setECSIndex(int index);
-	int getECSIndex() const;
 
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::string m_name;

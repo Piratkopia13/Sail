@@ -3,11 +3,16 @@
 #include "systems/Cleanup/EntityRemovalSystem.h"
 
 ECS::ECS() {
-	// Add the cleanup system
-	m_systems[typeid(EntityRemovalSystem)] = std::make_unique<EntityRemovalSystem>();
+	// Add a special case system
+	m_entityRemovalSystem = SAIL_NEW EntityRemovalSystem();
 }
 
 ECS::~ECS() {
+	delete m_entityRemovalSystem;
+}
+
+EntityRemovalSystem* ECS::getEntityRemovalSystem() {
+	return m_entityRemovalSystem;
 }
 
 unsigned ECS::nrOfComponentTypes() const {
@@ -24,24 +29,24 @@ Entity::SPtr ECS::createEntity(const std::string& name) {
 
 void ECS::queueDestructionOfEntity(Entity* entity) {
 	// Add entity to removal system
-	m_systems.at(typeid(EntityRemovalSystem)).get()->addEntity(entity);
+	m_entityRemovalSystem->addEntity(entity);
 }
 
 void ECS::destroyEntity(const Entity::SPtr entityToRemove) {
-	//Loop through and find entity
-	
 	// Find the index of the entity in the vector
-	int index = entityToRemove->getECSIndex();
+	destroyEntity(entityToRemove->getECSIndex());
+}
 
-	// Remove all of its components
+void ECS::destroyEntity(int ecsIndex) {
+	// Remove all of the entity's components
 	// Also removes it from the systems
-	m_entities[index]->removeAllComponents();
+	m_entities[ecsIndex]->removeAllComponents();
 
 	// Move the last entity in the vector
-	m_entities[index] = m_entities.back();
+	m_entities[ecsIndex] = m_entities.back();
 
 	// Set the index of the moved entity
-	m_entities[index]->setECSIndex(index);
+	m_entities[ecsIndex]->setECSIndex(ecsIndex);
 
 	// Remove the redundant copy of the moved entity
 	m_entities.pop_back();

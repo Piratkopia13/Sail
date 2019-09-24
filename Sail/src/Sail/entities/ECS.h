@@ -6,6 +6,8 @@
 #include "Entity.h"
 #include "systems/BaseComponentSystem.h"
 
+class EntityRemovalSystem;
+
 /*
 	See BaseComponentSystem.h on how to create systems
 	See Component.h on how to create components
@@ -58,6 +60,7 @@ public:
 	*/
 	void queueDestructionOfEntity(Entity* entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
+	void destroyEntity(int ecsIndex);
 
 	/*
 		Adds an already existing system of a chosen type
@@ -80,6 +83,12 @@ public:
 	template<typename T>
 	T* getSystem();
 
+
+	/*
+		Retrieves the entity removal system
+		This is a special case system, every system should not have their own get-function
+	*/
+	EntityRemovalSystem* getEntityRemovalSystem();
 
 	/*
 		Returns the number of unique component types
@@ -106,6 +115,9 @@ private:
 
 	std::vector<Entity::SPtr> m_entities;
 	SystemMap m_systems;
+
+	// This system is a special case, entities should never be automatically added to this when adding a component
+	EntityRemovalSystem* m_entityRemovalSystem;
 };
 
 template<typename T>

@@ -171,9 +171,11 @@ bool Octree::removeEntityRec(Entity* entityToRemove, Node* currentNode) {
 
 	//Look for mesh in this node
 	for (int i = 0; i < currentNode->nrOfEntities; i++) {
-		if (currentNode->entities[i] == entityToRemove) {
+		if (currentNode->entities[i]->getID() == entityToRemove->getID()) {
 			//Mesh found - Remove it
-			currentNode->entities.erase(currentNode->entities.begin() + i);
+			currentNode->entities[i] = currentNode->entities.back();
+			currentNode->entities.pop_back();
+			//currentNode->entities.erase(currentNode->entities.begin() + i);
 			currentNode->nrOfEntities--;
 			entityRemoved = true;
 			i = currentNode->nrOfEntities;
@@ -196,7 +198,18 @@ bool Octree::removeEntityRec(Entity* entityToRemove, Node* currentNode) {
 
 void Octree::updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd) {
 	for (int i = 0; i < currentNode->nrOfEntities; i++) {
-		if (currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->getChange()) { //Entity has changed
+
+
+		/////// Quick fix to prevent crash, will be changed or not needed later ///////////
+		BoundingBoxComponent* bbc = currentNode->entities[i]->getComponent<BoundingBoxComponent>();
+		if (!bbc) {
+			continue;
+		}
+		if (bbc->getBoundingBox()->getChange()) { //Entity has changed
+		/////// Quick fix to prevent crash, will be changed or not needed later ///////////
+
+
+		//if (currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox()->getChange()) { //Entity has changed
 			//Re-add the entity to get it in the right node
 			Entity* tempEntity = currentNode->entities[i];
 			//First remove the entity from this node to avoid duplicates

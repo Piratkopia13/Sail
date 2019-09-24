@@ -8,6 +8,8 @@ class UpdateBoundingBoxSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
 class AnimationSystem;
+class LifeTimeSystem;
+class EntityRemovalSystem;
 
 class GameState : public State {
 public:
@@ -43,6 +45,8 @@ private:
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
 		AnimationSystem* animationSystem = nullptr;
+		LifeTimeSystem* lifeTimeSystem = nullptr;
+		EntityRemovalSystem* entityRemovalSystem = nullptr;
 	};
 
 	Application* m_app;

@@ -4,6 +4,7 @@
 #include "..//Sail/src/Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "..//Sail/src/Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
+#include "..//Sail/src/Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "..//Sail/src/Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
@@ -89,6 +90,10 @@ GameState::GameState(StateStack& stack)
 	ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
 	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->provideOctree(m_octree);
 	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->getSystem<OctreeAddRemoverSystem>();
+
+	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
+
+	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
@@ -606,7 +611,7 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2.0f;
 
-	ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
+	//ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
 
 	m_playerController.update(dt);
 
@@ -909,6 +914,11 @@ void GameState::updateComponentSystems(float dt) {
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 	m_componentSystems.physicSystem->update(dt);
 	m_componentSystems.animationSystem->update(dt);
+	m_componentSystems.lifeTimeSystem->update(dt);
+
+
+	// Will probably need to be called last
+	m_componentSystems.entityRemovalSystem->update(0.0f);
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
