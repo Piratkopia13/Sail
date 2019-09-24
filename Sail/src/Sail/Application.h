@@ -15,7 +15,6 @@
 
 #include <future>
 
-#include "ai/pathfinding/NodeSystem.h"
 #include "resources/loaders/AssimpLoader.h"
 // Forward declarations
 namespace ctpl {
@@ -85,7 +84,6 @@ public:
 
 	MemoryManager& getMemoryManager();
 	Audio* getAudioManager();
-	NodeSystem* getNodeSystem();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
@@ -99,7 +97,6 @@ private:
 
 	MemoryManager m_memoryManager;
 	Audio m_audioManager;
-	std::unique_ptr<NodeSystem> m_nodeSystem;
 	StateStorage m_stateStorage;
 
 	// Timer
