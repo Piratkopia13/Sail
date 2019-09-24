@@ -243,8 +243,8 @@ float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 		}
 	}
 
-	if (noHit == false) { //The OBB was hit by the ray
-		if (tMin > 0) { //tMin is bigger than 0 so it is the first intersection point in camera view.
+	if (noHit == false) { //The AABB was hit by the ray
+		if (tMin > 0) { //tMin is bigger than 0 so it is the first intersection
 			returnValue = tMin;
 		}
 		else { //tMin is smaller than 0 so try with tMax.
