@@ -13,14 +13,14 @@ Octree::Octree(Scene* scene, Model* boundingBoxModel) {
 	m_scene = scene;
 	m_boundingBoxModel = boundingBoxModel;
 	m_softLimitMeshes = 4;
-	m_minimumNodeHalfSize = 10.0f;
+	m_minimumNodeHalfSize = 4.0f;
 
 	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
 	m_scene->addEntity(m_baseNode.bbEntity);
 	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* tempBoundingBox = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	tempBoundingBox->setPosition(glm::vec3(0.0f));
-	tempBoundingBox->setHalfSize(glm::vec3(50.0f, 50.0f, 50.0f));
+	tempBoundingBox->setHalfSize(glm::vec3(20.0f, 20.0f, 20.0f));
 	m_baseNode.parentNode = nullptr;
 	m_baseNode.nrOfEntities = 0;
 }
