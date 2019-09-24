@@ -34,7 +34,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	cmdList->Reset(allocator.Get(), nullptr);
 
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
-	m_dxr.updateCamera(*camera);
+	m_dxr.updateSceneData(*camera, *lightSetup);
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
 
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue

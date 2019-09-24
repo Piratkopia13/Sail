@@ -10,6 +10,7 @@ public:
 	virtual ~VertexBuffer() {};
 
 	virtual void bind(void* cmdList = nullptr) const = 0;
+	virtual void update(Mesh::Data& data) = 0;
 	unsigned int getVertexDataStride() const;
 
 protected:

@@ -12,3 +12,4 @@
 #include "CollidableComponent.h"
 #include "LightComponent.h"
 #include "LightListComponent.h"
+#include "AnimationComponent.h"

@@ -5,7 +5,8 @@
 #include "TextureData.h"
 #include "AudioData.h"
 #include "Sail/api/Texture.h"
-#include "ParsedScene.h"
+//#include "ParsedScene.h"
+#include "loaders/AssimpLoader.h"
 
 //class DeferredGeometryShader;
 class ShaderPipeline;
@@ -22,6 +23,9 @@ public:
 	AudioData& getAudioData(const std::string& filename);
 	bool hasAudioData(const std::string& filename);
 
+	static const std::string SAIL_DEFAULT_MODEL_LOCATION;
+	
+
 	// TextureData
 	void loadTextureData(const std::string& filename);
 	TextureData& getTextureData(const std::string& filename);
@@ -36,6 +40,11 @@ public:
 	void loadModel(const std::string& filename, Shader* shader);
 	Model& getModel(const std::string& filename, Shader* shader);
 	bool hasModel(const std::string& filename);
+
+	// Animations
+	void loadAnimationStack(const std::string& fileName);
+	AnimationStack& getAnimationStack(const std::string& fileName);
+	bool hasAnimationStack(const std::string& fileName);
 
 	// ShaderSets
 	template <typename T>
@@ -80,14 +89,17 @@ private:
 	// Textures mapped to their filenames
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
-	// Models mapped to their filenames,
-	// NOTE: Deleting during runtime will cause issues with the rendering
-	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
+	// Models mapped to their filenames
+	//std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
+	std::map < std::string, std::unique_ptr<Model>> m_models;
+	std::map < std::string, std::unique_ptr<AnimationStack>> m_animationStacks;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;
 	// SoundManager containing all sounds
 	//std::unique_ptr<SoundManager> m_soundManager;
 
+
+	std::unique_ptr<AssimpLoader> m_assimpLoader;
 };
 
 template <typename T>

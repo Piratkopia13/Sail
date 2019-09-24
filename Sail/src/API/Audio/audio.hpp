@@ -15,13 +15,14 @@ enum AudioType {MUSIC};
 #include <windows.h>
 #include <exception>
 #include <stdexcept>
+#include <atomic>
 
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid")
 
-#define SOUND_COUNT 3
-#define STREAMED_SOUNDS_COUNT 10
+#define SOUND_COUNT 236
+#define STREAMED_SOUNDS_COUNT 20
 #define STREAMING_BUFFER_SIZE 32768
 #define MAX_BUFFER_COUNT 3
 
@@ -52,6 +53,7 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 
 	HANDLE hBufferEndEvent;
 
+#pragma region STREAMING_VOICE_CONTEXT
 	StreamingVoiceContext() :
 #if (_WIN32_WINNT >= _WIN32_WINNT_VISTA)
 		hBufferEndEvent(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE))
@@ -65,6 +67,7 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 		CloseHandle(hBufferEndEvent);
 	}
 };
+#pragma endregion
 
 class Audio
 {
@@ -74,15 +77,16 @@ public:
 
 	void loadSound(const std::string &filename);
 	int playSound(const std::string& filename);
-	//void streamSound(const std::string& filename);
+	int streamSound(const std::string& filename, bool loop = true);
 	void pauseSound(int index);
 	void stopAllSounds();
 
 	void updateAudio();
 
 private:
+	bool m_isRunning = true;
 
-	// TEMPORARY *-*-*-*-*-*-*-*-*//
+	// 'TESTER' BUTTONS *-*-*-*-*-//
 	bool m_singlePress1 = true;  //
 	bool m_singlePress2 = true; //
 	bool m_singlePress3 = true;//
@@ -93,25 +97,25 @@ private:
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
 	// Represents each loaded sound in the form of an 'object'
-	IXAudio2SourceVoice* m_sourceVoice[SOUND_COUNT];
-	IXAudio2SourceVoice* m_streamVoice[STREAMED_SOUNDS_COUNT];
+	IXAudio2SourceVoice* m_sourceVoiceSound[SOUND_COUNT];
+	IXAudio2SourceVoice* m_sourceVoiceStream[STREAMED_SOUNDS_COUNT];
 
 	
-	int m_currIndex = 0;
+	int m_currSoundIndex = 0;
+	std::atomic<int> m_currStreamIndex = 0;
 
-	// Initialization
+	// INIT
 	void initialize();
 
 	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
-	std::thread* m_streamThreads[STREAMED_SOUNDS_COUNT];
 	bool m_isStreaming[STREAMED_SOUNDS_COUNT];
+	bool m_isFinished[STREAMED_SOUNDS_COUNT];
 	OVERLAPPED m_overlapped[STREAMED_SOUNDS_COUNT];
 
 	// PRIVATE FUNCTION
 	//-----------------
 	void initXAudio2();
-	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
-
+	void streamSoundInternal(const std::string& filename, int myIndex, bool loop);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
 	// ----------------
 };

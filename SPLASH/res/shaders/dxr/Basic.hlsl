@@ -63,7 +63,7 @@ void rayGen() {
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
-	payload.color = float4(0.2f, 0.2f, 0.2f, 1.0f);
+	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
 }
 
 float4 getColor(MeshData data, float2 texCoords) {
@@ -80,6 +80,13 @@ float4 getColor(MeshData data, float2 texCoords) {
 [shader("closesthit")]
 void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
 	payload.recursionDepth++;
+
+	// TODO: move to shadow shader 
+	// If this is the second bounce, return as hit and do nothing else
+	if (payload.recursionDepth == 2) {
+		payload.hit = 1;
+		return;
+	}
 
 	float3 barycentrics = float3(1.0 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
 	uint instanceID = InstanceID();
@@ -103,15 +110,70 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
 	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 
-	// float3 normalInWorldSpace = float3(0,-1,0);
+	// if (payload.recursionDepth < 1) {
+	// 	float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
+	// 	TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
+	// 	payload.color = payload.color * 0.2f + getColor(CB_MeshData.data[instanceID], texCoords) * 0.8f;
 
-	if (payload.recursionDepth < 2) {
-		float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
-		TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
-		payload.color = payload.color * 0.2f + getColor(CB_MeshData.data[instanceID], texCoords) * 0.8f;
+	// } else {
+	// 	// Max recursion, return color
+	// 	payload.color = getColor(CB_MeshData.data[instanceID], texCoords);
+	// }
 
-	} else {
-		// Max recursion, return color
-		payload.color = getColor(CB_MeshData.data[instanceID], texCoords);
+	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
+	float3 shadedColor = float3(0.f, 0.f, 0.f);
+	
+	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
+	// TODO: read these from model data
+	float shininess = 10.0f;
+	float specMap = 1.0f;
+	float kd = 1.0f;
+	float ka = 1.0f;
+	float ks = 1.0f;
+
+	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+		PointLightInput p = CB_SceneData.pointLights[i];
+
+		// Treat pointlights with no color as no light
+		if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
+			continue;
+		}
+
+		// Shoot a ray towards the point light to figure out if in shadow or not
+		float3 towardsLight = p.position - Utils::HitWorldPosition();
+		float dstToLight = length(towardsLight);
+
+		RayPayload shadowPayload;
+		shadowPayload.recursionDepth = 1;
+		shadowPayload.hit = 0;
+		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, 0, Utils::getRayDesc(normalize(towardsLight), dstToLight), shadowPayload);
+
+		// Dont do any shading if in shadow
+		if (shadowPayload.hit == 1) {
+			continue;
+		}
+
+		float3 hitToLight = p.position - Utils::HitWorldPosition();
+		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
+		float distanceToLight = length(hitToLight);
+
+		float diffuseCoefficient = saturate(dot(normalInWorldSpace, hitToLight));
+
+		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
+		if (diffuseCoefficient > 0.f) {
+			float3 r = reflect(-hitToLight, normalInWorldSpace);
+			r = normalize(r);
+			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
+		}
+
+		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
+
+		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor.rgb * p.color * attenuation;
 	}
+
+	float3 ambient = diffuseColor.rgb * ka * ambientCoefficient;
+
+	payload.color = float4(saturate(ambient + shadedColor), 1.0f);
+
+
 }

@@ -15,15 +15,16 @@
 
 #include <future>
 
+#include "ai/pathfinding/NodeSystem.h"
+#include "resources/loaders/AssimpLoader.h"
 // Forward declarations
 namespace ctpl {
 	class thread_pool;
 }
 
 // TODO? Move elsewhere
-const float TICKRATE = 100.0f;
+const float TICKRATE = 50.0f;
 const float TIMESTEP = 1.0f / TICKRATE;
-#include "ai/pathfinding/NodeSystem.h"
 
 class Application : public IEventDispatcher {
 
@@ -44,6 +45,7 @@ public:
 	virtual void update(float dt) = 0;
 	virtual void render(float dt, float alpha) = 0;
 	virtual void dispatchEvent(Event& event) override;
+	virtual void applyPendingStateChanges() = 0;
 
 	template<typename T>
 	T* const getAPI() { return static_cast<T*>(m_api.get()); }
@@ -80,6 +82,7 @@ public:
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
+
 	MemoryManager& getMemoryManager();
 	Audio* getAudioManager();
 	NodeSystem* getNodeSystem();
@@ -87,14 +90,16 @@ public:
 	const UINT getFPS() const;
 
 private:
+	Audio m_audioManager;
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
+
 	MemoryManager m_memoryManager;
-	Audio m_audioManager;
+	
 	std::unique_ptr<NodeSystem> m_nodeSystem;
 	StateStorage m_stateStorage;
 

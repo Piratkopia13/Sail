@@ -5,6 +5,7 @@
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/DX12IndexBuffer.h"
 #include "API/DX12/resources/DX12Texture.h"
+#include "Sail/graphics/light/LightSetup.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename)
 : m_shaderFilename(shaderFilename) 
@@ -105,19 +106,25 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 		i++;
 	}
 
-
-	// TODO: run this on an async compute queue
-	createBLAS(sceneGeometry, cmdList);
+	//static int frames = 0;
+	//if (frames < 3) {
+		// TODO: run this on an async compute queue
+		createBLAS(sceneGeometry, cmdList);
+		//frames++;
+	//}
 	createTLAS(sceneGeometry, cmdList);
 	createShaderTables(sceneGeometry);
 
 }
 
-void DXRBase::updateCamera(Camera& cam) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
 	DXRShaderCommon::SceneCBuffer newData = {};
 	newData.cameraPosition = cam.getPosition();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
-	m_cameraCB[m_context->getFrameIndex()]->updateData(&newData, sizeof(newData));
+
+	auto& plData = lights.getPointLightsData();
+	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
+	m_sceneCB[m_context->getFrameIndex()]->updateData(&newData, sizeof(newData));
 }
 
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
@@ -160,7 +167,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	// Set acceleration structure
 	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_DXR_TopBuffer[frameIndex].result->GetGPUVirtualAddress());
 	// Set scene constant buffer
-	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_cameraCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
+	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_sceneCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
 
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
@@ -376,7 +383,7 @@ void DXRBase::createShaderResources(bool remake) {
 			void* initData = malloc(size);
 			memset(initData, 0, size);
 			for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
-				m_cameraCB.emplace_back(std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0));
+				m_sceneCB.emplace_back(std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0));
 			}
 			free(initData);
 		}

@@ -69,8 +69,14 @@ void Scene::addStaticEntity(Entity::SPtr staticEntity) {
 	m_staticObjectEntities.push_back(staticEntity);
 }
 
+void Scene::setPlayerCandle(Entity::SPtr candle) {
+	m_playerCandle = candle;
+}
+
+
 void Scene::setLightSetup(LightSetup* lights) {
-	(*m_currentRenderer)->setLightSetup(lights);
+	m_rendererRaster->setLightSetup(lights);
+	m_rendererRaytrace->setLightSetup(lights);
 }
 
 
@@ -134,6 +140,12 @@ void Scene::draw(Camera& camera, const float alpha) {
 				(*m_currentRenderer)->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
 			}
 		}
+	}
+
+	TransformComponent* transform = m_playerCandle->getComponent<TransformComponent>();
+	ModelComponent* model = m_playerCandle->getComponent<ModelComponent>();
+	if (transform && model) {
+		(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
 	}
 
 	// Render dynamic objects (objects that might move or be added/removed)

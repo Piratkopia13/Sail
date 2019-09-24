@@ -21,6 +21,7 @@ IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["ImGui"] = "libraries/imgui"
 IncludeDir["MiniMM"] = "libraries/MemoryManager"
+IncludeDir["Assimp"] = "libraries/assimp/include"
 
 group "Libraries"
 include "libraries/glfw"
@@ -38,7 +39,7 @@ project "SPLASH"
 	targetdir (binDir)
 	objdir (intermediatesDir)
 
-	files { 
+	files {
 		"%{prj.name}/SPLASH.rc",    -- For icon
 		"%{prj.name}/resource.h", -- For icon
 		"%{prj.name}/src/**.h",
@@ -47,7 +48,7 @@ project "SPLASH"
 	}
 
 	-- include and fix these as soon as new cross-platform architecture is finished
-	removefiles { 
+	removefiles {
 		"**/ParticleHandler.*",
 		"**/PlayerCameraController.*",
 		"**/Scene.*"
@@ -58,6 +59,7 @@ project "SPLASH"
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.Assimp}",
 		"Physics"
 	}
 
@@ -77,14 +79,16 @@ project "SPLASH"
 		defines { "NDEBUG" }
 		optimize "On"
 
-	-- Copy fbxsdk dll to executable path
+	-- Copy dlls to executable path
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/assimp/lib/x64/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/assimp/lib/x86/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 
 
@@ -100,14 +104,14 @@ project "Sail"
 	pchheader "pch.h"
 	pchsource "Sail/src/pch.cpp"
 
-	files { 
+	files {
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
 	-- include and fix these as soon as new cross-platform architecture is finished
-	removefiles { 
+	removefiles {
 		"%{prj.name}/src/API/DX11/**",
 		"%{prj.name}/src/API/DX12/**",
 		"%{prj.name}/src/API/VULKAN/**",
@@ -132,14 +136,16 @@ project "Sail"
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.MiniMM}"
+		"%{IncludeDir.MiniMM}",
+		"%{IncludeDir.Assimp}"
 	}
 
 	links {
 		"libfbxsdk",
 		"GLFW",
 		"ImGui",
-		"MemoryManager"
+		"MemoryManager",
+		"assimp-vc140-mt"
 	}
 
 	defines {
@@ -165,11 +171,13 @@ project "Sail"
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x64"
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x86"
 		}
 
 	filter "system:windows"
@@ -196,11 +204,11 @@ project "Physics"
 	objdir (intermediatesDir)
 	cppdialect "C++17"
 	staticruntime "on"
-	
+
 	pchheader "PhysicsPCH.h"
 	pchsource "Physics/PhysicsPCH.cpp"
 
-	files { 
+	files {
 		"%{prj.name}/**.h",
 		"%{prj.name}/**.cpp"
 	}
@@ -210,22 +218,26 @@ project "Physics"
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.Assimp}"
 	}
 
 	links {
 		"Sail",
 		"libfbxsdk",
 		"GLFW",
-		"ImGui"
+		"ImGui",
+		"assimp-vc140-mt"
 	}
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x64"
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
+			"libraries/assimp/lib/x86"
 		}
 
 	filter "system:windows"
@@ -235,7 +247,7 @@ project "Physics"
 			"FBXSDK_SHARED",
 			"GLFW_INCLUDE_NONE"
 		}
-		
+
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		symbols "On"

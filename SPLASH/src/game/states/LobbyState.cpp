@@ -6,7 +6,9 @@
 #include "../Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
-#include "Network/NetworkWrapper.h"
+#include "Network/NWrapperSingleton.h"	// New network
+#include "Network/NWrapper.h"			// 
+
 
 #include <string>
 using namespace std;
@@ -17,7 +19,7 @@ LobbyState::LobbyState(StateStack& stack)
 	// ImGui is already initiated and set up, thanks alex!
 	m_app = Application::getInstance();
 	m_input = Input::GetInstance();
-	m_network = &NetworkWrapper::getInstance();
+	m_network = NWrapperSingleton::getInstance().getNetworkWrapper();
 	m_textHeight = 52;
 	m_outerPadding = 15;
 
@@ -39,28 +41,14 @@ LobbyState::~LobbyState() {
 }
 
 bool LobbyState::processInput(float dt) {
-	// Did user want to enter anything in the chatbox?
-	// Did user want to send the message?
-	// ---
-
 	if (m_input->IsMouseButtonPressed(0)) {
 		m_chatFocus = false;
 	}
 
-	// Purely a function for testing
-//	this->doTestStuff();
-
-	// Did user want to change some setting?
-	// ---
-
-	// Did user want to start the game?
-	// ---
-
 	return false;
 }
 
-bool LobbyState::inputToChatLog(MSG& msg)
-{
+bool LobbyState::inputToChatLog(MSG& msg) {
 	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != SAIL_KEY_RETURN) {
 		// Add whichever button that was inputted to the current message
 		// --- OBS : doesn't account for capslock, etc.
@@ -84,22 +72,7 @@ bool LobbyState::update(float dt) {
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
 	this->m_screenHeight = m_app->getWindow()->getWindowHeight();
 
-	// Did we send something?
-
-	// ---
-	if (NetworkWrapper::getInstance().isInitialized()) {
-		NetworkWrapper::getInstance().checkForPackages();
-	}
-
-
-
-
-
-	// Did we recieve something?
-	// ---
-
-	// Is anything going on in the background?
-	// ---
+	m_network->checkForPackages();
 
 	return false;
 }
@@ -126,7 +99,7 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-bool LobbyState::playerJoined(Player player) {
+bool LobbyState::playerJoined(Player& player) {
 	if (m_playerCount < m_playerLimit) {
 		m_players.push_back(player);
 		m_playerCount++;
@@ -135,7 +108,7 @@ bool LobbyState::playerJoined(Player player) {
 	return false;
 }
 
-bool LobbyState::playerLeft(unsigned int id) {
+bool LobbyState::playerLeft(unsigned char& id) {
 	// Linear search to get target 'player' struct, then erase that from the list
 	Player* toBeRemoved = nullptr;
 	int pos = 0;
@@ -174,10 +147,11 @@ string LobbyState::fetchMessage()
 	return message;
 }
 
-void LobbyState::addMessageToChat(Message message) {
+void LobbyState::addMessageToChat(Message& message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
-	Player* playa = this->getPlayer(stoi(message.sender));
+	unsigned char id = stoi(message.sender);
+	Player* playa = this->getPlayer(id);
 	string msg = playa->name + ": ";
 	message.content.insert(0, msg);
 
@@ -190,7 +164,7 @@ void LobbyState::addMessageToChat(Message message) {
 	}
 }
 
-Player* LobbyState::getPlayer(unsigned int id) {
+Player* LobbyState::getPlayer(unsigned char& id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {
@@ -223,6 +197,10 @@ void LobbyState::renderPlayerList() {
 		std::string temp;
 		temp += " - ";
 		temp += currentplayer.name.c_str();
+
+		if (currentplayer.id == m_me.id) {
+			temp += " (You)";
+		}
 		
 		ImGui::Text(temp.c_str());
 	}
@@ -230,27 +208,31 @@ void LobbyState::renderPlayerList() {
 }
 
 void LobbyState::renderStartButton() {
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-	flags |= ImGuiWindowFlags_NoResize;
-	flags |= ImGuiWindowFlags_NoMove;
-	flags |= ImGuiWindowFlags_NoNav;
-	flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
-	flags |= ImGuiWindowFlags_NoSavedSettings;
-	ImGui::SetNextWindowPos(ImVec2(
-		m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
-		m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
-	));
-	ImGui::Begin("Press 0 once");
 
-	// SetKeyBoardFocusHere on the chatbox prevents the button from working,
-	// so if we click with the mouse, temporarily set focus to the button.
+	if (NWrapperSingleton::getInstance().isHost()) {
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
+		flags |= ImGuiWindowFlags_NoResize;
+		flags |= ImGuiWindowFlags_NoMove;
+		flags |= ImGuiWindowFlags_NoNav;
+		flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+		flags |= ImGuiWindowFlags_NoSavedSettings;
+		ImGui::SetNextWindowPos(ImVec2(
+			m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
+			m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
+		));
+		ImGui::Begin("Start Game");
 
-	if (ImGui::Button("S.P.L.A.S.H")) {
-		// Queue a removal of LobbyState, then a push of gamestate
-		this->requestStackPop();
-		this->requestStackPush(States::Game);
+		// SetKeyBoardFocusHere on the chatbox prevents the button from working,
+		// so if we click with the mouse, temporarily set focus to the button.
+
+		if (ImGui::Button("S.P.L.A.S.H")) {
+			// Queue a removal of LobbyState, then a push of gamestate
+			m_network->sendMsgAllClients("t");
+			this->requestStackPop();
+			this->requestStackPush(States::Game);
+		}
+		ImGui::End();
 	}
-	ImGui::End();
 }
 
 void LobbyState::renderSettings() {

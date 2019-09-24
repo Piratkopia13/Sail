@@ -7,6 +7,7 @@
 class UpdateBoundingBoxSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
+class AnimationSystem;
 
 class GameState : public State {
 public:
@@ -24,11 +25,14 @@ public:
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
 
+
+
 private:
 	bool onResize(WindowResizeEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
+	bool renderImGuiLightDebug(float dt);
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updateComponentSystems(float dt);
 
@@ -38,6 +42,7 @@ private:
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
+		AnimationSystem* animationSystem = nullptr;
 	};
 
 	Application* m_app;
@@ -74,9 +79,11 @@ private:
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
+	
 
 	std::unique_ptr<Model> m_boundingBoxModel;
 
 	Octree* m_octree;
 	std::vector<Entity::SPtr> m_candles;
+	bool m_disableLightComponents;
 };

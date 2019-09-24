@@ -99,7 +99,7 @@ public:
 	bool searchHostsOnLan();
 
 	/*
-		Returns true if this is a Host.
+		Returns true if this is a Host
 	*/
 	bool isServer();
 	INITIALIZED_STATUS getInitializeStatus();

@@ -1,11 +1,10 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
-#include "../../SPLASH/src/game/events/TextInputEvent.h" // ONLY 2 BITCH
+#include "../../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
 #include "Sail/graphics/Scene.h"
-
 
 Application* Application::s_instance = nullptr;
 std::atomic_uint Application::s_queuedUpdates = 0;
@@ -138,7 +137,7 @@ int Application::startGameLoop() {
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
-			//UPDATES ALL CURRENTLY-WORKING AUDIO FUNCTIONALITY (TL;DR - Press '9' and '0')
+			//UPDATES AUDIO
 			Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
@@ -159,14 +158,14 @@ int Application::startGameLoop() {
 			if (s_updateRunning == 0) {
 				s_updateRunning = 1;
 				// Run update(s) in a separate thread
-				m_threadPool->push([this](int id) {
-					while (s_queuedUpdates > 0 && s_isRunning) {
+				//m_threadPool->push([this](int id) {
+					if (s_queuedUpdates > 0 && s_isRunning) {
 						s_queuedUpdates--;
 						Scene::IncrementCurrentUpdateIndex();
 						update(TIMESTEP);
 					}
 					s_updateRunning = 0;
-					});
+					//});
 			}
 
 			// Render
@@ -177,9 +176,15 @@ int Application::startGameLoop() {
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
+			
+			// Do changes on the stack between states
+			applyPendingStateChanges();
 		}
 	}
+
 	s_isRunning = false;
+	// All sounds need to be stopped before 'm_threadPool->stop()';
+	m_audioManager.stopAllSounds();
 	m_threadPool->stop();
 	return (int)msg.wParam;
 }
@@ -211,6 +216,7 @@ ImGuiHandler* const Application::getImGuiHandler() {
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
 }
+
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }

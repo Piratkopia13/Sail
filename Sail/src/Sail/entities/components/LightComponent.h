@@ -2,6 +2,7 @@
 
 #include "Component.h"
 #include "../../graphics/light/PointLight.h"
+
 class LightComponent : public Component<LightComponent> {
 public:
 	//create point light
@@ -12,7 +13,12 @@ public:
 		m_pointLight.setIndex(pl.getIndex());
 	}
 	~LightComponent() {}
-	PointLight m_pointLight;
+
+	PointLight& getPointLight() {
+		return m_pointLight;
+	}
+
 private:
+	PointLight m_pointLight;
 
 };
