@@ -2,13 +2,14 @@
 #include "BaseComponentSystem.h"
 #include "..//Entity.h"
 
-void BaseComponentSystem::addEntity(Entity* entity) {
+bool BaseComponentSystem::addEntity(Entity* entity) {
 	for (auto e : entities) {
 		if (e->getID() == entity->getID()) {
-			return;
+			return false;
 		}
 	}
 	entities.push_back(entity);
+	return true;
 }
 
 void BaseComponentSystem::removeEntity(Entity* entity) {
