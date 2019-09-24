@@ -11,7 +11,7 @@ namespace DXRUtils {
 		D3D12_STATE_SUBOBJECT* append(D3D12_STATE_SUBOBJECT_TYPE type, const void* desc);
 		void addLibrary(const std::string& shaderPath, const std::vector<LPCWSTR> names);
 		void addHitGroup(LPCWSTR exportName, LPCWSTR closestHitShaderImport, LPCWSTR anyHitShaderImport = nullptr, LPCWSTR intersectionShaderImport = nullptr, D3D12_HIT_GROUP_TYPE type = D3D12_HIT_GROUP_TYPE_TRIANGLES);
-		void addSignatureToShaders(std::vector<LPCWSTR> shaderNames, ID3D12RootSignature** rootSignature);
+		void addSignatureToShaders(const std::vector<LPCWSTR>& shaderNames, ID3D12RootSignature** rootSignature);
 		void setGlobalSignature(ID3D12RootSignature** rootSignature);
 		void setMaxPayloadSize(UINT size);
 		void setMaxAttributeSize(UINT size);
@@ -55,7 +55,12 @@ namespace DXRUtils {
 
 	class ShaderTableBuilder {
 	public:
-		ShaderTableBuilder(LPCWSTR shaderName, ID3D12StateObject* pso, UINT numInstances = 1, UINT maxBytesPerInstance = 32);
+		/*
+			@param shaderNames, a vector of shader names that should be contained in this shader table.
+			@param numInstances, a vector of UINT that represent the number of instances that should use each shader from shaderNames.
+			@param pso, a pointer to a ID3D12StateObject where the shaders defined in shaderNames are located.
+		*/
+		ShaderTableBuilder(const std::vector<LPCWSTR>& shaderNames, const std::vector<UINT>& numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance = 32);
 		~ShaderTableBuilder();
 
 		void addDescriptor(UINT64& descriptor, UINT instance = 0);
@@ -65,8 +70,9 @@ namespace DXRUtils {
 
 	private:
 		wComPtr<ID3D12StateObjectProperties> m_soProps;
-		LPCWSTR m_shaderName;
-		UINT m_numInstances;
+		std::vector<LPCWSTR> m_shaderNames;
+		std::vector<UINT> m_numInstances;
+		UINT m_numInstances_total;
 		UINT m_maxBytesPerInstance;
 
 		void** m_data;

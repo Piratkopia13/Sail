@@ -413,7 +413,7 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 			m_rayGenShaderTable[frameIndex].Resource->Release();
 			m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder(m_rayGenName, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder({ m_rayGenName }, {1U}, m_rtPipelineState.Get());
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
@@ -424,7 +424,7 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 			m_missShaderTable[frameIndex].Resource->Release();
 			m_missShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder(m_missName, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder({ m_missName }, {1}, m_rtPipelineState.Get());
 		//tableBuilder.addDescriptor(m_skyboxGPUDescHandle.ptr);
 		m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
@@ -436,7 +436,7 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 			m_hitGroupShaderTable[frameIndex].Resource->Release();
 			m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), sceneGeometry.size(), 64U);
+		DXRUtils::ShaderTableBuilder tableBuilder({ m_hitGroupName }, { (UINT)sceneGeometry.size(), 0 }, m_rtPipelineState.Get(), 64U);
 		for (unsigned int i = 0; i < sceneGeometry.size(); i++) {
 			auto& mesh = sceneGeometry[i].mesh;
 
@@ -466,10 +466,13 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 
 void DXRBase::createRaytracingPSO() {
 	DXRUtils::PSOBuilder psoBuilder;
-	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName });
+	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName, m_closestHitName2 });
+	//psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/testLib.hlsl", { m_closestHitName2 });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
-	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
-	psoBuilder.addSignatureToShaders({ m_closestHitName }, m_localSignatureHitGroup->get());
+	psoBuilder.addHitGroup(m_hitGroupName2, m_closestHitName2);
+	psoBuilder.addSignatureToShaders({ m_rayGenName },			m_localSignatureRayGen->get());
+	psoBuilder.addSignatureToShaders({ m_hitGroupName },		m_localSignatureHitGroup->get());
+	psoBuilder.addSignatureToShaders({ m_hitGroupName2 },		m_localSignatureHitGroup2->get());
 	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
 	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);
@@ -500,8 +503,16 @@ void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup->addCBV("MeshCBuffer", 1, 0);
 	m_localSignatureHitGroup->addDescriptorTable("Textures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 3); // Textures (t0, t1, t2)
 	m_localSignatureHitGroup->addStaticSampler();
-
 	m_localSignatureHitGroup->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+
+	/*==========TEST=========*/
+	m_localSignatureHitGroup2 = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
+	m_localSignatureHitGroup2->addSRV("VertexBuffer", 1, 0);
+	m_localSignatureHitGroup2->addSRV("IndexBuffer", 1, 1);
+	m_localSignatureHitGroup2->addCBV("MeshCBuffer", 1, 0);
+	m_localSignatureHitGroup2->addDescriptorTable("Textures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 3); // Textures (t0, t1, t2)
+	m_localSignatureHitGroup2->addStaticSampler();
+	m_localSignatureHitGroup2->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
 void DXRBase::createMissLocalRootSignature() {

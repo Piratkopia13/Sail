@@ -96,12 +96,16 @@ private:
 
 	const WCHAR* m_rayGenName = L"rayGen";
 	const WCHAR* m_closestHitName = L"closestHit";
+	const WCHAR* m_closestHitName2 = L"closestHit2";
 	const WCHAR* m_missName = L"miss";
 	const WCHAR* m_hitGroupName = L"HitGroup";
+	const WCHAR* m_hitGroupName2 = L"HitGroup2";
+	//const WCHAR* m_hitGroupName_test = L"HitGroup_test";
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup2;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 
 
