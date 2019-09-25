@@ -176,7 +176,7 @@ GameState::GameState(StateStack& stack)
 
 	// load each tile type for the map
 	Model* tile1 = &m_app->getResourceManager().getModel("tiler1.fbx", shader);
-	tile1->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.2f, 1.0f, 1.0f));
+	tile1->getMesh(0)->getMaterial()->setColor(glm::vec4(0.03f, 0.03f, 0.03f, 1.0f));
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());

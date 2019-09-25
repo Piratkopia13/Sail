@@ -18,6 +18,7 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* model, Model* bb) {
 	int tileSize = 5;
 	int worldWidth = 20;
 	int worldDepth = 20;
+	int offset = 17;
 
 	int random = rand() % 100 + 1;     // 1 to 100
 	
@@ -26,10 +27,10 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* model, Model* bb) {
 			auto e = ECS::Instance()->createEntity("");
 			e->addComponent<ModelComponent>(model);
 			if (rand() % 100 > 70) {
-				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * i, 0.f, tileSize * j));
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * i + offset, 0.f, tileSize * j + offset));
 			}
 			else {
-				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * i, -5.f, tileSize * j));
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * i + offset, -5.f, tileSize * j + offset));
 			}
 			
 			e->addComponent<BoundingBoxComponent>(bb);
