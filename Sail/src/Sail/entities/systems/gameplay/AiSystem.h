@@ -44,6 +44,7 @@ private:
 
 	void updatePath(AiComponent* aiComp, TransformComponent* transComp);
 	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
+	void aiUpdateFunc(Entity* entity, const float dt);
 
 private:
 	std::unordered_map<int, AiEntity> m_aiEntities;
