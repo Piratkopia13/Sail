@@ -60,17 +60,3 @@ void CandleSystem::updatePlayerCandle(CameraController* cam, const float yaw) {
 	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
 	m_playerCandle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);
 }
-
-// projectiles are presumed to have a PhysicsComponent
-void CandleSystem::checkProjectileCollisions(const std::vector<Entity::SPtr> &projectiles) {
-	for (auto p : projectiles) {
-		auto projectileCollisions = p->getComponent<PhysicsComponent>()->collisions;
-		for (auto candle : entities) {
-			for (auto collision : projectileCollisions) {
-				if (collision.entity == candle) {
-					candle->getComponent<CandleComponent>()->hitWithWater();
-				}
-			}
-		}
-	}
-}

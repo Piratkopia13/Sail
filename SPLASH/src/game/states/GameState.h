@@ -12,6 +12,7 @@ class LightSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
 class PrepareUpdateSystem;
+class GunSystem;
 class ProjectileSystem;
 
 class GameState : public State {
@@ -54,6 +55,7 @@ private:
 		PhysicSystem* physicSystem = nullptr;
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
+		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
 	};
 

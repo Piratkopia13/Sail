@@ -7,7 +7,8 @@
 #include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "Sail/entities/systems/light/LightSystem.h"
 #include "Sail/entities/systems/gameplay/AiSystem.h"
-#include "Sail/entities/systems/gameplay/ProjectileSystem.h"
+#include "Sail/entities/systems/gameplay/GunSystem.h"
+#include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/entities/systems/physics/PhysicSystem.h"
@@ -113,6 +114,8 @@ GameState::GameState(StateStack& stack)
 	//Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
 
+	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
+	
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
 	// This was moved out from the PlayerController constructor
@@ -836,7 +839,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
 	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
-	m_componentSystems.projectileSystem->update(dt, &m_scene); // Order?
+	m_componentSystems.gunSystem->update(dt, &m_scene); // Order?
+	m_componentSystems.projectileSystem->update(dt);
 	m_componentSystems.animationSystem->update(dt);
 	m_componentSystems.aiSystem->update(dt);
 
