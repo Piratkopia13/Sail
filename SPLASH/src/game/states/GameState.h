@@ -11,6 +11,7 @@ class LifeTimeSystem;
 class LightSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
+class PrepareUpdateSystem;
 
 class GameState : public State {
 public:
@@ -37,7 +38,7 @@ private:
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
 	// Where to updates the component systems. Responsibility can be moved to other places
-	void updateComponentSystems(float dt);
+	void updatePerTickComponentSystems(float dt);
 
 
 private:
@@ -51,6 +52,7 @@ private:
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 	};
 
 	Application* m_app;

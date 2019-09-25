@@ -1,8 +1,6 @@
 #pragma once
 #include <glm/vec3.hpp>
 
-// forward declaration
-class PerUpdateRenderObject;
 
 // Structs for storing transform data from two consecutive updates
 // so that they can be interpolated between.
@@ -75,7 +73,6 @@ public:
 	/* Forward should always be a normalized vector */
 	void setForward(const glm::vec3& forward);
 
-	PerUpdateRenderObject* getRenderTransform() const;
 	Transform* getParent() const;
 
 	const glm::vec3& getTranslation() const;

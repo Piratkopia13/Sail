@@ -11,6 +11,7 @@
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
+#include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/TimeSettings.h"
 
 #include <sstream>
@@ -108,6 +109,8 @@ GameState::GameState(StateStack& stack)
 	//Create system for the candles
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
 
+	//Create system which prepares each new update
+	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
@@ -203,9 +206,6 @@ GameState::GameState(StateStack& stack)
 
 	m_scene.addEntity(animationEntity);*/
 
-	// STATIC ENTITIES (never added/deleted/modified during runtime)
-	// Use .addStaticEntity() and StaticMatrixComponent instead of TransformComponent since static objects's transforms 
-	// don't need to be interpolated between updates.
 	{
 		auto e = ECS::Instance()->createEntity("Arena");
 		e->addComponent<ModelComponent>(arenaModel);
@@ -328,8 +328,6 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		m_scene.addEntity(e);
 
-		// DYNAMIC ENTITIES
-		// Use TransformComponent and .addEntity() so that they're interpolated
 		e = ECS::Instance()->createEntity("Character");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
@@ -427,10 +425,10 @@ GameState::GameState(StateStack& stack)
 		//pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(2);
 		e->addComponent<LightComponent>(pl);
-		//m_componentSystems.candleSystem->setPlayerCandle(e);
+		// Player candle will have its position updated each frame
+		e->addComponent<RealTimeComponent>();
 		m_componentSystems.candleSystem->setPlayerCandle(e);
 		m_scene.addEntity(e);
-		//m_scene.setPlayerCandle(e);
 
 		
 
@@ -573,18 +571,13 @@ bool GameState::update(float dt) {
 
 	//ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
 
-	//m_playerController.update(dt);
-
-	// TODO: send vector of projectile entities to candleSystem
-	//m_componentSystems.candleSystem->checkProjectileCollisions(projectiles)
-	m_componentSystems.candleSystem->update(dt);
-
-	m_scene.prepareUpdate(); // Copy game state from previous tick
-	m_playerController.prepareUpdate(); // Copy player position from previous tick
+	// TODO: REMOVE
+	//m_scene.prepareUpdate(); // Copy game state from previous tick
+	//m_playerController.prepareUpdate(); // Copy player position from previous tick
 
 	m_playerController.processKeyboardInput(TIMESTEP);
 
-	updateComponentSystems(dt);
+	updatePerTickComponentSystems(dt);
 
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {
@@ -594,15 +587,10 @@ bool GameState::update(float dt) {
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
 
-	// copy per-frame render objects to their own list so that they can be rendered without
-	// any interference from the update loop
-	//m_scene.prepareRenderObjects();
-
 	return true;
 }
 
 // Renders the state
-// DO NOT CREATE OR DESTROY ANY gameObjects HERE
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 bool GameState::render(float dt, float alpha) {
 	// Interpolate the player's camera position (but not rotation)
@@ -865,7 +853,9 @@ bool GameState::renderImGuiLightDebug(float dt) {
 
 // HERE BE DRAGONS
 // Make sure things are updated in the correct order or things will behave strangely
-void GameState::updateComponentSystems(float dt) {
+void GameState::updatePerTickComponentSystems(float dt) {
+	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
+	
 	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
 
 	m_componentSystems.animationSystem->update(dt);
@@ -873,6 +863,10 @@ void GameState::updateComponentSystems(float dt) {
 
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
+
+	// TODO: send vector of projectile entities to candleSystem
+	//m_componentSystems.candleSystem->checkProjectileCollisions(projectiles)
+	m_componentSystems.candleSystem->update(dt);
 
 	m_componentSystems.lifeTimeSystem->update(dt);
 	// Will probably need to be called last

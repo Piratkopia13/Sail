@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Transform.h"
-#include "PerUpdateRenderObject.h"
 
 Transform::Transform(Transform* parent)
 	: Transform::Transform({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, parent) 
@@ -47,16 +46,8 @@ void Transform::setParent(Transform* parent) {
 	}
 	m_parent = parent;
 	parent->addChild(this);
-	//for (auto& ts : m_transformSnapshots) {
-	//	ts.m_parentUpdated = true;
-	//}
-	//m_data.m_current.m_parentUpdated = true;
-	//m_data.m_previous.m_parentUpdated = true;
 	m_parentUpdated = true;
 	treeNeedsUpdating();
-	//for (int i = 0; i < SNAPSHOT_BUFFER_SIZE; i++) {
-	//	treeNeedsUpdating();
-	//}
 }
 
 void Transform::removeParent() {
@@ -67,7 +58,7 @@ void Transform::removeParent() {
 }
 
 // NOTE: Has to be done at the beginning of each update
-// copies current state into previous state
+// Call from PrepareUpdateSystem and no where else!
 void Transform::prepareUpdate() {
 	m_data.m_previous = m_data.m_current;
 	m_hasChanged = false;
@@ -97,11 +88,6 @@ void Transform::setStartTranslation(const glm::vec3& translation) {
 	m_data.m_previous.m_translation = translation;
 	m_data.m_current.m_translation = translation;
 	m_matNeedsUpdate = true;
-
-	/*for (auto& ts : m_transformSnapshots) {
-	ts.m_translation = translation;
-	ts.m_matNeedsUpdate = true;
-	}*/
 }
 
 void Transform::translate(const float x, const float y, const float z) {
@@ -125,17 +111,6 @@ void Transform::scale(const glm::vec3& scale) {
 	treeNeedsUpdating();
 }
 
-/*void Transform::rotate(const glm::vec3& rotation) {
-m_rotation += rotation;
-m_matNeedsUpdate = true;
-treeNeedsUpdating();
-}
-
-void Transform::rotate(const float x, const float y, const float z) {
-m_rotation += glm::vec3(x, y, z);
-m_matNeedsUpdate = true;
-treeNeedsUpdating();
-}*/
 void Transform::rotate(const glm::vec3& rotation) {
 	m_data.m_current.m_rotation += rotation;
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
@@ -232,41 +207,11 @@ void Transform::setForward(const glm::vec3& forward) {
 	m_matNeedsUpdate = true;
 }
 
-//// NOTE: Not used anywhere at the moment
-//void Transform::setMatrix(const glm::mat4& newMatrix) {
-//	m_localTransformMatrix = newMatrix;
-//	glm::vec3 tempSkew;
-//	glm::vec4 tempPerspective;
-//	glm::quat tempRotation;
-//	glm::decompose(newMatrix, 
-//		m_data.m_current.m_scale, 
-//		tempRotation, 
-//		m_data.m_current.m_translation, 
-//		tempSkew, tempPerspective);
-//	// TODO: Check that rotation is valid
-//	m_data.m_current.m_rotation = glm::eulerAngles(tempRotation);
-//	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
-//
-//	//m_data.m_current.m_matNeedsUpdate = false;
-//	treeNeedsUpdating();
-//}
 
 Transform* Transform::getParent() const {
 	return m_parent;
 }
 
-
-// creates a new RenderTransform
-PerUpdateRenderObject* Transform::getRenderTransform() const {
-	PerUpdateRenderObject* toReturn = SAIL_NEW PerUpdateRenderObject();
-	if (m_parent) {
-		toReturn->setParent(m_parent->getRenderTransform());
-	}
-	return toReturn;
-}
-
-
-// Note: returns the translation/rotation/scale that's currently used in update
 const glm::vec3& Transform::getTranslation() const {
 	return m_data.m_current.m_translation;
 }
@@ -282,21 +227,6 @@ const glm::vec3 Transform::getInterpolatedTranslation(float alpha) const {
 }
 
 
-//
-//const glm::vec3& Transform::getForward() {
-//	getMatrix();
-//
-//	return m_data.m_current.m_forward;
-//}
-
-//const glm::vec3& Transform::getRight() {
-//	return m_data.m_current.m_right;
-//}
-//
-//const glm::vec3& Transform::getUp() {
-//	return m_data.m_current.m_up;
-//}
-
 glm::mat4 Transform::getMatrix() {
 	if (m_matNeedsUpdate) {
 		updateLocalMatrix();
@@ -311,46 +241,19 @@ glm::mat4 Transform::getMatrix() {
 }
 
 glm::mat4 Transform::getRenderMatrix(float alpha) {
-	
-	// Always update matrix with interpolated data if any data was changed between
-	// the two snapshots
-
 	// If data hasn't changed use the CPU side transformMatrix
 	if (!m_hasChanged && !m_parentRenderUpdated) {
 		m_renderMatrix = getMatrix();
 	} else {
+		// if the data has changed between updates then the matrix will be interpolated every frame
+		updateLocalRenderMatrix(alpha);
+
 		updateRenderMatrix(alpha); // if it has then interpolate
 		if (m_parentRenderUpdated || !m_parent) {
 			updateRenderMatrix(alpha);
 			m_parentRenderUpdated = true;
 		}
 	}
-
-	//if (m_hasChanged) {
-	//	updateLocalRenderMatrix(alpha);
-	//} else if (m_matNeedsUpdate) { // if data hasn't changed only update the matrix if it hasn't been done yet
-	//	// if data hasn't changed then copy the CPU side matrix
-
-
-
-	//	updateLocalRenderMatrix(1.0f); // No need to interpolate since current == prev
-	//	m_interMatNeedsUpdate = false;
-	//}
-
-	//if (m_parentRenderUpdated || !m_parent) {
-	//	updateRenderMatrix(alpha);
-	//	m_parentRenderUpdated = false;
-	//}
-
-
-	//if (m_matNeedsUpdate) {
-	//	updateLocalMatrix();
-	//	m_matNeedsUpdate = false;
-	//}
-	//if (m_parentUpdated || !m_parent) {
-	//	updateMatrix();
-	//	m_parentUpdated = false;
-	//}
 
 	return m_renderMatrix;
 }
@@ -367,13 +270,6 @@ void Transform::updateLocalRenderMatrix(float alpha) {
 	glm::mat4 rotationMatrix = glm::mat4_cast(rot);
 	glm::mat4 scaleMatrix = glm::scale(m_localRenderMatrix, scale);
 	m_localRenderMatrix = transMatrix * rotationMatrix * scaleMatrix;
-
-	//m_localTransformMatrix = glm::mat4(1.0f);
-	//glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_data.m_current.m_translation);
-	//glm::mat4 rotationMatrix = glm::mat4_cast(m_data.m_current.m_rotationQuat);
-	//glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_data.m_current.m_scale);
-
-	//m_localTransformMatrix = transMatrix * rotationMatrix * scaleMatrix;
 }
 
 void Transform::updateRenderMatrix(float alpha) {
@@ -401,7 +297,6 @@ void Transform::updateMatrix() {
 	}
 }
 
-// Not used, all transforms are updated 
 void Transform::treeNeedsUpdating() {
 	m_parentUpdated = true;
 	m_parentRenderUpdated = true;
@@ -425,8 +320,5 @@ void Transform::removeChild(Transform* Transform) {
 }
 
 const bool Transform::getChange() {
-	//bool tempChange = m_hasChanged;
-	//m_hasChanged = false;
-	//return tempChange;
 	return m_hasChanged;
 }

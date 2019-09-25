@@ -23,7 +23,7 @@ public:
 	void update(float dt);
 
 	void setStartPosition(const glm::vec3& pos);
-	void prepareUpdate();
+	//void prepareUpdate();
 
 	void processKeyboardInput(float dt);
 	void processMouseInput(float dt);

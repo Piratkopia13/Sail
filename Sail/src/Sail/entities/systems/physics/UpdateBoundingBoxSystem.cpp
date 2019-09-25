@@ -4,7 +4,6 @@
 #include "../../components/TransformComponent.h"
 #include "../../components/BoundingBoxComponent.h"
 #include "../../components/ModelComponent.h"
-#include "../../components/StaticMatrixComponent.h"
 
 #include "../../../graphics/geometry/Model.h"
 
@@ -40,7 +39,6 @@ void UpdateBoundingBoxSystem::checkDistances(glm::vec3& minVec, glm::vec3& maxVe
 bool UpdateBoundingBoxSystem::addEntity(Entity* entity) {
 	if (BaseComponentSystem::addEntity(entity)) {
 		BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
-		//StaticMatrixComponent* staticMatrix = entity->getComponent<StaticMatrixComponent>();
 		ModelComponent* model = entity->getComponent<ModelComponent>();
 		TransformComponent* transform = entity->getComponent<TransformComponent>();
 
