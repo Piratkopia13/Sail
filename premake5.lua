@@ -68,6 +68,8 @@ project "SPLASH"
 		"Physics"
 	}
 
+	flags { "MultiProcessorCompile" }
+
 	filter "system:windows"
 		systemversion "latest"
 
@@ -147,6 +149,8 @@ project "Sail"
 		"MemoryManager",
 		"assimp-vc140-mt"
 	}
+
+	flags { "MultiProcessorCompile" }
 
 	defines {
 		"SAIL_PLATFORM=\"%{cfg.platform}\""
@@ -229,6 +233,9 @@ project "Physics"
 		"ImGui",
 		"assimp-vc140-mt"
 	}
+
+	flags { "MultiProcessorCompile" }
+
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
 			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
