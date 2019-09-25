@@ -527,8 +527,9 @@ bool GameState::processInput(float dt) {
 			candleEntity->getLightList().erase(candleEntity->getLightList().begin());
 		}
 	}
+
 	return true;
-	}
+}
 
 
 bool GameState::onEvent(Event& event) {
