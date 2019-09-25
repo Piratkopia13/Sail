@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BaseComponentSystem.h"
-#include "..//Entity.h"
 
 class Scene;
 class Model;
@@ -11,6 +10,8 @@ public:
 	~LevelGeneratorSystem();
 
 	void update(float dt) override;
-	void createWorld(Scene* scene, Model* model);
+	void generateMap();
+	void createWorld(Scene* scene, Model* tile1,Model* tile2, Model* bb);
+
 private:
 };

@@ -116,6 +116,8 @@ GameState::GameState(StateStack& stack)
 	//Application::getInstance()->getResourceManager().loadTexture("sponza/textures/boxOrientationTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/tileTexture.tga");
+
 
 
 
@@ -143,8 +145,8 @@ GameState::GameState(StateStack& stack)
 
 	// Create/load models
 
-	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
-	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+	//m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
+	//m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
 	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
@@ -164,9 +166,15 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
+	Model* tileFlat = &m_app->getResourceManager().getModel("tileFlat.fbx", shader);
+	tileFlat->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
+	Model* tileCross = &m_app->getResourceManager().getModel("tileCross.fbx", shader);
+	tileCross->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
+
+
 	// load each tile type for the map
-	Model* tile1 = &m_app->getResourceManager().getModel("tiler1.fbx", shader);
-	tile1->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.2f, 1.0f, 1.0f));
+	//Model* tile1 = &m_app->getResourceManager().getModel("tiler1.fbx", shader);
+	//tile1->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.2f, 1.0f, 1.0f));
 
 	//Give player a bounding box
 	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -181,8 +189,13 @@ GameState::GameState(StateStack& stack)
 	*/
 
 	// Create the level generator system and put it into the datatype.
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tile1);
+	Entity::SPtr map = ECS::Instance()->createEntity("Map");
+	map->addComponent<MapComponent>();
+	ECS::Instance()->createSystem<LevelGeneratorSystem>();
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->getSystem<LevelGeneratorSystem>();
+	m_componentSystems.levelGeneratorSystem->addEntity(map.get());
+	m_componentSystems.levelGeneratorSystem->generateMap();
+	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tileCross,tileFlat,m_boundingBoxModel.get());
 	
 	Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
