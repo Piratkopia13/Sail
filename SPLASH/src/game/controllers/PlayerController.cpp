@@ -1,16 +1,16 @@
 #include "pch.h"
 #include "PlayerController.h"
 #include "Sail.h"
+#include "Sail/TimeSettings.h"
+
 
 PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_cam = SAIL_NEW CameraController(cam);
 	m_scene = scene;
 	m_player = ECS::Instance()->createEntity("player_entity");
 
-	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
-	Logger::Log("Player ID: " + std::to_string(m_player->getID()));
 
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -26,11 +26,6 @@ void PlayerController::setStartPosition(const glm::vec3& pos) {
 
 }
 
-// To be run at the beginning of each update tick
-void PlayerController::prepareUpdate() {
-	TransformComponent* transform = m_player->getComponent<TransformComponent>();
-	if (transform) { transform->prepareUpdate(); }
-}
 
 void PlayerController::processKeyboardInput(float dt) {
 	float speedModifier = 1.f;
@@ -76,10 +71,6 @@ void PlayerController::processKeyboardInput(float dt) {
 	right = glm::normalize(right);
 
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
-
-	// the player's transform will be modified in the physicSystem so save the player's current
-	// position for interpolation later.
-	playerTrans->prepareUpdate();
 
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
@@ -156,48 +147,14 @@ void PlayerController::updateCameraPosition(float alpha) {
 
 	m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f,playerBB->getBoundingBox()->getHalfSize().y*0.8f,0.f)));
 	m_cam->setCameraDirection(forwards);
-
-	//moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns
-	glm::vec3 forward = m_cam->getCameraDirection();
-	forward.y = 0.f;
-	forward = glm::normalize(forward);
-
-	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-	right = glm::normalize(right);
-	glm::vec3 playerToCandle = glm::vec3((forward - right)*0.2f);
-	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 0.35f, 0);
-	m_candle->getComponent<TransformComponent>()->setTranslation(candlePos);
-	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
-	m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
-	m_candle->getComponent<TransformComponent>()->prepareUpdate();
-	glm::vec3 flamePos = candlePos + glm::vec3(0, 0.37f, 0);
-	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
-	m_candle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);
 }
 
-void PlayerController::destroyOldProjectiles() {
-	// Remove old projectiles
-	/*for (int i = 0; i < m_projectiles.size(); i++) {
-		if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
-			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
-			m_projectiles.erase(m_projectiles.begin() + i);
-			i--;
-		}
-	}*/
+
+CameraController* PlayerController::getCameraController() const {
+	return m_cam;
 }
 
-// NOTE: Keyboard and mouse input processing has been moved to their own functions above this one
 void PlayerController::update(float dt) {
-	/*for (int i = 0; i < m_projectiles.size(); i++) {
-		for (unsigned int j = 0; j < m_candles->size(); j++) {
-			auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
-			for (unsigned int k = 0; k < collisions.size(); k++) {
-				if (collisions[k].entity == m_candles->at(j).get()) {
-					m_candles->at(j)->removeComponent<LightComponent>();
-				}
-			}
-		}
-	}*/
 }
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
@@ -210,32 +167,7 @@ void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) 
 	m_player->addComponent<GunComponent>(m_projectileModel);
 }
 
-void PlayerController::provideCandles(std::vector<Entity::SPtr>* candles) {
-	m_candles = candles;
-}
 
-std::shared_ptr<Entity> PlayerController::getCandle() {
-	return m_candle;
-}
-
-//creates and binds the candle model and a pointlight for the player.
-void PlayerController::createCandle(Model* model) {
-	auto e = ECS::Instance()->createEntity("PlayerCandle");//;//ECS::Instance()->createEntity("PlayerCandle");
-	e->addComponent<ModelComponent>(model);
-	glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-	//camRight = glm::normalize(camRight);
-	glm::vec3 candlePos = -m_cam->getCameraDirection() + camRight;// -m_cam->getCameraUp();
-	e->addComponent<TransformComponent>(candlePos);// , m_player->getComponent<TransformComponent>());
-	//e->addComponent<TransformComponent>(glm::vec3(-1.f, -3.f, 1.f), m_player->getComponent<TransformComponent>());
-	//e->getComponent<TransformComponent>()->setParent(m_player->getComponent<TransformComponent>());
-	m_candle = e;
-	PointLight pl;
-	glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
-	pl.setColor(glm::vec3(0.5f, 0.5f, 0.5f));
-	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
-	//pl.setAttenuation(.0f, 0.1f, 0.02f);
-	pl.setIndex(2);
-	e->addComponent<LightComponent>(pl);
-	m_scene->setPlayerCandle(e);
-
+float PlayerController::getYaw() const {
+	return m_yaw;
 }

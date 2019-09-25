@@ -1,8 +1,6 @@
 #pragma once
 #include <glm/vec3.hpp>
 
-// forward declaration
-class PerUpdateRenderObject;
 
 // Structs for storing transform data from two consecutive updates
 // so that they can be interpolated between.
@@ -29,7 +27,6 @@ class Transform {
 
 public:
 	explicit Transform(Transform* parent);
-	//Transform(TransformSnapshot current, TransformSnapshot prev);
 	Transform(const glm::vec3& translation, Transform* parent = nullptr);
 	Transform(const glm::vec3& translation = { 0.0f, 0.0f, 0.0f },
 		const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f },
@@ -75,7 +72,6 @@ public:
 	/* Forward should always be a normalized vector */
 	void setForward(const glm::vec3& forward);
 
-	PerUpdateRenderObject* getRenderTransform() const;
 	Transform* getParent() const;
 
 	const glm::vec3& getTranslation() const;
@@ -84,23 +80,29 @@ public:
 
 	const glm::vec3 getInterpolatedTranslation(float alpha) const;
 
-	//const glm::vec3& getForward();
-	//const glm::vec3& getRight();
-	//const glm::vec3& getUp();
-
+	// Matrix used by collision etc.
 	glm::mat4 getMatrix();
+
+	// Matrix used to render
+	glm::mat4 getRenderMatrix(float alpha = 1.0f);
 
 private:
 	TransformFrame m_data;
 
-	// TODO: make matrix into its own component
-	// matrices here are only used for bounding boxes and CPU-side code
+	// Used for collision detection
+	// At most updated once per tick
 	glm::mat4 m_transformMatrix;
 	glm::mat4 m_localTransformMatrix;
 
-	bool m_matNeedsUpdate;
+	// Used for rendering
+	// At most updated once per frame
+	glm::mat4 m_renderMatrix;
+	glm::mat4 m_localRenderMatrix;
+
 	bool m_parentUpdated;
-	bool m_hasChanged;
+	bool m_parentRenderUpdated;
+	bool m_hasChanged;     // If the data has been changed since the last update
+	bool m_matNeedsUpdate; // Will only be false if m_hasChanged == false and a matrix has been created
 
 	Transform* m_parent = nullptr;
 
@@ -108,6 +110,10 @@ private:
 private:
 	void updateLocalMatrix();
 	void updateMatrix();
+
+	void updateLocalRenderMatrix(float alpha);
+	void updateRenderMatrix(float alpha);
+
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);

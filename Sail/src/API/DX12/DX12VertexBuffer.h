@@ -10,9 +10,12 @@ public:
 	virtual void bind(void* cmdList) const override;
 	ID3D12Resource1* getBuffer() const;
 	void update(Mesh::Data& data);
+	bool hasBeenUpdated() const;
+	void resetHasBeenUpdated();
 
 private:
-	wComPtr<ID3D12Resource1> m_vertexBuffer;
-
+	DX12API* m_context;
+	std::vector<wComPtr<ID3D12Resource1>> m_vertexBuffers;
+	std::vector<bool> m_hasBeenUpdated;
 };
 
