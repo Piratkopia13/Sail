@@ -175,7 +175,7 @@ void AiSystem::entityTargetFunc(AiComponent* aiComp, TransformComponent* transCo
 
 			Octree::RayIntersectionInfo rayHitInfo;
 			m_octree->getRayIntersection(gunPos + fireDir /*In order to (hopefully) miss itself*/, fireDir, &rayHitInfo);
-			if ( glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f && hitDist < rayHitInfo.closestHit ) {
+			if ( hitDist < 7.f && glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f && hitDist < rayHitInfo.closestHit ) {
 				gunComp->setFiring(gunPos += fireDir, fireDir);
 			}
 		}

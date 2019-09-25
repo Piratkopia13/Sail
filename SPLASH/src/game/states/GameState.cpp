@@ -356,7 +356,9 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
+#ifndef _DEBUG
 		e->addComponent<AiComponent>();
+#endif
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character3");
@@ -365,7 +367,9 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
+#ifndef _DEBUG
 		e->addComponent<AiComponent>();
+#endif
 		m_scene.addEntity(e);
 
 
