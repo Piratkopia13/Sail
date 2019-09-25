@@ -15,3 +15,4 @@
 #include "AnimationComponent.h"
 #include "LifeTimeComponent.h"
 #include "AiComponent.h"
+#include "GunComponent.h"
