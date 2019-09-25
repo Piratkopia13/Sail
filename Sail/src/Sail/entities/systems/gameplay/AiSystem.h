@@ -6,6 +6,7 @@
 class TransformComponent;
 class PhysicsComponent;
 class AiComponent;
+class GunComponent;
 class NodeSystem;
 class Model;
 class Octree;
@@ -42,6 +43,7 @@ private:
 	};
 
 	void updatePath(AiComponent* aiComp, TransformComponent* transComp);
+	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
 
 private:
 	std::unordered_map<int, AiEntity> m_aiEntities;
