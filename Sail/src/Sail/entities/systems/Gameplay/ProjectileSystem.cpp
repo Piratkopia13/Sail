@@ -32,12 +32,13 @@ void ProjectileSystem::update(float dt, Scene* scene) {
 				physics->acceleration = glm::vec3(0.f, -30.f, 0.f);//fix when gravity is properly implemented
 
 				scene->addEntity(e);//change when scene is a component.
-
 			}
 			gun->projectileSpawnTimer += dt;
 			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {
 				gun->projectileSpawnTimer = 0.f;
 			}
+
+			gun->firing = false;
 		}
 		else {
 			gun->projectileSpawnTimer = 0.f;

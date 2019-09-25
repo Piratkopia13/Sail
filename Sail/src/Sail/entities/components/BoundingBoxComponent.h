@@ -1,8 +1,9 @@
 #pragma once
 #include "Component.h"
 #include "../Physics/BoundingBox.h"
+
+#include "Sail/graphics/geometry/Transform.h"
 class Model;
-class Transform;
 
 class BoundingBoxComponent : public Component<BoundingBoxComponent> {
 public:
