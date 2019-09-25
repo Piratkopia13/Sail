@@ -106,7 +106,6 @@ private:
 	const WCHAR* m_missName = L"miss";
 	const WCHAR* m_hitGroupName = L"HitGroup";
 	const WCHAR* m_hitGroupName2 = L"HitGroup2";
-	//const WCHAR* m_hitGroupName_test = L"HitGroup_test";
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;
@@ -114,5 +113,9 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup2;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 
-
+	//Tobias Testing Stuff
+	UINT m_nTriangleGeometry	= 0;
+	UINT m_nProceduralGeometry	= 0;
+	D3D12_RAYTRACING_AABB m_aabb_desc = { -1, -1, -1, 1, 1, 1 };
+	ID3D12Resource1* m_aabb_desc_resource; //m_aabb_desc uploaded to GPU
 };

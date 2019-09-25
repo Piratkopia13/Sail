@@ -8,8 +8,7 @@
 #include "Sail/graphics/light/LightSetup.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename)
-: m_shaderFilename(shaderFilename) 
-{
+	: m_shaderFilename(shaderFilename) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	// Create frame resources (one per swap buffer)
@@ -28,6 +27,13 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 
 	createRaytracingPSO();
 	createInitialShaderResources();
+
+	m_aabb_desc_resource = DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(m_aabb_desc), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+	m_aabb_desc_resource->SetName(L"AABB Data");
+	void* pMappedData;
+	m_aabb_desc_resource->Map(0, nullptr, &pMappedData);
+	memcpy(pMappedData, &m_aabb_desc, sizeof(m_aabb_desc));
+	m_aabb_desc_resource->Unmap(0, nullptr);
 
 }
 
@@ -50,10 +56,14 @@ DXRBase::~DXRBase() {
 	for (auto& st : m_hitGroupShaderTable) {
 		st.release();
 	}
-		
+
+	m_aabb_desc_resource->Release();
 }
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
+
+	m_nTriangleGeometry = 0;
+	m_nProceduralGeometry = 0;
 
 	unsigned int frameIndex = m_context->getFrameIndex();
 	unsigned int totalNumInstances = 0;
@@ -67,7 +77,6 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		it.second.instanceTransforms.clear();
 	}
-
 
 	// Iterate all static meshes
 	for (auto& renderCommand : sceneGeometry) {
@@ -120,10 +129,10 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	for (auto it = m_bottomBuffers[frameIndex].begin(); it != m_bottomBuffers[frameIndex].end();) {
 		bool destroy = true;
 		for (auto& renderCommand : sceneGeometry) {
-			if (it->first == renderCommand.mesh) { 
+			if (it->first == renderCommand.mesh) {
 				destroy = false;
 				++it;
-				break; 
+				break;
 			}
 		}
 		if (destroy) {
@@ -149,7 +158,7 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
 }
 
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
-	
+
 	unsigned int frameIndex = m_context->getFrameIndex();
 
 	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -283,9 +292,10 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate) {
 	unsigned int frameIndex = m_context->getFrameIndex();
-	
+
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
 	Mesh* mesh = renderCommand.mesh;
+
 	InstanceList instance;
 	instance.instanceTransforms.emplace_back(renderCommand.transform);
 	AccelerationStructureBuffers& bottomBuffer = instance.blas;
@@ -293,21 +303,32 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 		bottomBuffer = *sourceBufferForUpdate;
 	}
 
-	auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
-	auto& ib = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer());
-
 	D3D12_RAYTRACING_GEOMETRY_DESC geomDesc = {};
-	geomDesc.Flags = (renderCommand.flags & Renderer::MESH_TRANSPARENT) ? D3D12_RAYTRACING_GEOMETRY_FLAG_NONE : D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-	geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-	geomDesc.Triangles.VertexBuffer.StartAddress = vb.getBuffer()->GetGPUVirtualAddress();
-	geomDesc.Triangles.VertexBuffer.StrideInBytes = vb.getVertexDataStride();
-	geomDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-	geomDesc.Triangles.VertexCount = mesh->getNumVertices();
+	if (mesh) {
+		m_nTriangleGeometry++;
+		auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
+		auto& ib = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer());
 
-	if (mesh->getNumIndices() > 0) {
-		geomDesc.Triangles.IndexBuffer = ib.getBuffer()->GetGPUVirtualAddress();
-		geomDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
-		geomDesc.Triangles.IndexCount = UINT(mesh->getNumIndices());
+		geomDesc.Flags = (renderCommand.flags & Renderer::MESH_TRANSPARENT) ? D3D12_RAYTRACING_GEOMETRY_FLAG_NONE : D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+		geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+		geomDesc.Triangles.VertexBuffer.StartAddress = vb.getBuffer()->GetGPUVirtualAddress();
+		geomDesc.Triangles.VertexBuffer.StrideInBytes = vb.getVertexDataStride();
+		geomDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+		geomDesc.Triangles.VertexCount = mesh->getNumVertices();
+
+		if (mesh->getNumIndices() > 0) {
+			geomDesc.Triangles.IndexBuffer = ib.getBuffer()->GetGPUVirtualAddress();
+			geomDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
+			geomDesc.Triangles.IndexCount = UINT(mesh->getNumIndices());
+		}
+	} else {
+		m_nProceduralGeometry++;
+		//No mesh included. Use AABB from GPU memmory (m_aabb_desc_resource) and set type to PROCEDURAL_PRIMITIVE.
+		geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
+		geomDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
+		geomDesc.AABBs.AABBCount = 1;
+		geomDesc.AABBs.AABBs.StartAddress = m_aabb_desc_resource->GetGPUVirtualAddress();
+		geomDesc.AABBs.AABBs.StrideInBytes = 0;
 	}
 
 	// Get the size requirements for the scratch and AS buffers
@@ -352,7 +373,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 
 	if (!performInplaceUpdate) {
 		// Insert BLAS into buttom buffer map
-		m_bottomBuffers[frameIndex].insert({mesh, instance});
+		m_bottomBuffers[frameIndex].insert({ mesh, instance });
 	}
 }
 
@@ -392,7 +413,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		//m_rayGenCBData.GIBounces = 1;
 		//m_rayGenSettingsCB = std::make_unique<DX12ConstantBuffer>("Ray Gen Settings CB", sizeof(RayGenSettings), m_renderer);
 		//m_rayGenSettingsCB->setData(&m_rayGenCBData, 0);
-		
+
 		// Store heap start for views that might update in runtime
 		m_rtHeapCPUHandle = cpuHandle;
 		m_rtHeapGPUHandle = gpuHandle;
@@ -434,44 +455,52 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 		auto& instanceList = it.second;
 		Mesh* mesh = it.first;
 
-		MeshHandles handles;
-		handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
-		if (mesh->getNumIndices() > 0) {
-			handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
-		}
-
-		// Three textures
-		for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-			DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
-			bool hasTexture = (textureNum == 0) ? mesh->getMaterial()->getPhongSettings().hasDiffuseTexture : mesh->getMaterial()->getPhongSettings().hasNormalTexture;
-			hasTexture = (textureNum == 2) ? mesh->getMaterial()->getPhongSettings().hasSpecularTexture : hasTexture;
-			if (hasTexture) {
-				// Make sure textures have initialized / uploaded their data to its default buffer
-				if (!texture->hasBeenInitialized()) {
-					texture->initBuffers(cmdList);
-				}
-
-				// Copy SRV to DXR heap
-				m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				handles.textureHandles[textureNum] = gpuHandle;
-			}
-			// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
-			cpuHandle.ptr += m_heapIncr;
-			gpuHandle.ptr += m_heapIncr;
-		}
-
-		// Update per mesh data
-		// Such as flags telling the shader to use indices, textures or not
 		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
 		DXRShaderCommon::MeshData meshData;
-		meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
-		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasDiffuseTexture) ? DXRShaderCommon::MESH_HAS_DIFFUSE_TEX : meshData.flags;
-		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
-		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasSpecularTexture) ? DXRShaderCommon::MESH_HAS_SPECULAR_TEX : meshData.flags;
-		meshData.color = mesh->getMaterial()->getPhongSettings().modelColor;
-		m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 
-		m_rtMeshHandles.emplace_back(handles);
+		if (mesh) {
+			MeshHandles handles;
+			handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
+			if (mesh->getNumIndices() > 0) {
+				handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
+			}
+
+			// Three textures
+			for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+				DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
+				bool hasTexture = (textureNum == 0) ? mesh->getMaterial()->getPhongSettings().hasDiffuseTexture : mesh->getMaterial()->getPhongSettings().hasNormalTexture;
+				hasTexture = (textureNum == 2) ? mesh->getMaterial()->getPhongSettings().hasSpecularTexture : hasTexture;
+				if (hasTexture) {
+					// Make sure textures have initialized / uploaded their data to its default buffer
+					if (!texture->hasBeenInitialized()) {
+						texture->initBuffers(cmdList);
+					}
+
+					// Copy SRV to DXR heap
+					m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					handles.textureHandles[textureNum] = gpuHandle;
+				}
+				// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
+				cpuHandle.ptr += m_heapIncr;
+				gpuHandle.ptr += m_heapIncr;
+			}
+
+			// Update per mesh data
+			// Such as flags telling the shader to use indices, textures or not
+
+			meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+			meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasDiffuseTexture) ? DXRShaderCommon::MESH_HAS_DIFFUSE_TEX : meshData.flags;
+			meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
+			meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasSpecularTexture) ? DXRShaderCommon::MESH_HAS_SPECULAR_TEX : meshData.flags;
+			meshData.color = mesh->getMaterial()->getPhongSettings().modelColor;
+			m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
+
+			m_rtMeshHandles.emplace_back(handles);
+		} else {
+			meshData.flags = DXRShaderCommon::MESH_NO_FLAGS;
+			meshData.color = glm::vec4(1,0,0,1);
+			m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
+		}
 
 		blasIndex++;
 	}
@@ -489,7 +518,7 @@ void DXRBase::updateShaderTables() {
 			m_rayGenShaderTable[frameIndex].Resource->Release();
 			m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder({ m_rayGenName }, {1U}, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder({ m_rayGenName }, { 1U }, m_rtPipelineState.Get());
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
@@ -500,7 +529,7 @@ void DXRBase::updateShaderTables() {
 			m_missShaderTable[frameIndex].Resource->Release();
 			m_missShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder({ m_missName }, {1}, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder({ m_missName }, { 1 }, m_rtPipelineState.Get());
 		//tableBuilder.addDescriptor(m_skyboxGPUDescHandle.ptr);
 		m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
@@ -513,7 +542,7 @@ void DXRBase::updateShaderTables() {
 			m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
 
-		DXRUtils::ShaderTableBuilder tableBuilder({ m_hitGroupName }, { (UINT)m_bottomBuffers[frameIndex].size() },m_rtPipelineState.Get(), 64U);
+		DXRUtils::ShaderTableBuilder tableBuilder({ m_hitGroupName }, { (UINT)m_bottomBuffers[frameIndex].size() }, m_rtPipelineState.Get(), 64U);
 		unsigned int blasIndex = 0;
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			auto& instanceList = it.second;
@@ -534,10 +563,10 @@ void DXRBase::updateShaderTables() {
 						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex);
 					}
 				} else {
-					Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
+					Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
 				}
-					
-			});
+
+				});
 			blasIndex++;
 		}
 		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
@@ -550,9 +579,9 @@ void DXRBase::createRaytracingPSO() {
 	//psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/testLib.hlsl", { m_closestHitName2 });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
 	psoBuilder.addHitGroup(m_hitGroupName2, m_closestHitName2);
-	psoBuilder.addSignatureToShaders({ m_rayGenName },			m_localSignatureRayGen->get());
-	psoBuilder.addSignatureToShaders({ m_hitGroupName },		m_localSignatureHitGroup->get());
-	psoBuilder.addSignatureToShaders({ m_hitGroupName2 },		m_localSignatureHitGroup2->get());
+	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
+	psoBuilder.addSignatureToShaders({ m_hitGroupName }, m_localSignatureHitGroup->get());
+	psoBuilder.addSignatureToShaders({ m_hitGroupName2 }, m_localSignatureHitGroup2->get());
 	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
 	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);
@@ -587,11 +616,7 @@ void DXRBase::createHitGroupLocalRootSignature() {
 
 	/*==========TEST=========*/
 	m_localSignatureHitGroup2 = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal2");
-	m_localSignatureHitGroup2->addSRV("VertexBuffer", 1, 0);
-	m_localSignatureHitGroup2->addSRV("IndexBuffer", 1, 1);
 	m_localSignatureHitGroup2->addCBV("MeshCBuffer", 1, 0);
-	m_localSignatureHitGroup2->addDescriptorTable("Textures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 3); // Textures (t0, t1, t2)
-	m_localSignatureHitGroup2->addStaticSampler();
 	m_localSignatureHitGroup2->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 

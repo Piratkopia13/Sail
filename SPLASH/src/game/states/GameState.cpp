@@ -394,7 +394,7 @@ GameState::GameState(StateStack& stack)
 		pl.setIndex(1);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
-		m_candles.push_back(e);
+		m_candles.push_back(e);	
 
 		//creates light for the player
 		m_playerController.createCandle(lightModel);
