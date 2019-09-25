@@ -55,4 +55,6 @@ private:
 
 	std::unique_ptr<NodeSystem> m_nodeSystem;
 
+	Octree* m_octree;
+
 };

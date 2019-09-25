@@ -7,6 +7,7 @@
 #include "..//Sail/src/Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "..//Sail/src/Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
 #include "Sail/entities/systems/gameplay/AiSystem.h"
+#include "..//Sail/src/Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "..//Sail/src/Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include <sstream>
@@ -95,15 +96,16 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
   
-	// TODO: create ai system
-	ECS::Instance()->createSystem<AiSystem>();
-	m_componentSystems.aiSystem = ECS::Instance()->getSystem<AiSystem>();
+	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+
+	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
 	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -30.0f, 0.0f);
+
 
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -335,8 +337,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
-		// Add ai to ai system
-		m_componentSystems.aiSystem->addEntity(e.get());
+		e->addComponent<GunComponent>(m_cubeModel.get());
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character2");
@@ -345,9 +346,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
-		// Add ai to ai system
-		m_componentSystems.aiSystem->addEntity(e.get());
+		//e->addComponent<AiComponent>();
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character3");
@@ -356,9 +355,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
-		// Add ai to ai system
-		m_componentSystems.aiSystem->addEntity(e.get());
+		//e->addComponent<AiComponent>();
 		m_scene.addEntity(e);
 
 
@@ -861,10 +858,12 @@ void GameState::updateComponentSystems(float dt) {
 	m_componentSystems.animationSystem->update(dt);
 	m_componentSystems.aiSystem->update(dt);
 	m_componentSystems.lifeTimeSystem->update(dt);
-
+	m_componentSystems.projectileSystem->update(dt, &m_scene);
 
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
+
+	
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
