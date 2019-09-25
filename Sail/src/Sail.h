@@ -56,6 +56,4 @@
 #include "Sail/graphics/Scene.h"
 #include "Sail/graphics/geometry/Transform.h"
 #include "Sail/utils/ConsoleCommands.h"
-#include "Sail/ai/pathfinding/NodeSystem.h"
 #include "Sail/utils/Profiler.h"
-//#include "Sail/entities/systems/SimplePhysicsSystem.h"
