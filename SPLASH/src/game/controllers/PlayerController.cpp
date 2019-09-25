@@ -104,9 +104,6 @@ void PlayerController::processKeyboardInput(float dt) {
 		glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 		m_player->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 	}
-	else {
-		m_player->getComponent<GunComponent>()->firing = false;
-	}
 }
 
 void PlayerController::processMouseInput(float dt) {
