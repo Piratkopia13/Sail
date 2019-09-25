@@ -154,9 +154,9 @@ void AiSystem::update(float dt) {
 
 			if ( gunComp != nullptr ) {
 				// Approx gun pos
-				auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 0.45f, 0.f);
+				auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
 				// Approx enemy head pos
-				auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0.f, 0.45f, 0.f);
+				auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
 				auto fireDir = enemyPos - gunPos;
 				fireDir = glm::normalize(fireDir);
 
@@ -165,7 +165,7 @@ void AiSystem::update(float dt) {
 				Octree::RayIntersectionInfo rayHitInfo;
 				m_octree->getRayIntersection(gunPos + fireDir /*In order to (hopefully) miss itself*/, fireDir, &rayHitInfo);
 				if ( glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f && hitDist < rayHitInfo.closestHit) {
-					gunComp->setFiring(gunPos, fireDir);
+					gunComp->setFiring(gunPos += fireDir, fireDir);
 				}
 			}
 		}
