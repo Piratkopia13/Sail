@@ -561,13 +561,7 @@ bool GameState::update(float dt) {
 
 	updatePerTickComponentSystems(dt);
 
-	// There is an imgui debug toggle to override lights
-	if (!m_disableLightComponents) {
-		m_lights.clearPointLights();
-
-		//check and update all lights for all entities
-		m_componentSystems.lightSystem->updateLights(&m_lights);
-	}
+	
 
 	return true;
 }
@@ -580,7 +574,7 @@ bool GameState::render(float dt, float alpha) {
 
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt);
-	
+
 	m_lights.updateBufferData();
 	
 	// Clear back buffer
@@ -858,6 +852,13 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt) {
 	// Update the player's candle with the current camera position
 	m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
+
+	// There is an imgui debug toggle to override lights
+	if (!m_disableLightComponents) {
+		m_lights.clearPointLights();
+		//check and update all lights for all entities
+		m_componentSystems.lightSystem->updateLights(&m_lights);
+	}
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
