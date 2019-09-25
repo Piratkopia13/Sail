@@ -33,6 +33,7 @@ void ProjectileSystem::update(float dt, Scene* scene) {
 
 				scene->addEntity(e);//change when scene is a component.
 
+				gun->firing = false;
 			}
 			gun->projectileSpawnTimer += dt;
 			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {

@@ -10,6 +10,7 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	Logger::Log("Player ID: " + std::to_string(m_player->getID()));
 
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -103,9 +104,6 @@ void PlayerController::processKeyboardInput(float dt) {
 		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 		glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 		m_player->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
-	}
-	else {
-		m_player->getComponent<GunComponent>()->firing = false;
 	}
 }
 

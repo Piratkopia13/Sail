@@ -338,8 +338,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
-		// Add ai to ai system
-		m_componentSystems.aiSystem->addEntity(e.get());
+		e->addComponent<GunComponent>(m_cubeModel.get());
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character2");
@@ -348,9 +347,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
-		// Add ai to ai system
-		m_componentSystems.aiSystem->addEntity(e.get());
+		//e->addComponent<AiComponent>();
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character3");
@@ -359,9 +356,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
-		// Add ai to ai system
-		m_componentSystems.aiSystem->addEntity(e.get());
+		//e->addComponent<AiComponent>();
 		m_scene.addEntity(e);
 
 
