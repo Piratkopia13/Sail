@@ -355,19 +355,18 @@ glm::mat4 Transform::getRenderMatrix(float alpha) {
 	return m_renderMatrix;
 }
 
-// TODO: Use the correct member variables
 void Transform::updateLocalRenderMatrix(float alpha) {
-	m_localTransformMatrix = glm::mat4(1.0f);
+	m_localRenderMatrix = glm::mat4(1.0f);
 
 	// Linear interpolation between the two most recent snapshots
 	glm::vec3 trans = (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
 	glm::quat rot = (alpha * m_data.m_current.m_rotationQuat) + ((1.0f - alpha) * m_data.m_previous.m_rotationQuat);
 	glm::vec3 scale = (alpha * m_data.m_current.m_scale) + (1.0f - alpha) * m_data.m_previous.m_scale;
 
-	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, trans);
+	glm::mat4 transMatrix = glm::translate(m_localRenderMatrix, trans);
 	glm::mat4 rotationMatrix = glm::mat4_cast(rot);
-	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, scale);
-	m_localTransformMatrix = transMatrix * rotationMatrix * scaleMatrix;
+	glm::mat4 scaleMatrix = glm::scale(m_localRenderMatrix, scale);
+	m_localRenderMatrix = transMatrix * rotationMatrix * scaleMatrix;
 
 	//m_localTransformMatrix = glm::mat4(1.0f);
 	//glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_data.m_current.m_translation);
@@ -379,9 +378,9 @@ void Transform::updateLocalRenderMatrix(float alpha) {
 
 void Transform::updateRenderMatrix(float alpha) {
 	if (m_parent) {
-		m_renderMatrix = m_parent->getRenderMatrix(alpha) * m_renderMatrix;
+		m_renderMatrix = m_parent->getRenderMatrix(alpha) * m_localRenderMatrix;
 	} else {
-		m_renderMatrix = m_renderMatrix;
+		m_renderMatrix = m_localRenderMatrix;
 	}
 }
 
@@ -426,7 +425,8 @@ void Transform::removeChild(Transform* Transform) {
 }
 
 const bool Transform::getChange() {
-	bool tempChange = m_hasChanged;
-	m_hasChanged = false;
-	return tempChange;
+	//bool tempChange = m_hasChanged;
+	//m_hasChanged = false;
+	//return tempChange;
+	return m_hasChanged;
 }

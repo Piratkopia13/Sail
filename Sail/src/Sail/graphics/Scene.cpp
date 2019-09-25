@@ -131,7 +131,8 @@ void Scene::draw(Camera& camera, const float alpha) {
 		TransformComponent* transform = entity->getComponent<TransformComponent>();
 
 		if (model && transform) {
-			(*m_currentRenderer)->submit(model->getModel(), transform->getRenderMatrix(1.0f));
+			//(*m_currentRenderer)->submit(model->getModel(), transform->getRenderMatrix(1.0f));
+			(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
 		}
 
 		if (m_showBoundingBoxes) {

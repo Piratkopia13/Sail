@@ -46,20 +46,20 @@ void CandleSystem::setPlayerCandle(Entity::SPtr candle) {
 }
 
 void CandleSystem::updatePlayerCandle(CameraController* cam, const float yaw) {
-	//moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns
+	//moves the candle model and its pointlight to the correct position and rotates it to not spin when the player turns	
 	glm::vec3 forward = cam->getCameraDirection();
 	forward.y = 0.f;
 	forward = glm::normalize(forward);
 
 	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 	right = glm::normalize(right);
-	glm::vec3 playerToCandle = forward - right;
-	glm::vec3 candlePos = cam->getCameraPosition() + playerToCandle - glm::vec3(0, 3.5f, 0);
+	glm::vec3 playerToCandle = glm::vec3((forward - right) * 0.2f);
+	glm::vec3 candlePos = cam->getCameraPosition() + playerToCandle - glm::vec3(0, 0.35f, 0);
 	m_playerCandle->getComponent<TransformComponent>()->setTranslation(candlePos);
 	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-yaw), 0.f);
 	m_playerCandle->getComponent<TransformComponent>()->setRotations(candleRot);
 	//m_playerCandle->getComponent<TransformComponent>()->prepareUpdate();
-	glm::vec3 flamePos = candlePos + glm::vec3(0, 3.5f, 0);
+	glm::vec3 flamePos = candlePos + glm::vec3(0, 0.37f, 0);
 	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
 	m_playerCandle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);
 }

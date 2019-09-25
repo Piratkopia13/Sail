@@ -50,6 +50,7 @@ private:
 		LightSystem* lightSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
+		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 	};
 
 	Application* m_app;

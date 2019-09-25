@@ -80,19 +80,17 @@ GameState::GameState(StateStack& stack)
 		this call could be moved inside the default constructor of ECS,
 		assuming each system is included in ECS.cpp instead of here
 	*/
-	ECS::Instance()->createSystem<PhysicSystem>();
-	ECS::Instance()->getSystem<PhysicSystem>()->provideOctree(m_octree);
-	m_componentSystems.physicSystem = ECS::Instance()->getSystem<PhysicSystem>();
+	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
+	m_componentSystems.physicSystem->provideOctree(m_octree);
+
 	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
 
 	//Create system for updating bounding box
-	ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
-	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->getSystem<UpdateBoundingBoxSystem>();
+	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 
 	//Create system for handling octree
-	ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
-	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->provideOctree(m_octree);
-	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->getSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
 
 	// Create lifetime system
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
@@ -479,10 +477,10 @@ bool GameState::processInput(float dt) {
 
 #endif
 	//Toggle bounding boxes rendering
-	if (Input::IsKeyPressed(SAIL_KEY_1)) {
+	if (Input::IsKeyPressed(SAIL_KEY_B)) {
 		m_scene.showBoundingBoxes(true);
 	}
-	if (Input::IsKeyPressed(SAIL_KEY_2)) {
+	if (Input::IsKeyPressed(SAIL_KEY_N)) {
 		m_scene.showBoundingBoxes(false);
 	}
 
@@ -529,32 +527,11 @@ bool GameState::processInput(float dt) {
 		m_app->dispatchEvent(e);
 	}
 
-	// TODO: update values in candlesystem with these ones
 	// Lights the selected candle
 	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
-		/*auto& candleEntity = m_scene.getGameObjectEntityByName("Map_Candle1");
-		if (!candleEntity->hasComponent<LightComponent>()) {
-			PointLight pl;
-			glm::vec3 pos = candleEntity->getComponent<TransformComponent>()->getTranslation();
-			pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-			pl.setPosition(glm::vec3(pos.x, pos.y + 0.37f, pos.z));
-			pl.setAttenuation(.0f, 0.1f, 0.02f);
-			pl.setIndex(0);
-			candleEntity->addComponent<LightComponent>(pl);
-		}*/
 		m_componentSystems.candleSystem->lightCandle("Map_Candle1");
 	}
 	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
-		//auto& candleEntity = m_scene.getGameObjectEntityByName("Map_Candle2");
-		//if (!candleEntity->hasComponent<LightComponent>()) {
-		//	PointLight pl;
-		//	glm::vec3 pos = candleEntity->getComponent<TransformComponent>()->getTranslation();
-		//	pl.setColor(glm::vec3(1.f, 1.f, 1.f));
-		//	pl.setPosition(glm::vec3(pos.x, pos.y + 0.37f, pos.z));
-		//	pl.setAttenuation(.0f, 0.1f, 0.02f);
-		//	pl.setIndex(1);
-		//	candleEntity->addComponent<LightComponent>(pl);
-		//}
 		m_componentSystems.candleSystem->lightCandle("Map_Candle2");
 	}
 
@@ -885,15 +862,18 @@ bool GameState::renderImGuiLightDebug(float dt) {
 	return true;
 }
 
+// HERE BE DRAGONS
+// Make sure things are updated in the correct order or things will behave strangely
 void GameState::updateComponentSystems(float dt) {
-	m_componentSystems.updateBoundingBoxSystem->update(dt);
-	m_componentSystems.octreeAddRemoverSystem->update(dt);
-	m_componentSystems.physicSystem->update(dt);
+	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
+
 	m_componentSystems.animationSystem->update(dt);
 	m_componentSystems.aiSystem->update(dt);
+
+	m_componentSystems.updateBoundingBoxSystem->update(dt);
+	m_componentSystems.octreeAddRemoverSystem->update(dt);
+
 	m_componentSystems.lifeTimeSystem->update(dt);
-
-
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
 }
