@@ -7,6 +7,6 @@ public:
 	ProjectileSystem();
 	~ProjectileSystem();
 
-	void update(float dt, PerspectiveCamera cam, Scene* scene);
+	void update(float dt, Scene* scene);
 	void update(float dt) override;
 };

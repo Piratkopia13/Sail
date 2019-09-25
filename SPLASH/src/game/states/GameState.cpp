@@ -97,11 +97,9 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
   
 	// TODO: create ai system
-	ECS::Instance()->createSystem<AiSystem>();
-	m_componentSystems.aiSystem = ECS::Instance()->getSystem<AiSystem>();
+	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 
-	ECS::Instance()->createSystem<ProjectileSystem>();
-	m_componentSystems.projectileSystem = ECS::Instance()->getSystem<ProjectileSystem>();
+	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
@@ -865,7 +863,7 @@ void GameState::updateComponentSystems(float dt) {
 	m_componentSystems.animationSystem->update(dt);
 	m_componentSystems.aiSystem->update(dt);
 	m_componentSystems.lifeTimeSystem->update(dt);
-	m_componentSystems.projectileSystem->update(dt, m_cam, &m_scene);
+	m_componentSystems.projectileSystem->update(dt, &m_scene);
 
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);

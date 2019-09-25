@@ -1,5 +1,6 @@
 #pragma once
 #include "Component.h"
+#include <glm/glm.hpp>
 
 class Model;
 //class Transform;
@@ -24,6 +25,11 @@ public:
 		return m_projectileSpawnLimit;
 	}
 
+	void setFiring(glm::vec3 pos, glm::vec3 dir);
+
+	glm::vec3 position;
+	glm::vec3 direction;
+
 	float projectileSpawnTimer = 0.f;
 	float projectileSpeed = 20.f;
 	bool firing = false;
@@ -33,5 +39,5 @@ private:
 	Model* m_wireframeModel;
 
 
-	float m_projectileSpawnLimit = 0.05f;
+	float m_projectileSpawnLimit = 0.1f;
 };
