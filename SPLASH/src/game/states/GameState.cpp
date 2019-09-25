@@ -182,7 +182,7 @@ GameState::GameState(StateStack& stack)
 
 	// Create the level generator system and put it into the datatype.
 	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tile1);
+	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tile1, m_boundingBoxModel.get());
 	
 	Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");

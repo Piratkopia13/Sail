@@ -13,7 +13,7 @@ LevelGeneratorSystem::~LevelGeneratorSystem() {
 void LevelGeneratorSystem::update(float dt) {
 }
 
-void LevelGeneratorSystem::createWorld(Scene* scene, Model* model) {
+void LevelGeneratorSystem::createWorld(Scene* scene, Model* model, Model* bb) {
 
 	int tileSize = 5;
 	int worldWidth = 20;
@@ -32,7 +32,7 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* model) {
 				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * i, -5.f, tileSize * j));
 			}
 			
-			e->addComponent<BoundingBoxComponent>(model);
+			e->addComponent<BoundingBoxComponent>(bb);
 			e->addComponent<CollidableComponent>();
 			scene->addStaticEntity(e);
 		}

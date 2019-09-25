@@ -11,6 +11,6 @@ public:
 	~LevelGeneratorSystem();
 
 	void update(float dt) override;
-	void createWorld(Scene* scene, Model* model);
+	void createWorld(Scene* scene, Model* model, Model* bb);
 private:
 };
