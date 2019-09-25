@@ -45,15 +45,15 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* tile1, Model* tile2,
 	for (int i = 0; i < worldWidth; i++) {
 		for (int j = 0; j < worldDepth; j++) {
 			auto e = ECS::Instance()->createEntity("");
-			e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i+2), 0.f, tileSize * (j+2)));
-			e->addComponent<BoundingBoxComponent>(bb);
-			e->addComponent<CollidableComponent>();
 			if (map->m_tiles[i*worldWidth+j]==1) {
 				e->addComponent<ModelComponent>(tile1);
 			}
 			else {
 				e->addComponent<ModelComponent>(tile2);
 			}
+			e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i+2), 0.f, tileSize * (j+2)));
+			e->addComponent<CollidableComponent>();
+			e->addComponent<BoundingBoxComponent>(bb);
 			scene->addStaticEntity(e);
 		}
 	}
