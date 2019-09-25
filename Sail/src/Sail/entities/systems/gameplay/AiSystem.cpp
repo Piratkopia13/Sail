@@ -126,8 +126,12 @@ std::vector<Entity*>& AiSystem::getEntities() {
 }
 
 void AiSystem::update(float dt) {
+	std::vector<std::future<void>> futures;
 	for ( auto& entity : entities ) {
-		auto job = Application::getInstance()->pushJobToThreadPool([this, entity, dt] (int id) { this->aiUpdateFunc(entity, dt); });
+		futures.push_back(Application::getInstance()->pushJobToThreadPool([this, entity, dt] (int id) { this->aiUpdateFunc(entity, dt); }));
+	}
+	for ( auto& a : futures ) {
+		a.get();
 	}
 }
 
