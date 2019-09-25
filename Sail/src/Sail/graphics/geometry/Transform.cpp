@@ -233,7 +233,7 @@ glm::mat4 Transform::getMatrix() {
 	}
 	if (m_parentUpdated || !m_parent) {
 		updateMatrix();
-		m_parentUpdated;
+		m_parentUpdated = false;
 	}
 
 	return m_transformMatrix;
@@ -250,7 +250,7 @@ glm::mat4 Transform::getRenderMatrix(float alpha) {
 		updateRenderMatrix(alpha); // if it has then interpolate
 		if (m_parentRenderUpdated || !m_parent) {
 			updateRenderMatrix(alpha);
-			m_parentRenderUpdated = true;
+			m_parentRenderUpdated = false;
 		}
 	}
 
