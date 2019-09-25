@@ -350,7 +350,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<GunComponent>(m_cubeModel.get());
 		m_scene.addEntity(e);
 
-		e = ECS::Instance()->createEntity("Character2");
+		/*e = ECS::Instance()->createEntity("Character2");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 5.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -370,7 +370,7 @@ GameState::GameState(StateStack& stack)
 #ifndef _DEBUG
 		e->addComponent<AiComponent>();
 #endif
-		m_scene.addEntity(e);
+		m_scene.addEntity(e);*/
 
 
 		//creates light with model and pointlight
