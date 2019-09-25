@@ -23,7 +23,6 @@ public:
 	void update(float dt);
 
 	void setStartPosition(const glm::vec3& pos);
-	void prepareUpdate();
 
 	void processKeyboardInput(float dt);
 	void processMouseInput(float dt);
@@ -34,14 +33,12 @@ public:
 
 	void setProjectileModels(Model* model, Model* wireframeModel);
 
-	void provideCandles(std::vector<Entity::SPtr>* candles);
 	void setProjectileModel(Model* model);
-	std::shared_ptr<Entity> getCandle();
-	void createCandle(Model* model);
+
+	CameraController* getCameraController() const;
 
 
-	// Should be called at the start of the update loop and nowhere else
-	void destroyOldProjectiles();
+	float getYaw() const;
 private:
 	float m_movementSpeed = 10.f;
 	float RUN_SPEED = 2.0f;
@@ -57,11 +54,6 @@ private:
 
 	std::shared_ptr<Entity> m_player;
 
-	std::vector<Entity::SPtr>* m_candles;
-
-	std::shared_ptr<Entity> m_candle;
-
-	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
 
 	float m_lookSensitivityMouse = 0.1f;

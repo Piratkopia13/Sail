@@ -3,13 +3,15 @@
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
 
-class UpdateBoundingBoxSystem;
+class AiSystem;
+class AnimationSystem;
+class CandleSystem;
+class EntityRemovalSystem;
+class LifeTimeSystem;
+class LightSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
-class AnimationSystem;
-class LifeTimeSystem;
-class EntityRemovalSystem;
-class AiSystem;
+class PrepareUpdateSystem;
 class ProjectileSystem;
 
 class GameState : public State {
@@ -37,25 +39,27 @@ private:
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
 	// Where to updates the component systems. Responsibility can be moved to other places
-	void updateComponentSystems(float dt);
-
+	void updatePerTickComponentSystems(float dt);
+	void updatePerFrameComponentSystems(float dt);
 
 private:
 	struct Systems {
-		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+		AiSystem* aiSystem = nullptr;
+		AnimationSystem* animationSystem = nullptr;
+		CandleSystem* candleSystem = nullptr;
+		EntityRemovalSystem* entityRemovalSystem = nullptr;
+		LifeTimeSystem* lifeTimeSystem = nullptr;
+		LightSystem* lightSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
-		AnimationSystem* animationSystem = nullptr;
-		LifeTimeSystem* lifeTimeSystem = nullptr;
-		EntityRemovalSystem* entityRemovalSystem = nullptr;
-		AiSystem* aiSystem = nullptr;
+		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
 	};
 
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	//FlyingCameraController m_camController;
 	PlayerController m_playerController;
 
 	const std::string createCube(const glm::vec3& position);
@@ -65,6 +69,8 @@ private:
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
+
+
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
 	int m_profilerCounter = 0;
@@ -90,6 +96,5 @@ private:
 	std::unique_ptr<Model> m_boundingBoxModel;
 
 	Octree* m_octree;
-	std::vector<Entity::SPtr> m_candles;
 	bool m_disableLightComponents;
 };
