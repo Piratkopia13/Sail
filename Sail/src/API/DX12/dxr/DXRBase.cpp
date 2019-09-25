@@ -506,7 +506,7 @@ void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 
 	/*==========TEST=========*/
-	m_localSignatureHitGroup2 = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
+	m_localSignatureHitGroup2 = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal2");
 	m_localSignatureHitGroup2->addSRV("VertexBuffer", 1, 0);
 	m_localSignatureHitGroup2->addSRV("IndexBuffer", 1, 1);
 	m_localSignatureHitGroup2->addCBV("MeshCBuffer", 1, 0);

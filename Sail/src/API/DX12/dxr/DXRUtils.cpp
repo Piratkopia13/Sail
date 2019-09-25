@@ -8,9 +8,17 @@ DXRUtils::PSOBuilder::PSOBuilder()
 	, m_maxPayloadSize(0)
 	, m_maxRecursionDepth(1)
 	, m_globalRootSignature(nullptr) {
+
 	m_dxilCompiler.init();
+
+	//WARNING! If any of these vectors expand while adding elements to them, all references will brake crashing the program when buiding the PSO.
+	//TODO: Fix it
 	m_associationNames.reserve(10);
 	m_exportAssociations.reserve(10);
+	m_shaderNames.reserve(10);
+	m_exportDescs.reserve(10);
+	m_libraryDescs.reserve(10);
+	m_hitGroupDescs.reserve(10);
 }
 
 DXRUtils::PSOBuilder::~PSOBuilder() {}
@@ -73,7 +81,7 @@ void DXRUtils::PSOBuilder::addHitGroup(LPCWSTR exportName, LPCWSTR closestHitSha
 
 void DXRUtils::PSOBuilder::addSignatureToShaders(const std::vector<LPCWSTR>& shaderNames, ID3D12RootSignature** rootSignature) {
 	//TODO: pass in different rootSignatures to different shaders
-	auto signatureSO = append(D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE, rootSignature);
+	D3D12_STATE_SUBOBJECT* signatureSO = append(D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE, rootSignature);
 
 	m_associationNames.emplace_back(shaderNames);
 
@@ -145,8 +153,6 @@ ID3D12StateObject* DXRUtils::PSOBuilder::build(ID3D12Device5* device) {
 
 	return pso;
 }
-
-
 
 DXRUtils::ShaderTableBuilder::ShaderTableBuilder(const std::vector<LPCWSTR>& shaderNames, const std::vector<UINT>& numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance)
 	: m_soProps(nullptr)
