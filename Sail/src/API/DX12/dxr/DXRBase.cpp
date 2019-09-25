@@ -575,13 +575,13 @@ void DXRBase::updateShaderTables() {
 
 void DXRBase::createRaytracingPSO() {
 	DXRUtils::PSOBuilder psoBuilder;
-	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName, m_closestHitName2 });
+	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName/*, m_closestHitName2*/ });
 	//psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/testLib.hlsl", { m_closestHitName2 });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
-	psoBuilder.addHitGroup(m_hitGroupName2, m_closestHitName2);
+	//psoBuilder.addHitGroup(m_hitGroupName2, m_closestHitName2);
 	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
 	psoBuilder.addSignatureToShaders({ m_hitGroupName }, m_localSignatureHitGroup->get());
-	psoBuilder.addSignatureToShaders({ m_hitGroupName2 }, m_localSignatureHitGroup2->get());
+	//psoBuilder.addSignatureToShaders({ m_hitGroupName2 }, m_localSignatureHitGroup2->get());
 	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
 	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);

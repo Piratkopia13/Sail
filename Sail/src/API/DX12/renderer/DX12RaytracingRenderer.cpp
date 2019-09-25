@@ -29,11 +29,11 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	auto& allocator = m_command.allocators[frameIndex];
 	auto& cmdList = m_command.list;
 
-	commandQueue.emplace_back();
-	Renderer::RenderCommand& temp = commandQueue.back();
-	temp.mesh = nullptr;
-	temp.transform = glm::identity<glm::mat4>();
-	temp.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+	//commandQueue.emplace_back();
+	//Renderer::RenderCommand& temp = commandQueue.back();
+	//temp.mesh = nullptr;
+	//temp.transform = glm::identity<glm::mat4>();
+	//temp.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
 
 	// Reset allocators and lists for this frame
 	allocator->Reset();
