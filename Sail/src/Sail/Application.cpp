@@ -2,7 +2,7 @@
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
 #include "../../SPLASH/src/game/events/TextInputEvent.h"
-#include "KeyCodes.h"
+#include "KeyBindings.h"
 #include "graphics/geometry/Transform.h"
 #include "Sail/graphics/Scene.h"
 
@@ -139,7 +139,7 @@ int Application::startGameLoop() {
 			Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
-			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
+			if (Input::IsKeyPressed(SAIL_KEYBIND_ALT) && Input::IsKeyPressed(SAIL_KEYBIND_F4))
 				PostQuitMessage(0);
 
 #ifdef _DEBUG

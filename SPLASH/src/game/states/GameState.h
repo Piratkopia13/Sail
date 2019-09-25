@@ -2,6 +2,7 @@
 
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
+#include "..//GameStateKeyBinds.h"
 
 class UpdateBoundingBoxSystem;
 class OctreeAddRemoverSystem;
@@ -92,4 +93,7 @@ private:
 	Octree* m_octree;
 	std::vector<Entity::SPtr> m_candles;
 	bool m_disableLightComponents;
+
+
+	GameStateKeyBinds m_keyBinds;
 };

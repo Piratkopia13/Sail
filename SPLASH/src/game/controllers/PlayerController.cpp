@@ -42,13 +42,13 @@ void PlayerController::processKeyboardInput(float dt) {
 	float tempY = physicsComp->velocity.y;
 
 	// Increase speed if shift or right trigger is pressed
-	if (Input::IsKeyPressed(SAIL_KEY_SHIFT)) { speedModifier = RUN_SPEED; }
+	if (Input::IsKeyPressed(SAIL_KEYBIND_SPRINT)) { speedModifier = RUN_SPEED; }
 
-	if (Input::IsKeyPressed(SAIL_KEY_W)) { forwardMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_S)) { forwardMovement -= 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_A)) { rightMovement -= 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_D)) { rightMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_SPACE)) { 
+	if (Input::IsKeyPressed(SAIL_KEYBIND_MOVE_FORWARD)) { forwardMovement += 1.0f; }
+	if (Input::IsKeyPressed(SAIL_KEYBIND_MOVE_BACKWARD)) { forwardMovement -= 1.0f; }
+	if (Input::IsKeyPressed(SAIL_KEYBIND_MOVE_LEFT)) { rightMovement -= 1.0f; }
+	if (Input::IsKeyPressed(SAIL_KEYBIND_MOVE_RIGHT)) { rightMovement += 1.0f; }
+	if (Input::IsKeyPressed(SAIL_KEYBIND_JUMP)) {
 		if (!m_wasSpacePressed) {
 			tempY = 15.0f;
 		}
