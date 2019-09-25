@@ -2,14 +2,15 @@
 
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
-#include "../controllers/AiController.h"
 
+class AiSystem;
 class AnimationSystem;
 class CandleSystem;
+class EntityRemovalSystem;
+class LifeTimeSystem;
 class LightSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
-class UpdateBoundingBoxSystem;
 
 class GameState : public State {
 public:
@@ -41,12 +42,14 @@ private:
 
 private:
 	struct Systems {
+		AiSystem* aiSystem = nullptr;
 		AnimationSystem* animationSystem = nullptr;
 		CandleSystem* candleSystem = nullptr;
+		EntityRemovalSystem* entityRemovalSystem = nullptr;
+		LifeTimeSystem* lifeTimeSystem = nullptr;
 		LightSystem* lightSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
-		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 	};
 
 	Application* m_app;
@@ -54,7 +57,6 @@ private:
 	PerspectiveCamera m_cam;
 	//FlyingCameraController m_camController;
 	PlayerController m_playerController;
-	std::vector<AiController> m_aiControllers;
 
 	const std::string createCube(const glm::vec3& position);
 
@@ -90,8 +92,5 @@ private:
 	std::unique_ptr<Model> m_boundingBoxModel;
 
 	Octree* m_octree;
-
-	// TODO: Make a system for these entities
-	//std::vector<Entity::SPtr> m_candles;
 	bool m_disableLightComponents;
 };

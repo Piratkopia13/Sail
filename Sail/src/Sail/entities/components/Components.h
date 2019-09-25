@@ -2,10 +2,12 @@
 
 #include "Component.h"
 
+#include "AiComponent.h"
 #include "AnimationComponent.h"
 #include "BoundingBoxComponent.h"
 #include "CandleComponent.h"
 #include "CollidableComponent.h"
+#include "LifeTimeComponent.h"
 #include "LightComponent.h"
 #include "LightListComponent.h"
 #include "ModelComponent.h"

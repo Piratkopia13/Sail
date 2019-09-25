@@ -33,6 +33,7 @@ public:
 	void setName(const std::string& name);
 	const std::string& getName() const;
 	int getID() const;
+	int getECSIndex() const;
 	Entity(const std::string& name = "");
 
 public:
@@ -45,10 +46,13 @@ private:
 	void addToSystems();
 	void removeFromSystems();
 
+	void setECSIndex(int index);
+
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::string m_name;
 	bool m_destructionQueued = false;
 	int m_id;
+	int m_ECSIndex;
 	ECS* m_ecs;
 	Entity::SPtr m_mySPtr;
 };

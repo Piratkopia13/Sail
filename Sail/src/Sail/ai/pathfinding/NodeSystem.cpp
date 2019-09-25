@@ -39,13 +39,14 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 }
 
 std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
- 	auto path = aStar(from.index, to.index);
-	
 	std::vector<NodeSystem::Node> nPath;
-	for ( int i = path.size() - 1; i > -1; i-- ) {
-		nPath.push_back(m_nodes[path[i]]);
-	}
+	if ( from.index != to.index ) {
+		auto path = aStar(from.index, to.index);
 
+		for ( int i = path.size() - 1; i > -1; i-- ) {
+			nPath.push_back(m_nodes[path[i]]);
+		}
+	}
 	return nPath;
 }
 
@@ -68,13 +69,14 @@ const NodeSystem::Node& NodeSystem::getNearestNode(const glm::vec3& position) co
 	return m_nodes[index];
 }
 
-unsigned int NodeSystem::getDistence(unsigned int n1, unsigned int n2) const {
+unsigned int NodeSystem::getDistance(unsigned int n1, unsigned int n2) const {
 	return glm::distance(m_nodes[n1].position, m_nodes[n2].position);
 }
 
 #ifdef _DEBUG_NODESYSTEM
-void NodeSystem::setDebugModelAndScene(Model* model, Scene* scene) {
-	m_nodeModel = model;
+void NodeSystem::setDebugModelAndScene(Shader* shader, Scene* scene) {
+	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);
+	m_nodeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
 	m_scene = scene;
 }
 #endif
@@ -167,12 +169,12 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 				if (m_nodes[neighbor].blocked || contains<std::list, unsigned int>(closedSet, neighbor)) {
 					continue;
 				} else {
-					//Distence From Start To Neighbor Through Current
-					unsigned int dist = gScores[current] + getDistence(current, neighbor);
+					//Distance From Start To Neighbor Through Current
+					unsigned int dist = gScores[current] + getDistance(current, neighbor);
 					if (dist < gScores[neighbor]) {
 						camefrom[neighbor] = current;
 						gScores[neighbor] = dist;
-						fScores[neighbor] = dist + getDistence(neighbor, to);
+						fScores[neighbor] = dist + getDistance(neighbor, to);
 						
 						if (!contains<std::list, unsigned int>(openSet, neighbor)) {
 							openSet.push_back(neighbor);

@@ -61,8 +61,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
-
-	m_nodeSystem = std::make_unique<NodeSystem>();
 }
 
 Application::~Application() {
@@ -137,8 +135,8 @@ int Application::startGameLoop() {
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
-			//UPDATES ALL CURRENTLY-WORKING AUDIO FUNCTIONALITY (TL;DR - Press '9' and '0')
-			//Application::getAudioManager()->updateAudio();
+			//UPDATES AUDIO
+			Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
 			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
@@ -181,7 +179,10 @@ int Application::startGameLoop() {
 			applyPendingStateChanges();
 		}
 	}
+
 	s_isRunning = false;
+	// All sounds need to be stopped before 'm_threadPool->stop()';
+	m_audioManager.stopAllSounds();
 	m_threadPool->stop();
 	return (int)msg.wParam;
 }
@@ -219,9 +220,6 @@ MemoryManager& Application::getMemoryManager() {
 }
 Audio* Application::getAudioManager() {
 	return &m_audioManager;
-}
-NodeSystem* Application::getNodeSystem() {
-	return m_nodeSystem.get();
 }
 StateStorage& Application::getStateStorage() {
 	return this->m_stateStorage;
