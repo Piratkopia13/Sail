@@ -10,6 +10,7 @@ class AnimationSystem;
 class LifeTimeSystem;
 class EntityRemovalSystem;
 class AiSystem;
+class ProjectileSystem;
 class LevelGeneratorSystem;
 
 class GameState : public State {
@@ -49,6 +50,7 @@ private:
 		LifeTimeSystem* lifeTimeSystem = nullptr;
 		EntityRemovalSystem* entityRemovalSystem = nullptr;
 		AiSystem* aiSystem = nullptr;
+		ProjectileSystem* projectileSystem = nullptr;
 		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
 	};
 
