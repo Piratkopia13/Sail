@@ -37,6 +37,11 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_dxr.updateSceneData(*camera, *lightSetup);
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
 
+	// AS has now been updated this frame, reset flag
+	for (auto& renderCommand : commandQueue) {
+		renderCommand.hasUpdatedSinceLastRender[frameIndex] = false;
+	}
+
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
 
 	RenderableTexture* renderOutput = m_outputTexture.get();
@@ -68,6 +73,15 @@ bool DX12RaytracingRenderer::onEvent(Event& event) {
 	// Pass along events
 	m_dxr.onEvent(event);
 	return true;
+}
+
+void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix) {
+	RenderCommand cmd;
+	cmd.mesh = mesh;
+	cmd.transform = glm::transpose(modelMatrix);
+	// Resize to match numSwapBuffers (specific to dx12)
+	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+	commandQueue.push_back(cmd);
 }
 
 bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {

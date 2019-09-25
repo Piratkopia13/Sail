@@ -2,12 +2,14 @@
 
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
-#include "../controllers/AiController.h"
 
 class UpdateBoundingBoxSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
 class AnimationSystem;
+class LifeTimeSystem;
+class EntityRemovalSystem;
+class AiSystem;
 class LevelGeneratorSystem;
 
 class GameState : public State {
@@ -44,6 +46,9 @@ private:
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
 		AnimationSystem* animationSystem = nullptr;
+		LifeTimeSystem* lifeTimeSystem = nullptr;
+		EntityRemovalSystem* entityRemovalSystem = nullptr;
+		AiSystem* aiSystem = nullptr;
 		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
 	};
 
@@ -52,7 +57,6 @@ private:
 	PerspectiveCamera m_cam;
 	//FlyingCameraController m_camController;
 	PlayerController m_playerController;
-	std::vector<AiController> m_aiControllers;
 
 	const std::string createCube(const glm::vec3& position);
 
