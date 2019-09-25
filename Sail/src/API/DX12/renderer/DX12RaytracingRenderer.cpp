@@ -30,37 +30,30 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	auto& allocator = m_command.allocators[frameIndex];
 	auto& cmdList = m_command.list;
 
-	//commandQueue.emplace_back();
-	//Renderer::RenderCommand& temp = commandQueue.back();
-	//temp.mesh = nullptr;
-	//temp.transform = glm::identity<glm::mat4>();
-	//temp.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
-
 	// Reset allocators and lists for this frame
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
 
-<<<<<<< HEAD
-	//static std::unique_ptr<Model> m_aabb = ModelFactory::CubeModel::Create(glm::vec3(0.5f, 0.5f, 0.5f), nullptr);
-	//commandQueue.emplace_back();
-	//RenderCommand& tempCmd = commandQueue.back();
-	//tempCmd.mesh = m_aabb->getMesh(0);
-	//tempCmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
-	//tempCmd.transform = glm::identity<glm::mat4>();
+	commandQueue.emplace_back();
+	RenderCommand& tempCmd = commandQueue.back();
+	tempCmd.mesh = nullptr;
+	tempCmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+	tempCmd.transform = glm::identity<glm::mat4>();
 
 	//tempCmd.transform = glm::crete
-=======
+
 	// Copy updated flag from vertex buffers to renderCommand
 	// This marks all commands that should have their bottom layer updated in-place
 	for (auto& renderCommand : commandQueue) {
-		auto& vb = static_cast<DX12VertexBuffer&>(renderCommand.mesh->getVertexBuffer());
-		if (vb.hasBeenUpdated()) {
-			renderCommand.hasUpdatedSinceLastRender[frameIndex] = true;
-			vb.resetHasBeenUpdated();
+		if (renderCommand.mesh) {
+			auto& vb = static_cast<DX12VertexBuffer&>(renderCommand.mesh->getVertexBuffer());
+			if (vb.hasBeenUpdated()) {
+				renderCommand.hasUpdatedSinceLastRender[frameIndex] = true;
+				vb.resetHasBeenUpdated();
+			}
 		}
 	}
 
->>>>>>> dev
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	m_dxr.updateSceneData(*camera, *lightSetup);
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());

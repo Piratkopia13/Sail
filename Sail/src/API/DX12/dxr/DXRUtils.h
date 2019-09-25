@@ -60,9 +60,10 @@ namespace DXRUtils {
 			@param numInstances, a vector of UINT that represent the number of instances that should use each shader from shaderNames.
 			@param pso, a pointer to a ID3D12StateObject where the shaders defined in shaderNames are located.
 		*/
-		ShaderTableBuilder(const std::vector<LPCWSTR>& shaderNames, const std::vector<UINT>& numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance = 32);
+		ShaderTableBuilder(const UINT& numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance = 32);
 		~ShaderTableBuilder();
 
+		void addShader(const LPCWSTR& shaderName, UINT instance = 0);
 		void addDescriptor(UINT64& descriptor, UINT instance = 0);
 		void addConstants(UINT numConstants, float* constants, UINT instance = 0);
 
@@ -71,8 +72,8 @@ namespace DXRUtils {
 	private:
 		wComPtr<ID3D12StateObjectProperties> m_soProps;
 		std::vector<LPCWSTR> m_shaderNames;
-		std::vector<UINT> m_numInstances;
-		UINT m_numInstances_total;
+		UINT m_numInstances;
+		//UINT m_numInstances_total;
 		UINT m_maxBytesPerInstance;
 
 		void** m_data;

@@ -468,9 +468,9 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 
 		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
 		DXRShaderCommon::MeshData meshData;
-
+		
+		MeshHandles handles;
 		if (mesh) {
-			MeshHandles handles;
 			handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
 			if (mesh->getNumIndices() > 0) {
 				handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
@@ -508,8 +508,10 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 
 			m_rtMeshHandles.emplace_back(handles);
 		} else {
+			m_rtMeshHandles.emplace_back(handles);
+
 			meshData.flags = DXRShaderCommon::MESH_NO_FLAGS;
-			meshData.color = glm::vec4(1,0,0,1);
+			meshData.color = glm::vec4(1, 0, 0, 1);
 			m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 		}
 
@@ -529,7 +531,8 @@ void DXRBase::updateShaderTables() {
 			m_rayGenShaderTable[frameIndex].Resource->Release();
 			m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder({ m_rayGenName }, { 1U }, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get());
+		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
@@ -540,7 +543,8 @@ void DXRBase::updateShaderTables() {
 			m_missShaderTable[frameIndex].Resource->Release();
 			m_missShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder({ m_missName }, { 1 }, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder(1, m_rtPipelineState.Get());
+		tableBuilder.addShader(m_missName);
 		//tableBuilder.addDescriptor(m_skyboxGPUDescHandle.ptr);
 		m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
@@ -553,31 +557,58 @@ void DXRBase::updateShaderTables() {
 			m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
 
-		DXRUtils::ShaderTableBuilder tableBuilder({ m_hitGroupName }, { (UINT)m_bottomBuffers[frameIndex].size() }, m_rtPipelineState.Get(), 64U);
+		//std::vector<LPCWSTR> hitGroupNames;
+		//std::vector<UINT> numInstances;
+
+		//if (m_nTriangleGeometry > 0) {
+		//	hitGroupNames.emplace_back(m_hitGroupName);
+		//	numInstances.emplace_back(m_nTriangleGeometry);
+		//}
+
+		//if (m_nProceduralGeometry > 0) {
+		//	hitGroupNames.emplace_back(m_hitGroupName2);
+		//	numInstances.emplace_back(m_nProceduralGeometry);
+		//}
+
+		DXRUtils::ShaderTableBuilder tableBuilder(m_bottomBuffers[frameIndex].size(), m_rtPipelineState.Get(), 64U);
 		unsigned int blasIndex = 0;
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			auto& instanceList = it.second;
 			Mesh* mesh = it.first;
 
-			m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
-				if (parameterName == "VertexBuffer") {
-					tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex);
-				} else if (parameterName == "IndexBuffer") {
-					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[blasIndex].indexBufferHandle : nullAddr, blasIndex);
-				} else if (parameterName == "MeshCBuffer") {
-					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
-					tableBuilder.addDescriptor(meshCBHandle, blasIndex);
-				} else if (parameterName == "Textures") {
-					// Three textures
-					for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex);
+			if (!mesh) {
+				tableBuilder.addShader(m_hitGroupName2);
+				m_localSignatureHitGroup2->doInOrder([&](const std::string& parameterName) {
+					if (parameterName == "MeshCBuffer") {
+						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
+						tableBuilder.addDescriptor(meshCBHandle, blasIndex);
+					} else {
+						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
 					}
-				} else {
-					Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
-				}
+					});
+			} else {
+				tableBuilder.addShader(m_hitGroupName);
+				m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
+					if (parameterName == "VertexBuffer") {
+						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex);
+					} else if (parameterName == "IndexBuffer") {
+						D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
+						tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[blasIndex].indexBufferHandle : nullAddr, blasIndex);
+					} else if (parameterName == "MeshCBuffer") {
+						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
+						tableBuilder.addDescriptor(meshCBHandle, blasIndex);
+					} else if (parameterName == "Textures") {
+						// Three textures
+						for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+							tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex);
+						}
+					} else {
+						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+					}
 
-				});
+					});
+			}
+
 			blasIndex++;
 		}
 		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
@@ -586,13 +617,13 @@ void DXRBase::updateShaderTables() {
 
 void DXRBase::createRaytracingPSO() {
 	DXRUtils::PSOBuilder psoBuilder;
-	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName/*, m_closestHitName2*/ });
+	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName, m_closestHitName2 });
 	//psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/testLib.hlsl", { m_closestHitName2 });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
-	//psoBuilder.addHitGroup(m_hitGroupName2, m_closestHitName2);
+	psoBuilder.addHitGroup(m_hitGroupName2, m_closestHitName2);
 	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
 	psoBuilder.addSignatureToShaders({ m_hitGroupName }, m_localSignatureHitGroup->get());
-	//psoBuilder.addSignatureToShaders({ m_hitGroupName2 }, m_localSignatureHitGroup2->get());
+	psoBuilder.addSignatureToShaders({ m_hitGroupName2 }, m_localSignatureHitGroup2->get());
 	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
 	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);

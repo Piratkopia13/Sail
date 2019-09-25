@@ -200,29 +200,19 @@ void closestHit2(inout RayPayload payload, in BuiltInTriangleIntersectionAttribu
 	uint i3 = primitiveID * verticesPerPrimitive + 2;
 	// Use indices if available
 	if (CB_MeshData.data[instanceID].flags & MESH_USE_INDICES) {
-		i1 = indices[i1];
-		i2 = indices[i2];
-		i3 = indices[i3];
+		i1 = 0;// indices[i1];
+		i2 = 0;//indices[i2];
+		i3 = 0;//indices[i3];
 	}
-	Vertex vertex1 = vertices[i1];
-	Vertex vertex2 = vertices[i2];
-	Vertex vertex3 = vertices[i3];
+	//Vertex vertex1 = Vertex();// vertices[i1];
+	//Vertex vertex2 = Vertex();// vertices[i2];
+	//Vertex vertex3 = Vertex();// vertices[i3];
 
-	float3 normalInLocalSpace = Utils::barrypolation(barycentrics, vertex1.normal, vertex2.normal, vertex3.normal);
-	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
-	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
+	float3 normalInLocalSpace = 0;// Utils::barrypolation(barycentrics, vertex1.normal, vertex2.normal, vertex3.normal);
+	float3 normalInWorldSpace = 0;// normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
+	//float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 
-	// if (payload.recursionDepth < 1) {
-	// 	float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
-	// 	TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
-	// 	payload.color = payload.color * 0.2f + getColor(CB_MeshData.data[instanceID], texCoords) * 0.8f;
-
-	// } else {
-	// 	// Max recursion, return color
-	// 	payload.color = getColor(CB_MeshData.data[instanceID], texCoords);
-	// }
-
-	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
+	float4 diffuseColor = CB_MeshData.data[instanceID].color;//getColor(CB_MeshData.data[instanceID], texCoords);
 	diffuseColor.r = 0;
 	float3 shadedColor = float3(0.f, 0.f, 0.f);
 
@@ -277,6 +267,4 @@ void closestHit2(inout RayPayload payload, in BuiltInTriangleIntersectionAttribu
 	float3 ambient = diffuseColor.rgb * ka * ambientCoefficient;
 
 	payload.color = float4(saturate(ambient + shadedColor), 1.0f);
-
-
 }
