@@ -52,8 +52,8 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* tile1, Model* tile2,
 				e->addComponent<ModelComponent>(tile2);
 			}
 			e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i+2), 0.f, tileSize * (j+2)));
-			e->addComponent<CollidableComponent>();
 			e->addComponent<BoundingBoxComponent>(bb);
+			e->addComponent<CollidableComponent>();
 			scene->addStaticEntity(e);
 		}
 	}
