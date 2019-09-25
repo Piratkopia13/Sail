@@ -7,16 +7,17 @@ void Renderer::begin(Camera* camera) {
 	commandQueue.clear();
 }
 
-void Renderer::submit(Model* model, const glm::mat4& modelMatrix) {
+void Renderer::submit(Model* model, const glm::mat4& modelMatrix, RenderFlag flags) {
 	for (unsigned int i = 0; i < model->getNumberOfMeshes(); i++) {
-		submit(model->getMesh(i), modelMatrix);
+		submit(model->getMesh(i), modelMatrix, flags);
 	}
 }
 
-void Renderer::submit(Mesh* mesh, const glm::mat4& modelMatrix) {
+void Renderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) {
 	RenderCommand cmd;
 	cmd.mesh = mesh;
 	cmd.transform = glm::transpose(modelMatrix);
+	cmd.flags = flags;
 	commandQueue.push_back(cmd);
 }
 

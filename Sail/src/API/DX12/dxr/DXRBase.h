@@ -29,13 +29,39 @@ public:
 	virtual bool onEvent(Event& event) override;
 
 private:
-	// Acceleration structures
-	void createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
+	struct AccelerationStructureBuffers {
+		wComPtr<ID3D12Resource1> scratch = nullptr;
+		wComPtr<ID3D12Resource1> result = nullptr;
+		wComPtr<ID3D12Resource1> instanceDesc = nullptr;    // Used only for top-level AS
+		bool allowUpdate = false;
+		void release() {
+			if (scratch) {
+				scratch->Release();
+				scratch = nullptr;
+			}
+			if (result) {
+				result->Release();
+				result = nullptr;
+			}
+			if (instanceDesc) {
+				instanceDesc->Release();
+				instanceDesc = nullptr;
+			}
+		}
+	};
+	struct InstanceList {
+		AccelerationStructureBuffers blas;
+		std::vector<glm::mat3x4> instanceTransforms;
+	};
 
-	// Other DXR requirements
-	void createShaderTables(const std::vector<Renderer::RenderCommand>& sceneGeometry);
-	void createShaderResources(bool remake = false);
+private:
+	// Acceleration structures
+	void createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList);
+	void createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate = nullptr);
+
+	void updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList);
+	void updateShaderTables();
+	void createInitialShaderResources(bool remake = false);
 	void createRaytracingPSO();
 
 	// Root signature creation
@@ -52,26 +78,7 @@ private:
 	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_sceneCB;
 	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_meshCB;
 
-	struct AccelerationStructureBuffers {
-		wComPtr<ID3D12Resource1> scratch = nullptr;
-		wComPtr<ID3D12Resource1> result = nullptr;
-		wComPtr<ID3D12Resource1> instanceDesc = nullptr;    // Used only for top-level AS
-		void release() {
-			if (scratch) {
-				scratch->Release();
-				scratch = nullptr;
-			}
-			if (result) {
-				result->Release();
-				result = nullptr;
-			}
-			if (instanceDesc) {
-				instanceDesc->Release();
-				instanceDesc = nullptr;
-			}
-		}
-	};
-	std::vector<std::vector<AccelerationStructureBuffers>> m_DXR_BottomBuffers;
+	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
 
 	wComPtr<ID3D12StateObject> m_rtPipelineState;

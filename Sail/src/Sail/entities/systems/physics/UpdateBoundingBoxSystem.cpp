@@ -4,12 +4,12 @@
 #include "../../components/TransformComponent.h"
 #include "../../components/BoundingBoxComponent.h"
 #include "../../components/ModelComponent.h"
-#include "../../components/StaticMatrixComponent.h"
 
 #include "../../../graphics/geometry/Model.h"
 
 UpdateBoundingBoxSystem::UpdateBoundingBoxSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(BoundingBoxComponent::ID);
+	requiredComponentTypes.push_back(TransformComponent::ID);
 }
 
 UpdateBoundingBoxSystem::~UpdateBoundingBoxSystem() {
@@ -36,34 +36,36 @@ void UpdateBoundingBoxSystem::checkDistances(glm::vec3& minVec, glm::vec3& maxVe
 	}
 }
 
-void UpdateBoundingBoxSystem::addEntity(Entity* entity) {
-	BaseComponentSystem::addEntity(entity);
+bool UpdateBoundingBoxSystem::addEntity(Entity* entity) {
+	if (BaseComponentSystem::addEntity(entity)) {
+		BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
+		ModelComponent* model = entity->getComponent<ModelComponent>();
+		TransformComponent* transform = entity->getComponent<TransformComponent>();
 
+		if (transform && model) {
+			glm::vec3 minPositions(INFINITY), maxPositions(-INFINITY);
 
-	BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
-	StaticMatrixComponent* staticMatrix = entity->getComponent<StaticMatrixComponent>();
-	ModelComponent* model = entity->getComponent<ModelComponent>();
-
-	if (staticMatrix && model) {
-		glm::vec3 minPositions(INFINITY), maxPositions(-INFINITY);
-
-		for (unsigned int i = 0; i < model->getModel()->getNumberOfMeshes(); i++) {
-			const Mesh::Data& meshData = model->getModel()->getMesh(i)->getData();
-			for (unsigned int j = 0; j < meshData.numVertices; j++) {
-				glm::vec3 posAfterTransform = glm::vec3(staticMatrix->getMatrix() * glm::vec4(meshData.positions[j].vec, 1.0f));
-				checkDistances(minPositions, maxPositions, posAfterTransform);
+			for (unsigned int i = 0; i < model->getModel()->getNumberOfMeshes(); i++) {
+				const Mesh::Data& meshData = model->getModel()->getMesh(i)->getData();
+				for (unsigned int j = 0; j < meshData.numVertices; j++) {
+					glm::vec3 posAfterTransform = glm::vec3(transform->getMatrix() * glm::vec4(meshData.positions[j].vec, 1.0f));
+					checkDistances(minPositions, maxPositions, posAfterTransform);
+				}
 			}
+
+			boundingBox->getBoundingBox()->setHalfSize((maxPositions - minPositions) * 0.5f);
+			boundingBox->getBoundingBox()->setPosition(minPositions + boundingBox->getBoundingBox()->getHalfSize());
+		}
+		else if (transform) {
+			boundingBox->getBoundingBox()->setPosition(glm::vec3(transform->getMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
 		}
 
-		boundingBox->getBoundingBox()->setHalfSize((maxPositions - minPositions) * 0.5f);
-		boundingBox->getBoundingBox()->setPosition(minPositions + boundingBox->getBoundingBox()->getHalfSize());
-	}
-	else if (staticMatrix) {
-		boundingBox->getBoundingBox()->setPosition(glm::vec3(staticMatrix->getMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
-	}
+		boundingBox->getTransform()->setTranslation(boundingBox->getBoundingBox()->getPosition());
+		boundingBox->getTransform()->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);
 
-	boundingBox->getTransform()->setTranslation(boundingBox->getBoundingBox()->getPosition());
-	boundingBox->getTransform()->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);
+		return true;
+	}
+	return false;
 }
 
 void UpdateBoundingBoxSystem::update(float dt) {
@@ -74,7 +76,6 @@ void UpdateBoundingBoxSystem::update(float dt) {
 		ModelComponent* model = e->getComponent<ModelComponent>();
 
 		if (transform && model) {
-			transform->prepareUpdate();
 			if (transform->getChange()) {
 				glm::vec3 minPositions(INFINITY), maxPositions(-INFINITY);
 
