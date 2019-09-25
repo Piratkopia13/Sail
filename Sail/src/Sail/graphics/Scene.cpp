@@ -61,10 +61,11 @@ void Scene::draw(Camera& camera, const float alpha) {
 			if (entity->getComponent<RealTimeComponent>()) {
 				// If it's a real-time entity render with the most recent update
 				// Not that for these entities should be updated once per frame for this to work correctly
-				(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
+				(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix(), (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
 			} else {
 				// If not interpolate between the two most recent updates
-				(*m_currentRenderer)->submit(model->getModel(), transform->getRenderMatrix(alpha));
+				(*m_currentRenderer)->submit(model->getModel(), transform->getRenderMatrix(alpha), (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
+
 			}
 		}
 
@@ -74,7 +75,7 @@ void Scene::draw(Camera& camera, const float alpha) {
 				Model* wireframeModel = boundingBox->getWireframeModel();
 				if (wireframeModel) {
 					// Bounding boxes are visualized with their most update since that's what's used for hit detection
-					(*m_currentRenderer)->submit(wireframeModel, boundingBox->getTransform()->getMatrix());
+					(*m_currentRenderer)->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), Renderer::MESH_STATIC);
 				}
 			}
 		}
