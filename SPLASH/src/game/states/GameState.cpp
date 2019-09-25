@@ -384,7 +384,7 @@ GameState::GameState(StateStack& stack)
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
-		//m_candles.push_back(e);
+
 #ifdef _DEBUG
 		// Candle1 holds all lights you can place in debug
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");

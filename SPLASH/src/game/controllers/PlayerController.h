@@ -33,7 +33,6 @@ public:
 
 	void setProjectileModels(Model* model, Model* wireframeModel);
 
-	//void provideCandles(std::vector<Entity::SPtr>* candles);
 	void setProjectileModel(Model* model);
 
 	CameraController* getCameraController() const;

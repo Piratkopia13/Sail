@@ -57,7 +57,7 @@ void Transform::removeParent() {
 }
 
 // NOTE: Has to be done at the beginning of each update
-// Call from PrepareUpdateSystem and no where else!
+// Call from PrepareUpdateSystem and nowhere else!
 void Transform::prepareUpdate() {
 	m_data.m_previous = m_data.m_current;
 	m_hasChanged = false;
