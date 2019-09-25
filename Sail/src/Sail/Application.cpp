@@ -5,6 +5,8 @@
 #include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
 #include "Sail/graphics/Scene.h"
+#include "Sail/TimeSettings.h"
+
 
 Application* Application::s_instance = nullptr;
 std::atomic_uint Application::s_queuedUpdates = 0;

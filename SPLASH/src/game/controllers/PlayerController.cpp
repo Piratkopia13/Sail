@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "PlayerController.h"
 #include "Sail.h"
+#include "Sail/TimeSettings.h"
+
 
 PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_cam = SAIL_NEW CameraController(cam);

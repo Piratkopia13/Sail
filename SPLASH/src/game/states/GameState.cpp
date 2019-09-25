@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
 #include "Sail/entities/ECS.h"
+#include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/candles/CandleSystem.h"
 #include "Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
 #include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
@@ -10,8 +11,8 @@
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
+#include "Sail/TimeSettings.h"
 
-#include "Sail/entities/components/Components.h"
 #include <sstream>
 #include <iomanip>
 
