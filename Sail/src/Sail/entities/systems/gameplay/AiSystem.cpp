@@ -158,7 +158,16 @@ void AiSystem::update(float dt) {
 				auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0.f, 2.f, 0.f);
 				auto fireDir = enemyPos - gunPos;
 				fireDir = glm::normalize(fireDir);
-				gunComp->setFiring(gunPos, fireDir);
+				/* Would like this to be Physics::CastRay(origin, dir, rayHitInfo) or something similar */
+				Octree::RayIntersectionInfo rayHitInfo;
+				// Should perhaps return a bool if it hit something?
+				m_octree->getRayIntersection(gunPos + fireDir /*In order to miss itself*/, fireDir, &rayHitInfo);
+				if ( rayHitInfo.entity != nullptr ) {
+					Logger::Log("Entity ID: " + std::to_string(rayHitInfo.entity->getID()) + " should be: " + std::to_string(aiComp->entityTarget->getID()));
+				}
+				if ( rayHitInfo.entity != nullptr && rayHitInfo.entity->getID() == aiComp->entityTarget->getID() ) {
+					gunComp->setFiring(gunPos, fireDir);
+				}
 			}
 		}
 
