@@ -355,6 +355,7 @@ glm::mat4 Transform::getRenderMatrix(float alpha) {
 	return m_renderMatrix;
 }
 
+// TODO: Use the correct member variables
 void Transform::updateLocalRenderMatrix(float alpha) {
 	m_localTransformMatrix = glm::mat4(1.0f);
 
