@@ -63,7 +63,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	for ( size_t i = 0; i < size; i++ ) {
 		conns.clear();
 		x_cur = i % x_max;
-		z_cur = floor(i / x_max);
+		z_cur = static_cast<int>(floor(i / x_max));
 		glm::vec3 pos(x_cur * padding - offsetX, offsetY, z_cur * padding - offsetZ);
 
 		bool blocked = false;
@@ -72,13 +72,9 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		m_octree->getCollisions(e.get(), &vec);
 
 		for ( Octree::CollisionInfo& info : vec ) {
-			int i = ( info.entity->getName().compare("Map_") );
-			if ( i >= 0 ) {
+			int j = ( info.entity->getName().compare("Map_") );
+			if ( j >= 0 ) {
 				//Not walkable
-				//auto e2 = ECS::Instance()->createEntity("blockedGroundMarker");
-				//e2->addComponent<TransformComponent>(pos);
-				//e2->addComponent<ModelComponent>(m_boundingBoxModel.get());
-				//m_scene.addEntity(e2);
 
 				blocked = true;
 				break;
@@ -124,10 +120,6 @@ bool AiSystem::addEntity(Entity* entity) {
 	return returnValue;
 }
 
-void AiSystem::removeEntity(Entity* entity) {
-	BaseComponentSystem::removeEntity(entity);
-
-}
 
 std::vector<Entity*>& AiSystem::getEntities() {
 	return entities;
@@ -200,7 +192,6 @@ void AiSystem::update(float dt) {
 				float velMagClamper = glm::length(physComp->velocity);
 				velMagClamper = ( velMagClamper > aiComp->movementSpeed ) ? aiComp->movementSpeed / velMagClamper : 1.0f;
 				physComp->velocity = physComp->velocity * velMagClamper;
-				//Logger::Log("Velocity: " + Utils::toStr(m_physComp->velocity));
 			}
 		} else {
 			physComp->velocity = glm::vec3(0.f);

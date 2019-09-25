@@ -28,12 +28,7 @@ public:
 	/*
 		Adds an entity to the system
 	*/
-	virtual bool addEntity(Entity* entity);
-
-	/*
-		Removes an entity from the system
-	*/
-	virtual void removeEntity(Entity* entity);
+	bool addEntity(Entity* entity) override;
 
 	std::vector<Entity*>& getEntities();
 
