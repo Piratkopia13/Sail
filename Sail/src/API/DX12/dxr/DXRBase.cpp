@@ -15,7 +15,7 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 	// Create frame resources (one per swap buffer)
 	// Only one TLAS is used for the whole scene
 	m_DXR_TopBuffer = m_context->createFrameResource<AccelerationStructureBuffers>();
-	m_DXR_BottomBuffers = m_context->createFrameResource<std::vector<AccelerationStructureBuffers>>();
+	m_bottomBuffers = m_context->createFrameResource<std::unordered_map<Mesh*, InstanceList>>();
 	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
@@ -27,15 +27,15 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 	createMissLocalRootSignature();
 
 	createRaytracingPSO();
-	createShaderResources();
+	createInitialShaderResources();
 
 }
 
 DXRBase::~DXRBase() {
 	m_rtPipelineState->Release();
-	for (auto& blasList : m_DXR_BottomBuffers) {
+	for (auto& blasList : m_bottomBuffers) {
 		for (auto& blas : blasList) {
-			blas.release();
+			blas.second.blas.release();
 		}
 	}
 	for (auto& tlas : m_DXR_TopBuffer) {
@@ -56,64 +56,85 @@ DXRBase::~DXRBase() {
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 
 	unsigned int frameIndex = m_context->getFrameIndex();
+	unsigned int totalNumInstances = 0;
 
-	// Update descriptors for vertices, indices, textures etc
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtHeapCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtHeapGPUHandle;
-	m_rtMeshHandles.clear();
-	unsigned int i = 0;
-	for (auto& geometry : sceneGeometry) {
-		auto& mesh = geometry.mesh;
+	auto flagNone = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	auto flagFastTrace = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	auto flagFastBuild = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
+	auto flagAllowUpdate = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
 
-		MeshHandles handles;
-		handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
-		if (mesh->getNumIndices() > 0)
-			handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
-		
-		// Three textures
-		for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-			DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
-			bool hasTexture = (textureNum == 0) ? mesh->getMaterial()->getPhongSettings().hasDiffuseTexture : mesh->getMaterial()->getPhongSettings().hasNormalTexture;
-			hasTexture = (textureNum == 2) ? mesh->getMaterial()->getPhongSettings().hasSpecularTexture : hasTexture;
-			if (hasTexture) {
-				// Make sure textures have initialized / uploaded their data to its default buffer
-				if (!texture->hasBeenInitialized()) {
-					texture->initBuffers(cmdList);
-				}
-
-				// Copy SRV to DXR heap
-				m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				handles.textureHandles[textureNum] = gpuHandle;
-			}
-			// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
-			cpuHandle.ptr += m_heapIncr;
-			gpuHandle.ptr += m_heapIncr;
-		}
-
-		// Update per mesh data
-		// Such as flags telling the shader to use indices, textures or not
-		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
-		DXRShaderCommon::MeshData meshData;
-		meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
-		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasDiffuseTexture) ?		DXRShaderCommon::MESH_HAS_DIFFUSE_TEX	: meshData.flags;
-		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasNormalTexture) ?		DXRShaderCommon::MESH_HAS_NORMAL_TEX	: meshData.flags;
-		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasSpecularTexture) ?	DXRShaderCommon::MESH_HAS_SPECULAR_TEX	: meshData.flags;
-		meshData.color = mesh->getMaterial()->getPhongSettings().modelColor;
-		m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, i * meshDataSize);
-
-		m_rtMeshHandles.emplace_back(handles);
-
-		i++;
+	// Clear old instance lists
+	for (auto& it : m_bottomBuffers[frameIndex]) {
+		it.second.instanceTransforms.clear();
 	}
 
-	//static int frames = 0;
-	//if (frames < 3) {
-		// TODO: run this on an async compute queue
-		createBLAS(sceneGeometry, cmdList);
-		//frames++;
-	//}
-	createTLAS(sceneGeometry, cmdList);
-	createShaderTables(sceneGeometry);
+
+	// Iterate all static meshes
+	for (auto& renderCommand : sceneGeometry) {
+		if (renderCommand.flags & Renderer::MESH_STATIC) {
+			Mesh* mesh = renderCommand.mesh;
+
+			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
+			// If mesh does not have a BLAS
+			if (searchResult == m_bottomBuffers[frameIndex].end()) {
+				createBLAS(renderCommand, flagFastTrace, cmdList);
+			} else {
+				// Mesh already has a BLAS - add transform to instance list
+				searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+			}
+
+			totalNumInstances++;
+		}
+	}
+
+	// Iterate all dynamic meshes
+	for (auto& renderCommand : sceneGeometry) {
+		if (renderCommand.flags & Renderer::MESH_DYNAMIC) {
+			Mesh* mesh = renderCommand.mesh;
+
+			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
+			auto flags = flagNone;
+			if (renderCommand.flags & Renderer::MESH_HERO) {
+				flags = flagFastTrace | flagAllowUpdate;
+			} else {
+				flags = flagFastBuild | flagAllowUpdate;
+			}
+
+			// If mesh does not have a BLAS
+			if (searchResult == m_bottomBuffers[frameIndex].end()) {
+				createBLAS(renderCommand, flags, cmdList);
+			} else {
+				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
+					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
+				} else {
+					// Mesh already has a BLAS - add transform to instance list
+					searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+				}
+			}
+
+			totalNumInstances++;
+		}
+	}
+
+	// Destroy BLASes that are no longer part of the scene
+	for (auto it = m_bottomBuffers[frameIndex].begin(); it != m_bottomBuffers[frameIndex].end();) {
+		bool destroy = true;
+		for (auto& renderCommand : sceneGeometry) {
+			if (it->first == renderCommand.mesh) { 
+				destroy = false;
+				++it;
+				break; 
+			}
+		}
+		if (destroy) {
+			it->second.blas.release();
+			it = m_bottomBuffers[frameIndex].erase(it);
+		}
+	}
+
+	createTLAS(totalNumInstances, cmdList);
+	updateDescriptorHeap(cmdList);
+	updateShaderTables();
 
 }
 
@@ -177,7 +198,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 bool DXRBase::onEvent(Event& event) {
 	auto onResize = [&](WindowResizeEvent& event) {
 		// Window changed size, resize output UAV
-		createShaderResources(true);
+		createInitialShaderResources(true);
 		return true;
 	};
 
@@ -185,18 +206,17 @@ bool DXRBase::onEvent(Event& event) {
 	return true;
 }
 
-void DXRBase::createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList) {
 
 	// Always rebuilds TLAS instead of updating it according to nvidia recommendations
 
-	unsigned int numBLAS = sceneGeometry.size();
 	unsigned int frameIndex = m_context->getFrameIndex();
 
 	// First, get the size of the TLAS buffers and create them
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
 	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	inputs.NumDescs = numBLAS;
+	inputs.NumDescs = numInstanceDescriptors;
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
 	m_DXR_TopBuffer[frameIndex].release();
@@ -209,7 +229,6 @@ void DXRBase::createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeomet
 	if (m_DXR_TopBuffer[frameIndex].scratch == nullptr) {
 		m_DXR_TopBuffer[frameIndex].scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
 		m_DXR_TopBuffer[frameIndex].scratch->SetName(L"TLAS_SCRATCH");
-
 	}
 
 	if (m_DXR_TopBuffer[frameIndex].result == nullptr) {
@@ -217,26 +236,31 @@ void DXRBase::createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeomet
 		m_DXR_TopBuffer[frameIndex].result->SetName(L"TLAS_RESULT");
 	}
 
-	m_DXR_TopBuffer[frameIndex].instanceDesc = DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * glm::max(numBLAS, 1U), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+	m_DXR_TopBuffer[frameIndex].instanceDesc = DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * glm::max(numInstanceDescriptors, 1U), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
 	m_DXR_TopBuffer[frameIndex].instanceDesc->SetName(L"TLAS_INSTANCE_DESC");
 
 	D3D12_RAYTRACING_INSTANCE_DESC* pInstanceDesc;
 	m_DXR_TopBuffer[frameIndex].instanceDesc->Map(0, nullptr, (void**)& pInstanceDesc);
 
-	for (UINT i = 0; i < numBLAS; i++) {
+	unsigned int blasIndex = 0;
+	unsigned int instanceID = 0;
+	for (auto& it : m_bottomBuffers[frameIndex]) {
+		auto& instanceList = it.second;
 
-		pInstanceDesc->InstanceID = i;                            // exposed to the shader via InstanceID()
-		pInstanceDesc->InstanceContributionToHitGroupIndex = i;   // offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
-		pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+		for (auto& transform : instanceList.instanceTransforms) {
+			pInstanceDesc->InstanceID = blasIndex;			// exposed to the shader via InstanceID() - currently same for all instances of same material
+			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
+			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
-		// apply transform from lambda function
-		glm::mat3x4 m = sceneGeometry[i].transform;
-		memcpy(pInstanceDesc->Transform, &m, sizeof(pInstanceDesc->Transform));
+			// apply transform from lambda function
+			memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
 
-		pInstanceDesc->AccelerationStructure = m_DXR_BottomBuffers[frameIndex][i].result->GetGPUVirtualAddress();
-		pInstanceDesc->InstanceMask = 0xFF;
+			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
+			pInstanceDesc->InstanceMask = 0xFF;
 
-		pInstanceDesc++;
+			pInstanceDesc++;
+		}
+		blasIndex++;
 	}
 	// Unmap
 	m_DXR_TopBuffer[frameIndex].instanceDesc->Unmap(0, nullptr);
@@ -257,87 +281,82 @@ void DXRBase::createTLAS(const std::vector<Renderer::RenderCommand>& sceneGeomet
 	cmdList->ResourceBarrier(1, &uavBarrier);
 }
 
-void DXRBase::createBLAS(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
-
-	unsigned int numBLAS = sceneGeometry.size();
+void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate) {
 	unsigned int frameIndex = m_context->getFrameIndex();
-	bool onlyUpdate = false;
-
-	if (!onlyUpdate) {
-		//std::cout << "FULL BLAS BUILD" << std::endl;
-		// Release old buffers if they exist
-		for (auto& blas : m_DXR_BottomBuffers[frameIndex]) {
-			blas.release();
-		}
-		// Resize all BLAS vectors
-		m_DXR_BottomBuffers[frameIndex].resize(numBLAS);
+	
+	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
+	Mesh* mesh = renderCommand.mesh;
+	InstanceList instance;
+	instance.instanceTransforms.emplace_back(renderCommand.transform);
+	AccelerationStructureBuffers& bottomBuffer = instance.blas;
+	if (performInplaceUpdate) {
+		bottomBuffer = *sourceBufferForUpdate;
 	}
 
-	for (unsigned int i = 0; i < numBLAS; i++) {
-		auto& geometry = sceneGeometry[i];
-		auto& bottomBuffer = m_DXR_BottomBuffers[frameIndex][i];
+	auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
+	auto& ib = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer());
 
-		auto& vb = static_cast<const DX12VertexBuffer&>(geometry.mesh->getVertexBuffer());
-		auto& ib = static_cast<const DX12IndexBuffer&>(geometry.mesh->getIndexBuffer());
+	D3D12_RAYTRACING_GEOMETRY_DESC geomDesc = {};
+	geomDesc.Flags = (renderCommand.flags & Renderer::MESH_TRANSPARENT) ? D3D12_RAYTRACING_GEOMETRY_FLAG_NONE : D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+	geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	geomDesc.Triangles.VertexBuffer.StartAddress = vb.getBuffer()->GetGPUVirtualAddress();
+	geomDesc.Triangles.VertexBuffer.StrideInBytes = vb.getVertexDataStride();
+	geomDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+	geomDesc.Triangles.VertexCount = mesh->getNumVertices();
 
-		D3D12_RAYTRACING_GEOMETRY_DESC geomDesc[1] = {};
-		geomDesc[0] = {};
-		geomDesc[0].Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-		geomDesc[0].Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-		geomDesc[0].Triangles.VertexBuffer.StartAddress = vb.getBuffer()->GetGPUVirtualAddress();
-		geomDesc[0].Triangles.VertexBuffer.StrideInBytes = vb.getVertexDataStride();
-		geomDesc[0].Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-		geomDesc[0].Triangles.VertexCount = geometry.mesh->getNumVertices();
-
-		if (geometry.mesh->getNumIndices() > 0) {
-			geomDesc[0].Triangles.IndexBuffer = ib.getBuffer()->GetGPUVirtualAddress();
-			geomDesc[0].Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
-			geomDesc[0].Triangles.IndexCount = UINT(geometry.mesh->getNumIndices());
-		}
-
-		// Get the size requirements for the scratch and AS buffers
-		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
-		inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-		inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE; // Changing this flag depending on mesh can speed up performance significantly!
-		/*if (onlyUpdate) {
-			inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
-		}*/
-		inputs.NumDescs = 1;
-		inputs.pGeometryDescs = geomDesc;
-		inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-
-		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
-		m_context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-
-		// TODO: make sure buffer size is >= info.UpdateScratchDataSize in bytes
-		if (!onlyUpdate) {
-			// Create the buffers. They need to support UAV, and since we are going to immediately use them, we create them with an unordered-access state
-			bottomBuffer.scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
-			bottomBuffer.scratch->SetName(L"BLAS_SCRATCH");
-			bottomBuffer.result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
-			bottomBuffer.result->SetName(L"BLAS_RESULT");
-		}
-
-		// Create the bottom-level AS
-		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
-		asDesc.Inputs = inputs;
-		asDesc.ScratchAccelerationStructureData = bottomBuffer.scratch->GetGPUVirtualAddress();
-		asDesc.DestAccelerationStructureData = bottomBuffer.result->GetGPUVirtualAddress();
-		if (inputs.Flags & D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE)
-			asDesc.SourceAccelerationStructureData = bottomBuffer.result->GetGPUVirtualAddress();
-
-		cmdList->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
-
-		// We need to insert a UAV barrier before using the acceleration structures in a raytracing operation
-		D3D12_RESOURCE_BARRIER uavBarrier = {};
-		uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-		uavBarrier.UAV.pResource = m_DXR_BottomBuffers[frameIndex][i].result.Get();
-		cmdList->ResourceBarrier(1, &uavBarrier);
+	if (mesh->getNumIndices() > 0) {
+		geomDesc.Triangles.IndexBuffer = ib.getBuffer()->GetGPUVirtualAddress();
+		geomDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
+		geomDesc.Triangles.IndexCount = UINT(mesh->getNumIndices());
 	}
 
+	// Get the size requirements for the scratch and AS buffers
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	inputs.Flags = flags; // Changing this flag depending on mesh can speed up performance significantly!
+	if (performInplaceUpdate) {
+		inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+	}
+	inputs.NumDescs = 1;
+	inputs.pGeometryDescs = &geomDesc;
+	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
+	m_context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+
+	// TODO: make sure buffer size is >= info.UpdateScratchDataSize in bytes
+	if (!performInplaceUpdate) {
+		// Create the buffers. They need to support UAV, and since we are going to immediately use them, we create them with an unordered-access state
+		bottomBuffer.scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
+		bottomBuffer.scratch->SetName(L"BLAS_SCRATCH");
+		bottomBuffer.result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
+		bottomBuffer.result->SetName(L"BLAS_RESULT");
+	}
+
+	// Create the bottom-level AS
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
+	asDesc.Inputs = inputs;
+	asDesc.ScratchAccelerationStructureData = bottomBuffer.scratch->GetGPUVirtualAddress();
+	asDesc.DestAccelerationStructureData = bottomBuffer.result->GetGPUVirtualAddress();
+	if (inputs.Flags & D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE) {
+		asDesc.SourceAccelerationStructureData = sourceBufferForUpdate->result->GetGPUVirtualAddress();
+	}
+
+	cmdList->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
+
+	// We need to insert a UAV barrier before using the acceleration structures in a raytracing operation
+	D3D12_RESOURCE_BARRIER uavBarrier = {};
+	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	uavBarrier.UAV.pResource = bottomBuffer.result.Get();
+	cmdList->ResourceBarrier(1, &uavBarrier);
+
+	if (!performInplaceUpdate) {
+		// Insert BLAS into buttom buffer map
+		m_bottomBuffers[frameIndex].insert({mesh, instance});
+	}
 }
 
-void DXRBase::createShaderResources(bool remake) {
+void DXRBase::createInitialShaderResources(bool remake) {
 
 	// Create some resources only once on init
 	if (!m_rtDescriptorHeap || remake) {
@@ -358,14 +377,11 @@ void DXRBase::createShaderResources(bool remake) {
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
 		// The first slot in the heap will be used for the output UAV, therefore we step once
-		m_rtOutputTextureUavGPUHandle = m_rtDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+		m_rtOutputTextureUavGPUHandle = gpuHandle;
 
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 
-		// Store heap start for views that might update in runtime
-		m_rtHeapCPUHandle = cpuHandle;
-		m_rtHeapGPUHandle = gpuHandle;
 
 		//// Ray gen settings CB
 		//m_rayGenCBData.flags = RT_ENABLE_TA | RT_ENABLE_JITTER_AA;
@@ -376,6 +392,10 @@ void DXRBase::createShaderResources(bool remake) {
 		//m_rayGenCBData.GIBounces = 1;
 		//m_rayGenSettingsCB = std::make_unique<DX12ConstantBuffer>("Ray Gen Settings CB", sizeof(RayGenSettings), m_renderer);
 		//m_rayGenSettingsCB->setData(&m_rayGenCBData, 0);
+		
+		// Store heap start for views that might update in runtime
+		m_rtHeapCPUHandle = cpuHandle;
+		m_rtHeapGPUHandle = gpuHandle;
 
 		// Scene CB
 		{
@@ -401,7 +421,63 @@ void DXRBase::createShaderResources(bool remake) {
 
 }
 
-void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sceneGeometry) {
+void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
+	unsigned int frameIndex = m_context->getFrameIndex();
+
+	// Update descriptors for vertices, indices, textures etc
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtHeapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtHeapGPUHandle;
+	m_rtMeshHandles.clear();
+
+	unsigned int blasIndex = 0;
+	for (auto& it : m_bottomBuffers[frameIndex]) {
+		auto& instanceList = it.second;
+		Mesh* mesh = it.first;
+
+		MeshHandles handles;
+		handles.vertexBufferHandle = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getBuffer()->GetGPUVirtualAddress();
+		if (mesh->getNumIndices() > 0) {
+			handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
+		}
+
+		// Three textures
+		for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+			DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
+			bool hasTexture = (textureNum == 0) ? mesh->getMaterial()->getPhongSettings().hasDiffuseTexture : mesh->getMaterial()->getPhongSettings().hasNormalTexture;
+			hasTexture = (textureNum == 2) ? mesh->getMaterial()->getPhongSettings().hasSpecularTexture : hasTexture;
+			if (hasTexture) {
+				// Make sure textures have initialized / uploaded their data to its default buffer
+				if (!texture->hasBeenInitialized()) {
+					texture->initBuffers(cmdList);
+				}
+
+				// Copy SRV to DXR heap
+				m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				handles.textureHandles[textureNum] = gpuHandle;
+			}
+			// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
+			cpuHandle.ptr += m_heapIncr;
+			gpuHandle.ptr += m_heapIncr;
+		}
+
+		// Update per mesh data
+		// Such as flags telling the shader to use indices, textures or not
+		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
+		DXRShaderCommon::MeshData meshData;
+		meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasDiffuseTexture) ? DXRShaderCommon::MESH_HAS_DIFFUSE_TEX : meshData.flags;
+		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
+		meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasSpecularTexture) ? DXRShaderCommon::MESH_HAS_SPECULAR_TEX : meshData.flags;
+		meshData.color = mesh->getMaterial()->getPhongSettings().modelColor;
+		m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
+
+		m_rtMeshHandles.emplace_back(handles);
+
+		blasIndex++;
+	}
+}
+
+void DXRBase::updateShaderTables() {
 
 	// 	 "Shader tables can be modified freely by the application (with appropriate state barriers)"
 
@@ -436,29 +512,33 @@ void DXRBase::createShaderTables(const std::vector<Renderer::RenderCommand>& sce
 			m_hitGroupShaderTable[frameIndex].Resource->Release();
 			m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder({ m_hitGroupName }, { (UINT)sceneGeometry.size(), 0 }, m_rtPipelineState.Get(), 64U);
-		for (unsigned int i = 0; i < sceneGeometry.size(); i++) {
-			auto& mesh = sceneGeometry[i].mesh;
+
+		DXRUtils::ShaderTableBuilder tableBuilder({ m_hitGroupName }, { (UINT)m_bottomBuffers[frameIndex].size() },m_rtPipelineState.Get(), 64U);
+		unsigned int blasIndex = 0;
+		for (auto& it : m_bottomBuffers[frameIndex]) {
+			auto& instanceList = it.second;
+			Mesh* mesh = it.first;
 
 			m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
 				if (parameterName == "VertexBuffer") {
-					tableBuilder.addDescriptor(m_rtMeshHandles[i].vertexBufferHandle, i);
+					tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex);
 				} else if (parameterName == "IndexBuffer") {
 					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[i].indexBufferHandle : nullAddr, i);
+					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[blasIndex].indexBufferHandle : nullAddr, blasIndex);
 				} else if (parameterName == "MeshCBuffer") {
 					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
-					tableBuilder.addDescriptor(meshCBHandle, i);
+					tableBuilder.addDescriptor(meshCBHandle, blasIndex);
 				} else if (parameterName == "Textures") {
 					// Three textures
 					for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-						tableBuilder.addDescriptor(m_rtMeshHandles[i].textureHandles[textureNum].ptr, i);
+						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex);
 					}
 				} else {
 					Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
 				}
 					
 			});
+			blasIndex++;
 		}
 		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}

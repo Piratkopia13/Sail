@@ -11,7 +11,7 @@ public:
 
 	void provideOctree(Octree* octree);
 
-	void addEntity(Entity* entity) override;
+	bool addEntity(Entity* entity) override;
 
 	void removeEntity(Entity* entity) override;
 
