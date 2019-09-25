@@ -2,6 +2,7 @@
 
 #include "AudioSystem.h"
 #include "..//Sail/src/Sail/entities/components/AudioComponent.h"
+#include "..//..//Entity.h"
 
 AudioSystem::AudioSystem() {
 	std::cout << "HERE!";
