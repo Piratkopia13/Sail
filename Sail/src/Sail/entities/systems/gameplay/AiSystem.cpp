@@ -3,6 +3,7 @@
 #include "../../components/AiComponent.h"
 #include "../../components/PhysicsComponent.h"
 #include "../../components/TransformComponent.h"
+#include "../../components/GunComponent.h"
 #include "Sail/ai/pathfinding/NodeSystem.h"
 
 #include "../../ECS.h"
@@ -12,6 +13,7 @@
 #include "Sail/utils/Utils.h"
 #include "../Physics/Octree.h"
 #include "Sail/Application.h"
+#include "../Physics/Physics.h"
 
 AiSystem::AiSystem() {
 	requiredComponentTypes.push_back(TransformComponent::ID);
@@ -34,6 +36,8 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 
 	std::vector<NodeSystem::Node> nodes;
 	std::vector<std::vector<unsigned int>> connections;
+
+	m_octree = octree;
 
 	std::vector<unsigned int> conns;
 	int x_max = 15;
@@ -64,7 +68,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		bool blocked = false;
 		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(pos);
 		std::vector < Octree::CollisionInfo> vec;
-		octree->getCollisions(e.get(), &vec);
+		m_octree->getCollisions(e.get(), &vec);
 
 		for ( Octree::CollisionInfo& info : vec ) {
 			int i = ( info.entity->getName().compare("Map_") );
@@ -129,53 +133,69 @@ std::vector<Entity*>& AiSystem::getEntities() {
 }
 
 void AiSystem::update(float dt) {
-	for ( auto& entity : m_aiEntities ) {
+	for ( auto& entity : entities ) {
 
-		if ( entity.second.aiComp->entityTarget != nullptr ) {
-			entity.second.aiComp->timeTakenOnPath += dt;
-			if ( entity.second.aiComp->timeTakenOnPath > m_timeBetweenPathUpdate ) {
-				entity.second.aiComp->timeTakenOnPath = 0.f;
-				entity.second.aiComp->posTarget = entity.second.aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation();
-				entity.second.aiComp->reachedTarget = false;
+		auto aiComp = entity->getComponent<AiComponent>();
+		auto transComp = entity->getComponent<TransformComponent>();
+		auto physComp = entity->getComponent<PhysicsComponent>();
+		auto gunComp = entity->getComponent<GunComponent>();
 
-				updatePath(entity.second.aiComp, entity.second.transComp);
+		if ( aiComp->entityTarget != nullptr ) {
+
+			aiComp->timeTakenOnPath += dt;
+			if ( aiComp->timeTakenOnPath > m_timeBetweenPathUpdate ) {
+				aiComp->timeTakenOnPath = 0.f;
+				aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation();
+				aiComp->reachedTarget = false;
+
+				updatePath(aiComp, transComp);
+			}
+
+			if ( gunComp != nullptr ) {
+				// Approx gun pos
+				auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 1.5f, 0.f);
+				// Approx enemy head pos
+				auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0.f, 2.f, 0.f);
+				auto fireDir = enemyPos - gunPos;
+				fireDir = glm::normalize(fireDir);
+				gunComp->setFiring(gunPos, fireDir);
 			}
 		}
 
-		if ( entity.second.aiComp->currPath.empty() ) {
+		if ( aiComp->currPath.empty() ) {
 			continue;
 		}
 
-		if ( entity.second.aiComp->reachedTarget && entity.second.aiComp->currNodeIndex < entity.second.aiComp->currPath.size() - 1 ) {
-			entity.second.aiComp->currNodeIndex++;
-			entity.second.aiComp->posTarget = entity.second.aiComp->currPath[entity.second.aiComp->currNodeIndex].position;
-			entity.second.aiComp->reachedTarget = false;
+		if ( aiComp->reachedTarget && aiComp->currNodeIndex < aiComp->currPath.size() - 1 ) {
+			aiComp->currNodeIndex++;
+			aiComp->posTarget = aiComp->currPath[aiComp->currNodeIndex].position;
+			aiComp->reachedTarget = false;
 		}
 
-		if ( !entity.second.aiComp->reachedTarget ) {
+		if ( !aiComp->reachedTarget ) {
 			// Check if the distance between target and ai is low enough
-			if ( glm::distance(entity.second.transComp->getTranslation(), entity.second.aiComp->currPath[entity.second.aiComp->currNodeIndex].position) < entity.second.aiComp->targetReachedThreshold ) {
-				entity.second.aiComp->lastVisitedNode = entity.second.aiComp->currPath[entity.second.aiComp->currNodeIndex];
-				entity.second.aiComp->reachedTarget = true;
+			if ( glm::distance(transComp->getTranslation(), aiComp->currPath[aiComp->currNodeIndex].position) < aiComp->targetReachedThreshold ) {
+				aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
+				aiComp->reachedTarget = true;
 			} else {
-				glm::vec3 desiredDir = entity.second.aiComp->currPath[entity.second.aiComp->currNodeIndex].position - entity.second.transComp->getTranslation();
+				glm::vec3 desiredDir = aiComp->currPath[aiComp->currNodeIndex].position - transComp->getTranslation();
 				if ( desiredDir == glm::vec3(0.f) ) {
 					desiredDir = glm::vec3(1.0f, 0.f, 0.f);
 				}
 				desiredDir = glm::normalize(desiredDir);
-				glm::vec3 desiredVel = desiredDir * entity.second.aiComp->movementSpeed;
-				glm::vec3 steering = ( desiredVel - entity.second.physComp->velocity );
-				float steeringMag = ( glm::length(steering) * entity.second.aiComp->mass );
-				steering *= entity.second.aiComp->maxSteeringForce / ( steeringMag != 0.f ? steeringMag : 1.f );
-				entity.second.physComp->velocity += steering;
+				glm::vec3 desiredVel = desiredDir * aiComp->movementSpeed;
+				glm::vec3 steering = ( desiredVel - physComp->velocity );
+				float steeringMag = ( glm::length(steering) * aiComp->mass );
+				steering *= aiComp->maxSteeringForce / ( steeringMag != 0.f ? steeringMag : 1.f );
+				physComp->velocity += steering;
 				// Float used to clamp the magnitude of the velocity between 0 and m_movementSpeed
-				float velMagClamper = glm::length(entity.second.physComp->velocity);
-				velMagClamper = ( velMagClamper > entity.second.aiComp->movementSpeed ) ? entity.second.aiComp->movementSpeed / velMagClamper : 1.0f;
-				entity.second.physComp->velocity = entity.second.physComp->velocity * velMagClamper;
+				float velMagClamper = glm::length(physComp->velocity);
+				velMagClamper = ( velMagClamper > aiComp->movementSpeed ) ? aiComp->movementSpeed / velMagClamper : 1.0f;
+				physComp->velocity = physComp->velocity * velMagClamper;
 				//Logger::Log("Velocity: " + Utils::toStr(m_physComp->velocity));
 			}
 		} else {
-			entity.second.physComp->velocity = glm::vec3(0.f);
+			physComp->velocity = glm::vec3(0.f);
 		}
 	}
 }

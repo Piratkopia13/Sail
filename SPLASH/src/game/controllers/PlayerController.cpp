@@ -91,38 +91,10 @@ void PlayerController::processKeyboardInput(float dt) {
 	// TODO: This should probably be moved elsewhere.
 	//       See if it should be done every tick or every frame and where the projectiles are to be created
 	if (Input::IsMouseButtonPressed(0)) {
-		if (m_projectileSpawnCounter == 0.f) {
-
-			// Create projectile entity and attaching components
-			auto e = ECS::Instance()->createEntity("new cube");
-			e->addComponent<ModelComponent>(m_projectileModel);
-			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.3f));
-			e->addComponent<PhysicsComponent>();
-			e->addComponent<BoundingBoxComponent>(m_projectileWireframeModel);
-			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 10.f;
-			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -9.82f, 0.f);
-			e->addComponent<LifeTimeComponent>(1.0f);
-
-			// Adding projectile to projectile vector to keep track of current projectiles
-			/*Projectile proj;
-			proj.projectile = e;
-			m_projectiles.push_back(proj);*/
-
-			// Add entity to scene for rendering, will most likely be changed once scene system is created
-			m_scene->addEntity(e);
-
-			m_projectileSpawnCounter += TIMESTEP;
-		}
-		else {
-			m_projectileSpawnCounter += TIMESTEP;
-			if (m_projectileSpawnCounter > 0.05f) {
-				m_projectileSpawnCounter = 0.f;
-			}
-		}
-	}
-	else {
-		m_projectileSpawnCounter = 0.f;
+		// TODO: add and tweak guncomponent+projectile system once playercontroller is changed to a system
+		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
+		glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
+		m_player->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 	}
 }
 
@@ -192,6 +164,7 @@ std::shared_ptr<Entity> PlayerController::getEntity() {
 void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) {
 	m_projectileModel = model;
 	m_projectileWireframeModel = wireframeModel;
+	m_player->addComponent<GunComponent>(m_projectileModel);
 }
 
 
