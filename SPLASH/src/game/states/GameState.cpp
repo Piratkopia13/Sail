@@ -13,6 +13,7 @@
 #include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/TimeSettings.h"
 
 #include <sstream>
@@ -114,6 +115,9 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
 
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
+
+	// Create system for handling and updating sounds
+	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
