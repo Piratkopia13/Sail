@@ -76,7 +76,6 @@ void UpdateBoundingBoxSystem::update(float dt) {
 		ModelComponent* model = e->getComponent<ModelComponent>();
 
 		if (transform && model) {
-			//transform->prepareUpdate();
 			if (transform->getChange()) {
 				glm::vec3 minPositions(INFINITY), maxPositions(-INFINITY);
 

@@ -45,15 +45,6 @@ void Scene::setLightSetup(LightSetup* lights) {
 	m_rendererRaytrace->setLightSetup(lights);
 }
 
-// NEEDS TO RUN ONCE BEFORE EACH UPDATE-LOOP ITERATION
-// Copies the game state from the previous tick 
-//void Scene::prepareUpdate() {
-//	for (auto e : m_sceneEntities) {
-//		TransformComponent* transform = e->getComponent<TransformComponent>();
-//		if (transform) { transform->prepareUpdate(); }
-//	}
-//}
-
 void Scene::showBoundingBoxes(bool val) {
 	m_showBoundingBoxes = val;
 }

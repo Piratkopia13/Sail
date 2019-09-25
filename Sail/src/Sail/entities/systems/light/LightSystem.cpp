@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "LightSystem.h"
 
-//#include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/LightComponent.h"
 #include "Sail/entities/components/LightListComponent.h"
 

@@ -9,7 +9,6 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_scene = scene;
 	m_player = ECS::Instance()->createEntity("player_entity");
 
-	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 
@@ -27,11 +26,6 @@ void PlayerController::setStartPosition(const glm::vec3& pos) {
 
 }
 
-// To be run at the beginning of each update tick
-//void PlayerController::prepareUpdate() {
-//	TransformComponent* transform = m_player->getComponent<TransformComponent>();
-//	if (transform) { transform->prepareUpdate(); }
-//}
 
 void PlayerController::processKeyboardInput(float dt) {
 	float speedModifier = 1.f;
@@ -77,10 +71,6 @@ void PlayerController::processKeyboardInput(float dt) {
 	right = glm::normalize(right);
 
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
-
-	// the player's transform will be modified in the physicSystem so save the player's current
-	// position for interpolation later.
-	playerTrans->prepareUpdate();
 
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
@@ -134,16 +124,6 @@ void PlayerController::processKeyboardInput(float dt) {
 	else {
 		m_projectileSpawnCounter = 0.f;
 	}
-
-	// Update for all projectiles
-	//for (int i = 0; i < m_projectiles.size(); i++) {
-	//for (Projectile& p : m_projectiles) {
-	//	p.lifeTime += TIMESTEP;
-	//	if (p.lifeTime > 2.f) {
-	//		p.projectile->queueDestruction();
-	//		//ECS::Instance()->queueDestructionOfEntity(p.projectile);
-	//	}
-	//}
 }
 
 void PlayerController::processMouseInput(float dt) {
@@ -202,32 +182,7 @@ CameraController* PlayerController::getCameraController() const {
 	return m_cam;
 }
 
-void PlayerController::destroyOldProjectiles() {
-	// Remove old projectiles
-	/*for (int i = 0; i < m_projectiles.size(); i++) {
-		if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
-			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
-			m_projectiles.erase(m_projectiles.begin() + i);
-			i--;
-		}
-	}*/
-}
-
-// NOTE: Keyboard and mouse input processing has been moved to their own functions above this one
 void PlayerController::update(float dt) {
-	// Projectile-Candle collision moved to CandleSystem and called from GameState
-
-	//for (int i = 0; i < m_projectiles.size(); i++) {
-	//	for (unsigned int j = 0; j < m_candles->size(); j++) {
-	//		auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
-	//		for (unsigned int k = 0; k < collisions.size(); k++) {
-	//			if (collisions[k].entity == m_candles->at(j).get()) {
-	//				// Tell the candle that it has been hit by water
-	//				m_candles->at(j)->getComponent<CandleComponent>()->hitWithWater();
-	//			}
-	//		}
-	//	}
-	//}
 }
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
@@ -239,9 +194,6 @@ void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) 
 	m_projectileWireframeModel = wireframeModel;
 }
 
-//void PlayerController::provideCandles(std::vector<Entity::SPtr>* candles) {
-//	m_candles = candles;
-//}
 
 float PlayerController::getYaw() const {
 	return m_yaw;

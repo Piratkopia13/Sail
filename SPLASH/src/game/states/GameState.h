@@ -39,7 +39,7 @@ private:
 	bool renderImGuiLightDebug(float dt);
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
-
+	void updatePerFrameComponentSystems(float dt);
 
 private:
 	struct Systems {
@@ -58,7 +58,6 @@ private:
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	//FlyingCameraController m_camController;
 	PlayerController m_playerController;
 
 	const std::string createCube(const glm::vec3& position);

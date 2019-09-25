@@ -405,32 +405,23 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
 
-		//creates light for the player
-		//m_playerController.createCandle(lightModel);
-
-		// Create player candle
+		// Create candle for the player
 		e = ECS::Instance()->createEntity("PlayerCandle");//;//ECS::Instance()->createEntity("PlayerCandle");
 		e->addComponent<CandleComponent>();
 		e->addComponent<ModelComponent>(lightModel);
 		CameraController* cc = m_playerController.getCameraController();
 		glm::vec3 camRight = glm::cross(cc->getCameraUp(), cc->getCameraDirection());
-		//camRight = glm::normalize(camRight);
 		glm::vec3 candlePos = -cc->getCameraDirection() + camRight;// -m_cam->getCameraUp();
-		e->addComponent<TransformComponent>(candlePos);// , m_player->getComponent<TransformComponent>());
-		//e->addComponent<TransformComponent>(glm::vec3(-1.f, -3.f, 1.f), m_player->getComponent<TransformComponent>());
-		//e->getComponent<TransformComponent>()->setParent(m_player->getComponent<TransformComponent>());
+		e->addComponent<TransformComponent>(candlePos);
 		lightPos = e->getComponent<TransformComponent>()->getTranslation();
 		pl.setColor(glm::vec3(0.5f, 0.5f, 0.5f));
 		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
-		//pl.setAttenuation(.0f, 0.1f, 0.02f);
 		pl.setIndex(2);
 		e->addComponent<LightComponent>(pl);
-		// Player candle will have its position updated each frame
-		e->addComponent<RealTimeComponent>();
+		e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
 		m_componentSystems.candleSystem->setPlayerCandle(e);
 		m_scene.addEntity(e);
 
-		
 
 
 		m_virtRAMHistory = SAIL_NEW float[100];
@@ -449,8 +440,6 @@ GameState::GameState(StateStack& stack)
 #else
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
-
-	//m_playerController.provideCandles(&m_candles);
 }
 
 GameState::~GameState() {
@@ -513,10 +502,7 @@ bool GameState::processInput(float dt) {
 		m_profiler.toggle();
 	}
 
-	// Update the camera controller from input devices
-	//m_camController.update(dt);
 	m_playerController.processMouseInput(dt);
-	//m_physSystem.execute(dt);
 
 
 	// Reload shaders
@@ -571,10 +557,6 @@ bool GameState::update(float dt) {
 
 	//ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
 
-	// TODO: REMOVE
-	//m_scene.prepareUpdate(); // Copy game state from previous tick
-	//m_playerController.prepareUpdate(); // Copy player position from previous tick
-
 	m_playerController.processKeyboardInput(TIMESTEP);
 
 	updatePerTickComponentSystems(dt);
@@ -596,9 +578,9 @@ bool GameState::render(float dt, float alpha) {
 	// Interpolate the player's camera position (but not rotation)
 	m_playerController.updateCameraPosition(alpha);
 
-	// Update the player's candle with the current camera position
-	m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
-
+	// UPDATE REAL TIME SYSTEMS
+	updatePerFrameComponentSystems(dt);
+	
 	m_lights.updateBufferData();
 	
 	// Clear back buffer
@@ -871,6 +853,11 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.lifeTimeSystem->update(dt);
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
+}
+
+void GameState::updatePerFrameComponentSystems(float dt) {
+	// Update the player's candle with the current camera position
+	m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

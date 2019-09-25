@@ -27,7 +27,6 @@ class Transform {
 
 public:
 	explicit Transform(Transform* parent);
-	//Transform(TransformSnapshot current, TransformSnapshot prev);
 	Transform(const glm::vec3& translation, Transform* parent = nullptr);
 	Transform(const glm::vec3& translation = { 0.0f, 0.0f, 0.0f },
 		const glm::vec3& rotation = { 0.0f, 0.0f, 0.0f },
@@ -81,10 +80,6 @@ public:
 
 	const glm::vec3 getInterpolatedTranslation(float alpha) const;
 
-	//const glm::vec3& getForward();
-	//const glm::vec3& getRight();
-	//const glm::vec3& getUp();
-
 	// Matrix used by collision etc.
 	glm::mat4 getMatrix();
 
@@ -93,9 +88,6 @@ public:
 
 private:
 	TransformFrame m_data;
-
-	// TODO: make matrix into its own component
-	// matrices here are only used for bounding boxes and CPU-side code
 
 	// Used for collision detection
 	// At most updated once per tick

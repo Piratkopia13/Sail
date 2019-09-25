@@ -28,8 +28,6 @@ void CandleSystem::lightCandle(std::string name) {
 	}
 }
 
-
-
 // should be updated after collision detection has been done
 void CandleSystem::update(float dt) {
 	for (auto e : entities) {
@@ -58,7 +56,6 @@ void CandleSystem::updatePlayerCandle(CameraController* cam, const float yaw) {
 	m_playerCandle->getComponent<TransformComponent>()->setTranslation(candlePos);
 	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-yaw), 0.f);
 	m_playerCandle->getComponent<TransformComponent>()->setRotations(candleRot);
-	//m_playerCandle->getComponent<TransformComponent>()->prepareUpdate();
 	glm::vec3 flamePos = candlePos + glm::vec3(0, 0.37f, 0);
 	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
 	m_playerCandle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);

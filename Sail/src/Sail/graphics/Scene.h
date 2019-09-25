@@ -27,8 +27,6 @@ public:
 	void draw(Camera& camera, const float alpha = 1.0f);
 
 
-	//void prepareUpdate();
-
 	virtual bool onEvent(Event& event) override;
 	void changeRenderer(unsigned int index);
 	bool& getDoProcessing();

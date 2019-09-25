@@ -19,7 +19,6 @@ Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, co
 	m_data.m_current.m_forward = glm::vec3(0.0f);
 	m_data.m_current.m_right = glm::vec3(0.0f);
 	m_data.m_current.m_up = glm::vec3(0.0f);
-	//m_data.m_current.m_parentUpdated = parent;
 
 	m_data.m_previous.m_translation = translation;
 	m_data.m_previous.m_rotation = rotation;
