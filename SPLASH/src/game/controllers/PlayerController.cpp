@@ -10,7 +10,6 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
-	Logger::Log("Player ID: " + std::to_string(m_player->getID()));
 
 	m_yaw = 90.f;
 	m_pitch = 0.f;

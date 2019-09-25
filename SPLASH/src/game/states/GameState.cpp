@@ -96,7 +96,6 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
   
-	// TODO: create ai system
 	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
