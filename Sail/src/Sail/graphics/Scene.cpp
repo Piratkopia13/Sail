@@ -134,7 +134,7 @@ void Scene::draw(Camera& camera, const float alpha) {
 		StaticMatrixComponent* matrix = entity->getComponent<StaticMatrixComponent>();
 
 		if (model && matrix) {
-			(*m_currentRenderer)->submit(model->getModel(), matrix->getMatrix());
+			(*m_currentRenderer)->submit(model->getModel(), matrix->getMatrix(), (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
 		}
 
 		if (m_showBoundingBoxes) {
@@ -142,16 +142,18 @@ void Scene::draw(Camera& camera, const float alpha) {
 			if (boundingBox) {
 				Model* wireframeModel = boundingBox->getWireframeModel();
 				if (wireframeModel) {
-					(*m_currentRenderer)->submit(wireframeModel, boundingBox->getTransform()->getMatrix());
+					(*m_currentRenderer)->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), Renderer::MESH_STATIC);
 				}
 			}
 		}
 	}
 
-	TransformComponent* transform = m_playerCandle->getComponent<TransformComponent>();
-	ModelComponent* model = m_playerCandle->getComponent<ModelComponent>();
-	if (transform && model) {
-		(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix());
+	if (m_playerCandle) {
+		TransformComponent* transform = m_playerCandle->getComponent<TransformComponent>();
+		ModelComponent* model = m_playerCandle->getComponent<ModelComponent>();
+		if (transform && model) {
+			(*m_currentRenderer)->submit(model->getModel(), transform->getMatrix(), (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
+		}
 	}
 
 	// Render dynamic objects (objects that might move or be added/removed)
@@ -159,7 +161,7 @@ void Scene::draw(Camera& camera, const float alpha) {
 	const UINT ind = Scene::GetRenderIndex();
 	m_perFrameLocks[ind].lock();
 	for (PerUpdateRenderObject& obj : m_dynamicRenderObjects[ind]) {
-		(*m_currentRenderer)->submit(obj.getModel(), obj.getMatrix(alpha));
+		(*m_currentRenderer)->submit(obj.getModel(), obj.getMatrix(alpha), (obj.getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
 	}
 	m_perFrameLocks[ind].unlock();
 

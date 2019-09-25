@@ -79,8 +79,17 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 			if (searchResult == m_bottomBuffers[frameIndex].end()) {
 				createBLAS(renderCommand, flagFastTrace, cmdList);
 			} else {
-				// Mesh already has a BLAS - add transform to instance list
-				searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
+					Logger::Warning("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
+					// Destroy old blas
+					searchResult->second.blas.release();
+					m_bottomBuffers[frameIndex].erase(searchResult);
+					// Create new one
+					createBLAS(renderCommand, flagFastTrace, cmdList);
+				} else {
+					// Mesh already has a BLAS - add transform to instance list
+					searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+				}
 			}
 
 			totalNumInstances++;
@@ -100,16 +109,15 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 				flags = flagFastBuild | flagAllowUpdate;
 			}
 
-			// If mesh does not have a BLAS
-			if (searchResult == m_bottomBuffers[frameIndex].end()) {
+			// If mesh does not have a BLAS or was first built as STATIC
+			if (searchResult == m_bottomBuffers[frameIndex].end() || !searchResult->second.blas.allowUpdate) {
 				createBLAS(renderCommand, flags, cmdList);
 			} else {
 				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
 					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
-				} else {
-					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
 				}
+				// Add transform to instance list
+				searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
 			}
 
 			totalNumInstances++;
@@ -291,6 +299,9 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	AccelerationStructureBuffers& bottomBuffer = instance.blas;
 	if (performInplaceUpdate) {
 		bottomBuffer = *sourceBufferForUpdate;
+	}
+	if (flags & D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE) {
+		instance.blas.allowUpdate = true;
 	}
 
 	auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
