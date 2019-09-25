@@ -103,7 +103,8 @@ GameState::GameState(StateStack& stack)
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -30.0f, 0.0f);
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -453,11 +454,12 @@ bool GameState::processInput(float dt) {
 
 	//Test ray intersection
 	if (Input::IsKeyPressed(SAIL_KEY_O)) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		/*Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), glm::vec3(0.0f, -1.0f, 0.0f), &tempInfo);
 		if (tempInfo.entity) {
 			Logger::Log("Ray intersection with " + tempInfo.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
-		}
+		}*/
+		Logger::Log("Height: " + std::to_string(m_playerController.getEntity()->getComponent<TransformComponent>()->getTranslation().y));
 	}
 
 	if (Input::WasKeyJustPressed(SAIL_KEY_H)) {
