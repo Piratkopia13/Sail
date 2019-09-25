@@ -11,6 +11,7 @@ public:
 	}
 	~MapComponent() {}
 	std::vector<int> m_tiles;
+	int tileArr[10][10];
 	int xsize=10, ysize=10;
 private:
 };

@@ -214,7 +214,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.levelGeneratorSystem = ECS::Instance()->getSystem<LevelGeneratorSystem>();
 	m_componentSystems.levelGeneratorSystem->addEntity(map.get());
 	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tileCross,tileFlat,m_boundingBoxModel.get());
+	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tileFlat,tileCross,tileCorner,tileStraight,tileT,m_boundingBoxModel.get());
 	
 	/*Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");

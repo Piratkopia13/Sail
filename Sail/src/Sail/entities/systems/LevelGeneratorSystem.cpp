@@ -17,21 +17,15 @@ void LevelGeneratorSystem::update(float dt) {
 void LevelGeneratorSystem::generateMap() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
-			for (int i = 0; i < map->xsize; i++) {
-				for (int j = 0; j < map->ysize; j++) {
-					if (rand() % 2 == 0) {
-						//1 is cross
-						map->m_tiles.push_back(1);
-					}
-					else {
-						//0 is flat
-						map->m_tiles.push_back(0);
-					}
-				}
+		for (int i = 0; i < map->xsize; i++) {
+			for (int j = 0; j < map->ysize; j++) {
+			//	map->m_tiles.push_back(rand() % 5);
+				map->tileArr[i][j] = rand() % 12;
 			}
+		}
 	}
 }
-void LevelGeneratorSystem::createWorld(Scene* scene, Model* tile1, Model* tile2,Model* bb) {
+void LevelGeneratorSystem::createWorld(Scene* scene, Model* tileFlat, Model* tileCross,Model* tileCorner,Model* tileStraight, Model* tileT, Model* bb) {
 
 	MapComponent* map;
 	for (auto& f : entities) {
@@ -45,13 +39,56 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* tile1, Model* tile2,
 	for (int i = 0; i < worldWidth; i++) {
 		for (int j = 0; j < worldDepth; j++) {
 			auto e = ECS::Instance()->createEntity("");
-			if (map->m_tiles[i*worldWidth+j]==1) {
-				e->addComponent<ModelComponent>(tile1);
+			//int tileId = map->m_tiles[i * worldWidth + j];
+			int tileId = map->tileArr[i][j];
+			if (tileId==0) {
+				e->addComponent<ModelComponent>(tileFlat);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)));
+			}
+			else if(tileId==1){
+				e->addComponent<ModelComponent>(tileCross);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)));
+			}
+			else if (tileId == 2) {
+				e->addComponent<ModelComponent>(tileStraight);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)));
+			}
+			else if (tileId == 3) {
+				e->addComponent<ModelComponent>(tileStraight);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)),glm::vec3(0.f,glm::radians(90.f),0.f));
+			}
+			else if (tileId == 4) {
+				e->addComponent<ModelComponent>(tileCorner);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)));
+			}
+			else if (tileId == 5) {
+				e->addComponent<ModelComponent>(tileCorner);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)), glm::vec3(0.f, glm::radians(90.f), 0.f));
+			}
+			else if (tileId == 6) {
+				e->addComponent<ModelComponent>(tileCorner);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)), glm::vec3(0.f, glm::radians(180.f), 0.f));
+			}
+			else if (tileId == 7) {
+				e->addComponent<ModelComponent>(tileCorner);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)), glm::vec3(0.f, glm::radians(270.f), 0.f));
+			}
+			else if (tileId == 8) {
+				e->addComponent<ModelComponent>(tileT);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)));
+			}
+			else if (tileId == 9) {
+				e->addComponent<ModelComponent>(tileT);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)), glm::vec3(0.f, glm::radians(90.f), 0.f));
+			}
+			else if (tileId == 10) {
+				e->addComponent<ModelComponent>(tileT);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)), glm::vec3(0.f, glm::radians(180.f), 0.f));
 			}
 			else {
-				e->addComponent<ModelComponent>(tile2);
+				e->addComponent<ModelComponent>(tileT);
+				e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i + 2), 0.f, tileSize * (j + 2)), glm::vec3(0.f, glm::radians(270.f), 0.f));
 			}
-			e->addComponent<StaticMatrixComponent>(glm::vec3(tileSize * (i+2), 0.f, tileSize * (j+2)));
 			e->addComponent<BoundingBoxComponent>(bb);
 			e->addComponent<CollidableComponent>();
 			scene->addStaticEntity(e);
