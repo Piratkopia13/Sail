@@ -79,12 +79,12 @@ public:
 	ResourceManager& getResourceManager();
 
 	MemoryManager& getMemoryManager();
-	AudioEngine* getAudioManager();
+	//AudioEngine* getAudioManager();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
 private:
-	AudioEngine m_audioManager;
+	//AudioEngine m_audioManager;
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;

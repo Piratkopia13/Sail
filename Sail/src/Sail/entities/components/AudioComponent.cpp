@@ -14,7 +14,6 @@ AudioComponent::AudioComponent() {
 }
 
 AudioComponent::~AudioComponent() {
-
 }
 
 void AudioComponent::defineSound(SoundType::SoundType type, std::string filename, float dtThreshold, bool isLooping) {

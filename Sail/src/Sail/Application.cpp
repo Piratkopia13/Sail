@@ -127,7 +127,7 @@ int Application::startGameLoop() {
 			Input::GetInstance()->beginFrame();
 
 			//UPDATES AUDIO
-			Application::getAudioManager()->updateAudio();
+			//Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
 			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
@@ -166,7 +166,7 @@ int Application::startGameLoop() {
 
 	s_isRunning = false;
 	// All sounds need to be stopped before 'm_threadPool->stop()';
-	m_audioManager.stopAllSounds();
+	//m_audioManager.stopAllSounds();
 	m_threadPool->stop();
 	return (int)msg.wParam;
 }
@@ -202,9 +202,9 @@ ResourceManager& Application::getResourceManager() {
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }
-AudioEngine* Application::getAudioManager() {
-	return &m_audioManager;
-}
+//AudioEngine* Application::getAudioManager() {
+//	return &m_audioManager;
+//}
 StateStorage& Application::getStateStorage() {
 	return this->m_stateStorage;
 }

@@ -18,3 +18,4 @@
 #include "RealTimeComponent.h"
 //#include "TextComponent.h"
 #include "TransformComponent.h"
+#include "AudioComponent.h"

@@ -4,7 +4,9 @@
 #include "..//BaseComponentSystem.h"
 #include "..//Sail/src/API/Audio/AudioEngine.h"
 
-class AudioSystem : public BaseComponentSystem {
+class AudioComponent;
+
+class AudioSystem final : public BaseComponentSystem {
 public:
 	AudioSystem();
 	~AudioSystem();

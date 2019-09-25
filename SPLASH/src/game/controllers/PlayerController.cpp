@@ -46,6 +46,7 @@ void PlayerController::processKeyboardInput(float dt) {
 	if (Input::IsKeyPressed(SAIL_KEY_D)) { rightMovement += 1.0f; }
 	if (Input::IsKeyPressed(SAIL_KEY_SPACE)) { 
 		if (!m_wasSpacePressed) {
+			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
 			tempY = 15.0f;
 		}
 		m_wasSpacePressed = true;
@@ -74,6 +75,9 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
+		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = true;
+		m_player->getComponent<AudioComponent>()->m_isLooping[SoundType::RUN] = true;
+
 		// Calculate total movement
 		physicsComp->velocity =
 			glm::normalize(right * rightMovement + forward * forwardMovement)
@@ -81,6 +85,9 @@ void PlayerController::processKeyboardInput(float dt) {
 	}
 	else {
 		physicsComp->velocity = glm::vec3(0.0f);
+		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = false;
+		m_player->getComponent<AudioComponent>()->m_isLooping[SoundType::RUN] = false;
+		m_player->getComponent<AudioComponent>()->m_soundEffectTimers[SoundType::RUN] = m_player->getComponent<AudioComponent>()->m_soundEffectThresholds[SoundType::RUN];
 	}
 
 	physicsComp->velocity.y = tempY;
