@@ -15,6 +15,8 @@ public:
 
 	virtual bool onEvent(Event& event) override;
 
+	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix) override;
+
 private:
 	bool onResize(WindowResizeEvent& event);
 

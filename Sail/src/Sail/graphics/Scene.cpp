@@ -34,7 +34,7 @@ UINT Scene::GetRenderIndex() { return s_renderIndex; }
 
 // NON-STATIC FUNCTIONS
 
-Scene::Scene() 
+Scene::Scene()
 	: m_doPostProcessing(false)
 {
 	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
@@ -109,7 +109,10 @@ void Scene::prepareRenderObjects() {
 		if (m_showBoundingBoxes) {
 			BoundingBoxComponent* boundingBox = gameObject->getComponent<BoundingBoxComponent>();
 			if (boundingBox) {
-				m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), boundingBox->getWireframeModel()));
+				Model* wireframeModel = boundingBox->getWireframeModel();
+				if (wireframeModel) {
+					m_dynamicRenderObjects[ind].push_back(PerUpdateRenderObject(boundingBox->getTransform(), wireframeModel));
+				}
 			}
 		}
 	}
@@ -137,7 +140,10 @@ void Scene::draw(Camera& camera, const float alpha) {
 		if (m_showBoundingBoxes) {
 			BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
 			if (boundingBox) {
-				(*m_currentRenderer)->submit(boundingBox->getWireframeModel(), boundingBox->getTransform()->getMatrix());
+				Model* wireframeModel = boundingBox->getWireframeModel();
+				if (wireframeModel) {
+					(*m_currentRenderer)->submit(wireframeModel, boundingBox->getTransform()->getMatrix());
+				}
 			}
 		}
 	}
@@ -205,7 +211,8 @@ bool Scene::onEvent(Event& event) {
 void Scene::changeRenderer(unsigned int index) {
 	if (index == 0) {
 		m_currentRenderer = &m_rendererRaster;
-	} else {
+	}
+	else {
 		m_currentRenderer = &m_rendererRaytrace;
 	}
 }
@@ -214,7 +221,7 @@ bool& Scene::getDoProcessing() {
 	return m_doPostProcessing;
 }
 
-bool Scene::onResize(WindowResizeEvent & event) {
+bool Scene::onResize(WindowResizeEvent& event) {
 
 	unsigned int width = event.getWidth();
 	unsigned int height = event.getHeight();
