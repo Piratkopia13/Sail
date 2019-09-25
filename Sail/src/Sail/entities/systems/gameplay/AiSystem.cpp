@@ -13,6 +13,7 @@
 #include "Sail/utils/Utils.h"
 #include "../Physics/Octree.h"
 #include "Sail/Application.h"
+#include "../Physics/Intersection.h"
 #include "../Physics/Physics.h"
 
 AiSystem::AiSystem() {
@@ -153,19 +154,17 @@ void AiSystem::update(float dt) {
 
 			if ( gunComp != nullptr ) {
 				// Approx gun pos
-				auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 1.5f, 0.f);
+				auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 0.45f, 0.f);
 				// Approx enemy head pos
-				auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0.f, 2.f, 0.f);
+				auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0.f, 0.45f, 0.f);
 				auto fireDir = enemyPos - gunPos;
 				fireDir = glm::normalize(fireDir);
-				/* Would like this to be Physics::CastRay(origin, dir, rayHitInfo) or something similar */
+
+				float hitDist = Intersection::rayWithAabb(gunPos, fireDir, *aiComp->entityTarget->getComponent<BoundingBoxComponent>()->getBoundingBox());
+
 				Octree::RayIntersectionInfo rayHitInfo;
-				// Should perhaps return a bool if it hit something?
-				m_octree->getRayIntersection(gunPos + fireDir /*In order to miss itself*/, fireDir, &rayHitInfo);
-				if ( rayHitInfo.entity != nullptr ) {
-					Logger::Log("Entity ID: " + std::to_string(rayHitInfo.entity->getID()) + " should be: " + std::to_string(aiComp->entityTarget->getID()));
-				}
-				if ( rayHitInfo.entity != nullptr && rayHitInfo.entity->getID() == aiComp->entityTarget->getID() ) {
+				m_octree->getRayIntersection(gunPos + fireDir /*In order to (hopefully) miss itself*/, fireDir, &rayHitInfo);
+				if ( glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f && hitDist < rayHitInfo.closestHit) {
 					gunComp->setFiring(gunPos, fireDir);
 				}
 			}
