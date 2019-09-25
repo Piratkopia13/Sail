@@ -220,7 +220,7 @@ ResourceManager& Application::getResourceManager() {
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }
-Audio* Application::getAudioManager() {
+AudioEngine* Application::getAudioManager() {
 	return &m_audioManager;
 }
 NodeSystem* Application::getNodeSystem() {

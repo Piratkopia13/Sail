@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "API/Audio/audio.hpp"
+#include "API/Audio/AudioEngine.h"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "Sail/Application.h"
 #include "Sail/KeyCodes.h"
@@ -9,7 +9,7 @@
 #include "WaveBankReader.h"
 #include <math.h>
 
-Audio::Audio() {
+AudioEngine::AudioEngine() {
 
 	HRESULT hr;
 	hr = CoInitialize(nullptr);
@@ -43,15 +43,15 @@ Audio::Audio() {
 	}
 }
 
-Audio::~Audio(){
+AudioEngine::~AudioEngine(){
 	m_isRunning = false;
 }
 
-void Audio::loadSound(const std::string& filename) {
+void AudioEngine::loadSound(const std::string& filename) {
 	Application::getInstance()->getResourceManager().loadAudioData(filename, m_xAudio2);
 }
 
-int Audio::playSound(const std::string& filename) {
+int AudioEngine::playSound(const std::string& filename) {
 	if (m_masterVoice == nullptr) {
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		return -1;
@@ -96,7 +96,7 @@ int Audio::playSound(const std::string& filename) {
 	}
 }
 
-int Audio::streamSound(const std::string& filename, bool loop) {
+int AudioEngine::streamSound(const std::string& filename, bool loop) {
 	int returnValue = m_currStreamIndex; // Store early
 
 	if (m_masterVoice == nullptr) {
@@ -113,14 +113,14 @@ int Audio::streamSound(const std::string& filename, bool loop) {
 	return returnValue;
 }
 
-void Audio::pauseSound(int index) {
+void AudioEngine::pauseSound(int index) {
 
 	if (m_sourceVoiceSound[index] != nullptr) {
 		m_sourceVoiceSound[index]->Stop();
 	}
 }
 
-void Audio::stopAllSounds() {
+void AudioEngine::stopAllSounds() {
 
 	for (int i = 0; i < SOUND_COUNT; i++) {
 		if (m_sourceVoiceSound[i] != nullptr) {
@@ -135,13 +135,12 @@ void Audio::stopAllSounds() {
 	}
 }
 
-void Audio::updateAudio() {
+void AudioEngine::updateAudio() {
 
 	// 'PLAY' Sound
 	if (Input::IsKeyPressed(SAIL_KEY_1) && m_singlePress1) {
 
 		m_singlePress1 = false;
-		this->loadSound("../Audio/sampleLarge.wav");
 	}
 
 	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePress1) {
@@ -179,11 +178,11 @@ void Audio::updateAudio() {
 	}
 }
 
-void Audio::initialize() {
+void AudioEngine::initialize() {
 
 }
 
-void Audio::initXAudio2() {
+void AudioEngine::initXAudio2() {
 
 	HRESULT hr;
 
@@ -198,7 +197,7 @@ void Audio::initXAudio2() {
 	}
 }
 
-void Audio::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
+void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
 
 	if (m_isStreaming[m_currStreamIndex]) {
 		while (m_isFinished[m_currStreamIndex] == false) {
@@ -428,7 +427,7 @@ void Audio::streamSoundInternal(const std::string& filename, int myIndex, bool l
 // Helper function to try to find the location of a media file
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
-HRESULT Audio::FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename)
+HRESULT AudioEngine::FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename)
 {
 	bool bFound = false;
 

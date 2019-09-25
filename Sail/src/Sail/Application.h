@@ -5,7 +5,7 @@
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
 #include "api/ImGuiHandler.h"
-#include "api/Audio/audio.hpp"
+#include "api/Audio/AudioEngine.h"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
@@ -84,13 +84,13 @@ public:
 	ResourceManager& getResourceManager();
 
 	MemoryManager& getMemoryManager();
-	Audio* getAudioManager();
+	AudioEngine* getAudioManager();
 	NodeSystem* getNodeSystem();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
 private:
-	Audio m_audioManager;
+	AudioEngine m_audioManager;
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;

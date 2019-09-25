@@ -1,5 +1,5 @@
-#ifndef AUDIO_HPP
-#define AUDIO_HPP
+#ifndef AUDIO_ENGINE_H
+#define AUDIO_ENGINE_H
 
 enum AudioType {MUSIC};
 
@@ -69,11 +69,11 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 };
 #pragma endregion
 
-class Audio
+class AudioEngine
 {
 public:
-	Audio();
-	~Audio();
+	AudioEngine();
+	~AudioEngine();
 
 	void loadSound(const std::string &filename);
 	int playSound(const std::string& filename);
