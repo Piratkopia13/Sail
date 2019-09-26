@@ -15,35 +15,23 @@ public:
 	typedef std::unique_ptr<Model> Ptr;
 
 public: 
-	//Model(std::vector<Mesh::Data>& data, ShaderSet* shaderSet);
 	Model();
 	Model(Mesh::Data& data, Shader* shader);
-	//Model(const std::string& path, ShaderSet* shaderSet);
 	~Model();
 
 	Mesh* addMesh(std::unique_ptr<Mesh> mesh);
-
-	//void setBuildData(Data& buildData);
-	//void buildBufferForShader(ShaderSet* shader);
 
 	// Draws the model using its material
 	void draw(const Renderer& renderer);
 
 	Mesh* getMesh(unsigned int index);
 	UINT getNumberOfMeshes() const;
-	/*ShaderSet* getShader() const;
-	Material* getMaterial();*/
-	//const AABB& getAABB() const;
-	//void updateAABB();
 
-private:
-	//void calculateAABB();
+	void setIsAnimated(bool animated);
+	bool isAnimated() const;
 
 private:
 	std::vector<Mesh::Ptr> m_meshes;
-
-	//Material::SPtr m_material;
-
-	//AABB m_aabb;
+	bool m_isAnimated;
 
 };

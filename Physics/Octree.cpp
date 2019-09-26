@@ -246,16 +246,12 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 					//Get collision
 					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
 					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
-					StaticMatrixComponent* staticMatrix = currentNode->entities[i]->getComponent<StaticMatrixComponent>();
 
 					if (model) {
 						//Entity has a model. Check collision with meshes
 						glm::mat4 transformMatrix;
 						if (transform) {
 							transformMatrix = transform->getMatrix();
-						}
-						else {
-							transformMatrix = staticMatrix->getMatrix();
 						}
 
 						for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
@@ -313,16 +309,12 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 				//Get Intersection
 				ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
 				TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
-				StaticMatrixComponent* staticMatrix = currentNode->entities[i]->getComponent<StaticMatrixComponent>();
 
 				if (model) {
 					//Entity has a model. Check ray against meshes
 					glm::mat4 transformMatrix;
 					if (transform) {
 						transformMatrix = transform->getMatrix();
-					}
-					else {
-						transformMatrix = staticMatrix->getMatrix();
 					}
 
 					for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
