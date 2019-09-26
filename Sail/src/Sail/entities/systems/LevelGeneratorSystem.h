@@ -11,7 +11,10 @@ public:
 
 	void update(float dt) override;
 	void generateMap();
-	void createWorld(Scene* scene, Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5, Model* bb);
+	void createWorld(Scene* scene, Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
 
 private:
+	int randomizeTileId(std::vector<int>* tiles,int seed);
+	void findPossibleTiles(std::vector<int>* mapPointer,int posx, int posy);
+	int createTileId(int posx, int posy);
 };

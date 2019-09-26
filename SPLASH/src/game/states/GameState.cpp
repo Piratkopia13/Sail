@@ -190,6 +190,8 @@ GameState::GameState(StateStack& stack)
 	tileCorner->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
 	Model* tileT = &m_app->getResourceManager().getModel("tileT.fbx", shader);
 	tileT->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
+	Model* tileEnd = &m_app->getResourceManager().getModel("tileEnd.fbx", shader);
+	tileEnd->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
 
 	// load each tile type for the map
 	//Model* tile1 = &m_app->getResourceManager().getModel("tiler1.fbx", shader);
@@ -214,7 +216,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.levelGeneratorSystem = ECS::Instance()->getSystem<LevelGeneratorSystem>();
 	m_componentSystems.levelGeneratorSystem->addEntity(map.get());
 	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tileFlat,tileCross,tileCorner,tileStraight,tileT,m_boundingBoxModel.get());
+	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tileFlat,tileCross,tileCorner,tileStraight,tileT,tileEnd,m_boundingBoxModel.get());
 	
 	/*Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
