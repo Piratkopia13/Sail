@@ -1,6 +1,21 @@
 #pragma once
 
 #include "Component.h"
-#include "TransformComponent.h"
+
+#include "AiComponent.h"
+#include "AnimationComponent.h"
+#include "BoundingBoxComponent.h"
+#include "CandleComponent.h"
+#include "CollidableComponent.h"
+#include "GunComponent.h"
+#include "LifeTimeComponent.h"
+#include "LightComponent.h"
+#include "LightListComponent.h"
 #include "ModelComponent.h"
-#include "TextComponent.h"
+//#include "MovementComponent.h"
+#include "PhysicsComponent.h"
+#include "PlayerComponent.h"
+#include "RealTimeComponent.h"
+//#include "TextComponent.h"
+#include "TransformComponent.h"
+#include "ProjectileComponent.h"

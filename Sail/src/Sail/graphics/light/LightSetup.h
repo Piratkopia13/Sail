@@ -4,6 +4,8 @@
 #include "PointLight.h"
 #include <vector>
 
+#include "Sail/graphics/Scene.h"
+
 class LightSetup {
 public:
 
@@ -14,9 +16,9 @@ public:
 		float padding;
 		glm::vec3 position = glm::vec3(0.f);
 		float attConstant = 0.f;
-		/*float attLinear;
+		float attLinear;
 		float attQuadratic;
-		float padding1, padding2;*/
+		float padding1, padding2;
 	};
 	struct DirLightBuffer {
 		DirLightBuffer() { };
@@ -39,12 +41,13 @@ public:
 	void setDirectionalLight(const DirectionalLight& dl);
 
 	const DirectionalLight& getDL() const;
-	const std::vector<PointLight>& getPLs() const;
+	std::vector<PointLight>& getPLs();
 
 	const DirLightBuffer& getDirLightData() const;
 	const PointLightsBuffer& getPointLightsData() const;
-
-private:
+	void clearPointLights();
+	void removePointLight();
+	void removePLByIndex(int index);
 	void updateBufferData();
 private:
 
