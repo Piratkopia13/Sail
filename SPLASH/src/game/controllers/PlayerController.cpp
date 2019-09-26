@@ -53,7 +53,7 @@ void PlayerController::processKeyboardInput(float dt) {
 	}
 
 	// TODO:: Fix Input::WasKeyJustPressed
-	if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)) {
+	if (Input::IsKeyPressed(KeyBinds::putDownCandle) && m_canPickUp) {
 		for (int i = 0; i < m_player->getChildEntities().size(); i++){
 			auto e = m_player->getChildEntities()[i];
 			auto candle = e->getComponent<CandleComponent>();
@@ -74,6 +74,7 @@ void PlayerController::processKeyboardInput(float dt) {
 				i = m_player->getChildEntities().size();
 			}
 		}
+		m_canPickUp = false;
 	}
 
 	glm::vec3 forwards(
@@ -174,7 +175,13 @@ CameraController* PlayerController::getCameraController() const {
 }
 
 void PlayerController::update(float dt) {
-
+	if (!m_canPickUp) {
+		m_candleTimer += dt;
+		if (m_candleTimer > m_candleLimit) {
+			m_candleTimer = 0.f;
+			m_canPickUp = true;
+		}
+	}
 }
 
 std::shared_ptr<Entity> PlayerController::getEntity() {

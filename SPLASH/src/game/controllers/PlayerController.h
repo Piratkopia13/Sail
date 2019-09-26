@@ -61,4 +61,7 @@ private:
 	float m_projectileSpawnCounter = 0.f;
 
 	bool m_wasSpacePressed = false;
+	bool m_canPickUp;
+	float m_candleTimer = 0.f;
+	float m_candleLimit = 0.2f;
 };

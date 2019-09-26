@@ -765,7 +765,7 @@ void GameState::updatePerFrameComponentSystems(float dt) {
 	// Update the player's candle with the current camera position
 	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
 
-
+	m_playerController.update(dt);
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {
 		m_lights.clearPointLights();
