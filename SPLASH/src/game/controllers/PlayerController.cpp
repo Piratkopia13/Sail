@@ -43,7 +43,7 @@ void PlayerController::processKeyboardInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::moveLeft)) { rightMovement -= 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
-		if (!m_wasSpacePressed) {
+		if (!m_wasSpacePressed && physicsComp->onGround) {
 			physicsComp->velocity.y = 5.0f;
 		}
 		m_wasSpacePressed = true;
