@@ -16,6 +16,7 @@
 
 #include "Sail/KeyCodes.h"
 #include "Sail/MouseButtonCodes.h"
+#include "Sail/KeyBinds.h"
 #include "Sail/Application.h"
 #include "Sail/Utils/Utils.h"
 #include "Sail/graphics/text/Text.h"

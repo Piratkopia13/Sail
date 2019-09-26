@@ -2,7 +2,7 @@
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
 #include "../../SPLASH/src/game/events/TextInputEvent.h"
-#include "KeyBindings.h"
+#include "KeyBinds.h"
 #include "graphics/geometry/Transform.h"
 #include "Sail/graphics/Scene.h"
 
@@ -77,6 +77,9 @@ int Application::startGameLoop() {
 	m_timer.startTimer();
 	const INT64 startTime = m_timer.getStartTime();
 
+	// Initialize key bindings
+	KeyBinds::init();
+
 	float currentTime = m_timer.getTimeSince<float>(startTime);
 	float newTime = 0.0f;
 	float delta = 0.0f;
@@ -139,7 +142,7 @@ int Application::startGameLoop() {
 			Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
-			if (Input::IsKeyPressed(SAIL_KEYBIND_ALT) && Input::IsKeyPressed(SAIL_KEYBIND_F4))
+			if (Input::IsKeyPressed(KeyBinds::alt) && Input::IsKeyPressed(KeyBinds::f4))
 				PostQuitMessage(0);
 
 #ifdef _DEBUG

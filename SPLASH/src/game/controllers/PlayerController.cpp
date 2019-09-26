@@ -42,13 +42,13 @@ void PlayerController::processKeyboardInput(float dt) {
 	float tempY = physicsComp->velocity.y;
 
 	// Increase speed if shift or right trigger is pressed
-	if (Input::IsKeyPressed(SAIL_KEYBIND_SPRINT)) { speedModifier = RUN_SPEED; }
+	if (Input::IsKeyPressed(KeyBinds::sprint)) { speedModifier = RUN_SPEED; }
 
-	if (Input::IsKeyPressed(SAIL_KEYBIND_MOVE_FORWARD)) { forwardMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEYBIND_MOVE_BACKWARD)) { forwardMovement -= 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEYBIND_MOVE_LEFT)) { rightMovement -= 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEYBIND_MOVE_RIGHT)) { rightMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEYBIND_JUMP)) {
+	if (Input::IsKeyPressed(KeyBinds::moveForward)) { forwardMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveBackward)) { forwardMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveLeft)) { rightMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
 		if (!m_wasSpacePressed) {
 			tempY = 15.0f;
 		}
@@ -57,7 +57,7 @@ void PlayerController::processKeyboardInput(float dt) {
 	else {
 		m_wasSpacePressed = false;
 	}
-	//if (Input::IsKeyPressed(SAIL_KEY_CONTROL)) { upMovement -= 1.0f; }
+	//if (Input::IsKeyPressed(KeyBinds::moveDown)) { upMovement -= 1.0f; }
 
 
 	glm::vec3 forwards(
