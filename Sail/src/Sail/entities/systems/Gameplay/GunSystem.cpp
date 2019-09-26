@@ -34,7 +34,7 @@ void GunSystem::update(float dt, Scene* scene) {
 				e->addComponent<ProjectileComponent>();
 				e->addComponent<TransformComponent>(gun->position);
 				TransformComponent* transform = e->getComponent<TransformComponent>();
-				transform->setScale(glm::vec3(1.0f, 1.0f, 5.0f) * 0.2f);
+				transform->setScale(glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f);
 				transform->rotateAroundY(glm::atan(gun->direction.x / gun->direction.z));
 				
 				e->addComponent<PhysicsComponent>();

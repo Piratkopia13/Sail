@@ -15,4 +15,7 @@ public:
 
 private:
 	Octree* m_octree;
+
+	void collisionUpdate(Entity* e, float dt);
+	void rayCastUpdate(Entity* e, float dt);
 };
