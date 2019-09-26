@@ -10,6 +10,13 @@ public:
 	void hitWithWater();
 	void resetHitByWater();
 	bool wasHitByWater() const;
+	void putDown();
+	void pickUp();
+	bool isCarried() const;
+
+
 private:
 	bool m_wasHitByWater = false;
+	bool m_carried = true;
+
 };

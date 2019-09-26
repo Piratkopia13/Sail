@@ -363,7 +363,7 @@ GameState::GameState(StateStack& stack)
 #endif
 
 		// Create candle for the player
-		e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
+		e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 1.1f, 0.f));
 		e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
 		m_playerController.getEntity()->addChildEntity(e);
 
@@ -748,10 +748,11 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.animationSystem->update(dt);
 	m_componentSystems.aiSystem->update(dt);
 
+	m_componentSystems.candleSystem->update(dt);
+
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 
-	m_componentSystems.candleSystem->update(dt);
 
 	m_componentSystems.lifeTimeSystem->update(dt);
 	// Will probably need to be called last
@@ -763,6 +764,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt) {
 	// Update the player's candle with the current camera position
 	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
+
 
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {

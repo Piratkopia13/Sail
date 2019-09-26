@@ -9,9 +9,9 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_scene = scene;
 	m_player = ECS::Instance()->createEntity("player_entity");
 
+
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
-
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
@@ -52,6 +52,29 @@ void PlayerController::processKeyboardInput(float dt) {
 		m_wasSpacePressed = false;
 	}
 
+	// TODO:: Fix Input::WasKeyJustPressed
+	if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)) {
+		for (int i = 0; i < m_player->getChildEntities().size(); i++){
+			auto e = m_player->getChildEntities()[i];
+			auto candle = e->getComponent<CandleComponent>();
+
+			auto cTransComp = e->getComponent<TransformComponent>();
+			auto pTransComp = m_player->getComponent<TransformComponent>();
+			if ( candle->isCarried() && physicsComp->onGround) {
+				candle->putDown();
+
+				cTransComp->setTranslation(pTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
+				cTransComp->removeParent();
+				i = m_player->getChildEntities().size();
+			}
+			else if (!candle->isCarried() && glm::length(pTransComp->getTranslation() - cTransComp->getTranslation()) < 2.0f) {
+				candle->pickUp();
+				cTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
+				cTransComp->setParent(pTransComp);
+				i = m_player->getChildEntities().size();
+			}
+		}
+	}
 
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
@@ -151,6 +174,7 @@ CameraController* PlayerController::getCameraController() const {
 }
 
 void PlayerController::update(float dt) {
+
 }
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
