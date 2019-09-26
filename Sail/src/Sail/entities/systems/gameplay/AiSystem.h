@@ -6,6 +6,7 @@
 class TransformComponent;
 class PhysicsComponent;
 class AiComponent;
+class GunComponent;
 class NodeSystem;
 class Model;
 class Octree;
@@ -28,12 +29,7 @@ public:
 	/*
 		Adds an entity to the system
 	*/
-	virtual bool addEntity(Entity* entity);
-
-	/*
-		Removes an entity from the system
-	*/
-	virtual void removeEntity(Entity* entity);
+	bool addEntity(Entity* entity) override;
 
 	std::vector<Entity*>& getEntities();
 
@@ -47,6 +43,8 @@ private:
 	};
 
 	void updatePath(AiComponent* aiComp, TransformComponent* transComp);
+	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
+	void aiUpdateFunc(Entity* entity, const float dt);
 
 private:
 	std::unordered_map<int, AiEntity> m_aiEntities;
@@ -54,5 +52,7 @@ private:
 	float m_timeBetweenPathUpdate;
 
 	std::unique_ptr<NodeSystem> m_nodeSystem;
+
+	Octree* m_octree;
 
 };

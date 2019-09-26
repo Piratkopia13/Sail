@@ -49,12 +49,13 @@ bool LobbyState::processInput(float dt) {
 }
 
 bool LobbyState::inputToChatLog(MSG& msg) {
-	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != SAIL_KEY_RETURN) {
+	int sendMessageKeyCode = KeyBinds::sendMessage;
+	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != sendMessageKeyCode) {
 		// Add whichever button that was inputted to the current message
 		// --- OBS : doesn't account for capslock, etc.
 		m_currentmessage[m_currentmessageIndex++] = (char)msg.wParam;
 	}
-	if (msg.wParam == SAIL_KEY_RETURN && m_chatFocus == false) {
+	if (msg.wParam == sendMessageKeyCode && m_chatFocus == false) {
 		return true;
 	}
 	return false;

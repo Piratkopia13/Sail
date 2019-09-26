@@ -3,6 +3,7 @@
 #include "Sail/Application.h"
 #include "../DX12Utils.h"
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
+#include "API/DX12/DX12VertexBuffer.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
@@ -32,6 +33,16 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	// Reset allocators and lists for this frame
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
+
+	// Copy updated flag from vertex buffers to renderCommand
+	// This marks all commands that should have their bottom layer updated in-place
+	for (auto& renderCommand : commandQueue) {
+		auto& vb = static_cast<DX12VertexBuffer&>(renderCommand.mesh->getVertexBuffer());
+		if (vb.hasBeenUpdated()) {
+			renderCommand.hasUpdatedSinceLastRender[frameIndex] = true;
+			vb.resetHasBeenUpdated();
+		}
+	}
 
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	m_dxr.updateSceneData(*camera, *lightSetup);
@@ -75,10 +86,11 @@ bool DX12RaytracingRenderer::onEvent(Event& event) {
 	return true;
 }
 
-void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix) {
+void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) {
 	RenderCommand cmd;
 	cmd.mesh = mesh;
 	cmd.transform = glm::transpose(modelMatrix);
+	cmd.flags = flags;
 	// Resize to match numSwapBuffers (specific to dx12)
 	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
 	commandQueue.push_back(cmd);

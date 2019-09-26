@@ -33,6 +33,7 @@ private:
 		wComPtr<ID3D12Resource1> scratch = nullptr;
 		wComPtr<ID3D12Resource1> result = nullptr;
 		wComPtr<ID3D12Resource1> instanceDesc = nullptr;    // Used only for top-level AS
+		bool allowUpdate = false;
 		void release() {
 			if (scratch) {
 				scratch->Release();
