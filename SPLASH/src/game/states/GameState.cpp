@@ -351,8 +351,6 @@ GameState::GameState(StateStack& stack)
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
 		m_scene.addEntity(e);
 
-		auto lightE = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
-
 
 		m_currLightIndex = 0;
 		e = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
