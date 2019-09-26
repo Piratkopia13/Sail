@@ -17,6 +17,8 @@ public:
 	virtual void resize(int width, int height) override;
 
 	ID3D12Resource1* getResource() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getRtvCDH() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getDsvCDH() const;
 
 private:
 	void createTextures();

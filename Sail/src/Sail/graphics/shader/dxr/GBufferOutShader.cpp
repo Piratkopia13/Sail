@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "GBufferOutShader.h"
 #include "Sail/Application.h"
+#include "API/DX12/shader/DX12ShaderPipeline.h"
 
 GBufferOutShader::GBufferOutShader()
 	: Shader("dxr/GBufferOut.hlsl")
@@ -12,6 +13,8 @@ GBufferOutShader::GBufferOutShader()
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::TANGENT, "TANGENT", 0);
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
+
+	static_cast<DX12ShaderPipeline*>(shaderPipeline)->setNumRenderTargets(2);
 
 	// Finish the shader creation
 	finish();

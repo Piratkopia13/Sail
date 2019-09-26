@@ -8,6 +8,8 @@ public:
 	DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numDescriptors, bool shaderVisible = false);
 	~DescriptorHeap();
 
+	ID3D12DescriptorHeap* get() const;
+
 	// An internal index behaving like a ring buffer is used
 	D3D12_CPU_DESCRIPTOR_HANDLE getNextCPUDescriptorHandle(int nSteps = 1);
 	D3D12_CPU_DESCRIPTOR_HANDLE getCPUDescriptorHandleForIndex(unsigned int index) const;

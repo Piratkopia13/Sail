@@ -14,7 +14,9 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 }
 
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
-	: ShaderPipeline(filename) {
+	: ShaderPipeline(filename) 
+	, m_numRenderTargets(1)
+{
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	if (!m_dxilCompiler) {
@@ -246,6 +248,10 @@ bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const voi
 	return false;
 }
 
+void DX12ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) { 
+	m_numRenderTargets = numRenderTargets;
+}
+
 void DX12ShaderPipeline::compile() {
 	ShaderPipeline::compile();
 }
@@ -287,8 +293,10 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 	}
 
 	// Specify render target and depthstencil usage
-	gpsd.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	gpsd.NumRenderTargets = 1;
+	for (unsigned int i = 0; i < m_numRenderTargets; i++) {
+		gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	}
+	gpsd.NumRenderTargets = m_numRenderTargets;
 
 	gpsd.SampleDesc.Count = 1;
 	gpsd.SampleDesc.Quality = 0;

@@ -4,8 +4,8 @@
 #include "Sail/api/Window.h"
 #include "../DX12Utils.h"
 
-RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name) {
-	return SAIL_NEW DX12RenderableTexture(1, width, height, true, false, 0U, 0U, name);
+RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, bool createDepthStencilView, bool createOnlyDSV) {
+	return SAIL_NEW DX12RenderableTexture(1, width, height, createDepthStencilView, createOnlyDSV, 0U, 0U, name);
 }
 
 DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, bool createDepthStencilView, bool createOnlyDSV, UINT bindFlags, UINT cpuAccessFlags, const std::string& name)
@@ -81,6 +81,16 @@ void DX12RenderableTexture::resize(int width, int height) {
 
 ID3D12Resource1* DX12RenderableTexture::getResource() const {
 	return textureDefaultBuffers[context->getFrameIndex()].Get();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH() const {
+	unsigned int frameIndex = context->getFrameIndex();
+	return m_rtvHeapCDHs[frameIndex];
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH() const {
+	unsigned int frameIndex = context->getFrameIndex();
+	return m_dsvHeapCDHs[frameIndex];
 }
 
 void DX12RenderableTexture::createTextures() {
