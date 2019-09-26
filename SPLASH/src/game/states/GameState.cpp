@@ -462,21 +462,21 @@ bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
 	// Add point light at camera pos
-	if (Input::WasKeyJustPressed(SAIL_KEY_E)) {
+	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
 		m_componentSystems.lightSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
 #endif
 	//Toggle bounding boxes rendering
-	if (Input::IsKeyPressed(SAIL_KEY_B)) {
+	if (Input::IsKeyPressed(KeyBinds::showBoundingBoxes)) {
 		m_scene.showBoundingBoxes(true);
 	}
-	if (Input::IsKeyPressed(SAIL_KEY_N)) {
+	if (Input::IsKeyPressed(KeyBinds::hideBoundingBoxes)) {
 		m_scene.showBoundingBoxes(false);
 	}
 
 	//Test ray intersection
-	if (Input::IsKeyPressed(SAIL_KEY_O)) {
+	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.entity) {
@@ -484,7 +484,8 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::WasKeyJustPressed(SAIL_KEY_H)) {
+	// Toggle ai following the player
+	if (Input::WasKeyJustPressed(KeyBinds::toggleAIFollowing)) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
@@ -496,11 +497,11 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::IsKeyPressed(SAIL_KEY_G)) {
+	if (Input::IsKeyPressed(KeyBinds::setDirectionalLight)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_OEM_5)) {
+	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole)) {
 		m_cc.toggle();
 		m_profiler.toggle();
 	}
@@ -509,28 +510,28 @@ bool GameState::processInput(float dt) {
 
 
 	// Reload shaders
-	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
+	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
 		Event e(Event::POTATO);
 		m_app->dispatchEvent(e);
 	}
 
 	// Lights the selected candle
-	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
+	if (Input::WasKeyJustPressed(KeyBinds::lightCandle1)) {
 		m_componentSystems.candleSystem->lightCandle("Map_Candle1");
 	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
+	if (Input::WasKeyJustPressed(KeyBinds::lightCandle2)) {
 		m_componentSystems.candleSystem->lightCandle("Map_Candle2");
 	}
 
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
-	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
+	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
 		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
 	}
 #endif
 	return true;
-	}
+}
 
 
 bool GameState::onEvent(Event& event) {
