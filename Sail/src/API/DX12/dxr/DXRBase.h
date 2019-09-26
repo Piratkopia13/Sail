@@ -102,11 +102,12 @@ private:
 	std::vector<MeshHandles> m_rtMeshHandles;
 
 	const WCHAR* m_rayGenName = L"rayGen";
-	const WCHAR* m_closestHitName = L"closestHit";
-	const WCHAR* m_closestHitName2 = L"closestHit2";
+	const WCHAR* m_closestHitName = L"closestHitTriangle";
+	const WCHAR* m_closestProceduralPrimitive = L"closestHitProcedural";
+	const WCHAR* m_intersectionProceduralPrimitive = L"IntersectionShader";
 	const WCHAR* m_missName = L"miss";
-	const WCHAR* m_hitGroupName = L"HitGroup";
-	const WCHAR* m_hitGroupName2 = L"HitGroup2";
+	const WCHAR* m_hitGroupTriangleName = L"hitGroupTriangle";
+	const WCHAR* m_hitGroupMetaBallName = L"hitGroupMetaBall";
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;

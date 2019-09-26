@@ -78,7 +78,7 @@ float4 getColor(MeshData data, float2 texCoords) {
 }
 
 [shader("closesthit")]
-void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
+void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
 	payload.recursionDepth++;
 
 	// TODO: move to shadow shader 
@@ -180,7 +180,7 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 
 
 [shader("closesthit")]
-void closestHit2(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
+void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttributes attribs) {
 	payload.recursionDepth++;
 
 	// TODO: move to shadow shader 
@@ -190,29 +190,11 @@ void closestHit2(inout RayPayload payload, in BuiltInTriangleIntersectionAttribu
 		return;
 	}
 
-	float3 barycentrics = float3(1.0 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
 	uint instanceID = InstanceID();
 	uint primitiveID = PrimitiveIndex();
 
-	uint verticesPerPrimitive = 3;
-	uint i1 = primitiveID * verticesPerPrimitive;
-	uint i2 = primitiveID * verticesPerPrimitive + 1;
-	uint i3 = primitiveID * verticesPerPrimitive + 2;
-	// Use indices if available
-	if (CB_MeshData.data[instanceID].flags & MESH_USE_INDICES) {
-		i1 = 0;// indices[i1];
-		i2 = 0;//indices[i2];
-		i3 = 0;//indices[i3];
-	}
-	//Vertex vertex1 = Vertex();// vertices[i1];
-	//Vertex vertex2 = Vertex();// vertices[i2];
-	//Vertex vertex3 = Vertex();// vertices[i3];
-
-	float3 normalInLocalSpace = 0;// Utils::barrypolation(barycentrics, vertex1.normal, vertex2.normal, vertex3.normal);
-	float3 normalInWorldSpace = 0;// normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
-	//float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
-
-	float4 diffuseColor = CB_MeshData.data[instanceID].color;//getColor(CB_MeshData.data[instanceID], texCoords);
+	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
+	float4 diffuseColor = CB_MeshData.data[instanceID].color;
 	diffuseColor.r = 0;
 	float3 shadedColor = float3(0.f, 0.f, 0.f);
 
@@ -265,6 +247,61 @@ void closestHit2(inout RayPayload payload, in BuiltInTriangleIntersectionAttribu
 	}
 
 	float3 ambient = diffuseColor.rgb * ka * ambientCoefficient;
-
 	payload.color = float4(saturate(ambient + shadedColor), 1.0f);
+}
+
+// Get ray in AABB's local space.
+//Ray GetRayInAABBPrimitiveLocalSpace()
+//{
+//    PrimitiveInstancePerFrameBuffer attr = g_AABBPrimitiveAttributes[l_aabbCB.instanceIndex];
+//
+//    // Retrieve a ray origin position and direction in bottom level AS space 
+//    // and transform them into the AABB primitive's local space.
+//    Ray ray;
+//    ray.origin = mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
+//    ray.direction = mul(ObjectRayDirection(), (float3x3) attr.bottomLevelASToLocalSpace);
+//    return ray;
+//}
+
+// Solve a quadratic equation.
+// Ref: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
+//bool SolveQuadraticEqn(float a, float b, float c, out float x0, out float x1) {
+//	float discr = b * b - 4 * a * c;
+//	if (discr < 0) return false;
+//	else if (discr == 0) x0 = x1 = -0.5 * b / a;
+//	else {
+//		float q = (b > 0) ?
+//			-0.5 * (b + sqrt(discr)) :
+//			-0.5 * (b - sqrt(discr));
+//		x0 = q / a;
+//		x1 = c / q;
+//	}
+//	if (x0 > x1) swap(x0, x1);
+//
+//	return true;
+//}
+
+//// Calculate a normal for a hit point on a sphere.
+//float3 CalculateNormalForARaySphereHit(in Ray ray, in float thit, float3 center) {
+//	float3 hitPosition = ray.origin + thit * ray.direction;
+//	return normalize(hitPosition - center);
+//}
+//
+//// Analytic solution of an unbounded ray sphere intersection points.
+//// Ref: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
+//bool SolveRaySphereIntersectionEquation(in Ray ray, out float tmin, out float tmax, in float3 center, in float radius) {
+//	float3 L = ray.origin - center;
+//	float a = dot(ray.direction, ray.direction);
+//	float b = 2 * dot(ray.direction, L);
+//	float c = dot(L, L) - radius * radius;
+//	return SolveQuadraticEqn(a, b, c, tmin, tmax);
+//}
+
+[shader("intersection")]
+void IntersectionShader()
+{
+	ProceduralPrimitiveAttributes attr;
+	attr.normal = float4(1, 1, 1, 0);
+	float thit = RayTCurrent();
+	ReportHit(thit, 0, attr);
 }

@@ -39,6 +39,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	tempCmd.mesh = nullptr;
 	tempCmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
 	tempCmd.transform = glm::identity<glm::mat4>();
+	//glm::translate(tempCmd.transform, glm::vec3(0, 10, 0));
 
 	//tempCmd.transform = glm::crete
 

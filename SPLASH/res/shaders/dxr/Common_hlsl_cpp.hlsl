@@ -73,6 +73,10 @@ struct MeshCBuffer {
 	MeshData data[MAX_INSTANCES]; // cbuffer min size is 64kb, fill with flags
 };
 
+struct ProceduralPrimitiveAttributes {
+	float4 normal;
+};
+
 #ifndef HLSL
 // C++ only
 
