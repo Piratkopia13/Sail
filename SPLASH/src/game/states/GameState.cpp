@@ -120,7 +120,8 @@ GameState::GameState(StateStack& stack)
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -30.0f, 0.0f);
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
 
 
