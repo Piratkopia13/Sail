@@ -15,6 +15,10 @@ public:
 public:
 	virtual ~Entity();
 
+	bool operator==(Entity::SPtr other) {
+		return getID() == other->getID();
+	}
+
 	template<typename ComponentType, typename... Targs>
 	ComponentType* addComponent(Targs... args);
 	template<typename ComponentType>
@@ -31,8 +35,9 @@ public:
 	void removeAllComponents();
 
 	void addChildEntity(Entity::SPtr child);
-	void removeChildEntity();
-	Entity::SPtr getChildEntity();
+	void removeChildEntity(Entity::SPtr toRemove);
+	/* Currently dangerous, will probably be altered in future */
+	std::vector<Entity::SPtr>& getChildEntities();
 	
 	void setName(const std::string& name);
 	const std::string& getName() const;

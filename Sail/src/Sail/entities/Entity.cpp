@@ -70,6 +70,14 @@ void Entity::addChildEntity(Entity::SPtr child) {
 	}
 }
 
+void Entity::removeChildEntity(Entity::SPtr toRemove) {
+	m_children.erase(std::find(m_children.begin(), m_children.end(), toRemove));
+}
+
+std::vector<Entity::SPtr>& Entity::getChildEntities() {
+	return m_children;
+}
+
 void Entity::setName(const std::string& name) {
 	m_name = name;
 }
