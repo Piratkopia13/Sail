@@ -46,7 +46,7 @@ void PlayerController::processKeyboardInput(float dt) {
 	if (Input::IsKeyPressed(SAIL_KEY_S)) { forwardMovement -= 1.0f; }
 	if (Input::IsKeyPressed(SAIL_KEY_A)) { rightMovement -= 1.0f; }
 	if (Input::IsKeyPressed(SAIL_KEY_D)) { rightMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_SPACE)) { 
+	if (Input::IsKeyPressed(SAIL_KEY_SPACE) && physicsComp->onGround) { 
 		if (!m_wasSpacePressed) {
 			physicsComp->velocity.y = 5.0f;
 		}
@@ -80,9 +80,13 @@ void PlayerController::processKeyboardInput(float dt) {
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f) {
 		// Calculate total movement
+		float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
+		if (!physicsComp->onGround) {
+			acceleration = acceleration * 0.5f;
+		}
 		physicsComp->accelerationToAdd += 
 			glm::normalize(right * rightMovement + forward * forwardMovement)
-			* 20.0f * speedModifier;
+			* acceleration;
 	}
 
 	// Shooting

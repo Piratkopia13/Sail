@@ -24,7 +24,8 @@ void PhysicSystem::update(float dt) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
 
-		bool onGround = false;
+		physics->onGround = false;
+		std::vector<int> groundIndices;
 
 		physics->velocity += physics->constantAcceleration * dt;
 		physics->velocity += physics->accelerationToAdd * dt;
@@ -45,7 +46,17 @@ void PhysicSystem::update(float dt) {
 
 				for (unsigned int i = 0; i < physics->collisions.size(); i++) {
 					if (physics->collisions[i].normal.y > 0.7f) {
-						onGround = true;
+						physics->onGround = true;
+						bool newGround = true;
+						for (unsigned int j = 0; j < groundIndices.size(); j++) {
+							if (physics->collisions[i].normal == physics->collisions[groundIndices[j]].normal) {
+								newGround = false;
+							}
+						}
+						if (newGround) {
+							//Save collision for friction calculation
+							groundIndices.push_back(i);
+						}
 					}
 
 					//Stop movement towards triangle
@@ -57,7 +68,7 @@ void PhysicSystem::update(float dt) {
 
 					//Tight angle corner special case
 					float dotProduct = glm::dot(physics->collisions[i].normal, glm::normalize(sumVec));
-					if (dotProduct < 0.98f && dotProduct > 0.0f) { //Colliding in a tight angle corner
+					if (dotProduct < 0.7072f && dotProduct > 0.0f) { //Colliding in a tight angle corner
 						glm::vec3 normalToNormal = sumVec - glm::dot(sumVec, physics->collisions[i].normal) * physics->collisions[i].normal;
 						normalToNormal = glm::normalize(normalToNormal);
 
@@ -74,33 +85,36 @@ void PhysicSystem::update(float dt) {
 		//------------------
 
 
+		//----Drag----
+		if (physics->onGround) { //Ground drag
+			unsigned int nrOfGroundCollisions = groundIndices.size();
+			for (unsigned int i = 0; i < nrOfGroundCollisions; i++) {
+				glm::vec3 velAlongPlane = physics->velocity - physics->collisions[groundIndices[i]].normal * glm::dot(physics->collisions[groundIndices[i]].normal, physics->velocity);
+				float sizeOfVel = glm::length(velAlongPlane);
+				if (sizeOfVel > 0.0f) {
+					float slowdown = glm::min((physics->drag / nrOfGroundCollisions) * dt, sizeOfVel);
+					physics->velocity -= slowdown * glm::normalize(velAlongPlane);
+				}
+			}
+		}
+		else { //Air drag
+			float saveY = physics->velocity.y;
+			physics->velocity.y = 0;
+			float vel = glm::length(physics->velocity);
+
+			if (vel > 0.0f) {
+				vel = glm::max(vel - physics->airDrag * dt, 0.0f);
+				physics->velocity = glm::normalize(physics->velocity) * vel;
+			}
+			physics->velocity.y = saveY;
+		}
+		//------------
+
+		//----Max Speed Limiter----
 		float saveY = physics->velocity.y;
 		physics->velocity.y = 0;
 		float vel = glm::length(physics->velocity);
-
 		if (vel > 0.0f) {
-			//Apply drag
-			float dragToApply = physics->drag;
-			if (!onGround) {
-				dragToApply = physics->airDrag;
-			}
-
-			if (physics->accelerationToAdd != glm::vec3(0.0f)) { //Accelerating
-				glm::vec3 normalizedAcceleration = glm::normalize(physics->accelerationToAdd);
-				glm::vec3 projectionVelocity = normalizedAcceleration * glm::dot(normalizedAcceleration, physics->velocity);
-				glm::vec3 theRest = physics->velocity - projectionVelocity;
-				float restLength = glm::length(theRest);
-				if (restLength > 0.0f) {
-					restLength = glm::max(restLength - dragToApply * dt, 0.0f);
-					theRest = glm::normalize(theRest) * restLength;
-				}
-				physics->velocity = projectionVelocity + theRest;
-				vel = glm::length(physics->velocity);
-			}
-			else { //Not accelerating
-				vel -= dragToApply * dt;
-			}
-
 			//Limit max speed
 			if (vel > physics->maxSpeed) {
 				vel = physics->maxSpeed;
@@ -108,12 +122,15 @@ void PhysicSystem::update(float dt) {
 			else if (vel < 0.05f) {
 				vel = 0.0f;
 			}
-			physics->velocity = glm::normalize(physics->velocity) * vel;
+
+			physics->velocity = vel * glm::normalize(physics->velocity);
 		}
 		physics->velocity.y = saveY;
+		//-------------------------
 
 		transform->rotate(physics->constantRotation * dt);
 		transform->translate((physics->m_oldVelocity + physics->velocity) * 0.5f * dt);
+		//transform->translate(physics->velocity * dt);
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
 	}
