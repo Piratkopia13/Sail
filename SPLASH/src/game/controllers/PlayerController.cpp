@@ -52,7 +52,7 @@ void PlayerController::processKeyboardInput(float dt) {
 		m_wasSpacePressed = false;
 	}
 
-	// TODO:: Fix Input::WasKeyJustPressed
+	// TODO:: Fix Input::WasKeyJustPressed and remove m_canPickUp
 	if (Input::IsKeyPressed(KeyBinds::putDownCandle) && m_canPickUp) {
 		for (int i = 0; i < m_player->getChildEntities().size(); i++){
 			auto e = m_player->getChildEntities()[i];
@@ -175,6 +175,7 @@ CameraController* PlayerController::getCameraController() const {
 }
 
 void PlayerController::update(float dt) {
+	// This can be removed once Input::WasKeyJustPressed is fixed since this only limit player from picking up candle right after putting it down.
 	if (!m_canPickUp) {
 		m_candleTimer += dt;
 		if (m_candleTimer > m_candleLimit) {
