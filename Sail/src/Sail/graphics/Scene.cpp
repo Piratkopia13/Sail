@@ -12,10 +12,6 @@
 Scene::Scene()
 	: m_doPostProcessing(false)
 {
-	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
-	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
-	m_currentRenderer = &m_rendererRaster;
-
 	// TODO: the following method ish
 	//m_postProcessPipeline.add<FXAAStage>();
 	/*m_postProcessPipeline.add<GaussianBlurStage>(1.f / 1.f);
@@ -30,6 +26,7 @@ Scene::Scene()
 	//m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(SAIL_NEW DX11RenderableTexture(1U, width, height, false));
 
 	m_showBoundingBoxes = false;
+	m_currentRenderer = Application::getInstance()->getRenderer(0);
 }
 
 Scene::~Scene() {
@@ -41,8 +38,8 @@ void Scene::addEntity(Entity::SPtr entity) {
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
-	m_rendererRaster->setLightSetup(lights);
-	m_rendererRaytrace->setLightSetup(lights);
+	m_lastLights = lights;
+	(*m_currentRenderer)->setLightSetup(lights);
 }
 
 void Scene::showBoundingBoxes(bool val) {
@@ -84,14 +81,12 @@ void Scene::draw(Camera& camera, const float alpha) {
 	(*m_currentRenderer)->end();
 	(*m_currentRenderer)->present((m_doPostProcessing) ? &m_postProcessPipeline : nullptr);
 
-	// Draw text last
-	// TODO: sort entity list instead of iterating entire list twice
-	/*for (Entity::SPtr& entity : m_entities) {
-		TextComponent* text = entity->getComponent<TextComponent>();
-		if (text) {
-			text->draw();
-		}
-	}*/
+	if (m_switchToRenderer) {
+		m_currentRenderer = m_switchToRenderer;
+		m_switchToRenderer = nullptr;
+
+		(*m_currentRenderer)->setLightSetup(m_lastLights); //To avoid Crash
+	}
 }
 
 //TODO add failsafe
@@ -118,20 +113,16 @@ bool Scene::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
 	// Forward events
-	m_rendererRaster->onEvent(event);
-	m_rendererRaytrace->onEvent(event);
+	(*m_currentRenderer)->onEvent(event);
+
 	//m_postProcessPipeline.onEvent(event);
 
 	return true;
 }
 
 void Scene::changeRenderer(unsigned int index) {
-	if (index == 0) {
-		m_currentRenderer = &m_rendererRaster;
-	}
-	else {
-		m_currentRenderer = &m_rendererRaytrace;
-	}
+
+	m_switchToRenderer = Application::getInstance()->getRenderer(index);
 }
 
 bool& Scene::getDoProcessing() {

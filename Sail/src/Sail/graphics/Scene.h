@@ -38,15 +38,10 @@ private:
 	// The objects in the scene that should be rendered
 	std::vector<Entity::SPtr> m_sceneEntities;
 
-	std::unique_ptr<Renderer> m_renderer;
-	//DeferredRenderer m_renderer;
-	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
-	//PostProcessPipeline m_postProcessPipeline;
-
-
-	std::unique_ptr<Renderer> m_rendererRaster;
-	std::unique_ptr<Renderer> m_rendererRaytrace;
 	std::unique_ptr<Renderer>* m_currentRenderer;
+	std::unique_ptr<Renderer>* m_switchToRenderer = nullptr;
+	LightSetup* m_lastLights;
+
 	PostProcessPipeline m_postProcessPipeline;
 	bool m_doPostProcessing;
 	bool m_showBoundingBoxes;

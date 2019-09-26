@@ -83,7 +83,13 @@ public:
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
+	std::unique_ptr<Renderer>* getRenderer(int index);
+
 private:
+	//Renderers
+	std::unique_ptr<Renderer> m_rendererRaster;
+	std::unique_ptr<Renderer> m_rendererRaytrace;
+
 	Audio m_audioManager;
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;

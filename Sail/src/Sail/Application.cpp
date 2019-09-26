@@ -12,8 +12,8 @@ Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
 
-Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
-
+Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api)
+{
 	// Set up instance if not set
 	if (s_instance) {
 		Logger::Error("Only one application can exist!");
@@ -61,6 +61,10 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
+
+	//Create Renderers Last
+	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
 }
 
 Application::~Application() {
@@ -212,4 +216,18 @@ const UINT Application::getFPS() const {
 	return m_fps;
 }
 
+std::unique_ptr<Renderer>* Application::getRenderer(int index) {
+
+	switch (index) {
+	case 0:
+		return &m_rendererRaster;
+	case 1:
+		return &m_rendererRaytrace;
+	default:
+		return nullptr;
+		break;
+	}
+
+	return nullptr;
+}
 
