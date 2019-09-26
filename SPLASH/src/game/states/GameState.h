@@ -12,6 +12,7 @@ class LightSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
 class PrepareUpdateSystem;
+class GunSystem;
 class ProjectileSystem;
 
 class GameState : public State {
@@ -43,6 +44,8 @@ private:
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt);
 
+	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
+
 private:
 	struct Systems {
 		AiSystem* aiSystem = nullptr;
@@ -55,6 +58,7 @@ private:
 		PhysicSystem* physicSystem = nullptr;
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
+		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
 	};
 
@@ -71,6 +75,7 @@ private:
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
 
+	size_t m_currLightIndex;
 
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
@@ -86,9 +91,6 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 
-	// Uncomment this to enable vram budget visualization
-	//std::string m_vramBCount;
-	//float* m_vramBudgetHistory;
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;

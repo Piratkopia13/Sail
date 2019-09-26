@@ -16,8 +16,6 @@ public:
 
 	void lightCandle(std::string name);
 
-	void checkProjectileCollisions(const std::vector<Entity::SPtr> &projectiles);
-
 	void update(float dt) override;
 
 	void updatePlayerCandle(CameraController* cam, const float yaw);
