@@ -70,10 +70,10 @@ float4 getColor(MeshData data, float2 texCoords) {
 	float4 color = data.color;
 	if (data.flags & MESH_HAS_DIFFUSE_TEX)
 		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
-	if (data.flags & MESH_HAS_NORMAL_TEX)
-		color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
-	if (data.flags & MESH_HAS_SPECULAR_TEX)
-		color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
+	// if (data.flags & MESH_HAS_NORMAL_TEX)
+	// 	color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
+	// if (data.flags & MESH_HAS_SPECULAR_TEX)
+	// 	color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
 	return color;
 }
 

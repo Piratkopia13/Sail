@@ -9,10 +9,10 @@ class PostProcessPipeline;
 #define MULTI_THREADED_COMMAND_RECORDING
 //#define DEBUG_MULTI_THREADED_COMMAND_RECORDING
 
-class DX12ForwardRenderer : public Renderer {
+class DX12GBufferRenderer : public Renderer {
 public:
-	DX12ForwardRenderer();
-	~DX12ForwardRenderer();
+	DX12GBufferRenderer();
+	~DX12GBufferRenderer();
 
 	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
 	virtual bool onEvent(Event& event) override;

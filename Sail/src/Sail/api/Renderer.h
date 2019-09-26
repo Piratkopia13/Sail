@@ -15,7 +15,8 @@ public:
 	enum Type {
 		FORWARD,
 		DEFERRED,
-		RAYTRACED
+		RAYTRACED,
+		GBUFFER
 	};
 
 	enum RenderFlag {

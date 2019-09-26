@@ -160,7 +160,7 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 
 	// Create/load models
 
@@ -785,7 +785,7 @@ bool GameState::renderImguiProfiler(float dt) {
 bool GameState::renderImGuiRenderSettings(float dt) {
 	static int selectedRenderer = 0;
 	ImGui::Begin("Rendering settings");
-	const char* items[] = { "Forward raster", "Raytraced" };
+	const char* items[] = { "Forward raster", "Raytraced", "GBuffer" };
 	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
 		m_scene.changeRenderer(selectedRenderer);
 	}
