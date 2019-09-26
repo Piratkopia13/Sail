@@ -5,10 +5,10 @@
 #include "KeyBinds.h"
 #include "graphics/geometry/Transform.h"
 #include "Sail/graphics/Scene.h"
+#include "Sail/TimeSettings.h"
+
 
 Application* Application::s_instance = nullptr;
-std::atomic_uint Application::s_queuedUpdates = 0;
-std::atomic_uint Application::s_updateRunning = 0;
 std::atomic_bool Application::s_isRunning = true;
 
 
@@ -126,15 +126,6 @@ int Application::startGameLoop() {
 				secCounter = 0.0;
 			}
 
-			// alpha value used for the interpolation later on
-			float alpha = accumulator/TIMESTEP;
-
-			// Queue multiple updates if the game has fallen behind to make sure that it catches back up to the current time.
-			while (accumulator >= TIMESTEP) {
-				accumulator -= TIMESTEP;
-				s_queuedUpdates++;
-			}
-
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
@@ -155,23 +146,16 @@ int Application::startGameLoop() {
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
 			processInput(delta);
 
-			// Don't create a new update thread if another one is already running the update loop
-			if (s_updateRunning == 0) {
-				s_updateRunning = 1;
-				// Run update(s) in a separate thread
-				//m_threadPool->push([this](int id) {
-					if (s_queuedUpdates > 0 && s_isRunning) {
-						s_queuedUpdates--;
-						Scene::IncrementCurrentUpdateIndex();
-						update(TIMESTEP);
-					}
-					s_updateRunning = 0;
-					//});
+			// Run the update if enough time has passed since the last update
+			while (accumulator >= TIMESTEP) {
+				accumulator -= TIMESTEP;
+				update(TIMESTEP);
 			}
 
-			// Render
-			Scene::UpdateCurrentRenderIndex();
+			// alpha value used for the interpolation
+			float alpha = accumulator / TIMESTEP;
 
+			// Render
 			render(delta, alpha);
 			//render(delta, 1.0f); // disable interpolation
 
