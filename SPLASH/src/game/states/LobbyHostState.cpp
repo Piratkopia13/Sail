@@ -3,6 +3,9 @@
 #include "Network/NWrapper.h"
 #include "Network/NWrapperHost.h"
 
+
+#include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
+
 using namespace std;
 
 LobbyHostState::LobbyHostState(StateStack& stack)
@@ -42,6 +45,45 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 
 		// ... Send the message to other clients and reset message
 		m_network->sendChatAllClients(mesgWithId);
+		
+
+
+
+
+
+
+
+
+		// TESTING FOR SENDING SERIALIZED DATA
+		unsigned int testInt = 5;
+
+		std::ostringstream os(std::ios::binary);
+		{
+			cereal::PortableBinaryOutputArchive ar(os);
+			ar(testInt);
+		}
+		std::string data = os.str();
+
+
+
+
+
+
+		//std::istringstream is(data);
+
+		//int testInt2 = 0;
+
+		//{
+		//	cereal::PortableBinaryInputArchive ar(is);
+		//	ar(testInt2);
+		//}
+		//if (testInt2 == 5) {
+		//	int fda = 43;
+		//}
+
+
+
+		m_network->sendSerializedData(data);
 	}
 
 	return true;

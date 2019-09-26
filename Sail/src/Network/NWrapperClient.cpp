@@ -12,6 +12,9 @@
 #include "../../SPLASH/src/game/events/NetworkStartGameEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
+
+#include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
+
 bool NWrapperClient::host(int port) {
 	// A client does not host, do nothing.
 	return false;
@@ -88,10 +91,12 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	unsigned char id_question;
 	Message processedMessage;
 
+	std::string dataString;
+
 	switch (nEvent.data->rawMsg[0])
 	{
 	case 'm':
-		// Client recieved a chat message from the host...
+		// Client received a chat message from the host...
 		// Parse and process into Message struct
 		processedMessage = processChatMessage((std::string)nEvent.data->rawMsg);
 
@@ -156,6 +161,16 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 
 		break;
 
+
+
+	case 's': // Serialized data, remove first character and send the rest to be deserialized
+		dataString = std::string(nEvent.data->rawMsg);
+		dataString.erase(0, 1); // remove the s
+
+		// Send the serialized data as a string to a function which parses it.
+		testDeserialize(dataString);
+
+		break;
 	default:
 		break;
 	}
@@ -171,4 +186,20 @@ unsigned int NWrapperClient::decompressDCMessage(std::string messageData) {
 	userID = reinterpret_cast<int&>(charAsInt);
 
 	return userID;
+}
+
+// Try to receive a 5 over the network
+void NWrapperClient::testDeserialize(std::string data) {
+	std::istringstream is(data, std::ios::binary);
+
+	unsigned int testInt = 0;
+
+	{
+		cereal::PortableBinaryInputArchive ar(is);
+		ar(testInt);
+	}
+	if (testInt == 5) {
+		int fda = 43;
+	}
+
 }
