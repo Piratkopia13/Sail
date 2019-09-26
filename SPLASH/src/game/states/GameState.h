@@ -43,6 +43,8 @@ private:
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt);
 
+	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
+
 private:
 	struct Systems {
 		AiSystem* aiSystem = nullptr;
@@ -72,6 +74,7 @@ private:
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
 
+	size_t m_currLightIndex;
 
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;

@@ -340,7 +340,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		m_scene.addEntity(e);
 
-		e = ECS::Instance()->createEntity("Character1");
+		e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -348,59 +348,23 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
 		e->addComponent<GunComponent>(m_cubeModel.get());
+		e->addChildEntity(createCandleEntity("AiCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
 		m_scene.addEntity(e);
 
-		//creates light with model and pointlight
-		e = ECS::Instance()->createEntity("Map_Candle1");
-		e->addComponent<CandleComponent>();
-		e->addComponent<ModelComponent>(lightModel);
-		e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		PointLight pl;
-		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
-		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setIndex(0);
-		e->addComponent<LightComponent>(pl);
-		m_scene.addEntity(e);
+
+		m_currLightIndex = 0;
+		e = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
+
 
 #ifdef _DEBUG
 		// Candle1 holds all lights you can place in debug
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
-		e = ECS::Instance()->createEntity("Map_Candle2");
-		e->addComponent<CandleComponent>();
-		e->addComponent<ModelComponent>(lightModel);
-		e->addComponent<TransformComponent>(glm::vec3(1.f/3, 0.f, 1.f/3));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
-		pl.setPosition(glm::vec3(lightPos.x , lightPos.y + 0.37f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setIndex(1);
-		e->addComponent<LightComponent>(pl);
-		m_scene.addEntity(e);
-
 		// Create candle for the player
-		e = ECS::Instance()->createEntity("PlayerCandle");
-		e->addComponent<CandleComponent>();
-		e->addComponent<ModelComponent>(lightModel);
-		CameraController* cc = m_playerController.getCameraController();
-		glm::vec3 camRight = glm::cross(cc->getCameraUp(), cc->getCameraDirection());
-		glm::vec3 candlePos = -cc->getCameraDirection() + camRight;// -m_cam->getCameraUp();
-		e->addComponent<TransformComponent>(candlePos);
-		lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(0.5f, 0.5f, 0.5f));
-		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
-		pl.setIndex(2);
-		e->addComponent<LightComponent>(pl);
+		e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
 		e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-		m_componentSystems.candleSystem->setPlayerCandle(e);
-		m_scene.addEntity(e);
+		m_playerController.getEntity()->addChildEntity(e);
 
 
 
@@ -796,7 +760,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 void GameState::updatePerFrameComponentSystems(float dt) {
 	// Update the player's candle with the current camera position
-	m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
+	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
 
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {
@@ -804,6 +768,25 @@ void GameState::updatePerFrameComponentSystems(float dt) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
+}
+
+Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos) {
+	//creates light with model and pointlight
+	auto e = ECS::Instance()->createEntity(name.c_str());
+	e->addComponent<CandleComponent>();
+	e->addComponent<ModelComponent>(lightModel);
+	e->addComponent<TransformComponent>(lightPos);
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	e->addComponent<CollidableComponent>();
+	PointLight pl;
+	pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
+	pl.setAttenuation(.0f, 0.1f, 0.02f);
+	pl.setIndex(m_currLightIndex++);
+	e->addComponent<LightComponent>(pl);
+	m_scene.addEntity(e);
+
+	return e;
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
