@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "StateStack.h"
 #include "Sail/Application.h"
-#include "Sail/KeyCodes.h"
+#include "Sail/KeyBinds.h"
 
 StateStack::StateStack()
 	: m_renderImgui(true)
@@ -23,7 +23,7 @@ State::Ptr StateStack::createState(States::ID stateID) {
 void StateStack::processInput(float dt) {
 
 	// Toggle imgui rendering on key
-	if (Input::WasKeyJustPressed(SAIL_KEY_F10))
+	if (Input::WasKeyJustPressed(KeyBinds::toggleImGui))
 		m_renderImgui = !m_renderImgui;
 
 	// Loop through the stack reversed
