@@ -16,7 +16,10 @@ class Entity;
 class BaseComponentSystem
 {
 public:
-	BaseComponentSystem() {}
+	BaseComponentSystem() 
+		: readBits(0)
+		, writeBits(0)
+	{}
 	virtual ~BaseComponentSystem() {}
 
 	virtual void update(float dt) = 0;
@@ -39,4 +42,6 @@ public:
 protected:
 	std::vector<Entity*> entities;
 	std::vector<int> requiredComponentTypes;
+	unsigned int readBits;
+	unsigned int writeBits;
 };

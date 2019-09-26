@@ -8,7 +8,16 @@
 
 PhysicSystem::PhysicSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(TransformComponent::ID);
+	readBits |= TransformComponent::BID;
+	writeBits |= TransformComponent::BID;
 	requiredComponentTypes.push_back(PhysicsComponent::ID);
+	readBits |= PhysicsComponent::BID;
+	writeBits |= PhysicsComponent::BID;
+
+	// Assumed?
+	readBits |= BoundingBoxComponent::BID;
+	writeBits |= BoundingBoxComponent::BID;
+
 	m_octree = nullptr;
 }
 
