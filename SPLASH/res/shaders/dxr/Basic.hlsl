@@ -194,8 +194,8 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	uint primitiveID = PrimitiveIndex();
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
-	float4 diffuseColor = CB_MeshData.data[instanceID].color;
-	diffuseColor.r = 0;
+	float4 diffuseColor = float4(0.f, 1.f, 1.f, 1.0f);// CB_MeshData.data[instanceID].color;
+	//float4 diffuseColor = float4(sqrt(attribs.normal.a), 0, 0, 1.0f);
 	float3 shadedColor = float3(0.f, 0.f, 0.f);
 
 	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
@@ -250,58 +250,114 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	payload.color = float4(saturate(ambient + shadedColor), 1.0f);
 }
 
-// Get ray in AABB's local space.
-//Ray GetRayInAABBPrimitiveLocalSpace()
-//{
-//    PrimitiveInstancePerFrameBuffer attr = g_AABBPrimitiveAttributes[l_aabbCB.instanceIndex];
-//
-//    // Retrieve a ray origin position and direction in bottom level AS space 
-//    // and transform them into the AABB primitive's local space.
-//    Ray ray;
-//    ray.origin = mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
-//    ray.direction = mul(ObjectRayDirection(), (float3x3) attr.bottomLevelASToLocalSpace);
-//    return ray;
-//}
+bool solveQuadratic(in float a, in float b, in float c, inout float x0, inout float x1) {
+	float discr = b * b - 4 * a * c;
+	if (discr < 0) {
+		return false;
+	}
+	else if (discr == 0) {
+		x0 = x1 = -0.5 * b / a;
+	}
+	else {
+		float q = (b > 0) ?
+			-0.5 * (b + sqrt(discr)) :
+			-0.5 * (b - sqrt(discr));
+		x0 = q / a;
+		x1 = c / q;
+	}
 
-// Solve a quadratic equation.
-// Ref: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
-//bool SolveQuadraticEqn(float a, float b, float c, out float x0, out float x1) {
-//	float discr = b * b - 4 * a * c;
-//	if (discr < 0) return false;
-//	else if (discr == 0) x0 = x1 = -0.5 * b / a;
-//	else {
-//		float q = (b > 0) ?
-//			-0.5 * (b + sqrt(discr)) :
-//			-0.5 * (b - sqrt(discr));
-//		x0 = q / a;
-//		x1 = c / q;
-//	}
-//	if (x0 > x1) swap(x0, x1);
-//
-//	return true;
-//}
+	if (x0 > x1) {
+		float temp = x0;
+		x0 = x1;
+		x1 = temp;
+	}
 
-//// Calculate a normal for a hit point on a sphere.
-//float3 CalculateNormalForARaySphereHit(in Ray ray, in float thit, float3 center) {
-//	float3 hitPosition = ray.origin + thit * ray.direction;
-//	return normalize(hitPosition - center);
-//}
-//
-//// Analytic solution of an unbounded ray sphere intersection points.
-//// Ref: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
-//bool SolveRaySphereIntersectionEquation(in Ray ray, out float tmin, out float tmax, in float3 center, in float radius) {
-//	float3 L = ray.origin - center;
-//	float a = dot(ray.direction, ray.direction);
-//	float b = 2 * dot(ray.direction, L);
-//	float c = dot(L, L) - radius * radius;
-//	return SolveQuadraticEqn(a, b, c, tmin, tmax);
-//}
+	return true;
+}
+
+bool intersect(in RayDesc ray, in float3 center, in float radius, out float t, out float4 normal) {
+	float t0, t1; // solutions for t if the ray intersects 
+
+	// analytic solution
+	float3 L = ray.Origin - center;
+	float a = dot(ray.Direction, ray.Direction);
+	float b = 2 * dot(ray.Direction, L);
+	float c = dot(L, L) - radius * radius;
+	if (!solveQuadratic(a, b, c, t0, t1)) {
+		return false;
+	}
+
+	if (t0 > t1) {
+		float temp = t0;
+		t0 = t1;
+		t1 = temp;
+	}
+
+	if (t0 < 0) {
+		t0 = t1; // if t0 is negative, let's use t1 instead 
+		if (t0 < 0) {
+			return false; // both t0 and t1 are negative 
+		}
+	}
+
+	t = t0;
+	normal = float4(normalize(ray.Origin - center), 0);
+
+	return true;
+}
 
 [shader("intersection")]
 void IntersectionShader()
 {
+	RayDesc ray;
+	ray.Origin		= ObjectRayOrigin();			// mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
+	ray.Direction	= ObjectRayDirection();	// mul(ObjectRayDirection(), (float3x3) attr.bottomLevelASToLocalSpace);
+
 	ProceduralPrimitiveAttributes attr;
 	attr.normal = float4(1, 1, 1, 0);
-	float thit = RayTCurrent();
-	ReportHit(thit, 0, attr);
+#define Many
+#ifdef Many
+	//Multiple Spheres
+	const int N = 3;
+	float3 centers[N] =
+	{
+		float3(-0.3, -0.3, -0.3),
+		float3(0.1, 0.1, 0.4),
+		float3(0.35,0.35, 0.0)
+	};
+	float  radii[N] = { 0.6, 0.3, 0.15 };
+
+	float minT = 0;
+	float4 normal;
+	bool hit = false;
+	for (int i = 0; i < N; i++) {
+		float t = 0;
+		float4 tempNormal;
+		if (intersect(ray, centers[i], radii[i], t, tempNormal)) {
+			if (t < minT || !hit) {
+				minT = t;
+				normal = tempNormal;
+			}
+			hit = true;
+		}
+	}
+
+	if (hit) {
+		attr.normal = normal;
+		ReportHit(minT, 0, attr);
+	} else {
+		//ReportHit(RayTCurrent(), 0, attr);
+	}
+#else
+	float t = 0;
+	float3 center = float3(0, 0, 0);
+	float radius = 1;
+	if (intersect(ray, center, radius, t, attr.normal)) {
+		float thit = t;
+		attr.normal.a = thit;
+		ReportHit(thit, 0, attr);
+	}
+#endif
+
+	//ReportHit(RayTCurrent(), 0, attr);
 }
