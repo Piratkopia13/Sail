@@ -13,6 +13,7 @@ class OctreeAddRemoverSystem;
 class PhysicSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
+class GameInputSystem;
 
 class GameState : public State {
 public:
@@ -24,7 +25,9 @@ public:
 	// Sends events to the state
 	virtual bool onEvent(Event& event) override;
 	// Updates the state
-	virtual bool update(float dt) override;
+	virtual bool updatePerTick(float dt) override;
+	// Updates the state per frame
+	virtual bool updatePerFrame(float dt, float alpha) override;
 	// Renders the state
 	virtual bool render(float dt, float alpha) override;
 	// Renders imgui
@@ -41,7 +44,7 @@ private:
 
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
-	void updatePerFrameComponentSystems(float dt);
+	void updatePerFrameComponentSystems(float dt, float alpha);
 
 private:
 	struct Systems {
@@ -56,6 +59,7 @@ private:
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
+		GameInputSystem* gameInputSystem = nullptr;
 	};
 
 	Application* m_app;
@@ -71,6 +75,8 @@ private:
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
 
+	// For use by non-deterministic entities
+	const float* pAlpha = nullptr;
 
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;

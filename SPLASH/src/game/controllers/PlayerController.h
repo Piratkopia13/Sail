@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Octree.h"
+#include "../Physics/Octree.h"
 
 class CameraController;
 class Camera;
@@ -23,11 +23,6 @@ public:
 	void update(float dt);
 
 	void setStartPosition(const glm::vec3& pos);
-
-	void processKeyboardInput(float dt);
-	void processMouseInput(float dt);
-
-	void updateCameraPosition(float alpha);
 
 	std::shared_ptr<Entity> getEntity();
 

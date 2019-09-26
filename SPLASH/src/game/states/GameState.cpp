@@ -13,6 +13,7 @@
 #include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
+#include "Sail/entities/systems/Input/GameInputSystem.h"
 #include "Sail/TimeSettings.h"
 
 #include <sstream>
@@ -115,12 +116,16 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
+
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
 	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -30.0f, 0.0f);
 
+	//Create system for input | Needs to be after playercontroller gets physicscomponent^
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_playerController);
 
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
@@ -437,6 +442,9 @@ GameState::GameState(StateStack& stack)
 	}
 
 
+
+
+
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 #ifdef _DEBUG_NODESYSTEM
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader, &m_scene);
@@ -506,7 +514,7 @@ bool GameState::processInput(float dt) {
 		m_profiler.toggle();
 	}
 
-	m_playerController.processMouseInput(dt);
+//	m_playerController.processMouseInput(dt);
 
 
 	// Reload shaders
@@ -548,7 +556,7 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
-bool GameState::update(float dt) {
+bool GameState::updatePerTick(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
@@ -561,7 +569,7 @@ bool GameState::update(float dt) {
 
 	//ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
 
-	m_playerController.processKeyboardInput(TIMESTEP);
+//	m_playerController.processKeyboardInput(TIMESTEP);
 
 	updatePerTickComponentSystems(dt);
 
@@ -570,17 +578,18 @@ bool GameState::update(float dt) {
 	return true;
 }
 
+bool GameState::updatePerFrame(float dt, float alpha) {
+	// UPDATE REAL TIME SYSTEMS
+	updatePerFrameComponentSystems(dt, alpha);
+
+	m_lights.updateBufferData();
+
+	return false;
+}
+
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 bool GameState::render(float dt, float alpha) {
-	// Interpolate the player's camera position (but not rotation)
-	m_playerController.updateCameraPosition(alpha);
-
-	// UPDATE REAL TIME SYSTEMS
-	updatePerFrameComponentSystems(dt);
-
-	m_lights.updateBufferData();
-	
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
@@ -835,7 +844,7 @@ bool GameState::renderImGuiLightDebug(float dt) {
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
-	
+
 	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
 	m_componentSystems.projectileSystem->update(dt, &m_scene); // Order?
 	m_componentSystems.animationSystem->update(dt);
@@ -851,13 +860,16 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.lifeTimeSystem->update(dt);
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
-
-	
 }
 
-void GameState::updatePerFrameComponentSystems(float dt) {
+void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
+	// Updates the camera
+	m_componentSystems.gameInputSystem->update(dt, alpha);
+
 	// Update the player's candle with the current camera position
 	m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
+
+	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {

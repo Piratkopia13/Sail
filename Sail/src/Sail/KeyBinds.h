@@ -1,11 +1,9 @@
 #pragma once
 
 namespace KeyBinds {
-	
 	// Initializes the key codes
 	void init();
 
-	
 	// GameState + Player controls
 	extern int addLight;
 	extern int showBoundingBoxes;
