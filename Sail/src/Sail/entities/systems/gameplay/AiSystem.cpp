@@ -3,6 +3,7 @@
 #include "../../components/AiComponent.h"
 #include "../../components/PhysicsComponent.h"
 #include "../../components/TransformComponent.h"
+#include "../../components/CandleComponent.h"
 #include "../../components/GunComponent.h"
 #include "Sail/ai/pathfinding/NodeSystem.h"
 
@@ -128,6 +129,7 @@ std::vector<Entity*>& AiSystem::getEntities() {
 void AiSystem::update(float dt) {
 	std::vector<std::future<void>> futures;
 	for ( auto& entity : entities ) {
+		// Might be dangerous for threads
 		futures.push_back(Application::getInstance()->pushJobToThreadPool([this, entity, dt] (int id) { this->aiUpdateFunc(entity, dt); }));
 	}
 	for ( auto& a : futures ) {
@@ -177,6 +179,12 @@ void AiSystem::entityTargetFunc(AiComponent* aiComp, TransformComponent* transCo
 			m_octree->getRayIntersection(gunPos + fireDir /*In order to (hopefully) miss itself*/, fireDir, &rayHitInfo);
 			if ( hitDist < 7.f && glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f && hitDist < rayHitInfo.closestHit ) {
 				gunComp->setFiring(gunPos += fireDir, fireDir);
+
+				if ( fireDir.z < 0.f ) {
+					transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) + 1.5707f, 0.f);
+				} else {
+					transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) - 1.5707f, 0.f);
+				}
 			}
 		}
 	}
@@ -187,6 +195,15 @@ void AiSystem::aiUpdateFunc(Entity* entity, const float dt) {
 	auto transComp = entity->getComponent<TransformComponent>();
 	auto physComp = entity->getComponent<PhysicsComponent>();
 	auto gunComp = entity->getComponent<GunComponent>();
+
+	for ( auto& e : entity->getChildEntities() ) {
+		auto candle = e->getComponent<CandleComponent>();
+		if ( candle ) {
+			if ( !candle->getIsAlive() ) {
+				return;
+			}
+		}
+	}
 
 	entityTargetFunc(aiComp, transComp, gunComp);
 
@@ -216,6 +233,15 @@ void AiSystem::aiUpdateFunc(Entity* entity, const float dt) {
 			float velMagClamper = glm::length(physComp->velocity);
 			velMagClamper = ( velMagClamper > aiComp->movementSpeed ) ? aiComp->movementSpeed / velMagClamper : 1.0f;
 			physComp->velocity = physComp->velocity * velMagClamper;
+
+			if ( !gunComp->firing ) {
+				auto dir = normalize(physComp->velocity);				
+				if ( physComp->velocity.z < 0.f ) {
+					transComp->setRotations(0.f, glm::atan(physComp->velocity.x / physComp->velocity.z) + 1.5707f, 0.f);
+				} else {
+					transComp->setRotations(0.f, glm::atan(physComp->velocity.x / physComp->velocity.z) - 1.5707f, 0.f);
+				}
+			}
 		}
 	} else if ( aiComp->currNodeIndex < aiComp->currPath.size() - 1 ) {
 		aiComp->currNodeIndex++;
