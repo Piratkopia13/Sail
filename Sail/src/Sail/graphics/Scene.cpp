@@ -13,9 +13,9 @@ Scene::Scene()
 	: m_doPostProcessing(false)
 {
 	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
-	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
-	m_rendererGBuffer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::GBUFFER));
-	m_currentRenderer = &m_rendererGBuffer;
+	m_rendererHybrid = std::unique_ptr<Renderer>(Renderer::Create(Renderer::HYBRID));
+	//m_rendererGBuffer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::GBUFFER));
+	m_currentRenderer = &m_rendererHybrid;
 
 	auto window = Application::getInstance()->getWindow();
 	UINT width = window->getWindowWidth();
@@ -34,8 +34,8 @@ void Scene::addEntity(Entity::SPtr entity) {
 
 void Scene::setLightSetup(LightSetup* lights) {
 	m_rendererRaster->setLightSetup(lights);
-	m_rendererRaytrace->setLightSetup(lights);
-	m_rendererGBuffer->setLightSetup(lights);
+	m_rendererHybrid->setLightSetup(lights);
+	//m_rendererGBuffer->setLightSetup(lights);
 }
 
 void Scene::showBoundingBoxes(bool val) {
@@ -112,8 +112,8 @@ bool Scene::onEvent(Event& event) {
 
 	// Forward events
 	m_rendererRaster->onEvent(event);
-	m_rendererGBuffer->onEvent(event);
-	m_rendererRaytrace->onEvent(event);
+	//m_rendererGBuffer->onEvent(event);
+	m_rendererHybrid->onEvent(event);
 	//m_postProcessPipeline.onEvent(event);
 
 	return true;
@@ -124,9 +124,9 @@ void Scene::changeRenderer(unsigned int index) {
 		m_currentRenderer = &m_rendererRaster;
 	}
 	else if (index == 1) {
-		m_currentRenderer = &m_rendererRaytrace;
+		m_currentRenderer = &m_rendererHybrid;
 	} else {
-		m_currentRenderer = &m_rendererGBuffer;
+		//m_currentRenderer = &m_rendererGBuffer;
 	}
 }
 

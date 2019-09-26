@@ -19,8 +19,10 @@ public:
 		int hit;
 	};
 
-	DXRBase(const std::string& shaderFilename);
+	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
 	~DXRBase();
+
+	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateSceneData(Camera& cam, LightSetup& lights);
@@ -73,6 +75,9 @@ private:
 
 private:
 	DX12API* m_context;
+
+	DX12RenderableTexture** m_gbufferInputTextures;
+
 	std::string m_shaderFilename;
 
 	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_sceneCB;
@@ -97,6 +102,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_gbufferStartGPUHandle;
 	UINT m_heapIncr;
 
 	std::vector<MeshHandles> m_rtMeshHandles;

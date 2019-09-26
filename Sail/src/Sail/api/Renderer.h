@@ -16,7 +16,8 @@ public:
 		FORWARD,
 		DEFERRED,
 		RAYTRACED,
-		GBUFFER
+		GBUFFER,
+		HYBRID
 	};
 
 	enum RenderFlag {

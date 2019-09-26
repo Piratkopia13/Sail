@@ -83,6 +83,16 @@ ID3D12Resource1* DX12RenderableTexture::getResource() const {
 	return textureDefaultBuffers[context->getFrameIndex()].Get();
 }
 
+ID3D12Resource* DX12RenderableTexture::getDepthResource() const {
+	return m_depthStencilBuffers[context->getFrameIndex()].Get();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDepthSrvCDH() const {
+	assert(m_hasDepthTextures); // Tried to get depth srv without a valid depth stencil resource
+	unsigned int frameIndex = context->getFrameIndex();
+	return depthSrvHeapCDHs[frameIndex];
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH() const {
 	unsigned int frameIndex = context->getFrameIndex();
 	return m_rtvHeapCDHs[frameIndex];
@@ -142,12 +152,12 @@ void DX12RenderableTexture::createDepthTextures() {
 	for (unsigned int i = 0; i < context->getNumSwapBuffers(); i++) {
 
 		D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-		depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+		depthOptimizedClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 		depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
 		D3D12_RESOURCE_DESC bufferDesc{};
-		bufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+		bufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		bufferDesc.Width = Application::getInstance()->getWindow()->getWindowWidth();
 		bufferDesc.Height = Application::getInstance()->getWindow()->getWindowHeight();
 		bufferDesc.DepthOrArraySize = 1;
@@ -169,9 +179,17 @@ void DX12RenderableTexture::createDepthTextures() {
 
 		// Create DSV
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-		depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+		depthStencilDesc.Format = bufferDesc.Format;
 		depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 		context->getDevice()->CreateDepthStencilView(m_depthStencilBuffers[i].Get(), &depthStencilDesc, m_dsvHeapCDHs[i]);
+
+		// Create a shader resource view for the depth stencil
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+		context->getDevice()->CreateShaderResourceView(m_depthStencilBuffers[i].Get(), &srvDesc, depthSrvHeapCDHs[i]);
 	}
 }

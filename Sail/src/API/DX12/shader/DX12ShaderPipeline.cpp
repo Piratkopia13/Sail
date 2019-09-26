@@ -343,7 +343,7 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 	dsDesc.BackFace = defaultStencilOp;
 
 	gpsd.DepthStencilState = dsDesc;
-	gpsd.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	gpsd.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	ThrowIfFailed(m_context->getDevice()->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&m_pipelineState)));
 }

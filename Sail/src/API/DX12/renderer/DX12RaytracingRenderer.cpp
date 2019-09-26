@@ -7,8 +7,8 @@
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
-DX12RaytracingRenderer::DX12RaytracingRenderer() 
-	: m_dxr("Basic")
+DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
+	: m_dxr("Basic", inputs)
 {
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
@@ -45,7 +45,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
-	m_dxr.updateSceneData(*camera, *lightSetup);
+	if (camera && lightSetup) {
+		m_dxr.updateSceneData(*camera, *lightSetup);
+	}
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
 
 	// AS has now been updated this frame, reset flag
@@ -94,6 +96,10 @@ void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, Re
 	// Resize to match numSwapBuffers (specific to dx12)
 	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
 	commandQueue.push_back(cmd);
+}
+
+void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
+	m_dxr.setGBufferInputs(inputs);
 }
 
 bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {

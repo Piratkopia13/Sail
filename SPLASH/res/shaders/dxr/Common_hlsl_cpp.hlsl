@@ -58,8 +58,11 @@ struct PointLightInput {
 // Properties set once for the scene
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
+	float4x4 viewToWorld;
 	float3 cameraPosition;
-	float padding;
+	float nearZ;
+	float farZ;
+	float3 padding;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 };
 

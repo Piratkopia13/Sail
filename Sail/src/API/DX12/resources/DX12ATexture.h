@@ -23,6 +23,7 @@ protected:
 	std::vector<wComPtr<ID3D12Resource1>> textureDefaultBuffers;
 	DescriptorHeap cpuDescHeap;
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> srvHeapCDHs;
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> depthSrvHeapCDHs;
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> uavHeapCDHs;
 
 	//std::unordered_map<std::thread::id, D3D12_RESOURCE_STATES> states;

@@ -783,9 +783,9 @@ bool GameState::renderImguiProfiler(float dt) {
 }
 
 bool GameState::renderImGuiRenderSettings(float dt) {
-	static int selectedRenderer = 0;
+	static int selectedRenderer = 1;
 	ImGui::Begin("Rendering settings");
-	const char* items[] = { "Forward raster", "Raytraced", "GBuffer" };
+	const char* items[] = { "Forward raster", "Hybrid rt" };
 	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
 		m_scene.changeRenderer(selectedRenderer);
 	}

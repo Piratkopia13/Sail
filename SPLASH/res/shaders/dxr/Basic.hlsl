@@ -3,6 +3,10 @@
 #include "Common_hlsl_cpp.hlsl"
 
 RaytracingAccelerationStructure gRtScene : register(t0);
+Texture2D<float4> sys_inTex_normals : register(t10);
+Texture2D<float4> sys_inTex_texCoords : register(t11);
+Texture2D<float4> sys_inTex_depth : register(t12);
+
 RWTexture2D<float4> lOutput : register(u0);
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
@@ -70,6 +74,10 @@ float4 getColor(MeshData data, float2 texCoords) {
 	float4 color = data.color;
 	if (data.flags & MESH_HAS_DIFFUSE_TEX)
 		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
+ 	color += sys_inTex_normals.SampleLevel(ss, texCoords, 0) * 0.1f;
+ 	color += sys_inTex_texCoords.SampleLevel(ss, texCoords, 0) * 0.1f;
+ 	color += sys_inTex_depth.SampleLevel(ss, texCoords, 0) * 0.1f;
+		
 	// if (data.flags & MESH_HAS_NORMAL_TEX)
 	// 	color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
 	// if (data.flags & MESH_HAS_SPECULAR_TEX)

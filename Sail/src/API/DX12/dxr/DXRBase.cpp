@@ -7,8 +7,9 @@
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
 
-DXRBase::DXRBase(const std::string& shaderFilename)
+DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 : m_shaderFilename(shaderFilename) 
+, m_gbufferInputTextures(inputs)
 {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
@@ -51,6 +52,10 @@ DXRBase::~DXRBase() {
 		st.release();
 	}
 		
+}
+
+void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
+	m_gbufferInputTextures = inputs;
 }
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
@@ -148,6 +153,9 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
 	DXRShaderCommon::SceneCBuffer newData = {};
+	newData.viewToWorld = glm::inverse(cam.getViewMatrix());
+	newData.nearZ = cam.getNearZ();
+	newData.farZ = cam.getFarZ();
 	newData.cameraPosition = cam.getPosition();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 
@@ -157,6 +165,7 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
 }
 
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
+	assert(m_gbufferInputTextures); // Input textures not set!
 	
 	unsigned int frameIndex = m_context->getFrameIndex();
 
@@ -197,6 +206,8 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_DXR_TopBuffer[frameIndex].result->GetGPUVirtualAddress());
 	// Set scene constant buffer
 	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_sceneCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
+
+	cmdList->SetComputeRootDescriptorTable(m_dxrGlobalRootSignature->getIndex("gbufferInputTextures"), m_gbufferStartGPUHandle);
 
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
@@ -393,6 +404,25 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 
+		// Next three slots are used for input gbuffers
+		D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
+		srcDescriptors[0] = m_gbufferInputTextures[0]->getSrvCDH();
+		srcDescriptors[1] = m_gbufferInputTextures[1]->getSrvCDH();
+		srcDescriptors[2] = m_gbufferInputTextures[0]->getDepthSrvCDH();
+
+		m_gbufferStartGPUHandle = gpuHandle;
+
+		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, srcDescriptors[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, srcDescriptors[1], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, srcDescriptors[2], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		//m_context->getDevice()->CopyDescriptors(3, &cpuHandle, nullptr, 3, srcDescriptors, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+
 
 		//// Ray gen settings CB
 		//m_rayGenCBData.flags = RT_ENABLE_TA | RT_ENABLE_JITTER_AA;
@@ -572,6 +602,8 @@ void DXRBase::createDXRGlobalRootSignature() {
 	m_dxrGlobalRootSignature = std::make_unique<DX12Utils::RootSignature>("dxrGlobal");
 	m_dxrGlobalRootSignature->addSRV("AccelerationStructure", 0);
 	m_dxrGlobalRootSignature->addCBV("SceneCBuffer", 0);
+
+	m_dxrGlobalRootSignature->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 3);
 
 	m_dxrGlobalRootSignature->build(m_context->getDevice());
 }
