@@ -87,9 +87,6 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 
-	// Uncomment this to enable vram budget visualization
-	//std::string m_vramBCount;
-	//float* m_vramBudgetHistory;
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;

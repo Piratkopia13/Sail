@@ -21,9 +21,7 @@
 
 GameState::GameState(StateStack& stack)
 : State(stack)
-//, m_cam(20.f, 20.f, 0.1f, 5000.f)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-//, m_camController(&m_cam)
 , m_playerController(&m_cam, &m_scene)
 , m_cc(true)
 , m_profiler(true)
@@ -145,7 +143,6 @@ GameState::GameState(StateStack& stack)
 
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
-	//m_camController.lookAt(glm::vec3(0.f));
 	m_cam.lookAt(glm::vec3(0.f));
 	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 	
@@ -353,29 +350,6 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<GunComponent>(m_cubeModel.get());
 		m_scene.addEntity(e);
 
-		/*e = ECS::Instance()->createEntity("Character2");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 5.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
-#ifndef _DEBUG
-		e->addComponent<AiComponent>();
-#endif
-		m_scene.addEntity(e);
-
-		e = ECS::Instance()->createEntity("Character3");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f,5.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
-#ifndef _DEBUG
-		e->addComponent<AiComponent>();
-#endif
-		m_scene.addEntity(e);*/
-
-
 		//creates light with model and pointlight
 		e = ECS::Instance()->createEntity("Map_Candle1");
 		e->addComponent<CandleComponent>();
@@ -412,7 +386,7 @@ GameState::GameState(StateStack& stack)
 		m_scene.addEntity(e);
 
 		// Create candle for the player
-		e = ECS::Instance()->createEntity("PlayerCandle");//;//ECS::Instance()->createEntity("PlayerCandle");
+		e = ECS::Instance()->createEntity("PlayerCandle");
 		e->addComponent<CandleComponent>();
 		e->addComponent<ModelComponent>(lightModel);
 		CameraController* cc = m_playerController.getCameraController();
@@ -432,8 +406,6 @@ GameState::GameState(StateStack& stack)
 
 		m_virtRAMHistory = SAIL_NEW float[100];
 		m_physRAMHistory = SAIL_NEW float[100];
-		// Uncomment this to enable vram budget visualization
-		//m_vramBudgetHistory = SAIL_NEW float[100];
 		m_vramUsageHistory = SAIL_NEW float[100];
 		m_cpuHistory = SAIL_NEW float[100];
 		m_frameTimesHistory = SAIL_NEW float[100];
@@ -451,8 +423,6 @@ GameState::GameState(StateStack& stack)
 GameState::~GameState() {
 	delete m_virtRAMHistory;
 	delete m_physRAMHistory;
-	// Uncomment this to enable vram budget visualization
-	//delete m_vramBudgetHistory;
 	delete m_vramUsageHistory;
 	delete m_cpuHistory;
 	delete m_frameTimesHistory;
@@ -561,8 +531,6 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2.0f;
 
-	//ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
-
 	m_playerController.processKeyboardInput(TIMESTEP);
 
 	updatePerTickComponentSystems(dt);
@@ -623,7 +591,6 @@ bool GameState::renderImguiConsole(float dt) {
 			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
 			buf[m_cc.getTextField().size()] = '\0';
 
-			//std::string* str = new std::string(m_cc.getTextField());
 			std::string original = m_cc.getTextField();
 			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
 				ImGuiInputTextFlags_EnterReturnsTrue);
@@ -669,12 +636,6 @@ bool GameState::renderImguiProfiler(float dt) {
 			header = "VRAM (" + m_vramUCount + " MB)";
 			ImGui::Text(header.c_str());
 
-			// Uncomment this to enable vram budget visualization
-
-			/*header = "VRAM Available (" + m_vramBCount + " MB)";
-			ImGui::Text(header.c_str());*/
-
-
 			ImGui::Separator();
 			if (ImGui::CollapsingHeader("CPU Graph")) {
 				header = "\n\n\n" + m_cpuCount + "(%)";
@@ -698,14 +659,6 @@ bool GameState::renderImguiProfiler(float dt) {
 				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
 			}
 
-			// Uncomment this to enable vram budget visualization
-
-			/*if (ImGui::CollapsingHeader("VRAM Budget Graph")) {
-				header = "\n\n\n" + m_vramBCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_vramBudgetHistory, 100, 0, "", 0.f, 6000.f, ImVec2(0, 100));
-			}*/
-
-
 
 			ImGui::EndChild();
 
@@ -713,11 +666,6 @@ bool GameState::renderImguiProfiler(float dt) {
 			if (m_profilerTimer > 0.2f) {
 				m_profilerTimer = 0.f;
 				if (m_profilerCounter < 100) {
-
-					// Uncomment this to enable vram budget visualization
-
-					//m_vramBudgetHistory[m_profilerCounter] = m_profiler.vramBudget();
-					//m_vramBCount = "\n\n\n" + std::to_string(m_profiler.vramBudget());
 
 					m_virtRAMHistory[m_profilerCounter] = m_profiler.virtMemUsage();
 					m_physRAMHistory[m_profilerCounter] = m_profiler.workSetUsage();
@@ -744,15 +692,6 @@ bool GameState::renderImguiProfiler(float dt) {
 					delete m_physRAMHistory;
 					m_physRAMHistory = tempFloatArr1;
 					m_physCount = std::to_string(m_profiler.workSetUsage());
-
-					// Uncomment this to enable vram budget visualization
-
-					/*float* tempFloatArr2 = SAIL_NEW float[100];
-					std::copy(m_vramBudgetHistory + 1, m_vramBudgetHistory + 101, tempFloatArr2);
-					tempFloatArr2[99] = m_profiler.vramBudget();
-					delete m_vramBudgetHistory;
-					m_vramBudgetHistory = tempFloatArr2;
-					m_vramBCount = std::to_string(m_profiler.vramBudget());*/
 
 					float* tempFloatArr3 = SAIL_NEW float[100];
 					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
@@ -828,7 +767,6 @@ bool GameState::renderImGuiLightDebug(float dt) {
 		i++;
 		ImGui::PopID();
 	}
-	//m_lights.updateBufferData();
 	ImGui::End();
 	return true;
 }
@@ -847,8 +785,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 
-	// TODO: send vector of projectile entities to candleSystem
-	//m_componentSystems.candleSystem->checkProjectileCollisions(projectiles)
 	m_componentSystems.candleSystem->update(dt);
 
 	m_componentSystems.lifeTimeSystem->update(dt);
