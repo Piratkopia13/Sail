@@ -577,7 +577,7 @@ void DXRBase::updateShaderTables() {
 			Mesh* mesh = it.first;
 
 			if (!mesh) {
-				tableBuilder.addShader(m_hitGroupName2);
+				tableBuilder.addShader(m_hitGroupName2);//Set the shadergroup to use
 				m_localSignatureHitGroup2->doInOrder([&](const std::string& parameterName) {
 					if (parameterName == "MeshCBuffer") {
 						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
@@ -587,7 +587,7 @@ void DXRBase::updateShaderTables() {
 					}
 					});
 			} else {
-				tableBuilder.addShader(m_hitGroupName);
+				tableBuilder.addShader(m_hitGroupName);//Set the shadergroup to use
 				m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
 					if (parameterName == "VertexBuffer") {
 						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex);
@@ -620,7 +620,7 @@ void DXRBase::createRaytracingPSO() {
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName, m_closestHitName2 });
 	//psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/testLib.hlsl", { m_closestHitName2 });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
-	psoBuilder.addHitGroup(m_hitGroupName2, m_closestHitName2);
+	psoBuilder.addHitGroup(m_hitGroupName2, m_closestHitName2); //TODO: Add intesection Shader here!
 	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
 	psoBuilder.addSignatureToShaders({ m_hitGroupName }, m_localSignatureHitGroup->get());
 	psoBuilder.addSignatureToShaders({ m_hitGroupName2 }, m_localSignatureHitGroup2->get());
