@@ -17,7 +17,6 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_roll = 0.f;
 
 	m_player->addComponent<AudioComponent>();
-	m_player->getComponent<AudioComponent>()->defineStreamedSound("../Audio/wavebankShortFade.xwb");
 }
 
 PlayerController::~PlayerController() {
@@ -81,13 +80,18 @@ void PlayerController::processKeyboardInput(float dt) {
 	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
 		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = true;
 		m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::RUN] = false;
-		if (m_player->getComponent<AudioComponent>()->m_streamedSounds.find("../Audio/wavebankShortFade.xwb") != m_player->getComponent<AudioComponent>()->m_streamedSounds.end()) {
-			std::cout << "TESTING";
-		}
 
-		if (m_player->getComponent<AudioComponent>()->m_streamedSounds.find("test") != m_player->getComponent<AudioComponent>()->m_streamedSounds.end()) {
-			std::cout << "TESTING";
+		if (!m_hasStartedStreaming) {
+			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
+			m_hasStartedStreaming = true;
 		}
+		//if (m_player->getComponent<AudioComponent>()->m_streamedSounds.find("../Audio/wavebankShortFade.xwb") != m_player->getComponent<AudioComponent>()->m_streamedSounds.end()) {
+		//	std::cout << "TESTING";
+		//}
+
+		//if (m_player->getComponent<AudioComponent>()->m_streamedSounds.find("test") != m_player->getComponent<AudioComponent>()->m_streamedSounds.end()) {
+		//	std::cout << "TESTING";
+		//}
 
 		// Calculate total movement
 		physicsComp->velocity =
@@ -111,6 +115,11 @@ void PlayerController::processKeyboardInput(float dt) {
 		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 		glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 		m_player->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+
+		if (!m_hasStoppedStreaming) {
+			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
+			m_hasStoppedStreaming = true;
+		}
 	}
 }
 

@@ -117,25 +117,19 @@ int AudioEngine::streamSound(const std::string& filename, bool loop) {
 
 void AudioEngine::stopSpecificSound(int index) {
 
-	if (index < 0 || index > SOUND_COUNT) {
-		Logger::Error("Tried to STOP a sound from playing with an INVALID INDEX!");
-		return;
-	}
-
-	if (m_sourceVoiceSound[index] != nullptr) {
-		m_sourceVoiceSound[index]->Stop();
+	if (this->checkSoundIndex(index)) {
+		if (m_sourceVoiceSound[index] != nullptr) {
+			m_sourceVoiceSound[index]->Stop();
+		}
 	}
 }
 
 void AudioEngine::stopSpecificStream(int index) {
 	
-	if (index < 0 || index > STREAMED_SOUNDS_COUNT) {
-		Logger::Error("Tried to STOP a sound being streamed with an INVALID INDEX!");
-		return;
-	}
-
-	if (m_sourceVoiceStream[index] != nullptr) {
-		m_isStreaming[index] = false;
+	if (this->checkStreamIndex(index)) {
+		if (m_sourceVoiceStream[index] != nullptr) {
+			m_isStreaming[index] = false;
+		}
 	}
 }
 
@@ -151,6 +145,48 @@ void AudioEngine::stopAllSounds() {
 
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
 		m_isStreaming[i] = false;
+	}
+}
+
+float AudioEngine::getSoundVolume(int index) {
+	
+	float returnValue = 0.0f;
+
+	if (this->checkSoundIndex(index)) {
+		m_sourceVoiceSound[index]->GetVolume(&returnValue);
+	}
+	else {
+		returnValue = -1.0f;
+	}
+
+	return returnValue;
+}
+
+float AudioEngine::getStreamVolume(int index) {
+
+	float returnValue = 0.0f;
+
+	if (this->checkStreamIndex(index)) {
+		m_sourceVoiceStream[index]->GetVolume(&returnValue);
+	}
+	else {
+		returnValue = -1.0f;
+	}
+
+	return returnValue;
+}
+
+void AudioEngine::setSoundVolume(int index, float value) {
+
+	if (this->checkSoundIndex(index)) {
+		m_sourceVoiceSound[index]->SetVolume(value);
+	}
+}
+
+void AudioEngine::setStreamVolume(int index, float value) {
+
+	if (this->checkStreamIndex(index)) {
+		m_sourceVoiceStream[index]->SetVolume(value);
 	}
 }
 
@@ -218,10 +254,10 @@ void AudioEngine::initXAudio2() {
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
 
-	if (m_isStreaming[m_currStreamIndex]) {
-		while (m_isFinished[m_currStreamIndex] == false) {
-			if (m_isStreaming[m_currStreamIndex]) {
-				m_isStreaming[m_currStreamIndex] = false;
+	if (m_isStreaming[myIndex]) {
+		while (m_isFinished[myIndex] == false) {
+			if (m_isStreaming[myIndex]) {
+				m_isStreaming[myIndex] = false;
 			}
 		}
 	}
@@ -518,4 +554,28 @@ HRESULT AudioEngine::FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR s
 	wcscpy_s(strDestPath, cchDest, strFilename);
 
 	return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
+}
+
+bool AudioEngine::checkSoundIndex(int index) {
+
+	if (index < 0 || index > SOUND_COUNT) {
+		Logger::Error("Tried to STOP a sound from playing with an INVALID INDEX!");
+		return false;
+	}
+
+	else {
+		return true;
+	}
+}
+
+bool AudioEngine::checkStreamIndex(int index) {
+
+	if (index < 0 || index > STREAMED_SOUNDS_COUNT) {
+		Logger::Error("Tried to STOP a sound from being streamed with an INVALID INDEX!");
+		return false;
+	}
+
+	else {
+		return true;
+	}
 }

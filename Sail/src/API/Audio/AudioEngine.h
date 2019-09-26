@@ -82,6 +82,12 @@ public:
 	void stopSpecificStream(int index);
 	void stopAllSounds();
 
+	float getSoundVolume(int index);
+	float getStreamVolume(int index);
+
+	void setSoundVolume(int index, float value = 0.5f);
+	void setStreamVolume(int index, float value = 0.5f);
+
 	void updateAudio();
 
 private:
@@ -101,7 +107,8 @@ private:
 	IXAudio2SourceVoice* m_sourceVoiceSound[SOUND_COUNT];
 	IXAudio2SourceVoice* m_sourceVoiceStream[STREAMED_SOUNDS_COUNT];
 
-	
+
+
 	int m_currSoundIndex = 0;
 	std::atomic<int> m_currStreamIndex = 0;
 
@@ -118,6 +125,9 @@ private:
 	void initXAudio2();
 	void streamSoundInternal(const std::string& filename, int myIndex, bool loop);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
+
+	bool checkSoundIndex(int index);
+	bool checkStreamIndex(int index);
 	// ----------------
 };
 

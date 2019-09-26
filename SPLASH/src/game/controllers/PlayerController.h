@@ -42,6 +42,9 @@ public:
 private:
 	float m_movementSpeed = 10.f;
 	float RUN_SPEED = 2.0f;
+	//TEMP VARIABLE FOR SOUND
+	bool m_hasStartedStreaming = false;
+	bool m_hasStoppedStreaming = false;
 
 	// "Attached" camera
 	CameraController* m_cam;

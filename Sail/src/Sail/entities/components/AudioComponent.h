@@ -22,11 +22,11 @@ public:
 	bool m_playOnce[SoundType::COUNT];
 
 	std::unordered_map<std::string, bool> m_streamedSounds;
-	int m_streamIndex;
+	std::unordered_map<std::string, int> m_streamedSoundsID;
 
 	// This function is purely here to MAKE LIFE LESS DIFFICULT
 	void defineSound(SoundType::SoundType type, std::string filename, float dtThreshold = 0.0f, bool playOnce = true);
-	void defineStreamedSound(std::string filename);
+//	void defineStreamedSound(std::string filename);
 };
 
 #endif
