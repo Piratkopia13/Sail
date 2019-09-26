@@ -130,7 +130,6 @@ void PhysicSystem::update(float dt) {
 
 		transform->rotate(physics->constantRotation * dt);
 		transform->translate((physics->m_oldVelocity + physics->velocity) * 0.5f * dt);
-		//transform->translate(physics->velocity * dt);
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
 	}

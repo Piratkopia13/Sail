@@ -40,7 +40,7 @@ void GunSystem::update(float dt, Scene* scene) {
 				e->addComponent<PhysicsComponent>();
 				PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
 				physics->velocity = gun->direction * gun->projectileSpeed;
-				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);//fix when gravity is properly implemented
+				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 				scene->addEntity(e);//change when scene is a component.
 			}
