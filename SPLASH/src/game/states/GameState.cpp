@@ -350,6 +350,11 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<GunComponent>(m_cubeModel.get());
 		m_scene.addEntity(e);
 
+		e = ECS::Instance()->createEntity("MetaBall");
+		e->addComponent<MetaballComponent>();
+		e->addComponent<TransformComponent>(glm::vec3(0, 2, 0));
+		m_scene.addEntity(e);
+
 		/*e = ECS::Instance()->createEntity("Character2");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 5.f), glm::vec3(0.f, 0.f, 0.f));

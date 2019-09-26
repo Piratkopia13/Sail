@@ -9,6 +9,7 @@ class Model;
 class LightSetup;
 class RenderableTexture;
 class PostProcessPipeline;
+class Material;
 
 class Renderer : public IEventListener {
 public:
@@ -23,19 +24,37 @@ public:
 		MESH_STATIC = 1 << 1,		// Vertices will never change
 		MESH_TRANSPARENT = 1 << 2,	// Should be rendered see-through
 		MESH_HERO = 1 << 3			// Mesh takes up a relatively large area of the screen 
-	};	
+	};
+
+	enum RenderCommandType {
+		RENDER_COMMAND_TYPE_MODEL,
+		RENDER_COMMAND_TYPE_NON_MODEL_METABALL,
+	};
+
 	struct RenderCommand {
-		Mesh* mesh;
+		RenderCommandType type;
 		glm::mat4 transform; // TODO: find out why having a const ptr here doesnt work
 		RenderFlag flags = MESH_STATIC;
 		std::vector<bool> hasUpdatedSinceLastRender;
+
+		union {
+			struct {
+				Mesh* mesh;
+			} model;
+			struct {
+				Material* material;
+			} nonModel;
+		};
 	};
+
 public:
 	static Renderer* Create(Renderer::Type type);
 	virtual ~Renderer() {}
 
 	virtual void begin(Camera* camera);
-	void submit(Model* model, const glm::mat4& modelMatrix, RenderFlag flags);
+	virtual void submit(Model* model, const glm::mat4& modelMatrix, RenderFlag flags);
+	virtual void submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) {};
+
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags);
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void end();
@@ -44,6 +63,7 @@ public:
 
 protected:
 	std::vector<RenderCommand> commandQueue;
+
 	Camera* camera;
 	LightSetup* lightSetup;
 

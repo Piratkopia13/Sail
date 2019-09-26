@@ -117,7 +117,9 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		// TODO: optimize!
 		for (auto& renderCommand : commandQueue) {
 			for (int i = 0; i < 3; i++) {
-				auto* tex = static_cast<DX12Texture*>(renderCommand.mesh->getMaterial()->getTexture(i));
+				if (renderCommand.type != RENDER_COMMAND_TYPE_MODEL)
+					continue;
+				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
 				if (tex && !tex->hasBeenInitialized()) {
 					tex->initBuffers(cmdList.Get());
 				}
@@ -156,7 +158,10 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	RenderCommand* command;
 	for (int i = 0; i < nCommands && meshIndex < oobMax; i++, meshIndex++ /*RenderCommand& command : commandQueue*/) {
 		command = &commandQueue[meshIndex];
-		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->mesh->getMaterial()->getShader()->getPipeline());
+		if (command->type != RENDER_COMMAND_TYPE_MODEL)
+			continue;
+
+		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->model.mesh->getMaterial()->getShader()->getPipeline());
 
 		shaderPipeline->checkBufferSizes(oobMax); //Temp fix to expand constant buffers if the scene contain to many objects
 		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
@@ -172,7 +177,7 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 			shaderPipeline->setCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
 		}
 
-		static_cast<DX12Mesh*>(command->mesh)->draw_new(*this, cmdList.Get(), meshIndex);
+		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
 	}
 
 	// Lastly - transition back buffer to present

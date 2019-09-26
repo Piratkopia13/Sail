@@ -18,3 +18,7 @@ float MetaballComponent::getRadius() const {
 void MetaballComponent::setRadius(float radius) {
 	m_radius = radius;
 }
+
+Material* MetaballComponent::getMaterial() {
+	return &m_material;
+}

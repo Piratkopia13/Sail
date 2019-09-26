@@ -110,16 +110,6 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
 	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 
-	// if (payload.recursionDepth < 1) {
-	// 	float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
-	// 	TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
-	// 	payload.color = payload.color * 0.2f + getColor(CB_MeshData.data[instanceID], texCoords) * 0.8f;
-
-	// } else {
-	// 	// Max recursion, return color
-	// 	payload.color = getColor(CB_MeshData.data[instanceID], texCoords);
-	// }
-
 	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
 	float3 shadedColor = float3(0.f, 0.f, 0.f);
 	
@@ -194,10 +184,17 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	uint primitiveID = PrimitiveIndex();
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
-	float4 diffuseColor = float4(0.f, 1.f, 1.f, 1.0f);// CB_MeshData.data[instanceID].color;
+	//float4 diffuseColor = float4(0.f, 1.f, 1.f, 1.0f);// CB_MeshData.data[instanceID].color;
+	float4 diffuseColor = CB_MeshData.data[instanceID].color;
 	//float4 diffuseColor = float4(sqrt(attribs.normal.a), 0, 0, 1.0f);
-	float3 shadedColor = float3(0.f, 0.f, 0.f);
+	//diffuseColor += float4(1,1,1,0);
+	//diffuseColor *= 0.5;
+	//diffuseColor.a = 1.0f;
 
+	//payload.color = diffuseColor;
+	//return;
+
+	float3 shadedColor = float3(0.f, 0.f, 0.f);
 	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
 	// TODO: read these from model data
 	float shininess = 10.0f;
@@ -225,6 +222,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 
 		// Dont do any shading if in shadow
 		if (shadowPayload.hit == 1) {
+			//diffuseColor = float4(1.f, 1.f, 1.f, 1.0f);// CB_MeshData.data[instanceID].color;
 			continue;
 		}
 
@@ -301,7 +299,7 @@ bool intersect(in RayDesc ray, in float3 center, in float radius, out float t, o
 	}
 
 	t = t0;
-	normal = float4(normalize(ray.Origin - center), 0);
+	normal = float4(normalize((ray.Origin + normalize(t * ray.Direction)) - center), 0);
 
 	return true;
 }
@@ -358,6 +356,6 @@ void IntersectionShader()
 		ReportHit(thit, 0, attr);
 	}
 #endif
-
+	
 	//ReportHit(RayTCurrent(), 0, attr);
 }

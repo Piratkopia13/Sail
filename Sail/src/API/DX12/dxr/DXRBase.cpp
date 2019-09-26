@@ -81,7 +81,10 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	// Iterate all static meshes
 	for (auto& renderCommand : sceneGeometry) {
 		if (renderCommand.flags & Renderer::MESH_STATIC) {
-			Mesh* mesh = renderCommand.mesh;
+			Mesh* mesh = nullptr;
+			if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
+				mesh = renderCommand.model.mesh;
+			}
 
 			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
 			// If mesh does not have a BLAS
@@ -108,7 +111,10 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	// Iterate all dynamic meshes
 	for (auto& renderCommand : sceneGeometry) {
 		if (renderCommand.flags & Renderer::MESH_DYNAMIC) {
-			Mesh* mesh = renderCommand.mesh;
+			Mesh* mesh = nullptr;
+			if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
+				mesh = renderCommand.model.mesh;
+			}
 
 			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
 			auto flags = flagNone;
@@ -137,7 +143,12 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	for (auto it = m_bottomBuffers[frameIndex].begin(); it != m_bottomBuffers[frameIndex].end();) {
 		bool destroy = true;
 		for (auto& renderCommand : sceneGeometry) {
-			if (it->first == renderCommand.mesh) {
+			Mesh* mesh = nullptr;
+			if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
+				mesh = renderCommand.model.mesh;
+			}
+
+			if (it->first == mesh) {
 				destroy = false;
 				++it;
 				break;
@@ -269,7 +280,6 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
-			// apply transform from lambda function
 			memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
 
 			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
@@ -300,9 +310,12 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate) {
 	unsigned int frameIndex = m_context->getFrameIndex();
+	Mesh* mesh = nullptr; 
+	if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
+		mesh = renderCommand.model.mesh;
+	}
 
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
-	Mesh* mesh = renderCommand.mesh;
 
 	InstanceList instance;
 	instance.instanceTransforms.emplace_back(renderCommand.transform);
@@ -315,8 +328,9 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	}
 
 	D3D12_RAYTRACING_GEOMETRY_DESC geomDesc = {};
-	if (mesh) {
+	if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
 		m_nTriangleGeometry++;
+
 		auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
 		auto& ib = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer());
 
@@ -509,9 +523,12 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 			m_rtMeshHandles.emplace_back(handles);
 		} else {
 			m_rtMeshHandles.emplace_back(handles);
+			static float time = 0;			
+			time += 0.001;
+			float r = ((int)time % 10) / 10.0f;
 
 			meshData.flags = DXRShaderCommon::MESH_NO_FLAGS;
-			meshData.color = glm::vec4(1, 0, 0, 1);
+			meshData.color = glm::vec4(r, 1-r, 0, 1);
 			m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 		}
 
