@@ -95,18 +95,20 @@ void Scene::draw(Camera& camera, const float alpha) {
 }
 
 //TODO add failsafe
-Entity::SPtr Scene::getSceneEntityByName(std::string name) {
-	for (auto e : m_sceneEntities) {
-		if (e->getName() == name) {
-			return e;
-		}
-	}
-	return NULL;
-}
-
-const std::vector<Entity::SPtr>& Scene::getGameObjectEntities() const {
-	return m_sceneEntities;
-}
+// NEVER USED
+//Entity::SPtr Scene::getSceneEntityByName(std::string name) {
+//	for (auto e : m_sceneEntities) {
+//		if (e->getName() == name) {
+//			return e;
+//		}
+//	}
+//	return NULL;
+//}
+//
+//// NEVER USED
+//const std::vector<Entity::SPtr>& Scene::getGameObjectEntities() const {
+//	return m_sceneEntities;
+//}
 
 void Scene::draw(void) {
 	(*m_currentRenderer)->begin(nullptr);
@@ -115,11 +117,11 @@ void Scene::draw(void) {
 }
 
 bool Scene::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
+	//EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
 
 	// Forward events
-	m_rendererRaster->onEvent(event);
-	m_rendererRaytrace->onEvent(event);
+	//m_rendererRaster->onEvent(event);
+	//m_rendererRaytrace->onEvent(event);
 	//m_postProcessPipeline.onEvent(event);
 
 	return true;
