@@ -166,7 +166,6 @@ int Application::startGameLoop() {
 
 	s_isRunning = false;
 	// All sounds need to be stopped before 'm_threadPool->stop()';
-	//m_audioManager.stopAllSounds();
 	m_threadPool->stop();
 	return (int)msg.wParam;
 }

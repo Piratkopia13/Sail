@@ -78,7 +78,8 @@ public:
 	void loadSound(const std::string &filename);
 	int playSound(const std::string& filename);
 	int streamSound(const std::string& filename, bool loop = true);
-	void pauseSound(int index);
+	void stopSpecificSound(int index);
+	void stopSpecificStream(int index);
 	void stopAllSounds();
 
 	void updateAudio();

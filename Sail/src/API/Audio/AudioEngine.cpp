@@ -58,6 +58,8 @@ int AudioEngine::playSound(const std::string& filename) {
 	}
 	if (Application::getInstance()->getResourceManager().hasAudioData(filename)) {
 
+		int returnValue = m_currSoundIndex; // Store early
+
 		if (m_sourceVoiceSound[m_currSoundIndex] != nullptr) {
 			m_sourceVoiceSound[m_currSoundIndex]->Stop();
 		}
@@ -87,7 +89,7 @@ int AudioEngine::playSound(const std::string& filename) {
 		m_currSoundIndex++;
 		m_currSoundIndex %= SOUND_COUNT;
 
-		return (m_currSoundIndex - 1);
+		return returnValue;
 	}
 
 	else {
@@ -113,10 +115,27 @@ int AudioEngine::streamSound(const std::string& filename, bool loop) {
 	return returnValue;
 }
 
-void AudioEngine::pauseSound(int index) {
+void AudioEngine::stopSpecificSound(int index) {
+
+	if (index < 0 || index > SOUND_COUNT) {
+		Logger::Error("Tried to STOP a sound from playing with an INVALID INDEX!");
+		return;
+	}
 
 	if (m_sourceVoiceSound[index] != nullptr) {
 		m_sourceVoiceSound[index]->Stop();
+	}
+}
+
+void AudioEngine::stopSpecificStream(int index) {
+	
+	if (index < 0 || index > STREAMED_SOUNDS_COUNT) {
+		Logger::Error("Tried to STOP a sound being streamed with an INVALID INDEX!");
+		return;
+	}
+
+	if (m_sourceVoiceStream[index] != nullptr) {
+		m_isStreaming[index] = false;
 	}
 }
 
@@ -170,7 +189,7 @@ void AudioEngine::updateAudio() {
 
 	// 'STOPPING' sound
 	if (Input::IsKeyPressed(SAIL_KEY_9)) {
-		this->pauseSound(0);
+		this->stopSpecificSound(0);
 	}
 
 	if (Input::IsKeyPressed(SAIL_KEY_0)) {
