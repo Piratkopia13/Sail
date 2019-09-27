@@ -74,7 +74,13 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 #pragma endregion
 };
 
-//struct StreamedAudioObject {};
+struct StreamedAudioObject {
+
+	IXAudio2SourceVoice* sourceVoice = nullptr;
+	bool isStreaming = false;
+	bool isFinished = false;
+	OVERLAPPED overlapped = { 0 };
+};
 
 class AudioEngine
 {
@@ -111,20 +117,13 @@ private:
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
 	// Represents each loaded sound in the form of an 'object'
 	IXAudio2SourceVoice* m_sourceVoiceSound[SOUND_COUNT];
-	IXAudio2SourceVoice* m_sourceVoiceStream[STREAMED_SOUNDS_COUNT];
-
-	// 
+	StreamedAudioObject m_streamedSounds[STREAMED_SOUNDS_COUNT];
 
 	int m_currSoundIndex = 0;
 	std::atomic<int> m_currStreamIndex = 0;
 
 	// INIT
 	void initialize();
-
-	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
-	bool m_isStreaming[STREAMED_SOUNDS_COUNT];
-	bool m_isFinished[STREAMED_SOUNDS_COUNT];
-	OVERLAPPED m_overlapped[STREAMED_SOUNDS_COUNT];
 
 	// PRIVATE FUNCTION
 	//-----------------
