@@ -177,33 +177,36 @@ GameState::GameState(StateStack& stack)
 
 
 	// Player creation
-	m_player = ECS::Instance()->createEntity("player");
+	auto player = ECS::Instance()->createEntity("player");
 	
-	m_player->addComponent<PlayerComponent>();
-	m_player->addComponent<TransformComponent>();
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	// TODO: Only used for AI, should be removed once AI can target player in a better way.
+	m_player = player.get();
 
-	m_player->addComponent<PhysicsComponent>();
-	m_player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	m_player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
+	player->addComponent<PlayerComponent>();
+	player->addComponent<TransformComponent>();
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+
+	player->addComponent<PhysicsComponent>();
+	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
 
 
 	// Give player a bounding box
-	m_player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	m_player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+	player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 
 	// Temporary projectile model for the player's gun
-	m_player->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
+	player->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
 
 
 	//Create system for input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
-	m_player->addComponent<AudioComponent>();
-	m_player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
-	m_player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
+	player->addComponent<AudioComponent>();
+	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
+	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
 
 
 
@@ -211,14 +214,14 @@ GameState::GameState(StateStack& stack)
 	m_currLightIndex = 0;
 	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	m_player->addChildEntity(e);
+	player->addChildEntity(e);
 
-	m_scene.addEntity(m_player);
+	m_scene.addEntity(player);
 	
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 
 
 	/*
@@ -453,7 +456,7 @@ bool GameState::processInput(float dt) {
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
 			if ( aiComp->entityTarget == nullptr ) {
-				aiComp->setTarget(m_player.get());
+				aiComp->setTarget(m_player);
 			} else {
 				aiComp->setTarget(nullptr);
 			}
