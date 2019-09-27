@@ -5,7 +5,7 @@
 RaytracingAccelerationStructure gRtScene : register(t0);
 Texture2D<float4> sys_inTex_normals : register(t10);
 Texture2D<float4> sys_inTex_texCoords : register(t11);
-Texture2D<float4> sys_inTex_depth : register(t12);
+Texture2D<float> sys_inTex_depth : register(t12);
 
 RWTexture2D<float4> lOutput : register(u0);
 
@@ -47,39 +47,35 @@ void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
 	float2 screenTexCoord = float2(launchIndex.x, launchIndex.y) / DispatchRaysDimensions().xy;
-	// screenTexCoord.y = -screenTexCoord.y;
 
-	lOutput[launchIndex] = float4( sys_inTex_texCoords.SampleLevel(ss, screenTexCoord, 0).rgb, 1.0f);
-	// lOutput[launchIndex] = float4( sys_inTex_normals.Load(int3(launchIndex.xy, 0)).rgb, 1.0f);
-	// lOutput[launchIndex] = float4( screenTexCoord, 0.f, 1.0f);
-	return;
-	
-	// float2 xy = launchIndex + 0.5f; // center in the middle of the pixel.
-	// float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
-	// // Invert Y for DirectX-style coordinates.
-	// screenPos.y = -screenPos.y;
+	float2 xy = launchIndex + 0.5f; // center in the middle of the pixel.
+	float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
+	// Invert Y for DirectX-style coordinates.
+	screenPos.y = -screenPos.y;
 
-	// // Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
-	// // G-Buffers contain data in world space
-	// float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	// float2 texCoords = sys_inTex_texCoords.SampleLevel(ss, screenTexCoord, 0).rg;
+	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
+	// G-Buffers contain data in world space
+	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
+	float2 texCoords = sys_inTex_texCoords.SampleLevel(ss, screenTexCoord, 0).rg;
 
-	// // ---------------------------------------------------
-	// // --- Calculate world position from depth texture ---
+	// ---------------------------------------------------
+	// --- Calculate world position from depth texture ---
 
-	// // TODO: move calculations to cpu
-	// float projectionA = CB_SceneData.farZ / (CB_SceneData.farZ - CB_SceneData.nearZ);
-    // float projectionB = (-CB_SceneData.farZ * CB_SceneData.nearZ) / (CB_SceneData.farZ - CB_SceneData.nearZ);
+	// TODO: move calculations to cpu
+	float projectionA = CB_SceneData.farZ / (CB_SceneData.farZ - CB_SceneData.nearZ);
+    float projectionB = (-CB_SceneData.farZ * CB_SceneData.nearZ) / (CB_SceneData.farZ - CB_SceneData.nearZ);
 
-	// float depth = sys_inTex_depth.SampleLevel(ss, screenTexCoord, 0).r;
-	// float linearDepth = projectionB / (depth - projectionA);
+	float depth = sys_inTex_depth.SampleLevel(ss, screenTexCoord, 0);
+	float linearDepth = projectionB / (depth - projectionA);
 
 	// float3 viewRay = normalize(float3(screenPos, 1));
 	// float3 vsPosition = viewRay * linearDepth;
 
 	// float3 worldPosition = mul((float3x3) CB_SceneData.viewToWorld, vsPosition);
-	// // ---------------------------------------------------
+	// ---------------------------------------------------
 
+	lOutput[launchIndex] = float4(depth, 0.f, 0.f, 1.0f);
+	// lOutput[launchIndex] = float4(worldPosition, 1.0f);
 
 
 
@@ -89,8 +85,8 @@ void rayGen() {
 	// generateCameraRay(launchIndex, origin, rayDir);
 
 	// RayDesc ray;
-	// ray.Origin = origin;
-	// ray.Direction = rayDir;
+	// ray.Origin = worldPosition;
+	// ray.Direction = normalize(reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal));
 	// // Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
 	// // TMin should be kept small to prevent missing geometry at close contact areas
 	// ray.TMin = 0.00001;
@@ -164,6 +160,10 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	// }
 
 	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
+
+	payload.color = diffuseColor;
+	return;
+
 	float3 shadedColor = float3(0.f, 0.f, 0.f);
 	
 	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
