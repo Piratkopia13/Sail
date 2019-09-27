@@ -8,9 +8,11 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "Network/NWrapperSingleton.h"	// New network
 #include "Network/NWrapper.h"			// 
-
+#include "Sail.h"
 
 #include <string>
+#include <list>
+using namespace std;
 
 LobbyState::LobbyState(StateStack& stack)
 	: State(stack)
@@ -66,7 +68,7 @@ void LobbyState::resetPlayerList()
 	m_playerCount = 0;
 }
 
-bool LobbyState::update(float dt) {
+bool LobbyState::updatePerTick(float dt) {
 	// Update screen dimensions & ImGui related
 	// (Sure, events, but the only thing consuming resources is the LobbyState)
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
@@ -208,7 +210,6 @@ void LobbyState::renderPlayerList() {
 }
 
 void LobbyState::renderStartButton() {
-
 	if (NWrapperSingleton::getInstance().isHost()) {
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 		flags |= ImGuiWindowFlags_NoResize;
@@ -222,12 +223,11 @@ void LobbyState::renderStartButton() {
 		));
 		ImGui::Begin("Start Game");
 
-		// SetKeyBoardFocusHere on the chatbox prevents the button from working,
-		// so if we click with the mouse, temporarily set focus to the button.
-
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
 			m_network->sendMsgAllClients("t");
+			
+		//	m_app->getStateStorage().setLobbyToGameData(fuckyou);
 			this->requestStackPop();
 			this->requestStackPush(States::Game);
 		}
