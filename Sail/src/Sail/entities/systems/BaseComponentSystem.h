@@ -47,12 +47,12 @@ public:
 	/* Returns the bit mask for all components that are being written to */
 	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getWriteBitMask() const;
 
+	virtual void stop() {}
+
 protected:
 	/* Registers the component to the system and defines how the system uses the component */
 	template<typename ComponentType>
 	void registerComponent(bool required, bool read, bool write);
-
-	virtual void stop() { ; }
 
 protected:
 	std::vector<Entity*> entities;
