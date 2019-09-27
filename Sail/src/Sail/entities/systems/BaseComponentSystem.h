@@ -45,6 +45,8 @@ public:
 	/* Returns the bit mask for all components that are being written to */
 	const unsigned int getWriteBitMask() const;
 
+	virtual void stop() { ; }
+
 protected:
 	std::vector<Entity*> entities;
 	std::vector<int> requiredComponentTypes;

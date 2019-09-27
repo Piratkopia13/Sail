@@ -19,3 +19,4 @@
 //#include "TextComponent.h"
 #include "TransformComponent.h"
 #include "ProjectileComponent.h"
+#include "AudioComponent.h"

@@ -15,6 +15,7 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/Input/GameInputSystem.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/TimeSettings.h"
 
 #include <sstream>
@@ -115,6 +116,20 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
 	
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
+
+	// Create system for handling and updating sounds
+	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+
+	// This was moved out from the PlayerController constructor
+	// since the PhysicSystem needs to be created first
+	// (or the PhysicsComponent needed to be detached and reattached
+	m_playerController.getEntity()->addComponent<PhysicsComponent>();
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
+	m_playerController.getEntity()->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
+	m_playerController.getEntity()->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
+
+
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
@@ -513,8 +528,6 @@ bool GameState::updatePerTick(float dt) {
 
 	updatePerTickComponentSystems(dt);
 
-	
-
 	return true;
 }
 
@@ -761,15 +774,19 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.animationSystem->update(dt);
 	m_componentSystems.aiSystem->update(dt);
 
+	m_componentSystems.candleSystem->update(dt);
+
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 
-	m_componentSystems.candleSystem->update(dt);
 
 	m_componentSystems.lifeTimeSystem->update(dt);
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
+
+	m_componentSystems.audioSystem->update(dt);
 }
+
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates the camera
