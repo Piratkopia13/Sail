@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <memory>
+#include <bitset>
 #include "components/Component.h"
 
 //#define MOVE(x) std::move(x)
@@ -27,8 +28,7 @@ public:
 	ComponentType* getComponent();
 	template<typename ComponentType>
 	bool hasComponent() const;
-
-	bool hasComponent(int id) const;
+	bool hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const;
 
 	bool isAboutToBeDestroyed() const;
 	void queueDestruction();
@@ -76,6 +76,8 @@ inline ComponentType* Entity::addComponent(Targs... args) {
 		Logger::Warning("Tried to add a duplicate component to an entity");
 	}
 
+	m_componentTypes |= ComponentType::BID;
+
 	// Place this entity within the correct systems if told to
 	if (tryToAddToSystems) {
 		addToSystems();
@@ -87,13 +89,18 @@ inline ComponentType* Entity::addComponent(Targs... args) {
 
 template<typename ComponentType>
 inline void Entity::removeComponent() {
-	auto it = m_components.find(ComponentType::ID);
-	if (it != m_components.end()) {
-		// Simply erasing the result of find() appears to be undefined behavior if the iterator points to end()
-		m_components.erase(it);
+	if ( hasComponent<ComponentType>() ) {
+		auto it = m_components.find(ComponentType::ID);
+		if ( it != m_components.end() ) {
+			// Simply erasing the result of find() appears to be undefined behavior if the iterator points to end()
+			m_components.erase(it);
 
-		// Remove this entity from systems which required the removed component
-		removeFromSystems();
+			// Set the component type bit to 0 if it was 1
+			m_componentTypes ^= ComponentType::BID;
+
+			// Remove this entity from systems which required the removed component
+			removeFromSystems();
+		}
 	}
 }
 
@@ -101,9 +108,11 @@ template<typename ComponentType>
 inline ComponentType* Entity::getComponent() {
 	// If the following line causes compile errors, then a class 
 	// deriving from component is missing public SAIL_COMPONENT macro
-	auto it = m_components.find(ComponentType::ID);
-	if (it != m_components.end()) {
-		return static_cast<ComponentType*>(it->second.get());
+	if ( hasComponent<ComponentType>() ) {
+		auto it = m_components.find(ComponentType::ID);
+		if ( it != m_components.end() ) {
+			return static_cast< ComponentType* >( it->second.get() );
+		}
 	}
 
 	return nullptr;
@@ -111,5 +120,5 @@ inline ComponentType* Entity::getComponent() {
 
 template<typename ComponentType>
 inline bool Entity::hasComponent() const {
-	return hasComponent(ComponentType::ID);
+	return (m_componentTypes & ComponentType::BID).any();
 }

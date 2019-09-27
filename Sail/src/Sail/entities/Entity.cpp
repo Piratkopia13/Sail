@@ -37,9 +37,8 @@ Entity::~Entity() {
 
 }
 
-bool Entity::hasComponent(int id) const
-{
-	return (m_components.find(id) != m_components.end());
+bool Entity::hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const {
+	return (m_componentTypes & componentTypes).any();
 }
 
 bool Entity::isAboutToBeDestroyed() const {

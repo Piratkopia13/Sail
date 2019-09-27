@@ -7,16 +7,11 @@
 #include "..//..//components/BoundingBoxComponent.h"
 
 PhysicSystem::PhysicSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(TransformComponent::ID);
-	readBits |= TransformComponent::BID;
-	writeBits |= TransformComponent::BID;
-	requiredComponentTypes.push_back(PhysicsComponent::ID);
-	readBits |= PhysicsComponent::BID;
-	writeBits |= PhysicsComponent::BID;
+	registerComponent<TransformComponent>(true, true, true);
+	registerComponent<PhysicsComponent>(true, true, true);
 
 	// Assumed?
-	readBits |= BoundingBoxComponent::BID;
-	writeBits |= BoundingBoxComponent::BID;
+	registerComponent<BoundingBoxComponent>(false, true, true);
 
 	m_octree = nullptr;
 }

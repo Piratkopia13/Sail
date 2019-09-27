@@ -9,12 +9,8 @@
 
 
 AnimationSystem::AnimationSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(AnimationComponent::ID);
-	readBits |= AnimationComponent::BID;
-	writeBits |= AnimationComponent::BID;
-	requiredComponentTypes.push_back(ModelComponent::ID);
-	readBits |= ModelComponent::BID;
-	writeBits |= ModelComponent::BID;
+	registerComponent<AnimationComponent>(true, true, true);
+	registerComponent<ModelComponent>(true, true, true);
 }
 
 AnimationSystem::~AnimationSystem() {

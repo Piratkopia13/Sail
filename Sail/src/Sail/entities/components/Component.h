@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <bitset>
 
 #define MAX_NUM_COMPONENTS_TYPES 128
 
@@ -16,7 +17,7 @@
 
 
 typedef int ComponentTypeID;
-typedef unsigned int ComponentTypeBitID;
+typedef std::bitset<MAX_NUM_COMPONENTS_TYPES> ComponentTypeBitID;
 
 /*
 	Counter for assigning IDs to component types at compile time

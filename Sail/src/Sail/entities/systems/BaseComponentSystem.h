@@ -16,13 +16,11 @@ class Entity;
 	Example: See PhysicSystem.h and PhysicSystem.cpp
 */
 
-class BaseComponentSystem
-{
+class BaseComponentSystem {
 public:
-	BaseComponentSystem() 
+	BaseComponentSystem()
 		: readBits(0)
-		, writeBits(0)
-	{}
+		, writeBits(0) {}
 	virtual ~BaseComponentSystem() {}
 
 	virtual void update(float dt) = 0;
@@ -41,7 +39,7 @@ public:
 		Returns the indices of all the component types required to be within this system
 	*/
 	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getRequiredComponentTypes() const;
-	
+
 	/* Returns the bit mask for all components that are being read from */
 	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getReadBitMask() const;
 
@@ -49,6 +47,7 @@ public:
 	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getWriteBitMask() const;
 
 protected:
+	/* Registers the component to the system and defines how the system uses the component */
 	template<typename ComponentType>
 	void registerComponent(bool required, bool read, bool write);
 
@@ -62,7 +61,7 @@ protected:
 
 template<typename ComponentType>
 inline void BaseComponentSystem::registerComponent(bool required, bool read, bool write) {
-	if (required) requiredComponentTypes |= ComponentType::BID;
-	if ( read )	readBits |= ComponentType::BID;
-	if (write)	writeBits |= ComponentType::BID;
+	if ( required )	requiredComponentTypes |= ComponentType::BID;
+	if ( read )		readBits |= ComponentType::BID;
+	if ( write )	writeBits |= ComponentType::BID;
 }
