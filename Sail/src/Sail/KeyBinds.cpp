@@ -68,7 +68,6 @@ void KeyBinds::init() {
 	disableCursor = SAIL_MOUSE_RIGHT_BUTTON;
 	shoot = SAIL_MOUSE_LEFT_BUTTON;
 
-
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds
 	f4 = SAIL_KEY_F4;
