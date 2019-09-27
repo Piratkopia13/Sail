@@ -151,11 +151,15 @@ int Application::startGameLoop() {
 			// Run the update if enough time has passed since the last update
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
-				update(TIMESTEP);
+				updatePerTick(TIMESTEP);
 			}
+
 
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
+
+			// Every-Frame-Updates goes here
+			updatePerFrame(TIMESTEP, alpha);
 
 			// Render
 			render(delta, alpha);

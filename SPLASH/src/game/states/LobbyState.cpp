@@ -66,7 +66,7 @@ void LobbyState::resetPlayerList()
 	m_playerCount = 0;
 }
 
-bool LobbyState::update(float dt) {
+bool LobbyState::updatePerTick(float dt) {
 	// Update screen dimensions & ImGui related
 	// (Sure, events, but the only thing consuming resources is the LobbyState)
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
