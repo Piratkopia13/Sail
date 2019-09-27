@@ -1,17 +1,17 @@
 #pragma once
 
-#include "../BaseComponentSystem.h"
+#include "NetworkSystem.h"
 
-
-class NetworkHostSystem : public BaseComponentSystem {
+class  NetworkHostSystem final : public NetworkSystem {
 public:
 	NetworkHostSystem();
 	~NetworkHostSystem();
 
-	void update(float dt);
+	void update(float dt) override;
+	bool onSerializedPackageRecieved(NetworkSerializedPackageEvent& event) override;
 
 private:
 
-
+	void sendPlayersTranslationToAllClients();
 
 };

@@ -51,9 +51,6 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 
 
 
-
-
-
 		// TESTING FOR SENDING SERIALIZED DATA
 		unsigned int testInt = 5;
 
@@ -69,21 +66,21 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 
 
 
-		//std::istringstream is(data);
+		std::istringstream is(data);
 
-		//int testInt2 = 0;
+		int testInt2 = 0;
 
-		//{
-		//	cereal::PortableBinaryInputArchive ar(is);
-		//	ar(testInt2);
-		//}
-		//if (testInt2 == 5) {
-		//	int fda = 43;
-		//}
+		{
+			cereal::PortableBinaryInputArchive ar(is);
+			ar(testInt2);
+		}
+		if (testInt2 == 5) {
+			int fda = 43;
+		}
 
 
 
-		m_network->sendSerializedData(data);
+	//	m_network->sendSerializedData(data);
 	}
 
 	return true;

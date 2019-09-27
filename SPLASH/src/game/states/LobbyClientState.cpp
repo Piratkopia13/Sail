@@ -104,15 +104,18 @@ bool LobbyClientState::onNameRequest(NetworkNameEvent& event) {
 }
 
 bool LobbyClientState::onDropped(NetworkDroppedEvent& event) {
+	// Queue changes to statestack
 	this->requestStackPop();
 	this->requestStackPush(States::MainMenu);
+
+	// Reset network so that user can choose host/client again.
 	NWrapperSingleton::getInstance().resetNetwork();
 
 	return false;
 }
 
 bool LobbyClientState::onStartGame(NetworkStartGameEvent& event) {
-	
+	// Queue changes to the stack
 	this->requestStackPop();
 	this->requestStackPush(States::Game);
 

@@ -14,6 +14,8 @@ class PhysicSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class GameInputSystem;
+class NetworkSystem;
+class NetworkSerializedPackageEvent;
 
 class GameState : public State {
 public:
@@ -37,6 +39,8 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
+
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
@@ -60,6 +64,7 @@ private:
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
 		GameInputSystem* gameInputSystem = nullptr;
+		NetworkSystem* networkSystem = nullptr;
 	};
 
 	Application* m_app;

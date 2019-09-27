@@ -23,6 +23,7 @@ public:
 
 
 	void sendSerializedData(std::string data);
+
 protected:
 	Network* m_network = nullptr;
 	Application* m_app = nullptr;	
