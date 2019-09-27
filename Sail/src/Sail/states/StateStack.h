@@ -31,7 +31,8 @@ class StateStack {
 		// Passes input to the states in the stack
 		virtual void processInput(float dt);
 		// Updates the states in the stack
-		virtual void update(float dt);
+		virtual void updatePerTick(float dt);
+		virtual void updatePerFrame(float dt, float alpha);
 		// Renders the states in the stack
 		virtual void render(float dt, float alpha);
 
