@@ -83,8 +83,9 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 
 	// TODO: move to shadow shader 
 	// If this is the second bounce, return as hit and do nothing else
-	if (payload.recursionDepth == 2) {
+	if (payload.recursionDepth >= 10) {
 		payload.hit = 1;
+		payload.color = float4(0, 0, 1 , 1);
 		return;
 	}
 
@@ -134,7 +135,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 		float dstToLight = length(towardsLight);
 
 		RayPayload shadowPayload;
-		shadowPayload.recursionDepth = 1;
+		shadowPayload.recursionDepth = 10;
 		shadowPayload.hit = 0;
 		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, Utils::getRayDesc(normalize(towardsLight), dstToLight), shadowPayload);
 
@@ -175,80 +176,27 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 
 	// TODO: move to shadow shader 
 	// If this is the second bounce, return as hit and do nothing else
-	if (payload.recursionDepth == 2) {
+	if (payload.recursionDepth >= 4) {
 		payload.hit = 1;
 		return;
 	}
 
-	uint instanceID = InstanceID();
-	uint primitiveID = PrimitiveIndex();
+	RayPayload nextBounce;
+	//nextBounce.recursionDepth = payload.recursionDepth;
+	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
+	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInWorldSpace));
+	RayDesc nextRaydesc = Utils::getRayDesc(reflectVector);
+	nextRaydesc.Origin += nextRaydesc.Direction * 0.0001;
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, nextRaydesc, payload);
 
-	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
-	//float4 diffuseColor = float4(0.f, 1.f, 1.f, 1.0f);// CB_MeshData.data[instanceID].color;
-	float4 diffuseColor = CB_MeshData.data[instanceID].color;
-	//float4 diffuseColor = float4(sqrt(attribs.normal.a), 0, 0, 1.0f);
-	//diffuseColor += float4(1,1,1,0);
-	//diffuseColor *= 0.5;
-	//diffuseColor.a = 1.0f;
+	//uint instanceID = InstanceID();
+	//uint primitiveID = PrimitiveIndex();
+	//float4 diffuseColor;
+
+	//diffuseColor = nextBounce.color;
 
 	//payload.color = diffuseColor;
-	//return;
-
-	float3 shadedColor = float3(0.f, 0.f, 0.f);
-	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
-	// TODO: read these from model data
-	float shininess = 10.0f;
-	float specMap = 1.0f;
-	float kd = 1.0f;
-	float ka = 1.0f;
-	float ks = 1.0f;
-
-	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLightInput p = CB_SceneData.pointLights[i];
-
-		// Treat pointlights with no color as no light
-		if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
-			continue;
-		}
-
-		// Shoot a ray towards the point light to figure out if in shadow or not
-		float3 towardsLight = p.position - Utils::HitWorldPosition();
-		float dstToLight = length(towardsLight);
-
-		RayPayload shadowPayload;
-		shadowPayload.recursionDepth = 1;
-		shadowPayload.hit = 0;
-		RayDesc r = Utils::getRayDesc(normalize(towardsLight), dstToLight);
-
-		r.Origin += normalize(attribs.normal.xyz) * 0.001;
-		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, r, shadowPayload);
-
-		// Dont do any shading if in shadow
-		if (shadowPayload.hit == 1) {
-			//diffuseColor = float4(1.f, 1.f, 1.f, 1.0f);// CB_MeshData.data[instanceID].color;
-			continue;
-		}
-
-		float3 hitToLight = p.position - Utils::HitWorldPosition();
-		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
-		float distanceToLight = length(hitToLight);
-
-		float diffuseCoefficient = saturate(dot(normalInWorldSpace, hitToLight));
-
-		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
-		if (diffuseCoefficient > 0.f) {
-			float3 r = reflect(-hitToLight, normalInWorldSpace);
-			r = normalize(r);
-			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
-		}
-
-		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
-
-		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor.rgb * p.color * attenuation;
-	}
-
-	float3 ambient = diffuseColor.rgb * ka * ambientCoefficient;
-	payload.color = float4(saturate(ambient + shadedColor), 1.0f);
+	return;
 }
 
 bool solveQuadratic(in float a, in float b, in float c, inout float x0, inout float x1) {
@@ -388,16 +336,16 @@ void IntersectionShader()
 	centers[2].z = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[2]);
 
 	float tmin = 0, tmax = 5;
-	unsigned int MAX_STEPS = 32;
-	unsigned int MAX_RESTEPS = 64;
+	unsigned int MAX_LARGE_STEPS = 32;
+	unsigned int MAX_SMALL_STEPS = 32;
 	//unsigned int seed = 2;
 	//float t = tmin + Utils::nextRand(seed);
 	float t = tmin;
-	float minTStep = (tmax - tmin) / (MAX_STEPS / 1.0f);
+	float minTStep = (tmax - tmin) / (MAX_LARGE_STEPS / 1.0f);
 	unsigned int iStep = 0;
 
 	float3 currPos = ray.Origin + t * ray.Direction;
-	while (iStep++ < MAX_STEPS) {
+	while (iStep++ < MAX_LARGE_STEPS) {
 		float fieldPotentials[N];    // Field potentials for each metaball.
 		float sumFieldPotential = CalculateMetaballsPotential(currPos, centers, radii, N); // Sum of all metaball field potentials.
 
@@ -413,7 +361,7 @@ void IntersectionShader()
 			float restep_step = minTStep / 2;
 			int restep_step_dir = -1;
 
-			for (int i = 0; i < MAX_RESTEPS; i++) {
+			for (int i = 0; i < MAX_SMALL_STEPS; i++) {
 				t += restep_step * restep_step_dir;
 				currPos = ray.Origin + t * ray.Direction;
 				float sumFieldPotential_recomp = CalculateMetaballsPotential(currPos, centers, radii, N); // Sum of all metaball field potentials.
