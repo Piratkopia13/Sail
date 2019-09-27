@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Sail.h"
-#include "../controllers/PlayerController.h"
 
 class AiSystem;
 class AnimationSystem;
@@ -12,7 +11,10 @@ class LightSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
 class PrepareUpdateSystem;
+class GunSystem;
 class ProjectileSystem;
+class GameInputSystem;
+class AudioSystem;
 
 class GameState : public State {
 public:
@@ -24,7 +26,9 @@ public:
 	// Sends events to the state
 	virtual bool onEvent(Event& event) override;
 	// Updates the state
-	virtual bool update(float dt) override;
+	virtual bool updatePerTick(float dt) override;
+	// Updates the state per frame
+	virtual bool updatePerFrame(float dt, float alpha) override;
 	// Renders the state
 	virtual bool render(float dt, float alpha) override;
 	// Renders imgui
@@ -38,9 +42,12 @@ private:
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
+
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
-	void updatePerFrameComponentSystems(float dt);
+	void updatePerFrameComponentSystems(float dt, float alpha);
+
+	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
 
 private:
 	struct Systems {
@@ -54,13 +61,18 @@ private:
 		PhysicSystem* physicSystem = nullptr;
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
+		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
+		GameInputSystem* gameInputSystem = nullptr;
+		AudioSystem* audioSystem = nullptr;
 	};
 
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	PlayerController m_playerController;
+
+	// TODO: Only used for AI, should be removed once AI can target player in a better way.
+	Entity* m_player;
 
 	const std::string createCube(const glm::vec3& position);
 
@@ -70,6 +82,9 @@ private:
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
 
+	size_t m_currLightIndex;
+	// For use by non-deterministic entities
+	const float* pAlpha = nullptr;
 
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
@@ -85,9 +100,6 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 
-	// Uncomment this to enable vram budget visualization
-	//std::string m_vramBCount;
-	//float* m_vramBudgetHistory;
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;

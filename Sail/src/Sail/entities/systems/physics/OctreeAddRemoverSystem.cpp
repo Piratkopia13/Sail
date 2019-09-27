@@ -8,7 +8,11 @@
 
 OctreeAddRemoverSystem::OctreeAddRemoverSystem() {
 	requiredComponentTypes.push_back(BoundingBoxComponent::ID);
+	readBits |= BoundingBoxComponent::BID;
+	writeBits |= BoundingBoxComponent::BID;
 	requiredComponentTypes.push_back(CollidableComponent::ID);
+	readBits |= CollidableComponent::BID;
+	writeBits |= CollidableComponent::BID;
 }
 
 OctreeAddRemoverSystem::~OctreeAddRemoverSystem() {

@@ -87,6 +87,7 @@ void Transform::setStartTranslation(const glm::vec3& translation) {
 	m_data.m_previous.m_translation = translation;
 	m_data.m_current.m_translation = translation;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 }
 
 void Transform::translate(const float x, const float y, const float z) {
@@ -294,11 +295,13 @@ void Transform::updateMatrix() {
 	} else {
 		m_transformMatrix = m_localTransformMatrix;
 	}
+	m_hasChanged = true;
 }
 
 void Transform::treeNeedsUpdating() {
 	m_parentUpdated = true;
 	m_parentRenderUpdated = true;
+	m_hasChanged = true;
 	for (Transform* child : m_children) {
 		child->treeNeedsUpdating();
 	}

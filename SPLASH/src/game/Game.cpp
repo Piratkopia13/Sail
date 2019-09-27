@@ -48,8 +48,12 @@ void Game::processInput(float dt) {
 	m_stateStack.processInput(dt);
 }
 
-void Game::update(float dt) {
-	m_stateStack.update(dt);
+void Game::updatePerTick(float dt) {
+	m_stateStack.updatePerTick(dt);
+}
+
+void Game::updatePerFrame(float dt, float alpha) {
+	m_stateStack.updatePerFrame(dt, alpha);
 }
 
 void Game::render(float dt, float alpha) {

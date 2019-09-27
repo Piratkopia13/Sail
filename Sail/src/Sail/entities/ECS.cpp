@@ -11,6 +11,16 @@ ECS::~ECS() {
 	delete m_entityRemovalSystem;
 }
 
+void ECS::stopAllSystems() {
+	for (auto &i : m_systems) {
+		i.second->stop();
+	}
+}
+
+void ECS::destroyAllSystems() {
+	m_systems.clear();
+}
+
 EntityRemovalSystem* ECS::getEntityRemovalSystem() {
 	return m_entityRemovalSystem;
 }
@@ -18,8 +28,6 @@ EntityRemovalSystem* ECS::getEntityRemovalSystem() {
 unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
 }
-
-
 
 Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));

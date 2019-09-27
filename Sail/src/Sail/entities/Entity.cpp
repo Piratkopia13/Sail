@@ -2,6 +2,8 @@
 #include "Entity.h"
 #include "ECS.h"
 
+#include "components/TransformComponent.h"
+
 static int s_id = 0;
 
 Entity::SPtr Entity::Create(ECS* ecs, const std::string& name) {
@@ -54,6 +56,26 @@ void Entity::queueDestruction() {
 void Entity::removeAllComponents() {
 	m_components.clear();
 	removeFromSystems();
+}
+
+void Entity::addChildEntity(Entity::SPtr child) {
+	m_children.push_back(child);
+
+	auto transComp = getComponent<TransformComponent>();
+	if ( transComp ) {
+		auto childTransComp = child->getComponent<TransformComponent>();
+		if ( childTransComp ) {
+			childTransComp->setParent(transComp);
+		}
+	}
+}
+
+void Entity::removeChildEntity(Entity::SPtr toRemove) {
+	m_children.erase(std::find(m_children.begin(), m_children.end(), toRemove));
+}
+
+std::vector<Entity::SPtr>& Entity::getChildEntities() {
+	return m_children;
 }
 
 void Entity::setName(const std::string& name) {
