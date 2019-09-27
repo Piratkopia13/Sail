@@ -38,7 +38,7 @@ public:
 	void removeChildEntity(Entity::SPtr toRemove);
 	/* Currently dangerous, will probably be altered in future */
 	std::vector<Entity::SPtr>& getChildEntities();
-	
+
 	void setName(const std::string& name);
 	const std::string& getName() const;
 	int getID() const;
@@ -72,19 +72,19 @@ private:
 template<typename ComponentType, typename... Targs>
 inline ComponentType* Entity::addComponent(Targs... args) {
 	auto res = m_components.insert({ ComponentType::ID, std::make_unique<ComponentType>(args...) });
-	if (!res.second) {
+	if ( !res.second ) {
 		Logger::Warning("Tried to add a duplicate component to an entity");
 	}
 
 	m_componentTypes |= ComponentType::BID;
 
 	// Place this entity within the correct systems if told to
-	if (tryToAddToSystems) {
+	if ( tryToAddToSystems ) {
 		addToSystems();
 	}
 
 	// Return pointer to the inserted component
-	return static_cast<ComponentType*>(res.first->second.get());
+	return static_cast< ComponentType* >( res.first->second.get() );
 }
 
 template<typename ComponentType>
@@ -120,5 +120,5 @@ inline ComponentType* Entity::getComponent() {
 
 template<typename ComponentType>
 inline bool Entity::hasComponent() const {
-	return (m_componentTypes & ComponentType::BID).any();
+	return ( m_componentTypes & ComponentType::BID ).any();
 }

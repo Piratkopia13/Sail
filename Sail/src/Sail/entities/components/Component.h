@@ -84,4 +84,4 @@ const ComponentTypeID Component<ComponentType>::ID = BaseComponent::createID();
 	Defines the constant static bit-ID of each component type at compile time
 */
 template<typename ComponentType>
-const ComponentTypeBitID Component<ComponentType>::BID = 1UL << ComponentType::ID;
+const ComponentTypeBitID Component<ComponentType>::BID = 1ULL << ComponentType::ID;

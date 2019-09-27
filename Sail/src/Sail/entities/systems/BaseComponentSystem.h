@@ -19,8 +19,9 @@ class Entity;
 class BaseComponentSystem {
 public:
 	BaseComponentSystem()
-		: readBits(0)
-		, writeBits(0) {}
+		: requiredComponentTypes(0x0)
+		, readBits(0x0)
+		, writeBits(0x0) {}
 	virtual ~BaseComponentSystem() {}
 
 	virtual void update(float dt) = 0;
