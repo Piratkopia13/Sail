@@ -68,8 +68,10 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 	{
 		CloseHandle(hBufferEndEvent);
 	}
-};
 #pragma endregion
+};
+
+//struct StreamedAudioObject {};
 
 class AudioEngine
 {
@@ -108,7 +110,7 @@ private:
 	IXAudio2SourceVoice* m_sourceVoiceSound[SOUND_COUNT];
 	IXAudio2SourceVoice* m_sourceVoiceStream[STREAMED_SOUNDS_COUNT];
 
-
+	// 
 
 	int m_currSoundIndex = 0;
 	std::atomic<int> m_currStreamIndex = 0;
