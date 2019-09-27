@@ -16,7 +16,10 @@ class Entity;
 class BaseComponentSystem
 {
 public:
-	BaseComponentSystem() {}
+	BaseComponentSystem() 
+		: readBits(0)
+		, writeBits(0)
+	{}
 	virtual ~BaseComponentSystem() {}
 
 	virtual void update(float dt) = 0;
@@ -35,8 +38,16 @@ public:
 		Returns the indices of all the component types required to be within this system
 	*/
 	const std::vector<int>& getRequiredComponentTypes() const;
+	
+	/* Returns the bit mask for all components that are being read from */
+	const unsigned int getReadBitMask() const;
+
+	/* Returns the bit mask for all components that are being written to */
+	const unsigned int getWriteBitMask() const;
 
 protected:
 	std::vector<Entity*> entities;
 	std::vector<int> requiredComponentTypes;
+	unsigned int readBits;
+	unsigned int writeBits;
 };

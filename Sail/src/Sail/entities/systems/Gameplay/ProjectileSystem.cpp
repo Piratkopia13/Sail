@@ -7,7 +7,11 @@
 
 ProjectileSystem::ProjectileSystem() {
 	requiredComponentTypes.push_back(ProjectileComponent::ID);
+	readBits |= ProjectileComponent::BID;
+	writeBits |= ProjectileComponent::BID;
 	requiredComponentTypes.push_back(PhysicsComponent::ID);
+	readBits |= PhysicsComponent::BID;
+	/* Does it really need the transform component? */
 	requiredComponentTypes.push_back(TransformComponent::ID);
 }
 

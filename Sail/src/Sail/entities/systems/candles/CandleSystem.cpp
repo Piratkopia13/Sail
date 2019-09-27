@@ -10,8 +10,13 @@
 
 CandleSystem::CandleSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(CandleComponent::ID);
+	readBits |= CandleComponent::BID;
+	writeBits |= CandleComponent::BID;
 	requiredComponentTypes.push_back(TransformComponent::ID); // read-only
+	readBits |= TransformComponent::BID;
 	requiredComponentTypes.push_back(LightComponent::ID);
+	readBits |= LightComponent::BID;
+	writeBits |= LightComponent::BID;
 }
 
 CandleSystem::~CandleSystem() {
