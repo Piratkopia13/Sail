@@ -23,6 +23,7 @@ namespace KeyBinds {
 	extern int moveDown;
 	extern int lightCandle1;
 	extern int lightCandle2;
+	extern int putDownCandle;
 
 	// Application
 	extern int alt;

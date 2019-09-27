@@ -7,8 +7,6 @@
 #include "Network/NWrapperClient.h"
 #include "Network/NWrapperSingleton.h"
 
-using namespace std;
-
 LobbyClientState::LobbyClientState(StateStack& stack)
 	: LobbyState(stack)
 {
@@ -32,8 +30,8 @@ bool LobbyClientState::onEvent(Event& event) {
 bool LobbyClientState::onMyTextInput(TextInputEvent& event) {
 	// Add input to current message, If 'enter', send message to host, do not input to chat.
 	if (this->inputToChatLog(event.getMSG())) {
-		string mesgWithId = "";
-		mesgWithId += to_string(m_me.id) + ':';
+		std::string mesgWithId = "";
+		mesgWithId += std::to_string(m_me.id) + ':';
 		mesgWithId += m_currentmessage;
 		this->fetchMessage();
 		m_network->sendChatMsg(mesgWithId);
@@ -79,7 +77,7 @@ bool LobbyClientState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 			printf("\t");
 			printf(currentPlayer.name.c_str());
 			printf("\t");
-			printf(to_string(currentPlayer.id).c_str());
+			printf(std::to_string(currentPlayer.id).c_str());
 			printf("\n");
 		}
 	}
@@ -90,13 +88,13 @@ bool LobbyClientState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 
 bool LobbyClientState::onNameRequest(NetworkNameEvent& event) {
 	// Save the ID which the host has blessed us with
-	string temp = event.getRepliedName();	// And replace our current HOSTID
-	int newId = stoi(temp);					//
+	std::string temp = event.getRepliedName();	// And replace our current HOSTID
+	int newId = std::stoi(temp);					//
 	m_me.id = newId;
 	this->playerJoined(Player{ 0, m_me.name });
 	
 	// Append :NAME onto ?ID --> ?ID:NAME and answer the host
-	string message = "?";
+	std::string message = "?";
 	message += event.getRepliedName();
 	message += ":" + m_me.name + ":";
 	m_network->sendMsg(message);

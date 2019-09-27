@@ -6,6 +6,7 @@
 
 PrepareUpdateSystem::PrepareUpdateSystem() {
 	requiredComponentTypes.push_back(TransformComponent::ID); // read-only
+	readBits |= TransformComponent::BID;
 }
 
 PrepareUpdateSystem::~PrepareUpdateSystem() {

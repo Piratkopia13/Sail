@@ -3,11 +3,6 @@
 #include "Network/NWrapper.h"
 #include "Network/NWrapperHost.h"
 
-
-#include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
-
-using namespace std;
-
 LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack)
 {
@@ -34,53 +29,17 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 	// Add to current message, If 'enter' ...
 	if (this->inputToChatLog(event.getMSG())) {
 		// ... Add current message to chat log
-		Message temp{ to_string(m_me.id), m_currentmessage };
+		Message temp{ std::to_string(m_me.id), m_currentmessage };
 		this->addTextToChat(&temp);
 
 		// ... Append my ID to it.
-		string mesgWithId = "";
-		mesgWithId += to_string(m_me.id) + ':';
+		std::string mesgWithId = "";
+		mesgWithId += std::to_string(m_me.id) + ':';
 		mesgWithId += m_currentmessage;
 		this->fetchMessage();
 
 		// ... Send the message to other clients and reset message
 		m_network->sendChatAllClients(mesgWithId);
-		
-
-
-
-
-
-		// TESTING FOR SENDING SERIALIZED DATA
-		unsigned int testInt = 5;
-
-		std::ostringstream os(std::ios::binary);
-		{
-			cereal::PortableBinaryOutputArchive ar(os);
-			ar(testInt);
-		}
-		std::string data = os.str();
-
-
-
-
-
-
-		std::istringstream is(data);
-
-		int testInt2 = 0;
-
-		{
-			cereal::PortableBinaryInputArchive ar(is);
-			ar(testInt2);
-		}
-		if (testInt2 == 5) {
-			int fda = 43;
-		}
-
-
-
-	//	m_network->sendSerializedData(data);
 	}
 
 	return true;
@@ -110,8 +69,8 @@ bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 
 bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	// Parse the message | ?12:DANIEL
-	string message = event.getRepliedName(); 
-	string id_string = "";
+	std::string message = event.getRepliedName(); 
+	std::string id_string = "";
 	unsigned char id_int = 0;
 
 	// Get ID...
@@ -125,7 +84,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 		}
 	}
 	// ... as a number
-	id_int = stoi(id_string);
+	id_int = std::stoi(id_string);
 
 	message.erase(0, id_string.size() + 2);	// Removes ?ID: ___
 	message.erase(message.size() - 1);		// Removes ___ :
@@ -143,7 +102,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 
 	printf("Sending out welcome package...\n");
 	for (auto currentPlayer : m_players) {
-		welcomePackage.append(to_string(currentPlayer.id));
+		welcomePackage.append(std::to_string(currentPlayer.id));
 		welcomePackage.append(":");
 		welcomePackage.append(currentPlayer.name);
 		welcomePackage.append(":");

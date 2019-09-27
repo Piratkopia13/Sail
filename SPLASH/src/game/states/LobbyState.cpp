@@ -38,7 +38,7 @@ LobbyState::LobbyState(StateStack& stack)
 }
 
 LobbyState::~LobbyState() {
-	delete[]m_currentmessage;
+	delete[] m_currentmessage;
 }
 
 bool LobbyState::processInput(float dt) {
@@ -136,9 +136,9 @@ void LobbyState::resetCurrentMessage() {
 	}
 }
 
-string LobbyState::fetchMessage()
+std::string LobbyState::fetchMessage()
 {
-	string message = string(m_currentmessage);
+	std::string message = std::string(m_currentmessage);
 
 	// Reset currentMessage
 	m_currentmessageIndex = 0;
@@ -154,7 +154,7 @@ void LobbyState::addMessageToChat(Message& message) {
 	// Add sender to the text
 	unsigned char id = stoi(message.sender);
 	Player* playa = this->getPlayer(id);
-	string msg = playa->name + ": ";
+	std::string msg = playa->name + ": ";
 	message.content.insert(0, msg);
 
 	// Add message to chatlog
