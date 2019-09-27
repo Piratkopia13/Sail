@@ -41,6 +41,10 @@ void CandleComponent::resetDoActivate() {
 	m_activate = false;
 }
 
+void CandleComponent::setDoActivate() {
+	m_activate = true;
+}
+
 void CandleComponent::addToDownTime(float time) {
 	m_downTime += time;
 }
@@ -51,4 +55,12 @@ void CandleComponent::resetDownTime() {
 
 float CandleComponent::getDownTime() const {
 	return m_downTime;
+}
+
+bool CandleComponent::isCarried() const {
+	return m_carried;
+}
+
+void CandleComponent::toggleCarried() {
+	m_carried = !m_carried;
 }
