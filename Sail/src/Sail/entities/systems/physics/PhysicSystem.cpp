@@ -140,7 +140,7 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 		float velocityAmp = glm::length(physics->velocity) * dt;
 		glm::vec3 normalizedVel = glm::normalize(physics->velocity);
 
-		//Find when the first wall of the boundingBox hits that position
+		//Find the distance to the front wall
 		float xMovementAllowed = boundingBox->getHalfSize().x / glm::max(std::abs(normalizedVel.x), 0.01f);
 		float yMovementAllowed = boundingBox->getHalfSize().y / glm::max(std::abs(normalizedVel.y), 0.01f);
 		float zMovementAllowed = boundingBox->getHalfSize().z / glm::max(std::abs(normalizedVel.z), 0.01f);
@@ -162,7 +162,6 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 				physics->m_oldVelocity = physics->velocity;
 
 				rayCastUpdate(e, dt);
-
 			}
 		}
 	}
