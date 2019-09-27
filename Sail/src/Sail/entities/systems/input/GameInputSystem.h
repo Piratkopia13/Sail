@@ -1,10 +1,9 @@
 #pragma once
 #include "../BaseComponentSystem.h"
-
-class PhysicsComponent;
+#include "Sail/entities/Entity.h"
+class Camera;
 class CameraController;
-class PlayerController;
-class Entity;
+
 
 class GameInputSystem final : public BaseComponentSystem {
 public:
@@ -14,7 +13,7 @@ public:
 	// This function is only here because it has to. use update with alpha.
 	void update(float dt) {}
 	void update(float dt, float alpha);
-	void initialize(PlayerController* playerEntity);
+	void initialize(Entity::SPtr player, Camera* cam);
 	void updateCameraPosition(float alpha);
 
 	void processPerFrameInput();
@@ -24,9 +23,7 @@ private:
 	void processKeyboardInput(const float& dt);
 	void processMouseInput(const float& dt);
 
-	PlayerController* m_player = nullptr;
-	Entity* m_playerEntity = nullptr;
-	PhysicsComponent* m_physics = nullptr;
+	Entity::SPtr m_playerEntity = nullptr;
 	CameraController* m_cam = nullptr;
 
 	// --------- Earlier used variables below this line ---------

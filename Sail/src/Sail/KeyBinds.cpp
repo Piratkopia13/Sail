@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "KeyBinds.h"
 #include "Sail/KeyCodes.h"
+#include "Sail/MouseButtonCodes.h"
 
 // Defines the variables
 namespace KeyBinds {
@@ -23,6 +24,8 @@ namespace KeyBinds {
 	int moveDown;
 	int lightCandle1;
 	int lightCandle2;
+	int disableCursor;
+	int shoot;
 
 	// Application
 	int alt;
@@ -62,6 +65,9 @@ void KeyBinds::init() {
 	moveDown = SAIL_KEY_CONTROL;
 	lightCandle1 = SAIL_KEY_Z;
 	lightCandle2 = SAIL_KEY_V;
+	disableCursor = SAIL_MOUSE_RIGHT_BUTTON;
+	shoot = SAIL_MOUSE_LEFT_BUTTON;
+
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds

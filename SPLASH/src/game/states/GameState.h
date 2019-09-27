@@ -69,7 +69,8 @@ private:
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	PlayerController m_playerController;
+	Entity::SPtr m_player;
+
 
 	const std::string createCube(const glm::vec3& position);
 

@@ -23,7 +23,7 @@
 GameState::GameState(StateStack& stack)
 : State(stack)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-, m_playerController(&m_cam, &m_scene)
+//, m_playerController(&m_cam, &m_scene)
 , m_cc(true)
 , m_profiler(true)
 , m_disableLightComponents(false)
@@ -117,19 +117,6 @@ GameState::GameState(StateStack& stack)
 	
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
-
-	// This was moved out from the PlayerController constructor
-	// since the PhysicSystem needs to be created first
-	// (or the PhysicsComponent needed to be detached and reattached
-	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
-
-	//Create system for input | Needs to be after playercontroller gets physicscomponent^
-	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_playerController);
-
-
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
 	// Textures needs to be loaded before they can be used
@@ -147,11 +134,6 @@ GameState::GameState(StateStack& stack)
 
 
 
-	// Set up camera with controllers
-	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
-	m_cam.lookAt(glm::vec3(0.f));
-	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
-	
 
 	// Add a directional light
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -191,13 +173,46 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-	//Give player a bounding box
-	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	m_playerController.getEntity()->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-	m_scene.addEntity(m_playerController.getEntity());
+
+	// Player creation
+	m_player = ECS::Instance()->createEntity("player");
+	
+	m_player->addComponent<TransformComponent>();
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+
+	m_player->addComponent<PhysicsComponent>();
+	m_player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	m_player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
+
+
+
+	// Give player a bounding box
+	m_player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	m_player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 
 	// Temporary projectile model for the player's gun
-	m_playerController.setProjectileModels(m_cubeModel.get(), m_boundingBoxModel.get());
+	m_player->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
+
+
+	//Create system for input
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(m_player, &m_cam);
+
+
+
+	// Create candle for the player
+	m_currLightIndex = 0;
+	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
+	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
+	m_player->addChildEntity(e);
+
+	m_scene.addEntity(m_player);
+	
+	// Set up camera
+	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
+	m_cam.lookAt(glm::vec3(0.f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+
 
 	/*
 		Creation of entities
@@ -353,12 +368,11 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
-		e->addComponent<GunComponent>(m_cubeModel.get());
+		e->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
 		m_scene.addEntity(e);
 
 
-		m_currLightIndex = 0;
 		e = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
 
 
@@ -367,10 +381,6 @@ GameState::GameState(StateStack& stack)
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
-		// Create candle for the player
-		e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
-		e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-		m_playerController.getEntity()->addChildEntity(e);
 
 
 
@@ -436,7 +446,7 @@ bool GameState::processInput(float dt) {
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
 			if ( aiComp->entityTarget == nullptr ) {
-				aiComp->setTarget(m_playerController.getEntity().get());
+				aiComp->setTarget(m_player.get());
 			} else {
 				aiComp->setTarget(nullptr);
 			}

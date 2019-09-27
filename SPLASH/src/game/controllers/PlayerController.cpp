@@ -28,7 +28,7 @@ void PlayerController::setStartPosition(const glm::vec3& pos) {
 }
 
 
-void PlayerController::processKeyboardInput(float dt) {
+//void PlayerController::processKeyboardInput(float dt) {
 //	float speedModifier = 1.f;
 //	float forwardMovement = 0.0f;
 //	float rightMovement = 0.0f;
@@ -144,7 +144,7 @@ void PlayerController::processKeyboardInput(float dt) {
 //
 //	m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f,playerBB->getBoundingBox()->getHalfSize().y*0.8f,0.f)));
 //	m_cam->setCameraDirection(forwards);
-}
+//}
 
 
 CameraController* PlayerController::getCameraController() const {
@@ -159,9 +159,9 @@ std::shared_ptr<Entity> PlayerController::getEntity() {
 }
 
 void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) {
-	m_projectileModel = model;
+	/*m_projectileModel = model;
 	m_projectileWireframeModel = wireframeModel;
-	m_player->addComponent<GunComponent>(m_projectileModel);
+	m_player->addComponent<GunComponent>(m_projectileModel);*/
 }
 
 

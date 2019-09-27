@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "GameInputSystem.h"
-#include "Sail.h"
+#include "Sail/graphics/camera/CameraController.h"
+#include "Sail/entities/components/Components.h"
 #include "../../../api/Input.h"
-#include "../../../SPLASH/src/game/controllers/PlayerController.h"
+#include "Sail/KeyBinds.h"
 
 GameInputSystem::GameInputSystem() {
 	m_yaw = 90.f;
@@ -19,11 +20,9 @@ void GameInputSystem::update(float dt, float alpha) {
 	this->updateCameraPosition(alpha);
 }
 
-void GameInputSystem::initialize(PlayerController* playerController) {
-	m_player = playerController;
-	m_playerEntity = m_player->getEntity().get();
-	m_cam = m_player->getCameraController();
-	m_physics = m_player->getEntity()->getComponent<PhysicsComponent>();
+void GameInputSystem::initialize(Entity::SPtr player, Camera* cam) {
+	m_playerEntity = player;
+	m_cam = SAIL_NEW CameraController(cam);
 }
 
 void GameInputSystem::processPerFrameInput() {
@@ -35,31 +34,38 @@ void GameInputSystem::processPerTickInput() {
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
-	float speedModifier = 1.f;
+
+		float speedModifier = 1.f;
 	float forwardMovement = 0.0f;
 	float rightMovement = 0.0f;
 	float upMovement = 0.0f;
 
-	PhysicsComponent* physicsComp = m_physics;
-
-	float tempY = physicsComp->velocity.y;
+	PhysicsComponent* physicsComp = m_playerEntity->getComponent<PhysicsComponent>();
 
 	// Increase speed if shift or right trigger is pressed
 	if (Input::IsKeyPressed(KeyBinds::sprint)) { speedModifier = m_runSpeed; }
+
 	if (Input::IsKeyPressed(KeyBinds::moveForward)) { forwardMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveBackward)) { forwardMovement -= 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveLeft)) { rightMovement -= 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
-		if (!m_wasSpacePressed) {
-			tempY = 15.0f;
+		if (!m_wasSpacePressed && physicsComp->onGround) {
+			physicsComp->velocity.y = 5.0f;
 		}
 		m_wasSpacePressed = true;
 	}
 	else {
 		m_wasSpacePressed = false;
 	}
-	//if (Input::IsKeyPressed(KeyBinds::moveDown)) { upMovement -= 1.0f; }
+
+
+	glm::vec3 forwards(
+		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
+		std::sin(glm::radians(m_pitch)),
+		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
+	);
+	forwards = glm::normalize(forwards);
 
 	glm::vec3 forward = m_cam->getCameraDirection();
 	forward.y = 0.f;
@@ -71,36 +77,76 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 	TransformComponent* playerTrans = m_playerEntity->getComponent<TransformComponent>();
 
 	// Prevent division by zero
-	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
+	if (forwardMovement != 0.0f || rightMovement != 0.0f) {
 		// Calculate total movement
-		physicsComp->velocity =
+		float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
+		if (!physicsComp->onGround) {
+			acceleration = acceleration * 0.5f;
+		}
+		physicsComp->accelerationToAdd += 
 			glm::normalize(right * rightMovement + forward * forwardMovement)
-			* m_movementSpeed * speedModifier;
-	}
-	else {
-		physicsComp->velocity = glm::vec3(0.0f);
+			* acceleration;
 	}
 
-	physicsComp->velocity.y = tempY;
+	//float speedModifier = 1.f;
+	//float forwardMovement = 0.0f;
+	//float rightMovement = 0.0f;
+	//float upMovement = 0.0f;
 
-	// Shooting
+	//PhysicsComponent* physicsComp = m_playerEntity->getComponent<PhysicsComponent>();
 
-	// Shoot gun
-	// TODO: This should probably be moved elsewhere.
-	//       See if it should be done every tick or every frame and where the projectiles are to be created
-	if (Input::IsMouseButtonPressed(0)) {
-		// TODO: add and tweak guncomponent+projectile system once playercontroller is changed to a system
-		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-		glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
-		m_playerEntity->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
-	}
+	//float tempY = physicsComp->velocity.y;
 
+	//// Increase speed if shift or right trigger is pressed
+	//if (Input::IsKeyPressed(KeyBinds::sprint)) { speedModifier = m_runSpeed; }
+	//if (Input::IsKeyPressed(KeyBinds::moveForward)) { forwardMovement += 1.0f; }
+	//if (Input::IsKeyPressed(KeyBinds::moveBackward)) { forwardMovement -= 1.0f; }
+	//if (Input::IsKeyPressed(KeyBinds::moveLeft)) { rightMovement -= 1.0f; }
+	//if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
+	//if (Input::IsKeyPressed(KeyBinds::moveUp)) {
+	//	if (!m_wasSpacePressed) {
+	//		tempY = 15.0f;
+	//	}
+	//	m_wasSpacePressed = true;
+	//}
+	//else {
+	//	m_wasSpacePressed = false;
+	//}
+	////if (Input::IsKeyPressed(KeyBinds::moveDown)) { upMovement -= 1.0f; }
+
+	//glm::vec3 forward = m_cam->getCameraDirection();
+	//forward.y = 0.f;
+	//forward = glm::normalize(forward);
+
+	//glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+	//right = glm::normalize(right);
+
+	//TransformComponent* playerTrans = m_playerEntity->getComponent<TransformComponent>();
+
+	//// Prevent division by zero
+	//if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
+	//	// Calculate total movement
+	//	physicsComp->velocity =
+	//		glm::normalize(right * rightMovement + forward * forwardMovement)
+	//		* m_movementSpeed * speedModifier;
+	//}
+	//else {
+	//	physicsComp->velocity = glm::vec3(0.0f);
+	//}
+
+	//physicsComp->velocity.y = tempY;
 }
 
 void GameInputSystem::processMouseInput(const float& dt) {
 	// Toggle cursor capture on right click
-	if (Input::WasMouseButtonJustPressed(SAIL_MOUSE_RIGHT_BUTTON)) {
+	if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
 		Input::HideCursor(!Input::IsCursorHidden());
+	}
+
+	if (Input::IsMouseButtonPressed(KeyBinds::shoot)) {
+		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
+		glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
+		m_playerEntity->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 	}
 
 	// Update pitch & yaw if window has focus
@@ -149,7 +195,6 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
 	);
 	forwards = glm::normalize(forwards);
-	//playerTrans->setForward(forwards); //needed?
 
 	m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 0.8f, 0.f)));
 	m_cam->setCameraDirection(forwards);
