@@ -14,6 +14,8 @@ class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
 class GameInputSystem;
+class NetworkSystem;
+class NetworkSerializedPackageEvent;
 class AudioSystem;
 
 class GameState : public State {
@@ -38,6 +40,8 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
+
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
@@ -64,6 +68,7 @@ private:
 		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
 		GameInputSystem* gameInputSystem = nullptr;
+		NetworkSystem* networkSystem = nullptr;
 		AudioSystem* audioSystem = nullptr;
 	};
 

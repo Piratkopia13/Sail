@@ -3,6 +3,10 @@ const unsigned int MAX_PACKAGE_SIZE = 64;
 const unsigned int MAX_AWAITING_PACKAGES = 1000;
 const unsigned int HOST_META_DESC_SIZE = MAX_PACKAGE_SIZE - 6;
 
+// The length of the string you get from archiving an int.
+// This is needed to know how many bytes to read to find the size of a message.
+constexpr int MSG_SIZE_STR_LEN = 1 + sizeof(int);
+
 //#define DEBUG_NETWORK
 
 typedef unsigned long long TCP_CONNECTION_ID;
@@ -17,7 +21,11 @@ enum class NETWORK_EVENT_TYPE {
 };
 
 union NetworkEventData {
-	char rawMsg[MAX_PACKAGE_SIZE];
+	struct {
+		size_t sizeOfMsg;
+		char* rawMsg;
+	} Message;
+
 	struct
 	{
 		union {
@@ -27,6 +35,11 @@ union NetworkEventData {
 		USHORT hostPort;
 		char description[HOST_META_DESC_SIZE];
 	} HostFoundOnLanData;
+
+	NetworkEventData() {
+		Message.rawMsg = nullptr;
+		Message.sizeOfMsg = 0;
+	}
 };
 static_assert(sizeof(NetworkEventData) == MAX_PACKAGE_SIZE, "sizeof(NetworkEventData) is not what you expect! Check your struct man.");
 
