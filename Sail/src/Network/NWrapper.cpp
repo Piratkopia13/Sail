@@ -2,6 +2,7 @@
 #include "NWrapper.h"
 #include "Network/NetworkModule.hpp"
 
+
 NWrapper::NWrapper(Network* pNetwork) {
 	this->initialize(pNetwork);
 }
@@ -16,7 +17,7 @@ void NWrapper::initialize(Network* pNetwork) {
 }
 
 void NWrapper::shutDown() {
-	// NO DELETION OF NETWORK, it is the responisibility of the NWrapperSingleton!
+	// NO DELETION OF NETWORK, it is the responsibility of the NWrapperSingleton!
 	m_network->shutdown();
 }
 
@@ -126,4 +127,9 @@ void NWrapper::sendMsgAllClients(std::string msg) {
 void NWrapper::sendChatAllClients(std::string msg) {
 	msg = std::string("m") + msg;
 	m_network->send(msg.c_str(), msg.length() + 1, -1);
+}
+
+void NWrapper::sendSerializedData(std::string data) {
+	data = std::string("s") + data;
+	m_network->send(data.c_str(), data.length(), -1);
 }

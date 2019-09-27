@@ -84,16 +84,15 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	unsigned int id_number = 0;			//
 	std::string id = "";			// used in 'm'
 	std::string remnants_m = "";
-	unsigned int id_m;
 	unsigned char id_question;
 	Message processedMessage;
+	std::string dataString;
 
-	switch (nEvent.data->rawMsg[0])
-	{
+	switch (nEvent.data->Message.rawMsg[0]) {
 	case 'm':
-		// Client recieved a chat message from the host...
+		// Client received a chat message from the host...
 		// Parse and process into Message struct
-		processedMessage = processChatMessage((std::string)nEvent.data->rawMsg);
+		processedMessage = processChatMessage((std::string)nEvent.data->Message.rawMsg);
 
 		// Dispatch Message to lobby.
 		Application::getInstance()->dispatchEvent(NetworkChatEvent(processedMessage));
@@ -103,7 +102,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case 'd':
 		// A player disconnected from the host...
 		// Get the user ID from the event data.
-		userID = this->decompressDCMessage(std::string(nEvent.data->rawMsg));
+		userID = this->decompressDCMessage(std::string(nEvent.data->Message.rawMsg));
 
 		// Dispatch the ID to lobby
 		Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(userID));
@@ -113,7 +112,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		// A player joined the host...
 		// Get the user ID from the event data.
 		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->rawMsg[1 + i];
+			charAsInt[i] = nEvent.data->Message.rawMsg[1 + i];
 		}
 		userID = reinterpret_cast<int&>(charAsInt);
 
@@ -124,7 +123,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case '?':
 		// The host is giving us an ID and asking what our name is...
 		// Parse the ID from the message
-		id_question = nEvent.data->rawMsg[1];
+		id_question = nEvent.data->Message.rawMsg[1];
 
 		// Dispatch ID to lobby where my chosen name will be replied back.
 		Application::getInstance()->dispatchEvent(NetworkNameEvent(std::to_string(id_question)));
@@ -138,7 +137,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case 'w':
 		// The host has sent us a welcome-package with a list of the players in the game...
 		// Parse the welcome-package into a list of players
-		remnants = nEvent.data->rawMsg;
+		remnants = nEvent.data->Message.rawMsg;
 		while (remnants != "") {
 			currentPlayer.id = this->parseID(remnants);
 			currentPlayer.name = this->parseName(remnants);
@@ -155,7 +154,13 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		}
 
 		break;
+	case 's': // Serialized data, remove first character and send the rest to be deserialized
+		dataString = std::string(nEvent.data->Message.rawMsg, nEvent.data->Message.sizeOfMsg);
+		dataString.erase(0, 1); // remove the s
 
+		// TODO: Send the serialized data as a string to a function which parses it.
+		//Application::getInstance()->dispatchEvent();
+		break;
 	default:
 		break;
 	}
@@ -172,3 +177,4 @@ unsigned int NWrapperClient::decompressDCMessage(std::string messageData) {
 
 	return userID;
 }
+
