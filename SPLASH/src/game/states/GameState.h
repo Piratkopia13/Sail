@@ -23,7 +23,7 @@ public:
 	GameState(StateStack& stack);
 	~GameState();
 
-	// Process input for the state
+	// Process input for the state ||
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
 	virtual bool onEvent(Event& event) override;
