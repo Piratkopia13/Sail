@@ -61,6 +61,8 @@ public:
 	void queueDestructionOfEntity(Entity* entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
 	void destroyEntity(int ecsIndex);
+	// Clears the map of all unique_ptr systems
+	void destroyAllSystems();
 
 	/*
 		Adds an already existing system of a chosen type

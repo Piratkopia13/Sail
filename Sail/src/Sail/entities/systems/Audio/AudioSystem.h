@@ -11,6 +11,8 @@ public:
 	AudioSystem();
 	~AudioSystem();
 
+	AudioEngine* getAudioEngine();
+
 	void update(float dt) override;
 
 private:

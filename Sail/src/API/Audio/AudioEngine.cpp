@@ -99,7 +99,7 @@ int AudioEngine::playSound(const std::string& filename) {
 }
 
 int AudioEngine::streamSound(const std::string& filename, bool loop) {
-	int returnValue = m_currStreamIndex; // Store early
+	int returnValue = m_currStreamIndex.load(); // Store early
 
 	if (m_masterVoice == nullptr) {
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
@@ -107,11 +107,11 @@ int AudioEngine::streamSound(const std::string& filename, bool loop) {
 	}
 
 	Application::getInstance()->pushJobToThreadPool(
-		[this](int id) {
-			return this->streamSoundInternal("../Audio/wavebankLong.xwb", m_currStreamIndex, false);
+		[this, returnValue](int id) {
+			return this->streamSoundInternal("../Audio/wavebankLong.xwb", returnValue, false);
 		});
 
-	m_currStreamIndex.store((m_currStreamIndex + 1) % STREAMED_SOUNDS_COUNT);
+	m_currStreamIndex.store((m_currStreamIndex + 2) % STREAMED_SOUNDS_COUNT);
 	return returnValue;
 }
 
@@ -130,6 +130,13 @@ void AudioEngine::stopSpecificStream(int index) {
 		if (m_sourceVoiceStream[index] != nullptr) {
 			m_isStreaming[index] = false;
 		}
+	}
+}
+
+void AudioEngine::stopAllStreams() {
+
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		m_isStreaming[i] = false;
 	}
 }
 

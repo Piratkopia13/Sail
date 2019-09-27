@@ -15,6 +15,10 @@ AudioSystem::~AudioSystem() {
 	m_audioEngine.stopAllSounds();
 }
 
+AudioEngine* AudioSystem::getAudioEngine() {
+	return &m_audioEngine;
+}
+
 void AudioSystem::update(float dt) {
 
 	AudioComponent* audioC = nullptr;
@@ -34,12 +38,10 @@ void AudioSystem::update(float dt) {
 						audioC->m_soundEffectTimers[i] += dt;
 
 						audioC->m_isPlaying[i] = !audioC->m_playOnce[i]; // NOTE: Opposite, hence '!'
-						std::cout << "LOOP-TIME!\n";
 					}
 
 					else {
 						audioC->m_soundEffectTimers[i] += dt;
-						std::cout << audioC->m_soundEffectTimers[SoundType::RUN] << "\n";
 
 						if (audioC->m_soundEffectTimers[i] > audioC->m_soundEffectThresholds[i]) {
 							audioC->m_soundEffectTimers[i] = 0.0f;

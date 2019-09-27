@@ -570,8 +570,6 @@ bool GameState::update(float dt) {
 
 	updatePerTickComponentSystems(dt);
 
-	
-
 	return true;
 }
 

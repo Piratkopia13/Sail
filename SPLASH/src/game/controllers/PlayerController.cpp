@@ -48,6 +48,8 @@ void PlayerController::processKeyboardInput(float dt) {
 	if (Input::IsKeyPressed(SAIL_KEY_D)) { rightMovement += 1.0f; }
 	if (Input::IsKeyPressed(SAIL_KEY_SPACE)) { 
 		if (!m_wasSpacePressed) {
+
+			// AUDIO TESTING (playing a non-looping jump sound)
 			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
 			m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::JUMP] = true;
 			tempY = 15.0f;
@@ -78,20 +80,16 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
+		// AUDIO TESTING (playing a looping running sound)
 		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = true;
 		m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::RUN] = false;
 
+		// AUDIO TESTING (turn ON streaming)
 		if (!m_hasStartedStreaming) {
 			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
 			m_hasStartedStreaming = true;
+			m_hasStoppedStreaming = false;
 		}
-		//if (m_player->getComponent<AudioComponent>()->m_streamedSounds.find("../Audio/wavebankShortFade.xwb") != m_player->getComponent<AudioComponent>()->m_streamedSounds.end()) {
-		//	std::cout << "TESTING";
-		//}
-
-		//if (m_player->getComponent<AudioComponent>()->m_streamedSounds.find("test") != m_player->getComponent<AudioComponent>()->m_streamedSounds.end()) {
-		//	std::cout << "TESTING";
-		//}
 
 		// Calculate total movement
 		physicsComp->velocity =
@@ -100,7 +98,16 @@ void PlayerController::processKeyboardInput(float dt) {
 	}
 	else {
 		physicsComp->velocity = glm::vec3(0.0f);
+		
+		// AUDIO TESTING (turn OFF looping running sound)
 		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = false;
+
+		// AUDIO TESTING (turning OFF streaming)
+		if (!m_hasStoppedStreaming) {
+			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
+			m_hasStoppedStreaming = true;
+			m_hasStartedStreaming = false;
+		}
 	}
 
 	physicsComp->velocity.y = tempY;
@@ -115,11 +122,6 @@ void PlayerController::processKeyboardInput(float dt) {
 		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 		glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 		m_player->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
-
-		if (!m_hasStoppedStreaming) {
-			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
-			m_hasStoppedStreaming = true;
-		}
 	}
 }
 

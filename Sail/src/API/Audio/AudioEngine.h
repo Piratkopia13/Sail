@@ -80,6 +80,7 @@ public:
 	int streamSound(const std::string& filename, bool loop = true);
 	void stopSpecificSound(int index);
 	void stopSpecificStream(int index);
+	void stopAllStreams();
 	void stopAllSounds();
 
 	float getSoundVolume(int index);
