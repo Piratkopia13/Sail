@@ -43,5 +43,4 @@ protected:
 
 	virtual void beginFrame() override;
 	virtual void endFrame() override;
-
 };

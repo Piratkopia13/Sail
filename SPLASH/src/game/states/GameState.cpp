@@ -7,7 +7,8 @@
 #include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "Sail/entities/systems/light/LightSystem.h"
 #include "Sail/entities/systems/gameplay/AiSystem.h"
-#include "Sail/entities/systems/gameplay/ProjectileSystem.h"
+#include "Sail/entities/systems/gameplay/GunSystem.h"
+#include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/entities/systems/physics/PhysicSystem.h"
@@ -20,9 +21,7 @@
 
 GameState::GameState(StateStack& stack)
 : State(stack)
-//, m_cam(20.f, 20.f, 0.1f, 5000.f)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-//, m_camController(&m_cam)
 , m_playerController(&m_cam, &m_scene)
 , m_cc(true)
 , m_profiler(true)
@@ -113,13 +112,16 @@ GameState::GameState(StateStack& stack)
 	//Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
 
+	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
+	
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
 	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.0f, -30.0f, 0.0f);
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	m_playerController.getEntity()->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
 
 
@@ -142,7 +144,6 @@ GameState::GameState(StateStack& stack)
 
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
-	//m_camController.lookAt(glm::vec3(0.f));
 	m_cam.lookAt(glm::vec3(0.f));
 	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 	
@@ -340,7 +341,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		m_scene.addEntity(e);
 
-		e = ECS::Instance()->createEntity("Character1");
+		e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -348,89 +349,28 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
 		e->addComponent<GunComponent>(m_cubeModel.get());
+		e->addChildEntity(createCandleEntity("AiCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
 		m_scene.addEntity(e);
 
-		/*e = ECS::Instance()->createEntity("Character2");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 5.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
-#ifndef _DEBUG
-		e->addComponent<AiComponent>();
-#endif
-		m_scene.addEntity(e);
 
-		e = ECS::Instance()->createEntity("Character3");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f,5.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
-#ifndef _DEBUG
-		e->addComponent<AiComponent>();
-#endif
-		m_scene.addEntity(e);*/
+		m_currLightIndex = 0;
+		e = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
 
-
-		//creates light with model and pointlight
-		e = ECS::Instance()->createEntity("Map_Candle1");
-		e->addComponent<CandleComponent>();
-		e->addComponent<ModelComponent>(lightModel);
-		e->addComponent<TransformComponent>(glm::vec3(1.f, 0.f, 1.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		PointLight pl;
-		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
-		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setIndex(0);
-		e->addComponent<LightComponent>(pl);
-		m_scene.addEntity(e);
 
 #ifdef _DEBUG
 		// Candle1 holds all lights you can place in debug
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
-		e = ECS::Instance()->createEntity("Map_Candle2");
-		e->addComponent<CandleComponent>();
-		e->addComponent<ModelComponent>(lightModel);
-		e->addComponent<TransformComponent>(glm::vec3(1.f/3, 0.f, 1.f/3));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
-		pl.setPosition(glm::vec3(lightPos.x , lightPos.y + 0.37f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setIndex(1);
-		e->addComponent<LightComponent>(pl);
-		m_scene.addEntity(e);
-
 		// Create candle for the player
-		e = ECS::Instance()->createEntity("PlayerCandle");//;//ECS::Instance()->createEntity("PlayerCandle");
-		e->addComponent<CandleComponent>();
-		e->addComponent<ModelComponent>(lightModel);
-		CameraController* cc = m_playerController.getCameraController();
-		glm::vec3 camRight = glm::cross(cc->getCameraUp(), cc->getCameraDirection());
-		glm::vec3 candlePos = -cc->getCameraDirection() + camRight;// -m_cam->getCameraUp();
-		e->addComponent<TransformComponent>(candlePos);
-		lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(0.5f, 0.5f, 0.5f));
-		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
-		pl.setIndex(2);
-		e->addComponent<LightComponent>(pl);
+		e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
 		e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-		m_componentSystems.candleSystem->setPlayerCandle(e);
-		m_scene.addEntity(e);
+		m_playerController.getEntity()->addChildEntity(e);
 
 
 
 		m_virtRAMHistory = SAIL_NEW float[100];
 		m_physRAMHistory = SAIL_NEW float[100];
-		// Uncomment this to enable vram budget visualization
-		//m_vramBudgetHistory = SAIL_NEW float[100];
 		m_vramUsageHistory = SAIL_NEW float[100];
 		m_cpuHistory = SAIL_NEW float[100];
 		m_frameTimesHistory = SAIL_NEW float[100];
@@ -448,8 +388,6 @@ GameState::GameState(StateStack& stack)
 GameState::~GameState() {
 	delete m_virtRAMHistory;
 	delete m_physRAMHistory;
-	// Uncomment this to enable vram budget visualization
-	//delete m_vramBudgetHistory;
 	delete m_vramUsageHistory;
 	delete m_cpuHistory;
 	delete m_frameTimesHistory;
@@ -462,21 +400,21 @@ bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
 	// Add point light at camera pos
-	if (Input::WasKeyJustPressed(SAIL_KEY_E)) {
+	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
 		m_componentSystems.lightSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
 #endif
 	//Toggle bounding boxes rendering
-	if (Input::IsKeyPressed(SAIL_KEY_B)) {
+	if (Input::IsKeyPressed(KeyBinds::showBoundingBoxes)) {
 		m_scene.showBoundingBoxes(true);
 	}
-	if (Input::IsKeyPressed(SAIL_KEY_N)) {
+	if (Input::IsKeyPressed(KeyBinds::hideBoundingBoxes)) {
 		m_scene.showBoundingBoxes(false);
 	}
 
 	//Test ray intersection
-	if (Input::IsKeyPressed(SAIL_KEY_O)) {
+	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.entity) {
@@ -484,7 +422,8 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::WasKeyJustPressed(SAIL_KEY_H)) {
+	// Toggle ai following the player
+	if (Input::WasKeyJustPressed(KeyBinds::toggleAIFollowing)) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
@@ -496,11 +435,11 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::IsKeyPressed(SAIL_KEY_G)) {
+	if (Input::IsKeyPressed(KeyBinds::setDirectionalLight)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_OEM_5)) {
+	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole)) {
 		m_cc.toggle();
 		m_profiler.toggle();
 	}
@@ -509,28 +448,28 @@ bool GameState::processInput(float dt) {
 
 
 	// Reload shaders
-	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
+	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
 		Event e(Event::POTATO);
 		m_app->dispatchEvent(e);
 	}
 
 	// Lights the selected candle
-	if (Input::WasKeyJustPressed(SAIL_KEY_Z)) {
+	if (Input::WasKeyJustPressed(KeyBinds::lightCandle1)) {
 		m_componentSystems.candleSystem->lightCandle("Map_Candle1");
 	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_V)) {
+	if (Input::WasKeyJustPressed(KeyBinds::lightCandle2)) {
 		m_componentSystems.candleSystem->lightCandle("Map_Candle2");
 	}
 
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
-	if (Input::WasKeyJustPressed(SAIL_KEY_X)) {
+	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
 		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
 	}
 #endif
 	return true;
-	}
+}
 
 
 bool GameState::onEvent(Event& event) {
@@ -557,8 +496,6 @@ bool GameState::update(float dt) {
 	static float change = 0.4f;
 	
 	counter += dt * 2.0f;
-
-	//ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
 
 	m_playerController.processKeyboardInput(TIMESTEP);
 
@@ -620,7 +557,6 @@ bool GameState::renderImguiConsole(float dt) {
 			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
 			buf[m_cc.getTextField().size()] = '\0';
 
-			//std::string* str = new std::string(m_cc.getTextField());
 			std::string original = m_cc.getTextField();
 			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
 				ImGuiInputTextFlags_EnterReturnsTrue);
@@ -666,12 +602,6 @@ bool GameState::renderImguiProfiler(float dt) {
 			header = "VRAM (" + m_vramUCount + " MB)";
 			ImGui::Text(header.c_str());
 
-			// Uncomment this to enable vram budget visualization
-
-			/*header = "VRAM Available (" + m_vramBCount + " MB)";
-			ImGui::Text(header.c_str());*/
-
-
 			ImGui::Separator();
 			if (ImGui::CollapsingHeader("CPU Graph")) {
 				header = "\n\n\n" + m_cpuCount + "(%)";
@@ -695,14 +625,6 @@ bool GameState::renderImguiProfiler(float dt) {
 				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
 			}
 
-			// Uncomment this to enable vram budget visualization
-
-			/*if (ImGui::CollapsingHeader("VRAM Budget Graph")) {
-				header = "\n\n\n" + m_vramBCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_vramBudgetHistory, 100, 0, "", 0.f, 6000.f, ImVec2(0, 100));
-			}*/
-
-
 
 			ImGui::EndChild();
 
@@ -710,11 +632,6 @@ bool GameState::renderImguiProfiler(float dt) {
 			if (m_profilerTimer > 0.2f) {
 				m_profilerTimer = 0.f;
 				if (m_profilerCounter < 100) {
-
-					// Uncomment this to enable vram budget visualization
-
-					//m_vramBudgetHistory[m_profilerCounter] = m_profiler.vramBudget();
-					//m_vramBCount = "\n\n\n" + std::to_string(m_profiler.vramBudget());
 
 					m_virtRAMHistory[m_profilerCounter] = m_profiler.virtMemUsage();
 					m_physRAMHistory[m_profilerCounter] = m_profiler.workSetUsage();
@@ -741,15 +658,6 @@ bool GameState::renderImguiProfiler(float dt) {
 					delete m_physRAMHistory;
 					m_physRAMHistory = tempFloatArr1;
 					m_physCount = std::to_string(m_profiler.workSetUsage());
-
-					// Uncomment this to enable vram budget visualization
-
-					/*float* tempFloatArr2 = SAIL_NEW float[100];
-					std::copy(m_vramBudgetHistory + 1, m_vramBudgetHistory + 101, tempFloatArr2);
-					tempFloatArr2[99] = m_profiler.vramBudget();
-					delete m_vramBudgetHistory;
-					m_vramBudgetHistory = tempFloatArr2;
-					m_vramBCount = std::to_string(m_profiler.vramBudget());*/
 
 					float* tempFloatArr3 = SAIL_NEW float[100];
 					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
@@ -825,7 +733,6 @@ bool GameState::renderImGuiLightDebug(float dt) {
 		i++;
 		ImGui::PopID();
 	}
-	//m_lights.updateBufferData();
 	ImGui::End();
 	return true;
 }
@@ -836,15 +743,14 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
 	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
-	m_componentSystems.projectileSystem->update(dt, &m_scene); // Order?
+	m_componentSystems.gunSystem->update(dt, &m_scene); // Order?
+	m_componentSystems.projectileSystem->update(dt);
 	m_componentSystems.animationSystem->update(dt);
 	m_componentSystems.aiSystem->update(dt);
 
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 
-	// TODO: send vector of projectile entities to candleSystem
-	//m_componentSystems.candleSystem->checkProjectileCollisions(projectiles)
 	m_componentSystems.candleSystem->update(dt);
 
 	m_componentSystems.lifeTimeSystem->update(dt);
@@ -856,7 +762,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 void GameState::updatePerFrameComponentSystems(float dt) {
 	// Update the player's candle with the current camera position
-	m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
+	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
 
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {
@@ -864,6 +770,25 @@ void GameState::updatePerFrameComponentSystems(float dt) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
+}
+
+Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos) {
+	//creates light with model and pointlight
+	auto e = ECS::Instance()->createEntity(name.c_str());
+	e->addComponent<CandleComponent>();
+	e->addComponent<ModelComponent>(lightModel);
+	e->addComponent<TransformComponent>(lightPos);
+	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	e->addComponent<CollidableComponent>();
+	PointLight pl;
+	pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
+	pl.setAttenuation(.0f, 0.1f, 0.02f);
+	pl.setIndex(m_currLightIndex++);
+	e->addComponent<LightComponent>(pl);
+	m_scene.addEntity(e);
+
+	return e;
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

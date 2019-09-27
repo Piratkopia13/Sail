@@ -294,11 +294,13 @@ void Transform::updateMatrix() {
 	} else {
 		m_transformMatrix = m_localTransformMatrix;
 	}
+	m_hasChanged = true;
 }
 
 void Transform::treeNeedsUpdating() {
 	m_parentUpdated = true;
 	m_parentRenderUpdated = true;
+	m_hasChanged = true;
 	for (Transform* child : m_children) {
 		child->treeNeedsUpdating();
 	}
