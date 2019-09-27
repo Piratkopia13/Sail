@@ -49,7 +49,7 @@ void rayGen() {
 	float2 screenTexCoord = float2(launchIndex.x, launchIndex.y) / DispatchRaysDimensions().xy;
 	// screenTexCoord.y = -screenTexCoord.y;
 
-	lOutput[launchIndex] = float4( sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb, 1.0f);
+	lOutput[launchIndex] = float4( sys_inTex_texCoords.SampleLevel(ss, screenTexCoord, 0).rgb, 1.0f);
 	// lOutput[launchIndex] = float4( sys_inTex_normals.Load(int3(launchIndex.xy, 0)).rgb, 1.0f);
 	// lOutput[launchIndex] = float4( screenTexCoord, 0.f, 1.0f);
 	return;
@@ -112,11 +112,7 @@ void miss(inout RayPayload payload) {
 float4 getColor(MeshData data, float2 texCoords) {
 	float4 color = data.color;
 	if (data.flags & MESH_HAS_DIFFUSE_TEX)
-		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
- 	color += sys_inTex_normals.SampleLevel(ss, texCoords, 0) * 0.1f;
- 	color += sys_inTex_texCoords.SampleLevel(ss, texCoords, 0) * 0.1f;
- 	color += sys_inTex_depth.SampleLevel(ss, texCoords, 0) * 0.1f;
-		
+		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);		
 	// if (data.flags & MESH_HAS_NORMAL_TEX)
 	// 	color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
 	// if (data.flags & MESH_HAS_SPECULAR_TEX)

@@ -211,8 +211,6 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	// Set scene constant buffer
 	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_sceneCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
 
-	cmdList->SetComputeRootDescriptorTable(m_dxrGlobalRootSignature->getIndex("gbufferInputTextures"), m_gbufferStartGPUHandle);
-
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
 	cmdList->DispatchRays(&raytraceDesc);
@@ -536,6 +534,7 @@ void DXRBase::updateShaderTables() {
 		}
 		DXRUtils::ShaderTableBuilder tableBuilder(m_rayGenName, m_rtPipelineState.Get());
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
+		tableBuilder.addDescriptor(m_gbufferStartGPUHandle.ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -607,14 +606,13 @@ void DXRBase::createDXRGlobalRootSignature() {
 	m_dxrGlobalRootSignature->addSRV("AccelerationStructure", 0);
 	m_dxrGlobalRootSignature->addCBV("SceneCBuffer", 0);
 
-	m_dxrGlobalRootSignature->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 3);
-
 	m_dxrGlobalRootSignature->build(m_context->getDevice());
 }
 
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
+	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 3);
 	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);

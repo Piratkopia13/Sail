@@ -136,7 +136,7 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		for (int i = 0; i < NUM_GBUFFERS; i++) {
 			// TODO: transition in batch
 			m_gbufferTextures[i]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-			m_gbufferTextures[i]->clear({ 1.00f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
+			m_gbufferTextures[i]->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
 		}
 
 	}
@@ -146,32 +146,32 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	m_context->clear(cmdList.Get());
 #endif
 
-	//cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
-	//cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	//// Bind the descriptor heap that will contain all SRVs, DSVs and RTVs for this frame
-	//m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
+	// Bind the descriptor heap that will contain all SRVs, DSVs and RTVs for this frame
+	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 
-	//// Bind mesh-common constant buffers (camera)
-	//// TODO: bind camera cbuffer here
-	////cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
+	// Bind mesh-common constant buffers (camera)
+	// TODO: bind camera cbuffer here
+	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
-	//// TODO: Sort meshes according to material
-	//unsigned int meshIndex = start;
-	//RenderCommand* command;
-	//for (int i = 0; i < nCommands && meshIndex < oobMax; i++, meshIndex++ /*RenderCommand& command : commandQueue*/) {
-	//	command = &commandQueue[meshIndex];
-	//	DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->mesh->getMaterial()->getShader()->getPipeline());
+	// TODO: Sort meshes according to material
+	unsigned int meshIndex = start;
+	RenderCommand* command;
+	for (int i = 0; i < nCommands && meshIndex < oobMax; i++, meshIndex++ /*RenderCommand& command : commandQueue*/) {
+		command = &commandQueue[meshIndex];
+		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->mesh->getMaterial()->getShader()->getPipeline());
 
-	//	shaderPipeline->checkBufferSizes(oobMax); //Temp fix to expand constant buffers if the scene contain to many objects
-	//	shaderPipeline->bind_new(cmdList.Get(), meshIndex);
+		shaderPipeline->checkBufferSizes(oobMax); //Temp fix to expand constant buffers if the scene contain to many objects
+		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
 
-	//	shaderPipeline->setCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
-	//	shaderPipeline->setCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
-	//	shaderPipeline->setCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->setCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->setCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->setCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
 
-	//	static_cast<DX12Mesh*>(command->mesh)->draw_new(*this, cmdList.Get(), meshIndex);
-	//}
+		static_cast<DX12Mesh*>(command->mesh)->draw_new(*this, cmdList.Get(), meshIndex);
+	}
 
 	// Lastly - transition back buffer to present
 #ifdef MULTI_THREADED_COMMAND_RECORDING
