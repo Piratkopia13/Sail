@@ -128,11 +128,13 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 
 void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+	TransformComponent* transform = e->getComponent<TransformComponent>();
 	BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
 
 	if (std::abs(physics->velocity.x * dt) > std::abs(boundingBox->getHalfSize().x)
 		|| std::abs(physics->velocity.y * dt) > std::abs(boundingBox->getHalfSize().y)
 		|| std::abs(physics->velocity.z * dt) > std::abs(boundingBox->getHalfSize().z)) {
+
 		//Object is moving at a speed that risks missing collisions
 		//Ray cast to find upcoming collisions
 		Octree::RayIntersectionInfo intersectionInfo;
@@ -153,6 +155,7 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 			if (newDt > 0.0001f) {
 				//Move untill first overlap
 				boundingBox->setPosition(boundingBox->getPosition() + physics->velocity * newDt);
+				transform->translate(physics->velocity * newDt);
 
 				dt -= newDt;
 
@@ -179,7 +182,6 @@ void PhysicSystem::update(float dt) {
 		if (boundingBox) {
 			rayCastUpdate(e, dt);
 			collisionUpdate(e, dt);
-			transform->setTranslation(boundingBox->getBoundingBox()->getPosition());
 		}
 
 		transform->rotate(physics->constantRotation * dt);

@@ -31,7 +31,7 @@ public:
 	glm::vec3 direction;
 
 	float projectileSpawnTimer = 0.f;
-	float projectileSpeed = 70.f;
+	float projectileSpeed = 100.f;
 	bool firing = false;
 
 private:
