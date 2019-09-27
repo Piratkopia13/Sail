@@ -73,18 +73,22 @@ int AudioEngine::playSound(const std::string& filename) {
 
 		if (hr != S_OK) {
 			Logger::Error("Failed to create the actual 'SourceVoice' for a sound file!");
+			return -1;
 		}
 
 		hr = m_sourceVoiceSound[m_currSoundIndex]->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
 
 		if (hr != S_OK) {
 			Logger::Error("Failed to submit the 'sourceBuffer' to the 'sourceVoice' for a sound file!");
+			return -1;
 		}
 
 		hr = m_sourceVoiceSound[m_currSoundIndex]->Start(0);
 		if (hr != S_OK) {
 			Logger::Error("Failed submit processed audio data to data buffer for a audio file");
+			return -1;
 		}
+		m_sourceVoiceSound[m_currSoundIndex]->SetVolume(VOL_THIRD);
 
 		m_currSoundIndex++;
 		m_currSoundIndex %= SOUND_COUNT;
@@ -214,10 +218,6 @@ void AudioEngine::initXAudio2() {
 	if (hr != S_OK) {
 		Logger::Error("Creating the 'IXAudio2MasterVoice' failed!");
 	}
-}
-
-void AudioEngine::initHeadRelativeSpatialSound() {
-
 }
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
@@ -381,7 +381,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 						}
 
 						m_sourceVoiceStream[myIndex]->Start();
-						if (currentVolume < 0.80f) {
+						if (currentVolume < VOL_THIRD) {
 							currentVolume += 0.1f;
 							m_sourceVoiceStream[myIndex]->SetVolume(currentVolume);
 						}
