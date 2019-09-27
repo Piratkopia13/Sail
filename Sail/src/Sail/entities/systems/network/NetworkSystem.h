@@ -34,7 +34,7 @@ protected:
 		void serialize(Archive& ar) {
 			ar(x, y, z);
 		}
-	}; 
+	};
 
 	struct TranslationStruct {
 		easyVector trans;
@@ -68,3 +68,4 @@ protected:
 		}
 	};
 };
+

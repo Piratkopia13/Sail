@@ -15,6 +15,11 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/Input/GameInputSystem.h"
+#include "Sail/entities/systems/network/NetworkHostSystem.h"
+#include "Sail/entities/systems/network/NetworkClientSystem.h"
+#include "Sail/entities/systems/network/Networksystem.h"
+#include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "Network/NWrapperSingleton.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/TimeSettings.h"
 
@@ -121,6 +126,24 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
 
+	//Create system for input | Needs to be after playercontroller gets physicscomponent^
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkHostSystem>();
+	}
+	else {
+		m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkClientSystem>();
+	}
+	// Player creation | Needs to be before networkSystem is initialized
+	m_player = ECS::Instance()->createEntity("player");
+	m_componentSystems.networkSystem->initialize(m_player.get());
+
+
+
+	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
+
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
@@ -176,8 +199,7 @@ GameState::GameState(StateStack& stack)
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 
-	// Player creation
-	m_player = ECS::Instance()->createEntity("player");
+
 	
 	m_player->addComponent<PlayerComponent>();
 	m_player->addComponent<TransformComponent>();
@@ -496,6 +518,7 @@ bool GameState::processInput(float dt) {
 
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
+	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 
 	// Forward events
 	m_scene.onEvent(event);
@@ -506,6 +529,11 @@ bool GameState::onEvent(Event& event) {
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
+}
+
+bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
+	m_componentSystems.networkSystem->onSerializedPackageRecieved(event);
+	return false;
 }
 
 bool GameState::updatePerTick(float dt) {
@@ -784,6 +812,13 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
+
+	// TODO: Move to correct place
+	m_componentSystems.networkSystem->update(dt);
+	m_componentSystems.audioSystem->update(dt);
+
+	// Update the player's candle with the current camera position
+	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
 
 	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 
