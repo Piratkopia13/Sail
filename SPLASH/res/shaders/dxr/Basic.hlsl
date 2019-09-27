@@ -37,6 +37,11 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 	direction = normalize(world.xyz - origin);
 }
 
+// [shader("callable")]
+// void callableTest(inout RayPayload payload) {
+    
+// }
+
 [shader("raygeneration")]
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
@@ -45,6 +50,7 @@ void rayGen() {
 	// screenTexCoord.y = -screenTexCoord.y;
 
 	lOutput[launchIndex] = float4( sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb, 1.0f);
+	// lOutput[launchIndex] = float4( sys_inTex_normals.Load(int3(launchIndex.xy, 0)).rgb, 1.0f);
 	// lOutput[launchIndex] = float4( screenTexCoord, 0.f, 1.0f);
 	return;
 	

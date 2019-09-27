@@ -166,6 +166,10 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
 
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
 	assert(m_gbufferInputTextures); // Input textures not set!
+
+	for (int i = 0; i < 2; i++) {
+		m_gbufferInputTextures[i]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
 	
 	unsigned int frameIndex = m_context->getFrameIndex();
 
