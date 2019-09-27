@@ -46,14 +46,14 @@ GSIn VSMain(VSIn input) {
 	// Convert position into projection space
     output.position = mul(sys_mProj, output.position);
     
-	// Convert normal into view space and normalize
-	output.normal = mul((float3x3) wv, input.normal);
+	// Convert normal into world space and normalize
+	output.normal = mul((float3x3) sys_mWorld, input.normal);
 	output.normal = normalize(output.normal);
 
-	// Create TBN matrix to go from tangent space to view space
+	// Create TBN matrix to go from tangent space to world space
 	output.tbn = float3x3(
-	  normalize(mul((float3x3) wv, input.tangent)),
-	  normalize(mul((float3x3) wv, input.bitangent)),
+	  normalize(mul((float3x3) sys_mWorld, input.tangent)),
+	  normalize(mul((float3x3) sys_mWorld, input.bitangent)),
 	  output.normal
 	);
 

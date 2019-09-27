@@ -39,30 +39,63 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 
 [shader("raygeneration")]
 void rayGen() {
-	float3 rayDir;
-	float3 origin;
-
 	uint2 launchIndex = DispatchRaysIndex().xy;
-	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
-	generateCameraRay(launchIndex, origin, rayDir);
 
-	RayDesc ray;
-	ray.Origin = origin;
-	ray.Direction = rayDir;
+	float2 screenTexCoord = float2(launchIndex.x, launchIndex.y) / DispatchRaysDimensions().xy;
+	// screenTexCoord.y = -screenTexCoord.y;
 
-	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
-	// TMin should be kept small to prevent missing geometry at close contact areas
-	ray.TMin = 0.00001;
-	ray.TMax = 10000.0;
+	lOutput[launchIndex] = float4( sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb, 1.0f);
+	// lOutput[launchIndex] = float4( screenTexCoord, 0.f, 1.0f);
+	return;
+	
+	// float2 xy = launchIndex + 0.5f; // center in the middle of the pixel.
+	// float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
+	// // Invert Y for DirectX-style coordinates.
+	// screenPos.y = -screenPos.y;
 
-	RayPayload payload;
-	payload.recursionDepth = 0;
-	payload.hit = 0;
-	payload.color = float4(0,0,0,0);
-	TraceRay(gRtScene, 0, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
-	lOutput[launchIndex] = payload.color;
+	// // Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
+	// // G-Buffers contain data in world space
+	// float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
+	// float2 texCoords = sys_inTex_texCoords.SampleLevel(ss, screenTexCoord, 0).rg;
 
-	// lOutput[launchIndex] = float4(1.0f, 0.2f, 0.2f, 1.0f);
+	// // ---------------------------------------------------
+	// // --- Calculate world position from depth texture ---
+
+	// // TODO: move calculations to cpu
+	// float projectionA = CB_SceneData.farZ / (CB_SceneData.farZ - CB_SceneData.nearZ);
+    // float projectionB = (-CB_SceneData.farZ * CB_SceneData.nearZ) / (CB_SceneData.farZ - CB_SceneData.nearZ);
+
+	// float depth = sys_inTex_depth.SampleLevel(ss, screenTexCoord, 0).r;
+	// float linearDepth = projectionB / (depth - projectionA);
+
+	// float3 viewRay = normalize(float3(screenPos, 1));
+	// float3 vsPosition = viewRay * linearDepth;
+
+	// float3 worldPosition = mul((float3x3) CB_SceneData.viewToWorld, vsPosition);
+	// // ---------------------------------------------------
+
+
+
+
+	// float3 rayDir;
+	// float3 origin;
+	// // Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
+	// generateCameraRay(launchIndex, origin, rayDir);
+
+	// RayDesc ray;
+	// ray.Origin = origin;
+	// ray.Direction = rayDir;
+	// // Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
+	// // TMin should be kept small to prevent missing geometry at close contact areas
+	// ray.TMin = 0.00001;
+	// ray.TMax = 10000.0;
+
+	// RayPayload payload;
+	// payload.recursionDepth = 0;
+	// payload.hit = 0;
+	// payload.color = float4(0,0,0,0);
+	// TraceRay(gRtScene, 0, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+	// lOutput[launchIndex] = payload.color;
 }
 
 [shader("miss")]
