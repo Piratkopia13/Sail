@@ -263,7 +263,7 @@ static const int N = 3;
 float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float ballradius, out float distance) {
 	distance = length(position - ballpos);
 
-	if (distance <= ballradius) {
+	if (distance <= abs(ballradius)) {
 		float d = distance;
 
 		// Quintic polynomial field function.
@@ -271,7 +271,7 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 		// second derivative may result in a sharp and visually unpleasant normal vector jump.
 		// The field function should return 1 at distance 0 from a center, and 1 at radius distance,
 		// but this one gives f(0) = 0, f(radius) = 1, so we use the distance to radius instead.
-		d = ballradius - d;
+		d = abs(ballradius) - d;
 
 		float r = ballradius;
 		return 6 * (d * d * d * d * d) / (r * r * r * r * r)
@@ -323,15 +323,15 @@ void IntersectionShader()
 	ProceduralPrimitiveAttributes attr;
 	attr.normal = float4(1, 1, 1, 0);
 
-	float  radii[N] = { 0.6, 0.5, 0.3 };
+	float  radii[N] = { -0.6, 0.5, 0.3 };
 	float3 centers[N] =
 	{
-		float3(-0.3, -0.3, -0.3),
-		float3(0.1, 0.1, 0.4),
+		float3(-0.1, -0.3, -0.0),
+		float3(0.1, -0.3, 0.4),
 		float3(0.35,0.35, 0.0)
 	};
 
-	centers[0].x = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[0]);
+	//centers[0].x = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[0]);
 	centers[1].y = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[1]);
 	centers[2].z = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[2]);
 
