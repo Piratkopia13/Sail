@@ -8,7 +8,11 @@
 
 OctreeAddRemoverSystem::OctreeAddRemoverSystem() {
 	requiredComponentTypes.push_back(BoundingBoxComponent::ID);
+	readBits |= BoundingBoxComponent::BID;
+	writeBits |= BoundingBoxComponent::BID;
 	requiredComponentTypes.push_back(CollidableComponent::ID);
+	readBits |= CollidableComponent::BID;
+	writeBits |= CollidableComponent::BID;
 }
 
 OctreeAddRemoverSystem::~OctreeAddRemoverSystem() {
@@ -20,12 +24,14 @@ void OctreeAddRemoverSystem::provideOctree(Octree* octree) {
 	m_octree->addEntities(&entities);
 }
 
-void OctreeAddRemoverSystem::addEntity(Entity* entity) {
-	BaseComponentSystem::addEntity(entity);
-
-	if (m_octree) {
-		m_octree->addEntity(entity);
+bool OctreeAddRemoverSystem::addEntity(Entity* entity) {
+	if (BaseComponentSystem::addEntity(entity)) {
+		if (m_octree) {
+			m_octree->addEntity(entity);
+			return true;
+		}
 	}
+	return false;
 }
 
 void OctreeAddRemoverSystem::removeEntity(Entity* entity) {

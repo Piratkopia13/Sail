@@ -2,12 +2,19 @@
 
 #include "Sail.h"
 #include "../controllers/PlayerController.h"
-#include "../controllers/AiController.h"
 
-class UpdateBoundingBoxSystem;
+class AiSystem;
+class AnimationSystem;
+class CandleSystem;
+class EntityRemovalSystem;
+class LifeTimeSystem;
+class LightSystem;
 class OctreeAddRemoverSystem;
 class PhysicSystem;
-class AnimationSystem;
+class PrepareUpdateSystem;
+class GunSystem;
+class ProjectileSystem;
+class AudioSystem;
 
 class GameState : public State {
 public:
@@ -33,24 +40,34 @@ private:
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
-	// Where to updates the component systems. Responsibility can be moved to other places
-	void updateComponentSystems(float dt);
 
+	// Where to updates the component systems. Responsibility can be moved to other places
+	void updatePerTickComponentSystems(float dt);
+	void updatePerFrameComponentSystems(float dt);
+
+	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
 
 private:
 	struct Systems {
-		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+		AiSystem* aiSystem = nullptr;
+		AnimationSystem* animationSystem = nullptr;
+		CandleSystem* candleSystem = nullptr;
+		EntityRemovalSystem* entityRemovalSystem = nullptr;
+		LifeTimeSystem* lifeTimeSystem = nullptr;
+		LightSystem* lightSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 		PhysicSystem* physicSystem = nullptr;
-		AnimationSystem* animationSystem = nullptr;
+		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
+		GunSystem* gunSystem = nullptr;
+		ProjectileSystem* projectileSystem = nullptr;
+		AudioSystem* audioSystem = nullptr;
 	};
 
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	//FlyingCameraController m_camController;
 	PlayerController m_playerController;
-	std::vector<AiController> m_aiControllers;
 
 	const std::string createCube(const glm::vec3& position);
 
@@ -59,6 +76,9 @@ private:
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
+
+	size_t m_currLightIndex;
+
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
 	int m_profilerCounter = 0;
@@ -73,9 +93,6 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 
-	// Uncomment this to enable vram budget visualization
-	//std::string m_vramBCount;
-	//float* m_vramBudgetHistory;
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
@@ -84,6 +101,5 @@ private:
 	std::unique_ptr<Model> m_boundingBoxModel;
 
 	Octree* m_octree;
-	std::vector<Entity::SPtr> m_candles;
 	bool m_disableLightComponents;
 };

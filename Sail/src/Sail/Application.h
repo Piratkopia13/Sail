@@ -5,7 +5,7 @@
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
 #include "api/ImGuiHandler.h"
-#include "api/Audio/audio.hpp"
+#include "api/Audio/AudioEngine.h"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
@@ -15,16 +15,11 @@
 
 #include <future>
 
-#include "ai/pathfinding/NodeSystem.h"
 #include "resources/loaders/AssimpLoader.h"
 // Forward declarations
 namespace ctpl {
 	class thread_pool;
 }
-
-// TODO? Move elsewhere
-const float TICKRATE = 50.0f;
-const float TIMESTEP = 1.0f / TICKRATE;
 
 class Application : public IEventDispatcher {
 
@@ -84,8 +79,6 @@ public:
 	ResourceManager& getResourceManager();
 
 	MemoryManager& getMemoryManager();
-	Audio* getAudioManager();
-	NodeSystem* getNodeSystem();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
@@ -98,15 +91,11 @@ private:
 	ResourceManager m_resourceManager;
 
 	MemoryManager m_memoryManager;
-	Audio m_audioManager;
-	std::unique_ptr<NodeSystem> m_nodeSystem;
 	StateStorage m_stateStorage;
 
 	// Timer
 	Timer m_timer;
 	UINT m_fps;
 
-	static std::atomic_uint s_updateRunning;	
-	static std::atomic_uint s_queuedUpdates;
 	static std::atomic_bool s_isRunning;
 };

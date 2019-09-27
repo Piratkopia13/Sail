@@ -15,6 +15,10 @@ public:
 public:
 	virtual ~Entity();
 
+	bool operator==(Entity::SPtr other) {
+		return getID() == other->getID();
+	}
+
 	template<typename ComponentType, typename... Targs>
 	ComponentType* addComponent(Targs... args);
 	template<typename ComponentType>
@@ -29,10 +33,16 @@ public:
 	bool isAboutToBeDestroyed() const;
 	void queueDestruction();
 	void removeAllComponents();
+
+	void addChildEntity(Entity::SPtr child);
+	void removeChildEntity(Entity::SPtr toRemove);
+	/* Currently dangerous, will probably be altered in future */
+	std::vector<Entity::SPtr>& getChildEntities();
 	
 	void setName(const std::string& name);
 	const std::string& getName() const;
 	int getID() const;
+	int getECSIndex() const;
 	Entity(const std::string& name = "");
 
 public:
@@ -45,12 +55,17 @@ private:
 	void addToSystems();
 	void removeFromSystems();
 
+	void setECSIndex(int index);
+
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::string m_name;
 	bool m_destructionQueued = false;
 	int m_id;
+	int m_ECSIndex;
 	ECS* m_ecs;
 	Entity::SPtr m_mySPtr;
+
+	std::vector<Entity::SPtr> m_children;
 };
 
 template<typename ComponentType, typename... Targs>

@@ -6,6 +6,7 @@
 #include "Entity.h"
 #include "systems/BaseComponentSystem.h"
 
+class EntityRemovalSystem;
 
 /*
 	See BaseComponentSystem.h on how to create systems
@@ -20,7 +21,8 @@
 		NOTE: If the developer does NOT want an entity to be automatically added to a system even when it has the valid components,
 			set entity.tryToAddToSystems = false.
 		NOTE: Entities can be added to a system manually, if specific situations demands it.
-			Call ecs->addEntityToSystems() to do this.
+			Call ecs->addEntityToSystems() to add it to every system it fits within.
+			Call system->addEntity() to add it to a specific system.
 		NOTE: A system needs to exist before an entity can be added to it. It will NOT check each entity if created after them.
 
 	Simple example:
@@ -28,15 +30,13 @@
 		ECS* ecs = ECS::Instance();
 		PhysicSystem* ps = ecs->createSystem<PhysicSystem>();
 		Entity::SPtr e = ecs->createEntity("FirstEntity");
-		e->addComponent<TransformComponent>(false);
-		e->addComponent<PhysicsComponent>(true, glm::vec3(1, 2, 3));
+		e->addComponent<TransformComponent>();
+		e->addComponent<PhysicsComponent>(glm::vec3(1, 2, 3));
 		entities.push_back(e);
 
 
 	For any further questions, reach out to Samuel
 */
-
-
 
 class ECS final {
 public:
@@ -50,13 +50,6 @@ public:
 		return &instance;
 	}
 
-
-	/*
-		Updates every system
-	*/
-	//void update(float dt);
-
-
 	/*
 		Creates and adds an entity
 	*/
@@ -65,8 +58,9 @@ public:
 	/*
 		Destroys an entity and removes it from the systems it was stored in
 	*/
-	void queueDestructionOfEntity(const Entity::SPtr entity);
+	void queueDestructionOfEntity(Entity* entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
+	void destroyEntity(int ecsIndex);
 
 	/*
 		Adds an already existing system of a chosen type
@@ -89,18 +83,33 @@ public:
 	template<typename T>
 	T* getSystem();
 
+	// Calls each system's 'stop()' function
+	void stopAllSystems();
+
+	// Clears the map of all unique_ptr systems
+	void destroyAllSystems();
+
+	/*
+		Retrieves the entity removal system
+		This is a special case system, every system should not have their own get-function
+	*/
+	EntityRemovalSystem* getEntityRemovalSystem();
 
 	/*
 		Returns the number of unique component types
 	*/
 	unsigned nrOfComponentTypes() const;
 
+	/*
+		Should NOT be called by the game developer
+		This is called internally by Entity
+	*/
+	void addEntityToSystems(Entity* entity);
 
 	/*
 		Should NOT be called by the game developer
-		This are called internally by Entity
+		This is called internally by Entity
 	*/
-	void addEntityToSystems(Entity* entity);
 	void removeEntityFromSystems(Entity* entity);
 
 private:
@@ -111,6 +120,9 @@ private:
 
 	std::vector<Entity::SPtr> m_entities;
 	SystemMap m_systems;
+
+	// This system is a special case, entities should never be automatically added to this when adding a component
+	EntityRemovalSystem* m_entityRemovalSystem;
 };
 
 template<typename T>

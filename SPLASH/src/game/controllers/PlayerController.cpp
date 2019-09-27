@@ -1,19 +1,22 @@
 #include "pch.h"
 #include "PlayerController.h"
 #include "Sail.h"
+#include "Sail/TimeSettings.h"
+
 
 PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_cam = SAIL_NEW CameraController(cam);
 	m_scene = scene;
 	m_player = ECS::Instance()->createEntity("player_entity");
 
-	//m_player->addComponent<MovementComponent>(/*initialSpeed*/ 0.f, /*initialDirection*/ m_cam->getCameraDirection());
-	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 3.f, 0.f));
 
+	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
+
+	m_player->addComponent<AudioComponent>();
 }
 
 PlayerController::~PlayerController() {
@@ -25,11 +28,6 @@ void PlayerController::setStartPosition(const glm::vec3& pos) {
 
 }
 
-// To be run at the beginning of each update tick
-void PlayerController::prepareUpdate() {
-	TransformComponent* transform = m_player->getComponent<TransformComponent>();
-	if (transform) { transform->prepareUpdate(); }
-}
 
 void PlayerController::processKeyboardInput(float dt) {
 	float speedModifier = 1.f;
@@ -39,26 +37,51 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	PhysicsComponent* physicsComp = m_player->getComponent<PhysicsComponent>();
 
-	float tempY = physicsComp->velocity.y;
-
 	// Increase speed if shift or right trigger is pressed
-	if (Input::IsKeyPressed(SAIL_KEY_SHIFT)) { speedModifier = RUN_SPEED; }
+	if (Input::IsKeyPressed(KeyBinds::sprint)) { speedModifier = RUN_SPEED; }
 
-	if (Input::IsKeyPressed(SAIL_KEY_W)) { forwardMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_S)) { forwardMovement -= 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_A)) { rightMovement -= 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_D)) { rightMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_SPACE)) { 
-		if (!m_wasSpacePressed) {
-			tempY = 15.0f;
+	if (Input::IsKeyPressed(KeyBinds::moveForward)) { forwardMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveBackward)) { forwardMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveLeft)) { rightMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
+		if (!m_wasSpacePressed && physicsComp->onGround) {
+			// AUDIO TESTING (playing a non-looping jump sound)
+			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+			m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::JUMP] = true;
+
+			physicsComp->velocity.y = 5.0f;
 		}
 		m_wasSpacePressed = true;
 	}
 	else {
 		m_wasSpacePressed = false;
 	}
-	//if (Input::IsKeyPressed(SAIL_KEY_CONTROL)) { upMovement -= 1.0f; }
 
+	// TODO:: Fix Input::WasKeyJustPressed and remove m_canPickUp
+	if (Input::IsKeyPressed(KeyBinds::putDownCandle) && m_canPickUp) {
+		for (int i = 0; i < m_player->getChildEntities().size(); i++){
+			auto e = m_player->getChildEntities()[i];
+			auto candle = e->getComponent<CandleComponent>();
+
+			auto cTransComp = e->getComponent<TransformComponent>();
+			auto pTransComp = m_player->getComponent<TransformComponent>();
+			if ( candle->isCarried() && physicsComp->onGround) {
+				candle->toggleCarried();
+
+				cTransComp->setTranslation(pTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
+				cTransComp->removeParent();
+				i = m_player->getChildEntities().size();
+			}
+			else if (!candle->isCarried() && glm::length(pTransComp->getTranslation() - cTransComp->getTranslation()) < 2.0f) {
+				candle->toggleCarried();
+				cTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
+				cTransComp->setParent(pTransComp);
+				i = m_player->getChildEntities().size();
+			}
+		}
+		m_canPickUp = false;
+	}
 
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
@@ -76,22 +99,44 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 
-	// the player's transform will be modified in the physicSystem so save the player's current
-	// position for interpolation later.
-	playerTrans->prepareUpdate();
-
 	// Prevent division by zero
-	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
+	if (forwardMovement != 0.0f || rightMovement != 0.0f) {
+		// AUDIO TESTING (turn ON streaming)
+		if (!m_hasStartedStreaming) {
+			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
+			m_hasStartedStreaming = true;
+			m_hasStoppedStreaming = false;
+		}
+
 		// Calculate total movement
-		physicsComp->velocity =
+		float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
+		if (!physicsComp->onGround) {
+			acceleration = acceleration * 0.5f;
+
+			// AUDIO TESTING (turn OFF looping running sound)
+			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = false;
+		}
+		// AUDIO TESTING (playing a looping running sound)
+		else {
+			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = true;
+			m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::RUN] = false;
+		}
+		physicsComp->accelerationToAdd += 
 			glm::normalize(right * rightMovement + forward * forwardMovement)
-			* m_movementSpeed * speedModifier;
-	}
-	else {
-		physicsComp->velocity = glm::vec3(0.0f);
+			* acceleration;
 	}
 
-	physicsComp->velocity.y = tempY;
+	else {
+		// AUDIO TESTING (turn OFF looping running sound)
+		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = false;
+
+		// AUDIO TESTING (turning OFF streaming)
+		if (!m_hasStoppedStreaming) {
+			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
+			m_hasStoppedStreaming = true;
+			m_hasStartedStreaming = false;
+		}
+	}
 
 	// Shooting
 
@@ -99,46 +144,10 @@ void PlayerController::processKeyboardInput(float dt) {
 	// TODO: This should probably be moved elsewhere.
 	//       See if it should be done every tick or every frame and where the projectiles are to be created
 	if (Input::IsMouseButtonPressed(0)) {
-		if (m_projectileSpawnCounter == 0.f) {
-
-			// Create projectile entity and attaching components
-			auto e = ECS::Instance()->createEntity("new cube");
-			e->addComponent<ModelComponent>(m_projectileModel);
-			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			e->addComponent<TransformComponent>(m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp()), glm::vec3(0.f), glm::vec3(0.3f));
-			e->addComponent<PhysicsComponent>();
-			e->addComponent<BoundingBoxComponent>(m_projectileWireframeModel);
-			e->getComponent<PhysicsComponent>()->velocity = m_cam->getCameraDirection() * 20.f;
-			e->getComponent<PhysicsComponent>()->acceleration = glm::vec3(0.f, -25.f, 0.f);
-
-			// Adding projectile to projectile vector to keep track of current projectiles
-			Projectile proj;
-			proj.projectile = e;
-			m_projectiles.push_back(proj);
-
-			// Add entity to scene for rendering, will most likely be changed once scene system is created
-			m_scene->addEntity(e);
-
-			m_projectileSpawnCounter += TIMESTEP;
-		}
-		else {
-			m_projectileSpawnCounter += TIMESTEP;
-			if (m_projectileSpawnCounter > 0.05f) {
-				m_projectileSpawnCounter = 0.f;
-			}
-		}
-	}
-	else {
-		m_projectileSpawnCounter = 0.f;
-	}
-
-	// Update for all projectiles
-	//for (int i = 0; i < m_projectiles.size(); i++) {
-	for (Projectile& p : m_projectiles) {
-		p.lifeTime += TIMESTEP;
-		if (p.lifeTime > 2.f) {
-			ECS::Instance()->queueDestructionOfEntity(p.projectile);
-		}
+		// TODO: add and tweak guncomponent+projectile system once playercontroller is changed to a system
+		glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
+		glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
+		m_player->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 	}
 }
 
@@ -189,48 +198,22 @@ void PlayerController::updateCameraPosition(float alpha) {
 	//playerTrans->setForward(forwards); //needed?
 
 
-	m_cam->setCameraPosition(playerTrans->getInterpolatedTranslation(alpha));
+	m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f,playerBB->getBoundingBox()->getHalfSize().y*0.8f,0.f)));
 	m_cam->setCameraDirection(forwards);
-
-	//moves the candlemodel and its pointlight to the correct position and rotates it to not spin when the player turns
-	glm::vec3 forward = m_cam->getCameraDirection();
-	forward.y = 0.f;
-	forward = glm::normalize(forward);
-
-	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-	right = glm::normalize(right);
-	glm::vec3 playerToCandle = forward - right;
-	glm::vec3 candlePos = m_cam->getCameraPosition() + playerToCandle - glm::vec3(0, 3.5f, 0);
-	m_candle->getComponent<TransformComponent>()->setTranslation(candlePos);
-	glm::vec3 candleRot = glm::vec3(0.f, glm::radians(-m_yaw), 0.f);
-	m_candle->getComponent<TransformComponent>()->setRotations(candleRot);
-	m_candle->getComponent<TransformComponent>()->prepareUpdate();
-	glm::vec3 flamePos = candlePos + glm::vec3(0, 3.5f, 0);
-	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
-	m_candle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);
 }
 
-void PlayerController::destroyOldProjectiles() {
-	// Remove old projectiles
-	for (int i = 0; i < m_projectiles.size(); i++) {
-		if (m_projectiles[i].projectile->isAboutToBeDestroyed()) {
-			ECS::Instance()->destroyEntity(m_projectiles[i].projectile);
-			m_projectiles.erase(m_projectiles.begin() + i);
-			i--;
-		}
-	}
+
+CameraController* PlayerController::getCameraController() const {
+	return m_cam;
 }
 
-// NOTE: Keyboard and mouse input processing has been moved to their own functions above this one
 void PlayerController::update(float dt) {
-	for (int i = 0; i < m_projectiles.size(); i++) {
-		for (unsigned int j = 0; j < m_candles->size(); j++) {
-			auto collisions = m_projectiles[i].projectile->getComponent<PhysicsComponent>()->collisions;
-			for (unsigned int k = 0; k < collisions.size(); k++) {
-				if (collisions[k].entity == m_candles->at(j).get()) {
-					m_candles->at(j)->removeComponent<LightComponent>();
-				}
-			}
+	// This can be removed once Input::WasKeyJustPressed is fixed since this only limit player from picking up candle right after putting it down.
+	if (!m_canPickUp) {
+		m_candleTimer += dt;
+		if (m_candleTimer > m_candleLimit) {
+			m_candleTimer = 0.f;
+			m_canPickUp = true;
 		}
 	}
 }
@@ -242,34 +225,10 @@ std::shared_ptr<Entity> PlayerController::getEntity() {
 void PlayerController::setProjectileModels(Model* model, Model* wireframeModel) {
 	m_projectileModel = model;
 	m_projectileWireframeModel = wireframeModel;
+	m_player->addComponent<GunComponent>(m_projectileModel);
 }
 
-void PlayerController::provideCandles(std::vector<Entity::SPtr>* candles) {
-	m_candles = candles;
-}
 
-std::shared_ptr<Entity> PlayerController::getCandle() {
-	return m_candle;
-}
-
-//creates and binds the candle model and a pointlight for the player.
-void PlayerController::createCandle(Model* model) {
-	auto e = ECS::Instance()->createEntity("PlayerCandle");//;//ECS::Instance()->createEntity("PlayerCandle");
-	e->addComponent<ModelComponent>(model);
-	glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-	//camRight = glm::normalize(camRight);
-	glm::vec3 candlePos = -m_cam->getCameraDirection() + camRight;// -m_cam->getCameraUp();
-	e->addComponent<TransformComponent>(candlePos);// , m_player->getComponent<TransformComponent>());
-	//e->addComponent<TransformComponent>(glm::vec3(-1.f, -3.f, 1.f), m_player->getComponent<TransformComponent>());
-	//e->getComponent<TransformComponent>()->setParent(m_player->getComponent<TransformComponent>());
-	m_candle = e;
-	PointLight pl;
-	glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
-	pl.setColor(glm::vec3(0.5f, 0.5f, 0.5f));
-	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + 3.1f, lightPos.z));
-	//pl.setAttenuation(.0f, 0.1f, 0.02f);
-	pl.setIndex(2);
-	e->addComponent<LightComponent>(pl);
-	m_scene->setPlayerCandle(e);
-
+float PlayerController::getYaw() const {
+	return m_yaw;
 }

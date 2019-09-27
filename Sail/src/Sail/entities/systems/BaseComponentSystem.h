@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
-#include "..//Entity.h"
+
+class Entity;
 
 /*
 	Created systems must inherit from this class.
@@ -15,7 +16,10 @@
 class BaseComponentSystem
 {
 public:
-	BaseComponentSystem() {}
+	BaseComponentSystem() 
+		: readBits(0)
+		, writeBits(0)
+	{}
 	virtual ~BaseComponentSystem() {}
 
 	virtual void update(float dt) = 0;
@@ -23,7 +27,7 @@ public:
 	/*
 		Adds an entity to the system
 	*/
-	virtual void addEntity(Entity* entity);
+	virtual bool addEntity(Entity* entity);
 
 	/*
 		Removes an entity from the system
@@ -34,8 +38,18 @@ public:
 		Returns the indices of all the component types required to be within this system
 	*/
 	const std::vector<int>& getRequiredComponentTypes() const;
+	
+	/* Returns the bit mask for all components that are being read from */
+	const unsigned int getReadBitMask() const;
+
+	/* Returns the bit mask for all components that are being written to */
+	const unsigned int getWriteBitMask() const;
+
+	virtual void stop() { ; }
 
 protected:
 	std::vector<Entity*> entities;
 	std::vector<int> requiredComponentTypes;
+	unsigned int readBits;
+	unsigned int writeBits;
 };

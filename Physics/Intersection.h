@@ -14,7 +14,7 @@ public:
 
 	static float rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb);
 
-	static float rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3 triangleCorners[3]);
+	static float rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
 
 private:
 	//Private constructor so an instance can't be created
