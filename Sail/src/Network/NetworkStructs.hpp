@@ -17,7 +17,11 @@ enum class NETWORK_EVENT_TYPE {
 };
 
 union NetworkEventData {
-	char rawMsg[MAX_PACKAGE_SIZE];
+	struct {
+		size_t sizeOfMsg;
+		char* rawMsg;
+	} Message;
+
 	struct
 	{
 		union {
@@ -27,6 +31,11 @@ union NetworkEventData {
 		USHORT hostPort;
 		char description[HOST_META_DESC_SIZE];
 	} HostFoundOnLanData;
+
+	NetworkEventData() {
+		Message.rawMsg = nullptr;
+		Message.sizeOfMsg = 0;
+	}
 };
 static_assert(sizeof(NetworkEventData) == MAX_PACKAGE_SIZE, "sizeof(NetworkEventData) is not what you expect! Check your struct man.");
 

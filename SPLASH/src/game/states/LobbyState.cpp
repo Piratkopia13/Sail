@@ -37,7 +37,7 @@ LobbyState::LobbyState(StateStack& stack)
 }
 
 LobbyState::~LobbyState() {
-	delete[]m_currentmessage;
+	delete[] m_currentmessage;
 }
 
 bool LobbyState::processInput(float dt) {

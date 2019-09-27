@@ -186,8 +186,22 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 		return true;
 	}
 
-	char msg[MAX_PACKAGE_SIZE] = { 0 };
-	memcpy(msg, message, size);
+
+	//char msg[MAX_PACKAGE_SIZE] = { 0 };
+
+	size_t packetSize = sizeof(size) + size;
+
+	// NOTE: this is technically not portable due to potential endian differences between machines.
+	char* msg = SAIL_NEW char[packetSize](); // All initialized with '\0'
+
+	// The message starts with a size_t stating how large the message is
+	size_t* t = reinterpret_cast<size_t*>(msg);
+	t[0] = size;
+
+	msg = reinterpret_cast<char*>(t);
+
+	//memcpy(msg, message, size);
+	memcpy(&msg[sizeof(size_t)], message, size);
 
 	Connection* conn = nullptr;
 	{
@@ -207,10 +221,12 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 		return false;
 	}
 
-	if (::send(conn->socket, msg, MAX_PACKAGE_SIZE, 0) == SOCKET_ERROR) {
+	//if (::send(conn->socket, msg, MAX_PACKAGE_SIZE, 0) == SOCKET_ERROR) {
+	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
 		return false;
 	}
 
+	delete[] msg;
 	return true;
 }
 
@@ -220,10 +236,25 @@ bool Network::send(const char* message, size_t size, Connection* conn)
 		return false;
 	}
 
-	if (::send(conn->socket, message, size, 0) == SOCKET_ERROR) {
+	size_t packetSize = sizeof(size) + size;
+
+	// NOTE: this is technically not portable due to potential endian differences between machines.
+	char* msg = SAIL_NEW char[packetSize];
+
+	// The message starts with a size_t stating how large the message is
+	size_t* t = reinterpret_cast<size_t*>(msg);
+	t[0] = size;
+
+	msg = reinterpret_cast<char*>(t);
+
+	//memcpy(msg, message, size);
+	memcpy(&msg[sizeof(size_t)], message, size);
+
+	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
 		return false;
 	}
 
+	delete[] msg;
 	return true;
 }
 
@@ -349,7 +380,7 @@ void Network::listenForUDP()
 					NetworkEvent nEvent;
 					nEvent.eventType = NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND;
 					nEvent.clientID = 0;
-					NetworkEventData data = { 0 };
+					NetworkEventData data = NetworkEventData();
 					data.HostFoundOnLanData.hostPort = udpdata.package.packageData.hostdata.port;
 					data.HostFoundOnLanData.ip_full = client.sin_addr.S_un.S_addr;
 					memcpy(data.HostFoundOnLanData.description, udpdata.package.packageData.hostdata.hostdescription, sizeof(m_serverMetaDesc));
@@ -498,10 +529,25 @@ ULONG Network::ip_string_to_ip_int(char* ip)
 	return result;
 }
 
-void Network::addNetworkEvent(NetworkEvent n, int dataSize)
+void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data)
 {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
-	memcpy(m_awaitingMessages[m_pend].rawMsg, n.data->rawMsg, dataSize);
+	/*memcpy(m_awaitingMessages[m_pend].rawMsg, n.data->rawMsg, dataSize);
+	m_awaitingEvents[m_pend].eventType = n.eventType;
+	m_awaitingEvents[m_pend].clientID = n.clientID;
+	m_awaitingEvents[m_pend].data = &m_awaitingMessages[m_pend];*/
+
+	// delete previous message if there is one
+	if (m_awaitingMessages[m_pend].Message.rawMsg != nullptr) {
+		delete[] m_awaitingMessages[m_pend].Message.rawMsg;
+		m_awaitingMessages[m_pend].Message.rawMsg = nullptr;
+	}
+
+	// Copy the incoming data to a message
+	m_awaitingMessages[m_pend].Message.rawMsg = SAIL_NEW char[dataSize]();
+	memcpy(m_awaitingMessages[m_pend].Message.rawMsg, data, dataSize);
+	m_awaitingMessages[m_pend].Message.sizeOfMsg = dataSize;
+
 	m_awaitingEvents[m_pend].eventType = n.eventType;
 	m_awaitingEvents[m_pend].clientID = n.clientID;
 	m_awaitingEvents[m_pend].data = &m_awaitingMessages[m_pend];
@@ -558,11 +604,24 @@ void Network::listen(const Connection* conn)
 	addNetworkEvent(nEvent, 0);
 
 	bool connectionIsClosed = false;
-	char msg[MAX_PACKAGE_SIZE];
+	//char msg[MAX_PACKAGE_SIZE];
+	char incomingPackageSize[sizeof(size_t)];
 
 	while (!connectionIsClosed && !m_shutdown) {
-		ZeroMemory(msg, sizeof(msg));
-		int bytesReceived = recv(conn->socket, msg, MAX_PACKAGE_SIZE, 0);
+
+		//ZeroMemory(msg, sizeof(msg));
+		//int bytesReceived = recv(conn->socket, msg, MAX_PACKAGE_SIZE, 0);
+
+		ZeroMemory(incomingPackageSize, sizeof(incomingPackageSize));
+
+		// Find out how large the incoming packet is
+		recv(conn->socket, incomingPackageSize, sizeof(incomingPackageSize), 0);
+		size_t* bytesToReceive = reinterpret_cast<size_t*>(&incomingPackageSize);
+
+		// Get the incoming packet
+		char* msg = SAIL_NEW char[bytesToReceive[0]]();
+		int bytesReceived = recv(conn->socket, msg, bytesToReceive[0], 0);
+
 
 #ifdef DEBUG_NETWORK
 		printf((std::string("bytesReceived: ") + std::to_string(bytesReceived) + "\n").c_str());
@@ -588,12 +647,14 @@ void Network::listen(const Connection* conn)
 			break;
 #endif // DEBUG_NETWORK
 		default:
-			nEvent.data = reinterpret_cast<NetworkEventData*>(msg);
+			//nEvent.data = reinterpret_cast<NetworkEventData*>(msg);
 			nEvent.eventType = NETWORK_EVENT_TYPE::MSG_RECEIVED;
 
-			addNetworkEvent(nEvent, bytesReceived);
+			addNetworkEvent(nEvent, bytesReceived, msg);
 
 			break;
 		}
+
+		delete[] msg;
 	}
 }

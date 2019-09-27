@@ -20,8 +20,6 @@ public:
 	void sendMsgAllClients(std::string msg);		// by either client or host
 	void sendChatAllClients(std::string msg);		//
 	virtual void sendChatMsg(std::string msg) = 0;
-
-
 	void sendSerializedData(std::string data);
 protected:
 	Network* m_network = nullptr;

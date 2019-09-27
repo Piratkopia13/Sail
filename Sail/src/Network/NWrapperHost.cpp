@@ -51,7 +51,7 @@ void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID id) {
 
 	this->compressDCMessage(convertedId, compressedMessage);
 
-	// Send to all clients that soneone disconnected and which id.
+	// Send to all clients that someone disconnected and which id.
 	m_network->send(compressedMessage, sizeof(compressedMessage), -1);
 
 	// Send id to menu / game state
@@ -79,16 +79,17 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 	unsigned char id_question;
 	Message processedMessage;
 
-	switch (nEvent.data->rawMsg[0])
+	//switch (nEvent.data->rawMsg[0])
+	switch (nEvent.data->Message.rawMsg[0])
 	{
 	case 'm':
 		// The host has recieved a message from a player...
 
 		// Send out the already formatted message to clients so that they can process the message.
-		sendMsgAllClients(nEvent.data->rawMsg);	
+		sendMsgAllClients(nEvent.data->Message.rawMsg);	
 
 		// Process the chat message
-		processedMessage = processChatMessage((std::string)nEvent.data->rawMsg);
+		processedMessage = processChatMessage((std::string)nEvent.data->Message.rawMsg);
 
 		// Dispatch to lobby
 		Application::getInstance()->dispatchEvent(NetworkChatEvent(processedMessage));
@@ -107,7 +108,7 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		// The host has recieved an answer to a name request...
 
 		// TODO: move "Parse the ID and name from the message" from Host::onNameRequest to here
-		Application::getInstance()->dispatchEvent(NetworkNameEvent{ nEvent.data->rawMsg });
+		Application::getInstance()->dispatchEvent(NetworkNameEvent{ nEvent.data->Message.rawMsg });
 
 		break;
 

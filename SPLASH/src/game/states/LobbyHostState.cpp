@@ -55,12 +55,23 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 
 
 		// TESTING FOR SENDING SERIALIZED DATA
-		unsigned int testInt = 5;
+		unsigned int testInt = 10000;
+		unsigned int intArr[200];
+		for (int i = 0; i < 200; i++) {
+			intArr[i] = i;
+		}
+
+		float f = 1.0f / 3.0f;
 
 		std::ostringstream os(std::ios::binary);
 		{
 			cereal::PortableBinaryOutputArchive ar(os);
-			ar(testInt);
+			for (int i = 0; i < 200; i++) {
+				ar(intArr[i]);
+			}
+
+
+			//ar(testInt, f);
 		}
 		std::string data = os.str();
 
@@ -69,7 +80,7 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 
 
 
-		//std::istringstream is(data);
+		//std::istringstream is(data, std::ios::binary);
 
 		//int testInt2 = 0;
 
