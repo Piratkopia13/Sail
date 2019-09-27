@@ -23,6 +23,7 @@ namespace KeyBinds {
 	int moveDown;
 	int lightCandle1;
 	int lightCandle2;
+	int putDownCandle;
 
 	// Application
 	int alt;
@@ -45,8 +46,8 @@ namespace KeyBinds {
 void KeyBinds::init() {
 	// GameState
 	addLight = SAIL_KEY_E;
-	showBoundingBoxes = SAIL_KEY_1;
-	hideBoundingBoxes = SAIL_KEY_2;
+	showBoundingBoxes = SAIL_KEY_B;
+	hideBoundingBoxes = SAIL_KEY_N;
 	testRayIntersection = SAIL_KEY_O;
 	toggleAIFollowing = SAIL_KEY_H;
 	setDirectionalLight = SAIL_KEY_G;
@@ -62,6 +63,7 @@ void KeyBinds::init() {
 	moveDown = SAIL_KEY_CONTROL;
 	lightCandle1 = SAIL_KEY_Z;
 	lightCandle2 = SAIL_KEY_V;
+	putDownCandle = SAIL_KEY_F;
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds

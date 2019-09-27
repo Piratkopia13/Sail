@@ -9,9 +9,9 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_scene = scene;
 	m_player = ECS::Instance()->createEntity("player_entity");
 
+
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
-
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
@@ -58,6 +58,30 @@ void PlayerController::processKeyboardInput(float dt) {
 		m_wasSpacePressed = false;
 	}
 
+	// TODO:: Fix Input::WasKeyJustPressed and remove m_canPickUp
+	if (Input::IsKeyPressed(KeyBinds::putDownCandle) && m_canPickUp) {
+		for (int i = 0; i < m_player->getChildEntities().size(); i++){
+			auto e = m_player->getChildEntities()[i];
+			auto candle = e->getComponent<CandleComponent>();
+
+			auto cTransComp = e->getComponent<TransformComponent>();
+			auto pTransComp = m_player->getComponent<TransformComponent>();
+			if ( candle->isCarried() && physicsComp->onGround) {
+				candle->toggleCarried();
+
+				cTransComp->setTranslation(pTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
+				cTransComp->removeParent();
+				i = m_player->getChildEntities().size();
+			}
+			else if (!candle->isCarried() && glm::length(pTransComp->getTranslation() - cTransComp->getTranslation()) < 2.0f) {
+				candle->toggleCarried();
+				cTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
+				cTransComp->setParent(pTransComp);
+				i = m_player->getChildEntities().size();
+			}
+		}
+		m_canPickUp = false;
+	}
 
 	glm::vec3 forwards(
 		std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
@@ -180,6 +204,14 @@ CameraController* PlayerController::getCameraController() const {
 }
 
 void PlayerController::update(float dt) {
+	// This can be removed once Input::WasKeyJustPressed is fixed since this only limit player from picking up candle right after putting it down.
+	if (!m_canPickUp) {
+		m_candleTimer += dt;
+		if (m_candleTimer > m_candleLimit) {
+			m_candleTimer = 0.f;
+			m_canPickUp = true;
+		}
+	}
 }
 
 std::shared_ptr<Entity> PlayerController::getEntity() {
