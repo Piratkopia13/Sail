@@ -28,65 +28,66 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 
 	//----Collisions----
 	BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
-	if (m_octree && boundingBox) {
 
-		//Update collision data
-		physics->collisions.clear();
-		m_octree->getCollisions(e, &physics->collisions);
+	//Update collision data
+	std::vector<Octree::CollisionInfo> collisions;
 
-		if (physics->collisions.size() > 0) {
-			//Get the combined normals
-			glm::vec3 sumVec(0.0f);
-			for (unsigned int i = 0; i < physics->collisions.size(); i++) {
-				sumVec += physics->collisions[i].normal;
+	m_octree->getCollisions(e, &collisions);
+
+	if (collisions.size() > 0) {
+		//Get the combined normals
+		glm::vec3 sumVec(0.0f);
+		for (unsigned int i = 0; i < collisions.size(); i++) {
+			sumVec += collisions[i].normal;
+
+			//Add collision to current collisions
+			physics->collisions.push_back(collisions[i]);
+		}
+
+		for (unsigned int i = 0; i < collisions.size(); i++) {
+			if (collisions[i].normal.y > 0.7f) {
+				physics->onGround = true;
+				bool newGround = true;
+				for (unsigned int j = 0; j < groundIndices.size(); j++) {
+					if (collisions[i].normal == collisions[groundIndices[j]].normal) {
+						newGround = false;
+					}
+				}
+				if (newGround) {
+					//Save collision for friction calculation
+					groundIndices.push_back(i);
+				}
 			}
 
-			for (unsigned int i = 0; i < physics->collisions.size(); i++) {
-				if (physics->collisions[i].normal.y > 0.7f) {
-					physics->onGround = true;
-					bool newGround = true;
-					for (unsigned int j = 0; j < groundIndices.size(); j++) {
-						if (physics->collisions[i].normal == physics->collisions[groundIndices[j]].normal) {
-							newGround = false;
-						}
-					}
-					if (newGround) {
-						//Save collision for friction calculation
-						groundIndices.push_back(i);
-					}
-				}
+			//Stop movement towards triangle
+			float projectionSize = glm::dot(physics->velocity, -collisions[i].normal);
 
-				//Stop movement towards triangle
-				float projectionSize = glm::dot(physics->velocity, -physics->collisions[i].normal);
+			if (projectionSize > 0.0f) { //Is pushing against wall
+				physics->velocity += collisions[i].normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
+			}
 
-				if (projectionSize > 0.0f) { //Is pushing against wall
-					physics->velocity += physics->collisions[i].normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
-				}
+			//Tight angle corner special case
+			float dotProduct = glm::dot(collisions[i].normal, glm::normalize(sumVec));
+			if (dotProduct < 0.7072f && dotProduct > 0.0f) { //Colliding in a tight angle corner
+				glm::vec3 normalToNormal = sumVec - glm::dot(sumVec, collisions[i].normal) * collisions[i].normal;
+				normalToNormal = glm::normalize(normalToNormal);
 
-				//Tight angle corner special case
-				float dotProduct = glm::dot(physics->collisions[i].normal, glm::normalize(sumVec));
-				if (dotProduct < 0.7072f && dotProduct > 0.0f) { //Colliding in a tight angle corner
-					glm::vec3 normalToNormal = sumVec - glm::dot(sumVec, physics->collisions[i].normal) * physics->collisions[i].normal;
-					normalToNormal = glm::normalize(normalToNormal);
+				//Stop movement towards corner
+				projectionSize = glm::dot(physics->velocity, -normalToNormal);
 
-					//Stop movement towards corner
-					projectionSize = glm::dot(physics->velocity, -normalToNormal);
-
-					if (projectionSize > 0.0f) {
-						physics->velocity += normalToNormal * projectionSize * (1.0f + physics->bounciness);
-					}
+				if (projectionSize > 0.0f) {
+					physics->velocity += normalToNormal * projectionSize * (1.0f + physics->bounciness);
 				}
 			}
 		}
 	}
 	//------------------
 
-
 	//----Drag----
 	if (physics->onGround) { //Ground drag
 		unsigned int nrOfGroundCollisions = groundIndices.size();
 		for (unsigned int i = 0; i < nrOfGroundCollisions; i++) {
-			glm::vec3 velAlongPlane = physics->velocity - physics->collisions[groundIndices[i]].normal * glm::dot(physics->collisions[groundIndices[i]].normal, physics->velocity);
+			glm::vec3 velAlongPlane = physics->velocity - collisions[groundIndices[i]].normal * glm::dot(collisions[groundIndices[i]].normal, physics->velocity);
 			float sizeOfVel = glm::length(velAlongPlane);
 			if (sizeOfVel > 0.0f) {
 				float slowdown = glm::min((physics->drag / nrOfGroundCollisions) * dt, sizeOfVel);
@@ -106,24 +107,6 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 		physics->velocity.y = saveY;
 	}
 	//------------
-
-	//----Max Speed Limiter----
-	float saveY = physics->velocity.y;
-	physics->velocity.y = 0;
-	float vel = glm::length(physics->velocity);
-	if (vel > 0.0f) {
-		//Limit max speed
-		if (vel > physics->maxSpeed) {
-			vel = physics->maxSpeed;
-		}
-		else if (vel < 0.05f) {
-			vel = 0.0f;
-		}
-
-		physics->velocity = vel * glm::normalize(physics->velocity);
-	}
-	physics->velocity.y = saveY;
-	//-------------------------
 }
 
 void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
@@ -176,13 +159,33 @@ void PhysicSystem::update(float dt) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 
+		physics->collisions.clear();
+
 		physics->velocity += physics->constantAcceleration * dt;
 		physics->velocity += physics->accelerationToAdd * dt;
 
-		if (boundingBox) {
+		if (boundingBox && m_octree) {
 			rayCastUpdate(e, dt);
 			collisionUpdate(e, dt);
 		}
+
+		//----Max Speed Limiter----
+		float saveY = physics->velocity.y;
+		physics->velocity.y = 0;
+		float vel = glm::length(physics->velocity);
+		if (vel > 0.0f) {
+			//Limit max speed
+			if (vel > physics->maxSpeed) {
+				vel = physics->maxSpeed;
+			}
+			else if (vel < 0.05f) {
+				vel = 0.0f;
+			}
+
+			physics->velocity = vel * glm::normalize(physics->velocity);
+		}
+		physics->velocity.y = saveY;
+		//-------------------------
 
 		transform->rotate(physics->constantRotation * dt);
 		transform->translate((physics->m_oldVelocity + physics->velocity) * 0.5f * dt);
