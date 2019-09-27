@@ -15,6 +15,8 @@ public:
 
 	void update(float dt) override;
 
+	void stop() override;
+
 private:
 	AudioEngine m_audioEngine;
 };

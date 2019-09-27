@@ -89,8 +89,6 @@ public:
 	void setSoundVolume(int index, float value = 0.5f);
 	void setStreamVolume(int index, float value = 0.5f);
 
-	void updateAudio();
-
 private:
 	bool m_isRunning = true;
 

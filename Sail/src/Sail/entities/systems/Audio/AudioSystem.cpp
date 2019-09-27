@@ -15,10 +15,6 @@ AudioSystem::~AudioSystem() {
 	m_audioEngine.stopAllSounds();
 }
 
-AudioEngine* AudioSystem::getAudioEngine() {
-	return &m_audioEngine;
-}
-
 void AudioSystem::update(float dt) {
 
 	AudioComponent* audioC = nullptr;
@@ -93,4 +89,12 @@ void AudioSystem::update(float dt) {
 				}
 			}
 	}
+}
+
+void AudioSystem::stop() {
+	m_audioEngine.stopAllStreams();
+}
+
+AudioEngine* AudioSystem::getAudioEngine() {
+	return &m_audioEngine;
 }

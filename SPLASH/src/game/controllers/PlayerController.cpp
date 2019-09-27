@@ -37,29 +37,26 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	PhysicsComponent* physicsComp = m_player->getComponent<PhysicsComponent>();
 
-	float tempY = physicsComp->velocity.y;
-
 	// Increase speed if shift or right trigger is pressed
-	if (Input::IsKeyPressed(SAIL_KEY_SHIFT)) { speedModifier = RUN_SPEED; }
+	if (Input::IsKeyPressed(KeyBinds::sprint)) { speedModifier = RUN_SPEED; }
 
-	if (Input::IsKeyPressed(SAIL_KEY_W)) { forwardMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_S)) { forwardMovement -= 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_A)) { rightMovement -= 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_D)) { rightMovement += 1.0f; }
-	if (Input::IsKeyPressed(SAIL_KEY_SPACE)) { 
-		if (!m_wasSpacePressed) {
-
+	if (Input::IsKeyPressed(KeyBinds::moveForward)) { forwardMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveBackward)) { forwardMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveLeft)) { rightMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
+		if (!m_wasSpacePressed && physicsComp->onGround) {
 			// AUDIO TESTING (playing a non-looping jump sound)
 			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
 			m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::JUMP] = true;
-			tempY = 15.0f;
+
+			physicsComp->velocity.y = 5.0f;
 		}
 		m_wasSpacePressed = true;
 	}
 	else {
 		m_wasSpacePressed = false;
 	}
-	//if (Input::IsKeyPressed(SAIL_KEY_CONTROL)) { upMovement -= 1.0f; }
 
 
 	glm::vec3 forwards(
@@ -79,7 +76,7 @@ void PlayerController::processKeyboardInput(float dt) {
 	TransformComponent* playerTrans = m_player->getComponent<TransformComponent>();
 
 	// Prevent division by zero
-	if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
+	if (forwardMovement != 0.0f || rightMovement != 0.0f) {
 		// AUDIO TESTING (playing a looping running sound)
 		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = true;
 		m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::RUN] = false;
@@ -92,13 +89,16 @@ void PlayerController::processKeyboardInput(float dt) {
 		}
 
 		// Calculate total movement
-		physicsComp->velocity =
+		float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
+		if (!physicsComp->onGround) {
+			acceleration = acceleration * 0.5f;
+		}
+		physicsComp->accelerationToAdd += 
 			glm::normalize(right * rightMovement + forward * forwardMovement)
-			* m_movementSpeed * speedModifier;
+			* acceleration;
 	}
+
 	else {
-		physicsComp->velocity = glm::vec3(0.0f);
-		
 		// AUDIO TESTING (turn OFF looping running sound)
 		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = false;
 
@@ -109,8 +109,6 @@ void PlayerController::processKeyboardInput(float dt) {
 			m_hasStartedStreaming = false;
 		}
 	}
-
-	physicsComp->velocity.y = tempY;
 
 	// Shooting
 

@@ -2,7 +2,7 @@
 #include "API/Audio/AudioEngine.h"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "Sail/Application.h"
-#include "Sail/KeyCodes.h"
+#include "Sail/KeyBinds.h"
 #include "API/Audio/GeneralFunctions.h"
 #include <fstream>
 #include <xaudio2.h>
@@ -194,49 +194,6 @@ void AudioEngine::setStreamVolume(int index, float value) {
 
 	if (this->checkStreamIndex(index)) {
 		m_sourceVoiceStream[index]->SetVolume(value);
-	}
-}
-
-void AudioEngine::updateAudio() {
-
-	// 'PLAY' Sound
-	if (Input::IsKeyPressed(SAIL_KEY_1) && m_singlePress1) {
-
-		m_singlePress1 = false;
-	}
-
-	else if (!Input::IsKeyPressed(SAIL_KEY_1) && !m_singlePress1) {
-		this->playSound("../Audio/sampleLarge.wav");
-		m_singlePress1 = true;
-	}
-
-	// 'STREAM' Sound
-	if (Input::IsKeyPressed(SAIL_KEY_2) && m_singlePress2) {
-		m_singlePress2 = false;
-		this->streamSound("../Audio/wavebankLong.xwb", false);
-	}
-
-	else if (!Input::IsKeyPressed(SAIL_KEY_2) && !m_singlePress2) {
-		m_singlePress2 = true;
-	}
-
-
-	if (Input::IsKeyPressed(SAIL_KEY_3) && m_singlePress3) {
-		m_singlePress3 = false;
-		this->streamSound("../Audio/wavebankShortFade.xwb", false);
-	}
-
-	else if (!Input::IsKeyPressed(SAIL_KEY_3) && !m_singlePress3) {
-		m_singlePress3 = true;
-	}
-
-	// 'STOPPING' sound
-	if (Input::IsKeyPressed(SAIL_KEY_9)) {
-		this->stopSpecificSound(0);
-	}
-
-	if (Input::IsKeyPressed(SAIL_KEY_0)) {
-		this->stopAllSounds();
 	}
 }
 
