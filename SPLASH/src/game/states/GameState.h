@@ -46,8 +46,7 @@ private:
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt);
-
-	void updateComponentSystems(float dt);
+	void runSystem(float dt, BaseComponentSystem* toRun);
 
 	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
 
@@ -106,4 +105,9 @@ private:
 
 	Octree* m_octree;
 	bool m_disableLightComponents;
+
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyWritingMask;
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyReadingMask;
+
+	std::vector<std::future<BaseComponentSystem*>> m_runningSystems;
 };

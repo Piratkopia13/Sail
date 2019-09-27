@@ -114,6 +114,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
 
 	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
+	m_componentSystems.gunSystem->setScene(&m_scene);
 	
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
@@ -748,7 +749,27 @@ bool GameState::renderImGuiLightDebug(float dt) {
 // HERE BE DRAGONS
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
+	m_currentlyReadingMask = 0;
+	m_currentlyWritingMask = 0;
+
+
+	auto toRun = m_componentSystems.prepareUpdateSystem;
+		/*
+			while true
+				if can run next
+					start next
+					push to running to vec
+				else
+				for each in vec
+					if vec[i] is done
+						pop[i]
+		*/
+
+	for (auto _system : m_componentSystems )
+		
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
+
+
 	
 	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
 	m_componentSystems.gunSystem->update(dt, &m_scene); // Order?
@@ -770,8 +791,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 }
 
 void GameState::updatePerFrameComponentSystems(float dt) {
-	// Update the player's candle with the current camera position
-	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
+	m_currentlyReadingMask = 0;
+	m_currentlyWritingMask = 0;
 
 	m_playerController.update(dt);
 
@@ -783,7 +804,28 @@ void GameState::updatePerFrameComponentSystems(float dt) {
 	}
 }
 
-void GameState::updateComponentSystems(float dt) {}
+void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
+	bool started = false;
+	while ( !started ) {
+		if ( !(m_currentlyReadingMask & toRun->getWriteBitMask()).any() && 
+			!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
+			!( m_currentlyWritingMask & toRun->getWriteBitMask() ).any() ) {
+
+			m_currentlyWritingMask |= toRun->getWriteBitMask();
+			m_currentlyReadingMask |= toRun->getReadBitMask();
+			started = true;
+			m_app->pushJobToThreadPool([this, dt, toRun] (int id) {toRun->update(dt); return toRun; });
+
+		}
+
+		for ( auto& fut : m_runningSystems ) {
+			if ( fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready ) {
+				auto doneSys = fut.get();
+				// Can't undo the read bit mask since multiple systems can read at the same time... What to do?
+			};
+		}
+	}
+}
 
 Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos) {
 	//creates light with model and pointlight
