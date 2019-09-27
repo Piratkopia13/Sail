@@ -266,6 +266,10 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
+
+		//TODO: REMOVE
+		e->addComponent<NetworkReceiverComponent>();
+		e->getComponent<NetworkReceiverComponent>()->test();
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Map_Barrier1");
