@@ -148,7 +148,7 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 		float zMovementAllowed = boundingBox->getHalfSize().z / glm::max(std::abs(normalizedVel.z), 0.01f);
 		float maxMovementAllowed = glm::min(glm::min(xMovementAllowed, yMovementAllowed), zMovementAllowed) * 0.95f;
 
-		if ((intersectionInfo.closestHit - maxMovementAllowed) < velocityAmp && intersectionInfo.closestHit > 0.0f) { //Found upcoming collision
+		if ((intersectionInfo.closestHit - maxMovementAllowed) <= velocityAmp && intersectionInfo.closestHit > 0.0f) { //Found upcoming collision
 			//Calculate new dt
 			float newDt = ((intersectionInfo.closestHit - maxMovementAllowed) / velocityAmp) * dt;
 
