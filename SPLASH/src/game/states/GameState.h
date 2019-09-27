@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Sail.h"
-#include "../controllers/PlayerController.h"
 
 class AiSystem;
 class AnimationSystem;

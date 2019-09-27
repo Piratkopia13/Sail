@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "InputComponent.h"
-#include "../../../SPLASH/src/game/controllers/PlayerController.h"
 #include "../../../SPLASH/Physics/Octree.h"
 #include "Sail.h"
 
