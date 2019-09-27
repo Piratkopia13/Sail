@@ -313,12 +313,12 @@ void IntersectionShader()
 	RayDesc ray;
 	ray.Origin		= ObjectRayOrigin();			// mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
 	ray.Direction	= ObjectRayDirection();	// mul(ObjectRayDirection(), (float3x3) attr.bottomLevelASToLocalSpace);
+	ray.TMax = 1000000;
+	ray.TMin = 0.00001;
 
 	ProceduralPrimitiveAttributes attr;
 	attr.normal = float4(1, 1, 1, 0);
-#define Many
-#ifdef Many
-	//Multiple Spheres
+
 	const int N = 3;
 	float  radii[N] = { 0.6, 0.3, 0.15 };
 	float3 centers[N] =
@@ -327,11 +327,27 @@ void IntersectionShader()
 		float3(0.1, 0.1, 0.4),
 		float3(0.35,0.35, 0.0)
 	};
-	//center[0].x = (CB_MeshData.data[instanceID].color.x * 2 - 1);
 
-	float minT = 0;
-	float4 normal;
-	bool hit = false;
+	centers[0].x = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[0]);
+	centers[1].y = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[1]);
+	centers[2].z = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[2]);
+
+	float tmin, tmax;
+	UINT MAX_STEPS = 128;
+	float t = tmin;
+	float minTStep = (tmax - tmin) / (MAX_STEPS / 1);
+	UINT iStep = 0;
+
+	float3 currPos = ray.Origin;
+	while (istep++ < MAX_STEPS) {
+
+
+
+		currPos +=
+	}
+
+
+	//////////////////////////
 	for (int i = 0; i < N; i++) {
 		float t = 0;
 		float4 tempNormal;
@@ -350,16 +366,7 @@ void IntersectionShader()
 	} else {
 		//ReportHit(RayTCurrent(), 0, attr);
 	}
-#else
-	float t = 0;
-	float3 center = float3(0, 0, 0);
-	float radius = 1;
-	if (intersect(ray, center, radius, t, attr.normal)) {
-		float thit = t;
-		attr.normal.a = thit;
-		ReportHit(thit, 0, attr);
-	}
-#endif
+
 	
 	//ReportHit(RayTCurrent(), 0, attr);
 }
