@@ -259,17 +259,12 @@ glm::mat4 Transform::getRenderMatrix(float alpha) {
 }
 
 void Transform::updateLocalRenderMatrix(float alpha) {
-	m_localRenderMatrix = glm::mat4(1.0f);
-
 	// Linear interpolation between the two most recent snapshots
 	glm::vec3 trans = (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
 	glm::quat rot = (alpha * m_data.m_current.m_rotationQuat) + ((1.0f - alpha) * m_data.m_previous.m_rotationQuat);
 	glm::vec3 scale = (alpha * m_data.m_current.m_scale) + (1.0f - alpha) * m_data.m_previous.m_scale;
 
-	glm::mat4 transMatrix = glm::translate(m_localRenderMatrix, trans);
-	glm::mat4 rotationMatrix = glm::mat4_cast(rot);
-	glm::mat4 scaleMatrix = glm::scale(m_localRenderMatrix, scale);
-	m_localRenderMatrix = transMatrix * rotationMatrix * scaleMatrix;
+	createTransformMatrix(m_localRenderMatrix, trans, rot, scale);
 }
 
 void Transform::updateRenderMatrix(float alpha) {
@@ -281,12 +276,14 @@ void Transform::updateRenderMatrix(float alpha) {
 }
 
 void Transform::updateLocalMatrix() {
-	m_localTransformMatrix = glm::mat4(1.0f);
+	/*m_localTransformMatrix = glm::mat4(1.0f);
 
 	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_data.m_current.m_translation);
 	glm::mat4 rotationMatrix = glm::mat4_cast(m_data.m_current.m_rotationQuat);
 	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_data.m_current.m_scale);
-	m_localTransformMatrix = transMatrix * rotationMatrix * scaleMatrix;
+	m_localTransformMatrix = transMatrix * rotationMatrix * scaleMatrix;*/
+
+	createTransformMatrix(m_localTransformMatrix, m_data.m_current.m_translation, m_data.m_current.m_rotationQuat, m_data.m_current.m_scale);
 }
 
 void Transform::updateMatrix() {
@@ -319,6 +316,28 @@ void Transform::removeChild(Transform* Transform) {
 			break;
 		}
 	}
+}
+
+void Transform::createTransformMatrix(glm::mat4& destination, const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale) const {
+	glm::mat4 prev = glm::mat4(destination);
+	destination = glm::mat4_cast(rotation);
+	
+	// destination[0] is the first column, not the first row (column major)
+	destination[0].x *= scale.x;
+	destination[0].y *= scale.x;
+	destination[0].z *= scale.x;
+
+	destination[1].x *= scale.y;
+	destination[1].y *= scale.y;
+	destination[1].z *= scale.y;
+
+	destination[2].x *= scale.z;
+	destination[2].y *= scale.z;
+	destination[2].z *= scale.z;
+
+	destination[3].x = translation.x;
+	destination[3].y = translation.y;
+	destination[3].z = translation.z;
 }
 
 const bool Transform::getChange() {
