@@ -4,18 +4,6 @@
 #include "Sail/entities/components/Components.h"
 #include "../../../api/Input.h"
 #include "Sail/KeyBinds.h"
-//
-//CandleSystem::CandleSystem() : BaseComponentSystem() {
-//	requiredComponentTypes.push_back(CandleComponent::ID);
-//	readBits |= CandleComponent::BID;
-//	writeBits |= CandleComponent::BID;
-//	requiredComponentTypes.push_back(TransformComponent::ID); // read-only
-//	readBits |= TransformComponent::BID;
-//	requiredComponentTypes.push_back(LightComponent::ID);
-//	readBits |= LightComponent::BID;
-//	writeBits |= LightComponent::BID;
-//}
-
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(PlayerComponent::ID);
