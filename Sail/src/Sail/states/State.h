@@ -20,7 +20,9 @@ class State : public IEventListener {
 		// Process input for the state
 		virtual bool processInput(float dt) = 0;
 		// Updates the state
-		virtual bool update(float dt) = 0;
+		virtual bool updatePerTick(float dt) = 0;
+		// Updates the state per frame
+		virtual bool updatePerFrame(float dt, float alpha) = 0;
 		// Renders the state
 		virtual bool render(float dt, float alpha) = 0;
 		// Renders imgui
