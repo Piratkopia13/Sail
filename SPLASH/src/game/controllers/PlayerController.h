@@ -6,7 +6,6 @@ class CameraController;
 class Camera;
 class Entity;
 
-class Scene;
 class Model;
 
 // Will most likely be obselete once collision is implemented and projectiles can be destroyed that way.
@@ -17,7 +16,7 @@ struct Projectile {
 
 class PlayerController {
 public:
-	PlayerController(Camera* cam, Scene* scene);
+	PlayerController(Camera* cam);
 	~PlayerController();
 
 	void update(float dt);
@@ -45,8 +44,6 @@ private:
 
 	// "Attached" camera
 	CameraController* m_cam;
-	
-	Scene* m_scene;
 
 	Model* m_projectileModel;
 	Model* m_projectileWireframeModel;

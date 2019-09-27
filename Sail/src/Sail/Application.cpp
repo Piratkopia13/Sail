@@ -4,9 +4,9 @@
 #include "../../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyBinds.h"
 #include "graphics/geometry/Transform.h"
-#include "Sail/graphics/Scene.h"
 #include "Sail/TimeSettings.h"
-
+#include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/render/RenderSystem.h"
 
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
@@ -52,6 +52,10 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 		Logger::Error("Failed to initialize the graphics API!");
 		return;
 	}
+
+	// Initialize Renderers
+	m_rendererWrapper.initialize();
+	ECS::Instance()->createSystem<RenderSystem>();
 
 	// Initialize imgui
 	m_imguiHandler->init();
@@ -207,6 +211,9 @@ MemoryManager& Application::getMemoryManager() {
 }
 Audio* Application::getAudioManager() {
 	return &m_audioManager;
+}
+RendererWrapper* Application::getRenderWrapper() {
+	return &m_rendererWrapper;
 }
 StateStorage& Application::getStateStorage() {
 	return this->m_stateStorage;

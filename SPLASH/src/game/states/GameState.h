@@ -14,6 +14,7 @@ class PhysicSystem;
 class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
+class RenderSystem;
 
 class GameState : public State {
 public:
@@ -60,6 +61,7 @@ private:
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
+		RenderSystem* renderSystem = nullptr;
 	};
 
 	Application* m_app;
@@ -70,7 +72,6 @@ private:
 	const std::string createCube(const glm::vec3& position);
 
 	Systems m_componentSystems;
-	Scene m_scene;
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
 	Profiler m_profiler;

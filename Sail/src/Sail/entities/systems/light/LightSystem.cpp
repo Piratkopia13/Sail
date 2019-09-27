@@ -3,7 +3,7 @@
 
 #include "Sail/entities/components/LightComponent.h"
 #include "Sail/entities/components/LightListComponent.h"
-
+#include "Sail/entities/ECS.h"
 #include "Sail/graphics/light/LightSetup.h"
 
 #ifdef _DEBUG

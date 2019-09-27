@@ -33,5 +33,4 @@ private:
 	// For ImGui Input
 	char* inputIP = nullptr;
 	char* inputName = nullptr;
-	Scene m_scene;
 };

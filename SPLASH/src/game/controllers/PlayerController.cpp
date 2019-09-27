@@ -4,9 +4,9 @@
 #include "Sail/TimeSettings.h"
 
 
-PlayerController::PlayerController(Camera* cam, Scene* scene) {
+PlayerController::PlayerController(Camera* cam) {
 	m_cam = SAIL_NEW CameraController(cam);
-	m_scene = scene;
+	
 	m_player = ECS::Instance()->createEntity("player_entity");
 
 	m_player->addComponent<TransformComponent>(m_cam->getCameraPosition());

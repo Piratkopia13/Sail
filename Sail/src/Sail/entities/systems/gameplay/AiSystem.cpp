@@ -28,8 +28,8 @@ AiSystem::AiSystem() {
 AiSystem::~AiSystem() {}
 
 #ifdef _DEBUG_NODESYSTEM
-void AiSystem::initNodeSystem(Model* bbModel, Octree* octree, Shader* shader, Scene* scene) {
-	m_nodeSystem->setDebugModelAndScene(shader, scene);
+void AiSystem::initNodeSystem(Model* bbModel, Octree* octree, Shader* shader) {
+	m_nodeSystem->setDebugModelAndScene(shader);
 	initNodeSystem(bbModel, octree);
 }
 #endif
