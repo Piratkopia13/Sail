@@ -1,10 +1,10 @@
 #pragma once
 
-#include "BaseComponentSystem.h"
+#include "..//BaseComponentSystem.h"
 
 class Scene;
 class Model;
-class LevelGeneratorSystem : public BaseComponentSystem {
+class LevelGeneratorSystem final: public BaseComponentSystem {
 public:
 	LevelGeneratorSystem();
 	~LevelGeneratorSystem();
@@ -14,7 +14,6 @@ public:
 	void createWorld(Scene* scene, Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
 
 private:
-	int randomizeTileId(std::vector<int>* tiles,int seed);
+	int randomizeTileId(std::vector<int>* tiles);
 	void findPossibleTiles(std::vector<int>* mapPointer,int posx, int posy);
-	int createTileId(int posx, int posy);
 };

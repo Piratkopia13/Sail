@@ -14,7 +14,7 @@ public:
 		}
 	}
 	~MapComponent() {}
-	int tileArr[15][15];
-	int xsize=15, ysize=15;
+	int tileArr[30][30];
+	int xsize=30, ysize=30;
 private:
 };

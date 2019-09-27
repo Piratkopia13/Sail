@@ -9,6 +9,7 @@
 #include "Sail/entities/systems/gameplay/AiSystem.h"
 #include "Sail/entities/systems/gameplay/ProjectileSystem.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
+#include "Sail/entities/systems/LevelGeneratorSystem/LevelGeneratorSystem.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
@@ -115,6 +116,9 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
+	//create system for level generation
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+	m_componentSystems.levelGeneratorSystem;
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
@@ -225,8 +229,6 @@ GameState::GameState(StateStack& stack)
 	// Create the level generator system and put it into the datatype.
 	Entity::SPtr map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
-	ECS::Instance()->createSystem<LevelGeneratorSystem>();
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->getSystem<LevelGeneratorSystem>();
 	m_componentSystems.levelGeneratorSystem->addEntity(map.get());
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tileFlat,tileCross,tileCorner,tileStraight,tileT,tileEnd,m_boundingBoxModel.get());
@@ -415,9 +417,9 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		PointLight pl;
 		glm::vec3 lightPos = e->getComponent<TransformComponent>()->getTranslation();
-		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+		pl.setColor(glm::vec3(0.f, 0.1f, 0.2f));
 		pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		pl.setAttenuation(.0f, .5f, .2f);
 		pl.setIndex(0);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
@@ -436,7 +438,7 @@ GameState::GameState(StateStack& stack)
 		lightPos = e->getComponent<TransformComponent>()->getTranslation();
 		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		pl.setPosition(glm::vec3(lightPos.x , lightPos.y + 0.37f, lightPos.z));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		//pl.setAttenuation(.2f, 0.1f, 0.02f);
 		pl.setIndex(1);
 		e->addComponent<LightComponent>(pl);
 		m_scene.addEntity(e);
