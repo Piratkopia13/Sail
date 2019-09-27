@@ -5,7 +5,7 @@
 #include "Sail/entities/components/TransformComponent.h"
 
 PrepareUpdateSystem::PrepareUpdateSystem() {
-	registerComponent<TransformComponent>(true, true, false);
+	registerComponent<TransformComponent>(true, true, true);
 }
 
 PrepareUpdateSystem::~PrepareUpdateSystem() {

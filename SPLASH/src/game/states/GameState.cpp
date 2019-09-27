@@ -751,28 +751,44 @@ bool GameState::renderImGuiLightDebug(float dt) {
 void GameState::updatePerTickComponentSystems(float dt) {
 	m_currentlyReadingMask = 0;
 	m_currentlyWritingMask = 0;
+	m_runningSystemJobs.clear();
+	m_runningSystems.clear();
+	
 
-
-	auto toRun = m_componentSystems.prepareUpdateSystem;
-		/*
-			while true
-				if can run next
-					start next
-					push to running to vec
-				else
-				for each in vec
-					if vec[i] is done
-						pop[i]
-		*/
-
-	for (auto _system : m_componentSystems )
-		
+	// TODO: Not sure this can be run in the 'normal' way
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
+	
+	runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
+	// Some of the systems can not be ran concurrently due to incorrect
+	//	component registration. Some entities gets removed while used by other systems
+	// TODO: Investigate this
+	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
+	runSystem(dt, m_componentSystems.projectileSystem);
+	runSystem(dt, m_componentSystems.animationSystem);
+	runSystem(dt, m_componentSystems.aiSystem);
+
+	runSystem(dt, m_componentSystems.candleSystem);
+
+	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
+	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
+
+	runSystem(dt, m_componentSystems.lifeTimeSystem);
+
+	runSystem(dt, m_componentSystems.audioSystem);
+
+	// Wait for all the systems to finish before starting the removal system
+	for ( auto& fut : m_runningSystemJobs ) {
+		fut.get();
+	}
+
+	// Will probably need to be called last
+	m_componentSystems.entityRemovalSystem->update(dt);
 
 
+	/*m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
 	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
-	m_componentSystems.gunSystem->update(dt, &m_scene); // Order?
+	m_componentSystems.gunSystem->update(dt); // Order?
 	m_componentSystems.projectileSystem->update(dt);
 	m_componentSystems.animationSystem->update(dt);
 	m_componentSystems.aiSystem->update(dt);
@@ -787,7 +803,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
 
-	m_componentSystems.audioSystem->update(dt);
+	m_componentSystems.audioSystem->update(dt);*/
 }
 
 void GameState::updatePerFrameComponentSystems(float dt) {
@@ -807,6 +823,7 @@ void GameState::updatePerFrameComponentSystems(float dt) {
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 	bool started = false;
 	while ( !started ) {
+		// First check if the system can be run
 		if ( !(m_currentlyReadingMask & toRun->getWriteBitMask()).any() && 
 			!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
 			!( m_currentlyWritingMask & toRun->getWriteBitMask() ).any() ) {
@@ -814,15 +831,36 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 			m_currentlyWritingMask |= toRun->getWriteBitMask();
 			m_currentlyReadingMask |= toRun->getReadBitMask();
 			started = true;
-			m_app->pushJobToThreadPool([this, dt, toRun] (int id) {toRun->update(dt); return toRun; });
+			m_runningSystems.push_back(toRun);
+			m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun] (int id) {toRun->update(dt); return toRun; }));
+			
+		} else {
+			// Then loop through all futures and see if any of them are done
+			for ( int i = 0; i < m_runningSystemJobs.size(); i++ ) {
+				if ( m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready ) {
+					auto doneSys = m_runningSystemJobs[i].get();
 
-		}
+					m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
+					i--;
 
-		for ( auto& fut : m_runningSystems ) {
-			if ( fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready ) {
-				auto doneSys = fut.get();
-				// Can't undo the read bit mask since multiple systems can read at the same time... What to do?
-			};
+					m_currentlyWritingMask ^= doneSys->getWriteBitMask();
+					m_currentlyReadingMask ^= doneSys->getReadBitMask();
+
+					int toRemoveIndex = -1;
+					for ( int j = 0; j < m_runningSystems.size(); j++ ) {
+						// Currently just compares memory adresses (if they point to the same location they're the same object)
+						if ( m_runningSystems[j] == doneSys )
+							toRemoveIndex = j;
+					}
+
+					m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
+
+					// Since multiple systems can read from components concurrently, currently best solution I came up with
+					for ( auto _sys : m_runningSystems ) {
+						m_currentlyReadingMask |= _sys->getReadBitMask();
+					}
+				}
+			}
 		}
 	}
 }

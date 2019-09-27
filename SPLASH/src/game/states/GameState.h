@@ -109,5 +109,6 @@ private:
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyWritingMask;
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyReadingMask;
 
-	std::vector<std::future<BaseComponentSystem*>> m_runningSystems;
+	std::vector<std::future<BaseComponentSystem*>> m_runningSystemJobs;
+	std::vector<BaseComponentSystem*> m_runningSystems;
 };

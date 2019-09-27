@@ -12,8 +12,8 @@
 
 LightSystem::LightSystem() : BaseComponentSystem() {
 	registerComponent<LightComponent>(true, true, true);
-	/* Seems like it reads from it sometimes */
-	registerComponent<LightListComponent>(false, true, false);
+	/* Seems like it reads/writes from it sometimes */
+	registerComponent<LightListComponent>(false, true, true);
 }
 
 LightSystem::~LightSystem() 
