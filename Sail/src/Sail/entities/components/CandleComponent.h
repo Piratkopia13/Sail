@@ -10,9 +10,17 @@ public:
 	void hitWithWater();
 	void resetHitByWater();
 	bool wasHitByWater() const;
-	void putDown();
-	void pickUp();
+	bool getIsAlive() const;
+	void setIsAlive(bool alive);
+	bool getDoActivate() const;
+	void setDoActivate();
+	void resetDoActivate();
+	void addToDownTime(float time);
+	void resetDownTime();
 	bool isCarried() const;
+	void toggleCarried();
+	float getDownTime() const;
+
 
 
 private:

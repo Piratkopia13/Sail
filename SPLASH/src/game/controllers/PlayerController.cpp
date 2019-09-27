@@ -61,14 +61,14 @@ void PlayerController::processKeyboardInput(float dt) {
 			auto cTransComp = e->getComponent<TransformComponent>();
 			auto pTransComp = m_player->getComponent<TransformComponent>();
 			if ( candle->isCarried() && physicsComp->onGround) {
-				candle->putDown();
+				candle->toggleCarried();
 
 				cTransComp->setTranslation(pTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
 				cTransComp->removeParent();
 				i = m_player->getChildEntities().size();
 			}
 			else if (!candle->isCarried() && glm::length(pTransComp->getTranslation() - cTransComp->getTranslation()) < 2.0f) {
-				candle->pickUp();
+				candle->toggleCarried();
 				cTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
 				cTransComp->setParent(pTransComp);
 				i = m_player->getChildEntities().size();
