@@ -48,9 +48,7 @@ void CandleSystem::update(float dt) {
 			candle->addToDownTime(dt);
 		}
 
-
-		glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);//e->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 0.5f, 0);
-		//glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
+		glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
 		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
 }

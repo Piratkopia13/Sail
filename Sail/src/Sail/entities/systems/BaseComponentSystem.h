@@ -52,6 +52,8 @@ protected:
 	template<typename ComponentType>
 	void registerComponent(bool required, bool read, bool write);
 
+	virtual void stop() { ; }
+
 protected:
 	std::vector<Entity*> entities;
 

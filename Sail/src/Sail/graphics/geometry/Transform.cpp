@@ -87,6 +87,7 @@ void Transform::setStartTranslation(const glm::vec3& translation) {
 	m_data.m_previous.m_translation = translation;
 	m_data.m_current.m_translation = translation;
 	m_matNeedsUpdate = true;
+	m_hasChanged = true;
 }
 
 void Transform::translate(const float x, const float y, const float z) {

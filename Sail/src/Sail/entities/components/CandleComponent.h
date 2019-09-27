@@ -13,18 +13,24 @@ public:
 	bool getIsAlive() const;
 	void setIsAlive(bool alive);
 	bool getDoActivate() const;
+	void setDoActivate();
 	void resetDoActivate();
-
-	/* Should probably be removed later */
 	void addToDownTime(float time);
 	void resetDownTime();
+	bool isCarried() const;
+	void toggleCarried();
 	float getDownTime() const;
+
+
 
 private:
 	bool m_wasHitByWater = false;
 	bool m_isAlive = true;
 	bool m_activate = true;
+	bool m_carried = true;
 
 	/* Should probably be removed later */
 	float m_downTime = 0.f;
+
+
 };
