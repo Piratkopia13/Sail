@@ -128,7 +128,7 @@ GameState::GameState(StateStack& stack)
 
 	//Create system for input | Needs to be after playercontroller gets physicscomponent^
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_playerController);
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkHostSystem>();
@@ -136,7 +136,9 @@ GameState::GameState(StateStack& stack)
 	else {
 		m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkClientSystem>();
 	}
-	m_componentSystems.networkSystem->initialize(m_playerController.getEntity().get());
+	// Player creation | Needs to be before networkSystem is initialized
+	m_player = ECS::Instance()->createEntity("player");
+	m_componentSystems.networkSystem->initialize(m_player.get());
 
 
 
@@ -197,8 +199,7 @@ GameState::GameState(StateStack& stack)
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 
-	// Player creation
-	m_player = ECS::Instance()->createEntity("player");
+
 	
 	m_player->addComponent<PlayerComponent>();
 	m_player->addComponent<TransformComponent>();
@@ -818,8 +819,6 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 
 	// Update the player's candle with the current camera position
 	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
-
-	m_playerController.update(dt);
 
 	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 
