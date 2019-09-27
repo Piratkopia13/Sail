@@ -7,9 +7,9 @@ class Model;
 
 class GunComponent : public Component<GunComponent> {
 public:
-	GunComponent(Model* projectileModel) : 
+	GunComponent(Model* projectileModel, Model* wireframeModel) : 
 	m_projectileModel(projectileModel)
-	,m_wireframeModel(projectileModel)
+	,m_wireframeModel(wireframeModel)
 	{ };
 	~GunComponent() { };
 

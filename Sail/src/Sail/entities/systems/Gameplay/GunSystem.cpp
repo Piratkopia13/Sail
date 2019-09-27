@@ -16,6 +16,8 @@
 
 GunSystem::GunSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(GunComponent::ID);
+	readBits |= GunComponent::BID;
+	writeBits |= GunComponent::BID;
 }
 
 GunSystem::~GunSystem() {

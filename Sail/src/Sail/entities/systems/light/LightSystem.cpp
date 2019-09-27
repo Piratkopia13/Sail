@@ -12,6 +12,11 @@
 
 LightSystem::LightSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(LightComponent::ID);
+	readBits |= LightComponent::BID;
+	writeBits |= LightComponent::BID;
+
+	/* Seems like it reads from it */
+	readBits |= LightListComponent::BID;
 }
 
 LightSystem::~LightSystem() 

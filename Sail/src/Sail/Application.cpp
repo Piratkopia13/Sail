@@ -6,6 +6,8 @@
 #include "graphics/geometry/Transform.h"
 #include "Sail/graphics/Scene.h"
 #include "Sail/TimeSettings.h"
+#include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
 
 
 Application* Application::s_instance = nullptr;
@@ -130,7 +132,7 @@ int Application::startGameLoop() {
 			Input::GetInstance()->beginFrame();
 
 			//UPDATES AUDIO
-			Application::getAudioManager()->updateAudio();
+			//Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
 			if (Input::IsKeyPressed(KeyBinds::alt) && Input::IsKeyPressed(KeyBinds::f4))
@@ -149,11 +151,15 @@ int Application::startGameLoop() {
 			// Run the update if enough time has passed since the last update
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
-				update(TIMESTEP);
+				updatePerTick(TIMESTEP);
 			}
+
 
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
+
+			// Every-Frame-Updates goes here
+			updatePerFrame(TIMESTEP, alpha);
 
 			// Render
 			render(delta, alpha);
@@ -168,9 +174,10 @@ int Application::startGameLoop() {
 	}
 
 	s_isRunning = false;
-	// All sounds need to be stopped before 'm_threadPool->stop()';
-	m_audioManager.stopAllSounds();
+	// Need to set all streams as 'm_isStreaming[i] = false' BEFORE stopping threads
+	ECS::Instance()->stopAllSystems();
 	m_threadPool->stop();
+	ECS::Instance()->destroyAllSystems();
 	return (int)msg.wParam;
 }
 
@@ -205,14 +212,13 @@ ResourceManager& Application::getResourceManager() {
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }
-Audio* Application::getAudioManager() {
-	return &m_audioManager;
-}
+//AudioEngine* Application::getAudioManager() {
+//	return &m_audioManager;
+//}
 StateStorage& Application::getStateStorage() {
 	return this->m_stateStorage;
 }
 const UINT Application::getFPS() const {
 	return m_fps;
 }
-
 
