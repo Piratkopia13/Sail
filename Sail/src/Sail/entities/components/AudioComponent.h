@@ -26,7 +26,6 @@ public:
 
 	// This function is purely here to MAKE LIFE LESS DIFFICULT
 	void defineSound(SoundType::SoundType type, std::string filename, float dtThreshold = 0.0f, bool playOnce = true);
-//	void defineStreamedSound(std::string filename);
 };
 
 #endif

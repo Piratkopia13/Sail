@@ -101,10 +101,6 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f) {
-		// AUDIO TESTING (playing a looping running sound)
-		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = true;
-		m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::RUN] = false;
-
 		// AUDIO TESTING (turn ON streaming)
 		if (!m_hasStartedStreaming) {
 			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
@@ -116,6 +112,14 @@ void PlayerController::processKeyboardInput(float dt) {
 		float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
 		if (!physicsComp->onGround) {
 			acceleration = acceleration * 0.5f;
+
+			// AUDIO TESTING (turn OFF looping running sound)
+			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = false;
+		}
+		// AUDIO TESTING (playing a looping running sound)
+		else {
+			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = true;
+			m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::RUN] = false;
 		}
 		physicsComp->accelerationToAdd += 
 			glm::normalize(right * rightMovement + forward * forwardMovement)
