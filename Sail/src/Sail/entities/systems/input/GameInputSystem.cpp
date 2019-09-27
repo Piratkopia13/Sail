@@ -89,11 +89,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		if (forwardMovement != 0.0f || rightMovement != 0.0f) {
 
 			// AUDIO TESTING (turn ON streaming)
-			if (!m_hasStartedStreaming) {
-				audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
-				m_hasStartedStreaming = true;
-				m_hasStoppedStreaming = false;
-			}
+			//if (!m_hasStartedStreaming) {
+			//	audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
+			//	m_hasStartedStreaming = true;
+			//	m_hasStoppedStreaming = false;
+			//}
 
 			// Calculate total movement
 			float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
@@ -117,11 +117,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			audioComp->m_isPlaying[SoundType::RUN] = false;
 
 			// AUDIO TESTING (turning OFF streaming)
-			if (!m_hasStoppedStreaming) {
-				audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
-				m_hasStoppedStreaming = true;
-				m_hasStartedStreaming = false;
-			}
+			//if (!m_hasStoppedStreaming) {
+			//	audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
+			//	m_hasStoppedStreaming = true;
+			//	m_hasStartedStreaming = false;
+			//}
 		}
 	}
 }
