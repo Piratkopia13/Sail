@@ -42,6 +42,8 @@ void GunSystem::update(float dt, Scene* scene) {
 				PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
 				physics->velocity = gun->direction * gun->projectileSpeed;
 				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+				physics->drag = 2.0f;
+				physics->bounciness = 0.1f;
 
 				scene->addEntity(e);//change when scene is a component.
 			}

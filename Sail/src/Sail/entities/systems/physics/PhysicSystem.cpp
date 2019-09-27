@@ -60,7 +60,7 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 				float projectionSize = glm::dot(physics->velocity, -physics->collisions[i].normal);
 
 				if (projectionSize > 0.0f) { //Is pushing against wall
-					physics->velocity += physics->collisions[i].normal * projectionSize; //Limit movement towards wall
+					physics->velocity += physics->collisions[i].normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
 				}
 
 				//Tight angle corner special case
@@ -73,7 +73,7 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 					projectionSize = glm::dot(physics->velocity, -normalToNormal);
 
 					if (projectionSize > 0.0f) {
-						physics->velocity += normalToNormal * projectionSize;
+						physics->velocity += normalToNormal * projectionSize * (1.0f + physics->bounciness);
 					}
 				}
 			}
