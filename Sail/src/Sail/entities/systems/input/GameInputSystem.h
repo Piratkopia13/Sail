@@ -11,9 +11,9 @@ public:
 	~GameInputSystem();
 
 	// This function is only here because it has to. use update with alpha.
-	void update(float dt) {}
+	void update(float dt) { update(dt, 1.0f); }
 	void update(float dt, float alpha);
-	void initialize(Entity::SPtr player, Camera* cam);
+	void initialize(Camera* cam);
 	void updateCameraPosition(float alpha);
 
 	void processPerFrameInput();
@@ -23,7 +23,6 @@ private:
 	void processKeyboardInput(const float& dt);
 	void processMouseInput(const float& dt);
 
-	Entity::SPtr m_playerEntity = nullptr;
 	CameraController* m_cam = nullptr;
 
 	// --------- Earlier used variables below this line ---------

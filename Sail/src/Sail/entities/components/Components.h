@@ -12,6 +12,7 @@
 #include "LightComponent.h"
 #include "LightListComponent.h"
 #include "ModelComponent.h"
+#include "PlayerComponent.h"
 //#include "MovementComponent.h"
 #include "PhysicsComponent.h"
 #include "RealTimeComponent.h"

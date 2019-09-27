@@ -179,6 +179,7 @@ GameState::GameState(StateStack& stack)
 	// Player creation
 	m_player = ECS::Instance()->createEntity("player");
 	
+	m_player->addComponent<PlayerComponent>();
 	m_player->addComponent<TransformComponent>();
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 
@@ -198,7 +199,7 @@ GameState::GameState(StateStack& stack)
 
 	//Create system for input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(m_player, &m_cam);
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
 	m_player->addComponent<AudioComponent>();
 	m_player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
