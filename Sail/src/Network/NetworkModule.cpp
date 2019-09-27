@@ -646,9 +646,7 @@ void Network::listen(const Connection* conn)
 			break;
 #endif // DEBUG_NETWORK
 		default:
-			//nEvent.data = reinterpret_cast<NetworkEventData*>(msg);
 			nEvent.eventType = NETWORK_EVENT_TYPE::MSG_RECEIVED;
-
 			addNetworkEvent(nEvent, bytesReceived, msg);
 
 			break;

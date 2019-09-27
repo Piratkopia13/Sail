@@ -77,7 +77,6 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 	Message processedMessage;
 	std::string dataString;
 
-	//switch (nEvent.data->rawMsg[0])
 	switch (nEvent.data->Message.rawMsg[0])
 	{
 	case 'm':
