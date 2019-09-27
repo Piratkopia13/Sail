@@ -42,4 +42,7 @@ namespace KeyBinds {
 
 	// LobbyState
 	extern int sendMessage;
+
+	// DX12RaytracingRenderer
+	extern int reloadDXRShader;
 };

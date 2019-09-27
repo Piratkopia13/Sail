@@ -18,9 +18,9 @@ public:
 
 	ID3D12Resource1* getResource() const;
 	ID3D12Resource* getDepthResource() const;
-	D3D12_CPU_DESCRIPTOR_HANDLE getDepthSrvCDH() const;
-	D3D12_CPU_DESCRIPTOR_HANDLE getRtvCDH() const;
-	D3D12_CPU_DESCRIPTOR_HANDLE getDsvCDH() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getDepthSrvCDH(int frameIndex = -1) const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getRtvCDH(int frameIndex = -1) const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getDsvCDH(int frameIndex = -1) const;
 
 
 private:

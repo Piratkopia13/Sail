@@ -68,36 +68,42 @@ void rayGen() {
 	float depth = sys_inTex_depth.SampleLevel(ss, screenTexCoord, 0);
 	float linearDepth = projectionB / (depth - projectionA);
 
-	// float3 viewRay = normalize(float3(screenPos, 1));
-	// float3 vsPosition = viewRay * linearDepth;
+    float3 screenVS = mul(CB_SceneData.clipToView, float4(screenPos, 0.f, 1.0f)).xyz;
+	float3 viewRay = float3(screenVS.xy / screenVS.z, 1.f);
 
-	// float3 worldPosition = mul((float3x3) CB_SceneData.viewToWorld, vsPosition);
+	// float3 viewRay = normalize(float3(screenPos, 1.0f));
+	float4 vsPosition = float4(viewRay * linearDepth, 1.0f);
+
+	float4 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition);
 	// ---------------------------------------------------
 
-	lOutput[launchIndex] = float4(depth, 0.f, 0.f, 1.0f);
+	//lOutput[launchIndex] = float4(depth / 1, 0.f, 0.f, 1.0f);
 	// lOutput[launchIndex] = float4(worldPosition, 1.0f);
+	// lOutput[launchIndex] = float4(worldPosition.xyz * 0.5f + 0.5f, 1.0f);
 
 
 
-	// float3 rayDir;
-	// float3 origin;
-	// // Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
-	// generateCameraRay(launchIndex, origin, rayDir);
+	float3 rayDir;
+	float3 origin;
+	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
+	generateCameraRay(launchIndex, origin, rayDir);
 
-	// RayDesc ray;
-	// ray.Origin = worldPosition;
-	// ray.Direction = normalize(reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal));
-	// // Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
-	// // TMin should be kept small to prevent missing geometry at close contact areas
-	// ray.TMin = 0.00001;
-	// ray.TMax = 10000.0;
+	RayDesc ray;
+	ray.Origin = worldPosition;
+	ray.Direction = normalize(reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal));
+	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
+	// TMin should be kept small to prevent missing geometry at close contact areas
+	ray.TMin = 0.00001;
+	ray.TMax = 10000.0;
 
-	// RayPayload payload;
-	// payload.recursionDepth = 0;
-	// payload.hit = 0;
-	// payload.color = float4(0,0,0,0);
-	// TraceRay(gRtScene, 0, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
-	// lOutput[launchIndex] = payload.color;
+	RayPayload payload;
+	payload.recursionDepth = 0;
+	payload.hit = 0;
+	payload.color = float4(0,0,0,0);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+
+	float3 color = worldNormal * 0.5f + 0.5f;
+	lOutput[launchIndex] = float4(color * 0.8f + payload.color.rgb * 0.2f, 1.0f);
 }
 
 [shader("miss")]

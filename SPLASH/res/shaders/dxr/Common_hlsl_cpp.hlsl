@@ -59,6 +59,7 @@ struct PointLightInput {
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
 	float4x4 viewToWorld;
+	float4x4 clipToView;
 	float3 cameraPosition;
 	float nearZ;
 	float farZ;

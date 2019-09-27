@@ -87,20 +87,20 @@ ID3D12Resource* DX12RenderableTexture::getDepthResource() const {
 	return m_depthStencilBuffers[context->getFrameIndex()].Get();
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDepthSrvCDH() const {
+D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDepthSrvCDH(int frameIndex) const {
 	assert(m_hasDepthTextures); // Tried to get depth srv without a valid depth stencil resource
-	unsigned int frameIndex = context->getFrameIndex();
-	return depthSrvHeapCDHs[frameIndex];
+	int i = (frameIndex == -1) ? context->getFrameIndex() : frameIndex;
+	return depthSrvHeapCDHs[i];
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH() const {
-	unsigned int frameIndex = context->getFrameIndex();
-	return m_rtvHeapCDHs[frameIndex];
+D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH(int frameIndex) const {
+	int i = (frameIndex == -1) ? context->getFrameIndex() : frameIndex;
+	return m_rtvHeapCDHs[i];
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH() const {
-	unsigned int frameIndex = context->getFrameIndex();
-	return m_dsvHeapCDHs[frameIndex];
+D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH(int frameIndex) const {
+	int i = (frameIndex == -1) ? context->getFrameIndex() : frameIndex;
+	return m_dsvHeapCDHs[i];
 }
 
 void DX12RenderableTexture::createTextures() {

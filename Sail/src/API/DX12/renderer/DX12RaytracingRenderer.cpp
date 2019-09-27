@@ -4,6 +4,7 @@
 #include "../DX12Utils.h"
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 #include "API/DX12/DX12VertexBuffer.h"
+#include "Sail/KeyBinds.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
@@ -33,6 +34,10 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	// Reset allocators and lists for this frame
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
+
+	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
+		m_dxr.reloadShaders();
+	}
 
 	// Copy updated flag from vertex buffers to renderCommand
 	// This marks all commands that should have their bottom layer updated in-place

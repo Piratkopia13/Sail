@@ -6,6 +6,7 @@
 #include "API/DX12/DX12IndexBuffer.h"
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
+#include "../renderer/DX12GBufferRenderer.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 : m_shaderFilename(shaderFilename) 
@@ -20,6 +21,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
+	m_gbufferStartGPUHandles = m_context->createFrameResource<D3D12_GPU_DESCRIPTOR_HANDLE>();
 
 	// Create root signatures
 	createDXRGlobalRootSignature();
@@ -154,6 +156,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
 	DXRShaderCommon::SceneCBuffer newData = {};
 	newData.viewToWorld = glm::inverse(cam.getViewMatrix());
+	newData.clipToView = glm::inverse(cam.getProjMatrix());
 	newData.nearZ = cam.getNearZ();
 	newData.farZ = cam.getFarZ();
 	newData.cameraPosition = cam.getPosition();
@@ -214,6 +217,11 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
 	cmdList->DispatchRays(&raytraceDesc);
+}
+
+void DXRBase::reloadShaders() {
+	// Recompile hlsl
+	createRaytracingPSO();
 }
 
 bool DXRBase::onEvent(Event& event) {
@@ -406,25 +414,20 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 
-		// Next three slots are used for input gbuffers
-		D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
-		srcDescriptors[0] = m_gbufferInputTextures[0]->getSrvCDH();
-		srcDescriptors[1] = m_gbufferInputTextures[1]->getSrvCDH();
-		srcDescriptors[2] = m_gbufferInputTextures[0]->getDepthSrvCDH();
+		// Next (3 * numSwapBuffers) slots are used for input gbuffers
+		for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
+			m_gbufferStartGPUHandles[i] = gpuHandle;
+			D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
+			srcDescriptors[0] = m_gbufferInputTextures[0]->getSrvCDH(i);
+			srcDescriptors[1] = m_gbufferInputTextures[1]->getSrvCDH(i);
+			srcDescriptors[2] = m_gbufferInputTextures[0]->getDepthSrvCDH(i);
 
-		m_gbufferStartGPUHandle = gpuHandle;
-
-		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, srcDescriptors[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		cpuHandle.ptr += m_heapIncr;
-		gpuHandle.ptr += m_heapIncr;
-		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, srcDescriptors[1], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		cpuHandle.ptr += m_heapIncr;
-		gpuHandle.ptr += m_heapIncr;
-		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, srcDescriptors[2], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		//m_context->getDevice()->CopyDescriptors(3, &cpuHandle, nullptr, 3, srcDescriptors, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		cpuHandle.ptr += m_heapIncr;
-		gpuHandle.ptr += m_heapIncr;
-
+			UINT dstRangeSizes[] = { 3 };
+			UINT srcRangeSizes[] = { 1, 1, 1 };
+			m_context->getDevice()->CopyDescriptors(1, &cpuHandle, dstRangeSizes, 3, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			cpuHandle.ptr += m_heapIncr * 3;
+			gpuHandle.ptr += m_heapIncr * 3;
+		}
 
 		//// Ray gen settings CB
 		//m_rayGenCBData.flags = RT_ENABLE_TA | RT_ENABLE_JITTER_AA;
@@ -534,7 +537,7 @@ void DXRBase::updateShaderTables() {
 		}
 		DXRUtils::ShaderTableBuilder tableBuilder(m_rayGenName, m_rtPipelineState.Get());
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
-		tableBuilder.addDescriptor(m_gbufferStartGPUHandle.ptr);
+		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -588,6 +591,8 @@ void DXRBase::updateShaderTables() {
 }
 
 void DXRBase::createRaytracingPSO() {
+	Memory::SafeRelease(m_rtPipelineState);
+
 	DXRUtils::PSOBuilder psoBuilder;
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);

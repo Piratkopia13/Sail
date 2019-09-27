@@ -28,6 +28,8 @@ public:
 	void updateSceneData(Camera& cam, LightSetup& lights);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
+	void reloadShaders();
+
 	virtual bool onEvent(Event& event) override;
 
 private:
@@ -102,7 +104,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_gbufferStartGPUHandle;
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
 	UINT m_heapIncr;
 
 	std::vector<MeshHandles> m_rtMeshHandles;

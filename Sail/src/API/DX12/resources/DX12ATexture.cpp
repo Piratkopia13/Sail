@@ -31,14 +31,16 @@ DX12ATexture::~DX12ATexture() {
 	
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getSrvCDH() const {
-	if (useOneResource) { return srvHeapCDHs[0]; }
-	return srvHeapCDHs[context->getFrameIndex()];
+D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getSrvCDH(int swapBuffer) const {
+	int i = (swapBuffer == -1) ? context->getFrameIndex() : swapBuffer;
+	if (useOneResource) { i = 0; }
+	return srvHeapCDHs[i];
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH() const {
-	if (useOneResource) { return uavHeapCDHs[0]; }
-	return uavHeapCDHs[context->getFrameIndex()];
+D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH(int swapBuffer) const {
+	int i = (swapBuffer == -1) ? context->getFrameIndex() : swapBuffer;
+	if (useOneResource) { i = 0; }
+	return uavHeapCDHs[i];
 }
 
 //void DX12ATexture::resetStates(const std::thread::id& resetTo) {

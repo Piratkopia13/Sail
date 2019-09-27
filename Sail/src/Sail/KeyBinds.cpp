@@ -40,6 +40,9 @@ namespace KeyBinds {
 
 	// LobbyState
 	int sendMessage;
+
+	// DX12RaytracingRenderer
+	int reloadDXRShader;
 }
 
 void KeyBinds::init() {
@@ -79,4 +82,8 @@ void KeyBinds::init() {
 
 	// LobbyState
 	sendMessage = SAIL_KEY_RETURN;
+
+	// DX12RaytracingRenderer
+	reloadDXRShader = SAIL_KEY_F5;
+
 }

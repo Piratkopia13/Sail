@@ -11,6 +11,9 @@ class PostProcessPipeline;
 
 class DX12GBufferRenderer : public Renderer {
 public:
+	static const int NUM_GBUFFERS = 2;
+
+public:
 	DX12GBufferRenderer();
 	~DX12GBufferRenderer();
 
@@ -26,7 +29,6 @@ private:
 	static const int MAX_RECORD_THREADS = 4;
 	static const int MIN_COMMANDS_PER_THREAD = 20;
 
-	static const int NUM_GBUFFERS = 2;
 
 	DX12API* m_context;
 	DX12RenderableTexture* m_gbufferTextures[NUM_GBUFFERS];
