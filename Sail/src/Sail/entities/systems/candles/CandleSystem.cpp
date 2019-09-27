@@ -10,8 +10,13 @@
 
 CandleSystem::CandleSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(CandleComponent::ID);
+	readBits |= CandleComponent::BID;
+	writeBits |= CandleComponent::BID;
 	requiredComponentTypes.push_back(TransformComponent::ID); // read-only
+	readBits |= TransformComponent::BID;
 	requiredComponentTypes.push_back(LightComponent::ID);
+	readBits |= LightComponent::BID;
+	writeBits |= LightComponent::BID;
 }
 
 CandleSystem::~CandleSystem() {
@@ -31,11 +36,27 @@ void CandleSystem::lightCandle(std::string name) {
 // should be updated after collision detection has been done
 void CandleSystem::update(float dt) {
 	for (auto e : entities) {
+
+		auto candle = e->getComponent<CandleComponent>();
+
 		// Remove light from candles that were hit by projectiles
-		if (CandleComponent* c = e->getComponent<CandleComponent>(); c->wasHitByWater()) {
-			c->resetHitByWater();
+		if ( candle->wasHitByWater()) {
+			candle->resetHitByWater();
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
+			candle->setIsAlive(false);
+		} else if ( candle->getDoActivate() || candle->getDownTime() >= 5.f /* Relight the candle every 5 seconds (should probably be removed later) */ ) {
+			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.3f, 0.3f, 0.3f));
+			candle->setIsAlive(true);
+			candle->resetDownTime();
+			candle->resetDoActivate();
+		} else if (!candle->getIsAlive()) {
+			candle->addToDownTime(dt);
 		}
+
+
+		glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);//e->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 0.5f, 0);
+		//glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
+		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
 }
 
@@ -59,18 +80,4 @@ void CandleSystem::updatePlayerCandle(CameraController* cam, const float yaw) {
 	glm::vec3 flamePos = candlePos + glm::vec3(0, 0.37f, 0);
 	glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
 	m_playerCandle->getComponent<LightComponent>()->getPointLight().setPosition(plPos);
-}
-
-// projectiles are presumed to have a PhysicsComponent
-void CandleSystem::checkProjectileCollisions(const std::vector<Entity::SPtr> &projectiles) {
-	for (auto p : projectiles) {
-		auto projectileCollisions = p->getComponent<PhysicsComponent>()->collisions;
-		for (auto candle : entities) {
-			for (auto collision : projectileCollisions) {
-				if (collision.entity == candle) {
-					candle->getComponent<CandleComponent>()->hitWithWater();
-				}
-			}
-		}
-	}
 }

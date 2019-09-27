@@ -24,3 +24,11 @@ void BaseComponentSystem::removeEntity(Entity* entity) {
 const std::vector<int>& BaseComponentSystem::getRequiredComponentTypes() const {
 	return requiredComponentTypes;
 }
+
+const unsigned int BaseComponentSystem::getReadBitMask() const {
+	return readBits;
+}
+
+const unsigned int BaseComponentSystem::getWriteBitMask() const {
+	return writeBits;
+}
