@@ -4,8 +4,10 @@
 enum AudioType {MUSIC};
 
 #include "Xaudio2.h"
-#include <thread>
+#include "xapo.h"
+#include "hrtfapoapi.h"
 
+#include <thread>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
@@ -122,6 +124,8 @@ private:
 	// PRIVATE FUNCTION
 	//-----------------
 	void initXAudio2();
+	void initHeadRelativeSpatialSound();
+
 	void streamSoundInternal(const std::string& filename, int myIndex, bool loop);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
 

@@ -216,6 +216,10 @@ void AudioEngine::initXAudio2() {
 	}
 }
 
+void AudioEngine::initHeadRelativeSpatialSound() {
+
+}
+
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
 
 	if (m_isStreaming[myIndex]) {
