@@ -299,56 +299,58 @@ void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& ray
 	}
 }
 
-void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData) {
+void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis) {
 	float nodeIntersectionDistance = Intersection::rayWithAabb(rayStart, rayDir, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox());
-	if (nodeIntersectionDistance >= 0.0f  && (nodeIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects with the current node closer than the closest hit
+	if (nodeIntersectionDistance >= 0.0f && (nodeIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects with the current node closer than the closest hit
 		//Check against entities
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
-			float entityIntersectionDistance = Intersection::rayWithAabb(rayStart, rayDir, *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox());
-			if (entityIntersectionDistance >= 0.0f && (entityIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects the entity bounding box closer than the closest hit
-				//Get Intersection
-				ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
-				TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
+			if (currentNode->entities[i] != ignoreThis) {
+				float entityIntersectionDistance = Intersection::rayWithAabb(rayStart, rayDir, *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox());
+				if (entityIntersectionDistance >= 0.0f && (entityIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects the entity bounding box closer than the closest hit
+					//Get Intersection
+					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
+					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
 
-				if (model) {
-					//Entity has a model. Check ray against meshes
-					glm::mat4 transformMatrix;
-					if (transform) {
-						transformMatrix = transform->getMatrix();
-					}
+					if (model) {
+						//Entity has a model. Check ray against meshes
+						glm::mat4 transformMatrix;
+						if (transform) {
+							transformMatrix = transform->getMatrix();
+						}
 
-					for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
-						const Mesh::Data& meshData = model->getModel()->getMesh(j)->getData();
-						if (meshData.indices) { //Has indices
-							for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
-								glm::vec3 v0, v1, v2;
-								v0 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
-								v1 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
-								v2 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
-								getIntersectionData(rayStart, rayDir, currentNode->entities[i], v0, v1, v2, outIntersectionData);
+						for (unsigned int j = 0; j < model->getModel()->getNumberOfMeshes(); j++) {
+							const Mesh::Data& meshData = model->getModel()->getMesh(j)->getData();
+							if (meshData.indices) { //Has indices
+								for (unsigned int k = 0; k < meshData.numIndices; k += 3) {
+									glm::vec3 v0, v1, v2;
+									v0 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k]].vec, 1.0f));
+									v1 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k + 1]].vec, 1.0f));
+									v2 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[meshData.indices[k + 2]].vec, 1.0f));
+									getIntersectionData(rayStart, rayDir, currentNode->entities[i], v0, v1, v2, outIntersectionData);
+								}
+							}
+							else { //Does not have indices
+								for (unsigned int k = 0; k < meshData.numVertices; k += 3) {
+									glm::vec3 v0, v1, v2;
+									v0 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k].vec, 1.0f));
+									v1 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
+									v2 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
+									getIntersectionData(rayStart, rayDir, currentNode->entities[i], v0, v1, v2, outIntersectionData);
+								}
 							}
 						}
-						else { //Does not have indices
-							for (unsigned int k = 0; k < meshData.numVertices; k += 3) {
-								glm::vec3 v0, v1, v2;
-								v0 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k].vec, 1.0f));
-								v1 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k + 1].vec, 1.0f));
-								v2 = glm::vec3(transformMatrix * glm::vec4(meshData.positions[k + 2].vec, 1.0f));
-								getIntersectionData(rayStart, rayDir, currentNode->entities[i], v0, v1, v2, outIntersectionData);
-							}
-						}
 					}
-				}
-				else { //No model
-					//Intersected with bounding box
-					Logger::Log("Ray intersected with " + currentNode->entities[i]->getName() + ", no model was found so no intersection information was stored");
+					else { //No model
+						//Intersected with bounding box
+						Logger::Log("Ray intersected with " + currentNode->entities[i]->getName() + ", no model was found so no intersection information was stored");
+					}
 				}
 			}
 		}
 
 		//Check for children
 		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-			getRayIntersectionRec(rayStart, rayDir, &currentNode->childNodes[i], outIntersectionData);
+			getRayIntersectionRec(rayStart, rayDir, &currentNode->childNodes[i], outIntersectionData, ignoreThis);
 		}
 	}
 }
@@ -423,6 +425,6 @@ void Octree::getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollis
 	getCollisionsRec(entity, entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), &m_baseNode, outCollisionData);
 }
 
-void Octree::getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData) {
-	getRayIntersectionRec(rayStart, rayDir, &m_baseNode, outIntersectionData);
+void Octree::getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis) {
+	getRayIntersectionRec(rayStart, rayDir, &m_baseNode, outIntersectionData, ignoreThis);
 }

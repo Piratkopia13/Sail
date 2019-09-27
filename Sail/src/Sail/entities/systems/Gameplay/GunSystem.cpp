@@ -11,6 +11,7 @@
 #include "Sail/entities/components/PhysicsComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
+#include "Sail/entities/components/CollidableComponent.h"
 
 
 GunSystem::GunSystem() : BaseComponentSystem() {

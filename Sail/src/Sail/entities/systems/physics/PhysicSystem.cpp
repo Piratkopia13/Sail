@@ -136,7 +136,7 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 		//Object is moving at a speed that risks missing collisions
 		//Ray cast to find upcoming collisions
 		Octree::RayIntersectionInfo intersectionInfo;
-		m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo);
+		m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo, e);
 		float velocityAmp = glm::length(physics->velocity) * dt;
 		if ((intersectionInfo.closestHit) < velocityAmp && intersectionInfo.closestHit > 0.0f) { //Found upcoming collision
 			glm::vec3 normalizedVel = glm::normalize(physics->velocity);
@@ -148,9 +148,9 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 			float maxMovementAllowed = glm::min(glm::min(xMovementAllowed, yMovementAllowed), zMovementAllowed) * 0.99f;
 
 			//Calculate new dt
-			float newDt = (glm::max(intersectionInfo.closestHit - maxMovementAllowed, 0.0f) / velocityAmp) * dt;
+			float newDt = ((intersectionInfo.closestHit - maxMovementAllowed) / velocityAmp) * dt;
 
-			if (newDt > 0.0f) {
+			if (newDt > 0.0001f) {
 
 				//Move untill first overlap
 				boundingBox->setPosition(boundingBox->getPosition() + physics->velocity * newDt);
