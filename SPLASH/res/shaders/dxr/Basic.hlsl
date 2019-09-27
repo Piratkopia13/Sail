@@ -194,8 +194,12 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	//float4 diffuseColor;
 
 	//diffuseColor = nextBounce.color;
+	float4 color = payload.color;
+	color.r *= 0.5;
+	color.g *= 0.5;
+	color.b = 1;
 
-	//payload.color = diffuseColor;
+	payload.color = color;
 	return;
 }
 
@@ -323,7 +327,7 @@ void IntersectionShader()
 	ProceduralPrimitiveAttributes attr;
 	attr.normal = float4(1, 1, 1, 0);
 
-	float  radii[N] = { -0.6, 0.5, 0.3 };
+	float  radii[N] = { 0.6, 0.5, 0.3 };
 	float3 centers[N] =
 	{
 		float3(-0.1, -0.3, -0.0),
@@ -348,12 +352,6 @@ void IntersectionShader()
 	while (iStep++ < MAX_LARGE_STEPS) {
 		float fieldPotentials[N];    // Field potentials for each metaball.
 		float sumFieldPotential = CalculateMetaballsPotential(currPos, centers, radii, N); // Sum of all metaball field potentials.
-
-		//for (int i = 0; i < N; i++) {
-		//	float distance;
-		//	fieldPotentials[i] = CalculateMetaballPotential(currPos, centers[i], radii[i], distance);
-		//	sumFieldPotential += fieldPotentials[i];
-		//}
 
 		const float Threshold = 0.25f;
 
@@ -382,28 +380,4 @@ void IntersectionShader()
 		t += minTStep;
 		currPos = ray.Origin + t * ray.Direction;
 	}
-
-
-	//////////////////////////
-	//for (int i = 0; i < N; i++) {
-	//	float t = 0;
-	//	float4 tempNormal;
-	//	if (intersect(ray, centers[i], radii[i], t, tempNormal)) {
-	//		if (t < minT || !hit) {
-	//			minT = t;
-	//			normal = tempNormal;
-	//		}
-	//		hit = true;
-	//	}
-	//}
-
-	//if (hit) {
-	//	attr.normal = normal;
-	//	ReportHit(minT, 0, attr);
-	//} else {
-	//	//ReportHit(RayTCurrent(), 0, attr);
-	//}
-
-	
-	//ReportHit(RayTCurrent(), 0, attr);
 }
