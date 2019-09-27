@@ -17,6 +17,12 @@ public:
 
 private:
 	bool m_wasHitByWater = false;
+	bool m_isAlive = true;
+	bool m_activate = true;
 	bool m_carried = true;
+
+	/* Should probably be removed later */
+	float m_downTime = 0.f;
+
 
 };
