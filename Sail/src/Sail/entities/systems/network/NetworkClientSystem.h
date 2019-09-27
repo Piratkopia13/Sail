@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 
+class NWrapper;
 
 class NetworkClientSystem : public BaseComponentSystem {
 public:
