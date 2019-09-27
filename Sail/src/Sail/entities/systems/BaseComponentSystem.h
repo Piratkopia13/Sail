@@ -1,5 +1,8 @@
 #pragma once
-#include <vector>
+
+#include "../components/Component.h"
+
+#include <bitset>
 
 class Entity;
 
@@ -37,17 +40,29 @@ public:
 	/*
 		Returns the indices of all the component types required to be within this system
 	*/
-	const std::vector<int>& getRequiredComponentTypes() const;
+	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getRequiredComponentTypes() const;
 	
 	/* Returns the bit mask for all components that are being read from */
-	const unsigned int getReadBitMask() const;
+	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getReadBitMask() const;
 
 	/* Returns the bit mask for all components that are being written to */
-	const unsigned int getWriteBitMask() const;
+	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getWriteBitMask() const;
+
+protected:
+	template<typename ComponentType>
+	void registerComponent(bool required, bool read, bool write);
 
 protected:
 	std::vector<Entity*> entities;
-	std::vector<int> requiredComponentTypes;
-	unsigned int readBits;
-	unsigned int writeBits;
+
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> requiredComponentTypes;
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> readBits;
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> writeBits;
 };
+
+template<typename ComponentType>
+inline void BaseComponentSystem::registerComponent(bool required, bool read, bool write) {
+	if (required) requiredComponentTypes |= ComponentType::BID;
+	if ( read )	readBits |= ComponentType::BID;
+	if (write)	writeBits |= ComponentType::BID;
+}

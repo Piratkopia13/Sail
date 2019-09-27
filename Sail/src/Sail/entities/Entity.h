@@ -58,6 +58,7 @@ private:
 	void setECSIndex(int index);
 
 	std::unordered_map<int, BaseComponent::Ptr> m_components;
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_componentTypes;
 	std::string m_name;
 	bool m_destructionQueued = false;
 	int m_id;

@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 
+#define MAX_NUM_COMPONENTS_TYPES 128
+
 
 /*
 	Any component of type T created should inherit from Component<T>.
@@ -38,9 +40,7 @@ public:
 		Should not be called anywhere else
 	*/
 	static ComponentTypeID createID() {
-		global_componentID++;
-		assert(global_componentID < 32 && "There were more than 32 unique components, system needs to be redesigned.");
-		return global_componentID;
+		return global_componentID++;
 	}
 
 	/*
