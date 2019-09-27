@@ -352,7 +352,7 @@ GameState::GameState(StateStack& stack)
 
 		e = ECS::Instance()->createEntity("MetaBall");
 		e->addComponent<MetaballComponent>();
-		e->addComponent<TransformComponent>(glm::vec3(0, 2, 0));
+		e->addComponent<TransformComponent>(glm::vec3(2, 2, 0));
 		m_scene.addEntity(e);
 
 		/*e = ECS::Instance()->createEntity("Character2");

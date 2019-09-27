@@ -136,7 +136,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 		RayPayload shadowPayload;
 		shadowPayload.recursionDepth = 1;
 		shadowPayload.hit = 0;
-		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, 0, Utils::getRayDesc(normalize(towardsLight), dstToLight), shadowPayload);
+		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, Utils::getRayDesc(normalize(towardsLight), dstToLight), shadowPayload);
 
 		// Dont do any shading if in shadow
 		if (shadowPayload.hit == 1) {
@@ -218,7 +218,10 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		RayPayload shadowPayload;
 		shadowPayload.recursionDepth = 1;
 		shadowPayload.hit = 0;
-		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, 0, Utils::getRayDesc(normalize(towardsLight), dstToLight), shadowPayload);
+		RayDesc r = Utils::getRayDesc(normalize(towardsLight), dstToLight);
+
+		r.Origin += normalize(attribs.normal.xyz) * 0.001;
+		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, r, shadowPayload);
 
 		// Dont do any shading if in shadow
 		if (shadowPayload.hit == 1) {
@@ -299,7 +302,7 @@ bool intersect(in RayDesc ray, in float3 center, in float radius, out float t, o
 	}
 
 	t = t0;
-	normal = float4(normalize((ray.Origin + normalize(t * ray.Direction)) - center), 0);
+	normal = float4(normalize((ray.Origin + t * normalize(ray.Direction)) - center), 0);
 
 	return true;
 }
