@@ -20,7 +20,4 @@ private:
 
 	// Deformatting Functions
 	unsigned int decompressDCMessage(std::string messageData);
-
-
-	void testDeserialize(std::string data);
 };

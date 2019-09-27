@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "NetworkModule.hpp"
 #include <random>
+#include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
 Network::Network() {}
 
@@ -186,22 +187,22 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 		return true;
 	}
 
+	// serialize the packet size and place that information at the beginning of the packet
+	std::ostringstream os(std::ios::binary);
+	{
+		cereal::PortableBinaryOutputArchive ar(os);
+		ar(size);
+	}
+	std::string msgSizeString = os.str();
 
-	//char msg[MAX_PACKAGE_SIZE] = { 0 };
-
-	size_t packetSize = sizeof(size) + size;
-
-	// NOTE: this is technically not portable due to potential endian differences between machines.
-	char* msg = SAIL_NEW char[packetSize](); // All initialized with '\0'
-
+	size_t packetSize = MSG_SIZE_STR_LEN + size;
+	char* msg = SAIL_NEW char[packetSize]();
+	
 	// The message starts with a size_t stating how large the message is
-	size_t* t = reinterpret_cast<size_t*>(msg);
-	t[0] = size;
+	memcpy(&msg[0], msgSizeString.c_str(), MSG_SIZE_STR_LEN);
 
-	msg = reinterpret_cast<char*>(t);
-
-	//memcpy(msg, message, size);
-	memcpy(&msg[sizeof(size_t)], message, size);
+	// The rest of msg is the actual message
+	memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
 
 	Connection* conn = nullptr;
 	{
@@ -221,7 +222,6 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 		return false;
 	}
 
-	//if (::send(conn->socket, msg, MAX_PACKAGE_SIZE, 0) == SOCKET_ERROR) {
 	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
 		return false;
 	}
@@ -236,19 +236,22 @@ bool Network::send(const char* message, size_t size, Connection* conn)
 		return false;
 	}
 
-	size_t packetSize = sizeof(size) + size;
+	// serialize the packet size and place that information at the beginning of the packet
+	std::ostringstream os(std::ios::binary);
+	{
+		cereal::PortableBinaryOutputArchive ar(os);
+		ar(size);
+	}
+	std::string msgSizeString = os.str();
 
-	// NOTE: this is technically not portable due to potential endian differences between machines.
-	char* msg = SAIL_NEW char[packetSize];
+	size_t packetSize = MSG_SIZE_STR_LEN + size;
+	char* msg = SAIL_NEW char[packetSize]();
 
 	// The message starts with a size_t stating how large the message is
-	size_t* t = reinterpret_cast<size_t*>(msg);
-	t[0] = size;
+	memcpy(&msg[0], msgSizeString.c_str(), MSG_SIZE_STR_LEN);
 
-	msg = reinterpret_cast<char*>(t);
-
-	//memcpy(msg, message, size);
-	memcpy(&msg[sizeof(size_t)], message, size);
+	// The rest of msg is the actual message
+	memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
 
 	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
 		return false;
@@ -532,11 +535,6 @@ ULONG Network::ip_string_to_ip_int(char* ip)
 void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data)
 {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
-	/*memcpy(m_awaitingMessages[m_pend].rawMsg, n.data->rawMsg, dataSize);
-	m_awaitingEvents[m_pend].eventType = n.eventType;
-	m_awaitingEvents[m_pend].clientID = n.clientID;
-	m_awaitingEvents[m_pend].data = &m_awaitingMessages[m_pend];*/
-
 	// delete previous message if there is one
 	if (m_awaitingMessages[m_pend].Message.rawMsg != nullptr) {
 		delete[] m_awaitingMessages[m_pend].Message.rawMsg;
@@ -604,24 +602,25 @@ void Network::listen(const Connection* conn)
 	addNetworkEvent(nEvent, 0);
 
 	bool connectionIsClosed = false;
-	//char msg[MAX_PACKAGE_SIZE];
-	char incomingPackageSize[sizeof(size_t)];
+	char incomingPackageSize[MSG_SIZE_STR_LEN];
+	int bytesToReceive = 0;
 
 	while (!connectionIsClosed && !m_shutdown) {
-
-		//ZeroMemory(msg, sizeof(msg));
-		//int bytesReceived = recv(conn->socket, msg, MAX_PACKAGE_SIZE, 0);
-
-		ZeroMemory(incomingPackageSize, sizeof(incomingPackageSize));
+		ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
 
 		// Find out how large the incoming packet is
-		recv(conn->socket, incomingPackageSize, sizeof(incomingPackageSize), 0);
-		size_t* bytesToReceive = reinterpret_cast<size_t*>(&incomingPackageSize);
+		recv(conn->socket, incomingPackageSize, MSG_SIZE_STR_LEN, 0);
 
-		// Get the incoming packet
-		char* msg = SAIL_NEW char[bytesToReceive[0]]();
-		int bytesReceived = recv(conn->socket, msg, bytesToReceive[0], 0);
+		// Read how many bytes to receive
+		std::istringstream is(std::string(incomingPackageSize, MSG_SIZE_STR_LEN));
+		{
+			cereal::PortableBinaryInputArchive ar(is);
+			ar(bytesToReceive);
+		}
 
+		// Get the incoming packet and place it in a char array
+		char* msg = SAIL_NEW char[bytesToReceive]();
+		int bytesReceived = recv(conn->socket, msg, bytesToReceive, 0);
 
 #ifdef DEBUG_NETWORK
 		printf((std::string("bytesReceived: ") + std::to_string(bytesReceived) + "\n").c_str());
