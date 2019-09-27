@@ -18,6 +18,12 @@ public:
 	ResourceManager();
 	~ResourceManager();
 
+	enum ImporterType {
+		SAIL_FBXSDK,
+		SAIL_ASSIMP
+	};
+
+
 	// AudioData
 	void loadAudioData(const std::string& filename, IXAudio2* xAudio2);
 	AudioData& getAudioData(const std::string& filename);
@@ -37,12 +43,12 @@ public:
 	bool hasTexture(const std::string& filename);
 
 	// Models
-	void loadModel(const std::string& filename, Shader* shader);
+	void loadModel(const std::string& filename, Shader* shader, const ImporterType type = SAIL_ASSIMP);
 	Model& getModel(const std::string& filename, Shader* shader);
 	bool hasModel(const std::string& filename);
 
 	// Animations
-	void loadAnimationStack(const std::string& fileName);
+	void loadAnimationStack(const std::string& fileName, const ImporterType type = SAIL_ASSIMP);
 	AnimationStack& getAnimationStack(const std::string& fileName);
 	bool hasAnimationStack(const std::string& fileName);
 
@@ -100,6 +106,7 @@ private:
 
 
 	std::unique_ptr<AssimpLoader> m_assimpLoader;
+
 };
 
 template <typename T>
