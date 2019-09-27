@@ -23,8 +23,3 @@ void AudioComponent::defineSound(SoundType::SoundType type, std::string filename
 	m_soundEffectThresholds[type] = dtThreshold;
 	m_playOnce[type] = playOnce;
 }
-
-//void AudioComponent::defineStreamedSound(std::string filename) {
-//	m_streamedSounds.insert({ filename, false });
-//	m_streamedSounds.insert({ filename, 0 });
-//}

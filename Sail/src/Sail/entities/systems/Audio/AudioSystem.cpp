@@ -8,6 +8,7 @@
 AudioSystem::AudioSystem() {
 	requiredComponentTypes.push_back(AudioComponent::ID);
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
+	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/jump.wav");
 }
 
