@@ -14,7 +14,6 @@
 #include "ModelComponent.h"
 //#include "MovementComponent.h"
 #include "PhysicsComponent.h"
-#include "PlayerComponent.h"
 #include "RealTimeComponent.h"
 //#include "TextComponent.h"
 #include "TransformComponent.h"
