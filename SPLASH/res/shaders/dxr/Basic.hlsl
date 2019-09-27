@@ -320,13 +320,14 @@ void IntersectionShader()
 #ifdef Many
 	//Multiple Spheres
 	const int N = 3;
+	float  radii[N] = { 0.6, 0.3, 0.15 };
 	float3 centers[N] =
 	{
 		float3(-0.3, -0.3, -0.3),
 		float3(0.1, 0.1, 0.4),
 		float3(0.35,0.35, 0.0)
 	};
-	float  radii[N] = { 0.6, 0.3, 0.15 };
+	//center[0].x = (CB_MeshData.data[instanceID].color.x * 2 - 1);
 
 	float minT = 0;
 	float4 normal;
