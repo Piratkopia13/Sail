@@ -26,7 +26,7 @@ bool MenuState::processInput(float dt) {
 	return false;
 }
 
-bool MenuState::update(float dt) {
+bool MenuState::update(float dt, float alpha) {
 	return false;
 }
 

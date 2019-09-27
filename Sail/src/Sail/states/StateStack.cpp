@@ -41,18 +41,31 @@ void StateStack::processInput(float dt) {
 
 }
 
-void StateStack::update(float dt) {
+void StateStack::update(float dt, float alpha) {
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
 
 		// Return if a state returns false
 		// This allows states to stop underlying states from updating
-		if (!(*itr)->update(dt))
+		if (!(*itr)->update(dt, alpha))
 			break;
 
 	}
 
+}
+
+void StateStack::fixedUpdate(float dt) {
+
+	// Loop through the stack reversed
+	for ( auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr ) {
+
+		// Return if a state returns false
+		// This allows states to stop underlying states from updating
+		if ( !( *itr )->fixedUpdate(dt) )
+			break;
+
+	}
 }
 
 void StateStack::render(float dt, float alpha) {

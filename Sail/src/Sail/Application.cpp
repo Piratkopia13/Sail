@@ -151,11 +151,13 @@ int Application::startGameLoop() {
 			// Run the update if enough time has passed since the last update
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
-				update(TIMESTEP);
+				fixedUpdate(TIMESTEP);
 			}
 
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
+
+			update(delta, alpha);
 
 			// Render
 			render(delta, alpha);

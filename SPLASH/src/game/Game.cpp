@@ -49,8 +49,12 @@ void Game::processInput(float dt) {
 	m_stateStack.processInput(dt);
 }
 
-void Game::update(float dt) {
-	m_stateStack.update(dt);
+void Game::update(float dt, float alpha) {
+	m_stateStack.update(dt, alpha);
+}
+
+void Game::fixedUpdate(float dt) {
+	m_stateStack.fixedUpdate(dt);
 }
 
 void Game::render(float dt, float alpha) {

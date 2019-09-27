@@ -17,7 +17,7 @@ public:
 	// Process input for the state
 	bool processInput(float dt);
 	// Updates the state
-	bool update(float dt);
+	bool update(float dt, float alpha = 1.0f);
 	// Renders the state
 	bool render(float dt, float alpha = 1.0f);
 	// Renders imgui

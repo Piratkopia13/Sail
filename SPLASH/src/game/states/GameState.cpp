@@ -492,7 +492,19 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
-bool GameState::update(float dt) {
+bool GameState::update(float dt, float alpha) {
+	// Interpolate the player's camera position (but not rotation)
+	m_playerController.updateCameraPosition(alpha);
+
+	// UPDATE REAL TIME SYSTEMS
+	updatePerFrameComponentSystems(dt);
+
+	m_lights.updateBufferData();
+
+	return true;
+}
+
+bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
@@ -500,7 +512,7 @@ bool GameState::update(float dt) {
 	static float counter = 0.0f;
 	static float size = 1.0f;
 	static float change = 0.4f;
-	
+
 	counter += dt * 2.0f;
 
 	m_playerController.processKeyboardInput(TIMESTEP);
@@ -512,15 +524,7 @@ bool GameState::update(float dt) {
 
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
-bool GameState::render(float dt, float alpha) {
-	// Interpolate the player's camera position (but not rotation)
-	m_playerController.updateCameraPosition(alpha);
-
-	// UPDATE REAL TIME SYSTEMS
-	updatePerFrameComponentSystems(dt);
-
-	m_lights.updateBufferData();
-	
+bool GameState::render(float dt, float alpha) {	
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
@@ -778,6 +782,8 @@ void GameState::updatePerFrameComponentSystems(float dt) {
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
 }
+
+void GameState::updateComponentSystems(float dt) {}
 
 Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos) {
 	//creates light with model and pointlight
