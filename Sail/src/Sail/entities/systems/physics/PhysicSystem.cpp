@@ -138,20 +138,19 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 		Octree::RayIntersectionInfo intersectionInfo;
 		m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo, e);
 		float velocityAmp = glm::length(physics->velocity) * dt;
-		if ((intersectionInfo.closestHit) < velocityAmp && intersectionInfo.closestHit > 0.0f) { //Found upcoming collision
-			glm::vec3 normalizedVel = glm::normalize(physics->velocity);
+		glm::vec3 normalizedVel = glm::normalize(physics->velocity);
 
-			//Find when the first wall of the boundingBox hits that position
-			float xMovementAllowed = boundingBox->getHalfSize().x / glm::max(std::abs(normalizedVel.x), 0.01f);
-			float yMovementAllowed = boundingBox->getHalfSize().y / glm::max(std::abs(normalizedVel.y), 0.01f);
-			float zMovementAllowed = boundingBox->getHalfSize().z / glm::max(std::abs(normalizedVel.z), 0.01f);
-			float maxMovementAllowed = glm::min(glm::min(xMovementAllowed, yMovementAllowed), zMovementAllowed) * 0.99f;
+		//Find when the first wall of the boundingBox hits that position
+		float xMovementAllowed = boundingBox->getHalfSize().x / glm::max(std::abs(normalizedVel.x), 0.01f);
+		float yMovementAllowed = boundingBox->getHalfSize().y / glm::max(std::abs(normalizedVel.y), 0.01f);
+		float zMovementAllowed = boundingBox->getHalfSize().z / glm::max(std::abs(normalizedVel.z), 0.01f);
+		float maxMovementAllowed = glm::min(glm::min(xMovementAllowed, yMovementAllowed), zMovementAllowed) * 0.95f;
 
+		if ((intersectionInfo.closestHit - maxMovementAllowed) < velocityAmp && intersectionInfo.closestHit > 0.0f) { //Found upcoming collision
 			//Calculate new dt
 			float newDt = ((intersectionInfo.closestHit - maxMovementAllowed) / velocityAmp) * dt;
 
 			if (newDt > 0.0001f) {
-
 				//Move untill first overlap
 				boundingBox->setPosition(boundingBox->getPosition() + physics->velocity * newDt);
 
