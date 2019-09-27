@@ -83,6 +83,11 @@ public:
 	template<typename T>
 	T* getSystem();
 
+	// Calls the 
+	void stopAllSystems();
+
+	// Clears the map of all unique_ptr systems
+	void destroyAllSystems();
 
 	/*
 		Retrieves the entity removal system

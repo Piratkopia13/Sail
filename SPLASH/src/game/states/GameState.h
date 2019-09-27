@@ -14,6 +14,7 @@ class PhysicSystem;
 class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
+class AudioSystem;
 
 class GameState : public State {
 public:
@@ -60,6 +61,7 @@ private:
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
+		AudioSystem* audioSystem = nullptr;
 	};
 
 	Application* m_app;

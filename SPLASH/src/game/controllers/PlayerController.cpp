@@ -15,6 +15,8 @@ PlayerController::PlayerController(Camera* cam, Scene* scene) {
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
+
+	m_player->addComponent<AudioComponent>();
 }
 
 PlayerController::~PlayerController() {
@@ -44,6 +46,10 @@ void PlayerController::processKeyboardInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
 		if (!m_wasSpacePressed && physicsComp->onGround) {
+			// AUDIO TESTING (playing a non-looping jump sound)
+			m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+			m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::JUMP] = true;
+
 			physicsComp->velocity.y = 5.0f;
 		}
 		m_wasSpacePressed = true;
@@ -95,6 +101,17 @@ void PlayerController::processKeyboardInput(float dt) {
 
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f) {
+		// AUDIO TESTING (playing a looping running sound)
+		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = true;
+		m_player->getComponent<AudioComponent>()->m_playOnce[SoundType::RUN] = false;
+
+		// AUDIO TESTING (turn ON streaming)
+		if (!m_hasStartedStreaming) {
+			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
+			m_hasStartedStreaming = true;
+			m_hasStoppedStreaming = false;
+		}
+
 		// Calculate total movement
 		float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
 		if (!physicsComp->onGround) {
@@ -103,6 +120,18 @@ void PlayerController::processKeyboardInput(float dt) {
 		physicsComp->accelerationToAdd += 
 			glm::normalize(right * rightMovement + forward * forwardMovement)
 			* acceleration;
+	}
+
+	else {
+		// AUDIO TESTING (turn OFF looping running sound)
+		m_player->getComponent<AudioComponent>()->m_isPlaying[SoundType::RUN] = false;
+
+		// AUDIO TESTING (turning OFF streaming)
+		if (!m_hasStoppedStreaming) {
+			m_player->getComponent<AudioComponent>()->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
+			m_hasStoppedStreaming = true;
+			m_hasStartedStreaming = false;
+		}
 	}
 
 	// Shooting
