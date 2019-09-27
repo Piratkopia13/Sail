@@ -21,5 +21,4 @@ public:
 	void updatePlayerCandle(CameraController* cam, const float yaw);
 private:
 	Entity::SPtr m_playerCandle;
-
 };

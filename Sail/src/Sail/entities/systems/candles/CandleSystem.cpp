@@ -38,6 +38,14 @@ void CandleSystem::update(float dt) {
 		if ( candle->wasHitByWater()) {
 			candle->resetHitByWater();
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
+			candle->setIsAlive(false);
+		} else if ( candle->getDoActivate() || candle->getDownTime() >= 5.f /* Relight the candle every 5 seconds (should probably be removed later) */ ) {
+			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.3f, 0.3f, 0.3f));
+			candle->setIsAlive(true);
+			candle->resetDownTime();
+			candle->resetDoActivate();
+		} else if (!candle->getIsAlive()) {
+			candle->addToDownTime(dt);
 		}
 
 
