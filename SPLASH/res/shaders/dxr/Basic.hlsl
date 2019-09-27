@@ -307,11 +307,67 @@ bool intersect(in RayDesc ray, in float3 center, in float radius, out float t, o
 	return true;
 }
 
+static const int N = 3;
+
+// Calculate a magnitude of an influence from a Metaball charge.
+// Return metaball potential range: <0,1>
+// mbRadius - largest possible area of metaball contribution - AKA its bounding sphere.
+float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float ballradius, out float distance) {
+	distance = length(position - ballpos);
+
+	if (distance <= ballradius) {
+		float d = distance;
+
+		// Quintic polynomial field function.
+		// The advantage of this polynomial is having smooth second derivative. Not having a smooth
+		// second derivative may result in a sharp and visually unpleasant normal vector jump.
+		// The field function should return 1 at distance 0 from a center, and 1 at radius distance,
+		// but this one gives f(0) = 0, f(radius) = 1, so we use the distance to radius instead.
+		d = ballradius - d;
+
+		float r = ballradius;
+		return 6 * (d * d * d * d * d) / (r * r * r * r * r)
+			- 15 * (d * d * d * d) / (r * r * r * r)
+			+ 10 * (d * d * d) / (r * r * r);
+	}
+	return 0;
+}
+
+// Calculate field potential from all active metaballs.
+float CalculateMetaballsPotential(in float3 position, in float3 ballpositions[N], in float ballRadiuses[N] , in unsigned int nballs) {
+	float sumFieldPotential = 0;
+	for (int i = 0; i < nballs; i++)
+	{
+		float dist;
+		sumFieldPotential += CalculateMetaballPotential(position, ballpositions[i], ballRadiuses[i], dist);
+	}
+	return sumFieldPotential;
+}
+
+// Calculate a normal via central differences.
+float3 CalculateMetaballsNormal(in float3 position, in float3 ballpositions[N], in float ballRadiuses[N], in unsigned int nballs) {
+	//return float3(0,0,0);
+	float e = 0.5773 * 0.00001;
+	return normalize(float3(
+		CalculateMetaballsPotential(position + float3(-e, 0, 0), ballpositions, ballRadiuses, nballs) -
+		CalculateMetaballsPotential(position + float3(e, 0, 0), ballpositions, ballRadiuses, nballs),
+		CalculateMetaballsPotential(position + float3(0, -e, 0), ballpositions, ballRadiuses, nballs) -
+		CalculateMetaballsPotential(position + float3(0, e, 0), ballpositions, ballRadiuses, nballs),
+		CalculateMetaballsPotential(position + float3(0, 0, -e), ballpositions, ballRadiuses, nballs) -
+		CalculateMetaballsPotential(position + float3(0, 0, e), ballpositions, ballRadiuses, nballs)));
+}
+
+float3 HitObjectPosition() {
+	return ObjectRayOrigin() + RayTCurrent() * ObjectRayDirection();
+}
+
 [shader("intersection")]
 void IntersectionShader()
 {
 	RayDesc ray;
-	ray.Origin		= ObjectRayOrigin();			// mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
+	//ray.Origin = Utils::HitWorldPosition();
+	//ray.Origin = HitObjectPosition();			// mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
+	ray.Origin =  ObjectRayOrigin();			// mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
 	ray.Direction	= ObjectRayDirection();	// mul(ObjectRayDirection(), (float3x3) attr.bottomLevelASToLocalSpace);
 	ray.TMax = 1000000;
 	ray.TMin = 0.00001;
@@ -319,8 +375,7 @@ void IntersectionShader()
 	ProceduralPrimitiveAttributes attr;
 	attr.normal = float4(1, 1, 1, 0);
 
-	const int N = 3;
-	float  radii[N] = { 0.6, 0.3, 0.15 };
+	float  radii[N] = { 0.6, 0.5, 0.3 };
 	float3 centers[N] =
 	{
 		float3(-0.3, -0.3, -0.3),
@@ -332,40 +387,74 @@ void IntersectionShader()
 	centers[1].y = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[1]);
 	centers[2].z = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[2]);
 
-	float tmin, tmax;
-	UINT MAX_STEPS = 128;
+	float tmin = 0, tmax = 5;
+	unsigned int MAX_STEPS = 32;
+	unsigned int MAX_RESTEPS = 64;
+	//unsigned int seed = 2;
+	//float t = tmin + Utils::nextRand(seed);
 	float t = tmin;
-	float minTStep = (tmax - tmin) / (MAX_STEPS / 1);
-	UINT iStep = 0;
+	float minTStep = (tmax - tmin) / (MAX_STEPS / 1.0f);
+	unsigned int iStep = 0;
 
-	float3 currPos = ray.Origin;
-	while (istep++ < MAX_STEPS) {
+	float3 currPos = ray.Origin + t * ray.Direction;
+	while (iStep++ < MAX_STEPS) {
+		float fieldPotentials[N];    // Field potentials for each metaball.
+		float sumFieldPotential = CalculateMetaballsPotential(currPos, centers, radii, N); // Sum of all metaball field potentials.
 
+		//for (int i = 0; i < N; i++) {
+		//	float distance;
+		//	fieldPotentials[i] = CalculateMetaballPotential(currPos, centers[i], radii[i], distance);
+		//	sumFieldPotential += fieldPotentials[i];
+		//}
 
+		const float Threshold = 0.25f;
 
-		currPos +=
+		if (sumFieldPotential >= Threshold) {
+			float restep_step = minTStep / 2;
+			int restep_step_dir = -1;
+
+			for (int i = 0; i < MAX_RESTEPS; i++) {
+				t += restep_step * restep_step_dir;
+				currPos = ray.Origin + t * ray.Direction;
+				float sumFieldPotential_recomp = CalculateMetaballsPotential(currPos, centers, radii, N); // Sum of all metaball field potentials.
+				if (sumFieldPotential_recomp >= Threshold) {
+					restep_step *= 0.5;
+					restep_step_dir = -1;
+				} else {
+					restep_step *= 0.8;
+					restep_step_dir = 1;
+				}
+			}
+	
+			attr.normal = float4(CalculateMetaballsNormal(currPos, centers, radii, N), 0);
+			ReportHit(t, 0, attr);
+			return;
+		}
+
+		t += minTStep;
+		currPos = ray.Origin + t * ray.Direction;
 	}
 
 
 	//////////////////////////
-	for (int i = 0; i < N; i++) {
-		float t = 0;
-		float4 tempNormal;
-		if (intersect(ray, centers[i], radii[i], t, tempNormal)) {
-			if (t < minT || !hit) {
-				minT = t;
-				normal = tempNormal;
-			}
-			hit = true;
-		}
-	}
+	//for (int i = 0; i < N; i++) {
+	//	float t = 0;
+	//	float4 tempNormal;
+	//	if (intersect(ray, centers[i], radii[i], t, tempNormal)) {
+	//		if (t < minT || !hit) {
+	//			minT = t;
+	//			normal = tempNormal;
+	//		}
+	//		hit = true;
+	//	}
+	//}
 
-	if (hit) {
-		attr.normal = normal;
-		ReportHit(minT, 0, attr);
-	} else {
-		//ReportHit(RayTCurrent(), 0, attr);
-	}
+	//if (hit) {
+	//	attr.normal = normal;
+	//	ReportHit(minT, 0, attr);
+	//} else {
+	//	//ReportHit(RayTCurrent(), 0, attr);
+	//}
 
 	
 	//ReportHit(RayTCurrent(), 0, attr);
