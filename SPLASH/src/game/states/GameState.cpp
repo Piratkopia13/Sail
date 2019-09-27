@@ -120,18 +120,6 @@ GameState::GameState(StateStack& stack)
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
-	// This was moved out from the PlayerController constructor
-	// since the PhysicSystem needs to be created first
-	// (or the PhysicsComponent needed to be detached and reattached
-	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
-	m_playerController.getEntity()->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
-	m_playerController.getEntity()->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
-
-
-
-	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -211,6 +199,10 @@ GameState::GameState(StateStack& stack)
 	//Create system for input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
 	m_componentSystems.gameInputSystem->initialize(m_player, &m_cam);
+
+	m_player->addComponent<AudioComponent>();
+	m_player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
+	m_player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
 
 
 

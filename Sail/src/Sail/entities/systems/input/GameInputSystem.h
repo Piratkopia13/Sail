@@ -36,6 +36,10 @@ private:
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
 
+	//TEMP VARIABLE FOR SOUND
+	bool m_hasStartedStreaming = false;
+	bool m_hasStoppedStreaming = true;
+
 	glm::vec3 calculateNormalizedRightVector();
 
 

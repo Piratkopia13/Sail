@@ -42,6 +42,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 	float upMovement = 0.0f;
 
 	PhysicsComponent* physicsComp = m_playerEntity->getComponent<PhysicsComponent>();
+	AudioComponent* audioComp = m_playerEntity->getComponent<AudioComponent>();
 
 	// Increase speed if shift or right trigger is pressed
 	if (Input::IsKeyPressed(KeyBinds::sprint)) { speedModifier = m_runSpeed; }
@@ -53,6 +54,10 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
 		if (!m_wasSpacePressed && physicsComp->onGround) {
 			physicsComp->velocity.y = 5.0f;
+
+
+			audioComp->m_isPlaying[SoundType::JUMP] = true;
+			audioComp->m_playOnce[SoundType::JUMP] = true;
 		}
 		m_wasSpacePressed = true;
 	}
@@ -79,14 +84,41 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 	// Prevent division by zero
 	if (forwardMovement != 0.0f || rightMovement != 0.0f) {
+
+		// AUDIO TESTING (turn ON streaming)
+		if (!m_hasStartedStreaming) {
+			audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
+			m_hasStartedStreaming = true;
+			m_hasStoppedStreaming = false;
+		}
+
 		// Calculate total movement
 		float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
 		if (!physicsComp->onGround) {
 			acceleration = acceleration * 0.5f;
+
+			// AUDIO TESTING (turn OFF looping running sound)
+			audioComp->m_isPlaying[SoundType::RUN] = false;
+		}
+		// AUDIO TESTING (playing a looping running sound)
+		else {
+			audioComp->m_isPlaying[SoundType::RUN] = true;
+			audioComp->m_playOnce[SoundType::RUN] = false;
 		}
 		physicsComp->accelerationToAdd = 
 			glm::normalize(right * rightMovement + forward * forwardMovement)
 			* acceleration;
+	}
+	else {
+		// AUDIO TESTING (turn OFF looping running sound)
+		audioComp->m_isPlaying[SoundType::RUN] = false;
+
+		// AUDIO TESTING (turning OFF streaming)
+		if (!m_hasStoppedStreaming) {
+			audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
+			m_hasStoppedStreaming = true;
+			m_hasStartedStreaming = false;
+		}
 	}
 
 }
