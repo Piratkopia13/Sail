@@ -12,6 +12,7 @@ GameInputSystem::GameInputSystem() {
 }
 
 GameInputSystem::~GameInputSystem() {
+	delete m_cam;
 }
 
 void GameInputSystem::update(float dt, float alpha) {
@@ -35,7 +36,7 @@ void GameInputSystem::processPerTickInput() {
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
 
-		float speedModifier = 1.f;
+	float speedModifier = 1.f;
 	float forwardMovement = 0.0f;
 	float rightMovement = 0.0f;
 	float upMovement = 0.0f;
@@ -83,58 +84,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		if (!physicsComp->onGround) {
 			acceleration = acceleration * 0.5f;
 		}
-		physicsComp->accelerationToAdd += 
+		physicsComp->accelerationToAdd = 
 			glm::normalize(right * rightMovement + forward * forwardMovement)
 			* acceleration;
 	}
 
-	//float speedModifier = 1.f;
-	//float forwardMovement = 0.0f;
-	//float rightMovement = 0.0f;
-	//float upMovement = 0.0f;
-
-	//PhysicsComponent* physicsComp = m_playerEntity->getComponent<PhysicsComponent>();
-
-	//float tempY = physicsComp->velocity.y;
-
-	//// Increase speed if shift or right trigger is pressed
-	//if (Input::IsKeyPressed(KeyBinds::sprint)) { speedModifier = m_runSpeed; }
-	//if (Input::IsKeyPressed(KeyBinds::moveForward)) { forwardMovement += 1.0f; }
-	//if (Input::IsKeyPressed(KeyBinds::moveBackward)) { forwardMovement -= 1.0f; }
-	//if (Input::IsKeyPressed(KeyBinds::moveLeft)) { rightMovement -= 1.0f; }
-	//if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
-	//if (Input::IsKeyPressed(KeyBinds::moveUp)) {
-	//	if (!m_wasSpacePressed) {
-	//		tempY = 15.0f;
-	//	}
-	//	m_wasSpacePressed = true;
-	//}
-	//else {
-	//	m_wasSpacePressed = false;
-	//}
-	////if (Input::IsKeyPressed(KeyBinds::moveDown)) { upMovement -= 1.0f; }
-
-	//glm::vec3 forward = m_cam->getCameraDirection();
-	//forward.y = 0.f;
-	//forward = glm::normalize(forward);
-
-	//glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-	//right = glm::normalize(right);
-
-	//TransformComponent* playerTrans = m_playerEntity->getComponent<TransformComponent>();
-
-	//// Prevent division by zero
-	//if (forwardMovement != 0.0f || rightMovement != 0.0f || upMovement != 0.0f) {
-	//	// Calculate total movement
-	//	physicsComp->velocity =
-	//		glm::normalize(right * rightMovement + forward * forwardMovement)
-	//		* m_movementSpeed * speedModifier;
-	//}
-	//else {
-	//	physicsComp->velocity = glm::vec3(0.0f);
-	//}
-
-	//physicsComp->velocity.y = tempY;
 }
 
 void GameInputSystem::processMouseInput(const float& dt) {

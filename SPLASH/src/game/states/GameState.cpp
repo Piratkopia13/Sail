@@ -23,7 +23,6 @@
 GameState::GameState(StateStack& stack)
 : State(stack)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-//, m_playerController(&m_cam, &m_scene)
 , m_cc(true)
 , m_profiler(true)
 , m_disableLightComponents(false)
@@ -462,9 +461,6 @@ bool GameState::processInput(float dt) {
 		m_profiler.toggle();
 	}
 
-//	m_playerController.processMouseInput(dt);
-
-
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
@@ -514,10 +510,6 @@ bool GameState::updatePerTick(float dt) {
 	static float change = 0.4f;
 	
 	counter += dt * 2.0f;
-
-	//ECS::Instance()->getSystem<EntityRemovalSystem>()->update(0.0f);
-
-//	m_playerController.processKeyboardInput(TIMESTEP);
 
 	updatePerTickComponentSystems(dt);
 
@@ -782,9 +774,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
-
-	// Update the player's candle with the current camera position
-	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
 
 	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 
