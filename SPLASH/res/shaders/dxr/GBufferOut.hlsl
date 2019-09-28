@@ -86,14 +86,14 @@ void GSMain(triangle GSIn input[3], inout TriangleStream<PSIn> output) {
 // TODO: check if it is worth the extra VRAM to write diffuse and specular gbuffers instead of sampling them in the raytracing shaders
 //       The advantage is that mip map level can be calculated automatically here
 //      
-// Texture2D sys_texDiffuse : register(t0);
+Texture2D sys_texDiffuse : register(t0);
 // Texture2D sys_texSpecular : register(t2);
 Texture2D sys_texNormal : register(t1);
 SamplerState PSss;
 
 struct GBuffers {
-	float4 normal    : SV_Target0;
-	float4 texCoords : SV_Target1;
+	float4 normal  : SV_Target0;
+	float4 diffuse : SV_Target1;
 	// float4 diffuse : SV_Target0;
 	// float4 specular : SV_Target2;
 	// float4 ambient : SV_Target3;
@@ -107,7 +107,7 @@ GBuffers PSMain(PSIn input) {
         gbuffers.normal = float4(mul(normalize(sys_texNormal.Sample(PSss, input.texCoords).rgb * 2.f - 1.f), input.tbn) / 2.f + .5f, 1.0f);
 
     // TODO: handle texcoords outside of [0..1] range
-    gbuffers.texCoords = float4(input.texCoords, 0.f, 1.0f);
+    gbuffers.diffuse = sys_texDiffuse.Sample(PSss, input.texCoords);
 
     return gbuffers;
 }

@@ -4,7 +4,7 @@
 
 RaytracingAccelerationStructure gRtScene : register(t0);
 Texture2D<float4> sys_inTex_normals : register(t10);
-Texture2D<float4> sys_inTex_texCoords : register(t11);
+Texture2D<float4> sys_inTex_diffuse : register(t11);
 Texture2D<float> sys_inTex_depth : register(t12);
 
 RWTexture2D<float4> lOutput : register(u0);
@@ -56,7 +56,7 @@ void rayGen() {
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	float2 texCoords = sys_inTex_texCoords.SampleLevel(ss, screenTexCoord, 0).rg;
+	float4 diffuse = sys_inTex_diffuse.SampleLevel(ss, screenTexCoord, 0);
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
@@ -102,8 +102,7 @@ void rayGen() {
 	payload.color = float4(0,0,0,0);
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 
-	float3 color = worldNormal * 0.5f + 0.5f;
-	lOutput[launchIndex] = float4(color * 0.8f + payload.color.rgb * 0.2f, 1.0f);
+	lOutput[launchIndex] = float4(diffuse * 0.8f + payload.color.rgb * 0.2f, 1.0f);
 }
 
 [shader("miss")]
