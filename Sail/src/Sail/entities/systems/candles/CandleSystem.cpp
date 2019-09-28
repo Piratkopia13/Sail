@@ -10,8 +10,13 @@
 
 CandleSystem::CandleSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(CandleComponent::ID);
+	readBits |= CandleComponent::BID;
+	writeBits |= CandleComponent::BID;
 	requiredComponentTypes.push_back(TransformComponent::ID); // read-only
+	readBits |= TransformComponent::BID;
 	requiredComponentTypes.push_back(LightComponent::ID);
+	readBits |= LightComponent::BID;
+	writeBits |= LightComponent::BID;
 }
 
 CandleSystem::~CandleSystem() {
@@ -38,11 +43,17 @@ void CandleSystem::update(float dt) {
 		if ( candle->wasHitByWater()) {
 			candle->resetHitByWater();
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
+			candle->setIsAlive(false);
+		} else if ( candle->getDoActivate() || candle->getDownTime() >= 5.f /* Relight the candle every 5 seconds (should probably be removed later) */ ) {
+			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.3f, 0.3f, 0.3f));
+			candle->setIsAlive(true);
+			candle->resetDownTime();
+			candle->resetDoActivate();
+		} else if (!candle->getIsAlive()) {
+			candle->addToDownTime(dt);
 		}
 
-
-		glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);//e->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 0.5f, 0);
-		//glm::vec3 plPos = flamePos - playerToCandle * 0.1f;
+		glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
 		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
 }
