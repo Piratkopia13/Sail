@@ -181,25 +181,87 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		return;
 	}
 
-	RayPayload nextBounce;
-	//nextBounce.recursionDepth = payload.recursionDepth;
-	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
-	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInWorldSpace));
-	RayDesc nextRaydesc = Utils::getRayDesc(reflectVector);
-	nextRaydesc.Origin += nextRaydesc.Direction * 0.0001;
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, nextRaydesc, payload);
+	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
 
-	//uint instanceID = InstanceID();
-	//uint primitiveID = PrimitiveIndex();
-	//float4 diffuseColor;
+	RayPayload reflect_payload = payload;
+	RayPayload refract_payload = payload;
+	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
+	float3 refractVector = refract(WorldRayDirection(), attribs.normal.xyz, 1.333f); //Refract index of water is 1.333, so thats what we will use.
+
+	RayDesc reflectRaydesc = Utils::getRayDesc(reflectVector);
+	RayDesc reftractRaydesc = Utils::getRayDesc(refractVector);
+	reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
+	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
+
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, reflectRaydesc, reflect_payload);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, reftractRaydesc, refract_payload);
 
 	//diffuseColor = nextBounce.color;
-	float4 color = payload.color;
-	color.r *= 0.5;
-	color.g *= 0.5;
-	color.b = 1;
+	float4 reflect_color = reflect_payload.color;
+	reflect_color.r *= 0.8;
+	reflect_color.g *= 0.8;
+	reflect_color.b += 0.2;
+	saturate(reflect_color);
 
-	payload.color = color;
+	float4 refract_color = refract_payload.color;
+	refract_color.r *= 0.8;
+	refract_color.g *= 0.8;
+	refract_color.b += 0.2;
+	saturate(refract_color);
+
+	float4 finaldiffusecolor = saturate((reflect_color*0.2 + refract_color) / 1.5);
+	finaldiffusecolor.a = 1;
+	/////////////////////////
+
+#define USE_PHONG_SHADEING
+#ifdef USE_PHONG_SHADEING
+	float3 shadedColor = float3(0.f, 0.f, 0.f);
+
+	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
+	// TODO: read these from model data
+	float shininess = 100.0f;
+	float specMap = 1.0f;
+	float kd = 1.0f;
+	float ka = 1.0f;
+	float ks = 3.0f;
+
+	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+		PointLightInput p = CB_SceneData.pointLights[i];
+
+		// Treat pointlights with no color as no light
+		if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
+			continue;
+		}
+
+		// Shoot a ray towards the point light to figure out if in shadow or not
+		float3 towardsLight = p.position - Utils::HitWorldPosition();
+		float dstToLight = length(towardsLight);
+
+		float3 hitToLight = p.position - Utils::HitWorldPosition();
+		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
+		float distanceToLight = length(hitToLight);
+
+		float diffuseCoefficient = 1;// saturate(dot(normalInWorldSpace, hitToLight));
+
+		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
+		if (diffuseCoefficient > 0.f) {
+			float3 r = reflect(-hitToLight, normalInWorldSpace);
+			r = normalize(r);
+			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
+		}
+
+		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
+
+		shadedColor += (/*kd*/ diffuseCoefficient + ks * specularCoefficient) * finaldiffusecolor.rgb * p.color * attenuation;
+	}
+
+	float3 ambient = finaldiffusecolor.rgb * ka * ambientCoefficient;
+
+	/////////////////////////
+	payload.color = float4(shadedColor, 1);
+#else
+	payload.color = finaldiffusecolor;
+#endif
 	return;
 }
 
