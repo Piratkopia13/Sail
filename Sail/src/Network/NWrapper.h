@@ -21,6 +21,7 @@ public:
 	void sendChatAllClients(std::string msg);		//
 	virtual void sendChatMsg(std::string msg) = 0;
 	void sendSerializedData(std::string data);
+	void sendSerializedDataToHost(std::string data);
 
 protected:
 	Network* m_network = nullptr;

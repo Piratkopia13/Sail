@@ -203,7 +203,14 @@ GameState::GameState(StateStack& stack)
 	
 	m_player->addComponent<PlayerComponent>();
 	m_player->addComponent<TransformComponent>();
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	// Temporary code which is meant to prevent players from spawning in eachother
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	}
+	else {
+		m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(3.0f, 3.f, 3.f));
+	}
+	
 
 	m_player->addComponent<PhysicsComponent>();
 	m_player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
@@ -390,20 +397,30 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		m_scene.addEntity(e);
 
-		e = ECS::Instance()->createEntity("AiCharacter");
+		/* Currently replaced by entity which will be moved by other player */
+		//e = ECS::Instance()->createEntity("AiCharacter");
+		//e->addComponent<ModelComponent>(characterModel);
+		//e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		//e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		//e->addComponent<CollidableComponent>();
+		//e->addComponent<PhysicsComponent>();
+		//e->addComponent<AiComponent>();
+		//e->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
+		//e->addChildEntity(createCandleEntity("AiCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
+		//m_scene.addEntity(e);
+
+		e = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
+
+		e = ECS::Instance()->createEntity("OtherPlayer");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
 		e->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
-		e->addChildEntity(createCandleEntity("AiCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
+		e->addComponent<OtherPlayerComponent>();
+		e->addChildEntity(createCandleEntity("OtherPlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
 		m_scene.addEntity(e);
-
-
-		e = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
-
 
 #ifdef _DEBUG
 		// Candle1 holds all lights you can place in debug

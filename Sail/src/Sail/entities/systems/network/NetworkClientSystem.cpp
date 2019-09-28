@@ -11,7 +11,7 @@
 #include <iostream> // TODO: remove
 
 NetworkClientSystem::NetworkClientSystem() {
-	requiredComponentTypes.push_back(TransformComponent::ID);
+	// Required components is handled in NetworkSystem
 }
 
 NetworkClientSystem::~NetworkClientSystem() {
@@ -22,25 +22,39 @@ void NetworkClientSystem::update(float dt) {
 	m_network->checkForPackages();
 
 	sendPlayerTranslationToHost();
+
+	
 }
 
 bool NetworkClientSystem::onSerializedPackageRecieved(NetworkSerializedPackageEvent& event) {
+	// Fetch data from the networkwrapper and de-serialize it.
 	std::istringstream is(event.getSerializedData());
 	cereal::PortableBinaryInputArchive inputArchive(is);
-	TranslationStruct backToNormal;
-	inputArchive(backToNormal);	// After this line the trans data is stored in backToNormal
-	std::cout << "Recieved translation package from host:";
-	std::cout << "x" << backToNormal.trans.x;
-	std::cout << "y" << backToNormal.trans.y;
-	std::cout << "z" << backToNormal.trans.z << "\n";
+	std::string deSerializedData;
+	inputArchive(deSerializedData);
+
+	// Parse the Package
+	parsePackage(deSerializedData);
+
+	for (auto& e : entities) {
+		// Fetch the transformComponent of the entity which represents the other player
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+		 
+		// Alter the transform of that entity based on the recieved movement of the other player
+		transform->setTranslation(glm::vec3{
+			deSerializedData.trans.x,
+			deSerializedData.trans.y,
+			deSerializedData.trans.z,
+		});
+	}
+
+
 	return false;
 }
 
 void NetworkClientSystem::sendPlayerTranslationToHost() {
 	TransformComponent* transform = m_playerEntity->getComponent<TransformComponent>();
 	glm::vec3 translation = transform->getTranslation();
-
-	translation.r;
 
 	TranslationStruct data;
 	data.trans.x = translation.x;
@@ -52,5 +66,5 @@ void NetworkClientSystem::sendPlayerTranslationToHost() {
 	outputArchive(data);
 	std::string binaryData = os.str();
 
-	m_network->sendSerializedData(binaryData);
+	m_network->sendSerializedDataToHost(binaryData);
 }

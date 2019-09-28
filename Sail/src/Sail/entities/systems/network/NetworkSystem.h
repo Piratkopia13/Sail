@@ -4,6 +4,7 @@
 
 #include "Network/NWrapper.h"
 #include "../BaseComponentSystem.h"
+#include "structPackages/StructPackage.h"
 
 class NetworkSerializedPackageEvent;
 
@@ -21,51 +22,21 @@ public:
 protected:
 	Entity* m_playerEntity = nullptr;
 	NWrapper* m_network = nullptr;
+	StructPackage* *m_arr_structs = nullptr;
 
+	void initalizeStructPackages();
+	
 	/*
-		Temporarily used instead of glm::vector as all serialized data needs the
-		'serialize' function, which glm::vector does not have unless hoops are
-		jumped through. 
+		Parses the deserialized package into m_arr_structs where
+		each non-deterministic entity's (Those with an attached network component)
+		data can be fetched from after this function has been called.
 	*/
-	struct easyVector {	
-		float x, y, z;
+	void parsePackage(std::string& deSerializedData);
 
-		template<class Archive>
-		void serialize(Archive& ar) {
-			ar(x, y, z);
-		}
-	};
 
-	struct TranslationStruct {
-		easyVector trans;
 
-		template<class Archive>
-		void serialize(Archive& ar) {
-			ar(trans);
-		}
-	};
 
-	struct TransformPackage {
-		easyVector m_translation;
-		easyVector m_rotation;
-		easyVector m_rotationQuat;
-		easyVector m_scale;
-		easyVector m_forward;
-		easyVector m_right;
-		easyVector m_up;
 
-		template<class Archive>
-		void serialize(Archive& ar) {
-			ar(
-				m_translation,
-				m_rotation,
-				m_rotationQuat,
-				m_scale,
-				m_forward,
-				m_right,
-				m_up
-			);
-		}
-	};
+	
 };
 

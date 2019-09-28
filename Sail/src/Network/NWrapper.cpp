@@ -133,3 +133,8 @@ void NWrapper::sendSerializedData(std::string data) {
 	data = std::string("s") + data;
 	m_network->send(data.c_str(), data.length(), -1);
 }
+
+void NWrapper::sendSerializedDataToHost(std::string data) {
+	data = std::string("s") + data;
+	m_network->send(data.c_str(), data.length());
+}

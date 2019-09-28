@@ -7,6 +7,7 @@
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
+#include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
 bool NWrapperHost::host(int port) {
@@ -116,8 +117,8 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		dataString = std::string(nEvent.data->Message.rawMsg, nEvent.data->Message.sizeOfMsg);
 		dataString.erase(0, 1); // remove the s
 
-		// TODO: Send the serialized data as a string to a function which parses it.
-		//Application::getInstance()->dispatchEvent();
+		// Send the serialized stringData as an event to the networkSystem which parses it.
+		Application::getInstance()->dispatchEvent(NetworkSerializedPackageEvent(dataString));
 		break;
 	default:
 		break;

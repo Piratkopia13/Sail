@@ -11,7 +11,7 @@
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 
 NetworkHostSystem::NetworkHostSystem() {
-	
+	// Required components is handled in NetworkSystem
 }
 
 NetworkHostSystem::~NetworkHostSystem() {
@@ -25,14 +25,24 @@ void NetworkHostSystem::update(float dt) {
 }
 
 bool NetworkHostSystem::onSerializedPackageRecieved(NetworkSerializedPackageEvent& event) {
+	// Fetch data from networkWrapper and de-serialize it
 	std::istringstream is(event.getSerializedData());
 	cereal::PortableBinaryInputArchive inputArchive(is);
-	TranslationStruct backToNormal;
-	inputArchive(backToNormal);	// After this line the trans data is stored in backToNormal
-	std::cout << "Recieved translation package from client:";
-	std::cout << "x" << backToNormal.trans.x;
-	std::cout << "y" << backToNormal.trans.y;
-	std::cout << "z" << backToNormal.trans.z << "\n";
+	TranslationStruct deSerializedData;
+	inputArchive(deSerializedData);
+
+	for (auto& e : entities) {
+		// Fetch the transformComponent of the entity which represents the other player
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+
+		// Alter the transform of that entity based on the recieved movement of the other player
+		transform->setTranslation(glm::vec3{
+			deSerializedData.trans.x,
+			deSerializedData.trans.y,
+			deSerializedData.trans.z,
+		});
+	}
+
 	return false;
 }
 
