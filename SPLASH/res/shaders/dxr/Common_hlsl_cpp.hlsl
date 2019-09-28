@@ -38,7 +38,7 @@ struct RayPayload {
 };
 
 struct ShadowRayPayload {
-  bool isHit;
+	bool isHit;
 };
 
 struct Vertex {

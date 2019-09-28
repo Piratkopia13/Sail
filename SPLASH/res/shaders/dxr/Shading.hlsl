@@ -27,24 +27,24 @@ float4 shade(float3 worldPosition, float3 worldNormal, float4 diffuseColor) {
         rayDesc.TMin = 0.00001;
         rayDesc.TMax = dstToLight;
 
-		RayPayload shadowPayload;
-		shadowPayload.recursionDepth = 1;
-		shadowPayload.hit = 0;
-		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, rayDesc, shadowPayload);
-
-		// Dont do any shading if in shadow
-		if (shadowPayload.hit == 1) {
-			continue;
-		}
-
-		// ShadowRayPayload shadowPayload;
-		// shadowPayload.isHit = 0;
-		// TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 1 /*Shadow hit group*/, 0, 1 /*Shadow miss shader*/, rayDesc, shadowPayload);
+		// RayPayload shadowPayload;
+		// shadowPayload.recursionDepth = 1;
+		// shadowPayload.hit = 1;
+		// TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, rayDesc, shadowPayload);
 
 		// // Dont do any shading if in shadow
-		// if (shadowPayload.isHit) {
+		// if (shadowPayload.hit == 1) {
 		// 	continue;
 		// }
+
+		ShadowRayPayload shadowPayload;
+		shadowPayload.isHit = true; // Assume hit, miss shader will set to false
+		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 1 /*Shadow hit group*/, 1 /*Shadow miss shader*/, rayDesc, shadowPayload);
+
+		// Dont do any shading if in shadow
+		if (shadowPayload.isHit) {
+			continue;
+		}
 
 		float3 hitToLight = p.position - worldPosition;
 		float3 hitToCam = CB_SceneData.cameraPosition - worldPosition;

@@ -115,8 +115,6 @@ private:
 	const WCHAR* m_closestHitName = L"closestHit";
 	const WCHAR* m_missName = L"miss";
 
-	const WCHAR* m_shadowHitGroupName = L"ShadowHitGroup";
-	const WCHAR* m_shadowClosestHitName = L"shadowClosestHit";
 	const WCHAR* m_shadowMissName = L"shadowMiss";
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
@@ -124,6 +122,5 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
-
 
 };

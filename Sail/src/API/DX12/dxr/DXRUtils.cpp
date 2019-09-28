@@ -204,13 +204,19 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 		unsigned int i = 0;
 		for (auto& shader : m_shaderNames) {
 			// Copy shader identifier
-			void* shaderID = m_soProps->GetShaderIdentifier(shader);
-			assert(shaderID != nullptr, "Shader Identifier not found in stateObject: id-%s", shader);
-			memcpy(pData, shaderID, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-			pData += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-			// Copy other data (descriptors, constants)
-			memcpy(pData, m_data[i], m_dataOffsets[i]);
-			pData += alignedSize - D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; // Append padding
+			void* shaderID = nullptr;
+			if (shader == L"NULL") {
+				// NULL shader identifier is valid and will cause no shader to be executed
+				pData += alignedSize; // No data, just append padding
+			} else {
+				shaderID = m_soProps->GetShaderIdentifier(shader);
+				assert(shaderID != nullptr, "Shader Identifier not found in stateObject: id-%s", shader);
+				memcpy(pData, shaderID, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+				pData += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+				// Copy other data (descriptors, constants)
+				memcpy(pData, m_data[i], m_dataOffsets[i]);
+				pData += alignedSize - D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; // Append padding
+			}
 			i++;
 		}
 	}
@@ -219,7 +225,7 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 	return shaderTable;
 }
 
-void DXRUtils::ShaderTableBuilder::addShader(const LPCWSTR& shaderName, UINT instance) {
+void DXRUtils::ShaderTableBuilder::addShader(const LPCWSTR& shaderName) {
 	m_shaderNames.emplace_back(shaderName);
 }
 

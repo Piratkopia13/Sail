@@ -43,12 +43,9 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-	float2 screenTexCoord = float2(launchIndex.x, launchIndex.y) / DispatchRaysDimensions().xy;
-
-	float2 xy = launchIndex + 0.5f; // center in the middle of the pixel.
-	float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
-	// Invert Y for DirectX-style coordinates.
-	screenPos.y = -screenPos.y;
+// #define TRACE_FROM_GBUFFERS
+#ifdef TRACE_FROM_GBUFFERS
+	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
@@ -65,6 +62,9 @@ void rayGen() {
 	float depth = sys_inTex_depth.SampleLevel(ss, screenTexCoord, 0);
 	float linearDepth = projectionB / (depth - projectionA);
 
+	float2 screenPos = screenTexCoord * 2.0f - 1.0f;
+	screenPos.y = -screenPos.y; // Invert Y for DirectX-style coordinates.
+	
     float3 screenVS = mul(CB_SceneData.clipToView, float4(screenPos, 0.f, 1.0f)).xyz;
 	float3 viewRay = float3(screenVS.xy / screenVS.z, 1.f);
 
@@ -74,32 +74,32 @@ void rayGen() {
 	float4 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition);
 	// ---------------------------------------------------
 
-	//lOutput[launchIndex] = float4(depth / 1, 0.f, 0.f, 1.0f);
-	// lOutput[launchIndex] = float4(worldPosition, 1.0f);
-	// lOutput[launchIndex] = float4(worldPosition.xyz * 0.5f + 0.5f, 1.0f);
-
-	//float3 rayDir;
-	//float3 origin;
-	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
-	//generateCameraRay(launchIndex, origin, rayDir);
-
-	// RayDesc ray;
-	// ray.Origin = worldPosition;
-	// ray.Direction = normalize(reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal));
-	// // Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
-	// // TMin should be kept small to prevent missing geometry at close contact areas
-	// ray.TMin = 0.00001;
-	// ray.TMax = 10000.0;
-
-	// RayPayload payload;
-	// payload.recursionDepth = 0;
-	// payload.hit = 0;
-	// payload.color = float4(0,0,0,0);
-	// TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
-
-	// lOutput[launchIndex] = float4(diffuse * 0.8f + payload.color.rgb * 0.2f, 1.0f);
-
 	lOutput[launchIndex] = shade(worldPosition, worldNormal, diffuseColor);
+
+#else
+	// Fully RT
+
+	float3 rayDir;
+	float3 origin;
+	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
+	generateCameraRay(launchIndex, origin, rayDir);
+
+	RayDesc ray;
+	ray.Origin = origin;
+	ray.Direction = rayDir;
+	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
+	// TMin should be kept small to prevent missing geometry at close contact areas
+	ray.TMin = 0.00001;
+	ray.TMax = 10000.0;
+
+	RayPayload payload;
+	payload.recursionDepth = 0;
+	payload.hit = 0;
+	payload.color = float4(0,0,0,0);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+
+	lOutput[launchIndex] = payload.color;
+#endif
 }
 
 [shader("miss")]

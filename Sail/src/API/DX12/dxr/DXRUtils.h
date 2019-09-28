@@ -63,7 +63,7 @@ namespace DXRUtils {
 		ShaderTableBuilder(UINT numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance = 32);
 		~ShaderTableBuilder();
 
-		void addShader(const LPCWSTR& shaderName, UINT instance = 0);
+		void addShader(const LPCWSTR& shaderName);
 		void addDescriptor(UINT64& descriptor, UINT instance = 0);
 		void addConstants(UINT numConstants, float* constants, UINT instance = 0);
 
