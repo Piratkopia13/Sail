@@ -28,6 +28,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	createRayGenLocalRootSignature();
 	createHitGroupLocalRootSignature();
 	createMissLocalRootSignature();
+	createEmptyLocalRootSignature();
 
 	createRaytracingPSO();
 	createInitialShaderResources();
@@ -595,10 +596,13 @@ void DXRBase::createRaytracingPSO() {
 
 	DXRUtils::PSOBuilder psoBuilder;
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName });
+	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowClosestHitName, m_shadowMissName });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
+	psoBuilder.addHitGroup(m_shadowHitGroupName, m_shadowClosestHitName);
 	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
 	psoBuilder.addSignatureToShaders({ m_closestHitName }, m_localSignatureHitGroup->get());
 	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
+	psoBuilder.addSignatureToShaders({ m_shadowClosestHitName, m_shadowMissName }, m_localSignatureEmpty->get());
 	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);
 	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());
@@ -639,5 +643,10 @@ void DXRBase::createMissLocalRootSignature() {
 	//m_localSignatureMiss->addDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3); // Skybox
 	m_localSignatureMiss->addStaticSampler();
 
+	m_localSignatureMiss->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+}
+
+void DXRBase::createEmptyLocalRootSignature() {
+	m_localSignatureMiss = std::make_unique<DX12Utils::RootSignature>("EmptyLocal");
 	m_localSignatureMiss->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }

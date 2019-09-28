@@ -37,6 +37,10 @@ struct RayPayload {
 	int hit;
 };
 
+struct ShadowRayPayload {
+  bool isHit;
+};
+
 struct Vertex {
 	float3 position;
 	float2 texCoords;
