@@ -81,28 +81,90 @@ void rayGen() {
 	// lOutput[launchIndex] = float4(worldPosition, 1.0f);
 	// lOutput[launchIndex] = float4(worldPosition.xyz * 0.5f + 0.5f, 1.0f);
 
-
-
-	float3 rayDir;
-	float3 origin;
+	//float3 rayDir;
+	//float3 origin;
 	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
-	generateCameraRay(launchIndex, origin, rayDir);
+	//generateCameraRay(launchIndex, origin, rayDir);
 
-	RayDesc ray;
-	ray.Origin = worldPosition;
-	ray.Direction = normalize(reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal));
-	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
-	// TMin should be kept small to prevent missing geometry at close contact areas
-	ray.TMin = 0.00001;
-	ray.TMax = 10000.0;
+	// RayDesc ray;
+	// ray.Origin = worldPosition;
+	// ray.Direction = normalize(reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal));
+	// // Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
+	// // TMin should be kept small to prevent missing geometry at close contact areas
+	// ray.TMin = 0.00001;
+	// ray.TMax = 10000.0;
 
-	RayPayload payload;
-	payload.recursionDepth = 0;
-	payload.hit = 0;
-	payload.color = float4(0,0,0,0);
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+	// RayPayload payload;
+	// payload.recursionDepth = 0;
+	// payload.hit = 0;
+	// payload.color = float4(0,0,0,0);
+	// TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 
-	lOutput[launchIndex] = float4(diffuse * 0.8f + payload.color.rgb * 0.2f, 1.0f);
+	// lOutput[launchIndex] = float4(diffuse * 0.8f + payload.color.rgb * 0.2f, 1.0f);
+
+
+
+	float3 shadedColor = float3(0.f, 0.f, 0.f);
+	
+	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
+	// TODO: read these from model data
+	float shininess = 10.0f;
+	float specMap = 1.0f;
+	float kd = 1.0f;
+	float ka = 1.0f;
+	float ks = 1.0f;
+
+	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+		PointLightInput p = CB_SceneData.pointLights[i];
+
+		// Treat pointlights with no color as no light
+		if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
+			continue;
+		}
+
+		// Shoot a ray towards the point light to figure out if in shadow or not
+		float3 towardsLight = p.position - worldPosition;
+		float dstToLight = length(towardsLight);
+
+        RayDesc rayDesc;
+        rayDesc.Origin = worldPosition;
+        rayDesc.Direction = normalize(towardsLight);
+        rayDesc.TMin = 0.0001;
+        rayDesc.TMax = dstToLight;
+
+		RayPayload shadowPayload;
+		shadowPayload.recursionDepth = 1;
+		shadowPayload.hit = 0;
+		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, rayDesc, shadowPayload);
+
+		// Dont do any shading if in shadow
+		if (shadowPayload.hit == 1) {
+			continue;
+		}
+
+		float3 hitToLight = p.position - worldPosition;
+		float3 hitToCam = CB_SceneData.cameraPosition - worldPosition;
+		float distanceToLight = length(hitToLight);
+
+		float diffuseCoefficient = saturate(dot(worldNormal, hitToLight));
+
+		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
+		if (diffuseCoefficient > 0.f) {
+			float3 r = reflect(-hitToLight, worldNormal);
+			r = normalize(r);
+			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
+		}
+
+		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
+
+		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuse.rgb * p.color * attenuation;
+	}
+
+	float3 ambient = diffuse.rgb * ka * ambientCoefficient;
+
+	lOutput[launchIndex] = float4(saturate(ambient + shadedColor), 1.0f);
+
+
 }
 
 [shader("miss")]
