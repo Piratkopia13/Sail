@@ -43,7 +43,7 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-// #define TRACE_FROM_GBUFFERS
+#define TRACE_FROM_GBUFFERS
 #ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
@@ -74,7 +74,12 @@ void rayGen() {
 	float4 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition);
 	// ---------------------------------------------------
 
-	lOutput[launchIndex] = shade(worldPosition, worldNormal, diffuseColor);
+	RayPayload payload;
+	payload.recursionDepth = 1;
+	payload.hit = 0;
+	payload.color = float4(0,0,0,0);
+	shade(worldPosition, worldNormal, diffuseColor, payload);
+	lOutput[launchIndex] = payload.color;
 
 #else
 	// Fully RT
@@ -144,17 +149,7 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
 	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 
-	// if (payload.recursionDepth < 1) {
-	// 	float3 reflectedDir = reflect(WorldRayDirection(), normalInWorldSpace);
-	// 	TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir), payload);
-	// 	payload.color = payload.color * 0.2f + getColor(CB_MeshData.data[instanceID], texCoords) * 0.8f;
-
-	// } else {
-	// 	// Max recursion, return color
-	// 	payload.color = getColor(CB_MeshData.data[instanceID], texCoords);
-	// }
-
 	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
 
-	payload.color = shade(Utils::HitWorldPosition(), normalInWorldSpace, diffuseColor);
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, diffuseColor, payload, true);
 }

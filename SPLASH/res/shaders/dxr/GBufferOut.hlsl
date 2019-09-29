@@ -20,7 +20,6 @@ struct PSIn {
     float4 position : SV_Position;
     float3 normal : NORMAL0;
     float2 texCoords : TEXCOORD0;
-    // float clip : SV_ClipDistance0;
     float3x3 tbn : TBN;
 };
 
@@ -76,8 +75,6 @@ void GSMain(triangle GSIn input[3], inout TriangleStream<PSIn> output) {
             psin.normal = input[i].normal;
             psin.texCoords = input[i].texCoords;
             psin.tbn = input[i].tbn;
-            // Calculate the distance from the vertex to the clipping plane
-            // psin.clip = 0;
             output.Append(psin);
         }
     }
@@ -106,8 +103,9 @@ GBuffers PSMain(PSIn input) {
     if (sys_material.hasNormalTexture)
         gbuffers.normal = float4(mul(normalize(sys_texNormal.Sample(PSss, input.texCoords).rgb * 2.f - 1.f), input.tbn) / 2.f + .5f, 1.0f);
 
-    // TODO: handle texcoords outside of [0..1] range
-    gbuffers.diffuse = sys_texDiffuse.Sample(PSss, input.texCoords);
+    gbuffers.diffuse = sys_material.modelColor;
+	if (sys_material.hasDiffuseTexture)
+		gbuffers.diffuse *= sys_texDiffuse.Sample(PSss, input.texCoords);
 
     return gbuffers;
 }

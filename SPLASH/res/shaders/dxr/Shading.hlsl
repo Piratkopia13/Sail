@@ -1,4 +1,4 @@
-float4 shade(float3 worldPosition, float3 worldNormal, float4 diffuseColor) {
+float4 phongShade(float3 worldPosition, float3 worldNormal, float4 diffuseColor) {
     float3 shadedColor = float3(0.f, 0.f, 0.f);
 	
 	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
@@ -57,4 +57,21 @@ float4 shade(float3 worldPosition, float3 worldNormal, float4 diffuseColor) {
 	float3 ambient = diffuseColor.rgb * ka * ambientCoefficient;
 
 	return float4(saturate(ambient + shadedColor), 1.0f);
+}
+
+void shade(float3 worldPosition, float3 worldNormal, float4 diffuseColor, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.9f) {
+	float4 phongColor = phongShade(worldPosition, worldNormal, diffuseColor);
+	
+	if (payload.recursionDepth < reflectionBounces + 1) {
+		// Ray direction for first ray when cast from GBuffer must be calculated using camera position
+		float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
+
+		// Trace reflection ray
+		float3 reflectedDir = reflect(rayDir, worldNormal);
+		TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir, worldPosition), payload);
+		payload.color = payload.color * (1.0f - reflectionAtt) + phongColor * reflectionAtt;
+	} else {
+		// Reflection ray, return color
+		payload.color = phongColor;
+	}
 }
