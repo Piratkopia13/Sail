@@ -758,7 +758,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// TODO: Not sure this can be run in the 'normal' way
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
-	runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
+	m_componentSystems.physicSystem->update(dt);
+	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
 	// Some of the systems can not be ran concurrently due to incorrect
 	//	component registration. Some entities gets removed while used by other systems
 	// TODO: Investigate this
