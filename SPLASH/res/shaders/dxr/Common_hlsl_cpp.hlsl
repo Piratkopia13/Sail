@@ -29,11 +29,11 @@ namespace DXRShaderCommon {
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 8
 
-static const uint MESH_NO_FLAGS	 			= 	0;
-static const uint MESH_USE_INDICES 			= 	1 << 0;
-static const uint MESH_HAS_DIFFUSE_TEX 		= 	1 << 1;
-static const uint MESH_HAS_NORMAL_TEX 		= 	1 << 2;
-static const uint MESH_HAS_SPECULAR_TEX		= 	1 << 3;
+static const uint MESH_NO_FLAGS				 			= 	0;
+static const uint MESH_USE_INDICES 						= 	1 << 0;
+static const uint MESH_HAS_ALBEDO_TEX 					= 	1 << 1;
+static const uint MESH_HAS_NORMAL_TEX 					= 	1 << 2;
+static const uint MESH_HAS_METALNESS_ROUGHNESS_AO_TEX	= 	1 << 3;
 
 struct RayPayload {
 	float4 color;

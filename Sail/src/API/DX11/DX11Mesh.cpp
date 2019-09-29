@@ -13,7 +13,7 @@ Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 DX11Mesh::DX11Mesh(Data& buildData, Shader* shader) 
 	: Mesh(buildData, shader)
 {
-	material = std::make_shared<Material>(shader);
+	material = std::make_shared<PhongMaterial>(shader);
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), buildData));
 	// Create index buffer if indices are set

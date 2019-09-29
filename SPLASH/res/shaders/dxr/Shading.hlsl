@@ -1,6 +1,6 @@
 #include "PBR.hlsl"
 
-float4 phongShade(float3 worldPosition, float3 worldNormal, float4 diffuseColor) {
+float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor) {
     float3 shadedColor = float3(0.f, 0.f, 0.f);
 	
 	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
@@ -14,16 +14,11 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float4 diffuseColor)
 	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
 		PointLightInput p = CB_SceneData.pointLights[i];
 
-		// Treat pointlights with no color as no light
-		if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
-			continue;
-		}
-
 		float3 hitToLight = p.position - worldPosition;
 		float distanceToLight = length(hitToLight);
 
-		// Dont do any shading if in shadow
-		if (Utils::rayHitAnything(worldPosition, normalize(hitToLight), distanceToLight)) {
+		// Dont do any shading if in shadow or light is black
+		if (Utils::rayHitAnything(worldPosition, normalize(hitToLight), distanceToLight) || all(p.color == 0.0f)) {
 			continue;
 		}
 
@@ -40,19 +35,19 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float4 diffuseColor)
 
 		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
 
-		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor.rgb * p.color * attenuation;
+		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor * p.color * attenuation;
 	}
 
-	float3 ambient = diffuseColor.rgb * ka * ambientCoefficient;
+	float3 ambient = diffuseColor * ka * ambientCoefficient;
 
 	return float4(saturate(ambient + shadedColor), 1.0f);
 }
 
-void shade(float3 worldPosition, float3 worldNormal, float4 diffuseColor, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.9f) {
-	payload.color = pbrShade(worldPosition, worldNormal, diffuseColor);
-	// payload.color = phongShade(worldPosition, worldNormal, diffuseColor);
+void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.9f) {
+	payload.color = pbrShade(worldPosition, worldNormal, albedo, metalness, roughness, ao);
+	// payload.color = phongShade(worldPosition, worldNormal, albedo);
 
-	// float4 phongColor = phongShade(worldPosition, worldNormal, diffuseColor);
+	// float4 phongColor = phongShade(worldPosition, worldNormal, albedo);
 	
 	// if (payload.recursionDepth < reflectionBounces + 1) {
 	// 	// Ray direction for first ray when cast from GBuffer must be calculated using camera position

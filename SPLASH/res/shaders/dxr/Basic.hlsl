@@ -1,10 +1,11 @@
 #define HLSL
 #include "Common_hlsl_cpp.hlsl"
 
-RaytracingAccelerationStructure gRtScene : register(t0);
-Texture2D<float4> sys_inTex_normals : register(t10);
-Texture2D<float4> sys_inTex_diffuse : register(t11);
-Texture2D<float> sys_inTex_depth : register(t12);
+RaytracingAccelerationStructure gRtScene 			: register(t0);
+Texture2D<float4> sys_inTex_normals 				: register(t10);
+Texture2D<float4> sys_inTex_albedo 					: register(t11);
+Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12);
+Texture2D<float>  sys_inTex_depth 					: register(t13);
 
 RWTexture2D<float4> lOutput : register(u0);
 
@@ -14,9 +15,9 @@ StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 
 // Texture2DArray<float4> textures : register(t2, space0);
-Texture2D<float4> sys_texDiffuse : register(t2);
+Texture2D<float4> sys_texAlbedo : register(t2);
 Texture2D<float4> sys_texNormal : register(t3);
-Texture2D<float4> sys_texSpecular : register(t4);
+Texture2D<float4> sys_texMetalnessRoughnessAO : register(t4);
 
 SamplerState ss : register(s0);
 
@@ -50,7 +51,7 @@ void rayGen() {
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	float4 diffuseColor = sys_inTex_diffuse.SampleLevel(ss, screenTexCoord, 0);
+	float4 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0);
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
@@ -78,7 +79,7 @@ void rayGen() {
 	payload.recursionDepth = 1;
 	payload.hit = 0;
 	payload.color = float4(0,0,0,0);
-	shade(worldPosition, worldNormal, diffuseColor, payload);
+	shade(worldPosition, worldNormal, albedoColor, 0.8f, 0.4f, 1.0f, payload);
 	lOutput[launchIndex] = payload.color;
 
 #else
@@ -114,8 +115,8 @@ void miss(inout RayPayload payload) {
 
 float4 getColor(MeshData data, float2 texCoords) {
 	float4 color = data.color;
-	if (data.flags & MESH_HAS_DIFFUSE_TEX)
-		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);		
+	if (data.flags & MESH_HAS_ALBEDO_TEX)
+		color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0);		
 	// if (data.flags & MESH_HAS_NORMAL_TEX)
 	// 	color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
 	// if (data.flags & MESH_HAS_SPECULAR_TEX)
@@ -151,5 +152,5 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 
 	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
 
-	shade(Utils::HitWorldPosition(), normalInWorldSpace, diffuseColor, payload, true);
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, diffuseColor, 0.8f, 0.4f, 1.0f, payload, true);
 }

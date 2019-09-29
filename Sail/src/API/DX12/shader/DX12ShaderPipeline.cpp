@@ -186,11 +186,11 @@ void DX12ShaderPipeline::setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsC
 	}
 }
 
-unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList) {
-	const Material::PhongSettings& ps = material->getPhongSettings();
+unsigned int DX12ShaderPipeline::setMaterial(PBRMaterial* material, void* cmdList) {
+	const PBRMaterial::PBRSettings& ps = material->getPBRSettings();
 	int nTextures = 0;
 	DX12Texture* textures[3];
-	if (ps.hasDiffuseTexture) {
+	if (ps.hasAlbedoTexture) {
 		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
 		nTextures++;
 	}
@@ -198,7 +198,7 @@ unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList) 
 		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
 		nTextures++;
 	}
-	if (ps.hasSpecularTexture) {
+	if (ps.hasMetalnessRoughnessAOTexture) {
 		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
 		nTextures++;
 	}

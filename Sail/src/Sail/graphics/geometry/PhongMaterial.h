@@ -8,9 +8,9 @@
 
 class Shader;
 
-class Material {
+class PhongMaterial {
 public:
-	typedef std::shared_ptr<Material> SPtr;
+	typedef std::shared_ptr<PhongMaterial> SPtr;
 public:
 	// Matching shader struct
 	struct PhongSettings {
@@ -25,8 +25,8 @@ public:
 	};
 
 public:
-	Material(Shader* shader);
-	~Material();
+	PhongMaterial(Shader* shader);
+	~PhongMaterial();
 
 	void bind(void* cmdList = nullptr);
 

@@ -158,22 +158,22 @@ GameState::GameState(StateStack& stack)
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
-	barrierModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/barrierBasicTexture.tga");
+	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
 
 	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
-	containerModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/containerBasicTexture.tga");
+	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
 
 	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
-	rampModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/rampBasicTexture.tga");
+	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 
 	// Player creation

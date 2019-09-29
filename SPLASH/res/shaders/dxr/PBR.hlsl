@@ -1,10 +1,3 @@
-// These should be read from material properties or textures
-
-// static float3  albedo;
-static float   metallic = 0.8f;
-static float   roughness = 0.4f;
-static float   ao = 1.0f;
-
 float3 fresnelSchlick(float cosTheta, float3 F0) {
     return F0 + (1.0f - F0) * pow(1.0f - cosTheta, 5.0f);
 } 
@@ -40,12 +33,12 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 albedo) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(CB_SceneData.cameraPosition - worldPosition);
 
     float3 F0 = 0.04f;
-    F0        = lerp(F0, albedo, metallic);
+    F0        = lerp(F0, albedo, metalness);
 
     // Reflectance equation
     float3 Lo = 0.0f;
@@ -54,10 +47,10 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 albedo) {
 
         float3 L = normalize(p.position - worldPosition);
         float3 H = normalize(V + L);
-        float distance    = length(p.position - worldPosition);
+        float distance = length(p.position - worldPosition);
     
-        // Dont do any shading if in shadow
-		if (Utils::rayHitAnything(worldPosition, L, distance)) {
+        // Dont do any shading if in shadow or light is black
+		if (Utils::rayHitAnything(worldPosition, L, distance) || all(p.color == 0.0f)) {
 			continue;
 		}
 
@@ -79,7 +72,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 albedo) {
         // The rest is the diffuse contribution (energy conserving)
         float3 kD = 1.0f - kS;
         // Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
-        kD *= 1.0f - metallic;
+        kD *= 1.0f - metalness;
 
         // Calculate the light's outgoing reflectance value
         float NdotL = max(dot(N, L), 0.0f);

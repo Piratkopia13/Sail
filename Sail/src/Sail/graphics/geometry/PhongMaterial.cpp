@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "Material.h"
+#include "PhongMaterial.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/Application.h"
 
-Material::Material(Shader* shader)
+PhongMaterial::PhongMaterial(Shader* shader)
 	: m_numTextures(3)
 	, m_shader(shader)
 	, m_textures {nullptr}
@@ -19,10 +19,10 @@ Material::Material(Shader* shader)
 	m_phongSettings.hasSpecularTexture = 0;
 
 }
-Material::~Material() { }
+PhongMaterial::~PhongMaterial() { }
 
 /*Not safe for multithreaded commandlist recording(d3d12)*/
-void Material::bind(void* cmdList) {
+void PhongMaterial::bind(void* cmdList) {
 	ShaderPipeline* pipeline = m_shader->getPipeline();
 	pipeline->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
 
@@ -37,48 +37,48 @@ void Material::bind(void* cmdList) {
 	//m_shader->bind();
 }
 
-void Material::setKa(float ka) {
+void PhongMaterial::setKa(float ka) {
 	m_phongSettings.ka = ka;
 }
-void Material::setKd(float kd) {
+void PhongMaterial::setKd(float kd) {
 	m_phongSettings.kd = kd;
 }
-void Material::setKs(float ks) {
+void PhongMaterial::setKs(float ks) {
 	m_phongSettings.ks = ks;
 }
-void Material::setShininess(float shininess) {
+void PhongMaterial::setShininess(float shininess) {
 	m_phongSettings.shininess = shininess;
 }
-void Material::setColor(const glm::vec4& color) {
+void PhongMaterial::setColor(const glm::vec4& color) {
 	m_phongSettings.modelColor = color;
 }
 
 
-void Material::setDiffuseTexture(const std::string& filename) {
+void PhongMaterial::setDiffuseTexture(const std::string& filename) {
 	getAndInsertTexture(filename, 0);
 	m_phongSettings.hasDiffuseTexture = 1;
 }
-void Material::setDiffuseTextureFromHandle(Texture* srv) {
+void PhongMaterial::setDiffuseTextureFromHandle(Texture* srv) {
 	m_textures[0] = srv;
 	m_phongSettings.hasDiffuseTexture = 1;
 }
 
 
-void Material::setNormalTexture(const std::string& filename) {
+void PhongMaterial::setNormalTexture(const std::string& filename) {
 	getAndInsertTexture(filename, 1);
 	m_phongSettings.hasNormalTexture = 1;
 }
-void Material::setNormalTextureFromHandle(Texture* srv) {
+void PhongMaterial::setNormalTextureFromHandle(Texture* srv) {
 	m_textures[1] = srv;
 	m_phongSettings.hasNormalTexture = 1;
 }
 
 
-void Material::setSpecularTexture(const std::string& filename) {
+void PhongMaterial::setSpecularTexture(const std::string& filename) {
 	getAndInsertTexture(filename, 2);
 	m_phongSettings.hasSpecularTexture = 1;
 }
-void Material::setSpecularTextureFromHandle(Texture* srv) {
+void PhongMaterial::setSpecularTextureFromHandle(Texture* srv) {
 	m_textures[2] = srv;
 	m_phongSettings.hasSpecularTexture = 1;
 }
@@ -90,7 +90,7 @@ void Material::setSpecularTextureFromHandle(Texture* srv) {
 //}
 
 
-void Material::getAndInsertTexture(const std::string& filename, int arraySlot) {
+void PhongMaterial::getAndInsertTexture(const std::string& filename, int arraySlot) {
 	Texture* t = &Application::getInstance()->getResourceManager().getTexture(filename);
 	m_textures[arraySlot] = t;
 }
@@ -103,15 +103,15 @@ void Material::getAndInsertTexture(const std::string& filename, int arraySlot) {
 //		return m_srvs;
 //}
 
-Texture* Material::getTexture(unsigned int id) const {
+Texture* PhongMaterial::getTexture(unsigned int id) const {
 	return m_textures[id];
 }
 
-const Material::PhongSettings& Material::getPhongSettings() const {
+const PhongMaterial::PhongSettings& PhongMaterial::getPhongSettings() const {
 	return m_phongSettings;
 }
 
-Shader* Material::getShader() const {
+Shader* PhongMaterial::getShader() const {
 	return m_shader;
 }
 

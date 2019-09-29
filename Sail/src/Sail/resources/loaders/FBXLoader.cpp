@@ -82,7 +82,7 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
 			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, m_shader));
-			getMaterial(pNode, mesh->getMaterial());
+			//getMaterial(pNode, mesh->getMaterial());
 			m_model->addMesh(std::move(mesh));
 
 		}
@@ -323,38 +323,38 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 }
 
-void FBXLoader::getMaterial(FbxNode* pNode, Material* material) {
-
-	// Gets the model's phong constants
-	if (pNode->GetSrcObjectCount<FbxSurfacePhong>() > 0) {
-
-		auto phong = pNode->GetSrcObject<FbxSurfacePhong>();
-		auto& resman = Application::getInstance()->getResourceManager();
-
-		FbxFileTexture* diffTex = phong->Diffuse.GetSrcObject<FbxFileTexture>();
-		if (diffTex) {
-			std::string filename = diffTex->GetRelativeFileName();
-			resman.loadTexture(filename);
-			material->setDiffuseTexture(filename);
-		}
-		FbxFileTexture* specTex = phong->Specular.GetSrcObject<FbxFileTexture>();
-		if (specTex) {
-			std::string filename = specTex->GetRelativeFileName();
-			resman.loadTexture(filename);
-			material->setSpecularTexture(specTex->GetRelativeFileName());
-		}
-		FbxFileTexture* normTex = phong->NormalMap.GetSrcObject<FbxFileTexture>();
-		if (normTex) {
-			std::string filename = normTex->GetRelativeFileName();
-			resman.loadTexture(filename);
-			material->setNormalTexture(normTex->GetRelativeFileName());
-		}
-
-		material->setKa(static_cast<float>(phong->AmbientFactor.Get()));
-		material->setKs(static_cast<float>(phong->SpecularFactor.Get()));
-		material->setKd (static_cast<float>(phong->DiffuseFactor.Get()));
-		material->setShininess(static_cast<float>(phong->Shininess.Get()));
-
-	}
-
-}
+//void FBXLoader::getMaterial(FbxNode* pNode, PBRMaterial* material) {
+//
+//	// Gets the model's phong constants
+//	if (pNode->GetSrcObjectCount<FbxSurfacePhong>() > 0) {
+//
+//		auto phong = pNode->GetSrcObject<FbxSurfacePhong>();
+//		auto& resman = Application::getInstance()->getResourceManager();
+//
+//		FbxFileTexture* diffTex = phong->Diffuse.GetSrcObject<FbxFileTexture>();
+//		if (diffTex) {
+//			std::string filename = diffTex->GetRelativeFileName();
+//			resman.loadTexture(filename);
+//			material->setDiffuseTexture(filename);
+//		}
+//		FbxFileTexture* specTex = phong->Specular.GetSrcObject<FbxFileTexture>();
+//		if (specTex) {
+//			std::string filename = specTex->GetRelativeFileName();
+//			resman.loadTexture(filename);
+//			material->setSpecularTexture(specTex->GetRelativeFileName());
+//		}
+//		FbxFileTexture* normTex = phong->NormalMap.GetSrcObject<FbxFileTexture>();
+//		if (normTex) {
+//			std::string filename = normTex->GetRelativeFileName();
+//			resman.loadTexture(filename);
+//			material->setNormalTexture(normTex->GetRelativeFileName());
+//		}
+//
+//		material->setKa(static_cast<float>(phong->AmbientFactor.Get()));
+//		material->setKs(static_cast<float>(phong->SpecularFactor.Get()));
+//		material->setKd (static_cast<float>(phong->DiffuseFactor.Get()));
+//		material->setShininess(static_cast<float>(phong->Shininess.Get()));
+//
+//	}
+//
+//}
