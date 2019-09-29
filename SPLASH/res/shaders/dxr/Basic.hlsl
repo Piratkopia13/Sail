@@ -51,7 +51,11 @@ void rayGen() {
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	float4 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0);
+	float3 albedoColor = pow(sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb, 2.2f);
+	float3 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0).rgb;
+	float metalness = metalnessRoughnessAO.r;
+	float roughness = metalnessRoughnessAO.g;
+	float ao = metalnessRoughnessAO.b;
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
@@ -72,14 +76,14 @@ void rayGen() {
 	// float3 viewRay = normalize(float3(screenPos, 1.0f));
 	float4 vsPosition = float4(viewRay * linearDepth, 1.0f);
 
-	float4 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition);
+	float3 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition).xyz;
 	// ---------------------------------------------------
 
 	RayPayload payload;
 	payload.recursionDepth = 1;
 	payload.hit = 0;
 	payload.color = float4(0,0,0,0);
-	shade(worldPosition, worldNormal, albedoColor, 0.8f, 0.4f, 1.0f, payload);
+	shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
 	lOutput[launchIndex] = payload.color;
 
 #else
@@ -113,14 +117,16 @@ void miss(inout RayPayload payload) {
 	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
 }
 
-float4 getColor(MeshData data, float2 texCoords) {
-	float4 color = data.color;
+float3 getAlbedo(MeshData data, float2 texCoords) {
+	float3 color = data.color.rgb;
 	if (data.flags & MESH_HAS_ALBEDO_TEX)
-		color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0);		
-	// if (data.flags & MESH_HAS_NORMAL_TEX)
-	// 	color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
-	// if (data.flags & MESH_HAS_SPECULAR_TEX)
-	// 	color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
+		color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb;
+	return color;
+}
+float3 getMetalnessRoughnessAO(MeshData data, float2 texCoords) {
+	float3 color = data.metalnessRoughnessAoScales;
+	if (data.flags & MESH_HAS_METALNESS_ROUGHNESS_AO_TEX)
+		color *= sys_texMetalnessRoughnessAO.SampleLevel(ss, texCoords, 0).rgb;
 	return color;
 }
 
@@ -150,7 +156,11 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
 	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 
-	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
+	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
+	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
+	float metalness = metalnessRoughnessAO.r;
+	float roughness = metalnessRoughnessAO.g;
+	float ao = metalnessRoughnessAO.b;
 
-	shade(Utils::HitWorldPosition(), normalInWorldSpace, diffuseColor, 0.8f, 0.4f, 1.0f, payload, true);
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
 }

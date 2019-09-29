@@ -78,8 +78,10 @@ struct SceneCBuffer {
 // Properties set once per BLAS/Mesh
 struct MeshData {
 	float4 color;
+	float3 metalnessRoughnessAoScales;
+	float padding;
 	int flags;
-	float3 padding;
+	float3 padding2;
 };
 struct MeshCBuffer {
 	MeshData data[MAX_INSTANCES]; // cbuffer min size is 64kb, fill with flags

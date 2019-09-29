@@ -134,6 +134,10 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/albedo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/normal.tga");
+
 
 
 
@@ -158,7 +162,10 @@ GameState::GameState(StateStack& stack)
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
+	//arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/stoneTileFloor/albedo.tga");
+	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
+	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/stoneTileFloor/normal.tga");
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
 	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");

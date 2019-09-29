@@ -92,9 +92,6 @@ struct GBuffers {
 	float4 normal  : SV_Target0;
 	float4 albedo : SV_Target1;
 	float4 metalnessRoughnessAO : SV_Target2;
-	// float4 diffuse : SV_Target0;
-	// float4 specular : SV_Target2;
-	// float4 ambient : SV_Target3;
 };
 
 GBuffers PSMain(PSIn input) {
