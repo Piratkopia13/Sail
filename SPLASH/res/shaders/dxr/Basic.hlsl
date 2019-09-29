@@ -182,34 +182,39 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	}
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
-
+	float refractIndex = 1.333f;
 	RayPayload reflect_payload = payload;
 	RayPayload refract_payload = payload;
 	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
-	float3 refractVector = refract(WorldRayDirection(), attribs.normal.xyz, 1.333f); //Refract index of water is 1.333, so thats what we will use.
+	float3 refractVector = refract(WorldRayDirection(), attribs.normal.xyz, refractIndex); //Refract index of water is 1.333, so thats what we will use.
 
 	RayDesc reflectRaydesc = Utils::getRayDesc(reflectVector);
 	RayDesc reftractRaydesc = Utils::getRayDesc(refractVector);
-	reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
-	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
+	//reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
+	//reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, reflectRaydesc, reflect_payload);
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, reftractRaydesc, refract_payload);
 
 	//diffuseColor = nextBounce.color;
 	float4 reflect_color = reflect_payload.color;
-	reflect_color.r *= 0.8;
-	reflect_color.g *= 0.8;
-	reflect_color.b += 0.2;
+	reflect_color.r *= 0.95;
+	reflect_color.g *= 0.95;
+	//reflect_color.b *= 0.9;
+	reflect_color.b *= 1.2;
 	saturate(reflect_color);
 
 	float4 refract_color = refract_payload.color;
-	refract_color.r *= 0.8;
-	refract_color.g *= 0.8;
-	refract_color.b += 0.2;
+	refract_color.r *= 0.9;
+	refract_color.g *= 0.9;
+	//refract_color.b *= 0.9;
+	//refract_color.b += 0.1;
 	saturate(refract_color);
 
+
+
 	float4 finaldiffusecolor = saturate((reflect_color*0.2 + refract_color) / 1.5);
+	//float4 finaldiffusecolor = float4(1,0,1,1);// saturate((reflect_color * 0.2 + refract_color) / 1.5);
 	finaldiffusecolor.a = 1;
 	/////////////////////////
 
@@ -241,7 +246,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
 		float distanceToLight = length(hitToLight);
 
-		float diffuseCoefficient = 1;// saturate(dot(normalInWorldSpace, hitToLight));
+		float diffuseCoefficient = 1;// clamp(dot(normalInWorldSpace, hitToLight), 0.2, 1);
 
 		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
 		if (diffuseCoefficient > 0.f) {
@@ -252,7 +257,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 
 		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
 
-		shadedColor += (/*kd*/ diffuseCoefficient + ks * specularCoefficient) * finaldiffusecolor.rgb * p.color * attenuation;
+		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * finaldiffusecolor.rgb * p.color * attenuation;
 	}
 
 	float3 ambient = finaldiffusecolor.rgb * ka * ambientCoefficient;
@@ -378,15 +383,28 @@ float3 HitObjectPosition() {
 [shader("intersection")]
 void IntersectionShader()
 {
-	RayDesc ray;
-	//ray.Origin = Utils::HitWorldPosition();
-	//ray.Origin = HitObjectPosition();			// mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
-	ray.Origin =  ObjectRayOrigin();			// mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
-	ray.Direction	= ObjectRayDirection();	// mul(ObjectRayDirection(), (float3x3) attr.bottomLevelASToLocalSpace);
+	float startT = 0;
+
+	RayDesc ray;	
+	ray.Origin = ObjectRayOrigin();
+	ray.Direction	= ObjectRayDirection();
 	ray.TMax = 1000000;
 	ray.TMin = 0.00001;
-
+	
 	ProceduralPrimitiveAttributes attr;
+
+	////////////////////////////////
+	/*find a point on the ray that are close to the metaballs and start stepping from there instead of using ObjectRayOrigin() as starting point.*/
+	float4 dummy;
+	float val;
+	if (length(ObjectRayOrigin()) > 2) {
+		if (intersect(ray, float3(0, 0, 0), 2, val, dummy)) {
+			startT = val;
+			ray.Origin += startT * ObjectRayDirection();
+		}
+	}
+	////////////////////////////////
+
 	attr.normal = float4(1, 1, 1, 0);
 
 	float  radii[N] = { 0.6, 0.5, 0.3 };
@@ -401,9 +419,10 @@ void IntersectionShader()
 	centers[1].y = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[1]);
 	centers[2].z = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[2]);
 
-	float tmin = 0, tmax = 5;
-	unsigned int MAX_LARGE_STEPS = 32;
-	unsigned int MAX_SMALL_STEPS = 32;
+	float tmin = 0, tmax = 2;
+	unsigned int MAX_LARGE_STEPS = 64;//If these steps dont hit any metaball no hit is reported.
+	unsigned int MAX_SMALL_STEPS = 64;//If a large step hit a metaball, use small steps to adjust go backwards
+
 	//unsigned int seed = 2;
 	//float t = tmin + Utils::nextRand(seed);
 	float t = tmin;
@@ -435,7 +454,7 @@ void IntersectionShader()
 			}
 	
 			attr.normal = float4(CalculateMetaballsNormal(currPos, centers, radii, N), 0);
-			ReportHit(t, 0, attr);
+			ReportHit(t + startT, 0, attr);
 			return;
 		}
 
