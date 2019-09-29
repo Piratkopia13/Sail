@@ -19,28 +19,15 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float4 diffuseColor)
 			continue;
 		}
 
-		// Shoot a ray towards the point light to figure out if in shadow or not
-		float3 towardsLight = p.position - worldPosition;
-		float dstToLight = length(towardsLight);
-
-        RayDesc rayDesc;
-        rayDesc.Origin = worldPosition;
-        rayDesc.Direction = normalize(towardsLight);
-        rayDesc.TMin = 0.00001;
-        rayDesc.TMax = dstToLight;
-
-		// ShadowRayPayload shadowPayload;
-		// shadowPayload.isHit = true; // Assume hit, miss shader will set to false
-		// TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 1 /*NULL hit group*/, 0, 1 /*Shadow miss shader*/, rayDesc, shadowPayload);
-
-		// // Dont do any shading if in shadow
-		// if (shadowPayload.isHit) {
-		// 	continue;
-		// }
-
 		float3 hitToLight = p.position - worldPosition;
-		float3 hitToCam = CB_SceneData.cameraPosition - worldPosition;
 		float distanceToLight = length(hitToLight);
+
+		// Dont do any shading if in shadow
+		if (Utils::rayHitAnything(worldPosition, normalize(hitToLight), distanceToLight)) {
+			continue;
+		}
+
+		float3 hitToCam = CB_SceneData.cameraPosition - worldPosition;
 
 		float diffuseCoefficient = saturate(dot(worldNormal, hitToLight));
 

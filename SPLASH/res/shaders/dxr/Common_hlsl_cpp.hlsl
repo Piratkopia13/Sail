@@ -1,3 +1,6 @@
+#ifndef __COMMON_HLSL__
+#define __COMMON_HLSL__
+
 #ifdef HLSL
 // Shader only
 
@@ -88,3 +91,5 @@ struct MeshCBuffer {
 } // End namespace
 
 #endif
+
+#endif // __COMMON_HLSL__

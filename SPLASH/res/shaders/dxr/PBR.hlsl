@@ -44,18 +44,23 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 albedo) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(CB_SceneData.cameraPosition - worldPosition);
 
-    float3 F0 = float3(0.04f, 0.04f, 0.04f);
+    float3 F0 = 0.04f;
     F0        = lerp(F0, albedo, metallic);
 
     // Reflectance equation
-    float3 Lo = float3(0.0f, 0.0f, 0.0f);
+    float3 Lo = 0.0f;
     for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
 		PointLightInput p = CB_SceneData.pointLights[i];
 
         float3 L = normalize(p.position - worldPosition);
         float3 H = normalize(V + L);
-    
         float distance    = length(p.position - worldPosition);
+    
+        // Dont do any shading if in shadow
+		if (Utils::rayHitAnything(worldPosition, L, distance)) {
+			continue;
+		}
+
         float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
         float3 radiance   = p.color * attenuation;
 
@@ -72,7 +77,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 albedo) {
         // The fresnel value directly corresponds to the specular contribution
         float3 kS = F;
         // The rest is the diffuse contribution (energy conserving)
-        float3 kD = float3(1.0f, 1.0f, 1.0f) - kS;
+        float3 kD = 1.0f - kS;
         // Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
         kD *= 1.0f - metallic;
 
@@ -82,14 +87,13 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 albedo) {
     }
 
     // Add the (improvised) ambient term to get the final color of the pixel
-    float3 ambient = float3(0.03f, 0.03f, 0.03f) * albedo * ao;
+    float3 ambient = 0.0f * albedo * ao;
     float3 color   = ambient + Lo;
 
     // Gamma correction
-    color = color / (color + float3(1.0f, 1.0f, 1.0f));
+    color = color / (color + 1.0f);
     // Tone mapping using the Reinhard operator
-    float q = 1.0f / 2.2f;
-    color = pow(color, float3(q, q, q));
+    color = pow(color, 1.0f / 2.2f);
 
     return float4(color, 1.0f);
 }

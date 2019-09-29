@@ -1,4 +1,3 @@
-#include "Utils.hlsl"
 #define HLSL
 #include "Common_hlsl_cpp.hlsl"
 
@@ -21,6 +20,7 @@ Texture2D<float4> sys_texSpecular : register(t4);
 
 SamplerState ss : register(s0);
 
+#include "Utils.hlsl"
 #include "Shading.hlsl"
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
