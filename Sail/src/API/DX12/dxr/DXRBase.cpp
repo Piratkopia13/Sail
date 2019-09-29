@@ -558,7 +558,6 @@ void DXRBase::updateShaderTables() {
 	}
 
 	// Hit group
-	// TODO: use different hit groups for regular shading, shadows, transparecy etc
 	{
 		if (m_hitGroupShaderTable[frameIndex].Resource) {
 			m_hitGroupShaderTable[frameIndex].Resource->Release();
