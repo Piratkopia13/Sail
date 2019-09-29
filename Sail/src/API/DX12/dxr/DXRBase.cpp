@@ -279,7 +279,8 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 		for (auto& transform : instanceList.instanceTransforms) {
 			pInstanceDesc->InstanceID = blasIndex;			// exposed to the shader via InstanceID() - currently same for all instances of same material
-			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
+			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
+																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
 			// apply transform from lambda function
@@ -573,31 +574,28 @@ void DXRBase::updateShaderTables() {
 			tableBuilder.addShader(m_hitGroupName);
 			m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
 				if (parameterName == "VertexBuffer") {
-					tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex);
+					tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex * 2);
 				} else if (parameterName == "IndexBuffer") {
 					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[blasIndex].indexBufferHandle : nullAddr, blasIndex);
+					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[blasIndex].indexBufferHandle : nullAddr, blasIndex * 2);
 				} else if (parameterName == "MeshCBuffer") {
 					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
-					tableBuilder.addDescriptor(meshCBHandle, blasIndex);
+					tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
 				} else if (parameterName == "Textures") {
 					// Three textures
 					for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex);
+						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
 					}
 				} else {
 					Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
 				}	
 			});
 
-			blasIndex++;
-		}
-
-
-		// Add NULL shader identifier for shadow rays
-		// This will cause no hit shaders to even execute
-		for (auto& it : m_bottomBuffers[frameIndex]) {
+			// Add NULL shader identifier for shadow rays
+			// This will cause no hit shaders to even execute
 			tableBuilder.addShader(L"NULL");
+
+			blasIndex++;
 		}
 
 		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
@@ -608,13 +606,16 @@ void DXRBase::createRaytracingPSO() {
 	Memory::SafeRelease(m_rtPipelineState);
 
 	DXRUtils::PSOBuilder psoBuilder;
+
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName });
-	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowMissName });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
 	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
 	psoBuilder.addSignatureToShaders({ m_closestHitName }, m_localSignatureHitGroup->get());
 	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
+
+	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowMissName });
 	psoBuilder.addSignatureToShaders({ m_shadowMissName }, m_localSignatureEmpty->get());
+
 	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);
 	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());

@@ -114,7 +114,6 @@ private:
 	const WCHAR* m_hitGroupName = L"HitGroup";
 	const WCHAR* m_closestHitName = L"closestHit";
 	const WCHAR* m_missName = L"miss";
-
 	const WCHAR* m_shadowMissName = L"shadowMiss";
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;

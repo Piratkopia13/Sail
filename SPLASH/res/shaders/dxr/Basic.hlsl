@@ -122,13 +122,6 @@ float4 getColor(MeshData data, float2 texCoords) {
 void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
 	payload.recursionDepth++;
 
-	// TODO: move to shadow shader 
-	// If this is the second bounce, return as hit and do nothing else
-	if (payload.recursionDepth == 2) {
-		payload.hit = 1;
-		return;
-	}
-
 	float3 barycentrics = float3(1.0 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
 	uint instanceID = InstanceID();
 	uint primitiveID = PrimitiveIndex();

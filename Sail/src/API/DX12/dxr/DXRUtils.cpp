@@ -201,8 +201,10 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 	char* pData;
 	shaderTable.Resource->Map(0, nullptr, (void**)&pData);
 	{
-		unsigned int i = 0;
-		for (auto& shader : m_shaderNames) {
+		assert(m_shaderNames.size() == m_numInstances && "All instances do not have a shader name associated with it!");
+		for (unsigned int i = 0; i < m_numInstances; i++) {
+			auto& shader = m_shaderNames[i];
+
 			// Copy shader identifier
 			void* shaderID = nullptr;
 			if (shader == L"NULL") {
@@ -217,7 +219,6 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 				memcpy(pData, m_data[i], m_dataOffsets[i]);
 				pData += alignedSize - D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; // Append padding
 			}
-			i++;
 		}
 	}
 	shaderTable.Resource->Unmap(0, nullptr);
