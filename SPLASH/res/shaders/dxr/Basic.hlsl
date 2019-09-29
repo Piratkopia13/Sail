@@ -190,8 +190,8 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 
 	RayDesc reflectRaydesc = Utils::getRayDesc(reflectVector);
 	RayDesc reftractRaydesc = Utils::getRayDesc(refractVector);
-	//reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
-	//reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
+	reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
+	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, reflectRaydesc, reflect_payload);
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, reftractRaydesc, refract_payload);
@@ -211,9 +211,10 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	//refract_color.b += 0.1;
 	saturate(refract_color);
 
+	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
+	float refconst = 1-abs(dot(normalize(hitToCam), normalInWorldSpace));
 
-
-	float4 finaldiffusecolor = saturate((reflect_color*0.2 + refract_color) / 1.5);
+	float4 finaldiffusecolor = saturate(reflect_color * refconst + refract_color * (1 - refconst));
 	//float4 finaldiffusecolor = float4(1,0,1,1);// saturate((reflect_color * 0.2 + refract_color) / 1.5);
 	finaldiffusecolor.a = 1;
 	/////////////////////////
@@ -243,7 +244,6 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		float dstToLight = length(towardsLight);
 
 		float3 hitToLight = p.position - Utils::HitWorldPosition();
-		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
 		float distanceToLight = length(hitToLight);
 
 		float diffuseCoefficient = 1;// clamp(dot(normalInWorldSpace, hitToLight), 0.2, 1);
@@ -334,6 +334,8 @@ static const int N = 3;
 float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float ballradius, out float distance) {
 	distance = length(position - ballpos);
 
+	float3 rel = (ballpos - position) / ballradius;
+
 	if (distance <= abs(ballradius)) {
 		float d = distance;
 
@@ -345,9 +347,11 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 		d = abs(ballradius) - d;
 
 		float r = ballradius;
-		return 6 * (d * d * d * d * d) / (r * r * r * r * r)
+		float p = 6 * (d * d * d * d * d) / (r * r * r * r * r)
 			- 15 * (d * d * d * d) / (r * r * r * r)
 			+ 10 * (d * d * d) / (r * r * r);
+
+		return p;
 	}
 	return 0;
 }
@@ -416,11 +420,15 @@ void IntersectionShader()
 	};
 
 	//centers[0].x = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[0]);
-	centers[1].y = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[1]);
+	float time = CB_MeshData.data[InstanceID()].color.z;
+	centers[1].y = sin(cos(time*5) * 3) * (1-radii[1]);
+	centers[1].x = cos(time*10) * (1-radii[1]);
+	centers[1].z = sin(time*10) * (1-radii[1]);
+
 	centers[2].z = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[2]);
 
-	float tmin = 0, tmax = 2;
-	unsigned int MAX_LARGE_STEPS = 64;//If these steps dont hit any metaball no hit is reported.
+	float tmin = 0, tmax = 3;
+	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
 	unsigned int MAX_SMALL_STEPS = 64;//If a large step hit a metaball, use small steps to adjust go backwards
 
 	//unsigned int seed = 2;

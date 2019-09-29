@@ -524,8 +524,10 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 		} else {
 			m_rtMeshHandles.emplace_back(handles);
 			static float time = 0;
+			static float totalTime = 0;
 			static float inc = 0.001;
 			time += inc;
+			totalTime += abs(inc);
 
 			if (time > 1) {
 				time = 1;
@@ -538,7 +540,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 			//float r = ((int)time % 10) / 10.0f;
 
 			meshData.flags = DXRShaderCommon::MESH_NO_FLAGS;
-			meshData.color = glm::vec4(time, 1-time, time, 1);
+			meshData.color = glm::vec4(time, 1-time, totalTime, 1);
 			m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 		}
 
