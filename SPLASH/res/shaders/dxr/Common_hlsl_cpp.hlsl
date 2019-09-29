@@ -3,6 +3,7 @@
 
 #define MERGE(a, b) a##b
 
+#define PI 3.14159265359
 #define M_1_PI 0.318309886183790671538
 
 #else
