@@ -113,7 +113,7 @@ bool LobbyClientState::onDropped(NetworkDroppedEvent& event) {
 }
 
 bool LobbyClientState::onStartGame(NetworkStartGameEvent& event) {
-	// Queue changes to the stack
+	// Queue changes to the stack while maintaining the connection
 	this->requestStackPop();
 	this->requestStackPush(States::Game);
 

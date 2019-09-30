@@ -4,68 +4,50 @@
 
 #include "Network/NWrapper.h"
 #include "../BaseComponentSystem.h"
+#include "structPackages/StructPackage.h"
 
 class NetworkSerializedPackageEvent;
 
 class NetworkSystem : public BaseComponentSystem {
 public:
 	NetworkSystem();
-	virtual ~NetworkSystem() {}
+	virtual ~NetworkSystem();
 
 	virtual void update(float dt) = 0;
 	// Constructor initializes pNWrapper
 	void initialize(Entity* playerEntity);
+
+
 
 	virtual bool onSerializedPackageRecieved(NetworkSerializedPackageEvent& event) = 0;
 
 protected:
 	Entity* m_playerEntity = nullptr;
 	NWrapper* m_network = nullptr;
+	//StructPackage* *m_arr_structs = nullptr; 
 
+	
 	/*
-		Temporarily used instead of glm::vector as all serialized data needs the
-		'serialize' function, which glm::vector does not have unless hoops are
-		jumped through. 
+		Fetch target entities faster than a linear search.
 	*/
-	struct easyVector {	
-		float x, y, z;
+	std::map<int, int> m_entityIDMap;
+	Entity* *m_arr_pEntities = nullptr;
 
-		template<class Archive>
-		void serialize(Archive& ar) {
-			ar(x, y, z);
-		}
-	};
+	//
+	void initStructPackages();
+	void initReadWriteBits();
+	void initEntityArr();
 
-	struct TranslationStruct {
-		easyVector trans;
+	int x, y, z;
+	/*
+		Parses the deserialized package into m_arr_structs where
+		each non-deterministic entity's (Those with an attached network component)
+		data can be fetched from after this function has been called.
+	*/
+	void parsePackage(std::string& deSerializedData);
 
-		template<class Archive>
-		void serialize(Archive& ar) {
-			ar(trans);
-		}
-	};
-
-	struct TransformPackage {
-		easyVector m_translation;
-		easyVector m_rotation;
-		easyVector m_rotationQuat;
-		easyVector m_scale;
-		easyVector m_forward;
-		easyVector m_right;
-		easyVector m_up;
-
-		template<class Archive>
-		void serialize(Archive& ar) {
-			ar(
-				m_translation,
-				m_rotation,
-				m_rotationQuat,
-				m_scale,
-				m_forward,
-				m_right,
-				m_up
-			);
-		}
-	};
+	void parseTransform();
+	void parseRotation();
+	void parseTransformRotation();
 };
 

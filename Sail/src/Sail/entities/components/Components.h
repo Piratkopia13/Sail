@@ -22,3 +22,4 @@
 #include "TransformComponent.h"
 #include "ProjectileComponent.h"
 #include "AudioComponent.h"
+#include "OtherPlayerComponent.h"
