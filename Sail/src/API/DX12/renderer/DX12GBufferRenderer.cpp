@@ -1,20 +1,19 @@
 #include "pch.h"
-#include "DX12ForwardRenderer.h"
+#include "DX12GBufferRenderer.h"
+#include "Sail/Application.h"
 #include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/api/ComputeShaderDispatcher.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "Sail/graphics/shader/Shader.h"
-#include "Sail/Application.h"
-#include "../DX12Utils.h"
+#include "Sail/graphics/postprocessing/PostProcessPipeline.h"
+#include "../resources/DescriptorHeap.h"
+#include "../resources/DX12Texture.h"
+#include "../resources/DX12RenderableTexture.h"
 #include "../shader/DX12ShaderPipeline.h"
 #include "../DX12Mesh.h"
-#include "../resources/DescriptorHeap.h"
-#include "Sail/graphics/shader/compute/TestComputeShader.h"
-#include "Sail/api/ComputeShaderDispatcher.h"
-#include "../resources/DX12Texture.h"
-#include "Sail/graphics/postprocessing/PostProcessPipeline.h"
-#include "API/DX12/resources/DX12RenderableTexture.h"
+#include "../DX12Utils.h"
 
-DX12ForwardRenderer::DX12ForwardRenderer() {
+DX12GBufferRenderer::DX12GBufferRenderer() {
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 
@@ -24,18 +23,21 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 		m_command[i].list->SetName(name.c_str());
 	}
 
-
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
-	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Forward renderer output renderable texture", true)));
-	m_outputTexture->renameBuffer("Forward renderer output renderable texture");
+
+	for (int i = 0; i < NUM_GBUFFERS; i++) {
+		m_gbufferTextures[i] = static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i), (i == 0)));
+	}
 }
 
-DX12ForwardRenderer::~DX12ForwardRenderer() {
-
+DX12GBufferRenderer::~DX12GBufferRenderer() {
+	for (int i = 0; i < NUM_GBUFFERS; i++) {
+		delete m_gbufferTextures[i];
+	}
 }
 
-void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
+void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
 	auto frameIndex = m_context->getFrameIndex();
@@ -59,8 +61,8 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	for (size_t i = 0; i < mainThreadIndex; i++) {
 		fut[i] = Application::getInstance()->pushJobToThreadPool(
 			[this, postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse](int id) {
-				return this->recordCommands(postProcessPipeline, i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
-			});
+			return this->recordCommands(postProcessPipeline, i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
+		});
 		start += commandsPerThread;
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		fut[i].get(); //Force recording threads to be recorded in order
@@ -84,8 +86,9 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // MULTI_THREADED_COMMAND_RECORDING
 }
 
-void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipeline, const int threadID, const int frameIndex, const int start, const int nCommands, size_t oobMax, int nThreads) {
-	//#ifdef MULTI_THREADED_COMMAND_RECORDING
+void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipeline, const int threadID, const int frameIndex, const int start, const int nCommands, size_t oobMax, int nThreads) {
+	assert(!postProcessPipeline); // Post process not allowed on the GBuffer pass!
+
 	auto& allocator = m_command[threadID].allocators[frameIndex];
 	auto& cmdList = m_command[threadID].list;
 
@@ -93,12 +96,16 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
 
-	// All threads must bind the render target
-	if (postProcessPipeline) {
-		m_outputTexture->begin(cmdList.Get());
-	} else {
-		m_context->renderToBackBuffer(cmdList.Get());
+	// Bind gbuffer RTV and DSV
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[NUM_GBUFFERS];
+	for (int i = 0; i < NUM_GBUFFERS; i++) {
+		rtvHandles[i] = m_gbufferTextures[i]->getRtvCDH();
 	}
+	cmdList->OMSetRenderTargets(NUM_GBUFFERS, rtvHandles, false, &m_gbufferTextures[0]->getDsvCDH());
+
+	cmdList->RSSetViewports(1, m_context->getViewport());
+	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
+
 
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
@@ -125,15 +132,13 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		}
 
 
-		// Transition output texture to render target
-		if (postProcessPipeline) {
-			m_outputTexture->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-			m_outputTexture->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
-		} else {
-			m_context->prepareToRender(cmdList.Get());
-			m_context->clear(cmdList.Get(), { 0.01f, 0.01f, 0.01f, 1.0f });
+		// Transition output textures to render target
+		for (int i = 0; i < NUM_GBUFFERS; i++) {
+			// TODO: transition in batch
+			m_gbufferTextures[i]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_gbufferTextures[i]->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
 		}
-		
+
 	}
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 #else
@@ -144,7 +149,7 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// Bind the descriptor heap that will contain all SRVs for this frame
+	// Bind the descriptor heap that will contain all SRVs, DSVs and RTVs for this frame
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 
 	// Bind mesh-common constant buffers (camera)
@@ -166,41 +171,22 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
 		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
 
-		shaderPipeline->trySetCBufferVar_new("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), meshIndex);
-
-		if (lightSetup) {
-			auto& dlData = lightSetup->getDirLightData();
-			auto& plData = lightSetup->getPointLightsData();
-			shaderPipeline->trySetCBufferVar_new("dirLight", &dlData, sizeof(dlData), meshIndex);
-			shaderPipeline->trySetCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
-		}
-
 		static_cast<DX12Mesh*>(command->mesh)->draw_new(*this, cmdList.Get(), meshIndex);
 	}
 
 	// Lastly - transition back buffer to present
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 	if (threadID == nThreads - 1) {
-		bool usePostProcessOutput = false;
-		if (postProcessPipeline) {
-			// Run post processing
-			RenderableTexture* renderOutput = postProcessPipeline->run(m_outputTexture.get(), cmdList.Get());
-			if (renderOutput) {
-				usePostProcessOutput = true;
 
-				DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(renderOutput);
-				// Copy post processing output to back buffer
-				dxRenderOutput->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-				auto* renderTarget = m_context->getCurrentRenderTargetResource();
-				DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
-				cmdList->CopyResource(renderTarget, dxRenderOutput->getResource());
-				// Lastly - transition back buffer to present
-				DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
-			}
-		}
-		if (!usePostProcessOutput) {
-			m_context->prepareToPresent(cmdList.Get());
-		}
+		//// TODO: remove when this pass is used together with RT
+		//// Copy gbuffer output to back buffer
+		//m_gbufferTextures[0]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+		//auto* renderTarget = m_context->getCurrentRenderTargetResource();
+		//DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
+		//cmdList->CopyResource(renderTarget, m_gbufferTextures[0]->getResource());
+		//// Lastly - transition back buffer to present
+		//DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
+
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
@@ -234,12 +220,18 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 }
 
-bool DX12ForwardRenderer::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12ForwardRenderer::onResize));
+bool DX12GBufferRenderer::onEvent(Event& event) {
+	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12GBufferRenderer::onResize));
 	return true;
 }
 
-bool DX12ForwardRenderer::onResize(WindowResizeEvent& event) {
-	m_outputTexture->resize(event.getWidth(), event.getHeight());
+DX12RenderableTexture** DX12GBufferRenderer::getGBufferOutputs() const {
+	return (DX12RenderableTexture**)m_gbufferTextures;
+}
+
+bool DX12GBufferRenderer::onResize(WindowResizeEvent& event) {
+	for (int i = 0; i < NUM_GBUFFERS; i++) {
+		m_gbufferTextures[i]->resize(event.getWidth(), event.getHeight());
+	}
 	return true;
 }
