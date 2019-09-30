@@ -3,7 +3,7 @@
 
 #include "Sail/entities/components/LightComponent.h"
 #include "Sail/entities/components/LightListComponent.h"
-
+#include "Sail/entities/ECS.h"
 #include "Sail/graphics/light/LightSetup.h"
 
 #ifdef _DEBUG
@@ -11,12 +11,10 @@
 #endif
 
 LightSystem::LightSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(LightComponent::ID);
-	readBits |= LightComponent::BID;
-	writeBits |= LightComponent::BID;
-
-	/* Seems like it reads from it */
-	readBits |= LightListComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<LightComponent>(true, true, true);
+	/* Seems like it reads/writes from it sometimes */
+	registerComponent<LightListComponent>(false, true, true);
 }
 
 LightSystem::~LightSystem() 

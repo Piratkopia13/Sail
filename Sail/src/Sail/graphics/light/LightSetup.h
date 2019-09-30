@@ -4,7 +4,6 @@
 #include "PointLight.h"
 #include <vector>
 
-#include "Sail/graphics/Scene.h"
 
 class LightSetup {
 public:
