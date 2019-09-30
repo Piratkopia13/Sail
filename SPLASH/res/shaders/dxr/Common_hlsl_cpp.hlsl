@@ -37,6 +37,10 @@ struct RayPayload {
 	int hit;
 };
 
+struct ShadowRayPayload {
+	bool isHit;
+};
+
 struct Vertex {
 	float3 position;
 	float2 texCoords;
@@ -58,8 +62,12 @@ struct PointLightInput {
 // Properties set once for the scene
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
+	float4x4 viewToWorld;
+	float4x4 clipToView;
 	float3 cameraPosition;
-	float padding;
+	float nearZ;
+	float farZ;
+	float3 padding;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 };
 

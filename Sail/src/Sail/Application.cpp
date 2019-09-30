@@ -154,6 +154,7 @@ int Application::startGameLoop() {
 				fixedUpdate(TIMESTEP);
 			}
 
+
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
 

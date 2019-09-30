@@ -4,8 +4,10 @@
 enum AudioType {MUSIC};
 
 #include "Xaudio2.h"
-#include <thread>
+#include "xapo.h"
+#include "hrtfapoapi.h"
 
+#include <thread>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
@@ -25,6 +27,9 @@ enum AudioType {MUSIC};
 #define STREAMED_SOUNDS_COUNT 20
 #define STREAMING_BUFFER_SIZE 32768
 #define MAX_BUFFER_COUNT 3
+#define VOL_HALF 0.5f
+#define VOL_THIRD 0.33f
+#define VOL_FOURTH 0.25f
 
 struct StreamingVoiceContext : public IXAudio2VoiceCallback
 {
@@ -86,8 +91,8 @@ public:
 	float getSoundVolume(int index);
 	float getStreamVolume(int index);
 
-	void setSoundVolume(int index, float value = 0.5f);
-	void setStreamVolume(int index, float value = 0.5f);
+	void setSoundVolume(int index, float value = VOL_HALF);
+	void setStreamVolume(int index, float value = VOL_HALF);
 
 private:
 	bool m_isRunning = true;
@@ -122,6 +127,7 @@ private:
 	// PRIVATE FUNCTION
 	//-----------------
 	void initXAudio2();
+
 	void streamSoundInternal(const std::string& filename, int myIndex, bool loop);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
 

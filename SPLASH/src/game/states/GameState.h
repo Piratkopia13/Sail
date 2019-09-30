@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Sail.h"
-#include "../controllers/PlayerController.h"
 
 class AiSystem;
 class AnimationSystem;
@@ -14,6 +13,7 @@ class PhysicSystem;
 class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
+class GameInputSystem;
 class AudioSystem;
 
 class GameState : public State {
@@ -64,13 +64,16 @@ private:
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
+		GameInputSystem* gameInputSystem = nullptr;
 		AudioSystem* audioSystem = nullptr;
 	};
 
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	PlayerController m_playerController;
+
+	// TODO: Only used for AI, should be removed once AI can target player in a better way.
+	Entity* m_player;
 
 	const std::string createCube(const glm::vec3& position);
 
@@ -81,6 +84,8 @@ private:
 	Profiler m_profiler;
 
 	size_t m_currLightIndex;
+	// For use by non-deterministic entities
+	const float* pAlpha = nullptr;
 
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;

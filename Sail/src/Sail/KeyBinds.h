@@ -1,11 +1,9 @@
 #pragma once
 
 namespace KeyBinds {
-	
 	// Initializes the key codes
 	void init();
 
-	
 	// GameState + Player controls
 	extern int addLight;
 	extern int showBoundingBoxes;
@@ -26,6 +24,8 @@ namespace KeyBinds {
 	extern int lightCandle1;
 	extern int lightCandle2;
 	extern int putDownCandle;
+	extern int disableCursor;
+	extern int shoot;
 
 	// Application
 	extern int alt;
@@ -43,4 +43,7 @@ namespace KeyBinds {
 
 	// LobbyState
 	extern int sendMessage;
+
+	// DX12RaytracingRenderer
+	extern int reloadDXRShader;
 };
