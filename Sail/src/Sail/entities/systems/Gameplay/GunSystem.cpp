@@ -45,7 +45,7 @@ void GunSystem::update(float dt, Scene* scene) {
 				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 				scene->addEntity(e);//change when scene is a component.
-				GameDataTracker::getInstance().logFiredWeapon();
+				GameDataTracker::getInstance().logWeaponFired();
 			}
 			gun->projectileSpawnTimer += dt;
 			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {

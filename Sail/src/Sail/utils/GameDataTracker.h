@@ -1,12 +1,13 @@
 #pragma once
 
+typedef double long LARGE_FLOAT;
 
 struct statistics {
 	LARGE_INTEGER bulletsFired;
 	LARGE_INTEGER bulletsHit;
 	LARGE_INTEGER bulletsHitPercentage;
 	LARGE_INTEGER enemiesKilled;
-	LARGE_INTEGER metresWalked;
+	LARGE_FLOAT distanceWalked;
 	LARGE_INTEGER jumpsMade;
 };
 
@@ -15,19 +16,19 @@ public:
 	//
 	~GameDataTracker();
 
-	//
-	void logWeaponFired();
-	void logEnemyHit();
-	void logEnemyKilled();
-	void logJump();
-	void logDistanceWalked(glm::vec3 vector);	// Does ABS(vector) internally
+	// Implemented in...
+	void logWeaponFired();						// ...GunSystem::update()
+	void logEnemyHit();							// Nowhere atm
+	void logEnemyKilled();						// Nowhere atm
+	void logJump();								// ...GameInputSystem::update()
+	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
 
 	// 
 	void resetData();
 	const statistics& getStatistics();
 
-	//
-	void renderImgui();
+	// Implemented in...
+	void renderImgui();							// ...GameState::renderImGui()
 
 private:
 	statistics m_loggedData;

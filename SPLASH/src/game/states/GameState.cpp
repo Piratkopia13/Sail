@@ -17,6 +17,7 @@
 #include "Sail/entities/systems/Input/GameInputSystem.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/TimeSettings.h"
+#include "Sail/utils/GameDataTracker.h"
 
 #include <sstream>
 #include <iomanip>
@@ -563,6 +564,7 @@ bool GameState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
+	GameDataTracker::getInstance().renderImgui();
 
 	return false;
 }

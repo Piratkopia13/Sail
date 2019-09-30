@@ -139,8 +139,11 @@ void PhysicSystem::update(float dt) {
 		//-------------------------
 
 		transform->rotate(physics->constantRotation * dt);
-		transform->translate((physics->m_oldVelocity + physics->velocity) * 0.5f * dt);
-		GameDataTracker::getInstance().logDistanceWalked((physics->m_oldVelocity + physics->velocity) * 0.5f * dt);
+		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * dt;
+		transform->translate(translation);
+		if (e->getName() == "player") {
+			GameDataTracker::getInstance().logDistanceWalked(translation);
+		}
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
 	}
