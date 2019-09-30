@@ -195,7 +195,7 @@ void LevelGeneratorSystem::generateMap() {
 			}
 		}
 
-		generateCorridors();
+		//generateCorridors();
 
 		//set all other tiles
 		for (int i = 0; i < map->xsize; i++) {
@@ -289,7 +289,7 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* tileFlat, Model* til
 					e->addComponent<ModelComponent>(tileCross);
 					e->addComponent<TransformComponent>(glm::vec3(tileSize * i + 20, 0.f, tileSize * j + 20));
 				}
-				e->getComponent<TransformComponent>()->setScale(glm::vec3(.7f, 1.0f, .7f));
+				e->getComponent<TransformComponent>()->setScale(glm::vec3(.7f, 4.0f, .7f));
 				e->addComponent<BoundingBoxComponent>(bb);
 				e->addComponent<CollidableComponent>();
 				scene->addEntity(e);
@@ -363,26 +363,26 @@ void LevelGeneratorSystem::findPossibleTiles(std::vector<int>* mapPointer, int p
 				}
 				//more flat
 				if (i == 0) {
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
-					//mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
+					mapPointer->emplace_back(i);
 				}
 				//more straight
 				if(i==5||i==10){

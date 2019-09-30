@@ -147,7 +147,7 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
-	std::string tileTex = "sponza/textures/tileTexture.tga";
+	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
 
 
