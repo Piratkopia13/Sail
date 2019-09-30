@@ -456,15 +456,18 @@ bool GameState::processInput(float dt) {
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
 			if ( aiComp->candleTarget == nullptr ) {
-
+				
+				// Find the candle child entity of player
+				Entity* candle = nullptr;
 				std::vector<Entity::SPtr> children = m_player->getChildEntities();
 				for (auto& child : children) {
 					if (child->hasComponent<CandleComponent>()) {
-
+						candle = child.get();
+						break;
 					}
 				}
 
-				//aiComp->setTarget();
+				aiComp->setTarget(candle);
 			} else {
 				aiComp->setTarget(nullptr);
 			}
