@@ -89,22 +89,24 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		if (forwardMovement != 0.0f || rightMovement != 0.0f) {
 
 			// AUDIO TESTING (turn ON streaming)
-			//if (!m_hasStartedStreaming) {
-			//	audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
-			//	m_hasStartedStreaming = true;
-			//	m_hasStoppedStreaming = false;
-			//}
+			if (m_canStart) {
+				std::cout << "FIRST\t";
+				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankShortFade.xwb", true);
+				m_canStart = false;
+				m_canStop = true;
+			}
 
 			// Calculate total movement
 			float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
 			if (!physicsComp->onGround) {
 				acceleration = acceleration * 0.5f;
-
+				std::cout << "\n\t\t\tAIR!!\n";
 				// AUDIO TESTING (turn OFF looping running sound)
 				audioComp->m_isPlaying[SoundType::RUN] = false;
 			}
 			// AUDIO TESTING (playing a looping running sound)
 			else {
+				std::cout << "\n\t\t\tGROUND!!\n";
 				audioComp->m_isPlaying[SoundType::RUN] = true;
 				audioComp->m_playOnce[SoundType::RUN] = false;
 			}
@@ -117,11 +119,12 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			audioComp->m_isPlaying[SoundType::RUN] = false;
 
 			// AUDIO TESTING (turning OFF streaming)
-			//if (!m_hasStoppedStreaming) {
-			//	audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
-			//	m_hasStoppedStreaming = true;
-			//	m_hasStartedStreaming = false;
-			//}
+			if (m_canStop) {
+				std::cout << "SECOND\n";
+				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankShortFade.xwb", false);
+				m_canStart = true;
+				m_canStop = false;
+			}
 		}
 	}
 }

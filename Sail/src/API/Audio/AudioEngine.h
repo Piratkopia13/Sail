@@ -90,9 +90,13 @@ public:
 
 	float getSoundVolume(int index);
 	float getStreamVolume(int index);
+	int getSoundIndex();
+	int getStreamIndex();
 
 	void setSoundVolume(int index, float value = VOL_HALF);
 	void setStreamVolume(int index, float value = VOL_HALF);
+
+	std::atomic<bool> m_streamLocks[STREAMED_SOUNDS_COUNT];
 
 private:
 	bool m_isRunning = true;

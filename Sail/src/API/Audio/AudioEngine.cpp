@@ -40,6 +40,7 @@ AudioEngine::AudioEngine() {
 		m_isStreaming[i] = false;
 		m_isFinished[i] = false;
 		m_overlapped[i] = { 0 };
+		m_streamLocks[i].store(false);
 	}
 }
 
@@ -103,20 +104,24 @@ int AudioEngine::playSound(const std::string& filename) {
 }
 
 int AudioEngine::streamSound(const std::string& filename, bool loop) {
-	int returnValue = m_currStreamIndex.load(); // Store early
+	int indexReturnValue = m_currStreamIndex.load(); // Store early
+	
+	bool expectedValue = false;
+	while (!m_streamLocks[indexReturnValue].compare_exchange_strong(expectedValue, true));
 
 	if (m_masterVoice == nullptr) {
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
+		m_streamLocks[indexReturnValue].store(false);
+
 		return -1;
 	}
+	else {
+		this->streamSoundInternal(filename, indexReturnValue, false);
 
-	Application::getInstance()->pushJobToThreadPool(
-		[this, returnValue](int id) {
-			return this->streamSoundInternal("../Audio/wavebankLong.xwb", returnValue, false);
-		});
+		m_currStreamIndex.store((indexReturnValue + 1) % STREAMED_SOUNDS_COUNT);
 
-	m_currStreamIndex.store((m_currStreamIndex + 2) % STREAMED_SOUNDS_COUNT);
-	return returnValue;
+		return indexReturnValue;
+	}
 }
 
 void AudioEngine::stopSpecificSound(int index) {
@@ -187,6 +192,14 @@ float AudioEngine::getStreamVolume(int index) {
 	return returnValue;
 }
 
+int AudioEngine::getSoundIndex() {
+	return m_currSoundIndex;
+}
+
+int AudioEngine::getStreamIndex() {
+	return m_currStreamIndex;
+}
+
 void AudioEngine::setSoundVolume(int index, float value) {
 
 	if (this->checkSoundIndex(index)) {
@@ -222,18 +235,21 @@ void AudioEngine::initXAudio2() {
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
 
-	if (m_isStreaming[myIndex]) {
-		while (m_isFinished[myIndex] == false) {
-			if (m_isStreaming[myIndex]) {
-				m_isStreaming[myIndex] = false;
-			}
-		}
-	}
+	// If the 'streamIndex' we're trying to stream to is busy, we tell it to stop streaming
+	// and then we wait for that thread to finish streaming on our index before continuing.
+	//if (m_isStreaming[myIndex]) {
+	//	while (m_isFinished[myIndex] == false) {
+	//		if (m_isStreaming[myIndex]) {
+	//			m_isStreaming[myIndex] = false;
+	//		}
+	//	}
+	//}
 
 	if (m_isRunning) {
 
 #pragma region VARIABLES_LIST
 		m_isStreaming[myIndex] = true;
+		m_streamLocks[myIndex].store(false);
 		m_isFinished[myIndex] = false;
 		WCHAR wavebank[MAX_PATH];
 		DirectX::WaveBankReader wbr;

@@ -36,8 +36,8 @@ private:
 	float m_yaw, m_pitch, m_roll;
 
 	//TEMP VARIABLE FOR SOUND
-	bool m_hasStartedStreaming = false;
-	bool m_hasStoppedStreaming = true;
+	bool m_canStart = true;
+	bool m_canStop = false;
 
 	glm::vec3 calculateNormalizedRightVector();
 

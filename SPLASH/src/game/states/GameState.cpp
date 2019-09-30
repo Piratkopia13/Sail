@@ -202,7 +202,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
 	m_player->addComponent<AudioComponent>();
-	m_player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
+	m_player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 8.0f, true);
 	m_player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
 
 
@@ -776,8 +776,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.lifeTimeSystem->update(dt);
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
-
-	m_componentSystems.audioSystem->update(dt);
 }
 
 
@@ -793,6 +791,8 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
+
+	m_componentSystems.audioSystem->update(dt);
 }
 
 Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos) {
