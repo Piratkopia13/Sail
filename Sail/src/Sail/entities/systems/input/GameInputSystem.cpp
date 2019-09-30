@@ -70,6 +70,29 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			m_wasSpacePressed = false;
 		}
 
+		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
+			for (int i = 0; i < e->getChildEntities().size(); i++) {
+				auto candleE = e->getChildEntities()[i];
+				auto candleComp = candleE->getComponent<CandleComponent>();
+
+				auto candleTransComp = candleE->getComponent<TransformComponent>();
+				auto playerTransComp = e->getComponent<TransformComponent>();
+				if (candleComp->isCarried() && physicsComp->onGround) {
+					candleComp->toggleCarried();
+
+					candleTransComp->setTranslation(playerTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
+					candleTransComp->removeParent();
+					i = e->getChildEntities().size();
+				}
+				else if (!candleComp->isCarried() && glm::length(playerTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f) {
+					candleComp->toggleCarried();
+					candleTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
+					candleTransComp->setParent(playerTransComp);
+					i = e->getChildEntities().size();
+				}
+			}
+		}
+
 
 		glm::vec3 forwards(
 			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
