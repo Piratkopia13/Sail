@@ -6,7 +6,7 @@
 #include "Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
 #include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "Sail/entities/systems/light/LightSystem.h"
-#include "Sail/entities/systems/gameplay/AiSystem.h"
+#include "Sail/entities/systems/gameplay/ai/AiSystem.h"
 #include "Sail/entities/systems/gameplay/GunSystem.h"
 #include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
