@@ -18,4 +18,5 @@ private:
 	void findPossibleTiles(std::vector<int>* mapPointer,int posx, int posy);
 	void generateCorridors();
 	void splitChunk();
+	void splitBlock();
 };

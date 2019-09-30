@@ -118,7 +118,6 @@ GameState::GameState(StateStack& stack)
 
 	//create system for level generation
 	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-	m_componentSystems.levelGeneratorSystem;
 	// This was moved out from the PlayerController constructor
 	// since the PhysicSystem needs to be created first
 	// (or the PhysicsComponent needed to be detached and reattached
