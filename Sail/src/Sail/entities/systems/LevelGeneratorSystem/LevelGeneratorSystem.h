@@ -16,4 +16,6 @@ public:
 private:
 	int randomizeTileId(std::vector<int>* tiles);
 	void findPossibleTiles(std::vector<int>* mapPointer,int posx, int posy);
+	void generateCorridors();
+	void splitChunk();
 };

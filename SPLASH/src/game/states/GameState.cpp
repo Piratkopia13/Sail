@@ -146,7 +146,9 @@ GameState::GameState(StateStack& stack)
 	//Application::getInstance()->getResourceManager().loadTexture("sponza/textures/boxOrientationTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/tileTexture.tga");
+
+	std::string tileTex = "sponza/textures/tileTexture.tga";
+	Application::getInstance()->getResourceManager().loadTexture(tileTex);
 
 
 
@@ -197,18 +199,18 @@ GameState::GameState(StateStack& stack)
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	//Load tileset for world
-	Model* tileFlat = &m_app->getResourceManager().getModel("tileFlat.fbx", shader);
-	tileFlat->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
-	Model* tileCross = &m_app->getResourceManager().getModel("tileCross.fbx", shader);
-	tileCross->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
-	Model* tileStraight = &m_app->getResourceManager().getModel("tileStraight.fbx", shader);
-	tileStraight->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
-	Model* tileCorner = &m_app->getResourceManager().getModel("tileCorner.fbx", shader);
-	tileCorner->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
-	Model* tileT = &m_app->getResourceManager().getModel("tileT.fbx", shader);
-	tileT->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
-	Model* tileEnd = &m_app->getResourceManager().getModel("tileEnd.fbx", shader);
-	tileEnd->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/tileTexture.tga");
+	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
+	tileFlat->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
+	tileCross->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
+	tileStraight->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
+	tileCorner->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
+	tileT->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
+	tileEnd->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
 
 	// load each tile type for the map
 	//Model* tile1 = &m_app->getResourceManager().getModel("tiler1.fbx", shader);
