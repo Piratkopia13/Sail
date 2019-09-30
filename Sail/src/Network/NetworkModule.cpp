@@ -8,6 +8,13 @@ Network::Network() {}
 Network::~Network() {
 	shutdown();
 
+	for (int i = 0; i < MAX_AWAITING_PACKAGES; ++i) {
+		if (m_awaitingMessages[i].Message.rawMsg != nullptr) {
+			delete[] m_awaitingMessages[i].Message.rawMsg;
+			m_awaitingMessages[i].Message.rawMsg = nullptr;
+		}
+	}
+
 	delete[] m_awaitingEvents;
 	delete[] m_awaitingMessages;
 

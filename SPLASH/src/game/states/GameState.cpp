@@ -275,8 +275,8 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 
 		//TODO: REMOVE
-		e->addComponent<NetworkReceiverComponent>();
-		e->getComponent<NetworkReceiverComponent>()->test();
+	/*	e->addComponent<NetworkReceiverComponent>();
+		e->getComponent<NetworkReceiverComponent>()->test();*/
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Map_Barrier1");
