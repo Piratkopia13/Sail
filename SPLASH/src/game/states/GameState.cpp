@@ -21,6 +21,9 @@
 #include <sstream>
 #include <iomanip>
 
+// Uncomment to use forward rendering
+// #define DISABLE_RT
+
 GameState::GameState(StateStack& stack)
 : State(stack)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -163,7 +166,12 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
+#ifdef DISABLE_RT
+	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+	m_scene.changeRenderer(1);
+#else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
+#endif
 
 	// Create/load models
 
@@ -738,12 +746,7 @@ bool GameState::renderImguiProfiler(float dt) {
 }
 
 bool GameState::renderImGuiRenderSettings(float dt) {
-	static int selectedRenderer = 1;
 	ImGui::Begin("Rendering settings");
-	const char* items[] = { "Forward raster", "Hybrid rt" };
-	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
-		m_scene.changeRenderer(selectedRenderer);
-	}
 	ImGui::Checkbox("Enable post processing", &m_scene.getDoProcessing());
 	ImGui::End();
 

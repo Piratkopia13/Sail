@@ -121,12 +121,9 @@ bool Scene::onEvent(Event& event) {
 
 void Scene::changeRenderer(unsigned int index) {
 	if (index == 0) {
-		m_currentRenderer = &m_rendererRaster;
-	}
-	else if (index == 1) {
 		m_currentRenderer = &m_rendererHybrid;
 	} else {
-		//m_currentRenderer = &m_rendererGBuffer;
+		m_currentRenderer = &m_rendererRaster;
 	}
 }
 
