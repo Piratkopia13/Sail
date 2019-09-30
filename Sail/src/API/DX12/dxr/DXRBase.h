@@ -118,6 +118,6 @@ private:
 	//Tobias Testing Stuff
 	UINT m_nTriangleGeometry	= 0;
 	UINT m_nProceduralGeometry	= 0;
-	D3D12_RAYTRACING_AABB m_aabb_desc = { -1, -1, -1, 1, 1, 1 };
+	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.1, -0.1, -0.1, 0.1, 0.1, 0.1 };
 	ID3D12Resource1* m_aabb_desc_resource; //m_aabb_desc uploaded to GPU
 };

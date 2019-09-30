@@ -190,15 +190,12 @@ GameState::GameState(StateStack& stack)
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
-
-
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 
 	// Temporary projectile model for the player's gun
 	player->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
-
 
 	//Create system for input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -390,7 +387,7 @@ GameState::GameState(StateStack& stack)
 
 		e = ECS::Instance()->createEntity("MetaBall");
 		e->addComponent<MetaballComponent>();
-		e->addComponent<TransformComponent>(glm::vec3(-2, 2, 0));
+		e->addComponent<TransformComponent>(glm::vec3(-2, 2, 0), glm::vec3(-0, 45, 0));
 		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("MetaBall");

@@ -182,7 +182,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	}
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
-	float refractIndex = 1.333f;
+	float refractIndex = 0.3; // 1.333f;
 	RayPayload reflect_payload = payload;
 	RayPayload refract_payload = payload;
 	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
@@ -326,7 +326,7 @@ bool intersect(in RayDesc ray, in float3 center, in float radius, out float t, o
 	return true;
 }
 
-static const int N = 3;
+static const int N = 1;
 
 // Calculate a magnitude of an influence from a Metaball charge.
 // Return metaball potential range: <0,1>
@@ -411,21 +411,19 @@ void IntersectionShader()
 
 	attr.normal = float4(1, 1, 1, 0);
 
-	float  radii[N] = { 0.6, 0.5, 0.3 };
+	float  radii[N] = { 0.1 };
 	float3 centers[N] =
 	{
-		float3(-0.1, -0.3, -0.0),
-		float3(0.1, -0.3, 0.4),
-		float3(0.35,0.35, 0.0)
+		float3(0.0, 0.0, 0.0),
 	};
 
 	//centers[0].x = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[0]);
-	float time = CB_MeshData.data[InstanceID()].color.z;
-	centers[1].y = sin(cos(time*5) * 3) * (1-radii[1]);
-	centers[1].x = cos(time*10) * (1-radii[1]);
-	centers[1].z = sin(time*10) * (1-radii[1]);
+	//float time = CB_MeshData.data[InstanceID()].color.z;
+	//centers[1].y = sin(cos(time*5) * 3) * (1-radii[1]) * 0.5;
+	//centers[1].x = cos(time*10) * (1-radii[1]) * 0.5;
+	//centers[1].z = sin(time*10) * (1-radii[1]) * 0.5;
 
-	centers[2].z = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[2]);
+	//centers[2].z = (CB_MeshData.data[InstanceID()].color.x * 2 - 1) * (1-radii[2]) * 0.5;
 
 	float tmin = 0, tmax = 3;
 	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
