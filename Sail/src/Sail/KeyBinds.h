@@ -26,6 +26,7 @@ namespace KeyBinds {
 	extern int putDownCandle;
 	extern int disableCursor;
 	extern int shoot;
+	extern int showInGameMenu;
 
 	// Application
 	extern int alt;

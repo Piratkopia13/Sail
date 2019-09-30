@@ -489,6 +489,19 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.candleSystem->lightCandle("Map_Candle2");
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+		if (m_paused) {
+			m_paused = false;
+			requestStackPop();
+		}
+		else if(!m_paused){
+			m_paused = true;
+			requestStackPush(States::Pause);
+
+		}
+
+	}
+
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
