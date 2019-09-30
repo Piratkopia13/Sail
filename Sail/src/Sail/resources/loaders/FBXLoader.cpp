@@ -111,7 +111,30 @@ bool FBXLoader::initScene(const std::string& filePath) {
 			return false;
 		}
 		m_scenes[filePath] = scene;
+		m_sceneData[filePath] = {}; //??
 	}
+	return true;
+}
+bool FBXLoader::importScene(const std::string& filePath) {
+	if (!initScene) {
+		return false;
+	}
+
+
+	if (m_scenes.find(filePath) == m_scenes.end())
+		return false;
+	const FbxScene* scene = m_scenes[filePath];
+	assert(scene);
+
+
+
+
+
+
+
+
+
+
 	return true;
 }
 void FBXLoader::clearScene(const std::string& filePath) {
@@ -365,11 +388,11 @@ void FBXLoader::fetchGeometry(const FbxNode* node, Mesh* mesh) {
 //		}
 //
 //	}
-//
-//
-//
-//
-//
+
+
+
+
+
 
 	unsigned int childCount = (unsigned int)node->GetChildCount();
 	for (unsigned int child = 0; child < childCount; child++) {

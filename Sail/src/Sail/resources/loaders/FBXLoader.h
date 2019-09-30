@@ -14,6 +14,7 @@ public:
 	~FBXLoader();
 
 	bool initScene(const std::string& filePath);
+	bool importScene(const std::string& filePath);
 	void clearScene(const std::string& filePath);
 	void clearAllScenes();
 	Model* importStaticModel(const std::string& filePath, Shader* path);
@@ -61,11 +62,14 @@ private:
 
 
 	struct SceneData {
+		std::vector<Model*> models;
+		std::vector<AnimationStack*> animationStacks;
+		std::vector<std::string> textures;
 
 	};
 
 	std::map<std::string, const FbxScene*> m_scenes;
-	std::map < std::string, SceneData> m_sceneDatas;
+	std::map < std::string, SceneData> m_sceneData;
 
 	//DEBUG
 	std::string GetAttributeTypeName(FbxNodeAttribute::EType type);
