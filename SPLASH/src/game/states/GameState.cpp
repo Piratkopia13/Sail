@@ -473,8 +473,6 @@ bool GameState::processInput(float dt) {
 					}
 				}
 				aiComp->setTarget(candle);
-
-				//aiComp->setTarget(m_player);
 			} else {
 				aiComp->setTarget(nullptr);
 			}

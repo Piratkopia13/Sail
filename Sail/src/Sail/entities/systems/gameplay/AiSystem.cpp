@@ -165,23 +165,21 @@ void AiSystem::entityTargetFunc(AiComponent* aiComp, TransformComponent* transCo
 	if ( aiComp->entityTarget != nullptr ) {
 		if ( aiComp->timeTakenOnPath > m_timeBetweenPathUpdate ) {
 			aiComp->timeTakenOnPath = 0.f;
-			aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation();
+			//aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation();
+			aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
 			aiComp->reachedTarget = false;
 
 			updatePath(aiComp, transComp);
 		}
 
 		if ( gunComp != nullptr ) {
-			// Approx gun pos
+			// Approx AI gun pos
 			auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
-			
-			
-			// Approx enemy head pos
-			//auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
 
 			// Candle pos
-			// Aim slightly higher to account for gravity
 			const glm::vec3& candlePos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
+
+			// Aim slightly higher to account for gravity
 			const glm::vec3& enemyPos = candlePos + glm::vec3(0, 0.3f, 0);
 
 			auto fireDir = enemyPos - gunPos;
@@ -191,7 +189,6 @@ void AiSystem::entityTargetFunc(AiComponent* aiComp, TransformComponent* transCo
 
 			Octree::RayIntersectionInfo rayHitInfo;
 			m_octree->getRayIntersection(gunPos + fireDir /*In order to (hopefully) miss itself*/, fireDir, &rayHitInfo);
-			//if ( hitDist < 7.f && glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f && hitDist < rayHitInfo.closestHit ) {
 			if (hitDist < 7.f && glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f) {
 				gunComp->setFiring(gunPos += fireDir, fireDir);
 
