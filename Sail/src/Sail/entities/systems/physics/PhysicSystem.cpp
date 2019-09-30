@@ -129,20 +129,16 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 
 		//Object is moving at a speed that risks missing collisions
 		//Ray cast to find upcoming collisions
+		float padding = glm::max(glm::max(boundingBox->getHalfSize().x, boundingBox->getHalfSize().y), boundingBox->getHalfSize().z) * 0.8f;
+		//float padding = glm::length(boundingBox->getHalfSize());
 		Octree::RayIntersectionInfo intersectionInfo;
-		m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo, e);
+		m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo, e, padding);
 		float velocityAmp = glm::length(physics->velocity) * dt;
 		glm::vec3 normalizedVel = glm::normalize(physics->velocity);
 
-		//Find the distance to the front wall
-		float xMovementAllowed = boundingBox->getHalfSize().x / glm::max(std::abs(normalizedVel.x), 0.01f);
-		float yMovementAllowed = boundingBox->getHalfSize().y / glm::max(std::abs(normalizedVel.y), 0.01f);
-		float zMovementAllowed = boundingBox->getHalfSize().z / glm::max(std::abs(normalizedVel.z), 0.01f);
-		float maxMovementAllowed = glm::min(glm::min(xMovementAllowed, yMovementAllowed), zMovementAllowed) * 0.95f;
-
-		if ((intersectionInfo.closestHit - maxMovementAllowed) <= velocityAmp && intersectionInfo.closestHit > 0.0f) { //Found upcoming collision
+		if ((intersectionInfo.closestHit) <= velocityAmp && intersectionInfo.closestHit > 0.0f) { //Found upcoming collision
 			//Calculate new dt
-			float newDt = ((intersectionInfo.closestHit - maxMovementAllowed) / velocityAmp) * dt;
+			float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
 
 			if (newDt > 0.0001f) {
 				//Move untill first overlap

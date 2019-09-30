@@ -206,6 +206,7 @@ bool Intersection::triangleWithTriangleSupport(const glm::vec3 U[3], const glm::
 
 float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb) {
 	float returnValue = -1.0f;
+	glm::vec3 normalizedRay = glm::normalize(rayVec);
 	bool noHit = false; //Boolean for early exits from the for-loop
 	float tMin = -std::numeric_limits<float>::infinity(); //tMin initialized at negative infinity
 	float tMax = std::numeric_limits<float>::infinity(); //tMax initialized at positive infinity
@@ -214,7 +215,7 @@ float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 		float tempH = aabb.getHalfSize()[i]; //Temporary variable to store the current half axis
 
 		float e = p[i];
-		float f = rayVec[i];
+		float f = normalizedRay[i];
 		if (f != 0.0f) { //Ray is not parallel to slab
 			float tempF = 1 / f; //temporary variable to avoid calculating division with the (possibly) very small value f multiple times since it is an expensive calculation
 
@@ -285,5 +286,46 @@ float Intersection::rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& 
 		returnValue = tuvw.x;
 	}
 
+	return returnValue;
+}
+
+float Intersection::rayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb, float padding) {
+	float returnValue = -1.0f;
+	
+	if (padding != 0.0f) {
+		//Add padding
+		BoundingBox paddedAABB;
+
+		paddedAABB.setPosition(aabb.getPosition());
+		paddedAABB.setHalfSize(aabb.getHalfSize() + glm::vec3(padding));
+
+		returnValue = rayWithAabb(rayStart, rayVec, paddedAABB);
+	}
+	else {
+		returnValue = rayWithAabb(rayStart, rayVec, aabb);
+	}
+
+	return returnValue;
+}
+
+float Intersection::rayWithPaddedTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, float padding) {
+	float returnValue = -1.0f;
+	
+	if (padding != 0.0f) {
+		//Add padding
+		glm::vec3 triangleNormal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+
+		glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
+
+		glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) + triangleNormal) * padding;
+		glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) + triangleNormal) * padding;
+		glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) + triangleNormal) * padding;
+
+		returnValue = rayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
+	}
+	else {
+		returnValue = rayWithTriangle(rayStart, rayDir, v1, v2, v3);
+	}
+	
 	return returnValue;
 }

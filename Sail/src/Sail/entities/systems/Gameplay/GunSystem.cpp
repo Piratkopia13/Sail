@@ -33,6 +33,7 @@ void GunSystem::update(float dt, Scene* scene) {
 				auto e = ECS::Instance()->createEntity("projectile");
 				e->addComponent<ModelComponent>(gun->getProjectileModel());
 				e->addComponent<BoundingBoxComponent>();
+				e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.2f));
 				e->addComponent<LifeTimeComponent>(2.0f);
 				e->addComponent<ProjectileComponent>();
 				e->addComponent<TransformComponent>(gun->position);
