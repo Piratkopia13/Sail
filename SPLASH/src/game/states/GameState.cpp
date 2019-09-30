@@ -118,6 +118,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
 
 	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
+	m_componentSystems.gunSystem->setScene(&m_scene);
 	
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
@@ -511,7 +512,16 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
-bool GameState::updatePerTick(float dt) {
+bool GameState::update(float dt, float alpha) {
+	// UPDATE REAL TIME SYSTEMS
+	updatePerFrameComponentSystems(dt, alpha);
+
+	m_lights.updateBufferData();
+
+	return true;
+}
+
+bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " 
@@ -520,7 +530,7 @@ bool GameState::updatePerTick(float dt) {
 	static float counter = 0.0f;
 	static float size = 1.0f;
 	static float change = 0.4f;
-	
+
 	counter += dt * 2.0f;
 
 	updatePerTickComponentSystems(dt);
@@ -528,18 +538,9 @@ bool GameState::updatePerTick(float dt) {
 	return true;
 }
 
-bool GameState::updatePerFrame(float dt, float alpha) {
-	// UPDATE REAL TIME SYSTEMS
-	updatePerFrameComponentSystems(dt, alpha);
-
-	m_lights.updateBufferData();
-
-	return false;
-}
-
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
-bool GameState::render(float dt, float alpha) {
+bool GameState::render(float dt, float alpha) {	
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
@@ -760,25 +761,40 @@ bool GameState::renderImGuiLightDebug(float dt) {
 // HERE BE DRAGONS
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
+	m_currentlyReadingMask = 0;
+	m_currentlyWritingMask = 0;
+	m_runningSystemJobs.clear();
+	m_runningSystems.clear();
+	
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
+	
+	m_componentSystems.physicSystem->update(dt);
+	// This can probably be used once the respective system developers 
+	//	have checked their respective systems for proper component registration
+	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
 
-	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
-	m_componentSystems.gunSystem->update(dt); // Order?
-	m_componentSystems.projectileSystem->update(dt);
-	m_componentSystems.animationSystem->update(dt);
-	m_componentSystems.aiSystem->update(dt);
+	// TODO: Investigate this
+	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
+	runSystem(dt, m_componentSystems.projectileSystem);
+	runSystem(dt, m_componentSystems.animationSystem);
+	runSystem(dt, m_componentSystems.aiSystem);
 
-	m_componentSystems.candleSystem->update(dt);
+	runSystem(dt, m_componentSystems.candleSystem);
 
-	m_componentSystems.updateBoundingBoxSystem->update(dt);
-	m_componentSystems.octreeAddRemoverSystem->update(dt);
+	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
+	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 
+	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
-	m_componentSystems.lifeTimeSystem->update(dt);
+	runSystem(dt, m_componentSystems.audioSystem);
+
+	// Wait for all the systems to finish before starting the removal system
+	for ( auto& fut : m_runningSystemJobs ) {
+		fut.get();
+	}
+
 	// Will probably need to be called last
-	m_componentSystems.entityRemovalSystem->update(0.0f);
-
-	m_componentSystems.audioSystem->update(dt);
+	m_componentSystems.entityRemovalSystem->update(dt);
 }
 
 
@@ -793,6 +809,51 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
+	}
+}
+
+void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
+	bool started = false;
+	while ( !started ) {
+		// First check if the system can be run
+		if ( !(m_currentlyReadingMask & toRun->getWriteBitMask()).any() && 
+			!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
+			!( m_currentlyWritingMask & toRun->getWriteBitMask() ).any() ) {
+
+			m_currentlyWritingMask |= toRun->getWriteBitMask();
+			m_currentlyReadingMask |= toRun->getReadBitMask();
+			started = true;
+			m_runningSystems.push_back(toRun);
+			m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun] (int id) {toRun->update(dt); return toRun; }));
+			
+		} else {
+			// Then loop through all futures and see if any of them are done
+			for ( int i = 0; i < m_runningSystemJobs.size(); i++ ) {
+				if ( m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready ) {
+					auto doneSys = m_runningSystemJobs[i].get();
+
+					m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
+					i--;
+
+					m_currentlyWritingMask ^= doneSys->getWriteBitMask();
+					m_currentlyReadingMask ^= doneSys->getReadBitMask();
+
+					int toRemoveIndex = -1;
+					for ( int j = 0; j < m_runningSystems.size(); j++ ) {
+						// Currently just compares memory adresses (if they point to the same location they're the same object)
+						if ( m_runningSystems[j] == doneSys )
+							toRemoveIndex = j;
+					}
+
+					m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
+
+					// Since multiple systems can read from components concurrently, currently best solution I came up with
+					for ( auto _sys : m_runningSystems ) {
+						m_currentlyReadingMask |= _sys->getReadBitMask();
+					}
+				}
+			}
+		}
 	}
 }
 

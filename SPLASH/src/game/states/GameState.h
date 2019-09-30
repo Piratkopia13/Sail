@@ -26,12 +26,12 @@ public:
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
 	virtual bool onEvent(Event& event) override;
-	// Updates the state
-	virtual bool updatePerTick(float dt) override;
-	// Updates the state per frame
-	virtual bool updatePerFrame(float dt, float alpha) override;
+	// Updates the state - Runs every frame
+	virtual bool update(float dt, float alpha = 1.0f) override;
+	// Updates the state - Runs every tick
+	virtual bool fixedUpdate(float dt) override;
 	// Renders the state
-	virtual bool render(float dt, float alpha) override;
+	virtual bool render(float dt, float alpha = 1.0f) override;
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
 
@@ -47,6 +47,7 @@ private:
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
+	void runSystem(float dt, BaseComponentSystem* toRun);
 
 	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
 
@@ -110,4 +111,10 @@ private:
 
 	Octree* m_octree;
 	bool m_disableLightComponents;
+
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyWritingMask;
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyReadingMask;
+
+	std::vector<std::future<BaseComponentSystem*>> m_runningSystemJobs;
+	std::vector<BaseComponentSystem*> m_runningSystems;
 };

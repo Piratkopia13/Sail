@@ -14,14 +14,14 @@
 
 
 GunSystem::GunSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(GunComponent::ID);
-	readBits |= GunComponent::BID;
-	writeBits |= GunComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<GunComponent>(true, true, true);
 }
 
 GunSystem::~GunSystem() {
 
 }
+
 
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {

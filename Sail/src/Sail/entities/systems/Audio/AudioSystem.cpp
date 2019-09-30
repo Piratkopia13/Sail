@@ -6,7 +6,8 @@
 #include <iterator>
 
 AudioSystem::AudioSystem() {
-	requiredComponentTypes.push_back(AudioComponent::ID);
+	// TODO: System owner should check if this is correct
+	registerComponent<AudioComponent>(true, true, true);
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/jump.wav");
