@@ -17,6 +17,8 @@ GunSystem::GunSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(GunComponent::ID);
 	readBits |= GunComponent::BID;
 	writeBits |= GunComponent::BID;
+
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 GunSystem::~GunSystem() {
@@ -45,7 +47,7 @@ void GunSystem::update(float dt, Scene* scene) {
 				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 				scene->addEntity(e);//change when scene is a component.
-				GameDataTracker::getInstance().logWeaponFired();
+				m_gameDataTracker->logWeaponFired();
 			}
 			gun->projectileSpawnTimer += dt;
 			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {

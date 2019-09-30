@@ -14,6 +14,8 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
+
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 GameInputSystem::~GameInputSystem() {
@@ -64,7 +66,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 				audioComp->m_isPlaying[SoundType::JUMP] = true;
 				audioComp->m_playOnce[SoundType::JUMP] = true;
-				GameDataTracker::getInstance().logJump();
+				m_gameDataTracker->logJump();
 			}
 			m_wasSpacePressed = true;
 		}

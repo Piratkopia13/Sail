@@ -502,6 +502,7 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
 	}
 #endif
+
 	return true;
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-typedef double long LARGE_FLOAT;
+typedef long double LARGE_FLOAT;
 
 struct statistics {
 	LARGE_INTEGER bulletsFired;
@@ -17,20 +17,21 @@ public:
 	~GameDataTracker();
 
 	// Implemented in...
-	void logWeaponFired();						// ...GunSystem::update()
+	void logWeaponFired();						// ...ehfy::update()
 	void logEnemyHit();							// Nowhere atm
 	void logEnemyKilled();						// Nowhere atm
 	void logJump();								// ...GameInputSystem::update()
 	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
 
-	// 
-	void resetData();
-	const statistics& getStatistics();
+	// Implemented in...
+	void resetData();							// Nowhere atm
+	const statistics& getStatistics();			// Nowhere atm
 
 	// Implemented in...
-	void renderImgui();							// ...GameState::renderImGui()
+	void renderImgui();							// ...EndState::renderImGui()
 
 private:
+	//
 	statistics m_loggedData;
 	
 

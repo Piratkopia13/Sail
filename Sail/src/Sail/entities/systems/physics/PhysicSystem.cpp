@@ -20,6 +20,7 @@ PhysicSystem::PhysicSystem() : BaseComponentSystem() {
 	writeBits |= BoundingBoxComponent::BID;
 
 	m_octree = nullptr;
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 PhysicSystem::~PhysicSystem() {
@@ -142,7 +143,7 @@ void PhysicSystem::update(float dt) {
 		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * dt;
 		transform->translate(translation);
 		if (e->getName() == "player") {
-			GameDataTracker::getInstance().logDistanceWalked(translation);
+			m_gameDataTracker->logDistanceWalked(translation);
 		}
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
