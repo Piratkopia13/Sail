@@ -23,7 +23,7 @@ private:
 	std::unique_ptr<Renderer> m_rendererRaster;
 	std::unique_ptr<Renderer> m_rendererRaytrace;
 	Renderer* m_currentRenderer;
-	PostProcessPipeline* m_postProcessPipeline;
+	std::shared_ptr<PostProcessPipeline> m_postProcessPipeline;
 
 	bool m_doPostProcessing;
 };

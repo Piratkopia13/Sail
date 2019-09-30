@@ -14,7 +14,7 @@ RenderSystem::RenderSystem() {
 	requiredComponentTypes.push_back(ModelComponent::ID);
 	requiredComponentTypes.push_back(TransformComponent::ID);
 
-	m_renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
+	refreshRenderer();
 	m_renderHitboxes = false;
 }
 
@@ -32,6 +32,10 @@ RenderSystem::~RenderSystem() {
 	 else {
 		 m_renderHitboxes = true;
 	 }
+ }
+
+ void RenderSystem::refreshRenderer() {
+	 m_renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
  }
 
  void RenderSystem::draw(Camera& camera, const float alpha) {
@@ -71,9 +75,10 @@ RenderSystem::~RenderSystem() {
 		 }
 
 	 } // for each entity
-	 
+
 	 m_renderer->end();
-	 m_renderer->present((false) ? Application::getInstance()->getRenderWrapper()->getPostProcessPipeline() : nullptr);
+	 m_renderer->present((Application::getInstance()->getRenderWrapper()->getDoPostProcessing()
+		 ) ? Application::getInstance()->getRenderWrapper()->getPostProcessPipeline() : nullptr);
 
  }
 

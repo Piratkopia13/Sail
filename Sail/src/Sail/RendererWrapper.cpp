@@ -15,6 +15,8 @@ void RendererWrapper::initialize() {
 	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
 	m_currentRenderer = m_rendererRaster.get();
 
+	m_postProcessPipeline = std::make_shared<PostProcessPipeline>();
+
 	m_doPostProcessing = false;
 }
 
@@ -49,7 +51,7 @@ Renderer* RendererWrapper::getCurrentRenderer() {
 }
 
 PostProcessPipeline* RendererWrapper::getPostProcessPipeline() {
-	return m_postProcessPipeline;
+	return m_postProcessPipeline.get();
 }
 
 void RendererWrapper::setLightSetup(LightSetup* lights) {

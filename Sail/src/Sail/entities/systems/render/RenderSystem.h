@@ -10,6 +10,7 @@ public:
 	~RenderSystem();
 	void update(float dt) override;
 	void toggleHitboxes();
+	void refreshRenderer();
 
 	// Model component and Transform component is required to be drawn.
 	void draw(Camera& camera, const float alpha);

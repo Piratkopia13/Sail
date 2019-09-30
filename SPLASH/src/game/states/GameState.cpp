@@ -688,6 +688,8 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	const char* items[] = { "Forward raster", "Raytraced" };
 	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
 		(*Application::getInstance()->getRenderWrapper()).changeRenderer(selectedRenderer);
+		m_componentSystems.renderSystem->refreshRenderer();
+		m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 	}
 	ImGui::Checkbox("Enable post processing", 
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
