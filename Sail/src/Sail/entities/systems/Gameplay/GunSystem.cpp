@@ -11,6 +11,7 @@
 #include "Sail/entities/components/PhysicsComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
+#include "Sail/entities/components/MetaballComponent.h"
 
 
 GunSystem::GunSystem() : BaseComponentSystem() {
@@ -30,14 +31,15 @@ void GunSystem::update(float dt, Scene* scene) {
 		if (gun->firing) {
 			if (gun->projectileSpawnTimer == 0.f) {
 				auto e = ECS::Instance()->createEntity("projectile");
-				e->addComponent<ModelComponent>(gun->getProjectileModel());
+				e->addComponent<MetaballComponent>(/*gun->getProjectileModel()*/);
 				e->addComponent<BoundingBoxComponent>();
+				e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
 				e->addComponent<LifeTimeComponent>(2.0f);
 				e->addComponent<ProjectileComponent>();
 				e->addComponent<TransformComponent>(gun->position);
 				TransformComponent* transform = e->getComponent<TransformComponent>();
-				transform->setScale(glm::vec3(1.0f, 1.0f, 5.0f) * 0.2f);
-				transform->rotateAroundY(glm::atan(gun->direction.x / gun->direction.z));
+				//transform->setScale(glm::vec3(1.0f, 1.0f, 5.0f) * 0.2f);
+				//transform->rotateAroundY(glm::atan(gun->direction.x / gun->direction.z));
 				
 				e->addComponent<PhysicsComponent>();
 				PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
