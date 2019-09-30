@@ -36,7 +36,9 @@ public:
 	// Process input for the state
 	bool processInput(float dt);
 	// Updates the state
-	virtual bool update(float dt);
+	virtual bool updatePerTick(float dt);
+	// Updates the state per frame
+	bool updatePerFrame(float dt, float alpha) override { return false; }
 	// Renders the state
 	bool render(float dt, float alpha = 1.0f);
 	// Renders imgui

@@ -39,14 +39,12 @@ private:
 	std::vector<Entity::SPtr> m_sceneEntities;
 
 	std::unique_ptr<Renderer> m_renderer;
-	//DeferredRenderer m_renderer;
-	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
-	//PostProcessPipeline m_postProcessPipeline;
-
 
 	std::unique_ptr<Renderer> m_rendererRaster;
-	std::unique_ptr<Renderer> m_rendererRaytrace;
+	//std::unique_ptr<Renderer> m_rendererGBuffer;
+	std::unique_ptr<Renderer> m_rendererHybrid;
 	std::unique_ptr<Renderer>* m_currentRenderer;
+
 	PostProcessPipeline m_postProcessPipeline;
 	bool m_doPostProcessing;
 	bool m_showBoundingBoxes;

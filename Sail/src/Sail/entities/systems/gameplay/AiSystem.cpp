@@ -19,8 +19,14 @@
 
 AiSystem::AiSystem() {
 	requiredComponentTypes.push_back(TransformComponent::ID);
+	readBits |= TransformComponent::BID;
+	writeBits |= TransformComponent::BID;
 	requiredComponentTypes.push_back(PhysicsComponent::ID);
+	readBits |= PhysicsComponent::BID;
+	writeBits |= PhysicsComponent::BID;
 	requiredComponentTypes.push_back(AiComponent::ID);
+	readBits |= AiComponent::BID;
+	writeBits |= AiComponent::BID;
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
 }

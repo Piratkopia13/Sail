@@ -28,7 +28,7 @@ bool MenuState::processInput(float dt) {
 	return false;
 }
 
-bool MenuState::update(float dt) {
+bool MenuState::updatePerTick(float dt) {
 	return false;
 }
 

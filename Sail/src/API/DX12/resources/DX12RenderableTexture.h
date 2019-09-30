@@ -17,6 +17,11 @@ public:
 	virtual void resize(int width, int height) override;
 
 	ID3D12Resource1* getResource() const;
+	ID3D12Resource* getDepthResource() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getDepthSrvCDH(int frameIndex = -1) const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getRtvCDH(int frameIndex = -1) const;
+	D3D12_CPU_DESCRIPTOR_HANDLE getDsvCDH(int frameIndex = -1) const;
+
 
 private:
 	void createTextures();
@@ -28,6 +33,7 @@ private:
 	DescriptorHeap m_cpuDsvDescHeap;
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_rtvHeapCDHs;
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_dsvHeapCDHs;
+	
 	UINT m_width, m_height;
 	bool m_hasDepthTextures;
 

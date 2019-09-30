@@ -5,6 +5,8 @@
 
 LifeTimeSystem::LifeTimeSystem() {
 	requiredComponentTypes.push_back(LifeTimeComponent::ID);
+	readBits |= LifeTimeComponent::BID;
+	writeBits |= LifeTimeComponent::BID;
 }
 
 LifeTimeSystem::~LifeTimeSystem() {

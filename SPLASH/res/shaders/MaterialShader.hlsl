@@ -20,7 +20,8 @@ struct PSIn {
 
 cbuffer VSPSSystemCBuffer : register(b0) {
 	matrix sys_mWorld;
-    matrix sys_mVP;
+    matrix sys_mView;
+    matrix sys_mProj;
     Material sys_material;
     float4 sys_clippingPlane;
     float3 sys_cameraPos;
@@ -71,7 +72,8 @@ PSIn VSMain(VSIn input) {
     }
 
 
-    output.position = mul(sys_mVP, output.position);
+    output.position = mul(sys_mView, output.position);
+    output.position = mul(sys_mProj, output.position);
 
 	if (sys_material.hasNormalTexture) {
 	    // Convert to tangent space

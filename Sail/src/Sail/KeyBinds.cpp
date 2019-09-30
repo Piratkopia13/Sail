@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "KeyBinds.h"
 #include "Sail/KeyCodes.h"
+#include "Sail/MouseButtonCodes.h"
 
 // Defines the variables
 namespace KeyBinds {
@@ -23,6 +24,9 @@ namespace KeyBinds {
 	int moveDown;
 	int lightCandle1;
 	int lightCandle2;
+	int putDownCandle;
+	int disableCursor;
+	int shoot;
 
 	// Application
 	int alt;
@@ -40,13 +44,16 @@ namespace KeyBinds {
 
 	// LobbyState
 	int sendMessage;
+
+	// DX12RaytracingRenderer
+	int reloadDXRShader;
 }
 
 void KeyBinds::init() {
 	// GameState
 	addLight = SAIL_KEY_E;
-	showBoundingBoxes = SAIL_KEY_1;
-	hideBoundingBoxes = SAIL_KEY_2;
+	showBoundingBoxes = SAIL_KEY_B;
+	hideBoundingBoxes = SAIL_KEY_N;
 	testRayIntersection = SAIL_KEY_O;
 	toggleAIFollowing = SAIL_KEY_H;
 	setDirectionalLight = SAIL_KEY_G;
@@ -62,6 +69,9 @@ void KeyBinds::init() {
 	moveDown = SAIL_KEY_CONTROL;
 	lightCandle1 = SAIL_KEY_Z;
 	lightCandle2 = SAIL_KEY_V;
+	putDownCandle = SAIL_KEY_F;
+	disableCursor = SAIL_MOUSE_RIGHT_BUTTON;
+	shoot = SAIL_MOUSE_LEFT_BUTTON;
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds
@@ -79,4 +89,8 @@ void KeyBinds::init() {
 
 	// LobbyState
 	sendMessage = SAIL_KEY_RETURN;
+
+	// DX12RaytracingRenderer
+	reloadDXRShader = SAIL_KEY_F5;
+
 }
