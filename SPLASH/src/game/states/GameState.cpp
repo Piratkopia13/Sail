@@ -153,6 +153,8 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 
 	// Create/load models
+	Model* animatedModel = &m_app->getResourceManager().getModel("walkTri.fbx", shader);
+	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
 
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));

@@ -176,6 +176,8 @@ const float AnimationStack::VertConnection::checkWeights() {
 #pragma region ANIMATIONSTACK
 
 AnimationStack::AnimationStack() {
+	m_connectionSize = 0;
+	m_connections = nullptr;
 }
 AnimationStack::AnimationStack(const unsigned int vertCount) {
 	m_connectionSize = vertCount;
@@ -186,6 +188,16 @@ AnimationStack::~AnimationStack() {
 		Memory::SafeDelete(m_stack[m_names[index]]);
 	}
 	Memory::SafeDeleteArr(m_connections);
+}
+void AnimationStack::reSizeConnections(const unsigned int vertCount) {
+	VertConnection* temp = SAIL_NEW VertConnection[vertCount];
+	for (unsigned int i = 0; i < m_connectionSize; i++) {
+		temp[i] = m_connections[i];
+	}
+	Memory::SafeDeleteArr(m_connections);
+	m_connectionSize = vertCount;
+	m_connections = temp;
+
 }
 void AnimationStack::addAnimation(const std::string& animationName, Animation* animation) {
 	if (m_stack.find(animationName) == m_stack.end()) {

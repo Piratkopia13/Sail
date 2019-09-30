@@ -7,6 +7,7 @@
 #include "Sail/api/Texture.h"
 //#include "ParsedScene.h"
 #include "loaders/AssimpLoader.h"
+#include "loaders/FBXLoader.h"
 
 //class DeferredGeometryShader;
 class ShaderPipeline;
@@ -43,12 +44,12 @@ public:
 	bool hasTexture(const std::string& filename);
 
 	// Models
-	void loadModel(const std::string& filename, Shader* shader, const ImporterType type = SAIL_ASSIMP);
+	void loadModel(const std::string& filename, Shader* shader, const ImporterType type = SAIL_FBXSDK);
 	Model& getModel(const std::string& filename, Shader* shader);
 	bool hasModel(const std::string& filename);
 
 	// Animations
-	void loadAnimationStack(const std::string& fileName, const ImporterType type = SAIL_ASSIMP);
+	void loadAnimationStack(const std::string& fileName, const ImporterType type = SAIL_FBXSDK);
 	AnimationStack& getAnimationStack(const std::string& fileName);
 	bool hasAnimationStack(const std::string& fileName);
 
@@ -106,7 +107,7 @@ private:
 
 
 	std::unique_ptr<AssimpLoader> m_assimpLoader;
-
+	std::unique_ptr<FBXLoader> m_fbxLoader;
 };
 
 template <typename T>

@@ -71,6 +71,8 @@ public:
 	AnimationStack(const unsigned int vertCount);
 	~AnimationStack();
 
+	void reSizeConnections(const unsigned int vertCount);
+
 	void addAnimation(const std::string& animationName, Animation* animation);
 	void setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight);
 

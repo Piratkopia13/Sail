@@ -14,12 +14,14 @@ public:
 	~FBXLoader();
 
 	bool initScene(const std::string& filePath);
-	bool importScene(const std::string& filePath);
+	bool importScene(const std::string& filePath, Shader* path);
 	void clearScene(const std::string& filePath);
 	void clearAllScenes();
-	Model* importStaticModel(const std::string& filePath, Shader* path);
-	AnimationStack* importStack(const std::string& filePath);
+	Model* importStaticModel(const std::string& filePath, Shader* shader);
+	AnimationStack* importAnimationStack(const std::string& filePath);
 
+	Model* fetchModel(const std::string& filePath, Shader* shader);
+	AnimationStack* fetchAnimationStack(const std::string& filePath, Shader* shader = nullptr);
 
 
 	FbxScene* makeScene(std::string fileName, std::string sceneName);
@@ -32,15 +34,16 @@ public:
 private:
 
 
-	void fetchGeometry(const FbxNode* node, Mesh* mesh);
-
-
+	void fetchGeometry(FbxNode* node, Mesh::Data& mesh);
+	void fetchAnimations(FbxNode* node, AnimationStack* stack);
+	
+	FbxVector2 getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMesh* mesh, int polyIndex, int vertIndex) const;
+	void getGeometry(FbxMesh* mesh, Mesh::Data& buildData);
+	void getAnimations(FbxNode* node, AnimationStack* stack);
 
 	FbxScene* parseFBX(const std::string& filename);
 
 	void loadNode(FbxNode* pNode);
-	FbxVector2 getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMesh* mesh, int polyIndex, int vertIndex) const;
-	void getGeometry(FbxMesh* mesh, Mesh::Data& buildData);
 	void getMaterial(FbxNode* pNode, Material* material);
 
 private:
@@ -62,9 +65,16 @@ private:
 
 
 	struct SceneData {
-		std::vector<Model*> models;
-		std::vector<AnimationStack*> animationStacks;
-		std::vector<std::string> textures;
+		bool done;
+		bool hasModel;
+		bool hasAnimation;
+		bool hasTextures;
+		Model* model;
+		AnimationStack* stack;
+
+		//std::vector<Model*> models;
+		//std::vector<AnimationStack*> animationStacks;
+		//std::vector<std::string> textures;
 
 	};
 
@@ -74,6 +84,7 @@ private:
 	//DEBUG
 	std::string GetAttributeTypeName(FbxNodeAttribute::EType type);
 	std::string PrintAttribute(FbxNodeAttribute* pAttribute);
+	void printNodeTree(FbxNode* node, const std::string& indent);
 	void printAnimationStack(const FbxNode* node);
 	//void printAnimationStack();
 
