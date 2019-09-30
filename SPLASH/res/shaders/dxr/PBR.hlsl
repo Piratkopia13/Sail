@@ -1,6 +1,9 @@
 float3 fresnelSchlick(float cosTheta, float3 F0) {
     return F0 + (1.0f - F0) * pow(1.0f - cosTheta, 5.0f);
 } 
+float3 fresnelSchlickRoughness(float cosTheta, float3 F0, float roughness) {
+    return F0 + (max(1.0f - roughness, F0) - F0) * pow(1.0f - cosTheta, 5.0f);
+}  
 
 float DistributionGGX(float3 N, float3 H, float roughness) {
     float a      = roughness * roughness;
@@ -78,6 +81,22 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 albedo, float m
         float NdotL = max(dot(N, L), 0.0f);
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
+
+    // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
+    // float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
+
+    // float3 kS = F;
+    // float3 kD = 1.0f - kS;
+    // kD *= 1.0f - metalness;	  
+    
+    // float3 irradiance = texture(irradianceMap, N).rgb;
+    // float3 diffuse    = irradiance * albedo;
+    
+    // const float MAX_REFLECTION_LOD = 4.0f;
+    // float3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;   
+    // float2 envBRDF  = texture(brdfLUT, float2(max(dot(N, V), 0.0f), roughness)).rg;
+    // float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+
 
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 ambient = 0.0f * albedo * ao;
