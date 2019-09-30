@@ -276,13 +276,6 @@ void Transform::updateRenderMatrix(float alpha) {
 }
 
 void Transform::updateLocalMatrix() {
-	/*m_localTransformMatrix = glm::mat4(1.0f);
-
-	glm::mat4 transMatrix = glm::translate(m_localTransformMatrix, m_data.m_current.m_translation);
-	glm::mat4 rotationMatrix = glm::mat4_cast(m_data.m_current.m_rotationQuat);
-	glm::mat4 scaleMatrix = glm::scale(m_localTransformMatrix, m_data.m_current.m_scale);
-	m_localTransformMatrix = transMatrix * rotationMatrix * scaleMatrix;*/
-
 	createTransformMatrix(m_localTransformMatrix, m_data.m_current.m_translation, m_data.m_current.m_rotationQuat, m_data.m_current.m_scale);
 }
 
@@ -322,7 +315,7 @@ void Transform::createTransformMatrix(glm::mat4& destination, const glm::vec3& t
 	glm::mat4 prev = glm::mat4(destination);
 	destination = glm::mat4_cast(rotation);
 	
-	// destination[0] is the first column, not the first row (column major)
+	// Column major means destination[0] is the first column, not the first row
 	destination[0].x *= scale.x;
 	destination[0].y *= scale.x;
 	destination[0].z *= scale.x;
@@ -335,6 +328,7 @@ void Transform::createTransformMatrix(glm::mat4& destination, const glm::vec3& t
 	destination[2].y *= scale.z;
 	destination[2].z *= scale.z;
 
+	// Apply translation
 	destination[3].x = translation.x;
 	destination[3].y = translation.y;
 	destination[3].z = translation.z;
