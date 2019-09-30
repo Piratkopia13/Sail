@@ -4,6 +4,7 @@
 #include "..//..//Entity.h"
 
 LifeTimeSystem::LifeTimeSystem() {
+	// TODO: System owner should check if this is correct
 	registerComponent<LifeTimeComponent>(true, true, true);
 }
 

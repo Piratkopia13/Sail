@@ -7,6 +7,7 @@
 #include "..//..//components/BoundingBoxComponent.h"
 
 PhysicSystem::PhysicSystem() : BaseComponentSystem() {
+	// TODO: System owner should check if this is correct
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<PhysicsComponent>(true, true, true);
 

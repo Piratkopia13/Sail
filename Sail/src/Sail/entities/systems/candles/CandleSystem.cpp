@@ -8,7 +8,8 @@
 
 #include "Sail/graphics/camera/CameraController.h"
 
-CandleSystem::CandleSystem() : BaseComponentSystem() {	
+CandleSystem::CandleSystem() : BaseComponentSystem() {
+	// TODO: System owner should check if this is correct
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<LightComponent>(true, true, true);

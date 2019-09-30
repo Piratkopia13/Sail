@@ -11,6 +11,7 @@
 #endif
 
 LightSystem::LightSystem() : BaseComponentSystem() {
+	// TODO: System owner should check if this is correct
 	registerComponent<LightComponent>(true, true, true);
 	/* Seems like it reads/writes from it sometimes */
 	registerComponent<LightListComponent>(false, true, true);

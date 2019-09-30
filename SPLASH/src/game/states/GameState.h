@@ -45,7 +45,7 @@ private:
 
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
-	void updatePerFrameComponentSystems(float dt);
+	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
 	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);

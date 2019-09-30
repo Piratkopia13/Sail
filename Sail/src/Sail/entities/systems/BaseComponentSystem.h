@@ -50,7 +50,13 @@ public:
 	virtual void stop() {}
 
 protected:
-	/* Registers the component to the system and defines how the system uses the component */
+	/**
+	 * Registers the component to the system and defines how the system uses the component
+	 *
+	 * @param required Should be set to true if the component is required by the system
+	 * @param read Should be set to true if the component is read by the system
+	 * @param write Should be set to true if the component is written to by the system
+	 */
 	template<typename ComponentType>
 	void registerComponent(bool required, bool read, bool write);
 

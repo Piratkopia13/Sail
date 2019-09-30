@@ -6,6 +6,7 @@
 #include "Sail/entities/components/TransformComponent.h"
 
 ProjectileSystem::ProjectileSystem() {
+	// TODO: System owner should check if this is correct
 	registerComponent<ProjectileComponent>(true, true, true);
 	registerComponent<PhysicsComponent>(true, true, false);
 	/* Does it really need the transform component? - it's not being used */

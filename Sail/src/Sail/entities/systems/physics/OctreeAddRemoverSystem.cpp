@@ -7,6 +7,7 @@
 #include "..//..//components/CollidableComponent.h"
 
 OctreeAddRemoverSystem::OctreeAddRemoverSystem() {
+	// TODO: System owner should check if this is correct
 	registerComponent<BoundingBoxComponent>(true, true, true);
 	registerComponent<CollidableComponent>(true, true, true);
 }

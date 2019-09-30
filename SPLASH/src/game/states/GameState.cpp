@@ -521,11 +521,8 @@ bool GameState::onResize(WindowResizeEvent& event) {
 }
 
 bool GameState::update(float dt, float alpha) {
-	// Interpolate the player's camera position (but not rotation)
-	m_playerController.updateCameraPosition(alpha);
-
 	// UPDATE REAL TIME SYSTEMS
-	updatePerFrameComponentSystems(dt);
+	updatePerFrameComponentSystems(dt, alpha);
 
 	m_lights.updateBufferData();
 
@@ -774,14 +771,13 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 	
-
-	// TODO: Not sure this can be run in the 'normal' way
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
 	m_componentSystems.physicSystem->update(dt);
+	// This can probably be used once the respective system developers 
+	//	have checked their respective systems for proper component registration
 	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
-	// Some of the systems can not be ran concurrently due to incorrect
-	//	component registration. Some entities gets removed while used by other systems
+
 	// TODO: Investigate this
 	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
 	runSystem(dt, m_componentSystems.projectileSystem);
@@ -804,27 +800,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(dt);
-
-
-	/*m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
-	
-	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
-	m_componentSystems.gunSystem->update(dt); // Order?
-	m_componentSystems.projectileSystem->update(dt);
-	m_componentSystems.animationSystem->update(dt);
-	m_componentSystems.aiSystem->update(dt);
-
-	m_componentSystems.candleSystem->update(dt);
-
-	m_componentSystems.updateBoundingBoxSystem->update(dt);
-	m_componentSystems.octreeAddRemoverSystem->update(dt);
-
-
-	m_componentSystems.lifeTimeSystem->update(dt);
-	// Will probably need to be called last
-	m_componentSystems.entityRemovalSystem->update(0.0f);
-
-	m_componentSystems.audioSystem->update(dt);*/
 }
 
 

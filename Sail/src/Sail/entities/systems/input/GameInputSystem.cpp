@@ -6,8 +6,8 @@
 #include "Sail/KeyBinds.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(PlayerComponent::ID);
-	readBits |= PlayerComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<PlayerComponent>(true, true, false);
 	
 	// cam variables
 	m_yaw = 90.f;

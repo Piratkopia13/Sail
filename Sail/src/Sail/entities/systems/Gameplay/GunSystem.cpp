@@ -14,6 +14,7 @@
 
 
 GunSystem::GunSystem() : BaseComponentSystem() {
+	// TODO: System owner should check if this is correct
 	registerComponent<GunComponent>(true, true, true);
 }
 

@@ -9,6 +9,7 @@
 
 
 AnimationSystem::AnimationSystem() : BaseComponentSystem() {
+	// TODO: System owner should check if this is correct
 	registerComponent<AnimationComponent>(true, true, true);
 	registerComponent<ModelComponent>(true, true, true);
 }
