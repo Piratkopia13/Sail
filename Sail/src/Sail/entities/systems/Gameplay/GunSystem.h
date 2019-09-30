@@ -7,6 +7,11 @@ public:
 	GunSystem();
 	~GunSystem();
 
-	void update(float dt, Scene* scene);
+	void setScene(Scene* scene);
+
 	void update(float dt) override;
+
+private:
+	Scene* m_scene;
+
 };

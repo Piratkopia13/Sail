@@ -37,8 +37,8 @@ public:
 	// Required methods
 	virtual int run() = 0;
 	virtual void processInput(float dt) = 0;
-	virtual void updatePerTick(float dt) = 0;
-	virtual void updatePerFrame(float dt, float alpha) = 0;
+	virtual void update(float dt, float alpha) = 0;
+	virtual void fixedUpdate(float dt) = 0;
 	virtual void render(float dt, float alpha) = 0;
 	virtual void dispatchEvent(Event& event) override;
 	virtual void applyPendingStateChanges() = 0;
