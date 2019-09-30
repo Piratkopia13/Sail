@@ -14,6 +14,7 @@
 #include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
+#include "Sail/entities/systems/Input/GameInputSystem.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/TimeSettings.h"
 
@@ -23,7 +24,6 @@
 GameState::GameState(StateStack& stack)
 : State(stack)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-, m_playerController(&m_cam, &m_scene)
 , m_cc(true)
 , m_profiler(true)
 , m_disableLightComponents(false)
@@ -120,18 +120,6 @@ GameState::GameState(StateStack& stack)
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
-	// This was moved out from the PlayerController constructor
-	// since the PhysicSystem needs to be created first
-	// (or the PhysicsComponent needed to be detached and reattached
-	m_playerController.getEntity()->addComponent<PhysicsComponent>();
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	m_playerController.getEntity()->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
-	m_playerController.getEntity()->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
-	m_playerController.getEntity()->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
-
-
-
-	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -148,11 +136,6 @@ GameState::GameState(StateStack& stack)
 
 
 
-	// Set up camera with controllers
-	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
-	m_cam.lookAt(glm::vec3(0.f));
-	m_playerController.getEntity()->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
-	
 
 	// Add a directional light
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -192,13 +175,54 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-	//Give player a bounding box
-	m_playerController.getEntity()->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-	m_playerController.getEntity()->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-	m_scene.addEntity(m_playerController.getEntity());
+
+	// Player creation
+	auto player = ECS::Instance()->createEntity("player");
+	
+	// TODO: Only used for AI, should be removed once AI can target player in a better way.
+	m_player = player.get();
+
+	player->addComponent<PlayerComponent>();
+	player->addComponent<TransformComponent>();
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+
+	player->addComponent<PhysicsComponent>();
+	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
+
+
+
+	// Give player a bounding box
+	player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 
 	// Temporary projectile model for the player's gun
-	m_playerController.setProjectileModels(m_cubeModel.get(), m_boundingBoxModel.get());
+	player->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
+
+
+	//Create system for input
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
+
+	player->addComponent<AudioComponent>();
+	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
+	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
+
+
+
+	// Create candle for the player
+	m_currLightIndex = 0;
+	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
+	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
+	player->addChildEntity(e);
+
+	m_scene.addEntity(player);
+	
+	// Set up camera
+	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
+	m_cam.lookAt(glm::vec3(0.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+
 
 	/*
 		Creation of entities
@@ -354,12 +378,11 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
-		e->addComponent<GunComponent>(m_cubeModel.get());
+		e->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
 		m_scene.addEntity(e);
 
 
-		m_currLightIndex = 0;
 		e = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
 
 
@@ -368,10 +391,6 @@ GameState::GameState(StateStack& stack)
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
-		// Create candle for the player
-		e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 1.1f, 0.f));
-		e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-		m_playerController.getEntity()->addChildEntity(e);
 
 
 
@@ -381,6 +400,9 @@ GameState::GameState(StateStack& stack)
 		m_cpuHistory = SAIL_NEW float[100];
 		m_frameTimesHistory = SAIL_NEW float[100];
 	}
+
+
+
 
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
@@ -434,7 +456,7 @@ bool GameState::processInput(float dt) {
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
 			if ( aiComp->entityTarget == nullptr ) {
-				aiComp->setTarget(m_playerController.getEntity().get());
+				aiComp->setTarget(m_player);
 			} else {
 				aiComp->setTarget(nullptr);
 			}
@@ -449,9 +471,6 @@ bool GameState::processInput(float dt) {
 		m_cc.toggle();
 		m_profiler.toggle();
 	}
-
-	m_playerController.processMouseInput(dt);
-
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
@@ -492,7 +511,7 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
-bool GameState::update(float dt) {
+bool GameState::updatePerTick(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
@@ -503,24 +522,23 @@ bool GameState::update(float dt) {
 	
 	counter += dt * 2.0f;
 
-	m_playerController.processKeyboardInput(TIMESTEP);
-
 	updatePerTickComponentSystems(dt);
 
 	return true;
 }
 
+bool GameState::updatePerFrame(float dt, float alpha) {
+	// UPDATE REAL TIME SYSTEMS
+	updatePerFrameComponentSystems(dt, alpha);
+
+	m_lights.updateBufferData();
+
+	return false;
+}
+
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 bool GameState::render(float dt, float alpha) {
-	// Interpolate the player's camera position (but not rotation)
-	m_playerController.updateCameraPosition(alpha);
-
-	// UPDATE REAL TIME SYSTEMS
-	updatePerFrameComponentSystems(dt);
-
-	m_lights.updateBufferData();
-	
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
@@ -745,7 +763,7 @@ bool GameState::renderImGuiLightDebug(float dt) {
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
-	
+
 	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
 	m_componentSystems.gunSystem->update(dt, &m_scene); // Order?
 	m_componentSystems.projectileSystem->update(dt);
@@ -765,11 +783,12 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.audioSystem->update(dt);
 }
 
-void GameState::updatePerFrameComponentSystems(float dt) {
-	// Update the player's candle with the current camera position
-	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
 
-	m_playerController.update(dt);
+void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
+	// Updates the camera
+	m_componentSystems.gameInputSystem->update(dt, alpha);
+
+	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {
