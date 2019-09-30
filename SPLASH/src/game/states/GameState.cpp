@@ -455,8 +455,16 @@ bool GameState::processInput(float dt) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
-			if ( aiComp->entityTarget == nullptr ) {
-				aiComp->setTarget(m_player);
+			if ( aiComp->candleTarget == nullptr ) {
+
+				std::vector<Entity::SPtr> children = m_player->getChildEntities();
+				for (auto& child : children) {
+					if (child->hasComponent<CandleComponent>()) {
+
+					}
+				}
+
+				//aiComp->setTarget();
 			} else {
 				aiComp->setTarget(nullptr);
 			}
