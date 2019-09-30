@@ -6,6 +6,9 @@
 #include "..//..//components/PhysicsComponent.h"
 #include "..//..//components/BoundingBoxComponent.h"
 
+#include "..//Sail/src/Sail/api/Input.h"
+#include "..//Sail/src/Sail/KeyCodes.h"
+
 PhysicSystem::PhysicSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(TransformComponent::ID);
 	readBits |= TransformComponent::BID;
@@ -28,20 +31,24 @@ void PhysicSystem::provideOctree(Octree* octree) {
 	m_octree = octree;
 }
 
-void PhysicSystem::collisionUpdate(Entity* e, float dt) {
-	TransformComponent* transform = e->getComponent<TransformComponent>();
-	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-
-	physics->onGround = false;
-	std::vector<int> groundIndices;
-
-	//----Collisions----
-	BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
-
+const bool PhysicSystem::collisionUpdate(Entity* thisPhysicalObject, const float& dt) {
 	//Update collision data
 	std::vector<Octree::CollisionInfo> collisions;
 
-	m_octree->getCollisions(e, &collisions);
+	m_octree->getCollisions(thisPhysicalObject, &collisions);
+
+	return handleCollisions(thisPhysicalObject, collisions, dt);
+}
+
+const bool PhysicSystem::handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
+	bool returnValue = false;
+
+	TransformComponent* transform = e->getComponent<TransformComponent>();
+	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+	BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
+
+	physics->onGround = false;
+	std::vector<int> groundIndices;
 
 	if (collisions.size() > 0) {
 		//Get the combined normals
@@ -72,6 +79,7 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 			float projectionSize = glm::dot(physics->velocity, -collisions[i].normal);
 
 			if (projectionSize > 0.0f) { //Is pushing against wall
+				returnValue = true;
 				physics->velocity += collisions[i].normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
 			}
 
@@ -85,6 +93,7 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 				projectionSize = glm::dot(physics->velocity, -normalToNormal);
 
 				if (projectionSize > 0.0f) {
+					returnValue = true;
 					physics->velocity += normalToNormal * projectionSize * (1.0f + physics->bounciness);
 				}
 			}
@@ -101,6 +110,7 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 			if (sizeOfVel > 0.0f) {
 				float slowdown = glm::min((physics->drag / nrOfGroundCollisions) * dt, sizeOfVel);
 				physics->velocity -= slowdown * glm::normalize(velAlongPlane);
+				returnValue = true;
 			}
 		}
 	}
@@ -116,44 +126,51 @@ void PhysicSystem::collisionUpdate(Entity* e, float dt) {
 		physics->velocity.y = saveY;
 	}
 	//------------
+
+	return returnValue;
 }
 
-void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
+void PhysicSystem::rayCastUpdate(Entity* e, float& padding, const float originalPadding, float& dt) {
 	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
 
+	float velocityAmp = glm::length(physics->velocity) * dt;
+
+	//Problem I am facing is this becomes false for the small padding in the end of a frame. And the next frame the padding is so big that it has already passed the wall.
 	if (std::abs(physics->velocity.x * dt) > std::abs(boundingBox->getHalfSize().x)
 		|| std::abs(physics->velocity.y * dt) > std::abs(boundingBox->getHalfSize().y)
 		|| std::abs(physics->velocity.z * dt) > std::abs(boundingBox->getHalfSize().z)) {
 
 		//Object is moving at a speed that risks missing collisions
-		//Ray cast to find upcoming collisions
-		float padding = glm::max(glm::max(boundingBox->getHalfSize().x, boundingBox->getHalfSize().y), boundingBox->getHalfSize().z) * 0.8f;
-		//float padding = glm::length(boundingBox->getHalfSize());
+		//Ray cast to find upcoming collisions, use padding for "swept sphere"
 		Octree::RayIntersectionInfo intersectionInfo;
 		m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo, e, padding);
-		float velocityAmp = glm::length(physics->velocity) * dt;
-		glm::vec3 normalizedVel = glm::normalize(physics->velocity);
 
-		if ((intersectionInfo.closestHit) <= velocityAmp && intersectionInfo.closestHit > 0.0f) { //Found upcoming collision
+		if ((intersectionInfo.closestHit) <= velocityAmp + originalPadding && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
 			//Calculate new dt
 			float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
 
-			if (newDt > 0.0001f) {
-				//Move untill first overlap
-				boundingBox->setPosition(boundingBox->getPosition() + physics->velocity * newDt);
-				transform->translate(physics->velocity * newDt);
+			//Move untill first overlap
+			boundingBox->setPosition(boundingBox->getPosition() + physics->velocity * newDt);
+			transform->translate(physics->velocity * newDt);
 
-				dt -= newDt;
+			dt -= newDt;
 
-				//Collision update
-				collisionUpdate(e, dt);
-
-				physics->m_oldVelocity = physics->velocity;
-
-				rayCastUpdate(e, dt);
+			//Collision update
+			if (collisionUpdate(e, dt)) {
+				//Velocity changed due to collision
+				physics->velocity = glm::vec3(0.0f);
+				physics->constantAcceleration = glm::vec3(0.0f);
+				padding = originalPadding;
 			}
+			else {
+				padding *= 0.9f;
+			}
+
+			physics->m_oldVelocity = physics->velocity;
+
+			rayCastUpdate(e, padding, originalPadding, dt);
 		}
 	}
 }
@@ -170,8 +187,21 @@ void PhysicSystem::update(float dt) {
 		physics->velocity += physics->accelerationToAdd * dt;
 
 		if (boundingBox && m_octree) {
-			rayCastUpdate(e, dt);
-			collisionUpdate(e, dt);
+			if (e->getName() == "projectile" && Input::IsKeyPressed(SAIL_KEY_L)) {
+				std::cout << "Break\n";
+			}
+
+			m_lastRayIntersect = nullptr;
+			//Get ray padding for swept sphere
+			float padding = glm::length(boundingBox->getBoundingBox()->getHalfSize());
+			if (e->getName() == "projectile") {
+				std::cout << "\n";
+			}
+			rayCastUpdate(e, padding, padding, dt);
+			if (collisionUpdate(e, dt) && e->getName() == "projectile") {
+				physics->velocity = glm::vec3(0.0f);
+				physics->constantAcceleration = glm::vec3(0.0f);
+			}
 		}
 
 		//----Max Speed Limiter----

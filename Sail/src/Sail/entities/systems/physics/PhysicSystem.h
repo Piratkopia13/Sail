@@ -1,7 +1,7 @@
 #pragma once
 #include "..//BaseComponentSystem.h"
-
-class Octree;
+#include "..//..//Physics/Physics.h"
+//class Octree;
 
 class PhysicSystem final : public BaseComponentSystem
 {
@@ -16,6 +16,9 @@ public:
 private:
 	Octree* m_octree;
 
-	void rayCastUpdate(Entity* e, float& dt);
-	void collisionUpdate(Entity* e, float dt);
+	Entity* m_lastRayIntersect;
+
+	void rayCastUpdate(Entity* e, float& padding, const float originalPadding, float& dt);
+	const bool collisionUpdate(Entity* thisPhysicalObject, const float& dt);
+	const bool handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt);
 };
