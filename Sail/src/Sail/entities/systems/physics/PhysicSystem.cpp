@@ -5,6 +5,7 @@
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/PhysicsComponent.h"
 #include "..//..//components/BoundingBoxComponent.h"
+#include "Sail/utils/GameDataTracker.h"
 
 PhysicSystem::PhysicSystem() : BaseComponentSystem() {
 	requiredComponentTypes.push_back(TransformComponent::ID);
@@ -139,6 +140,7 @@ void PhysicSystem::update(float dt) {
 
 		transform->rotate(physics->constantRotation * dt);
 		transform->translate((physics->m_oldVelocity + physics->velocity) * 0.5f * dt);
+		GameDataTracker::getInstance().logDistanceWalked((physics->m_oldVelocity + physics->velocity) * 0.5f * dt);
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
 	}

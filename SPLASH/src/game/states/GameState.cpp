@@ -485,7 +485,7 @@ bool GameState::processInput(float dt) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
 		Event e(Event::POTATO);
 		m_app->dispatchEvent(e);
-	}
+	}  
 
 	// Lights the selected candle
 	if (Input::WasKeyJustPressed(KeyBinds::lightCandle1)) {
