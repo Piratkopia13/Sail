@@ -13,6 +13,22 @@ namespace Netcode {
 	static NetworkObjectID nrOfNetworkObjects() { return gNetworkIDCounter; }
 
 
+	//// Structs for the kind of data that will be sent over the network,
+	//// will just be used to read to/write from in the NetworkSystems
+
+	enum NetworkEntityType : __int32 {
+		PLAYER_ENTITY = 1,
+		MECHA_ENTITY = 2,
+	};
+
+	// Same type will be used by both sender and receiver
+	enum NetworkDataType : __int32 {
+		CREATE_NETWORKED_ENTITY = 1,
+		MODIFY_TRANSFORM = 2,
+		SPAWN_PROJECTILE = 3,
+
+	};
+
 	// MODIFY_TRANSFORM
 	struct ModifyTransform {
 		glm::vec3 transform;
@@ -50,14 +66,8 @@ namespace Netcode {
 
 
 
-
-	// Same type will be used by both sender and receiver
-	enum NetworkDataType : __int32 {
-		MODIFY_TRANSFORM = 0,
-		SHOOT_PROJECTILE = 1,
-
-	};
-
+	// This is logically how the data will be sent/received.
+	/*
 	struct NetcodeData {
 		NetworkObjectID objectID;
 		NetworkDataType type;
@@ -67,5 +77,6 @@ namespace Netcode {
 			// ...
 		};
 	};
+	*/
 }
 

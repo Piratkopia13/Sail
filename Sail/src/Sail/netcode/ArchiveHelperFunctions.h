@@ -5,13 +5,23 @@
 
 namespace Archive {
 	template<class Archive>
-	void serializeVec3(Archive& ar, glm::vec3& vec3) {
-		ar(vec3.x, vec3.y, vec3.z);
+	void loadVec3(Archive& fromArchive, glm::vec3& vec3) {
+		fromArchive(vec3.x, vec3.y, vec3.z);
 	}
 
 	template<class Archive>
-	void serealizeQuat(Archive& ar, glm::quat& quat) {
-		ar(quat.x, quat.y, quat.z, quat.w);
+	void archiveVec3(Archive& toArchive, const glm::vec3& vec3) {
+		toArchive(vec3.x, vec3.y, vec3.z);
+	}
+
+	template<class Archive>
+	void loadQuat(Archive& fromArchive, glm::quat& quat) {
+		fromArchive(quat.x, quat.y, quat.z, quat.w);
+	}
+
+	template<class Archive>
+	void archiveQuat(Archive& toArchive, const glm::quat& quat) {
+		toArchive(quat.x, quat.y, quat.z, quat.w);
 	}
 
 }

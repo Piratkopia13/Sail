@@ -3,15 +3,17 @@
 #include "Sail/netcode/NetworkedStructs.h"
 
 
-class NetworSenderComponent : public Component<NetworSenderComponent> {
+class NetworkSenderComponent : public Component<NetworkSenderComponent> {
 public:
 	// type will decide which components are modified for the entity this component belongs to
 	// The ownerID is the ID of the player and is used to create a unique ID for the network component
-	NetworSenderComponent(Netcode::NetworkDataType type, unsigned char ownerID);
-	~NetworSenderComponent();
+	NetworkSenderComponent(Netcode::NetworkDataType dataType, Netcode::NetworkEntityType entityType, unsigned char ownerID);
+	~NetworkSenderComponent();
 
 	// should be ID and type
-
-	
-	//Netcode::NetcodeData data;
+	Netcode::NetworkObjectID m_id;
+	Netcode::NetworkEntityType m_entityType;
+	// Might be changed to a list of types if there are multiple components per entity one wants to
+	// send over the network
+	Netcode::NetworkDataType m_dataType;
 };

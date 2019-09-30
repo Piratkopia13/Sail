@@ -203,7 +203,7 @@ GameState::GameState(StateStack& stack)
 	
 	m_player->addComponent<PlayerComponent>();
 	m_player->addComponent<TransformComponent>();
-	// Temporary code which is meant to prevent players from spawning in eachother
+	// Temporary code which is meant to prevent players from spawning in each other
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 	}
@@ -553,6 +553,9 @@ bool GameState::onResize(WindowResizeEvent& event) {
 }
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
+	// TODO: save data string to buffer which will be read from in NetworkReceiverSystem
+
+
 	m_componentSystems.networkSystem->onSerializedPackageRecieved(event);
 	return false;
 }
