@@ -5,6 +5,8 @@
 #include <bitset>
 #include "components/Component.h"
 
+#include "../utils/Utils.h"
+
 //#define MOVE(x) std::move(x)
 
 class ECS;

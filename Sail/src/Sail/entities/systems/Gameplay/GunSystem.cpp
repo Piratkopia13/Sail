@@ -22,9 +22,6 @@ GunSystem::~GunSystem() {
 
 }
 
-void GunSystem::setScene(Scene* scene) {
-	m_scene = scene;
-}
 
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {
@@ -47,7 +44,6 @@ void GunSystem::update(float dt) {
 				physics->velocity = gun->direction * gun->projectileSpeed;
 				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
-				m_scene->addEntity(e);//change when scene is a component.
 			}
 			gun->projectileSpawnTimer += dt;
 			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {
@@ -60,4 +56,4 @@ void GunSystem::update(float dt) {
 			gun->projectileSpawnTimer = 0.f;
 		}
 	}
-}
+} // update
