@@ -9,6 +9,7 @@ public:
 	RenderSystem();
 	~RenderSystem();
 	void update(float dt) override;
+	void toggleHitboxes();
 
 	// Model component and Transform component is required to be drawn.
 	void draw(Camera& camera, const float alpha);
@@ -20,4 +21,5 @@ public:
 
 private:
 	Renderer* m_renderer;
+	bool m_renderHitboxes;
 };

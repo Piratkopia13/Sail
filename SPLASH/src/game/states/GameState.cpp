@@ -401,13 +401,10 @@ bool GameState::processInput(float dt) {
 	}
 
 #endif
-	//Toggle bounding boxes rendering
-	//if (Input::IsKeyPressed(KeyBinds::showBoundingBoxes)) {
-	//
-	//}
-	//if (Input::IsKeyPressed(KeyBinds::hideBoundingBoxes)) {
-	//
-	//}
+
+	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
+		m_componentSystems.renderSystem->toggleHitboxes();
+	}
 
 	//Test ray intersection
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
@@ -515,9 +512,8 @@ bool GameState::render(float dt, float alpha) {
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
-	// Draw the scene
+	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.renderSystem->draw(m_cam, alpha);
-	//m_componentSystems.renderSystem->draw();
 
 	return true;
 }

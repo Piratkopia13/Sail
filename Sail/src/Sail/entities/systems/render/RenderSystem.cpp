@@ -3,6 +3,7 @@
 #include "..//..//components/ModelComponent.h"
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/RealTimeComponent.h"
+#include "..//..//components/BoundingBoxComponent.h"
 #include "..//..//Entity.h"
 #include "..//..//..//graphics/camera/Camera.h"
 #include "..//..//..//graphics/geometry/Model.h"
@@ -14,6 +15,7 @@ RenderSystem::RenderSystem() {
 	requiredComponentTypes.push_back(TransformComponent::ID);
 
 	m_renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
+	m_renderHitboxes = false;
 }
 
 RenderSystem::~RenderSystem() {
@@ -23,7 +25,18 @@ RenderSystem::~RenderSystem() {
 
 }
 
+ void RenderSystem::toggleHitboxes() {
+	 if (m_renderHitboxes) {
+		 m_renderHitboxes = false;
+	 }
+	 else {
+		 m_renderHitboxes = true;
+	 }
+ }
+
  void RenderSystem::draw(Camera& camera, const float alpha) {
+
+	 m_renderer->begin(&camera);
 
 	 ModelComponent* mc = nullptr;
 	 for (auto& entity : entities) {
@@ -45,6 +58,17 @@ RenderSystem::~RenderSystem() {
 		 }
 
 		 // Solution for bounding boxes
+		 if (m_renderHitboxes) {
+			 BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
+			 if (boundingBox) {
+				 Model* wireframeModel = boundingBox->getWireframeModel();
+				 if (wireframeModel) {
+					 // Bounding boxes are visualized with their most update since that's what's used for hit detection
+					 m_renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), 
+						 Renderer::MESH_STATIC);
+				 }
+			 }
+		 }
 
 	 } // for each entity
 	 
