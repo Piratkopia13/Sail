@@ -443,6 +443,12 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.renderSystem->toggleHitboxes();
 	}
 
+	if (Input::WasKeyJustPressed(SAIL_KEY_P)) {
+		this->requestStackPop();
+		this->requestStackPush(States::MainMenu);
+
+	}
+
 	//Test ray intersection
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
