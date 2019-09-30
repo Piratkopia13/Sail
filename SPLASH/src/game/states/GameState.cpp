@@ -198,8 +198,6 @@ GameState::GameState(StateStack& stack)
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
-
-
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
@@ -220,7 +218,7 @@ GameState::GameState(StateStack& stack)
 
 	// Create candle for the player
 	m_currLightIndex = 0;
-	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
+	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 1.0f, 0.f));
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
 	player->addChildEntity(e);
 
@@ -463,7 +461,7 @@ bool GameState::processInput(float dt) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
-			if ( aiComp->candleTarget == nullptr ) {
+			if ( aiComp->entityTarget == nullptr ) {
 				
 				// Find the candle child entity of player
 				Entity* candle = nullptr;
@@ -474,8 +472,9 @@ bool GameState::processInput(float dt) {
 						break;
 					}
 				}
-
 				aiComp->setTarget(candle);
+
+				//aiComp->setTarget(m_player);
 			} else {
 				aiComp->setTarget(nullptr);
 			}
@@ -789,12 +788,16 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 
-
 	m_componentSystems.lifeTimeSystem->update(dt);
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
 
 	m_componentSystems.audioSystem->update(dt);
+
+
+	glm::vec3 playerPosition = m_player->getComponent<TransformComponent>()->getTranslation();
+	glm::vec3 candlePosition = m_player->getChildEntities()[0]->getComponent<TransformComponent>()->getMatrix()[3];
+
 }
 
 
