@@ -118,7 +118,6 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
 
 	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
-	m_componentSystems.gunSystem->setScene(&m_scene);
 	
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 

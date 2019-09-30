@@ -11,8 +11,9 @@
 
 
 RenderSystem::RenderSystem() {
-	requiredComponentTypes.push_back(ModelComponent::ID);
-	requiredComponentTypes.push_back(TransformComponent::ID);
+
+	registerComponent<ModelComponent>(true, true, false);
+	registerComponent<TransformComponent>(true, true, false);
 
 	refreshRenderer();
 	m_renderHitboxes = false;
