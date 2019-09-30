@@ -12,8 +12,8 @@ RendererWrapper::~RendererWrapper() {
 
 void RendererWrapper::initialize() {
 	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
-	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
-	m_currentRenderer = m_rendererRaster.get();
+	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::HYBRID));
+	m_currentRenderer = m_rendererRaytrace.get();
 
 	m_postProcessPipeline = std::make_shared<PostProcessPipeline>();
 
@@ -21,17 +21,17 @@ void RendererWrapper::initialize() {
 }
 
 /*
-	0 : Raster
-	1 : Raytrace
+	0 : Raytrace
+	1 : Raster
 */
 void RendererWrapper::changeRenderer(unsigned int index) {
 
 	switch (index) {
 	case 0:
-		m_currentRenderer = m_rendererRaster.get();
+		m_currentRenderer = m_rendererRaytrace.get();
 		break;
 	case 1:
-		m_currentRenderer = m_rendererRaytrace.get();
+		m_currentRenderer = m_rendererRaster.get();
 		break;
 	default:
 		break;

@@ -23,7 +23,7 @@
 #include <iomanip>
 
 // Uncomment to use forward rendering
-// #define DISABLE_RT
+//#define DISABLE_RT
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -124,6 +124,7 @@ GameState::GameState(StateStack& stack)
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
+	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -150,15 +151,15 @@ GameState::GameState(StateStack& stack)
 	// Set up the scene
 	//addSkybox(L"skybox_space_512.dds"); //TODO
 
-	//(*Application::getInstance()->getRenderWrapper())->setLightSetup(&m_lights);
-	//(*(*Application::getInstance()->getRenderWrapper()).getCurrentRenderer())->setLightSetup(&m_lights);
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
 #ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
-	m_scene.changeRenderer(1);
+	(*Application::getInstance()->getRenderWrapper()).changeRenderer(1);
+	m_componentSystems.renderSystem->refreshRenderer();
+	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 #endif
@@ -226,8 +227,6 @@ GameState::GameState(StateStack& stack)
 	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
 	player->addChildEntity(e);
-
-	m_scene.addEntity(player);
 	
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
@@ -716,12 +715,6 @@ bool GameState::renderImguiProfiler(float dt) {
 
 bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Begin("Rendering settings");
-	const char* items[] = { "Forward raster", "Raytraced" };
-	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
-		(*Application::getInstance()->getRenderWrapper()).changeRenderer(selectedRenderer);
-		m_componentSystems.renderSystem->refreshRenderer();
-		m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
-	}
 	ImGui::Checkbox("Enable post processing", 
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
 	);
