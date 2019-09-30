@@ -6,9 +6,11 @@
 #include "API/DX12/DX12IndexBuffer.h"
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
+#include "../renderer/DX12GBufferRenderer.h"
 
-DXRBase::DXRBase(const std::string& shaderFilename)
+DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 : m_shaderFilename(shaderFilename) 
+, m_gbufferInputTextures(inputs)
 {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
@@ -19,12 +21,14 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
+	m_gbufferStartGPUHandles = m_context->createFrameResource<D3D12_GPU_DESCRIPTOR_HANDLE>();
 
 	// Create root signatures
 	createDXRGlobalRootSignature();
 	createRayGenLocalRootSignature();
 	createHitGroupLocalRootSignature();
 	createMissLocalRootSignature();
+	createEmptyLocalRootSignature();
 
 	createRaytracingPSO();
 	createInitialShaderResources();
@@ -51,6 +55,10 @@ DXRBase::~DXRBase() {
 		st.release();
 	}
 		
+}
+
+void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
+	m_gbufferInputTextures = inputs;
 }
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
@@ -148,6 +156,10 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
 	DXRShaderCommon::SceneCBuffer newData = {};
+	newData.viewToWorld = glm::inverse(cam.getViewMatrix());
+	newData.clipToView = glm::inverse(cam.getProjMatrix());
+	newData.nearZ = cam.getNearZ();
+	newData.farZ = cam.getFarZ();
 	newData.cameraPosition = cam.getPosition();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 
@@ -157,6 +169,11 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
 }
 
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
+	assert(m_gbufferInputTextures); // Input textures not set!
+
+	for (int i = 0; i < 2; i++) {
+		m_gbufferInputTextures[i]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
 	
 	unsigned int frameIndex = m_context->getFrameIndex();
 
@@ -201,6 +218,11 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
 	cmdList->DispatchRays(&raytraceDesc);
+}
+
+void DXRBase::reloadShaders() {
+	// Recompile hlsl
+	createRaytracingPSO();
 }
 
 bool DXRBase::onEvent(Event& event) {
@@ -257,7 +279,8 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 		for (auto& transform : instanceList.instanceTransforms) {
 			pInstanceDesc->InstanceID = blasIndex;			// exposed to the shader via InstanceID() - currently same for all instances of same material
-			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
+			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
+																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
 			// apply transform from lambda function
@@ -393,6 +416,20 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 
+		// Next (3 * numSwapBuffers) slots are used for input gbuffers
+		for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
+			m_gbufferStartGPUHandles[i] = gpuHandle;
+			D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
+			srcDescriptors[0] = m_gbufferInputTextures[0]->getSrvCDH(i);
+			srcDescriptors[1] = m_gbufferInputTextures[1]->getSrvCDH(i);
+			srcDescriptors[2] = m_gbufferInputTextures[0]->getDepthSrvCDH(i);
+
+			UINT dstRangeSizes[] = { 3 };
+			UINT srcRangeSizes[] = { 1, 1, 1 };
+			m_context->getDevice()->CopyDescriptors(1, &cpuHandle, dstRangeSizes, 3, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			cpuHandle.ptr += m_heapIncr * 3;
+			gpuHandle.ptr += m_heapIncr * 3;
+		}
 
 		//// Ray gen settings CB
 		//m_rayGenCBData.flags = RT_ENABLE_TA | RT_ENABLE_JITTER_AA;
@@ -500,8 +537,10 @@ void DXRBase::updateShaderTables() {
 			m_rayGenShaderTable[frameIndex].Resource->Release();
 			m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder(m_rayGenName, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get());
+		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
+		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -511,56 +550,71 @@ void DXRBase::updateShaderTables() {
 			m_missShaderTable[frameIndex].Resource->Release();
 			m_missShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder(m_missName, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder(2U, m_rtPipelineState.Get());
+		tableBuilder.addShader(m_missName);
+		tableBuilder.addShader(m_shadowMissName);
 		//tableBuilder.addDescriptor(m_skyboxGPUDescHandle.ptr);
 		m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
 	// Hit group
-	// TODO: use different hit groups for regular shading, shadows, transparecy etc
 	{
 		if (m_hitGroupShaderTable[frameIndex].Resource) {
 			m_hitGroupShaderTable[frameIndex].Resource->Release();
 			m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder(m_hitGroupName, m_rtPipelineState.Get(), m_bottomBuffers[frameIndex].size(), 64U);
+		DXRUtils::ShaderTableBuilder tableBuilder(m_bottomBuffers[frameIndex].size() * 2 /* * 2 for shadow rays (all NULL) */, m_rtPipelineState.Get(), 64U);
+
 		unsigned int blasIndex = 0;
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			auto& instanceList = it.second;
 			Mesh* mesh = it.first;
 
+			tableBuilder.addShader(m_hitGroupName);
 			m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
 				if (parameterName == "VertexBuffer") {
-					tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex);
+					tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex * 2);
 				} else if (parameterName == "IndexBuffer") {
 					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[blasIndex].indexBufferHandle : nullAddr, blasIndex);
+					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[blasIndex].indexBufferHandle : nullAddr, blasIndex * 2);
 				} else if (parameterName == "MeshCBuffer") {
 					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
-					tableBuilder.addDescriptor(meshCBHandle, blasIndex);
+					tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
 				} else if (parameterName == "Textures") {
 					// Three textures
 					for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex);
+						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
 					}
 				} else {
 					Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
-				}
-					
+				}	
 			});
+
+			// Add NULL shader identifier for shadow rays
+			// This will cause no hit shaders to even execute
+			tableBuilder.addShader(L"NULL");
+
 			blasIndex++;
 		}
+
 		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 }
 
 void DXRBase::createRaytracingPSO() {
+	Memory::SafeRelease(m_rtPipelineState);
+
 	DXRUtils::PSOBuilder psoBuilder;
+
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName });
 	psoBuilder.addHitGroup(m_hitGroupName, m_closestHitName);
 	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
 	psoBuilder.addSignatureToShaders({ m_closestHitName }, m_localSignatureHitGroup->get());
 	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
+
+	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowMissName });
+	psoBuilder.addSignatureToShaders({ m_shadowMissName }, m_localSignatureEmpty->get());
+
 	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);
 	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());
@@ -579,6 +633,8 @@ void DXRBase::createDXRGlobalRootSignature() {
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
+	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 3);
+	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
@@ -597,7 +653,12 @@ void DXRBase::createHitGroupLocalRootSignature() {
 void DXRBase::createMissLocalRootSignature() {
 	m_localSignatureMiss = std::make_unique<DX12Utils::RootSignature>("MissLocal");
 	//m_localSignatureMiss->addDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3); // Skybox
-	m_localSignatureMiss->addStaticSampler();
+	//m_localSignatureMiss->addStaticSampler();
 
 	m_localSignatureMiss->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+}
+
+void DXRBase::createEmptyLocalRootSignature() {
+	m_localSignatureEmpty = std::make_unique<DX12Utils::RootSignature>("EmptyLocal");
+	m_localSignatureEmpty->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }

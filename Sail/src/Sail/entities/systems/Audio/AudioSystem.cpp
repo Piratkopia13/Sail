@@ -7,7 +7,8 @@
 #include "..//Sail/src/Sail/Application.h"
 
 AudioSystem::AudioSystem() {
-	requiredComponentTypes.push_back(AudioComponent::ID);
+	// TODO: System owner should check if this is correct
+	registerComponent<AudioComponent>(true, true, true);
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/jump.wav");
 }
@@ -86,7 +87,20 @@ void AudioSystem::update(float dt) {
 				//if (audioC->m_currentlyStreaming.find(filename) != audioC->m_currentlyStreaming.end()) {
 				//	std::cout << "OH SHIET\n";
 				//}
-				IDHolder = m_audioEngine.getStreamIndex();
+				//IDHolder = m_audioEngine.getStreamIndex();
+
+				int id = -1;
+				for (size_t i = 0; i < STREAMED_SOUNDS_COUNT; i++)
+				{
+					if (!m_isStreaming[i]) {
+						id = i;
+						m_isStreaming[i] = true;
+						break;
+					}
+				}
+				if (id == -1) {
+					//Force song to quit and steal id from it.
+				}
 
 				Application::getInstance()->pushJobToThreadPool(
 					[this, filename](int id) {

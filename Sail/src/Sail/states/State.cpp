@@ -13,6 +13,10 @@ State::State(StateStack& stack)
 State::~State() {
 }
 
+bool State::fixedUpdate(float dt) {
+	return false;
+}
+
 bool State::renderImgui(float dt) {
 	ImGui::ShowDemoWindow();
 	return false;

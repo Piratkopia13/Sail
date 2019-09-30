@@ -112,8 +112,6 @@ int AudioEngine::streamSound(const std::string& filename, bool loop) {
 	if (m_masterVoice == nullptr) {
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		m_streamLocks[indexReturnValue].store(false);
-
-		return -1;
 	}
 	else {
 		this->streamSoundInternal(filename, indexReturnValue, false);
@@ -122,6 +120,9 @@ int AudioEngine::streamSound(const std::string& filename, bool loop) {
 
 		return indexReturnValue;
 	}
+
+	m_isStreaming[indexReturnValue] = false;
+	return -1;
 }
 
 void AudioEngine::stopSpecificSound(int index) {

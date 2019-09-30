@@ -7,12 +7,9 @@
 #include "..//..//components/CollidableComponent.h"
 
 OctreeAddRemoverSystem::OctreeAddRemoverSystem() {
-	requiredComponentTypes.push_back(BoundingBoxComponent::ID);
-	readBits |= BoundingBoxComponent::BID;
-	writeBits |= BoundingBoxComponent::BID;
-	requiredComponentTypes.push_back(CollidableComponent::ID);
-	readBits |= CollidableComponent::BID;
-	writeBits |= CollidableComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<BoundingBoxComponent>(true, true, true);
+	registerComponent<CollidableComponent>(true, true, true);
 }
 
 OctreeAddRemoverSystem::~OctreeAddRemoverSystem() {

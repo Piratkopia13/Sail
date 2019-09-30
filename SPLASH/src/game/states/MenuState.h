@@ -17,9 +17,7 @@ public:
 	// Process input for the state
 	bool processInput(float dt);
 	// Updates the state
-	bool updatePerTick(float dt);
-	// Updates the state per frame
-	bool updatePerFrame(float dt, float alpha) override { return false; }
+	bool update(float dt, float alpha = 1.0f);
 	// Renders the state
 	bool render(float dt, float alpha = 1.0f);
 	// Renders imgui
@@ -35,5 +33,4 @@ private:
 	// For ImGui Input
 	char* inputIP = nullptr;
 	char* inputName = nullptr;
-	Scene m_scene;
 };

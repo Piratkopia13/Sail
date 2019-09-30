@@ -6,7 +6,8 @@
 
 
 NetworkClientSystem::NetworkClientSystem() {
-	requiredComponentTypes.push_back(TransformComponent::ID);
+	// TODO: System owner should check if this is correct
+	registerComponent<TransformComponent>(true, true, true);
 }
 
 NetworkClientSystem::~NetworkClientSystem() {

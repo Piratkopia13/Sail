@@ -8,7 +8,6 @@
 
 #ifdef _DEBUG_NODESYSTEM
 #include "Sail/entities/Entity.h"
-class Scene;
 class Shader;
 #endif
 
@@ -57,9 +56,8 @@ public:
 	unsigned int getDistance(unsigned int n1, unsigned int n2) const;
 
 #ifdef _DEBUG_NODESYSTEM
-	void setDebugModelAndScene(Shader* shader, Scene* scene);
+	void setDebugModelAndScene(Shader* shader);
 	Model* m_nodeModel;
-	Scene* m_scene;
 	std::vector<Entity::SPtr> m_nodeEntities;
 #endif
 
