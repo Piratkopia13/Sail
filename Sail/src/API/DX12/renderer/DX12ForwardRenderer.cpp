@@ -27,7 +27,7 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
-	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Forward renderer output renderable texture", true)));
 	m_outputTexture->renameBuffer("Forward renderer output renderable texture");
 }
 
@@ -166,13 +166,13 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
 		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
 
-		shaderPipeline->setCBufferVar_new("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), meshIndex);
+		shaderPipeline->trySetCBufferVar_new("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), meshIndex);
 
 		if (lightSetup) {
 			auto& dlData = lightSetup->getDirLightData();
 			auto& plData = lightSetup->getPointLightsData();
-			shaderPipeline->setCBufferVar_new("dirLight", &dlData, sizeof(dlData), meshIndex);
-			shaderPipeline->setCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
+			shaderPipeline->trySetCBufferVar_new("dirLight", &dlData, sizeof(dlData), meshIndex);
+			shaderPipeline->trySetCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
 		}
 
 		static_cast<DX12Mesh*>(command->mesh)->draw_new(*this, cmdList.Get(), meshIndex);
