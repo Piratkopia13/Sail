@@ -793,11 +793,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.entityRemovalSystem->update(0.0f);
 
 	m_componentSystems.audioSystem->update(dt);
-
-
-	glm::vec3 playerPosition = m_player->getComponent<TransformComponent>()->getTranslation();
-	glm::vec3 candlePosition = m_player->getChildEntities()[0]->getComponent<TransformComponent>()->getMatrix()[3];
-
 }
 
 
