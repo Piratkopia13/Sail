@@ -28,7 +28,7 @@ bool NetworkHostSystem::onSerializedPackageRecieved(NetworkSerializedPackageEven
 	// Fetch data from networkWrapper and de-serialize it
 	std::istringstream is(event.getSerializedData());
 	cereal::PortableBinaryInputArchive inputArchive(is);
-	TranslationStruct deSerializedData;
+	myStruct deSerializedData;
 	inputArchive(deSerializedData);
 
 	for (auto& e : entities) {
@@ -50,9 +50,9 @@ void NetworkHostSystem::sendPlayersTranslationToAllClients() {
 	TransformComponent* transform = m_playerEntity->getComponent<TransformComponent>();
 	glm::vec3 translation = transform->getTranslation();
 
-	translation.r;
+	myStruct data;
 
-	TranslationStruct data;
+	//TranslationStruct data;
 	data.trans.x = translation.x;
 	data.trans.y = translation.y;
 	data.trans.z = translation.z;
