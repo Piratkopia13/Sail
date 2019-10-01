@@ -23,7 +23,7 @@
 #include <iomanip>
 
 // Uncomment to use forward rendering
-//#define DISABLE_RT
+#define DISABLE_RT
 
 GameState::GameState(StateStack& stack)
 : State(stack)

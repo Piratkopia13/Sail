@@ -187,9 +187,9 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 
 		physics->m_oldVelocity = physics->velocity;
 
-		if (rayCastCheck(e, dt)) {
+		//if (rayCastCheck(e, dt)) {
 			rayCastUpdate(e, dt);
-		}
+		//}
 	}
 }
 
@@ -202,12 +202,13 @@ void PhysicSystem::update(float dt) {
 		physics->collisions.clear();
 
 		if (physics->padding < 0.0f) {
-			//physics->padding = glm::min(glm::min(boundingBox->getBoundingBox()->getHalfSize().x, boundingBox->getBoundingBox()->getHalfSize().y), boundingBox->getBoundingBox()->getHalfSize().z);
 			physics->padding = glm::length(boundingBox->getBoundingBox()->getHalfSize());
 		}
 
 		physics->velocity += physics->constantAcceleration * dt;
 		physics->velocity += physics->accelerationToAdd * dt;
+
+		transform->rotate(physics->constantRotation * dt);
 
 		if (boundingBox && m_octree) {
 			collisionUpdate(e, dt);
@@ -236,8 +237,8 @@ void PhysicSystem::update(float dt) {
 		physics->velocity.y = saveY;
 		//-------------------------
 
-		transform->rotate(physics->constantRotation * dt);
 		transform->translate((physics->m_oldVelocity + physics->velocity) * 0.5f * dt);
+		//transform->translate(physics->velocity * dt);
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
 	}
