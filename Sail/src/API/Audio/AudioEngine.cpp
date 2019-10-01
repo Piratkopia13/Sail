@@ -44,7 +44,7 @@ AudioEngine::AudioEngine() {
 	}
 }
 
-AudioEngine::~AudioEngine(){
+AudioEngine::~AudioEngine() {
 	m_isRunning = false;
 }
 
@@ -128,10 +128,10 @@ void AudioEngine::stopSpecificSound(int index) {
 }
 
 void AudioEngine::stopSpecificStream(int index) {
-	
+
 	if (this->checkStreamIndex(index)) {
-		if (m_streamedSounds[index].sourceVoice != nullptr) {
-			m_streamedSounds[index].isStreaming = false;
+		if (m_sourceVoiceStream[index] != nullptr) {
+			m_isStreaming[index] = false;
 		}
 	}
 }
@@ -139,7 +139,7 @@ void AudioEngine::stopSpecificStream(int index) {
 void AudioEngine::stopAllStreams() {
 
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
-		m_streamedSounds[i].isStreaming = false;
+		m_isStreaming[i] = false;
 	}
 }
 
@@ -154,12 +154,12 @@ void AudioEngine::stopAllSounds() {
 	}
 
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
-		m_streamedSounds[i].isStreaming = false;
+		m_isStreaming[i] = false;
 	}
 }
 
 float AudioEngine::getSoundVolume(int index) {
-	
+
 	float returnValue = 0.0f;
 
 	if (this->checkSoundIndex(index)) {
@@ -177,7 +177,7 @@ float AudioEngine::getStreamVolume(int index) {
 	float returnValue = 0.0f;
 
 	if (this->checkStreamIndex(index)) {
-		m_streamedSounds[index].sourceVoice->GetVolume(&returnValue);
+		m_sourceVoiceStream[index]->GetVolume(&returnValue);
 	}
 	else {
 		returnValue = -1.0f;
@@ -214,7 +214,7 @@ void AudioEngine::setSoundVolume(int index, float value) {
 void AudioEngine::setStreamVolume(int index, float value) {
 
 	if (this->checkStreamIndex(index)) {
-		m_streamedSounds[index].sourceVoice->SetVolume(value);
+		m_sourceVoiceStream[index]->SetVolume(value);
 	}
 }
 
@@ -278,7 +278,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			return;
 		}
 
-		while (m_streamedSounds[myIndex].isStreaming) {
+		while (m_isStreaming[myIndex]) {
 			// For every piece of audio within the '.xwb' file (preferably only be 1)
 			for (DWORD i = 0; i < wbr.Count(); i++) {
 
@@ -294,16 +294,16 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 					Logger::Error("Failed to get meta data for '.xwb' file!");
 				}
 
-				hr = m_xAudio2->CreateSourceVoice(&m_streamedSounds[myIndex].sourceVoice, wfx, 0, 1.0f, &voiceContext);
+				hr = m_xAudio2->CreateSourceVoice(&m_sourceVoiceStream[myIndex], wfx, 0, 1.0f, &voiceContext);
 				if (hr != S_OK) {
 					Logger::Error("Failed to create source voice!");
 				}
 
-				m_streamedSounds[myIndex].sourceVoice->SetVolume(0);
+				m_sourceVoiceStream[myIndex]->SetVolume(0);
 
 				// Create the 'overlapped' structure as well as buffers to handle async I/O
 #if (_WIN32_WINNT >= _WIN32_WINNT_VISTA)
-				m_streamedSounds[myIndex].overlapped.hEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
+				m_overlapped[myIndex].hEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
 #else
 				m_overlapped.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 #endif
@@ -314,7 +314,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 					// non-PCM data will fail here. ADPCM requires a more complicated streaming mechanism to deal with submission in audio frames that do
 					// not necessarily align to the 2K async boundary.
 					//
-					m_streamedSounds[myIndex].isStreaming = false;
+					m_isStreaming[myIndex] = false;
 					break;
 				}
 
@@ -329,27 +329,27 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 				HANDLE async = wbr.GetAsyncHandle();
 
 				// Reading from the file (when time-since-last-read has passed threshold)
-				while ((currentPosition < metadata.lengthBytes) && m_streamedSounds[myIndex].isStreaming)
+				while ((currentPosition < metadata.lengthBytes) && m_isStreaming[myIndex])
 				{
 					if (GetAsyncKeyState(VK_ESCAPE))
 					{
-						m_streamedSounds[myIndex].isStreaming = false;
-						while (GetAsyncKeyState(VK_ESCAPE) && m_streamedSounds[myIndex].isStreaming) {
+						m_isStreaming[myIndex] = false;
+						while (GetAsyncKeyState(VK_ESCAPE) && m_isStreaming[myIndex]) {
 							Sleep(10);
 						}
 						break;
 					}
 
 					DWORD cbValid = std::min(STREAMING_BUFFER_SIZE, static_cast<int>(metadata.lengthBytes - static_cast<UINT32>(currentPosition)));
-					m_streamedSounds[myIndex].overlapped.Offset = metadata.offsetBytes + currentPosition;
+					m_overlapped[myIndex].Offset = metadata.offsetBytes + currentPosition;
 
 					bool wait = false;
-					if (!ReadFile(async, buffers[currentDiskReadBuffer].get(), STREAMING_BUFFER_SIZE, nullptr, &m_streamedSounds[myIndex].overlapped))
+					if (!ReadFile(async, buffers[currentDiskReadBuffer].get(), STREAMING_BUFFER_SIZE, nullptr, &m_overlapped[myIndex]))
 					{
 						DWORD error = GetLastError();
 						if (error != ERROR_IO_PENDING)
 						{
-							m_streamedSounds[myIndex].isStreaming = false;
+							m_isStreaming[myIndex] = false;
 							break;
 						}
 						wait = true;
@@ -363,19 +363,19 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 					// however, we'll just go to sleep until the read is done.
 					//
 					if (wait) {
-						WaitForSingleObject(m_streamedSounds[myIndex].overlapped.hEvent, INFINITE);
+						WaitForSingleObject(m_overlapped[myIndex].hEvent, INFINITE);
 					}
 
 					DWORD cb;
 #if (_WIN32_WINNT >= 0x0602 /*_WIN32_WINNT_WIN8*/)
-					BOOL result = GetOverlappedResultEx(async, &m_streamedSounds[myIndex].overlapped, &cb, 0, FALSE);
+					BOOL result = GetOverlappedResultEx(async, &m_overlapped[myIndex], &cb, 0, FALSE);
 #else
 					BOOL result = GetOverlappedResult(async, &ovlCurrentRequest, &cb, FALSE);
 #endif
 
 					if (!result)
 					{
-						m_streamedSounds[myIndex].isStreaming = false;
+						m_isStreaming[myIndex] = false;
 						break;
 					}
 
@@ -388,15 +388,15 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 					XAUDIO2_VOICE_STATE state;
 					for (;;)
 					{
-						m_streamedSounds[myIndex].sourceVoice->GetState(&state);
+						m_sourceVoiceStream[myIndex]->GetState(&state);
 						if (state.BuffersQueued < MAX_BUFFER_COUNT - 1) {
 							break;
 						}
 
-						m_streamedSounds[myIndex].sourceVoice->Start();
+						m_sourceVoiceStream[myIndex]->Start();
 						if (currentVolume < VOL_THIRD) {
 							currentVolume += 0.1f;
-							m_streamedSounds[myIndex].sourceVoice->SetVolume(currentVolume);
+							m_sourceVoiceStream[myIndex]->SetVolume(currentVolume);
 						}
 
 						currentChunk++;
@@ -414,7 +414,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 						buf.Flags = XAUDIO2_END_OF_STREAM;
 					}
 
-					m_streamedSounds[myIndex].sourceVoice->SubmitSourceBuffer(&buf);
+					m_sourceVoiceStream[myIndex]->SubmitSourceBuffer(&buf);
 
 					currentDiskReadBuffer++;
 					currentDiskReadBuffer %= MAX_BUFFER_COUNT;
@@ -422,12 +422,27 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			}
 
 			if (!loop) {
-				m_streamedSounds[myIndex].isStreaming = false;
+				m_isStreaming[myIndex] = false;
 			}
+
+			//if (!m_isStreaming[myIndex])
+			//{
+			//	m_sourceVoiceStream[myIndex]->SetVolume(0);
+
+			//	XAUDIO2_VOICE_STATE state;
+			//	for (;;)
+			//	{
+			//		m_sourceVoiceStream[myIndex]->GetState(&state);
+			//		if (!state.BuffersQueued)
+			//			break;
+
+			//		WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
+			//	}
+			//}
 
 			currentChunk = 0;
 			currentVolume = 0;
-			m_streamedSounds[myIndex].sourceVoice->Stop();
+			m_sourceVoiceStream[myIndex]->Stop();
 		}
 		//
 		// Clean up

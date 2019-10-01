@@ -1,11 +1,12 @@
 #ifndef AUDIO_ENGINE_H
 #define AUDIO_ENGINE_H
 
-enum AudioType {MUSIC};
+enum AudioType { MUSIC };
 
 #include "Xaudio2.h"
-#include "xapo.h"
-#include "hrtfapoapi.h"
+#include "x3daudio.h"
+//#include "xapo.h"
+//#include "hrtfapoapi.h"
 
 #include <thread>
 #include <mfapi.h>
@@ -71,16 +72,8 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 	{
 		CloseHandle(hBufferEndEvent);
 	}
+};
 #pragma endregion
-};
-
-struct StreamedAudioObject {
-
-	IXAudio2SourceVoice* sourceVoice = nullptr;
-	bool isStreaming = false;
-	bool isFinished = false;
-	OVERLAPPED overlapped = { 0 };
-};
 
 class AudioEngine
 {
@@ -88,7 +81,7 @@ public:
 	AudioEngine();
 	~AudioEngine();
 
-	void loadSound(const std::string &filename);
+	void loadSound(const std::string& filename);
 	int playSound(const std::string& filename);
 	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
 	void stopSpecificSound(int index);
@@ -121,13 +114,18 @@ private:
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
 	// Represents each loaded sound in the form of an 'object'
 	IXAudio2SourceVoice* m_sourceVoiceSound[SOUND_COUNT];
-	StreamedAudioObject m_streamedSounds[STREAMED_SOUNDS_COUNT];
+	IXAudio2SourceVoice* m_sourceVoiceStream[STREAMED_SOUNDS_COUNT];
 
 	int m_currSoundIndex = 0;
 	//std::atomic<int> m_currStreamIndex = 0;
 
 	// INIT
 	void initialize();
+
+	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
+	bool m_isStreaming[STREAMED_SOUNDS_COUNT];
+	bool m_isFinished[STREAMED_SOUNDS_COUNT];
+	OVERLAPPED m_overlapped[STREAMED_SOUNDS_COUNT];
 
 	// PRIVATE FUNCTION
 	//-----------------
