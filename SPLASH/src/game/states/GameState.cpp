@@ -139,6 +139,7 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
+/*
 	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/albedo.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/normal.tga");
@@ -150,7 +151,7 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/normal.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/albedo.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/normal.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/normal.tga");*/
 
 
 
@@ -183,34 +184,34 @@ GameState::GameState(StateStack& stack)
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	//arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
-	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/stoneTileFloor/albedo.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
+	/*arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/stoneTileFloor/albedo.tga");
 	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
-	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/stoneTileFloor/normal.tga");
+	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/stoneTileFloor/normal.tga");*/
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
 	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
 
 	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
-	//containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
-	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
+	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
+	/*containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
 	containerModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/rustedIron/metalnessRoughnessAO.tga");
-	containerModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/rustedIron/normal.tga");
+	containerModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/rustedIron/normal.tga");*/
 
 	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
-	//rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
-	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/brokenConcrete/albedo.tga");
+	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
+	/*rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/brokenConcrete/albedo.tga");
 	rampModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/brokenConcrete/metalnessRoughnessAO.tga");
-	rampModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/brokenConcrete/normal.tga");
+	rampModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/brokenConcrete/normal.tga");*/
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	//characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	/*characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
 	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");
+	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");*/
 
 
 	// Player creation
@@ -501,9 +502,7 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
-		m_app->getResourceManager().reloadShader<MaterialShader>();
-		Event e(Event::POTATO);
-		m_app->dispatchEvent(e);
+		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 	}
 
 	// Lights the selected candle

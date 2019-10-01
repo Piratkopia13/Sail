@@ -9,8 +9,9 @@
 #include "../renderer/DX12GBufferRenderer.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
-: m_shaderFilename(shaderFilename) 
+: m_shaderFilename(shaderFilename)
 , m_gbufferInputTextures(inputs)
+, m_brdfLUTPath("pbr/brdfLUT.tga")
 {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
@@ -221,6 +222,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 }
 
 void DXRBase::reloadShaders() {
+	m_context->waitForGPU();
 	// Recompile hlsl
 	createRaytracingPSO();
 }
@@ -412,7 +414,16 @@ void DXRBase::createInitialShaderResources(bool remake) {
 
 		// The first slot in the heap will be used for the output UAV, therefore we step once
 		m_rtOutputTextureUavGPUHandle = gpuHandle;
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
 
+		// Next slot is used for the brdfLUT
+		m_rtBrdfLUTGPUHandle = gpuHandle;
+		if (!Application::getInstance()->getResourceManager().hasTexture(m_brdfLUTPath)) {
+			Application::getInstance()->getResourceManager().loadTexture(m_brdfLUTPath);
+		}
+		auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
+		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, brdfLutTex.getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 
@@ -472,6 +483,12 @@ void DXRBase::createInitialShaderResources(bool remake) {
 
 void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	unsigned int frameIndex = m_context->getFrameIndex();
+
+	// Make sure brdfLut texture has been initialized
+	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
+	if (!brdfLutTex.hasBeenInitialized()) {
+		brdfLutTex.initBuffers(cmdList);
+	}
 
 	// Update descriptors for vertices, indices, textures etc
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtHeapCPUHandle;
@@ -547,6 +564,7 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -591,6 +609,8 @@ void DXRBase::updateShaderTables() {
 					for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
 						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
 					}
+				} else if (parameterName == "sys_brdfLUT") {
+					tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 				} else {
 					Logger::Error("Unhandled root signature parameter! ("+parameterName+")");
 				}	
@@ -640,6 +660,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
+	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
@@ -647,6 +668,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 
 void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
+	m_localSignatureHitGroup->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureHitGroup->addSRV("VertexBuffer", 1, 0);
 	m_localSignatureHitGroup->addSRV("IndexBuffer", 1, 1);
 	m_localSignatureHitGroup->addCBV("MeshCBuffer", 1, 0);

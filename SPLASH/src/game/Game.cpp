@@ -3,6 +3,7 @@
 #include "states/MenuState.h"
 #include "states/LobbyHostState.h"
 #include "states/LobbyClientState.h"
+#include "states/PBRTestState.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -14,7 +15,7 @@ Game::Game(HINSTANCE hInstance)
 
 	// Set starting state
 	//m_stateStack.pushState(States::MainMenu);
-	m_stateStack.pushState(States::MainMenu);
+	m_stateStack.pushState(States::Game);
 	
 	// Initialize the Network wrapper instance.
 	//NetworkWrapper::getInstance().initialize();
@@ -34,6 +35,7 @@ void Game::registerStates() {
 	m_stateStack.registerState<LobbyHostState>(States::HostLobby);
 	m_stateStack.registerState<LobbyClientState>(States::JoinLobby);
 	m_stateStack.registerState<MenuState>(States::MainMenu);
+	m_stateStack.registerState<PBRTestState>(States::PBRTest);
 }
 
 void Game::dispatchEvent(Event& event) {
