@@ -112,6 +112,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 		// Prevent division by zero
 		if (forwardMovement != 0.0f || rightMovement != 0.0f) {
+
 			// Calculate total movement
 			float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
 			if (!physicsComp->onGround) {
@@ -152,6 +153,8 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+			audioComp->m_isPlaying[SoundType::SHOOT] = true;
+			audioComp->m_playOnce[SoundType::SHOOT] = true;
 		}
 
 		// Update pitch & yaw if window has focus

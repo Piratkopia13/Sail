@@ -5,7 +5,6 @@
 #include "Sail/KeyBinds.h"
 #include "API/Audio/GeneralFunctions.h"
 #include <fstream>
-#include <xaudio2.h>
 #include "WaveBankReader.h"
 #include <math.h>
 
@@ -29,19 +28,7 @@ AudioEngine::AudioEngine() {
 	}
 #pragma endregion
 
-	this->initXAudio2();
-
-	for (int i = 0; i < SOUND_COUNT; i++) {
-		m_sourceVoiceSound[i] = nullptr;
-	}
-
-	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
-		m_sourceVoiceStream[i] = nullptr;
-		m_isStreaming[i] = false;
-		m_isFinished[i] = true;
-		m_overlapped[i] = { 0 };
-		m_streamLocks[i].store(false);
-	}
+	this->initialize();
 }
 
 AudioEngine::~AudioEngine() {
@@ -61,12 +48,12 @@ int AudioEngine::playSound(const std::string& filename) {
 
 		int returnValue = m_currSoundIndex; // Store early
 
-		if (m_sourceVoiceSound[m_currSoundIndex] != nullptr) {
-			m_sourceVoiceSound[m_currSoundIndex]->Stop();
+		if (m_sound[m_currSoundIndex].sourceVoice != nullptr) {
+			m_sound[m_currSoundIndex].sourceVoice->Stop();
 		}
 
 		// creating a 'sourceVoice' for WAV file-type
-		HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sourceVoiceSound[m_currSoundIndex], (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+		HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sound[m_currSoundIndex].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
 
 		// THIS IS THE OTHER VERSION FOR ADPC
 				// ... for ADPC-WAV compressed file-type
@@ -77,19 +64,19 @@ int AudioEngine::playSound(const std::string& filename) {
 			return -1;
 		}
 
-		hr = m_sourceVoiceSound[m_currSoundIndex]->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
+		hr = m_sound[m_currSoundIndex].sourceVoice->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
 
 		if (hr != S_OK) {
 			Logger::Error("Failed to submit the 'sourceBuffer' to the 'sourceVoice' for a sound file!");
 			return -1;
 		}
 
-		hr = m_sourceVoiceSound[m_currSoundIndex]->Start(0);
+		hr = m_sound[m_currSoundIndex].sourceVoice->Start(0);
 		if (hr != S_OK) {
 			Logger::Error("Failed submit processed audio data to data buffer for a audio file");
 			return -1;
 		}
-		m_sourceVoiceSound[m_currSoundIndex]->SetVolume(VOL_THIRD);
+		m_sound[m_currSoundIndex].sourceVoice->SetVolume(VOL_THIRD);
 
 		m_currSoundIndex++;
 		m_currSoundIndex %= SOUND_COUNT;
@@ -121,8 +108,8 @@ void AudioEngine::streamSound(const std::string& filename, int streamIndex, bool
 void AudioEngine::stopSpecificSound(int index) {
 
 	if (this->checkSoundIndex(index)) {
-		if (m_sourceVoiceSound[index] != nullptr) {
-			m_sourceVoiceSound[index]->Stop();
+		if (m_sound[index].sourceVoice != nullptr) {
+			m_sound[index].sourceVoice->Stop();
 		}
 	}
 }
@@ -130,7 +117,7 @@ void AudioEngine::stopSpecificSound(int index) {
 void AudioEngine::stopSpecificStream(int index) {
 
 	if (this->checkStreamIndex(index)) {
-		if (m_sourceVoiceStream[index] != nullptr) {
+		if (m_stream[index].sourceVoice != nullptr) {
 			m_isStreaming[index] = false;
 		}
 	}
@@ -146,10 +133,10 @@ void AudioEngine::stopAllStreams() {
 void AudioEngine::stopAllSounds() {
 
 	for (int i = 0; i < SOUND_COUNT; i++) {
-		if (m_sourceVoiceSound[i] != nullptr) {
-			m_sourceVoiceSound[i]->Stop();
-			m_sourceVoiceSound[i]->DestroyVoice();
-			m_sourceVoiceSound[i] = nullptr;
+		if (m_sound[i].sourceVoice != nullptr) {
+			m_sound[i].sourceVoice->Stop();
+			m_sound[i].sourceVoice->DestroyVoice();
+			m_sound[i].sourceVoice = nullptr;
 		}
 	}
 
@@ -163,7 +150,7 @@ float AudioEngine::getSoundVolume(int index) {
 	float returnValue = 0.0f;
 
 	if (this->checkSoundIndex(index)) {
-		m_sourceVoiceSound[index]->GetVolume(&returnValue);
+		m_sound[index].sourceVoice->GetVolume(&returnValue);
 	}
 	else {
 		returnValue = -1.0f;
@@ -177,7 +164,7 @@ float AudioEngine::getStreamVolume(int index) {
 	float returnValue = 0.0f;
 
 	if (this->checkStreamIndex(index)) {
-		m_sourceVoiceStream[index]->GetVolume(&returnValue);
+		m_stream[index].sourceVoice->GetVolume(&returnValue);
 	}
 	else {
 		returnValue = -1.0f;
@@ -207,19 +194,63 @@ int AudioEngine::getAvailableStreamIndex() {
 void AudioEngine::setSoundVolume(int index, float value) {
 
 	if (this->checkSoundIndex(index)) {
-		m_sourceVoiceSound[index]->SetVolume(value);
+		m_sound[index].sourceVoice->SetVolume(value);
 	}
 }
 
 void AudioEngine::setStreamVolume(int index, float value) {
 
 	if (this->checkStreamIndex(index)) {
-		m_sourceVoiceStream[index]->SetVolume(value);
+		m_stream[index].sourceVoice->SetVolume(value);
 	}
 }
 
 void AudioEngine::initialize() {
 
+	// Init soundObjects
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		m_sound[i].sourceVoice = nullptr;
+
+		//// Initialize EMITTER-structure
+		//m_sound[i].emitter.OrientFront = { 0,0,0 };
+		//m_sound[i].emitter.OrientTop = { 0,0,0 };
+		//m_sound[i].emitter.Position = { 0,0,0 };
+		//m_sound[i].emitter.Velocity = { 0,0,0 };
+		//m_sound[i].emitter.InnerRadius = 0;
+		//m_sound[i].emitter.InnerRadiusAngle = 0;
+		//m_sound[i].emitter.ChannelCount = 1;
+		//m_sound[i].emitter.ChannelRadius = 0.0f;
+		//m_sound[i].emitter.CurveDistanceScaler = FLT_MIN;
+		//m_sound[i].emitter.DopplerScaler = 0.0f;
+	}
+	// Init streamObjects
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		m_stream[i].sourceVoice = nullptr;
+		m_isStreaming[i] = false;
+		m_isFinished[i] = true;
+		m_overlapped[i] = { 0 };
+		m_streamLocks[i].store(false);
+
+		//// Initialize EMITTER-structure
+		//m_sound[i].emitter.OrientFront = { 0,0,0 };
+		//m_sound[i].emitter.OrientTop = { 0,0,0 };
+		//m_sound[i].emitter.Position = { 0,0,0 };
+		//m_sound[i].emitter.Velocity = { 0,0,0 };
+		//m_sound[i].emitter.InnerRadius = 0;
+		//m_sound[i].emitter.InnerRadiusAngle = 0;
+		//m_sound[i].emitter.ChannelCount = 1;
+		//m_sound[i].emitter.ChannelRadius = 0.0f;
+		//m_sound[i].emitter.CurveDistanceScaler = FLT_MIN;
+		//m_sound[i].emitter.DopplerScaler = 0.0f;
+	}
+
+	//FLOAT32* matrix = new FLOAT32[1];
+	//DSPSettings.SrcChannelCount = 1;
+	//DSPSettings.DstChannelCount = 1;
+	//DSPSettings.pMatrixCoefficients = matrix;
+
+	this->initXAudio2();
+	this->initXAudio3D();
 }
 
 void AudioEngine::initXAudio2() {
@@ -241,9 +272,9 @@ void AudioEngine::initXAudio3D() {
 
 	HRESULT hr;
 	DWORD channelMaskHolder;
-	X3DAUDIO_HANDLE m_xAudio3D;
+	m_masterVoice->GetChannelMask(&channelMaskHolder);
 
-	X3DAudioInitialize(m_masterVoice->GetChannelMask(&channelMaskHolder), FLT_MIN, m_xAudio3D);
+	X3DAudioInitialize(channelMaskHolder, 1.0f, m_xAudio3D);
 }
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
@@ -303,12 +334,12 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 					Logger::Error("Failed to get meta data for '.xwb' file!");
 				}
 
-				hr = m_xAudio2->CreateSourceVoice(&m_sourceVoiceStream[myIndex], wfx, 0, 1.0f, &voiceContext);
+				hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, wfx, 0, 1.0f, &voiceContext);
 				if (hr != S_OK) {
 					Logger::Error("Failed to create source voice!");
 				}
 
-				m_sourceVoiceStream[myIndex]->SetVolume(0);
+				m_stream[myIndex].sourceVoice->SetVolume(0);
 
 				// Create the 'overlapped' structure as well as buffers to handle async I/O
 #if (_WIN32_WINNT >= _WIN32_WINNT_VISTA)
@@ -397,15 +428,15 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 					XAUDIO2_VOICE_STATE state;
 					for (;;)
 					{
-						m_sourceVoiceStream[myIndex]->GetState(&state);
+						m_stream[myIndex].sourceVoice->GetState(&state);
 						if (state.BuffersQueued < MAX_BUFFER_COUNT - 1) {
 							break;
 						}
 
-						m_sourceVoiceStream[myIndex]->Start();
+						m_stream[myIndex].sourceVoice->Start();
 						if (currentVolume < VOL_THIRD) {
 							currentVolume += 0.1f;
-							m_sourceVoiceStream[myIndex]->SetVolume(currentVolume);
+							m_stream[myIndex].sourceVoice->SetVolume(currentVolume);
 						}
 
 						currentChunk++;
@@ -423,7 +454,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 						buf.Flags = XAUDIO2_END_OF_STREAM;
 					}
 
-					m_sourceVoiceStream[myIndex]->SubmitSourceBuffer(&buf);
+					m_stream[myIndex].sourceVoice->SubmitSourceBuffer(&buf);
 
 					currentDiskReadBuffer++;
 					currentDiskReadBuffer %= MAX_BUFFER_COUNT;
@@ -451,15 +482,15 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 			currentChunk = 0;
 			currentVolume = 0;
-			m_sourceVoiceStream[myIndex]->Stop();
+			m_stream[myIndex].sourceVoice->Stop();
 		}
 		//
 		// Clean up
 		//
-		if (m_sourceVoiceStream[myIndex] != nullptr) {
-			m_sourceVoiceStream[myIndex]->Stop();
-			m_sourceVoiceStream[myIndex]->DestroyVoice();
-			m_sourceVoiceStream[myIndex] = nullptr;
+		if (m_stream[myIndex].sourceVoice != nullptr) {
+			m_stream[myIndex].sourceVoice->Stop();
+			m_stream[myIndex].sourceVoice->DestroyVoice();
+			m_stream[myIndex].sourceVoice = nullptr;
 			CloseHandle(m_overlapped[myIndex].hEvent);
 		}
 

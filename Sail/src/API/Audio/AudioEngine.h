@@ -3,10 +3,10 @@
 
 enum AudioType { MUSIC };
 
-#include "Xaudio2.h"
-#include "x3daudio.h"
-//#include "xapo.h"
-//#include "hrtfapoapi.h"
+#include <xaudio2.h>
+#include <x3daudio.h>
+
+#pragma comment (lib, "../../../../libraries/Audio/x3daudio.lib")
 
 #include <thread>
 #include <mfapi.h>
@@ -75,6 +75,12 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 };
 #pragma endregion
 
+struct soundStruct {
+
+	IXAudio2SourceVoice* sourceVoice = nullptr;
+	//X3DAUDIO_EMITTER emitter;
+};
+
 class AudioEngine
 {
 public:
@@ -102,22 +108,17 @@ public:
 private:
 	bool m_isRunning = true;
 
-	// 'TESTER' BUTTONS *-*-*-*-*-//
-	bool m_singlePress1 = true;  //
-	bool m_singlePress2 = true; //
-	bool m_singlePress3 = true;//
-	// *-*-*-*-*-*-*-*-*-*-*-*//
-
 	// The main audio 'core'
 	IXAudio2* m_xAudio2 = nullptr;
 	// The main 3D-audio 'core'
 	X3DAUDIO_HANDLE m_xAudio3D;
+	//X3DAUDIO_DSP_SETTINGS DSPSettings = { 0 };
 
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
 	// Represents each loaded sound in the form of an 'object'
-	IXAudio2SourceVoice* m_sourceVoiceSound[SOUND_COUNT];
-	IXAudio2SourceVoice* m_sourceVoiceStream[STREAMED_SOUNDS_COUNT];
+	soundStruct m_sound[SOUND_COUNT];
+	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
 
 	int m_currSoundIndex = 0;
 	//std::atomic<int> m_currStreamIndex = 0;
