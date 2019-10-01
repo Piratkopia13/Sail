@@ -19,6 +19,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/TimeSettings.h"
+#include "Sail/utils/GameDataTracker.h"
 
 #include <sstream>
 #include <iomanip>
@@ -491,7 +492,7 @@ bool GameState::processInput(float dt) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
 		Event e(Event::POTATO);
 		m_app->dispatchEvent(e);
-	}
+	}  
 
 	// Lights the selected candle
 	if (Input::WasKeyJustPressed(KeyBinds::lightCandle1)) {
@@ -524,6 +525,7 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
 	}
 #endif
+
 	return true;
 }
 

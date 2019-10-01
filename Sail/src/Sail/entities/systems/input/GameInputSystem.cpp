@@ -5,6 +5,7 @@
 #include "../../../api/Input.h"
 #include "Sail/KeyBinds.h"
 #include "Sail/Application.h"
+#include "Sail/utils/GameDataTracker.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
@@ -14,6 +15,8 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
+
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 GameInputSystem::~GameInputSystem() {
@@ -64,6 +67,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 				audioComp->m_isPlaying[SoundType::JUMP] = true;
 				audioComp->m_playOnce[SoundType::JUMP] = true;
+				m_gameDataTracker->logJump();
 			}
 			m_wasSpacePressed = true;
 		}
