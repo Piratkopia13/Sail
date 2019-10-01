@@ -820,10 +820,13 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 	
+	//// TODO? move to its own thread
+	//NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
 	// Update entities with info from the network
-	//m_componentSystems.networkReceiverSystem->update();
+	m_componentSystems.networkReceiverSystem->update();
 
 	m_componentSystems.physicSystem->update(dt);
 	// This can probably be used once the respective system developers 
@@ -851,7 +854,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	}
 
 	// Send out your entity info to the rest of the players
-	//m_componentSystems.networkSenderSystem->update(0.0f);
+	m_componentSystems.networkSenderSystem->update(0.0f);
 
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(dt);
@@ -859,6 +862,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
+	// TODO? move to its own thread
+	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+	
 	// Updates the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 

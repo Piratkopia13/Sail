@@ -122,7 +122,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::N
 	}
 
 	// Manually add entity to this system, don't wait for ECS
-	entities.push_back(e.get());
+	//entities.push_back(e.get());
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities

@@ -9,6 +9,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 
+
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
