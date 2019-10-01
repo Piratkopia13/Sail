@@ -1,7 +1,7 @@
 #pragma once
 #include "..//BaseComponentSystem.h"
+#include "../../Physics/Physics.h"
 
-class Octree;
 class GameDataTracker;
 
 class PhysicSystem final : public BaseComponentSystem

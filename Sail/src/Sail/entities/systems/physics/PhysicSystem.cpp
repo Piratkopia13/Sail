@@ -178,7 +178,7 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 		}
 
 		if (paddingTooBig) {
-			physics->padding *= 0.9f;
+			physics->padding *= 0.75f;
 		}
 
 		physics->m_oldVelocity = physics->velocity;
