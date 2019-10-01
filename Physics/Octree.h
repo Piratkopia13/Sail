@@ -14,10 +14,8 @@ public:
 	};
 
 	struct RayIntersectionInfo {
-		float closestHit = -1;
-		glm::vec3 normal;
-		glm::vec3 positions[3];
-		Entity* entity = nullptr;
+		float closestHit = -1.0f;
+		CollisionInfo info;
 	};
 
 private:

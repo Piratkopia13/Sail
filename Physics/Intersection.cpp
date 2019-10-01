@@ -319,9 +319,9 @@ float Intersection::rayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 		//Only check if triangle is facing ray start
 		if (padding != 0.0f) {
 			//Add padding
-			glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) + triangleNormal) * padding;
-			glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) + triangleNormal) * padding;
-			glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) + triangleNormal) * padding;
+			glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) * 20.0f + triangleNormal) * padding;
+			glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) * 20.0f + triangleNormal) * padding;
+			glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) * 20.0f + triangleNormal) * padding;
 
 			returnValue = rayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
 		}

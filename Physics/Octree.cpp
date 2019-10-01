@@ -292,13 +292,13 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 
 void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData, float padding) {
 	float intersectionDistance = Intersection::rayWithPaddedTriangle(rayStart, rayDir, v1, v2, v3, padding);
-	if (intersectionDistance >= 0.0f && (intersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) {
+	if (intersectionDistance >= 0.0f && (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) {
+		outIntersectionData->info.normal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+		outIntersectionData->info.positions[0] = v1;
+		outIntersectionData->info.positions[1] = v2;
+		outIntersectionData->info.positions[2] = v3;
+		outIntersectionData->info.entity = meshEntity;
 		outIntersectionData->closestHit = intersectionDistance;
-		outIntersectionData->normal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
-		outIntersectionData->positions[0] = v1;
-		outIntersectionData->positions[1] = v2;
-		outIntersectionData->positions[2] = v3;
-		outIntersectionData->entity = meshEntity;
 	}
 }
 

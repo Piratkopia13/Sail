@@ -130,7 +130,7 @@ const bool PhysicSystem::rayCastCheck(Entity* e, float& dt) {
 	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
 	BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
 
-	if (glm::abs(physics->velocity.x * dt) > glm::abs(boundingBox->getHalfSize().x) 
+	if (glm::abs(physics->velocity.x * dt) > glm::abs(boundingBox->getHalfSize().x)
 		|| glm::abs(physics->velocity.y * dt) > glm::abs(boundingBox->getHalfSize().y)
 		|| glm::abs(physics->velocity.z * dt) > glm::abs(boundingBox->getHalfSize().z)) {
 		//Object is moving at a speed that risks missing collisions
@@ -163,20 +163,14 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 		//Collision update
 		bool paddingTooBig = true;
 
-		if (Intersection::aabbWithTriangle(*boundingBox, intersectionInfo.positions[0], intersectionInfo.positions[1], intersectionInfo.positions[2])) {
-			Octree::CollisionInfo tempInfo;
-			tempInfo.entity = intersectionInfo.entity;
-			tempInfo.normal = intersectionInfo.normal;
-			tempInfo.positions[0] = intersectionInfo.positions[0];
-			tempInfo.positions[1] = intersectionInfo.positions[1];
-			tempInfo.positions[2] = intersectionInfo.positions[2];
-			physics->collisions.push_back(tempInfo);
+		if (Intersection::aabbWithTriangle(*boundingBox, intersectionInfo.info.positions[0], intersectionInfo.info.positions[1], intersectionInfo.info.positions[2])) {
+			physics->collisions.push_back(intersectionInfo.info);
 
 			//Stop movement towards triangle
-			float projectionSize = glm::dot(physics->velocity, -intersectionInfo.normal);
+			float projectionSize = glm::dot(physics->velocity, -intersectionInfo.info.normal);
 
 			if (projectionSize > 0.0f) { //Is pushing against wall
-				physics->velocity += intersectionInfo.normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
+				physics->velocity += intersectionInfo.info.normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
 				paddingTooBig = false;
 			}
 		}
@@ -187,9 +181,7 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 
 		physics->m_oldVelocity = physics->velocity;
 
-		//if (rayCastCheck(e, dt)) {
-			rayCastUpdate(e, dt);
-		//}
+		rayCastUpdate(e, dt);
 	}
 }
 
