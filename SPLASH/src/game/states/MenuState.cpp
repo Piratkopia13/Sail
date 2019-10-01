@@ -6,6 +6,8 @@
 #include "Network/NWrapperSingleton.h"
 #include "Network/NWrapper.h"
 
+#include "Sail/entities/systems/render/RenderSystem.h"
+
 MenuState::MenuState(StateStack& stack) 
 	: State(stack)
 {
@@ -32,7 +34,7 @@ bool MenuState::update(float dt, float alpha) {
 
 bool MenuState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	m_scene.draw();
+	ECS::Instance()->getSystem<RenderSystem>()->draw();
 	return false;
 }
 

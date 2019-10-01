@@ -3,6 +3,7 @@
 #include "states/MenuState.h"
 #include "states/LobbyHostState.h"
 #include "states/LobbyClientState.h"
+#include "states/InGameMenuState.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -18,6 +19,7 @@ Game::Game(HINSTANCE hInstance)
 	
 	// Initialize the Network wrapper instance.
 	//NetworkWrapper::getInstance().initialize();
+	//
 }
 
 Game::~Game() {
@@ -34,6 +36,8 @@ void Game::registerStates() {
 	m_stateStack.registerState<LobbyHostState>(States::HostLobby);
 	m_stateStack.registerState<LobbyClientState>(States::JoinLobby);
 	m_stateStack.registerState<MenuState>(States::MainMenu);
+	m_stateStack.registerState<InGameMenuState>(States::Pause);
+	m_stateStack.registerState<MenuState>(States::End);
 }
 
 void Game::dispatchEvent(Event& event) {

@@ -5,6 +5,7 @@
 class AiSystem;
 class AnimationSystem;
 class CandleSystem;
+class EntityAdderSystem;
 class EntityRemovalSystem;
 class LifeTimeSystem;
 class LightSystem;
@@ -15,6 +16,7 @@ class GunSystem;
 class ProjectileSystem;
 class GameInputSystem;
 class AudioSystem;
+class RenderSystem;
 
 class GameState : public State {
 public:
@@ -55,6 +57,7 @@ private:
 		AiSystem* aiSystem = nullptr;
 		AnimationSystem* animationSystem = nullptr;
 		CandleSystem* candleSystem = nullptr;
+		EntityAdderSystem* entityAdderSystem = nullptr;
 		EntityRemovalSystem* entityRemovalSystem = nullptr;
 		LifeTimeSystem* lifeTimeSystem = nullptr;
 		LightSystem* lightSystem = nullptr;
@@ -66,6 +69,7 @@ private:
 		ProjectileSystem* projectileSystem = nullptr;
 		GameInputSystem* gameInputSystem = nullptr;
 		AudioSystem* audioSystem = nullptr;
+		RenderSystem* renderSystem = nullptr;
 	};
 
 	Application* m_app;
@@ -78,7 +82,6 @@ private:
 	const std::string createCube(const glm::vec3& position);
 
 	Systems m_componentSystems;
-	Scene m_scene;
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
@@ -107,6 +110,8 @@ private:
 	
 
 	std::unique_ptr<Model> m_boundingBoxModel;
+
+	bool m_paused = false;
 
 	Octree* m_octree;
 	bool m_disableLightComponents;
