@@ -2,10 +2,9 @@
 
 #include "../BaseComponentSystem.h"
 
-class NetworkSenderSystem : BaseComponentSystem {
+class NetworkSenderSystem : public BaseComponentSystem {
 public:
 	NetworkSenderSystem();
 	~NetworkSenderSystem();
 	void update(float dt) override;
-
 };

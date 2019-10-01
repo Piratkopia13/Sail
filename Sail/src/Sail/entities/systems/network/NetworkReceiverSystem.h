@@ -3,11 +3,11 @@
 #include "../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
 
-class NetworkReceiverSystem : BaseComponentSystem {
+class NetworkReceiverSystem : public BaseComponentSystem {
 public:
 	NetworkReceiverSystem();
 	~NetworkReceiverSystem();
-	void update(float dt) override;
+	void update(float dt = 0.0f) override;
 
 	void pushDataToBuffer(std::string data);
 private:

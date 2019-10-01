@@ -4,7 +4,7 @@
 
 
 namespace Netcode {
-	static NetworkObjectID gNetworkIDCounter = 0;
+	extern NetworkObjectID gNetworkIDCounter = 0;
 }
-
-
+//
+//

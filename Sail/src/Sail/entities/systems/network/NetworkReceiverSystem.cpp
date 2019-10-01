@@ -6,8 +6,9 @@
 #include "Network/NWrapperSingleton.h"
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
-NetworkReceiverSystem::NetworkReceiverSystem() {
-
+NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
+	// As of right now this system can create entities so don't run it in parallel with other systems
+	registerComponent<NetworkReceiverComponent>(true, true, true);
 }
 
 NetworkReceiverSystem::~NetworkReceiverSystem() {
@@ -86,20 +87,45 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 }
 
 void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::NetworkEntityType entityType, const glm::vec3& translation) {
+	using namespace Netcode;
 	auto e = ECS::Instance()->createEntity(std::string("NetcodedEntity " + id));
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
 
-	//switch (entityType) {
+	// If you are the host create a sender component to pass on the info to all players
+	if (NWrapperSingleton::getInstance().isHost()) {
+		// Currently assumes that the data type is MODIFY_TRANSFORM, might be changed in the future
+		//e->addComponent<NetworkSenderComponent>(NetworkDataType::MODIFY_TRANSFORM, entityType, id);
+	}
 
-	//}
-	//
 
-	// TODO: Manually add entity to this system, don't wait for ECS
+	// TODO: USE AN ENTITY FACTORY INSTEAD
+	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
+	Model* characterModel = &Application::getInstance()->getResourceManager().getModel("character1.fbx", shader);
+	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
+
+	auto boundingBoxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), wireframeShader);
+	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
 
+	// create the new entity
+	switch (entityType) {
+	case NetworkEntityType::PLAYER_ENTITY:
+		// TODO: use some entity factory to make the creation of entities unified
+		e->addComponent<ModelComponent>(characterModel);
+		e->addComponent<TransformComponent>(translation);
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel.get());
+		e->addComponent<CollidableComponent>();
+		break;
+	default:
+		break;
+	}
+
+	// Manually add entity to this system, don't wait for ECS
+	entities.push_back(e.get());
 }
 
-// Might need some optimization if we have a lot of networked entities
+// Might need some optimization (like sorting) if we have a lot of networked entities
 void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, const glm::vec3& translation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {

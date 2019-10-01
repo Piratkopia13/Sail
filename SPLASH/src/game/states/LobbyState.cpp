@@ -226,6 +226,7 @@ void LobbyState::renderStartButton() {
 
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
+			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(m_me, m_players));
 			m_network->sendMsgAllClients("t");
 			this->requestStackPop();
 			this->requestStackPush(States::Game);

@@ -129,7 +129,7 @@ void NWrapper::sendChatAllClients(std::string msg) {
 	m_network->send(msg.c_str(), msg.length() + 1, -1);
 }
 
-void NWrapper::sendSerializedData(std::string data) {
+void NWrapper::sendSerializedDataAllClients(std::string data) {
 	data = std::string("s") + data;
 	m_network->send(data.c_str(), data.length(), -1);
 }

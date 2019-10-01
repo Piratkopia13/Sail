@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "NetworkSenderSystem.h"
+
 #include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/Entity.h"
 
@@ -7,9 +8,10 @@
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
 
-NetworkSenderSystem::NetworkSenderSystem() {
-	requiredComponentTypes.push_back(NetworkSenderComponent::ID);
-	readBits |= NetworkSenderComponent::BID;
+NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
+	registerComponent<NetworkSenderComponent>(true, true, true);
+	//requiredComponentTypes.push_back(NetworkSenderComponent::ID);
+	//readBits |= NetworkSenderComponent::BID;
 	//writeBits |= NetworkSenderComponent::BID;
 }
 
@@ -64,6 +66,9 @@ void NetworkSenderSystem::update(float dt) {
 			// Send translation
 			TransformComponent* t = e->getComponent<TransformComponent>();
 			Archive::archiveVec3(ar, t->getTranslation());
+
+			// After the remote entity has been created we'll want to track and modify it's transform
+			nsc->m_dataType = Netcode::MODIFY_TRANSFORM;
 		}
 		break;
 		case NetworkDataType::MODIFY_TRANSFORM:
@@ -88,5 +93,9 @@ void NetworkSenderSystem::update(float dt) {
 	std::string binaryData = os.str();
 
 	// send the serialized data over the network
-	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedData(binaryData);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);
+	} else {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
+	}
 }

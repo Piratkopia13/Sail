@@ -261,6 +261,7 @@ bool Network::send(const char* message, size_t size, Connection* conn)
 	memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
 
 	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
+		delete[] msg;
 		return false;
 	}
 

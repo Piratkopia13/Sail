@@ -15,9 +15,11 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/Input/GameInputSystem.h"
-#include "Sail/entities/systems/network/NetworkHostSystem.h"
-#include "Sail/entities/systems/network/NetworkClientSystem.h"
-#include "Sail/entities/systems/network/Networksystem.h"
+//#include "Sail/entities/systems/network/NetworkHostSystem.h"
+//#include "Sail/entities/systems/network/NetworkClientSystem.h"
+//#include "Sail/entities/systems/network/Networksystem.h"
+#include "Sail/entities/systems/network/NetworkReceiverSystem.h"
+#include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
@@ -135,12 +137,15 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
-	if (NWrapperSingleton::getInstance().isHost()) {
-		m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkHostSystem>();
-	}
-	else {
-		m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkClientSystem>();
-	}
+	//if (NWrapperSingleton::getInstance().isHost()) {
+	//	m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkHostSystem>();
+	//}
+	//else {
+	//	m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkClientSystem>();
+	//}
+
+	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
@@ -206,21 +211,42 @@ GameState::GameState(StateStack& stack)
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 
+
+	// Get the player id's and names from the lobby
+	const LobbyToGameData lobbyInfo = m_app->getStateStorage().getLobbyToGameData();
+
+	// Player spawn positions are based on their unique id
+	// This will likely be changed later so that the host sets all the players' start positions
+	float spawnOffset = static_cast<float>(lobbyInfo.m_me.id);
+	
 	// Player creation
 	auto player = ECS::Instance()->createEntity("player");
 	
+
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	m_player = player.get();
 
 	player->addComponent<PlayerComponent>();
-	player->addComponent<TransformComponent>();
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	player->addComponent<TransformComponent>(glm::vec3(1.6f + spawnOffset, 0.9f, 10.f));
+	//player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	
+	player->addComponent<NetworkSenderComponent>(
+		Netcode::NetworkDataType::CREATE_NETWORKED_ENTITY,
+		Netcode::NetworkEntityType::PLAYER_ENTITY,
+		lobbyInfo.m_me.id);
+
+	//if (NWrapperSingleton::getInstance().isHost()) {
+	//	// Send the start positions of all players to all players
+	//	
+	//} else {
+	//	player->addComponent<NetworkReceiverComponent>();
+	//}
+
 
 	player->addComponent<PhysicsComponent>();
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
-
-
+	
 
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
@@ -249,8 +275,11 @@ GameState::GameState(StateStack& stack)
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+	//player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 
+
+
+	// Other players 
 
 	/*
 		Creation of entities
@@ -529,7 +558,10 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 	// TODO: save data string to buffer which will be read from in NetworkReceiverSystem
 
 
-	m_componentSystems.networkSystem->onSerializedPackageRecieved(event);
+	//m_componentSystems.networkSystem->onSerializedPackageRecieved(event);
+	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+
+
 	return false;
 }
 
@@ -790,6 +822,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
+	// Update entities with info from the network
+	//m_componentSystems.networkReceiverSystem->update();
+
 	m_componentSystems.physicSystem->update(dt);
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
@@ -815,6 +850,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 		fut.get();
 	}
 
+	// Send out your entity info to the rest of the players
+	//m_componentSystems.networkSenderSystem->update(0.0f);
+
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(dt);
 }
@@ -825,7 +863,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 
 	// TODO: Move to correct place
-	m_componentSystems.networkSystem->update(dt);
+	//m_componentSystems.networkSystem->update(dt);
 
 	// Update the player's candle with the current camera position
 	//m_componentSystems.candleSystem->updatePlayerCandle(m_playerController.getCameraController(), m_playerController.getYaw());
