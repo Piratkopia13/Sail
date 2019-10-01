@@ -452,13 +452,6 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.renderSystem->toggleHitboxes();
 	}
 
-	if (Input::WasKeyJustPressed(SAIL_KEY_P)) {
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
-
-		shutDownGameState();
-	}
-
 	//Test ray intersection
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
@@ -556,10 +549,9 @@ bool GameState::onResize(WindowResizeEvent& event) {
 }
 
 bool GameState::onPlayerCandleHit(PlayerCandleHitEvent& event) {
-	
-	// Will be replaced by EndState soon
-	std::cout << "Player hit\n";
-	
+	this->requestStackPop();
+	this->requestStackPush(States::EndGame);
+	m_poppedThisFrame = true;
 	return true;
 }
 
@@ -859,6 +851,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
+
+	if (m_poppedThisFrame) {
+		shutDownGameState();
+	}
 }
 
 

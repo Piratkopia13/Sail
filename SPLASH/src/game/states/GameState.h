@@ -117,4 +117,6 @@ private:
 
 	std::vector<std::future<BaseComponentSystem*>> m_runningSystemJobs;
 	std::vector<BaseComponentSystem*> m_runningSystems;
+
+	bool m_poppedThisFrame = false;
 };
