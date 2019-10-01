@@ -565,7 +565,6 @@ bool GameState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
-	GameDataTracker::getInstance().renderImgui();
 
 	return false;
 }
