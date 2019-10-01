@@ -384,24 +384,25 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<PhysicsComponent>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		
-		e = ECS::Instance()->createEntity("AiCharacter");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
-		e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
-		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
-		
 
+		int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+		for (size_t i = 0; i < botCount; i++) {
+			e = ECS::Instance()->createEntity("AiCharacter");
+			e->addComponent<ModelComponent>(characterModel);
+			e->addComponent<TransformComponent>(glm::vec3(5.f*(i+1), 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+			e->addComponent<BoundingBoxComponent>(boundingBoxModel);
+			e->addComponent<CollidableComponent>();
+			e->addComponent<PhysicsComponent>();
+			e->addComponent<AiComponent>();
+			e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
+			e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
-		e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
+			e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
+		}
 
 
 #ifdef _DEBUG
-		// Candle1 holds all lights you can place in debug
+		// Candle1 holds all lights you can place in debug...
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
