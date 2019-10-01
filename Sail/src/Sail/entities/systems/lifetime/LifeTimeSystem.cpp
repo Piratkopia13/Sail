@@ -4,9 +4,8 @@
 #include "..//..//Entity.h"
 
 LifeTimeSystem::LifeTimeSystem() {
-	requiredComponentTypes.push_back(LifeTimeComponent::ID);
-	readBits |= LifeTimeComponent::BID;
-	writeBits |= LifeTimeComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<LifeTimeComponent>(true, true, true);
 }
 
 LifeTimeSystem::~LifeTimeSystem() {

@@ -10,7 +10,8 @@
 #include "cereal/types/vector.hpp"
 
 NetworkClientSystem::NetworkClientSystem() {
-	// Required components is handled in NetworkSystem
+	// TODO: System owner should check if this is correct
+	registerComponent<TransformComponent>(true, true, true);
 }
 
 NetworkClientSystem::~NetworkClientSystem() {

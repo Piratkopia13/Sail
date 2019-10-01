@@ -9,7 +9,7 @@ DescriptorHeap::DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int num
 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.NumDescriptors = numDescriptors;
-	heapDesc.Flags = (shaderVisible) ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	heapDesc.Flags = (type != D3D12_DESCRIPTOR_HEAP_TYPE_RTV && type != D3D12_DESCRIPTOR_HEAP_TYPE_DSV && shaderVisible) ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	heapDesc.Type = type;
 	ThrowIfFailed(context->getDevice()->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_descHeap)));
 
@@ -18,6 +18,10 @@ DescriptorHeap::DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int num
 
 DescriptorHeap::~DescriptorHeap() {
 
+}
+
+ID3D12DescriptorHeap* DescriptorHeap::get() const {
+	return m_descHeap.Get();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::getNextCPUDescriptorHandle(int nSteps) {
