@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Sail/api/Renderer.h"
-#include <glm/glm.hpp>
 #include "../DX12API.h"
-#include "Sail/api/ComputeShaderDispatcher.h"
 
 class DX12RenderableTexture;
 class PostProcessPipeline;

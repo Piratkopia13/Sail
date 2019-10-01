@@ -4,7 +4,6 @@
 #include "Sail/entities/Entity.h"
 
 class Model;
-class Scene;
 
 class Octree {
 public:
@@ -32,7 +31,6 @@ private:
 
 	Node m_baseNode;
 
-	Scene* m_scene;
 	Model* m_boundingBoxModel;
 
 	int m_softLimitMeshes;
@@ -50,7 +48,7 @@ private:
 	int pruneTreeRec(Node* currentNode);
 
 public:
-	Octree(Scene *scene, Model *boundingBoxModel);
+	Octree(Model *boundingBoxModel);
 	~Octree();
 
 	void addEntity(Entity* newEntity);

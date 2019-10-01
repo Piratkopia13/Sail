@@ -15,16 +15,16 @@
 
 
 GunSystem::GunSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(GunComponent::ID);
-	readBits |= GunComponent::BID;
-	writeBits |= GunComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<GunComponent>(true, true, true);
 }
 
 GunSystem::~GunSystem() {
 
 }
 
-void GunSystem::update(float dt, Scene* scene) {
+
+void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
 
@@ -48,7 +48,6 @@ void GunSystem::update(float dt, Scene* scene) {
 				physics->drag = 2.0f;
 				physics->bounciness = 0.1f;
 
-				scene->addEntity(e);//change when scene is a component.
 			}
 			gun->projectileSpawnTimer += dt;
 			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {
@@ -61,7 +60,4 @@ void GunSystem::update(float dt, Scene* scene) {
 			gun->projectileSpawnTimer = 0.f;
 		}
 	}
-}
-void GunSystem::update(float dt) {
-
-}
+} // update

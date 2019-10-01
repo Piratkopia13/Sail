@@ -2,21 +2,20 @@
 
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/ECS.h"
-#include "Sail/graphics/Scene.h"
 #include "Sail/graphics/geometry/Model.h"
 
 #include "Intersection.h"
 
 #include "Octree.h"
 
-Octree::Octree(Scene* scene, Model* boundingBoxModel) {
-	m_scene = scene;
+Octree::Octree(Model* boundingBoxModel) {
+	
 	m_boundingBoxModel = boundingBoxModel;
 	m_softLimitMeshes = 4;
 	m_minimumNodeHalfSize = 4.0f;
 
 	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	m_scene->addEntity(m_baseNode.bbEntity);
+	
 	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* tempBoundingBox = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	tempBoundingBox->setPosition(glm::vec3(0.0f));
@@ -39,7 +38,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 	Node newBaseNode;
 	const BoundingBox* baseNodeBB = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	m_scene->addEntity(newBaseNode.bbEntity);
+	
 	newBaseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* newBaseNodeBoundingBox = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNodeBoundingBox->setPosition(baseNodeBB->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(x * baseNodeBB->getHalfSize().x * 2.0f, y * baseNodeBB->getHalfSize().y * 2.0f, z * baseNodeBB->getHalfSize().z * 2.0f));
@@ -56,7 +55,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 				}
 				else {
 					tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-					m_scene->addEntity(tempChildNode.bbEntity);
+					
 					tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 					BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 					tempChildBoundingBox->setHalfSize(baseNodeBB->getHalfSize());
@@ -135,7 +134,7 @@ bool Octree::addEntityRec(Entity* newEntity, Node* currentNode) {
 							const BoundingBox* currentNodeBB = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							Node tempChildNode;
 							tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-							m_scene->addEntity(tempChildNode.bbEntity);
+							
 							tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 							BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							tempChildBoundingBox->setHalfSize(currentNodeBB->getHalfSize() / 2.0f);

@@ -6,8 +6,8 @@
 #include "Sail/KeyBinds.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(PlayerComponent::ID);
-	readBits |= PlayerComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<PlayerComponent>(true, true, false);
 	
 	// cam variables
 	m_yaw = 90.f;
@@ -68,6 +68,29 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		}
 		else {
 			m_wasSpacePressed = false;
+		}
+
+		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
+			for (int i = 0; i < e->getChildEntities().size(); i++) {
+				auto candleE = e->getChildEntities()[i];
+				auto candleComp = candleE->getComponent<CandleComponent>();
+
+				auto candleTransComp = candleE->getComponent<TransformComponent>();
+				auto playerTransComp = e->getComponent<TransformComponent>();
+				if (candleComp->isCarried() && physicsComp->onGround) {
+					candleComp->toggleCarried();
+
+					candleTransComp->setTranslation(playerTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
+					candleTransComp->removeParent();
+					i = e->getChildEntities().size();
+				}
+				else if (!candleComp->isCarried() && glm::length(playerTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f) {
+					candleComp->toggleCarried();
+					candleTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
+					candleTransComp->setParent(playerTransComp);
+					i = e->getChildEntities().size();
+				}
+			}
 		}
 
 
