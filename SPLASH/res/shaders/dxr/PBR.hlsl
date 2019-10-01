@@ -123,12 +123,17 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
 		PointLightInput p = CB_SceneData.pointLights[i];
 
+        // Ignore point light if color is black
+		if (all(p.color == 0.0f)) {
+			continue;
+		}
+
         float3 L = normalize(p.position - worldPosition);
         float3 H = normalize(V + L);
         float distance = length(p.position - worldPosition);
     
         // Dont do any shading if in shadow or light is black
-        if (Utils::rayHitAnything(worldPosition, L, distance) || all(p.color == 0.0f)) {
+        if (Utils::rayHitAnything(worldPosition, L, distance)) {
             continue;
         }
 

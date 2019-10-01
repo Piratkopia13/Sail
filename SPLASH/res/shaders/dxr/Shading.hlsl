@@ -14,11 +14,16 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
 		PointLightInput p = CB_SceneData.pointLights[i];
 
+		// Ignore point light if color is black
+		if (all(p.color == 0.0f)) {
+			continue;
+		}
+
 		float3 hitToLight = p.position - worldPosition;
 		float distanceToLight = length(hitToLight);
 
 		// Dont do any shading if in shadow or light is black
-		if (Utils::rayHitAnything(worldPosition, normalize(hitToLight), distanceToLight) || all(p.color == 0.0f)) {
+		if (Utils::rayHitAnything(worldPosition, normalize(hitToLight), distanceToLight)) {
 			continue;
 		}
 
@@ -46,8 +51,8 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.9f) {
 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
 	
-	// payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
-	payload.color = phongShade(worldPosition, worldNormal, albedo);
+	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
+	// payload.color = phongShade(worldPosition, worldNormal, albedo);
 
 	// float4 phongColor = phongShade(worldPosition, worldNormal, albedo);
 	
