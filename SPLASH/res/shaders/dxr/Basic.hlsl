@@ -161,9 +161,26 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	Vertex vertex2 = vertices[i2];
 	Vertex vertex3 = vertices[i3];
 
+	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 	float3 normalInLocalSpace = Utils::barrypolation(barycentrics, vertex1.normal, vertex2.normal, vertex3.normal);
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
-	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
+
+	float3 tangentInLocalSpace = Utils::barrypolation(barycentrics, vertex1.tangent, vertex2.tangent, vertex3.tangent);
+	float3 tangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), tangentInLocalSpace));
+
+	float3 bitangentInLocalSpace = Utils::barrypolation(barycentrics, vertex1.bitangent, vertex2.bitangent, vertex3.bitangent);
+	float3 bitangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), bitangentInLocalSpace));
+
+	// Create TBN matrix to go from tangent space to world space
+	float3x3 tbn = float3x3(
+	  tangentInWorldSpace,
+	  bitangentInWorldSpace,
+	  normalInWorldSpace
+	);
+	if (CB_MeshData.data[instanceID].flags & MESH_HAS_NORMAL_TEX) {
+        normalInWorldSpace = mul(normalize(sys_texNormal.SampleLevel(ss, texCoords, 0).rgb * 2.f - 1.f), tbn) / 2.f + .5f;
+	}
+
 
 	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
 	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
