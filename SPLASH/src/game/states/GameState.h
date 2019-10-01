@@ -40,6 +40,7 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
@@ -116,4 +117,6 @@ private:
 
 	std::vector<std::future<BaseComponentSystem*>> m_runningSystemJobs;
 	std::vector<BaseComponentSystem*> m_runningSystems;
+
+	bool m_poppedThisFrame = false;
 };
