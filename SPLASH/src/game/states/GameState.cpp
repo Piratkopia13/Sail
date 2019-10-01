@@ -535,7 +535,6 @@ bool GameState::processInput(float dt) {
 	return true;
 }
 
-
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
@@ -856,7 +855,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 		shutDownGameState();
 	}
 }
-
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates the camera

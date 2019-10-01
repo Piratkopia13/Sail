@@ -3,7 +3,7 @@
 #include "Sail/Application.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/KeyBinds.h"
-
+#include "Sail/utils/GameDataTracker.h"
 
 #include "../libraries/imgui/imgui.h"
 
@@ -31,6 +31,7 @@ bool EndGameState::render(float dt, float alpha) {
 
 	// Call the empty draw function to just clear the screen until we have actual graphics.
 	ECS::Instance()->getSystem<RenderSystem>()->draw();
+
 	return true;
 }
 
@@ -52,6 +53,7 @@ bool EndGameState::renderImgui(float dt) {
 	}
 	ImGui::End();
 
+	GameDataTracker::getInstance().renderImgui();
 
 	return true;
 }
