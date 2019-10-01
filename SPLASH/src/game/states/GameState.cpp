@@ -389,7 +389,7 @@ GameState::GameState(StateStack& stack)
 		for (size_t i = 0; i < botCount; i++) {
 			e = ECS::Instance()->createEntity("AiCharacter");
 			e->addComponent<ModelComponent>(characterModel);
-			e->addComponent<TransformComponent>(glm::vec3(5.f*i, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+			e->addComponent<TransformComponent>(glm::vec3(5.f*(i+1), 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 			e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 			e->addComponent<CollidableComponent>();
 			e->addComponent<PhysicsComponent>();
