@@ -3,7 +3,8 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/candles/CandleSystem.h"
-#include "Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
+#include "Sail/entities/systems/entityManagement/EntityAdderSystem.h"
+#include "Sail/entities/systems/entityManagement/EntityRemovalSystem.h"
 #include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "Sail/entities/systems/light/LightSystem.h"
 #include "Sail/entities/systems/gameplay/AiSystem.h"
@@ -101,6 +102,9 @@ GameState::GameState(StateStack& stack)
 
 	// Create lifetime system
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
+
+	// Create entity adder system
+	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
 
 	// Create entity removal system
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
@@ -202,8 +206,6 @@ GameState::GameState(StateStack& stack)
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
-
-
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
 	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
@@ -224,7 +226,7 @@ GameState::GameState(StateStack& stack)
 
 	// Create candle for the player
 	m_currLightIndex = 0;
-	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
+	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 1.0f, 0.f));
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
 	player->addChildEntity(e);
 	
@@ -458,7 +460,17 @@ bool GameState::processInput(float dt) {
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
 			if ( aiComp->entityTarget == nullptr ) {
-				aiComp->setTarget(m_player);
+				
+				// Find the candle child entity of player
+				Entity* candle = nullptr;
+				std::vector<Entity::SPtr> children = m_player->getChildEntities();
+				for (auto& child : children) {
+					if (child->hasComponent<CandleComponent>()) {
+						candle = child.get();
+						break;
+					}
+				}
+				aiComp->setTarget(candle);
 			} else {
 				aiComp->setTarget(nullptr);
 			}
@@ -784,6 +796,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
+	m_componentSystems.entityAdderSystem->update(0.0f);
+
 	m_componentSystems.physicSystem->update(dt);
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
@@ -799,9 +813,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
-
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
-
 	runSystem(dt, m_componentSystems.audioSystem);
 
 	// Wait for all the systems to finish before starting the removal system
@@ -810,7 +822,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	}
 
 	// Will probably need to be called last
-	m_componentSystems.entityRemovalSystem->update(dt);
+	m_componentSystems.entityRemovalSystem->update(0.0f);
 }
 
 
