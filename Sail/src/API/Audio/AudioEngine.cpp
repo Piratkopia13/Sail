@@ -239,16 +239,6 @@ void AudioEngine::initXAudio2() {
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
 
-	// If the 'streamIndex' we're trying to stream to is busy, we tell it to stop streaming
-	// and then we wait for that thread to finish streaming on our index before continuing.
-	//if (m_isStreaming[myIndex]) {
-	//	while (m_isFinished[myIndex] == false) {
-	//		if (m_isStreaming[myIndex]) {
-	//			m_isStreaming[myIndex] = false;
-	//		}
-	//	}
-	//}
-
 	if (m_isRunning) {
 
 #pragma region VARIABLES_LIST
