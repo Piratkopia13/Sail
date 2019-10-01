@@ -105,7 +105,8 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::N
 		}
 	}
 	
-	auto e = ECS::Instance()->createEntity(std::string("NetcodedEntity " + id));
+	//auto e = ECS::Instance()->createEntity(std::string("NetcodedEntity " + id));
+	auto e = ECS::Instance()->createEntity("ReceiverEntity");
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
 
 	// If you are the host create a sender component to pass on the info to all players
