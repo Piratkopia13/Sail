@@ -11,6 +11,8 @@ AudioSystem::AudioSystem() {
 	registerComponent<AudioComponent>(true, true, true);
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/jump.wav");
+	m_audioEngine.loadSound("../Audio/landingGrunt.wav");
+	m_audioEngine.loadSound("../Audio/pew.wav");
 }
 
 AudioSystem::~AudioSystem() {
@@ -74,7 +76,7 @@ void AudioSystem::update(float dt) {
 		std::list<std::pair<std::string, int>>::iterator j;
 		std::list<std::pair<std::string, int>>::iterator streamToBeDeleted;
 		std::string filename = "";
-		int IDHolder = 0;
+		int streamIndex = 0;
 
 		for (i = audioC->m_streamingRequests.begin(); i != audioC->m_streamingRequests.end();) {
 
@@ -84,32 +86,21 @@ void AudioSystem::update(float dt) {
 				toBeDeleted = i;
 				i++;
 
-				//if (audioC->m_currentlyStreaming.find(filename) != audioC->m_currentlyStreaming.end()) {
-				//	std::cout << "OH SHIET\n";
-				//}
-				//IDHolder = m_audioEngine.getStreamIndex();
+				streamIndex = m_audioEngine.getAvailableStreamIndex();
 
-				int id = -1;
-				for (size_t i = 0; i < STREAMED_SOUNDS_COUNT; i++)
-				{
-					if (!m_isStreaming[i]) {
-						id = i;
-						m_isStreaming[i] = true;
-						break;
-					}
+				if (streamIndex == -1) {
+					Logger::Error("Too many sounds already streaming; failed to stream another one!");
 				}
-				if (id == -1) {
-					//Force song to quit and steal id from it.
+				else {
+
+					Application::getInstance()->pushJobToThreadPool(
+						[this, filename, streamIndex](int id) {
+							return m_audioEngine.streamSound(filename, streamIndex);
+						});
+
+					audioC->m_currentlyStreaming.emplace_back(filename, streamIndex);
+					audioC->m_streamingRequests.erase(toBeDeleted);
 				}
-
-				Application::getInstance()->pushJobToThreadPool(
-					[this, filename](int id) {
-						return m_audioEngine.streamSound(filename);
-					});
-
-				audioC->m_currentlyStreaming.emplace_back(filename, IDHolder);
-				audioC->m_streamingRequests.erase(toBeDeleted);
-				// NOTE: We are NOT incrementing because we JUST ERASED an element from the map
 			}
 			else/*if (i.second == false)*/ {
 
@@ -124,11 +115,10 @@ void AudioSystem::update(float dt) {
 
 					if (streamToBeDeleted->first == filename) {
 
-						bool expectedValue = true;
-						while (m_audioEngine.m_streamLocks[streamToBeDeleted->second].compare_exchange_strong(expectedValue, true));
+						bool expectedValue = false;
+						while (!m_audioEngine.m_streamLocks[streamToBeDeleted->second].compare_exchange_strong(expectedValue, true));
 
 						m_audioEngine.stopSpecificStream(streamToBeDeleted->second);
-						m_audioEngine.m_streamLocks[streamToBeDeleted->second].store(false);
 						audioC->m_currentlyStreaming.erase(streamToBeDeleted);
 
 						break;

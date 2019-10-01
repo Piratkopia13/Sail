@@ -59,15 +59,20 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		if (Input::IsKeyPressed(KeyBinds::moveUp)) {
 			if (!m_wasSpacePressed && physicsComp->onGround) {
 				physicsComp->velocity.y = 5.0f;
-
-
 				audioComp->m_isPlaying[SoundType::JUMP] = true;
-				audioComp->m_playOnce[SoundType::JUMP] = true;
 			}
 			m_wasSpacePressed = true;
 		}
 		else {
 			m_wasSpacePressed = false;
+		}
+
+		if (!physicsComp->onGround) {
+			m_hasLanded = false;
+		}
+		else if (physicsComp->onGround && m_hasLanded == false) {
+			audioComp->m_isPlaying[SoundType::LANDING] = true;
+			m_hasLanded = true;
 		}
 
 		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
@@ -113,8 +118,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 			// AUDIO TESTING (turn ON streaming)
 			if (m_canStart) {
-				std::cout << "FIRST\t";
-				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankShortFade.xwb", true);
+				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankLong.xwb", true);
 				m_canStart = false;
 				m_canStop = true;
 			}
@@ -123,16 +127,17 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
 			if (!physicsComp->onGround) {
 				acceleration = acceleration * 0.5f;
-				std::cout << "\n\t\t\tAIR!!\n";
 				// AUDIO TESTING (turn OFF looping running sound)
 				audioComp->m_isPlaying[SoundType::RUN] = false;
 			}
 			// AUDIO TESTING (playing a looping running sound)
-			else {
-				std::cout << "\n\t\t\tGROUND!!\n";
+			else if (m_runSoundTimer > 0.3f) {
 				audioComp->m_isPlaying[SoundType::RUN] = true;
-				audioComp->m_playOnce[SoundType::RUN] = false;
 			}
+			else {
+				m_runSoundTimer += dt;
+			}
+
 			physicsComp->accelerationToAdd = 
 				glm::normalize(right * rightMovement + forward * forwardMovement)
 				* acceleration;
@@ -140,11 +145,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		else {
 			// AUDIO TESTING (turn OFF looping running sound)
 			audioComp->m_isPlaying[SoundType::RUN] = false;
+			m_runSoundTimer = 0.0f;
 
 			// AUDIO TESTING (turning OFF streaming)
 			if (m_canStop) {
-				std::cout << "SECOND\n";
-				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankShortFade.xwb", false);
+				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankLong.xwb", false);
 				m_canStart = true;
 				m_canStop = false;
 			}
@@ -155,7 +160,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 void GameInputSystem::processMouseInput(const float& dt) {
 	// Toggle cursor capture on right click
 	for (auto e : entities) {
-
+		AudioComponent* audioComp = e->getComponent<AudioComponent>();
 
 		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
 			Input::HideCursor(!Input::IsCursorHidden());
@@ -165,6 +170,8 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+			audioComp->m_isPlaying[SoundType::SHOOT] = true;
+			audioComp->m_playOnce[SoundType::SHOOT] = true;
 		}
 
 		// Update pitch & yaw if window has focus

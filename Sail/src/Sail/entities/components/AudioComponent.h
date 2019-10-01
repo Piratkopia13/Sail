@@ -6,7 +6,7 @@
 #include <stack>
 
 namespace SoundType {
-	enum SoundType{WALK, RUN, SHOOT, JUMP, COUNT};
+	enum SoundType{WALK, RUN, SHOOT, JUMP, LANDING, COUNT};
 }
 
 class AudioComponent : public Component<AudioComponent>

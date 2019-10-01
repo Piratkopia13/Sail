@@ -82,7 +82,7 @@ public:
 
 	void loadSound(const std::string &filename);
 	int playSound(const std::string& filename);
-	int streamSound(const std::string& filename, bool loop = true);
+	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
 	void stopSpecificSound(int index);
 	void stopSpecificStream(int index);
 	void stopAllStreams();
@@ -91,7 +91,8 @@ public:
 	float getSoundVolume(int index);
 	float getStreamVolume(int index);
 	int getSoundIndex();
-	int getStreamIndex();
+	//int getStreamIndex();
+	int getAvailableStreamIndex();
 
 	void setSoundVolume(int index, float value = VOL_HALF);
 	void setStreamVolume(int index, float value = VOL_HALF);
@@ -115,10 +116,8 @@ private:
 	IXAudio2SourceVoice* m_sourceVoiceSound[SOUND_COUNT];
 	IXAudio2SourceVoice* m_sourceVoiceStream[STREAMED_SOUNDS_COUNT];
 
-
-
 	int m_currSoundIndex = 0;
-	std::atomic<int> m_currStreamIndex = 0;
+	//std::atomic<int> m_currStreamIndex = 0;
 
 	// INIT
 	void initialize();
