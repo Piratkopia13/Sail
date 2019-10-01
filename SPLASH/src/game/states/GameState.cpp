@@ -504,10 +504,14 @@ bool GameState::processInput(float dt) {
 
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
 		if (m_paused) {
+			Input::HideCursor(!Input::IsCursorHidden());
 			m_paused = false;
 			requestStackPop();
 		}
 		else if(!m_paused){
+			if (Input::IsCursorHidden()) {
+				Input::HideCursor(!Input::IsCursorHidden());
+			}
 			m_paused = true;
 			requestStackPush(States::Pause);
 

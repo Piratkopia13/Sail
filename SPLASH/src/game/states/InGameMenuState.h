@@ -15,7 +15,7 @@ public:
 	// Renders the state
 	bool render(float dt, float alpha = 1.0f);
 	// Renders imgui
-	//bool renderImgui(float dt);
+	bool renderImgui(float dt);
 	// Sends events to the state
 	bool onEvent(Event& event) { return true; }
 private:
