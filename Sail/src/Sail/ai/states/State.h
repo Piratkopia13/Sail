@@ -12,7 +12,7 @@ namespace FSM {
 	class BaseState {
 	public:
 		BaseState() {}
-		~BaseState() {}
+		virtual ~BaseState() {}
 
 		static FSMStateID createID() {
 			return global_fsmStateID++;
@@ -41,7 +41,7 @@ namespace FSM {
 	class State : public BaseState {
 	public:
 		State() {}
-		~State() {}
+		virtual ~State() {}
 
 		static const FSMStateID ID;
 
