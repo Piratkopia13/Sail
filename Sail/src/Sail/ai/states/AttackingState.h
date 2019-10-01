@@ -13,7 +13,7 @@ public:
 	}
 
 	void update(float dt) override {
-		Logger::Log("I am Attacking State, hello!");
+		Logger::Log("I am the Attacking State, hello!");
 	}
 
 	virtual void reset() {}

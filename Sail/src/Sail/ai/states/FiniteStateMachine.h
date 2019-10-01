@@ -9,16 +9,10 @@
 
 class FiniteStateMachine {
 public:
-	FiniteStateMachine()
-		: m_currentState(nullptr) 
-		, m_name("")
-	{}
-
 	FiniteStateMachine(const std::string& name)
-		: FiniteStateMachine()
-	{
-		m_name = name;
-	}
+		: m_currentState(nullptr)
+		, m_name(name)
+	{}
 
 	virtual ~FiniteStateMachine() {
 		for ( int i = 0; i < m_states.size(); i++ ) {

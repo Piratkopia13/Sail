@@ -4,10 +4,6 @@
 
 class TestFSM : public FiniteStateMachine {
 public:
-	TestFSM()
-		: FiniteStateMachine() 
-	{}
-
 	TestFSM(const std::string& name)
 		: FiniteStateMachine(name)
 	{}
