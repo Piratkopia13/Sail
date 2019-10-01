@@ -16,7 +16,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 }
 
 GameInputSystem::~GameInputSystem() {
-	delete m_cam;
+	clean();
 }
 
 
@@ -27,7 +27,13 @@ void GameInputSystem::update(float dt, float alpha) {
 }
 
 void GameInputSystem::initialize(Camera* cam) {
-	m_cam = SAIL_NEW CameraController(cam);
+	if (m_cam == nullptr) {
+		m_cam = SAIL_NEW CameraController(cam);
+	}
+}
+
+void GameInputSystem::clean() { 
+	Memory::SafeDelete(m_cam);
 }
 
 void GameInputSystem::processPerFrameInput() {

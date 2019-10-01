@@ -166,9 +166,6 @@ GameState::GameState(StateStack& stack)
 #endif
 
 	// Create/load models
-	
-	//m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
-	//m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
@@ -775,6 +772,10 @@ void GameState::shutDownGameState() {
 
 	// Clear all entities
 	ECS::Instance()->destroyAllEntities();
+	
+	// Clear all neccesary systems
+	m_componentSystems.gameInputSystem->clean();
+
 }
 
 // HERE BE DRAGONS

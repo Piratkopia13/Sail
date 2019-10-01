@@ -2,6 +2,8 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/Application.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/KeyBinds.h"
+
 
 #include "../libraries/imgui/imgui.h"
 
@@ -13,6 +15,10 @@ EndGameState::~EndGameState() {
 }
 
 bool EndGameState::processInput(float dt) {
+	if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
+		Input::HideCursor(!Input::IsCursorHidden());
+	}
+
 	return true;
 }
 
@@ -39,5 +45,13 @@ bool EndGameState::renderImgui(float dt) {
 		this->requestStackPush(States::MainMenu);
 	}
 	ImGui::End();
+
+	ImGui::Begin("Quit");
+	if (ImGui::Button("Quit Button")) {
+		PostQuitMessage(0);
+	}
+	ImGui::End();
+
+
 	return true;
 }
