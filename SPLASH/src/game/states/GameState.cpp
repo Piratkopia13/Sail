@@ -131,6 +131,10 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
 
+	//Create system for input
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
+
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
@@ -215,10 +219,6 @@ GameState::GameState(StateStack& stack)
 	player->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
 
 
-	//Create system for input
-	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_cam);
-
 	player->addComponent<AudioComponent>();
 	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
 	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
@@ -229,6 +229,7 @@ GameState::GameState(StateStack& stack)
 	m_currLightIndex = 0;
 	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 1.0f, 0.f));
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
+	e->getComponent<CandleComponent>()->setOwner(player->getID());
 	player->addChildEntity(e);
 	
 	// Set up camera
