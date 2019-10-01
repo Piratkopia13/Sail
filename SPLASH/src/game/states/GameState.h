@@ -111,6 +111,8 @@ private:
 
 	std::unique_ptr<Model> m_boundingBoxModel;
 
+	bool m_paused = false;
+
 	Octree* m_octree;
 	bool m_disableLightComponents;
 
