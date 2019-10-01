@@ -15,6 +15,7 @@ public:
 	void update(float dt) { update(dt, 1.0f); }
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
+	void clean();
 	void updateCameraPosition(float alpha);
 
 	void processPerFrameInput();
