@@ -34,12 +34,12 @@ public:
 private:
 
 
-	void fetchGeometry(FbxNode* node, Mesh::Data& mesh);
-	void fetchAnimations(FbxNode* node, AnimationStack* stack);
+	void fetchGeometry(FbxNode* node, Mesh::Data& mesh, const std::string& name);
+	void fetchAnimations(FbxNode* node, AnimationStack* stack, const std::string& name);
 	
 	FbxVector2 getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMesh* mesh, int polyIndex, int vertIndex) const;
-	void getGeometry(FbxMesh* mesh, Mesh::Data& buildData);
-	void getAnimations(FbxNode* node, AnimationStack* stack);
+	void getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::string& scene);
+	void getAnimations(FbxNode* node, AnimationStack* stack, const std::string& name);
 
 	FbxScene* parseFBX(const std::string& filename);
 
@@ -85,7 +85,7 @@ private:
 		//std::vector<std::string> textures;
 		~SceneData() { Memory::SafeDelete(model); Memory::SafeDelete(stack); }
 		
-		
+		std::vector<std::vector<unsigned long>> cpToVertMap;
 
 	};
 

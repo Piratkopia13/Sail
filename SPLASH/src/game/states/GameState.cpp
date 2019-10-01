@@ -245,12 +245,12 @@ GameState::GameState(StateStack& stack)
 	//AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
 	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 	
-	//auto animationEntity = ECS::Instance()->createEntity("animatedModel");
-	//animationEntity->addComponent<TransformComponent>();
-	//animationEntity->addComponent<ModelComponent>(animatedModel);
-	//animationEntity->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	//animationEntity->addComponent<AnimationComponent>(animationStack);
-	//animationEntity->getComponent<AnimationComponent>()->currentAnimation = animationStack->getAnimation(0);
+	auto animationEntity = ECS::Instance()->createEntity("animatedModel");
+	animationEntity->addComponent<TransformComponent>();
+	animationEntity->addComponent<ModelComponent>(animatedModel);
+	animationEntity->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity->addComponent<AnimationComponent>(animationStack);
+	animationEntity->getComponent<AnimationComponent>()->currentAnimation = animationStack->getAnimation(0);
 
 	
 
