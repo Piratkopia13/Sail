@@ -4,11 +4,18 @@
 
 class TestFSM : public FiniteStateMachine {
 public:
-	TestFSM() {}
+	TestFSM()
+		: FiniteStateMachine() 
+	{}
+
+	TestFSM(const std::string& name)
+		: FiniteStateMachine(name)
+	{}
+
 	~TestFSM() {}
 
 	void update(float dt) override {
-		Logger::Log("This is the TestFSM!");
+		Logger::Log("This is the " + m_name + "!");
 
 		FiniteStateMachine::update(dt);
 	}
