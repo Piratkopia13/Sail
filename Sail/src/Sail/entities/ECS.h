@@ -6,6 +6,7 @@
 #include "Entity.h"
 #include "systems/BaseComponentSystem.h"
 
+class EntityAdderSystem;
 class EntityRemovalSystem;
 
 /*
@@ -61,6 +62,7 @@ public:
 	void queueDestructionOfEntity(Entity* entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
 	void destroyEntity(int ecsIndex);
+	void destroyAllEntities();
 
 	/*
 		Adds an already existing system of a chosen type
@@ -83,6 +85,17 @@ public:
 	template<typename T>
 	T* getSystem();
 
+	// Calls each system's 'stop()' function
+	void stopAllSystems();
+
+	// Clears the map of all unique_ptr systems
+	void destroyAllSystems();
+
+	/*
+		Retrieves the entity adder system
+		This is a special case system, every system should not have their own get-function
+	*/
+	EntityAdderSystem* getEntityAdderSystem();
 
 	/*
 		Retrieves the entity removal system
@@ -107,6 +120,12 @@ public:
 	*/
 	void removeEntityFromSystems(Entity* entity);
 
+	/*
+		Should NOT be called by the game developer
+		This is called internally by EntityAdderSystem
+	*/
+	void addAllQueuedEntities();
+
 private:
 	typedef std::unordered_map<std::type_index, std::unique_ptr<BaseComponentSystem>> SystemMap;
 
@@ -116,6 +135,8 @@ private:
 	std::vector<Entity::SPtr> m_entities;
 	SystemMap m_systems;
 
+	// This system is a special case, entities should never be automatically added to this when adding a component
+	EntityAdderSystem* m_entityAdderSystem;
 	// This system is a special case, entities should never be automatically added to this when adding a component
 	EntityRemovalSystem* m_entityRemovalSystem;
 };

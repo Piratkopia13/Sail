@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Sail/entities/systems/BaseComponentSystem.h"
-#include "Sail/entities/Entity.h"
 
 class CameraController;
 class LightSetup;
@@ -12,16 +11,11 @@ public:
 	CandleSystem();
 	virtual ~CandleSystem();
 
-	void setPlayerCandle(Entity::SPtr candle);
+	void setPlayerEntityID(int entityID);
 
 	void lightCandle(std::string name);
 
-	void checkProjectileCollisions(const std::vector<Entity::SPtr> &projectiles);
-
 	void update(float dt) override;
-
-	void updatePlayerCandle(CameraController* cam, const float yaw);
 private:
-	Entity::SPtr m_playerCandle;
-
+	int m_playerEntityID;
 };

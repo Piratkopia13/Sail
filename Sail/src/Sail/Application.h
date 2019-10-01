@@ -5,13 +5,14 @@
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
 #include "api/ImGuiHandler.h"
-#include "api/Audio/audio.hpp"
+#include "api/Audio/AudioEngine.h"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "events/IEventDispatcher.h"
 #include "utils/StateStorage.h"
+#include "RendererWrapper.h"
 
 #include <future>
 
@@ -37,7 +38,8 @@ public:
 	// Required methods
 	virtual int run() = 0;
 	virtual void processInput(float dt) = 0;
-	virtual void update(float dt) = 0;
+	virtual void update(float dt, float alpha) = 0;
+	virtual void fixedUpdate(float dt) = 0;
 	virtual void render(float dt, float alpha) = 0;
 	virtual void dispatchEvent(Event& event) override;
 	virtual void applyPendingStateChanges() = 0;
@@ -79,18 +81,18 @@ public:
 	ResourceManager& getResourceManager();
 
 	MemoryManager& getMemoryManager();
-	Audio* getAudioManager();
+	RendererWrapper* getRenderWrapper();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
 private:
-	Audio m_audioManager;
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
+	RendererWrapper m_rendererWrapper;
 
 	MemoryManager m_memoryManager;
 	StateStorage m_stateStorage;

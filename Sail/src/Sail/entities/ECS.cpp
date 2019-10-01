@@ -1,14 +1,37 @@
 #include "pch.h"
 #include "ECS.h"
-#include "systems/Cleanup/EntityRemovalSystem.h"
+#include "systems/entityManagement/EntityAdderSystem.h"
+#include "systems/entityManagement/EntityRemovalSystem.h"
+
+void ECS::addAllQueuedEntities() {
+	for (auto& s : m_systems) {
+		s.second->addQueuedEntities();
+	}
+}
 
 ECS::ECS() {
-	// Add a special case system
+	// Add the special case systems
+	m_entityAdderSystem = SAIL_NEW EntityAdderSystem();
 	m_entityRemovalSystem = SAIL_NEW EntityRemovalSystem();
 }
 
 ECS::~ECS() {
 	delete m_entityRemovalSystem;
+	delete m_entityAdderSystem;
+}
+
+void ECS::stopAllSystems() {
+	for (auto &i : m_systems) {
+		i.second->stop();
+	}
+}
+
+void ECS::destroyAllSystems() {
+	m_systems.clear();
+}
+
+EntityAdderSystem* ECS::getEntityAdderSystem() {
+	return m_entityAdderSystem;
 }
 
 EntityRemovalSystem* ECS::getEntityRemovalSystem() {
@@ -19,8 +42,6 @@ unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
 }
 
-
-
 Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));
 	m_entities.back()->setECSIndex(m_entities.size() - 1);
@@ -30,6 +51,9 @@ Entity::SPtr ECS::createEntity(const std::string& name) {
 void ECS::queueDestructionOfEntity(Entity* entity) {
 	// Add entity to removal system
 	m_entityRemovalSystem->addEntity(entity);
+	
+	// Might be a poor solution
+	m_entityRemovalSystem->addQueuedEntities();
 }
 
 void ECS::destroyEntity(const Entity::SPtr entityToRemove) {
@@ -52,24 +76,23 @@ void ECS::destroyEntity(int ecsIndex) {
 	m_entities.pop_back();
 }
 
+void ECS::destroyAllEntities() {
+	for (auto& e : m_entities) {
+		e->removeAllComponents();
+		e->removeFromSystems();
+	}
+	m_entities.clear();
+}
+
 void ECS::addEntityToSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
-	
+
 	// Check which systems this entity can be placed in
-	for (; it != m_systems.end(); ++it) {
-		std::vector<int> componentTypes = it->second->getRequiredComponentTypes();
-		
-		// Check if the entity has all the required components for the system
-		bool hasCorrectComponents = true;
-		for (auto typeID : componentTypes) {
-			if (!entity->hasComponent(typeID)) {
-				hasCorrectComponents = false;
-				break;
-			}
-		}
+	for ( ; it != m_systems.end(); ++it ) {
+		auto componentTypes = it->second->getRequiredComponentTypes();
 
 		// Add this entity to the system
-		if (hasCorrectComponents) {
+		if ( entity->hasComponents(componentTypes) ) {
 			it->second->addEntity(entity);
 		}
 	}
@@ -78,18 +101,10 @@ void ECS::addEntityToSystems(Entity* entity) {
 void ECS::removeEntityFromSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 
-	for (; it != m_systems.end(); ++it) {
-		std::vector<int> componentTypes = it->second->getRequiredComponentTypes();
+	for ( ; it != m_systems.end(); ++it ) {
+		auto componentTypes = it->second->getRequiredComponentTypes();
 
-		bool hasCorrectComponents = true;
-		for (auto typeID : componentTypes) {
-			if (!entity->hasComponent(typeID)) {
-				hasCorrectComponents = false;
-				break;
-			}
-		}
-
-		if (!hasCorrectComponents) {
+		if ( !entity->hasComponents(componentTypes) ) {
 			it->second->removeEntity(entity);
 		}
 	}

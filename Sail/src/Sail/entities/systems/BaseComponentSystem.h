@@ -1,5 +1,8 @@
 #pragma once
-#include <vector>
+
+#include "../components/Component.h"
+
+#include <bitset>
 
 class Entity;
 
@@ -13,10 +16,12 @@ class Entity;
 	Example: See PhysicSystem.h and PhysicSystem.cpp
 */
 
-class BaseComponentSystem
-{
+class BaseComponentSystem {
 public:
-	BaseComponentSystem() {}
+	BaseComponentSystem()
+		: requiredComponentTypes(0x0)
+		, readBits(0x0)
+		, writeBits(0x0) {}
 	virtual ~BaseComponentSystem() {}
 
 	virtual void update(float dt) = 0;
@@ -34,9 +39,48 @@ public:
 	/*
 		Returns the indices of all the component types required to be within this system
 	*/
-	const std::vector<int>& getRequiredComponentTypes() const;
+	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getRequiredComponentTypes() const;
+
+	/* Returns the bit mask for all components that are being read from */
+	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getReadBitMask() const;
+
+	/* Returns the bit mask for all components that are being written to */
+	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getWriteBitMask() const;
+
+	virtual void stop() {}
+
+	// Do not call this, it is called internally by EntityAdderSystem
+	void addQueuedEntities();
+
+protected:
+	/**
+	 * Registers the component to the system and defines how the system uses the component
+	 *
+	 * @param required Should be set to true if the component is required by the system
+	 * @param read Should be set to true if the component is read by the system
+	 * @param write Should be set to true if the component is written to by the system
+	 */
+	template<typename ComponentType>
+	void registerComponent(bool required, bool read, bool write);
 
 protected:
 	std::vector<Entity*> entities;
-	std::vector<int> requiredComponentTypes;
+	std::vector<Entity*> entitiesQueuedToAdd;
+
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> requiredComponentTypes;
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> readBits;
+	std::bitset<MAX_NUM_COMPONENTS_TYPES> writeBits;
 };
+
+template<typename ComponentType>
+inline void BaseComponentSystem::registerComponent(bool required, bool read, bool write) {
+	if ( required ) { 
+		requiredComponentTypes |= ComponentType::BID; 
+	}
+	if ( read ) { 
+		readBits |= ComponentType::BID; 
+	}
+	if ( write ) { 
+		writeBits |= ComponentType::BID; 
+	}
+}

@@ -9,8 +9,9 @@
 
 
 AnimationSystem::AnimationSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(AnimationComponent::ID);
-	requiredComponentTypes.push_back(ModelComponent::ID);
+	// TODO: System owner should check if this is correct
+	registerComponent<AnimationComponent>(true, true, true);
+	registerComponent<ModelComponent>(true, true, true);
 }
 
 AnimationSystem::~AnimationSystem() {

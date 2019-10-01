@@ -1,5 +1,8 @@
 #pragma once
 #include <memory>
+#include <bitset>
+
+#define MAX_NUM_COMPONENTS_TYPES 128
 
 
 /*
@@ -14,6 +17,7 @@
 
 
 typedef int ComponentTypeID;
+typedef std::bitset<MAX_NUM_COMPONENTS_TYPES> ComponentTypeBitID;
 
 /*
 	Counter for assigning IDs to component types at compile time
@@ -65,6 +69,7 @@ public:
 	virtual ~Component() {}
 
 	static const ComponentTypeID ID;
+	static const ComponentTypeBitID BID;
 protected:
 	Component() {}
 };
@@ -74,3 +79,9 @@ protected:
 */
 template<typename ComponentType>
 const ComponentTypeID Component<ComponentType>::ID = BaseComponent::createID();
+
+/*
+	Defines the constant static bit-ID of each component type at compile time
+*/
+template<typename ComponentType>
+const ComponentTypeBitID Component<ComponentType>::BID = 1ULL << ComponentType::ID;

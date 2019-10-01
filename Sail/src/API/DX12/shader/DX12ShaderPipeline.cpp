@@ -14,7 +14,9 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 }
 
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
-	: ShaderPipeline(filename) {
+	: ShaderPipeline(filename) 
+	, m_numRenderTargets(1)
+{
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	if (!m_dxilCompiler) {
@@ -119,6 +121,9 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 	switch (shaderType) {
 	case ShaderComponent::VS:
 		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
+	case ShaderComponent::GS:
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GSMain", "gs_5_0", flags, 0, &pShaders, &errorBlob);
 		break;
 	case ShaderComponent::PS:
 		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", flags, 0, &pShaders, &errorBlob);
@@ -243,6 +248,10 @@ bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const voi
 	return false;
 }
 
+void DX12ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) { 
+	m_numRenderTargets = numRenderTargets;
+}
+
 void DX12ShaderPipeline::compile() {
 	ShaderPipeline::compile();
 }
@@ -284,8 +293,10 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 	}
 
 	// Specify render target and depthstencil usage
-	gpsd.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	gpsd.NumRenderTargets = 1;
+	for (unsigned int i = 0; i < m_numRenderTargets; i++) {
+		gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	}
+	gpsd.NumRenderTargets = m_numRenderTargets;
 
 	gpsd.SampleDesc.Count = 1;
 	gpsd.SampleDesc.Quality = 0;
@@ -332,7 +343,7 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 	dsDesc.BackFace = defaultStencilOp;
 
 	gpsd.DepthStencilState = dsDesc;
-	gpsd.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	gpsd.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	ThrowIfFailed(m_context->getDevice()->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&m_pipelineState)));
 }

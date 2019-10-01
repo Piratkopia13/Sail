@@ -426,22 +426,6 @@ void AssimpLoader::calcInterpolatedScale(aiVector3D& out, const float animationT
 
 }
 
-//Animation* AssimpLoader::importAnimation(const aiScene* scene, aiNode* node) {
-//
-//	if (scene->HasAnimations()) {
-//		for (int i = 0; i < scene->mNumAnimations; i++) {
-//			std::string name = scene->mAnimations[i]->mName.C_Str();
-//			Logger::Log(name);
-//
-//		}
-//
-//
-//
-//
-//	}
-//	return ;
-//}
-
 const bool AssimpLoader::errorCheck(const aiScene* scene) {
 	if ( !scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode ) {
 		Logger::Error("ERROR::ASSIMP::" + std::string(m_importer.GetErrorString()));

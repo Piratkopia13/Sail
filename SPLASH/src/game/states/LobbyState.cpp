@@ -8,7 +8,8 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "Network/NWrapperSingleton.h"	// New network
 #include "Network/NWrapper.h"			// 
-
+#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/ECS.h"
 
 #include <string>
 using namespace std;
@@ -49,12 +50,13 @@ bool LobbyState::processInput(float dt) {
 }
 
 bool LobbyState::inputToChatLog(MSG& msg) {
-	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != SAIL_KEY_RETURN) {
+	int sendMessageKeyCode = KeyBinds::sendMessage;
+	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != sendMessageKeyCode) {
 		// Add whichever button that was inputted to the current message
 		// --- OBS : doesn't account for capslock, etc.
 		m_currentmessage[m_currentmessageIndex++] = (char)msg.wParam;
 	}
-	if (msg.wParam == SAIL_KEY_RETURN && m_chatFocus == false) {
+	if (msg.wParam == sendMessageKeyCode && m_chatFocus == false) {
 		return true;
 	}
 	return false;
@@ -66,7 +68,7 @@ void LobbyState::resetPlayerList()
 	m_playerCount = 0;
 }
 
-bool LobbyState::update(float dt) {
+bool LobbyState::update(float dt, float alpha) {
 	// Update screen dimensions & ImGui related
 	// (Sure, events, but the only thing consuming resources is the LobbyState)
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
@@ -79,7 +81,7 @@ bool LobbyState::update(float dt) {
 
 bool LobbyState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	m_scene.draw();
+	ECS::Instance()->getSystem<RenderSystem>()->draw();
 	return false;
 }
 
