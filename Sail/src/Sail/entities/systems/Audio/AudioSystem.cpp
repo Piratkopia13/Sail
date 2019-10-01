@@ -11,8 +11,6 @@ AudioSystem::AudioSystem() {
 	registerComponent<AudioComponent>(true, true, true);
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/jump.wav");
-	m_audioEngine.loadSound("../Audio/landingGrunt.wav");
-	m_audioEngine.loadSound("../Audio/pew.wav");
 }
 
 AudioSystem::~AudioSystem() {
