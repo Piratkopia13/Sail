@@ -201,14 +201,20 @@ Model* FBXLoader::fetchModel(const std::string& filePath, Shader* shader) {
 		return nullptr;
 	if (m_sceneData.find(filePath) == m_sceneData.end())
 		return nullptr;
-	return m_sceneData[filePath].model;
+	auto* temp = m_sceneData[filePath].model;
+	m_sceneData[filePath].model = nullptr;
+	m_sceneData[filePath].hasModel = false;
+	return temp;
 }
 AnimationStack* FBXLoader::fetchAnimationStack(const std::string& filePath, Shader* shader) {
 	if (!importScene(filePath, shader))
 		return nullptr;
 	if (m_sceneData.find(filePath) == m_sceneData.end())
 		return nullptr;
-	return m_sceneData[filePath].stack;
+	auto* temp = m_sceneData[filePath].stack;
+	m_sceneData[filePath].stack = nullptr;
+	m_sceneData[filePath].hasAnimation = false;
+	return temp;
 }
 
 FbxScene* FBXLoader::makeScene(std::string filePath, std::string sceneName) {
@@ -375,6 +381,8 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 		return;
 	}
 
+	unsigned int uniqueVertices = 0;
+	buildData.indices = SAIL_NEW unsigned long[buildData.numVertices];
 	buildData.positions = SAIL_NEW Mesh::vec3[buildData.numVertices];
 	buildData.normals = SAIL_NEW Mesh::vec3[buildData.numVertices];
 	buildData.texCoords = SAIL_NEW Mesh::vec2[buildData.numVertices];
@@ -389,25 +397,43 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 		Logger::Error("Couldn't find any vertices in the mesh in the file " + m_filepath);
 		return;
 	}
-	for (int polyIndex = 0; polyIndex < mesh->GetPolygonCount(); polyIndex++) {
+
+	Mesh::vec3 vertPosition[3] = { { 0,0,0 },{ 0,0,0 },{ 0,0,0 } };
+	Mesh::vec3 vertNormal[3] = { { 0,0,0 },{ 0,0,0 },{ 0,0,0 } };
+	Mesh::vec3 vertTangent[3] = { { 0,0,0 },{ 0,0,0 },{ 0,0,0 } };
+	Mesh::vec3 vertBitangent[3] = { { 0,0,0 },{ 0,0,0 },{ 0,0,0 } };
+	Mesh::vec2 vertTexCoord[3] = { { 0,0 },{ 0,0 } };
+	
+
+
+
+	for (unsigned int polyIndex = 0; polyIndex < mesh->GetPolygonCount(); polyIndex++) {
 		int numVertices = mesh->GetPolygonSize(polyIndex);
 
-		for (int vertIndex = 0; vertIndex < numVertices; vertIndex += 3) {
+		for (unsigned int vertIndex = 0; vertIndex < numVertices; vertIndex += 3) {
 
 			/*
 			--	Positions
 			*/
-			buildData.positions[vertexIndex].vec.x = (float)cp[indices[vertexIndex]][0];
-			buildData.positions[vertexIndex].vec.y = (float)cp[indices[vertexIndex]][1];
-			buildData.positions[vertexIndex].vec.z = (float)cp[indices[vertexIndex]][2];
 
-			buildData.positions[vertexIndex + 1].vec.x = (float)cp[indices[vertexIndex + 1]][0];
-			buildData.positions[vertexIndex + 1].vec.y = (float)cp[indices[vertexIndex + 1]][1];
-			buildData.positions[vertexIndex + 1].vec.z = (float)cp[indices[vertexIndex + 1]][2];
+			for (unsigned int axis = 0; axis < 3; axis++) {
+				vertPosition[0].vec[axis] = (float)cp[indices[vertexIndex]][axis];
+				vertPosition[1].vec[axis] = (float)cp[indices[vertexIndex + 1]][axis];
+				vertPosition[2].vec[axis] = (float)cp[indices[vertexIndex + 2]][axis];
 
-			buildData.positions[vertexIndex + 2].vec.x = (float)cp[indices[vertexIndex + 2]][0];
-			buildData.positions[vertexIndex + 2].vec.y = (float)cp[indices[vertexIndex + 2]][1];
-			buildData.positions[vertexIndex + 2].vec.z = (float)cp[indices[vertexIndex + 2]][2];
+			}
+
+			//buildData.positions[vertexIndex].vec.x = (float)cp[indices[vertexIndex]][0];
+			//buildData.positions[vertexIndex].vec.y = (float)cp[indices[vertexIndex]][1];
+			//buildData.positions[vertexIndex].vec.z = (float)cp[indices[vertexIndex]][2];
+			//
+			//buildData.positions[vertexIndex + 1].vec.x = (float)cp[indices[vertexIndex + 1]][0];
+			//buildData.positions[vertexIndex + 1].vec.y = (float)cp[indices[vertexIndex + 1]][1];
+			//buildData.positions[vertexIndex + 1].vec.z = (float)cp[indices[vertexIndex + 1]][2];
+			//
+			//buildData.positions[vertexIndex + 2].vec.x = (float)cp[indices[vertexIndex + 2]][0];
+			//buildData.positions[vertexIndex + 2].vec.y = (float)cp[indices[vertexIndex + 2]][1];
+			//buildData.positions[vertexIndex + 2].vec.z = (float)cp[indices[vertexIndex + 2]][2];
 
 
 
@@ -418,7 +444,8 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 			if (leNormal == nullptr && norms) {
 				Logger::Warning("Couldn't find any normals in the mesh in the file " + m_filepath);
 				norms = false;
-			} else if (norms) {
+			} 
+			else if (norms) {
 				if (leNormal->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int normIndex = 0;
 
@@ -431,19 +458,28 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 
 					FbxVector4 norm = leNormal->GetDirectArray().GetAt(normIndex);
-					buildData.normals[vertexIndex].vec.x = (float)norm[0];
-					buildData.normals[vertexIndex].vec.y = (float)norm[1];
-					buildData.normals[vertexIndex].vec.z = (float)norm[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertNormal[0].vec[axis] = (float)norm[axis];
+					}
+					//buildData.normals[vertexIndex].vec.x = (float)norm[0];
+					//buildData.normals[vertexIndex].vec.y = (float)norm[1];
+					//buildData.normals[vertexIndex].vec.z = (float)norm[2];
 
 					norm = leNormal->GetDirectArray().GetAt(normIndex + 1);
-					buildData.normals[vertexIndex + 1].vec.x = (float)norm[0];
-					buildData.normals[vertexIndex + 1].vec.y = (float)norm[1];
-					buildData.normals[vertexIndex + 1].vec.z = (float)norm[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertNormal[1].vec[axis] = (float)norm[axis];
+					}
+					//buildData.normals[vertexIndex + 1].vec.x = (float)norm[0];
+					//buildData.normals[vertexIndex + 1].vec.y = (float)norm[1];
+					//buildData.normals[vertexIndex + 1].vec.z = (float)norm[2];
 
 					norm = leNormal->GetDirectArray().GetAt(normIndex + 2);
-					buildData.normals[vertexIndex + 2].vec.x = (float)norm[0];
-					buildData.normals[vertexIndex + 2].vec.y = (float)norm[1];
-					buildData.normals[vertexIndex + 2].vec.z = (float)norm[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertNormal[2].vec[axis] = (float)norm[axis];
+					}
+					//buildData.normals[vertexIndex + 2].vec.x = (float)norm[0];
+					//buildData.normals[vertexIndex + 2].vec.y = (float)norm[1];
+					//buildData.normals[vertexIndex + 2].vec.z = (float)norm[2];
 				}
 			}
 
@@ -454,7 +490,8 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 			if (geTang == nullptr && tangs) {
 				Logger::Warning("Couldn't find any tangents in the mesh in the file " + m_filepath);
 				tangs = false;
-			} else if (tangs) {
+			} 
+			else if (tangs) {
 				if (geTang->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int tangIndex = 0;
 
@@ -466,19 +503,28 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 						tangIndex = geTang->GetIndexArray().GetAt(vertexIndex);
 
 					FbxVector4 tangent = geTang->GetDirectArray().GetAt(tangIndex);
-					buildData.tangents[vertexIndex].vec.x = (float)tangent[0];
-					buildData.tangents[vertexIndex].vec.y = (float)tangent[1];
-					buildData.tangents[vertexIndex].vec.z = (float)tangent[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertTangent[2].vec[axis] = (float)tangent[axis];
+					}
+					//buildData.tangents[vertexIndex].vec.x = (float)tangent[0];
+					//buildData.tangents[vertexIndex].vec.y = (float)tangent[1];
+					//buildData.tangents[vertexIndex].vec.z = (float)tangent[2];
 
 					tangent = geTang->GetDirectArray().GetAt(tangIndex + 1);
-					buildData.tangents[vertexIndex + 1].vec.x = (float)tangent[0];
-					buildData.tangents[vertexIndex + 1].vec.y = (float)tangent[1];
-					buildData.tangents[vertexIndex + 1].vec.z = (float)tangent[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertTangent[2].vec[axis] = (float)tangent[axis];
+					}
+					//buildData.tangents[vertexIndex + 1].vec.x = (float)tangent[0];
+					//buildData.tangents[vertexIndex + 1].vec.y = (float)tangent[1];
+					//buildData.tangents[vertexIndex + 1].vec.z = (float)tangent[2];
 
 					tangent = geTang->GetDirectArray().GetAt(tangIndex + 2);
-					buildData.tangents[vertexIndex + 2].vec.x = (float)tangent[0];
-					buildData.tangents[vertexIndex + 2].vec.y = (float)tangent[1];
-					buildData.tangents[vertexIndex + 2].vec.z = (float)tangent[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertTangent[2].vec[axis] = (float)tangent[axis];
+					}
+					//buildData.tangents[vertexIndex + 2].vec.x = (float)tangent[0];
+					//buildData.tangents[vertexIndex + 2].vec.y = (float)tangent[1];
+					//buildData.tangents[vertexIndex + 2].vec.z = (float)tangent[2];
 				}
 			}
 
@@ -489,7 +535,8 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 			if (geBN == nullptr && bitangs) {
 				Logger::Warning("Couldn't find any binormals in the mesh in the file " + m_filepath);
 				bitangs = false;
-			} else if (bitangs) {
+			} 
+			else if (bitangs) {
 				if (geBN->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int biNormIndex = 0;
 
@@ -501,19 +548,28 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 						biNormIndex = geBN->GetIndexArray().GetAt(vertexIndex);
 
 					FbxVector4 biNorm = geBN->GetDirectArray().GetAt(biNormIndex);
-					buildData.bitangents[vertexIndex].vec.x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex].vec.y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex].vec.z = (float)biNorm[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertBitangent[2].vec[axis] = (float)biNorm[axis];
+					}
+					//buildData.bitangents[vertexIndex].vec.x = (float)biNorm[0];
+					//buildData.bitangents[vertexIndex].vec.y = (float)biNorm[1];
+					//buildData.bitangents[vertexIndex].vec.z = (float)biNorm[2];
 
 					biNorm = geBN->GetDirectArray().GetAt(biNormIndex + 1);
-					buildData.bitangents[vertexIndex + 1].vec.x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex + 1].vec.y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex + 1].vec.z = (float)biNorm[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertBitangent[2].vec[axis] = (float)biNorm[axis];
+					}
+					//buildData.bitangents[vertexIndex + 1].vec.x = (float)biNorm[0];
+					//buildData.bitangents[vertexIndex + 1].vec.y = (float)biNorm[1];
+					//buildData.bitangents[vertexIndex + 1].vec.z = (float)biNorm[2];
 
 					biNorm = geBN->GetDirectArray().GetAt(biNormIndex + 2);
-					buildData.bitangents[vertexIndex + 2].vec.x = (float)biNorm[0];
-					buildData.bitangents[vertexIndex + 2].vec.y = (float)biNorm[1];
-					buildData.bitangents[vertexIndex + 2].vec.z = (float)biNorm[2];
+					for (unsigned int axis = 0; axis < 3; axis++) {
+						vertBitangent[2].vec[axis] = (float)biNorm[axis];
+					}
+					//buildData.bitangents[vertexIndex + 2].vec.x = (float)biNorm[0];
+					//buildData.bitangents[vertexIndex + 2].vec.y = (float)biNorm[1];
+					//buildData.bitangents[vertexIndex + 2].vec.z = (float)biNorm[2];
 				}
 			}
 
@@ -530,24 +586,39 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex);
 				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex);
-				buildData.texCoords[vertexIndex].vec.x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex].vec.y = -static_cast<float>(texCoord[1]);
+				vertTexCoord[0].vec[0] = static_cast<float>(texCoord[0]);
+				vertTexCoord[0].vec[1] = -static_cast<float>(texCoord[1]);
+				
+				//buildData.texCoords[vertexIndex].vec.x = static_cast<float>(texCoord[0]);
+				//buildData.texCoords[vertexIndex].vec.y = -static_cast<float>(texCoord[1]);
 
 				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex + 1);
 				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex + 1);
-				buildData.texCoords[vertexIndex + 1].vec.x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex + 1].vec.y = -static_cast<float>(texCoord[1]);
+				vertTexCoord[1].vec[0] = static_cast<float>(texCoord[0]);
+				vertTexCoord[1].vec[1] = -static_cast<float>(texCoord[1]);
+				//buildData.texCoords[vertexIndex + 1].vec.x = static_cast<float>(texCoord[0]);
+				//buildData.texCoords[vertexIndex + 1].vec.y = -static_cast<float>(texCoord[1]);
 
 				cpIndex = mesh->GetPolygonVertex(polyIndex, vertIndex + 2);
 				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex + 2);
-				buildData.texCoords[vertexIndex + 2].vec.x = static_cast<float>(texCoord[0]);
-				buildData.texCoords[vertexIndex + 2].vec.y =  -static_cast<float>(texCoord[1]);
+				vertTexCoord[2].vec[0] = static_cast<float>(texCoord[0]);
+				vertTexCoord[2].vec[1] = -static_cast<float>(texCoord[1]);
+				//buildData.texCoords[vertexIndex + 2].vec.x = static_cast<float>(texCoord[0]);
+				//buildData.texCoords[vertexIndex + 2].vec.y =  -static_cast<float>(texCoord[1]);
 			}
 
-			vertexIndex += 3;
+
+
+			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[0], vertNormal[0], vertTangent[0], vertBitangent[0], vertTexCoord[0]);
+			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[1], vertNormal[1], vertTangent[1], vertBitangent[1], vertTexCoord[1]);
+			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[2], vertNormal[2], vertTangent[2], vertBitangent[2], vertTexCoord[2]);
+
+
+
 		}
 
 	}
+	buildData.resizeVertices(uniqueVertices);
 
 }
 
@@ -696,6 +767,22 @@ void FBXLoader::getMaterial(FbxNode* pNode, Material* material) {
 
 	}
 
+}
+
+void FBXLoader::addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, const unsigned long& currentIndex, const Mesh::vec3& position, const Mesh::vec3& normal, const Mesh::vec3& tangent, const Mesh::vec3& bitangent, const Mesh::vec2& uv) {
+	for (unsigned int vert = 0; vert < uniqueVertices; vert++) {
+		if (buildData.positions[vert] == position && buildData.normals[vert] == normal) {
+			buildData.indices[currentIndex] = vert;
+			return;
+		}
+	}
+
+	buildData.positions[uniqueVertices] = position;
+	buildData.normals[uniqueVertices] = normal;
+	buildData.tangents[uniqueVertices] = tangent;
+	buildData.bitangents[uniqueVertices] = bitangent;
+	buildData.texCoords[uniqueVertices] = uv;
+	uniqueVertices += 1;
 }
 
 

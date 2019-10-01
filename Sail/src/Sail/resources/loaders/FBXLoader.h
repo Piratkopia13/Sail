@@ -46,6 +46,14 @@ private:
 	void loadNode(FbxNode* pNode);
 	void getMaterial(FbxNode* pNode, Material* material);
 
+	void addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, const unsigned long& currentIndex, const Mesh::vec3& position, const Mesh::vec3& normal, const Mesh::vec3& tangent, const Mesh::vec3& bitangent, const Mesh::vec2& uv);
+
+	//DEBUG
+	std::string GetAttributeTypeName(FbxNodeAttribute::EType type);
+	std::string PrintAttribute(FbxNodeAttribute* pAttribute);
+	void printNodeTree(FbxNode* node, const std::string& indent);
+	void printAnimationStack(const FbxNode* node);
+
 private:
 	static FbxManager* s_manager;
 	static FbxIOSettings* s_ios;
@@ -75,17 +83,16 @@ private:
 		//std::vector<Model*> models;
 		//std::vector<AnimationStack*> animationStacks;
 		//std::vector<std::string> textures;
+		~SceneData() { Memory::SafeDelete(model); Memory::SafeDelete(stack); }
+		
+		
 
 	};
 
 	std::map<std::string, const FbxScene*> m_scenes;
 	std::map < std::string, SceneData> m_sceneData;
 
-	//DEBUG
-	std::string GetAttributeTypeName(FbxNodeAttribute::EType type);
-	std::string PrintAttribute(FbxNodeAttribute* pAttribute);
-	void printNodeTree(FbxNode* node, const std::string& indent);
-	void printAnimationStack(const FbxNode* node);
+
 	//void printAnimationStack();
 
 
