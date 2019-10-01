@@ -4,6 +4,7 @@
 
 class Scene;
 class Model;
+struct rect;
 class LevelGeneratorSystem final: public BaseComponentSystem {
 public:
 	LevelGeneratorSystem();
@@ -16,7 +17,8 @@ public:
 private:
 	int randomizeTileId(std::vector<int>* tiles);
 	void findPossibleTiles(std::vector<int>* mapPointer,int posx, int posy);
-	void generateCorridors();
 	void splitChunk();
 	void splitBlock();
+	void matchRoom();
+	bool checkBorder(rect rekt);
 };

@@ -18,223 +18,50 @@ void LevelGeneratorSystem::update(float dt) {
 void LevelGeneratorSystem::generateMap() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
-		
-		//set corners
-		{
-			map->tileArr[0][0] = 3;
-			map->tileArr[0][map->ysize-1] =6;
-			map->tileArr[map->xsize-1][map->ysize-1] = 12;
-			map->tileArr[map->xsize-1][0] = 9;
-		}
-
-		srand(2);
-		int seed =2;
-		int centerx = (map->xsize)/ 2, centery = (map->ysize)/ 2;
+		srand(map->seed);
 		std::vector<int> avaliableTiles;
 
-		//set edges
-		//{
-		//	avaliableTiles.push_back(5);
-		//	avaliableTiles.push_back(7);
-		//	for (int i = 1; i < map->ysize - 1; i++) {
-		//		map->tileArr[0][i] = randomizeTileId(&avaliableTiles);
-		//	}
-		//	avaliableTiles.clear();
-
-		//	avaliableTiles.push_back(10);
-		//	avaliableTiles.push_back(11);
-		//	for (int i = 1; i < map->xsize - 1; i++) {
-		//		map->tileArr[i][0] = randomizeTileId(&avaliableTiles);
-		//	}
-		//	avaliableTiles.clear();	
-		//	avaliableTiles.push_back(5);
-		//	avaliableTiles.push_back(13);
-		//	for (int i = 1; i < map->ysize - 1; i++) {
-		//		map->tileArr[map->xsize-1][i] = randomizeTileId(&avaliableTiles);
-		//	}
-		//	avaliableTiles.clear();
-		//	avaliableTiles.push_back(10);
-		//	avaliableTiles.push_back(14);
-		//	for (int i = 1; i < map->xsize - 1; i++) {
-		//		map->tileArr[i][map->ysize-1] = randomizeTileId(&avaliableTiles);
-		//	}
-		//	avaliableTiles.clear();
-		//}
-		////set center room
-		//{
-		//	//floor
-		//	map->tileArr[seed][centery] = 17;
-		//	map->tileArr[centerx - 1][centery] = 0;
-		//	map->tileArr[centerx - 1][centery - 1] = 0;
-		//	map->tileArr[centerx][centery - 1] = 0;
-
-		//	//walls
-		//	map->tileArr[centerx - 2][centery - 2] = 3;
-		//	map->tileArr[centerx - 2][centery - 1] = 12;
-		//	map->tileArr[centerx - 2][centery] = 9;
-		//	map->tileArr[centerx - 2][centery + 1] = 6;
-		//	map->tileArr[centerx - 1][centery + 1] = 9;
-		//	map->tileArr[centerx][centery + 1] = 3;
-		//	map->tileArr[centerx + 1][centery + 1] = 12;
-		//	map->tileArr[centerx + 1][centery] = 3;
-		//	map->tileArr[centerx + 1][centery - 1] = 6;
-		//	map->tileArr[centerx + 1][centery - 2] = 9;
-		//	map->tileArr[centerx][centery - 2] = 6;
-		//	map->tileArr[centerx - 1][centery - 2] = 12;
-
-		//	//ends
-		//	map->tileArr[centerx - 1][centery + 2] = 4;
-		//	map->tileArr[centerx][centery + 2] = 4;
-		//	map->tileArr[centerx + 2][centery] = 8;
-		//	map->tileArr[centerx + 2][centery - 1] = 8;
-		//	map->tileArr[centerx][centery - 3] = 1;
-		//	map->tileArr[centerx - 1][centery - 3] = 1;
-		//	map->tileArr[centerx - 3][centery - 1] = 2;
-		//	map->tileArr[centerx - 3][centery] = 2;
-		//}
-		////create ramp rooms
-		//{	
-		//	//north room
-		//	map->tileArr[centerx-2][map->ysize - 1] = 14;
-		//	map->tileArr[centerx-1][map->ysize - 1] = 10;
-		//	map->tileArr[centerx][map->ysize - 1] = 10;
-		//	map->tileArr[centerx+1][map->ysize - 1] = 14;
-
-		//	map->tileArr[centerx][map->ysize-3] = 0;
-		//	map->tileArr[centerx][map->ysize-2] = 0;
-		//	map->tileArr[centerx-1][map->ysize - 3] = 0;
-		//	map->tileArr[centerx-1][map->ysize - 2] = 0;
-		//	
-		//	map->tileArr[centerx-2][map->ysize - 4] = 3;
-		//	map->tileArr[centerx-1][map->ysize - 4] = 12;
-		//	map->tileArr[centerx][map->ysize - 4] = 6;
-		//	map->tileArr[centerx+1][map->ysize - 4] = 9;
-
-		//	//south room
-		//	map->tileArr[centerx-2][0] = 11;
-		//	map->tileArr[centerx-1][0] = 10;
-		//	map->tileArr[centerx][0] = 10;
-		//	map->tileArr[centerx+1][0] = 11;
-
-		//	map->tileArr[centerx][2] = 0;
-		//	map->tileArr[centerx][1] = 0;
-		//	map->tileArr[centerx - 1][2] = 0;
-		//	map->tileArr[centerx - 1][1] = 0;
-		//	
-		//	map->tileArr[centerx - 2][3] = 6;
-		//	map->tileArr[centerx - 1][3] = 9;
-		//	map->tileArr[centerx][3] = 3;
-		//	map->tileArr[centerx + 1][3] = 12;
-
-		//	//east room
-		//	map->tileArr[map->xsize-1][centery- 2] = 13;
-		//	map->tileArr[map->xsize - 1][centery - 1] = 5;
-		//	map->tileArr[map->xsize - 1][centery] = 5;
-		//	map->tileArr[map->xsize - 1][centery+1] = 13;
-
-		//	map->tileArr[map->xsize - 3][centery] = 0;
-		//	map->tileArr[map->xsize - 2][centery] = 0;
-		//	map->tileArr[map->xsize - 3][centery-1] = 0;
-		//	map->tileArr[map->xsize - 2][centery -1] = 0;
-
-		//	map->tileArr[map->xsize - 4][centery - 2] = 3;
-		//	map->tileArr[map->xsize - 4][centery - 1] = 12;
-		//	map->tileArr[map->xsize - 4][centery ] = 9;
-		//	map->tileArr[map->xsize - 4][centery +1] = 6;
-
-		//	//west room
-		//	map->tileArr[0][centery - 2] = 7;
-		//	map->tileArr[0][centery - 1] = 5;
-		//	map->tileArr[0][centery] = 5;
-		//	map->tileArr[0][centery + 1] = 7;
-
-		//	map->tileArr[2][centery] = 0;
-		//	map->tileArr[1][centery] = 0;
-		//	map->tileArr[2][centery - 1] = 0;
-		//	map->tileArr[1][centery - 1] = 0;
-
-		//	map->tileArr[3][centery - 2] = 9;
-		//	map->tileArr[3][centery - 1] = 6;
-		//	map->tileArr[3][centery] = 3;
-		//	map->tileArr[3][centery + 1] = 12;
-		//}
-		////create "corridors"
-		//{
-		//	for (int i = 0; i < map->ysize; i++) {
-		//		if (map->tileArr[centerx][i] == -1) {
-		//			map->tileArr[centerx][i] = 0;
-		//			findPossibleTiles(&avaliableTiles, centerx-1,i);
-		//			map->tileArr[centerx-1][i] = randomizeTileId(&avaliableTiles);
-		//			avaliableTiles.clear();
-		//			findPossibleTiles(&avaliableTiles, centerx , i);
-		//			map->tileArr[centerx][i] = randomizeTileId(&avaliableTiles);
-		//			avaliableTiles.clear();
-		//			if (map->tileArr[centerx][i] == 0 || map->tileArr[centerx - 1][i] == 0) {
-		//				map->tileArr[centerx][i] = -1;
-		//				map->tileArr[centerx - 1][i] = -1;
-		//				i--;
-		//			}
-		//		}
-		//	}
-		//	for (int i = 0; i < map->xsize; i++) {
-		//		if (map->tileArr[i][centery] == -1) {
-		//			map->tileArr[i][centery] = 0;
-		//			findPossibleTiles(&avaliableTiles, i, centery-1);
-		//			map->tileArr[i][centery-1] = randomizeTileId(&avaliableTiles);
-		//			avaliableTiles.clear();
-		//			findPossibleTiles(&avaliableTiles, i, centery);
-		//			map->tileArr[i][centery] = randomizeTileId(&avaliableTiles);
-		//			avaliableTiles.clear();
-		//			if (map->tileArr[i][centery] == 0 || map->tileArr[i][centery-1] == 0) {
-		//				map->tileArr[i][centery] = -1;
-		//				map->tileArr[i][centery - 1] = -1;
-		//				i--;
-		//			}
-
-		//		}
-		//	}
-		//}
-
-		//generateCorridors();
-
-		////set all other tiles
-		//for (int i = 0; i < map->xsize; i++) {
-		//	for (int j = 0; j < map->ysize; j++) {
-		//		if (map->tileArr[i][j] == -1) {
-		//			findPossibleTiles(&avaliableTiles, i, j);
-		//			map->tileArr[i][j] = randomizeTileId(&avaliableTiles);// rand() % 16;
-		//			avaliableTiles.clear();
-		//		}
-		//	}
-		//}
+		//create floor to split for map generation
 		rect floor;
 		floor.posx = 0;
 		floor.posy = 0;
 		floor.sizex = map->xsize;
 		floor.sizey = map->ysize;
 		map->chunks.emplace(floor);
+
+		//create blocks and hallways
 		splitChunk();
-		splitBlock();
+
+		//add hallways to type-layer
 		while (!map->hallways.empty()) {
 			rect tile;
 			tile = map->hallways.front();
 			map->hallways.pop();
 			for (int i = 0; i < tile.sizex; i++) {
 				for (int j = 0; j < tile.sizey; j++) {
-					map->tileArr[tile.posx + i][tile.posy + j] = 0;
+					map->tileArr[tile.posx + i][tile.posy + j][1] = 0;
 				}
 			}
 		}
+
+		//create rooms from blocks
+		splitBlock();
+
+		//add rooms with individual type to type-layer
+		int roomCounter = 1;
 		while (!map->rooms.empty()) {
 			rect tile;
 			tile = map->rooms.front();
 			map->rooms.pop();
 			for (int i = 0; i < tile.sizex; i++) {
 				for (int j = 0; j < tile.sizey; j++) {
-					map->tileArr[tile.posx + i][tile.posy + j] = 15;
+					map->tileArr[tile.posx + i][tile.posy + j][1] = roomCounter;
+					map->matched.emplace(tile);
 				}
 			}
+			roomCounter++;
 		}
+		matchRoom();
 	}
 }
 
@@ -251,7 +78,7 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* tileFlat, Model* til
 	for (int i = 0; i < worldWidth; i++) {
 		for (int j = 0; j < worldDepth; j++) {
 			auto e = ECS::Instance()->createEntity("");
-			int tileId = map->tileArr[i][j];
+			int tileId = map->tileArr[i][j][0];
 			if (tileId<16 && tileId>-1) {
 				if (tileId == 0) {
 					e->addComponent<ModelComponent>(tileFlat);
@@ -317,7 +144,11 @@ void LevelGeneratorSystem::createWorld(Scene* scene, Model* tileFlat, Model* til
 					e->addComponent<ModelComponent>(tileCross);
 					e->addComponent<TransformComponent>(glm::vec3(tileSize * i + 20, 0.f, tileSize * j + 20));
 				}
-				e->getComponent<TransformComponent>()->setScale(glm::vec3(1.f, 1.0f, 1.f));
+				float height = 1.0f;
+				if (map->tileArr[i][j][1] != 0) {
+					height = 3.0f;
+				}
+				e->getComponent<TransformComponent>()->setScale(glm::vec3(1.f, height, 1.f));
 				e->addComponent<BoundingBoxComponent>(bb);
 				e->addComponent<CollidableComponent>();
 				scene->addEntity(e);
@@ -341,10 +172,10 @@ void LevelGeneratorSystem::findPossibleTiles(std::vector<int>* mapPointer, int p
 		MapComponent* map = e->getComponent<MapComponent>();
 		
 		int tiles[4];
-		tiles[0]=map->tileArr[posx][posy + 1];
-		tiles[1]= map->tileArr[posx+1][posy];
-		tiles[2] = map->tileArr[posx][posy-1];
-		tiles[3] = map->tileArr[posx - 1][posy];
+		tiles[0]=map->tileArr[posx][posy + 1][0];
+		tiles[1]= map->tileArr[posx+1][posy][0];
+		tiles[2] = map->tileArr[posx][posy-1][0];
+		tiles[3] = map->tileArr[posx - 1][posy][0];
 
 		int nrOfRules = 0;
 		std::vector<int> temp;
@@ -429,34 +260,6 @@ void LevelGeneratorSystem::findPossibleTiles(std::vector<int>* mapPointer, int p
 	}
 }
 
-void LevelGeneratorSystem::generateCorridors() {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		int pos = 0;
-		bool ns = true;
-		int corridors = 0;
-		float size = map->xsize * map->ysize;
-		while ((corridors / size) < 0.1f) {
-			pos = rand()%map->xsize;
-			for (int i = 0; i < map->xsize; i++) {
-				if (ns) {
-					if (map->tileArr[pos][i] == -1) {
-						map->tileArr[pos][i] = 0;
-						corridors++;
-					}
-				}
-				else {
-					if (map->tileArr[i][pos] == -1) {
-						map->tileArr[i][pos] =0;
-						corridors++;
-					}
-				}
-			}
-			ns = !ns;
-		}
-	}
-}
-
 void LevelGeneratorSystem::splitChunk() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
@@ -537,81 +340,135 @@ void LevelGeneratorSystem::splitChunk() {
 void LevelGeneratorSystem::splitBlock() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
-		bool ns = true;
+
 		while (!map->blocks.empty()) {
 			rect rekt, a, b;
 			rekt = map->blocks.front();
 			map->blocks.pop();
-			if (rand() % 100 >= map->roomSplitStop) {
-				if (ns) {					
-					if (rekt.sizex >2) {
-						int newSize = rand() % (rekt.sizex-1) + 1;
-						a.posy = rekt.posy;
-						a.posx = rekt.posx;
-						a.sizex = newSize;
-						a.sizey = rekt.sizey;
-						map->blocks.emplace(a);
-						b.posy = rekt.posy;
-						b.posx = rekt.posx + newSize;
-						b.sizex = rekt.sizex - newSize;
-						b.sizey = rekt.sizey;
-						map->blocks.emplace(b);
-					}
-					else if (rekt.sizex ==2 ) {
-						int newSize = 1;
-						a.posy = rekt.posy;
-						a.posx = rekt.posx;
-						a.sizex = newSize;
-						a.sizey = rekt.sizey;
-						map->blocks.emplace(a);
-						b.posy = rekt.posy;
-						b.posx = rekt.posx + newSize;
-						b.sizex = rekt.sizex - newSize;
-						b.sizey = rekt.sizey;
-						map->blocks.emplace(b);
-					}
-					else if (rekt.sizex < 2 && rekt.sizey < 2) {
-						map->rooms.emplace(rekt);
-					}
-					else {
-						map->blocks.emplace(rekt);
-					}
-					ns = !ns;
+			if (rand() % 100 > map->roomSplitStop) {
+				if (rekt.sizex <= map->minRoomSize && rekt.sizey <= map->minRoomSize) {
+					map->rooms.emplace(rekt);
 				}
-				else {
-					if (rekt.sizey > 2) {
-						int newSize = rand() % (rekt.sizey - 1) + 1;
+				else if ((rekt.sizex > rekt.sizey ||rekt.ns==2)&&rekt.ns<3) {
+					if (rekt.sizex > 3) {
+						int newSize = rand() % (rekt.sizex - 2) + 1;
 						a.posy = rekt.posy;
 						a.posx = rekt.posx;
-						a.sizey = newSize;
-						a.sizex = rekt.sizex;
-						map->blocks.emplace(a);
-						b.posy = rekt.posy + newSize;
-						b.posx = rekt.posx ;
-						b.sizex = rekt.sizex;
-						b.sizey = rekt.sizey - newSize;
-						map->blocks.emplace(b);
+						a.sizex = newSize;
+						a.sizey = rekt.sizey;
+						b.posy = rekt.posy;
+						b.posx = rekt.posx + newSize;
+						b.sizex = rekt.sizex - newSize;
+						b.sizey = rekt.sizey;
+						if (checkBorder(a) && checkBorder(b)) {
+							map->blocks.emplace(a);
+							map->blocks.emplace(b);
+						}
+						else {
+							rekt.ns += 1;
+							map->blocks.emplace(rekt);
+						}
+					}
+					else if (rekt.sizex == 3) {
+						int newSize = 1+rand()%2;
+						a.posy = rekt.posy;
+						a.posx = rekt.posx;
+						a.sizex = newSize;
+						a.sizey = rekt.sizey;
+						b.posy = rekt.posy;
+						b.posx = rekt.posx + newSize;
+						b.sizex = rekt.sizex - newSize;
+						b.sizey = rekt.sizey;
+						if (checkBorder(a) && checkBorder(b)) {
+							map->blocks.emplace(a);
+							map->blocks.emplace(b);
+						}
+						else {
+							rekt.ns += 1;
+							map->blocks.emplace(rekt);
+						}
 					}
 					else if (rekt.sizex == 2) {
 						int newSize = 1;
 						a.posy = rekt.posy;
 						a.posx = rekt.posx;
+						a.sizex = newSize;
+						a.sizey = rekt.sizey;
+						b.posy = rekt.posy;
+						b.posx = rekt.posx + newSize;
+						b.sizex = rekt.sizex - newSize;
+						b.sizey = rekt.sizey;
+						if (checkBorder(a) && checkBorder(b)) {
+							map->blocks.emplace(a);
+							map->blocks.emplace(b);
+						}
+						else {
+							rekt.ns += 1;
+							map->blocks.emplace(rekt);
+						}
+					}
+				}
+				else if(rekt.ns==0||rekt.ns==1 ){
+					if (rekt.sizey > 3) {
+						int newSize = rand() % (rekt.sizey - 2)+1;
+						a.posy = rekt.posy;
+						a.posx = rekt.posx;
 						a.sizey = newSize;
 						a.sizex = rekt.sizex;
-						map->blocks.emplace(a);
 						b.posy = rekt.posy + newSize;
 						b.posx = rekt.posx;
 						b.sizex = rekt.sizex;
 						b.sizey = rekt.sizey - newSize;
-						map->blocks.emplace(b);
+						if (checkBorder(a) && checkBorder(b)) {
+							map->blocks.emplace(a);
+							map->blocks.emplace(b);
+						}
+						else {
+							rekt.ns += 2;
+							map->blocks.emplace(rekt);
+						}
 					}
-					else if (rekt.sizex < 2 && rekt.sizey < 2) {
-						map->rooms.emplace(rekt);
+					else if (rekt.sizey == 3) {
+						int newSize = 1+rand()%2;
+						a.posy = rekt.posy;
+						a.posx = rekt.posx;
+						a.sizey = newSize;
+						a.sizex = rekt.sizex;
+						b.posy = rekt.posy + newSize;
+						b.posx = rekt.posx;
+						b.sizex = rekt.sizex;
+						b.sizey = rekt.sizey - newSize;
+						if (checkBorder(a) && checkBorder(b)) {
+							map->blocks.emplace(a);
+							map->blocks.emplace(b);
+						}
+						else {
+							rekt.ns += 2;
+							map->blocks.emplace(rekt);
+						}
 					}
-					else {
-						map->blocks.emplace(rekt);
+					else if (rekt.sizey == 2) {
+						int newSize = 1;
+						a.posy = rekt.posy;
+						a.posx = rekt.posx;
+						a.sizey = newSize;
+						a.sizex = rekt.sizex;
+						b.posy = rekt.posy + newSize;
+						b.posx = rekt.posx;
+						b.sizex = rekt.sizex;
+						b.sizey = rekt.sizey - newSize;
+						if (checkBorder(a) && checkBorder(b)) {
+							map->blocks.emplace(a);
+							map->blocks.emplace(b);
+						}
+						else {
+							rekt.ns += 2;
+							map->blocks.emplace(rekt);
+						}
 					}
-					ns = !ns;
+				}
+				else {
+					map->rooms.emplace(rekt);
 				}
 			}
 			else {
@@ -619,4 +476,95 @@ void LevelGeneratorSystem::splitBlock() {
 			}
 		}
 	}
+}
+
+void LevelGeneratorSystem::matchRoom() {
+	for (auto& e : entities) {
+		MapComponent* map = e->getComponent<MapComponent>();
+		int tiles[4];
+		for (int i = 0; i < map->xsize; i++) {
+			for (int j = 0; j < map->ysize; j++) {
+				//check typeID around current position to find tileID 
+				if (i - 1 < 0) {
+					tiles[0] = -1;
+				}
+				else {
+					tiles[0] = map->tileArr[i - 1][j][1];
+				}
+				if (j + 1 > map->ysize) {
+					tiles[1] = -1;
+				}
+				else {
+					tiles[1] = map->tileArr[i][j + 1][1];
+				}
+				if (i + 1 > map->xsize) {
+					tiles[2] = -1;
+				}
+				else {
+					tiles[2] = map->tileArr[i + 1][j][1];
+				}
+				if (j - 1 < 0) {
+					tiles[3] = -1;
+				}
+				else {
+					tiles[3] = map->tileArr[i][j - 1][1];
+				}
+
+				//match and add value for walls
+				if (tiles[0] != map->tileArr[i][j][1]) {
+					map->tileArr[i][j][0] += 8;
+				}
+				if (tiles[1] != map->tileArr[i][j][1]) {
+					map->tileArr[i][j][0] += 1;
+				}
+				if (tiles[2] != map->tileArr[i][j][1]) {
+					map->tileArr[i][j][0] += 2;
+				}
+				if (tiles[3] != map->tileArr[i][j][1]) {
+					map->tileArr[i][j][0] += 4;
+				}
+				if (map->tileArr[i][j][1] == -1) {
+					map->tileArr[i][j][0] = -1;
+				}
+			}
+		}
+	
+	}
+}
+
+bool LevelGeneratorSystem::checkBorder(rect rekt) {
+	bool top=false,bottom=false,left=false,right=false;
+	for (auto& e : entities) {
+		MapComponent* map = e->getComponent<MapComponent>();
+		for (int i = 0; i < rekt.sizex; i++) {
+			if (rekt.posx + i >= 0 && rekt.posx + i < map->xsize) {
+				if (rekt.posy > 0) {
+					if (map->tileArr[rekt.posx + i][rekt.posy - 1][1] == 0) {
+						bottom = true;
+					}
+				}
+				if (rekt.posy + rekt.sizey + 1 < map->ysize) {
+					if (map->tileArr[rekt.posx + i][rekt.posy + rekt.sizey ][1] == 0) {
+						top = true;
+					}
+				}
+			}
+		}
+
+		for (int i = 0; i < rekt.sizey; i++) {
+			if (rekt.posy + i >= 0 && rekt.posy + i < map->ysize) {
+				if (rekt.posx > 0) {
+					if (map->tileArr[rekt.posx - 1][rekt.posy + i][1] == 0) {
+						left = true;
+					}
+				}
+				if (rekt.posx + rekt.sizex + 1 < map->xsize) {
+					if (map->tileArr[rekt.posx + rekt.sizex][rekt.posy + i][1] == 0) {
+						right = true;
+					}
+				}
+			}
+		}
+	}
+	return (top||bottom||left||right);
 }

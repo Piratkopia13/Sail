@@ -7,23 +7,27 @@ struct rect {
 	int posy;
 	int sizex;
 	int sizey;
+	int ns=0;
 };
 class MapComponent : public Component<MapComponent> {
 public:
 	MapComponent() {
 		for (int i = 0; i < xsize; i++) {
 			for (int j = 0; j < ysize; j++) {
-				tileArr[i][j] = -1;
+				tileArr[i][j][0] = 0;
+				tileArr[i][j][1] = -1;
 			}
 		}
 	}
 	~MapComponent() {}
-	int tileArr[15][15];
-	int xsize=15, ysize=15;
+	const static int xsize=30, ysize=30;
+	int tileArr[xsize][ysize][2]; //0 is tileID, 1 is typeID
 	float hallwayThreshold = 0.3f;
 	int minSplitSize = 5;
-	int roomSplitStop = 20;
+	int minRoomSize = 1;
+	int roomSplitStop = 3;
+	int seed = 2;
 	int totalArea = xsize * ysize;
-	std::queue<rect> chunks, blocks, hallways, rooms;
+	std::queue<rect> chunks, blocks, hallways, rooms, matched;
 private:
 };
