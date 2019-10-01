@@ -20,7 +20,7 @@ DX12Texture::DX12Texture(const std::string& filename)
 	m_textureDesc.Width = m_textureData.getWidth();
 	m_textureDesc.Height = m_textureData.getHeight();
 	m_textureDesc.DepthOrArraySize = 1;
-	m_textureDesc.MipLevels = 1;
+	m_textureDesc.MipLevels = MIP_LEVELS;
 	m_textureDesc.SampleDesc.Count = 1;
 	m_textureDesc.SampleDesc.Quality = 0;
 	m_textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -37,7 +37,7 @@ DX12Texture::DX12Texture(const std::string& filename)
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = m_textureDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MipLevels = m_textureDesc.MipLevels;
 	context->getDevice()->CreateShaderResourceView(textureDefaultBuffers[0].Get(), &srvDesc, srvHeapCDHs[0]);
 
 	// Dont allow UAV access
@@ -75,6 +75,21 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffers[0].Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
 	//DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffer.Get(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	//transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	// Dispatch compute shader to generate mip levels
+
+	unsigned int srcMip = 0;
+
+	for (unsigned int mip = 0; mip < MIP_LEVELS; mip++) {
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = m_textureDesc.Format;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		uavDesc.Texture2D.MipSlice = srcMip + mip + 1;
+
+		//cmdList->SetComputeRootUnorderedAccessView(asd, )
+		//context->getDevice()->CreateUnorderedAccessView()
+		//SetUnorderedAccessView(GenerateMips::OutMip, mip, texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, srcMip + mip + 1, 1, &uavDesc);
+	}
 
 	m_isInitialized = true;
 }

@@ -19,6 +19,8 @@ public:
 	ID3D12Resource1* getResource() const;
 
 private:
+	static const unsigned int MIP_LEVELS = 1;
+
 	DX12API* context;
 	TextureData& m_textureData;
 	D3D12_RESOURCE_DESC m_textureDesc;
