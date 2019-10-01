@@ -22,7 +22,7 @@ public:
 		, posTarget(glm::vec3(0.f, 0.f, 0.f))
 	{}
 
-	void setTarget(Entity* targetEntity);
+	void setTarget(Entity* entityTarget_);
 	void setTarget(glm::vec3 targetPos);
 
 	float movementSpeed;

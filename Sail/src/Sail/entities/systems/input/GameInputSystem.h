@@ -3,6 +3,7 @@
 #include "Sail/entities/Entity.h"
 class Camera;
 class CameraController;
+class GameDataTracker;
 
 
 class GameInputSystem final : public BaseComponentSystem {
@@ -24,6 +25,8 @@ private:
 	void processMouseInput(const float& dt);
 
 	CameraController* m_cam = nullptr;
+	GameDataTracker* m_gameDataTracker = nullptr;
+
 
 	// --------- Earlier used variables below this line ---------
 	float m_runSpeed = 2.0;
