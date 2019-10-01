@@ -4,6 +4,7 @@
 #include "Sail/entities/components/Components.h"
 #include "../../../api/Input.h"
 #include "Sail/KeyBinds.h"
+#include "Sail/Application.h"
 #include "Sail/utils/GameDataTracker.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
@@ -96,7 +97,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				}
 			}
 		}
-
 
 		glm::vec3 forwards(
 			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
