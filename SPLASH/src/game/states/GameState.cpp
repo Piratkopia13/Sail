@@ -410,7 +410,7 @@ GameState::GameState(StateStack& stack)
 
 
 #ifdef _DEBUG
-		// Candle1 holds all lights you can place in debug..
+		// Candle1 holds all lights you can place in debug...
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
