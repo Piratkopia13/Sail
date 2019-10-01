@@ -121,10 +121,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		if (forwardMovement != 0.0f || rightMovement != 0.0f) {
 
 			// AUDIO TESTING (turn ON streaming)
-			if (m_canStart) {
+			if (!m_songStarted) {
 				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankLong.xwb", true);
-				m_canStart = false;
-				m_canStop = true;
+				m_songStarted = true;
 			}
 
 			// Calculate total movement
@@ -150,13 +149,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			// AUDIO TESTING (turn OFF looping running sound)
 			audioComp->m_isPlaying[SoundType::RUN] = false;
 			m_runSoundTimer = 0.0f;
-
-			// AUDIO TESTING (turning OFF streaming)
-			if (m_canStop) {
-				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankLong.xwb", false);
-				m_canStart = true;
-				m_canStop = false;
-			}
 		}
 	}
 }

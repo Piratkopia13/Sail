@@ -105,7 +105,7 @@ int AudioEngine::playSound(const std::string& filename) {
 
 void AudioEngine::streamSound(const std::string& filename, int streamIndex, bool loop) {
 	bool expectedValue = false;
-	//while (!m_streamLocks[streamIndex].compare_exchange_strong(expectedValue, true));
+	while (!m_streamLocks[streamIndex].compare_exchange_strong(expectedValue, true));
 
 	if (m_masterVoice == nullptr) {
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
@@ -457,7 +457,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 		m_isFinished[myIndex] = true;
 		m_streamLocks[myIndex].store(false);
 	}
-	std::cout << "Index #" << myIndex << " is FINISHED!\n";
 
 	return;
 }
