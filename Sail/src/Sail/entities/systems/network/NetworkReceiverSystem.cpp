@@ -94,6 +94,8 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::N
 	//}
 	//
 
+	// TODO: Manually add entity to this system, don't wait for ECS
+
 
 }
 
