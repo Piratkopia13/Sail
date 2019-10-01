@@ -8,7 +8,8 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "Network/NWrapperSingleton.h"	// New network
 #include "Network/NWrapper.h"			// 
-
+#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/ECS.h"
 
 #include <string>
 using namespace std;
@@ -67,7 +68,7 @@ void LobbyState::resetPlayerList()
 	m_playerCount = 0;
 }
 
-bool LobbyState::updatePerTick(float dt) {
+bool LobbyState::update(float dt, float alpha) {
 	// Update screen dimensions & ImGui related
 	// (Sure, events, but the only thing consuming resources is the LobbyState)
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
@@ -80,7 +81,7 @@ bool LobbyState::updatePerTick(float dt) {
 
 bool LobbyState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	m_scene.draw();
+	ECS::Instance()->getSystem<RenderSystem>()->draw();
 	return false;
 }
 

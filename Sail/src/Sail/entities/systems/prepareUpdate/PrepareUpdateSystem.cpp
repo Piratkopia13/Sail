@@ -5,8 +5,8 @@
 #include "Sail/entities/components/TransformComponent.h"
 
 PrepareUpdateSystem::PrepareUpdateSystem() {
-	requiredComponentTypes.push_back(TransformComponent::ID); // read-only
-	readBits |= TransformComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<TransformComponent>(true, true, true);
 }
 
 PrepareUpdateSystem::~PrepareUpdateSystem() {

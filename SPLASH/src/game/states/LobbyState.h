@@ -36,9 +36,7 @@ public:
 	// Process input for the state
 	bool processInput(float dt);
 	// Updates the state
-	virtual bool updatePerTick(float dt);
-	// Updates the state per frame
-	bool updatePerFrame(float dt, float alpha) override { return false; }
+	virtual bool update(float dt, float alpha = 1.0f);
 	// Renders the state
 	bool render(float dt, float alpha = 1.0f);
 	// Renders imgui
@@ -80,7 +78,6 @@ private:
 	bool m_firstFrame = true;	// Used solely for ImGui
 	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
-	Scene m_scene;
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	unsigned int m_outerPadding;
