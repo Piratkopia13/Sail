@@ -3,6 +3,7 @@
 
 #include "Sail.h"
 
+class Model;
 
 class BotFactory {
 public:
@@ -11,8 +12,16 @@ public:
 
 	void createBots(std::vector<glm::vec3> spawnPositions);
 
+	void initialize();
+	void reset();
+
+
 private:
+	//
 	ECS* p_ECS = nullptr;
+
+	//
+	bool m_isInitialized = false;
 
 
 	void createCharacterModel();

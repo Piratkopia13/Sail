@@ -107,8 +107,6 @@ private:
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
-	
-
 	std::unique_ptr<Model> m_boundingBoxModel;
 
 	bool m_paused = false;
