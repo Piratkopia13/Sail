@@ -11,19 +11,20 @@
 #include "Sail/entities/components/PhysicsComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
-
+#include "Sail/utils/GameDataTracker.h"
 
 GunSystem::GunSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(GunComponent::ID);
-	readBits |= GunComponent::BID;
-	writeBits |= GunComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<GunComponent>(true, true, true);
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 GunSystem::~GunSystem() {
 
 }
 
-void GunSystem::update(float dt, Scene* scene) {
+
+void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
 
@@ -44,7 +45,7 @@ void GunSystem::update(float dt, Scene* scene) {
 				physics->velocity = gun->direction * gun->projectileSpeed;
 				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
-				scene->addEntity(e);//change when scene is a component.
+				m_gameDataTracker->logWeaponFired();
 			}
 			gun->projectileSpawnTimer += dt;
 			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {
@@ -57,7 +58,4 @@ void GunSystem::update(float dt, Scene* scene) {
 			gun->projectileSpawnTimer = 0.f;
 		}
 	}
-}
-void GunSystem::update(float dt) {
-
-}
+} // update

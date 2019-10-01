@@ -41,18 +41,31 @@ void StateStack::processInput(float dt) {
 
 }
 
-void StateStack::update(float dt) {
+void StateStack::update(float dt, float alpha) {
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
 
 		// Return if a state returns false
 		// This allows states to stop underlying states from updating
-		if (!(*itr)->update(dt))
+		if (!(*itr)->update(dt, alpha))
 			break;
 
 	}
 
+}
+
+void StateStack::fixedUpdate(float dt) {
+
+	// Loop through the stack reversed
+	for ( auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr ) {
+
+		// Return if a state returns false
+		// This allows states to stop underlying states from updating
+		if ( !( *itr )->fixedUpdate(dt) )
+			break;
+
+	}
 }
 
 void StateStack::render(float dt, float alpha) {
@@ -89,16 +102,16 @@ void StateStack::onEvent(Event& event) {
 }
 
 void StateStack::pushState(States::ID stateID) {
-	m_pendingList.push_back(PendingChange(Push, stateID));
+	m_pendingList.emplace_back(Push, stateID);
 }
 void StateStack::popState() {
-	m_pendingList.push_back(PendingChange(Pop));
+	m_pendingList.emplace_back(Pop);
 }
 void StateStack::clearStack() {
-	m_pendingList.push_back(PendingChange(Clear));
+	m_pendingList.emplace_back(Clear);
 }
 bool StateStack::isEmpty() const {
-	return m_stack.size() == 0;
+	return m_stack.empty();
 }
 
 void StateStack::applyPendingChanges() {

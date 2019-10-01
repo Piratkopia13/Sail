@@ -3,6 +3,7 @@
 #include "states/MenuState.h"
 #include "states/LobbyHostState.h"
 #include "states/LobbyClientState.h"
+#include "states/InGameMenuState.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -14,10 +15,11 @@ Game::Game(HINSTANCE hInstance)
 
 	// Set starting state
 	//m_stateStack.pushState(States::MainMenu);
-	m_stateStack.pushState(States::Game);
+	m_stateStack.pushState(States::MainMenu);
 	
 	// Initialize the Network wrapper instance.
 	//NetworkWrapper::getInstance().initialize();
+	//
 }
 
 Game::~Game() {
@@ -34,6 +36,8 @@ void Game::registerStates() {
 	m_stateStack.registerState<LobbyHostState>(States::HostLobby);
 	m_stateStack.registerState<LobbyClientState>(States::JoinLobby);
 	m_stateStack.registerState<MenuState>(States::MainMenu);
+	m_stateStack.registerState<InGameMenuState>(States::Pause);
+	m_stateStack.registerState<MenuState>(States::End);
 }
 
 void Game::dispatchEvent(Event& event) {
@@ -49,8 +53,12 @@ void Game::processInput(float dt) {
 	m_stateStack.processInput(dt);
 }
 
-void Game::update(float dt) {
-	m_stateStack.update(dt);
+void Game::update(float dt, float alpha) {
+	m_stateStack.update(dt, alpha);
+}
+
+void Game::fixedUpdate(float dt) {
+	m_stateStack.fixedUpdate(dt);
 }
 
 void Game::render(float dt, float alpha) {

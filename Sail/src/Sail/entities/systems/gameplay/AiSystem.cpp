@@ -18,15 +18,9 @@
 #include "../Physics/Physics.h"
 
 AiSystem::AiSystem() {
-	requiredComponentTypes.push_back(TransformComponent::ID);
-	readBits |= TransformComponent::BID;
-	writeBits |= TransformComponent::BID;
-	requiredComponentTypes.push_back(PhysicsComponent::ID);
-	readBits |= PhysicsComponent::BID;
-	writeBits |= PhysicsComponent::BID;
-	requiredComponentTypes.push_back(AiComponent::ID);
-	readBits |= AiComponent::BID;
-	writeBits |= AiComponent::BID;
+	registerComponent<TransformComponent>(true, true, true);
+	registerComponent<PhysicsComponent>(true, true, true);
+	registerComponent<AiComponent>(true, true, true);
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
 }
@@ -34,8 +28,8 @@ AiSystem::AiSystem() {
 AiSystem::~AiSystem() {}
 
 #ifdef _DEBUG_NODESYSTEM
-void AiSystem::initNodeSystem(Model* bbModel, Octree* octree, Shader* shader, Scene* scene) {
-	m_nodeSystem->setDebugModelAndScene(shader, scene);
+void AiSystem::initNodeSystem(Model* bbModel, Octree* octree, Shader* shader) {
+	m_nodeSystem->setDebugModelAndScene(shader);
 	initNodeSystem(bbModel, octree);
 }
 #endif
@@ -165,17 +159,23 @@ void AiSystem::entityTargetFunc(AiComponent* aiComp, TransformComponent* transCo
 	if ( aiComp->entityTarget != nullptr ) {
 		if ( aiComp->timeTakenOnPath > m_timeBetweenPathUpdate ) {
 			aiComp->timeTakenOnPath = 0.f;
-			aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation();
+			//aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation();
+			aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
 			aiComp->reachedTarget = false;
 
 			updatePath(aiComp, transComp);
 		}
 
 		if ( gunComp != nullptr ) {
-			// Approx gun pos
+			// Approx AI gun pos
 			auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
-			// Approx enemy head pos
-			auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
+
+			// Candle pos
+			const glm::vec3& candlePos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
+
+			// Aim slightly higher to account for gravity
+			const glm::vec3& enemyPos = candlePos + glm::vec3(0, 0.3f, 0);
+
 			auto fireDir = enemyPos - gunPos;
 			fireDir = glm::normalize(fireDir);
 
@@ -183,7 +183,7 @@ void AiSystem::entityTargetFunc(AiComponent* aiComp, TransformComponent* transCo
 
 			Octree::RayIntersectionInfo rayHitInfo;
 			m_octree->getRayIntersection(gunPos + fireDir /*In order to (hopefully) miss itself*/, fireDir, &rayHitInfo);
-			if ( hitDist < 7.f && glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f && hitDist < rayHitInfo.closestHit ) {
+			if (hitDist < 7.f && glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 1.f) {
 				gunComp->setFiring(gunPos += fireDir, fireDir);
 
 				if ( fireDir.z < 0.f ) {

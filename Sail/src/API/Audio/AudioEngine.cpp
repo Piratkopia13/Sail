@@ -34,6 +34,14 @@ AudioEngine::AudioEngine() {
 	for (int i = 0; i < SOUND_COUNT; i++) {
 		m_sourceVoiceSound[i] = nullptr;
 	}
+
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		m_sourceVoiceStream[i] = nullptr;
+		m_isStreaming[i] = false;
+		m_isFinished[i] = true;
+		m_overlapped[i] = { 0 };
+		m_streamLocks[i].store(false);
+	}
 }
 
 AudioEngine::~AudioEngine(){
@@ -95,21 +103,19 @@ int AudioEngine::playSound(const std::string& filename) {
 	}
 }
 
-int AudioEngine::streamSound(const std::string& filename, bool loop) {
-	int returnValue = m_currStreamIndex.load(); // Store early
+void AudioEngine::streamSound(const std::string& filename, int streamIndex, bool loop) {
+	bool expectedValue = false;
+	//while (!m_streamLocks[streamIndex].compare_exchange_strong(expectedValue, true));
 
 	if (m_masterVoice == nullptr) {
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
-		return -1;
+		m_streamLocks[streamIndex].store(false);
+	}
+	else {
+		this->streamSoundInternal(filename, streamIndex, loop);
 	}
 
-	Application::getInstance()->pushJobToThreadPool(
-		[this, returnValue](int id) {
-			return this->streamSoundInternal("../Audio/wavebankLong.xwb", returnValue, false);
-		});
-
-	m_currStreamIndex.store((m_currStreamIndex + 2) % STREAMED_SOUNDS_COUNT);
-	return returnValue;
+	return;
 }
 
 void AudioEngine::stopSpecificSound(int index) {
@@ -180,6 +186,24 @@ float AudioEngine::getStreamVolume(int index) {
 	return returnValue;
 }
 
+int AudioEngine::getSoundIndex() {
+	return m_currSoundIndex;
+}
+
+int AudioEngine::getAvailableStreamIndex() {
+	int returnValue = -1;
+
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		if (m_isFinished[i]) {
+			m_isStreaming[i] = true;
+			returnValue = i;
+			break;
+		}
+	}
+
+	return returnValue;
+}
+
 void AudioEngine::setSoundVolume(int index, float value) {
 
 	if (this->checkSoundIndex(index)) {
@@ -214,19 +238,16 @@ void AudioEngine::initXAudio2() {
 }
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
-	if (m_streamedSounds[myIndex].isStreaming) {
-		while (m_streamedSounds[myIndex].isFinished == false) {
-			if (m_streamedSounds[myIndex].isStreaming) {
-				m_streamedSounds[myIndex].isStreaming = false;
-			}
-		}
-	}
 
 	if (m_isRunning) {
 
 #pragma region VARIABLES_LIST
-		m_streamedSounds[myIndex].isStreaming = true;
-		m_streamedSounds[myIndex].isFinished = false;
+		// Set to 'officially streaming'
+		m_isStreaming[myIndex] = true;
+		m_isFinished[myIndex] = false;
+		// Release the 'streamLock' AFTER we've set 'm_isStreaming[myIndex] = true'
+		m_streamLocks[myIndex].store(false);
+
 		WCHAR wavebank[MAX_PATH];
 		DirectX::WaveBankReader wbr;
 		StreamingVoiceContext voiceContext;
@@ -404,21 +425,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 				m_streamedSounds[myIndex].isStreaming = false;
 			}
 
-			if (!m_streamedSounds[myIndex].isStreaming)
-			{
-				m_streamedSounds[myIndex].sourceVoice->SetVolume(0);
-
-				XAUDIO2_VOICE_STATE state;
-				for (;;)
-				{
-					m_streamedSounds[myIndex].sourceVoice->GetState(&state);
-					if (!state.BuffersQueued)
-						break;
-
-					WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
-				}
-			}
-
 			currentChunk = 0;
 			currentVolume = 0;
 			m_streamedSounds[myIndex].sourceVoice->Stop();
@@ -426,15 +432,18 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 		//
 		// Clean up
 		//
-		if (m_streamedSounds[myIndex].sourceVoice != nullptr) {
-			m_streamedSounds[myIndex].sourceVoice->Stop(0);
-			m_streamedSounds[myIndex].sourceVoice->DestroyVoice();
-			m_streamedSounds[myIndex].sourceVoice = nullptr;
-			CloseHandle(m_streamedSounds[myIndex].overlapped.hEvent);
+		if (m_sourceVoiceStream[myIndex] != nullptr) {
+			m_sourceVoiceStream[myIndex]->Stop();
+			m_sourceVoiceStream[myIndex]->DestroyVoice();
+			m_sourceVoiceStream[myIndex] = nullptr;
+			CloseHandle(m_overlapped[myIndex].hEvent);
 		}
 
-		m_streamedSounds[myIndex].isFinished = true;
+		m_isFinished[myIndex] = true;
+		m_streamLocks[myIndex].store(false);
 	}
+	std::cout << "Index #" << myIndex << " is FINISHED!\n";
+
 	return;
 }
 
