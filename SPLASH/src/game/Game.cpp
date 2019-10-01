@@ -18,6 +18,7 @@ Game::Game(HINSTANCE hInstance)
 	
 	// Initialize the Network wrapper instance.
 	//NetworkWrapper::getInstance().initialize();
+	//
 }
 
 Game::~Game() {
