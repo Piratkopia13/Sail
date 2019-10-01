@@ -24,7 +24,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
-	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
+	unsigned int poolSize = std::max<unsigned int>(4, (10 * std::thread::hardware_concurrency()));
 	m_threadPool = std::unique_ptr<ctpl::thread_pool>(SAIL_NEW ctpl::thread_pool(poolSize));
 
 	// Set up window

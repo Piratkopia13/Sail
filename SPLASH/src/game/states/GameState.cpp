@@ -3,10 +3,11 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/candles/CandleSystem.h"
-#include "Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
+#include "Sail/entities/systems/entityManagement/EntityAdderSystem.h"
+#include "Sail/entities/systems/entityManagement/EntityRemovalSystem.h"
 #include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "Sail/entities/systems/light/LightSystem.h"
-#include "Sail/entities/systems/gameplay/AiSystem.h"
+#include "Sail/entities/systems/gameplay/ai/AiSystem.h"
 #include "Sail/entities/systems/gameplay/GunSystem.h"
 #include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
@@ -18,6 +19,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/TimeSettings.h"
+#include "Sail/utils/GameDataTracker.h"
 #include "Network/NWrapperSingleton.h"
 
 #include <sstream>
@@ -102,6 +104,9 @@ GameState::GameState(StateStack& stack)
 
 	// Create lifetime system
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
+
+	// Create entity adder system
+	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
 
 	// Create entity removal system
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
@@ -203,8 +208,6 @@ GameState::GameState(StateStack& stack)
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
-
-
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
@@ -218,9 +221,8 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
 	player->addComponent<AudioComponent>();
-	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
-
+	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
+	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
 
 
 	// Create candle for the player
@@ -466,7 +468,17 @@ bool GameState::processInput(float dt) {
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
 			if ( aiComp->entityTarget == nullptr ) {
-				aiComp->setTarget(m_player);
+				
+				// Find the candle child entity of player
+				Entity* candle = nullptr;
+				std::vector<Entity::SPtr> children = m_player->getChildEntities();
+				for (auto& child : children) {
+					if (child->hasComponent<CandleComponent>()) {
+						candle = child.get();
+						break;
+					}
+				}
+				aiComp->setTarget(candle);
 			} else {
 				aiComp->setTarget(nullptr);
 			}
@@ -487,7 +499,7 @@ bool GameState::processInput(float dt) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
 		Event e(Event::POTATO);
 		m_app->dispatchEvent(e);
-	}
+	}  
 
 	// Lights the selected candle
 	if (Input::WasKeyJustPressed(KeyBinds::lightCandle1)) {
@@ -497,12 +509,30 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.candleSystem->lightCandle("Map_Candle2");
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+		if (m_paused) {
+			Input::HideCursor(!Input::IsCursorHidden());
+			m_paused = false;
+			requestStackPop();
+		}
+		else if(!m_paused){
+			if (Input::IsCursorHidden()) {
+				Input::HideCursor(!Input::IsCursorHidden());
+			}
+			m_paused = true;
+			requestStackPush(States::Pause);
+
+		}
+
+	}
+
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
 		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
 	}
 #endif
+
 	return true;
 }
 
@@ -788,6 +818,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
+	m_componentSystems.entityAdderSystem->update(0.0f);
+
 	m_componentSystems.physicSystem->update(dt);
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
@@ -803,9 +835,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
-
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
-
 	runSystem(dt, m_componentSystems.audioSystem);
 
 	// Wait for all the systems to finish before starting the removal system
@@ -814,7 +844,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	}
 
 	// Will probably need to be called last
-	m_componentSystems.entityRemovalSystem->update(dt);
+	m_componentSystems.entityRemovalSystem->update(0.0f);
 }
 
 
@@ -830,6 +860,8 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
+
+	m_componentSystems.audioSystem->update(dt);
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {

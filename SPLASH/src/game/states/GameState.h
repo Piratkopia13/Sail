@@ -5,6 +5,7 @@
 class AiSystem;
 class AnimationSystem;
 class CandleSystem;
+class EntityAdderSystem;
 class EntityRemovalSystem;
 class LifeTimeSystem;
 class LightSystem;
@@ -58,6 +59,7 @@ private:
 		AiSystem* aiSystem = nullptr;
 		AnimationSystem* animationSystem = nullptr;
 		CandleSystem* candleSystem = nullptr;
+		EntityAdderSystem* entityAdderSystem = nullptr;
 		EntityRemovalSystem* entityRemovalSystem = nullptr;
 		LifeTimeSystem* lifeTimeSystem = nullptr;
 		LightSystem* lightSystem = nullptr;
@@ -104,6 +106,8 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 
+	bool m_paused = false;
+	
 	Octree* m_octree;
 	bool m_disableLightComponents;
 
