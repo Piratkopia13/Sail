@@ -40,6 +40,7 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);

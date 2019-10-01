@@ -231,11 +231,16 @@ GameState::GameState(StateStack& stack)
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
 	e->getComponent<CandleComponent>()->setOwner(player->getID());
 	player->addChildEntity(e);
-	
+
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
 	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+
+
+
+	// Inform CandleSystem of the player
+	m_componentSystems.candleSystem->setPlayerEntityID(player->getID());
 
 
 	/*
@@ -529,13 +534,21 @@ bool GameState::processInput(float dt) {
 
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
-
+	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
 
 	return true;
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
+	return true;
+}
+
+bool GameState::onPlayerCandleHit(PlayerCandleHitEvent& event) {
+	
+	// Will be replaced by EndState soon
+	std::cout << "Player hit\n";
+	
 	return true;
 }
 
