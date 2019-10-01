@@ -133,8 +133,9 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::N
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(translation);
 		//e->addComponent<BoundingBoxComponent>(boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(nullptr); // TODO: Use a bounding box
 		//e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-		//e->addComponent<CollidableComponent>();
+		e->addComponent<CollidableComponent>();
 		break;
 	default:
 		break;
