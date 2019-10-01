@@ -141,11 +141,6 @@ GameState::GameState(StateStack& stack)
 	else {
 		m_componentSystems.networkSystem = ECS::Instance()->createSystem<NetworkClientSystem>();
 	}
-	// Player creation | Needs to be before networkSystem is initialized
-	m_player = ECS::Instance()->createEntity("player");
-	m_componentSystems.networkSystem->initialize(m_player.get());
-
-
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
