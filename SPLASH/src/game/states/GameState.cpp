@@ -222,8 +222,6 @@ GameState::GameState(StateStack& stack)
 	player->addComponent<AudioComponent>();
 	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
 	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::LANDING, "../Audio/landingGrunt.wav", 0.0f, true);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::SHOOT, "../Audio/pew.wav", 0.15f, true);
 
 
 	// Create candle for the player
