@@ -61,6 +61,7 @@ public:
 	void queueDestructionOfEntity(Entity* entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
 	void destroyEntity(int ecsIndex);
+	void destroyAllEntities();
 
 	/*
 		Adds an already existing system of a chosen type

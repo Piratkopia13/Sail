@@ -60,6 +60,14 @@ void ECS::destroyEntity(int ecsIndex) {
 	m_entities.pop_back();
 }
 
+void ECS::destroyAllEntities() {
+	for (auto& e : m_entities) {
+		e->removeAllComponents();
+		e->removeFromSystems();
+	}
+	m_entities.clear();
+}
+
 void ECS::addEntityToSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 

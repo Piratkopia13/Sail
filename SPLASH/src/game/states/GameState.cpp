@@ -18,6 +18,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/TimeSettings.h"
+#include "Network/NWrapperSingleton.h"
 
 #include <sstream>
 #include <iomanip>
@@ -448,8 +449,9 @@ bool GameState::processInput(float dt) {
 
 	if (Input::WasKeyJustPressed(SAIL_KEY_P)) {
 		this->requestStackPop();
-		this->requestStackPush(States::MainMenu);
+		this->requestStackPush(States::EndGame);
 
+		shutDownGameState();
 	}
 
 	//Test ray intersection
@@ -764,6 +766,15 @@ bool GameState::renderImGuiLightDebug(float dt) {
 	}
 	ImGui::End();
 	return true;
+}
+
+void GameState::shutDownGameState() {
+
+	// Reset network
+	NWrapperSingleton::getInstance().resetNetwork();
+
+	// Clear all entities
+	ECS::Instance()->destroyAllEntities();
 }
 
 // HERE BE DRAGONS

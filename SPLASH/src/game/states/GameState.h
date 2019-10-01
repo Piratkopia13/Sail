@@ -44,6 +44,8 @@ private:
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
 
+	void shutDownGameState();
+
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);

@@ -8,15 +8,15 @@ public:
 	~EndGameState();
 
 	// Process input for the state
-	bool processInput(float dt);
+	bool processInput(float dt) override;
 	// Updates the state
-	bool update(float dt, float alpha = 1.0f);
+	bool update(float dt, float alpha = 1.0f) override;
 	// Renders the state
-	bool render(float dt, float alpha = 1.0f);
+	bool render(float dt, float alpha = 1.0f) override;
 	// Renders imgui
-	bool renderImgui(float dt);
+	bool renderImgui(float dt) override;
 	// Sends events to the state
-	bool onEvent(Event& event) { return true; }
+	bool onEvent(Event& event) override { return true; }
 
 private:
 
