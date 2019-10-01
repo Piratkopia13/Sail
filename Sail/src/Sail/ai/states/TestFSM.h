@@ -10,7 +10,7 @@ public:
 
 	~TestFSM() {}
 
-	void update(float dt) override {
+	void update(float dt, Entity* entity) override {
 		Logger::Log("This is the " + m_name + "!");
 
 		FiniteStateMachine::update(dt);

@@ -12,7 +12,7 @@ public:
 
 	}
 
-	void update(float dt) override {
+	void update(float dt, Entity* entity) override {
 		Logger::Log("I am da test state, hello!");
 	}
 

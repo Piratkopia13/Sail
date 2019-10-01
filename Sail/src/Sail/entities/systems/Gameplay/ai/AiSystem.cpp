@@ -5,6 +5,7 @@
 #include "../../../components/TransformComponent.h"
 #include "../../../components/CandleComponent.h"
 #include "../../../components/GunComponent.h"
+#include "../../../components/FSMComponent.h"
 #include "Sail/ai/pathfinding/NodeSystem.h"
 
 #include "../../../ECS.h"
@@ -139,8 +140,5 @@ void AiSystem::update(float dt) {
 
 
 void AiSystem::aiUpdateFunc(Entity* entity, const float dt) {
-	auto aiComp = entity->getComponent<AiComponent>();
-	auto transComp = entity->getComponent<TransformComponent>();
-	auto physComp = entity->getComponent<PhysicsComponent>();
-	auto gunComp = entity->getComponent<GunComponent>();
+	entity->getComponent<FSMComponent>()->update(dt, entity);
 }

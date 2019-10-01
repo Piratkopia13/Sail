@@ -14,7 +14,7 @@ public:
 	AttackingState();
 	~AttackingState();
 
-	void update(float dt) override;
+	void update(float dt, Entity* entity) override;
 	void reset() override;
 	void init() override;
 

@@ -13,7 +13,7 @@ AttackingState::AttackingState() {}
 
 AttackingState::~AttackingState() {}
 
-void AttackingState::update(float dt) {
+void AttackingState::update(float dt, Entity* entity) {
 
 }
 

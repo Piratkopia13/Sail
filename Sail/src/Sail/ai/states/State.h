@@ -7,6 +7,8 @@ typedef unsigned int FSMStateID;
 
 FSMStateID global_fsmStateID = 0;
 
+class Entity;
+
 namespace FSM {
 	struct Transition;
 
@@ -40,7 +42,7 @@ namespace FSM {
 			return m_transitions;
 		}
 
-		virtual void update(float dt) = 0;
+		virtual void update(float dt, Entity* entity) = 0;
 
 		virtual void reset() = 0;
 

@@ -7,6 +7,8 @@
 #include "State.h"
 #include "Sail/utils/Utils.h"
 
+class Entity;
+
 class FiniteStateMachine {
 public:
 	FiniteStateMachine(const std::string& name)
@@ -20,7 +22,7 @@ public:
 		}
 	}
 
-	virtual void update(float dt) {
+	virtual void update(float dt, Entity* entity) {
 		for ( auto transition : m_currentState->getTransitions() ) {
 			if ( transition.first ) {
 				m_currentState->reset();
@@ -29,7 +31,7 @@ public:
 			}
 		}
 
-		m_currentState->update(dt);
+		m_currentState->update(dt, entity);
 	}
 
 	/**
