@@ -99,7 +99,6 @@ public:
 	float getSoundVolume(int index);
 	float getStreamVolume(int index);
 	int getSoundIndex();
-	//int getStreamIndex();
 	int getAvailableStreamIndex();
 
 	void setSoundVolume(int index, float value = VOL_HALF);

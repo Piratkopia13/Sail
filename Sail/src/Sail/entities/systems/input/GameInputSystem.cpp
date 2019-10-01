@@ -63,6 +63,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		if (Input::IsKeyPressed(KeyBinds::moveUp)) {
 			if (!m_wasSpacePressed && physicsComp->onGround) {
 				physicsComp->velocity.y = 5.0f;
+				// AUDIO TESTING - JUMPING
 				audioComp->m_isPlaying[SoundType::JUMP] = true;
 				m_gameDataTracker->logJump();
 			}
@@ -72,12 +73,17 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			m_wasSpacePressed = false;
 		}
 
+		// AUDIO TESTING - LANDING
 		if (!physicsComp->onGround) {
 			m_hasLanded = false;
+			m_fallTimer += dt;
 		}
-		else if (physicsComp->onGround && m_hasLanded == false) {
+		else if (physicsComp->onGround && m_hasLanded == false && (m_fallTimer > 0.8f)) {
 			audioComp->m_isPlaying[SoundType::LANDING] = true;
 			m_hasLanded = true;
+		}
+		else {
+			m_fallTimer = 0.0f;
 		}
 
 		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
@@ -121,10 +127,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		if (forwardMovement != 0.0f || rightMovement != 0.0f) {
 
 			// AUDIO TESTING (turn ON streaming)
-			if (m_canStart) {
+			if (!m_songStarted) {
 				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankLong.xwb", true);
-				m_canStart = false;
-				m_canStop = true;
+				m_songStarted = true;
 			}
 
 			// Calculate total movement
@@ -150,13 +155,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			// AUDIO TESTING (turn OFF looping running sound)
 			audioComp->m_isPlaying[SoundType::RUN] = false;
 			m_runSoundTimer = 0.0f;
-
-			// AUDIO TESTING (turning OFF streaming)
-			if (m_canStop) {
-				audioComp->m_streamingRequests.emplace_back("../Audio/wavebankLong.xwb", false);
-				m_canStart = true;
-				m_canStop = false;
-			}
 		}
 	}
 }

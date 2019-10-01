@@ -29,9 +29,11 @@ private:
 
 
 	// --------- Earlier used variables below this line ---------
+	bool m_songStarted = false;
 	float m_runSpeed = 2.0;
 	float m_movementSpeed = 20.f;
 	float m_runSoundTimer = 0.0f;
+	float m_fallTimer = 0.0f;
 	bool m_wasSpacePressed = false;
 	bool m_hasLanded = true;
 	float m_projectileSpawnCounter = 0.f;
@@ -39,10 +41,6 @@ private:
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
-
-	//TEMP VARIABLE FOR SOUND
-	bool m_canStart = true;
-	bool m_canStop = false;
 
 	glm::vec3 calculateNormalizedRightVector();
 
