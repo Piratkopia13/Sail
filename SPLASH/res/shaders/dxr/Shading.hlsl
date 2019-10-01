@@ -46,8 +46,8 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.9f) {
 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
 	
-	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
-	// payload.color = phongShade(worldPosition, worldNormal, albedo);
+	// payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
+	payload.color = phongShade(worldPosition, worldNormal, albedo);
 
 	// float4 phongColor = phongShade(worldPosition, worldNormal, albedo);
 	
