@@ -5,6 +5,7 @@
 class AiSystem;
 class AnimationSystem;
 class CandleSystem;
+class EntityAdderSystem;
 class EntityRemovalSystem;
 class LifeTimeSystem;
 class LightSystem;
@@ -39,23 +40,27 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
+
+	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
-	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
+	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos);
 
 private:
 	struct Systems {
 		AiSystem* aiSystem = nullptr;
 		AnimationSystem* animationSystem = nullptr;
 		CandleSystem* candleSystem = nullptr;
+		EntityAdderSystem* entityAdderSystem = nullptr;
 		EntityRemovalSystem* entityRemovalSystem = nullptr;
 		LifeTimeSystem* lifeTimeSystem = nullptr;
 		LightSystem* lightSystem = nullptr;
@@ -102,13 +107,8 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 
-
-	std::unique_ptr<Model> m_cubeModel;
-	std::unique_ptr<Model> m_planeModel;
+	bool m_paused = false;
 	
-
-	std::unique_ptr<Model> m_boundingBoxModel;
-
 	Octree* m_octree;
 	bool m_disableLightComponents;
 
@@ -117,4 +117,6 @@ private:
 
 	std::vector<std::future<BaseComponentSystem*>> m_runningSystemJobs;
 	std::vector<BaseComponentSystem*> m_runningSystems;
+
+	bool m_poppedThisFrame = false;
 };

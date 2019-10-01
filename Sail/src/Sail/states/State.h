@@ -17,7 +17,7 @@ class State : public IEventListener {
 		State(StateStack& stack);
 		virtual ~State();
 
-		// Process input for the state
+		// Process input for the state.
 		virtual bool processInput(float dt) = 0;
 		// Updates the state - runs every frame
 		virtual bool update(float dt, float alpha) = 0;

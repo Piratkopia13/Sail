@@ -13,6 +13,7 @@ class Octree;
 
 #ifdef _DEBUG_NODESYSTEM
 class Shader;
+class Scene;
 #endif
 
 class AiSystem final : public BaseComponentSystem {
@@ -22,7 +23,7 @@ public:
 
 	void initNodeSystem(Model* bbModel, Octree* octree);
 #ifdef _DEBUG_NODESYSTEM
-	void initNodeSystem(Model* bbModel, Octree* octree, Shader* shader);
+	void initNodeSystem(Model* bbModel, Octree* octree, Shader* shader, Scene* scene);
 #endif
 
 	/*
