@@ -38,7 +38,6 @@ void Game::registerStates() {
 	m_stateStack.registerState<LobbyClientState>(States::JoinLobby);
 	m_stateStack.registerState<MenuState>(States::MainMenu);
 	m_stateStack.registerState<InGameMenuState>(States::Pause);
-	m_stateStack.registerState<MenuState>(States::End);
 	m_stateStack.registerState<EndGameState>(States::EndGame);
 }
 
