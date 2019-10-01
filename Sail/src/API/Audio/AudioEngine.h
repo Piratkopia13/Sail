@@ -108,8 +108,11 @@ private:
 	bool m_singlePress3 = true;//
 	// *-*-*-*-*-*-*-*-*-*-*-*//
 
-	// The main 'XAudio2' engine
+	// The main audio 'core'
 	IXAudio2* m_xAudio2 = nullptr;
+	// The main 3D-audio 'core'
+	X3DAUDIO_HANDLE m_xAudio3D;
+
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
 	// Represents each loaded sound in the form of an 'object'
@@ -130,6 +133,7 @@ private:
 	// PRIVATE FUNCTION
 	//-----------------
 	void initXAudio2();
+	void initXAudio3D();
 
 	void streamSoundInternal(const std::string& filename, int myIndex, bool loop);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);

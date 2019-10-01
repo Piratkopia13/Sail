@@ -237,6 +237,15 @@ void AudioEngine::initXAudio2() {
 	}
 }
 
+void AudioEngine::initXAudio3D() {
+
+	HRESULT hr;
+	DWORD channelMaskHolder;
+	X3DAUDIO_HANDLE m_xAudio3D;
+
+	X3DAudioInitialize(m_masterVoice->GetChannelMask(&channelMaskHolder), FLT_MIN, m_xAudio3D);
+}
+
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
 
 	if (m_isRunning) {

@@ -223,7 +223,6 @@ GameState::GameState(StateStack& stack)
 	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
 	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
 
-
 	// Create candle for the player
 	m_currLightIndex = 0;
 	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 1.0f, 0.f));
@@ -235,12 +234,10 @@ GameState::GameState(StateStack& stack)
 	m_cam.lookAt(glm::vec3(0.f));
 	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 
-
 	/*
 		Creation of entities
 	*/
 
-	
 	/*Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
 	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
