@@ -19,11 +19,16 @@ public:
 		int hit;
 	};
 
+	struct Metaball {
+		glm::vec3 pos;
+		float distToCamera;
+	};
+
 	DXRBase(const std::string& shaderFilename);
 	~DXRBase();
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights);
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	virtual bool onEvent(Event& event) override;
@@ -71,6 +76,9 @@ private:
 	void createHitGroupLocalRootSignature();
 	void createMissLocalRootSignature();
 
+	void initMetaballBuffers();
+	void updateMetaballpositions(const std::vector<Metaball>& metaballs);
+
 private:
 	DX12API* m_context;
 	std::string m_shaderFilename;
@@ -100,6 +108,9 @@ private:
 	UINT m_heapIncr;
 
 	std::vector<MeshHandles> m_rtMeshHandles;
+	//Metaballs
+	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
+	UINT m_metaballsToRender;
 
 	const WCHAR* m_rayGenName = L"rayGen";
 	const WCHAR* m_closestHitName = L"closestHitTriangle";
@@ -118,6 +129,6 @@ private:
 	//Tobias Testing Stuff
 	UINT m_nTriangleGeometry	= 0;
 	UINT m_nProceduralGeometry	= 0;
-	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.1, -0.1, -0.1, 0.1, 0.1, 0.1 };
+	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2, -0.2, -0.2, 0.2, 0.2, 0.2 };
 	ID3D12Resource1* m_aabb_desc_resource; //m_aabb_desc uploaded to GPU
 };

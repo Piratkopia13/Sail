@@ -6,6 +6,7 @@
 #include "API/DX12/DX12IndexBuffer.h"
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
+#include "API/DX12/DX12API.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename)
 	: m_shaderFilename(shaderFilename) {
@@ -166,14 +167,46 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs) {
+	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? metaballs.size() : MAX_NUM_METABALLS;
+	updateMetaballpositions(metaballs);
+
 	DXRShaderCommon::SceneCBuffer newData = {};
 	newData.cameraPosition = cam.getPosition();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
+	newData.nMetaballs = m_metaballsToRender;
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
 	m_sceneCB[m_context->getFrameIndex()]->updateData(&newData, sizeof(newData));
+}
+
+void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
+	if (m_metaballsToRender == 0) {
+		return;
+	}
+
+	void* pMappedData;
+	ID3D12Resource1* res = m_metaballPositions_srv[m_context->getFrameIndex()];
+
+ 	HRESULT hr =  res->Map(0, nullptr, &pMappedData);
+	if (FAILED(hr)) {
+		_com_error err(hr);
+		std::cout << err.ErrorMessage() << std::endl;
+
+		hr = m_context->getDevice()->GetDeviceRemovedReason();
+		_com_error err2(hr);
+		std::cout << err2.ErrorMessage() << std::endl;
+
+		return;
+	}
+	int offset = 0;
+	int offsetInc = sizeof(metaballs[0].pos);
+	for (size_t i = 0; i < m_metaballsToRender; i++) {;
+		memcpy(static_cast<char*>(pMappedData) + offset, &metaballs[i].pos, offsetInc);
+		offset += offsetInc;
+	}
+	res->Unmap(0, nullptr);
 }
 
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
@@ -272,11 +305,15 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 	unsigned int blasIndex = 0;
 	unsigned int instanceID = 0;
+	unsigned int instanceID_metaballs = 0;
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
-
 		for (auto& transform : instanceList.instanceTransforms) {
-			pInstanceDesc->InstanceID = blasIndex;			// exposed to the shader via InstanceID() - currently same for all instances of same material
+			if (it.first == nullptr) {
+				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
+			} else {
+				pInstanceDesc->InstanceID = blasIndex;
+			}
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
@@ -403,6 +440,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 }
 
 void DXRBase::createInitialShaderResources(bool remake) {
+	initMetaballBuffers();
 
 	// Create some resources only once on init
 	if (!m_rtDescriptorHeap || remake) {
@@ -476,6 +514,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	m_rtMeshHandles.clear();
 
 	unsigned int blasIndex = 0;
+	unsigned int metaballIndex = 0;
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
 		Mesh* mesh = it.first;
@@ -540,7 +579,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 			//float r = ((int)time % 10) / 10.0f;
 
 			meshData.flags = DXRShaderCommon::MESH_NO_FLAGS;
-			meshData.color = glm::vec4(time, 1-time, totalTime, 1);
+			meshData.color = glm::vec4((float)(metaballIndex++), 1-time, totalTime, 1);
 			m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 		}
 
@@ -611,6 +650,10 @@ void DXRBase::updateShaderTables() {
 					if (parameterName == "MeshCBuffer") {
 						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
 						tableBuilder.addDescriptor(meshCBHandle, blasIndex);
+					}
+					else if (parameterName == "MetaballPositions") {
+						D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballPositions_srv[frameIndex]->GetGPUVirtualAddress();
+						tableBuilder.addDescriptor(metaballHandle, blasIndex);
 					} else {
 						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
 					}
@@ -686,8 +729,9 @@ void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup->addStaticSampler();
 	m_localSignatureHitGroup->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 
-	/*==========TEST=========*/
+	/*==========Metaballs=========*/
 	m_localSignatureHitGroup2 = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal2");
+	m_localSignatureHitGroup2->addSRV("MetaballPositions", 1, 2);
 	m_localSignatureHitGroup2->addCBV("MeshCBuffer", 1, 0);
 	m_localSignatureHitGroup2->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
@@ -698,4 +742,11 @@ void DXRBase::createMissLocalRootSignature() {
 	m_localSignatureMiss->addStaticSampler();
 
 	m_localSignatureMiss->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+}
+
+void DXRBase::initMetaballBuffers() {
+	m_metaballPositions_srv.reserve(DX12API::NUM_SWAP_BUFFERS);
+	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
+		m_metaballPositions_srv.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), MAX_NUM_METABALLS * sizeof(glm::vec3), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
+	}
 }

@@ -31,7 +31,7 @@ public:
 	glm::vec3 direction;
 
 	float projectileSpawnTimer = 0.f;
-	float projectileSpeed = 20.f;
+	float projectileSpeed = 10.f;
 	bool firing = false;
 
 private:
@@ -39,5 +39,5 @@ private:
 	Model* m_wireframeModel;
 
 
-	float m_projectileSpawnLimit = 0.1f;
+	float m_projectileSpawnLimit = 0.5f;
 };

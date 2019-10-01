@@ -24,6 +24,7 @@ namespace DXRShaderCommon {
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 8
+#define MAX_NUM_METABALLS 100
 
 static const uint MESH_NO_FLAGS	 			= 	0;
 static const uint MESH_USE_INDICES 			= 	1 << 0;
@@ -59,7 +60,7 @@ struct PointLightInput {
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
 	float3 cameraPosition;
-	float padding;
+	uint nMetaballs;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 };
 

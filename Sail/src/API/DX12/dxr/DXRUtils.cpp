@@ -216,7 +216,7 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 			LPCWCH& shader = m_shaderNames[i];
 			// Copy shader identifier
 			void* shaderID = m_soProps->GetShaderIdentifier(shader);
-			assert(shaderID != nullptr, "Shader Identifier not found in stateObject: id-%s", shader);
+			assert(shaderID != nullptr && "Shader Identifier not found");
 			memcpy(pData, shaderID, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 			pData += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 			// Copy other data (descriptors, constants)
@@ -234,11 +234,11 @@ void DXRUtils::ShaderTableBuilder::addShader(const LPCWSTR& shaderName, UINT ins
 }
 
 void DXRUtils::ShaderTableBuilder::addDescriptor(UINT64& descriptor, UINT instance) {
-	assert(instance < m_numInstances, "DXRUtils::ShaderTableBuilder::addDescriptor");
+	assert(instance < m_numInstances);
 	auto ptr = static_cast<char*>(m_data[instance]) + m_dataOffsets[instance];
 	*(UINT64*)ptr = descriptor;
 	m_dataOffsets[instance] += sizeof(descriptor);
-	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance, "DXRUtils::ShaderTableBuilder::addDescriptor");
+	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance);
 }
 
 void DXRUtils::ShaderTableBuilder::addConstants(UINT numConstants, float* constants, UINT instance) {
