@@ -46,12 +46,14 @@ private:
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
 
+	void shutDownGameState();
+
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
-	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
+	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos);
 
 private:
 	struct Systems {
@@ -105,15 +107,8 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 
-
-	std::unique_ptr<Model> m_cubeModel;
-	std::unique_ptr<Model> m_planeModel;
-	
-
-	std::unique_ptr<Model> m_boundingBoxModel;
-
 	bool m_paused = false;
-
+	
 	Octree* m_octree;
 	bool m_disableLightComponents;
 
