@@ -51,6 +51,9 @@ Entity::SPtr ECS::createEntity(const std::string& name) {
 void ECS::queueDestructionOfEntity(Entity* entity) {
 	// Add entity to removal system
 	m_entityRemovalSystem->addEntity(entity);
+	
+	// Might be a poor solution
+	m_entityRemovalSystem->addQueuedEntities();
 }
 
 void ECS::destroyEntity(const Entity::SPtr entityToRemove) {
