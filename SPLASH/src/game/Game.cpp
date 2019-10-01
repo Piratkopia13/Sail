@@ -4,6 +4,7 @@
 #include "states/LobbyHostState.h"
 #include "states/LobbyClientState.h"
 #include "states/InGameMenuState.h"
+#include "states/EndGameState.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -37,7 +38,7 @@ void Game::registerStates() {
 	m_stateStack.registerState<LobbyClientState>(States::JoinLobby);
 	m_stateStack.registerState<MenuState>(States::MainMenu);
 	m_stateStack.registerState<InGameMenuState>(States::Pause);
-	m_stateStack.registerState<MenuState>(States::End);
+	m_stateStack.registerState<EndGameState>(States::EndGame);
 }
 
 void Game::dispatchEvent(Event& event) {
