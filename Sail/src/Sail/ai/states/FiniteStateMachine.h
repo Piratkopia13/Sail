@@ -2,8 +2,6 @@
 
 
 #include <unordered_map>
-#include <vector>
-#include <string>
 
 #include "State.h"
 #include "Sail/utils/Utils.h"
@@ -14,7 +12,7 @@ public:
 		m_currentState = nullptr;
 	}
 
-	~FiniteStateMachine() {
+	virtual ~FiniteStateMachine() {
 		for ( int i = 0; i < m_states.size(); i++ ) {
 			Memory::SafeDelete(m_states[i]);
 		}

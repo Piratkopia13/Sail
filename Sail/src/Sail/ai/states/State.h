@@ -1,6 +1,6 @@
 #pragma once
 
-#include <list>
+#include <vector>
 
 typedef unsigned int FSMStateID;
 
@@ -61,10 +61,10 @@ namespace FSM {
 			floatGreaterThanChecks.emplace_back(toCheck, value);
 		}
 
-		std::list<std::pair<bool*, bool>> boolChecks;
-		std::list<std::pair<float*, float>> floatLessThanChecks;
-		std::list<std::pair<float*, float>> floatEqualChecks;
-		std::list<std::pair<float*, float>> floatGreaterThanChecks;
+		std::vector<std::pair<bool*, bool>> boolChecks;
+		std::vector<std::pair<float*, float>> floatLessThanChecks;
+		std::vector<std::pair<float*, float>> floatEqualChecks;
+		std::vector<std::pair<float*, float>> floatGreaterThanChecks;
 	};
 
 
