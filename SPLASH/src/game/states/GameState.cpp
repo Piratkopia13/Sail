@@ -802,6 +802,11 @@ bool GameState::renderImGuiLightDebug(float dt) {
 
 void GameState::shutDownGameState() {
 
+	// Show mouse cursor if hidden
+	if (Input::IsCursorHidden()) {
+		Input::HideCursor(!Input::IsCursorHidden());
+	}
+
 	// Reset network
 	NWrapperSingleton::getInstance().resetNetwork();
 

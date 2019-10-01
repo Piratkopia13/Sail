@@ -15,10 +15,6 @@ EndGameState::~EndGameState() {
 }
 
 bool EndGameState::processInput(float dt) {
-	if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
-		Input::HideCursor(!Input::IsCursorHidden());
-	}
-
 	return true;
 }
 
