@@ -34,6 +34,7 @@ void Game::registerStates() {
 	m_stateStack.registerState<LobbyHostState>(States::HostLobby);
 	m_stateStack.registerState<LobbyClientState>(States::JoinLobby);
 	m_stateStack.registerState<MenuState>(States::MainMenu);
+	m_stateStack.registerState<MenuState>(States::End);
 }
 
 void Game::dispatchEvent(Event& event) {
