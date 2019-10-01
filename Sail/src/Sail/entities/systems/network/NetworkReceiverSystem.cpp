@@ -15,6 +15,10 @@ NetworkReceiverSystem::~NetworkReceiverSystem() {
 
 }
 
+void NetworkReceiverSystem::initWithPlayerID(unsigned char playerID) {
+	m_playerID = playerID;
+}
+
 // Needs to match how the NetworkSenderSystem updates
 void NetworkReceiverSystem::update(float dt) {
 	using namespace Netcode;
@@ -88,13 +92,26 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 
 void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::NetworkEntityType entityType, const glm::vec3& translation) {
 	using namespace Netcode;
+
+	// Early exit if the entity belongs to the player (since host sends out messages to all players including the one who sent it to them)
+	if (static_cast<unsigned char>(id >> 18) == m_playerID) {
+		return;
+	}
+
+	// Early exit if the entity already exists
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			return;
+		}
+	}
+	
 	auto e = ECS::Instance()->createEntity(std::string("NetcodedEntity " + id));
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
 
 	// If you are the host create a sender component to pass on the info to all players
 	if (NWrapperSingleton::getInstance().isHost()) {
 		// Currently assumes that the data type is MODIFY_TRANSFORM, might be changed in the future
-		//e->addComponent<NetworkSenderComponent>(NetworkDataType::MODIFY_TRANSFORM, entityType, id);
+		e->addComponent<NetworkSenderComponent>(NetworkDataType::CREATE_NETWORKED_ENTITY, entityType, id);
 	}
 
 
@@ -114,15 +131,16 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::N
 		// TODO: use some entity factory to make the creation of entities unified
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(translation);
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
+		//e->addComponent<BoundingBoxComponent>(boundingBoxModel.get());
+		//e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+		//e->addComponent<CollidableComponent>();
 		break;
 	default:
 		break;
 	}
 
 	// Manually add entity to this system, don't wait for ECS
-	//entities.push_back(e.get());
+	entities.push_back(e.get());
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities

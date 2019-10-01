@@ -88,6 +88,10 @@ GameState::GameState(StateStack& stack)
 	m_octree = SAIL_NEW Octree(m_boundingBoxModel.get());
 	//-----------------------
 
+
+	// Get the player id's and names from the lobby
+	const LobbyToGameData lobbyInfo = m_app->getStateStorage().getLobbyToGameData();
+
 	/*
 		Create a PhysicSystem
 		If the game developer does not want to add the systems like this,
@@ -146,6 +150,7 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
+	m_componentSystems.networkReceiverSystem->initWithPlayerID(lobbyInfo.m_me.id);
 
 	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
@@ -211,17 +216,14 @@ GameState::GameState(StateStack& stack)
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 
-
-	// Get the player id's and names from the lobby
-	const LobbyToGameData lobbyInfo = m_app->getStateStorage().getLobbyToGameData();
-
 	// Player spawn positions are based on their unique id
 	// This will likely be changed later so that the host sets all the players' start positions
-	float spawnOffset = static_cast<float>(lobbyInfo.m_me.id);
+	float spawnOffset = static_cast<float>(2*static_cast<int>(lobbyInfo.m_me.id)-10);
 	
 	// Player creation
 	auto player = ECS::Instance()->createEntity("player");
 	
+	Logger::Log("Player id: " + std::to_string(static_cast<int>(lobbyInfo.m_me.id)+1));
 
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	m_player = player.get();
