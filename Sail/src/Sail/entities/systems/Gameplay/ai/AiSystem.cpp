@@ -22,6 +22,9 @@ AiSystem::AiSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<PhysicsComponent>(true, true, true);
 	registerComponent<AiComponent>(true, true, true);
+	registerComponent<FSMComponent>(true, true, true);
+	registerComponent<GunComponent>(true, true, true);
+	registerComponent<CandleComponent>(false, true, false);
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
 }

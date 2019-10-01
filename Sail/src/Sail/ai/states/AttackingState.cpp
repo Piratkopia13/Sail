@@ -14,7 +14,7 @@ AttackingState::AttackingState() {}
 AttackingState::~AttackingState() {}
 
 void AttackingState::update(float dt, Entity* entity) {
-
+	// TODO: Implement this stuff
 }
 
 void AttackingState::reset() {}

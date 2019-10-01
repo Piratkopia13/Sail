@@ -5,7 +5,7 @@
 
 typedef unsigned int FSMStateID;
 
-FSMStateID global_fsmStateID = 0;
+extern FSMStateID global_fsmStateID;
 
 class Entity;
 
