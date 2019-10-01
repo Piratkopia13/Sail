@@ -126,47 +126,69 @@ const bool PhysicSystem::handleCollisions(Entity* e, const std::vector<Octree::C
 	return returnValue;
 }
 
-void PhysicSystem::rayCastUpdate(Entity* e, float& padding, const float originalPadding, float& dt) {
+const bool PhysicSystem::rayCastCheck(Entity* e, float& dt) {
+	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+	BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
+
+	if (glm::abs(physics->velocity.x * dt) > glm::abs(boundingBox->getHalfSize().x) 
+		|| glm::abs(physics->velocity.y * dt) > glm::abs(boundingBox->getHalfSize().y)
+		|| glm::abs(physics->velocity.z * dt) > glm::abs(boundingBox->getHalfSize().z)) {
+		//Object is moving at a speed that risks missing collisions
+		return true;
+	}
+	return false;
+}
+
+void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
 
 	float velocityAmp = glm::length(physics->velocity) * dt;
 
-	//Problem I am facing is this becomes false for the small padding in the end of a frame. And the next frame the padding is so big that it has already passed the wall.
-	if (std::abs(physics->velocity.x * dt) > std::abs(boundingBox->getHalfSize().x)
-		|| std::abs(physics->velocity.y * dt) > std::abs(boundingBox->getHalfSize().y)
-		|| std::abs(physics->velocity.z * dt) > std::abs(boundingBox->getHalfSize().z)) {
+	//Ray cast to find upcoming collisions, use padding for "swept sphere"
+	Octree::RayIntersectionInfo intersectionInfo;
+	m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo, e, physics->padding);
 
-		//Object is moving at a speed that risks missing collisions
-		//Ray cast to find upcoming collisions, use padding for "swept sphere"
-		Octree::RayIntersectionInfo intersectionInfo;
-		m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo, e, padding);
+	if (intersectionInfo.closestHit <= velocityAmp && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
+		//Calculate new dt
+		float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
 
-		if ((intersectionInfo.closestHit) <= velocityAmp + originalPadding && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
-			//Calculate new dt
-			float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
+		//Move untill first overlap
+		boundingBox->setPosition(boundingBox->getPosition() + physics->velocity * newDt);
+		transform->translate(physics->velocity * newDt);
 
-			//Move untill first overlap
-			boundingBox->setPosition(boundingBox->getPosition() + physics->velocity * newDt);
-			transform->translate(physics->velocity * newDt);
+		dt -= newDt;
 
-			dt -= newDt;
+		//Collision update
+		bool paddingTooBig = true;
 
-			//Collision update
-			if (collisionUpdate(e, dt)) {
-				//Velocity changed due to collision
-				physics->velocity = glm::vec3(0.0f);
-				physics->constantAcceleration = glm::vec3(0.0f);
-				padding = originalPadding;
+		if (Intersection::aabbWithTriangle(*boundingBox, intersectionInfo.positions[0], intersectionInfo.positions[1], intersectionInfo.positions[2])) {
+			Octree::CollisionInfo tempInfo;
+			tempInfo.entity = intersectionInfo.entity;
+			tempInfo.normal = intersectionInfo.normal;
+			tempInfo.positions[0] = intersectionInfo.positions[0];
+			tempInfo.positions[1] = intersectionInfo.positions[1];
+			tempInfo.positions[2] = intersectionInfo.positions[2];
+			physics->collisions.push_back(tempInfo);
+
+			//Stop movement towards triangle
+			float projectionSize = glm::dot(physics->velocity, -intersectionInfo.normal);
+
+			if (projectionSize > 0.0f) { //Is pushing against wall
+				physics->velocity += intersectionInfo.normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
+				paddingTooBig = false;
 			}
-			else {
-				padding *= 0.9f;
-			}
+		}
 
-			physics->m_oldVelocity = physics->velocity;
+		if (paddingTooBig) {
+			physics->padding *= 0.9f;
+		}
 
-			rayCastUpdate(e, padding, originalPadding, dt);
+		physics->m_oldVelocity = physics->velocity;
+
+		if (rayCastCheck(e, dt)) {
+			rayCastUpdate(e, dt);
 		}
 	}
 }
@@ -179,24 +201,20 @@ void PhysicSystem::update(float dt) {
 
 		physics->collisions.clear();
 
+		if (physics->padding < 0.0f) {
+			//physics->padding = glm::min(glm::min(boundingBox->getBoundingBox()->getHalfSize().x, boundingBox->getBoundingBox()->getHalfSize().y), boundingBox->getBoundingBox()->getHalfSize().z);
+			physics->padding = glm::length(boundingBox->getBoundingBox()->getHalfSize());
+		}
+
 		physics->velocity += physics->constantAcceleration * dt;
 		physics->velocity += physics->accelerationToAdd * dt;
 
 		if (boundingBox && m_octree) {
-			if (e->getName() == "projectile" && Input::IsKeyPressed(SAIL_KEY_L)) {
-				std::cout << "Break\n";
-			}
+			collisionUpdate(e, dt);
 
-			m_lastRayIntersect = nullptr;
-			//Get ray padding for swept sphere
-			float padding = glm::length(boundingBox->getBoundingBox()->getHalfSize());
-			if (e->getName() == "projectile") {
-				std::cout << "\n";
-			}
-			rayCastUpdate(e, padding, padding, dt);
-			if (collisionUpdate(e, dt) && e->getName() == "projectile") {
-				physics->velocity = glm::vec3(0.0f);
-				physics->constantAcceleration = glm::vec3(0.0f);
+			if (rayCastCheck(e, dt)) {
+				//Object is moving fast, ray cast for collisions
+				rayCastUpdate(e, dt);
 			}
 		}
 

@@ -16,9 +16,8 @@ public:
 private:
 	Octree* m_octree;
 
-	Entity* m_lastRayIntersect;
-
-	void rayCastUpdate(Entity* e, float& padding, const float originalPadding, float& dt);
+	const bool rayCastCheck(Entity* e, float& dt);
+	void rayCastUpdate(Entity* e, float& dt);
 	const bool collisionUpdate(Entity* thisPhysicalObject, const float& dt);
 	const bool handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt);
 };
