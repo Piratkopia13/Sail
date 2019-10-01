@@ -550,7 +550,6 @@ bool GameState::processInput(float dt) {
 	return true;
 }
 
-
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
@@ -818,6 +817,11 @@ bool GameState::renderImGuiLightDebug(float dt) {
 
 void GameState::shutDownGameState() {
 
+	// Show mouse cursor if hidden
+	if (Input::IsCursorHidden()) {
+		Input::HideCursor(!Input::IsCursorHidden());
+	}
+
 	// Reset network
 	NWrapperSingleton::getInstance().resetNetwork();
 
@@ -871,7 +875,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 		shutDownGameState();
 	}
 }
-
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates the camera
