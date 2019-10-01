@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "AiComponent.h"
 
-void AiComponent::setTarget(Entity* targetEntity) {
-	entityTarget = targetEntity;
+void AiComponent::setTarget(Entity* entityTarget_) {
+	entityTarget = entityTarget_;
 	reachedTarget = false;
 }
 
