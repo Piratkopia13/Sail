@@ -4,9 +4,11 @@
 
 typedef unsigned int FSMStateID;
 
-extern FSMStateID global_fsmStateID;
+FSMStateID global_fsmStateID = 0;
 
 namespace FSM {
+	struct Transition;
+
 	class BaseState {
 	public:
 		BaseState() {}
@@ -16,85 +18,66 @@ namespace FSM {
 			return global_fsmStateID++;
 		}
 
-		/*
-			Retrieves the number of states
-		*/
-		static int nrOfStateTypes() {
-			return global_fsmStateID;
+		void addTransition(Transition* transition, BaseState* toState) {
+			m_transitions.emplace_back(transition, toState);
 		}
+
+		std::vector<std::pair<Transition*, BaseState*>>& getTransitions() {
+			return m_transitions;
+		}
+
+		virtual void update(float dt) = 0;
+
+		virtual void reset() = 0;
+
+		virtual void init() = 0;
+
+	protected:
+		std::vector<std::pair<Transition*, BaseState*>> m_transitions;
+
 	};
 
+	template <typename StateType>
 	class State : public BaseState {
 	public:
 		State() {}
 		~State() {}
 
+		virtual void update(float dt) = 0;
+
+		virtual void reset() = 0;
+
+		virtual void init() = 0;
+
 		static const FSMStateID ID;
 
-		virtual void update() = 0;
 	};
-
-	class Transition {
-	public:
-		Transition() {}
-		~Transition() {}
-
+	
+	struct Transition {
 		void addBoolCheck(bool* toCheck, bool value) {
-			m_boolChecks.emplace_back(toCheck, value);
+			boolChecks.emplace_back(toCheck, value);
 		}
 		void addFloatLessThanCheck(float* toCheck, float value) {
-			m_floatLessThanChecks.emplace_back(toCheck, value);
+			floatLessThanChecks.emplace_back(toCheck, value);
 		}
 		void addFloatEqualCheck(float* toCheck, float value) {
-			m_floatEqualChecks.emplace_back(toCheck, value);
+			floatEqualChecks.emplace_back(toCheck, value);
 		}
 		void addFloatGreaterThanCheck(float* toCheck, float value) {
-			m_floatGreaterThanChecks.emplace_back(toCheck, value);
+			floatGreaterThanChecks.emplace_back(toCheck, value);
 		}
 
-		bool checkTransition() {
-			bool trans = true;
-			for ( auto boolCheck : m_boolChecks ) {
-				if ( *boolCheck.first != boolCheck.second ) {
-					trans = false;
-				}
-			}
-
-			for ( auto floatLessThanCheck : m_floatLessThanChecks ) {
-				if ( *floatLessThanCheck.first < floatLessThanCheck.second ) {
-					trans = false;
-				}
-			}
-
-			for ( auto floatEqualCheck : m_floatEqualChecks ) {
-				if ( std::abs(*floatEqualCheck.first - floatEqualCheck.second) < m_eps ) {
-					trans = false;
-				}
-			}
-
-			for ( auto floatGreaterThanCheck : m_floatGreaterThanChecks ) {
-				if ( *floatGreaterThanCheck.first > floatGreaterThanCheck.second ) {
-					trans = false;
-				}
-			}
-
-			return trans;
-		}
-
-	private:
-		// Epsilon
-		float m_eps = 0.0001f;
-
-		std::list<std::pair<bool*, bool>> m_boolChecks;
-		std::list<std::pair<float*, float>> m_floatLessThanChecks;
-		std::list<std::pair<float*, float>> m_floatEqualChecks;
-		std::list<std::pair<float*, float>> m_floatGreaterThanChecks;
+		std::list<std::pair<bool*, bool>> boolChecks;
+		std::list<std::pair<float*, float>> floatLessThanChecks;
+		std::list<std::pair<float*, float>> floatEqualChecks;
+		std::list<std::pair<float*, float>> floatGreaterThanChecks;
 	};
 
 
 
 	/*
-		Defines the constant static ID of each component type at compile time
+		Defines the constant static ID of each state type at compile time
 	*/
-	const FSMStateID State::ID = BaseState::createID();
+	template<typename StateType>
+	const FSMStateID State<StateType>::ID = BaseState::createID();
 }
