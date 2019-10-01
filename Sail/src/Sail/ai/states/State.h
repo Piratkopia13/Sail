@@ -43,12 +43,6 @@ namespace FSM {
 		State() {}
 		~State() {}
 
-		virtual void update(float dt) = 0;
-
-		virtual void reset() = 0;
-
-		virtual void init() = 0;
-
 		static const FSMStateID ID;
 
 	};
