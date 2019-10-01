@@ -132,6 +132,10 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
 
+	//Create system for input
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
+
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
@@ -216,10 +220,6 @@ GameState::GameState(StateStack& stack)
 	player->addComponent<GunComponent>(cubeModel, boundingBoxModel);
 
 
-	//Create system for input
-	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_cam);
-
 	player->addComponent<AudioComponent>();
 	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
 	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
@@ -229,12 +229,18 @@ GameState::GameState(StateStack& stack)
 	m_currLightIndex = 0;
 	auto e = createCandleEntity("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
+	e->getComponent<CandleComponent>()->setOwner(player->getID());
 	player->addChildEntity(e);
-	
+
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
 	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+
+
+
+	// Inform CandleSystem of the player
+	m_componentSystems.candleSystem->setPlayerEntityID(player->getID());
 
 
 	/*
@@ -378,7 +384,22 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<PhysicsComponent>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		
+
+		int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+		for (size_t i = 0; i < botCount; i++) {
+			e = ECS::Instance()->createEntity("AiCharacter");
+			e->addComponent<ModelComponent>(characterModel);
+			e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+			e->addComponent<BoundingBoxComponent>(boundingBoxModel);
+			e->addComponent<CollidableComponent>();
+			e->addComponent<PhysicsComponent>();
+			e->addComponent<AiComponent>();
+			e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
+			e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
+
+			e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
+		}
+		/*
 		e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
@@ -391,11 +412,11 @@ GameState::GameState(StateStack& stack)
 		
 
 
-		e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
+		e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));*/
 
 
 #ifdef _DEBUG
-		// Candle1 holds all lights you can place in debug
+		// Candle1 holds all lights you can place in debug...
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
@@ -444,13 +465,6 @@ bool GameState::processInput(float dt) {
 
 	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
 		m_componentSystems.renderSystem->toggleHitboxes();
-	}
-
-	if (Input::WasKeyJustPressed(SAIL_KEY_P)) {
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
-
-		shutDownGameState();
 	}
 
 	//Test ray intersection
@@ -539,13 +553,20 @@ bool GameState::processInput(float dt) {
 
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
-
+	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
 
 	return true;
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
+	return true;
+}
+
+bool GameState::onPlayerCandleHit(PlayerCandleHitEvent& event) {
+	this->requestStackPop();
+	this->requestStackPush(States::EndGame);
+	m_poppedThisFrame = true;
 	return true;
 }
 
@@ -845,6 +866,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
+
+	if (m_poppedThisFrame) {
+		shutDownGameState();
+	}
 }
 
 

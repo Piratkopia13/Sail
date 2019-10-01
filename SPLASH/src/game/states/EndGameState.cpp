@@ -37,9 +37,11 @@ bool EndGameState::render(float dt, float alpha) {
 bool EndGameState::renderImgui(float dt) {
 
 	ImGui::Begin("Game over");
+	ImGui::SetWindowPos({500,500});
 	ImGui::End();
 
 	ImGui::Begin("Return");
+	ImGui::SetWindowPos({ 500,550 });
 	if (ImGui::Button("Main menu")) {
 		this->requestStackPop();
 		this->requestStackPush(States::MainMenu);
@@ -47,6 +49,7 @@ bool EndGameState::renderImgui(float dt) {
 	ImGui::End();
 
 	ImGui::Begin("Quit");
+	ImGui::SetWindowPos({ 500,600 });
 	if (ImGui::Button("Quit Button")) {
 		PostQuitMessage(0);
 	}
