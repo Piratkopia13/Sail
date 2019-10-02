@@ -222,20 +222,20 @@ void PhysicSystem::update(float dt) {
 		physics->velocity.y = saveY;
 		//-------------------------
 
-		float updateAbleDt = dt;
+		float updateableDt = dt;
 
 		if (boundingBox && m_octree) {
-			collisionUpdate(e, updateAbleDt);
+			collisionUpdate(e, updateableDt);
 
-			if (rayCastCheck(e, updateAbleDt)) {
+			if (rayCastCheck(e, updateableDt)) {
 
 				//Object is moving fast, ray cast for collisions
-				rayCastUpdate(e, updateAbleDt);
+				rayCastUpdate(e, updateableDt);
 				physics->m_oldVelocity = physics->velocity;
 			}
 		}
 
-		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * updateAbleDt;
+		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * updateableDt;
 		transform->translate(translation);
 		if (e->getName() == "player") {
 			m_gameDataTracker->logDistanceWalked(translation);
