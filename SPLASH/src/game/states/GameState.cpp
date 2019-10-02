@@ -638,9 +638,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_currentlyWritingMask = 0;
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
-	
-	//// TODO? move to its own thread
-	//NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
 
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	

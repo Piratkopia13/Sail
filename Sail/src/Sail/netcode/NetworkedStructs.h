@@ -40,11 +40,11 @@ namespace Netcode {
 	  struct NetworkMessage {
 	      NetworkObjectID objectID;
 	      MessageType     type;
-		  union {
-		      ModifyTransform transform;
-			  SpawnProjectile spawnProjectile;
-			  ...
-		  }
+	      union {
+	          ModifyTransform transform;
+	          SpawnProjectile spawnProjectile;
+	          ...
+	      }
 	  }
 	*/
 
