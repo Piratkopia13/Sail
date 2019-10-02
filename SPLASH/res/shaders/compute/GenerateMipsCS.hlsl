@@ -46,7 +46,7 @@ RWTexture2D<float4> OutMip3 : register( u12 ) : SAIL_IGNORE;
 RWTexture2D<float4> OutMip4 : register( u13 ) : SAIL_IGNORE;
 
 // Linear clamp sampler.
-SamplerState CSLinearClampSampler : register( s0 );
+SamplerState CSLinearClampSampler : register( s2 );
 
 // The reason for separating channels is to reduce bank conflicts in the
 // local data memory controller.  A large stride will cause more threads

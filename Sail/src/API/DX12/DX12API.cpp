@@ -353,7 +353,7 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::UAV_GENERAL1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 
-	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[2];
+	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[3];
 	staticSamplerDesc[0] = {};
 	staticSamplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	staticSamplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -373,11 +373,18 @@ void DX12API::createGlobalRootSignature() {
 	staticSamplerDesc[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
 	staticSamplerDesc[1].ShaderRegister = 1;
 
+	staticSamplerDesc[2] = staticSamplerDesc[0];
+	staticSamplerDesc[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	staticSamplerDesc[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].ShaderRegister = 2;
+
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	rsDesc.NumParameters = GlobalRootParam::SIZE;
 	rsDesc.pParameters = rootParam;
-	rsDesc.NumStaticSamplers = 2;
+	rsDesc.NumStaticSamplers = ARRAYSIZE(staticSamplerDesc);
 	rsDesc.pStaticSamplers = staticSamplerDesc;
 
 	// Serialize and create the actual signature
