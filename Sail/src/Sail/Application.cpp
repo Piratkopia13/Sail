@@ -4,10 +4,10 @@
 #include "../../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyBinds.h"
 #include "graphics/geometry/Transform.h"
-#include "Sail/graphics/Scene.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
+#include "Sail/entities/systems/render/RenderSystem.h"
 
 
 Application* Application::s_instance = nullptr;
@@ -15,7 +15,7 @@ std::atomic_bool Application::s_isRunning = true;
 
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
-
+	
 	// Set up instance if not set
 	if (s_instance) {
 		Logger::Error("Only one application can exist!");
@@ -25,7 +25,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
-	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
+	unsigned int poolSize = std::max<unsigned int>(4, (10 * std::thread::hardware_concurrency()));
 	m_threadPool = std::unique_ptr<ctpl::thread_pool>(SAIL_NEW ctpl::thread_pool(poolSize));
 
 	// Set up window
@@ -54,6 +54,10 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 		Logger::Error("Failed to initialize the graphics API!");
 		return;
 	}
+
+	// Initialize Renderers
+	m_rendererWrapper.initialize();
+	ECS::Instance()->createSystem<RenderSystem>();
 
 	// Initialize imgui
 	m_imguiHandler->init();
@@ -115,7 +119,8 @@ int Application::startGameLoop() {
 			delta = newTime - currentTime;
 			currentTime = newTime;
 
-			// Will slow the game down if the CPU can't keep up with the TICKRATE
+			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
+			// when the update is really slow for whatever reason.
 			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
@@ -151,15 +156,14 @@ int Application::startGameLoop() {
 			// Run the update if enough time has passed since the last update
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
-				updatePerTick(TIMESTEP);
+				fixedUpdate(TIMESTEP);
 			}
 
 
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
 
-			// Every-Frame-Updates goes here
-			updatePerFrame(TIMESTEP, alpha);
+			update(delta, alpha);
 
 			// Render
 			render(delta, alpha);
@@ -194,6 +198,9 @@ Application* Application::getInstance() {
 void Application::dispatchEvent(Event& event) {
 	m_api->onEvent(event);
 	Input::GetInstance()->onEvent(event);
+
+	m_rendererWrapper.onEvent(event);
+	
 }
 
 GraphicsAPI* const Application::getAPI() {
@@ -212,9 +219,10 @@ ResourceManager& Application::getResourceManager() {
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }
-//AudioEngine* Application::getAudioManager() {
-//	return &m_audioManager;
-//}
+
+RendererWrapper* Application::getRenderWrapper() {
+	return &m_rendererWrapper;
+}
 StateStorage& Application::getStateStorage() {
 	return this->m_stateStorage;
 }

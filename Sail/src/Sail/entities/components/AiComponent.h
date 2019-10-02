@@ -10,10 +10,12 @@ public:
 	AiComponent() 
 		: movementSpeed(5.f)
 		, timeTakenOnPath(0.f)
-		, targetReachedThreshold(0.3f)
+		, targetReachedThreshold(1.3f)
 		, maxSteeringForce(0.3f)
 		, mass(1.0f)
-		, reachedTarget(true)
+		, reachedPathingTarget(true)
+		, updatePath(true)
+		, doWalk(false)
 		, currNodeIndex(0)
 		, lastVisitedNode(NodeSystem::Node(glm::vec3(10000.f, 10000.f, 10000.f), false, 2381831))
 		, controlledEntity(nullptr)
@@ -22,7 +24,7 @@ public:
 		, posTarget(glm::vec3(0.f, 0.f, 0.f))
 	{}
 
-	void setTarget(Entity* targetEntity);
+	void setTarget(Entity* entityTarget_);
 	void setTarget(glm::vec3 targetPos);
 
 	float movementSpeed;
@@ -31,7 +33,9 @@ public:
 	float maxSteeringForce;
 	float mass;
 	
-	bool reachedTarget;
+	bool reachedPathingTarget;
+	bool updatePath;
+	bool doWalk;
 
 	int currNodeIndex;
 
@@ -41,6 +45,6 @@ public:
 	Entity* controlledEntity;
 	Entity* entityTarget;
 
-	glm::vec3 lastTargetPos;
 	glm::vec3 posTarget;
+	glm::vec3 lastTargetPos;
 };

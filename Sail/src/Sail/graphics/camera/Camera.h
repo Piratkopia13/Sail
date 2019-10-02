@@ -72,7 +72,7 @@ class Camera {
 public:
 
 	Camera() {
-		m_viewMatrix = glm::mat4(1.0f); // Identity matrix
+		viewMatrix = glm::mat4(1.0f); // Identity matrix
 
 		m_pos = glm::vec3(0.f, 0.f, 0.f);
 		m_direction = glm::vec3(0.f, 0.f, -1.f);
@@ -106,30 +106,29 @@ public:
 	
 
 	const glm::mat4& getViewProjection() {
-
 		if (m_updateViewMatrix) {
-			m_viewMatrix = glm::lookAtLH(m_pos, m_pos + m_direction, glm::vec3(0.f, 1.f, 0.f));
+			viewMatrix = glm::lookAtLH(m_pos, m_pos + m_direction, glm::vec3(0.f, 1.f, 0.f));
 			m_updateVPMatrix = true;
 			m_updateViewMatrix = false;
 		}
 
 		if (m_updateVPMatrix) {
-			m_VPMatrix = getProjectionMatrix() * m_viewMatrix;
+			VPMatrix = getProjectionMatrix() * viewMatrix;
 			// Update frustum planes
-			m_frustum.extractPlanes(m_VPMatrix);
+			m_frustum.extractPlanes(VPMatrix);
 			m_updateVPMatrix = false;
 		}
 
-		return m_VPMatrix;
+		return VPMatrix;
 	}
 
 	const glm::mat4& getViewMatrix() {
 		if (m_updateViewMatrix) {
-			m_viewMatrix = glm::lookAtLH(m_pos, m_pos + m_direction, glm::vec3(0.f, 1.f, 0.f));
+			viewMatrix = glm::lookAtLH(m_pos, m_pos + m_direction, glm::vec3(0.f, 1.f, 0.f));
 			m_updateVPMatrix = true;
 			m_updateViewMatrix = false;
 		}
-		return m_viewMatrix;
+		return viewMatrix;
 	}
 	const glm::mat4& getProjMatrix() {
 		return getProjectionMatrix();
@@ -152,13 +151,22 @@ public:
 		return m_frustum;
 	}
 
-protected:
-	glm::mat4 m_VPMatrix;
-
-	glm::mat4 m_viewMatrix;
+	float getNearZ() const {
+		return nearZDst;
+	}
+	float getFarZ() const {
+		return farZDst;
+	}
 
 private:
 	virtual const glm::mat4& getProjectionMatrix() = 0;
+
+protected:
+	glm::mat4 VPMatrix;
+	glm::mat4 viewMatrix;
+
+	float nearZDst;
+	float farZDst;
 
 private:
 	bool m_updateVPMatrix, m_updateViewMatrix;

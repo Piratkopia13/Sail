@@ -16,7 +16,7 @@ NodeSystem::~NodeSystem() {
 
 void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
 #ifdef _DEBUG_NODESYSTEM
-	if ( m_nodeModel == nullptr || m_scene == nullptr ) {
+	if ( m_nodeModel == nullptr ) {
 		Logger::Error("Node model and scene need to be set in the node system during debug.");
 	}
 #endif
@@ -29,11 +29,13 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		ECS::Instance()->destroyEntity(m_nodeEntities[i]);
 	}
 	m_nodeEntities.clear();
+	int currNodeEntity = 0;
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
-		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
-		m_nodeEntities[i]->addComponent<TransformComponent>(m_nodes[i].position);
-		m_nodeEntities[i]->addComponent<ModelComponent>(m_nodeModel);
-		m_scene->addEntity(m_nodeEntities[i]);
+		if ( !m_nodes[i].blocked ) {
+			m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
+			m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position);
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_nodeModel);
+		}
 	}
 #endif
 }
@@ -74,10 +76,9 @@ unsigned int NodeSystem::getDistance(unsigned int n1, unsigned int n2) const {
 }
 
 #ifdef _DEBUG_NODESYSTEM
-void NodeSystem::setDebugModelAndScene(Shader* shader, Scene* scene) {
+void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);
 	m_nodeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
-	m_scene = scene;
 }
 #endif
 

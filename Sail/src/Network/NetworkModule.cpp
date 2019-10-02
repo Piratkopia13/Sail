@@ -8,6 +8,13 @@ Network::Network() {}
 Network::~Network() {
 	shutdown();
 
+	for (int i = 0; i < MAX_AWAITING_PACKAGES; ++i) {
+		if (m_awaitingMessages[i].Message.rawMsg != nullptr) {
+			delete[] m_awaitingMessages[i].Message.rawMsg;
+			m_awaitingMessages[i].Message.rawMsg = nullptr;
+		}
+	}
+
 	delete[] m_awaitingEvents;
 	delete[] m_awaitingMessages;
 
@@ -254,6 +261,7 @@ bool Network::send(const char* message, size_t size, Connection* conn)
 	memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
 
 	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
+		delete[] msg;
 		return false;
 	}
 

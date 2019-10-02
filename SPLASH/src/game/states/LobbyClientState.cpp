@@ -41,7 +41,7 @@ bool LobbyClientState::onMyTextInput(TextInputEvent& event) {
 }
 
 bool LobbyClientState::onRecievedText(NetworkChatEvent& event) {
-	// Only add the recieved message to the chat
+	// Only add the received message to the chat
 	this->addTextToChat(&event.getMessage());
 
 	return false;
@@ -68,7 +68,7 @@ bool LobbyClientState::onPlayerWelcomed(NetworkWelcomeEvent& event) {
 		// Clean local list of players.
 		this->resetPlayerList();
 
-		printf("Recieved welcome package...\n");
+		printf("Received welcome package...\n");
 		for (auto currentPlayer : list) {
 			// TODO: Maybe addPlayerFunction?
 			this->playerJoined(currentPlayer);
@@ -114,6 +114,9 @@ bool LobbyClientState::onDropped(NetworkDroppedEvent& event) {
 
 bool LobbyClientState::onStartGame(NetworkStartGameEvent& event) {
 	// Queue changes to the stack while maintaining the connection
+
+
+	m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(m_me, m_players));
 	this->requestStackPop();
 	this->requestStackPush(States::Game);
 

@@ -4,19 +4,23 @@
 #include "Sail/entities/components/Components.h"
 #include "../../../api/Input.h"
 #include "Sail/KeyBinds.h"
+#include "Sail/Application.h"
+#include "Sail/utils/GameDataTracker.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(PlayerComponent::ID);
-	readBits |= PlayerComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<PlayerComponent>(true, true, false);
 	
 	// cam variables
 	m_yaw = 90.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
+
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 GameInputSystem::~GameInputSystem() {
-	delete m_cam;
+	clean();
 }
 
 
@@ -27,7 +31,13 @@ void GameInputSystem::update(float dt, float alpha) {
 }
 
 void GameInputSystem::initialize(Camera* cam) {
-	m_cam = SAIL_NEW CameraController(cam);
+	if (m_cam == nullptr) {
+		m_cam = SAIL_NEW CameraController(cam);
+	}
+}
+
+void GameInputSystem::clean() { 
+	Memory::SafeDelete(m_cam);
 }
 
 void GameInputSystem::processPerFrameInput() {
@@ -59,10 +69,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		if (Input::IsKeyPressed(KeyBinds::moveUp)) {
 			if (!m_wasSpacePressed && physicsComp->onGround) {
 				physicsComp->velocity.y = 5.0f;
-
-
+				// AUDIO TESTING - JUMPING
 				audioComp->m_isPlaying[SoundType::JUMP] = true;
-				audioComp->m_playOnce[SoundType::JUMP] = true;
+				m_gameDataTracker->logJump();
 			}
 			m_wasSpacePressed = true;
 		}
@@ -70,6 +79,28 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			m_wasSpacePressed = false;
 		}
 
+		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
+			for (int i = 0; i < e->getChildEntities().size(); i++) {
+				auto candleE = e->getChildEntities()[i];
+				auto candleComp = candleE->getComponent<CandleComponent>();
+
+				auto candleTransComp = candleE->getComponent<TransformComponent>();
+				auto playerTransComp = e->getComponent<TransformComponent>();
+				if (candleComp->isCarried() && physicsComp->onGround) {
+					candleComp->toggleCarried();
+
+					candleTransComp->setTranslation(playerTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
+					candleTransComp->removeParent();
+					i = e->getChildEntities().size();
+				}
+				else if (!candleComp->isCarried() && glm::length(playerTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f) {
+					candleComp->toggleCarried();
+					candleTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
+					candleTransComp->setParent(playerTransComp);
+					i = e->getChildEntities().size();
+				}
+			}
+		}
 
 		glm::vec3 forwards(
 			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
@@ -87,27 +118,21 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 		// Prevent division by zero
 		if (forwardMovement != 0.0f || rightMovement != 0.0f) {
-
-			// AUDIO TESTING (turn ON streaming)
-			if (!m_hasStartedStreaming) {
-				audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", true });
-				m_hasStartedStreaming = true;
-				m_hasStoppedStreaming = false;
-			}
-
 			// Calculate total movement
 			float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
 			if (!physicsComp->onGround) {
 				acceleration = acceleration * 0.5f;
-
 				// AUDIO TESTING (turn OFF looping running sound)
 				audioComp->m_isPlaying[SoundType::RUN] = false;
 			}
 			// AUDIO TESTING (playing a looping running sound)
-			else {
+			else if (m_runSoundTimer > 0.3f) {
 				audioComp->m_isPlaying[SoundType::RUN] = true;
-				audioComp->m_playOnce[SoundType::RUN] = false;
 			}
+			else {
+				m_runSoundTimer += dt;
+			}
+
 			physicsComp->accelerationToAdd = 
 				glm::normalize(right * rightMovement + forward * forwardMovement)
 				* acceleration;
@@ -115,13 +140,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		else {
 			// AUDIO TESTING (turn OFF looping running sound)
 			audioComp->m_isPlaying[SoundType::RUN] = false;
-
-			// AUDIO TESTING (turning OFF streaming)
-			if (!m_hasStoppedStreaming) {
-				audioComp->m_streamedSounds.insert({ "../Audio/wavebankShortFade.xwb", false });
-				m_hasStoppedStreaming = true;
-				m_hasStartedStreaming = false;
-			}
+			m_runSoundTimer = 0.0f;
 		}
 	}
 }
@@ -129,7 +148,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 void GameInputSystem::processMouseInput(const float& dt) {
 	// Toggle cursor capture on right click
 	for (auto e : entities) {
-
+		AudioComponent* audioComp = e->getComponent<AudioComponent>();
 
 		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
 			Input::HideCursor(!Input::IsCursorHidden());
@@ -137,7 +156,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 
 		if (Input::IsMouseButtonPressed(KeyBinds::shoot)) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
+			glm::vec3 gunPosition = m_cam->getCameraPosition() +(m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 		}
 

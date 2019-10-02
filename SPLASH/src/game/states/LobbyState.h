@@ -13,20 +13,8 @@ struct Message {
 	std::string content;
 };
 
-struct Player {
-	unsigned char id;
-	std::string name;
 
-	bool friend operator==(const Player& left, const Player& right) {
-		if (left.id == right.id &&
-			left.name == right.name) {
-			return true;
-		}
-		return false;
-	}
-};
-
-#define HOST_ID 1337
+#define HOST_ID 0
 
 class LobbyState : public State {
 public:
@@ -36,9 +24,7 @@ public:
 	// Process input for the state
 	bool processInput(float dt);
 	// Updates the state
-	virtual bool updatePerTick(float dt);
-	// Updates the state per frame
-	bool updatePerFrame(float dt, float alpha) override { return false; }
+	virtual bool update(float dt, float alpha = 1.0f);
 	// Renders the state
 	bool render(float dt, float alpha = 1.0f);
 	// Renders imgui
@@ -71,6 +57,7 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 
 	// Back-end variables
+	int* m_settingBotCount = nullptr;
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
 	unsigned int m_playerCount;
@@ -80,7 +67,6 @@ private:
 	bool m_firstFrame = true;	// Used solely for ImGui
 	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
-	Scene m_scene;
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	unsigned int m_outerPadding;

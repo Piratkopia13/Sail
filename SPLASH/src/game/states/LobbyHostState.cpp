@@ -6,7 +6,7 @@
 LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack)
 {
-	m_me.id = HOST_ID;	// Reserved for host, all other will get 1,2,3,...,not1337,n
+	m_me.id = HOST_ID;	// Reserved for host, all other will get 1,2,3,...,n
 	m_me.name = m_app->getStateStorage().getMenuToLobbyData()->name;
 	playerJoined(m_me);
 }
