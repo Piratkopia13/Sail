@@ -25,5 +25,7 @@ private:
 	Intersection() {};
 	~Intersection() {};
 
+	static BoundingBox m_paddedReserved; //Used in rayWithPaddedAabb to avoid having to create a new bounding box every time
+
 	static bool triangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]);
 };

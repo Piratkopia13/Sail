@@ -3,6 +3,7 @@
 
 #include "Intersection.h"
 
+BoundingBox Intersection::m_paddedReserved;
 
 bool Intersection::aabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2) {
 
@@ -294,12 +295,10 @@ float Intersection::rayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3
 	
 	if (padding != 0.0f) {
 		//Add padding
-		BoundingBox paddedAABB;
+		m_paddedReserved.setPosition(aabb.getPosition());
+		m_paddedReserved.setHalfSize(aabb.getHalfSize() + glm::vec3(padding));
 
-		paddedAABB.setPosition(aabb.getPosition());
-		paddedAABB.setHalfSize(aabb.getHalfSize() + glm::vec3(padding));
-
-		returnValue = rayWithAabb(rayStart, rayVec, paddedAABB);
+		returnValue = rayWithAabb(rayStart, rayVec, m_paddedReserved);
 	}
 	else {
 		returnValue = rayWithAabb(rayStart, rayVec, aabb);
