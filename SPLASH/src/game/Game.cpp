@@ -5,6 +5,7 @@
 #include "states/LobbyClientState.h"
 #include "states/PBRTestState.h"
 #include "states/InGameMenuState.h"
+#include "states/EndGameState.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -38,7 +39,7 @@ void Game::registerStates() {
 	m_stateStack.registerState<LobbyClientState>(States::JoinLobby);
 	m_stateStack.registerState<MenuState>(States::MainMenu);
 	m_stateStack.registerState<InGameMenuState>(States::Pause);
-	m_stateStack.registerState<MenuState>(States::End);
+	m_stateStack.registerState<EndGameState>(States::EndGame);
 	m_stateStack.registerState<PBRTestState>(States::PBRTest);
 }
 
