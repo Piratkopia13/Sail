@@ -205,11 +205,12 @@ void PhysicSystem::update(float dt) {
 		transform->rotate(physics->constantRotation * dt);
 
 		if (boundingBox && m_octree) {
-			collisionUpdate(e, dt);
-
 			if (rayCastCheck(e, dt)) {
 				//Object is moving fast, ray cast for collisions
 				rayCastUpdate(e, dt);
+			}
+			else {
+				collisionUpdate(e, dt);
 			}
 		}
 
