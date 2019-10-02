@@ -957,8 +957,8 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addComponent<AiComponent>();
 		e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
 		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<PhysicsComponent>()->maxSpeed = player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
-		e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
+		e->getComponent<PhysicsComponent>()->maxSpeed = m_player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
+		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
 	}
