@@ -20,8 +20,9 @@ public:
 	virtual void applyPendingStateChanges() override;
 
 private:
-	// Register the different states
+	// Register the different states //
 	void registerStates();
 
 	StateStack m_stateStack;
 };
+

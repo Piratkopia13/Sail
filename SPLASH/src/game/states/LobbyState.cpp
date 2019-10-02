@@ -29,6 +29,8 @@ LobbyState::LobbyState(StateStack& stack)
 	m_playerLimit = 12;
 	m_playerCount = 0;
 	m_messageCount = 0;
+	m_settingBotCount = new int;
+	*m_settingBotCount = 0;
 
 	// Set name according to data from menustate
 	m_me.name = m_app->getStateStorage().getMenuToLobbyData()->name;
@@ -40,6 +42,7 @@ LobbyState::LobbyState(StateStack& stack)
 
 LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
+	delete m_settingBotCount;
 }
 
 bool LobbyState::processInput(float dt) {
@@ -228,6 +231,7 @@ void LobbyState::renderStartButton() {
 			// Queue a removal of LobbyState, then a push of gamestate
 			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(m_me, m_players));
 			m_network->sendMsgAllClients("t");
+			m_app->getStateStorage().setLobbyToGameStateData(LobbyToGameStateData{ *m_settingBotCount });
 			this->requestStackPop();
 			this->requestStackPush(States::Game);
 		}
@@ -236,7 +240,23 @@ void LobbyState::renderStartButton() {
 }
 
 void LobbyState::renderSettings() {
+	ImGuiWindowFlags settingsFlags = ImGuiWindowFlags_NoCollapse;
+	settingsFlags |= ImGuiWindowFlags_NoResize;
+	settingsFlags |= ImGuiWindowFlags_NoMove;
+	settingsFlags |= ImGuiWindowFlags_NoNav;
+	settingsFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	settingsFlags |= ImGuiWindowFlags_NoTitleBar;
+	settingsFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+	settingsFlags |= ImGuiWindowFlags_NoSavedSettings;
 
+	ImGui::SetNextWindowPos(ImVec2(
+		m_screenWidth - m_outerPadding - 330,
+		m_outerPadding
+	));
+	ImGui::Begin("Settings", NULL, settingsFlags);
+	ImGui::InputInt("BotCountInput: ", m_settingBotCount, 1, 1);
+
+	ImGui::End();
 }
 
 void LobbyState::renderChat() {
