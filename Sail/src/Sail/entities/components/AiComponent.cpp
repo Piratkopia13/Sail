@@ -3,10 +3,10 @@
 
 void AiComponent::setTarget(Entity* entityTarget_) {
 	entityTarget = entityTarget_;
-	reachedTarget = false;
+	reachedPathingTarget = false;
 }
 
 void AiComponent::setTarget(glm::vec3 targetPos) {
 	posTarget = targetPos;
-	reachedTarget = false;
+	reachedPathingTarget = false;
 }
