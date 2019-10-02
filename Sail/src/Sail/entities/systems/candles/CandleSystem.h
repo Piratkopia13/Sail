@@ -13,7 +13,7 @@ public:
 
 	void setPlayerEntityID(int entityID);
 
-	void lightCandle(std::string name);
+	void lightCandle(const std::string& name);
 
 	void update(float dt) override;
 private:
