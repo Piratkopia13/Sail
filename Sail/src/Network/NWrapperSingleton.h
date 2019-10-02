@@ -3,7 +3,7 @@
 #include "NWrapperHost.h"
 #include "NWrapperClient.h"
 
-class NWrapperSingleton {
+class NWrapperSingleton : public NetworkEventHandler {
 public:
 	// Guaranteed to be destroyed, instantiated on first use.
 	static NWrapperSingleton& getInstance() {
@@ -22,6 +22,7 @@ public:
 	bool isHost();
 	void resetNetwork();
 	NWrapper* getNetworkWrapper();
+	void checkForLobbies();
 
 private:
 	NWrapperSingleton();
@@ -31,4 +32,6 @@ private:
 	NWrapper* m_wrapper = nullptr;
 	bool m_isInitialized = false;
 	bool m_isHost = false;
+
+	void handleNetworkEvents(NetworkEvent nEvent);
 };

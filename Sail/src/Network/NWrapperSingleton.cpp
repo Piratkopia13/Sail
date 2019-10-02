@@ -3,6 +3,8 @@
 #include "Network/NetworkModule.hpp"
 #include "Network/NetworkStructs.hpp"
 #include "Sail.h"
+#include "../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
+
 
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
@@ -47,6 +49,11 @@ NWrapper* NWrapperSingleton::getNetworkWrapper() {
 	return m_wrapper;
 }
 
+void NWrapperSingleton::checkForLobbies() {
+	m_network->searchHostsOnLan();
+	m_network->checkForPackages(*this);
+}
+
 void NWrapperSingleton::initialize(bool asHost) {
 	if (m_isInitialized == false) {
 		m_isInitialized = true;
@@ -66,4 +73,14 @@ void NWrapperSingleton::resetNetwork() {
 	m_isInitialized = false;
 	m_isHost = false;
 	delete this->m_wrapper;
+}
+
+void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
+	if (nEvent.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
+		NetworkLanHostFoundEvent event(
+			nEvent.data->HostFoundOnLanData.ip_full,
+			nEvent.data->HostFoundOnLanData.hostPort
+		);
+		Application::getInstance()->dispatchEvent(event);
+	}
 }

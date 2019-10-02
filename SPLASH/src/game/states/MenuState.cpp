@@ -1,3 +1,5 @@
+
+#include "Sail/../../Sail/src/Network/NetworkModule.hpp"
 #include "MenuState.h"
 
 #include "Sail.h"
@@ -6,7 +8,11 @@
 #include "Network/NWrapperSingleton.h"
 #include "Network/NWrapper.h"
 
+#include "Sail/../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
+
 #include "Sail/entities/systems/render/RenderSystem.h"
+#include <string>
+
 
 MenuState::MenuState(StateStack& stack) 
 	: State(stack)
@@ -17,11 +23,14 @@ MenuState::MenuState(StateStack& stack)
 
 	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
 	this->inputName = SAIL_NEW char[100]{ "Hans" };
+	
+	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 }
 
 MenuState::~MenuState() {
 	delete[] this->inputIP;
 	delete[] this->inputName;
+	delete[] m_ipBuffer;
 }
 
 bool MenuState::processInput(float dt) {
@@ -29,6 +38,11 @@ bool MenuState::processInput(float dt) {
 }
 
 bool MenuState::update(float dt, float alpha) {
+	// Check each update for open lobbies (Maybe sleep?)
+	NWrapperSingleton::getInstance().checkForLobbies();
+	sortFoundLobbies();
+	removeDeadLobbies();
+
 	return false;
 }
 
@@ -70,6 +84,66 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::End();
 
 
+	// Display open lobbies
+	ImGui::Begin("Hosted Lobbies on LAN", NULL);
+	// Per hosted game
+	for (auto& ip : m_foundLobbies) {
+		// List as a button
+		if (ImGui::Button(ip.c_str())) {
+			// If pressed then join
+			char* tempIp = SAIL_NEW char[m_ipBufferSize];
+			tempIp = std::strcpy(tempIp, ip.c_str());
+			if (m_network->connectToIP(tempIp)) {
+				this->requestStackPop();
+				this->requestStackPush(States::JoinLobby);
+				delete[] tempIp;
+			}
+		}
+	}
+	ImGui::End();
+
 
 	return false;
+}
+
+bool MenuState::onEvent(Event& event) {
+	EventHandler::dispatch<NetworkLanHostFoundEvent>(event, SAIL_BIND_EVENT(&MenuState::onLanHostFound));
+
+	return false;
+}
+
+bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
+	// Get Ip (as int) then convert into char*
+	ULONG ip_as_int = event.getIp();
+	Network::ip_int_to_ip_string(ip_as_int, m_ipBuffer, m_ipBufferSize);
+	std::string ip_as_string(m_ipBuffer);
+
+	// Get Port as well
+	USHORT hostPort = event.getHostPort();
+	ip_as_string += ":";
+	ip_as_string.append(std::to_string(hostPort));
+
+	// Check if it is already logged.	
+	bool alreadyExists = false;
+	for (auto& lobbyIp : m_foundLobbies) {
+		if (lobbyIp == ip_as_string) {
+			alreadyExists = true;
+		}
+	}
+	// If not...
+	if (alreadyExists == false) {
+		// ...log it
+		m_foundLobbies.push_back(ip_as_string);
+	}
+
+	return false;
+}
+
+void MenuState::sortFoundLobbies() {
+	std::sort(m_foundLobbies.begin(), m_foundLobbies.end());
+}
+
+void MenuState::removeDeadLobbies() {
+
+
 }
