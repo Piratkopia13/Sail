@@ -72,7 +72,7 @@ void AttackingState::entityTargetFunc(AiComponent* aiComp, TransformComponent* t
 			auto fireDir = enemyPos - gunPos;
 			fireDir = glm::normalize(fireDir);
 
-			float hitDist = Intersection::rayWithAabb(gunPos, fireDir, *aiComp->entityTarget->getComponent<BoundingBoxComponent>()->getBoundingBox());
+			float hitDist = Intersection::RayWithAabb(gunPos, fireDir, *aiComp->entityTarget->getComponent<BoundingBoxComponent>()->getBoundingBox());
 
 			Octree::RayIntersectionInfo rayHitInfo;
 			m_octree->getRayIntersection(gunPos + fireDir /*In order to (hopefully) miss itself*/, fireDir, &rayHitInfo);
