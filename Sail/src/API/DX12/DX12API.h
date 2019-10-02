@@ -13,6 +13,7 @@
 #include <d3d12.h>
 #include <dxgi1_6.h> // Only used for initialization of the device and swap chain
 #include <d3dcompiler.h>
+#include <DXProgrammableCapture.h>
 #ifdef _DEBUG
 #include <initguid.h>
 #include <DXGIDebug.h>
@@ -92,6 +93,9 @@ public:
 	const D3D12_VIEWPORT* getViewport() const;
 	const D3D12_RECT* getScissorRect() const;
 
+	void beginPIXCapture() const;
+	void endPIXCapture() const;
+
 	void initCommand(Command& cmd);
 
 	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
@@ -132,6 +136,7 @@ private:
 #ifdef _DEBUG
 	wComPtr<IDXGIFactory2> m_dxgiFactory;
 #endif
+	wComPtr<IDXGraphicsAnalysis> m_pixGa;
 	// Only used for initialization
 	IDXGIFactory6* m_factory;
 	IDXGIAdapter3* m_adapter3;

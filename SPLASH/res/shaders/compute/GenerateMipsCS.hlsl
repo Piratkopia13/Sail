@@ -26,7 +26,7 @@ struct ComputeShaderInput
     uint  GroupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-cbuffer GenerateMipsCB : register( b0 )
+cbuffer CSGenerateMipsCB : register( b0 )
 {
     uint SrcMipLevel;	// Texture level of source mip
     uint NumMipLevels;	// Number of OutMips to write: [1-4]
@@ -39,24 +39,13 @@ cbuffer GenerateMipsCB : register( b0 )
 Texture2D<float4> SrcMip : register( t0 );
 
 // Write up to 4 mip map levels.
-RWTexture2D<float4> OutMip1 : register( u0 );
-RWTexture2D<float4> OutMip2 : register( u1 );
-RWTexture2D<float4> OutMip3 : register( u2 );
-RWTexture2D<float4> OutMip4 : register( u3 );
+RWTexture2D<float4> OutMip1 : register( u10 ) : SAIL_IGNORE;
+RWTexture2D<float4> OutMip2 : register( u11 ) : SAIL_IGNORE;
+RWTexture2D<float4> OutMip3 : register( u12 ) : SAIL_IGNORE;
+RWTexture2D<float4> OutMip4 : register( u13 ) : SAIL_IGNORE;
 
 // Linear clamp sampler.
-SamplerState LinearClampSampler : register( s0 );
-
-#define GenerateMips_RootSignature \
-    "RootFlags(0), " \
-    "RootConstants(b0, num32BitConstants = 6), " \
-    "DescriptorTable( SRV(t0, numDescriptors = 1) )," \
-    "DescriptorTable( UAV(u0, numDescriptors = 4) )," \
-    "StaticSampler(s0," \
-        "addressU = TEXTURE_ADDRESS_CLAMP," \
-        "addressV = TEXTURE_ADDRESS_CLAMP," \
-        "addressW = TEXTURE_ADDRESS_CLAMP," \
-        "filter = FILTER_MIN_MAG_MIP_LINEAR)"
+SamplerState CSLinearClampSampler : register( s0 );
 
 // The reason for separating channels is to reduce bank conflicts in the
 // local data memory controller.  A large stride will cause more threads
@@ -105,9 +94,8 @@ float4 PackColor(float4 x)
     }
 }
 
-[RootSignature( GenerateMips_RootSignature )]
 [numthreads( BLOCK_SIZE, BLOCK_SIZE, 1 )]
-void main( ComputeShaderInput IN )
+void CSMain( ComputeShaderInput IN )
 {
     float4 Src1 = (float4)0;
 
@@ -130,7 +118,7 @@ void main( ComputeShaderInput IN )
         {
             float2 UV = TexelSize * ( IN.DispatchThreadID.xy + 0.5 );
 
-            Src1 = SrcMip.SampleLevel( LinearClampSampler, UV, SrcMipLevel );
+            Src1 = SrcMip.SampleLevel( CSLinearClampSampler, UV, SrcMipLevel );
         }
         break;
         case WIDTH_ODD_HEIGHT_EVEN:
@@ -141,8 +129,8 @@ void main( ComputeShaderInput IN )
             float2 UV1 = TexelSize * ( IN.DispatchThreadID.xy + float2( 0.25, 0.5 ) );
             float2 Off = TexelSize * float2( 0.5, 0.0 );
 
-            Src1 = 0.5 * ( SrcMip.SampleLevel( LinearClampSampler, UV1, SrcMipLevel ) +
-                           SrcMip.SampleLevel( LinearClampSampler, UV1 + Off, SrcMipLevel ) );
+            Src1 = 0.5 * ( SrcMip.SampleLevel( CSLinearClampSampler, UV1, SrcMipLevel ) +
+                           SrcMip.SampleLevel( CSLinearClampSampler, UV1 + Off, SrcMipLevel ) );
         }
         break;
         case WIDTH_EVEN_HEIGHT_ODD:
@@ -153,8 +141,8 @@ void main( ComputeShaderInput IN )
             float2 UV1 = TexelSize * ( IN.DispatchThreadID.xy + float2( 0.5, 0.25 ) );
             float2 Off = TexelSize * float2( 0.0, 0.5 );
 
-            Src1 = 0.5 * ( SrcMip.SampleLevel( LinearClampSampler, UV1, SrcMipLevel ) +
-                           SrcMip.SampleLevel( LinearClampSampler, UV1 + Off, SrcMipLevel ) );
+            Src1 = 0.5 * ( SrcMip.SampleLevel( CSLinearClampSampler, UV1, SrcMipLevel ) +
+                           SrcMip.SampleLevel( CSLinearClampSampler, UV1 + Off, SrcMipLevel ) );
         }
         break;
         case WIDTH_HEIGHT_ODD:
@@ -165,10 +153,10 @@ void main( ComputeShaderInput IN )
             float2 UV1 = TexelSize * ( IN.DispatchThreadID.xy + float2( 0.25, 0.25 ) );
             float2 Off = TexelSize * 0.5;
 
-            Src1 =  SrcMip.SampleLevel( LinearClampSampler, UV1, SrcMipLevel );
-            Src1 += SrcMip.SampleLevel( LinearClampSampler, UV1 + float2( Off.x, 0.0   ), SrcMipLevel );
-            Src1 += SrcMip.SampleLevel( LinearClampSampler, UV1 + float2( 0.0,   Off.y ), SrcMipLevel );
-            Src1 += SrcMip.SampleLevel( LinearClampSampler, UV1 + float2( Off.x, Off.y ), SrcMipLevel );
+            Src1 =  SrcMip.SampleLevel( CSLinearClampSampler, UV1, SrcMipLevel );
+            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( Off.x, 0.0   ), SrcMipLevel );
+            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( 0.0,   Off.y ), SrcMipLevel );
+            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( Off.x, Off.y ), SrcMipLevel );
             Src1 *= 0.25;
         }
         break;

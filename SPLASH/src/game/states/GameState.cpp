@@ -24,6 +24,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <API\DX12\DX12API.h>
 
 // Uncomment to use forward rendering
 //#define DISABLE_RT
@@ -608,11 +609,22 @@ bool GameState::fixedUpdate(float dt) {
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 bool GameState::render(float dt, float alpha) {	
+	static int numFrames = 0;
+	static int capFrames = 2;
+	if (numFrames < capFrames) {
+		Application::getInstance()->getAPI<DX12API>()->beginPIXCapture();
+	}
+
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.renderSystem->draw(m_cam, alpha);
+
+	if (numFrames < capFrames) {
+		Application::getInstance()->getAPI<DX12API>()->endPIXCapture();
+		numFrames++;
+	}
 
 	return true;
 }

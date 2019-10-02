@@ -89,6 +89,11 @@ void ShaderPipeline::parse(const std::string& source) {
 	if (source.find("HSMain") != std::string::npos) { parsedData.hasHS = true; }
 	if (source.find("CSMain") != std::string::npos) { parsedData.hasCS = true; }
 
+	if (!parsedData.hasVS && !parsedData.hasPS && !parsedData.hasGS && !parsedData.hasDS && !parsedData.hasHS && !parsedData.hasCS) {
+		Logger::Error("No main function found in shader. The main function(s) needs to be named VSMain, PSMain, GSMain, DSMain, HSMain or CSMain");
+		assert(false);
+	}
+
 	// Remove comments from source
 	std::string cleanSource = removeComments(source);
 
@@ -224,6 +229,7 @@ void ShaderPipeline::parseRWTexture(const char* source) {
 	std::string name = nextTokenAsName(source, tokenSize);
 	source += tokenSize;
 
+	tokenSize = 0;
 	int slot = findNextIntOnLine(source);
 	if (slot == -1) {
 		slot = 0; // No slot specified, use 0 as default
@@ -346,6 +352,8 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 
 // TODO: registerTypeSize(typeName, size)
 UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
+	if (typeName == "uint") return 4;
+	if (typeName == "bool") return 4;
 	if (typeName == "float") return 4;
 	if (typeName == "float2") return 4*2;
 	if (typeName == "float3") return 4*3;

@@ -30,17 +30,19 @@ Shader::ComputeShaderOutput* GenerateMipsComputeShader::getComputeOutput() {
 }
 
 GenerateMipsComputeShader::GenerateMipsComputeShader()
-	: Shader("compute/ComputeTest.hlsl")
+	: Shader("compute/GenerateMipsCS.hlsl")
 	, m_clippingPlaneHasChanged(false) {
 	// Finish the shader creation
 	finish();
 
 	// Specify dispatch requirements
-	m_settings.usesCBV_SRV_UAV = true;
-	m_settings.numInputTextures = 1;
-	m_settings.numOutputTextures = 1;
+	m_settings.usesCBV_SRV_UAV = false;
+	m_settings.numInputTextures = 0;
+	m_settings.numOutputTextures = 0;
+	m_settings.threadGroupXScale = 1.0f / 8.0f;
+	m_settings.threadGroupYScale = 1.0f / 8.0f;
 
-	m_output.outputTexture = getPipeline()->getRenderableTexture("output");
+	//m_output.outputTexture = getPipeline()->getRenderableTexture("output");
 
 }
 GenerateMipsComputeShader::~GenerateMipsComputeShader() { }

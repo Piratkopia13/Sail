@@ -96,7 +96,7 @@ void DX12API::createDevice() {
 	wComPtr<ID3D12Debug1> debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
 		debugController->EnableDebugLayer();
-		debugController->SetEnableGPUBasedValidation(true);
+		debugController->SetEnableGPUBasedValidation(false);
 	}
 	wComPtr<IDXGIInfoQueue> dxgiInfoQueue;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf())))) {
@@ -109,6 +109,11 @@ void DX12API::createDevice() {
 		CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_dxgiFactory.ReleaseAndGetAddressOf()))
 	);
 #endif
+
+	// PIX programmic capture control
+	if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa)))) {
+		Logger::Warning("PIX programmic capture not available");
+	}
 
 	// 2. Find comlient adapter and create device
 
@@ -269,13 +274,13 @@ void DX12API::createGlobalRootSignature() {
 	// Define descriptor range(s)
 	D3D12_DESCRIPTOR_RANGE descRangeSrvUav[2];
 	descRangeSrvUav[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	descRangeSrvUav[0].NumDescriptors = 3;
+	descRangeSrvUav[0].NumDescriptors = 10;
 	descRangeSrvUav[0].BaseShaderRegister = 0; // register bX
 	descRangeSrvUav[0].RegisterSpace = 0; // register (bX,spaceY)
 	descRangeSrvUav[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	descRangeSrvUav[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	descRangeSrvUav[1].NumDescriptors = 1;
+	descRangeSrvUav[1].NumDescriptors = 10;
 	descRangeSrvUav[1].BaseShaderRegister = 10; // register bX
 	descRangeSrvUav[1].RegisterSpace = 0; // register (bX,spaceY)
 	descRangeSrvUav[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -704,6 +709,18 @@ const D3D12_VIEWPORT* DX12API::getViewport() const {
 
 const D3D12_RECT* DX12API::getScissorRect() const {
 	return &m_scissorRect;
+}
+
+void DX12API::beginPIXCapture() const {
+	if (m_pixGa) {
+		m_pixGa->BeginCapture();
+	}
+}
+
+void DX12API::endPIXCapture() const {
+	if (m_pixGa) {
+		m_pixGa->EndCapture();
+	}
 }
 
 void DX12API::initCommand(Command& cmd) {

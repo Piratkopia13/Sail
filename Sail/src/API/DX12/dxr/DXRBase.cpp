@@ -487,7 +487,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	// Make sure brdfLut texture has been initialized
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
 	if (!brdfLutTex.hasBeenInitialized()) {
-		brdfLutTex.initBuffers(cmdList);
+		brdfLutTex.initBuffers(cmdList, 0);
 	}
 
 	// Update descriptors for vertices, indices, textures etc
@@ -516,7 +516,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 			if (hasTexture) {
 				// Make sure textures have initialized / uploaded their data to its default buffer
 				if (!texture->hasBeenInitialized()) {
-					texture->initBuffers(cmdList);
+					texture->initBuffers(cmdList, textureNum * blasIndex);
 				}
 
 				// Copy SRV to DXR heap
