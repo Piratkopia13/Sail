@@ -1,14 +1,23 @@
 #include "pch.h"
 #include "ECS.h"
-#include "systems/Cleanup/EntityRemovalSystem.h"
+#include "systems/entityManagement/EntityAdderSystem.h"
+#include "systems/entityManagement/EntityRemovalSystem.h"
+
+void ECS::addAllQueuedEntities() {
+	for (auto& s : m_systems) {
+		s.second->addQueuedEntities();
+	}
+}
 
 ECS::ECS() {
-	// Add a special case system
+	// Add the special case systems
+	m_entityAdderSystem = SAIL_NEW EntityAdderSystem();
 	m_entityRemovalSystem = SAIL_NEW EntityRemovalSystem();
 }
 
 ECS::~ECS() {
 	delete m_entityRemovalSystem;
+	delete m_entityAdderSystem;
 }
 
 void ECS::stopAllSystems() {
@@ -19,6 +28,10 @@ void ECS::stopAllSystems() {
 
 void ECS::destroyAllSystems() {
 	m_systems.clear();
+}
+
+EntityAdderSystem* ECS::getEntityAdderSystem() {
+	return m_entityAdderSystem;
 }
 
 EntityRemovalSystem* ECS::getEntityRemovalSystem() {
@@ -38,6 +51,9 @@ Entity::SPtr ECS::createEntity(const std::string& name) {
 void ECS::queueDestructionOfEntity(Entity* entity) {
 	// Add entity to removal system
 	m_entityRemovalSystem->addEntity(entity);
+	
+	// Might be a poor solution
+	m_entityRemovalSystem->addQueuedEntities();
 }
 
 void ECS::destroyEntity(const Entity::SPtr entityToRemove) {
@@ -58,6 +74,14 @@ void ECS::destroyEntity(int ecsIndex) {
 
 	// Remove the redundant copy of the moved entity
 	m_entities.pop_back();
+}
+
+void ECS::destroyAllEntities() {
+	for (auto& e : m_entities) {
+		e->removeAllComponents();
+		e->removeFromSystems();
+	}
+	m_entities.clear();
 }
 
 void ECS::addEntityToSystems(Entity* entity) {

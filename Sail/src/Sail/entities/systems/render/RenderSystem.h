@@ -22,5 +22,7 @@ public:
 
 private:
 	Renderer* m_renderer;
+
+	// Temporary solution to be able to render hitboxes
 	bool m_renderHitboxes;
 };

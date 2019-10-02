@@ -69,6 +69,7 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 
 	// Back-end variables
+	int* m_settingBotCount = nullptr;
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
 	unsigned int m_playerCount;

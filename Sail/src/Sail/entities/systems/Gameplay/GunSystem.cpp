@@ -11,12 +11,13 @@
 #include "Sail/entities/components/PhysicsComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
+#include "Sail/utils/GameDataTracker.h"
 #include "Sail/entities/components/CollidableComponent.h"
-
 
 GunSystem::GunSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<GunComponent>(true, true, true);
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 GunSystem::~GunSystem() {
@@ -48,6 +49,7 @@ void GunSystem::update(float dt) {
 				physics->drag = 2.0f;
 				physics->bounciness = 0.1f;
 
+				m_gameDataTracker->logWeaponFired();
 			}
 			gun->projectileSpawnTimer += dt;
 			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {
