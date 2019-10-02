@@ -163,9 +163,7 @@ void AiSystem::updatePath(AiComponent* aiComp, TransformComponent* transComp) {
 		aiComp->timeTakenOnPath = 0.f;
 		aiComp->reachedPathingTarget = false;
 
-		Logger::Log(Utils::toStr(aiComp->posTarget));
-
-		// aiComp->posTarget should be updated in each FSM state
+		// aiComp->posTarget is updated in each FSM state
 		aiComp->lastTargetPos = aiComp->posTarget;
 
 		auto tempPath = m_nodeSystem->getPath(transComp->getTranslation(), aiComp->posTarget);
