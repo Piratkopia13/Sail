@@ -9,7 +9,7 @@ class PerspectiveCamera;
 class CandleSystem final : public BaseComponentSystem {
 public:
 	CandleSystem();
-	virtual ~CandleSystem();
+	~CandleSystem();
 
 	void setPlayerEntityID(int entityID);
 
