@@ -731,7 +731,8 @@ Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* light
 	pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
 	pl.setAttenuation(.0f, 0.1f, 0.02f);
-	pl.setIndex(m_currLightIndex++);
+	pl.setIndex(m_currLightIndex);
+	m_currLightIndex++;
 	e->addComponent<LightComponent>(pl);
 
 	return e;
