@@ -200,65 +200,12 @@ GameState::GameState(StateStack& stack)
 	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
 	aiModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-	// Player spawn positions are based on their unique id
-	// This will most likely be changed later so that the host sets all the players' start positions
-	float spawnOffset = static_cast<float>(2 * static_cast<int>(playerID) - 10);
-	
 	// Player creation
-	setUpPlayer(boundingBoxModel, cubeModel, lightModel);
+	setUpPlayer(boundingBoxModel, cubeModel, lightModel, playerID);
 
 	// Level Creation
 	createTestLevel(shader, boundingBoxModel);
 	auto player = ECS::Instance()->createEntity("player");
-
-	////////////////////////////////////////////////////////////////////////
-	// For debugging 
-	//Logger::Log("Player id: " + std::to_string(static_cast<int>(lobbyInfo.m_me.id)+1));
-
-	// TODO: Only used for AI, should be removed once AI can target player in a better way.
-	m_player = player.get();
-
-	player->addComponent<PlayerComponent>();
-	player->addComponent<TransformComponent>(glm::vec3(1.6f + spawnOffset, 0.9f, 10.f));
-	//player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
-	
-	player->addComponent<NetworkSenderComponent>(
-		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
-		Netcode::EntityType::PLAYER_ENTITY,
-		playerID);
-
-
-	player->addComponent<PhysicsComponent>();
-	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
-	
-
-
-	// Give player a bounding box
-	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-
-	// Temporary projectile model for the player's gun
-	player->addComponent<GunComponent>(cubeModel, boundingBoxModel);
-
-
-	player->addComponent<AudioComponent>();
-	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
-
-
-	// Create candle for the player
-	m_currLightIndex = 0;
-	auto e = createCandleEntity("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
-	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	e->getComponent<CandleComponent>()->setOwner(player->getID());
-	player->addChildEntity(e);
-
-	// Set up camera
-	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
-	m_cam.lookAt(glm::vec3(0.f));
-
-	/////////////////////////////////////////////////////////////////////
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
@@ -844,7 +791,11 @@ const std::string GameState::createCube(const glm::vec3& position) {
 		std::to_string(position.z) + ")");
 }
 
-void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel) {
+void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID) {
+	// Player spawn positions are based on their unique id
+	// This will most likely be changed later so that the host sets all the players' start positions
+	float spawnOffset = static_cast<float>(2 * static_cast<int>(playerID) - 10);
+	
 	auto player = ECS::Instance()->createEntity("player");
 
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
@@ -853,7 +804,11 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	player->addComponent<PlayerComponent>();
 
 	player->addComponent<TransformComponent>();
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+
+	player->addComponent<NetworkSenderComponent>(
+		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
+		Netcode::EntityType::PLAYER_ENTITY,
+		playerID);
 
 	player->addComponent<PhysicsComponent>();
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
@@ -882,7 +837,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f+spawnOffset, 0.9f, 10.f));
 }
 
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
@@ -1020,7 +975,7 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 }
 
 void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
-	int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	
 	if (botCount < 0) {
