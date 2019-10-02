@@ -166,7 +166,7 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 		bool paddingTooBig = true;
 
 		for (unsigned int i = 0; i < intersectionInfo.info.size(); i++) {
-			if (Intersection::aabbWithTriangle(*boundingBox, intersectionInfo.info[i].positions[0], intersectionInfo.info[i].positions[1], intersectionInfo.info[i].positions[2])) {
+			if (Intersection::AabbWithTriangle(*boundingBox, intersectionInfo.info[i].positions[0], intersectionInfo.info[i].positions[1], intersectionInfo.info[i].positions[2])) {
 				physics->collisions.push_back(intersectionInfo.info[i]);
 
 				//Stop movement towards triangle
