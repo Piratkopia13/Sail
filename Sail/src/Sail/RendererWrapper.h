@@ -7,7 +7,7 @@ class PostProcessPipeline;
 class RendererWrapper {
 public:
 	RendererWrapper();
-	~RendererWrapper();
+	virtual ~RendererWrapper();
 
 	void initialize();
 
