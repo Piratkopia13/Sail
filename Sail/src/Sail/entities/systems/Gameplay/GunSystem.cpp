@@ -30,38 +30,51 @@ void GunSystem::update(float dt, Scene* scene) {
 		GunComponent* gun = e->getComponent<GunComponent>();
 
 		if (gun->firing) {
-			if (gun->projectileSpawnTimer == 0.f) {
-				
-				
-				for (int i = 0; i <= 10; i++) {
-					auto e = ECS::Instance()->createEntity("projectile");
-					e->addComponent<MetaballComponent>(/*gun->getProjectileModel()*/);
-					e->addComponent<BoundingBoxComponent>();
-					//e->addComponent<CollidableComponent>();
-					e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.5, 0.5, 0.5));
-					e->addComponent<LifeTimeComponent>(2.0f);
-					e->addComponent<ProjectileComponent>();					
-					e->addComponent<TransformComponent>(gun->position - gun->direction * (0.15f * i));
-					e->addComponent<PhysicsComponent>();
-					PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-					physics->velocity = gun->direction * (gun->projectileSpeed + i * 0.1f);
-					physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
-					scene->addEntity(e);//change when scene is a component.
-				}	
+			if (gun->gunOverloadTimer <= 0) {
+				if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
+					gun->gunOverloadTimer = gun->m_gunOverloadCooldown;
+					gun->gunOverloadvalue = 0;
+				}
 
+				if (gun->projectileSpawnTimer <= 0.f) {
+					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
-			}
-			gun->projectileSpawnTimer += dt;
-			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {
-				gun->projectileSpawnTimer = 0.f;
+					for (int i = 0; i <= 1; i++) {
+						auto e = ECS::Instance()->createEntity("projectile");
+						glm::vec3 randPos;
+						float maxrand = 0.2f;
+						randPos.r = ((float)rand() / RAND_MAX) * maxrand;
+						randPos.g = ((float)rand() / RAND_MAX) * maxrand;
+						randPos.b = ((float)rand() / RAND_MAX) * maxrand;
+
+						e->addComponent<MetaballComponent>(/*gun->getProjectileModel()*/);
+						e->addComponent<BoundingBoxComponent>();
+						//e->addComponent<CollidableComponent>();
+						e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
+						e->addComponent<LifeTimeComponent>(4.0f);
+						e->addComponent<ProjectileComponent>();
+						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
+						e->addComponent<PhysicsComponent>();
+						PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+						physics->velocity = gun->direction * ((gun->projectileSpeed + i * 0.1f) * 1.0f);
+						physics->constantAcceleration = glm::vec3(0.f, -9.82f, 0.f);
+
+						scene->addEntity(e);//change when scene is a component.
+					}
+				}
 			}
 
 			gun->firing = false;
 		}
 		else {
-			gun->projectileSpawnTimer = 0.f;
+			if (gun->gunOverloadvalue > 0) {
+				gun->gunOverloadvalue -= dt;
+			}
 		}
+
+		gun->gunOverloadTimer -= dt;
+		gun->projectileSpawnTimer -= dt;
 	}
 }
 void GunSystem::update(float dt) {

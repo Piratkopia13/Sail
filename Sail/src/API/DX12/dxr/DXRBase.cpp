@@ -311,8 +311,10 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 		for (auto& transform : instanceList.instanceTransforms) {
 			if (it.first == nullptr) {
 				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
+				pInstanceDesc->InstanceMask = 0x01;
 			} else {
 				pInstanceDesc->InstanceID = blasIndex;
+				pInstanceDesc->InstanceMask = 0xFF;
 			}
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
@@ -320,7 +322,6 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 			memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
 
 			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
-			pInstanceDesc->InstanceMask = 0xFF;
 
 			pInstanceDesc++;
 		}

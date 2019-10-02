@@ -21,17 +21,22 @@ public:
 		return m_wireframeModel;
 	}
 
-	float getSpawnLimit() const {
-		return m_projectileSpawnLimit;
-	}
-
 	void setFiring(glm::vec3 pos, glm::vec3 dir);
 
 	glm::vec3 position;
 	glm::vec3 direction;
 
 	float projectileSpawnTimer = 0.f;
+	float gunOverloadTimer = 0.f;
+	float m_projectileSpawnCooldown = 0.02f;
+	float m_gunOverloadCooldown = .5f;
+
+
 	float projectileSpeed = 10.f;
+
+	float gunOverloadvalue = 0.f;
+	float gunOverloadThreshold = .5f;
+
 	bool firing = false;
 
 private:
@@ -39,5 +44,4 @@ private:
 	Model* m_wireframeModel;
 
 
-	float m_projectileSpawnLimit = 0.5f;
 };

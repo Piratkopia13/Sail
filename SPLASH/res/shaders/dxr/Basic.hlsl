@@ -177,7 +177,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 
 	// TODO: move to shadow shader 
 	// If this is the second bounce, return as hit and do nothing else
-	if (payload.recursionDepth >= 4) {
+	if (payload.recursionDepth >= 2) {
 		payload.hit = 1;
 		return;
 	}
@@ -194,22 +194,22 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
 	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, reflectRaydesc, reflect_payload);
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, reftractRaydesc, refract_payload);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF &~ 0x01, 0, 0, 0, reftractRaydesc, refract_payload);
 
 	//diffuseColor = nextBounce.color;
 	float4 reflect_color = reflect_payload.color;
-	reflect_color.r *= 0.95;
-	reflect_color.g *= 0.95;
+	reflect_color.r *= 0.5;
+	reflect_color.g *= 0.5;
 	//reflect_color.b *= 0.9;
-	reflect_color.b *= 1.2;
+	reflect_color.b += 0.1;
 	saturate(reflect_color);
 
 	float4 refract_color = refract_payload.color;
 	refract_color.r *= 0.9;
 	refract_color.g *= 0.9;
 	//refract_color.b *= 0.9;
-	refract_color.b += 0.1;
+	refract_color.b += 0.05;
 	saturate(refract_color);
 
 	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
@@ -218,6 +218,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	//float4 finaldiffusecolor = saturate(reflect_color * refconst + refract_color * (1 - refconst));
 	//float4 finaldiffusecolor = float4(CB_SceneData.nMetaballs, CB_SceneData.nMetaballs, CB_SceneData.nMetaballs,1) * 10 / MAX_NUM_METABALLS;// saturate((reflect_color * 0.2 + refract_color) / 1.5);
 	float4 finaldiffusecolor = /*float4(InstanceID() / 10.0f, 0, 1, 1);*/ saturate((reflect_color * 0.2 + refract_color) / 1.5);
+	//float4 finaldiffusecolor = reflect_color;
 	finaldiffusecolor.a = 1;
 	/////////////////////////
 
@@ -373,10 +374,11 @@ float CalculateMetaballsPotential(in float3 position) {
 	uint nballs = CB_SceneData.nMetaballs;
 
 	int mid = InstanceID();
-	int nWeights = max(10 - mid * 0.5, 2);
+	int nWeights = 5;
 
-	int start = mid - nWeights / 2;
-	int end = mid + nWeights / 2;
+	int start = mid - nWeights;
+	int end = mid + nWeights;
+
 	if (start < 0)
 		start = 0;
 	if (end > nballs)
@@ -437,7 +439,7 @@ void IntersectionShader() {
 
 	float tmin = 0, tmax = 1;
 	unsigned int MAX_LARGE_STEPS = 16;//If these steps dont hit any metaball no hit is reported.
-	unsigned int MAX_SMALL_STEPS = 16;//If a large step hit a metaball, use small steps to adjust go backwards
+	unsigned int MAX_SMALL_STEPS = 32;//If a large step hit a metaball, use small steps to adjust go backwards
 
 	//unsigned int seed = 2;
 	//float t = tmin + Utils::nextRand(seed);
@@ -449,7 +451,7 @@ void IntersectionShader() {
 	while (iStep++ < MAX_LARGE_STEPS) {
 		float sumFieldPotential = CalculateMetaballsPotential(currPos); // Sum of all metaball field potentials.
 
-		const float Threshold = 0.25f;
+		const float Threshold = 0.95f;
 
 		if (sumFieldPotential >= Threshold) {
 			float restep_step = minTStep / 2;
