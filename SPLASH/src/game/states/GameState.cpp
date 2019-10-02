@@ -385,7 +385,11 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
 
+
 		int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+		if (botCount > 1) {
+			botCount = 1;
+		}
 		for (size_t i = 0; i < botCount; i++) {
 			e = ECS::Instance()->createEntity("AiCharacter");
 			e->addComponent<ModelComponent>(characterModel);
@@ -397,7 +401,7 @@ GameState::GameState(StateStack& stack)
 			e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
 			e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
-			e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
+		//	e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
 		}
 
 
