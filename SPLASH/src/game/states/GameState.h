@@ -119,4 +119,8 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_poppedThisFrame = false;
+
+	void createTestLevel(Shader* shader, Model* boundingBoxModel);
+	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel);
+	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
 };
