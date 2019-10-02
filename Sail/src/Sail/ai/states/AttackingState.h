@@ -20,7 +20,6 @@ public:
 	void init() override;
 
 	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
-	//void updatePath(AiComponent* aiComp, TransformComponent* transComp);
 
 private:
 	Octree* m_octree;
