@@ -385,7 +385,11 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
 
+
 		int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+		if (botCount > 1) {
+			botCount = 1;
+		}
 		for (size_t i = 0; i < botCount; i++) {
 			e = ECS::Instance()->createEntity("AiCharacter");
 			e->addComponent<ModelComponent>(characterModel);
