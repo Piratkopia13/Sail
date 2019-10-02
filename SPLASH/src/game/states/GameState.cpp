@@ -196,9 +196,9 @@ GameState::GameState(StateStack& stack)
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
 	//arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
-	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/stoneTileFloor/albedo.tga");
-	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
-	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/stoneTileFloor/normal.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
+	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
+	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
 	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");

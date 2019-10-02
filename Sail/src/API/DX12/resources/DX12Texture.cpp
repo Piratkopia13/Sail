@@ -140,7 +140,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		dstWidth = std::max<DWORD>(1, dstWidth);
 		dstHeight = std::max<DWORD>(1, dstHeight);
 
-		glm::vec2 texelSize = glm::vec2(1.0f / (float)dstWidth, 1.0f / (float)dstHeight) * 2.0f;
+		glm::vec2 texelSize = glm::vec2(1.0f / (float)dstWidth, 1.0f / (float)dstHeight);
 
 		dxPipeline->setCBufferVar_new("SrcMipLevel", &srcMip, sizeof(unsigned int), meshIndex);
 		dxPipeline->setCBufferVar_new("NumMipLevels", &mipCount, sizeof(unsigned int), meshIndex);
@@ -157,7 +157,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cmdList->SetComputeRootDescriptorTable(context->getRootIndexFromRegister("t0"), gpuHandle);
-		cpuHandle.ptr += heap->getDescriptorIncrementSize() * 9;
+		cpuHandle.ptr += heap->getDescriptorIncrementSize() * 10;
 		
 		//SetShaderResourceView(GenerateMips::SrcMip, 0, texture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, srcMip, 1, &srvDesc);
 
