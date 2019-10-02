@@ -196,6 +196,10 @@ Application* Application::getInstance() {
 void Application::dispatchEvent(Event& event) {
 	m_api->onEvent(event);
 	Input::GetInstance()->onEvent(event);
+
+	if (m_rendererWrapper.getCurrentRenderer()) {
+		m_rendererWrapper.onEvent(event);
+	}
 }
 
 GraphicsAPI* const Application::getAPI() {

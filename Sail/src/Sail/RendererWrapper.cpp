@@ -3,6 +3,8 @@
 
 #include "api/Renderer.h"
 #include "graphics/postprocessing/PostProcessPipeline.h"
+#include "Sail/events/WindowResizeEvent.h"
+//#include "Sail/events/EventHandler.h"
 
 RendererWrapper::RendererWrapper() {
 }
@@ -52,6 +54,20 @@ Renderer* RendererWrapper::getCurrentRenderer() {
 
 PostProcessPipeline* RendererWrapper::getPostProcessPipeline() {
 	return m_postProcessPipeline.get();
+}
+
+bool RendererWrapper::onEvent(Event& event) {
+
+	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&RendererWrapper::onResize));
+
+	return true;
+}
+
+bool RendererWrapper::onResize(Event& event) {
+
+	m_rendererRaster->onEvent(event);
+
+	return true;
 }
 
 void RendererWrapper::setLightSetup(LightSetup* lights) {
