@@ -7,6 +7,7 @@ enum AudioType { MUSIC };
 #include <x3daudio.h>
 
 #pragma comment (lib, "../../../../libraries/Audio/x3daudio.lib")
+#pragma comment (lib, "../../../../libraries/Audio/xaudio2.lib")
 
 #include <thread>
 #include <mfapi.h>
