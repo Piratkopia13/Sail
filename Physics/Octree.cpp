@@ -300,22 +300,12 @@ void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& ray
 		newInfo.positions[2] = v3;
 		newInfo.entity = meshEntity;
 
-		//if (outIntersectionData->closestHit >= 0.0f && (outIntersectionData->closestHit - intersectionDistance) < padding) {
-		//	//New hit was close to the old hit. Keep the old hit info in the vector
-		//	CollisionInfo oldInfo = outIntersectionData->info[0];
-		//	outIntersectionData->info.clear();
-		//	
-		//	outIntersectionData->info.push_back(newInfo);
-		//	outIntersectionData->info.push_back(oldInfo);
-		//}
-		//else {
-			//Only save the new info
-			//outIntersectionData->info.clear();
-			outIntersectionData->info.push_back(newInfo);
-		//}
+		//Save all intersections
+		outIntersectionData->info.push_back(newInfo);
 
 		if (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
 			outIntersectionData->closestHit = intersectionDistance;
+			outIntersectionData->closestHitIndex = outIntersectionData->info.size() - 1;
 		}
 	}
 }

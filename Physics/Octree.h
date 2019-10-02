@@ -15,6 +15,7 @@ public:
 
 	struct RayIntersectionInfo {
 		float closestHit = -1.0f;
+		int closestHitIndex = -1;
 		std::vector<CollisionInfo> info;
 	};
 
