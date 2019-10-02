@@ -75,6 +75,10 @@ unsigned int NodeSystem::getDistance(unsigned int n1, unsigned int n2) const {
 	return glm::distance(m_nodes[n1].position, m_nodes[n2].position);
 }
 
+const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
+	return m_nodes;
+}
+
 #ifdef _DEBUG_NODESYSTEM
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);

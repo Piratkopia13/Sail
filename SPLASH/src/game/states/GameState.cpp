@@ -19,6 +19,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/ai/states/AttackingState.h"
+#include "Sail/ai/states/FleeingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Network/NWrapperSingleton.h"
@@ -401,11 +402,24 @@ GameState::GameState(StateStack& stack)
 			e->addComponent<CollidableComponent>();
 			e->addComponent<PhysicsComponent>();
 			e->addComponent<AiComponent>();
-			e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
+			auto fsmComp = e->addComponent<FSMComponent>();
 			e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 			e->getComponent<PhysicsComponent>()->maxSpeed = player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
 			e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
-			e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
+			auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
+			e->addChildEntity(aiCandleEntity);
+			// Create states and transitions
+			{
+				fsmComp->createState<AttackingState>(m_octree);
+				fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
+				// TODO: unnecessary to create new transitions for each FSM if they're all identical
+				FSM::Transition* fromAttackToFleeing = SAIL_NEW FSM::Transition;
+				fromAttackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+				FSM::Transition* fromFleeingToAttacking = SAIL_NEW FSM::Transition;
+				fromFleeingToAttacking->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
+				fsmComp->addTransition<AttackingState, FleeingState>(fromAttackToFleeing);
+				fsmComp->addTransition<FleeingState, AttackingState>(fromFleeingToAttacking);
+			}
 
 		//	e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
 		}
