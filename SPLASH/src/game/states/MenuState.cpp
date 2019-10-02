@@ -39,7 +39,7 @@ bool MenuState::processInput(float dt) {
 
 bool MenuState::update(float dt, float alpha) {
 	NWrapperSingleton::getInstance().searchForLobbies();
-	NWrapperSingleton::getInstance().checkFoundPackages();
+	NWrapperSingleton::getInstance().checkFoundPackages(); // Make timer.
 	removeDeadLobbies();
 	return false;
 }
@@ -84,9 +84,6 @@ bool MenuState::renderImgui(float dt) {
 
 	// Display open lobbies
 	ImGui::Begin("Hosted Lobbies on LAN", NULL);
-	//if (ImGui::Button("Refresh")) {
-	//	m_refreshing = true;
-	//}
 	// Per hosted game
 	for (auto& lobby : m_foundLobbies) {
 		// List as a button
@@ -173,37 +170,3 @@ void MenuState::removeDeadLobbies() {
 		}
 	}
 }
-
-//
-//void MenuState::sortFoundLobbies() {
-//	std::sort(m_foundLobbies.begin(), m_foundLobbies.end());
-//	std::sort(m_newfoundLobbies.begin(), m_newfoundLobbies.end());
-//}
-//
-//void MenuState::removeDeadLobbies() {
-//	if (m_foundLobbies.size() != m_lobbiesFoundThisFrame && 
-//		m_foundLobbies.size() != m_newfoundLobbies.size())
-//	{
-//		if (m_newfoundLobbies.size() < m_foundLobbies.size()) {
-//			// A lobby has died, find and remove it.
-//			// Is it any lobby other than the last?
-//			for (int i = 0; i < m_lobbiesFoundThisFrame; i++)	{
-//				if (m_foundLobbies.at(i) != m_newfoundLobbies.at(i)) {
-//					// We found the discrepancy at index 'i'.
-//					// Delete the discrepancy from foundLobbies
-//					m_foundLobbies.erase(m_foundLobbies.begin() + i);
-//				}
-//			}
-//		}
-//		else {
-//			// In this case, a new was added
-//		}
-//		m_lobbiesChanged = true;
-//	}
-//	if (m_lobbiesChanged == true) {
-//		m_foundLobbies = m_newfoundLobbies;
-//		m_lobbiesChanged = false;
-//	}
-//	// Reset counter
-//	m_lobbiesFoundThisFrame = 0;
-//}
