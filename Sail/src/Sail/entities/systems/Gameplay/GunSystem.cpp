@@ -34,9 +34,11 @@ void GunSystem::update(float dt) {
 				auto e = ECS::Instance()->createEntity("projectile");
 				e->addComponent<ModelComponent>(gun->getProjectileModel());
 				e->addComponent<BoundingBoxComponent>();
-				e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.2f));
-				e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(gun->position);
-				e->addComponent<LifeTimeComponent>(3.0f);
+				BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
+				//Done here because systems doesn't update the bounding box first frame so it passes through things
+				boundingBox->setHalfSize(glm::vec3(0.2f));
+				boundingBox->setPosition(gun->position);
+				e->addComponent<LifeTimeComponent>(2.0f);
 				e->addComponent<ProjectileComponent>();
 				e->addComponent<TransformComponent>(gun->position);
 				TransformComponent* transform = e->getComponent<TransformComponent>();
