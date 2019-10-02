@@ -66,7 +66,6 @@ private:
 	int m_id;
 	int m_ECSIndex;
 	ECS* m_ecs;
-	Entity::SPtr m_mySPtr;
 
 	std::vector<Entity::SPtr> m_children;
 };

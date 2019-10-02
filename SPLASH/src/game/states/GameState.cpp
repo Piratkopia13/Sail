@@ -206,10 +206,11 @@ GameState::GameState(StateStack& stack)
 
 	player->addComponent<PlayerComponent>();
 	player->addComponent<TransformComponent>();
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 
 	player->addComponent<PhysicsComponent>();
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
 	// Give player a bounding box
@@ -235,7 +236,6 @@ GameState::GameState(StateStack& stack)
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 
 
 
@@ -461,8 +461,8 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.entity) {
-			Logger::Log("Ray intersection with " + tempInfo.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
 
