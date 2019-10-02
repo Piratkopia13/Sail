@@ -15,9 +15,6 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/Input/GameInputSystem.h"
-//#include "Sail/entities/systems/network/NetworkHostSystem.h"
-//#include "Sail/entities/systems/network/NetworkClientSystem.h"
-//#include "Sail/entities/systems/network/Networksystem.h"
 #include "Sail/entities/systems/network/NetworkReceiverSystem.h"
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
@@ -217,13 +214,14 @@ GameState::GameState(StateStack& stack)
 
 
 	// Player spawn positions are based on their unique id
-	// This will likely be changed later so that the host sets all the players' start positions
+	// This will most likely be changed later so that the host sets all the players' start positions
 	float spawnOffset = static_cast<float>(2*static_cast<int>(lobbyInfo.m_me.id)-10);
 	
 	// Player creation
 	auto player = ECS::Instance()->createEntity("player");
 	
-	Logger::Log("Player id: " + std::to_string(static_cast<int>(lobbyInfo.m_me.id)+1));
+	// For debugging 
+	//Logger::Log("Player id: " + std::to_string(static_cast<int>(lobbyInfo.m_me.id)+1));
 
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	m_player = player.get();
@@ -236,13 +234,6 @@ GameState::GameState(StateStack& stack)
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
 		Netcode::EntityType::PLAYER_ENTITY,
 		lobbyInfo.m_me.id);
-
-	//if (NWrapperSingleton::getInstance().isHost()) {
-	//	// Send the start positions of all players to all players
-	//	
-	//} else {
-	//	player->addComponent<NetworkReceiverComponent>();
-	//}
 
 
 	player->addComponent<PhysicsComponent>();
