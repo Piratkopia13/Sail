@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../../BaseComponentSystem.h"
+#include "../BaseComponentSystem.h"
 #include "Sail/ai/pathfinding/NodeSystem.h"
+#include <vector>
+#include <unordered_map>
 
 class TransformComponent;
 class PhysicsComponent;
