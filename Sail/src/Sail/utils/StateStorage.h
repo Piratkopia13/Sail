@@ -25,12 +25,13 @@ struct MenuToLobbyData {
 
 
 struct LobbyToGameData {
-	Player m_me;
-	std::list<Player> m_players;
+	Player myPlayer;
+	std::list<Player> playerList;
 	int botCount = 0;
 
 	LobbyToGameData() {}
-	LobbyToGameData(Player& me, std::list<Player>& players) : m_me(me), m_players(players) {}
+	LobbyToGameData(Player& me, std::list<Player>& players, int nrOfBots = 0) : 
+		myPlayer(me), playerList(players), botCount(nrOfBots) {}
 };
 
 class StateStorage {
@@ -45,11 +46,11 @@ public:
 	const MenuToLobbyData* getMenuToLobbyData() { return &m_menuLobbyData; }
 
 	void setLobbyToGameData(LobbyToGameData& data) { m_lobyToGameData = data; }
-	const LobbyToGameData getLobbyToGameData() { return m_lobyToGameData; }
+	const LobbyToGameData* getLobbyToGameData() { return &m_lobyToGameData; }
 
 
 private:
-	MenuToLobbyData m_menuLobbyData; // //
+	MenuToLobbyData m_menuLobbyData;
 	LobbyToGameData m_lobyToGameData;
 
 };

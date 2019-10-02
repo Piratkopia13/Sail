@@ -87,10 +87,6 @@ GameState::GameState(StateStack& stack)
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
 	//-----------------------
 
-
-	// Get the player id's and names from the lobby
-	const LobbyToGameData lobbyInfo = m_app->getStateStorage().getLobbyToGameData();
-
 	/*
 		Create a PhysicSystem
 		If the game developer does not want to add the systems like this,
@@ -144,9 +140,13 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
 
+	// Get the player id's and names from the lobby
+	const unsigned char playerID = m_app->getStateStorage().getLobbyToGameData()->myPlayer.id;
+
+	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
-	m_componentSystems.networkReceiverSystem->initWithPlayerID(lobbyInfo.m_me.id);
+	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -212,11 +212,11 @@ GameState::GameState(StateStack& stack)
 
 	// Player spawn positions are based on their unique id
 	// This will most likely be changed later so that the host sets all the players' start positions
-	float spawnOffset = static_cast<float>(2*static_cast<int>(lobbyInfo.m_me.id)-10);
+	float spawnOffset = static_cast<float>(2 * static_cast<int>(playerID) - 10);
 	
 	// Player creation
 	auto player = ECS::Instance()->createEntity("player");
-	
+
 	// For debugging 
 	//Logger::Log("Player id: " + std::to_string(static_cast<int>(lobbyInfo.m_me.id)+1));
 
@@ -230,7 +230,7 @@ GameState::GameState(StateStack& stack)
 	player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
 		Netcode::EntityType::PLAYER_ENTITY,
-		lobbyInfo.m_me.id);
+		playerID);
 
 
 	player->addComponent<PhysicsComponent>();
@@ -412,7 +412,7 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<CollidableComponent>();
 
 
-		int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+		int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 		if (botCount > 1) {
 			botCount = 1;
 		}
