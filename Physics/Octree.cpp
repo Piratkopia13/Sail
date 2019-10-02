@@ -378,7 +378,8 @@ int Octree::pruneTreeRec(Node* currentNode) {
 		if (returnValue == 0) {
 			//No entities in any child - Prune the children
 			for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-				ECS::Instance()->destroyEntity(currentNode->childNodes[i].bbEntity);
+				currentNode->childNodes[i].bbEntity->queueDestruction();
+				//ECS::Instance()->destroyEntity(currentNode->childNodes[i].bbEntity);
 			}
 			currentNode->childNodes.clear();
 		}
