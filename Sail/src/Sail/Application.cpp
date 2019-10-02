@@ -118,8 +118,6 @@ int Application::startGameLoop() {
 			delta = newTime - currentTime;
 			currentTime = newTime;
 
-			// Will slow the game down if the CPU can't keep up with the TICKRATE
-
 			// Update fps counter
 			secCounter += delta;
 			accumulator += delta;

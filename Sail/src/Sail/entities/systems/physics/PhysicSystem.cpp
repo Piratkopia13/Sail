@@ -165,23 +165,23 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 		//Collision update
 		bool paddingTooBig = true;
 
-		if (Intersection::aabbWithTriangle(*boundingBox, intersectionInfo.info.positions[0], intersectionInfo.info.positions[1], intersectionInfo.info.positions[2])) {
-			physics->collisions.push_back(intersectionInfo.info);
+		for (unsigned int i = 0; i < intersectionInfo.info.size(); i++) {
+			if (Intersection::aabbWithTriangle(*boundingBox, intersectionInfo.info[i].positions[0], intersectionInfo.info[i].positions[1], intersectionInfo.info[i].positions[2])) {
+				physics->collisions.push_back(intersectionInfo.info[i]);
 
-			//Stop movement towards triangle
-			float projectionSize = glm::dot(physics->velocity, -intersectionInfo.info.normal);
+				//Stop movement towards triangle
+				float projectionSize = glm::dot(physics->velocity, -intersectionInfo.info[i].normal);
 
-			if (projectionSize > 0.0f) { //Is pushing against wall
-				physics->velocity += intersectionInfo.info.normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
-				paddingTooBig = false;
+				if (projectionSize > 0.0f) { //Is pushing against wall
+					physics->velocity += intersectionInfo.info[i].normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
+					paddingTooBig = false;
+				}
 			}
 		}
 
 		if (paddingTooBig) {
 			physics->padding *= 0.5f;
 		}
-
-		physics->m_oldVelocity = physics->velocity;
 
 		rayCastUpdate(e, dt);
 	}
@@ -204,16 +204,6 @@ void PhysicSystem::update(float dt) {
 
 		transform->rotate(physics->constantRotation * dt);
 
-		if (boundingBox && m_octree) {
-			if (rayCastCheck(e, dt)) {
-				//Object is moving fast, ray cast for collisions
-				rayCastUpdate(e, dt);
-			}
-			else {
-				collisionUpdate(e, dt);
-			}
-		}
-
 		//----Max Speed Limiter----
 		float saveY = physics->velocity.y;
 		physics->velocity.y = 0;
@@ -231,11 +221,27 @@ void PhysicSystem::update(float dt) {
 		}
 		physics->velocity.y = saveY;
 		//-------------------------
+
+		if (boundingBox && m_octree) {
+			collisionUpdate(e, dt);
+
+			if (rayCastCheck(e, dt)) {
+				if (Input::IsKeyPressed(SAIL_KEY_L)) {
+					std::cout << "Break\n";
+				}
+
+				//Object is moving fast, ray cast for collisions
+				rayCastUpdate(e, dt);
+				physics->m_oldVelocity = physics->velocity;
+			}
+		}
+
 		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * dt;
 		transform->translate(translation);
 		if (e->getName() == "player") {
 			m_gameDataTracker->logDistanceWalked(translation);
 		}
+		
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
 	}

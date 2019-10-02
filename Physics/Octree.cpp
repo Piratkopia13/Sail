@@ -292,13 +292,31 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 
 void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData, float padding) {
 	float intersectionDistance = Intersection::rayWithPaddedTriangle(rayStart, rayDir, v1, v2, v3, padding);
-	if (intersectionDistance >= 0.0f && (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) {
-		outIntersectionData->info.normal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
-		outIntersectionData->info.positions[0] = v1;
-		outIntersectionData->info.positions[1] = v2;
-		outIntersectionData->info.positions[2] = v3;
-		outIntersectionData->info.entity = meshEntity;
-		outIntersectionData->closestHit = intersectionDistance;
+	if (intersectionDistance >= 0.0f) {
+		CollisionInfo newInfo;
+		newInfo.normal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+		newInfo.positions[0] = v1;
+		newInfo.positions[1] = v2;
+		newInfo.positions[2] = v3;
+		newInfo.entity = meshEntity;
+
+		//if (outIntersectionData->closestHit >= 0.0f && (outIntersectionData->closestHit - intersectionDistance) < padding) {
+		//	//New hit was close to the old hit. Keep the old hit info in the vector
+		//	CollisionInfo oldInfo = outIntersectionData->info[0];
+		//	outIntersectionData->info.clear();
+		//	
+		//	outIntersectionData->info.push_back(newInfo);
+		//	outIntersectionData->info.push_back(oldInfo);
+		//}
+		//else {
+			//Only save the new info
+			//outIntersectionData->info.clear();
+			outIntersectionData->info.push_back(newInfo);
+		//}
+
+		if (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
+			outIntersectionData->closestHit = intersectionDistance;
+		}
 	}
 }
 
