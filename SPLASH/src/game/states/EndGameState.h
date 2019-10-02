@@ -4,7 +4,7 @@
 
 class EndGameState : public State {
 public:
-	EndGameState(StateStack& stack);
+	explicit EndGameState(StateStack& stack);
 	~EndGameState();
 
 	// Process input for the state
