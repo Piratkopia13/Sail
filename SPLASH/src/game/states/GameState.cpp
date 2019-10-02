@@ -152,7 +152,6 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/barrierBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/containerBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("sponza/textures/boxOrientationTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
@@ -164,8 +163,8 @@ GameState::GameState(StateStack& stack)
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
-
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
+
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
@@ -179,7 +178,6 @@ GameState::GameState(StateStack& stack)
 #endif
 
 	// Create/load models
-
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
@@ -210,7 +208,7 @@ GameState::GameState(StateStack& stack)
 
 
 
-	//Allocating memory for profiler
+	// Allocating memory for profiler
 	m_virtRAMHistory = SAIL_NEW float[100];
 	m_physRAMHistory = SAIL_NEW float[100];
 	m_vramUsageHistory = SAIL_NEW float[100];
@@ -391,7 +389,6 @@ bool GameState::render(float dt, float alpha) {
 
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	ImGui::ShowDemoWindow();
 	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
@@ -600,9 +597,7 @@ bool GameState::renderImGuiLightDebug(float dt) {
 void GameState::shutDownGameState() {
 
 	// Show mouse cursor if hidden
-	if (Input::IsCursorHidden()) {
-		Input::HideCursor(!Input::IsCursorHidden());
-	}
+	Input::HideCursor(false);
 
 	// Reset network
 	NWrapperSingleton::getInstance().resetNetwork();
@@ -770,6 +765,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	m_player = player.get();
 
 	player->addComponent<PlayerComponent>();
+
 	player->addComponent<TransformComponent>();
 	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 
@@ -804,6 +800,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 }
 
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
+	// Load models used for test level
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
 	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
 
@@ -815,6 +812,8 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 
 	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
 	rampModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/rampBasicTexture.tga");
+
+	// Create entities for test level
 
 	auto e = ECS::Instance()->createEntity("Arena");
 	e->addComponent<ModelComponent>(arenaModel);
@@ -937,12 +936,12 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
 	int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
 
-	// TODO: Remove this when more bots can be added safely
-	if (botCount > 1) {
-		botCount = 1;
-	}
-	else if (botCount < 0) {
+	
+	if (botCount < 0) {
 		botCount = 0;
+	}// TODO: Remove this when more bots can be added safely
+	else if (botCount > 1) {
+		botCount = 1;
 	}
 	for (size_t i = 0; i < botCount; i++) {
 		auto e = ECS::Instance()->createEntity("AiCharacter");
