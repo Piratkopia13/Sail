@@ -222,21 +222,20 @@ void PhysicSystem::update(float dt) {
 		physics->velocity.y = saveY;
 		//-------------------------
 
-		if (boundingBox && m_octree) {
-			collisionUpdate(e, dt);
+		float updateAbleDt = dt;
 
-			if (rayCastCheck(e, dt)) {
-				if (Input::IsKeyPressed(SAIL_KEY_L)) {
-					std::cout << "Break\n";
-				}
+		if (boundingBox && m_octree) {
+			collisionUpdate(e, updateAbleDt);
+
+			if (rayCastCheck(e, updateAbleDt)) {
 
 				//Object is moving fast, ray cast for collisions
-				rayCastUpdate(e, dt);
+				rayCastUpdate(e, updateAbleDt);
 				physics->m_oldVelocity = physics->velocity;
 			}
 		}
 
-		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * dt;
+		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * updateAbleDt;
 		transform->translate(translation);
 		if (e->getName() == "player") {
 			m_gameDataTracker->logDistanceWalked(translation);
