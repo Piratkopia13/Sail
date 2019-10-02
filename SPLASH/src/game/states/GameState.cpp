@@ -401,7 +401,7 @@ GameState::GameState(StateStack& stack)
 			e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
 			e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
-			e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
+		//	e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
 		}
 
 
