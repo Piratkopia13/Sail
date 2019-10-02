@@ -119,7 +119,6 @@ int Application::startGameLoop() {
 			currentTime = newTime;
 
 			// Will slow the game down if the CPU can't keep up with the TICKRATE
-			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += delta;
