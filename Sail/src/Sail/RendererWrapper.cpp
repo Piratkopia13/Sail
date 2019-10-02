@@ -66,6 +66,7 @@ bool RendererWrapper::onEvent(Event& event) {
 bool RendererWrapper::onResize(Event& event) {
 
 	m_rendererRaster->onEvent(event);
+	m_rendererRaytrace->onEvent(event);
 
 	return true;
 }
