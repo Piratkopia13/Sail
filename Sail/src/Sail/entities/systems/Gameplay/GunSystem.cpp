@@ -31,22 +31,22 @@ void GunSystem::update(float dt) {
 
 		if (gun->firing) {
 			if (gun->projectileSpawnTimer == 0.f) {
-				auto e = ECS::Instance()->createEntity("projectile");
-				e->addComponent<ModelComponent>(gun->getProjectileModel());
-				e->addComponent<BoundingBoxComponent>();
-				BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
+				auto proj = ECS::Instance()->createEntity("projectile");
+				proj->addComponent<ModelComponent>(gun->getProjectileModel());
+				proj->addComponent<BoundingBoxComponent>();
+				BoundingBox* boundingBox = proj->getComponent<BoundingBoxComponent>()->getBoundingBox();
 				//Done here because systems doesn't update the bounding box first frame so it passes through things
 				boundingBox->setHalfSize(glm::vec3(0.2f));
 				boundingBox->setPosition(gun->position);
-				e->addComponent<LifeTimeComponent>(2.0f);
-				e->addComponent<ProjectileComponent>();
-				e->addComponent<TransformComponent>(gun->position);
-				TransformComponent* transform = e->getComponent<TransformComponent>();
+				proj->addComponent<LifeTimeComponent>(2.0f);
+				proj->addComponent<ProjectileComponent>();
+				proj->addComponent<TransformComponent>(gun->position);
+				TransformComponent* transform = proj->getComponent<TransformComponent>();
 				transform->setScale(glm::vec3(1.0f, 1.0f, 1.0f) * 0.2f);
 				transform->rotateAroundY(glm::atan(gun->direction.x / gun->direction.z));
 				
-				e->addComponent<PhysicsComponent>();
-				PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+				proj->addComponent<PhysicsComponent>();
+				PhysicsComponent* physics = proj->getComponent<PhysicsComponent>();
 				physics->velocity = gun->direction * gun->projectileSpeed;
 				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 				physics->drag = 2.0f;
@@ -66,4 +66,4 @@ void GunSystem::update(float dt) {
 			gun->projectileSpawnTimer = 0.f;
 		}
 	}
-} // update
+}

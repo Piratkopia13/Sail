@@ -3,7 +3,6 @@
 #include <glm/glm.hpp>
 
 class Model;
-//class Transform;
 
 class GunComponent : public Component<GunComponent> {
 public:
