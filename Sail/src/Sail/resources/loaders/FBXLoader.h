@@ -48,6 +48,14 @@ private:
 
 	void addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, const unsigned long& currentIndex, const Mesh::vec3& position, const Mesh::vec3& normal, const Mesh::vec3& tangent, const Mesh::vec3& bitangent, const Mesh::vec2& uv);
 
+	void fetchSkeleton(FbxNode* node, const std::string& filename);
+
+	void fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex);
+
+	int getBoneIndex(unsigned int uniqueID, const std::string& name);
+
+	
+
 	//DEBUG
 	std::string GetAttributeTypeName(FbxNodeAttribute::EType type);
 	std::string PrintAttribute(FbxNodeAttribute* pAttribute);
@@ -69,10 +77,20 @@ private:
 	std::string m_matSpecularTex;
 	std::string m_matNormalTex;*/
 
+	class Bone {
+	public:
+		Bone() { parentIndex = 0; uniqueID = 0; globalBindposeInverse = glm::identity<glm::mat4>();};
+		~Bone() {}
 
+		int parentIndex;
+		unsigned long uniqueID;
+		std::vector<unsigned int> childIndexes;
+		glm::mat4 globalBindposeInverse;
+	};
 
 
 	struct SceneData {
+		~SceneData() { Memory::SafeDelete(model); Memory::SafeDelete(stack); }
 		bool done;
 		bool hasModel;
 		bool hasAnimation;
@@ -80,12 +98,12 @@ private:
 		Model* model;
 		AnimationStack* stack;
 
+		std::vector<std::vector<unsigned long>> cpToVertMap;
+		std::vector<Bone> bones;
 		//std::vector<Model*> models;
 		//std::vector<AnimationStack*> animationStacks;
 		//std::vector<std::string> textures;
-		~SceneData() { Memory::SafeDelete(model); Memory::SafeDelete(stack); }
 		
-		std::vector<std::vector<unsigned long>> cpToVertMap;
 
 	};
 

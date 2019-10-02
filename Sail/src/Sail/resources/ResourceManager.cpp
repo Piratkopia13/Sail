@@ -86,8 +86,9 @@ void ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	// Insert the new model
 
 	Model* temp = nullptr;
-	if(type == ResourceManager::ImporterType::SAIL_ASSIMP)
+	if (type == ResourceManager::ImporterType::SAIL_ASSIMP) {
 		temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION + filename, shader);
+	}
 	else if (type == ResourceManager::ImporterType::SAIL_FBXSDK) {
 		temp = m_fbxLoader->fetchModel(SAIL_DEFAULT_MODEL_LOCATION + filename, shader);
 	}
@@ -121,8 +122,9 @@ bool ResourceManager::hasModel(const std::string& filename) {
 
 void ResourceManager::loadAnimationStack(const std::string& fileName, const ImporterType type) {
 	AnimationStack* temp = nullptr;
-	if (type == ResourceManager::ImporterType::SAIL_ASSIMP)
+	if (type == ResourceManager::ImporterType::SAIL_ASSIMP) {
 		temp = m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName);
+	}
 	else if (type == ResourceManager::ImporterType::SAIL_FBXSDK) {
 		//TODO: REMOVE SHADER FROM ANIMATION IMPORT
 		temp = m_fbxLoader->fetchAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName, nullptr);
@@ -140,7 +142,7 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 	}
 
 
-	m_animationStacks.insert({ fileName, std::unique_ptr<AnimationStack>(m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName))});
+	//m_animationStacks.insert({ fileName, std::unique_ptr<AnimationStack>(m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName))});
 }
 
 AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) {

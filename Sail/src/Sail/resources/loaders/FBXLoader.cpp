@@ -11,6 +11,7 @@
 FbxManager* FBXLoader::s_manager = FbxManager::Create();
 FbxIOSettings* FBXLoader::s_ios = FbxIOSettings::Create(s_manager, IOSROOT);
 
+
 //transform ripped from https ://github.com/Caspila/GUInity/blob/master/Source/Converter.cpp
 static const glm::mat4 FBXtoGLM(const FbxAMatrix& mat) {
 	glm::mat4 newMat;
@@ -57,7 +58,7 @@ static void FBXtoGLM(glm::mat4& newMat, const FbxAMatrix& mat) {
 	newMat[3][1] = mat[3][1];
 	newMat[3][2] = mat[3][2];
 	newMat[3][3] = mat[3][3];
-	newMat = glm::transpose(newMat);
+	//newMat = glm::transpose(newMat);
 }
 static void FBXtoGLM(glm::vec3& newVec, const FbxVector4& vec) {
 	newVec.x = (float)vec[0];
@@ -127,7 +128,7 @@ bool FBXLoader::initScene(const std::string& filePath) {
 		}
 		
 		m_scenes[filePath] = scene;
-		m_sceneData[filePath] = { false, false, false, false, nullptr, nullptr }; //??
+		m_sceneData[filePath] = { false, false, false, false, nullptr, nullptr}; //??
 	}
 	return true;
 }
@@ -197,7 +198,9 @@ AnimationStack* FBXLoader::importAnimationStack(const std::string& filePath) {
 
 	
 	AnimationStack* stack = SAIL_NEW AnimationStack();
+	fetchSkeleton(root, filePath);
 	fetchAnimations(root, stack, filePath);
+
 
 
 	return stack;
@@ -238,8 +241,11 @@ FbxScene* FBXLoader::makeScene(std::string filePath, std::string sceneName) {
 		return nullptr;
 	}
 	FbxScene* lScene = FbxScene::Create(s_manager, sceneName.c_str());
+
+	
 	importer->Import(lScene);
 	importer->Destroy();
+		
 	return lScene;
 }
 
@@ -282,6 +288,7 @@ void FBXLoader::fetchAnimations(FbxNode* node, AnimationStack* stack, const std:
 
 		if (attributeType == FbxNodeAttribute::eMesh) {
 			FbxMesh* fbxmesh = node->GetMesh();
+			
 			getAnimations(node, stack, name);
 			return;
 		}
@@ -596,21 +603,22 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 
 			unsigned long oldUnique = uniqueVertices;
 			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[0], vertNormal[0], vertTangent[0], vertBitangent[0], vertTexCoord[0]);
+			
 			if(oldUnique != uniqueVertices)
-				cpMap[CPIndex[0]].emplace_back(uniqueVertices);
+				cpMap[CPIndex[0]].emplace_back(oldUnique);
 			oldUnique = uniqueVertices;
 			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[1], vertNormal[1], vertTangent[1], vertBitangent[1], vertTexCoord[1]);
 			if (oldUnique != uniqueVertices)
-				cpMap[CPIndex[1]].emplace_back(uniqueVertices);
+				cpMap[CPIndex[1]].emplace_back(oldUnique);
 			oldUnique = uniqueVertices; 
 			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[2], vertNormal[2], vertTangent[2], vertBitangent[2], vertTexCoord[2]);
 			if (oldUnique != uniqueVertices)
-				cpMap[CPIndex[2]].emplace_back(uniqueVertices);
+				cpMap[CPIndex[2]].emplace_back(oldUnique);
 
 		}
 
 	}
-	buildData.resizeVertices(uniqueVertices+1);
+	buildData.resizeVertices(uniqueVertices);
 
 }
 
@@ -643,15 +651,39 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					#endif
 					continue;
 				}
+				unsigned int clusterCount = skin->GetClusterCount();
+
+				std::vector<int> limbIndexes;
+				limbIndexes.resize(clusterCount);
+				for (unsigned int clusterIndex = 0; clusterIndex < clusterCount; clusterIndex++) {
+					FbxCluster* cluster = skin->GetCluster(clusterIndex);
+					limbIndexes[clusterIndex] = getBoneIndex(cluster->GetLink()->GetUniqueID(), name);
+					if (limbIndexes[clusterIndex] == -1) {
+						Logger::Warning("Could not find limb at clusterIndex: " + std::to_string(clusterIndex));
+					}
+				}
 
 
 
-
+				
 
 				// set controlpoints?
-				unsigned int clusterCount = skin->GetClusterCount();
-				for (unsigned int clusterIndex = 0; clusterIndex < clusterCount; ++clusterIndex) {
+				for (unsigned int clusterIndex = 0; clusterIndex < clusterCount; clusterIndex++) {
 					FbxCluster* cluster = skin->GetCluster(clusterIndex);
+					glm::mat4 globalBindposeInverse;
+
+					FbxAMatrix transformMatrix;
+					FbxAMatrix transformLinkMatrix;
+					FbxAMatrix globalBindposeInverseMatrix;
+					cluster->GetTransformMatrix(transformMatrix);
+					cluster->GetTransformLinkMatrix(transformLinkMatrix);
+					globalBindposeInverseMatrix = transformLinkMatrix.Inverse() * transformMatrix * geometryTransform;
+
+					FBXtoGLM(globalBindposeInverse, globalBindposeInverseMatrix);
+
+					m_sceneData[name].bones[limbIndexes[clusterIndex]].globalBindposeInverse = globalBindposeInverse;
+
+
 
 					// Update the information in mSkeleton 
 					//model->setGlobalBindposeInverse(limbIndexes[clusterIndex], convertToXMMatrix(globalBindposeInverseMatrix));
@@ -664,7 +696,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					for (unsigned int index = 0; index < indexCount; ++index) {
 
 						int indexCCPI = CPIndices[index];
-						int limbIndex = clusterIndex;
+						int limbIndex = limbIndexes[clusterIndex];
 						float weightzzz = CPWeights[index];
 						for (int i = 0; i < cpMap[indexCCPI].size(); i++) {
 							unsigned long trueIndex = cpMap[indexCCPI][i];
@@ -675,7 +707,8 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					}
 				}
 
-
+				stack->normalizeWeights();
+				stack->checkWeights();
 
 
 
@@ -700,30 +733,28 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					//TODO: find way to import FPS from file.
 					FbxTime::EMode fps = FbxTime::eFrames24;
 					for (FbxLongLong frameIndex = start.GetFrameCount(fps); frameIndex <= end.GetFrameCount(fps); frameIndex++) {
-						Animation::Frame* frame = SAIL_NEW Animation::Frame(clusterCount);
+						Animation::Frame* frame = SAIL_NEW Animation::Frame(m_sceneData[name].bones.size());
 						FbxTime currTime;
 						currTime.SetFrame(frameIndex, fps);
 						if (firstFrameTime == 0.0f)
 							firstFrameTime = float(currTime.GetSecondDouble());
-						glm::mat4 matrix;			
-						FbxAMatrix transformMatrix;
-						FbxAMatrix transformLinkMatrix;
-						FbxAMatrix globalBindposeInverseMatrix;
+						glm::mat4 matrix;		
+						
 						for (unsigned int clusterIndex = 0; clusterIndex < clusterCount; ++clusterIndex) {
 							FbxCluster* cluster = skin->GetCluster(clusterIndex);
-							cluster->GetTransformMatrix(transformMatrix);
-							cluster->GetTransformLinkMatrix(transformLinkMatrix);
-							globalBindposeInverseMatrix = transformLinkMatrix.Inverse() * transformMatrix * geometryTransform;
+
 							FbxAMatrix currentTransformOffset = node->EvaluateGlobalTransform(currTime) * geometryTransform;
 
-							FBXtoGLM(matrix, globalBindposeInverseMatrix * currentTransformOffset.Inverse() * cluster->GetLink()->EvaluateGlobalTransform(currTime));
-							frame->setTransform(clusterIndex, matrix);
+							FBXtoGLM(matrix, currentTransformOffset.Inverse() * cluster->GetLink()->EvaluateGlobalTransform(currTime));
+
+							frame->setTransform(limbIndexes[clusterIndex],  matrix * m_sceneData[name].bones[limbIndexes[clusterIndex]].globalBindposeInverse);
 						}
 						float time = float(currTime.GetSecondDouble()) - firstFrameTime;
 						animation->addFrame(frameIndex, time, frame);
 					}
 					
 					stack->addAnimation(animationName, animation);
+					Logger::Log("Added: " + animationName);
 				}
 			}//deformer end
 		}
@@ -784,8 +815,43 @@ void FBXLoader::addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, c
 	uniqueVertices += 1;
 }
 
+void FBXLoader::fetchSkeleton(FbxNode* node, const std::string& filename) {
 
 
+	for (int childIndex = 0; childIndex < node->GetChildCount(); ++childIndex) {
+		FbxNode* currNode = node->GetChild(childIndex);
+		fetchSkeletonRecursive(currNode, filename, 0, 0, -1);
+	}
+
+}
+void FBXLoader::fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex) {
+
+	if (inNode->GetNodeAttribute() && inNode->GetNodeAttribute()->GetAttributeType() && inNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eSkeleton) {
+		m_sceneData[filename].bones;
+		FBXLoader::Bone limb;
+		limb.parentIndex = inParentIndex;
+		limb.uniqueID = inNode->GetUniqueID();
+
+		if(m_sceneData[filename].bones.size() > 0)
+			m_sceneData[filename].bones[limb.parentIndex].childIndexes.push_back(int(m_sceneData[filename].bones.size()));
+		m_sceneData[filename].bones.push_back(limb);
+
+	}
+	for (int i = 0; i < inNode->GetChildCount(); i++) {
+		fetchSkeletonRecursive(inNode->GetChild(i), filename, inDepth + 1, unsigned int(m_sceneData[filename].bones.size()), myIndex);
+	}
+
+
+}
+
+int FBXLoader::getBoneIndex(unsigned int uniqueID, const std::string& name) {
+	auto& ref = m_sceneData[name].bones;
+	for (unsigned int i = 0; i < ref.size(); i++) {
+		if (ref[i].uniqueID == uniqueID)
+			return i;
+	}
+	return -1;
+}
 
 
 

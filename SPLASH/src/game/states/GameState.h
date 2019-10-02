@@ -51,6 +51,9 @@ private:
 
 	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
 
+	void loadAnimations();
+	void initAnimations();
+
 private:
 	struct Systems {
 		AiSystem* aiSystem = nullptr;

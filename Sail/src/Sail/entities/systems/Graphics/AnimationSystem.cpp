@@ -44,8 +44,12 @@ void AnimationSystem::update(float dt) {
 
 
 			const unsigned int frame = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
+			const unsigned int frame2 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::INFRONT);
 			const unsigned int transformSize = animationC->currentAnimation->getAnimationTransformSize(frame);
+			const unsigned int transformSize2 = animationC->currentAnimation->getAnimationTransformSize(frame2);
+
 			const glm::mat4* transforms = animationC->currentAnimation->getAnimationTransform(frame);
+			const glm::mat4* transforms2 = animationC->currentAnimation->getAnimationTransform(frame2);
 			//Logger::Log(std::to_string(frame));
 
 
@@ -55,20 +59,33 @@ void AnimationSystem::update(float dt) {
 
 			if (connections && transforms) {
 				glm::mat mat = glm::identity<glm::mat4>();
+				glm::mat matInv = glm::identity<glm::mat4>();
+
 				for (unsigned int connectionIndex = 0; connectionIndex < connectionSize; connectionIndex++) {
 					unsigned int count = connections[connectionIndex].count;
 					mat = glm::identity<glm::mat4>();
+					matInv = glm::identity<glm::mat4>();
+
+					float weightTotal = 0.0f;
 					for (unsigned int countIndex = 0; countIndex < count; countIndex++) {
 						mat += transforms[connections[connectionIndex].transform[countIndex]] * connections[connectionIndex].weight[countIndex];
+						weightTotal += connections[connectionIndex].weight[countIndex];
 					}
-				
-					animationC->data.positions[connectionIndex].vec = glm::vec3(mat * glm::vec4(pos[connectionIndex].vec,1));
-					animationC->data.normals[connectionIndex].vec = glm::vec3( mat * glm::vec4(norm[connectionIndex].vec,1));
+					matInv = glm::inverseTranspose(mat);
+
+
+
+					animationC->data.positions[connectionIndex].vec = glm::vec3(mat * glm::vec4(pos[connectionIndex].vec, 1));
+					animationC->data.normals[connectionIndex].vec = glm::vec3(matInv * glm::vec4(norm[connectionIndex].vec, 0));
+					animationC->data.tangents[connectionIndex].vec = glm::vec3(matInv * glm::vec4(tangent[connectionIndex].vec, 0));
+					animationC->data.bitangents[connectionIndex].vec = glm::vec3(matInv * glm::vec4(bitangent[connectionIndex].vec, 0));
+
+					animationC->data.texCoords[connectionIndex].vec = uv[connectionIndex].vec;
+
 					//animationC->data.positions[connectionIndex].vec = pos[connectionIndex].vec;
 					//animationC->data.normals[connectionIndex].vec = norm[connectionIndex].vec;
-					animationC->data.tangents[connectionIndex].vec = glm::vec3( mat * glm::vec4(tangent[connectionIndex].vec,1));
-					animationC->data.bitangents[connectionIndex].vec = glm::vec3( mat * glm::vec4(bitangent[connectionIndex].vec,1));
-					animationC->data.texCoords[connectionIndex].vec = uv[connectionIndex].vec;
+					//animationC->data.bitangents[connectionIndex].vec = tangent[connectionIndex].vec;
+					//animationC->data.tangents[connectionIndex].vec = bitangent[connectionIndex].vec;
 					//#ifdef _DEBUG
 					//	if (connectionIndex == 0) {
 					//	const int x = animationC->data.positions[connectionIndex].vec.x;

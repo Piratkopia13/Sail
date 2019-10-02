@@ -165,8 +165,9 @@ GameState::GameState(StateStack& stack)
 #endif
 
 	// Create/load models
-	Model* animatedModel = &m_app->getResourceManager().getModel("walkTri.fbx", shader);
-	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
+	//Model* animatedModel = &m_app->getResourceManager().getModel("walkTri.fbx", shader);
+	//AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
+	loadAnimations();
 
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
@@ -243,17 +244,10 @@ GameState::GameState(StateStack& stack)
 	
 	//Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	//AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
-	animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
-	
-	auto animationEntity = ECS::Instance()->createEntity("animatedModel");
-	animationEntity->addComponent<TransformComponent>();
-	animationEntity->addComponent<ModelComponent>(animatedModel);
-	animationEntity->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	animationEntity->addComponent<AnimationComponent>(animationStack);
-	animationEntity->getComponent<AnimationComponent>()->currentAnimation = animationStack->getAnimation(0);
+
 
 	
-
+	initAnimations();
 	{
 		auto e = ECS::Instance()->createEntity("Arena");
 		e->addComponent<ModelComponent>(arenaModel);
@@ -875,6 +869,84 @@ Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* light
 	e->addComponent<LightComponent>(pl);
 
 	return e;
+}
+
+void GameState::loadAnimations() {
+	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
+	m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+
+#ifndef _DEBUG
+	m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+#endif
+
+
+
+}
+
+void GameState::initAnimations() {
+	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
+
+
+
+	auto animationEntity1 = ECS::Instance()->createEntity("animatedModel1");
+	animationEntity1->addComponent<TransformComponent>();
+	animationEntity1->getComponent<TransformComponent>()->translate(0, 0, 5);
+	animationEntity1->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/ScuffedSteve_2.fbx", shader));
+	animationEntity1->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity1->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/ScuffedSteve_2.fbx"));
+	animationEntity1->getComponent<AnimationComponent>()->currentAnimation = animationEntity1->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
+	animationEntity2->addComponent<TransformComponent>();
+	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
+	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/walkTri.fbx", shader));
+	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
+	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+#ifndef _DEBUG
+
+	auto animationEntity3 = ECS::Instance()->createEntity("animatedModel3");
+	animationEntity3->addComponent<TransformComponent>();
+	animationEntity3->getComponent<TransformComponent>()->translate(3, 4, 2);
+	animationEntity3->getComponent<TransformComponent>()->scale(0.005f);
+	animationEntity3->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/BaseMesh_Anim.fbx", shader));
+	animationEntity3->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity3->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/BaseMesh_Anim.fbx"));
+	animationEntity3->getComponent<AnimationComponent>()->currentAnimation = animationEntity3->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+	auto animationEntity4 = ECS::Instance()->createEntity("animatedModel4");
+	animationEntity4->addComponent<TransformComponent>();
+	animationEntity4->getComponent<TransformComponent>()->translate(-1,2,-3);
+	animationEntity4->getComponent<TransformComponent>()->scale(0.005f);
+	animationEntity4->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT.fbx", shader));
+	animationEntity4->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity4->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
+	animationEntity4->getComponent<AnimationComponent>()->currentAnimation = animationEntity4->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+	auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5");
+	animationEntity5->addComponent<TransformComponent>();
+	animationEntity5->getComponent<TransformComponent>()->translate(-3,4,0);
+	animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT2.fbx", shader));
+	animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT2.fbx"));
+	animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+#endif
+
+
+
+
+
+
+
+
+
+
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

@@ -5,7 +5,7 @@
 
 Animation::Frame::Frame() :
 	m_transformSize(0),
-	m_limbTransform(nullptr) {
+	m_limbTransform(nullptr){
 }
 Animation::Frame::Frame(const unsigned int size) :
 	m_transformSize(size) {
@@ -169,6 +169,16 @@ const float AnimationStack::VertConnection::checkWeights() {
 	return sum;
 }
 
+void AnimationStack::VertConnection::normalizeWeights() {
+	float sum = 0.0f;
+	for (unsigned int weightIndex = 0; weightIndex < count; weightIndex++) {
+		sum += weight[weightIndex];
+	}
+	for (unsigned int weightIndex = 0; weightIndex < count; weightIndex++) {
+		weight[weightIndex] /= sum;
+	}
+}
+
 
 
 #pragma endregion
@@ -178,10 +188,12 @@ const float AnimationStack::VertConnection::checkWeights() {
 AnimationStack::AnimationStack() {
 	m_connectionSize = 0;
 	m_connections = nullptr;
+	m_bones = nullptr;
 }
-AnimationStack::AnimationStack(const unsigned int vertCount) {
+AnimationStack::AnimationStack(const unsigned int vertCount) : AnimationStack(){
 	m_connectionSize = vertCount;
 	m_connections = SAIL_NEW VertConnection[vertCount];
+
 }
 AnimationStack::~AnimationStack() {
 	for (unsigned int index = 0; index < m_stack.size(); index++) {
@@ -221,6 +233,7 @@ void AnimationStack::setConnectionData(const unsigned int vertexIndex, const uns
 	}
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
 }
+
 
 Animation* AnimationStack::getAnimation(const std::string& name) {
 	if (m_stack.find(name) == m_stack.end())
@@ -270,12 +283,24 @@ const unsigned int AnimationStack::getConnectionSize() {
 }
 
 void AnimationStack::checkWeights() {
+
 	for (unsigned int i = 0; i < m_connectionSize; i++) {
+		if (m_connections[i].count == 0)
+			Logger::Warning("count == 0: " + std::to_string(i));
+
 		float value = m_connections[i].checkWeights();
 		if (value > 1.001 || value < 0.999) {
 			Logger::Warning("Weights fucked: " + std::to_string(i) + "(" + std::to_string(value) + ")");
 		}
 	}
+}
+
+void AnimationStack::normalizeWeights() {
+
+	for (unsigned int i = 0; i < m_connectionSize; i++) {
+		m_connections[i].normalizeWeights();
+	}
+
 }
 
 #pragma endregion

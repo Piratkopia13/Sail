@@ -61,10 +61,23 @@ public:
 		VertConnection();
 		void addConnection(const unsigned int _transform, const float _weight);
 		const float checkWeights();
+		void normalizeWeights();
 
 		unsigned int count;
 		unsigned int transform[SAIL_BONES_PER_VERTEX];
 		float weight[SAIL_BONES_PER_VERTEX];
+	};
+	class Bone {
+	public:
+		Bone();
+		~Bone();
+
+		int parentIndex;
+		unsigned long uniqueID;
+		std::vector<unsigned int> childIndexes;
+		glm::mat4 globalBindposeInverse;
+		
+
 	};
 
 	AnimationStack();
@@ -75,6 +88,7 @@ public:
 
 	void addAnimation(const std::string& animationName, Animation* animation);
 	void setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight);
+	void addBone(const Bone& Bone);
 
 	Animation* getAnimation(const std::string& name);
 	Animation* getAnimation(const unsigned int index);
@@ -90,12 +104,13 @@ public:
 
 
 	void checkWeights();
+	void normalizeWeights();
 private:
 
 	unsigned int m_connectionSize;
 	VertConnection* m_connections;
 	
-
+	Bone* m_bones;
 	std::map<int, std::string> m_names;
 	std::map<std::string, Animation*> m_stack;
 
