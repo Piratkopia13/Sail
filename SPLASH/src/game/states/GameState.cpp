@@ -151,18 +151,18 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/normal.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/normal.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/normal.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/normal.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/albedo.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/normal.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/metalnessRoughnessAO.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/normal.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/albedo.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/metalnessRoughnessAO.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/normal.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/albedo.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
+	//Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/normal.tga");
 
 
 
@@ -195,34 +195,46 @@ GameState::GameState(StateStack& stack)
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	//arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
-	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setMetalnessScale(0.570f);
+	arenaModel->getMesh(0)->getMaterial()->setRoughnessScale(0.593f);
+	arenaModel->getMesh(0)->getMaterial()->setAOScale(0.023f);
+	/*arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
 	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");
+	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");*/
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
 	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
 
 	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
-	//containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
-	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
+	containerModel->getMesh(0)->getMaterial()->setMetalnessScale(0.778f);
+	containerModel->getMesh(0)->getMaterial()->setRoughnessScale(0.394f);
+	containerModel->getMesh(0)->getMaterial()->setAOScale(0.036f);
+	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
+	/*containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
 	containerModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/rustedIron/metalnessRoughnessAO.tga");
-	containerModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/rustedIron/normal.tga");
+	containerModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/rustedIron/normal.tga");*/
 
 	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
-	//rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
-	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/brokenConcrete/albedo.tga");
+	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
+	rampModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+	rampModel->getMesh(0)->getMaterial()->setRoughnessScale(1.0f);
+	rampModel->getMesh(0)->getMaterial()->setAOScale(1.0f);
+	/*rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/brokenConcrete/albedo.tga");
 	rampModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/brokenConcrete/metalnessRoughnessAO.tga");
-	rampModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/brokenConcrete/normal.tga");
+	rampModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/brokenConcrete/normal.tga");*/
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	//characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
+	characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+	characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
+	characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	/*characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
 	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");
+	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");*/
 
 
 	// Player creation
@@ -798,6 +810,39 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Checkbox("Enable post processing", 
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
 	);
+
+	static Entity* pickedEntity = nullptr;
+	static float metalness = 1.0f;
+	static float roughness = 1.0f;
+	static float ao = 1.0f;
+
+	ImGui::Separator();
+	if (ImGui::Button("Pick entity")) {
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		pickedEntity = tempInfo.entity;
+	}
+
+	if (pickedEntity) {
+		ImGui::Text("Material properties for %s", pickedEntity->getName());
+		if (auto* model = pickedEntity->getComponent<ModelComponent>()) {
+			auto* mat = model->getModel()->getMesh(0)->getMaterial();
+			const auto& pbrSettings = mat->getPBRSettings();
+			metalness = pbrSettings.metalnessScale;
+			roughness = pbrSettings.roughnessScale;
+			ao = pbrSettings.aoScale;
+			if (ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f)) {
+				mat->setMetalnessScale(metalness);
+			}
+			if (ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f)) {
+				mat->setRoughnessScale(roughness);
+			}
+			if (ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f)) {
+				mat->setAOScale(ao);
+			}
+		}
+	}
+
 	ImGui::End();
 
 	return false;
