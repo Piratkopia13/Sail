@@ -22,7 +22,8 @@ public:
 	bool isHost();
 	void resetNetwork();
 	NWrapper* getNetworkWrapper();
-	void checkForLobbies();
+	void searchForLobbies();
+	void checkFoundPackages();
 
 private:
 	NWrapperSingleton();

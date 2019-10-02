@@ -5,6 +5,7 @@
 #include "Network/NWrapperHost.h"
 #include <string>
 #include <list>
+#include <ctime>
 
 class NetworkLanHostFoundEvent;
 
@@ -39,10 +40,23 @@ private:
 
 	// Other lobbies
 	bool onLanHostFound(NetworkLanHostFoundEvent& event);
-	void sortFoundLobbies();
-	void removeDeadLobbies();
+	//void sortFoundLobbies();
+	void removeDeadLobbies();		// Only works with sorted lobbies
 	const int m_ipBufferSize = 64;
 	char* m_ipBuffer;
-	std::vector<std::string> m_foundLobbies;
+	/*bool m_lobbiesChanged = false;
+	int m_lobbiesFoundThisFrame = 0;*/
+	int m_sleepTime;
+
+	bool m_refreshing = true;
+	 
+
+	struct FoundLobby {
+		std::string ip;
+		double duration = 5;
+		void resetDuration() { duration = 5; }
+	};
+	std::vector<FoundLobby> m_foundLobbies;
+	std::vector<std::string> m_newfoundLobbies;
 };
 

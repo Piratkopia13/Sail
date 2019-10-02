@@ -49,8 +49,11 @@ NWrapper* NWrapperSingleton::getNetworkWrapper() {
 	return m_wrapper;
 }
 
-void NWrapperSingleton::checkForLobbies() {
+void NWrapperSingleton::searchForLobbies() {
 	m_network->searchHostsOnLan();
+}
+
+void NWrapperSingleton::checkFoundPackages() {
 	m_network->checkForPackages(*this);
 }
 

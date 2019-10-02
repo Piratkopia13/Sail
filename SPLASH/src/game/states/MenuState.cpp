@@ -38,11 +38,9 @@ bool MenuState::processInput(float dt) {
 }
 
 bool MenuState::update(float dt, float alpha) {
-	// Check each update for open lobbies (Maybe sleep?)
-	NWrapperSingleton::getInstance().checkForLobbies();
-	sortFoundLobbies();
+	NWrapperSingleton::getInstance().searchForLobbies();
+	NWrapperSingleton::getInstance().checkFoundPackages();
 	removeDeadLobbies();
-
 	return false;
 }
 
@@ -86,13 +84,17 @@ bool MenuState::renderImgui(float dt) {
 
 	// Display open lobbies
 	ImGui::Begin("Hosted Lobbies on LAN", NULL);
+	//if (ImGui::Button("Refresh")) {
+	//	m_refreshing = true;
+	//}
 	// Per hosted game
-	for (auto& ip : m_foundLobbies) {
+	for (auto& lobby : m_foundLobbies) {
 		// List as a button
-		if (ImGui::Button(ip.c_str())) {
-			// If pressed then join
+		if (ImGui::Button(lobby.ip.c_str())) {
 			char* tempIp = SAIL_NEW char[m_ipBufferSize];
-			tempIp = std::strcpy(tempIp, ip.c_str());
+			tempIp = std::strcpy(tempIp, lobby.ip.c_str());
+
+			// If pressed then join
 			if (m_network->connectToIP(tempIp)) {
 				this->requestStackPop();
 				this->requestStackPush(States::JoinLobby);
@@ -125,25 +127,83 @@ bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
 
 	// Check if it is already logged.	
 	bool alreadyExists = false;
-	for (auto& lobbyIp : m_foundLobbies) {
-		if (lobbyIp == ip_as_string) {
+	for (auto& lobby : m_foundLobbies) {
+		if (lobby.ip == ip_as_string) {
 			alreadyExists = true;
+			lobby.resetDuration();
 		}
 	}
 	// If not...
 	if (alreadyExists == false) {
 		// ...log it
-		m_foundLobbies.push_back(ip_as_string);
+		m_foundLobbies.push_back(FoundLobby{ ip_as_string });
 	}
 
 	return false;
 }
 
-void MenuState::sortFoundLobbies() {
-	std::sort(m_foundLobbies.begin(), m_foundLobbies.end());
-}
-
 void MenuState::removeDeadLobbies() {
+	// How much time passed since last time this function was called?
+	double timePassed = 0.1;
+	std::vector<FoundLobby> lobbiesToRemove;
 
+	// Find out which lobbies should be removed
+	for (auto& lobby : m_foundLobbies) {
+		lobby.duration -= timePassed;
+		std::cout << lobby.duration << "\n";
 
+		// Remove them based on UDP inactivity
+		if (lobby.duration < 0) {
+			// Queue the removal
+			lobbiesToRemove.push_back(lobby);
+		}
+	}
+
+	// Remove queued lobbies.
+	int index;
+	for (auto& lobbyToRemove : lobbiesToRemove)	{
+		index = 0;
+
+		for (auto& lobby : m_foundLobbies) {
+			if (lobbyToRemove.ip == lobby.ip) {
+				m_foundLobbies.erase(m_foundLobbies.begin()+index);
+				break;
+			}
+			index++;
+		}
+	}
 }
+
+//
+//void MenuState::sortFoundLobbies() {
+//	std::sort(m_foundLobbies.begin(), m_foundLobbies.end());
+//	std::sort(m_newfoundLobbies.begin(), m_newfoundLobbies.end());
+//}
+//
+//void MenuState::removeDeadLobbies() {
+//	if (m_foundLobbies.size() != m_lobbiesFoundThisFrame && 
+//		m_foundLobbies.size() != m_newfoundLobbies.size())
+//	{
+//		if (m_newfoundLobbies.size() < m_foundLobbies.size()) {
+//			// A lobby has died, find and remove it.
+//			// Is it any lobby other than the last?
+//			for (int i = 0; i < m_lobbiesFoundThisFrame; i++)	{
+//				if (m_foundLobbies.at(i) != m_newfoundLobbies.at(i)) {
+//					// We found the discrepancy at index 'i'.
+//					// Delete the discrepancy from foundLobbies
+//					m_foundLobbies.erase(m_foundLobbies.begin() + i);
+//				}
+//			}
+//		}
+//		else {
+//			// In this case, a new was added
+//		}
+//		m_lobbiesChanged = true;
+//	}
+//	if (m_lobbiesChanged == true) {
+//		m_foundLobbies = m_newfoundLobbies;
+//		m_lobbiesChanged = false;
+//	}
+//	// Reset counter
+//	m_lobbiesFoundThisFrame = 0;
+//}
