@@ -6,21 +6,22 @@
 class AiComponent;
 class TransformComponent;
 class GunComponent;
+class PhysicsComponent;
 class NodeSystem;
 class Octree;
 
 class AttackingState : public FSM::State<AttackingState> {
 public:
-	AttackingState();
+	AttackingState(Octree* octree);
 	~AttackingState();
 
 	void update(float dt, Entity* entity) override;
 	void reset() override;
 	void init() override;
 
-	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp, Octree* octree);
-	void updatePath(AiComponent* aiComp, TransformComponent* transComp, NodeSystem* nodeSystem);
+	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
+	//void updatePath(AiComponent* aiComp, TransformComponent* transComp);
 
 private:
-
+	Octree* m_octree;
 };

@@ -27,6 +27,7 @@ AiSystem::AiSystem() {
 	registerComponent<CandleComponent>(false, true, false);
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
+	m_timeBetweenPathUpdate = 0.5f;
 }
 
 AiSystem::~AiSystem() {}
@@ -59,7 +60,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	bool* walkable = SAIL_NEW bool[size];
 
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
-	e->addComponent<BoundingBoxComponent>(bbModel);
+	e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 
 
 	/*Nodesystem*/
@@ -144,4 +145,77 @@ void AiSystem::update(float dt) {
 
 void AiSystem::aiUpdateFunc(Entity* entity, const float dt) {
 	entity->getComponent<FSMComponent>()->update(dt, entity);
+	auto transComp = entity->getComponent<TransformComponent>();
+	auto aiComp = entity->getComponent<AiComponent>();
+
+	if ( (aiComp->timeTakenOnPath > m_timeBetweenPathUpdate && aiComp->doWalk) ) {
+		aiComp->updatePath = true;
+	}
+
+	updatePath(aiComp, transComp);
+	updatePhysics(aiComp, transComp, entity->getComponent<PhysicsComponent>(), dt);
+}
+
+
+void AiSystem::updatePath(AiComponent* aiComp, TransformComponent* transComp) {
+	if ( aiComp->updatePath ) {
+
+		aiComp->timeTakenOnPath = 0.f;
+		aiComp->reachedPathingTarget = false;
+
+		Logger::Log(Utils::toStr(aiComp->posTarget));
+
+		// aiComp->posTarget should be updated in each FSM state
+		aiComp->lastTargetPos = aiComp->posTarget;
+
+		auto tempPath = m_nodeSystem->getPath(transComp->getTranslation(), aiComp->posTarget);
+
+		aiComp->currNodeIndex = 0;
+
+		// Fix problem of always going toward closest node
+		if ( tempPath.size() > 1 && glm::distance(tempPath[1].position, transComp->getTranslation()) < glm::distance(tempPath[1].position, tempPath[0].position) ) {
+			aiComp->currNodeIndex += 1;
+		}
+
+		aiComp->currPath = tempPath;
+
+		aiComp->updatePath = false;
+	}
+}
+
+void AiSystem::updatePhysics(AiComponent* aiComp, TransformComponent* transComp, PhysicsComponent* physComp, float dt) {
+	if ( aiComp->currPath.size() > 0 ) {
+		if ( aiComp->doWalk ) {
+			if ( !aiComp->reachedPathingTarget ) {
+				aiComp->timeTakenOnPath += dt;
+
+				// Check if the distance between current node target and ai is low enough to begin targeting next node
+				if ( glm::distance(transComp->getTranslation(), aiComp->currPath[aiComp->currNodeIndex].position) < aiComp->targetReachedThreshold ) {
+					if ( aiComp->currNodeIndex != aiComp->currPath.size() - 1 ) {
+						aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
+					}
+					aiComp->reachedPathingTarget = true;
+				} else {
+					glm::vec3 desiredDir = aiComp->currPath[aiComp->currNodeIndex].position - transComp->getTranslation();
+					if ( desiredDir == glm::vec3(0.f) ) {
+						desiredDir = glm::vec3(1.0f, 0.f, 0.f);
+					}
+					desiredDir = glm::normalize(desiredDir);
+
+					float acceleration = 70.0f - ( glm::length(physComp->velocity) / physComp->maxSpeed ) * 20.0f;
+					physComp->accelerationToAdd = desiredDir * acceleration;
+				}
+			} else if ( aiComp->currPath.size() > 0 ) {
+				// Update next node target
+				if ( aiComp->currNodeIndex < aiComp->currPath.size() - 1 ) {
+					aiComp->currNodeIndex++;
+				}
+				aiComp->reachedPathingTarget = false;
+			}
+		}
+	} else {
+		// Set velocity to 0
+		physComp->velocity = glm::vec3(0.f, physComp->velocity.y, 0.f);
+		aiComp->timeTakenOnPath = 3.f;
+	}
 }

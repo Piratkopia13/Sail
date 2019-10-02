@@ -42,7 +42,7 @@ private:
 	};
 
 	void updatePath(AiComponent* aiComp, TransformComponent* transComp);
-	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
+	void updatePhysics(AiComponent* aiComp, TransformComponent* transComp, PhysicsComponent* physComp, float dt);
 	void aiUpdateFunc(Entity* entity, const float dt);
 
 private:
