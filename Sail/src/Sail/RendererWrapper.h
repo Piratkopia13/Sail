@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Sail/events/IEventListener.h"
+
 class Renderer;
 class LightSetup;
 class PostProcessPipeline;
 
-class RendererWrapper {
+class RendererWrapper : public IEventListener {
 public:
 	RendererWrapper();
 	~RendererWrapper();
@@ -16,6 +18,8 @@ public:
 	bool& getDoPostProcessing();
 	Renderer* getCurrentRenderer();
 	PostProcessPipeline* getPostProcessPipeline();
+	bool onEvent(Event& event);
+	bool onResize(Event& event);
 
 private:
 	void setLightSetup(LightSetup* lights);

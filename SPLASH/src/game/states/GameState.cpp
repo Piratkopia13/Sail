@@ -209,10 +209,11 @@ GameState::GameState(StateStack& stack)
 
 	player->addComponent<PlayerComponent>();
 	player->addComponent<TransformComponent>();
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 
 	player->addComponent<PhysicsComponent>();
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
 	// Give player a bounding box
@@ -238,7 +239,6 @@ GameState::GameState(StateStack& stack)
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 
 
 
@@ -387,27 +387,32 @@ GameState::GameState(StateStack& stack)
 		e->addComponent<PhysicsComponent>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		
-		e = ECS::Instance()->createEntity("AiCharacter");
-		e->addComponent<ModelComponent>(aiModel);
-		e->addComponent<TransformComponent>(glm::vec3(5.f, 5.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
-		e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
-		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<PhysicsComponent>()->maxSpeed = player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
-		e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
-		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
-		
 
 
-		e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
+		int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+		if (botCount > 1) {
+			botCount = 1;
+		}
+		for (size_t i = 0; i < botCount; i++) {
+			e = ECS::Instance()->createEntity("AiCharacter");
+			e->addComponent<ModelComponent>(characterModel);
+			e->addComponent<TransformComponent>(glm::vec3(5.f*(i+1), 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+			e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+			e->addComponent<CollidableComponent>();
+			e->addComponent<PhysicsComponent>();
+			e->addComponent<AiComponent>();
+			e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
+			e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+			e->getComponent<PhysicsComponent>()->maxSpeed = player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
+			e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
+			e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
+
+		//	e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
+		}
 
 
 #ifdef _DEBUG
-		// Candle1 holds all lights you can place in debug
+		// Candle1 holds all lights you can place in debug...
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
@@ -462,8 +467,8 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.entity) {
-			Logger::Log("Ray intersection with " + tempInfo.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
 
@@ -540,7 +545,6 @@ bool GameState::processInput(float dt) {
 
 	return true;
 }
-
 
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
@@ -809,6 +813,11 @@ bool GameState::renderImGuiLightDebug(float dt) {
 
 void GameState::shutDownGameState() {
 
+	// Show mouse cursor if hidden
+	if (Input::IsCursorHidden()) {
+		Input::HideCursor(!Input::IsCursorHidden());
+	}
+
 	// Reset network
 	NWrapperSingleton::getInstance().resetNetwork();
 
@@ -862,7 +871,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 		shutDownGameState();
 	}
 }
-
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates the camera
