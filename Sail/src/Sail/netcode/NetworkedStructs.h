@@ -1,7 +1,5 @@
 #pragma once
-
 #include "ArchiveHelperFunctions.h"
-
 
 namespace Netcode {
 	typedef unsigned __int32 NetworkObjectID;
@@ -13,21 +11,42 @@ namespace Netcode {
 	static NetworkObjectID nrOfNetworkObjects() { return gNetworkIDCounter; }
 
 
-	//// Structs for the kind of data that will be sent over the network,
-	//// will just be used to read to/write from in the NetworkSystems
+	/*
+	  Enums for the kind of entities/data that will be sent over the network,
+	  will just be used to read to/write from in the NetworkSystems
+	*/
 
-	enum NetworkEntityType : __int32 {
+
+	// Pre-defined entity types so that other players know which entity to create
+	enum EntityType : __int32 {
 		PLAYER_ENTITY = 1,
 		MECHA_ENTITY = 2,
 	};
 
-	// Same type will be used by both sender and receiver
-	enum NetworkDataType : __int32 {
+	// The message type decides how the subsequent data will be parsed and used
+	enum MessageType : __int32 {
 		CREATE_NETWORKED_ENTITY = 1,
 		MODIFY_TRANSFORM = 2,
 		SPAWN_PROJECTILE = 3,
 
 	};
+
+	/*
+	  Structs for the kind of data that will be sent/
+	  They map to the message types as if the message consists of a tagged union
+
+	  Logical structure of a message:
+	  
+	  struct NetworkMessage {
+	      NetworkObjectID objectID;
+	      MessageType     type;
+		  union {
+		      ModifyTransform transform;
+			  SpawnProjectile spawnProjectile;
+			  ...
+		  }
+	  }
+	*/
 
 	// MODIFY_TRANSFORM
 	struct ModifyTransform {
@@ -44,8 +63,8 @@ namespace Netcode {
 		}
 	};
 
-	// SHOOT_PROJECTILE
-	struct ShootProjectile {
+	// SPAWN_PROJECTILE
+	struct SpawnProjectile {
 		glm::vec3 position;
 		glm::quat rotation;
 		// velocity or something maybe?
@@ -62,21 +81,5 @@ namespace Netcode {
 			Archive::serializeVec3(ar, position);
 		}
 	};
-
-
-
-
-	// This is logically how the data will be sent/received.
-	/*
-	struct NetcodeData {
-		NetworkObjectID objectID;
-		NetworkDataType type;
-		union {
-			ModifyTransform transform;
-			ShootProjectile shootProjectile;
-			// ...
-		};
-	};
-	*/
 }
 

@@ -3,6 +3,9 @@
 #include "glm/vec3.hpp"
 #include "Sail/../../libraries/cereal/types/vector.hpp"
 
+/*
+  Helper functions to serialize various data structs/classes that aren't in STL
+*/
 namespace Archive {
 	template<class Archive>
 	void loadVec3(Archive& fromArchive, glm::vec3& vec3) {
@@ -23,5 +26,4 @@ namespace Archive {
 	void archiveQuat(Archive& toArchive, const glm::quat& quat) {
 		toArchive(quat.x, quat.y, quat.z, quat.w);
 	}
-
 }

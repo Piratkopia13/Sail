@@ -10,33 +10,31 @@
 
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 	registerComponent<NetworkSenderComponent>(true, true, true);
-	//requiredComponentTypes.push_back(NetworkSenderComponent::ID);
-	//readBits |= NetworkSenderComponent::BID;
-	//writeBits |= NetworkSenderComponent::BID;
+	registerComponent<TransformComponent>(false, true, false);
 }
 
 NetworkSenderSystem::~NetworkSenderSystem() {
 
 }
 
-// Logical structure of the package that will be sent by this function
 /*
+  The construction of messages needs to match how the NetworkReceiverSystem parses them so
+  any changes made here needs to be made there as well!
 
-__int32 nrOfEntities
-__int32 entity[0].id
-__int32 entity[0].dataType
-Data    entity[0].data
-__int32 entity[1].id
-__int32 entity[1].dataType
-Data    entity[1].data
-__int32 entity[2].id
-__int32 entity[2].dataType
-Data    entity[2].data
-....
+  Logical structure of the package that will be sent by this function:
 
+    __int32         nrOfEntities
+    NetworkObjectID entity[0].id
+    MessageType     entity[0].messageType
+    MessageData     entity[0].data
+	NetworkObjectID entity[1].id
+	MessageType     entity[1].messageType
+	MessageData     entity[1].data
+	NetworkObjectID entity[2].id
+	MessageType     entity[2].messageType
+	MessageData     entity[2].data
+    ....
 */
-
-// Needs to match how the NetworkReceiverSystem updates
 void NetworkSenderSystem::update(float dt) {
 	using namespace Netcode;
 
@@ -49,44 +47,37 @@ void NetworkSenderSystem::update(float dt) {
 
 	// TODO: Add game tick here in the future
 
-
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
-		ar(nsc->m_id, nsc->m_dataType);
-		//ar(nsc->m_dataType);
+		ar(nsc->m_id, nsc->m_dataType); // Send the entity ID and what type of data it is
 
 		switch (nsc->m_dataType) {
 
 			// Send necessary info to create the networked entity 
-		case NetworkDataType::CREATE_NETWORKED_ENTITY:
+		case MessageType::CREATE_NETWORKED_ENTITY:
 		{
-			// Send Entity type
-			ar(nsc->m_entityType);
+			ar(nsc->m_entityType); // Send Entity type
 
-			// Send translation
 			TransformComponent* t = e->getComponent<TransformComponent>();
-			Archive::archiveVec3(ar, t->getTranslation());
+			Archive::archiveVec3(ar, t->getTranslation()); // Send translation
 
-			// After the remote entity has been created we'll want to track and modify it's transform
+			// After the remote entity has been created we'll want to be able to modify its transform
 			nsc->m_dataType = Netcode::MODIFY_TRANSFORM;
 		}
 		break;
-		case NetworkDataType::MODIFY_TRANSFORM:
+		case MessageType::MODIFY_TRANSFORM:
 		{
 			TransformComponent* t = e->getComponent<TransformComponent>();
-			Archive::archiveVec3(ar, t->getTranslation());
+			Archive::archiveVec3(ar, t->getTranslation()); // Send translation
 		}
 		break;
-		case NetworkDataType::SPAWN_PROJECTILE:
+		case MessageType::SPAWN_PROJECTILE:
 		{
-			// TODO: Spawn (or tell some system to spawn) a projectile
+			// TODO: Send the information needed to spawn a projectile
 		}
 		break;
 		default:
-		{
-
-		}
-		break;
+			break;
 		}
 	}
 

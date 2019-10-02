@@ -233,8 +233,8 @@ GameState::GameState(StateStack& stack)
 	//player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
 	
 	player->addComponent<NetworkSenderComponent>(
-		Netcode::NetworkDataType::CREATE_NETWORKED_ENTITY,
-		Netcode::NetworkEntityType::PLAYER_ENTITY,
+		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
+		Netcode::EntityType::PLAYER_ENTITY,
 		lobbyInfo.m_me.id);
 
 	//if (NWrapperSingleton::getInstance().isHost()) {
