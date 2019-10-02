@@ -461,8 +461,8 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.info[0].entity) {
-			Logger::Log("Ray intersection with " + tempInfo.info[0].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
 
