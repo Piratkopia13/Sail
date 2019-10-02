@@ -162,7 +162,6 @@ int Application::startGameLoop() {
 
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
-			//float alpha = 1.0f;
 
 			update(delta, alpha);
 

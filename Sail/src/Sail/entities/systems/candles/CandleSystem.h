@@ -9,11 +9,11 @@ class PerspectiveCamera;
 class CandleSystem final : public BaseComponentSystem {
 public:
 	CandleSystem();
-	virtual ~CandleSystem();
+	~CandleSystem();
 
 	void setPlayerEntityID(int entityID);
 
-	void lightCandle(std::string name);
+	void lightCandle(const std::string& name);
 
 	void update(float dt) override;
 private:
