@@ -121,7 +121,7 @@ int Application::startGameLoop() {
 
 			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
 			// when the update is really slow for whatever reason.
-			delta = std::min(delta, 10 * TIMESTEP);
+			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += delta;
@@ -162,6 +162,7 @@ int Application::startGameLoop() {
 
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
+			//float alpha = 1.0f;
 
 			update(delta, alpha);
 

@@ -140,18 +140,40 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
-	auto boundingBoxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), wireframeShader);
+	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
+	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
+	//Wireframe bounding box model
+	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-
 
 	// create the new entity
 	switch (entityType) {
 	case EntityType::PLAYER_ENTITY:
+	{
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(translation);
-		e->addComponent<BoundingBoxComponent>(nullptr); // TODO: Investigate crash when this is set to a bounding box model
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		break;
+
+		//creates light with model and pointlight
+		auto light = ECS::Instance()->createEntity("ReceiverLight");
+		light->addComponent<CandleComponent>();
+		light->addComponent<ModelComponent>(lightModel);
+		light->addComponent<TransformComponent>(glm::vec3(0.f, 2.f, 0.f));
+		light->addComponent<BoundingBoxComponent>(boundingBoxModel);
+		light->addComponent<CollidableComponent>();
+		PointLight pl;
+		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+		pl.setPosition(glm::vec3(0.2f, 0.2f + .37f, 0.2f));
+		pl.setAttenuation(.0f, 0.1f, 0.02f);
+		//pl.setIndex(m_currLightIndex++);
+		pl.setIndex(999); // TODO: unique light index needed?
+		light->addComponent<LightComponent>(pl);
+
+		e->addChildEntity(light);
+
+	}
+	break;
 	default:
 		break;
 	}
