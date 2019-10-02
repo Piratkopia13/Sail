@@ -29,10 +29,13 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		ECS::Instance()->destroyEntity(m_nodeEntities[i]);
 	}
 	m_nodeEntities.clear();
+	int currNodeEntity = 0;
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
-		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
-		m_nodeEntities[i]->addComponent<TransformComponent>(m_nodes[i].position);
-		m_nodeEntities[i]->addComponent<ModelComponent>(m_nodeModel);
+		if ( !m_nodes[i].blocked ) {
+			m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
+			m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position);
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_nodeModel);
+		}
 	}
 #endif
 }

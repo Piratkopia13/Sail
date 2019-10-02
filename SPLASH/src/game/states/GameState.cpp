@@ -18,6 +18,7 @@
 #include "Sail/entities/systems/input/GameInputSystem.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/ai/states/AttackingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Network/NWrapperSingleton.h"
@@ -187,6 +188,8 @@ GameState::GameState(StateStack& stack)
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
 	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
+	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
+	aiModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	// Player creation
 	setUpPlayer(boundingBoxModel, cubeModel, lightModel);
@@ -257,8 +260,8 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.entity) {
-			Logger::Log("Ray intersection with " + tempInfo.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
 
@@ -944,14 +947,19 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		botCount = 1;
 	}
 	for (size_t i = 0; i < botCount; i++) {
+
 		auto e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(5.f * (i + 1), 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
+		e->addComponent<TransformComponent>(glm::vec3(2.f * (i + 1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
-		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
+		e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
+		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<PhysicsComponent>()->maxSpeed = player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
+		e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
+
 	}
 }
