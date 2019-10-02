@@ -33,6 +33,9 @@ enum AudioType { MUSIC };
 #define VOL_THIRD 0.33f
 #define VOL_FOURTH 0.25f
 
+#define SPEED_OF_SOUND 1.0f
+#define DISTANCE_SCALER 100.0f
+
 struct StreamingVoiceContext : public IXAudio2VoiceCallback
 {
 	STDMETHOD_(void, OnVoiceProcessingPassStart)(UINT32) override
@@ -79,7 +82,7 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 struct soundStruct {
 
 	IXAudio2SourceVoice* sourceVoice = nullptr;
-	//X3DAUDIO_EMITTER emitter;
+	X3DAUDIO_EMITTER emitter = { 0 };
 };
 
 class AudioEngine
@@ -89,7 +92,7 @@ public:
 	~AudioEngine();
 
 	void loadSound(const std::string& filename);
-	int playSound(const std::string& filename);
+	int playSound(const std::string& filename, X3DAUDIO_LISTENER& listener);
 	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
 	void stopSpecificSound(int index);
 	void stopSpecificStream(int index);
@@ -105,6 +108,8 @@ public:
 	void setStreamVolume(int index, float value = VOL_HALF);
 
 	std::atomic<bool> m_streamLocks[STREAMED_SOUNDS_COUNT];
+	X3DAUDIO_DSP_SETTINGS DSPSettings = { 0 };
+
 
 private:
 	bool m_isRunning = true;
@@ -112,11 +117,12 @@ private:
 	// The main audio 'core'
 	IXAudio2* m_xAudio2 = nullptr;
 	// The main 3D-audio 'core'
-	X3DAUDIO_HANDLE m_xAudio3D;
-	//X3DAUDIO_DSP_SETTINGS DSPSettings = { 0 };
+	X3DAUDIO_HANDLE m_X3DInstance;
+	
 
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
+	DWORD m_destinationChannelCount;
 	// Represents each loaded sound in the form of an 'object'
 	soundStruct m_sound[SOUND_COUNT];
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];

@@ -12,6 +12,8 @@ AudioComponent::AudioComponent() {
 		m_isPlaying[i] = false;
 		m_playOnce[i] = true;
 	}
+
+	listener.pCone = nullptr;
 }
 
 AudioComponent::~AudioComponent() {

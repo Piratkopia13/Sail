@@ -12,8 +12,8 @@ namespace States {
 		JoinLobby,
 		Game,
 		Pause,
-		End,
-		Score
+		Score,
+		EndGame
 	};
 
 }

@@ -33,13 +33,16 @@ AudioEngine::AudioEngine() {
 
 AudioEngine::~AudioEngine() {
 	m_isRunning = false;
+
+	delete DSPSettings.pMatrixCoefficients;
+	delete DSPSettings.pDelayTimes;
 }
 
 void AudioEngine::loadSound(const std::string& filename) {
 	Application::getInstance()->getResourceManager().loadAudioData(filename, m_xAudio2);
 }
 
-int AudioEngine::playSound(const std::string& filename) {
+int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& listener) {
 	if (m_masterVoice == nullptr) {
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		return -1;
@@ -71,12 +74,35 @@ int AudioEngine::playSound(const std::string& filename) {
 			return -1;
 		}
 
-		hr = m_sound[m_currSoundIndex].sourceVoice->Start(0);
+		m_sound[m_currSoundIndex].sourceVoice->SetVolume(VOL_THIRD);
+
+		m_sound[m_currSoundIndex].emitter.OrientFront = listener.OrientFront;
+		m_sound[m_currSoundIndex].emitter.OrientTop = listener.OrientTop;
+		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + 100.f, listener.Position.y, listener.Position.z };
+		m_sound[m_currSoundIndex].emitter.Velocity = listener.Velocity;
+
+		X3DAudioCalculate(m_X3DInstance, &listener, &m_sound[m_currSoundIndex].emitter,
+			X3DAUDIO_CALCULATE_MATRIX /*| X3DAUDIO_CALCULATE_DOPPLER*/ | X3DAUDIO_CALCULATE_LPF_DIRECT /*| X3DAUDIO_CALCULATE_REVERB*/,
+			&DSPSettings);
+
+		std::cout << DSPSettings.pMatrixCoefficients[0] << "\t";
+		std::cout << DSPSettings.pMatrixCoefficients[1] << "\n";
+
+		DSPSettings.pMatrixCoefficients[0] = 0.1f;
+		DSPSettings.pMatrixCoefficients[1] = 0.0f;
+
+		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, DSPSettings.pMatrixCoefficients);
+		//m_sound[m_currSoundIndex].sourceVoice->SetFrequencyRatio(DSPSettings.DopplerFactor);
+		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, &DSPSettings.ReverbLevel);
+
+		XAUDIO2_FILTER_PARAMETERS FilterParameters = { LowPassFilter, 2.0f * sinf(X3DAUDIO_PI / 6.0f * DSPSettings.LPFDirectCoefficient), 1.0f };
+		m_sound[m_currSoundIndex].sourceVoice->SetFilterParameters(&FilterParameters);
+
+		hr = m_sound[m_currSoundIndex].sourceVoice->Start();
 		if (hr != S_OK) {
 			Logger::Error("Failed submit processed audio data to data buffer for a audio file");
 			return -1;
 		}
-		m_sound[m_currSoundIndex].sourceVoice->SetVolume(VOL_THIRD);
 
 		m_currSoundIndex++;
 		m_currSoundIndex %= SOUND_COUNT;
@@ -211,17 +237,17 @@ void AudioEngine::initialize() {
 	for (int i = 0; i < SOUND_COUNT; i++) {
 		m_sound[i].sourceVoice = nullptr;
 
-		//// Initialize EMITTER-structure
-		//m_sound[i].emitter.OrientFront = { 0,0,0 };
-		//m_sound[i].emitter.OrientTop = { 0,0,0 };
-		//m_sound[i].emitter.Position = { 0,0,0 };
-		//m_sound[i].emitter.Velocity = { 0,0,0 };
-		//m_sound[i].emitter.InnerRadius = 0;
-		//m_sound[i].emitter.InnerRadiusAngle = 0;
-		//m_sound[i].emitter.ChannelCount = 1;
-		//m_sound[i].emitter.ChannelRadius = 0.0f;
-		//m_sound[i].emitter.CurveDistanceScaler = FLT_MIN;
-		//m_sound[i].emitter.DopplerScaler = 0.0f;
+		// Initialize EMITTER-structure
+		m_sound[i].emitter.OrientFront = { 0,0,0 };
+		m_sound[i].emitter.OrientTop = { 0,0,0 };
+		m_sound[i].emitter.Position = { 0,0,0 };
+		m_sound[i].emitter.Velocity = { 0,0,0 };
+		m_sound[i].emitter.InnerRadius = 2.0f;
+		m_sound[i].emitter.InnerRadiusAngle = 1.0f;
+		m_sound[i].emitter.ChannelCount = 1;
+		m_sound[i].emitter.ChannelRadius = 1.0f;
+		m_sound[i].emitter.CurveDistanceScaler = DISTANCE_SCALER;
+		m_sound[i].emitter.DopplerScaler = 1.0f;
 	}
 	// Init streamObjects
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
@@ -231,23 +257,18 @@ void AudioEngine::initialize() {
 		m_overlapped[i] = { 0 };
 		m_streamLocks[i].store(false);
 
-		//// Initialize EMITTER-structure
-		//m_sound[i].emitter.OrientFront = { 0,0,0 };
-		//m_sound[i].emitter.OrientTop = { 0,0,0 };
-		//m_sound[i].emitter.Position = { 0,0,0 };
-		//m_sound[i].emitter.Velocity = { 0,0,0 };
-		//m_sound[i].emitter.InnerRadius = 0;
-		//m_sound[i].emitter.InnerRadiusAngle = 0;
-		//m_sound[i].emitter.ChannelCount = 1;
-		//m_sound[i].emitter.ChannelRadius = 0.0f;
-		//m_sound[i].emitter.CurveDistanceScaler = FLT_MIN;
-		//m_sound[i].emitter.DopplerScaler = 0.0f;
+		// Initialize EMITTER-structure
+		m_sound[i].emitter.OrientFront = { 0,0,0 };
+		m_sound[i].emitter.OrientTop = { 0,0,0 };
+		m_sound[i].emitter.Position = { 0,0,0 };
+		m_sound[i].emitter.Velocity = { 0,0,0 };
+		m_sound[i].emitter.InnerRadius = 1;
+		m_sound[i].emitter.InnerRadiusAngle = 1;
+		m_sound[i].emitter.ChannelCount = 1;
+		m_sound[i].emitter.ChannelRadius = 1.0f;
+		m_sound[i].emitter.CurveDistanceScaler = DISTANCE_SCALER;
+		m_sound[i].emitter.DopplerScaler = 1.0f;
 	}
-
-	//FLOAT32* matrix = new FLOAT32[1];
-	//DSPSettings.SrcChannelCount = 1;
-	//DSPSettings.DstChannelCount = 1;
-	//DSPSettings.pMatrixCoefficients = matrix;
 
 	this->initXAudio2();
 	this->initXAudio3D();
@@ -274,7 +295,21 @@ void AudioEngine::initXAudio3D() {
 	DWORD channelMaskHolder;
 	m_masterVoice->GetChannelMask(&channelMaskHolder);
 
-	X3DAudioInitialize(channelMaskHolder, 1.0f, m_xAudio3D);
+	XAUDIO2_VOICE_DETAILS tempVoiceDetails;
+	m_masterVoice->GetVoiceDetails(&tempVoiceDetails);
+	m_destinationChannelCount = tempVoiceDetails.InputChannels;
+
+	FLOAT32* matrixCoeff = SAIL_NEW FLOAT32[m_destinationChannelCount];
+	FLOAT32* delayTimes = SAIL_NEW FLOAT32[m_destinationChannelCount];
+	*matrixCoeff = FLOAT32{ 0 };
+	*delayTimes = FLOAT32{ 0 };
+
+	DSPSettings.SrcChannelCount = 1;
+	DSPSettings.DstChannelCount = m_destinationChannelCount;
+	DSPSettings.pMatrixCoefficients = matrixCoeff;
+	DSPSettings.pDelayTimes = delayTimes;
+
+	X3DAudioInitialize(channelMaskHolder, SPEED_OF_SOUND, m_X3DInstance);
 }
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {

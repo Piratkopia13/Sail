@@ -20,7 +20,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 }
 
 GameInputSystem::~GameInputSystem() {
-	delete m_cam;
+	clean();
 }
 
 
@@ -31,7 +31,13 @@ void GameInputSystem::update(float dt, float alpha) {
 }
 
 void GameInputSystem::initialize(Camera* cam) {
-	m_cam = SAIL_NEW CameraController(cam);
+	if (m_cam == nullptr) {
+		m_cam = SAIL_NEW CameraController(cam);
+	}
+}
+
+void GameInputSystem::clean() { 
+	Memory::SafeDelete(m_cam);
 }
 
 void GameInputSystem::processPerFrameInput() {
@@ -153,8 +159,6 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
-			audioComp->m_isPlaying[SoundType::SHOOT] = true;
-			audioComp->m_playOnce[SoundType::SHOOT] = true;
 		}
 
 		// Update pitch & yaw if window has focus

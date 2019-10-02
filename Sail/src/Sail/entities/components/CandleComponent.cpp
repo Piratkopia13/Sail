@@ -57,6 +57,14 @@ float CandleComponent::getDownTime() const {
 	return m_downTime;
 }
 
+void CandleComponent::setOwner(int playerEntityID) {
+	m_playerEntityID = playerEntityID;
+}
+
+int CandleComponent::getOwner() const {
+	return m_playerEntityID;
+}
+
 bool CandleComponent::isCarried() const {
 	return m_carried;
 }

@@ -2,28 +2,52 @@
 
 #include "AudioSystem.h"
 #include "..//Sail/src/Sail/entities/components/AudioComponent.h"
+#include "..//Sail/src/Sail/entities/components/PhysicsComponent.h"
+#include "..//Sail/src/Sail/graphics/camera/PerspectiveCamera.h"
 #include "..//..//Entity.h"
 #include <iterator>
 #include "..//Sail/src/Sail/Application.h"
 
 AudioSystem::AudioSystem() {
-	// TODO: System owner should check if this is correct
-	registerComponent<AudioComponent>(true, true, true);
-	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
-	m_audioEngine.loadSound("../Audio/jump.wav");
 }
 
 AudioSystem::~AudioSystem() {
 	m_audioEngine.stopAllSounds();
 }
 
+void AudioSystem::initialize(PerspectiveCamera* camPtr) {
+	// TODO: System owner should check if this is correct
+	registerComponent<AudioComponent>(true, true, true);
+	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
+	m_audioEngine.loadSound("../Audio/jump.wav");
+
+	m_camPtr = camPtr;
+}
+
 void AudioSystem::update(float dt) {
 
 	AudioComponent* audioC = nullptr;
+	PhysicsComponent* physicsC = nullptr;
+
+	glm::vec3 dir;
+	glm::vec3 up;
+	glm::vec3 pos;
+	glm::vec3 vel;
 
 	for (auto& e : entities) {
 
 		audioC = e->getComponent<AudioComponent>();
+		physicsC = e->getComponent<PhysicsComponent>();
+
+		dir = m_camPtr->getDirection();
+		up = m_camPtr->getUp();
+		pos = m_camPtr->getPosition();
+		vel = physicsC->velocity;
+
+		audioC->listener.OrientFront = X3DAUDIO_VECTOR(dir.x, dir.y, dir.z);
+		audioC->listener.OrientTop = X3DAUDIO_VECTOR(up.x, up.y, up.z);
+		audioC->listener.Position = X3DAUDIO_VECTOR(0,0,0);
+		audioC->listener.Velocity = X3DAUDIO_VECTOR(vel.x, vel.y, vel.z);
 
 		if (audioC != nullptr) {
 
@@ -32,7 +56,7 @@ void AudioSystem::update(float dt) {
 
 				if (audioC->m_isPlaying[i]) {
 					if (audioC->m_soundEffectTimers[i] == 0.0f) {
-						audioC->m_soundID[i] = m_audioEngine.playSound(audioC->m_soundEffects[i]);
+						audioC->m_soundID[i] = m_audioEngine.playSound(audioC->m_soundEffects[i], audioC->listener);
 						audioC->m_soundEffectTimers[i] += dt;
 
 						audioC->m_isPlaying[i] = !audioC->m_playOnce[i]; // NOTE: Opposite, hence '!'
