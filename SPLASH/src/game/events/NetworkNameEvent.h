@@ -16,7 +16,7 @@ public:
 	// When host calls it replies name, otherwise id.
 	inline std::string getRepliedName() { return m_repliedName; }
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::NETWORK_NAME;
 	}
 

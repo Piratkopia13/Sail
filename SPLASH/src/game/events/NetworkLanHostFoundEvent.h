@@ -12,7 +12,7 @@ public:
 	}
 	~NetworkLanHostFoundEvent() {}
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::NETWORK_LAN_HOST_FOUND;
 	}
 
