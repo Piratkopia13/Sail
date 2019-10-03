@@ -79,8 +79,10 @@ int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& liste
 
 		m_sound[m_currSoundIndex].emitter.OrientFront = listener.OrientFront;
 		m_sound[m_currSoundIndex].emitter.OrientTop = listener.OrientTop;
-		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + (m_tempDistance++), listener.Position.y, listener.Position.z };
+		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + m_tempDistance, listener.Position.y, listener.Position.z };
 		m_sound[m_currSoundIndex].emitter.Velocity = listener.Velocity;
+
+		m_tempDistance += 1000.0f;
 
 		X3DAudioCalculate(m_X3DInstance, &listener, &m_sound[m_currSoundIndex].emitter,
 			X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT /*| X3DAUDIO_CALCULATE_REVERB*/,
