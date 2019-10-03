@@ -217,10 +217,12 @@ GameState::GameState(StateStack& stack)
 	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
 	tileEnd->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
 
-	// load each tile type for the map
-	//Model* tile1 = &m_app->getResourceManager().getModel("tiler1.fbx", shader);
-	//tile1->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.2f, 1.0f, 1.0f));
-
+	// Create the level generator system and put it into the datatype.
+	auto map = ECS::Instance()->createEntity("Map");
+	map->addComponent<MapComponent>();
+	ECS::Instance()->addAllQueuedEntities();
+	m_componentSystems.levelGeneratorSystem->generateMap();
+	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat,tileCross,tileCorner,tileStraight,tileT,tileEnd,boundingBoxModel);
 
 	// Player creation
 	auto player = ECS::Instance()->createEntity("player");
@@ -271,12 +273,6 @@ GameState::GameState(StateStack& stack)
 		Creation of entities
 	*/
 
-	// Create the level generator system and put it into the datatype.
-	auto map = ECS::Instance()->createEntity("Map");
-	map->addComponent<MapComponent>();
-	ECS::Instance()->addAllQueuedEntities();
-	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat,tileCross,tileCorner,tileStraight,tileT,tileEnd,boundingBoxModel);
 	
 	/*Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");
