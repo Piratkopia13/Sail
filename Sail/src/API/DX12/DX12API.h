@@ -44,6 +44,7 @@ namespace GlobalRootParam {
 
 class DX12API : public GraphicsAPI {
 public:
+	static const UINT NUM_SWAP_BUFFERS;
 	struct Command {
 		std::vector<wComPtr<ID3D12CommandAllocator>> allocators; // Allocator only grows, use multple (one for each thing)
 		wComPtr<ID3D12GraphicsCommandList4> list;
@@ -120,9 +121,7 @@ private:
 
 	void resizeBuffers(UINT width, UINT height);
 
-
 private:
-	static const UINT NUM_SWAP_BUFFERS;
 
 	// Whether or not tearing is available for fullscreen borderless windowed mode.
 	bool m_tearingSupport;

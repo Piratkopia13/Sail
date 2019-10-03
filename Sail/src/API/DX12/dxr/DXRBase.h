@@ -19,13 +19,18 @@ public:
 		int hit;
 	};
 
+	struct Metaball {
+		glm::vec3 pos;
+		float distToCamera;
+	};
+
 	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
 	~DXRBase();
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights);
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void reloadShaders();
@@ -76,6 +81,9 @@ private:
 	void createMissLocalRootSignature();
 	void createEmptyLocalRootSignature();
 
+	void initMetaballBuffers();
+	void updateMetaballpositions(const std::vector<Metaball>& metaballs);
+
 private:
 	DX12API* m_context;
 
@@ -113,17 +121,28 @@ private:
 
 
 	std::vector<MeshHandles> m_rtMeshHandles;
+	//Metaballs
+	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
+	UINT m_metaballsToRender;
 
 	const WCHAR* m_rayGenName = L"rayGen";
-	const WCHAR* m_hitGroupName = L"HitGroup";
-	const WCHAR* m_closestHitName = L"closestHit";
+	const WCHAR* m_closestHitName = L"closestHitTriangle";
+	const WCHAR* m_closestProceduralPrimitive = L"closestHitProcedural";
+	const WCHAR* m_intersectionProceduralPrimitive = L"IntersectionShader";
 	const WCHAR* m_missName = L"miss";
+	const WCHAR* m_hitGroupTriangleName = L"hitGroupTriangle";
+	const WCHAR* m_hitGroupMetaBallName = L"hitGroupMetaBall";
 	const WCHAR* m_shadowMissName = L"shadowMiss";
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;
-	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup_mesh;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup_metaball;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
+
+	//Metaball Stuff
+	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2, -0.2, -0.2, 0.2, 0.2, 0.2 };
+	ID3D12Resource1* m_aabb_desc_resource; //m_aabb_desc uploaded to GPU
 
 };

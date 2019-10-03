@@ -28,6 +28,7 @@ namespace DXRShaderCommon {
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 8
+#define MAX_NUM_METABALLS 200
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
@@ -38,7 +39,7 @@ static const uint MESH_HAS_METALNESS_ROUGHNESS_AO_TEX	= 	1 << 3;
 struct RayPayload {
 	float4 color;
 	uint recursionDepth;
-	int hit;
+	float closestTvalue;
 };
 
 struct ShadowRayPayload {
@@ -69,9 +70,10 @@ struct SceneCBuffer {
 	float4x4 viewToWorld;
 	float4x4 clipToView;
 	float3 cameraPosition;
+	uint nMetaballs;
 	float nearZ;
 	float farZ;
-	float3 padding;
+	float2 padding;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 };
 
@@ -85,6 +87,10 @@ struct MeshData {
 };
 struct MeshCBuffer {
 	MeshData data[MAX_INSTANCES]; // cbuffer min size is 64kb, fill with flags
+};
+
+struct ProceduralPrimitiveAttributes {
+	float4 normal;
 };
 
 #ifndef HLSL
