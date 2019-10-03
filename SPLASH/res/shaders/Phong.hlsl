@@ -1,25 +1,4 @@
-#define NUM_POINT_LIGHTS 8
-
-struct PointLight {
-	float3 color;
-	float distanceToLight;
-	float3 fragToLight;
-    float attConstant;
-    float attLinear;
-    float attQuadratic;
-};
-
-struct DirectionalLight {
-	float3 color;
-	float3 direction;
-};
-
-struct LightList {
-	DirectionalLight dirLight;
-    PointLight pointLights[NUM_POINT_LIGHTS];
-};
-
-struct Material {
+struct PhongMaterial {
 	float4 modelColor;
 	float ka;
 	float kd;
@@ -29,9 +8,10 @@ struct Material {
 	bool hasNormalTexture;
 	bool hasSpecularTexture;
 };
+#include "Common.hlsl"
 
 struct PhongInput {
-	Material mat;
+	PhongMaterial mat;
 	float4 diffuseColor;
 	float3 normal;
 	float3 specMap;
