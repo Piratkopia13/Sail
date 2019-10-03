@@ -40,6 +40,7 @@ GameState::GameState(StateStack& stack)
 , m_cc(true)
 , m_profiler(true)
 , m_disableLightComponents(false)
+, m_showcaseProcGen(false)
 {
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -278,6 +279,18 @@ bool GameState::processInput(float dt) {
 	}
 
 #endif
+
+	// Enable bright light and move camera to above procedural generated level
+	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
+		m_disableLightComponents = !m_disableLightComponents;
+		m_showcaseProcGen = m_disableLightComponents;
+		if (m_showcaseProcGen) {
+			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
+			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
+		} else {
+			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
+		}
+	}
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
@@ -751,6 +764,10 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
+	} 
+	
+	if (m_showcaseProcGen) {
+		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 
 	m_componentSystems.audioSystem->update(dt);
@@ -1016,7 +1033,6 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
-	e->getComponent<TransformComponent>()->setScale(glm::vec3(1.f, 0.1f, 1.f));
 
 
 	e = ECS::Instance()->createEntity("Map_Barrier1");
@@ -1137,9 +1153,9 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	if (botCount < 0) {
 		botCount = 0;
 	}// TODO: Remove this when more bots can be added safely
-	else if (botCount > 1) {
-		botCount = 1;
-	}
+	//else if (botCount > 1) {
+	//	botCount = 1;
+	//}
 	for (size_t i = 0; i < botCount; i++) {		
 		auto e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
