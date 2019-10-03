@@ -9,9 +9,7 @@
 #include "../Physics/Octree.h"
 #include "../Physics/Intersection.h"
 
-AttackingState::AttackingState(Octree* octree)
-	: m_octree(octree)
-{}
+AttackingState::AttackingState() {}
 
 AttackingState::~AttackingState() {}
 
@@ -36,8 +34,8 @@ void AttackingState::update(float dt, Entity* entity) {
 		// Candle pos
 		const glm::vec3& candlePos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
 
-		// Aim slightly higher to account for gravity
-		const glm::vec3& enemyPos = candlePos + glm::vec3(0, 0.3f, 0);
+		// Aim slightly higher to account for gravity (removed temporarily)
+		const glm::vec3& enemyPos = candlePos;// +glm::vec3(0, 0.3f, 0);
 
 		auto fireDir = enemyPos - gunPos;
 		fireDir = glm::normalize(fireDir);
@@ -73,18 +71,14 @@ void AttackingState::init(Entity* entity) {
 
 void AttackingState::entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp, const glm::vec3& fireDir, const glm::vec3& gunPos, const float hitDist) {
 
-	// Don't shoot unless the candle is lit up
-	if ( aiComp->entityTarget->getComponent<CandleComponent>()->getIsAlive() ) {
+	// If the target is within 7 units and if there is nothing between the target and the ai and don't shoot unless the candle is lit up
+	if ( hitDist < 7.f && aiComp->entityTarget->getComponent<CandleComponent>()->getIsAlive() ) {
+		gunComp->setFiring(gunPos + fireDir, fireDir);
 
-		// If the target is within 7 units and if there is nothing between the target and the ai
-		if ( hitDist < 7.f ) {
-			gunComp->setFiring(gunPos + fireDir, fireDir);
-
-			if ( fireDir.z < 0.f ) {
-				transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) + 1.5707f, 0.f);
-			} else {
-				transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) - 1.5707f, 0.f);
-			}
+		if ( fireDir.z < 0.f ) {
+			transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) + 1.5707f, 0.f);
+		} else {
+			transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) - 1.5707f, 0.f);
 		}
 	}
 }

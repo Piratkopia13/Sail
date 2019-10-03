@@ -12,7 +12,7 @@ class Octree;
 
 class AttackingState : public FSM::State<AttackingState> {
 public:
-	AttackingState(Octree* octree);
+	AttackingState();
 	~AttackingState();
 
 	void update(float dt, Entity* entity) override;
@@ -22,5 +22,4 @@ public:
 	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp, const glm::vec3& fireDir, const glm::vec3& gunPos, const float hitDist);
 
 private:
-	Octree* m_octree;
 };

@@ -166,6 +166,7 @@ glm::vec3& AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* tran
 		desiredDir = glm::vec3(1.0f, 0.f, 0.f);
 	}
 	desiredDir = glm::normalize(desiredDir);
+	return desiredDir;
 }
 
 
@@ -202,7 +203,9 @@ void AiSystem::updatePhysics(AiComponent* aiComp, TransformComponent* transComp,
 
 			// Check if the distance between current node target and ai is low enough to begin targeting next node
 			if ( glm::distance(transComp->getTranslation(), aiComp->currPath[aiComp->currNodeIndex].position) < aiComp->targetReachedThreshold ) {
-				aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
+				if ( aiComp->currNodeIndex != aiComp->currPath.size() - 1 ) {
+					aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
+				}
 				aiComp->reachedPathingTarget = true;
 			// Else continue walking
 			} else {
