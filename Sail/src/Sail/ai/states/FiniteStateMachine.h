@@ -42,7 +42,7 @@ public:
 	 *	@param args the arguments
 	 */
 	template <typename StateType, typename... Args>
-	void createState(Args... args);
+	StateType* createState(Args... args);
 
 	/**
 	 *	Adds the inputed transition between FromStateType and ToStateType, this requires both FromStateType and ToStateType to already exist in the system
@@ -64,19 +64,19 @@ protected:
 		}
 
 		for ( auto floatLessThanCheck : transition->floatLessThanChecks ) {
-			if ( *floatLessThanCheck.first < floatLessThanCheck.second ) {
+			if ( !(*floatLessThanCheck.first < floatLessThanCheck.second) ) {
 				trans = false;
 			}
 		}
 
 		for ( auto floatEqualCheck : transition->floatEqualChecks ) {
-			if ( std::abs(*floatEqualCheck.first - floatEqualCheck.second) < m_eps ) {
+			if ( !(std::abs(*floatEqualCheck.first - floatEqualCheck.second) < m_eps) ) {
 				trans = false;
 			}
 		}
 
 		for ( auto floatGreaterThanCheck : transition->floatGreaterThanChecks ) {
-			if ( *floatGreaterThanCheck.first > floatGreaterThanCheck.second ) {
+			if ( !(*floatGreaterThanCheck.first > floatGreaterThanCheck.second) ) {
 				trans = false;
 			}
 		}
@@ -95,7 +95,7 @@ private:
 };
 
 template<typename StateType, typename... Args>
-inline void FiniteStateMachine::createState(Args... args) {
+inline StateType* FiniteStateMachine::createState(Args... args) {
 	auto it = m_states.find(StateType::ID);
 
 	if ( it == m_states.end() ) {
@@ -105,9 +105,12 @@ inline void FiniteStateMachine::createState(Args... args) {
 		if ( m_currentState == nullptr ) {
 			m_currentState = toEmplace;
 		}
+		return toEmplace;
 	} else {
 		Logger::Error("Tried to create state type with ID " + std::to_string(StateType::ID) + " but it already existed in the FSM (" + m_name + ").");
 	}
+
+	return nullptr;
 }
 
 template<typename FromStateType, typename ToStateType>
