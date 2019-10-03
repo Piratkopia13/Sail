@@ -42,7 +42,5 @@ GenerateMipsComputeShader::GenerateMipsComputeShader()
 	m_settings.threadGroupXScale = 1.0f / 8.0f;
 	m_settings.threadGroupYScale = 1.0f / 8.0f;
 
-	//m_output.outputTexture = getPipeline()->getRenderableTexture("output");
-
 }
 GenerateMipsComputeShader::~GenerateMipsComputeShader() { }

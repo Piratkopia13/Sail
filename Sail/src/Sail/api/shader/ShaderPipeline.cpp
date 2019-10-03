@@ -333,8 +333,9 @@ RenderableTexture* ShaderPipeline::getRenderableTexture(const std::string& name)
 // TODO: size isnt really needed, can be read from the byteOffset of the next var
 void ShaderPipeline::setCBufferVar(const std::string& name, const void* data, UINT size) {
 	bool success = trySetCBufferVar(name, data, size);
-	if (!success)
+	if (!success) {
 		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+	}
 }
 
 bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data, UINT size) {
@@ -352,24 +353,21 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 
 // TODO: registerTypeSize(typeName, size)
 UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
-	if (typeName == "uint") return 4;
-	if (typeName == "bool") return 4;
-	if (typeName == "float") return 4;
-	if (typeName == "float2") return 4*2;
-	if (typeName == "float3") return 4*3;
-	if (typeName == "float4") return 4*4;
-	if (typeName == "float3x3") return 4 * 3 * 3;
-	if (typeName == "float4x4" || typeName == "matrix") return 4 * 4 * 4;
+	if (typeName == "uint") { return 4; }
+	if (typeName == "bool") { return 4; }
+	if (typeName == "float") { return 4; }
+	if (typeName == "float2") { return 4 * 2; }
+	if (typeName == "float3") { return 4 * 3; }
+	if (typeName == "float4") { return 4 * 4; }
+	if (typeName == "float3x3") { return 4 * 3 * 3; }
+	if (typeName == "float4x4" || typeName == "matrix") { return 4 * 4 * 4; }
 
-	if (typeName == "Material") return 48;
-	if (typeName == "DirectionalLight") return 32;
-	if (typeName == "PointLight") return 32;
-	if (typeName == "PointLightInput") return 272;
-	if (typeName == "DeferredPointLightData") return 48;
-	if (typeName == "DeferredDirLightData") return 32;
-	//if (typeName == "DeferredPointLightData") return 48;
-	//if (typeName == "PointLightInput") return 384;
-
+	if (typeName == "Material") { return 48; }
+	if (typeName == "DirectionalLight") { return 32; }
+	if (typeName == "PointLight") { return 32; }
+	if (typeName == "PointLightInput") { return 272; }
+	if (typeName == "DeferredPointLightData") { return 48; }
+	if (typeName == "DeferredDirLightData") { return 32; }
 
 	Logger::Error("Found shader variable type with unknown size (" + typeName + ")");
 	return 0;

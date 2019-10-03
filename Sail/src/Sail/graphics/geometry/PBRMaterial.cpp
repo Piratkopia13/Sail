@@ -28,12 +28,15 @@ void PBRMaterial::bind(void* cmdList) {
 
 	// TODO: check if this causes a problem in DX12
 	// when a normal or specular texture is bound but not a diffuse one, the order will probably be wrong in dx12 shaders
-	if (m_pbrSettings.hasAlbedoTexture)
+	if (m_pbrSettings.hasAlbedoTexture) {
 		pipeline->setTexture2D("sys_texAlbedo", m_textures[0], cmdList);
-	if (m_pbrSettings.hasNormalTexture)
+	}
+	if (m_pbrSettings.hasNormalTexture) {
 		pipeline->setTexture2D("sys_texNormal", m_textures[1], cmdList);
-	if (m_pbrSettings.hasMetalnessRoughnessAOTexture)
+	}
+	if (m_pbrSettings.hasMetalnessRoughnessAOTexture) {
 		pipeline->setTexture2D("sys_texMetalnessRoughnessAO", m_textures[2], cmdList);
+	}
 }
 
 void PBRMaterial::setMetalnessScale(float metalness) {

@@ -30,7 +30,6 @@
 
 #include <sstream>
 #include <iomanip>
-#include <API\DX12\DX12API.h>
 
 // Uncomment to use forward rendering
 //#define DISABLE_RT
