@@ -46,7 +46,7 @@ void AudioSystem::update(float dt) {
 
 		audioC->listener.OrientFront = X3DAUDIO_VECTOR(dir.x, dir.y, dir.z);
 		audioC->listener.OrientTop = X3DAUDIO_VECTOR(up.x, up.y, up.z);
-		audioC->listener.Position = X3DAUDIO_VECTOR(0,0,0);
+		audioC->listener.Position = X3DAUDIO_VECTOR(pos.x, pos.y, pos.z);
 		audioC->listener.Velocity = X3DAUDIO_VECTOR(vel.x, vel.y, vel.z);
 
 		if (audioC != nullptr) {

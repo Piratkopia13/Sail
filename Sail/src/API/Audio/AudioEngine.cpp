@@ -78,22 +78,20 @@ int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& liste
 
 		m_sound[m_currSoundIndex].emitter.OrientFront = listener.OrientFront;
 		m_sound[m_currSoundIndex].emitter.OrientTop = listener.OrientTop;
-		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + 100.f, listener.Position.y, listener.Position.z };
+		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + 1000.0f, listener.Position.y, listener.Position.z };
 		m_sound[m_currSoundIndex].emitter.Velocity = listener.Velocity;
 
 		X3DAudioCalculate(m_X3DInstance, &listener, &m_sound[m_currSoundIndex].emitter,
-			X3DAUDIO_CALCULATE_MATRIX /*| X3DAUDIO_CALCULATE_DOPPLER*/ | X3DAUDIO_CALCULATE_LPF_DIRECT /*| X3DAUDIO_CALCULATE_REVERB*/,
+			X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT /*| X3DAUDIO_CALCULATE_REVERB*/,
 			&DSPSettings);
 
-		std::cout << DSPSettings.pMatrixCoefficients[0] << "\t";
-		std::cout << DSPSettings.pMatrixCoefficients[1] << "\n";
-
-		DSPSettings.pMatrixCoefficients[0] = 0.1f;
-		DSPSettings.pMatrixCoefficients[1] = 0.0f;
+		std::cout << "LEFT_EAR_VOL: " << DSPSettings.pMatrixCoefficients[0] << "\t";
+		std::cout << "RIGHT_EAR_VOL: " << DSPSettings.pMatrixCoefficients[1] << "\n";
+		std::cout << "DISTANCE: " << DSPSettings.EmitterToListenerDistance << "\n";
 
 		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, DSPSettings.pMatrixCoefficients);
-		//m_sound[m_currSoundIndex].sourceVoice->SetFrequencyRatio(DSPSettings.DopplerFactor);
-		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, &DSPSettings.ReverbLevel);
+		m_sound[m_currSoundIndex].sourceVoice->SetFrequencyRatio(DSPSettings.DopplerFactor);
+		//m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, &DSPSettings.ReverbLevel);
 
 		XAUDIO2_FILTER_PARAMETERS FilterParameters = { LowPassFilter, 2.0f * sinf(X3DAUDIO_PI / 6.0f * DSPSettings.LPFDirectCoefficient), 1.0f };
 		m_sound[m_currSoundIndex].sourceVoice->SetFilterParameters(&FilterParameters);
