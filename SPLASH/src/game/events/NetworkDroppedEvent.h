@@ -11,7 +11,7 @@ public:
 	}
 	~NetworkDroppedEvent() {}
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::NETWORK_DROPPED;
 	}
 
