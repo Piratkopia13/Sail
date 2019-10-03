@@ -417,7 +417,8 @@ bool GameState::renderImgui(float dt) {
 
 bool GameState::prepareStateChange() {
 	if (m_poppedThisFrame) {
-		shutDownGameState();
+		// Reset network
+		NWrapperSingleton::getInstance().resetNetwork();
 	}
 	return true;
 }
@@ -624,15 +625,11 @@ void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
-	// Reset network
-	NWrapperSingleton::getInstance().resetNetwork();
-
 	// Clear all entities
 	ECS::Instance()->destroyAllEntities();
 	
 	// Clear all necessary systems
 	m_componentSystems.gameInputSystem->clean();
-
 }
 
 // HERE BE DRAGONS
@@ -678,6 +675,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
+
+	if (m_poppedThisFrame) {
+		shutDownGameState();
+	}
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
