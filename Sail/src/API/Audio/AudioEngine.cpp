@@ -74,11 +74,11 @@ int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& liste
 			return -1;
 		}
 
-		m_sound[m_currSoundIndex].sourceVoice->SetVolume(VOL_THIRD);
+		//m_sound[m_currSoundIndex].sourceVoice->SetVolume(VOL_THIRD);
 
 		m_sound[m_currSoundIndex].emitter.OrientFront = listener.OrientFront;
 		m_sound[m_currSoundIndex].emitter.OrientTop = listener.OrientTop;
-		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + 1000.0f, listener.Position.y, listener.Position.z };
+		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + 1.0f, listener.Position.y, listener.Position.z };
 		m_sound[m_currSoundIndex].emitter.Velocity = listener.Velocity;
 
 		X3DAudioCalculate(m_X3DInstance, &listener, &m_sound[m_currSoundIndex].emitter,
@@ -89,9 +89,12 @@ int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& liste
 		std::cout << "RIGHT_EAR_VOL: " << DSPSettings.pMatrixCoefficients[1] << "\n";
 		std::cout << "DISTANCE: " << DSPSettings.EmitterToListenerDistance << "\n";
 
-		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, DSPSettings.pMatrixCoefficients);
+		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_sound[m_currSoundIndex].sourceVoice, 1, m_destinationChannelCount, DSPSettings.pMatrixCoefficients);
 		m_sound[m_currSoundIndex].sourceVoice->SetFrequencyRatio(DSPSettings.DopplerFactor);
+
+		// R E V E R B   A P P L I C A T I O N
 		//m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, &DSPSettings.ReverbLevel);
+		// EXAMPLE-CODE VERSION: pSFXSourceVoice->SetOutputMatrix(pSubmixVoice, 1, 1, &DSPSettings.ReverbLevel);
 
 		XAUDIO2_FILTER_PARAMETERS FilterParameters = { LowPassFilter, 2.0f * sinf(X3DAUDIO_PI / 6.0f * DSPSettings.LPFDirectCoefficient), 1.0f };
 		m_sound[m_currSoundIndex].sourceVoice->SetFilterParameters(&FilterParameters);

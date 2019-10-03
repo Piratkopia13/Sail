@@ -1,10 +1,13 @@
 #pragma once
 
 #include <vector>
+#include "Sail/utils/Utils.h"
 
 typedef unsigned int FSMStateID;
 
-FSMStateID global_fsmStateID = 0;
+extern FSMStateID global_fsmStateID;
+
+class Entity;
 
 namespace FSM {
 	struct Transition;
@@ -12,25 +15,38 @@ namespace FSM {
 	class BaseState {
 	public:
 		BaseState() {}
-		virtual ~BaseState() {}
+		virtual ~BaseState() {
+			for ( int i = 0; i < m_transitions.size(); i++ ) {
+				Memory::SafeDelete(m_transitions[i].first);
+			}
+		}
 
 		static FSMStateID createID() {
 			return global_fsmStateID++;
 		}
 
+		/*
+			The base state will handle deletion of any transition added to it
+
+			@param transition the transition to be tested
+			@param toState the state to transition to if transition is successful
+		*/
 		void addTransition(Transition* transition, BaseState* toState) {
 			m_transitions.emplace_back(transition, toState);
 		}
 
+		/*
+			@return the transitions available from this state
+		*/
 		std::vector<std::pair<Transition*, BaseState*>>& getTransitions() {
 			return m_transitions;
 		}
 
-		virtual void update(float dt) = 0;
+		virtual void update(float dt, Entity* entity) = 0;
 
-		virtual void reset() = 0;
+		virtual void reset(Entity* entity) = 0;
 
-		virtual void init() = 0;
+		virtual void init(Entity* entity) = 0;
 
 	protected:
 		std::vector<std::pair<Transition*, BaseState*>> m_transitions;

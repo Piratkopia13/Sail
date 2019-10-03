@@ -26,7 +26,7 @@ void CandleSystem::setPlayerEntityID(int entityID) {
 }
 
 // turn on the light of a specified candle if it doesn't have one already
-void CandleSystem::lightCandle(std::string name) {
+void CandleSystem::lightCandle(const std::string& name) {
 	for (auto e : entities) {
 		if (e->getName() == name) {
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(1.0f, 1.0f, 1.0f));
