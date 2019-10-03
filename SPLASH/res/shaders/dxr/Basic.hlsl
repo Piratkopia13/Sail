@@ -174,7 +174,9 @@ void closestHit(inout RayPayload payload, in BuiltInTriangleIntersectionAttribut
 	  normalInWorldSpace
 	);
 	if (CB_MeshData.data[instanceID].flags & MESH_HAS_NORMAL_TEX) {
-        normalInWorldSpace = mul(normalize(sys_texNormal.SampleLevel(ss, texCoords, 0).rgb * 2.f - 1.f), tbn);
+		float3 normalSample = sys_texNormal.SampleLevel(ss, texCoords, 0).rgb;
+        normalSample.y = 1.0f - normalSample.y;
+        normalInWorldSpace = mul(normalize(normalSample * 2.f - 1.f), tbn);
 	}
 
 

@@ -112,6 +112,11 @@ PBRTestState::PBRTestState(StateStack& stack)
 	direction = glm::normalize(direction);
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 
+	PointLight pl;
+	pl.setColor(glm::vec3(1.0f));
+	pl.setPosition(glm::vec3(0.f, 10.f, 0.f));
+	m_lights.addPointLight(pl);
+
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
@@ -230,7 +235,7 @@ bool PBRTestState::processInput(float dt) {
 
 	m_camController.update(dt);
 
-	return true;
+	return false;
 }
 
 
@@ -248,7 +253,7 @@ bool PBRTestState::onResize(WindowResizeEvent& event) {
 bool PBRTestState::update(float dt, float alpha) {
 
 	m_lights.updateBufferData();
-	return true;
+	return false;
 }
 
 bool PBRTestState::fixedUpdate(float dt) {
@@ -271,7 +276,7 @@ bool PBRTestState::fixedUpdate(float dt) {
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
 
-	return true;
+	return false;
 }
 
 // Renders the state
@@ -283,7 +288,7 @@ bool PBRTestState::render(float dt, float alpha) {
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.renderSystem->draw(m_cam, alpha);
 
-	return true;
+	return false;
 }
 
 bool PBRTestState::renderImgui(float dt) {

@@ -588,7 +588,7 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	}
 
 	if (pickedEntity) {
-		ImGui::Text("Material properties for %s", pickedEntity->getName());
+		ImGui::Text("Material properties for %s", pickedEntity->getName().c_str());
 		if (auto* model = pickedEntity->getComponent<ModelComponent>()) {
 			auto* mat = model->getModel()->getMesh(0)->getMaterial();
 			const auto& pbrSettings = mat->getPBRSettings();

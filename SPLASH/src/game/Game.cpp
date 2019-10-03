@@ -16,7 +16,7 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 
 	// Set starting state
-	m_stateStack.pushState(States::PBRTest);
+	m_stateStack.pushState(States::MainMenu);
 	
 }
 
