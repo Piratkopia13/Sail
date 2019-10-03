@@ -136,7 +136,7 @@ bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
 	}
 	// If not...
 	if (alreadyExists == false) {
-		// ...log it
+		// ...log it.
 		m_foundLobbies.push_back(FoundLobby{ ip_as_string });
 	}
 
