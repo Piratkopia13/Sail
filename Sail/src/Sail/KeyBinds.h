@@ -27,6 +27,7 @@ namespace KeyBinds {
 	extern int disableCursor;
 	extern int shoot;
 	extern int showInGameMenu;
+	extern int toggleSphere;	// Collision
 	extern int toggleSun;
 
 	// Application
