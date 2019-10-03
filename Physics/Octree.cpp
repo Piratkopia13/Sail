@@ -290,6 +290,10 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 	}
 }
 
+void Octree::getCollisionsRec(Entity* entity, VerticalCylinder* entityVerticalCylinder, Node* currentNode, std::vector<Octree::CollisionInfo>* outCollisionData) {
+
+}
+
 void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData, float padding) {
 	float intersectionDistance = Intersection::RayWithPaddedTriangle(rayStart, rayDir, v1, v2, v3, padding);
 	if (intersectionDistance >= 0.0f) {

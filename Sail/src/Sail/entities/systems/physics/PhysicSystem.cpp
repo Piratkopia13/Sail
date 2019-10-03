@@ -235,7 +235,7 @@ void PhysicSystem::update(float dt) {
 			}
 		}
 
-		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * updateableDt;
+		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * (0.5f * updateableDt);
 		transform->translate(translation);
 		if (e->getName() == "player") {
 			m_gameDataTracker->logDistanceWalked(translation);
