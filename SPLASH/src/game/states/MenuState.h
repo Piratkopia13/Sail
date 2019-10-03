@@ -53,8 +53,8 @@ private:
 
 	struct FoundLobby {
 		std::string ip;
-		double duration = 10;
-		void resetDuration() { duration = 5; }
+		double duration = 20;
+		void resetDuration() { duration = 20; }
 	};
 	double m_frameTick = 0.1;
 	double udpChill = 5;
