@@ -4,12 +4,15 @@
 //#include "audio/SoundManager.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/api/Mesh.h"
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 
 ResourceManager::ResourceManager() {
 	//m_soundManager = std::make_unique<SoundManager>();
 	m_assimpLoader = std::make_unique<AssimpLoader>();
+	m_fbxLoader = std::make_unique<FBXLoader>();
+	m_defaultShader = nullptr;
 }
 ResourceManager::~ResourceManager() {
 	for (auto it : m_shaderSets) {
@@ -20,6 +23,14 @@ ResourceManager::~ResourceManager() {
 //
 // AudioData
 //
+
+bool ResourceManager::setDefaultShader(Shader* shader) {
+	if (shader) {
+		m_defaultShader = shader;
+		return true;
+	}
+	return false;
+}
 
 void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {
 	if (!this->hasAudioData(filename)) {
@@ -81,31 +92,81 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 // Model
 //
 
-void ResourceManager::loadModel(const std::string& filename, Shader* shader) {
+void ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
 	// Insert the new model
-	//Model* temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION +filename, shader);
-	Model* temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION + filename, shader);
-	//m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shader) });
-	m_models.insert({ filename, std::unique_ptr<Model>(temp) });
+	Shader* shaderToUse = shader ? shader : m_defaultShader;
+
+
+	Model* temp = nullptr;
+	if (type == ResourceManager::ImporterType::SAIL_ASSIMP) {
+		temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION + filename, shaderToUse);
+	}
+	else if (type == ResourceManager::ImporterType::SAIL_FBXSDK) {
+		temp = m_fbxLoader->fetchModel(SAIL_DEFAULT_MODEL_LOCATION + filename, shaderToUse);
+	}
+
+	if (temp) {
+		Logger::Log("Loaded model: " + filename);
+		temp->setName(filename);
+		m_models.insert({ filename, std::unique_ptr<Model>(temp) });
+	}
+	else {
+#ifdef _DEBUG
+		Logger::Error("Could not Load model: (" + filename + ")");
+		//assert(temp);
+#endif
+	}
 }
 Model& ResourceManager::getModel(const std::string& filename, Shader* shader) {
 	auto pos = m_models.find(filename);
 	if (pos == m_models.end()) {
 		// Model was not yet loaded, load it and return
-		loadModel(filename, shader);
+		Shader* shaderToUse = shader ? shader : m_defaultShader;
+		loadModel(filename, shaderToUse);
 		
 		return *m_models.find(filename)->second;
-		//Logger::Error("Tried to access an fbx model that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadFBXModel(" + filename + ") before accessing it.");
 	}
 
 	return *pos->second;
+}
+Model& ResourceManager::getModelCopy(const std::string& filename, Shader* shader) {
+	Shader* shaderToUse = shader ? shader : m_defaultShader;
+	Model& model = getModel(filename, shaderToUse);
+	
+	Mesh* mesh = model.getMesh(0);
+	Mesh::Data data;
+	data.deepCopy(mesh->getData());
+	Model* tempModel = new Model(data, shaderToUse);
+	std::string nameCopy = getSuitableName(filename);
+	tempModel->setName(nameCopy);
+	Logger::Log("copied model: " + filename + ", using name: " + nameCopy);
+	m_models.insert({ nameCopy, std::unique_ptr<Model>(tempModel) });
+
+	return *m_models.find(nameCopy)->second;
 }
 bool ResourceManager::hasModel(const std::string& filename) {
 	return m_models.find(filename) != m_models.end();
 }
 
-void ResourceManager::loadAnimationStack(const std::string& fileName) {
-	m_animationStacks.insert({ fileName, std::unique_ptr<AnimationStack>(m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName))});
+void ResourceManager::loadAnimationStack(const std::string& fileName, const ImporterType type) {
+	AnimationStack* temp = nullptr;
+	if (type == ResourceManager::ImporterType::SAIL_ASSIMP) {
+		temp = m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName);
+	}
+	else if (type == ResourceManager::ImporterType::SAIL_FBXSDK) {
+		//TODO: REMOVE SHADER FROM ANIMATION IMPORT
+		assert(m_defaultShader&& "set default shader first, or load model first");
+		temp = m_fbxLoader->fetchAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName, m_defaultShader);
+	}
+
+	if (temp) {
+		m_animationStacks.insert({ fileName, std::unique_ptr<AnimationStack>(temp) });
+	}
+	else {
+#ifdef _DEBUG
+		Logger::Error("Could not Load model: (" + fileName + ")");
+#endif
+	}
 }
 
 AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) {
@@ -118,6 +179,17 @@ AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) 
 
 bool ResourceManager::hasAnimationStack(const std::string& fileName) {
 	return false;
+}
+
+const std::string ResourceManager::getSuitableName(const std::string& name) {
+	unsigned int iterator = 1;
+	while (iterator < 1000) {
+		std::string tempName = name + std::to_string(iterator++);
+		if (m_models.find(tempName) == m_models.end()) {
+			return tempName;
+		}
+	}
+	return "broken";
 }
 
 //void ResourceManager::reloadShaders() {
