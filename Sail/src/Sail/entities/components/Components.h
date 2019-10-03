@@ -23,6 +23,7 @@
 //#include "TextComponent.h"
 #include "TransformComponent.h"
 #include "VerticalCylinderComponent.h"
+#include "MetaballComponent.h"
 #include "ProjectileComponent.h"
 #include "AudioComponent.h"
 #include "FSMComponent.h"

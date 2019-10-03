@@ -63,6 +63,9 @@ private:
 
 	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos);
 
+	void loadAnimations();
+	void initAnimations();
+
 private:
 	struct Systems {
 		AiSystem* aiSystem = nullptr;
@@ -124,6 +127,7 @@ private:
 	
 	Octree* m_octree;
 	bool m_disableLightComponents;
+	bool m_showcaseProcGen;
 
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyWritingMask;
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyReadingMask;

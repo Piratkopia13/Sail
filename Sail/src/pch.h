@@ -15,6 +15,7 @@
 #define NOMINMAX // Removes min max macros which cause issues
 // Exclude some less used APIs to speed up the build process on windows
 #define WIN32_LEAN_AND_MEAN
+//#define SAIL_VERBOSELOGGING
 
 // Math
 // TODO: only define GLM_FORCE_DEPTH_ZERO_TO_ONE if directx or vulkan (not opengl)

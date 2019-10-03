@@ -55,11 +55,7 @@ namespace DXRUtils {
 
 	class ShaderTableBuilder {
 	public:
-		/*
-			@param shaderNames, a vector of shader names that should be contained in this shader table.
-			@param numInstances, a vector of UINT that represent the number of instances that should use each shader from shaderNames.
-			@param pso, a pointer to a ID3D12StateObject where the shaders defined in shaderNames are located.
-		*/
+
 		ShaderTableBuilder(UINT numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance = 32);
 		~ShaderTableBuilder();
 

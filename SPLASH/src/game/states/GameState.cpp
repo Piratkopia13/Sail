@@ -23,6 +23,7 @@
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
+#include "Sail/ai/states/SearchingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
@@ -40,6 +41,7 @@ GameState::GameState(StateStack& stack)
 , m_cc(true)
 , m_profiler(true)
 , m_disableLightComponents(false)
+, m_showcaseProcGen(false)
 {
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -194,23 +196,29 @@ GameState::GameState(StateStack& stack)
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 #endif
+	m_app->getResourceManager().setDefaultShader(shader);
 
 	// Create/load models
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+	loadAnimations();
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+	characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+	characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
+	characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 	// Player creation
-	setUpPlayer(boundingBoxModel, cubeModel, lightModel, playerID);
 
+	setUpPlayer(boundingBoxModel, cubeModel, lightModel, playerID);
+	initAnimations();
 	// Level Creation
 	createTestLevel(shader, boundingBoxModel);
 
@@ -218,7 +226,6 @@ GameState::GameState(StateStack& stack)
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
-
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 
@@ -274,6 +281,18 @@ bool GameState::processInput(float dt) {
 
 #endif
 
+	// Enable bright light and move camera to above procedural generated level
+	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
+		m_disableLightComponents = !m_disableLightComponents;
+		m_showcaseProcGen = m_disableLightComponents;
+		if (m_showcaseProcGen) {
+			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
+			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
+		} else {
+			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
+		}
+	}
+
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
 		m_componentSystems.renderSystem->toggleHitboxes();
@@ -326,10 +345,8 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
-		m_app->getResourceManager().reloadShader<MaterialShader>();
-		Event e(Event::POTATO);
-		m_app->dispatchEvent(e);
-	}  
+		m_app->getResourceManager().reloadShader<GBufferOutShader>();
+	}
 
 	// Pause game
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
@@ -617,6 +634,41 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Checkbox("Enable post processing", 
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
 	);
+
+	static Entity* pickedEntity = nullptr;
+	static float metalness = 1.0f;
+	static float roughness = 1.0f;
+	static float ao = 1.0f;
+
+	ImGui::Separator();
+	if (ImGui::Button("Pick entity")) {
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		if (tempInfo.closestHitIndex != -1) {
+			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
+		}
+	}
+
+	if (pickedEntity) {
+		ImGui::Text("Material properties for %s", pickedEntity->getName().c_str());
+		if (auto* model = pickedEntity->getComponent<ModelComponent>()) {
+			auto* mat = model->getModel()->getMesh(0)->getMaterial();
+			const auto& pbrSettings = mat->getPBRSettings();
+			metalness = pbrSettings.metalnessScale;
+			roughness = pbrSettings.roughnessScale;
+			ao = pbrSettings.aoScale;
+			if (ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f)) {
+				mat->setMetalnessScale(metalness);
+			}
+			if (ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f)) {
+				mat->setRoughnessScale(roughness);
+			}
+			if (ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f)) {
+				mat->setAOScale(ao);
+			}
+		}
+	}
+
 	ImGui::End();
 
 	return false;
@@ -639,7 +691,7 @@ bool GameState::renderImGuiLightDebug(float dt) {
 			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
 
 			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position##", &position[0], -40.f, 40.0f);
+			ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
 			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
 			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
 			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
@@ -728,6 +780,10 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
+	} 
+	
+	if (m_showcaseProcGen) {
+		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 
 	m_componentSystems.audioSystem->update(dt);
@@ -795,6 +851,96 @@ Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* light
 	e->addComponent<LightComponent>(pl);
 
 	return e;
+}
+
+void GameState::loadAnimations() {
+	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
+	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+
+#ifndef _DEBUG
+	m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+#endif
+
+
+
+}
+
+void GameState::initAnimations() {
+	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
+
+
+
+	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
+	animationEntity2->addComponent<TransformComponent>();
+	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
+	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/walkTri.fbx"));
+	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
+	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+
+#ifndef _DEBUG
+	auto animationEntity1 = ECS::Instance()->createEntity("animatedModel1");
+	animationEntity1->addComponent<TransformComponent>();
+	animationEntity1->getComponent<TransformComponent>()->translate(0, 0, 5);
+	animationEntity1->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/ScuffedSteve_2.fbx", shader));
+	animationEntity1->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity1->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/ScuffedSteve_2.fbx"));
+	animationEntity1->getComponent<AnimationComponent>()->currentAnimation = animationEntity1->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+	auto animationEntity22 = ECS::Instance()->createEntity("animatedModel22");
+	animationEntity22->addComponent<TransformComponent>();
+	animationEntity22->getComponent<TransformComponent>()->translate(-4, 0, 0);
+	animationEntity22->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx", shader));
+	animationEntity22->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity22->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
+	animationEntity22->getComponent<AnimationComponent>()->currentAnimation = animationEntity22->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+	auto animationEntity3 = ECS::Instance()->createEntity("animatedModel3");
+	animationEntity3->addComponent<TransformComponent>();
+	animationEntity3->getComponent<TransformComponent>()->translate(3, 4, 2);
+	animationEntity3->getComponent<TransformComponent>()->scale(0.005f);
+	animationEntity3->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/BaseMesh_Anim.fbx", shader));
+	animationEntity3->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity3->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/BaseMesh_Anim.fbx"));
+	animationEntity3->getComponent<AnimationComponent>()->currentAnimation = animationEntity3->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+	auto animationEntity4 = ECS::Instance()->createEntity("animatedModel4");
+	animationEntity4->addComponent<TransformComponent>();
+	animationEntity4->getComponent<TransformComponent>()->translate(-1,2,-3);
+	animationEntity4->getComponent<TransformComponent>()->scale(0.005f);
+	animationEntity4->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT.fbx", shader));
+	animationEntity4->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity4->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
+	animationEntity4->getComponent<AnimationComponent>()->currentAnimation = animationEntity4->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+	unsigned int count = m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx").getAnimationCount();
+	for (int i = 0; i < count; i++) {
+		auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5-"+std::to_string(i));
+		animationEntity5->addComponent<TransformComponent>();
+		animationEntity5->getComponent<TransformComponent>()->translate(0, 3+i*2, 0);
+		animationEntity5->getComponent<TransformComponent>()->scale(0.005f);
+		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/DEBUG_BALLBOT.fbx", shader));
+		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
+		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
+	}
+	
+
+#endif
+
+
+
+
+
+
+
+
+
+
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
@@ -876,16 +1022,25 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	// Load models used for test level
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setMetalnessScale(0.570f);
+	arenaModel->getMesh(0)->getMaterial()->setRoughnessScale(0.593f);
+	arenaModel->getMesh(0)->getMaterial()->setAOScale(0.023f);
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
-	barrierModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/barrierBasicTexture.tga");
+	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
 
 	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
-	containerModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/containerBasicTexture.tga");
+	containerModel->getMesh(0)->getMaterial()->setMetalnessScale(0.778f);
+	containerModel->getMesh(0)->getMaterial()->setRoughnessScale(0.394f);
+	containerModel->getMesh(0)->getMaterial()->setAOScale(0.036f);
+	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
 
 	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
-	rampModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/rampBasicTexture.tga");
+	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
+	rampModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+	rampModel->getMesh(0)->getMaterial()->setRoughnessScale(1.0f);
+	rampModel->getMesh(0)->getMaterial()->setAOScale(1.0f);
 
 	// Create entities for test level
 
@@ -894,7 +1049,6 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
-	e->getComponent<TransformComponent>()->setScale(glm::vec3(1.f, 0.1f, 1.f));
 
 
 	e = ECS::Instance()->createEntity("Map_Barrier1");
@@ -1011,13 +1165,12 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
 	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
-	
 	if (botCount < 0) {
 		botCount = 0;
 	}// TODO: Remove this when more bots can be added safely
-	else if (botCount > 1) {
-		botCount = 1;
-	}
+	//else if (botCount > 1) {
+	//	botCount = 1;
+	//}
 	for (size_t i = 0; i < botCount; i++) {		
 		auto e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
@@ -1032,17 +1185,38 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
 		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
 		e->addChildEntity(aiCandleEntity);
+		
 		// Create states and transitions
 		{
-			fsmComp->createState<AttackingState>(m_octree);
+			SearchingState* searchState = fsmComp->createState<SearchingState>(m_componentSystems.aiSystem->getNodeSystem());
+			AttackingState* attackState = fsmComp->createState<AttackingState>();
 			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
+			
+
 			// TODO: unnecessary to create new transitions for each FSM if they're all identical
-			FSM::Transition* fromAttackToFleeing = SAIL_NEW FSM::Transition;
-			fromAttackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
-			FSM::Transition* fromFleeingToAttacking = SAIL_NEW FSM::Transition;
-			fromFleeingToAttacking->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
-			fsmComp->addTransition<AttackingState, FleeingState>(fromAttackToFleeing);
-			fsmComp->addTransition<FleeingState, AttackingState>(fromFleeingToAttacking);
+			// Attack State
+			FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
+			attackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+			FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
+			attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
+
+			// Search State
+			FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
+			searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
+			FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
+			searchToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+
+			// Fleeing State
+			FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
+			fleeingToSearch->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
+
+			fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
+			fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
+
+			fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
+			fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
+
+			fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);
 		}
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
@@ -1054,17 +1228,17 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
-	tileFlat->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
-	tileCross->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileCross->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
-	tileStraight->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileStraight->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
-	tileCorner->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileCorner->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
-	tileT->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileT->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
-	tileEnd->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");

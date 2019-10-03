@@ -30,8 +30,6 @@ protected:
 	//atomic<D3D12_RESOURCE_STATES> startState;
 	std::vector<D3D12_RESOURCE_STATES> state;
 
-	std::mutex m_stateMutex;
-
 	bool isRenderableTex;
 	bool useOneResource;
 };

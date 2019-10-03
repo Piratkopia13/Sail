@@ -29,6 +29,7 @@ namespace KeyBinds {
 	int shoot;
 	int showInGameMenu;
 	int toggleSphere;
+	int toggleSun;
 
 	// Application
 	int alt;
@@ -76,6 +77,7 @@ void KeyBinds::init() {
 	shoot = SAIL_MOUSE_LEFT_BUTTON;
 	showInGameMenu = SAIL_KEY_ESCAPE;
 	toggleSphere = SAIL_KEY_C;
+	toggleSun = SAIL_KEY_P;
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds

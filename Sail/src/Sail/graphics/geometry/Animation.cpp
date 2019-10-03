@@ -5,7 +5,7 @@
 
 Animation::Frame::Frame() :
 	m_transformSize(0),
-	m_limbTransform(nullptr) {
+	m_limbTransform(nullptr){
 }
 Animation::Frame::Frame(const unsigned int size) :
 	m_transformSize(size) {
@@ -20,7 +20,9 @@ Animation::Frame::~Frame() {
 void Animation::Frame::setTransform(const unsigned int index, const glm::mat4& transform) {
 #ifdef _DEBUG
 	if (index >= m_transformSize || index < 0) {
+		#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 		Logger::Error("Tried to add transform to index(" + std::to_string(index) + ") maxSize(" + std::to_string(m_transformSize));
+		#endif
 		return;
 	}
 #endif
@@ -47,12 +49,12 @@ Animation::Animation() :
 Animation::~Animation() {
 	for (unsigned int frame = 0; frame <= m_maxFrame; frame++) {
 		Memory::SafeDelete(m_frames[frame]);
-
 	}
 }
 const float Animation::getMaxAnimationTime() {
-	if(exists(m_maxFrame))
+	if (exists(m_maxFrame)) {
 		return m_frameTimes[m_maxFrame];
+	}
 	return 0.0f;
 }
 const unsigned int Animation::getMaxAnimationFrame() {
@@ -64,8 +66,9 @@ const glm::mat4* Animation::getAnimationTransform(const float time, const FindTy
 	return getAnimationTransform(frame);
 }
 const glm::mat4* Animation::getAnimationTransform(const unsigned int frame) {
-	if (exists(frame))
+	if (exists(frame)) {
 		return m_frames[frame]->getTransformList();
+	}
 	return nullptr;
 }
 
@@ -74,25 +77,29 @@ const unsigned int Animation::getAnimationTransformSize(const float time) {
 	return getAnimationTransformSize(frame);
 }
 const unsigned int Animation::getAnimationTransformSize(const unsigned int frame) {
-	if (exists(frame))
-		return m_frameTimes[frame];
+	if (exists(frame)) {
+		return m_frames[frame]->getTransformListSize();
+	}
 	return 0;
 }
 
 const float Animation::getTimeAtFrame(const unsigned int frame) {
-	if (exists(frame))
+	if (exists(frame)) {
 		return m_frameTimes[frame];
+	}
 	return 0.0f;
 }
 const unsigned int Animation::getFrameAtTime(const float time, const FindType type) {
 	// TODO: fmod
-	if (time >= m_maxFrameTime)
+	if (time >= m_maxFrameTime) {
 		return 0;
+	}
 	for (unsigned int frame = 0; frame < m_maxFrame; frame++) {
 		float lastFrameTime = 0;
 		if (exists(frame)) {
-			if ((m_frameTimes[frame] == time))
+			if ((m_frameTimes[frame] == time)) {
 				return frame;
+			}
 			if (m_frameTimes[frame] > time) {
 
 				if (type == BEHIND) {
@@ -105,10 +112,12 @@ const unsigned int Animation::getFrameAtTime(const float time, const FindType ty
 					float behind = time - m_frameTimes[frame - 1];
 					float inFront = m_frameTimes[frame] - time;
 
-					if (behind >= inFront)
+					if (behind >= inFront) {
 						return frame - 1;
-					else
+					}
+					else {
 						return frame;
+					}
 				}
 			}	
 		}
@@ -117,10 +126,12 @@ const unsigned int Animation::getFrameAtTime(const float time, const FindType ty
 }
 
 void Animation::addFrame(const unsigned int frame, const float time, Animation::Frame* data) {
-	if (m_maxFrameTime < time)
+	if (m_maxFrameTime < time) {
 		m_maxFrameTime = time;
-	if (m_maxFrame < frame)
+	}
+	if (m_maxFrame < frame) {
 		m_maxFrame = frame;
+	}
 
 	m_frames[frame] = data;
 	m_frameTimes[frame] = time;
@@ -128,7 +139,7 @@ void Animation::addFrame(const unsigned int frame, const float time, Animation::
 
 inline const bool Animation::exists(const unsigned int frame) {
 	if (m_frames.find(frame) == m_frames.end()) {
-		#ifdef _DEBUG
+		#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 			Logger::Warning("Trying to access frame(" + std::to_string(frame) + ") which does not exist, maxFrame(" + std::to_string(m_maxFrame) + ").");
 		#endif
 		return false;
@@ -151,7 +162,7 @@ AnimationStack::VertConnection::VertConnection() :
 
 void AnimationStack::VertConnection::addConnection(const unsigned int _transform, const float _weight) {
 	if (count >= SAIL_BONES_PER_VERTEX) {
-		#ifdef _DEBUG
+		#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 			Logger::Error("AnimationStack:VertConnection: Too many existing connections(" + std::to_string(count) + ")");
 		#endif
 		return;
@@ -163,10 +174,20 @@ void AnimationStack::VertConnection::addConnection(const unsigned int _transform
 
 const float AnimationStack::VertConnection::checkWeights() {
 	float sum = 0;
-	for (int i = 0; i < count; i++) {
+	for (unsigned int i = 0; i < count; i++) {
 		sum += weight[i];
 	}
 	return sum;
+}
+
+void AnimationStack::VertConnection::normalizeWeights() {
+	float sum = 0.0f;
+	for (unsigned int weightIndex = 0; weightIndex < count; weightIndex++) {
+		sum += weight[weightIndex];
+	}
+	for (unsigned int weightIndex = 0; weightIndex < count; weightIndex++) {
+		weight[weightIndex] /= sum;
+	}
 }
 
 
@@ -176,10 +197,13 @@ const float AnimationStack::VertConnection::checkWeights() {
 #pragma region ANIMATIONSTACK
 
 AnimationStack::AnimationStack() {
+	m_connectionSize = 0;
+	m_connections = nullptr;
 }
-AnimationStack::AnimationStack(const unsigned int vertCount) {
+AnimationStack::AnimationStack(const unsigned int vertCount) : AnimationStack(){
 	m_connectionSize = vertCount;
 	m_connections = SAIL_NEW VertConnection[vertCount];
+
 }
 AnimationStack::~AnimationStack() {
 	for (unsigned int index = 0; index < m_stack.size(); index++) {
@@ -187,32 +211,50 @@ AnimationStack::~AnimationStack() {
 	}
 	Memory::SafeDeleteArr(m_connections);
 }
+void AnimationStack::reSizeConnections(const unsigned int vertCount) {
+	VertConnection* temp = SAIL_NEW VertConnection[vertCount];
+	for (unsigned int i = 0; i < m_connectionSize; i++) {
+		temp[i] = m_connections[i];
+	}
+	Memory::SafeDeleteArr(m_connections);
+	m_connectionSize = vertCount;
+	m_connections = temp;
+
+}
 void AnimationStack::addAnimation(const std::string& animationName, Animation* animation) {
 	if (m_stack.find(animationName) == m_stack.end()) {
-		m_names[m_stack.size()] = animationName;
+		m_names[(unsigned int)m_stack.size()] = animationName;
 		m_stack[animationName] = animation;
 	}
 	else {
+#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 		Logger::Warning("Replacing animation " + animationName);
+#endif
 		m_stack[animationName] = animation;
 	}
 }
 void AnimationStack::setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight) {
 #ifdef _DEBUG
 	if (vertexIndex > m_connectionSize) {
+#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 		Logger::Error("AnimationStack::setBoneData: vertexIndex("+ std::to_string(vertexIndex) +") larger than array size("+std::to_string(m_connectionSize) +")." );
+#endif
 		return;
 	}
 #endif
 	if (m_connections[vertexIndex].count >= SAIL_BONES_PER_VERTEX) {
+#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 		Logger::Error("AnimationStack::SetConnectionData: vertexIndex: " + std::to_string(vertexIndex) + "");
+#endif
 	}
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
 }
 
+
 Animation* AnimationStack::getAnimation(const std::string& name) {
-	if (m_stack.find(name) == m_stack.end())
+	if (m_stack.find(name) == m_stack.end()) {
 		return nullptr;
+	}
 	return m_stack[name];
 }
 Animation* AnimationStack::getAnimation(const unsigned int index) {
@@ -222,6 +264,10 @@ Animation* AnimationStack::getAnimation(const unsigned int index) {
 		return nullptr;
 
 	return m_stack[m_names[index]];
+}
+
+const unsigned int AnimationStack::getAnimationCount() {
+	return m_stack.size();
 }
 
 const glm::mat4* AnimationStack::getTransform(const std::string& name, const float time) {
@@ -258,12 +304,29 @@ const unsigned int AnimationStack::getConnectionSize() {
 }
 
 void AnimationStack::checkWeights() {
+
 	for (unsigned int i = 0; i < m_connectionSize; i++) {
+		if (m_connections[i].count == 0) {
+#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
+			Logger::Warning("count == 0: " + std::to_string(i));
+#endif
+		}
+
 		float value = m_connections[i].checkWeights();
 		if (value > 1.001 || value < 0.999) {
+#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 			Logger::Warning("Weights fucked: " + std::to_string(i) + "(" + std::to_string(value) + ")");
+#endif
 		}
 	}
+}
+
+void AnimationStack::normalizeWeights() {
+
+	for (unsigned int i = 0; i < m_connectionSize; i++) {
+		m_connections[i].normalizeWeights();
+	}
+
 }
 
 #pragma endregion

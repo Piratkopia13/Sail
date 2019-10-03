@@ -12,6 +12,7 @@ public:
 
 	virtual void begin(Camera* camera) override;
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
+	virtual void submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) override;
 	virtual void setLightSetup(LightSetup* lightSetup) override;
 	virtual void end() override;
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;

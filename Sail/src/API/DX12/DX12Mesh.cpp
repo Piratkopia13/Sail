@@ -14,7 +14,7 @@ Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 	: Mesh(buildData, shader) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
-	material = std::make_shared<Material>(shader);
+	material = std::make_shared<PBRMaterial>(shader);
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), buildData));
 	// Create index buffer if indices are set
@@ -50,9 +50,9 @@ void DX12Mesh::draw_new(const Renderer& renderer, void* cmdList, int meshIndex) 
 
 void DX12Mesh::bindMaterial(void* cmdList, int meshIndex) {
 	Shader* shader = material->getShader();
-	const Material::PhongSettings& phongSettings = material->getPhongSettings();
+	const auto& pbrSettings = material->getPBRSettings();
 	DX12ShaderPipeline* pipeline = static_cast<DX12ShaderPipeline*>(shader->getPipeline());
-	pipeline->trySetCBufferVar_new("sys_material", (void*)& phongSettings, sizeof(Material::PhongSettings), meshIndex);
+	pipeline->trySetCBufferVar_new("sys_material_pbr", (void*)& pbrSettings, sizeof(PBRMaterial::PBRSettings), meshIndex);
 	m_SRVIndex = pipeline->setMaterial(material.get(), cmdList);
 }
 

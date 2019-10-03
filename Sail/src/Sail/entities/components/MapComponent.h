@@ -41,7 +41,7 @@ public:
 		}
 
 	}
-	const static int xsize = 30, ysize = 30; //size of level
+	const static int xsize = 5, ysize = 5; //size of level
 	int tileArr[xsize][ysize][3]; //0 is tileID, 1 is typeID, 2 is door
 	float hallwayThreshold = 0.3f; // percentage of level that can be corridors
 	int minSplitSize = 5; //minimum size for splitting chunks

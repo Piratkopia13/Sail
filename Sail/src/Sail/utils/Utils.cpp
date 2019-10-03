@@ -46,6 +46,15 @@ float Utils::smootherstep(float edge0, float edge1, float x) {
 	return x * x * x * (x * (x * 6 - 15) + 10);
 }
 
+float Utils::wrapValue(float value, float lowerBound, float upperBound) {
+	float val = value;
+	value = std::fmodf(value - lowerBound, upperBound - lowerBound) + lowerBound;
+	if ( value < lowerBound ) {
+		value += (upperBound - lowerBound);
+	}
+	return value;
+}
+
 
 glm::vec4 Utils::getRandomColor() {
 	return glm::vec4(Utils::rnd(), Utils::rnd(), Utils::rnd(), 1);
@@ -63,11 +72,30 @@ std::string Utils::String::getBlockStartingFrom(const char* source) {
 
 const char* Utils::String::findToken(const std::string& token, const char* source) {
 	const char* match;
-	if (match = strstr(source, token.c_str())) {
-		bool left = match == source || isspace((match - 1)[0]);
-		match += token.size();
-		bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
-		return match;
+	size_t offset = 0;
+	while (true) {
+		if (match = strstr(source + offset, token.c_str())) {
+			bool left = match == source || isspace((match - 1)[0]);
+			match += token.size();
+			bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
+
+			// Ignore match if line contains "SAIL_IGNORE"
+			const char* newLine = strchr(match, '\n');
+			size_t lineLength = newLine - match;
+			char* lineCopy = (char*)malloc(lineLength + 1);
+			memset(lineCopy, '\0', lineLength + 1);
+			strncpy(lineCopy, match, lineLength);
+			if (strstr(lineCopy, "SAIL_IGNORE")) {
+				free(lineCopy);
+				offset += (match - source) + lineLength;
+				continue;
+			} else {
+				free(lineCopy);
+				return match;
+			}
+		} else {
+			break;
+		}
 	}
 	return nullptr;
 }
