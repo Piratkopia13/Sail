@@ -108,6 +108,7 @@ bool LobbyClientState::onDropped(NetworkDroppedEvent& event) {
 
 	// Reset network so that user can choose host/client again.
 	NWrapperSingleton::getInstance().resetNetwork();
+	NWrapperSingleton::getInstance().resetWrapper();
 
 	return false;
 }
