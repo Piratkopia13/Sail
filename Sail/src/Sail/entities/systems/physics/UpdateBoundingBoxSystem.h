@@ -13,4 +13,6 @@ public:
 
 private:
 	void checkDistances(glm::vec3& minVec, glm::vec3& maxVec, const glm::vec3& testVec);
+	void recalculateBoundingBoxFully(Entity* e);
+	void recalculateBoundingBoxPosition(Entity* e);
 };
