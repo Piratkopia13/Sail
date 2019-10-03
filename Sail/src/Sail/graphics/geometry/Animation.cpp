@@ -49,12 +49,12 @@ Animation::Animation() :
 Animation::~Animation() {
 	for (unsigned int frame = 0; frame <= m_maxFrame; frame++) {
 		Memory::SafeDelete(m_frames[frame]);
-
 	}
 }
 const float Animation::getMaxAnimationTime() {
-	if(exists(m_maxFrame))
+	if (exists(m_maxFrame)) {
 		return m_frameTimes[m_maxFrame];
+	}
 	return 0.0f;
 }
 const unsigned int Animation::getMaxAnimationFrame() {
@@ -66,8 +66,9 @@ const glm::mat4* Animation::getAnimationTransform(const float time, const FindTy
 	return getAnimationTransform(frame);
 }
 const glm::mat4* Animation::getAnimationTransform(const unsigned int frame) {
-	if (exists(frame))
+	if (exists(frame)) {
 		return m_frames[frame]->getTransformList();
+	}
 	return nullptr;
 }
 
@@ -76,25 +77,29 @@ const unsigned int Animation::getAnimationTransformSize(const float time) {
 	return getAnimationTransformSize(frame);
 }
 const unsigned int Animation::getAnimationTransformSize(const unsigned int frame) {
-	if (exists(frame))
+	if (exists(frame)) {
 		return m_frames[frame]->getTransformListSize();
+	}
 	return 0;
 }
 
 const float Animation::getTimeAtFrame(const unsigned int frame) {
-	if (exists(frame))
+	if (exists(frame)) {
 		return m_frameTimes[frame];
+	}
 	return 0.0f;
 }
 const unsigned int Animation::getFrameAtTime(const float time, const FindType type) {
 	// TODO: fmod
-	if (time >= m_maxFrameTime)
+	if (time >= m_maxFrameTime) {
 		return 0;
+	}
 	for (unsigned int frame = 0; frame < m_maxFrame; frame++) {
 		float lastFrameTime = 0;
 		if (exists(frame)) {
-			if ((m_frameTimes[frame] == time))
+			if ((m_frameTimes[frame] == time)) {
 				return frame;
+			}
 			if (m_frameTimes[frame] > time) {
 
 				if (type == BEHIND) {
@@ -107,10 +112,12 @@ const unsigned int Animation::getFrameAtTime(const float time, const FindType ty
 					float behind = time - m_frameTimes[frame - 1];
 					float inFront = m_frameTimes[frame] - time;
 
-					if (behind >= inFront)
+					if (behind >= inFront) {
 						return frame - 1;
-					else
+					}
+					else {
 						return frame;
+					}
 				}
 			}	
 		}
@@ -119,10 +126,12 @@ const unsigned int Animation::getFrameAtTime(const float time, const FindType ty
 }
 
 void Animation::addFrame(const unsigned int frame, const float time, Animation::Frame* data) {
-	if (m_maxFrameTime < time)
+	if (m_maxFrameTime < time) {
 		m_maxFrameTime = time;
-	if (m_maxFrame < frame)
+	}
+	if (m_maxFrame < frame) {
 		m_maxFrame = frame;
+	}
 
 	m_frames[frame] = data;
 	m_frameTimes[frame] = time;
@@ -243,8 +252,9 @@ void AnimationStack::setConnectionData(const unsigned int vertexIndex, const uns
 
 
 Animation* AnimationStack::getAnimation(const std::string& name) {
-	if (m_stack.find(name) == m_stack.end())
+	if (m_stack.find(name) == m_stack.end()) {
 		return nullptr;
+	}
 	return m_stack[name];
 }
 Animation* AnimationStack::getAnimation(const unsigned int index) {

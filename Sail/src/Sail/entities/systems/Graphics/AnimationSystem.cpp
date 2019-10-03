@@ -22,14 +22,16 @@ void AnimationSystem::update(float dt) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		ModelComponent* modelC = e->getComponent<ModelComponent>();
 		animationC->animationTime += dt;
-		if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime())
+		if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime()) {
 			animationC->animationTime -= animationC->currentAnimation->getMaxAnimationTime();
+		}
 
 		Mesh * mesh = modelC->getModel()->getMesh(0);
 		const Mesh::Data* data = &mesh->getMeshData();
 		if (data->numVertices > 0) {
-			if (animationC->data.numVertices != data->numVertices)
+			if (animationC->data.numVertices != data->numVertices) {
 				animationC->data.deepCopy(*data);
+			}
 			if (animationC->dataSize != data->numVertices) {
 				animationC->resizeData(data->numVertices);
 			}

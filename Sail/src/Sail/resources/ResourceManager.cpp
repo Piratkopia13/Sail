@@ -125,7 +125,6 @@ Model& ResourceManager::getModel(const std::string& filename, Shader* shader) {
 		loadModel(filename, shaderToUse);
 		
 		return *m_models.find(filename)->second;
-		//Logger::Error("Tried to access an fbx model that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadFBXModel(" + filename + ") before accessing it.");
 	}
 
 	return *pos->second;
@@ -168,9 +167,6 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 		Logger::Error("Could not Load model: (" + fileName + ")");
 #endif
 	}
-
-
-	//m_animationStacks.insert({ fileName, std::unique_ptr<AnimationStack>(m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName))});
 }
 
 AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) {

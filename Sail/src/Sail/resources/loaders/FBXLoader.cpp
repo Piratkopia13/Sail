@@ -52,14 +52,16 @@ FBXLoader::~FBXLoader() {
 
 #pragma region sceneAndDataImporting
 bool FBXLoader::importScene(const std::string& filePath, Shader* shader) {
-	if (m_sceneData.find(filePath) != m_sceneData.end())
+	if (m_sceneData.find(filePath) != m_sceneData.end()) {
 		return true;
+	}
 	if (!initScene(filePath)) {
 		return false;
 	}
 
-	if (m_scenes.find(filePath) == m_scenes.end())
+	if (m_scenes.find(filePath) == m_scenes.end()) {
 		return false;
+	}
 	const FbxScene* scene = m_scenes[filePath];
 	assert(scene);
 
@@ -239,30 +241,12 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 					
 					FbxVector4 norm = leNormal->GetDirectArray().GetAt(normIndex);
 					FBXtoGLM(vertNormal[0].vec, norm);
-					//for (unsigned int axis = 0; axis < 3; axis++) {
-					//	vertNormal[0].vec[axis] = (float)norm[axis];
-					//}
-					//buildData.normals[vertexIndex].vec.x = (float)norm[0];
-					//buildData.normals[vertexIndex].vec.y = (float)norm[1];
-					//buildData.normals[vertexIndex].vec.z = (float)norm[2];
 
 					norm = leNormal->GetDirectArray().GetAt(normIndex + 1);
 					FBXtoGLM(vertNormal[1].vec, norm);
-					//for (unsigned int axis = 0; axis < 3; axis++) {
-					//	vertNormal[1].vec[axis] = (float)norm[axis];
-					//}
-					//buildData.normals[vertexIndex + 1].vec.x = (float)norm[0];
-					//buildData.normals[vertexIndex + 1].vec.y = (float)norm[1];
-					//buildData.normals[vertexIndex + 1].vec.z = (float)norm[2];
 
 					norm = leNormal->GetDirectArray().GetAt(normIndex + 2);
 					FBXtoGLM(vertNormal[2].vec, norm);
-					//for (unsigned int axis = 0; axis < 3; axis++) {
-					//	vertNormal[2].vec[axis] = (float)norm[axis];
-					//}
-					//buildData.normals[vertexIndex + 2].vec.x = (float)norm[0];
-					//buildData.normals[vertexIndex + 2].vec.y = (float)norm[1];
-					//buildData.normals[vertexIndex + 2].vec.z = (float)norm[2];
 				}
 			}
 			else {
@@ -390,16 +374,19 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			unsigned long oldUnique = uniqueVertices;
 			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[0], vertNormal[0], vertTangent[0], vertBitangent[0], vertTexCoord[0]);
 			
-			if(oldUnique != uniqueVertices)
+			if (oldUnique != uniqueVertices) {
 				cpMap[CPIndex[0]].emplace_back(oldUnique);
+			}
 			oldUnique = uniqueVertices;
 			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[1], vertNormal[1], vertTangent[1], vertBitangent[1], vertTexCoord[1]);
-			if (oldUnique != uniqueVertices)
+			if (oldUnique != uniqueVertices) {
 				cpMap[CPIndex[1]].emplace_back(oldUnique);
+			}
 			oldUnique = uniqueVertices; 
 			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[2], vertNormal[2], vertTangent[2], vertBitangent[2], vertTexCoord[2]);
-			if (oldUnique != uniqueVertices)
+			if (oldUnique != uniqueVertices) {
 				cpMap[CPIndex[2]].emplace_back(oldUnique);
+			}
 
 		}
 
@@ -544,12 +531,6 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 					m_sceneData[name].bones[limbIndexes[clusterIndex]].globalBindposeInverse = globalBindposeInverse;
 
-
-
-					// Update the information in mSkeleton 
-					//model->setGlobalBindposeInverse(limbIndexes[clusterIndex], convertToXMMatrix(globalBindposeInverseMatrix));
-
-
 					unsigned int indexCount = cluster->GetControlPointIndicesCount();
 					int* CPIndices = cluster->GetControlPointIndices();
 					double* CPWeights = cluster->GetControlPointWeights();
@@ -582,13 +563,9 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					std::string animationName = currAnimStack->GetName();
 					node->GetScene()->SetCurrentAnimationStack(currAnimStack);
 
-					//FbxAnimEvaluator* eval = node->GetAnimationEvaluator();
 					FbxTime start = takeInfo->mLocalTimeSpan.GetStart();
 					FbxTime end = takeInfo->mLocalTimeSpan.GetStop();
 
-
-
-					//cout << "Animation Time: " << to_string((float)takeInfo->mLocalTimeSpan.GetDuration().GetSecondDouble()) << " Frame Count: " << to_string((int)end.GetFrameCount(FbxTime::eFrames24)) << endl;
 					float firstFrameTime = 0.0f;
 
 					//TODO: find way to import FPS from file.
@@ -597,8 +574,9 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 						Animation::Frame* frame = SAIL_NEW Animation::Frame((unsigned int)m_sceneData[name].bones.size());
 						FbxTime currTime;
 						currTime.SetFrame(frameIndex, fps);
-						if (firstFrameTime == 0.0f)
+						if (firstFrameTime == 0.0f) {
 							firstFrameTime = float(currTime.GetSecondDouble());
+						}
 						glm::mat4 matrix;		
 						
 						for (unsigned int clusterIndex = 0; clusterIndex < clusterCount; ++clusterIndex) {
@@ -626,20 +604,24 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 #pragma region exportData
 Model* FBXLoader::fetchModel(const std::string& filePath, Shader* shader) {
-	if (!importScene(filePath, shader))
+	if (!importScene(filePath, shader)) {
 		return nullptr;
-	if (m_sceneData.find(filePath) == m_sceneData.end())
+	}
+	if (m_sceneData.find(filePath) == m_sceneData.end()) {
 		return nullptr;
+	}
 	auto* temp = m_sceneData[filePath].model;
 	m_sceneData[filePath].model = nullptr;
 	m_sceneData[filePath].hasModel = false;
 	return temp;
 }
 AnimationStack* FBXLoader::fetchAnimationStack(const std::string& filePath, Shader* shader) {
-	if (!importScene(filePath, shader))
+	if (!importScene(filePath, shader)) {
 		return nullptr;
-	if (m_sceneData.find(filePath) == m_sceneData.end())
+	}
+	if (m_sceneData.find(filePath) == m_sceneData.end()) {
 		return nullptr;
+	}
 	auto* temp = m_sceneData[filePath].stack;
 	m_sceneData[filePath].stack = nullptr;
 	m_sceneData[filePath].hasAnimation = false;
@@ -675,13 +657,13 @@ void FBXLoader::fetchSkeleton(FbxNode* node, const std::string& filename) {
 void FBXLoader::fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex) {
 
 	if (inNode->GetNodeAttribute() && inNode->GetNodeAttribute()->GetAttributeType() && inNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eSkeleton) {
-		m_sceneData[filename].bones;
 		FBXLoader::SceneData::Bone limb;
 		limb.parentIndex = inParentIndex;
 		limb.uniqueID = inNode->GetUniqueID();
 
-		if(m_sceneData[filename].bones.size() > 0)
+		if (m_sceneData[filename].bones.size() > 0) {
 			m_sceneData[filename].bones[limb.parentIndex].childIndexes.push_back(int(m_sceneData[filename].bones.size()));
+		}
 		m_sceneData[filename].bones.push_back(limb);
 
 	}
@@ -694,8 +676,9 @@ void FBXLoader::fetchSkeletonRecursive(FbxNode* inNode, const std::string& filen
 int FBXLoader::getBoneIndex(unsigned int uniqueID, const std::string& name) {
 	auto& ref = m_sceneData[name].bones;
 	for (unsigned int i = 0; i < ref.size(); i++) {
-		if (ref[i].uniqueID == uniqueID)
+		if (ref[i].uniqueID == uniqueID) {
 			return i;
+		}
 	}
 	return -1;
 }
@@ -728,7 +711,9 @@ std::string FBXLoader::GetAttributeTypeName(FbxNodeAttribute::EType type) {
 	}
 }
 std::string FBXLoader::PrintAttribute(FbxNodeAttribute* pAttribute) {
-	if (!pAttribute) return "x";
+	if (!pAttribute) {
+		return "x";
+	}
 
 	std::string typeName = GetAttributeTypeName(pAttribute->GetAttributeType());
 	std::string attrName = pAttribute->GetName();
