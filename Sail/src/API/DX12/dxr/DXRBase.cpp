@@ -6,8 +6,6 @@
 #include "API/DX12/DX12IndexBuffer.h"
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
-#include "API/DX12/DX12API.h"
-
 #include "../renderer/DX12GBufferRenderer.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
