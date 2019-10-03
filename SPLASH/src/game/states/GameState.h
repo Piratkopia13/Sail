@@ -40,7 +40,8 @@ public:
 	virtual bool render(float dt, float alpha = 1.0f) override;
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
-
+	// If the state is about to change clean it up
+	virtual bool prepareStateChange() override;
 
 
 private:

@@ -47,6 +47,9 @@ class StateStack {
 		// Returns whether or not the stack is empty
 		bool isEmpty() const;
 
+		// Lets a state clean up itself before switching from it
+		void prepareStateChange();
+
 		// Applies all pending actions to the stack
 		void applyPendingChanges();
 

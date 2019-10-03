@@ -427,7 +427,7 @@ bool GameState::render(float dt, float alpha) {
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.renderSystem->draw(m_cam, alpha);
-
+	
 	return true;
 }
 
@@ -439,6 +439,14 @@ bool GameState::renderImgui(float dt) {
 	renderImGuiLightDebug(dt);
 
 	return false;
+}
+
+bool GameState::prepareStateChange() {
+	if (m_poppedThisFrame) {
+		// Reset network
+		NWrapperSingleton::getInstance().resetNetwork();
+	}
+	return true;
 }
 
 bool GameState::renderImguiConsole(float dt) {
@@ -643,15 +651,11 @@ void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
-	// Reset network
-	NWrapperSingleton::getInstance().resetNetwork();
-
 	// Clear all entities
 	ECS::Instance()->destroyAllEntities();
 	
-	// Clear all neccesary systems
+	// Clear all necessary systems
 	m_componentSystems.gameInputSystem->clean();
-
 }
 
 // HERE BE DRAGONS
