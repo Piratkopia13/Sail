@@ -7,7 +7,7 @@ public:
 	}
 	~PlayerCandleHitEvent() {
 	}
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::PLAYER_CANDLE_HIT;
 	}
 };
