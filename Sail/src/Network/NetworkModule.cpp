@@ -23,6 +23,8 @@ Network::~Network() {
 
 bool Network::initialize()
 {
+	m_shutdown = false;
+
 	if (m_initializedStatus) {
 		return true;
 	}
@@ -391,9 +393,13 @@ void Network::listenForUDP()
 					nEvent.eventType = NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND;
 					nEvent.clientID = 0;
 					NetworkEventData data = NetworkEventData();
+					// Memcpy description before the other shit, as it writes over rawMsg.
+					memcpy(data.HostFoundOnLanData.description, udpdata.package.packageData.hostdata.hostdescription, sizeof(m_serverMetaDesc));
+					// Attatch hostPort and ip, then an irrelevant message as UDP only cares about ip and hostport atm.
 					data.HostFoundOnLanData.hostPort = udpdata.package.packageData.hostdata.port;
 					data.HostFoundOnLanData.ip_full = client.sin_addr.S_un.S_addr;
-					memcpy(data.HostFoundOnLanData.description, udpdata.package.packageData.hostdata.hostdescription, sizeof(m_serverMetaDesc));
+					
+
 					nEvent.data = &data;
 
 					addNetworkEvent(nEvent, sizeof(data));
@@ -481,6 +487,7 @@ void Network::shutdown()
 	if (m_initializedStatus == INITIALIZED_STATUS::IS_SERVER) {
 		::shutdown(m_soc, 2);
 		if (closesocket(m_soc) == SOCKET_ERROR) {
+			m_soc = 0;
 #ifdef DEBUG_NETWORK
 			printf("Error closing m_soc\n");
 #endif
@@ -512,9 +519,11 @@ void Network::shutdown()
 
 	if (m_udp_broadcast_socket) {
 		closesocket(m_udp_broadcast_socket);
+		m_udp_broadcast_socket = 0;
 	}
 	if (m_udp_directMessage_socket) {
 		closesocket(m_udp_directMessage_socket);
+		m_udp_directMessage_socket = 0;
 	}
 
 	if (m_UDPListener) {
@@ -539,8 +548,7 @@ ULONG Network::ip_string_to_ip_int(char* ip)
 	return result;
 }
 
-void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data)
-{
+void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
 	// delete previous message if there is one
 	if (m_awaitingMessages[m_pend].Message.rawMsg != nullptr) {
@@ -550,8 +558,18 @@ void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data)
 
 	// Copy the incoming data to a message
 	m_awaitingMessages[m_pend].Message.rawMsg = SAIL_NEW char[dataSize]();
-	memcpy(m_awaitingMessages[m_pend].Message.rawMsg, data, dataSize);
-	m_awaitingMessages[m_pend].Message.sizeOfMsg = dataSize;
+	
+	if (n.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
+		// UDP MESSAGE
+		memcpy(&m_awaitingMessages[m_pend].HostFoundOnLanData, &n.data->HostFoundOnLanData, sizeof(n.data->HostFoundOnLanData));
+	}
+	else {
+		// All other messages
+		memcpy(m_awaitingMessages[m_pend].Message.rawMsg, data, dataSize);
+		m_awaitingMessages[m_pend].Message.sizeOfMsg = dataSize;
+	}
+
+
 
 	m_awaitingEvents[m_pend].eventType = n.eventType;
 	m_awaitingEvents[m_pend].clientID = n.clientID;

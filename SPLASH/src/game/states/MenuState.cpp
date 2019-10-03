@@ -38,8 +38,13 @@ bool MenuState::processInput(float dt) {
 }
 
 bool MenuState::update(float dt, float alpha) {
-	NWrapperSingleton::getInstance().searchForLobbies();
-	NWrapperSingleton::getInstance().checkFoundPackages(); // Make timer.
+	udpCounter -= m_frameTick;
+	if (udpCounter < 0) {
+		NWrapperSingleton::getInstance().searchForLobbies();
+		NWrapperSingleton::getInstance().checkFoundPackages(); // Make timer.
+		udpCounter = udpChill;
+	}
+	
 	removeDeadLobbies();
 	return false;
 }
@@ -140,12 +145,11 @@ bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
 
 void MenuState::removeDeadLobbies() {
 	// How much time passed since last time this function was called?
-	double timePassed = 0.1;
 	std::vector<FoundLobby> lobbiesToRemove;
 
 	// Find out which lobbies should be removed
 	for (auto& lobby : m_foundLobbies) {
-		lobby.duration -= timePassed;
+		lobby.duration -= m_frameTick;
 
 		// Remove them based on UDP inactivity
 		if (lobby.duration < 0) {

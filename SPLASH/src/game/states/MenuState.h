@@ -53,9 +53,12 @@ private:
 
 	struct FoundLobby {
 		std::string ip;
-		double duration = 5;
+		double duration = 10;
 		void resetDuration() { duration = 5; }
 	};
+	double m_frameTick = 0.1;
+	double udpChill = 5;
+	double udpCounter = 0;
 	std::vector<FoundLobby> m_foundLobbies;
 	std::vector<std::string> m_newfoundLobbies;
 };
