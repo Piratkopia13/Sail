@@ -29,7 +29,7 @@ private:
 	void fetchGeometry(FbxNode* node, Mesh::Data& mesh, const std::string& name);
 	void getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::string& scene);
 	FbxVector2 getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMesh* mesh, int polyIndex, int vertIndex) const;
-	void getMaterial(FbxNode* pNode, Material* material);
+
 	
 	void fetchAnimations(FbxNode* node, AnimationStack* stack, const std::string& name);
 	void getAnimations(FbxNode* node, AnimationStack* stack, const std::string& name);
