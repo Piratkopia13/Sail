@@ -46,6 +46,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 	
 	for (auto e : entities) {
 		PhysicsComponent* physicsComp = e->getComponent<PhysicsComponent>();
+		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 		AudioComponent* audioComp = e->getComponent<AudioComponent>();
 
 		// Get player movement inputs
@@ -148,7 +149,7 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		);
 		forwards = glm::normalize(forwards);
 
-		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 0.8f, 0.f)));
+		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 1.8f, 0.f)));
 		m_cam->setCameraDirection(forwards);
 	}
 }

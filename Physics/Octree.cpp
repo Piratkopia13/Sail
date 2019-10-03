@@ -76,11 +76,11 @@ glm::vec3 Octree::findCornerOutside(Entity* entity, Node* testNode) {
 	//Find if any corner of a entity's bounding box is outside of node. Returns a vector towards the outside corner if one is found. Otherwise a 0.0f vec is returned.
 	glm::vec3 directionVec(0.0f, 0.0f, 0.0f);
 
-	const std::vector<glm::vec3>* corners = entity->getComponent<BoundingBoxComponent>()->getBoundingBox()->getCorners();
+	const glm::vec3* corners = entity->getComponent<BoundingBoxComponent>()->getBoundingBox()->getCorners();
 	glm::vec3 testNodeHalfSize = testNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox()->getHalfSize();
 
 	for (int i = 0; i < 8; i++) {
-		glm::vec3 distanceVec = corners->at(i) - testNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox()->getPosition();
+		glm::vec3 distanceVec = corners[i] - testNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox()->getPosition();
 
 		if (distanceVec.x <= -testNodeHalfSize.x || distanceVec.x >= testNodeHalfSize.x ||
 			distanceVec.y <= -testNodeHalfSize.y || distanceVec.y >= testNodeHalfSize.y ||
