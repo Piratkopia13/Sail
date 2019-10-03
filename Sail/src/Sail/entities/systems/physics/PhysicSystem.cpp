@@ -5,6 +5,7 @@
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/PhysicsComponent.h"
 #include "..//..//components/BoundingBoxComponent.h"
+#include "..//..//components/CollisionSpheresComponent.h"
 #include "Sail/utils/GameDataTracker.h"
 
 #include "..//Sail/src/Sail/api/Input.h"
@@ -33,8 +34,13 @@ const bool PhysicSystem::collisionUpdate(Entity* thisPhysicalObject, const float
 	//Update collision data
 	std::vector<Octree::CollisionInfo> collisions;
 
-	m_octree->getCollisions(thisPhysicalObject, &collisions);
-
+	bool hasSpheres = thisPhysicalObject->hasComponent<CollisionSpheresComponent>();
+	if (hasSpheres) {
+		m_octree->getCollisionsSpheres(thisPhysicalObject, &collisions);
+	} else {
+		m_octree->getCollisions(thisPhysicalObject, &collisions);
+	}
+	
 	return handleCollisions(thisPhysicalObject, collisions, dt);
 }
 
@@ -242,5 +248,12 @@ void PhysicSystem::update(float dt) {
 		
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
+
+
+		// Dumb thing for now, will hopefully be done cleaner in the future
+		if (CollisionSpheresComponent* csc = e->getComponent<CollisionSpheresComponent>()) {
+			csc->spheres[0].position = transform->getTranslation() + glm::vec3(0, 1, 0) * (-0.9f + csc->spheres[0].radius);
+			csc->spheres[1].position = transform->getTranslation() + glm::vec3(0, 1, 0) * (0.9f - csc->spheres[1].radius);
+		}
 	}
 }

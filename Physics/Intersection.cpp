@@ -86,6 +86,24 @@ bool Intersection::AabbWithPlane(const BoundingBox& aabb, const glm::vec3& norma
 	return false;
 }
 
+bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
+	const glm::vec3* corners = aabb.getCorners();
+
+	// Find the point on the aabb closest to the sphere
+	float closestOnAabbX = std::fminf(std::fmaxf(sphere.position.x, corners[0].x), corners[1].x);
+	float closestOnAabbY = std::fminf(std::fmaxf(sphere.position.y, corners[2].y), corners[0].y);	// corners[0] > corners[2]
+	float closestOnAabbZ = std::fminf(std::fmaxf(sphere.position.z, corners[0].z), corners[4].z);
+
+	// Distance from cylinder to closest point on rectangle
+	float distX = closestOnAabbX - sphere.position.x;
+	float distY = closestOnAabbY - sphere.position.y;
+	float distZ = closestOnAabbZ - sphere.position.z;
+	float distSquared = distX * distX + distY * distY + distZ * distZ;
+
+	// True if the distance is smaller than the radius
+	return (distSquared < sphere.radius * sphere.radius);
+}
+
 bool Intersection::AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl) {
 	const glm::vec3* corners = aabb.getCorners();
 
@@ -138,6 +156,36 @@ bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 	return false;
 }
 
+bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphere) {
+	glm::vec3 toVert = tri[0] - sphere.position;
+	glm::vec3 normal = glm::normalize(glm::cross(tri[1] - tri[0], tri[2] - tri[0]));
+	glm::vec3 toTriPlane = normal * glm::dot(toVert, normal);
+
+	// Check if closest point on triangle plane is farther than radius from sphere center
+	if (glm::length(toTriPlane) >= sphere.radius) {
+		return false;
+	}
+
+	glm::vec3 p = sphere.position + toTriPlane;
+	glm::vec3 v0 = tri[1] - tri[0];
+	glm::vec3 v1 = tri[2] - tri[0];
+	glm::vec3 v2 = p - tri[0];
+
+	// Determine barycentric coordinates
+	float d00 = glm::dot(v0, v0);
+	float d01 = glm::dot(v0, v1);
+	float d11 = glm::dot(v1, v1);
+	float d20 = glm::dot(v2, v0);
+	float d21 = glm::dot(v2, v1);
+	float denom = d00 * d11 - d01 * d01;
+	float v = (d11 * d20 - d01 * d21) / denom;
+	float w = (d00 * d21 - d01 * d20) / denom;
+	float u = 1.0f - v - w;
+
+	// Check if the point on the triangle plane is within the triangle
+	return ((0.0f < v && v < 1.0f) && (0.0f < w && w < 1.0f) && (0.0f < u && u < 1.0f));
+}
+
 bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
 	if (PointWithVerticalCylinder(tri[0], cyl)) {
 		return true;
@@ -158,9 +206,11 @@ bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const Ve
 		return true;
 	}
 
+
+
 	/*
 		NOTE:
-		These tests are NOT enough to be sure of a collision
+		These tests are NOT enough to guarantee a collision
 		More will need to be done
 	*/
 	
