@@ -117,12 +117,12 @@ void ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 #endif
 	}
 }
-Model& ResourceManager::getModel(const std::string& filename, Shader* shader) {
+Model& ResourceManager::getModel(const std::string& filename, Shader* shader, const ImporterType type) {
 	auto pos = m_models.find(filename);
 	if (pos == m_models.end()) {
 		// Model was not yet loaded, load it and return
 		Shader* shaderToUse = shader ? shader : m_defaultShader;
-		loadModel(filename, shaderToUse);
+		loadModel(filename, shaderToUse, type);
 		
 		return *m_models.find(filename)->second;
 	}
