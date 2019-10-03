@@ -216,6 +216,7 @@ GameState::GameState(StateStack& stack)
 	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 	// Player creation
+
 	setUpPlayer(boundingBoxModel, cubeModel, lightModel, playerID);
 	initAnimations();
 	// Level Creation
@@ -225,7 +226,6 @@ GameState::GameState(StateStack& stack)
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
-
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 

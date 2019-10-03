@@ -13,9 +13,7 @@
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
-
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
-	
 	// Set up instance if not set
 	if (s_instance) {
 		Logger::Error("Only one application can exist!");
@@ -67,6 +65,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
+
 }
 
 Application::~Application() {
@@ -229,4 +228,3 @@ StateStorage& Application::getStateStorage() {
 const UINT Application::getFPS() const {
 	return m_fps;
 }
-

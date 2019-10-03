@@ -146,11 +146,16 @@ ID3D12StateObject* DXRUtils::PSOBuilder::build(ID3D12Device5* device) {
 	if (!SUCCEEDED(hr)) {
 		_com_error err2(hr);
 		std::cout << "Device Status: " << err2.ErrorMessage() << std::endl;
+
+		hr = device->GetDeviceRemovedReason();
+		_com_error err(hr);
+		std::cout << err2.ErrorMessage() << std::endl;
 	}
 	ThrowIfFailed(hr);
 
 	return pso;
 }
+
 
 DXRUtils::ShaderTableBuilder::ShaderTableBuilder(UINT numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance)
 	: m_soProps(nullptr)

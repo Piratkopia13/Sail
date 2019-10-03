@@ -35,6 +35,23 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
 
+	std::sort(m_metaballpositions.begin(), m_metaballpositions.end(),
+		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
+		{
+			return a.distToCamera < b.distToCamera;
+		});
+
+	for (size_t i = 0; i < MAX_NUM_METABALLS && i < m_metaballpositions.size(); i++) {
+		commandQueue.emplace_back();
+		RenderCommand& cmd = commandQueue.back();
+		cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
+		cmd.nonModel.material = nullptr;
+		cmd.transform = glm::identity<glm::mat4>();
+		cmd.transform = glm::translate(cmd.transform, m_metaballpositions[i].pos);
+		cmd.transform = glm::transpose(cmd.transform);
+		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+	}
+
 	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
 		m_dxr.reloadShaders();
 	}
@@ -42,17 +59,19 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	// Copy updated flag from vertex buffers to renderCommand
 	// This marks all commands that should have their bottom layer updated in-place
 	for (auto& renderCommand : commandQueue) {
-		auto& vb = static_cast<DX12VertexBuffer&>(renderCommand.mesh->getVertexBuffer());
-		if (vb.hasBeenUpdated()) {
-			renderCommand.hasUpdatedSinceLastRender[frameIndex] = true;
-			vb.resetHasBeenUpdated();
+		if (renderCommand.type == RENDER_COMMAND_TYPE_MODEL) {
+			auto& vb = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
+			if (vb.hasBeenUpdated()) {
+				renderCommand.hasUpdatedSinceLastRender[frameIndex] = true;
+				vb.resetHasBeenUpdated();
+			}
 		}
 	}
 
-	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	if (camera && lightSetup) {
-		m_dxr.updateSceneData(*camera, *lightSetup);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
 	}
+	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
 
 	// AS has now been updated this frame, reset flag
@@ -85,6 +104,11 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_context->executeCommandLists({ cmdList.Get() });
 }
 
+void DX12RaytracingRenderer::begin(Camera* camera) {
+	Renderer::begin(camera);
+	m_metaballpositions.clear();
+}
+
 bool DX12RaytracingRenderer::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12RaytracingRenderer::onResize));
 
@@ -95,12 +119,24 @@ bool DX12RaytracingRenderer::onEvent(Event& event) {
 
 void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) {
 	RenderCommand cmd;
-	cmd.mesh = mesh;
+	cmd.type = RENDER_COMMAND_TYPE_MODEL;
+	cmd.model.mesh = mesh;
 	cmd.transform = glm::transpose(modelMatrix);
 	cmd.flags = flags;
 	// Resize to match numSwapBuffers (specific to dx12)
 	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
 	commandQueue.push_back(cmd);
+}
+
+void DX12RaytracingRenderer::submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) {
+	assert(type != RenderCommandType::RENDER_COMMAND_TYPE_MODEL);
+
+	if (type == RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL) {
+		DXRBase::Metaball ball;
+		ball.pos = glm::vec3(modelMatrix[3].x, modelMatrix[3].y, modelMatrix[3].z);
+		ball.distToCamera = glm::length(ball.pos - camera->getPosition());
+		m_metaballpositions.emplace_back(ball);
+	}
 }
 
 void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
