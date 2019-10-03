@@ -23,6 +23,7 @@
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
+#include "Sail/ai/states/SearchingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
@@ -1057,7 +1058,6 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
 	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
-	
 	if (botCount < 0) {
 		botCount = 0;
 	}// TODO: Remove this when more bots can be added safely
@@ -1078,17 +1078,38 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
 		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
 		e->addChildEntity(aiCandleEntity);
+		
 		// Create states and transitions
 		{
-			fsmComp->createState<AttackingState>(m_octree);
+			SearchingState* searchState = fsmComp->createState<SearchingState>(m_componentSystems.aiSystem->getNodeSystem());
+			AttackingState* attackState = fsmComp->createState<AttackingState>(m_octree);
 			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
+			
+
 			// TODO: unnecessary to create new transitions for each FSM if they're all identical
-			FSM::Transition* fromAttackToFleeing = SAIL_NEW FSM::Transition;
-			fromAttackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
-			FSM::Transition* fromFleeingToAttacking = SAIL_NEW FSM::Transition;
-			fromFleeingToAttacking->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
-			fsmComp->addTransition<AttackingState, FleeingState>(fromAttackToFleeing);
-			fsmComp->addTransition<FleeingState, AttackingState>(fromFleeingToAttacking);
+			// Attack State
+			FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
+			attackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+			FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
+			attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
+
+			// Search State
+			FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
+			searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
+			FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
+			searchToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+
+			// Fleeing State
+			FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
+			fleeingToSearch->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
+
+			fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
+			fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
+
+			fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
+			fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
+
+			fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);
 		}
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
