@@ -205,139 +205,6 @@ GameState::GameState(StateStack& stack)
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 
 
-		e = ECS::Instance()->createEntity("Map_Barrier2");
-		e->addComponent<ModelComponent>(barrierModel);
-		e->addComponent<TransformComponent>(glm::vec3(-4.54f*0.3f, 0.f, 8.06f *0.3f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-		
-
-		e = ECS::Instance()->createEntity("Map_Barrier3");
-		e->addComponent<ModelComponent>(barrierModel);
-		e->addComponent<TransformComponent>(glm::vec3(8.46f *0.3f, 0.f, 8.06f *0.3f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-		
-
-		e = ECS::Instance()->createEntity("Map_Container1");
-		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(6.95f *0.3f, 0.f, 25.f *0.3f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-	
-
-		e = ECS::Instance()->createEntity("Map_Container2");
-		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(-25.f*0.3f, 0.f, 12.43f*0.3f), glm::vec3(0.f, 1.57f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-		
-
-		e = ECS::Instance()->createEntity("Map_Container3");
-		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(-25.f*0.3f, 2.4f, -7.73f*0.3f), glm::vec3(0.f, 1.57f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-		
-
-		e = ECS::Instance()->createEntity("Map_Container4");
-		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(-19.67f*0.3f, 0.f, -24.83f*0.3f), glm::vec3(0.f, 0.79f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-	
-
-		e = ECS::Instance()->createEntity("Map_Container5");
-		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f*0.3f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-	
-
-		e = ECS::Instance()->createEntity("Map_Container6");
-		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.20f*0.3f, 0.f, -8.f*0.3f), glm::vec3(0.f, 1.57f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-
-
-		e = ECS::Instance()->createEntity("Map_Container7");
-		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.2f*0.3f, 2.4f, -22.8f*0.3f), glm::vec3(0.f, 1.57f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-	
-
-		e = ECS::Instance()->createEntity("Map_Container8");
-		e->addComponent<ModelComponent>(containerModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.36f*0.3f, 0.f, -32.41f*0.3f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-	
-
-		e = ECS::Instance()->createEntity("Map_Ramp1");
-		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(5.2f *0.3f, 0.f, -32.25f *0.3f), glm::vec3(0.f, 3.14f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-	
-		e = ECS::Instance()->createEntity("Map_Ramp2");
-		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(15.2f*0.3f, 2.4f, -32.25f*0.3f), glm::vec3(0.f, 3.14f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-	
-		e = ECS::Instance()->createEntity("Map_Ramp3");
-		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.f*0.3f, 2.4f, -5.5f*0.3f), glm::vec3(0.f, 4.71f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-		e = ECS::Instance()->createEntity("Map_Ramp4");
-		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(24.f*0.3f, 0.f, 9.f*0.3f), glm::vec3(0.f, 4.71f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-		e = ECS::Instance()->createEntity("Map_Ramp5");
-		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(-16.f*0.3f, 0.f, 20.f*0.3f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-		e = ECS::Instance()->createEntity("Map_Ramp6");
-		e->addComponent<ModelComponent>(rampModel);
-		e->addComponent<TransformComponent>(glm::vec3(-34.f*0.3f, 0.f, 20.f*0.3f), glm::vec3(0.f, 3.14f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-
-		e = ECS::Instance()->createEntity("Character");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<PhysicsComponent>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-
-
-		int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
-		if (botCount > 1) {
-			botCount = 1;
-		}
-		for (size_t i = 0; i < botCount; i++) {
-			e = ECS::Instance()->createEntity("AiCharacter");
-			e->addComponent<ModelComponent>(characterModel);
-			e->addComponent<TransformComponent>(glm::vec3(2.f*(i+1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-			e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-			e->addComponent<CollidableComponent>();
-			e->addComponent<PhysicsComponent>();
-			e->addComponent<AiComponent>();
-			e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
-			e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-			e->getComponent<PhysicsComponent>()->maxSpeed = player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
-			e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
-			e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
-
-		//	e = createCandleEntity("Map_Candle1", lightModel, boundingBoxModel, glm::vec3(0.f, 0.0f, 0.f));
-		}
-
-
 #ifdef _DEBUG
 		// Candle1 holds all lights you can place in debug...
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
@@ -351,9 +218,6 @@ GameState::GameState(StateStack& stack)
 	m_vramUsageHistory = SAIL_NEW float[100];
 	m_cpuHistory = SAIL_NEW float[100];
 	m_frameTimesHistory = SAIL_NEW float[100];
-
-
-
 
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
@@ -1080,19 +944,32 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	else if (botCount > 1) {
 		botCount = 1;
 	}
-	for (size_t i = 0; i < botCount; i++) {
-
+	for (size_t i = 0; i < botCount; i++) {		
 		auto e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(2.f * (i + 1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(2.f*(i+1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
-		e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
+		auto fsmComp = e->addComponent<FSMComponent>();
 		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 		e->getComponent<PhysicsComponent>()->maxSpeed = m_player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
+		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
+		e->addChildEntity(aiCandleEntity);
+		// Create states and transitions
+		{
+			fsmComp->createState<AttackingState>(m_octree);
+			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
+			// TODO: unnecessary to create new transitions for each FSM if they're all identical
+			FSM::Transition* fromAttackToFleeing = SAIL_NEW FSM::Transition;
+			fromAttackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+			FSM::Transition* fromFleeingToAttacking = SAIL_NEW FSM::Transition;
+			fromFleeingToAttacking->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
+			fsmComp->addTransition<AttackingState, FleeingState>(fromAttackToFleeing);
+			fsmComp->addTransition<FleeingState, AttackingState>(fromFleeingToAttacking);
+		}
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
 	}
