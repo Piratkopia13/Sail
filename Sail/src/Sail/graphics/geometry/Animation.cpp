@@ -75,7 +75,7 @@ const unsigned int Animation::getAnimationTransformSize(const float time) {
 }
 const unsigned int Animation::getAnimationTransformSize(const unsigned int frame) {
 	if (exists(frame))
-		return m_frameTimes[frame];
+		return m_frames[frame]->getTransformListSize();
 	return 0;
 }
 
@@ -163,7 +163,7 @@ void AnimationStack::VertConnection::addConnection(const unsigned int _transform
 
 const float AnimationStack::VertConnection::checkWeights() {
 	float sum = 0;
-	for (int i = 0; i < count; i++) {
+	for (unsigned int i = 0; i < count; i++) {
 		sum += weight[i];
 	}
 	return sum;
@@ -188,7 +188,6 @@ void AnimationStack::VertConnection::normalizeWeights() {
 AnimationStack::AnimationStack() {
 	m_connectionSize = 0;
 	m_connections = nullptr;
-	m_bones = nullptr;
 }
 AnimationStack::AnimationStack(const unsigned int vertCount) : AnimationStack(){
 	m_connectionSize = vertCount;
@@ -213,7 +212,7 @@ void AnimationStack::reSizeConnections(const unsigned int vertCount) {
 }
 void AnimationStack::addAnimation(const std::string& animationName, Animation* animation) {
 	if (m_stack.find(animationName) == m_stack.end()) {
-		m_names[m_stack.size()] = animationName;
+		m_names[(unsigned int)m_stack.size()] = animationName;
 		m_stack[animationName] = animation;
 	}
 	else {

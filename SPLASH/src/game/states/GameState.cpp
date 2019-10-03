@@ -162,6 +162,7 @@ GameState::GameState(StateStack& stack)
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
+	m_app->getResourceManager().setDefaultShader(shader);
 #endif
 
 	// Create/load models
@@ -172,7 +173,7 @@ GameState::GameState(StateStack& stack)
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
+	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx");
 	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);

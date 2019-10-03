@@ -23,6 +23,7 @@ public:
 		SAIL_FBXSDK,
 		SAIL_ASSIMP
 	};
+	bool setDefaultShader(Shader* shader);
 
 
 	// AudioData
@@ -44,8 +45,8 @@ public:
 	bool hasTexture(const std::string& filename);
 
 	// Models
-	void loadModel(const std::string& filename, Shader* shader, const ImporterType type = SAIL_FBXSDK);
-	Model& getModel(const std::string& filename, Shader* shader);
+	void loadModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
+	Model& getModel(const std::string& filename, Shader* shader = nullptr);
 	bool hasModel(const std::string& filename);
 
 	// Animations
@@ -108,6 +109,7 @@ private:
 
 	std::unique_ptr<AssimpLoader> m_assimpLoader;
 	std::unique_ptr<FBXLoader> m_fbxLoader;
+	Shader* m_defaultShader;
 };
 
 template <typename T>
