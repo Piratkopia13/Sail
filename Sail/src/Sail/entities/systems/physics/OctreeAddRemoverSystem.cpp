@@ -22,11 +22,9 @@ void OctreeAddRemoverSystem::provideOctree(Octree* octree) {
 }
 
 bool OctreeAddRemoverSystem::addEntity(Entity* entity) {
-	if (BaseComponentSystem::addEntity(entity)) {
-		if (m_octree) {
+	if (BaseComponentSystem::addEntity(entity) && m_octree) {
 			m_octree->addEntity(entity);
 			return true;
-		}
 	}
 	return false;
 }

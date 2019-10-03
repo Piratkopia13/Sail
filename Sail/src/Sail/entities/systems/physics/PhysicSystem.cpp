@@ -41,9 +41,8 @@ const bool PhysicSystem::collisionUpdate(Entity* thisPhysicalObject, const float
 const bool PhysicSystem::handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
 	bool returnValue = false;
 
-	TransformComponent* transform = e->getComponent<TransformComponent>();
 	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-	BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
+
 
 	physics->onGround = false;
 	std::vector<int> groundIndices;
