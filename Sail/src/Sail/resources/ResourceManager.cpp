@@ -139,6 +139,7 @@ Model& ResourceManager::getModelCopy(const std::string& filename, Shader* shader
 	data.deepCopy(mesh->getData());
 	Model* tempModel = new Model(data, shaderToUse);
 	std::string nameCopy = getSuitableName(filename);
+	tempModel->setName(nameCopy);
 	Logger::Log("copied model: " + filename + ", using name: " + nameCopy);
 	m_models.insert({ nameCopy, std::unique_ptr<Model>(tempModel) });
 
