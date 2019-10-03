@@ -29,23 +29,19 @@ void PhysicSystem::provideOctree(Octree* octree) {
 	m_octree = octree;
 }
 
-const bool PhysicSystem::collisionUpdate(Entity* thisPhysicalObject, const float& dt) {
+const bool PhysicSystem::collisionUpdate(Entity* thisPhysicalObject, PhysicsComponent* physicsComp, const float& dt) {
 	//Update collision data
 	std::vector<Octree::CollisionInfo> collisions;
 
 	m_octree->getCollisions(thisPhysicalObject, &collisions);
 
-	return handleCollisions(thisPhysicalObject, collisions, dt);
+	return handleCollisions(thisPhysicalObject, physicsComp, collisions, dt);
 }
 
-const bool PhysicSystem::handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
+const bool PhysicSystem::handleCollisions(Entity* e, PhysicsComponent* physicsComp, const std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
 	bool returnValue = false;
 
-	TransformComponent* transform = e->getComponent<TransformComponent>();
-	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-	BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
-
-	physics->onGround = false;
+	physicsComp->onGround = false;
 	std::vector<int> groundIndices;
 
 	if (collisions.size() > 0) {
@@ -55,12 +51,12 @@ const bool PhysicSystem::handleCollisions(Entity* e, const std::vector<Octree::C
 			sumVec += collisions[i].normal;
 
 			//Add collision to current collisions
-			physics->collisions.push_back(collisions[i]);
+			physicsComp->collisions.push_back(collisions[i]);
 		}
 
 		for (unsigned int i = 0; i < collisions.size(); i++) {
 			if (collisions[i].normal.y > 0.7f) {
-				physics->onGround = true;
+				physicsComp->onGround = true;
 				bool newGround = true;
 				for (unsigned int j = 0; j < groundIndices.size(); j++) {
 					if (collisions[i].normal == collisions[groundIndices[j]].normal) {
@@ -74,11 +70,11 @@ const bool PhysicSystem::handleCollisions(Entity* e, const std::vector<Octree::C
 			}
 
 			//Stop movement towards triangle
-			float projectionSize = glm::dot(physics->velocity, -collisions[i].normal);
+			float projectionSize = glm::dot(physicsComp->velocity, -collisions[i].normal);
 
 			if (projectionSize > 0.0f) { //Is pushing against wall
 				returnValue = true;
-				physics->velocity += collisions[i].normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
+				physicsComp->velocity += collisions[i].normal * projectionSize * (1.0f + physicsComp->bounciness); //Limit movement towards wall
 			}
 
 			//Tight angle corner special case
@@ -88,11 +84,11 @@ const bool PhysicSystem::handleCollisions(Entity* e, const std::vector<Octree::C
 				normalToNormal = glm::normalize(normalToNormal);
 
 				//Stop movement towards corner
-				projectionSize = glm::dot(physics->velocity, -normalToNormal);
+				projectionSize = glm::dot(physicsComp->velocity, -normalToNormal);
 
 				if (projectionSize > 0.0f) {
 					returnValue = true;
-					physics->velocity += normalToNormal * projectionSize * (1.0f + physics->bounciness);
+					physicsComp->velocity += normalToNormal * projectionSize * (1.0f + physicsComp->bounciness);
 				}
 			}
 		}
@@ -100,65 +96,59 @@ const bool PhysicSystem::handleCollisions(Entity* e, const std::vector<Octree::C
 	//------------------
 
 	//----Drag----
-	if (physics->onGround) { //Ground drag
+	if (physicsComp->onGround) { //Ground drag
 		unsigned int nrOfGroundCollisions = groundIndices.size();
 		for (unsigned int i = 0; i < nrOfGroundCollisions; i++) {
-			glm::vec3 velAlongPlane = physics->velocity - collisions[groundIndices[i]].normal * glm::dot(collisions[groundIndices[i]].normal, physics->velocity);
+			glm::vec3 velAlongPlane = physicsComp->velocity - collisions[groundIndices[i]].normal * glm::dot(collisions[groundIndices[i]].normal, physicsComp->velocity);
 			float sizeOfVel = glm::length(velAlongPlane);
 			if (sizeOfVel > 0.0f) {
-				float slowdown = glm::min((physics->drag / nrOfGroundCollisions) * dt, sizeOfVel);
-				physics->velocity -= slowdown * glm::normalize(velAlongPlane);
+				float slowdown = glm::min((physicsComp->drag / nrOfGroundCollisions) * dt, sizeOfVel);
+				physicsComp->velocity -= slowdown * glm::normalize(velAlongPlane);
 				returnValue = true;
 			}
 		}
 	}
 	else { //Air drag
-		float saveY = physics->velocity.y;
-		physics->velocity.y = 0;
-		float vel = glm::length(physics->velocity);
+		float saveY = physicsComp->velocity.y;
+		physicsComp->velocity.y = 0;
+		float vel = glm::length(physicsComp->velocity);
 
 		if (vel > 0.0f) {
-			vel = glm::max(vel - physics->airDrag * dt, 0.0f);
-			physics->velocity = glm::normalize(physics->velocity) * vel;
+			vel = glm::max(vel - physicsComp->airDrag * dt, 0.0f);
+			physicsComp->velocity = glm::normalize(physicsComp->velocity) * vel;
 		}
-		physics->velocity.y = saveY;
+		physicsComp->velocity.y = saveY;
 	}
 	//------------
 
 	return returnValue;
 }
 
-const bool PhysicSystem::rayCastCheck(Entity* e, float& dt) {
-	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-	BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
-
-	if (glm::abs(physics->velocity.x * dt) > glm::abs(boundingBox->getHalfSize().x)
-		|| glm::abs(physics->velocity.y * dt) > glm::abs(boundingBox->getHalfSize().y)
-		|| glm::abs(physics->velocity.z * dt) > glm::abs(boundingBox->getHalfSize().z)) {
+const bool PhysicSystem::rayCastCheck(Entity* e, PhysicsComponent* physicsComp, BoundingBox* boundingBox, float& dt) {
+	if (glm::abs(physicsComp->velocity.x * dt) > glm::abs(boundingBox->getHalfSize().x)
+		|| glm::abs(physicsComp->velocity.y * dt) > glm::abs(boundingBox->getHalfSize().y)
+		|| glm::abs(physicsComp->velocity.z * dt) > glm::abs(boundingBox->getHalfSize().z)) {
 		//Object is moving at a speed that risks missing collisions
 		return true;
 	}
 	return false;
 }
 
-void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
-	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-	TransformComponent* transform = e->getComponent<TransformComponent>();
-	BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
+void PhysicSystem::rayCastUpdate(Entity* e, PhysicsComponent* physicsComp, BoundingBox* boundingBox, TransformComponent* transform, float& dt) {
 
-	float velocityAmp = glm::length(physics->velocity) * dt;
+	float velocityAmp = glm::length(physicsComp->velocity) * dt;
 
 	//Ray cast to find upcoming collisions, use padding for "swept sphere"
 	Octree::RayIntersectionInfo intersectionInfo;
-	m_octree->getRayIntersection(boundingBox->getPosition(), physics->velocity, &intersectionInfo, e, physics->padding);
+	m_octree->getRayIntersection(boundingBox->getPosition(), physicsComp->velocity, &intersectionInfo, e, physicsComp->padding);
 
 	if (intersectionInfo.closestHit <= velocityAmp && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
 		//Calculate new dt
 		float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
 
 		//Move untill first overlap
-		boundingBox->setPosition(boundingBox->getPosition() + physics->velocity * newDt);
-		transform->translate(physics->velocity * newDt);
+		boundingBox->setPosition(boundingBox->getPosition() + physicsComp->velocity * newDt);
+		transform->translate(physicsComp->velocity * newDt);
 
 		dt -= newDt;
 
@@ -167,24 +157,58 @@ void PhysicSystem::rayCastUpdate(Entity* e, float& dt) {
 
 		for (unsigned int i = 0; i < intersectionInfo.info.size(); i++) {
 			if (Intersection::AabbWithTriangle(*boundingBox, intersectionInfo.info[i].positions[0], intersectionInfo.info[i].positions[1], intersectionInfo.info[i].positions[2])) {
-				physics->collisions.push_back(intersectionInfo.info[i]);
+				physicsComp->collisions.push_back(intersectionInfo.info[i]);
 
 				//Stop movement towards triangle
-				float projectionSize = glm::dot(physics->velocity, -intersectionInfo.info[i].normal);
+				float projectionSize = glm::dot(physicsComp->velocity, -intersectionInfo.info[i].normal);
 
 				if (projectionSize > 0.0f) { //Is pushing against wall
-					physics->velocity += intersectionInfo.info[i].normal * projectionSize * (1.0f + physics->bounciness); //Limit movement towards wall
+					physicsComp->velocity += intersectionInfo.info[i].normal * projectionSize * (1.0f + physicsComp->bounciness); //Limit movement towards wall
 					paddingTooBig = false;
 				}
 			}
 		}
 
 		if (paddingTooBig) {
-			physics->padding *= 0.5f;
+			physicsComp->padding *= 0.5f;
 		}
 
-		rayCastUpdate(e, dt);
+		rayCastUpdate(e, physicsComp, boundingBox, transform, dt);
 	}
+}
+
+void PhysicSystem::surfaceFromCollision(Entity* e, BoundingBox* boundingBox, TransformComponent* transform, const std::vector<Octree::CollisionInfo>& collisions) {
+	glm::vec3 distance(0.0f);
+
+	float stepSize = 0.005f;
+
+	for (unsigned int i = 0; i < collisions.size(); i++) {
+		//Find approx how far into the wall the character is
+		bool colliding = true;
+		while (colliding) {
+			//Push the character out of the wall
+			boundingBox->setPosition(boundingBox->getPosition() + collisions[i].normal * stepSize);
+
+			glm::vec3 middle = (collisions[i].positions[0] + collisions[i].positions[1] + collisions[i].positions[2]) / 3.0f;
+
+			glm::vec3 newPosition0 = middle + (collisions[i].positions[0] - middle) * 0.9f;
+			glm::vec3 newPosition1 = middle + (collisions[i].positions[1] - middle) * 0.9f;
+			glm::vec3 newPosition2 = middle + (collisions[i].positions[2] - middle) * 0.9f;
+
+			bool currentCollision = Intersection::AabbWithTriangle(*boundingBox, newPosition0, newPosition1, newPosition2);
+			if (!currentCollision) {
+				colliding = false;
+
+				//Go back to previous position to avoid loosing contact
+				boundingBox->setPosition(boundingBox->getPosition() - collisions[i].normal * stepSize);
+			}
+			else {
+				distance += collisions[i].normal * stepSize;
+			}
+		}
+	}
+
+	transform->translate(distance);
 }
 
 void PhysicSystem::update(float dt) {
@@ -225,12 +249,13 @@ void PhysicSystem::update(float dt) {
 		float updateableDt = dt;
 
 		if (boundingBox && m_octree) {
-			collisionUpdate(e, updateableDt);
+			collisionUpdate(e, physics, updateableDt);
 
-			if (rayCastCheck(e, updateableDt)) {
+			surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);
 
+			if (rayCastCheck(e, physics, boundingBox->getBoundingBox(), updateableDt)) {
 				//Object is moving fast, ray cast for collisions
-				rayCastUpdate(e, updateableDt);
+				rayCastUpdate(e, physics, boundingBox->getBoundingBox(), transform, updateableDt);
 				physics->m_oldVelocity = physics->velocity;
 			}
 		}

@@ -57,6 +57,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 	
 	for (auto e : entities) {
 		PhysicsComponent* physicsComp = e->getComponent<PhysicsComponent>();
+		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 		AudioComponent* audioComp = e->getComponent<AudioComponent>();
 
 		// Increase speed if shift or right trigger is pressed
@@ -89,13 +90,13 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				if (candleComp->isCarried() && physicsComp->onGround) {
 					candleComp->toggleCarried();
 
-					candleTransComp->setTranslation(playerTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
+					candleTransComp->setTranslation(playerTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, 0.0f, m_cam->getCameraDirection().z));
 					candleTransComp->removeParent();
 					i = e->getChildEntities().size();
 				}
 				else if (!candleComp->isCarried() && glm::length(playerTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f) {
 					candleComp->toggleCarried();
-					candleTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
+					candleTransComp->setTranslation(glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 2.0f + 0.2f, 0.f));
 					candleTransComp->setParent(playerTransComp);
 					i = e->getChildEntities().size();
 				}
@@ -211,7 +212,7 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		);
 		forwards = glm::normalize(forwards);
 
-		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 0.8f, 0.f)));
+		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 1.8f, 0.f)));
 		m_cam->setCameraDirection(forwards);
 	}
 }

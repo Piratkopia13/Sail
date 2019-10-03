@@ -60,7 +60,7 @@ void Transform::removeParent() {
 // Call from PrepareUpdateSystem and nowhere else!
 void Transform::prepareUpdate() {
 	m_data.m_previous = m_data.m_current;
-	m_hasChanged = false;
+	m_hasChanged = 0;
 }
 
 
@@ -79,7 +79,7 @@ TransformFrame Transform::getTransformFrame() const {
 void Transform::translate(const glm::vec3& move) {
 	m_data.m_current.m_translation += move;
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 1;
 	treeNeedsUpdating();
 }
 
@@ -87,27 +87,27 @@ void Transform::setStartTranslation(const glm::vec3& translation) {
 	m_data.m_previous.m_translation = translation;
 	m_data.m_current.m_translation = translation;
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 1;
 }
 
 void Transform::translate(const float x, const float y, const float z) {
 	m_data.m_current.m_translation += glm::vec3(x, y, z);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 1;
 	treeNeedsUpdating();
 }
 
 void Transform::scale(const float factor) {
 	m_data.m_current.m_scale *= factor;
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
 void Transform::scale(const glm::vec3& scale) {
 	m_data.m_current.m_scale *= scale;
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
@@ -115,14 +115,14 @@ void Transform::rotate(const glm::vec3& rotation) {
 	m_data.m_current.m_rotation += rotation;
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
 void Transform::rotate(const float x, const float y, const float z) {
 	m_data.m_current.m_rotation += glm::vec3(x, y, z);
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
-	m_matNeedsUpdate = true;
+	m_matNeedsUpdate = 2;
 	treeNeedsUpdating();
 }
 
@@ -130,7 +130,7 @@ void Transform::rotateAroundX(const float radians) {
 	m_data.m_current.m_rotation.x += radians;
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
@@ -138,7 +138,7 @@ void Transform::rotateAroundY(const float radians) {
 	m_data.m_current.m_rotation.y += radians;
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
@@ -146,21 +146,21 @@ void Transform::rotateAroundZ(const float radians) {
 	m_data.m_current.m_rotation.z += radians;
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
 void Transform::setTranslation(const glm::vec3& translation) {
 	m_data.m_current.m_translation = translation;
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 1;
 	treeNeedsUpdating();
 }
 
 void Transform::setTranslation(const float x, const float y, const float z) {
 	m_data.m_current.m_translation = glm::vec3(x, y, z);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 1;
 	treeNeedsUpdating();
 }
 
@@ -168,7 +168,7 @@ void Transform::setRotations(const glm::vec3& rotations) {
 	m_data.m_current.m_rotation = rotations;
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
@@ -176,28 +176,28 @@ void Transform::setRotations(const float x, const float y, const float z) {
 	m_data.m_current.m_rotation = glm::vec3(x, y, z);
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
 void Transform::setScale(const float scale) {
 	m_data.m_current.m_scale = glm::vec3(scale, scale, scale	);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
 void Transform::setScale(const float x, const float y, const float z) {
 	m_data.m_current.m_scale = glm::vec3(x, y, z	);
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
 void Transform::setScale(const glm::vec3& scale) {
 	m_data.m_current.m_scale = scale;
 	m_matNeedsUpdate = true;
-	m_hasChanged = true;
+	m_hasChanged = 2;
 	treeNeedsUpdating();
 }
 
@@ -205,6 +205,7 @@ void Transform::setForward(const glm::vec3& forward) {
 	m_data.m_current.m_forward = glm::vec3(forward.x, forward.y, -forward.z);
 	m_data.m_current.m_rotationQuat = glm::rotation(glm::vec3(0.f, 0.f, -1.f), m_data.m_current.m_forward);
 	m_matNeedsUpdate = true;
+	m_hasChanged = 2;
 }
 
 
@@ -285,13 +286,14 @@ void Transform::updateMatrix() {
 	} else {
 		m_transformMatrix = m_localTransformMatrix;
 	}
-	m_hasChanged = true;
 }
 
 void Transform::treeNeedsUpdating() {
 	m_parentUpdated = true;
 	m_parentRenderUpdated = true;
-	m_hasChanged = true;
+	if (m_parent) {
+		m_hasChanged = glm::max(m_parent->getChange(), m_hasChanged);
+	}
 	for (Transform* child : m_children) {
 		child->treeNeedsUpdating();
 	}
