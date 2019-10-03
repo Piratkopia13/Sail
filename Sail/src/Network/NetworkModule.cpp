@@ -449,7 +449,7 @@ bool Network::udpSend(sockaddr* addr, char* msg, int msgSize)
 TCP_CONNECTION_ID Network::generateID()
 {
 	TCP_CONNECTION_ID id = 0;
-	std::random_device rd;   // non-deterministic generator
+	std::random_device rd;   // non-deterministic generator.
 	std::mt19937 gen(rd());
 
 	if (m_hostFlags & (USHORT)HostFlags::USE_RANDOM_IDS) {
