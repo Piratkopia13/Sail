@@ -9,8 +9,7 @@
 #include "../Physics/Octree.h"
 #include "../Physics/Intersection.h"
 
-AttackingState::AttackingState(Octree* octree)
-	: m_octree(octree) {
+AttackingState::AttackingState() {
 	m_distToHost = INFINITY;
 }
 
@@ -31,14 +30,16 @@ void AttackingState::update(float dt, Entity* entity) {
 	if ( aiComp->entityTarget != nullptr ) {
 		aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
 
+		m_distToHost = glm::distance2(aiComp->posTarget, glm::vec3(transComp->getMatrix()[3]));
+
 		// Approx AI gun pos
 		auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
 
 		// Candle pos
 		const glm::vec3& candlePos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
 
-		// Aim slightly higher to account for gravity
-		const glm::vec3& enemyPos = candlePos + glm::vec3(0, 0.3f, 0);
+		// Aim slightly higher to account for gravity (removed temporarily)
+		const glm::vec3& enemyPos = candlePos;// +glm::vec3(0, 0.3f, 0);
 
 		auto fireDir = enemyPos - gunPos;
 		fireDir = glm::normalize(fireDir);
@@ -78,18 +79,22 @@ float* AttackingState::getDistToHost() {
 
 void AttackingState::entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp, const glm::vec3& fireDir, const glm::vec3& gunPos, const float hitDist) {
 
-	// Don't shoot unless the candle is lit up
-	if ( aiComp->entityTarget->getComponent<CandleComponent>()->getIsAlive() ) {
+	// If the target is within 7 units and if there is nothing between the target and the ai and don't shoot unless the candle is lit up
+	if ( hitDist < 7.f && aiComp->entityTarget->getComponent<CandleComponent>()->getIsAlive() ) {
+		gunComp->setFiring(gunPos + fireDir, fireDir);
 
-		// If the target is within 7 units and if there is nothing between the target and the ai
-		if ( hitDist < 7.f ) {
-			gunComp->setFiring(gunPos + fireDir, fireDir);
-
-			if ( fireDir.z < 0.f ) {
-				transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) + 1.5707f, 0.f);
-			} else {
-				transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) - 1.5707f, 0.f);
-			}
+		float yaw = 0.f;		
+		float piTwo = 6.28318f;
+		if ( fireDir.z < 0.f ) {
+			yaw = glm::atan(fireDir.x / fireDir.z) + 1.5707f;
+		} else {
+			yaw = glm::atan(fireDir.x / fireDir.z) - 1.5707f;
 		}
+		// To make sure that 0.f < yaw < 2 * pi
+		if ( yaw < 0 ) {
+			yaw = piTwo + yaw;
+		}
+		yaw = std::fmod(yaw, piTwo);
+		transComp->setRotations(0.f, yaw, 0.f);
 	}
 }
