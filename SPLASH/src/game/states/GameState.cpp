@@ -11,6 +11,7 @@
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
 #include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
+#include "Sail/entities/systems/LevelGeneratorSystem/LevelGeneratorSystem.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
@@ -140,6 +141,8 @@ GameState::GameState(StateStack& stack)
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+	//create system for level generation
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
 
 	// Create system for rendering
 	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
@@ -168,6 +171,7 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
+
 
 
 
@@ -209,6 +213,8 @@ GameState::GameState(StateStack& stack)
 
 	// Level Creation
 	createTestLevel(shader, boundingBoxModel);
+
+	createLevel(shader, boundingBoxModel);
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
@@ -873,6 +879,7 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
+	e->getComponent<TransformComponent>()->setScale(glm::vec3(1.f, 0.1f, 1.f));
 
 
 	e = ECS::Instance()->createEntity("Map_Barrier1");
@@ -1025,4 +1032,30 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
 	}
+}
+
+void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
+	std::string tileTex = "sponza/textures/tileTexture1.tga";
+	Application::getInstance()->getResourceManager().loadTexture(tileTex);
+	//Load tileset for world
+	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
+	tileFlat->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
+	tileCross->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
+	tileStraight->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
+	tileCorner->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
+	tileT->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
+	tileEnd->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+
+	// Create the level generator system and put it into the datatype.
+	auto map = ECS::Instance()->createEntity("Map");
+	map->addComponent<MapComponent>();
+	ECS::Instance()->addAllQueuedEntities();
+	m_componentSystems.levelGeneratorSystem->generateMap();
+	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat, tileCross, tileCorner, tileStraight, tileT, tileEnd, boundingBoxModel);
+
 }

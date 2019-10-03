@@ -1,7 +1,7 @@
 float4 phongShade(float3 worldPosition, float3 worldNormal, float4 diffuseColor) {
     float3 shadedColor = float3(0.f, 0.f, 0.f);
 	
-	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
+	float3 ambientCoefficient = float3(0.f, 0.f, 0.f);
 	// TODO: read these from model data
 	float shininess = 10.0f;
 	float specMap = 1.0f;
