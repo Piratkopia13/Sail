@@ -21,6 +21,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/ai/states/AttackingState.h"
+#include "Sail/ai/states/FleeingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
@@ -226,9 +227,6 @@ GameState::GameState(StateStack& stack)
 	m_vramUsageHistory = SAIL_NEW float[100];
 	m_cpuHistory = SAIL_NEW float[100];
 	m_frameTimesHistory = SAIL_NEW float[100];
-
-
-
 
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
@@ -980,19 +978,32 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	else if (botCount > 1) {
 		botCount = 1;
 	}
-	for (size_t i = 0; i < botCount; i++) {
-
+	for (size_t i = 0; i < botCount; i++) {		
 		auto e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(2.f * (i + 1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(2.f*(i+1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
-		e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
+		auto fsmComp = e->addComponent<FSMComponent>();
 		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 		e->getComponent<PhysicsComponent>()->maxSpeed = m_player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
+		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
+		e->addChildEntity(aiCandleEntity);
+		// Create states and transitions
+		{
+			fsmComp->createState<AttackingState>(m_octree);
+			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
+			// TODO: unnecessary to create new transitions for each FSM if they're all identical
+			FSM::Transition* fromAttackToFleeing = SAIL_NEW FSM::Transition;
+			fromAttackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+			FSM::Transition* fromFleeingToAttacking = SAIL_NEW FSM::Transition;
+			fromFleeingToAttacking->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
+			fsmComp->addTransition<AttackingState, FleeingState>(fromAttackToFleeing);
+			fsmComp->addTransition<FleeingState, AttackingState>(fromFleeingToAttacking);
+		}
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
 	}

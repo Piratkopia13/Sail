@@ -50,9 +50,9 @@ void AttackingState::update(float dt, Entity* entity) {
 	}
 }
 
-void AttackingState::reset() {}
+void AttackingState::reset(Entity* entity) {}
 
-void AttackingState::init() {}
+void AttackingState::init(Entity* entity) {}
 
 void AttackingState::entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp) {
 	if ( gunComp != nullptr ) {
