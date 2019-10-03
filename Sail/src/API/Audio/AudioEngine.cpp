@@ -34,8 +34,8 @@ AudioEngine::AudioEngine() {
 AudioEngine::~AudioEngine() {
 	m_isRunning = false;
 
-	delete DSPSettings.pMatrixCoefficients;
-	delete DSPSettings.pDelayTimes;
+	delete m_DSPSettings.pMatrixCoefficients;
+	delete m_DSPSettings.pDelayTimes;
 }
 
 void AudioEngine::loadSound(const std::string& filename) {
@@ -53,6 +53,7 @@ int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& liste
 
 		if (m_sound[m_currSoundIndex].sourceVoice != nullptr) {
 			m_sound[m_currSoundIndex].sourceVoice->Stop();
+			m_sound[m_currSoundIndex].sourceVoice->DestroyVoice();
 		}
 
 		// creating a 'sourceVoice' for WAV file-type
@@ -74,29 +75,29 @@ int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& liste
 			return -1;
 		}
 
-		//m_sound[m_currSoundIndex].sourceVoice->SetVolume(VOL_THIRD);
+		m_sound[m_currSoundIndex].sourceVoice->SetVolume(VOL_THIRD);
 
 		m_sound[m_currSoundIndex].emitter.OrientFront = listener.OrientFront;
 		m_sound[m_currSoundIndex].emitter.OrientTop = listener.OrientTop;
-		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + 1.0f, listener.Position.y, listener.Position.z };
+		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + (m_tempDistance++), listener.Position.y, listener.Position.z };
 		m_sound[m_currSoundIndex].emitter.Velocity = listener.Velocity;
 
 		X3DAudioCalculate(m_X3DInstance, &listener, &m_sound[m_currSoundIndex].emitter,
 			X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT /*| X3DAUDIO_CALCULATE_REVERB*/,
-			&DSPSettings);
+			&m_DSPSettings);
 
-		std::cout << "LEFT_EAR_VOL: " << DSPSettings.pMatrixCoefficients[0] << "\t";
-		std::cout << "RIGHT_EAR_VOL: " << DSPSettings.pMatrixCoefficients[1] << "\n";
-		std::cout << "DISTANCE: " << DSPSettings.EmitterToListenerDistance << "\n";
+		std::cout << "LEFT_EAR_VOL: " << m_DSPSettings.pMatrixCoefficients[0] << "\t";
+		std::cout << "RIGHT_EAR_VOL: " << m_DSPSettings.pMatrixCoefficients[1] << "\n";
+		std::cout << "DISTANCE: " << m_DSPSettings.EmitterToListenerDistance << "\n";
 
-		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_sound[m_currSoundIndex].sourceVoice, 1, m_destinationChannelCount, DSPSettings.pMatrixCoefficients);
-		m_sound[m_currSoundIndex].sourceVoice->SetFrequencyRatio(DSPSettings.DopplerFactor);
+		m_sound[m_currSoundIndex].sourceVoice->SetFrequencyRatio(m_DSPSettings.DopplerFactor);
+		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, m_DSPSettings.pMatrixCoefficients);
 
 		// R E V E R B   A P P L I C A T I O N
 		//m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, &DSPSettings.ReverbLevel);
 		// EXAMPLE-CODE VERSION: pSFXSourceVoice->SetOutputMatrix(pSubmixVoice, 1, 1, &DSPSettings.ReverbLevel);
 
-		XAUDIO2_FILTER_PARAMETERS FilterParameters = { LowPassFilter, 2.0f * sinf(X3DAUDIO_PI / 6.0f * DSPSettings.LPFDirectCoefficient), 1.0f };
+		XAUDIO2_FILTER_PARAMETERS FilterParameters = { LowPassFilter, 2.0f * sinf(X3DAUDIO_PI / 6.0f * m_DSPSettings.LPFDirectCoefficient), 1.0f };
 		m_sound[m_currSoundIndex].sourceVoice->SetFilterParameters(&FilterParameters);
 
 		hr = m_sound[m_currSoundIndex].sourceVoice->Start();
@@ -305,10 +306,10 @@ void AudioEngine::initXAudio3D() {
 	*matrixCoeff = FLOAT32{ 0 };
 	*delayTimes = FLOAT32{ 0 };
 
-	DSPSettings.SrcChannelCount = 1;
-	DSPSettings.DstChannelCount = m_destinationChannelCount;
-	DSPSettings.pMatrixCoefficients = matrixCoeff;
-	DSPSettings.pDelayTimes = delayTimes;
+	m_DSPSettings.SrcChannelCount = 1;
+	m_DSPSettings.DstChannelCount = m_destinationChannelCount;
+	m_DSPSettings.pMatrixCoefficients = matrixCoeff;
+	m_DSPSettings.pDelayTimes = delayTimes;
 
 	X3DAudioInitialize(channelMaskHolder, SPEED_OF_SOUND, m_X3DInstance);
 }

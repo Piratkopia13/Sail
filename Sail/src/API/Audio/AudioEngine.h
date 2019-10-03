@@ -34,7 +34,7 @@ enum AudioType { MUSIC };
 #define VOL_FOURTH 0.25f
 
 #define SPEED_OF_SOUND 1.0f
-#define DISTANCE_SCALER 14.0f
+#define DISTANCE_SCALER 1.0f
 
 struct StreamingVoiceContext : public IXAudio2VoiceCallback
 {
@@ -108,7 +108,7 @@ public:
 	void setStreamVolume(int index, float value = VOL_HALF);
 
 	std::atomic<bool> m_streamLocks[STREAMED_SOUNDS_COUNT];
-	X3DAUDIO_DSP_SETTINGS DSPSettings = { 0 };
+	X3DAUDIO_DSP_SETTINGS m_DSPSettings = { 0 };
 
 private: 
 	bool m_isRunning = true;
@@ -127,6 +127,7 @@ private:
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
 
 	int m_currSoundIndex = 0;
+	int m_tempDistance = 0;
 	//std::atomic<int> m_currStreamIndex = 0;
 
 	// INIT
