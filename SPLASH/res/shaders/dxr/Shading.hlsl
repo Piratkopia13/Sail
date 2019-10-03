@@ -48,7 +48,8 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 	return float4(saturate(ambient + shadedColor), 1.0f);
 }
 
-void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.9f) {
+void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.5f) {
+	// Ray direction for first ray when cast from GBuffer must be calculated using camera position
 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
 	
 	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
@@ -57,9 +58,6 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	// float4 phongColor = phongShade(worldPosition, worldNormal, albedo);
 	
 	// if (payload.recursionDepth < reflectionBounces + 1) {
-	// 	// Ray direction for first ray when cast from GBuffer must be calculated using camera position
-	// 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
-
 	// 	// Trace reflection ray
 	// 	float3 reflectedDir = reflect(rayDir, worldNormal);
 	// 	TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir, worldPosition), payload);

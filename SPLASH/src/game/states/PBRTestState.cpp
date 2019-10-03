@@ -4,6 +4,7 @@
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/candles/CandleSystem.h"
 #include "Sail/entities/systems/entityManagement/EntityRemovalSystem.h"
+#include "Sail/entities/systems/entityManagement/EntityAdderSystem.h"
 #include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "Sail/entities/systems/light/LightSystem.h"
 #include "Sail/entities/systems/gameplay/GunSystem.h"
@@ -64,35 +65,45 @@ PBRTestState::PBRTestState(StateStack& stack)
 	});
 #endif
 
+	// Create octree
+	m_octree = SAIL_NEW Octree(nullptr);
+
 	// Get the Application instance
 	m_app = Application::getInstance();
-	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
+	m_componentSystems.renderSystem = ECS::Instance()->getSystem<RenderSystem>();
+
+	// Create entity adder system
+	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
+
+	// Create entity removal system
+	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
+
+	// Create system for updating bounding box
+	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
+
+	// Create system for handling octree
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
+
 
 	// Textures needs to be loaded before they can be used
-	// TODO: automatically load textures when needed so the following can be removed
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/arenaBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/barrierBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/containerBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/pavingStones/albedo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/pavingStones/normal.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/normal.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/normal.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/normal.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/normal.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/greenTiles/albedo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/greenTiles/metalnessRoughnessAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/greenTiles/normal.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/albedo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/ice/albedo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/ice/metalnessRoughnessAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/ice/normal.tga");
 
 	Application::getInstance()->getResourceManager().loadTexture("pbr/brdfLUT.tga");
-
-
 
 
 	// Add a directional light
@@ -121,9 +132,24 @@ PBRTestState::PBRTestState(StateStack& stack)
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
 	//arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
-	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
-	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/rustedIron/metalnessRoughnessAO.tga");
-	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/rustedIron/normal.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/ice/albedo.tga");
+	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/ice/metalnessRoughnessAO.tga");
+	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/ice/normal.tga");
+
+	Model* cylinderModel0 = &m_app->getResourceManager().getModel("pbrCylinder.fbx", shader);
+	cylinderModel0->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/metal/albedo.tga");
+	cylinderModel0->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/metal/metalnessRoughnessAO.tga");
+	cylinderModel0->getMesh(0)->getMaterial()->setNormalTexture("pbr/metal/normal.tga");
+
+	Model* cylinderModel1 = &m_app->getResourceManager().getModel("pbrCylinder_.fbx", shader);
+	cylinderModel1->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+	cylinderModel1->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
+	cylinderModel1->getMesh(0)->getMaterial()->setNormalTexture("pbr/pavingStones/normal.tga");
+
+	Model* cylinderModel2 = &m_app->getResourceManager().getModel("pbrCylinder__.fbx", shader);
+	cylinderModel2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/greenTiles/albedo.tga");
+	cylinderModel2->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/greenTiles/metalnessRoughnessAO.tga");
+	cylinderModel2->getMesh(0)->getMaterial()->setNormalTexture("pbr/greenTiles/normal.tga");
 
 	/*
 		Creation of entities
@@ -133,6 +159,26 @@ PBRTestState::PBRTestState(StateStack& stack)
 		auto e = ECS::Instance()->createEntity("Arena");
 		e->addComponent<ModelComponent>(arenaModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<BoundingBoxComponent>();
+		e->addComponent<CollidableComponent>();
+
+		e = ECS::Instance()->createEntity("Cylinder1");
+		e->addComponent<ModelComponent>(cylinderModel0);
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 1.f, 0.f));
+		e->addComponent<BoundingBoxComponent>();
+		e->addComponent<CollidableComponent>();
+
+		e = ECS::Instance()->createEntity("Cylinder2");
+		e->addComponent<ModelComponent>(cylinderModel1);
+		e->addComponent<TransformComponent>(glm::vec3(3.f, 1.f, 0.f));
+		e->addComponent<BoundingBoxComponent>();
+		e->addComponent<CollidableComponent>();
+
+		e = ECS::Instance()->createEntity("Cylinder3");
+		e->addComponent<ModelComponent>(cylinderModel2);
+		e->addComponent<TransformComponent>(glm::vec3(-3.f, 1.f, 0.f));
+		e->addComponent<BoundingBoxComponent>();
+		e->addComponent<CollidableComponent>();
 
 
 		m_virtRAMHistory = SAIL_NEW float[100];
@@ -150,6 +196,7 @@ PBRTestState::~PBRTestState() {
 	delete m_vramUsageHistory;
 	delete m_cpuHistory;
 	delete m_frameTimesHistory;
+	delete m_octree;
 }
 
 // Process input for the state
@@ -205,6 +252,11 @@ bool PBRTestState::update(float dt, float alpha) {
 }
 
 bool PBRTestState::fixedUpdate(float dt) {
+
+	m_componentSystems.entityAdderSystem->update(0.0f);
+	m_componentSystems.updateBoundingBoxSystem->update(dt);
+	m_componentSystems.octreeAddRemoverSystem->update(dt);
+
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | "
@@ -215,6 +267,9 @@ bool PBRTestState::fixedUpdate(float dt) {
 	static float change = 0.4f;
 
 	counter += dt * 2.0f;
+
+	// Will probably need to be called last
+	m_componentSystems.entityRemovalSystem->update(0.0f);
 
 	return true;
 }
@@ -400,6 +455,41 @@ bool PBRTestState::renderImGuiRenderSettings(float dt) {
 	ImGui::Checkbox("Enable post processing",
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
 	);
+
+	static Entity* pickedEntity = nullptr;
+	static float metalness = 1.0f;
+	static float roughness = 1.0f;
+	static float ao = 1.0f;
+
+	ImGui::Separator();
+	if (ImGui::Button("Pick entity")) {
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		if (tempInfo.closestHitIndex != -1) {
+			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
+		}
+	}
+
+	if (pickedEntity) {
+		ImGui::Text("Material properties for %s", pickedEntity->getName());
+		if (auto * model = pickedEntity->getComponent<ModelComponent>()) {
+			auto* mat = model->getModel()->getMesh(0)->getMaterial();
+			const auto& pbrSettings = mat->getPBRSettings();
+			metalness = pbrSettings.metalnessScale;
+			roughness = pbrSettings.roughnessScale;
+			ao = pbrSettings.aoScale;
+			if (ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f)) {
+				mat->setMetalnessScale(metalness);
+			}
+			if (ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f)) {
+				mat->setRoughnessScale(roughness);
+			}
+			if (ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f)) {
+				mat->setAOScale(ao);
+			}
+		}
+	}
+
 	ImGui::End();
 
 	return false;

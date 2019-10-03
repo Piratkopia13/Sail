@@ -109,9 +109,8 @@ void DX12API::createDevice() {
 		CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_dxgiFactory.ReleaseAndGetAddressOf()))
 	);
 	// PIX programmic capture control
-	if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa)))) {
-		Logger::Warning("PIX programmic capture not available");
-	}
+	// Will fail if program is not launched from pix
+	DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa));
 #endif
 
 

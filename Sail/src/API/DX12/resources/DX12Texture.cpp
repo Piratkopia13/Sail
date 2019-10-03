@@ -146,13 +146,10 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		dxPipeline->setCBufferVar_new("NumMipLevels", &mipCount, sizeof(unsigned int), meshIndex);
 		dxPipeline->setCBufferVar_new("TexelSize", &texelSize, sizeof(glm::vec2), meshIndex);
 
-		//SetCompute32BitConstants(GenerateMips::GenerateMipsCB, generateMipsCB);
-
 		const auto& heap = context->getComputeGPUDescriptorHeap();
 		unsigned int indexStart = heap->getAndStepIndex(20); // TODO: read this from root parameters
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heap->getCPUDescriptorHandleForIndex(indexStart);
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = heap->getGPUDescriptorHandleForIndex(indexStart);
-		//heap->setIndex(0);
 
 		transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -171,19 +168,22 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 
 			DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[0].Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, srcMip + mip + 1);
 		}
-		//state[0] = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
-		// Pad any unused mip levels with a default UAV. Doing this keeps the DX12 runtime happy.
+		// TODO: Pad any unused mip levels with a default UAV. Doing this keeps the DX12 runtime happy.
 		/*if (mipCount < 4) {
 			m_DynamicDescriptorHeap[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]->StageDescriptors(GenerateMips::OutMip, mipCount, 4 - mipCount, m_GenerateMipsPSO->GetDefaultUAV());
 		}*/
-
 		
 		// Dispatch compute shader to generate mip levels
 		GenerateMipsComputeShader::Input input;
 		input.threadGroupCountX = glm::ceil(dstWidth * settings->threadGroupXScale);
 		input.threadGroupCountY = glm::ceil(dstHeight * settings->threadGroupYScale);
 		csDispatcher.dispatch(mipsShader, input, meshIndex, cmdList);
+
+		// Transition all subresources to the state that the texture think it is in
+		for (uint32_t mip = 0; mip < mipCount; ++mip) {
+			DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[0].Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, srcMip + mip + 1);
+		}
 
 		DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
 

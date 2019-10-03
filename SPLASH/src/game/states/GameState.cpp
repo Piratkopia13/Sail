@@ -582,7 +582,9 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	if (ImGui::Button("Pick entity")) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
+		if (tempInfo.closestHitIndex != -1) {
+			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
+		}
 	}
 
 	if (pickedEntity) {

@@ -52,8 +52,8 @@ void rayGen() {
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	float3 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb;
-	// float3 albedoColor = pow(sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb, 2.2f);
+	// float3 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb;
+	float3 albedoColor = pow(sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb, 2.2f);
 	float3 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0).rgb;
 	float metalness = metalnessRoughnessAO.r;
 	float roughness = metalnessRoughnessAO.g;
@@ -87,11 +87,7 @@ void rayGen() {
 	payload.color = float4(0,0,0,0);
 	shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
 	lOutput[launchIndex] = payload.color;
-
-
-	// float2 integratedBRDF = IntegrateBRDF(screenTexCoord.x, 1.0f - screenTexCoord.y);
-    // lOutput[launchIndex] = float4(integratedBRDF / 2.0f, 0.f, 1.0f);	
-
+	// lOutput[launchIndex] = float4(worldNormal * 0.5f + 0.5f, 1.0f);
 
 #else
 	// Fully RT
@@ -127,8 +123,8 @@ void miss(inout RayPayload payload) {
 float3 getAlbedo(MeshData data, float2 texCoords) {
 	float3 color = data.color.rgb;
 	if (data.flags & MESH_HAS_ALBEDO_TEX)
-		color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb;
-		// color *= pow(sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb, 2.2f);
+		// color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb;
+		color *= pow(sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb, 2.2f);
 
 	return color;
 }

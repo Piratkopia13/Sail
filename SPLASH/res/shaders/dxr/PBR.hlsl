@@ -170,7 +170,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     kD *= 1.0f - metalness;	  
     
     // float3 irradiance = texture(irradianceMap, N).rgb;
-    float3 irradiance = 0.00f;
+    float3 irradiance = 0.01f;
     float3 diffuse    = irradiance * albedo;
     
     float3 R = reflect(-V, N);  
@@ -191,6 +191,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         ray.TMax = 1000;
 		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, ray, payload);
         float3 prefilteredColor = payload.color.rgb;
+        // float3 prefilteredColor = 0.5f;
 
         // return float4(prefilteredColor, 1.0f);
 

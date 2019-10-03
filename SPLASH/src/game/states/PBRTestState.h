@@ -3,6 +3,8 @@
 #include "Sail.h"
 
 class RenderSystem;
+class OctreeAddRemoverSystem;
+class UpdateBoundingBoxSystem;
 
 class PBRTestState : public State {
 public:
@@ -34,12 +36,17 @@ private:
 private:
 	struct Systems {
 		RenderSystem* renderSystem = nullptr;
+		EntityAdderSystem* entityAdderSystem = nullptr;
+		EntityRemovalSystem* entityRemovalSystem = nullptr;
+		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
+		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 	};
 
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
 	FlyingCameraController m_camController;
+	Octree* m_octree;
 
 	const std::string createCube(const glm::vec3& position);
 

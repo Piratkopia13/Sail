@@ -21,7 +21,7 @@ namespace Utils {
         RayDesc rayDesc;
         rayDesc.Origin = origin;
         rayDesc.Direction = direction;
-        rayDesc.TMin = 0.00001;
+        rayDesc.TMin = 0.001;
         rayDesc.TMax = tmax;
 
         ShadowRayPayload shadowPayload;

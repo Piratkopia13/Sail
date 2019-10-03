@@ -98,8 +98,11 @@ GBuffers PSMain(PSIn input) {
 	GBuffers gbuffers;
 
 	gbuffers.normal = float4(normalize(input.normal) / 2.f + .5f, 1.f);
-    if (sys_material_pbr.hasNormalTexture)
-        gbuffers.normal = float4(mul(normalize(sys_texNormal.Sample(PSss, input.texCoords).rgb * 2.f - 1.f), input.tbn) / 2.f + .5f, 1.0f);
+    if (sys_material_pbr.hasNormalTexture) {
+        float3 normalSample = sys_texNormal.Sample(PSss, input.texCoords).rgb;
+        normalSample.y = 1.0f - normalSample.y;
+        gbuffers.normal = float4(mul(normalize(normalSample * 2.f - 1.f), input.tbn) / 2.f + .5f, 1.0f);
+    }
 
     gbuffers.albedo = sys_material_pbr.modelColor;
 	if (sys_material_pbr.hasAlbedoTexture)
