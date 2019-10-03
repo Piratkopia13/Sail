@@ -135,23 +135,23 @@ PBRTestState::PBRTestState(StateStack& stack)
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
+	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader, ResourceManager::SAIL_ASSIMP);
 	//arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
 	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/ice/albedo.tga");
 	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/ice/metalnessRoughnessAO.tga");
 	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/ice/normal.tga");
 
-	Model* cylinderModel0 = &m_app->getResourceManager().getModel("pbrCylinder.fbx", shader);
+	Model* cylinderModel0 = &m_app->getResourceManager().getModel("pbrCylinder.fbx", shader, ResourceManager::SAIL_ASSIMP);
 	cylinderModel0->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/metal/albedo.tga");
 	cylinderModel0->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/metal/metalnessRoughnessAO.tga");
 	cylinderModel0->getMesh(0)->getMaterial()->setNormalTexture("pbr/metal/normal.tga");
 
-	Model* cylinderModel1 = &m_app->getResourceManager().getModel("pbrCylinder_.fbx", shader);
+	Model* cylinderModel1 = &m_app->getResourceManager().getModel("pbrCylinder_.fbx", shader, ResourceManager::SAIL_ASSIMP);
 	cylinderModel1->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
 	cylinderModel1->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
 	cylinderModel1->getMesh(0)->getMaterial()->setNormalTexture("pbr/pavingStones/normal.tga");
 
-	Model* cylinderModel2 = &m_app->getResourceManager().getModel("pbrCylinder__.fbx", shader);
+	Model* cylinderModel2 = &m_app->getResourceManager().getModel("pbrCylinder__.fbx", shader, ResourceManager::SAIL_ASSIMP);
 	cylinderModel2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/greenTiles/albedo.tga");
 	cylinderModel2->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/greenTiles/metalnessRoughnessAO.tga");
 	cylinderModel2->getMesh(0)->getMaterial()->setNormalTexture("pbr/greenTiles/normal.tga");
