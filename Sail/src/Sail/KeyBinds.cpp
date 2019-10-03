@@ -28,6 +28,7 @@ namespace KeyBinds {
 	int disableCursor;
 	int shoot;
 	int showInGameMenu;
+	int toggleSun;
 
 	// Application
 	int alt;
@@ -74,6 +75,7 @@ void KeyBinds::init() {
 	disableCursor = SAIL_MOUSE_RIGHT_BUTTON;
 	shoot = SAIL_MOUSE_LEFT_BUTTON;
 	showInGameMenu = SAIL_KEY_ESCAPE;
+	toggleSun = SAIL_KEY_P;
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds
