@@ -61,6 +61,7 @@ public:
 		VertConnection();
 		void addConnection(const unsigned int _transform, const float _weight);
 		const float checkWeights();
+		void normalizeWeights();
 
 		unsigned int count;
 		unsigned int transform[SAIL_BONES_PER_VERTEX];
@@ -71,11 +72,14 @@ public:
 	AnimationStack(const unsigned int vertCount);
 	~AnimationStack();
 
+	void reSizeConnections(const unsigned int vertCount);
+
 	void addAnimation(const std::string& animationName, Animation* animation);
 	void setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight);
 
 	Animation* getAnimation(const std::string& name);
 	Animation* getAnimation(const unsigned int index);
+	const unsigned int getAnimationCount();
 
 	const glm::mat4* getTransform(const std::string& name, const float time);
 	const glm::mat4* getTransform(const std::string& name, const unsigned int frame);
@@ -85,16 +89,14 @@ public:
 	VertConnection* getConnections();
 	const unsigned int getConnectionSize();
 
-
-
 	void checkWeights();
+	void normalizeWeights();
 private:
 
 	unsigned int m_connectionSize;
 	VertConnection* m_connections;
 	
-
-	std::map<int, std::string> m_names;
+	std::map<unsigned int, std::string> m_names;
 	std::map<std::string, Animation*> m_stack;
 
 };

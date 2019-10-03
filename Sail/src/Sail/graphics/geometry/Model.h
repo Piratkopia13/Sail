@@ -15,7 +15,7 @@ public:
 	Model();
 	Model(Mesh::Data& data, Shader* shader);
 	~Model();
-
+	void setName(const std::string& name);
 	Mesh* addMesh(std::unique_ptr<Mesh> mesh);
 
 	// Draws the model using its material
@@ -28,6 +28,7 @@ public:
 	bool isAnimated() const;
 
 private:
+	std::string m_name;
 	std::vector<Mesh::Ptr> m_meshes;
 	bool m_isAnimated;
 

@@ -14,6 +14,9 @@ Model::Model()
 Model::~Model() {
 }
 
+void Model::setName(const std::string& name) {
+}
+
 Mesh* Model::addMesh(std::unique_ptr<Mesh> mesh) {
 	m_meshes.push_back(std::move(mesh));
 	return m_meshes.back().get();
