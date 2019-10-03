@@ -89,6 +89,9 @@ GameState::GameState(StateStack& stack)
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
 	//-----------------------
 
+	// Setting light index
+	m_currLightIndex = 0;
+
 	/*
 		Create a PhysicSystem
 		If the game developer does not want to add the systems like this,
@@ -461,6 +464,8 @@ bool GameState::renderImguiProfiler(float dt) {
 	bool open = m_profiler.windowOpen();
 	if (open) {
 		if (ImGui::Begin("Profiler", &open)) {
+
+			//Profiler window displaying the current usage
 			m_profiler.windowState(open);
 			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
 			std::string header;
@@ -481,6 +486,7 @@ bool GameState::renderImguiProfiler(float dt) {
 			ImGui::Text(header.c_str());
 
 			ImGui::Separator();
+			//Collapsing headers for graphs over time
 			if (ImGui::CollapsingHeader("CPU Graph")) {
 				header = "\n\n\n" + m_cpuCount + "(%)";
 				ImGui::PlotLines(header.c_str(), m_cpuHistory, 100, 0, "", 0.f, 100.f, ImVec2(0, 100));
@@ -507,6 +513,7 @@ bool GameState::renderImguiProfiler(float dt) {
 			ImGui::EndChild();
 
 			m_profilerTimer += dt;
+			//Updating graphs and current usage
 			if (m_profilerTimer > 0.2f) {
 				m_profilerTimer = 0.f;
 				if (m_profilerCounter < 100) {
@@ -640,10 +647,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	
 	// Update entities with info from the network
 	m_componentSystems.networkReceiverSystem->update();
-
 	m_componentSystems.entityAdderSystem->update(0.0f);
-
 	m_componentSystems.physicSystem->update(dt);
+
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
 	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
@@ -653,9 +659,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
-
 	runSystem(dt, m_componentSystems.candleSystem);
-
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
@@ -795,15 +799,18 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	m_player = player.get();
 
+	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player
 	player->addComponent<PlayerComponent>();
 
 	player->addComponent<TransformComponent>();
+
 
 	player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID);
 
+	// Add physics component and setting initial variables
 	player->addComponent<PhysicsComponent>();
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
@@ -815,14 +822,13 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	// Temporary projectile model for the player's gun
 	player->addComponent<GunComponent>(projectileModel, boundingBoxModel);
 
-
+	// Adding audio component and adding all sounds attached to the player entity
 	player->addComponent<AudioComponent>();
 	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
 	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
 
 
 	// Create candle for the player
-	m_currLightIndex = 0;
 	auto e = createCandleEntity("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
 	e->getComponent<CandleComponent>()->setOwner(player->getID());
