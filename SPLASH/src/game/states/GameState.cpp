@@ -1085,17 +1085,17 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
-	tileFlat->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
-	tileCross->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileCross->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
-	tileStraight->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileStraight->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
-	tileCorner->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileCorner->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
-	tileT->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileT->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
-	tileEnd->getMesh(0)->getMaterial()->setDiffuseTexture(tileTex);
+	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
