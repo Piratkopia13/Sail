@@ -1174,7 +1174,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		// Create states and transitions
 		{
 			SearchingState* searchState = fsmComp->createState<SearchingState>(m_componentSystems.aiSystem->getNodeSystem());
-			AttackingState* attackState = fsmComp->createState<AttackingState>(m_octree);
+			AttackingState* attackState = fsmComp->createState<AttackingState>();
 			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
 			
 
