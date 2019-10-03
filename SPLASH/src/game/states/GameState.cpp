@@ -205,7 +205,6 @@ GameState::GameState(StateStack& stack)
 
 	// Level Creation
 	createTestLevel(shader, boundingBoxModel);
-	auto player = ECS::Instance()->createEntity("player");
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
