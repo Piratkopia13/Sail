@@ -43,6 +43,7 @@ void Game::dispatchEvent(Event& event) {
 }
 
 void Game::applyPendingStateChanges() {
+	m_stateStack.prepareStateChange();
 	this->m_stateStack.applyPendingChanges();
 }
 
