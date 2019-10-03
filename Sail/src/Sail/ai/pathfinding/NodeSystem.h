@@ -54,6 +54,7 @@ public:
 
 	const NodeSystem::Node& getNearestNode(const glm::vec3& position) const;
 	unsigned int getDistance(unsigned int n1, unsigned int n2) const;
+	const std::vector<NodeSystem::Node>& getNodes() const;
 
 #ifdef _DEBUG_NODESYSTEM
 	void setDebugModelAndScene(Shader* shader);

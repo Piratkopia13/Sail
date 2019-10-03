@@ -17,7 +17,8 @@ public:
 	// Only used by compute shaders
 	virtual void dispatch(unsigned int threadGroupCountX, unsigned int threadGroupCountY, unsigned int threadGroupCountZ, void* cmdList = nullptr) override;
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
-	virtual unsigned int setMaterial(Material* texture, void* cmdList);
+
+	virtual unsigned int setMaterial(PBRMaterial* texture, void* cmdList);
 	void checkBufferSizes(unsigned int nMeshes);
 	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList = nullptr) override;
 	virtual void setTexture2D(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) override;

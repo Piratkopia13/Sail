@@ -22,6 +22,11 @@ void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatri
 	m_rendererRaytrace->submit(mesh, modelMatrix, flags);
 }
 
+void DX12HybridRaytracerRenderer::submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) {
+	m_rendererGbuffer->submitNonMesh(type, material, modelMatrix, flags);
+	m_rendererRaytrace->submitNonMesh(type, material, modelMatrix, flags);
+}
+
 void DX12HybridRaytracerRenderer::setLightSetup(LightSetup* lightSetup) {
 	m_rendererGbuffer->setLightSetup(lightSetup);
 	m_rendererRaytrace->setLightSetup(lightSetup);

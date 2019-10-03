@@ -3,7 +3,6 @@
 #include <glm/glm.hpp>
 
 class Model;
-//class Transform;
 
 class GunComponent : public Component<GunComponent> {
 public:
@@ -21,23 +20,26 @@ public:
 		return m_wireframeModel;
 	}
 
-	float getSpawnLimit() const {
-		return m_projectileSpawnLimit;
-	}
-
 	void setFiring(glm::vec3 pos, glm::vec3 dir);
 
 	glm::vec3 position;
 	glm::vec3 direction;
 
 	float projectileSpawnTimer = 0.f;
-	float projectileSpeed = 20.f;
+	float gunOverloadTimer = 0.f;
+	float m_projectileSpawnCooldown = 0.02f;
+	float m_gunOverloadCooldown = .5f;
+
+
+	float projectileSpeed = 10.f;
+
+	float gunOverloadvalue = 0.f;
+	float gunOverloadThreshold = .5f;
+
 	bool firing = false;
 
 private:
 	Model* m_projectileModel;
 	Model* m_wireframeModel;
-
-
-	float m_projectileSpawnLimit = 0.1f;
+	float m_projectileSpawnLimit = 0.3f;
 };

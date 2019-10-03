@@ -40,7 +40,8 @@ void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
 	for (auto& it : parsedData.cBuffers) {
-		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->bind_new(cmdList, meshIndex);
+		auto* dxCBuffer = static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get());
+		dxCBuffer->bind_new(cmdList, meshIndex, csBlob != nullptr);
 	}
 	for (auto& it : parsedData.samplers) {
 		it.sampler->bind();
@@ -167,7 +168,8 @@ void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture,
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	DX12Texture* dxTexture = static_cast<DX12Texture*>(texture);
 	if (!dxTexture->hasBeenInitialized()) {
-		dxTexture->initBuffers(dxCmdList);
+		assert(false); // Is this used?
+		//dxTexture->initBuffers(dxCmdList);
 	}
 
 	setDXTexture2D(dxTexture, dxCmdList);
@@ -186,11 +188,11 @@ void DX12ShaderPipeline::setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsC
 	}
 }
 
-unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList) {
-	const Material::PhongSettings& ps = material->getPhongSettings();
+unsigned int DX12ShaderPipeline::setMaterial(PBRMaterial* material, void* cmdList) {
+	const PBRMaterial::PBRSettings& ps = material->getPBRSettings();
 	int nTextures = 0;
 	DX12Texture* textures[3];
-	if (ps.hasDiffuseTexture) {
+	if (ps.hasAlbedoTexture) {
 		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
 		nTextures++;
 	}
@@ -198,7 +200,7 @@ unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList) 
 		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
 		nTextures++;
 	}
-	if (ps.hasSpecularTexture) {
+	if (ps.hasMetalnessRoughnessAOTexture) {
 		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
 		nTextures++;
 	}
@@ -208,7 +210,7 @@ unsigned int DX12ShaderPipeline::setMaterial(Material* material, void* cmdList) 
 
 	for (size_t i = 0; i < nTextures; i++) {
 		if (!textures[i]->hasBeenInitialized()) {
-			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
+			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList), i);
 		}
 
 		textures[i]->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);

@@ -1,14 +1,11 @@
 #pragma once
 
-#include <d3d11.h>
 #include <vector>
 #include "Sail/api/Mesh.h"
 #include "Sail/api/Renderer.h"
-#include "Sail/utils/Utils.h"
 
 // Forward declarations
 class ShaderPipeline;
-class Material;
 
 class Model {
 public:
@@ -18,7 +15,7 @@ public:
 	Model();
 	Model(Mesh::Data& data, Shader* shader);
 	~Model();
-
+	void setName(const std::string& name);
 	Mesh* addMesh(std::unique_ptr<Mesh> mesh);
 
 	// Draws the model using its material
@@ -31,6 +28,7 @@ public:
 	bool isAnimated() const;
 
 private:
+	std::string m_name;
 	std::vector<Mesh::Ptr> m_meshes;
 	bool m_isAnimated;
 

@@ -52,7 +52,7 @@ void FlyingCameraController::update(float dt) {
 	// Side to side motion
 	//
 
-	glm::vec3 right = glm::cross(getCameraDirection(), glm::vec3(0.f, 1.f, 0.f));
+	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), getCameraDirection());
 	right = glm::normalize(right);
 	// Gamepad
 	//setCameraPosition(getCameraPosition() - right * gpState.thumbSticks.leftX * movementSpeed);

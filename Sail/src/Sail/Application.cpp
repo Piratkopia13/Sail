@@ -9,12 +9,11 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 
+
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
-
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
-	
 	// Set up instance if not set
 	if (s_instance) {
 		Logger::Error("Only one application can exist!");
@@ -66,6 +65,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
+
 }
 
 Application::~Application() {
@@ -117,6 +117,10 @@ int Application::startGameLoop() {
 			newTime = m_timer.getTimeSince<float>(startTime);
 			delta = newTime - currentTime;
 			currentTime = newTime;
+
+			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
+			// when the update is really slow for whatever reason.
+			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += delta;
@@ -224,4 +228,3 @@ StateStorage& Application::getStateStorage() {
 const UINT Application::getFPS() const {
 	return m_fps;
 }
-

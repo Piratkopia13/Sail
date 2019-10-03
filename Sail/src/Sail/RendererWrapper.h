@@ -9,7 +9,7 @@ class PostProcessPipeline;
 class RendererWrapper : public IEventListener {
 public:
 	RendererWrapper();
-	~RendererWrapper();
+	virtual ~RendererWrapper();
 
 	void initialize();
 

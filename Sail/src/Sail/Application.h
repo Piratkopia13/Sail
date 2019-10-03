@@ -5,7 +5,6 @@
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
 #include "api/ImGuiHandler.h"
-#include "api/Audio/AudioEngine.h"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
@@ -86,6 +85,7 @@ public:
 	const UINT getFPS() const;
 
 private:
+
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;

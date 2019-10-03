@@ -89,12 +89,12 @@ std::vector<Model*> AssimpLoader::importScene(const std::string& path, Shader* s
 
 
 void AssimpLoader::processNode(const aiScene* scene, aiNode* node, Mesh::Data& meshData) {
-	for ( int i = 0; i < node->mNumMeshes; i++ ) {
+	for (unsigned int i = 0; i < node->mNumMeshes; i++ ) {
 		getGeometry(scene->mMeshes[node->mMeshes[i]], meshData, m_meshOffsets[node->mMeshes[i]]);
 		//getMaterial(pNode, mesh->getMaterial());
 	}
 
-	for ( int i = 0; i < node->mNumChildren; i++ ) {
+	for (unsigned int i = 0; i < node->mNumChildren; i++ ) {
 		processNode(scene, node->mChildren[i], meshData);
 	}
 }
@@ -154,8 +154,8 @@ void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData, AssimpLoader
 			Indices
 		*/
 		int vIndex = 0;
-		for ( int faceIndex = 0; faceIndex < mesh->mNumFaces; faceIndex++ ) {
-			for ( int iIndex = 0; iIndex < mesh->mFaces[faceIndex].mNumIndices; iIndex++ ) {
+		for (unsigned int faceIndex = 0; faceIndex < mesh->mNumFaces; faceIndex++ ) {
+			for (unsigned int iIndex = 0; iIndex < mesh->mFaces[faceIndex].mNumIndices; iIndex++ ) {
 				if ( meshOffset.indexOffset + vIndex > buildData.numIndices ) {
 					Logger::Error("TOOO BIIIIIG INDEX");
 				}
