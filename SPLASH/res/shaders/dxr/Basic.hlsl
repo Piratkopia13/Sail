@@ -44,7 +44,7 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-#define TRACE_FROM_GBUFFERS
+	//#define TRACE_FROM_GBUFFERS
 #ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
@@ -58,15 +58,15 @@ void rayGen() {
 
 	// TODO: move calculations to cpu
 	float projectionA = CB_SceneData.farZ / (CB_SceneData.farZ - CB_SceneData.nearZ);
-    float projectionB = (-CB_SceneData.farZ * CB_SceneData.nearZ) / (CB_SceneData.farZ - CB_SceneData.nearZ);
+	float projectionB = (-CB_SceneData.farZ * CB_SceneData.nearZ) / (CB_SceneData.farZ - CB_SceneData.nearZ);
 
 	float depth = sys_inTex_depth.SampleLevel(ss, screenTexCoord, 0);
 	float linearDepth = projectionB / (depth - projectionA);
 
 	float2 screenPos = screenTexCoord * 2.0f - 1.0f;
 	screenPos.y = -screenPos.y; // Invert Y for DirectX-style coordinates.
-	
-    float3 screenVS = mul(CB_SceneData.clipToView, float4(screenPos, 0.f, 1.0f)).xyz;
+
+	float3 screenVS = mul(CB_SceneData.clipToView, float4(screenPos, 0.f, 1.0f)).xyz;
 	float3 viewRay = float3(screenVS.xy / screenVS.z, 1.f);
 
 	// float3 viewRay = normalize(float3(screenPos, 1.0f));
@@ -78,9 +78,9 @@ void rayGen() {
 	RayPayload payload;
 	payload.recursionDepth = 1;
 	payload.closestTvalue = 0;
-	payload.color = float4(0,0,0,0);
+	payload.color = float4(0, 0, 0, 0);
 	shade(worldPosition, worldNormal, diffuseColor, payload);
-	
+
 	//===========MetaBalls RT START===========
 	float3 rayDir;
 	float3 origin;
@@ -104,19 +104,21 @@ void rayGen() {
 	//===========MetaBalls RT END===========
 
 
-	lOutput[launchIndex] = (payload.color + payload_metaball.color) / 2;
+	//lOutput[launchIndex] = (payload_metaball.color);
+	//return;
 	//return;
 	float t;
 	//linearDepth /= CB_SceneData.farZ;
-	t = min(linearDepth, (payload_metaball.closestTvalue - CB_SceneData.nearZ - ray.TMin) / CB_SceneData.farZ);
+	t = min(linearDepth, payload_metaball.closestTvalue) / 10.0f;
 	//t = payload_metaball.closestTvalue / 3;// / CB_SceneData.farZ;
-	
-	lOutput[launchIndex] = float4(t,t,t,1);
 
-	float metaballDepth = (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4) * projectionA;
+	lOutput[launchIndex] = float4(t, t, t, 1);
+
+	float metaballDepth = payload_metaball.closestTvalue - CB_SceneData.nearZ * 4;// (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4)* projectionA;
+
 	if (metaballDepth <= linearDepth)
 		lOutput[launchIndex] = payload_metaball.color;
-	else{
+	else {
 		lOutput[launchIndex] = payload.color;
 	}
 #else
@@ -139,7 +141,7 @@ void rayGen() {
 	payload.recursionDepth = 0;
 	payload.closestTvalue = 0;
 
-	payload.color = float4(0,0,0,0);
+	payload.color = float4(0, 0, 0, 0);
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 
 	lOutput[launchIndex] = payload.color;
@@ -155,7 +157,7 @@ void miss(inout RayPayload payload) {
 float4 getColor(MeshData data, float2 texCoords) {
 	float4 color = data.color;
 	if (data.flags & MESH_HAS_DIFFUSE_TEX)
-		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);		
+		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
 	// if (data.flags & MESH_HAS_NORMAL_TEX)
 	// 	color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
 	// if (data.flags & MESH_HAS_SPECULAR_TEX)
@@ -200,12 +202,6 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttributes attribs) {
 	payload.recursionDepth++;
 	payload.closestTvalue = RayTCurrent();
-	// TODO: move to shadow shader 
-	// If this is the second bounce, return as hit and do nothing else
-	//if (payload.recursionDepth >= 2) {
-	//	payload.hit = 1;
-	//	return;
-	//}
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
 	float refractIndex = 0.3; // 1.333f;
@@ -220,31 +216,29 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF &~ 0x01, 0, 0, 0, reftractRaydesc, refract_payload);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
 
 	//diffuseColor = nextBounce.color;
 	float4 reflect_color = reflect_payload.color;
 	reflect_color.r *= 0.5;
 	reflect_color.g *= 0.5;
-	//reflect_color.b *= 0.9;
 	reflect_color.b += 0.1;
 	saturate(reflect_color);
 
 	float4 refract_color = refract_payload.color;
 	refract_color.r *= 0.9;
 	refract_color.g *= 0.9;
-	//refract_color.b *= 0.9;
 	refract_color.b += 0.05;
 	saturate(refract_color);
 
 	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
 	float refconst = 1 - abs(dot(normalize(hitToCam), normalInWorldSpace));
 
-	float4 finaldiffusecolor = /*float4(InstanceID() / 10.0f, 0, 1, 1);*/ saturate((reflect_color * 0.2 + refract_color) / 1.5);
+	float4 finaldiffusecolor = saturate((reflect_color * refconst + refract_color * (1 - refconst)));
 	finaldiffusecolor.a = 1;
+	
 	/////////////////////////
-
-	payload.color = finaldiffusecolor;
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, finaldiffusecolor, payload, true);
 
 	return;
 }
@@ -272,7 +266,7 @@ bool solveQuadratic(in float a, in float b, in float c, inout float x0, inout fl
 	return true;
 }
 
-bool intersect(in RayDesc ray, in float3 center, in float radius, out float t, out float4 normal) {
+bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out float t, out float4 normal) {
 	float t0, t1; // solutions for t if the ray intersects 
 
 	// analytic solution
@@ -350,7 +344,7 @@ float CalculateMetaballsPotential(in float3 position) {
 	uint nballs = CB_SceneData.nMetaballs;
 
 	int mid = InstanceID();
-	int nWeights = 5;
+	int nWeights = 6;
 
 	int start = mid - nWeights;
 	int end = mid + nWeights;
@@ -368,9 +362,7 @@ float CalculateMetaballsPotential(in float3 position) {
 
 // Calculate a normal via central differences.
 float3 CalculateMetaballsNormal(in float3 position) {
-	//return float3(0,0,0);
-	//float e = 0.5773 * 0.00001;
-	float e = 0.00001;
+	float e = 0.5773 * 0.00001;
 	return normalize(float3(
 		CalculateMetaballsPotential(position + float3(-e, 0, 0)) -
 		CalculateMetaballsPotential(position + float3(e, 0, 0)),
@@ -399,26 +391,21 @@ void IntersectionShader() {
 	ProceduralPrimitiveAttributes attr;
 
 	////////////////////////////////
-	/*find a point on the ray that are close to the metaballs and start stepping from there instead of using ObjectRayOrigin() or WorldRayOrigin() as starting point.*/
+	/*find a point on the ray that are close to the metaballs and start stepping from there instead of using the rays origin as starting point.*/
 	float4 dummy;
 	float val;
 	if (length(ObjectRayOrigin()) > 0.2) {//TODO: CHANGE THIS
-		if (intersect(rayLocal, float3(0, 0, 0), 0.2, val, dummy)) {
+		if (intersectSphere(rayLocal, float3(0, 0, 0), 0.2, val, dummy)) {
 			startT = val;
 			rayWorld.Origin += startT * rayWorld.Direction;
 		}
 	}
-
-	//ReportHit(startT, 0, attr);
-	//return;
 	////////////////////////////////
 
 	float tmin = 0, tmax = 1;
 	unsigned int MAX_LARGE_STEPS = 16;//If these steps dont hit any metaball no hit is reported.
 	unsigned int MAX_SMALL_STEPS = 32;//If a large step hit a metaball, use small steps to adjust go backwards
 
-	//unsigned int seed = 2;
-	//float t = tmin + Utils::nextRand(seed);
 	float t = tmin;
 	float minTStep = (tmax - tmin) / (MAX_LARGE_STEPS / 1.0f);
 	unsigned int iStep = 0;

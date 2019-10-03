@@ -15,11 +15,8 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 
 	// Set starting state
-	m_stateStack.pushState(States::Game);
+	m_stateStack.pushState(States::MainMenu);
 
-	// Initialize the Network wrapper instance.
-	//NetworkWrapper::getInstance().initialize();
-	//
 }
 
 Game::~Game() {
@@ -46,6 +43,7 @@ void Game::dispatchEvent(Event& event) {
 }
 
 void Game::applyPendingStateChanges() {
+	m_stateStack.prepareStateChange();
 	this->m_stateStack.applyPendingChanges();
 }
 

@@ -64,6 +64,10 @@ DXRBase::~DXRBase() {
 		st.release();
 	}
 
+	for (auto& resource : m_metaballPositions_srv) {
+		resource->Release();
+	}
+
 	m_aabb_desc_resource->Release();
 }
 

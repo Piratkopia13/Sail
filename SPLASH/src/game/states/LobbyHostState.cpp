@@ -3,12 +3,10 @@
 #include "Network/NWrapper.h"
 #include "Network/NWrapperHost.h"
 
-using namespace std;
-
 LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack)
 {
-	m_me.id = HOST_ID;	// Reserved for host, all other will get 1,2,3,...,not1337,n
+	m_me.id = HOST_ID;	// Reserved for host, all other will get 1,2,3,...,n
 	m_me.name = m_app->getStateStorage().getMenuToLobbyData()->name;
 	playerJoined(m_me);
 }
@@ -31,12 +29,12 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 	// Add to current message, If 'enter' ...
 	if (this->inputToChatLog(event.getMSG())) {
 		// ... Add current message to chat log
-		Message temp{ to_string(m_me.id), m_currentmessage };
+		Message temp{ std::to_string(m_me.id), m_currentmessage };
 		this->addTextToChat(&temp);
 
 		// ... Append my ID to it.
-		string mesgWithId = "";
-		mesgWithId += to_string(m_me.id) + ':';
+		std::string mesgWithId = "";
+		mesgWithId += std::to_string(m_me.id) + ':';
 		mesgWithId += m_currentmessage;
 		this->fetchMessage();
 
@@ -71,8 +69,8 @@ bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 
 bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	// Parse the message | ?12:DANIEL
-	string message = event.getRepliedName(); 
-	string id_string = "";
+	std::string message = event.getRepliedName(); 
+	std::string id_string = "";
 	unsigned char id_int = 0;
 
 	// Get ID...
@@ -86,7 +84,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 		}
 	}
 	// ... as a number
-	id_int = stoi(id_string);
+	id_int = std::stoi(id_string);
 
 	message.erase(0, id_string.size() + 2);	// Removes ?ID: ___
 	message.erase(message.size() - 1);		// Removes ___ :
@@ -104,7 +102,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 
 	printf("Sending out welcome package...\n");
 	for (auto currentPlayer : m_players) {
-		welcomePackage.append(to_string(currentPlayer.id));
+		welcomePackage.append(std::to_string(currentPlayer.id));
 		welcomePackage.append(":");
 		welcomePackage.append(currentPlayer.name);
 		welcomePackage.append(":");

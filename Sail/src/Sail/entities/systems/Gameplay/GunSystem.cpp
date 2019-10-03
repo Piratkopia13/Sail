@@ -80,4 +80,4 @@ void GunSystem::update(float dt) {
 		gun->gunOverloadTimer -= dt;
 		gun->projectileSpawnTimer -= dt;
 	}
-} // update
+}
