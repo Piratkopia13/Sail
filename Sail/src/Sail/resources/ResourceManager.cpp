@@ -4,6 +4,7 @@
 //#include "audio/SoundManager.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/api/Mesh.h"
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 
@@ -105,7 +106,8 @@ void ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	}
 
 	if (temp) {
-
+		Logger::Log("Loaded model: " + filename);
+		temp->setName(filename);
 		m_models.insert({ filename, std::unique_ptr<Model>(temp) });
 	}
 	else {
@@ -127,6 +129,20 @@ Model& ResourceManager::getModel(const std::string& filename, Shader* shader) {
 	}
 
 	return *pos->second;
+}
+Model& ResourceManager::getModelCopy(const std::string& filename, Shader* shader) {
+	Shader* shaderToUse = shader ? shader : m_defaultShader;
+	Model& model = getModel(filename, shaderToUse);
+	
+	Mesh* mesh = model.getMesh(0);
+	Mesh::Data data;
+	data.deepCopy(mesh->getData());
+	Model* tempModel = new Model(data, shaderToUse);
+	std::string nameCopy = getSuitableName(filename);
+	Logger::Log("copied model: " + filename + ", using name: " + nameCopy);
+	m_models.insert({ nameCopy, std::unique_ptr<Model>(tempModel) });
+
+	return *m_models.find(nameCopy)->second;
 }
 bool ResourceManager::hasModel(const std::string& filename) {
 	return m_models.find(filename) != m_models.end();
@@ -166,6 +182,17 @@ AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) 
 
 bool ResourceManager::hasAnimationStack(const std::string& fileName) {
 	return false;
+}
+
+const std::string ResourceManager::getSuitableName(const std::string& name) {
+	unsigned int iterator = 1;
+	while (iterator < 1000) {
+		std::string tempName = name + std::to_string(iterator++);
+		if (m_models.find(tempName) == m_models.end()) {
+			return tempName;
+		}
+	}
+	return "broken";
 }
 
 //void ResourceManager::reloadShaders() {

@@ -874,14 +874,13 @@ Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* light
 
 void GameState::loadAnimations() {
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-	m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 #ifndef _DEBUG
+	m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 #endif
 
 
@@ -893,6 +892,16 @@ void GameState::initAnimations() {
 
 
 
+	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
+	animationEntity2->addComponent<TransformComponent>();
+	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
+	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/walkTri.fbx"));
+	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
+	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
+
+#ifndef _DEBUG
 	auto animationEntity1 = ECS::Instance()->createEntity("animatedModel1");
 	animationEntity1->addComponent<TransformComponent>();
 	animationEntity1->getComponent<TransformComponent>()->translate(0, 0, 5);
@@ -901,15 +910,13 @@ void GameState::initAnimations() {
 	animationEntity1->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/ScuffedSteve_2.fbx"));
 	animationEntity1->getComponent<AnimationComponent>()->currentAnimation = animationEntity1->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
 
-	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
-	animationEntity2->addComponent<TransformComponent>();
-	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
-	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/walkTri.fbx", shader));
-	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
-
-#ifndef _DEBUG
+	auto animationEntity22 = ECS::Instance()->createEntity("animatedModel22");
+	animationEntity22->addComponent<TransformComponent>();
+	animationEntity22->getComponent<TransformComponent>()->translate(-4, 0, 0);
+	animationEntity22->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx", shader));
+	animationEntity22->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity22->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
+	animationEntity22->getComponent<AnimationComponent>()->currentAnimation = animationEntity22->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
 
 	auto animationEntity3 = ECS::Instance()->createEntity("animatedModel3");
 	animationEntity3->addComponent<TransformComponent>();
@@ -929,13 +936,18 @@ void GameState::initAnimations() {
 	animationEntity4->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
 	animationEntity4->getComponent<AnimationComponent>()->currentAnimation = animationEntity4->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
 
-	auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5");
-	animationEntity5->addComponent<TransformComponent>();
-	animationEntity5->getComponent<TransformComponent>()->translate(-3,4,0);
-	animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT2.fbx", shader));
-	animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT2.fbx"));
-	animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+	unsigned int count = m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx").getAnimationCount();
+	for (int i = 0; i < count; i++) {
+		auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5-"+std::to_string(i));
+		animationEntity5->addComponent<TransformComponent>();
+		animationEntity5->getComponent<TransformComponent>()->translate(0, 3+i*2, 0);
+		animationEntity5->getComponent<TransformComponent>()->scale(0.005f);
+		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/DEBUG_BALLBOT.fbx", shader));
+		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
+		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
+	}
+	
 
 #endif
 

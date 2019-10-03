@@ -79,6 +79,7 @@ public:
 
 	Animation* getAnimation(const std::string& name);
 	Animation* getAnimation(const unsigned int index);
+	const unsigned int getAnimationCount();
 
 	const glm::mat4* getTransform(const std::string& name, const float time);
 	const glm::mat4* getTransform(const std::string& name, const unsigned int frame);

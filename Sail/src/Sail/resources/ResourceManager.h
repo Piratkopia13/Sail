@@ -47,6 +47,7 @@ public:
 	// Models
 	void loadModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModel(const std::string& filename, Shader* shader = nullptr);
+	Model& getModelCopy(const std::string& filename, Shader* shader = nullptr);
 	bool hasModel(const std::string& filename);
 
 	// Animations
@@ -90,6 +91,9 @@ public:
 
 	// SoundManager
 	//SoundManager* getSoundManager();
+
+private:
+	const std::string getSuitableName(const std::string& name);
 
 private:
 	// Audio files/data mapped to their filenames

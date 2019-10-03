@@ -53,7 +53,7 @@ const Mesh::Data& Mesh::getData() const {
 	return meshData;
 }
 
-void Mesh::Data::deepCopy(const Data& other) {
+void Mesh::Data::deepCopy(const Mesh::Data& other) {
 	this->numIndices = other.numIndices;
 	this->numVertices = other.numVertices;
 	this->numInstances = other.numInstances;
