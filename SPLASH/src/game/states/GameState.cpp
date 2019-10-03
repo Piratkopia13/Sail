@@ -143,8 +143,6 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
 
-
-
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
@@ -156,20 +154,6 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
-
-
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/albedo.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/metalnessRoughnessAO.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/stoneTileFloor/normal.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/metalnessRoughnessAO.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/normal.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/albedo.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/metalnessRoughnessAO.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/brokenConcrete/normal.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/albedo.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	//Application::getInstance()->getResourceManager().loadTexture("pbr/wornBlueBurlap/normal.tga");
 
 
 	// Add a directional light which is used in forward rendering
