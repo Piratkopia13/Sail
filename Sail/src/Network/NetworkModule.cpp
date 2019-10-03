@@ -241,7 +241,6 @@ bool Network::searchHostsOnLan()
 
 	UDP_DATA udpdata = { 0 };
 	udpdata.package.packagetype = UDP_DATA_PACKAGE_TYPE_HOSTINFO_REQUEST;
-
 	if (::sendto(m_udp_broadcast_socket, (char*)& udpdata, sizeof(udpdata), 0, (sockaddr*)& m_udp_broadcast_address, sizeof(m_udp_broadcast_address)) == SOCKET_ERROR) {
 #ifdef DEBUG_NETWORK
 		int err = WSAGetLastError();
@@ -343,7 +342,7 @@ void Network::listenForUDP()
 			case UDP_DATA_PACKAGE_TYPE_HOSTINFO:
 				if (m_initializedStatus) {
 #ifdef DEBUG_NETWORK
-					printf("UDP_DATA_PACKAGE_TYPE_HOSTINFO: %d - %s\n", udpdata.package.packageData.hostdata.port, udpdata.package.packageData.hostdata.description);
+					//printf("UDP_DATA_PACKAGE_TYPE_HOSTINFO: %d - %s\n", udpdata.package.packageData.hostdata.port, udpdata.package.packageData.hostdata.description);
 #endif // DEBUG_NETWORK
 
 					NetworkEvent nEvent;

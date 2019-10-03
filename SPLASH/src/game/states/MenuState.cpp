@@ -81,7 +81,6 @@ bool MenuState::renderImgui(float dt) {
 	}
 	ImGui::End();
 
-
 	// Display open lobbies
 	ImGui::Begin("Hosted Lobbies on LAN", NULL);
 	// Per hosted game

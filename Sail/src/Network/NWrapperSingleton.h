@@ -20,6 +20,7 @@ public:
 	// Initializes NetworkWrapper as NetworkWrapperClient
 	bool connectToIP(char* = "127.0.0.1:54000");
 	bool isHost();
+	void resetWrapper();
 	void resetNetwork();
 	NWrapper* getNetworkWrapper();
 	void searchForLobbies();
