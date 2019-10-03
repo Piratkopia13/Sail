@@ -19,7 +19,7 @@ public:
 	void reset() override;
 	void init() override;
 
-	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
+	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp, const glm::vec3& fireDir, const glm::vec3& gunPos, const float hitDist);
 
 private:
 	Octree* m_octree;
