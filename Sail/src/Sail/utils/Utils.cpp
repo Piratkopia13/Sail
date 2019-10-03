@@ -46,6 +46,15 @@ float Utils::smootherstep(float edge0, float edge1, float x) {
 	return x * x * x * (x * (x * 6 - 15) + 10);
 }
 
+float Utils::wrapValue(float value, float lowerBound, float upperBound) {
+	float val = value;
+	value = std::fmodf(value - lowerBound, upperBound - lowerBound) + lowerBound;
+	if ( value < lowerBound ) {
+		value += (upperBound - lowerBound);
+	}
+	return value;
+}
+
 
 glm::vec4 Utils::getRandomColor() {
 	return glm::vec4(Utils::rnd(), Utils::rnd(), Utils::rnd(), 1);

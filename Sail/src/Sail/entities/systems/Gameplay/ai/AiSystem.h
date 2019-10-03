@@ -45,6 +45,7 @@ private:
 
 	void updatePath(AiComponent* aiComp, TransformComponent* transComp);
 	void updatePhysics(AiComponent* aiComp, TransformComponent* transComp, PhysicsComponent* physComp, float dt);
+	float getAiYaw(PhysicsComponent* physComp, float currYaw, float dt);
 	void aiUpdateFunc(Entity* entity, const float dt);
 	glm::vec3& getDesiredDir(AiComponent* aiComp, TransformComponent* transComp);
 

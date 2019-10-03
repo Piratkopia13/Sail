@@ -203,9 +203,7 @@ void AiSystem::updatePhysics(AiComponent* aiComp, TransformComponent* transComp,
 
 			// Check if the distance between current node target and ai is low enough to begin targeting next node
 			if ( glm::distance(transComp->getTranslation(), aiComp->currPath[aiComp->currNodeIndex].position) < aiComp->targetReachedThreshold ) {
-				if ( aiComp->currNodeIndex != aiComp->currPath.size() - 1 ) {
-					aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
-				}
+				aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
 				aiComp->reachedPathingTarget = true;
 			// Else continue walking
 			} else {
@@ -220,10 +218,53 @@ void AiSystem::updatePhysics(AiComponent* aiComp, TransformComponent* transComp,
 			}
 			aiComp->reachedPathingTarget = false;
 		}
+
+		float newYaw = getAiYaw(physComp, transComp->getRotations().y, dt);
+		transComp->setRotations(0.f, newYaw, 0.f);
+
 	// If the ai shouldn't walk, just stop walking
 	} else {
 		// Set velocity to 0
 		physComp->velocity = glm::vec3(0.f, physComp->velocity.y, 0.f);
 		aiComp->timeTakenOnPath = 3.f;
 	}
+}
+
+float AiSystem::getAiYaw(PhysicsComponent* physComp, float currYaw, float dt) {
+	float newYaw = currYaw;
+	if ( glm::length2(physComp->velocity) > 0.f ) {
+		float desiredYaw = 0.f;
+		// TODO: Edit turnrate and things
+		float turnRate = PI_2; // 2 pi
+		auto normalizedVel = glm::normalize(physComp->velocity);
+		float physCompX = normalizedVel.x;
+		float physCompZ = normalizedVel.z;
+		physCompZ = physCompZ != 0 ? physCompZ : 0.1f;
+		if ( physComp->velocity.z < 0.f ) {
+			desiredYaw = glm::atan(physCompX / physCompZ) + 1.5707f;
+		} else {
+			desiredYaw = glm::atan(physCompX / physCompZ) - 1.5707f;
+		}
+		desiredYaw = Utils::wrapValue(desiredYaw, 0.f, PI_2);
+		float diff = desiredYaw - currYaw;
+
+		if ( std::abs(diff) > PI ) {
+			diff = currYaw - desiredYaw;
+		}
+
+		float toTurn = 0.f;
+		if ( diff > 0 ) {
+			toTurn = turnRate * dt;
+		} else if ( diff < 0 ) {
+			toTurn = -turnRate * dt;
+		}
+
+		if ( std::abs(diff) > std::abs(toTurn) ) {
+			newYaw = Utils::wrapValue(currYaw + toTurn, 0.f, PI_2);
+		} else {
+			newYaw = Utils::wrapValue(currYaw + diff, 0.f, PI_2);
+		}
+
+	}
+	return newYaw;
 }

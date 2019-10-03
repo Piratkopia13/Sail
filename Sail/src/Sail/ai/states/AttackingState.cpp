@@ -75,10 +75,18 @@ void AttackingState::entityTargetFunc(AiComponent* aiComp, TransformComponent* t
 	if ( hitDist < 7.f && aiComp->entityTarget->getComponent<CandleComponent>()->getIsAlive() ) {
 		gunComp->setFiring(gunPos + fireDir, fireDir);
 
+		float yaw = 0.f;		
+		float piTwo = 6.28318f;
 		if ( fireDir.z < 0.f ) {
-			transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) + 1.5707f, 0.f);
+			yaw = glm::atan(fireDir.x / fireDir.z) + 1.5707f;
 		} else {
-			transComp->setRotations(0.f, glm::atan(fireDir.x / fireDir.z) - 1.5707f, 0.f);
+			yaw = glm::atan(fireDir.x / fireDir.z) - 1.5707f;
 		}
+		// To make sure that 0.f < yaw < 2 * pi
+		if ( yaw < 0 ) {
+			yaw = piTwo + yaw;
+		}
+		yaw = std::fmod(yaw, piTwo);
+		transComp->setRotations(0.f, yaw, 0.f);
 	}
 }

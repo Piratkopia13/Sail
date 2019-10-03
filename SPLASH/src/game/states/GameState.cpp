@@ -1012,7 +1012,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addChildEntity(aiCandleEntity);
 		// Create states and transitions
 		{
-			fsmComp->createState<AttackingState>(m_octree);
+			fsmComp->createState<AttackingState>();
 			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
 			// TODO: unnecessary to create new transitions for each FSM if they're all identical
 			FSM::Transition* fromAttackToFleeing = SAIL_NEW FSM::Transition;
