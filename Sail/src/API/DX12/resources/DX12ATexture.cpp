@@ -4,7 +4,7 @@
 #include "Sail/Application.h"
 
 DX12ATexture::DX12ATexture()
-	: cpuDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers() * 2)
+	: cpuDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers() * 3)
 	, isRenderableTex(false) 
 	, useOneResource(false)
 {
@@ -16,12 +16,14 @@ DX12ATexture::DX12ATexture()
 
 	state.resize(numSwapBuffers);
 	srvHeapCDHs.resize(numSwapBuffers);
+	depthSrvHeapCDHs.resize(numSwapBuffers);
 	uavHeapCDHs.resize(numSwapBuffers);
 	textureDefaultBuffers.resize(numSwapBuffers);
 	// Store the cpu descriptor handle that will contain the srv for this texture
 	for (unsigned int i = 0; i < numSwapBuffers; i++) {
-		srvHeapCDHs[i] = cpuDescHeap.getCPUDescriptorHandleForIndex(i * 2 + 0);
-		uavHeapCDHs[i] = cpuDescHeap.getCPUDescriptorHandleForIndex(i * 2 + 1);
+		srvHeapCDHs[i]		= cpuDescHeap.getCPUDescriptorHandleForIndex(i * 3 + 0);
+		uavHeapCDHs[i]		= cpuDescHeap.getCPUDescriptorHandleForIndex(i * 3 + 1);
+		depthSrvHeapCDHs[i] = cpuDescHeap.getCPUDescriptorHandleForIndex(i * 3 + 2);
 	}
 }
 
@@ -29,14 +31,16 @@ DX12ATexture::~DX12ATexture() {
 	
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getSrvCDH() const {
-	if (useOneResource) { return srvHeapCDHs[0]; }
-	return srvHeapCDHs[context->getFrameIndex()];
+D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getSrvCDH(int swapBuffer) const {
+	int i = (swapBuffer == -1) ? context->getFrameIndex() : swapBuffer;
+	if (useOneResource) { i = 0; }
+	return srvHeapCDHs[i];
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH() const {
-	if (useOneResource) { return uavHeapCDHs[0]; }
-	return uavHeapCDHs[context->getFrameIndex()];
+D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH(int swapBuffer) const {
+	int i = (swapBuffer == -1) ? context->getFrameIndex() : swapBuffer;
+	if (useOneResource) { i = 0; }
+	return uavHeapCDHs[i];
 }
 
 //void DX12ATexture::resetStates(const std::thread::id& resetTo) {

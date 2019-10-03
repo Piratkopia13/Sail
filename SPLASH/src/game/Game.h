@@ -13,15 +13,16 @@ public:
 
 	virtual int run() override;
 	virtual void processInput(float dt) override;
-	virtual void updatePerTick(float dt) override;
-	virtual void updatePerFrame(float dt, float alpha) override;
+	virtual void update(float dt, float alpha) override;
+	virtual void fixedUpdate(float dt) override;
 	virtual void render(float dt, float alpha) override;
 	virtual void dispatchEvent(Event& event) override;
 	virtual void applyPendingStateChanges() override;
 
 private:
-	// Register the different states
+	// Register the different states //
 	void registerStates();
 
 	StateStack m_stateStack;
 };
+

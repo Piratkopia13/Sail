@@ -8,15 +8,10 @@
 #include "../../../graphics/geometry/Model.h"
 
 UpdateBoundingBoxSystem::UpdateBoundingBoxSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(BoundingBoxComponent::ID);
-	readBits |= BoundingBoxComponent::BID;
-	writeBits |= BoundingBoxComponent::BID;
-	requiredComponentTypes.push_back(TransformComponent::ID);
-	readBits |= TransformComponent::BID;
-	writeBits |= TransformComponent::BID;
-
-	readBits |= ModelComponent::BID;
-	writeBits |= ModelComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<BoundingBoxComponent>(true, true, true);
+	registerComponent<TransformComponent>(true, true, true);
+	registerComponent<ModelComponent>(false, true, true);
 }
 
 UpdateBoundingBoxSystem::~UpdateBoundingBoxSystem() {

@@ -4,10 +4,11 @@
 #include "..//Sail/src/Sail/entities/components/AudioComponent.h"
 #include "..//..//Entity.h"
 #include <iterator>
+#include "..//Sail/src/Sail/Application.h"
 
 AudioSystem::AudioSystem() {
-	requiredComponentTypes.push_back(AudioComponent::ID);
-	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
+	// TODO: System owner should check if this is correct
+	registerComponent<AudioComponent>(true, true, true);
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/jump.wav");
 }
@@ -68,27 +69,62 @@ void AudioSystem::update(float dt) {
 		}
 
 			// Playing STREAMED sounds
-		std::unordered_map<std::string, bool>::iterator i = audioC->m_streamedSounds.begin();
+		std::list<std::pair<std::string, bool>>::iterator i;
+		std::list<std::pair<std::string, bool>>::iterator toBeDeleted;
+		std::list<std::pair<std::string, int>>::iterator j;
+		std::list<std::pair<std::string, int>>::iterator streamToBeDeleted;
 		std::string filename = "";
+		int streamIndex = 0;
 
-			while (i != audioC->m_streamedSounds.end()) {
-				if (i->second == true) {
-					filename = i->first;
-					i++;
+		for (i = audioC->m_streamingRequests.begin(); i != audioC->m_streamingRequests.end();) {
 
-					audioC->m_streamedSoundsID.insert({ filename, m_audioEngine.streamSound(filename) });
-					audioC->m_streamedSounds.erase(filename);
-					// NOTE: We are NOT incrementing because we JUST ERASED an element from the map
+			if (i->second == true) {
+
+				filename = i->first;
+				toBeDeleted = i;
+				i++;
+
+				streamIndex = m_audioEngine.getAvailableStreamIndex();
+
+				if (streamIndex == -1) {
+					Logger::Error("Too many sounds already streaming; failed to stream another one!");
 				}
-				else/*if (i.second == false)*/ {
-					filename = i->first;
-					i++;
+				else {
 
-					m_audioEngine.stopSpecificStream(audioC->m_streamedSoundsID.find(filename)->second);
-					audioC->m_streamedSounds.erase(filename);
-					audioC->m_streamedSoundsID.erase(filename);
+					Application::getInstance()->pushJobToThreadPool(
+						[this, filename, streamIndex](int id) {
+							return m_audioEngine.streamSound(filename, streamIndex);
+						});
+
+					audioC->m_currentlyStreaming.emplace_back(filename, streamIndex);
+					audioC->m_streamingRequests.erase(toBeDeleted);
 				}
 			}
+			else/*if (i.second == false)*/ {
+
+				filename = i->first;
+				toBeDeleted = i;
+				i++;
+
+				for (j = audioC->m_currentlyStreaming.begin(); j != audioC->m_currentlyStreaming.end();) {
+
+					streamToBeDeleted = j;
+					j++;
+
+					if (streamToBeDeleted->first == filename) {
+
+						bool expectedValue = false;
+						while (!m_audioEngine.m_streamLocks[streamToBeDeleted->second].compare_exchange_strong(expectedValue, true));
+
+						m_audioEngine.stopSpecificStream(streamToBeDeleted->second);
+						audioC->m_currentlyStreaming.erase(streamToBeDeleted);
+
+						break;
+					}
+				}
+				audioC->m_streamingRequests.erase(toBeDeleted);
+			}
+		}
 	}
 }
 

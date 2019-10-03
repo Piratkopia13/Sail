@@ -24,12 +24,16 @@ public:
 		float distToCamera;
 	};
 
-	DXRBase(const std::string& shaderFilename);
+	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
 	~DXRBase();
+
+	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
+
+	void reloadShaders();
 
 	virtual bool onEvent(Event& event) override;
 
@@ -75,12 +79,16 @@ private:
 	void createRayGenLocalRootSignature();
 	void createHitGroupLocalRootSignature();
 	void createMissLocalRootSignature();
+	void createEmptyLocalRootSignature();
 
 	void initMetaballBuffers();
 	void updateMetaballpositions(const std::vector<Metaball>& metaballs);
 
 private:
 	DX12API* m_context;
+
+	DX12RenderableTexture** m_gbufferInputTextures;
+
 	std::string m_shaderFilename;
 
 	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_sceneCB;
@@ -105,6 +113,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandle;
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
 	UINT m_heapIncr;
 
 	std::vector<MeshHandles> m_rtMeshHandles;
@@ -119,16 +128,17 @@ private:
 	const WCHAR* m_missName = L"miss";
 	const WCHAR* m_hitGroupTriangleName = L"hitGroupTriangle";
 	const WCHAR* m_hitGroupMetaBallName = L"hitGroupMetaBall";
+	const WCHAR* m_shadowMissName = L"shadowMiss";
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup2;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
-	//Tobias Testing Stuff
-	UINT m_nTriangleGeometry	= 0;
-	UINT m_nProceduralGeometry	= 0;
+	//Metaball Stuff
 	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2, -0.2, -0.2, 0.2, 0.2, 0.2 };
 	ID3D12Resource1* m_aabb_desc_resource; //m_aabb_desc uploaded to GPU
+
 };

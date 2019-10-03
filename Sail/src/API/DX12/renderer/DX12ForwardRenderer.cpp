@@ -27,7 +27,7 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
-	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Forward renderer output renderable texture", true)));
 	m_outputTexture->renameBuffer("Forward renderer output renderable texture");
 }
 
@@ -166,15 +166,18 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		shaderPipeline->checkBufferSizes(oobMax); //Temp fix to expand constant buffers if the scene contain to many objects
 		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
 
-		shaderPipeline->setCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
-		shaderPipeline->setCBufferVar_new("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), meshIndex);
-		shaderPipeline->setCBufferVar_new("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), meshIndex);
+		// Used in most shaders
+		shaderPipeline->trySetCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
+
+		shaderPipeline->trySetCBufferVar_new("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), meshIndex);
 
 		if (lightSetup) {
 			auto& dlData = lightSetup->getDirLightData();
 			auto& plData = lightSetup->getPointLightsData();
-			shaderPipeline->setCBufferVar_new("dirLight", &dlData, sizeof(dlData), meshIndex);
-			shaderPipeline->setCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
+			shaderPipeline->trySetCBufferVar_new("dirLight", &dlData, sizeof(dlData), meshIndex);
+			shaderPipeline->trySetCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
 		}
 
 		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);

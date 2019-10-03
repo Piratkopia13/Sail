@@ -3,10 +3,11 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/candles/CandleSystem.h"
-#include "Sail/entities/systems/Cleanup/EntityRemovalSystem.h"
+#include "Sail/entities/systems/entityManagement/EntityAdderSystem.h"
+#include "Sail/entities/systems/entityManagement/EntityRemovalSystem.h"
 #include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
 #include "Sail/entities/systems/light/LightSystem.h"
-#include "Sail/entities/systems/gameplay/AiSystem.h"
+#include "Sail/entities/systems/gameplay/ai/AiSystem.h"
 #include "Sail/entities/systems/gameplay/GunSystem.h"
 #include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
@@ -16,10 +17,16 @@
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/Input/GameInputSystem.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
+#include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/TimeSettings.h"
+#include "Sail/utils/GameDataTracker.h"
+#include "Network/NWrapperSingleton.h"
 
 #include <sstream>
 #include <iomanip>
+
+// Uncomment to use forward rendering
+//#define DISABLE_RT
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -70,11 +77,11 @@ GameState::GameState(StateStack& stack)
 	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
 
 	//Wireframe bounding box model
-	m_boundingBoxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), wireframeShader);
-	m_boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
 	//Create octree
-	m_octree = SAIL_NEW Octree(&m_scene, m_boundingBoxModel.get());
+	m_octree = SAIL_NEW Octree(boundingBoxModel);
 	//-----------------------
 
 	/*
@@ -98,6 +105,9 @@ GameState::GameState(StateStack& stack)
 	// Create lifetime system
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
 
+	// Create entity adder system
+	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
+
 	// Create entity removal system
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
   
@@ -120,6 +130,11 @@ GameState::GameState(StateStack& stack)
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
+	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
+
+	//Create system for input
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -144,18 +159,25 @@ GameState::GameState(StateStack& stack)
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 
 	// Set up the scene
-	//m_scene->addSkybox(L"skybox_space_512.dds"); //TODO
-	m_scene.setLightSetup(&m_lights);
+	//addSkybox(L"skybox_space_512.dds"); //TODO
 
+	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
+#ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+	(*Application::getInstance()->getRenderWrapper()).changeRenderer(1);
+	m_componentSystems.renderSystem->refreshRenderer();
+	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
+#else
+	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
+#endif
 
 	// Create/load models
 
-	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
-	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
+	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
 	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
@@ -184,41 +206,40 @@ GameState::GameState(StateStack& stack)
 
 	player->addComponent<PlayerComponent>();
 	player->addComponent<TransformComponent>();
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
 
 	player->addComponent<PhysicsComponent>();
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+
 	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
 
 	// Give player a bounding box
-	player->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 
 	// Temporary projectile model for the player's gun
-	player->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
-
-	//Create system for input
-	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_cam);
+	player->addComponent<GunComponent>(cubeModel, boundingBoxModel);
 
 	player->addComponent<AudioComponent>();
-	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, true);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, false);
-
+	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
+	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
 
 
 	// Create candle for the player
 	m_currLightIndex = 0;
-	auto e = createCandleEntity("PlayerCandle", lightModel, glm::vec3(0.f, 2.f, 0.f));
+	auto e = createCandleEntity("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
+	e->getComponent<CandleComponent>()->setOwner(player->getID());
 	player->addChildEntity(e);
 
-	m_scene.addEntity(player);
-	
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+
+
+
+	// Inform CandleSystem of the player
+	m_componentSystems.candleSystem->setPlayerEntityID(player->getID());
 
 
 	/*
@@ -236,170 +257,158 @@ GameState::GameState(StateStack& stack)
 	animationEntity->addComponent<AnimationComponent>(animationStack);
 	animationEntity->getComponent<AnimationComponent>()->currentAnimation = animationStack->getAnimation(0);
 
-	m_scene.addEntity(animationEntity);*/
+	*/
 
 	{
 		auto e = ECS::Instance()->createEntity("Arena");
 		e->addComponent<ModelComponent>(arenaModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+		
 
 		e = ECS::Instance()->createEntity("Map_Barrier1");
 		e->addComponent<ModelComponent>(barrierModel);
 		e->addComponent<TransformComponent>(glm::vec3(-16.15f*0.3f, 0.f, 3.83f*0.3f), glm::vec3(0.f, -0.79f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+	
 
 		e = ECS::Instance()->createEntity("Map_Barrier2");
 		e->addComponent<ModelComponent>(barrierModel);
 		e->addComponent<TransformComponent>(glm::vec3(-4.54f*0.3f, 0.f, 8.06f *0.3f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+		
 
 		e = ECS::Instance()->createEntity("Map_Barrier3");
 		e->addComponent<ModelComponent>(barrierModel);
 		e->addComponent<TransformComponent>(glm::vec3(8.46f *0.3f, 0.f, 8.06f *0.3f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+		
 
 		e = ECS::Instance()->createEntity("Map_Container1");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<TransformComponent>(glm::vec3(6.95f *0.3f, 0.f, 25.f *0.3f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+	
 
 		e = ECS::Instance()->createEntity("Map_Container2");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<TransformComponent>(glm::vec3(-25.f*0.3f, 0.f, 12.43f*0.3f), glm::vec3(0.f, 1.57f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+		
 
 		e = ECS::Instance()->createEntity("Map_Container3");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<TransformComponent>(glm::vec3(-25.f*0.3f, 2.4f, -7.73f*0.3f), glm::vec3(0.f, 1.57f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+		
 
 		e = ECS::Instance()->createEntity("Map_Container4");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<TransformComponent>(glm::vec3(-19.67f*0.3f, 0.f, -24.83f*0.3f), glm::vec3(0.f, 0.79f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+	
 
 		e = ECS::Instance()->createEntity("Map_Container5");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f*0.3f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+	
 
 		e = ECS::Instance()->createEntity("Map_Container6");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<TransformComponent>(glm::vec3(24.20f*0.3f, 0.f, -8.f*0.3f), glm::vec3(0.f, 1.57f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+
 
 		e = ECS::Instance()->createEntity("Map_Container7");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<TransformComponent>(glm::vec3(24.2f*0.3f, 2.4f, -22.8f*0.3f), glm::vec3(0.f, 1.57f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+	
 
 		e = ECS::Instance()->createEntity("Map_Container8");
 		e->addComponent<ModelComponent>(containerModel);
 		e->addComponent<TransformComponent>(glm::vec3(24.36f*0.3f, 0.f, -32.41f*0.3f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+	
 
 		e = ECS::Instance()->createEntity("Map_Ramp1");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<TransformComponent>(glm::vec3(5.2f *0.3f, 0.f, -32.25f *0.3f), glm::vec3(0.f, 3.14f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+	
 		e = ECS::Instance()->createEntity("Map_Ramp2");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<TransformComponent>(glm::vec3(15.2f*0.3f, 2.4f, -32.25f*0.3f), glm::vec3(0.f, 3.14f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
+	
 		e = ECS::Instance()->createEntity("Map_Ramp3");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<TransformComponent>(glm::vec3(24.f*0.3f, 2.4f, -5.5f*0.3f), glm::vec3(0.f, 4.71f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
 		e = ECS::Instance()->createEntity("Map_Ramp4");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<TransformComponent>(glm::vec3(24.f*0.3f, 0.f, 9.f*0.3f), glm::vec3(0.f, 4.71f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
 		e = ECS::Instance()->createEntity("Map_Ramp5");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<TransformComponent>(glm::vec3(-16.f*0.3f, 0.f, 20.f*0.3f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
 		e = ECS::Instance()->createEntity("Map_Ramp6");
 		e->addComponent<ModelComponent>(rampModel);
 		e->addComponent<TransformComponent>(glm::vec3(-34.f*0.3f, 0.f, 20.f*0.3f), glm::vec3(0.f, 3.14f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
 
 		e = ECS::Instance()->createEntity("Character");
 		e->addComponent<ModelComponent>(characterModel);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<PhysicsComponent>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
-		m_scene.addEntity(e);
 
-		e = ECS::Instance()->createEntity("AiCharacter");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(5.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
-		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
-		e->addComponent<GunComponent>(m_cubeModel.get(), m_boundingBoxModel.get());
-		e->addChildEntity(createCandleEntity("AiCandle", lightModel, glm::vec3(0.f, 2.f, 0.f)));
-		m_scene.addEntity(e);
-
-
-		e = ECS::Instance()->createEntity("MetaBall");
-		e->addComponent<MetaballComponent>();
-		e->addComponent<TransformComponent>(glm::vec3(1, 2, 3));
-		m_scene.addEntity(e);
 
 		//e = ECS::Instance()->createEntity("MetaBall");
 		//e->addComponent<MetaballComponent>();
-		//e->addComponent<TransformComponent>(glm::vec3(-2, 2, 0), glm::vec3(-0, 45, 0));
-		//m_scene.addEntity(e);
+		//e->addComponent<TransformComponent>(glm::vec3(1, 2, 3));
 
-		//e = ECS::Instance()->createEntity("MetaBall");
-		//e->addComponent<MetaballComponent>();
-		//e->addComponent<TransformComponent>(glm::vec3(-2, 2, 2));
-		//m_scene.addEntity(e);
+		int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+		if (botCount > 1) {
+			botCount = 1;
+		}
+		for (size_t i = 0; i < botCount; i++) {
+			e = ECS::Instance()->createEntity("AiCharacter");
+			e->addComponent<ModelComponent>(characterModel);
+			e->addComponent<TransformComponent>(glm::vec3(5.f*(i+1), 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+			e->addComponent<BoundingBoxComponent>(boundingBoxModel);
+			e->addComponent<CollidableComponent>();
+			e->addComponent<PhysicsComponent>();
+			e->addComponent<AiComponent>();
+			e->addComponent<GunComponent>(cubeModel, boundingBoxModel);
+			e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
-		e = createCandleEntity("Map_Candle1", lightModel, glm::vec3(0.f, 0.0f, 0.f));
+		}
 
 
 #ifdef _DEBUG
-		// Candle1 holds all lights you can place in debug
+		// Candle1 holds all lights you can place in debug...
 		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
@@ -413,13 +422,9 @@ GameState::GameState(StateStack& stack)
 		m_frameTimesHistory = SAIL_NEW float[100];
 	}
 
-
-
-
-
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 #ifdef _DEBUG_NODESYSTEM
-	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader, &m_scene);
+	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader);
 #else
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
@@ -445,20 +450,17 @@ bool GameState::processInput(float dt) {
 	}
 
 #endif
-	//Toggle bounding boxes rendering
-	if (Input::IsKeyPressed(KeyBinds::showBoundingBoxes)) {
-		m_scene.showBoundingBoxes(true);
-	}
-	if (Input::IsKeyPressed(KeyBinds::hideBoundingBoxes)) {
-		m_scene.showBoundingBoxes(false);
+
+	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
+		m_componentSystems.renderSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.entity) {
-			Logger::Log("Ray intersection with " + tempInfo.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
 
@@ -468,7 +470,17 @@ bool GameState::processInput(float dt) {
 		for ( int i = 0; i < entities.size(); i++ ) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
 			if ( aiComp->entityTarget == nullptr ) {
-				aiComp->setTarget(m_player);
+				
+				// Find the candle child entity of player
+				Entity* candle = nullptr;
+				std::vector<Entity::SPtr> children = m_player->getChildEntities();
+				for (auto& child : children) {
+					if (child->hasComponent<CandleComponent>()) {
+						candle = child.get();
+						break;
+					}
+				}
+				aiComp->setTarget(candle);
 			} else {
 				aiComp->setTarget(nullptr);
 			}
@@ -489,7 +501,7 @@ bool GameState::processInput(float dt) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
 		Event e(Event::POTATO);
 		m_app->dispatchEvent(e);
-	}
+	}  
 
 	// Lights the selected candle
 	if (Input::WasKeyJustPressed(KeyBinds::lightCandle1)) {
@@ -499,21 +511,36 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.candleSystem->lightCandle("Map_Candle2");
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+		if (m_paused) {
+			Input::HideCursor(!Input::IsCursorHidden());
+			m_paused = false;
+			requestStackPop();
+		}
+		else if(!m_paused){
+			if (Input::IsCursorHidden()) {
+				Input::HideCursor(!Input::IsCursorHidden());
+			}
+			m_paused = true;
+			requestStackPush(States::Pause);
+
+		}
+
+	}
+
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
 		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
 	}
 #endif
+
 	return true;
 }
 
-
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
-
-	// Forward events
-	m_scene.onEvent(event);
+	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
 
 	return true;
 }
@@ -523,15 +550,32 @@ bool GameState::onResize(WindowResizeEvent& event) {
 	return true;
 }
 
-bool GameState::updatePerTick(float dt) {
+bool GameState::onPlayerCandleHit(PlayerCandleHitEvent& event) {
+	this->requestStackPop();
+	this->requestStackPush(States::EndGame);
+	m_poppedThisFrame = true;
+	return true;
+}
+
+bool GameState::update(float dt, float alpha) {
+	// UPDATE REAL TIME SYSTEMS
+	updatePerFrameComponentSystems(dt, alpha);
+
+	m_lights.updateBufferData();
+
+	return true;
+}
+
+bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " 
+		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
 
 	static float counter = 0.0f;
 	static float size = 1.0f;
 	static float change = 0.4f;
-	
+
 	counter += dt * 2.0f;
 
 	updatePerTickComponentSystems(dt);
@@ -539,23 +583,14 @@ bool GameState::updatePerTick(float dt) {
 	return true;
 }
 
-bool GameState::updatePerFrame(float dt, float alpha) {
-	// UPDATE REAL TIME SYSTEMS
-	updatePerFrameComponentSystems(dt, alpha);
-
-	m_lights.updateBufferData();
-
-	return false;
-}
-
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
-bool GameState::render(float dt, float alpha) {
+bool GameState::render(float dt, float alpha) {	
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
-	// Draw the scene
-	m_scene.draw(m_cam, alpha);
+	// Draw the scene. Entities with model and trans component will be rendered.
+	m_componentSystems.renderSystem->draw(m_cam, alpha);
 
 	return true;
 }
@@ -725,13 +760,10 @@ bool GameState::renderImguiProfiler(float dt) {
 }
 
 bool GameState::renderImGuiRenderSettings(float dt) {
-	static int selectedRenderer = 0;
 	ImGui::Begin("Rendering settings");
-	const char* items[] = { "Forward raster", "Raytraced" };
-	if (ImGui::Combo("Renderer", &selectedRenderer, items, IM_ARRAYSIZE(items))) {
-		m_scene.changeRenderer(selectedRenderer);
-	}
-	ImGui::Checkbox("Enable post processing", &m_scene.getDoProcessing());
+	ImGui::Checkbox("Enable post processing", 
+		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
+	);
 	ImGui::End();
 
 	return false;
@@ -771,30 +803,66 @@ bool GameState::renderImGuiLightDebug(float dt) {
 	return true;
 }
 
+void GameState::shutDownGameState() {
+
+	// Show mouse cursor if hidden
+	if (Input::IsCursorHidden()) {
+		Input::HideCursor(!Input::IsCursorHidden());
+	}
+
+	// Reset network
+	NWrapperSingleton::getInstance().resetNetwork();
+
+	// Clear all entities
+	ECS::Instance()->destroyAllEntities();
+	
+	// Clear all neccesary systems
+	m_componentSystems.gameInputSystem->clean();
+
+}
+
 // HERE BE DRAGONS
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
+	m_currentlyReadingMask = 0;
+	m_currentlyWritingMask = 0;
+	m_runningSystemJobs.clear();
+	m_runningSystems.clear();
+	
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
+	
+	m_componentSystems.entityAdderSystem->update(0.0f);
 
-	m_componentSystems.physicSystem->update(dt); // Needs to be updated before boundingboxes etc.
-	m_componentSystems.gunSystem->update(dt, &m_scene); // Order?
-	m_componentSystems.projectileSystem->update(dt);
-	m_componentSystems.animationSystem->update(dt);
-	m_componentSystems.aiSystem->update(dt);
+	m_componentSystems.physicSystem->update(dt);
+	// This can probably be used once the respective system developers 
+	//	have checked their respective systems for proper component registration
+	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
 
-	m_componentSystems.candleSystem->update(dt);
+	// TODO: Investigate this
+	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
+	runSystem(dt, m_componentSystems.projectileSystem);
+	runSystem(dt, m_componentSystems.animationSystem);
+	runSystem(dt, m_componentSystems.aiSystem);
 
-	m_componentSystems.updateBoundingBoxSystem->update(dt);
-	m_componentSystems.octreeAddRemoverSystem->update(dt);
+	runSystem(dt, m_componentSystems.candleSystem);
 
+	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
+	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
+	runSystem(dt, m_componentSystems.lifeTimeSystem);
+	runSystem(dt, m_componentSystems.audioSystem);
 
-	m_componentSystems.lifeTimeSystem->update(dt);
+	// Wait for all the systems to finish before starting the removal system
+	for ( auto& fut : m_runningSystemJobs ) {
+		fut.get();
+	}
+
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
 
-	m_componentSystems.audioSystem->update(dt);
+	if (m_poppedThisFrame) {
+		shutDownGameState();
+	}
 }
-
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates the camera
@@ -808,15 +876,62 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
+
+	m_componentSystems.audioSystem->update(dt);
 }
 
-Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos) {
+void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
+	bool started = false;
+	while ( !started ) {
+		// First check if the system can be run
+		if ( !(m_currentlyReadingMask & toRun->getWriteBitMask()).any() && 
+			!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
+			!( m_currentlyWritingMask & toRun->getWriteBitMask() ).any() ) {
+
+			m_currentlyWritingMask |= toRun->getWriteBitMask();
+			m_currentlyReadingMask |= toRun->getReadBitMask();
+			started = true;
+			m_runningSystems.push_back(toRun);
+			m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun] (int id) {toRun->update(dt); return toRun; }));
+			
+		} else {
+			// Then loop through all futures and see if any of them are done
+			for ( int i = 0; i < m_runningSystemJobs.size(); i++ ) {
+				if ( m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready ) {
+					auto doneSys = m_runningSystemJobs[i].get();
+
+					m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
+					i--;
+
+					m_currentlyWritingMask ^= doneSys->getWriteBitMask();
+					m_currentlyReadingMask ^= doneSys->getReadBitMask();
+
+					int toRemoveIndex = -1;
+					for ( int j = 0; j < m_runningSystems.size(); j++ ) {
+						// Currently just compares memory adresses (if they point to the same location they're the same object)
+						if ( m_runningSystems[j] == doneSys )
+							toRemoveIndex = j;
+					}
+
+					m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
+
+					// Since multiple systems can read from components concurrently, currently best solution I came up with
+					for ( auto _sys : m_runningSystems ) {
+						m_currentlyReadingMask |= _sys->getReadBitMask();
+					}
+				}
+			}
+		}
+	}
+}
+
+Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos) {
 	//creates light with model and pointlight
 	auto e = ECS::Instance()->createEntity(name.c_str());
 	e->addComponent<CandleComponent>();
 	e->addComponent<ModelComponent>(lightModel);
 	e->addComponent<TransformComponent>(lightPos);
-	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+	e->addComponent<BoundingBoxComponent>(bbModel);
 	e->addComponent<CollidableComponent>();
 	PointLight pl;
 	pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
@@ -824,20 +939,32 @@ Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* light
 	pl.setAttenuation(.0f, 0.1f, 0.02f);
 	pl.setIndex(m_currLightIndex++);
 	e->addComponent<LightComponent>(pl);
-	m_scene.addEntity(e);
 
 	return e;
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
+
+	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
+		"cubeWidth1.fbx", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
+	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+
+	Model* tmpbbModel = &m_app->getResourceManager().getModel(
+		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<WireframeShader>());
+	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+
 	auto e = ECS::Instance()->createEntity("new cube");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
+	e->addComponent<ModelComponent>(tmpCubeModel);
+
 	e->addComponent<TransformComponent>(position);
-	e->addComponent<BoundingBoxComponent>(m_boundingBoxModel.get());
+
+	e->addComponent<BoundingBoxComponent>(tmpbbModel);
+
 	e->addComponent<CollidableComponent>();
-	m_scene.addEntity(e);
+
 	return std::string("Added Cube at (" +
 		std::to_string(position.x) + ":" +
 		std::to_string(position.y) + ":" +
 		std::to_string(position.z) + ")");
 }
+

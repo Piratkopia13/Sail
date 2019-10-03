@@ -11,26 +11,27 @@
 #include "Sail/entities/components/PhysicsComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
+
 #include "Sail/entities/components/MetaballComponent.h"
+#include "Sail/utils/GameDataTracker.h"
 #include "Sail/entities/components/CollidableComponent.h"
 
-
 GunSystem::GunSystem() : BaseComponentSystem() {
-	requiredComponentTypes.push_back(GunComponent::ID);
-	readBits |= GunComponent::BID;
-	writeBits |= GunComponent::BID;
+	// TODO: System owner should check if this is correct
+	registerComponent<GunComponent>(true, true, true);
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 GunSystem::~GunSystem() {
 
 }
 
-void GunSystem::update(float dt, Scene* scene) {
+
+void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
 
 		if (gun->firing) {
-
 			if (gun->gunOverloadTimer <= 0) {
 				if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
 					gun->gunOverloadTimer = gun->m_gunOverloadCooldown;
@@ -48,19 +49,22 @@ void GunSystem::update(float dt, Scene* scene) {
 						randPos.g = ((float)rand() / RAND_MAX) * maxrand;
 						randPos.b = ((float)rand() / RAND_MAX) * maxrand;
 
-						e->addComponent<MetaballComponent>(/*gun->getProjectileModel()*/);
+						e->addComponent<MetaballComponent>();
 						e->addComponent<BoundingBoxComponent>();
-						//e->addComponent<CollidableComponent>();
 						e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
 						e->addComponent<LifeTimeComponent>(4.0f);
 						e->addComponent<ProjectileComponent>();
 						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
+
 						e->addComponent<PhysicsComponent>();
 						PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-						physics->velocity = gun->direction * ((gun->projectileSpeed + i * 0.1f) * 1.0f);
-						physics->constantAcceleration = glm::vec3(0.f, -9.82f, 0.f);
+						physics->velocity = gun->direction * gun->projectileSpeed;
+						physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+						physics->drag = 2.0f;
+						physics->bounciness = 0.1f;
+						physics->padding = 0.2f;
 
-						scene->addEntity(e);//change when scene is a component.
+						m_gameDataTracker->logWeaponFired();
 					}
 				}
 			}
@@ -76,7 +80,4 @@ void GunSystem::update(float dt, Scene* scene) {
 		gun->gunOverloadTimer -= dt;
 		gun->projectileSpawnTimer -= dt;
 	}
-}
-void GunSystem::update(float dt) {
-
-}
+} // update

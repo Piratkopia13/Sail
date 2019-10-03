@@ -27,6 +27,7 @@ namespace KeyBinds {
 	int putDownCandle;
 	int disableCursor;
 	int shoot;
+	int showInGameMenu;
 
 	// Application
 	int alt;
@@ -44,6 +45,9 @@ namespace KeyBinds {
 
 	// LobbyState
 	int sendMessage;
+
+	// DX12RaytracingRenderer
+	int reloadDXRShader;
 }
 
 void KeyBinds::init() {
@@ -69,6 +73,7 @@ void KeyBinds::init() {
 	putDownCandle = SAIL_KEY_F;
 	disableCursor = SAIL_MOUSE_RIGHT_BUTTON;
 	shoot = SAIL_MOUSE_LEFT_BUTTON;
+	showInGameMenu = SAIL_KEY_ESCAPE;
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds
@@ -86,4 +91,8 @@ void KeyBinds::init() {
 
 	// LobbyState
 	sendMessage = SAIL_KEY_RETURN;
+
+	// DX12RaytracingRenderer
+	reloadDXRShader = SAIL_KEY_F5;
+
 }

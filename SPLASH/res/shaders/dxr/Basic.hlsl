@@ -3,6 +3,10 @@
 #include "Common_hlsl_cpp.hlsl"
 
 RaytracingAccelerationStructure gRtScene : register(t0);
+Texture2D<float4> sys_inTex_normals : register(t10);
+Texture2D<float4> sys_inTex_diffuse : register(t11);
+Texture2D<float> sys_inTex_depth : register(t12);
+
 RWTexture2D<float4> lOutput : register(u0);
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
@@ -17,6 +21,8 @@ Texture2D<float4> sys_texNormal : register(t3);
 Texture2D<float4> sys_texSpecular : register(t4);
 
 SamplerState ss : register(s0);
+
+#include "Shading.hlsl"
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -36,17 +42,93 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 
 [shader("raygeneration")]
 void rayGen() {
+	uint2 launchIndex = DispatchRaysIndex().xy;
+
+//#define TRACE_FROM_GBUFFERS
+#ifdef TRACE_FROM_GBUFFERS
+	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
+
+	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
+	// G-Buffers contain data in world space
+	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
+	float4 diffuseColor = sys_inTex_diffuse.SampleLevel(ss, screenTexCoord, 0);
+
+	// ---------------------------------------------------
+	// --- Calculate world position from depth texture ---
+
+	// TODO: move calculations to cpu
+	float projectionA = CB_SceneData.farZ / (CB_SceneData.farZ - CB_SceneData.nearZ);
+    float projectionB = (-CB_SceneData.farZ * CB_SceneData.nearZ) / (CB_SceneData.farZ - CB_SceneData.nearZ);
+
+	float depth = sys_inTex_depth.SampleLevel(ss, screenTexCoord, 0);
+	float linearDepth = projectionB / (depth - projectionA);
+
+	float2 screenPos = screenTexCoord * 2.0f - 1.0f;
+	screenPos.y = -screenPos.y; // Invert Y for DirectX-style coordinates.
+	
+    float3 screenVS = mul(CB_SceneData.clipToView, float4(screenPos, 0.f, 1.0f)).xyz;
+	float3 viewRay = float3(screenVS.xy / screenVS.z, 1.f);
+
+	// float3 viewRay = normalize(float3(screenPos, 1.0f));
+	float4 vsPosition = float4(viewRay * linearDepth, 1.0f);
+
+	float4 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition);
+	// ---------------------------------------------------
+
+	RayPayload payload;
+	payload.recursionDepth = 1;
+	payload.closestTvalue = 0;
+	payload.color = float4(0,0,0,0);
+	shade(worldPosition, worldNormal, diffuseColor, payload);
+	
+	//===========MetaBalls RT START===========
 	float3 rayDir;
 	float3 origin;
-
-	uint2 launchIndex = DispatchRaysIndex().xy;
 	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
 	generateCameraRay(launchIndex, origin, rayDir);
 
 	RayDesc ray;
 	ray.Origin = origin;
 	ray.Direction = rayDir;
+	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
+	// TMin should be kept small to prevent missing geometry at close contact areas
+	ray.TMin = 0.00001;
+	ray.TMax = 10000.0;
 
+	RayPayload payload_metaball;
+	payload_metaball.recursionDepth = 0;
+	payload_metaball.closestTvalue = 0;
+	payload_metaball.color = float4(0, 0, 0, 0);
+
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payload_metaball);
+	//===========MetaBalls RT END===========
+
+
+	lOutput[launchIndex] = (payload.color + payload_metaball.color) / 2;
+	//return;
+	float t;
+	//linearDepth /= CB_SceneData.farZ;
+	t = min(linearDepth, payload_metaball.closestTvalue / CB_SceneData.farZ);
+	//t = payload_metaball.closestTvalue / 3;// / CB_SceneData.farZ;
+	
+	lOutput[launchIndex] = float4(t,t,t,1);
+
+	if (payload_metaball.closestTvalue <= linearDepth)
+		lOutput[launchIndex] = payload_metaball.color;
+	else{
+		lOutput[launchIndex] = payload.color;
+	}
+#else
+	// Fully RT
+
+	float3 rayDir;
+	float3 origin;
+	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
+	generateCameraRay(launchIndex, origin, rayDir);
+
+	RayDesc ray;
+	ray.Origin = origin;
+	ray.Direction = rayDir;
 	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
 	// TMin should be kept small to prevent missing geometry at close contact areas
 	ray.TMin = 0.00001;
@@ -54,41 +136,36 @@ void rayGen() {
 
 	RayPayload payload;
 	payload.recursionDepth = 0;
-	payload.hit = 0;
-	payload.color = float4(0, 0, 0, 0);
-	TraceRay(gRtScene, 0, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
-	lOutput[launchIndex] = payload.color;
+	payload.closestTvalue = 0;
 
-	// lOutput[launchIndex] = float4(1.0f, 0.2f, 0.2f, 1.0f);
+	payload.color = float4(0,0,0,0);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+
+	lOutput[launchIndex] = payload.color;
+#endif
 }
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
 	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
+	payload.closestTvalue = 10000000;
 }
 
 float4 getColor(MeshData data, float2 texCoords) {
 	float4 color = data.color;
 	if (data.flags & MESH_HAS_DIFFUSE_TEX)
-		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
-	if (data.flags & MESH_HAS_NORMAL_TEX)
-		color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
-	if (data.flags & MESH_HAS_SPECULAR_TEX)
-		color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
+		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);		
+	// if (data.flags & MESH_HAS_NORMAL_TEX)
+	// 	color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
+	// if (data.flags & MESH_HAS_SPECULAR_TEX)
+	// 	color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
 	return color;
 }
 
 [shader("closesthit")]
 void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
 	payload.recursionDepth++;
-
-	// TODO: move to shadow shader 
-	// If this is the second bounce, return as hit and do nothing else
-	if (payload.recursionDepth >= 10) {
-		payload.hit = 1;
-		payload.color = float4(0, 0, 1, 1);
-		return;
-	}
+	payload.closestTvalue = RayTCurrent();
 
 	float3 barycentrics = float3(1.0 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
 	uint instanceID = InstanceID();
@@ -113,74 +190,21 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 
 	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
-	float3 shadedColor = float3(0.f, 0.f, 0.f);
 
-	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
-	// TODO: read these from model data
-	float shininess = 10.0f;
-	float specMap = 1.0f;
-	float kd = 1.0f;
-	float ka = 1.0f;
-	float ks = 1.0f;
-
-	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLightInput p = CB_SceneData.pointLights[i];
-
-		// Treat pointlights with no color as no light
-		if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
-			continue;
-		}
-
-		// Shoot a ray towards the point light to figure out if in shadow or not
-		float3 towardsLight = p.position - Utils::HitWorldPosition();
-		float dstToLight = length(towardsLight);
-
-		RayPayload shadowPayload;
-		shadowPayload.recursionDepth = 10;
-		shadowPayload.hit = 0;
-		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, Utils::getRayDesc(normalize(towardsLight), dstToLight), shadowPayload);
-
-		// Dont do any shading if in shadow
-		if (shadowPayload.hit == 1) {
-			continue;
-		}
-
-		float3 hitToLight = p.position - Utils::HitWorldPosition();
-		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
-		float distanceToLight = length(hitToLight);
-
-		float diffuseCoefficient = saturate(dot(normalInWorldSpace, hitToLight));
-
-		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
-		if (diffuseCoefficient > 0.f) {
-			float3 r = reflect(-hitToLight, normalInWorldSpace);
-			r = normalize(r);
-			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
-		}
-
-		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
-
-		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor.rgb * p.color * attenuation;
-	}
-
-	float3 ambient = diffuseColor.rgb * ka * ambientCoefficient;
-
-	payload.color = float4(saturate(ambient + shadedColor), 1.0f);
-
-
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, diffuseColor, payload, true);
 }
 
 
 [shader("closesthit")]
 void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttributes attribs) {
 	payload.recursionDepth++;
-
+	payload.closestTvalue = RayTCurrent();
 	// TODO: move to shadow shader 
 	// If this is the second bounce, return as hit and do nothing else
-	if (payload.recursionDepth >= 2) {
-		payload.hit = 1;
-		return;
-	}
+	//if (payload.recursionDepth >= 2) {
+	//	payload.hit = 1;
+	//	return;
+	//}
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
 	float refractIndex = 0.3; // 1.333f;
@@ -215,61 +239,12 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
 	float refconst = 1 - abs(dot(normalize(hitToCam), normalInWorldSpace));
 
-	//float4 finaldiffusecolor = saturate(reflect_color * refconst + refract_color * (1 - refconst));
-	//float4 finaldiffusecolor = float4(CB_SceneData.nMetaballs, CB_SceneData.nMetaballs, CB_SceneData.nMetaballs,1) * 10 / MAX_NUM_METABALLS;// saturate((reflect_color * 0.2 + refract_color) / 1.5);
 	float4 finaldiffusecolor = /*float4(InstanceID() / 10.0f, 0, 1, 1);*/ saturate((reflect_color * 0.2 + refract_color) / 1.5);
-	//float4 finaldiffusecolor = reflect_color;
 	finaldiffusecolor.a = 1;
 	/////////////////////////
 
-#define USE_PHONG_SHADEING
-#ifdef USE_PHONG_SHADEING
-	float3 shadedColor = float3(0.f, 0.f, 0.f);
-
-	float3 ambientCoefficient = float3(0.0f, 0.0f, 0.0f);
-	// TODO: read these from model data
-	float shininess = 100.0f;
-	float specMap = 1.0f;
-	float kd = 1.0f;
-	float ka = 1.0f;
-	float ks = 3.0f;
-
-	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLightInput p = CB_SceneData.pointLights[i];
-
-		// Treat pointlights with no color as no light
-		if (p.color.r == 0.f && p.color.g == 0.f && p.color.b == 0.f) {
-			continue;
-		}
-
-		// Shoot a ray towards the point light to figure out if in shadow or not
-		float3 towardsLight = p.position - Utils::HitWorldPosition();
-		float dstToLight = length(towardsLight);
-
-		float3 hitToLight = p.position - Utils::HitWorldPosition();
-		float distanceToLight = length(hitToLight);
-
-		float diffuseCoefficient = 1;// clamp(dot(normalInWorldSpace, hitToLight), 0.2, 1);
-
-		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
-		if (diffuseCoefficient > 0.f) {
-			float3 r = reflect(-hitToLight, normalInWorldSpace);
-			r = normalize(r);
-			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
-		}
-
-		float attenuation = 1.f / (p.attConstant + p.attLinear * distanceToLight + p.attQuadratic * pow(distanceToLight, 2.f));
-
-		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * finaldiffusecolor.rgb * p.color * attenuation;
-	}
-
-	float3 ambient = finaldiffusecolor.rgb * ka * ambientCoefficient;
-
-	/////////////////////////
-	payload.color = float4(shadedColor, 1);
-#else
 	payload.color = finaldiffusecolor;
-#endif
+
 	return;
 }
 
@@ -478,4 +453,5 @@ void IntersectionShader() {
 		t += minTStep;
 		currPos = rayWorld.Origin + t * rayWorld.Direction;
 	}
+
 }

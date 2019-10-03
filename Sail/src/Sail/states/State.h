@@ -17,12 +17,12 @@ class State : public IEventListener {
 		State(StateStack& stack);
 		virtual ~State();
 
-		// Process input for the state
+		// Process input for the state.
 		virtual bool processInput(float dt) = 0;
-		// Updates the state
-		virtual bool updatePerTick(float dt) = 0;
-		// Updates the state per frame
-		virtual bool updatePerFrame(float dt, float alpha) = 0;
+		// Updates the state - runs every frame
+		virtual bool update(float dt, float alpha) = 0;
+		// Updates the state - runs every tick
+		virtual bool fixedUpdate(float dt);
 		// Renders the state
 		virtual bool render(float dt, float alpha) = 0;
 		// Renders imgui

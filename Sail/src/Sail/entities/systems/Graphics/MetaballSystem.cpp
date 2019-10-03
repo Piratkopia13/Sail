@@ -5,8 +5,7 @@
 #include "Sail/entities/components/TransformComponent.h"
 
 MetaballSystem::MetaballSystem() {
-	requiredComponentTypes.push_back(MetaballComponent::ID);
-	requiredComponentTypes.push_back(TransformComponent::ID);
+	
 }
 
 MetaballSystem::~MetaballSystem() {
@@ -14,8 +13,5 @@ MetaballSystem::~MetaballSystem() {
 }
 
 void MetaballSystem::update(float dt) {
-	//Application::getInstance()->ge
-	for (auto& e : entities) {
 
-	}
 }

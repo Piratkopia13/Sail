@@ -4,11 +4,13 @@
 #include "../DX12Utils.h"
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 #include "API/DX12/DX12VertexBuffer.h"
+#include "Sail/KeyBinds.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
-DX12RaytracingRenderer::DX12RaytracingRenderer()
-	: m_dxr("Basic") {
+DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
+	: m_dxr("Basic", inputs)
+{
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 	m_context->initCommand(m_command);
@@ -50,15 +52,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
 	}
 
-	//printf("%d - %d\n", m_metaballpositions.front().distToCamera, m_metaballpositions.back().distToCamera);
-
-	//commandQueue.emplace_back();
-	//RenderCommand& tempCmd = commandQueue.back();
-	//tempCmd.mesh = nullptr;
-	//tempCmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
-	//tempCmd.transform = glm::identity<glm::mat4>();
-	//glm::translate(tempCmd.transform, glm::vec3(0, 10, 0));
-
+	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
+		m_dxr.reloadShaders();
+	}
 
 	// Copy updated flag from vertex buffers to renderCommand
 	// This marks all commands that should have their bottom layer updated in-place
@@ -72,7 +68,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 
-	m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
+	if (camera && lightSetup) {
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
+	}
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
 
@@ -139,14 +137,10 @@ void DX12RaytracingRenderer::submitNonMesh(RenderCommandType type, Material* mat
 		ball.distToCamera = glm::length(ball.pos - camera->getPosition());
 		m_metaballpositions.emplace_back(ball);
 	}
+}
 
-	//commandQueue.emplace_back();
-	//RenderCommand& cmd = commandQueue.back();
-	//cmd.type = type;
-	//cmd.nonModel.material = material;
-	//cmd.transform = glm::transpose(modelMatrix);
-	//cmd.flags = flags;
-	//cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
+	m_dxr.setGBufferInputs(inputs);
 }
 
 bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {

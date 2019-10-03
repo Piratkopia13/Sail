@@ -142,9 +142,7 @@ ID3D12StateObject* DXRUtils::PSOBuilder::build(ID3D12Device5* device) {
 	desc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
 
 	ID3D12StateObject* pso;
-	//ThrowIfFailed();
-	HRESULT hr;
-	hr = device->CreateStateObject(&desc, IID_PPV_ARGS(&pso));
+	HRESULT hr = device->CreateStateObject(&desc, IID_PPV_ARGS(&pso));
 	if (!SUCCEEDED(hr)) {
 		_com_error err2(hr);
 		std::cout << "Device Status: " << err2.ErrorMessage() << std::endl;
@@ -154,17 +152,13 @@ ID3D12StateObject* DXRUtils::PSOBuilder::build(ID3D12Device5* device) {
 	return pso;
 }
 
-DXRUtils::ShaderTableBuilder::ShaderTableBuilder(const UINT& numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance)
+
+DXRUtils::ShaderTableBuilder::ShaderTableBuilder(UINT numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance)
 	: m_soProps(nullptr)
 	, m_numInstances(numInstances)
 	, m_maxBytesPerInstance(maxBytesPerInstance) {
 	// Get the properties of the pre-built pipeline state object
 	ThrowIfFailed(pso->QueryInterface(IID_PPV_ARGS(&m_soProps)));
-
-	//m_numInstances_total = 0;
-	//for (auto& it : m_numInstances) {
-	//	m_numInstances_total += it;
-	//}
 
 	m_data = SAIL_NEW void* [m_numInstances];
 	m_dataOffsets = SAIL_NEW UINT[m_numInstances];
@@ -180,7 +174,6 @@ DXRUtils::ShaderTableBuilder::~ShaderTableBuilder() {
 
 	delete[] m_data;
 	delete[] m_dataOffsets;
-	//m_soProps->Release();
 }
 
 DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* device) {
@@ -201,27 +194,32 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 
 	shaderTable.StrideInBytes = alignedSize;
 	shaderTable.SizeInBytes = shaderTable.StrideInBytes * m_numInstances;
-	shaderTable.Resource = DX12Utils::CreateBuffer(device, shaderTable.SizeInBytes, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+	shaderTable.Resource = DX12Utils::CreateBuffer(device, std::max((UINT64)1, shaderTable.SizeInBytes), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
 	shaderTable.Resource->SetName(L"SHADER_TABLE");
 
 	// Map the buffer
 	// Use a char* to to pointer arithmetic per byte
 	char* pData;
-	shaderTable.Resource->Map(0, nullptr, (void**)& pData);
+	shaderTable.Resource->Map(0, nullptr, (void**)&pData);
 	{
-		size_t nShaders = m_shaderNames.size();
-		int blasIndex = 0;
-		for (size_t i = 0; i < nShaders; i++) {
-			//size_t nInstances = m_numInstances[i];
-			LPCWCH& shader = m_shaderNames[i];
+		assert(m_shaderNames.size() == m_numInstances && "All instances do not have a shader name associated with it!");
+		for (unsigned int i = 0; i < m_numInstances; i++) {
+			auto& shader = m_shaderNames[i];
+
 			// Copy shader identifier
-			void* shaderID = m_soProps->GetShaderIdentifier(shader);
-			assert(shaderID != nullptr && "Shader Identifier not found");
-			memcpy(pData, shaderID, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-			pData += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-			// Copy other data (descriptors, constants)
-			memcpy(pData, m_data[i], m_dataOffsets[i]);
-			pData += alignedSize - D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; // Append padding
+			void* shaderID = nullptr;
+			if (shader == L"NULL") {
+				// NULL shader identifier is valid and will cause no shader to be executed
+				pData += alignedSize; // No data, just append padding
+			} else {
+				shaderID = m_soProps->GetShaderIdentifier(shader);
+				assert(shaderID != nullptr && "Shader Identifier not found in stateObject");
+				memcpy(pData, shaderID, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+				pData += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+				// Copy other data (descriptors, constants)
+				memcpy(pData, m_data[i], m_dataOffsets[i]);
+				pData += alignedSize - D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; // Append padding
+			}
 		}
 	}
 	shaderTable.Resource->Unmap(0, nullptr);
@@ -229,22 +227,22 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 	return shaderTable;
 }
 
-void DXRUtils::ShaderTableBuilder::addShader(const LPCWSTR& shaderName, UINT instance) {
+void DXRUtils::ShaderTableBuilder::addShader(const LPCWSTR& shaderName) {
 	m_shaderNames.emplace_back(shaderName);
 }
 
 void DXRUtils::ShaderTableBuilder::addDescriptor(UINT64& descriptor, UINT instance) {
-	assert(instance < m_numInstances);
+	assert(instance < m_numInstances && "DXRUtils::ShaderTableBuilder::addDescriptor");
 	auto ptr = static_cast<char*>(m_data[instance]) + m_dataOffsets[instance];
 	*(UINT64*)ptr = descriptor;
 	m_dataOffsets[instance] += sizeof(descriptor);
-	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance);
+	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance && "DXRUtils::ShaderTableBuilder::addDescriptor");
 }
 
 void DXRUtils::ShaderTableBuilder::addConstants(UINT numConstants, float* constants, UINT instance) {
-	assert(instance < m_numInstances, "DXRUtils::ShaderTableBuilder::addConstants");
+	assert(instance < m_numInstances && "DXRUtils::ShaderTableBuilder::addConstants");
 	auto ptr = static_cast<char*>(m_data[instance]) + m_dataOffsets[instance];
 	memcpy(ptr, constants, sizeof(float) * numConstants);
 	m_dataOffsets[instance] += sizeof(float) * numConstants;
-	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance, "DXRUtils::ShaderTableBuilder::addConstants");
+	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance && "DXRUtils::ShaderTableBuilder::addConstants");
 }

@@ -3,12 +3,24 @@
 #include "..//Entity.h"
 
 bool BaseComponentSystem::addEntity(Entity* entity) {
+	
+	// Check if the entity is in the system
 	for (auto e : entities) {
 		if (e->getID() == entity->getID()) {
 			return false;
 		}
 	}
-	entities.push_back(entity);
+
+	// Check if the entity is about to be in the system
+	for (auto e : entitiesQueuedToAdd) {
+		if (e->getID() == entity->getID()) {
+			return false;
+		}
+	}
+
+	// Queue the adding of the entity 
+	entitiesQueuedToAdd.push_back(entity);
+
 	return true;
 }
 
@@ -21,14 +33,19 @@ void BaseComponentSystem::removeEntity(Entity* entity) {
 	}
 }
 
-const std::vector<int>& BaseComponentSystem::getRequiredComponentTypes() const {
+const std::bitset<MAX_NUM_COMPONENTS_TYPES>& BaseComponentSystem::getRequiredComponentTypes() const {
 	return requiredComponentTypes;
 }
 
-const unsigned int BaseComponentSystem::getReadBitMask() const {
+const std::bitset<MAX_NUM_COMPONENTS_TYPES>& BaseComponentSystem::getReadBitMask() const {
 	return readBits;
 }
 
-const unsigned int BaseComponentSystem::getWriteBitMask() const {
+const std::bitset<MAX_NUM_COMPONENTS_TYPES>& BaseComponentSystem::getWriteBitMask() const {
 	return writeBits;
+}
+
+void BaseComponentSystem::addQueuedEntities() {
+	entities.insert(entities.end(), entitiesQueuedToAdd.begin(), entitiesQueuedToAdd.end());
+	entitiesQueuedToAdd.clear();
 }

@@ -8,7 +8,7 @@
 
 class DX12RaytracingRenderer : public Renderer {
 public:
-	DX12RaytracingRenderer();
+	DX12RaytracingRenderer(DX12RenderableTexture** inputs);
 	~DX12RaytracingRenderer();
 
 	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
@@ -17,6 +17,8 @@ public:
 	virtual bool onEvent(Event& event) override;
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
 	virtual void submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) override;
+
+	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 private:
 	bool onResize(WindowResizeEvent& event);
