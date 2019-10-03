@@ -14,6 +14,7 @@ class PhysicSystem;
 class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
+class LevelGeneratorSystem;
 class GameInputSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
@@ -82,6 +83,7 @@ private:
 		NetworkSenderSystem* networkSenderSystem = nullptr;
 		AudioSystem* audioSystem = nullptr;
 		RenderSystem* renderSystem = nullptr;
+		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
 	};
 
 	Application* m_app;
@@ -94,6 +96,7 @@ private:
 	void createTestLevel(Shader* shader, Model* boundingBoxModel);
 	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID);
 	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
+	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
 
 	Systems m_componentSystems;
