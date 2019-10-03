@@ -147,7 +147,6 @@ void MenuState::removeDeadLobbies() {
 	// Find out which lobbies should be removed
 	for (auto& lobby : m_foundLobbies) {
 		lobby.duration -= timePassed;
-		std::cout << lobby.duration << "\n";
 
 		// Remove them based on UDP inactivity
 		if (lobby.duration < 0) {
