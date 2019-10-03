@@ -15,7 +15,7 @@ public:
 
 	std::string getSerializedData() { return m_serializedData; }
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::NETWORK_SERIALIZED_DATA_RECIEVED;
 	}
 

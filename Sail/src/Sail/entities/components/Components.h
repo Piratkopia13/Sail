@@ -13,6 +13,7 @@
 #include "LightListComponent.h"
 #include "NetworkReceiverComponent.h"
 #include "NetworkSenderComponent.h"
+#include "MapComponent.h"
 #include "ModelComponent.h"
 #include "PlayerComponent.h"
 //#include "MovementComponent.h"

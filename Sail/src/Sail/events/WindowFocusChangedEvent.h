@@ -11,7 +11,7 @@ public:
 
 	inline bool isFocused() const { return m_isFocused; };
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::WINDOW_FOCUS_CHANGED;
 	}
 private:

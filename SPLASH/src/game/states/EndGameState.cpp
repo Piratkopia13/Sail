@@ -4,7 +4,7 @@
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/KeyBinds.h"
 #include "Sail/utils/GameDataTracker.h"
-
+#include "Network/NWrapperSingleton.h"
 #include "../libraries/imgui/imgui.h"
 
 EndGameState::EndGameState(StateStack& stack) : State(stack) {
@@ -32,7 +32,6 @@ bool EndGameState::render(float dt, float alpha) {
 }
 
 bool EndGameState::renderImgui(float dt) {
-
 	ImGui::Begin("Game over");
 	ImGui::SetWindowPos({500,500});
 	ImGui::End();
@@ -40,6 +39,8 @@ bool EndGameState::renderImgui(float dt) {
 	ImGui::Begin("Return");
 	ImGui::SetWindowPos({ 500,550 });
 	if (ImGui::Button("Main menu")) {
+		NWrapperSingleton::getInstance().resetNetwork();
+		NWrapperSingleton::getInstance().resetWrapper();
 		this->requestStackPop();
 		this->requestStackPush(States::MainMenu);
 	}

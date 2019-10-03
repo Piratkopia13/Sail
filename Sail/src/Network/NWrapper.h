@@ -34,7 +34,6 @@ protected:
 
 private:
 	void initialize(Network* pNetwork);
-	void shutDown();
 	void handleNetworkEvents(NetworkEvent nEvent);
 
 	virtual void playerJoined(TCP_CONNECTION_ID id) = 0;

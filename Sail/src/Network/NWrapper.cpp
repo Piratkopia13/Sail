@@ -8,17 +8,11 @@ NWrapper::NWrapper(Network* pNetwork) {
 }
 
 NWrapper::~NWrapper() {
-	this->shutDown();
 }
 
 void NWrapper::initialize(Network* pNetwork) {
 	m_network = pNetwork;
 	m_app = Application::getInstance();
-}
-
-void NWrapper::shutDown() {
-	// NO DELETION OF NETWORK, it is the responsibility of the NWrapperSingleton!
-	m_network->shutdown();
 }
 
 void NWrapper::handleNetworkEvents(NetworkEvent nEvent) {

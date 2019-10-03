@@ -11,6 +11,7 @@
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
 #include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
+#include "Sail/entities/systems/LevelGeneratorSystem/LevelGeneratorSystem.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
@@ -39,6 +40,7 @@ GameState::GameState(StateStack& stack)
 , m_cc(true)
 , m_profiler(true)
 , m_disableLightComponents(false)
+, m_showcaseProcGen(false)
 {
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -140,6 +142,8 @@ GameState::GameState(StateStack& stack)
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+	//create system for level generation
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
 
 	// Create system for rendering
 	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
@@ -172,6 +176,7 @@ GameState::GameState(StateStack& stack)
 
 
 
+
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
@@ -196,19 +201,24 @@ GameState::GameState(StateStack& stack)
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/candleBasicTexture.tga");
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
 	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+	characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+	characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
+	characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 	// Player creation
 	setUpPlayer(boundingBoxModel, cubeModel, lightModel, playerID);
 
 	// Level Creation
 	createTestLevel(shader, boundingBoxModel);
+
+	createLevel(shader, boundingBoxModel);
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
@@ -268,6 +278,18 @@ bool GameState::processInput(float dt) {
 
 #endif
 
+	// Enable bright light and move camera to above procedural generated level
+	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
+		m_disableLightComponents = !m_disableLightComponents;
+		m_showcaseProcGen = m_disableLightComponents;
+		if (m_showcaseProcGen) {
+			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
+			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
+		} else {
+			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
+		}
+	}
+
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
 		m_componentSystems.renderSystem->toggleHitboxes();
@@ -320,10 +342,8 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
-		m_app->getResourceManager().reloadShader<MaterialShader>();
-		Event e(Event::POTATO);
-		m_app->dispatchEvent(e);
-	}  
+		m_app->getResourceManager().reloadShader<GBufferOutShader>();
+	}
 
 	// Pause game
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
@@ -596,6 +616,41 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Checkbox("Enable post processing", 
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
 	);
+
+	static Entity* pickedEntity = nullptr;
+	static float metalness = 1.0f;
+	static float roughness = 1.0f;
+	static float ao = 1.0f;
+
+	ImGui::Separator();
+	if (ImGui::Button("Pick entity")) {
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		if (tempInfo.closestHitIndex != -1) {
+			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
+		}
+	}
+
+	if (pickedEntity) {
+		ImGui::Text("Material properties for %s", pickedEntity->getName().c_str());
+		if (auto* model = pickedEntity->getComponent<ModelComponent>()) {
+			auto* mat = model->getModel()->getMesh(0)->getMaterial();
+			const auto& pbrSettings = mat->getPBRSettings();
+			metalness = pbrSettings.metalnessScale;
+			roughness = pbrSettings.roughnessScale;
+			ao = pbrSettings.aoScale;
+			if (ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f)) {
+				mat->setMetalnessScale(metalness);
+			}
+			if (ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f)) {
+				mat->setRoughnessScale(roughness);
+			}
+			if (ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f)) {
+				mat->setAOScale(ao);
+			}
+		}
+	}
+
 	ImGui::End();
 
 	return false;
@@ -618,7 +673,7 @@ bool GameState::renderImGuiLightDebug(float dt) {
 			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
 
 			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position##", &position[0], -40.f, 40.0f);
+			ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
 			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
 			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
 			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
@@ -707,6 +762,10 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
+	} 
+	
+	if (m_showcaseProcGen) {
+		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 
 	m_componentSystems.audioSystem->update(dt);
@@ -855,16 +914,25 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	// Load models used for test level
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setMetalnessScale(0.570f);
+	arenaModel->getMesh(0)->getMaterial()->setRoughnessScale(0.593f);
+	arenaModel->getMesh(0)->getMaterial()->setAOScale(0.023f);
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
-	barrierModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/barrierBasicTexture.tga");
+	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
 
 	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
-	containerModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/containerBasicTexture.tga");
+	containerModel->getMesh(0)->getMaterial()->setMetalnessScale(0.778f);
+	containerModel->getMesh(0)->getMaterial()->setRoughnessScale(0.394f);
+	containerModel->getMesh(0)->getMaterial()->setAOScale(0.036f);
+	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
 
 	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
-	rampModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/rampBasicTexture.tga");
+	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
+	rampModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+	rampModel->getMesh(0)->getMaterial()->setRoughnessScale(1.0f);
+	rampModel->getMesh(0)->getMaterial()->setAOScale(1.0f);
 
 	// Create entities for test level
 
@@ -993,9 +1061,9 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	if (botCount < 0) {
 		botCount = 0;
 	}// TODO: Remove this when more bots can be added safely
-	else if (botCount > 1) {
-		botCount = 1;
-	}
+	//else if (botCount > 1) {
+	//	botCount = 1;
+	//}
 	for (size_t i = 0; i < botCount; i++) {		
 		auto e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
@@ -1025,4 +1093,30 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
 	}
+}
+
+void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
+	std::string tileTex = "sponza/textures/tileTexture1.tga";
+	Application::getInstance()->getResourceManager().loadTexture(tileTex);
+	//Load tileset for world
+	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
+	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
+	tileCross->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
+	tileStraight->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
+	tileCorner->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
+	tileT->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
+	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	// Create the level generator system and put it into the datatype.
+	auto map = ECS::Instance()->createEntity("Map");
+	map->addComponent<MapComponent>();
+	ECS::Instance()->addAllQueuedEntities();
+	m_componentSystems.levelGeneratorSystem->generateMap();
+	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat, tileCross, tileCorner, tileStraight, tileT, tileEnd, boundingBoxModel);
+
 }
