@@ -195,36 +195,6 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
-	arenaModel->getMesh(0)->getMaterial()->setMetalnessScale(0.570f);
-	arenaModel->getMesh(0)->getMaterial()->setRoughnessScale(0.593f);
-	arenaModel->getMesh(0)->getMaterial()->setAOScale(0.023f);
-	/*arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
-	arenaModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	arenaModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");*/
-
-	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
-	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
-
-	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
-	containerModel->getMesh(0)->getMaterial()->setMetalnessScale(0.778f);
-	containerModel->getMesh(0)->getMaterial()->setRoughnessScale(0.394f);
-	containerModel->getMesh(0)->getMaterial()->setAOScale(0.036f);
-	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
-	/*containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
-	containerModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/rustedIron/metalnessRoughnessAO.tga");
-	containerModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/rustedIron/normal.tga");*/
-
-	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
-	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
-	rampModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-	rampModel->getMesh(0)->getMaterial()->setRoughnessScale(1.0f);
-	rampModel->getMesh(0)->getMaterial()->setAOScale(1.0f);
-	/*rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/brokenConcrete/albedo.tga");
-	rampModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/brokenConcrete/metalnessRoughnessAO.tga");
-	rampModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/brokenConcrete/normal.tga");*/
-
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
@@ -233,12 +203,9 @@ GameState::GameState(StateStack& stack)
 	characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
 	characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
 	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
-	/*characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/wornBlueBurlap/albedo.tga");
-	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/wornBlueBurlap/metalnessRoughnessAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/wornBlueBurlap/normal.tga");*/
 
 	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 	// Player creation
 	setUpPlayer(boundingBoxModel, cubeModel, lightModel);
@@ -428,22 +395,11 @@ bool GameState::fixedUpdate(float dt) {
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 bool GameState::render(float dt, float alpha) {	
-	static int numFrames = 0;
-	static int capFrames = 2;
-	if (numFrames < capFrames) {
-		Application::getInstance()->getAPI<DX12API>()->beginPIXCapture();
-	}
-
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.renderSystem->draw(m_cam, alpha);
-
-	if (numFrames < capFrames) {
-		Application::getInstance()->getAPI<DX12API>()->endPIXCapture();
-		numFrames++;
-	}
 
 	return true;
 }
@@ -626,7 +582,7 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	if (ImGui::Button("Pick entity")) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		pickedEntity = tempInfo.entity;
+		pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
 	}
 
 	if (pickedEntity) {
@@ -896,16 +852,25 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	// Load models used for test level
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	arenaModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
+	arenaModel->getMesh(0)->getMaterial()->setMetalnessScale(0.570f);
+	arenaModel->getMesh(0)->getMaterial()->setRoughnessScale(0.593f);
+	arenaModel->getMesh(0)->getMaterial()->setAOScale(0.023f);
 
 	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
-	barrierModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/barrierBasicTexture.tga");
+	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
 
 	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
-	containerModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/containerBasicTexture.tga");
+	containerModel->getMesh(0)->getMaterial()->setMetalnessScale(0.778f);
+	containerModel->getMesh(0)->getMaterial()->setRoughnessScale(0.394f);
+	containerModel->getMesh(0)->getMaterial()->setAOScale(0.036f);
+	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
 
 	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
-	rampModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/rampBasicTexture.tga");
+	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
+	rampModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+	rampModel->getMesh(0)->getMaterial()->setRoughnessScale(1.0f);
+	rampModel->getMesh(0)->getMaterial()->setAOScale(1.0f);
 
 	// Create entities for test level
 

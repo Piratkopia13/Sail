@@ -108,12 +108,12 @@ void DX12API::createDevice() {
 	ThrowIfFailed(
 		CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_dxgiFactory.ReleaseAndGetAddressOf()))
 	);
-#endif
-
 	// PIX programmic capture control
 	if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa)))) {
 		Logger::Warning("PIX programmic capture not available");
 	}
+#endif
+
 
 	// 2. Find comlient adapter and create device
 
@@ -718,17 +718,18 @@ const D3D12_RECT* DX12API::getScissorRect() const {
 	return &m_scissorRect;
 }
 
+#ifdef _DEBUG
 void DX12API::beginPIXCapture() const {
 	if (m_pixGa) {
 		m_pixGa->BeginCapture();
 	}
 }
-
 void DX12API::endPIXCapture() const {
 	if (m_pixGa) {
 		m_pixGa->EndCapture();
 	}
 }
+#endif
 
 void DX12API::initCommand(Command& cmd) {
 	// Create allocators
