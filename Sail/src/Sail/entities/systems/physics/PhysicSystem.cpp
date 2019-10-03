@@ -253,7 +253,7 @@ void PhysicSystem::update(float dt) {
 		if (boundingBox && m_octree) {
 			collisionUpdate(e, physics, updateableDt);
 
-			//surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);
+			surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);
 
 			if (rayCastCheck(e, physics, boundingBox->getBoundingBox(), updateableDt)) {
 				//Object is moving fast, ray cast for collisions

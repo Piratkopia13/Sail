@@ -47,7 +47,7 @@ void GunSystem::update(float dt) {
 				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 				physics->drag = 2.0f;
 				physics->bounciness = 0.1f;
-				physics->padding = 0.1f;
+				physics->padding = 0.16f;
 
 				m_gameDataTracker->logWeaponFired();
 			}
