@@ -30,6 +30,8 @@ void AttackingState::update(float dt, Entity* entity) {
 	if ( aiComp->entityTarget != nullptr ) {
 		aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
 
+		m_distToHost = glm::distance2(aiComp->posTarget, glm::vec3(transComp->getMatrix()[3]));
+
 		// Approx AI gun pos
 		auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
 
