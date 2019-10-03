@@ -36,14 +36,10 @@ void GunSystem::update(float dt) {
 				e->addComponent<BoundingBoxComponent>();
 				BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
 				//Done here because systems doesn't update the bounding box first frame so it passes through things
-				boundingBox->setHalfSize(glm::vec3(0.2f));
-				boundingBox->setPosition(gun->position);
 				e->addComponent<LifeTimeComponent>(2.0f);
 				e->addComponent<ProjectileComponent>();
-				e->addComponent<TransformComponent>(gun->position);
+				e->addComponent<TransformComponent>(gun->position, glm::vec3(0.0f, glm::atan(gun->direction.x / gun->direction.z), 0.0f), glm::vec3(0.2f));
 				TransformComponent* transform = e->getComponent<TransformComponent>();
-				transform->setScale(glm::vec3(1.0f, 1.0f, 1.0f) * 0.2f);
-				transform->rotateAroundY(glm::atan(gun->direction.x / gun->direction.z));
 				
 				e->addComponent<PhysicsComponent>();
 				PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
@@ -51,7 +47,7 @@ void GunSystem::update(float dt) {
 				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 				physics->drag = 2.0f;
 				physics->bounciness = 0.1f;
-				physics->padding = 0.2f;
+				physics->padding = 0.1f;
 
 				m_gameDataTracker->logWeaponFired();
 			}

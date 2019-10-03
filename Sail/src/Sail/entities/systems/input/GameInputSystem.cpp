@@ -213,6 +213,7 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		forwards = glm::normalize(forwards);
 
 		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 1.8f, 0.f)));
+		//m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha)));
 		m_cam->setCameraDirection(forwards);
 	}
 }

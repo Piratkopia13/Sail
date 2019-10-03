@@ -226,7 +226,9 @@ void PhysicSystem::update(float dt) {
 		physics->velocity += physics->constantAcceleration * dt;
 		physics->velocity += physics->accelerationToAdd * dt;
 
-		transform->rotate(physics->constantRotation * dt);
+		if (physics->constantRotation != glm::vec3(0.0f)) {
+			transform->rotate(physics->constantRotation * dt);
+		}
 
 		//----Max Speed Limiter----
 		float saveY = physics->velocity.y;
@@ -251,7 +253,7 @@ void PhysicSystem::update(float dt) {
 		if (boundingBox && m_octree) {
 			collisionUpdate(e, physics, updateableDt);
 
-			surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);
+			//surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);
 
 			if (rayCastCheck(e, physics, boundingBox->getBoundingBox(), updateableDt)) {
 				//Object is moving fast, ray cast for collisions
@@ -261,9 +263,11 @@ void PhysicSystem::update(float dt) {
 		}
 
 		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * updateableDt;
-		transform->translate(translation);
-		if (e->getName() == "player") {
-			m_gameDataTracker->logDistanceWalked(translation);
+		if (translation != glm::vec3(0.0f)) {
+			transform->translate(translation);
+			if (e->getName() == "player") {
+				m_gameDataTracker->logDistanceWalked(translation);
+			}
 		}
 		
 		physics->m_oldVelocity = physics->velocity;

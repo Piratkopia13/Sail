@@ -69,8 +69,8 @@ RenderSystem::~RenderSystem() {
 				 Model* wireframeModel = boundingBox->getWireframeModel();
 				 if (wireframeModel) {
 					 // Bounding boxes are visualized with their most update since that's what's used for hit detection
-					 m_renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), 
-						 Renderer::MESH_STATIC);
+						 m_renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(),
+							 Renderer::MESH_STATIC);
 				 }
 			 }
 		 }

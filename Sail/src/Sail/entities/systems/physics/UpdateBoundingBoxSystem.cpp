@@ -58,18 +58,19 @@ void UpdateBoundingBoxSystem::recalculateBoundingBoxFully(Entity* e) {
 		boundingBox->getBoundingBox()->setPosition(minPositions + boundingBox->getBoundingBox()->getHalfSize());
 	}
 	else {
-		boundingBox->getBoundingBox()->setPosition(transform->getTranslation());
+		boundingBox->getBoundingBox()->setPosition(transform->getTranslation() + glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
 	}
 
-	boundingBox->getTransform()->setStartTranslation(boundingBox->getBoundingBox()->getPosition());
+	boundingBox->getTransform()->setTranslation(boundingBox->getBoundingBox()->getPosition() - glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
 	boundingBox->getTransform()->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);
 }
 
 void UpdateBoundingBoxSystem::recalculateBoundingBoxPosition(Entity* e) {
 	BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
-	boundingBox->getBoundingBox()->setPosition(transform->getTranslation() + glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
-	boundingBox->getTransform()->setStartTranslation(boundingBox->getBoundingBox()->getPosition());
+	glm::mat4 transformationMatrix = transform->getMatrix();
+	boundingBox->getBoundingBox()->setPosition(glm::vec3(transformationMatrix[3]) + glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
+	boundingBox->getTransform()->setTranslation(boundingBox->getBoundingBox()->getPosition() - glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
 	boundingBox->getTransform()->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);
 }
 
