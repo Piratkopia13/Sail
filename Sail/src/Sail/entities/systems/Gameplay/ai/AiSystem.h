@@ -46,6 +46,7 @@ private:
 	void updatePath(AiComponent* aiComp, TransformComponent* transComp);
 	void updatePhysics(AiComponent* aiComp, TransformComponent* transComp, PhysicsComponent* physComp, float dt);
 	void aiUpdateFunc(Entity* entity, const float dt);
+	glm::vec3& getDesiredDir(AiComponent* aiComp, TransformComponent* transComp);
 
 private:
 	std::unordered_map<int, AiEntity> m_aiEntities;

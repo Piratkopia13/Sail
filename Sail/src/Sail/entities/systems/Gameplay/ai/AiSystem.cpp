@@ -152,12 +152,20 @@ void AiSystem::aiUpdateFunc(Entity* entity, const float dt) {
 	auto transComp = entity->getComponent<TransformComponent>();
 	auto aiComp = entity->getComponent<AiComponent>();
 
-	if ( (aiComp->timeTakenOnPath > m_timeBetweenPathUpdate && aiComp->doWalk) ) {
+	if ( aiComp->timeTakenOnPath > m_timeBetweenPathUpdate && aiComp->doWalk ) {
 		aiComp->updatePath = true;
 	}
 
 	updatePath(aiComp, transComp);
 	updatePhysics(aiComp, transComp, entity->getComponent<PhysicsComponent>(), dt);
+}
+
+glm::vec3& AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* transComp) {
+	glm::vec3 desiredDir = aiComp->currPath[aiComp->currNodeIndex].position - transComp->getTranslation();
+	if ( desiredDir == glm::vec3(0.f) ) {
+		desiredDir = glm::vec3(1.0f, 0.f, 0.f);
+	}
+	desiredDir = glm::normalize(desiredDir);
 }
 
 
@@ -186,35 +194,30 @@ void AiSystem::updatePath(AiComponent* aiComp, TransformComponent* transComp) {
 }
 
 void AiSystem::updatePhysics(AiComponent* aiComp, TransformComponent* transComp, PhysicsComponent* physComp, float dt) {
-	if ( aiComp->currPath.size() > 0 ) {
-		if ( aiComp->doWalk ) {
-			if ( !aiComp->reachedPathingTarget ) {
-				aiComp->timeTakenOnPath += dt;
+	// Check if there is a path currently active and if the ai should be walking
+	if ( aiComp->currPath.size() > 0 && aiComp->doWalk ) {
+		// Check if the ai hasn't reached the current pathing target yet
+		if ( !aiComp->reachedPathingTarget ) {
+			aiComp->timeTakenOnPath += dt;
 
-				// Check if the distance between current node target and ai is low enough to begin targeting next node
-				if ( glm::distance(transComp->getTranslation(), aiComp->currPath[aiComp->currNodeIndex].position) < aiComp->targetReachedThreshold ) {
-					if ( aiComp->currNodeIndex != aiComp->currPath.size() - 1 ) {
-						aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
-					}
-					aiComp->reachedPathingTarget = true;
-				} else {
-					glm::vec3 desiredDir = aiComp->currPath[aiComp->currNodeIndex].position - transComp->getTranslation();
-					if ( desiredDir == glm::vec3(0.f) ) {
-						desiredDir = glm::vec3(1.0f, 0.f, 0.f);
-					}
-					desiredDir = glm::normalize(desiredDir);
-
-					float acceleration = 70.0f - ( glm::length(physComp->velocity) / physComp->maxSpeed ) * 20.0f;
-					physComp->accelerationToAdd = desiredDir * acceleration;
-				}
-			} else if ( aiComp->currPath.size() > 0 ) {
-				// Update next node target
-				if ( aiComp->currNodeIndex < aiComp->currPath.size() - 1 ) {
-					aiComp->currNodeIndex++;
-				}
-				aiComp->reachedPathingTarget = false;
+			// Check if the distance between current node target and ai is low enough to begin targeting next node
+			if ( glm::distance(transComp->getTranslation(), aiComp->currPath[aiComp->currNodeIndex].position) < aiComp->targetReachedThreshold ) {
+				aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
+				aiComp->reachedPathingTarget = true;
+			// Else continue walking
+			} else {
+				float acceleration = 70.0f - ( glm::length(physComp->velocity) / physComp->maxSpeed ) * 20.0f;
+				physComp->accelerationToAdd = getDesiredDir(aiComp, transComp) * acceleration;
 			}
+		// Else increment the current node path
+		} else if ( aiComp->currPath.size() > 0 ) {
+			// Update next node target
+			if ( aiComp->currNodeIndex < aiComp->currPath.size() - 1 ) {
+				aiComp->currNodeIndex++;
+			}
+			aiComp->reachedPathingTarget = false;
 		}
+	// If the ai shouldn't walk, just stop walking
 	} else {
 		// Set velocity to 0
 		physComp->velocity = glm::vec3(0.f, physComp->velocity.y, 0.f);
