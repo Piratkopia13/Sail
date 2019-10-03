@@ -861,6 +861,7 @@ void GameState::initAnimations() {
 	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
 	animationEntity2->addComponent<TransformComponent>();
 	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
+	animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
 	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
@@ -871,6 +872,7 @@ void GameState::initAnimations() {
 	auto animationEntity1 = ECS::Instance()->createEntity("animatedModel1");
 	animationEntity1->addComponent<TransformComponent>();
 	animationEntity1->getComponent<TransformComponent>()->translate(0, 0, 5);
+	animationEntity1->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
 	animationEntity1->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/ScuffedSteve_2.fbx", shader));
 	animationEntity1->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity1->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/ScuffedSteve_2.fbx"));
@@ -879,6 +881,7 @@ void GameState::initAnimations() {
 	auto animationEntity22 = ECS::Instance()->createEntity("animatedModel22");
 	animationEntity22->addComponent<TransformComponent>();
 	animationEntity22->getComponent<TransformComponent>()->translate(-4, 0, 0);
+	animationEntity22->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
 	animationEntity22->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx", shader));
 	animationEntity22->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity22->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
@@ -887,6 +890,7 @@ void GameState::initAnimations() {
 	auto animationEntity3 = ECS::Instance()->createEntity("animatedModel3");
 	animationEntity3->addComponent<TransformComponent>();
 	animationEntity3->getComponent<TransformComponent>()->translate(3, 4, 2);
+	animationEntity3->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
 	animationEntity3->getComponent<TransformComponent>()->scale(0.005f);
 	animationEntity3->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/BaseMesh_Anim.fbx", shader));
 	animationEntity3->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
@@ -896,6 +900,7 @@ void GameState::initAnimations() {
 	auto animationEntity4 = ECS::Instance()->createEntity("animatedModel4");
 	animationEntity4->addComponent<TransformComponent>();
 	animationEntity4->getComponent<TransformComponent>()->translate(-1,2,-3);
+	animationEntity4->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
 	animationEntity4->getComponent<TransformComponent>()->scale(0.005f);
 	animationEntity4->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT.fbx", shader));
 	animationEntity4->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
@@ -907,6 +912,7 @@ void GameState::initAnimations() {
 		auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5-"+std::to_string(i));
 		animationEntity5->addComponent<TransformComponent>();
 		animationEntity5->getComponent<TransformComponent>()->translate(0, 3+i*2, 0);
+		animationEntity5->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
 		animationEntity5->getComponent<TransformComponent>()->scale(0.005f);
 		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/DEBUG_BALLBOT.fbx", shader));
 		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
