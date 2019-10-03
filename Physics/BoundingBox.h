@@ -9,6 +9,7 @@ private:
 	std::vector<glm::vec3> m_corners;
 
 	bool m_hasChanged;
+	bool m_cornersNeedUpdate;
 
 	void updateCorners();
 
@@ -23,7 +24,7 @@ public:
 	const glm::vec3& getPosition() const;
 	const glm::vec3& getHalfSize() const;
 
-	const std::vector<glm::vec3>* getCorners() const;
+	const std::vector<glm::vec3>* getCorners();
 
 	void setPosition(const glm::vec3& position);
 	void setHalfSize(const glm::vec3& size);

@@ -12,7 +12,7 @@ public:
 
 	inline int getPlayerID() const { return m_player_id; };
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::NETWORK_DISCONNECT;
 	}
 

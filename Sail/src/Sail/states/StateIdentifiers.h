@@ -12,7 +12,9 @@ namespace States {
 		JoinLobby,
 		Game,
 		Pause,
-		Score
+		EndGame,
+		Score,
+		PBRTest
 	};
 
 }

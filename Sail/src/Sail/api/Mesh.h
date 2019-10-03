@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include "Sail/graphics/geometry/Material.h"
+#include "Sail/graphics/geometry/PBRMaterial.h"
 #include "Sail/api/Renderer.h"
 
 class VertexBuffer;
@@ -68,7 +68,7 @@ public:
 
 	const Data& getMeshData();
 
-	Material* getMaterial();
+	PBRMaterial* getMaterial();
 
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;
@@ -78,7 +78,7 @@ public:
 	const Mesh::Data& getData() const;
 
 protected:
-	Material::SPtr material;
+	PBRMaterial::SPtr material;
 
 	std::unique_ptr<VertexBuffer> vertexBuffer;
 	std::unique_ptr<IndexBuffer> indexBuffer;

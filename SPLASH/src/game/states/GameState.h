@@ -5,6 +5,7 @@
 class AiSystem;
 class AnimationSystem;
 class CandleSystem;
+class EntityAdderSystem;
 class EntityRemovalSystem;
 class LifeTimeSystem;
 class LightSystem;
@@ -13,16 +14,21 @@ class PhysicSystem;
 class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
+class LevelGeneratorSystem;
 class GameInputSystem;
+class NetworkReceiverSystem;
+class NetworkSenderSystem;
 class AudioSystem;
 class RenderSystem;
+
+class NetworkSerializedPackageEvent;
 
 class GameState : public State {
 public:
 	GameState(StateStack& stack);
 	~GameState();
 
-	// Process input for the state
+	// Process input for the state ||
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
 	virtual bool onEvent(Event& event) override;
@@ -34,22 +40,28 @@ public:
 	virtual bool render(float dt, float alpha = 1.0f) override;
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
-
+	// If the state is about to change clean it up
+	virtual bool prepareStateChange() override;
 
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
+
+	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
+
+	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
-	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, glm::vec3 lightPos);
+	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos);
 
 	void loadAnimations();
 	void initAnimations();
@@ -59,6 +71,7 @@ private:
 		AiSystem* aiSystem = nullptr;
 		AnimationSystem* animationSystem = nullptr;
 		CandleSystem* candleSystem = nullptr;
+		EntityAdderSystem* entityAdderSystem = nullptr;
 		EntityRemovalSystem* entityRemovalSystem = nullptr;
 		LifeTimeSystem* lifeTimeSystem = nullptr;
 		LightSystem* lightSystem = nullptr;
@@ -69,8 +82,11 @@ private:
 		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
 		GameInputSystem* gameInputSystem = nullptr;
+		NetworkReceiverSystem* networkReceiverSystem = nullptr;
+		NetworkSenderSystem* networkSenderSystem = nullptr;
 		AudioSystem* audioSystem = nullptr;
 		RenderSystem* renderSystem = nullptr;
+		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
 	};
 
 	Application* m_app;
@@ -80,6 +96,10 @@ private:
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	Entity* m_player;
 
+	void createTestLevel(Shader* shader, Model* boundingBoxModel);
+	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID);
+	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
+	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
 
 	Systems m_componentSystems;
@@ -88,8 +108,6 @@ private:
 	Profiler m_profiler;
 
 	size_t m_currLightIndex;
-	// For use by non-deterministic entities
-	const float* pAlpha = nullptr;
 
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
@@ -105,13 +123,8 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 
-
-	std::unique_ptr<Model> m_cubeModel;
-	std::unique_ptr<Model> m_planeModel;
+	bool m_paused = false;
 	
-
-	std::unique_ptr<Model> m_boundingBoxModel;
-
 	Octree* m_octree;
 	bool m_disableLightComponents;
 
@@ -120,4 +133,7 @@ private:
 
 	std::vector<std::future<BaseComponentSystem*>> m_runningSystemJobs;
 	std::vector<BaseComponentSystem*> m_runningSystems;
+
+	bool m_poppedThisFrame = false;
+
 };

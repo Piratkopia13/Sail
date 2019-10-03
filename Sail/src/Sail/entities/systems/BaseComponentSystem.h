@@ -49,6 +49,9 @@ public:
 
 	virtual void stop() {}
 
+	// Do not call this, it is called internally by EntityAdderSystem
+	void addQueuedEntities();
+
 protected:
 	/**
 	 * Registers the component to the system and defines how the system uses the component
@@ -62,6 +65,7 @@ protected:
 
 protected:
 	std::vector<Entity*> entities;
+	std::vector<Entity*> entitiesQueuedToAdd;
 
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> requiredComponentTypes;
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> readBits;

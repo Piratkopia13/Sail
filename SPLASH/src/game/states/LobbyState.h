@@ -13,20 +13,8 @@ struct Message {
 	std::string content;
 };
 
-struct Player {
-	unsigned char id;
-	std::string name;
 
-	bool friend operator==(const Player& left, const Player& right) {
-		if (left.id == right.id &&
-			left.name == right.name) {
-			return true;
-		}
-		return false;
-	}
-};
-
-#define HOST_ID 1337
+#define HOST_ID 0
 
 class LobbyState : public State {
 public:
@@ -69,6 +57,7 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 
 	// Back-end variables
+	int* m_settingBotCount = nullptr;
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
 	unsigned int m_playerCount;

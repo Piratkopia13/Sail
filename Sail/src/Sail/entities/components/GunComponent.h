@@ -3,7 +3,6 @@
 #include <glm/glm.hpp>
 
 class Model;
-//class Transform;
 
 class GunComponent : public Component<GunComponent> {
 public:
@@ -39,5 +38,5 @@ private:
 	Model* m_wireframeModel;
 
 
-	float m_projectileSpawnLimit = 0.1f;
+	float m_projectileSpawnLimit = 0.3f;
 };

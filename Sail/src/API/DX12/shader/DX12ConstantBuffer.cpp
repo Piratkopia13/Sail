@@ -52,12 +52,16 @@ namespace ShaderComponent {
 		assert(false);/*[deprecated]*/
 	}
 
-	void DX12ConstantBuffer::bind_new(void* cmdList, int meshIndex) const {
+	void DX12ConstantBuffer::bind_new(void* cmdList, int meshIndex, bool useComputeShader) const {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getFrameIndex();
 
 		UINT rootIndex = m_context->getRootIndexFromRegister("b" + std::to_string(m_register));
-		dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
+		if (useComputeShader) {
+			dxCmdList->SetComputeRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
+		} else {
+			dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
+		}
 	}
 
 	void DX12ConstantBuffer::checkBufferSize(unsigned int nMeshes) {

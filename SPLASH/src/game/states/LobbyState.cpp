@@ -12,6 +12,7 @@
 #include "Sail/entities/ECS.h"
 
 #include <string>
+#include <list>
 using namespace std;
 
 LobbyState::LobbyState(StateStack& stack)
@@ -28,6 +29,8 @@ LobbyState::LobbyState(StateStack& stack)
 	m_playerLimit = 12;
 	m_playerCount = 0;
 	m_messageCount = 0;
+	m_settingBotCount = new int;
+	*m_settingBotCount = 0;
 
 	// Set name according to data from menustate
 	m_me.name = m_app->getStateStorage().getMenuToLobbyData()->name;
@@ -38,7 +41,8 @@ LobbyState::LobbyState(StateStack& stack)
 }
 
 LobbyState::~LobbyState() {
-	delete[]m_currentmessage;
+	delete[] m_currentmessage;
+	delete m_settingBotCount;
 }
 
 bool LobbyState::processInput(float dt) {
@@ -136,9 +140,9 @@ void LobbyState::resetCurrentMessage() {
 	}
 }
 
-string LobbyState::fetchMessage()
+std::string LobbyState::fetchMessage()
 {
-	string message = string(m_currentmessage);
+	std::string message = std::string(m_currentmessage);
 
 	// Reset currentMessage
 	m_currentmessageIndex = 0;
@@ -154,7 +158,7 @@ void LobbyState::addMessageToChat(Message& message) {
 	// Add sender to the text
 	unsigned char id = stoi(message.sender);
 	Player* playa = this->getPlayer(id);
-	string msg = playa->name + ": ";
+	std::string msg = playa->name + ": ";
 	message.content.insert(0, msg);
 
 	// Add message to chatlog
@@ -210,7 +214,6 @@ void LobbyState::renderPlayerList() {
 }
 
 void LobbyState::renderStartButton() {
-
 	if (NWrapperSingleton::getInstance().isHost()) {
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 		flags |= ImGuiWindowFlags_NoResize;
@@ -224,11 +227,9 @@ void LobbyState::renderStartButton() {
 		));
 		ImGui::Begin("Start Game");
 
-		// SetKeyBoardFocusHere on the chatbox prevents the button from working,
-		// so if we click with the mouse, temporarily set focus to the button.
-
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
+			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(m_me, m_players, *m_settingBotCount));
 			m_network->sendMsgAllClients("t");
 			this->requestStackPop();
 			this->requestStackPush(States::Game);
@@ -238,7 +239,23 @@ void LobbyState::renderStartButton() {
 }
 
 void LobbyState::renderSettings() {
+	ImGuiWindowFlags settingsFlags = ImGuiWindowFlags_NoCollapse;
+	settingsFlags |= ImGuiWindowFlags_NoResize;
+	settingsFlags |= ImGuiWindowFlags_NoMove;
+	settingsFlags |= ImGuiWindowFlags_NoNav;
+	settingsFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	settingsFlags |= ImGuiWindowFlags_NoTitleBar;
+	settingsFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+	settingsFlags |= ImGuiWindowFlags_NoSavedSettings;
 
+	ImGui::SetNextWindowPos(ImVec2(
+		m_screenWidth - m_outerPadding - 330,
+		m_outerPadding
+	));
+	ImGui::Begin("Settings", NULL, settingsFlags);
+	ImGui::InputInt("BotCountInput: ", m_settingBotCount, 1, 1);
+
+	ImGui::End();
 }
 
 void LobbyState::renderChat() {

@@ -30,7 +30,7 @@ const Mesh::Data& Mesh::getMeshData() {
 	return meshData;
 }
 
-Material* Mesh::getMaterial() {
+PBRMaterial* Mesh::getMaterial() {
 	return material.get();
 }
 

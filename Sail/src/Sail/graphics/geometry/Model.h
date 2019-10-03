@@ -1,14 +1,11 @@
 #pragma once
 
-#include <d3d11.h>
 #include <vector>
 #include "Sail/api/Mesh.h"
 #include "Sail/api/Renderer.h"
-#include "Sail/utils/Utils.h"
 
 // Forward declarations
 class ShaderPipeline;
-class Material;
 
 class Model {
 public:

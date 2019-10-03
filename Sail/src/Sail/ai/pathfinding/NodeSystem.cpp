@@ -29,10 +29,13 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		ECS::Instance()->destroyEntity(m_nodeEntities[i]);
 	}
 	m_nodeEntities.clear();
+	int currNodeEntity = 0;
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
-		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
-		m_nodeEntities[i]->addComponent<TransformComponent>(m_nodes[i].position);
-		m_nodeEntities[i]->addComponent<ModelComponent>(m_nodeModel);
+		if ( !m_nodes[i].blocked ) {
+			m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
+			m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position);
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_nodeModel);
+		}
 	}
 #endif
 }
@@ -70,6 +73,10 @@ const NodeSystem::Node& NodeSystem::getNearestNode(const glm::vec3& position) co
 
 unsigned int NodeSystem::getDistance(unsigned int n1, unsigned int n2) const {
 	return glm::distance(m_nodes[n1].position, m_nodes[n2].position);
+}
+
+const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
+	return m_nodes;
 }
 
 #ifdef _DEBUG_NODESYSTEM

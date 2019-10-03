@@ -29,8 +29,8 @@ int Entity::getECSIndex() const {
 }
 
 Entity::Entity(const std::string& name) 
-	: m_name(name)
-	, m_componentTypes(0x0) 
+	: m_componentTypes(0x0),
+	m_name(name)
 {
 	m_id = s_id++;
 	m_ECSIndex = -1;

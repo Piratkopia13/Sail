@@ -11,6 +11,7 @@ public:
 	void resetHitByWater();
 	bool wasHitByWater() const;
 	bool getIsAlive() const;
+	bool* getPtrToIsAlive();
 	void setIsAlive(bool alive);
 	bool getDoActivate() const;
 	void setDoActivate();
@@ -20,7 +21,8 @@ public:
 	bool isCarried() const;
 	void toggleCarried();
 	float getDownTime() const;
-
+	void setOwner(int playerEntityID);
+	int getOwner() const;
 
 
 private:
@@ -32,5 +34,5 @@ private:
 	/* Should probably be removed later */
 	float m_downTime = 0.f;
 
-
+	int m_playerEntityID = -1;
 };
