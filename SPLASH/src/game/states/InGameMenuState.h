@@ -3,7 +3,7 @@
 
 class InGameMenuState : public State {
 public:
-	InGameMenuState(StateStack& stack);
+	explicit InGameMenuState(StateStack& stack);
 	~InGameMenuState();
 
 	// Process input for the state
