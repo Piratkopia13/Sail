@@ -11,8 +11,9 @@
 #include "../Physics/Intersection.h"
 
 AttackingState::AttackingState(Octree* octree)
-	: m_octree(octree)
-{}
+	: m_octree(octree) {
+	m_distToHost = INFINITY;
+}
 
 AttackingState::~AttackingState() {}
 
@@ -29,6 +30,13 @@ void AttackingState::update(float dt, Entity* entity) {
 				return;
 			}
 		}
+	}
+
+	// Update distance to track when to switch to searching state.
+	if (aiComp->entityTarget != nullptr) {
+		auto aiPos = transComp->getMatrix()[3];
+		auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
+		m_distToHost = glm::distance2(enemyPos, aiPos);
 	}
 
 	if ( aiComp->entityTarget != nullptr ) {
@@ -53,6 +61,10 @@ void AttackingState::update(float dt, Entity* entity) {
 void AttackingState::reset(Entity* entity) {}
 
 void AttackingState::init(Entity* entity) {}
+
+float* AttackingState::getDistToHost() {
+	return &m_distToHost;
+}
 
 void AttackingState::entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp) {
 	if ( gunComp != nullptr ) {

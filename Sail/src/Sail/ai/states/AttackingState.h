@@ -19,8 +19,10 @@ public:
 	void reset(Entity* entity) override;
 	void init(Entity* entity) override;
 
+	float* getDistToHost();
 	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
 
 private:
 	Octree* m_octree;
+	float m_distToHost;
 };
