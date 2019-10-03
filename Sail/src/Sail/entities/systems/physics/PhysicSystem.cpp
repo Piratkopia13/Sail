@@ -5,6 +5,7 @@
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/PhysicsComponent.h"
 #include "..//..//components/BoundingBoxComponent.h"
+#include "..//..//components/CollisionSpheresComponent.h"
 #include "Sail/utils/GameDataTracker.h"
 
 #include "..//Sail/src/Sail/api/Input.h"
@@ -33,7 +34,13 @@ const bool PhysicSystem::collisionUpdate(Entity* thisPhysicalObject, PhysicsComp
 	//Update collision data
 	std::vector<Octree::CollisionInfo> collisions;
 
-	m_octree->getCollisions(thisPhysicalObject, &collisions);
+	bool hasSpheres = thisPhysicalObject->hasComponent<CollisionSpheresComponent>();
+	if (hasSpheres) {
+		m_octree->getCollisionsSpheres(thisPhysicalObject, &collisions);
+	}
+	else {
+		m_octree->getCollisions(thisPhysicalObject, &collisions);
+	}
 
 	return handleCollisions(thisPhysicalObject, physicsComp, collisions, dt);
 }
@@ -253,7 +260,7 @@ void PhysicSystem::update(float dt) {
 		if (boundingBox && m_octree) {
 			collisionUpdate(e, physics, updateableDt);
 
-			surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);
+			//surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);
 
 			if (rayCastCheck(e, physics, boundingBox->getBoundingBox(), updateableDt)) {
 				//Object is moving fast, ray cast for collisions
@@ -262,7 +269,7 @@ void PhysicSystem::update(float dt) {
 			}
 		}
 
-		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * 0.5f * updateableDt;
+		glm::vec3 translation = (physics->m_oldVelocity + physics->velocity) * (0.5f * updateableDt);
 		if (translation != glm::vec3(0.0f)) {
 			transform->translate(translation);
 			if (e->getName() == "player") {
@@ -272,5 +279,12 @@ void PhysicSystem::update(float dt) {
 		
 		physics->m_oldVelocity = physics->velocity;
 		physics->accelerationToAdd = glm::vec3(0.0f);
+
+
+		// Dumb thing for now, will hopefully be done cleaner in the future
+		if (CollisionSpheresComponent* csc = e->getComponent<CollisionSpheresComponent>()) {
+			csc->spheres[0].position = transform->getTranslation() + glm::vec3(0, 1, 0) * csc->spheres[0].radius;
+			csc->spheres[1].position = transform->getTranslation() + glm::vec3(0, 1, 0) * (0.9f * 2.0f - csc->spheres[1].radius);
+		}
 	}
 }

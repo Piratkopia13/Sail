@@ -364,6 +364,21 @@ bool GameState::processInput(float dt) {
 
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
+		static bool attach = false;
+		attach = !attach;
+		if (attach) {
+			CollisionSpheresComponent* csc = m_player->addComponent<CollisionSpheresComponent>();
+			csc->spheres[0].radius = 0.4f;
+			csc->spheres[1].radius = csc->spheres[0].radius;
+			csc->spheres[0].position = m_player->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 1, 0) * (-0.9f + csc->spheres[0].radius);
+			csc->spheres[1].position = m_player->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 1, 0) * (0.9f - csc->spheres[1].radius);
+		}
+		else {
+			m_player->removeComponent<CollisionSpheresComponent>();
+		}
+	}
+
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {

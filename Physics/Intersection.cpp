@@ -86,6 +86,50 @@ bool Intersection::AabbWithPlane(const BoundingBox& aabb, const glm::vec3& norma
 	return false;
 }
 
+bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
+	const glm::vec3* corners = aabb.getCorners();
+
+	// Find the point on the aabb closest to the sphere
+	float closestOnAabbX = std::fminf(std::fmaxf(sphere.position.x, corners[0].x), corners[1].x);
+	float closestOnAabbY = std::fminf(std::fmaxf(sphere.position.y, corners[2].y), corners[0].y);	// corners[0] > corners[2]
+	float closestOnAabbZ = std::fminf(std::fmaxf(sphere.position.z, corners[0].z), corners[4].z);
+
+	// Distance from cylinder to closest point on rectangle
+	float distX = closestOnAabbX - sphere.position.x;
+	float distY = closestOnAabbY - sphere.position.y;
+	float distZ = closestOnAabbZ - sphere.position.z;
+	float distSquared = distX * distX + distY * distY + distZ * distZ;
+
+	// True if the distance is smaller than the radius
+	return (distSquared < sphere.radius * sphere.radius);
+}
+
+bool Intersection::AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl) {
+	const glm::vec3* corners = aabb.getCorners();
+
+	float yPosDifference = aabb.getPosition().y - cyl.position.y;
+	float halfHeightSum = aabb.getHalfSize().y + cyl.halfHeight;
+
+	// Check if the objects are too far from each other along the y-axis
+	if (halfHeightSum < std::fabsf(yPosDifference)) {
+		return false;
+	}
+
+	// Only 2D calculations below
+
+	// Find the point on the aabb closest to the cylinder
+	float closestOnAabbX = std::fminf(std::fmaxf(cyl.position.x, corners[0].x), corners[1].x);
+	float closestOnAabbZ = std::fminf(std::fmaxf(cyl.position.z, corners[0].z), corners[4].z);
+
+	// Distance from cylinder to closest point on rectangle
+	float distX = closestOnAabbX - cyl.position.x;
+	float distZ = closestOnAabbZ - cyl.position.z;
+	float distSquared = distX * distX + distZ * distZ;
+
+	// True if the distance is smaller than the radius
+	return (distSquared < cyl.radius * cyl.radius);
+}
+
 bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[3]) {
 	glm::vec3 S0[2], S1[2];
 	if (TriangleWithTriangleSupport(V, U, S0) && TriangleWithTriangleSupport(U, V, S1))
@@ -110,6 +154,190 @@ bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 		return (I0.second > I1.first && I0.first < I1.second);
 	}
 	return false;
+}
+
+bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphere) {
+	glm::vec3 toVert = tri[0] - sphere.position;
+	glm::vec3 normal = glm::normalize(glm::cross(tri[1] - tri[0], tri[2] - tri[0]));
+	glm::vec3 toTriPlane = normal * glm::dot(toVert, normal);
+
+	// Check if closest point on triangle plane is farther than radius from sphere center
+	if (glm::length(toTriPlane) >= sphere.radius) {
+		return false;
+	}
+
+	glm::vec3 p = sphere.position + toTriPlane;
+	glm::vec3 v0 = tri[1] - tri[0];
+	glm::vec3 v1 = tri[2] - tri[0];
+	glm::vec3 v2 = p - tri[0];
+
+	// Determine barycentric coordinates
+	float d00 = glm::dot(v0, v0);
+	float d01 = glm::dot(v0, v1);
+	float d11 = glm::dot(v1, v1);
+	float d20 = glm::dot(v2, v0);
+	float d21 = glm::dot(v2, v1);
+	float denom = d00 * d11 - d01 * d01;
+	float v = (d11 * d20 - d01 * d21) / denom;
+	float w = (d00 * d21 - d01 * d20) / denom;
+	float u = 1.0f - v - w;
+
+	// Check if the point on the triangle plane is within the triangle
+	return ((0.0f < v && v < 1.0f) && (0.0f < w && w < 1.0f) && (0.0f < u && u < 1.0f));
+}
+
+bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
+	if (PointWithVerticalCylinder(tri[0], cyl)) {
+		return true;
+	}
+	if (PointWithVerticalCylinder(tri[1], cyl)) {
+		return true;
+	}
+	if (PointWithVerticalCylinder(tri[2], cyl)) {
+		return true;
+	}
+	if (LineSegmentWithVerticalCylinder(tri[0], tri[1], cyl)) {
+		return true;
+	}
+	if (LineSegmentWithVerticalCylinder(tri[0], tri[2], cyl)) {
+		return true;
+	}
+	if (LineSegmentWithVerticalCylinder(tri[1], tri[2], cyl)) {
+		return true;
+	}
+
+
+
+	/*
+		NOTE:
+		These tests are NOT enough to guarantee a collision
+		More will need to be done
+	*/
+	
+	return false;
+}
+
+bool Intersection::PointWithVerticalCylinder(const glm::vec3 p, const VerticalCylinder& cyl) {
+	float distY = p.y - cyl.position.y;
+	
+	// Check if point is above or below cylinder
+	if (std::fabsf(distY) > cyl.halfHeight) {
+		return false;
+	}
+
+	float distX = p.x - cyl.position.x;
+	float distZ = p.z - cyl.position.z;
+
+	// Check if point is within radius of cylinder
+	return (distX * distX + distZ * distZ < cyl.radius * cyl.radius);
+}
+
+bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const glm::vec3& end, const VerticalCylinder& cyl) {
+
+	// Check if either start or end are within the cylinder
+	// This simplifies calculations below, but is unnecessary if the caller has already checked them
+	if (PointWithVerticalCylinder(start, cyl) || PointWithVerticalCylinder(end, cyl)) {
+		return true;
+	}
+
+	/*
+		Then check if the intersections are within the line segment
+		Then check if the y-coordinates are within the cylinder
+	*/
+
+	glm::vec3 dir = glm::normalize(end - start);
+	glm::vec3 toRay = start - cyl.position;
+
+	float t_0;
+	float t_1;
+
+	// Check against an infinitely tall cylinder
+	{
+		// Project rays in 2D
+		glm::vec2 dir2D = glm::normalize(glm::vec2(dir.x, dir.z));
+		glm::vec2 toStart2D = glm::vec2(start.x, start.z) - glm::vec2(cyl.position.x, cyl.position.z);
+
+		// Code found at http://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection/
+		float a = glm::dot(dir, dir);
+		float b = 2.0f * glm::dot(toStart2D, dir2D);
+		float c = glm::dot(toStart2D, toStart2D) - (cyl.radius * cyl.radius);
+		float d = b * b - 4.0f * a * c;
+
+		// Check if the line misses the infinite cylinder (ray misses the circle)
+		if (d < 0.0f) {
+			return false;
+		}
+
+		// Calculate the distance to the two intersections (in 2D)
+		float sq = std::sqrtf(d);
+		float divA = 1.0f / (2.0f * a);
+		t_0 = (-b - sq) * divA;		// t_0 is always smaller than t_1 (see code above)
+		t_1 = (-b + sq) * divA;
+	}
+
+
+	// Distance from start to end
+	float t_end = glm::length(end - start);
+
+	// Cylinder top and bottom
+	float lowY = cyl.position.y - cyl.halfHeight;
+	float highY = cyl.position.y + cyl.halfHeight;
+
+	// Intersection heights
+	float y_0 = start.y + dir.y * t_0;
+	float y_1 = start.y + dir.y * t_1;
+
+	// Determine which of the two intersections are within the line segment
+	// Then check if the intersections are within the cylinder height
+	bool isColliding = false;
+	bool checkFurther = false;
+	if (t_0 < 0.0f) {
+		if (t_1 < 0.0f) {
+			// Both intersections are "behind" the segment
+			// Collision is impossible
+		} else if (t_1 < t_end) {
+			// First intersection is "behind" the segment, second is "within"
+
+			// Check if the second intersection is within the cylinder height
+			if (lowY < y_1 && y_1 < highY) {
+				isColliding = true;
+			}
+		} else {
+			// First intersection is "behind" the segment, second is "in front of"
+			// Neither start nor end are within the cylinder (first thing checked in this function)
+			// This means the points of the segment are one of three cases
+			// 1. both above (Collision is impossible)
+			// 2. both below (Collision is impossible)
+			// 3. one above and one below
+
+			// Check whether both points are either above or below
+			// NOTE: this has to check the POINTS, not the intersections
+			//     If one intersection is above and the other within or below, the segment (both points) can still be above (among other cases)
+			bool bothAboveOrBelow = (start.y > highY && end.y > highY) || (start.y < lowY && end.y < lowY);
+			if (!bothAboveOrBelow) {
+				isColliding = true;
+			}
+		}
+	} else if (t_0 < t_end) {
+		if (t_1 < t_end) {
+			// Both intersections are "within" the segment
+
+			// Check if either 
+			if ((lowY < y_0 && y_0 < highY) || (lowY < y_1 && y_1 < highY)) {
+				isColliding = true;
+			}
+		} else {
+			// First intersection is "within" the segment, second is "in front of"
+			if (lowY < y_0 && y_0 < highY) {
+				isColliding = true;
+			}
+		}
+	} else {
+		// Both intersections are "in front of" the segment
+		// Collision is impossible
+	}
+
+	return isColliding;
 }
 
 bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
