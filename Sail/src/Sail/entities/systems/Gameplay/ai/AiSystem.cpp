@@ -235,7 +235,7 @@ float AiSystem::getAiYaw(PhysicsComponent* physComp, float currYaw, float dt) {
 	if ( glm::length2(physComp->velocity) > 0.f ) {
 		float desiredYaw = 0.f;
 		// TODO: Edit turnrate and things
-		float turnRate = PI_2; // 2 pi
+		float turnRate = PI_2 / 2.f; // 2 pi
 		auto normalizedVel = glm::normalize(physComp->velocity);
 		float physCompX = normalizedVel.x;
 		float physCompZ = normalizedVel.z;
