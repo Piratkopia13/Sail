@@ -16,7 +16,7 @@ public:
 	inline unsigned int getHeight() const { return m_height; }
 	inline bool isMinimized() const { return m_isMinimized; };
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::WINDOW_RESIZE;
 	}
 private:
