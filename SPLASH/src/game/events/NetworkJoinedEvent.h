@@ -12,7 +12,7 @@ public:
 
 	inline Player getPlayer() const { return m_player; };
 
-	static Type GetStaticType() {
+	static Type getStaticType() {
 		return Event::NETWORK_JOINED;
 	}
 

@@ -15,7 +15,7 @@ public:
 
 	inline Message getMessage() const { return m_chatMessage; };
 
-	static Type GetStaticType() {
+	static Type getStaticType() {
 		return Event::NETWORK_CHAT;
 	}
 
