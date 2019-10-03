@@ -272,11 +272,11 @@ GameState::GameState(StateStack& stack)
 	*/
 
 	// Create the level generator system and put it into the datatype.
-	Entity::SPtr map = ECS::Instance()->createEntity("Map");
+	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
-	m_componentSystems.levelGeneratorSystem->addEntity(map.get());
+	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(&m_scene, tileFlat,tileCross,tileCorner,tileStraight,tileT,tileEnd,m_boundingBoxModel.get());
+	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat,tileCross,tileCorner,tileStraight,tileT,tileEnd,boundingBoxModel);
 	
 	/*Model* animatedModel = &m_app->getResourceManager().getModel("walkingAnimationBaked.fbx", shader); 
 	AnimationStack* animationStack = &m_app->getResourceManager().getAnimationStack("walkingAnimationBaked.fbx");

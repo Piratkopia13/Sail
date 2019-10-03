@@ -12,7 +12,7 @@ public:
 
 	void update(float dt) override;
 	void generateMap();
-	void createWorld(Scene* scene, Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
+	void createWorld(Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
 
 private:
 	int randomizeTileId(std::vector<int>* tiles);
@@ -20,5 +20,7 @@ private:
 	void splitChunk();
 	void splitBlock();
 	void matchRoom();
-	bool checkBorder(rect rekt);
+	int checkBorder(rect rekt);
+	bool splitDirection(bool ns);
+	void addDoors();
 };
