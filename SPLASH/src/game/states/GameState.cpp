@@ -401,7 +401,7 @@ bool GameState::render(float dt, float alpha) {
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.renderSystem->draw(m_cam, alpha);
-
+	
 	return true;
 }
 
@@ -413,6 +413,13 @@ bool GameState::renderImgui(float dt) {
 	renderImGuiLightDebug(dt);
 
 	return false;
+}
+
+bool GameState::prepareStateChange() {
+	if (m_poppedThisFrame) {
+		shutDownGameState();
+	}
+	return true;
 }
 
 bool GameState::renderImguiConsole(float dt) {
@@ -623,7 +630,7 @@ void GameState::shutDownGameState() {
 	// Clear all entities
 	ECS::Instance()->destroyAllEntities();
 	
-	// Clear all neccesary systems
+	// Clear all necessary systems
 	m_componentSystems.gameInputSystem->clean();
 
 }
@@ -671,10 +678,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
-
-	if (m_poppedThisFrame) {
-		shutDownGameState();
-	}
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
