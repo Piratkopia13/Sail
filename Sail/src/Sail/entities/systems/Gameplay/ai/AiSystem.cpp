@@ -142,6 +142,10 @@ void AiSystem::update(float dt) {
 	}
 }
 
+NodeSystem* AiSystem::getNodeSystem() {
+	return m_nodeSystem.get();
+}
+
 
 void AiSystem::aiUpdateFunc(Entity* entity, const float dt) {
 	entity->getComponent<FSMComponent>()->update(dt, entity);

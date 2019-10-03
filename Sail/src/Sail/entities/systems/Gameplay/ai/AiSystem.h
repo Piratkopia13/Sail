@@ -34,6 +34,8 @@ public:
 
 	void update(float dt) override;
 
+	NodeSystem* getNodeSystem();
+
 private:
 	struct AiEntity {
 		TransformComponent* transComp;
