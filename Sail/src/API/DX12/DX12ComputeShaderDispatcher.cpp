@@ -23,7 +23,7 @@ void DX12ComputeShaderDispatcher::begin(void* cmdList) {
 	dxCmdList->SetComputeRootSignature(m_context->getGlobalRootSignature());
 }
 
-Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, Shader::ComputeShaderInput& input, void* cmdList) {
+Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, Shader::ComputeShaderInput& input, int meshIndex, void* cmdList) {
 	assert(computeShader.getPipeline()->isComputeShader()); // Not a compute shader
 	auto* dxShaderPipeline = static_cast<DX12ShaderPipeline*>(computeShader.getPipeline());
 	
@@ -55,7 +55,8 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
 	}
 	// Bind output resources
-	dxShaderPipeline->bind_new(dxCmdList, 3); // TODO: why 3?
+	/*dxShaderPipeline->bind_new(dxCmdList, 3); // TODO: why 3?*/
+	dxShaderPipeline->bind_new(dxCmdList, meshIndex);
 
 	dxShaderPipeline->dispatch(input.threadGroupCountX, input.threadGroupCountY, input.threadGroupCountZ, dxCmdList);
 

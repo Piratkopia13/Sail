@@ -16,6 +16,7 @@
 #ifdef _DEBUG
 #include <initguid.h>
 #include <DXGIDebug.h>
+#include <DXProgrammableCapture.h>
 #endif
 #include "Sail/api/GraphicsAPI.h"
 #include <map>
@@ -92,6 +93,11 @@ public:
 	const D3D12_VIEWPORT* getViewport() const;
 	const D3D12_RECT* getScissorRect() const;
 
+#ifdef _DEBUG
+	void beginPIXCapture() const;
+	void endPIXCapture() const;
+#endif
+
 	void initCommand(Command& cmd);
 
 	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
@@ -131,6 +137,7 @@ private:
 	wComPtr<ID3D12Device5> m_device;
 #ifdef _DEBUG
 	wComPtr<IDXGIFactory2> m_dxgiFactory;
+	wComPtr<IDXGraphicsAnalysis> m_pixGa;
 #endif
 	// Only used for initialization
 	IDXGIFactory6* m_factory;

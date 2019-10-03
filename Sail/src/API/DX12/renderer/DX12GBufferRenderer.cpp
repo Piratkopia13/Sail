@@ -122,11 +122,13 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 		// Init all textures - this needs to be done on ONE thread
 		// TODO: optimize!
+		int meshIndex = 0;
 		for (auto& renderCommand : commandQueue) {
 			for (int i = 0; i < 3; i++) {
 				auto* tex = static_cast<DX12Texture*>(renderCommand.mesh->getMaterial()->getTexture(i));
 				if (tex && !tex->hasBeenInitialized()) {
-					tex->initBuffers(cmdList.Get());
+					tex->initBuffers(cmdList.Get(), meshIndex);
+					meshIndex++;
 				}
 			}
 		}
