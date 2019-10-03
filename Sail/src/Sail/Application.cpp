@@ -14,7 +14,7 @@ std::atomic_bool Application::s_isRunning = true;
 
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
-
+	
 	// Set up instance if not set
 	if (s_instance) {
 		Logger::Error("Only one application can exist!");
@@ -118,9 +118,6 @@ int Application::startGameLoop() {
 			delta = newTime - currentTime;
 			currentTime = newTime;
 
-			// Will slow the game down if the CPU can't keep up with the TICKRATE
-			delta = std::min(delta, 4 * TIMESTEP);
-
 			// Update fps counter
 			secCounter += delta;
 			accumulator += delta;
@@ -196,6 +193,9 @@ Application* Application::getInstance() {
 void Application::dispatchEvent(Event& event) {
 	m_api->onEvent(event);
 	Input::GetInstance()->onEvent(event);
+
+	m_rendererWrapper.onEvent(event);
+	
 }
 
 GraphicsAPI* const Application::getAPI() {

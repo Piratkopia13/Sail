@@ -19,8 +19,6 @@ public:
 
 private:
 	AudioEngine m_audioEngine;
-
-	int m_currStreamIndex = 0;
 };
 
 #endif
