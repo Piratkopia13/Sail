@@ -139,17 +139,31 @@ bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 }
 
 bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
-	bool isVertexInside =
-		PointWithVerticalCylinder(tri[0], cyl) ||
-		PointWithVerticalCylinder(tri[1], cyl) ||
-		PointWithVerticalCylinder(tri[2], cyl);
-
-	if (isVertexInside) {
+	if (PointWithVerticalCylinder(tri[0], cyl)) {
+		return true;
+	}
+	if (PointWithVerticalCylinder(tri[1], cyl)) {
+		return true;
+	}
+	if (PointWithVerticalCylinder(tri[2], cyl)) {
+		return true;
+	}
+	if (LineSegmentWithVerticalCylinder(tri[0], tri[1], cyl)) {
+		return true;
+	}
+	if (LineSegmentWithVerticalCylinder(tri[0], tri[2], cyl)) {
+		return true;
+	}
+	if (LineSegmentWithVerticalCylinder(tri[1], tri[2], cyl)) {
 		return true;
 	}
 
-
-
+	/*
+		NOTE:
+		These tests are NOT enough to be sure of a collision
+		More will need to be done
+	*/
+	
 	return false;
 }
 
@@ -170,102 +184,110 @@ bool Intersection::PointWithVerticalCylinder(const glm::vec3 p, const VerticalCy
 
 bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const glm::vec3& end, const VerticalCylinder& cyl) {
 
+	// Check if either start or end are within the cylinder
+	// This simplifies calculations below, but is unnecessary if the caller has already checked them
+	if (PointWithVerticalCylinder(start, cyl) || PointWithVerticalCylinder(end, cyl)) {
+		return true;
+	}
+
 	/*
-		Check against an infinitely tall cylinder
+		Then check if the intersections are within the line segment
 		Then check if the y-coordinates are within the cylinder
 	*/
 
 	glm::vec3 dir = glm::normalize(end - start);
 	glm::vec3 toRay = start - cyl.position;
 
-	// Code found at http://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection/
-	float a = dir.x * dir.x + dir.z * dir.z;
-	float b = 2.0f * glm::dot(toRay, dir);
-	float c = (toRay.x * toRay.x + toRay.z * toRay.z) - (cyl.radius * cyl.radius);
-	float d = b * b - 4.0f * a * c;
-	
-	// Check if the line misses the infinite cylinder (ray misses the circle)
-	if (d < 0.0f) {
-		return false;
+	float t_0;
+	float t_1;
+
+	// Check against an infinitely tall cylinder
+	{
+		// Project rays in 2D
+		glm::vec2 dir2D = glm::normalize(glm::vec2(dir.x, dir.z));
+		glm::vec2 toStart2D = glm::vec2(start.x, start.z) - glm::vec2(cyl.position.x, cyl.position.z);
+
+		// Code found at http://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection/
+		float a = glm::dot(dir, dir);
+		float b = 2.0f * glm::dot(toStart2D, dir2D);
+		float c = glm::dot(toStart2D, toStart2D) - (cyl.radius * cyl.radius);
+		float d = b * b - 4.0f * a * c;
+
+		// Check if the line misses the infinite cylinder (ray misses the circle)
+		if (d < 0.0f) {
+			return false;
+		}
+
+		// Calculate the distance to the two intersections (in 2D)
+		float sq = std::sqrtf(d);
+		float divA = 1.0f / (2.0f * a);
+		t_0 = (-b - sq) * divA;		// t_0 is always smaller than t_1 (see code above)
+		t_1 = (-b + sq) * divA;
 	}
-	
-	// Calculate the distance to the two intersections (in 2D)
-	float sq = std::sqrtf(d);
-	float divA = 1.0f / (2.0f * a);
-	float t_0 = (-b - sq) * divA;
-	float t_1 = (-b + sq) * divA;
-
-	// Find the coordinates of the two intersections
-	glm::vec3 col_0 = start + dir * t_0;
-	glm::vec3 col_1 = start + dir * t_1;
-
-	
 
 
+	// Distance from start to end
+	float t_end = glm::length(end - start);
 
-
-	/*// Calculate the distance to the two intersections (in 3D)
-	glm::vec3 flatDir = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
-	float divDot = 1.0f / glm::dot(dir, flatDir);
-	float t0 = t_flat0 * divDot;
-	float t1 = t_flat1 * divDot;
-	
-	// Determine the intersection points on the infinite cylinder
-	glm::vec3 hit0 = start + dir * t0;
-	glm::vec3 hit1 = start + dir * t1;
-
-	// Check within the cylinder height
+	// Cylinder top and bottom
 	float lowY = cyl.position.y - cyl.halfHeight;
 	float highY = cyl.position.y + cyl.halfHeight;
-	
-	if (hit0.y < lowY)
-	{
-		if (hit1.y < lowY)
-		{
-			// Both points are below cylinder
-		}
-		else if (hit1.y > highY)
-		{
 
+	// Intersection heights
+	float y_0 = start.y + dir.y * t_0;
+	float y_1 = start.y + dir.y * t_1;
 
-		}
-		else
-		{
+	// Determine which of the two intersections are within the line segment
+	// Then check if the intersections are within the cylinder height
+	bool isColliding = false;
+	bool checkFurther = false;
+	if (t_0 < 0.0f) {
+		if (t_1 < 0.0f) {
+			// Both intersections are "behind" the segment
+			// Collision is impossible
+		} else if (t_1 < t_end) {
+			// First intersection is "behind" the segment, second is "within"
 
+			// Check if the second intersection is within the cylinder height
+			if (lowY < y_1 && y_1 < highY) {
+				isColliding = true;
+			}
+		} else {
+			// First intersection is "behind" the segment, second is "in front of"
+			// Neither start nor end are within the cylinder (first thing checked in this function)
+			// This means the points of the segment are one of three cases
+			// 1. both above (Collision is impossible)
+			// 2. both below (Collision is impossible)
+			// 3. one above and one below
+
+			// Check whether both points are either above or below
+			// NOTE: this has to check the POINTS, not the intersections
+			//     If one intersection is above and the other within or below, the segment (both points) can still be above (among other cases)
+			bool bothAboveOrBelow = (start.y > highY && end.y > highY) || (start.y < lowY && end.y < lowY);
+			if (!bothAboveOrBelow) {
+				isColliding = true;
+			}
 		}
+	} else if (t_0 < t_end) {
+		if (t_1 < t_end) {
+			// Both intersections are "within" the segment
+
+			// Check if either 
+			if ((lowY < y_0 && y_0 < highY) || (lowY < y_1 && y_1 < highY)) {
+				isColliding = true;
+			}
+		} else {
+			// First intersection is "within" the segment, second is "in front of"
+			if (lowY < y_0 && y_0 < highY) {
+				isColliding = true;
+			}
+		}
+	} else {
+		// Both intersections are "in front of" the segment
+		// Collision is impossible
 	}
-	else if (hit0.y > highY)
-	{
-		if (hit1.y < lowY)
-		{
-		}
-		else if (hit1.y > highY)
-		{
 
-		}
-		else
-		{
-
-		}
-	}
-	else
-	{
-		if (hit1.y < lowY)
-		{
-		}
-		else if (hit1.y > highY)
-		{
-
-		}
-		else
-		{
-
-		}
-	}*/
-
-	return false;
-
-	// Code found at http://mathworld.wolfram.com/Circle-LineIntersection.html
+	return isColliding;
 }
 
 bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
