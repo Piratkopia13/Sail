@@ -85,6 +85,32 @@ bool Intersection::aabbWithPlane(const BoundingBox& aabb, const glm::vec3& norma
 	return false;
 }
 
+bool Intersection::aabbWithVerticalCylinder(const BoundingBox& aabb, const VerticalCylinder& cyl) {
+	const std::vector<glm::vec3>& corners = *aabb.getCorners();
+
+	float yPosDifference = aabb.getPosition().y - cyl.position.y;
+	float halfHeightSum = aabb.getHalfSize().y + cyl.halfHeight;
+
+	// Check if the objects are too far from each other along the y-axis
+	if (halfHeightSum < std::fabsf(yPosDifference)) {
+		return false;
+	}
+
+	// Only 2D calculations below
+
+	// Find the point on the aabb closest to the cylinder
+	float closestOnAabbX = std::fminf(std::fmaxf(cyl.position.x, corners[0].x), corners[1].x);
+	float closestOnAabbZ = std::fminf(std::fmaxf(cyl.position.z, corners[0].z), corners[4].z);
+
+	// Distance from cylinder to closest point on rectangle
+	float distX = closestOnAabbX - cyl.position.x;
+	float distZ = closestOnAabbZ - cyl.position.z;
+	float distSquared = distX * distX + distZ * distZ;
+
+	// True if the distance is smaller than the radius
+	return (distSquared < cyl.radius * cyl.radius);
+}
+
 bool Intersection::triangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[3]) {
 	glm::vec3 S0[2], S1[2];
 	if (triangleWithTriangleSupport(V, U, S0) && triangleWithTriangleSupport(U, V, S1))
@@ -109,6 +135,136 @@ bool Intersection::triangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 		return (I0.second > I1.first && I0.first < I1.second);
 	}
 	return false;
+}
+
+bool Intersection::triangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
+	bool isVertexInside =
+		pointWithVerticalCylinder(tri[0], cyl) ||
+		pointWithVerticalCylinder(tri[1], cyl) ||
+		pointWithVerticalCylinder(tri[2], cyl);
+
+	if (isVertexInside) {
+		return true;
+	}
+
+
+
+	return false;
+}
+
+bool Intersection::pointWithVerticalCylinder(const glm::vec3 p, const VerticalCylinder& cyl) {
+	float distY = p.y - cyl.position.y;
+	
+	// Check if point is above or below cylinder
+	if (std::fabsf(distY) > cyl.halfHeight) {
+		return false;
+	}
+
+	float distX = p.x - cyl.position.x;
+	float distZ = p.z - cyl.position.z;
+
+	// Check if point is within radius of cylinder
+	return (distX * distX + distZ * distZ < cyl.radius * cyl.radius);
+}
+
+bool Intersection::lineSegmentWithVerticalCylinder(const glm::vec3& start, const glm::vec3& end, const VerticalCylinder& cyl) {
+
+	/*
+		Check against an infinitely tall cylinder
+		Then check if the y-coordinates are within the cylinder
+	*/
+
+	glm::vec3 dir = glm::normalize(end - start);
+	glm::vec3 toRay = start - cyl.position;
+
+	// Code found at http://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection/
+	float a = dir.x * dir.x + dir.z * dir.z;
+	float b = 2.0f * glm::dot(toRay, dir);
+	float c = (toRay.x * toRay.x + toRay.z * toRay.z) - (cyl.radius * cyl.radius);
+	float d = b * b - 4.0f * a * c;
+	
+	// Check if the line misses the infinite cylinder (ray misses the circle)
+	if (d < 0.0f) {
+		return false;
+	}
+	
+	// Calculate the distance to the two intersections (in 2D)
+	float sq = std::sqrtf(d);
+	float divA = 1.0f / (2.0f * a);
+	float t_0 = (-b - sq) * divA;
+	float t_1 = (-b + sq) * divA;
+
+	// Find the coordinates of the two intersections
+	glm::vec3 col_0 = start + dir * t_0;
+	glm::vec3 col_1 = start + dir * t_1;
+
+	
+
+
+
+
+	/*// Calculate the distance to the two intersections (in 3D)
+	glm::vec3 flatDir = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
+	float divDot = 1.0f / glm::dot(dir, flatDir);
+	float t0 = t_flat0 * divDot;
+	float t1 = t_flat1 * divDot;
+	
+	// Determine the intersection points on the infinite cylinder
+	glm::vec3 hit0 = start + dir * t0;
+	glm::vec3 hit1 = start + dir * t1;
+
+	// Check within the cylinder height
+	float lowY = cyl.position.y - cyl.halfHeight;
+	float highY = cyl.position.y + cyl.halfHeight;
+	
+	if (hit0.y < lowY)
+	{
+		if (hit1.y < lowY)
+		{
+			// Both points are below cylinder
+		}
+		else if (hit1.y > highY)
+		{
+
+
+		}
+		else
+		{
+
+		}
+	}
+	else if (hit0.y > highY)
+	{
+		if (hit1.y < lowY)
+		{
+		}
+		else if (hit1.y > highY)
+		{
+
+		}
+		else
+		{
+
+		}
+	}
+	else
+	{
+		if (hit1.y < lowY)
+		{
+		}
+		else if (hit1.y > highY)
+		{
+
+		}
+		else
+		{
+
+		}
+	}*/
+
+
+
+	// Code found at http://mathworld.wolfram.com/Circle-LineIntersection.html
 }
 
 bool Intersection::triangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
@@ -287,3 +443,30 @@ float Intersection::rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& 
 
 	return returnValue;
 }
+
+//float Intersection::rayWithVerticalCylinder(const glm::vec3& rayStart, const glm::vec3& rayVec, const VerticalCylinder& cyl) {
+//	float returnValue = -1.0f;
+//
+//
+//	return returnValue;
+//}
+
+/*Intersection::LineWithCirclePoints Intersection::rayWithCircle2D(const glm::vec2& rayStart, const glm::vec2& rayDir, const glm::vec2& cPos, float cRad) {
+	glm::vec2 circleToRay = rayStart - cPos;
+
+	Intersection::LineWithCirclePoints intersections;
+
+	// Code found at http://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection/
+	float a = rayDir.x * rayDir.x + rayDir.y * rayDir.y;
+	float b = 2.0f * glm::dot(circleToRay, rayDir);
+	float c = (circleToRay.x * circleToRay.x + circleToRay.y * circleToRay.y) - (cRad * cRad);
+	float d = b * b - 4.0f * a * c;
+	if (d < 0.0f) {
+		intersections.small = intersections.big = -1.0f;		// No intersection
+	} else {
+		float sq = std::sqrtf(d);
+		float divA = 1.0f / (2.0f * a);
+		intersections.small = (-b - sq) * divA;
+		intersections.big	= (-b + sq) * divA;
+	}
+}*/
