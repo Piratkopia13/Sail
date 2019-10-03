@@ -114,6 +114,12 @@ bool StateStack::isEmpty() const {
 	return m_stack.empty();
 }
 
+void StateStack::prepareStateChange() {
+	for (auto& state : m_stack) {
+		state->prepareStateChange();
+	}
+}
+
 void StateStack::applyPendingChanges() {
 	
 	// Perform something depending on the action

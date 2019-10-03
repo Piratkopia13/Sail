@@ -5,6 +5,11 @@ class Camera;
 class CameraController;
 class GameDataTracker;
 
+struct Movement {
+	float speedModifier = 1.f;
+	float forwardMovement = 0.0f;
+	float rightMovement = 0.0f;
+};
 
 class GameInputSystem final : public BaseComponentSystem {
 public:
@@ -18,13 +23,13 @@ public:
 	void clean();
 	void updateCameraPosition(float alpha);
 
-	void processPerFrameInput();
-	void processPerTickInput();
-
 private:
 	void processKeyboardInput(const float& dt);
 	void processMouseInput(const float& dt);
 
+	void putDownCandle(Entity* entity);
+	Movement getPlayerMovementInput(Entity* entity);
+	
 	CameraController* m_cam = nullptr;
 	GameDataTracker* m_gameDataTracker = nullptr;
 
@@ -39,9 +44,5 @@ private:
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
-
-	glm::vec3 calculateNormalizedRightVector();
-
-
 
 };
