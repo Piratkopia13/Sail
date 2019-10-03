@@ -3,8 +3,9 @@
 
 #include "Intersection.h"
 
+BoundingBox Intersection::sPaddedReserved;
 
-bool Intersection::aabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2) {
+bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2) {
 
 	glm::vec3 center1 = aabb1.getPosition();
 	glm::vec3 center2 = aabb2.getPosition();
@@ -23,7 +24,7 @@ bool Intersection::aabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aab
 	return true;
 }
 
-bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
 
 	glm::vec3 center = aabb.getPosition();
 	//Calculate normal for triangle
@@ -44,7 +45,7 @@ bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 	float distance = -glm::dot(triangleToWorldOrigo, triNormal);
 
 	// Test the AABB against the plane that the triangle is on
-	if (aabbWithPlane(aabb, triNormal, distance)) {
+	if (AabbWithPlane(aabb, triNormal, distance)) {
 		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
@@ -75,7 +76,7 @@ bool Intersection::aabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 	return true;
 }
 
-bool Intersection::aabbWithPlane(const BoundingBox& aabb, const glm::vec3& normal, const float& distance) {
+bool Intersection::AabbWithPlane(const BoundingBox& aabb, const glm::vec3& normal, const float& distance) {
 	//Actually creates a sphere from the aabb half size and tests sphere with plane
 	float radius = glm::length(aabb.getHalfSize());
 
@@ -85,8 +86,8 @@ bool Intersection::aabbWithPlane(const BoundingBox& aabb, const glm::vec3& norma
 	return false;
 }
 
-bool Intersection::aabbWithVerticalCylinder(const BoundingBox& aabb, const VerticalCylinder& cyl) {
-	const std::vector<glm::vec3>& corners = *aabb.getCorners();
+bool Intersection::AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl) {
+	const glm::vec3* corners = aabb.getCorners();
 
 	float yPosDifference = aabb.getPosition().y - cyl.position.y;
 	float halfHeightSum = aabb.getHalfSize().y + cyl.halfHeight;
@@ -111,9 +112,9 @@ bool Intersection::aabbWithVerticalCylinder(const BoundingBox& aabb, const Verti
 	return (distSquared < cyl.radius * cyl.radius);
 }
 
-bool Intersection::triangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[3]) {
+bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[3]) {
 	glm::vec3 S0[2], S1[2];
-	if (triangleWithTriangleSupport(V, U, S0) && triangleWithTriangleSupport(U, V, S1))
+	if (TriangleWithTriangleSupport(V, U, S0) && TriangleWithTriangleSupport(U, V, S1))
 	{
 		// Theoretically, the segments lie on the same line.  A direction D
 		// of the line is the Cross(NormalOf(U),NormalOf(V)).  We choose the
@@ -137,11 +138,11 @@ bool Intersection::triangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 	return false;
 }
 
-bool Intersection::triangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
+bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
 	bool isVertexInside =
-		pointWithVerticalCylinder(tri[0], cyl) ||
-		pointWithVerticalCylinder(tri[1], cyl) ||
-		pointWithVerticalCylinder(tri[2], cyl);
+		PointWithVerticalCylinder(tri[0], cyl) ||
+		PointWithVerticalCylinder(tri[1], cyl) ||
+		PointWithVerticalCylinder(tri[2], cyl);
 
 	if (isVertexInside) {
 		return true;
@@ -152,7 +153,7 @@ bool Intersection::triangleWithVerticalCylinder(const glm::vec3 tri[3], const Ve
 	return false;
 }
 
-bool Intersection::pointWithVerticalCylinder(const glm::vec3 p, const VerticalCylinder& cyl) {
+bool Intersection::PointWithVerticalCylinder(const glm::vec3 p, const VerticalCylinder& cyl) {
 	float distY = p.y - cyl.position.y;
 	
 	// Check if point is above or below cylinder
@@ -167,7 +168,7 @@ bool Intersection::pointWithVerticalCylinder(const glm::vec3 p, const VerticalCy
 	return (distX * distX + distZ * distZ < cyl.radius * cyl.radius);
 }
 
-bool Intersection::lineSegmentWithVerticalCylinder(const glm::vec3& start, const glm::vec3& end, const VerticalCylinder& cyl) {
+bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const glm::vec3& end, const VerticalCylinder& cyl) {
 
 	/*
 		Check against an infinitely tall cylinder
@@ -262,12 +263,12 @@ bool Intersection::lineSegmentWithVerticalCylinder(const glm::vec3& start, const
 		}
 	}*/
 
-
+	return false;
 
 	// Code found at http://mathworld.wolfram.com/Circle-LineIntersection.html
 }
 
-bool Intersection::triangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
+bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
 	// Compute the plane normal for triangle U.
 	glm::vec3 edge1 = U[1] - U[0];
 	glm::vec3 edge2 = U[2] - U[0];
@@ -360,8 +361,9 @@ bool Intersection::triangleWithTriangleSupport(const glm::vec3 U[3], const glm::
 	return false;
 }
 
-float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb) {
+float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb) {
 	float returnValue = -1.0f;
+	glm::vec3 normalizedRay = glm::normalize(rayVec);
 	bool noHit = false; //Boolean for early exits from the for-loop
 	float tMin = -std::numeric_limits<float>::infinity(); //tMin initialized at negative infinity
 	float tMax = std::numeric_limits<float>::infinity(); //tMax initialized at positive infinity
@@ -370,7 +372,7 @@ float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 		float tempH = aabb.getHalfSize()[i]; //Temporary variable to store the current half axis
 
 		float e = p[i];
-		float f = rayVec[i];
+		float f = normalizedRay[i];
 		if (f != 0.0f) { //Ray is not parallel to slab
 			float tempF = 1 / f; //temporary variable to avoid calculating division with the (possibly) very small value f multiple times since it is an expensive calculation
 
@@ -412,7 +414,7 @@ float Intersection::rayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 	return returnValue;
 }
 
-float Intersection::rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
+float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
 	float returnValue = -1.0f;
 	glm::vec3 normalizedRay = glm::normalize(rayDir); //Normalize ray direction vec just to be sure
 
@@ -444,29 +446,44 @@ float Intersection::rayWithTriangle(const glm::vec3& rayStart, const glm::vec3& 
 	return returnValue;
 }
 
-//float Intersection::rayWithVerticalCylinder(const glm::vec3& rayStart, const glm::vec3& rayVec, const VerticalCylinder& cyl) {
-//	float returnValue = -1.0f;
-//
-//
-//	return returnValue;
-//}
+float Intersection::RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb, float padding) {
+	float returnValue = -1.0f;
+	
+	if (padding != 0.0f) {
+		//Add padding
+		sPaddedReserved.setPosition(aabb.getPosition());
+		sPaddedReserved.setHalfSize(aabb.getHalfSize() + glm::vec3(padding));
 
-/*Intersection::LineWithCirclePoints Intersection::rayWithCircle2D(const glm::vec2& rayStart, const glm::vec2& rayDir, const glm::vec2& cPos, float cRad) {
-	glm::vec2 circleToRay = rayStart - cPos;
-
-	Intersection::LineWithCirclePoints intersections;
-
-	// Code found at http://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection/
-	float a = rayDir.x * rayDir.x + rayDir.y * rayDir.y;
-	float b = 2.0f * glm::dot(circleToRay, rayDir);
-	float c = (circleToRay.x * circleToRay.x + circleToRay.y * circleToRay.y) - (cRad * cRad);
-	float d = b * b - 4.0f * a * c;
-	if (d < 0.0f) {
-		intersections.small = intersections.big = -1.0f;		// No intersection
-	} else {
-		float sq = std::sqrtf(d);
-		float divA = 1.0f / (2.0f * a);
-		intersections.small = (-b - sq) * divA;
-		intersections.big	= (-b + sq) * divA;
+		returnValue = RayWithAabb(rayStart, rayVec, sPaddedReserved);
 	}
-}*/
+	else {
+		returnValue = RayWithAabb(rayStart, rayVec, aabb);
+	}
+
+	return returnValue;
+}
+
+float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, float padding) {
+	float returnValue = -1.0f;
+	
+	glm::vec3 triangleNormal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+
+	glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
+
+	if (glm::dot(middle - rayStart, triangleNormal) < 0.0f) {
+		//Only check if triangle is facing ray start
+		if (padding != 0.0f) {
+			//Add padding
+			glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) * 20.0f + triangleNormal) * padding;
+			glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) * 20.0f + triangleNormal) * padding;
+			glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) * 20.0f + triangleNormal) * padding;
+
+			returnValue = RayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
+		}
+		else {
+			returnValue = RayWithTriangle(rayStart, rayDir, v1, v2, v3);
+		}
+	}
+	
+	return returnValue;
+}
