@@ -13,7 +13,7 @@ public:
 
 	inline MSG& getMSG() const { return m_msg; };
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::TEXTINPUT;
 	}
 

@@ -17,7 +17,7 @@ public:
 
 	inline std::list<Player> getListOfPlayers() { return playerList; }
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::NETWORK_WELCOME;
 	}
 

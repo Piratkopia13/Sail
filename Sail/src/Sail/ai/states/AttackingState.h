@@ -18,9 +18,9 @@ public:
 	void update(float dt, Entity* entity) override;
 	void reset(Entity* entity) override;
 	void init(Entity* entity) override;
-
 	float* getDistToHost();
-	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
+
+	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp, const glm::vec3& fireDir, const glm::vec3& gunPos, const float hitDist);
 
 private:
 	Octree* m_octree;

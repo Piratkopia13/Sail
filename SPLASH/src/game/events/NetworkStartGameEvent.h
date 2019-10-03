@@ -10,7 +10,7 @@ public:
 	~NetworkStartGameEvent() {}
 
 
-	static Type getStaticType() {
+	static Type GetStaticType() {
 		return Event::NETWORK_START_GAME;
 	}
 

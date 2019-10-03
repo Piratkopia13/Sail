@@ -14,7 +14,7 @@ GBufferOutShader::GBufferOutShader()
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
-	static_cast<DX12ShaderPipeline*>(shaderPipeline)->setNumRenderTargets(2);
+	static_cast<DX12ShaderPipeline*>(shaderPipeline)->setNumRenderTargets(3);
 
 	// Finish the shader creation
 	finish();
