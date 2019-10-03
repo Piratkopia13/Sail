@@ -9,7 +9,7 @@ Network::~Network() {
 	shutdown();
 
 	for (int i = 0; i < MAX_AWAITING_PACKAGES; ++i) {
-		if (m_awaitingMessages[i].Message.rawMsg != nullptr) {
+		if (m_awaitingEvents[i].eventType != NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND && m_awaitingMessages[i].Message.rawMsg != nullptr) {
 			delete[] m_awaitingMessages[i].Message.rawMsg;
 			m_awaitingMessages[i].Message.rawMsg = nullptr;
 		}
@@ -557,7 +557,6 @@ void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	}
 
 	// Copy the incoming data to a message
-	m_awaitingMessages[m_pend].Message.rawMsg = SAIL_NEW char[dataSize]();
 	
 	if (n.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
 		// UDP MESSAGE
@@ -565,6 +564,7 @@ void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	}
 	else {
 		// All other messages
+		m_awaitingMessages[m_pend].Message.rawMsg = SAIL_NEW char[dataSize]();
 		memcpy(m_awaitingMessages[m_pend].Message.rawMsg, data, dataSize);
 		m_awaitingMessages[m_pend].Message.sizeOfMsg = dataSize;
 	}
