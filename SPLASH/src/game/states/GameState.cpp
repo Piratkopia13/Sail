@@ -40,6 +40,7 @@ GameState::GameState(StateStack& stack)
 , m_cc(true)
 , m_profiler(true)
 , m_disableLightComponents(false)
+, m_showcaseProcGen(false)
 {
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -276,6 +277,18 @@ bool GameState::processInput(float dt) {
 	}
 
 #endif
+
+	// Enable bright light and move camera to above procedural generated level
+	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
+		m_disableLightComponents = !m_disableLightComponents;
+		m_showcaseProcGen = m_disableLightComponents;
+		if (m_showcaseProcGen) {
+			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
+			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
+		} else {
+			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
+		}
+	}
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
@@ -749,6 +762,10 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
+	} 
+	
+	if (m_showcaseProcGen) {
+		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 
 	m_componentSystems.audioSystem->update(dt);
