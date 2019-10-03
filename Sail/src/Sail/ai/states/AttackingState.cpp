@@ -63,11 +63,11 @@ void AttackingState::update(float dt, Entity* entity) {
 	}
 }
 
-void AttackingState::reset() {
+void AttackingState::reset(Entity* entity) {
 	// For future use, needs to be implemented in each state
 }
 
-void AttackingState::init() {
+void AttackingState::init(Entity* entity) {
 	// For future use, needs to be implemented in each state
 }
 

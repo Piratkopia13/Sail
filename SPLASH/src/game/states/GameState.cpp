@@ -16,11 +16,15 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/input/GameInputSystem.h"
+#include "Sail/entities/systems/network/NetworkReceiverSystem.h"
+#include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/ai/states/AttackingState.h"
+#include "Sail/ai/states/FleeingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
+#include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
 
 #include <sstream>
@@ -142,7 +146,13 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
 
+	// Get the player id's and names from the lobby
+	const unsigned char playerID = m_app->getStateStorage().getLobbyToGameData()->myPlayer.id;
 
+	// Create network send and receive systems
+	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
+	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -192,7 +202,7 @@ GameState::GameState(StateStack& stack)
 	aiModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 	// Player creation
-	setUpPlayer(boundingBoxModel, cubeModel, lightModel);
+	setUpPlayer(boundingBoxModel, cubeModel, lightModel, playerID);
 
 	// Level Creation
 	createTestLevel(shader, boundingBoxModel);
@@ -217,9 +227,6 @@ GameState::GameState(StateStack& stack)
 	m_vramUsageHistory = SAIL_NEW float[100];
 	m_cpuHistory = SAIL_NEW float[100];
 	m_frameTimesHistory = SAIL_NEW float[100];
-
-
-
 
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
@@ -265,6 +272,7 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
+	// TODO: Move this to a system
 	// Toggle ai following the player
 	if (Input::WasKeyJustPressed(KeyBinds::toggleAIFollowing)) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
@@ -335,6 +343,8 @@ bool GameState::processInput(float dt) {
 
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
+	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
+
 	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
 
 	return true;
@@ -342,6 +352,11 @@ bool GameState::onEvent(Event& event) {
 
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
+	return true;
+}
+
+bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
+	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
 	return true;
 }
 
@@ -386,7 +401,7 @@ bool GameState::render(float dt, float alpha) {
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.renderSystem->draw(m_cam, alpha);
-
+	
 	return true;
 }
 
@@ -398,6 +413,14 @@ bool GameState::renderImgui(float dt) {
 	renderImGuiLightDebug(dt);
 
 	return false;
+}
+
+bool GameState::prepareStateChange() {
+	if (m_poppedThisFrame) {
+		// Reset network
+		NWrapperSingleton::getInstance().resetNetwork();
+	}
+	return true;
 }
 
 bool GameState::renderImguiConsole(float dt) {
@@ -602,15 +625,11 @@ void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
-	// Reset network
-	NWrapperSingleton::getInstance().resetNetwork();
-
 	// Clear all entities
 	ECS::Instance()->destroyAllEntities();
 	
-	// Clear all neccesary systems
+	// Clear all necessary systems
 	m_componentSystems.gameInputSystem->clean();
-
 }
 
 // HERE BE DRAGONS
@@ -620,9 +639,12 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_currentlyWritingMask = 0;
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
-	
+
 	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
 	
+	// Update entities with info from the network
+	m_componentSystems.networkReceiverSystem->update();
+
 	m_componentSystems.entityAdderSystem->update(0.0f);
 
 	m_componentSystems.physicSystem->update(dt);
@@ -648,6 +670,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 		fut.get();
 	}
 
+	// Send out your entity info to the rest of the players
+	m_componentSystems.networkSenderSystem->update(0.0f);
+
 	// Will probably need to be called last
 	m_componentSystems.entityRemovalSystem->update(0.0f);
 
@@ -657,6 +682,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
+	// TODO? move to its own thread
+	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+	
 	// Updates the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 
@@ -761,7 +789,11 @@ const std::string GameState::createCube(const glm::vec3& position) {
 		std::to_string(position.z) + ")");
 }
 
-void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel) {
+void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID) {
+	// Player spawn positions are based on their unique id
+	// This will most likely be changed later so that the host sets all the players' start positions
+	float spawnOffset = static_cast<float>(2 * static_cast<int>(playerID) - 10);
+	
 	auto player = ECS::Instance()->createEntity("player");
 
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
@@ -770,7 +802,11 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	player->addComponent<PlayerComponent>();
 
 	player->addComponent<TransformComponent>();
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.0f, 0.f, 0.f));
+
+	player->addComponent<NetworkSenderComponent>(
+		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
+		Netcode::EntityType::PLAYER_ENTITY,
+		playerID);
 
 	player->addComponent<PhysicsComponent>();
 	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
@@ -799,7 +835,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 10.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f+spawnOffset, 0.9f, 10.f));
 }
 
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
@@ -937,7 +973,7 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 }
 
 void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
-	int botCount = m_app->getStateStorage().getLobbyToGameStateData()->botCount;
+	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	
 	if (botCount < 0) {
@@ -946,19 +982,32 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	else if (botCount > 1) {
 		botCount = 1;
 	}
-	for (size_t i = 0; i < botCount; i++) {
-
+	for (size_t i = 0; i < botCount; i++) {		
 		auto e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(2.f * (i + 1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<TransformComponent>(glm::vec3(2.f*(i+1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
-		e->addComponent<FSMComponent>()->createState<AttackingState>(m_octree);
+		auto fsmComp = e->addComponent<FSMComponent>();
 		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 		e->getComponent<PhysicsComponent>()->maxSpeed = m_player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
+		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
+		e->addChildEntity(aiCandleEntity);
+		// Create states and transitions
+		{
+			fsmComp->createState<AttackingState>(m_octree);
+			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
+			// TODO: unnecessary to create new transitions for each FSM if they're all identical
+			FSM::Transition* fromAttackToFleeing = SAIL_NEW FSM::Transition;
+			fromAttackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+			FSM::Transition* fromFleeingToAttacking = SAIL_NEW FSM::Transition;
+			fromFleeingToAttacking->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
+			fsmComp->addTransition<AttackingState, FleeingState>(fromAttackToFleeing);
+			fsmComp->addTransition<FleeingState, AttackingState>(fromFleeingToAttacking);
+		}
 		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 
 	}

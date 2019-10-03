@@ -11,6 +11,8 @@
 #include "LifeTimeComponent.h"
 #include "LightComponent.h"
 #include "LightListComponent.h"
+#include "NetworkReceiverComponent.h"
+#include "NetworkSenderComponent.h"
 #include "ModelComponent.h"
 #include "PlayerComponent.h"
 //#include "MovementComponent.h"

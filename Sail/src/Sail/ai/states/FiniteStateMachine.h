@@ -24,10 +24,10 @@ public:
 
 	virtual void update(float dt, Entity* entity) {
 		for ( auto transition : m_currentState->getTransitions() ) {
-			if ( transition.first ) {
-				m_currentState->reset();
+			if ( checkTransition(transition.first) ) {
+				m_currentState->reset(entity);
 				m_currentState = transition.second;
-				m_currentState->init();
+				m_currentState->init(entity);
 			}
 		}
 
@@ -110,7 +110,7 @@ inline void FiniteStateMachine::createState(Args... args) {
 	}
 }
 
-template<typename ToStateType, typename FromStateType>
+template<typename FromStateType, typename ToStateType>
 inline bool FiniteStateMachine::addTransition(FSM::Transition* toAdd) {
 	auto fromState = m_states.find(FromStateType::ID);
 	if ( fromState != m_states.end() ) {

@@ -15,15 +15,19 @@ class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
 class GameInputSystem;
+class NetworkReceiverSystem;
+class NetworkSenderSystem;
 class AudioSystem;
 class RenderSystem;
+
+class NetworkSerializedPackageEvent;
 
 class GameState : public State {
 public:
 	GameState(StateStack& stack);
 	~GameState();
 
-	// Process input for the state
+	// Process input for the state ||
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
 	virtual bool onEvent(Event& event) override;
@@ -35,11 +39,14 @@ public:
 	virtual bool render(float dt, float alpha = 1.0f) override;
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
-
+	// If the state is about to change clean it up
+	virtual bool prepareStateChange() override;
 
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
+
 	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
@@ -71,6 +78,8 @@ private:
 		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
 		GameInputSystem* gameInputSystem = nullptr;
+		NetworkReceiverSystem* networkReceiverSystem = nullptr;
+		NetworkSenderSystem* networkSenderSystem = nullptr;
 		AudioSystem* audioSystem = nullptr;
 		RenderSystem* renderSystem = nullptr;
 	};
@@ -83,7 +92,7 @@ private:
 	Entity* m_player;
 
 	void createTestLevel(Shader* shader, Model* boundingBoxModel);
-	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel);
+	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID);
 	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
 	const std::string createCube(const glm::vec3& position);
 
