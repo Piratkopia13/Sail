@@ -115,13 +115,15 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 		// Init all textures - this needs to be done on ONE thread
 		// TODO: optimize!
+		int meshIndex = 0;
 		for (auto& renderCommand : commandQueue) {
 			for (int i = 0; i < 3; i++) {
 				if (renderCommand.type != RENDER_COMMAND_TYPE_MODEL)
 					continue;
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
 				if (tex && !tex->hasBeenInitialized()) {
-					tex->initBuffers(cmdList.Get());
+					tex->initBuffers(cmdList.Get(), meshIndex);
+					meshIndex++;
 				}
 			}
 		}

@@ -25,16 +25,6 @@ FBXLoader::FBXLoader(const std::string& filepath, Shader* shader)
 	if (m_scene != nullptr) {
 
 		loadNode(m_scene->GetRootNode());
-		/*m_model->getMaterial()->setKa(m_matSettings.ka);
-		m_model->getMaterial()->setKd(m_matSettings.kd);
-		m_model->getMaterial()->setKs(m_matSettings.ks);
-		m_model->getMaterial()->setShininess(m_matSettings.shininess);
-		if (m_matDiffuseTex != "")
-			m_model->getMaterial()->setDiffuseTexture(m_matDiffuseTex);
-		if (m_matNormalTex != "")
-			m_model->getMaterial()->setDiffuseTexture(m_matNormalTex);
-		if (m_matSpecularTex != "")
-			m_model->getMaterial()->setDiffuseTexture(m_matSpecularTex);*/
 
 	} else {
 		Logger::Warning("Failed to load fbx file '" + filepath + "', using default cube.");
@@ -82,7 +72,6 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
 			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, m_shader));
-			getMaterial(pNode, mesh->getMaterial());
 			m_model->addMesh(std::move(mesh));
 
 		}
@@ -318,42 +307,6 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 			vertexIndex += 3;
 		}
-
-	}
-
-}
-
-void FBXLoader::getMaterial(FbxNode* pNode, Material* material) {
-
-	// Gets the model's phong constants
-	if (pNode->GetSrcObjectCount<FbxSurfacePhong>() > 0) {
-
-		auto phong = pNode->GetSrcObject<FbxSurfacePhong>();
-		auto& resman = Application::getInstance()->getResourceManager();
-
-		FbxFileTexture* diffTex = phong->Diffuse.GetSrcObject<FbxFileTexture>();
-		if (diffTex) {
-			std::string filename = diffTex->GetRelativeFileName();
-			resman.loadTexture(filename);
-			material->setDiffuseTexture(filename);
-		}
-		FbxFileTexture* specTex = phong->Specular.GetSrcObject<FbxFileTexture>();
-		if (specTex) {
-			std::string filename = specTex->GetRelativeFileName();
-			resman.loadTexture(filename);
-			material->setSpecularTexture(specTex->GetRelativeFileName());
-		}
-		FbxFileTexture* normTex = phong->NormalMap.GetSrcObject<FbxFileTexture>();
-		if (normTex) {
-			std::string filename = normTex->GetRelativeFileName();
-			resman.loadTexture(filename);
-			material->setNormalTexture(normTex->GetRelativeFileName());
-		}
-
-		material->setKa(static_cast<float>(phong->AmbientFactor.Get()));
-		material->setKs(static_cast<float>(phong->SpecularFactor.Get()));
-		material->setKd (static_cast<float>(phong->DiffuseFactor.Get()));
-		material->setShininess(static_cast<float>(phong->Shininess.Get()));
 
 	}
 

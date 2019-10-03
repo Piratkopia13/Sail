@@ -64,7 +64,7 @@ RenderSystem::~RenderSystem() {
 					 (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
 			 }
 		 } else if (metaball) {
-			 m_renderer->submitNonMesh(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, metaball->getMaterial(), transform->getRenderMatrix(alpha), Renderer::MESH_STATIC);
+			 m_renderer->submitNonMesh(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getRenderMatrix(alpha), Renderer::MESH_STATIC);
 		 } else {
 			 continue;
 		 }

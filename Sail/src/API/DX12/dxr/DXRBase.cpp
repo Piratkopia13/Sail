@@ -9,8 +9,9 @@
 #include "../renderer/DX12GBufferRenderer.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
-: m_shaderFilename(shaderFilename) 
+: m_shaderFilename(shaderFilename)
 , m_gbufferInputTextures(inputs)
+, m_brdfLUTPath("pbr/brdfLUT.tga")
 {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
@@ -226,7 +227,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 
 	assert(m_gbufferInputTextures); // Input textures not set!
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < DX12GBufferRenderer::NUM_GBUFFERS; i++) {
 		m_gbufferInputTextures[i]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 	
@@ -276,6 +277,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 }
 
 void DXRBase::reloadShaders() {
+	m_context->waitForGPU();
 	// Recompile hlsl
 	createRaytracingPSO();
 }
@@ -486,23 +488,33 @@ void DXRBase::createInitialShaderResources(bool remake) {
 
 		// The first slot in the heap will be used for the output UAV, therefore we step once
 		m_rtOutputTextureUavGPUHandle = gpuHandle;
-
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 
-		// Next (3 * numSwapBuffers) slots are used for input gbuffers
+		// Next slot is used for the brdfLUT
+		m_rtBrdfLUTGPUHandle = gpuHandle;
+		if (!Application::getInstance()->getResourceManager().hasTexture(m_brdfLUTPath)) {
+			Application::getInstance()->getResourceManager().loadTexture(m_brdfLUTPath);
+		}
+		auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
+		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, brdfLutTex.getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+
+		// Next (4 * numSwapBuffers) slots are used for input gbuffers
 		for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
 			m_gbufferStartGPUHandles[i] = gpuHandle;
-			D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
+			D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[4];
 			srcDescriptors[0] = m_gbufferInputTextures[0]->getSrvCDH(i);
 			srcDescriptors[1] = m_gbufferInputTextures[1]->getSrvCDH(i);
-			srcDescriptors[2] = m_gbufferInputTextures[0]->getDepthSrvCDH(i);
+			srcDescriptors[2] = m_gbufferInputTextures[2]->getSrvCDH(i);
+			srcDescriptors[3] = m_gbufferInputTextures[0]->getDepthSrvCDH(i);
 
-			UINT dstRangeSizes[] = { 3 };
-			UINT srcRangeSizes[] = { 1, 1, 1 };
-			m_context->getDevice()->CopyDescriptors(1, &cpuHandle, dstRangeSizes, 3, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			cpuHandle.ptr += m_heapIncr * 3;
-			gpuHandle.ptr += m_heapIncr * 3;
+			UINT dstRangeSizes[] = { 4 };
+			UINT srcRangeSizes[] = { 1, 1, 1, 1 };
+			m_context->getDevice()->CopyDescriptors(1, &cpuHandle, dstRangeSizes, 4, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			cpuHandle.ptr += m_heapIncr * 4;
+			gpuHandle.ptr += m_heapIncr * 4;
 		}
 
 		//// Ray gen settings CB
@@ -546,6 +558,12 @@ void DXRBase::createInitialShaderResources(bool remake) {
 void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	unsigned int frameIndex = m_context->getFrameIndex();
 
+	// Make sure brdfLut texture has been initialized
+	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
+	if (!brdfLutTex.hasBeenInitialized()) {
+		brdfLutTex.initBuffers(cmdList, 0);
+	}
+
 	// Update descriptors for vertices, indices, textures etc
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtHeapGPUHandle;
@@ -567,16 +585,18 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
 			}
 
-			// Three textures
-			for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-				DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
-				bool hasTexture = (textureNum == 0) ? mesh->getMaterial()->getPhongSettings().hasDiffuseTexture : mesh->getMaterial()->getPhongSettings().hasNormalTexture;
-				hasTexture = (textureNum == 2) ? mesh->getMaterial()->getPhongSettings().hasSpecularTexture : hasTexture;
-				if (hasTexture) {
-					// Make sure textures have initialized / uploaded their data to its default buffer
-					if (!texture->hasBeenInitialized()) {
-						texture->initBuffers(cmdList);
-					}
+		auto& materialSettings = mesh->getMaterial()->getPBRSettings();
+
+		// Three textures
+		for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+			DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
+			bool hasTexture = (textureNum == 0) ? materialSettings.hasAlbedoTexture : materialSettings.hasNormalTexture;
+			hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
+			if (hasTexture) {
+				// Make sure textures have initialized / uploaded their data to its default buffer
+				if (!texture->hasBeenInitialized()) {
+					texture->initBuffers(cmdList, textureNum * blasIndex);
+				}
 
 					// Copy SRV to DXR heap
 					m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -587,15 +607,19 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				gpuHandle.ptr += m_heapIncr;
 			}
 
-			// Update per mesh data
-			// Such as flags telling the shader to use indices, textures or not
-
-			meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
-			meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasDiffuseTexture) ? DXRShaderCommon::MESH_HAS_DIFFUSE_TEX : meshData.flags;
-			meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
-			meshData.flags |= (mesh->getMaterial()->getPhongSettings().hasSpecularTexture) ? DXRShaderCommon::MESH_HAS_SPECULAR_TEX : meshData.flags;
-			meshData.color = mesh->getMaterial()->getPhongSettings().modelColor;
-			m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
+		// Update per mesh data
+		// Such as flags telling the shader to use indices, textures or not
+		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
+		DXRShaderCommon::MeshData meshData;
+		meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+		meshData.flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData.flags;
+		meshData.flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
+		meshData.flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData.flags;
+		meshData.color = materialSettings.modelColor;
+		meshData.metalnessRoughnessAoScales.r = materialSettings.metalnessScale;
+		meshData.metalnessRoughnessAoScales.g = materialSettings.roughnessScale;
+		meshData.metalnessRoughnessAoScales.b = materialSettings.aoScale;
+		m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 
 			m_rtMeshHandles.emplace_back(handles);
 		} else {
@@ -641,6 +665,7 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -682,6 +707,8 @@ void DXRBase::updateShaderTables() {
 					else if (parameterName == "MetaballPositions") {
 						D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballPositions_srv[frameIndex]->GetGPUVirtualAddress();
 						tableBuilder.addDescriptor(metaballHandle, blasIndex * 2);
+					} else if (parameterName == "sys_brdfLUT") {
+						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
 						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
 					}
@@ -702,6 +729,8 @@ void DXRBase::updateShaderTables() {
 						for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
 							tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
 						}
+					} else if (parameterName == "sys_brdfLUT") {
+						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
 						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
 					}
@@ -753,7 +782,8 @@ void DXRBase::createDXRGlobalRootSignature() {
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
-	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 3);
+	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
+	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
@@ -761,6 +791,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 
 void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
+	m_localSignatureHitGroup->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureHitGroup->addSRV("VertexBuffer", 1, 0);
 	m_localSignatureHitGroup->addSRV("IndexBuffer", 1, 1);
 	m_localSignatureHitGroup->addCBV("MeshCBuffer", 1, 0);
@@ -770,8 +801,10 @@ void DXRBase::createHitGroupLocalRootSignature() {
 
 	/*==========Metaballs=========*/
 	m_localSignatureHitGroup2 = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal2");
+	m_localSignatureHitGroup2->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureHitGroup2->addSRV("MetaballPositions", 1, 2);
 	m_localSignatureHitGroup2->addCBV("MeshCBuffer", 1, 0);
+	m_localSignatureHitGroup2->addStaticSampler();
 	m_localSignatureHitGroup2->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 

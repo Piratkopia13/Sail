@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Renderer.h"
 #include "Sail/graphics/geometry/Model.h"
-#include "Sail/graphics/geometry/Material.h"
 
 void Renderer::begin(Camera* camera) {
 	this->camera = camera;

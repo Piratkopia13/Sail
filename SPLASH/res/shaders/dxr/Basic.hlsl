@@ -1,11 +1,12 @@
-#include "Utils.hlsl"
 #define HLSL
 #include "Common_hlsl_cpp.hlsl"
 
-RaytracingAccelerationStructure gRtScene : register(t0);
-Texture2D<float4> sys_inTex_normals : register(t10);
-Texture2D<float4> sys_inTex_diffuse : register(t11);
-Texture2D<float> sys_inTex_depth : register(t12);
+RaytracingAccelerationStructure gRtScene 			: register(t0);
+Texture2D<float4> sys_brdfLUT 						: register(t5);
+Texture2D<float4> sys_inTex_normals 				: register(t10);
+Texture2D<float4> sys_inTex_albedo 					: register(t11);
+Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12);
+Texture2D<float>  sys_inTex_depth 					: register(t13);
 
 RWTexture2D<float4> lOutput : register(u0);
 
@@ -16,12 +17,13 @@ StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
 
 // Texture2DArray<float4> textures : register(t2, space0);
-Texture2D<float4> sys_texDiffuse : register(t2);
+Texture2D<float4> sys_texAlbedo : register(t2);
 Texture2D<float4> sys_texNormal : register(t3);
-Texture2D<float4> sys_texSpecular : register(t4);
+Texture2D<float4> sys_texMetalnessRoughnessAO : register(t4);
 
 SamplerState ss : register(s0);
 
+#include "Utils.hlsl"
 #include "Shading.hlsl"
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
@@ -44,14 +46,19 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-	//#define TRACE_FROM_GBUFFERS
+	#define TRACE_FROM_GBUFFERS
 #ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	float4 diffuseColor = sys_inTex_diffuse.SampleLevel(ss, screenTexCoord, 0);
+	// float3 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb;
+	float3 albedoColor = pow(sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb, 2.2f);
+	float3 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0).rgb;
+	float metalness = metalnessRoughnessAO.r;
+	float roughness = metalnessRoughnessAO.g;
+	float ao = metalnessRoughnessAO.b;
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
@@ -72,14 +79,16 @@ void rayGen() {
 	// float3 viewRay = normalize(float3(screenPos, 1.0f));
 	float4 vsPosition = float4(viewRay * linearDepth, 1.0f);
 
-	float4 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition);
+	float3 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition).xyz;
 	// ---------------------------------------------------
 
 	RayPayload payload;
 	payload.recursionDepth = 1;
 	payload.closestTvalue = 0;
-	payload.color = float4(0, 0, 0, 0);
-	shade(worldPosition, worldNormal, diffuseColor, payload);
+	payload.color = float4(0,0,0,0);
+	shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+	lOutput[launchIndex] = payload.color;
+
 
 	//===========MetaBalls RT START===========
 	float3 rayDir;
@@ -154,14 +163,18 @@ void miss(inout RayPayload payload) {
 	payload.closestTvalue = 10000000;
 }
 
-float4 getColor(MeshData data, float2 texCoords) {
-	float4 color = data.color;
-	if (data.flags & MESH_HAS_DIFFUSE_TEX)
-		color *= sys_texDiffuse.SampleLevel(ss, texCoords, 0);
-	// if (data.flags & MESH_HAS_NORMAL_TEX)
-	// 	color += sys_texNormal.SampleLevel(ss, texCoords, 0) * 0.1f;
-	// if (data.flags & MESH_HAS_SPECULAR_TEX)
-	// 	color += sys_texSpecular.SampleLevel(ss, texCoords, 0) * 0.1f;
+float3 getAlbedo(MeshData data, float2 texCoords) {
+	float3 color = data.color.rgb;
+	if (data.flags & MESH_HAS_ALBEDO_TEX)
+		// color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb;
+		color *= pow(sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb, 2.2f);
+
+	return color;
+}
+float3 getMetalnessRoughnessAO(MeshData data, float2 texCoords) {
+	float3 color = data.metalnessRoughnessAoScales;
+	if (data.flags & MESH_HAS_METALNESS_ROUGHNESS_AO_TEX)
+		color *= sys_texMetalnessRoughnessAO.SampleLevel(ss, texCoords, 0).rgb;
 	return color;
 }
 
@@ -188,13 +201,36 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	Vertex vertex2 = vertices[i2];
 	Vertex vertex3 = vertices[i3];
 
+	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 	float3 normalInLocalSpace = Utils::barrypolation(barycentrics, vertex1.normal, vertex2.normal, vertex3.normal);
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
-	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 
-	float4 diffuseColor = getColor(CB_MeshData.data[instanceID], texCoords);
+	float3 tangentInLocalSpace = Utils::barrypolation(barycentrics, vertex1.tangent, vertex2.tangent, vertex3.tangent);
+	float3 tangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), tangentInLocalSpace));
 
-	shade(Utils::HitWorldPosition(), normalInWorldSpace, diffuseColor, payload, true);
+	float3 bitangentInLocalSpace = Utils::barrypolation(barycentrics, vertex1.bitangent, vertex2.bitangent, vertex3.bitangent);
+	float3 bitangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), bitangentInLocalSpace));
+
+	// Create TBN matrix to go from tangent space to world space
+	float3x3 tbn = float3x3(
+	  tangentInWorldSpace,
+	  bitangentInWorldSpace,
+	  normalInWorldSpace
+	);
+	if (CB_MeshData.data[instanceID].flags & MESH_HAS_NORMAL_TEX) {
+		float3 normalSample = sys_texNormal.SampleLevel(ss, texCoords, 0).rgb;
+        normalSample.y = 1.0f - normalSample.y;
+        normalInWorldSpace = mul(normalize(normalSample * 2.f - 1.f), tbn);
+	}
+
+
+	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
+	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
+	float metalness = metalnessRoughnessAO.r;
+	float roughness = metalnessRoughnessAO.g;
+	float ao = metalnessRoughnessAO.b;
+
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
 }
 
 
@@ -234,11 +270,16 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
 	float refconst = 1 - abs(dot(normalize(hitToCam), normalInWorldSpace));
 
-	float4 finaldiffusecolor = saturate((reflect_color * refconst + refract_color * (1 - refconst)));
+	float4 finaldiffusecolor = saturate((reflect_color * 0.2f + refract_color) / 1.5f);
 	finaldiffusecolor.a = 1;
 	
 	/////////////////////////
-	shade(Utils::HitWorldPosition(), normalInWorldSpace, finaldiffusecolor, payload, true);
+	float3 albedoColor = finaldiffusecolor.xyz;
+	float metalness = 1;
+	float roughness = 1;
+	float ao = 1;
+
+	payload.color = phongShade(Utils::HitWorldPosition(), normalInWorldSpace, finaldiffusecolor.xyz);
 
 	return;
 }
@@ -441,5 +482,4 @@ void IntersectionShader() {
 		t += minTStep;
 		currPos = rayWorld.Origin + t * rayWorld.Direction;
 	}
-
 }

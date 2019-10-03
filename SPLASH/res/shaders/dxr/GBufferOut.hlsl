@@ -1,4 +1,4 @@
-#include "../Phong.hlsl"
+#include "../Common.hlsl"
 
 struct VSIn {
 	float4 position : POSITION0;
@@ -30,7 +30,7 @@ cbuffer VSSystemCBuffer : register(b0) {
 }
 
 cbuffer PSSystemCBuffer : register(b1) {
-    Material sys_material;
+    Material sys_material_pbr;
 }
 
 GSIn VSMain(VSIn input) {
@@ -83,29 +83,34 @@ void GSMain(triangle GSIn input[3], inout TriangleStream<PSIn> output) {
 // TODO: check if it is worth the extra VRAM to write diffuse and specular gbuffers instead of sampling them in the raytracing shaders
 //       The advantage is that mip map level can be calculated automatically here
 //      
-Texture2D sys_texDiffuse : register(t0);
-// Texture2D sys_texSpecular : register(t2);
-Texture2D sys_texNormal : register(t1);
+Texture2D sys_texAlbedo                 : register(t0);
+Texture2D sys_texNormal                 : register(t1);
+Texture2D sys_texMetalnessRoughnessAO   : register(t2);
 SamplerState PSss;
 
 struct GBuffers {
 	float4 normal  : SV_Target0;
-	float4 diffuse : SV_Target1;
-	// float4 diffuse : SV_Target0;
-	// float4 specular : SV_Target2;
-	// float4 ambient : SV_Target3;
+	float4 albedo : SV_Target1;
+	float4 metalnessRoughnessAO : SV_Target2;
 };
 
 GBuffers PSMain(PSIn input) {
 	GBuffers gbuffers;
 
 	gbuffers.normal = float4(normalize(input.normal) / 2.f + .5f, 1.f);
-    if (sys_material.hasNormalTexture)
-        gbuffers.normal = float4(mul(normalize(sys_texNormal.Sample(PSss, input.texCoords).rgb * 2.f - 1.f), input.tbn) / 2.f + .5f, 1.0f);
+    if (sys_material_pbr.hasNormalTexture) {
+        float3 normalSample = sys_texNormal.Sample(PSss, input.texCoords).rgb;
+        normalSample.y = 1.0f - normalSample.y;
+        gbuffers.normal = float4(mul(normalize(normalSample * 2.f - 1.f), input.tbn) / 2.f + .5f, 1.0f);
+    }
 
-    gbuffers.diffuse = sys_material.modelColor;
-	if (sys_material.hasDiffuseTexture)
-		gbuffers.diffuse *= sys_texDiffuse.Sample(PSss, input.texCoords);
+    gbuffers.albedo = sys_material_pbr.modelColor;
+	if (sys_material_pbr.hasAlbedoTexture)
+		gbuffers.albedo *= sys_texAlbedo.Sample(PSss, input.texCoords);
+
+    gbuffers.metalnessRoughnessAO = float4(sys_material_pbr.metalnessScale, sys_material_pbr.roughnessScale, sys_material_pbr.aoScale, 1.0f);
+	if (sys_material_pbr.hasMetalnessRoughnessAOTexture)
+		gbuffers.metalnessRoughnessAO *= sys_texMetalnessRoughnessAO.Sample(PSss, input.texCoords);
 
     return gbuffers;
 }
