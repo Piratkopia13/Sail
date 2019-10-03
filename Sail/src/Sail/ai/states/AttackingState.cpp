@@ -9,7 +9,9 @@
 #include "../Physics/Octree.h"
 #include "../Physics/Intersection.h"
 
-AttackingState::AttackingState() {}
+AttackingState::AttackingState() {
+	m_distToHost = INFINITY;
+}
 
 AttackingState::~AttackingState() {}
 
@@ -67,6 +69,10 @@ void AttackingState::reset(Entity* entity) {
 
 void AttackingState::init(Entity* entity) {
 	// For future use, needs to be implemented in each state
+}
+
+float* AttackingState::getDistToHost() {
+	return &m_distToHost;
 }
 
 void AttackingState::entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp, const glm::vec3& fireDir, const glm::vec3& gunPos, const float hitDist) {
