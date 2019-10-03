@@ -16,15 +16,19 @@ class GunSystem;
 class ProjectileSystem;
 class LevelGeneratorSystem;
 class GameInputSystem;
+class NetworkReceiverSystem;
+class NetworkSenderSystem;
 class AudioSystem;
 class RenderSystem;
+
+class NetworkSerializedPackageEvent;
 
 class GameState : public State {
 public:
 	GameState(StateStack& stack);
 	~GameState();
 
-	// Process input for the state
+	// Process input for the state ||
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
 	virtual bool onEvent(Event& event) override;
@@ -41,6 +45,8 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
+	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
+
 	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
@@ -72,6 +78,8 @@ private:
 		GunSystem* gunSystem = nullptr;
 		ProjectileSystem* projectileSystem = nullptr;
 		GameInputSystem* gameInputSystem = nullptr;
+		NetworkReceiverSystem* networkReceiverSystem = nullptr;
+		NetworkSenderSystem* networkSenderSystem = nullptr;
 		AudioSystem* audioSystem = nullptr;
 		RenderSystem* renderSystem = nullptr;
 		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
@@ -84,6 +92,9 @@ private:
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	Entity* m_player;
 
+	void createTestLevel(Shader* shader, Model* boundingBoxModel);
+	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID);
+	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
 	const std::string createCube(const glm::vec3& position);
 
 	Systems m_componentSystems;
@@ -92,8 +103,6 @@ private:
 	Profiler m_profiler;
 
 	size_t m_currLightIndex;
-	// For use by non-deterministic entities
-	const float* pAlpha = nullptr;
 
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
@@ -121,4 +130,5 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_poppedThisFrame = false;
+
 };

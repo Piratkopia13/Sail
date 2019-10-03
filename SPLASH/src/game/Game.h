@@ -25,3 +25,4 @@ private:
 
 	StateStack m_stateStack;
 };
+

@@ -11,6 +11,8 @@
 #include "LifeTimeComponent.h"
 #include "LightComponent.h"
 #include "LightListComponent.h"
+#include "NetworkReceiverComponent.h"
+#include "NetworkSenderComponent.h"
 #include "MapComponent.h"
 #include "ModelComponent.h"
 #include "PlayerComponent.h"
@@ -21,3 +23,4 @@
 #include "TransformComponent.h"
 #include "ProjectileComponent.h"
 #include "AudioComponent.h"
+#include "FSMComponent.h"

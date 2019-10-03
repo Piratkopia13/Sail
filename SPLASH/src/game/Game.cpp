@@ -15,12 +15,8 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 
 	// Set starting state
-	//m_stateStack.pushState(States::MainMenu);
 	m_stateStack.pushState(States::MainMenu);
 	
-	// Initialize the Network wrapper instance.
-	//NetworkWrapper::getInstance().initialize();
-	//
 }
 
 Game::~Game() {

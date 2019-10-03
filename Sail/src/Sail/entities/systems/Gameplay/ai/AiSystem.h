@@ -13,7 +13,6 @@ class Octree;
 
 #ifdef _DEBUG_NODESYSTEM
 class Shader;
-class Scene;
 #endif
 
 class AiSystem final : public BaseComponentSystem {
@@ -23,7 +22,7 @@ public:
 
 	void initNodeSystem(Model* bbModel, Octree* octree);
 #ifdef _DEBUG_NODESYSTEM
-	void initNodeSystem(Model* bbModel, Octree* octree, Shader* shader, Scene* scene);
+	void initNodeSystem(Model* bbModel, Octree* octree, Shader* shader);
 #endif
 
 	/*
@@ -35,6 +34,8 @@ public:
 
 	void update(float dt) override;
 
+	NodeSystem* getNodeSystem();
+
 private:
 	struct AiEntity {
 		TransformComponent* transComp;
@@ -43,7 +44,7 @@ private:
 	};
 
 	void updatePath(AiComponent* aiComp, TransformComponent* transComp);
-	void entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp);
+	void updatePhysics(AiComponent* aiComp, TransformComponent* transComp, PhysicsComponent* physComp, float dt);
 	void aiUpdateFunc(Entity* entity, const float dt);
 
 private:
