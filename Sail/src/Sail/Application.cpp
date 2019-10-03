@@ -9,6 +9,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 
+
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
@@ -117,6 +118,10 @@ int Application::startGameLoop() {
 			newTime = m_timer.getTimeSince<float>(startTime);
 			delta = newTime - currentTime;
 			currentTime = newTime;
+
+			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
+			// when the update is really slow for whatever reason.
+			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += delta;

@@ -26,6 +26,8 @@ bool InGameMenuState::render(float dt, float alpha) {
 }
 
 bool InGameMenuState::renderImgui(float dt) {
+
+	// Rendering a pause window in the middle of the game window.
 	ImGui::Begin("Paused", NULL, ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoBackground|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoScrollbar);
 	ImVec2 size = ImVec2(50.f, 0.f);
 	ImVec2 pos = ImVec2((Application::getInstance()->getWindow()->getWindowWidth() / 2.f) - (size.x / 2.f), (Application::getInstance()->getWindow()->getWindowHeight() / 2.f) - (size.y / 2.f));

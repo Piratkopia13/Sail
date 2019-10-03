@@ -44,9 +44,9 @@ namespace FSM {
 
 		virtual void update(float dt, Entity* entity) = 0;
 
-		virtual void reset() = 0;
+		virtual void reset(Entity* entity) = 0;
 
-		virtual void init() = 0;
+		virtual void init(Entity* entity) = 0;
 
 	protected:
 		std::vector<std::pair<Transition*, BaseState*>> m_transitions;
