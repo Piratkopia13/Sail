@@ -4,6 +4,7 @@
 #include "../../Sail/MouseButtonCodes.h"
 #include "../../Sail/KeyCodes.h"
 
+
 class Win32Input : public Input {
 public:
 	Win32Input();
@@ -42,5 +43,4 @@ protected:
 
 	virtual void beginFrame() override;
 	virtual void endFrame() override;
-
 };

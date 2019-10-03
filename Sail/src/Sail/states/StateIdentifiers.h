@@ -7,9 +7,13 @@ namespace States {
 	enum ID {
 		None,
 		MainMenu,
+		Lobby,
+		HostLobby,
+		JoinLobby,
 		Game,
 		Pause,
-		Score
+		Score,
+		EndGame
 	};
 
 }

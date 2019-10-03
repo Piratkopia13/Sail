@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h" // TODO: REMOVE
 
 #include <exception>
 #include <iostream>
@@ -12,7 +13,15 @@
 // Break on failed HRESULT return
 #define ThrowIfFailed(result)	\
 	if (FAILED(result))			\
+		throw std::exception();
+// Show message box and break on failed blob creation
+#define ThrowIfBlobError(hr, blob) { \
+	if (FAILED(hr)) { \
+		MessageBoxA(0, (char*)blob->GetBufferPointer(), "", 0); \
+		OutputDebugStringA((char*)blob->GetBufferPointer()); \
 		throw std::exception(); \
+	} \
+}
 
 // Macro to easier track down memory leaks
 #ifdef _DEBUG
@@ -95,7 +104,7 @@ public:
 
 
 	inline static void Warning(const std::string& msg) {
-		
+
 		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 		// Save currently set color
@@ -109,7 +118,7 @@ public:
 		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 #ifdef _SAIL_BREAK_ON_WARNING
- 		__debugbreak();
+		__debugbreak();
 #endif
 	}
 

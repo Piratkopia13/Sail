@@ -34,6 +34,7 @@ public:
 
 	struct Data {
 		Data() : numIndices(0), numInstances(0), indices(nullptr), numVertices(0), normals(nullptr), positions(nullptr), colors(nullptr), texCoords(nullptr), tangents(nullptr), bitangents(nullptr) {};
+		
 		void deepCopy(const Data& other);
 		unsigned int numIndices;
 		unsigned long* indices;
@@ -54,13 +55,16 @@ public:
 
 	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;
 
+	const Data& getMeshData();
+
 	Material* getMaterial();
 
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;
 	unsigned int getNumInstances() const;
-	const VertexBuffer& getVertexBuffer() const;
+	VertexBuffer& getVertexBuffer() const;
 	const IndexBuffer& getIndexBuffer() const;
+	const Mesh::Data& getData() const;
 
 protected:
 	Material::SPtr material;
