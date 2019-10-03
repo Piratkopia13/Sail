@@ -104,7 +104,7 @@ private:
 
 	bool m_parentUpdated;
 	bool m_parentRenderUpdated;
-	bool m_hasChanged;     // If the data has been changed since the last update
+	int m_hasChanged;     // If the data has been changed since the last update
 	bool m_matNeedsUpdate; // Will only be false if m_hasChanged == false and a matrix has been created
 
 	Transform* m_parent = nullptr;
@@ -126,5 +126,5 @@ private:
 
 private:
 	friend class UpdateBoundingBoxSystem;
-	const bool getChange(); //Only access this from UpdateBoundingBoxSystem::update()
+	const int getChange(); //Only access this from UpdateBoundingBoxSystem::update()
 };

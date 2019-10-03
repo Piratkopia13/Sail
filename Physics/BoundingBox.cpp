@@ -13,11 +13,6 @@ BoundingBox::~BoundingBox() {
 }
 
 void BoundingBox::updateCorners() {
-	//Make sure there are the right number of corners
-	while (m_corners.size() < 8) {
-		m_corners.push_back(glm::vec3(0.0f));
-	}
-
 	m_corners[0] = m_position + glm::vec3(-m_halfSize.x, m_halfSize.y, -m_halfSize.z); //Left Top Close - 0
 	m_corners[1] = m_position + glm::vec3(m_halfSize.x, m_halfSize.y, -m_halfSize.z); //Right Top Close - 1
 	m_corners[2] = m_position + glm::vec3(-m_halfSize.x, -m_halfSize.y, -m_halfSize.z); //Left Bottom Close - 2
@@ -44,11 +39,11 @@ const glm::vec3& BoundingBox::getHalfSize() const {
 	return m_halfSize;
 }
 
-const std::vector<glm::vec3>* BoundingBox::getCorners() {
+const glm::vec3* BoundingBox::getCorners() {
 	if (m_cornersNeedUpdate) {
 		updateCorners();
 	}
-	return &m_corners;
+	return m_corners;
 }
 
 void BoundingBox::setPosition(const glm::vec3& position) {
