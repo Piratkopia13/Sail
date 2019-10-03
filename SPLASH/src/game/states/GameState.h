@@ -82,6 +82,9 @@ private:
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	Entity* m_player;
 
+	void createTestLevel(Shader* shader, Model* boundingBoxModel);
+	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel);
+	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
 	const std::string createCube(const glm::vec3& position);
 
 	Systems m_componentSystems;
@@ -90,8 +93,6 @@ private:
 	Profiler m_profiler;
 
 	size_t m_currLightIndex;
-	// For use by non-deterministic entities
-	const float* pAlpha = nullptr;
 
 	// ImGUI profiler data
 	float m_profilerTimer = 0.f;
@@ -119,4 +120,5 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_poppedThisFrame = false;
+
 };
