@@ -69,7 +69,6 @@ namespace DXRUtils {
 		wComPtr<ID3D12StateObjectProperties> m_soProps;
 		std::vector<LPCWSTR> m_shaderNames;
 		UINT m_numInstances;
-		//UINT m_numInstances_total;
 		UINT m_maxBytesPerInstance;
 
 		void** m_data;

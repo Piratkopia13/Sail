@@ -118,8 +118,10 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		int meshIndex = 0;
 		for (auto& renderCommand : commandQueue) {
 			for (int i = 0; i < 3; i++) {
-				if (renderCommand.type != RENDER_COMMAND_TYPE_MODEL)
+				if (renderCommand.type != RENDER_COMMAND_TYPE_MODEL) {
 					continue;
+				}
+
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
 				if (tex && !tex->hasBeenInitialized()) {
 					tex->initBuffers(cmdList.Get(), meshIndex);
@@ -160,8 +162,9 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	RenderCommand* command;
 	for (int i = 0; i < nCommands && meshIndex < oobMax; i++, meshIndex++ /*RenderCommand& command : commandQueue*/) {
 		command = &commandQueue[meshIndex];
-		if (command->type != RENDER_COMMAND_TYPE_MODEL)
+		if (command->type != RENDER_COMMAND_TYPE_MODEL) {
 			continue;
+		}
 
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->model.mesh->getMaterial()->getShader()->getPipeline());
 

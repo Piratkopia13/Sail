@@ -3,7 +3,7 @@
 
 MetaballComponent::MetaballComponent(float radius) :
 	m_radius(radius),
-	m_material(PhongMaterial(nullptr))
+	m_material(PBRMaterial(nullptr))
 {
 
 }
@@ -19,6 +19,6 @@ void MetaballComponent::setRadius(float radius) {
 	m_radius = radius;
 }
 
-PhongMaterial* MetaballComponent::getMaterial() {
+PBRMaterial* MetaballComponent::getMaterial() {
 	return &m_material;
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "Component.h"
-#include "Sail/graphics/geometry/PhongMaterial.h"
+#include "Sail/graphics/geometry/PBRMaterial.h"
 
 class MetaballComponent : public Component <MetaballComponent>{
 
@@ -9,10 +9,10 @@ public:
 	~MetaballComponent();
 	float getRadius() const;
 	void setRadius(float radius);
-	PhongMaterial* getMaterial();
+	PBRMaterial* getMaterial();
 
 private:
 	float m_radius;
-	PhongMaterial m_material;
+	PBRMaterial  m_material;
 };
 

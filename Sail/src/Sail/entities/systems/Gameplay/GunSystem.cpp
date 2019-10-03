@@ -16,6 +16,8 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "Sail/entities/components/CollidableComponent.h"
 
+#include <random>
+
 GunSystem::GunSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<GunComponent>(true, true, true);
@@ -45,6 +47,8 @@ void GunSystem::update(float dt) {
 						auto e = ECS::Instance()->createEntity("projectile");
 						glm::vec3 randPos;
 						float maxrand = 0.2f;
+
+						//Will remove rand later.
 						randPos.r = ((float)rand() / RAND_MAX) * maxrand;
 						randPos.g = ((float)rand() / RAND_MAX) * maxrand;
 						randPos.b = ((float)rand() / RAND_MAX) * maxrand;

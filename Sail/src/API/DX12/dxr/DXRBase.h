@@ -136,8 +136,8 @@ private:
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;
-	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup;
-	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup2;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup_mesh;
+	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureHitGroup_metaball;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 

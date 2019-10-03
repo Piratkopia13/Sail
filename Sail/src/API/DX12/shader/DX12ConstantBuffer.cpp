@@ -76,7 +76,7 @@ namespace ShaderComponent {
 			expanding = true;
 
 			unsigned int oldSize = m_resourceHeapSize;
-			unsigned int size = (nMeshes * 2) * m_byteAlignedSize;
+			unsigned int size = (nMeshes + 1) * m_byteAlignedSize;
 			// Size must be a multiple of 64KB for single-textures and constant buffers
 			m_resourceHeapSize = (unsigned int)((glm::floor(size / (1024.0 * 64.0)) + 1) * (1024.0 * 64.0));
 

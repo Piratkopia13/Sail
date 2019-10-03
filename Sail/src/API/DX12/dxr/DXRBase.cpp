@@ -699,7 +699,7 @@ void DXRBase::updateShaderTables() {
 
 			if (!mesh) {
 				tableBuilder.addShader(m_hitGroupMetaBallName);//Set the shadergroup to use
-				m_localSignatureHitGroup2->doInOrder([&](const std::string& parameterName) {
+				m_localSignatureHitGroup_metaball->doInOrder([&](const std::string& parameterName) {
 					if (parameterName == "MeshCBuffer") {
 						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
 						tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
@@ -715,7 +715,7 @@ void DXRBase::updateShaderTables() {
 					});
 			} else {
 				tableBuilder.addShader(m_hitGroupTriangleName);//Set the shadergroup to use
-				m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
+				m_localSignatureHitGroup_mesh->doInOrder([&](const std::string& parameterName) {
 					if (parameterName == "VertexBuffer") {
 						tableBuilder.addDescriptor(m_rtMeshHandles[blasIndex].vertexBufferHandle, blasIndex * 2);
 					} else if (parameterName == "IndexBuffer") {
@@ -756,8 +756,8 @@ void DXRBase::createRaytracingPSO() {
 	psoBuilder.addHitGroup(m_hitGroupMetaBallName, m_closestProceduralPrimitive, nullptr, m_intersectionProceduralPrimitive, D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE); //TODO: Add intesection Shader here!
 
 	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
-	psoBuilder.addSignatureToShaders({ m_hitGroupTriangleName }, m_localSignatureHitGroup->get());
-	psoBuilder.addSignatureToShaders({ m_hitGroupMetaBallName }, m_localSignatureHitGroup2->get());
+	psoBuilder.addSignatureToShaders({ m_hitGroupTriangleName }, m_localSignatureHitGroup_mesh->get());
+	psoBuilder.addSignatureToShaders({ m_hitGroupMetaBallName }, m_localSignatureHitGroup_metaball->get());
 	psoBuilder.addSignatureToShaders({ m_missName }, m_localSignatureMiss->get());
 
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowMissName });
@@ -790,22 +790,22 @@ void DXRBase::createRayGenLocalRootSignature() {
 }
 
 void DXRBase::createHitGroupLocalRootSignature() {
-	m_localSignatureHitGroup = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
-	m_localSignatureHitGroup->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
-	m_localSignatureHitGroup->addSRV("VertexBuffer", 1, 0);
-	m_localSignatureHitGroup->addSRV("IndexBuffer", 1, 1);
-	m_localSignatureHitGroup->addCBV("MeshCBuffer", 1, 0);
-	m_localSignatureHitGroup->addDescriptorTable("Textures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 3); // Textures (t0, t1, t2)
-	m_localSignatureHitGroup->addStaticSampler();
-	m_localSignatureHitGroup->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+	m_localSignatureHitGroup_mesh = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
+	m_localSignatureHitGroup_mesh->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
+	m_localSignatureHitGroup_mesh->addSRV("VertexBuffer", 1, 0);
+	m_localSignatureHitGroup_mesh->addSRV("IndexBuffer", 1, 1);
+	m_localSignatureHitGroup_mesh->addCBV("MeshCBuffer", 1, 0);
+	m_localSignatureHitGroup_mesh->addDescriptorTable("Textures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 3); // Textures (t0, t1, t2)
+	m_localSignatureHitGroup_mesh->addStaticSampler();
+	m_localSignatureHitGroup_mesh->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 
 	/*==========Metaballs=========*/
-	m_localSignatureHitGroup2 = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal2");
-	m_localSignatureHitGroup2->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
-	m_localSignatureHitGroup2->addSRV("MetaballPositions", 1, 2);
-	m_localSignatureHitGroup2->addCBV("MeshCBuffer", 1, 0);
-	m_localSignatureHitGroup2->addStaticSampler();
-	m_localSignatureHitGroup2->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+	m_localSignatureHitGroup_metaball = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal2");
+	m_localSignatureHitGroup_metaball->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
+	m_localSignatureHitGroup_metaball->addSRV("MetaballPositions", 1, 2);
+	m_localSignatureHitGroup_metaball->addCBV("MeshCBuffer", 1, 0);
+	m_localSignatureHitGroup_metaball->addStaticSampler();
+	m_localSignatureHitGroup_metaball->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
 void DXRBase::createMissLocalRootSignature() {
