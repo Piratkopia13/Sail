@@ -33,7 +33,7 @@ enum AudioType { MUSIC };
 #define VOL_THIRD 0.33f
 #define VOL_FOURTH 0.25f
 
-#define SPEED_OF_SOUND 1.0f
+#define SPEED_OF_SOUND 343.0f
 #define DISTANCE_SCALER 1.0f
 
 struct StreamingVoiceContext : public IXAudio2VoiceCallback
@@ -127,7 +127,7 @@ private:
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
 
 	int m_currSoundIndex = 0;
-	int m_tempDistance = 0;
+	float m_tempDistance = 0;
 	//std::atomic<int> m_currStreamIndex = 0;
 
 	// INIT

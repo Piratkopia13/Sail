@@ -49,15 +49,17 @@ int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& liste
 	}
 	if (Application::getInstance()->getResourceManager().hasAudioData(filename)) {
 
-		int returnValue = m_currSoundIndex; // Store early
+		int indexValue = m_currSoundIndex; // Store early
+		m_currSoundIndex++;
+		m_currSoundIndex %= SOUND_COUNT;
 
-		if (m_sound[m_currSoundIndex].sourceVoice != nullptr) {
-			m_sound[m_currSoundIndex].sourceVoice->Stop();
-			m_sound[m_currSoundIndex].sourceVoice->DestroyVoice();
+		if (m_sound[indexValue].sourceVoice != nullptr) {
+			m_sound[indexValue].sourceVoice->Stop();
+			m_sound[indexValue].sourceVoice->DestroyVoice();
 		}
 
 		// creating a 'sourceVoice' for WAV file-type
-		HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sound[m_currSoundIndex].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+		HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
 
 		// THIS IS THE OTHER VERSION FOR ADPC
 				// ... for ADPC-WAV compressed file-type
@@ -68,50 +70,97 @@ int AudioEngine::playSound(const std::string& filename, X3DAUDIO_LISTENER& liste
 			return -1;
 		}
 
-		hr = m_sound[m_currSoundIndex].sourceVoice->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
+		hr = m_sound[indexValue].sourceVoice->SubmitSourceBuffer(Application::getInstance()->getResourceManager().getAudioData(filename).getSoundBuffer());
 
 		if (hr != S_OK) {
 			Logger::Error("Failed to submit the 'sourceBuffer' to the 'sourceVoice' for a sound file!");
 			return -1;
 		}
 
-		m_sound[m_currSoundIndex].sourceVoice->SetVolume(VOL_THIRD);
+		//m_sound[indexValue].sourceVoice->SetVolume(VOL_THIRD);
 
-		m_sound[m_currSoundIndex].emitter.OrientFront = listener.OrientFront;
-		m_sound[m_currSoundIndex].emitter.OrientTop = listener.OrientTop;
-		m_sound[m_currSoundIndex].emitter.Position = { listener.Position.x + m_tempDistance, listener.Position.y, listener.Position.z };
-		m_sound[m_currSoundIndex].emitter.Velocity = listener.Velocity;
+		m_sound[indexValue].emitter.OrientFront = listener.OrientFront;
+		m_sound[indexValue].emitter.OrientTop = listener.OrientTop;
+		m_sound[indexValue].emitter.Position = {listener.Position.x, listener.Position.y, listener.Position.z};
+		m_sound[indexValue].emitter.Velocity = listener.Velocity;
 
-		m_tempDistance += 1000.0f;
+		m_tempDistance += 0.1f;
 
-		X3DAudioCalculate(m_X3DInstance, &listener, &m_sound[m_currSoundIndex].emitter,
+		X3DAudioCalculate(m_X3DInstance, &listener, &m_sound[indexValue].emitter,
 			X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT /*| X3DAUDIO_CALCULATE_REVERB*/,
 			&m_DSPSettings);
 
-		std::cout << "LEFT_EAR_VOL: " << m_DSPSettings.pMatrixCoefficients[0] << "\t";
-		std::cout << "RIGHT_EAR_VOL: " << m_DSPSettings.pMatrixCoefficients[1] << "\n";
-		std::cout << "DISTANCE: " << m_DSPSettings.EmitterToListenerDistance << "\n";
+		//IXAudio2Voice* pDestb4 = nullptr;
+		//float* pMatrixb4 = new float[64];
+		//m_sound[indexValue].sourceVoice->GetOutputMatrix(pDest, 1, 2, pMatrix);
+		//delete[]pMatrixb4;
+		 
+		//XAUDIO2_FILTER_PARAMETERS FilterParameters = {
+		//	LowPassFilter,
+		//	/*2 * sin(pi * (desired filter cutoff frequency) / sampleRate) */
+		//	2.0f * sinf(X3DAUDIO_PI * 20000 / 48000), //6.0f * m_DSPSettings.LPFDirectCoefficient
+		//	1.0f
+		//};
 
-		m_sound[m_currSoundIndex].sourceVoice->SetFrequencyRatio(m_DSPSettings.DopplerFactor);
-		m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, m_DSPSettings.pMatrixCoefficients);
+		hr = m_sound[indexValue].sourceVoice->SetOutputMatrix(m_masterVoice, 2, m_destinationChannelCount, m_DSPSettings.pMatrixCoefficients);
+		if (hr != S_OK) {
+			Logger::Error("UN-NAMED ERROR3!");
+			return -1;
+		}
+
+		if (m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL) == S_OK) {
+			int asdf = 3;
+		}
+		else {
+			int asdf = 3;
+		}
+
+		float* pMatrix = new float[2];
+		m_sound[indexValue].sourceVoice->GetOutputMatrix(NULL, 2, 2, pMatrix);
+		delete[]pMatrix;
+		//m_sound[indexValue].sourceVoice->SetFrequencyRatio(m_DSPSettings.DopplerFactor);
 
 		// R E V E R B   A P P L I C A T I O N
-		//m_sound[m_currSoundIndex].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, &DSPSettings.ReverbLevel);
+		//m_sound[returnValue].sourceVoice->SetOutputMatrix(m_masterVoice, 1, m_destinationChannelCount, &DSPSettings.ReverbLevel);
 		// EXAMPLE-CODE VERSION: pSFXSourceVoice->SetOutputMatrix(pSubmixVoice, 1, 1, &DSPSettings.ReverbLevel);
 
-		XAUDIO2_FILTER_PARAMETERS FilterParameters = { LowPassFilter, 2.0f * sinf(X3DAUDIO_PI / 6.0f * m_DSPSettings.LPFDirectCoefficient), 1.0f };
-		m_sound[m_currSoundIndex].sourceVoice->SetFilterParameters(&FilterParameters);
 
-		hr = m_sound[m_currSoundIndex].sourceVoice->Start();
+
+		//hr = m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
+		//if (hr != S_OK) {
+		//	Logger::Error("UN-NAMED ERROR5!");
+		//	return -1;
+		//}
+		XAUDIO2_FILTER_PARAMETERS work{
+			LowPassFilter,
+			1.0f,
+			1.0f,
+		};
+		// IFAN, USE THE SOURCE (it's broken)
+		hr = m_sound[indexValue].sourceVoice->SetFilterParameters(&work/*, XAUDIO2_COMMIT_NOW*/);
+		if (hr != S_OK) {
+			Logger::Error("UN-NAMED ERROR4!");
+			return -1;
+		}
+
+		hr = m_sound[indexValue].sourceVoice->Start(0, XAUDIO2_COMMIT_ALL);
+		if (m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL) == S_OK) {
+			int asdf = 3;
+		}
+
 		if (hr != S_OK) {
 			Logger::Error("Failed submit processed audio data to data buffer for a audio file");
 			return -1;
 		}
 
-		m_currSoundIndex++;
-		m_currSoundIndex %= SOUND_COUNT;
+		std::cout << "LEFT_EAR_VOL: " << m_DSPSettings.pMatrixCoefficients[0] << "\n";
+		std::cout << "RIGHT_EAR_VOL: " << m_DSPSettings.pMatrixCoefficients[1] << "\n";
+		std::cout << "DISTANCE: " << m_DSPSettings.EmitterToListenerDistance << "\n";
+		float tempFloat;
+		m_sound[indexValue].sourceVoice->GetVolume(&tempFloat);
+		std::cout << "CURRENT VOLUME: " << tempFloat << "\n";
 
-		return returnValue;
+		return indexValue;
 	}
 
 	else {
@@ -262,16 +311,16 @@ void AudioEngine::initialize() {
 		m_streamLocks[i].store(false);
 
 		// Initialize EMITTER-structure
-		m_sound[i].emitter.OrientFront = { 0,0,0 };
-		m_sound[i].emitter.OrientTop = { 0,0,0 };
-		m_sound[i].emitter.Position = { 0,0,0 };
-		m_sound[i].emitter.Velocity = { 0,0,0 };
-		m_sound[i].emitter.InnerRadius = 1;
-		m_sound[i].emitter.InnerRadiusAngle = 1;
-		m_sound[i].emitter.ChannelCount = 1;
-		m_sound[i].emitter.ChannelRadius = 1.0f;
-		m_sound[i].emitter.CurveDistanceScaler = DISTANCE_SCALER;
-		m_sound[i].emitter.DopplerScaler = 1.0f;
+		m_stream[i].emitter.OrientFront = { 0,0,0 };
+		m_stream[i].emitter.OrientTop = { 0,0,0 };
+		m_stream[i].emitter.Position = { 0,0,0 };
+		m_stream[i].emitter.Velocity = { 0,0,0 };
+		m_stream[i].emitter.InnerRadius = 1;
+		m_stream[i].emitter.InnerRadiusAngle = 1;
+		m_stream[i].emitter.ChannelCount = 1;
+		m_stream[i].emitter.ChannelRadius = 1.0f;
+		m_stream[i].emitter.CurveDistanceScaler = DISTANCE_SCALER;
+		m_stream[i].emitter.DopplerScaler = 1.0f;
 	}
 
 	this->initXAudio2();
@@ -287,7 +336,7 @@ void AudioEngine::initXAudio2() {
 		Logger::Error("Creating the 'IXAudio2' object failed!");
 	}
 
-	hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice);
+	hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice/*, 2, 48000, 0, nullptr, nullptr*/);
 	if (hr != S_OK) {
 		Logger::Error("Creating the 'IXAudio2MasterVoice' failed!");
 	}
@@ -297,7 +346,10 @@ void AudioEngine::initXAudio3D() {
 
 	HRESULT hr;
 	DWORD channelMaskHolder;
-	m_masterVoice->GetChannelMask(&channelMaskHolder);
+	hr = m_masterVoice->GetChannelMask(&channelMaskHolder);
+	if (hr != S_OK) {
+		Logger::Error("UN-NAMED ERROR1!");
+	}
 
 	XAUDIO2_VOICE_DETAILS tempVoiceDetails;
 	m_masterVoice->GetVoiceDetails(&tempVoiceDetails);
@@ -308,12 +360,15 @@ void AudioEngine::initXAudio3D() {
 	*matrixCoeff = FLOAT32{ 0 };
 	*delayTimes = FLOAT32{ 0 };
 
-	m_DSPSettings.SrcChannelCount = 1;
+	m_DSPSettings.SrcChannelCount = 2;
 	m_DSPSettings.DstChannelCount = m_destinationChannelCount;
 	m_DSPSettings.pMatrixCoefficients = matrixCoeff;
 	m_DSPSettings.pDelayTimes = delayTimes;
 
-	X3DAudioInitialize(channelMaskHolder, SPEED_OF_SOUND, m_X3DInstance);
+	hr = X3DAudioInitialize(channelMaskHolder, SPEED_OF_SOUND, m_X3DInstance);
+	if (hr != S_OK) {
+		Logger::Error("UN-NAMED ERROR2!");
+	}
 }
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
