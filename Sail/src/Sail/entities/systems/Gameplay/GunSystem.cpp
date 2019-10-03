@@ -11,8 +11,12 @@
 #include "Sail/entities/components/PhysicsComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
+
+#include "Sail/entities/components/MetaballComponent.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Sail/entities/components/CollidableComponent.h"
+
+#include <random>
 
 GunSystem::GunSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
@@ -30,40 +34,54 @@ void GunSystem::update(float dt) {
 		GunComponent* gun = e->getComponent<GunComponent>();
 
 		if (gun->firing) {
-			if (gun->projectileSpawnTimer == 0.f) {
-				auto proj = ECS::Instance()->createEntity("projectile");
-				proj->addComponent<ModelComponent>(gun->getProjectileModel());
-				proj->addComponent<BoundingBoxComponent>();
-				BoundingBox* boundingBox = proj->getComponent<BoundingBoxComponent>()->getBoundingBox();
-				//Done here because systems doesn't update the bounding box first frame so it passes through things
-				boundingBox->setHalfSize(glm::vec3(0.2f));
-				boundingBox->setPosition(gun->position);
-				proj->addComponent<LifeTimeComponent>(2.0f);
-				proj->addComponent<ProjectileComponent>();
-				proj->addComponent<TransformComponent>(gun->position);
-				TransformComponent* transform = proj->getComponent<TransformComponent>();
-				transform->setScale(glm::vec3(1.0f, 1.0f, 1.0f) * 0.2f);
-				transform->rotateAroundY(glm::atan(gun->direction.x / gun->direction.z));
-				
-				proj->addComponent<PhysicsComponent>();
-				PhysicsComponent* physics = proj->getComponent<PhysicsComponent>();
-				physics->velocity = gun->direction * gun->projectileSpeed;
-				physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
-				physics->drag = 2.0f;
-				physics->bounciness = 0.1f;
-				physics->padding = 0.2f;
+			if (gun->gunOverloadTimer <= 0) {
+				if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
+					gun->gunOverloadTimer = gun->m_gunOverloadCooldown;
+					gun->gunOverloadvalue = 0;
+				}
 
-				m_gameDataTracker->logWeaponFired();
-			}
-			gun->projectileSpawnTimer += dt;
-			if (gun->projectileSpawnTimer > gun->getSpawnLimit()) {
-				gun->projectileSpawnTimer = 0.f;
+				if (gun->projectileSpawnTimer <= 0.f) {
+					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
+
+					for (int i = 0; i <= 1; i++) {
+						auto e = ECS::Instance()->createEntity("projectile");
+						glm::vec3 randPos;
+						float maxrand = 0.2f;
+
+						//Will remove rand later.
+						randPos.r = ((float)rand() / RAND_MAX) * maxrand;
+						randPos.g = ((float)rand() / RAND_MAX) * maxrand;
+						randPos.b = ((float)rand() / RAND_MAX) * maxrand;
+
+						e->addComponent<MetaballComponent>();
+						e->addComponent<BoundingBoxComponent>();
+						e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
+						e->addComponent<LifeTimeComponent>(4.0f);
+						e->addComponent<ProjectileComponent>();
+						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
+
+						e->addComponent<PhysicsComponent>();
+						PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+						physics->velocity = gun->direction * gun->projectileSpeed;
+						physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+						physics->drag = 2.0f;
+						physics->bounciness = 0.1f;
+						physics->padding = 0.2f;
+
+						m_gameDataTracker->logWeaponFired();
+					}
+				}
 			}
 
 			gun->firing = false;
 		}
 		else {
-			gun->projectileSpawnTimer = 0.f;
+			if (gun->gunOverloadvalue > 0) {
+				gun->gunOverloadvalue -= dt;
+			}
 		}
+
+		gun->gunOverloadTimer -= dt;
+		gun->projectileSpawnTimer -= dt;
 	}
 }

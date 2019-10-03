@@ -85,6 +85,7 @@ public:
 	const UINT getFPS() const;
 
 private:
+
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
