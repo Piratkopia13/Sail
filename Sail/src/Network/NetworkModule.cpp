@@ -1,11 +1,19 @@
 #include "pch.h"
 #include "NetworkModule.hpp"
 #include <random>
+#include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
 Network::Network() {}
 
 Network::~Network() {
 	shutdown();
+
+	for (int i = 0; i < MAX_AWAITING_PACKAGES; ++i) {
+		if (m_awaitingEvents[i].eventType != NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND && m_awaitingMessages[i].Message.rawMsg != nullptr) {
+			delete[] m_awaitingMessages[i].Message.rawMsg;
+			m_awaitingMessages[i].Message.rawMsg = nullptr;
+		}
+	}
 
 	delete[] m_awaitingEvents;
 	delete[] m_awaitingMessages;
@@ -15,6 +23,8 @@ Network::~Network() {
 
 bool Network::initialize()
 {
+	m_shutdown = false;
+
 	if (m_initializedStatus) {
 		return true;
 	}
@@ -186,8 +196,22 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 		return true;
 	}
 
-	char msg[MAX_PACKAGE_SIZE] = { 0 };
-	memcpy(msg, message, size);
+	// serialize the packet size and place that information at the beginning of the packet
+	std::ostringstream os(std::ios::binary);
+	{
+		cereal::PortableBinaryOutputArchive ar(os);
+		ar(size);
+	}
+	std::string msgSizeString = os.str();
+
+	size_t packetSize = MSG_SIZE_STR_LEN + size;
+	char* msg = SAIL_NEW char[packetSize]();
+	
+	// The message starts with a size_t stating how large the message is
+	memcpy(&msg[0], msgSizeString.c_str(), MSG_SIZE_STR_LEN);
+
+	// The rest of msg is the actual message
+	memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
 
 	Connection* conn = nullptr;
 	{
@@ -207,10 +231,11 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 		return false;
 	}
 
-	if (::send(conn->socket, msg, MAX_PACKAGE_SIZE, 0) == SOCKET_ERROR) {
+	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
 		return false;
 	}
 
+	delete[] msg;
 	return true;
 }
 
@@ -220,10 +245,29 @@ bool Network::send(const char* message, size_t size, Connection* conn)
 		return false;
 	}
 
-	if (::send(conn->socket, message, size, 0) == SOCKET_ERROR) {
+	// serialize the packet size and place that information at the beginning of the packet
+	std::ostringstream os(std::ios::binary);
+	{
+		cereal::PortableBinaryOutputArchive ar(os);
+		ar(size);
+	}
+	std::string msgSizeString = os.str();
+
+	size_t packetSize = MSG_SIZE_STR_LEN + size;
+	char* msg = SAIL_NEW char[packetSize]();
+
+	// The message starts with a size_t stating how large the message is
+	memcpy(&msg[0], msgSizeString.c_str(), MSG_SIZE_STR_LEN);
+
+	// The rest of msg is the actual message
+	memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
+
+	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
+		delete[] msg;
 		return false;
 	}
 
+	delete[] msg;
 	return true;
 }
 
@@ -241,7 +285,6 @@ bool Network::searchHostsOnLan()
 
 	UDP_DATA udpdata = { 0 };
 	udpdata.package.packagetype = UDP_DATA_PACKAGE_TYPE_HOSTINFO_REQUEST;
-
 	if (::sendto(m_udp_broadcast_socket, (char*)& udpdata, sizeof(udpdata), 0, (sockaddr*)& m_udp_broadcast_address, sizeof(m_udp_broadcast_address)) == SOCKET_ERROR) {
 #ifdef DEBUG_NETWORK
 		int err = WSAGetLastError();
@@ -343,16 +386,20 @@ void Network::listenForUDP()
 			case UDP_DATA_PACKAGE_TYPE_HOSTINFO:
 				if (m_initializedStatus) {
 #ifdef DEBUG_NETWORK
-					printf("UDP_DATA_PACKAGE_TYPE_HOSTINFO: %d - %s\n", udpdata.package.packageData.hostdata.port, udpdata.package.packageData.hostdata.description);
+					//printf("UDP_DATA_PACKAGE_TYPE_HOSTINFO: %d - %s\n", udpdata.package.packageData.hostdata.port, udpdata.package.packageData.hostdata.description);
 #endif // DEBUG_NETWORK
 
 					NetworkEvent nEvent;
 					nEvent.eventType = NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND;
 					nEvent.clientID = 0;
-					NetworkEventData data = { 0 };
+					NetworkEventData data = NetworkEventData();
+					// Memcpy description before the other shit, as it writes over rawMsg.
+					memcpy(data.HostFoundOnLanData.description, udpdata.package.packageData.hostdata.hostdescription, sizeof(m_serverMetaDesc));
+					// Attatch hostPort and ip, then an irrelevant message as UDP only cares about ip and hostport atm.
 					data.HostFoundOnLanData.hostPort = udpdata.package.packageData.hostdata.port;
 					data.HostFoundOnLanData.ip_full = client.sin_addr.S_un.S_addr;
-					memcpy(data.HostFoundOnLanData.description, udpdata.package.packageData.hostdata.hostdescription, sizeof(m_serverMetaDesc));
+					
+
 					nEvent.data = &data;
 
 					addNetworkEvent(nEvent, sizeof(data));
@@ -402,7 +449,7 @@ bool Network::udpSend(sockaddr* addr, char* msg, int msgSize)
 TCP_CONNECTION_ID Network::generateID()
 {
 	TCP_CONNECTION_ID id = 0;
-	std::random_device rd;   // non-deterministic generator
+	std::random_device rd;   // non-deterministic generator.
 	std::mt19937 gen(rd());
 
 	if (m_hostFlags & (USHORT)HostFlags::USE_RANDOM_IDS) {
@@ -440,6 +487,7 @@ void Network::shutdown()
 	if (m_initializedStatus == INITIALIZED_STATUS::IS_SERVER) {
 		::shutdown(m_soc, 2);
 		if (closesocket(m_soc) == SOCKET_ERROR) {
+			m_soc = 0;
 #ifdef DEBUG_NETWORK
 			printf("Error closing m_soc\n");
 #endif
@@ -471,9 +519,11 @@ void Network::shutdown()
 
 	if (m_udp_broadcast_socket) {
 		closesocket(m_udp_broadcast_socket);
+		m_udp_broadcast_socket = 0;
 	}
 	if (m_udp_directMessage_socket) {
 		closesocket(m_udp_directMessage_socket);
+		m_udp_directMessage_socket = 0;
 	}
 
 	if (m_UDPListener) {
@@ -498,10 +548,29 @@ ULONG Network::ip_string_to_ip_int(char* ip)
 	return result;
 }
 
-void Network::addNetworkEvent(NetworkEvent n, int dataSize)
-{
+void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
-	memcpy(m_awaitingMessages[m_pend].rawMsg, n.data->rawMsg, dataSize);
+	// delete previous message if there is one
+	if (m_awaitingMessages[m_pend].Message.rawMsg != nullptr) {
+		delete[] m_awaitingMessages[m_pend].Message.rawMsg;
+		m_awaitingMessages[m_pend].Message.rawMsg = nullptr;
+	}
+
+	// Copy the incoming data to a message
+	
+	if (n.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
+		// UDP MESSAGE
+		memcpy(&m_awaitingMessages[m_pend].HostFoundOnLanData, &n.data->HostFoundOnLanData, sizeof(n.data->HostFoundOnLanData));
+	}
+	else {
+		// All other messages
+		m_awaitingMessages[m_pend].Message.rawMsg = SAIL_NEW char[dataSize]();
+		memcpy(m_awaitingMessages[m_pend].Message.rawMsg, data, dataSize);
+		m_awaitingMessages[m_pend].Message.sizeOfMsg = dataSize;
+	}
+
+
+
 	m_awaitingEvents[m_pend].eventType = n.eventType;
 	m_awaitingEvents[m_pend].clientID = n.clientID;
 	m_awaitingEvents[m_pend].data = &m_awaitingMessages[m_pend];
@@ -558,11 +627,25 @@ void Network::listen(const Connection* conn)
 	addNetworkEvent(nEvent, 0);
 
 	bool connectionIsClosed = false;
-	char msg[MAX_PACKAGE_SIZE];
+	char incomingPackageSize[MSG_SIZE_STR_LEN];
+	int bytesToReceive = 0;
 
 	while (!connectionIsClosed && !m_shutdown) {
-		ZeroMemory(msg, sizeof(msg));
-		int bytesReceived = recv(conn->socket, msg, MAX_PACKAGE_SIZE, 0);
+		ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
+
+		// Find out how large the incoming packet is
+		recv(conn->socket, incomingPackageSize, MSG_SIZE_STR_LEN, 0);
+
+		// Read how many bytes to receive
+		std::istringstream is(std::string(incomingPackageSize, MSG_SIZE_STR_LEN));
+		{
+			cereal::PortableBinaryInputArchive ar(is);
+			ar(bytesToReceive);
+		}
+
+		// Get the incoming packet and place it in a char array
+		char* msg = SAIL_NEW char[bytesToReceive]();
+		int bytesReceived = recv(conn->socket, msg, bytesToReceive, 0);
 
 #ifdef DEBUG_NETWORK
 		printf((std::string("bytesReceived: ") + std::to_string(bytesReceived) + "\n").c_str());
@@ -588,12 +671,12 @@ void Network::listen(const Connection* conn)
 			break;
 #endif // DEBUG_NETWORK
 		default:
-			nEvent.data = reinterpret_cast<NetworkEventData*>(msg);
 			nEvent.eventType = NETWORK_EVENT_TYPE::MSG_RECEIVED;
-
-			addNetworkEvent(nEvent, bytesReceived);
+			addNetworkEvent(nEvent, bytesReceived, msg);
 
 			break;
 		}
+
+		delete[] msg;
 	}
 }

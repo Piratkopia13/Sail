@@ -1,72 +1,98 @@
 #include "pch.h"
 #include "ECS.h"
+#include "systems/entityManagement/EntityAdderSystem.h"
+#include "systems/entityManagement/EntityRemovalSystem.h"
+
+void ECS::addAllQueuedEntities() {
+	for (auto& s : m_systems) {
+		s.second->addQueuedEntities();
+	}
+}
 
 ECS::ECS() {
-
+	// Add the special case systems
+	m_entityAdderSystem = SAIL_NEW EntityAdderSystem();
+	m_entityRemovalSystem = SAIL_NEW EntityRemovalSystem();
 }
 
 ECS::~ECS() {
+	delete m_entityRemovalSystem;
+	delete m_entityAdderSystem;
 }
 
-//void ECS::update(float dt) {
-//	SystemMap::iterator it = m_systems.begin();
-//	for (; it != m_systems.end(); ++it) {
-//		it->second->update(dt);
-//	}
-//}
+void ECS::stopAllSystems() {
+	for (auto &i : m_systems) {
+		i.second->stop();
+	}
+}
+
+void ECS::destroyAllSystems() {
+	m_systems.clear();
+}
+
+EntityAdderSystem* ECS::getEntityAdderSystem() {
+	return m_entityAdderSystem;
+}
+
+EntityRemovalSystem* ECS::getEntityRemovalSystem() {
+	return m_entityRemovalSystem;
+}
 
 unsigned ECS::nrOfComponentTypes() const {
 	return BaseComponent::nrOfComponentTypes();
 }
 
-
-
 Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));
+	m_entities.back()->setECSIndex(m_entities.size() - 1);
 	return m_entities.back();
 }
 
-void ECS::queueDestructionOfEntity(const Entity::SPtr entity) {
-	//Loop through and find entity
-	for (auto e : m_entities) {
-	//for (unsigned int i = 0; i < m_entities.size(); i++) {
-		if (e == entity) { //Entity found
-			e->queueDestruction();
-			break;
-		}
-	}
+void ECS::queueDestructionOfEntity(Entity* entity) {
+	// Add entity to removal system
+	m_entityRemovalSystem->addEntity(entity);
+	
+	// Might be a poor solution
+	m_entityRemovalSystem->addQueuedEntities();
 }
 
 void ECS::destroyEntity(const Entity::SPtr entityToRemove) {
-	//Loop through and find entity
-	for (unsigned int i = 0; i < m_entities.size(); i++) {
-		if (m_entities[i] == entityToRemove) { //Entity found
-			//Destroy it
-			m_entities[i]->removeAllComponents();
-			m_entities.erase(m_entities.begin() + i);
-			break;
-		}
+	// Find the index of the entity in the vector
+	destroyEntity(entityToRemove->getECSIndex());
+}
+
+void ECS::destroyEntity(int ecsIndex) {
+	// Remove all of the entity's components
+	// Also removes it from the systems
+	m_entities[ecsIndex]->removeAllComponents();
+
+	// Move the last entity in the vector
+	m_entities[ecsIndex] = m_entities.back();
+
+	// Set the index of the moved entity
+	m_entities[ecsIndex]->setECSIndex(ecsIndex);
+
+	// Remove the redundant copy of the moved entity
+	m_entities.pop_back();
+}
+
+void ECS::destroyAllEntities() {
+	for (auto& e : m_entities) {
+		e->removeAllComponents();
+		e->removeFromSystems();
 	}
+	m_entities.clear();
 }
 
 void ECS::addEntityToSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
-	
+
 	// Check which systems this entity can be placed in
-	for (; it != m_systems.end(); ++it) {
-		std::vector<int> componentTypes = it->second->getRequiredComponentTypes();
-		
-		// Check if the entity has all the required components for the system
-		bool hasCorrectComponents = true;
-		for (auto typeID : componentTypes) {
-			if (!entity->hasComponent(typeID)) {
-				hasCorrectComponents = false;
-				break;
-			}
-		}
+	for ( ; it != m_systems.end(); ++it ) {
+		auto componentTypes = it->second->getRequiredComponentTypes();
 
 		// Add this entity to the system
-		if (hasCorrectComponents) {
+		if ( entity->hasComponents(componentTypes) ) {
 			it->second->addEntity(entity);
 		}
 	}
@@ -75,18 +101,10 @@ void ECS::addEntityToSystems(Entity* entity) {
 void ECS::removeEntityFromSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 
-	for (; it != m_systems.end(); ++it) {
-		std::vector<int> componentTypes = it->second->getRequiredComponentTypes();
+	for ( ; it != m_systems.end(); ++it ) {
+		auto componentTypes = it->second->getRequiredComponentTypes();
 
-		bool hasCorrectComponents = true;
-		for (auto typeID : componentTypes) {
-			if (!entity->hasComponent(typeID)) {
-				hasCorrectComponents = false;
-				break;
-			}
-		}
-
-		if (!hasCorrectComponents) {
+		if ( !entity->hasComponents(componentTypes) ) {
 			it->second->removeEntity(entity);
 		}
 	}

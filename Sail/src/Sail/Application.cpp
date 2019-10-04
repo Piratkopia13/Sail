@@ -2,18 +2,18 @@
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
 #include "../../SPLASH/src/game/events/TextInputEvent.h"
-#include "KeyCodes.h"
+#include "KeyBinds.h"
 #include "graphics/geometry/Transform.h"
-#include "Sail/graphics/Scene.h"
+#include "Sail/TimeSettings.h"
+#include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
+#include "Sail/entities/systems/render/RenderSystem.h"
+
 
 Application* Application::s_instance = nullptr;
-std::atomic_uint Application::s_queuedUpdates = 0;
-std::atomic_uint Application::s_updateRunning = 0;
 std::atomic_bool Application::s_isRunning = true;
 
-
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
-
 	// Set up instance if not set
 	if (s_instance) {
 		Logger::Error("Only one application can exist!");
@@ -23,7 +23,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
-	unsigned int poolSize = std::max<unsigned int>(4, (2 * std::thread::hardware_concurrency()));
+	unsigned int poolSize = std::max<unsigned int>(4, (10 * std::thread::hardware_concurrency()));
 	m_threadPool = std::unique_ptr<ctpl::thread_pool>(SAIL_NEW ctpl::thread_pool(poolSize));
 
 	// Set up window
@@ -53,6 +53,10 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 		return;
 	}
 
+	// Initialize Renderers
+	m_rendererWrapper.initialize();
+	ECS::Instance()->createSystem<RenderSystem>();
+
 	// Initialize imgui
 	m_imguiHandler->init();
 
@@ -62,7 +66,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
 
-	m_nodeSystem = std::make_unique<NodeSystem>();
 }
 
 Application::~Application() {
@@ -78,6 +81,9 @@ int Application::startGameLoop() {
 	// Start delta timer
 	m_timer.startTimer();
 	const INT64 startTime = m_timer.getStartTime();
+
+	// Initialize key bindings
+	KeyBinds::init();
 
 	float currentTime = m_timer.getTimeSince<float>(startTime);
 	float newTime = 0.0f;
@@ -112,7 +118,8 @@ int Application::startGameLoop() {
 			delta = newTime - currentTime;
 			currentTime = newTime;
 
-			// Will slow the game down if the CPU can't keep up with the TICKRATE
+			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
+			// when the update is really slow for whatever reason.
 			delta = std::min(delta, 4 * TIMESTEP);
 
 			// Update fps counter
@@ -125,23 +132,14 @@ int Application::startGameLoop() {
 				secCounter = 0.0;
 			}
 
-			// alpha value used for the interpolation later on
-			float alpha = accumulator/TIMESTEP;
-
-			// Queue multiple updates if the game has fallen behind to make sure that it catches back up to the current time.
-			while (accumulator >= TIMESTEP) {
-				accumulator -= TIMESTEP;
-				s_queuedUpdates++;
-			}
-
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
-			//UPDATES ALL CURRENTLY-WORKING AUDIO FUNCTIONALITY (TL;DR - Press '9' and '0')
+			//UPDATES AUDIO
 			//Application::getAudioManager()->updateAudio();
 
 			// Quit on alt-f4
-			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
+			if (Input::IsKeyPressed(KeyBinds::alt) && Input::IsKeyPressed(KeyBinds::f4))
 				PostQuitMessage(0);
 
 #ifdef _DEBUG
@@ -154,23 +152,19 @@ int Application::startGameLoop() {
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
 			processInput(delta);
 
-			// Don't create a new update thread if another one is already running the update loop
-			if (s_updateRunning == 0) {
-				s_updateRunning = 1;
-				// Run update(s) in a separate thread
-				//m_threadPool->push([this](int id) {
-					if (s_queuedUpdates > 0 && s_isRunning) {
-						s_queuedUpdates--;
-						Scene::IncrementCurrentUpdateIndex();
-						update(TIMESTEP);
-					}
-					s_updateRunning = 0;
-					//});
+			// Run the update if enough time has passed since the last update
+			while (accumulator >= TIMESTEP) {
+				accumulator -= TIMESTEP;
+				fixedUpdate(TIMESTEP);
 			}
 
-			// Render
-			Scene::UpdateCurrentRenderIndex();
 
+			// alpha value used for the interpolation
+			float alpha = accumulator / TIMESTEP;
+
+			update(delta, alpha);
+
+			// Render
 			render(delta, alpha);
 			//render(delta, 1.0f); // disable interpolation
 
@@ -181,8 +175,12 @@ int Application::startGameLoop() {
 			applyPendingStateChanges();
 		}
 	}
+
 	s_isRunning = false;
+	// Need to set all streams as 'm_isStreaming[i] = false' BEFORE stopping threads
+	ECS::Instance()->stopAllSystems();
 	m_threadPool->stop();
+	ECS::Instance()->destroyAllSystems();
 	return (int)msg.wParam;
 }
 
@@ -199,6 +197,9 @@ Application* Application::getInstance() {
 void Application::dispatchEvent(Event& event) {
 	m_api->onEvent(event);
 	Input::GetInstance()->onEvent(event);
+
+	m_rendererWrapper.onEvent(event);
+	
 }
 
 GraphicsAPI* const Application::getAPI() {
@@ -217,11 +218,9 @@ ResourceManager& Application::getResourceManager() {
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }
-Audio* Application::getAudioManager() {
-	return &m_audioManager;
-}
-NodeSystem* Application::getNodeSystem() {
-	return m_nodeSystem.get();
+
+RendererWrapper* Application::getRenderWrapper() {
+	return &m_rendererWrapper;
 }
 StateStorage& Application::getStateStorage() {
 	return this->m_stateStorage;
@@ -229,5 +228,3 @@ StateStorage& Application::getStateStorage() {
 const UINT Application::getFPS() const {
 	return m_fps;
 }
-
-

@@ -16,7 +16,7 @@ NodeSystem::~NodeSystem() {
 
 void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
 #ifdef _DEBUG_NODESYSTEM
-	if ( m_nodeModel == nullptr || m_scene == nullptr ) {
+	if ( m_nodeModel == nullptr ) {
 		Logger::Error("Node model and scene need to be set in the node system during debug.");
 	}
 #endif
@@ -29,23 +29,26 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		ECS::Instance()->destroyEntity(m_nodeEntities[i]);
 	}
 	m_nodeEntities.clear();
+	int currNodeEntity = 0;
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
-		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
-		m_nodeEntities[i]->addComponent<TransformComponent>(m_nodes[i].position);
-		m_nodeEntities[i]->addComponent<ModelComponent>(m_nodeModel);
-		m_scene->addEntity(m_nodeEntities[i]);
+		if ( !m_nodes[i].blocked ) {
+			m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
+			m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position);
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_nodeModel);
+		}
 	}
 #endif
 }
 
 std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
- 	auto path = aStar(from.index, to.index);
-	
 	std::vector<NodeSystem::Node> nPath;
-	for ( int i = path.size() - 1; i > -1; i-- ) {
-		nPath.push_back(m_nodes[path[i]]);
-	}
+	if ( from.index != to.index ) {
+		auto path = aStar(from.index, to.index);
 
+		for ( int i = path.size() - 1; i > -1; i-- ) {
+			nPath.push_back(m_nodes[path[i]]);
+		}
+	}
 	return nPath;
 }
 
@@ -68,14 +71,18 @@ const NodeSystem::Node& NodeSystem::getNearestNode(const glm::vec3& position) co
 	return m_nodes[index];
 }
 
-unsigned int NodeSystem::getDistence(unsigned int n1, unsigned int n2) const {
+unsigned int NodeSystem::getDistance(unsigned int n1, unsigned int n2) const {
 	return glm::distance(m_nodes[n1].position, m_nodes[n2].position);
 }
 
+const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
+	return m_nodes;
+}
+
 #ifdef _DEBUG_NODESYSTEM
-void NodeSystem::setDebugModelAndScene(Model* model, Scene* scene) {
-	m_nodeModel = model;
-	m_scene = scene;
+void NodeSystem::setDebugModelAndScene(Shader* shader) {
+	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);
+	m_nodeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
 }
 #endif
 
@@ -167,12 +174,12 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 				if (m_nodes[neighbor].blocked || contains<std::list, unsigned int>(closedSet, neighbor)) {
 					continue;
 				} else {
-					//Distence From Start To Neighbor Through Current
-					unsigned int dist = gScores[current] + getDistence(current, neighbor);
+					//Distance From Start To Neighbor Through Current
+					unsigned int dist = gScores[current] + getDistance(current, neighbor);
 					if (dist < gScores[neighbor]) {
 						camefrom[neighbor] = current;
 						gScores[neighbor] = dist;
-						fScores[neighbor] = dist + getDistence(neighbor, to);
+						fScores[neighbor] = dist + getDistance(neighbor, to);
 						
 						if (!contains<std::list, unsigned int>(openSet, neighbor)) {
 							openSet.push_back(neighbor);

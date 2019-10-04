@@ -8,10 +8,10 @@
 
 #ifdef _DEBUG_NODESYSTEM
 #include "Sail/entities/Entity.h"
+class Shader;
 #endif
 
 class Model;
-class Scene;
 
 /*
 	Checks if container of type U<X> contains element of type X.
@@ -53,12 +53,12 @@ public:
 	std::vector<NodeSystem::Node> getPath(const glm::vec3& from, const glm::vec3& to);
 
 	const NodeSystem::Node& getNearestNode(const glm::vec3& position) const;
-	unsigned int getDistence(unsigned int n1, unsigned int n2) const;
+	unsigned int getDistance(unsigned int n1, unsigned int n2) const;
+	const std::vector<NodeSystem::Node>& getNodes() const;
 
 #ifdef _DEBUG_NODESYSTEM
-	void setDebugModelAndScene(Model* model, Scene* scene);
+	void setDebugModelAndScene(Shader* shader);
 	Model* m_nodeModel;
-	Scene* m_scene;
 	std::vector<Entity::SPtr> m_nodeEntities;
 #endif
 

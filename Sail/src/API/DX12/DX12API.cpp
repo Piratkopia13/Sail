@@ -96,7 +96,7 @@ void DX12API::createDevice() {
 	wComPtr<ID3D12Debug1> debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
 		debugController->EnableDebugLayer();
-		debugController->SetEnableGPUBasedValidation(true);
+		debugController->SetEnableGPUBasedValidation(false);
 	}
 	wComPtr<IDXGIInfoQueue> dxgiInfoQueue;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf())))) {
@@ -108,7 +108,11 @@ void DX12API::createDevice() {
 	ThrowIfFailed(
 		CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_dxgiFactory.ReleaseAndGetAddressOf()))
 	);
+	// PIX programmic capture control
+	// Will fail if program is not launched from pix
+	DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa));
 #endif
+
 
 	// 2. Find comlient adapter and create device
 
@@ -269,13 +273,13 @@ void DX12API::createGlobalRootSignature() {
 	// Define descriptor range(s)
 	D3D12_DESCRIPTOR_RANGE descRangeSrvUav[2];
 	descRangeSrvUav[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	descRangeSrvUav[0].NumDescriptors = 3;
+	descRangeSrvUav[0].NumDescriptors = 10;
 	descRangeSrvUav[0].BaseShaderRegister = 0; // register bX
 	descRangeSrvUav[0].RegisterSpace = 0; // register (bX,spaceY)
 	descRangeSrvUav[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	descRangeSrvUav[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	descRangeSrvUav[1].NumDescriptors = 1;
+	descRangeSrvUav[1].NumDescriptors = 10;
 	descRangeSrvUav[1].BaseShaderRegister = 10; // register bX
 	descRangeSrvUav[1].RegisterSpace = 0; // register (bX,spaceY)
 	descRangeSrvUav[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -348,7 +352,7 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::UAV_GENERAL1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 
-	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[2];
+	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[3];
 	staticSamplerDesc[0] = {};
 	staticSamplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	staticSamplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -368,11 +372,18 @@ void DX12API::createGlobalRootSignature() {
 	staticSamplerDesc[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
 	staticSamplerDesc[1].ShaderRegister = 1;
 
+	staticSamplerDesc[2] = staticSamplerDesc[0];
+	staticSamplerDesc[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	staticSamplerDesc[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].ShaderRegister = 2;
+
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	rsDesc.NumParameters = GlobalRootParam::SIZE;
 	rsDesc.pParameters = rootParam;
-	rsDesc.NumStaticSamplers = 2;
+	rsDesc.NumStaticSamplers = ARRAYSIZE(staticSamplerDesc);
 	rsDesc.pStaticSamplers = staticSamplerDesc;
 
 	// Serialize and create the actual signature
@@ -406,17 +417,17 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 	m_dsDescriptorHeap->SetName(L"Depth/Stencil Resource Heap");
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 
 	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
 	D3D12_RESOURCE_DESC bufferDesc{};
-	bufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	bufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	bufferDesc.Width = window->getWindowWidth();
 	bufferDesc.Height = window->getWindowHeight();
 	bufferDesc.DepthOrArraySize = 1;
@@ -524,15 +535,15 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 
 	// Recreate the dsv
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 	D3D12_RESOURCE_DESC bufferDesc{};
-	bufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	bufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	bufferDesc.Width = width;
 	bufferDesc.Height = height;
 	bufferDesc.DepthOrArraySize = 1;
@@ -705,6 +716,19 @@ const D3D12_VIEWPORT* DX12API::getViewport() const {
 const D3D12_RECT* DX12API::getScissorRect() const {
 	return &m_scissorRect;
 }
+
+#ifdef _DEBUG
+void DX12API::beginPIXCapture() const {
+	if (m_pixGa) {
+		m_pixGa->BeginCapture();
+	}
+}
+void DX12API::endPIXCapture() const {
+	if (m_pixGa) {
+		m_pixGa->EndCapture();
+	}
+}
+#endif
 
 void DX12API::initCommand(Command& cmd) {
 	// Create allocators

@@ -11,8 +11,8 @@ ParsedScene::ParsedScene(const std::string& filename, Shader* shader) {
 		Logger::Error("Only FBX models are currently supported! Tried to load \"" + filename + "\"");
 	}
 
-	FBXLoader loader(DEFAULT_MODEL_LOCATION + filename, shader);
-	m_model = std::move(loader.getModel());
+	//FBXLoader loader(DEFAULT_MODEL_LOCATION + filename, shader);
+	//m_model = std::move(loader.getModel());
 }
 
 ParsedScene::~ParsedScene() {

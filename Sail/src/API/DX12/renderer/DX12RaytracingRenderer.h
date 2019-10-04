@@ -8,12 +8,17 @@
 
 class DX12RaytracingRenderer : public Renderer {
 public:
-	DX12RaytracingRenderer();
+	DX12RaytracingRenderer(DX12RenderableTexture** inputs);
 	~DX12RaytracingRenderer();
 
 	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
+	virtual void begin(Camera* camera) override;
 
 	virtual bool onEvent(Event& event) override;
+	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
+	virtual void submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) override;
+
+	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 private:
 	bool onResize(WindowResizeEvent& event);
@@ -24,4 +29,5 @@ private:
 	DXRBase m_dxr;
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 
+	std::vector<DXRBase::Metaball> m_metaballpositions;
 };

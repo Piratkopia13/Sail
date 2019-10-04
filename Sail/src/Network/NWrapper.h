@@ -20,6 +20,8 @@ public:
 	void sendMsgAllClients(std::string msg);		// by either client or host
 	void sendChatAllClients(std::string msg);		//
 	virtual void sendChatMsg(std::string msg) = 0;
+	void sendSerializedDataAllClients(std::string data);
+	void sendSerializedDataToHost(std::string data);
 
 protected:
 	Network* m_network = nullptr;
@@ -32,7 +34,6 @@ protected:
 
 private:
 	void initialize(Network* pNetwork);
-	void shutDown();
 	void handleNetworkEvents(NetworkEvent nEvent);
 
 	virtual void playerJoined(TCP_CONNECTION_ID id) = 0;

@@ -198,7 +198,7 @@ private:
 
 	TCP_CONNECTION_ID generateID();
 	bool send(const char* message, size_t size, Connection* conn);
-	void addNetworkEvent(NetworkEvent n, int dataSize);
+	void addNetworkEvent(NetworkEvent n, int dataSize, const char* data = nullptr);
 
 	/*
 		Only used by the server. This function is called in a new thread and waits for new incomming connection requests.

@@ -7,6 +7,7 @@
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
+#include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
 bool NWrapperHost::host(int port) {
@@ -51,7 +52,7 @@ void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID id) {
 
 	this->compressDCMessage(convertedId, compressedMessage);
 
-	// Send to all clients that soneone disconnected and which id.
+	// Send to all clients that someone disconnected and which id.
 	m_network->send(compressedMessage, sizeof(compressedMessage), -1);
 
 	// Send id to menu / game state
@@ -64,7 +65,6 @@ void NWrapperHost::playerReconnected(TCP_CONNECTION_ID id) {
 
 void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 	// These will be assigned in the switch case.
-	unsigned int userID;
 	std::string message;
 	char charAsInt[4] = { 0 };
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
@@ -75,20 +75,19 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 	unsigned int id_number = 0;			//
 	std::string id = "";			// used in 'm'
 	std::string remnants_m = "";
-	unsigned int id_m;
-	unsigned char id_question;
 	Message processedMessage;
+	std::string dataString;
 
-	switch (nEvent.data->rawMsg[0])
+	switch (nEvent.data->Message.rawMsg[0])
 	{
 	case 'm':
-		// The host has recieved a message from a player...
+		// The host has received a message from a player...
 
 		// Send out the already formatted message to clients so that they can process the message.
-		sendMsgAllClients(nEvent.data->rawMsg);	
+		sendMsgAllClients(nEvent.data->Message.rawMsg);	
 
 		// Process the chat message
-		processedMessage = processChatMessage((std::string)nEvent.data->rawMsg);
+		processedMessage = processChatMessage((std::string)nEvent.data->Message.rawMsg);
 
 		// Dispatch to lobby
 		Application::getInstance()->dispatchEvent(NetworkChatEvent(processedMessage));
@@ -104,17 +103,23 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		break;
 
 	case '?':
-		// The host has recieved an answer to a name request...
+		// The host has received an answer to a name request...
 
 		// TODO: move "Parse the ID and name from the message" from Host::onNameRequest to here
-		Application::getInstance()->dispatchEvent(NetworkNameEvent{ nEvent.data->rawMsg });
+		Application::getInstance()->dispatchEvent(NetworkNameEvent{ nEvent.data->Message.rawMsg });
 
 		break;
 
 	case 'w':
-		// Only clients recieve welcome packages.
+		// Only clients receive welcome packages.
 		break;
+	case 's': // Serialized data, remove first character and send the rest to be deserialized
+		dataString = std::string(nEvent.data->Message.rawMsg, nEvent.data->Message.sizeOfMsg);
+		dataString.erase(0, 1); // remove the s
 
+		// Send the serialized stringData as an event to the networkSystem which parses it.
+		Application::getInstance()->dispatchEvent(NetworkSerializedPackageEvent(dataString));
+		break;
 	default:
 		break;
 	}

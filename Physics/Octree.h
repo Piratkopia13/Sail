@@ -1,10 +1,10 @@
 #pragma once
 
 #include "BoundingBox.h"
+#include "Sphere.h"
 #include "Sail/entities/Entity.h"
 
 class Model;
-class Scene;
 
 class Octree {
 public:
@@ -12,6 +12,12 @@ public:
 		glm::vec3 normal;
 		glm::vec3 positions[3];
 		Entity* entity;
+	};
+
+	struct RayIntersectionInfo {
+		float closestHit = -1.0f;
+		int closestHitIndex = -1;
+		std::vector<CollisionInfo> info;
 	};
 
 private:
@@ -25,7 +31,6 @@ private:
 
 	Node m_baseNode;
 
-	Scene* m_scene;
 	Model* m_boundingBoxModel;
 
 	int m_softLimitMeshes;
@@ -36,12 +41,16 @@ private:
 	bool addEntityRec(Entity* newEntity, Node* currentNode);
 	bool removeEntityRec(Entity* entityToRemove, Node* currentNode);
 	void updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd);
-	void getCollisionData(Entity* entity, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, std::vector<Octree::CollisionInfo>* outCollisionData);
-	void getCollisionsRec(Entity* entity, Node* currentNode, std::vector<Octree::CollisionInfo>* outCollisionData);
+	void getCollisionData(BoundingBox* entityBoundingBox, Entity* meshEntity, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, std::vector<Octree::CollisionInfo>* outCollisionData);
+	void getCollisionData(Sphere* entitySphere, Entity* meshEntity, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, std::vector<Octree::CollisionInfo>* outCollisionData);
+	void getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, Node* currentNode, std::vector<Octree::CollisionInfo>* outCollisionData);
+	void getCollisionsRec(Entity* entity, Sphere* entitySphere, Node* currentNode, std::vector<Octree::CollisionInfo>* outCollisionData);
+	void getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData, float padding);
+	void getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding);
 	int pruneTreeRec(Node* currentNode);
 
 public:
-	Octree(Scene *scene, Model *boundingBoxModel);
+	Octree(Model *boundingBoxModel);
 	~Octree();
 
 	void addEntity(Entity* newEntity);
@@ -53,4 +62,6 @@ public:
 	void update();
 
 	void getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollisionData);
+	void getCollisionsSpheres(Entity* entity, std::vector<CollisionInfo>* outCollisionData);
+	void getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis = nullptr, float padding = 0.0f);
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h" // TODO: REMOVE
 
 #include <exception>
 #include <iostream>
@@ -152,6 +153,7 @@ namespace Utils {
 	glm::vec4 getRandomColor();
 	float clamp(float val, float min, float max);
 	float smootherstep(float edge0, float edge1, float x);
+	float wrapValue(float value, float lowerBound, float upperBound);
 
 	static std::random_device rd;
 	static std::mt19937 gen(rd());

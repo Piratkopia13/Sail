@@ -30,8 +30,10 @@ class StateStack {
 
 		// Passes input to the states in the stack
 		virtual void processInput(float dt);
-		// Updates the states in the stack
-		virtual void update(float dt);
+		// Updates the states in the stack every frame
+		virtual void update(float dt, float alpha);
+		// Updates the states in the stack every tick
+		virtual void fixedUpdate(float dt);
 		// Renders the states in the stack
 		virtual void render(float dt, float alpha);
 
@@ -44,6 +46,9 @@ class StateStack {
 
 		// Returns whether or not the stack is empty
 		bool isEmpty() const;
+
+		// Lets a state clean up itself before switching from it
+		void prepareStateChange();
 
 		// Applies all pending actions to the stack
 		void applyPendingChanges();

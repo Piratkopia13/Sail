@@ -1,7 +1,10 @@
 #pragma once
 #include "..//BaseComponentSystem.h"
+#include "../../Physics/Physics.h"
 
-class Octree;
+class GameDataTracker;
+class PhysicsComponent;
+class TransformComponent;
 
 class PhysicSystem final : public BaseComponentSystem
 {
@@ -14,5 +17,12 @@ public:
 	void update(float dt) override;
 
 private:
-	Octree* m_octree;
+	Octree* m_octree = nullptr;
+	GameDataTracker* m_gameDataTracker = nullptr;
+
+	const bool rayCastCheck(Entity* e, PhysicsComponent* physicsComp, BoundingBox* boundingBox, float& dt);
+	void rayCastUpdate(Entity* e, PhysicsComponent* physicsComp, BoundingBox* boundingBox, TransformComponent* transform, float& dt);
+	const bool collisionUpdate(Entity* thisPhysicalObject, PhysicsComponent* physicsComp, const float& dt);
+	const bool handleCollisions(Entity* e, PhysicsComponent* physicsComp, const std::vector<Octree::CollisionInfo>& collisions, const float& dt);
+	void surfaceFromCollision(Entity* e, BoundingBox* boundingBox, TransformComponent* transform, const std::vector<Octree::CollisionInfo>& collisions);
 };

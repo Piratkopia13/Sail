@@ -5,26 +5,21 @@
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
 #include "api/ImGuiHandler.h"
-#include "api/Audio/audio.hpp"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "events/IEventDispatcher.h"
 #include "utils/StateStorage.h"
+#include "RendererWrapper.h"
 
 #include <future>
 
-#include "ai/pathfinding/NodeSystem.h"
 #include "resources/loaders/AssimpLoader.h"
 // Forward declarations
 namespace ctpl {
 	class thread_pool;
 }
-
-// TODO? Move elsewhere
-const float TICKRATE = 50.0f;
-const float TIMESTEP = 1.0f / TICKRATE;
 
 class Application : public IEventDispatcher {
 
@@ -42,7 +37,8 @@ public:
 	// Required methods
 	virtual int run() = 0;
 	virtual void processInput(float dt) = 0;
-	virtual void update(float dt) = 0;
+	virtual void update(float dt, float alpha) = 0;
+	virtual void fixedUpdate(float dt) = 0;
 	virtual void render(float dt, float alpha) = 0;
 	virtual void dispatchEvent(Event& event) override;
 	virtual void applyPendingStateChanges() = 0;
@@ -84,29 +80,26 @@ public:
 	ResourceManager& getResourceManager();
 
 	MemoryManager& getMemoryManager();
-	Audio* getAudioManager();
-	NodeSystem* getNodeSystem();
+	RendererWrapper* getRenderWrapper();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
 
 private:
+
 	static Application* s_instance;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
 	ResourceManager m_resourceManager;
+	RendererWrapper m_rendererWrapper;
 
 	MemoryManager m_memoryManager;
-	Audio m_audioManager;
-	std::unique_ptr<NodeSystem> m_nodeSystem;
 	StateStorage m_stateStorage;
 
 	// Timer
 	Timer m_timer;
 	UINT m_fps;
 
-	static std::atomic_uint s_updateRunning;	
-	static std::atomic_uint s_queuedUpdates;
 	static std::atomic_bool s_isRunning;
 };

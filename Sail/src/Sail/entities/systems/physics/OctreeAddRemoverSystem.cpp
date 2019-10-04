@@ -7,8 +7,9 @@
 #include "..//..//components/CollidableComponent.h"
 
 OctreeAddRemoverSystem::OctreeAddRemoverSystem() {
-	requiredComponentTypes.push_back(BoundingBoxComponent::ID);
-	requiredComponentTypes.push_back(CollidableComponent::ID);
+	// TODO: System owner should check if this is correct
+	registerComponent<BoundingBoxComponent>(true, true, true);
+	registerComponent<CollidableComponent>(true, true, true);
 }
 
 OctreeAddRemoverSystem::~OctreeAddRemoverSystem() {
@@ -20,12 +21,12 @@ void OctreeAddRemoverSystem::provideOctree(Octree* octree) {
 	m_octree->addEntities(&entities);
 }
 
-void OctreeAddRemoverSystem::addEntity(Entity* entity) {
-	BaseComponentSystem::addEntity(entity);
-
-	if (m_octree) {
-		m_octree->addEntity(entity);
+bool OctreeAddRemoverSystem::addEntity(Entity* entity) {
+	if (BaseComponentSystem::addEntity(entity) && m_octree) {
+			m_octree->addEntity(entity);
+			return true;
 	}
+	return false;
 }
 
 void OctreeAddRemoverSystem::removeEntity(Entity* entity) {

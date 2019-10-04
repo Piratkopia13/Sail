@@ -1,11 +1,15 @@
 #pragma once
 #include "Component.h"
 #include "../Physics/BoundingBox.h"
+
+#include "Sail/graphics/geometry/Transform.h"
 class Model;
-class Transform;
 
 class BoundingBoxComponent : public Component<BoundingBoxComponent> {
 public:
+	BoundingBoxComponent() {
+
+	}
 	BoundingBoxComponent(Model* wireframe)
 		: m_wireframe(wireframe)
 	{ }
@@ -24,7 +28,7 @@ public:
 	}
 
 private:
-	Model* m_wireframe;
+	Model* m_wireframe = nullptr;
 	BoundingBox m_boundingBox;
 	Transform m_transform;
 };
