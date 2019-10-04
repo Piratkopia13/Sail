@@ -1,6 +1,5 @@
 #pragma once
 
-#include <unordered_map>
 #include <memory>
 #include <bitset>
 #include "components/Component.h"
@@ -60,7 +59,6 @@ private:
 	void setECSIndex(int index);
 
 	BaseComponent::Ptr* m_components;
-	//std::unordered_map<int, BaseComponent::Ptr> m_components;
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_componentTypes;
 	std::string m_name;
 	bool m_destructionQueued = false;
@@ -78,11 +76,6 @@ inline ComponentType* Entity::addComponent(Targs... args) {
 	}
 	m_components[ComponentType::ID] = std::make_unique<ComponentType>(args...);
 
-	/*auto res = m_components.insert({ ComponentType::ID, std::make_unique<ComponentType>(args...) });
-	if ( !res.second ) {
-		Logger::Warning("Tried to add a duplicate component to an entity");
-	}*/
-
 	m_componentTypes |= ComponentType::BID;
 
 	// Place this entity within the correct systems if told to
@@ -91,7 +84,6 @@ inline ComponentType* Entity::addComponent(Targs... args) {
 	}
 
 	// Return pointer to the inserted component
-	//return static_cast< ComponentType* >( res.first->second.get() );
 	return static_cast<ComponentType*>(m_components[ComponentType::ID].get());
 }
 
@@ -105,34 +97,11 @@ inline void Entity::removeComponent() {
 
 		// Remove this entity from systems which required the removed component
 		removeFromSystems();
-
-		//auto it = m_components.find(ComponentType::ID);
-		//if ( it != m_components.end() ) {
-		//	// Simply erasing the result of find() appears to be undefined behavior if the iterator points to end()
-		//	m_components.erase(it);
-
-		//	// Set the component type bit to 0 if it was 1
-		//	m_componentTypes ^= ComponentType::BID;
-
-		//	// Remove this entity from systems which required the removed component
-		//	removeFromSystems();
-		//}
 	}
 }
 
 template<typename ComponentType>
 inline ComponentType* Entity::getComponent() {
-	// If the following line causes compile errors, then a class 
-	// deriving from component is missing public SAIL_COMPONENT macro
-	/*if ( hasComponent<ComponentType>() ) {
-		auto it = m_components.find(ComponentType::ID);
-		if ( it != m_components.end() ) {
-			return static_cast< ComponentType* >( it->second.get() );
-		}
-	}
-
-	return nullptr;*/
-
 	return static_cast<ComponentType*>(m_components[ComponentType::ID].get());
 }
 
