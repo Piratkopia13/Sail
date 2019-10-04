@@ -25,6 +25,18 @@ enum AudioType { MUSIC };
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid")
 
+
+
+
+// HRTF
+#include <xapo.h>
+#include <hrtfapoapi.h>
+
+#pragma comment(lib, "hrtfapo.lib");
+
+#include "XAudio2Helpers.h"
+
+
 #define SOUND_COUNT 236
 #define STREAMED_SOUNDS_COUNT 20
 #define STREAMING_BUFFER_SIZE 32768
