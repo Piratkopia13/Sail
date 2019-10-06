@@ -58,30 +58,41 @@ HRTFAudioSystem::~HRTFAudioSystem()
 void HRTFAudioSystem::update(float dt)
 {
 	for (auto e : entities) {
-		auto sc = e->getComponent<SoundComponent>();
+		//auto sc = e->getComponent<SoundComponent>();
 
-		// If the component has had a sound queued initialize that sound
-		if (sc->soundQueued) {
-			initializeSound(*sc);
-			sc->soundQueued = false;
-			sc->soundPlaying = true;
+		for (auto& sound : e->getComponent<SoundComponent>()->sounds) {
+			if (sound._isPlaying || sound._isQueued) {
+				updateSoundWithNewPosition(sound);
+			}
+			if (sound._isQueued) {
+				sound.Start();
+				sound._isPlaying = true;
+				sound._isQueued = false;
+			}
 		}
 
-		// If the component is currently playing a sound update it with a new position
-		if (sc->soundPlaying) {
-			updateSoundWithNewPosition(*sc);
-		}
+		//// If the component has had a sound queued initialize that sound
+		//if (sc->soundQueued) {
+		//	initializeSound(*sc);
+		//	sc->soundQueued = false;
+		//	sc->soundPlaying = true;
+		//}
+
+		//// If the component is currently playing a sound update it with a new position
+		//if (sc->soundPlaying) {
+		//	updateSoundWithNewPosition(*sc);
+		//}
 	}
 }
 
-void HRTFAudioSystem::initializeSound(SoundComponent& sc) {
+void HRTFAudioSystem::initializeSound(OmnidirectionalSound& sound) {
 	// conversion from std::string to LPCWSTR (Long Pointer to Const Wide STRing)
-	int stringLength = MultiByteToWideChar(CP_ACP, 0, sc.filename.data(), sc.filename.length(), 0, 0);
+	int stringLength = MultiByteToWideChar(CP_ACP, 0, sound._filename.data(), sound._filename.length(), 0, 0);
 	std::wstring wstr(stringLength, 0);
-	MultiByteToWideChar(CP_ACP, 0, sc.filename.data(), sc.filename.length(), &wstr[0], stringLength);
+	MultiByteToWideChar(CP_ACP, 0, sound._filename.data(), sound._filename.length(), &wstr[0], stringLength);
 
 
-	auto hr = sc._audioFile.Initialize(wstr.c_str());
+	auto hr = sound._audioFile.Initialize(wstr.c_str());
 
 	ComPtr<IXAPO> xapo;
 	if (SUCCEEDED(hr))
@@ -94,13 +105,13 @@ void HRTFAudioSystem::initializeSound(SoundComponent& sc) {
 
 	if (SUCCEEDED(hr))
 	{
-		hr = xapo.As(&sc._hrtfParams);
+		hr = xapo.As(&sound._hrtfParams);
 	}
 
 	// Set the default environment.
 	if (SUCCEEDED(hr))
 	{
-		hr = sc._hrtfParams->SetEnvironment(sc._environment);
+		hr = sound._hrtfParams->SetEnvironment(sound._environment);
 	}
 
 
@@ -108,23 +119,23 @@ void HRTFAudioSystem::initializeSound(SoundComponent& sc) {
 	// The source voice is used to submit audio data and control playback.
 	if (SUCCEEDED(hr))
 	{
-		hr = SetupXAudio2(sc._audioFile.GetFormat(), xapo.Get(), &sc._xaudio2, &sc._sourceVoice);
+		hr = SetupXAudio2(sound._audioFile.GetFormat(), xapo.Get(), &sound._xaudio2, &sound._sourceVoice);
 	}
 
 	// Submit audio data to the source voice.
 	if (SUCCEEDED(hr))
 	{
 		XAUDIO2_BUFFER buffer{};
-		buffer.AudioBytes = static_cast<UINT32>(sc._audioFile.GetSize());
-		buffer.pAudioData = sc._audioFile.GetData();
+		buffer.AudioBytes = static_cast<UINT32>(sound._audioFile.GetSize());
+		buffer.pAudioData = sound._audioFile.GetData();
 		buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
-		hr = sc._sourceVoice->SubmitSourceBuffer(&buffer);
+		hr = sound._sourceVoice->SubmitSourceBuffer(&buffer);
 	}
 }
 
 // TODO: position stuff here
 // TODO: rewrite with glm
-void HRTFAudioSystem::updateSoundWithNewPosition(SoundComponent& sc) {
+void HRTFAudioSystem::updateSoundWithNewPosition(OmnidirectionalSound& sound) {
 	using namespace winrt::Windows::Foundation;
 
 	// TODO: get values from transform or something
@@ -182,6 +193,6 @@ void HRTFAudioSystem::updateSoundWithNewPosition(SoundComponent& sc) {
 	};
 
 	// update the source position with the new relative position
-	sc._hrtfParams->SetSourcePosition(&hrtfPosition);
+	sound._hrtfParams->SetSourcePosition(&hrtfPosition);
 
 }

@@ -3,6 +3,7 @@
 #include "Sail/entities/systems/BaseComponentSystem.h"
 
 class SoundComponent;
+class OmnidirectionalSound;
 
 class HRTFAudioSystem final : public BaseComponentSystem {
 public:
@@ -12,8 +13,8 @@ public:
 
 	void update(float dt) override;
 
-	void initializeSound(SoundComponent& sc);
-	void updateSoundWithNewPosition(SoundComponent& sc);
+	void initializeSound(OmnidirectionalSound& sc);
+	void updateSoundWithNewPosition(OmnidirectionalSound& sound);
 	// TODO:
 	//void update(float3 cameraPos, float3 fameraRot, etc)
 
