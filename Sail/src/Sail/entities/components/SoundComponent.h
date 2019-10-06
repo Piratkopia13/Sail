@@ -7,15 +7,19 @@
 //	enum SoundType { WALK, RUN, SHOOT, JUMP, LANDING, COUNT };
 //}
 
+
 class SoundComponent : public Component<SoundComponent>
 {
 public:
 	SoundComponent() {}
+
+	// TODO: clean up
 	virtual ~SoundComponent() {}
 
 	void addSound(std::string filename) {
-		OmnidirectionalSound sound(filename);
-		if (SUCCEEDED(sound.Initialize())) {
+		OmnidirectionalSound* sound = new OmnidirectionalSound(filename);
+		if (SUCCEEDED(sound->Initialize())) {
+			sound->_isQueued = true; // so that it plays
 			sounds.emplace_back(sound);
 		}
 	}
@@ -35,6 +39,6 @@ public:
 		}
 	};
 	*/
-	std::vector<OmnidirectionalSound> sounds;
+	std::vector<OmnidirectionalSound*> sounds;
 };
 

@@ -18,7 +18,8 @@
 #include "Sail/entities/systems/input/GameInputSystem.h"
 #include "Sail/entities/systems/network/NetworkReceiverSystem.h"
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
-#include "Sail/entities/systems/Audio/AudioSystem.h"
+//#include "Sail/entities/systems/Audio/AudioSystem.h"
+#include "Sail/entities/systems/Audio/HRTFAudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
@@ -26,6 +27,7 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
+
 
 #include <sstream>
 #include <iomanip>
@@ -153,8 +155,11 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
 
 	// Create system for handling and updating sounds
-	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
-	m_componentSystems.audioSystem->initialize(&m_cam);
+	//m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+	//m_componentSystems.audioSystem->initialize(&m_cam);
+	m_componentSystems.hrtfAudioSystem = ECS::Instance()->createSystem<HRTFAudioSystem>();
+
+
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -661,7 +666,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
-	runSystem(dt, m_componentSystems.audioSystem);
+	//runSystem(dt, m_componentSystems.audioSystem); // Either update here or per-frame, not in both
+	//runSystem(dt, m_componentSystems.hrtfAudioSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for ( auto& fut : m_runningSystemJobs ) {
@@ -695,7 +701,8 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
 
-	m_componentSystems.audioSystem->update(dt);
+	//m_componentSystems.audioSystem->update(dt);
+	m_componentSystems.hrtfAudioSystem->update(m_cam);
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
@@ -831,7 +838,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	player->addChildEntity(e);
 
 	// Set up camera
-	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
+	m_cam.setPosition(glm::vec3(1.6f+spawnOffset, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
 	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f+spawnOffset, 0.9f, 10.f));
 }
@@ -857,6 +864,11 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
+
+	// REMOVE: For testing audio
+	e->addComponent<SoundComponent>();
+	e->getComponent<SoundComponent>()->addSound("../Audio/guitar.wav");
+	
 
 
 	e = ECS::Instance()->createEntity("Map_Barrier1");

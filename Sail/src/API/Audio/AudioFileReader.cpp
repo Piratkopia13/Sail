@@ -11,7 +11,37 @@
 #include "pch.h"
 
 
-//#include "AudioFileReader.h"
+#include "AudioFileReader.h"
+
+
+
+// TODO: remove unneeded stuff
+#include <XAudio2.h>
+#include <xapo.h>
+#include <hrtfapoapi.h>
+#include <DirectXMath.h>
+#include <wrl\client.h>
+#include <wrl\implements.h>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <strsafe.h>
+
+#include <winrt/base.h>
+#include <winrt/Windows.Foundation.h>
+
+
+
+using namespace Microsoft::WRL;
+//using namespace Windows::UI::Xaml;
+using namespace Windows::Foundation;
+
+
+
+
+
+
+
 
 _Use_decl_annotations_
 HRESULT AudioFileReader::Initialize(LPCWSTR filename)

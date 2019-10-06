@@ -11,6 +11,8 @@
 #pragma once
 
 
+#include <mmreg.h>
+
 //
 // Helper class uses MediaFoundation to read audio files
 //

@@ -12,9 +12,28 @@
 #pragma once
 
 
+// TODO: remove unneeded stuff
+#include <XAudio2.h>
+#include <xapo.h>
+#include <hrtfapoapi.h>
+#include <DirectXMath.h>
+#include <wrl\client.h>
+#include <wrl\implements.h>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <strsafe.h>
+
+#include <winrt/base.h>
+#include <winrt/Windows.Foundation.h>
+
 // Sets up XAudio2 for HRTF processing
 static HRESULT SetupXAudio2(_In_ const WAVEFORMATEX* format, _In_ IXAPO* xApo, _Outptr_ IXAudio2** xAudio2, _Outptr_ IXAudio2SourceVoice** sourceVoice)
 {
+	using namespace Microsoft::WRL;
+	//using namespace Windows::UI::Xaml;
+	using namespace Windows::Foundation;
+
 	// Initialize XAudio2 for HRTF processing with "XAUDIO2_1024_QUANTUM" flag which specifies processing frame size of 1024 samples.
 	ComPtr<IXAudio2> xAudio2Instance;
 	auto hr = XAudio2Create(&xAudio2Instance, XAUDIO2_1024_QUANTUM);
