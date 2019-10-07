@@ -34,10 +34,12 @@ Entity::Entity(const std::string& name)
 {
 	m_id = s_id++;
 	m_ECSIndex = -1;
+
+	m_components = SAIL_NEW BaseComponent::Ptr[BaseComponent::nrOfComponentTypes()];
 }
 
 Entity::~Entity() {
-
+	delete[] m_components;
 }
 
 bool Entity::hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const {
@@ -56,7 +58,10 @@ void Entity::queueDestruction() {
 
 // TODO: should only be able to be called on entities with m_destructionQueued == true
 void Entity::removeAllComponents() {
-	m_components.clear();
+	for (int i = 0; i < BaseComponent::nrOfComponentTypes(); i++) {
+		m_components[i].reset(nullptr);
+	}
+	//m_components.clear();
 	m_componentTypes = std::bitset<MAX_NUM_COMPONENTS_TYPES>(0);
 	removeFromSystems();
 }

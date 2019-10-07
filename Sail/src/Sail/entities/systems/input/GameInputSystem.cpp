@@ -56,9 +56,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		Movement playerMovement = getPlayerMovementInput(e);
 
 		// Player puts down candle
+#ifndef _DEBUG
 		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
 			putDownCandle(e);
 		}
+#endif
 
 		// Calculate forward vector for player
 		glm::vec3 forward = m_cam->getCameraDirection();
