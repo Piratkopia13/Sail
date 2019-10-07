@@ -73,17 +73,18 @@ template<typename ComponentType, typename... Targs>
 inline ComponentType* Entity::addComponent(Targs... args) {
 	if (m_components[ComponentType::ID]) {
 		Logger::Warning("Tried to add a duplicate component to an entity");
+	} else {
+		m_components[ComponentType::ID] = std::make_unique<ComponentType>(args...);
+
+		m_componentTypes |= ComponentType::BID;
+
+		// Place this entity within the correct systems if told to
+		if (tryToAddToSystems) {
+			addToSystems();
+		}
 	}
-	m_components[ComponentType::ID] = std::make_unique<ComponentType>(args...);
 
-	m_componentTypes |= ComponentType::BID;
-
-	// Place this entity within the correct systems if told to
-	if ( tryToAddToSystems ) {
-		addToSystems();
-	}
-
-	// Return pointer to the inserted component
+	// Return pointer to the component
 	return static_cast<ComponentType*>(m_components[ComponentType::ID].get());
 }
 
