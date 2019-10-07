@@ -1174,9 +1174,13 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	if (botCount < 0) {
 		botCount = 0;
 	}// TODO: Remove this when more bots can be added safely
-	//else if (botCount > 1) {
-	//	botCount = 1;
-	//}
+#ifdef _DEBUG
+	if (botCount > 1) {
+		botCount = 0;
+	}
+#endif // _DEBUG
+
+
 	for (size_t i = 0; i < botCount; i++) {		
 		auto e = ECS::Instance()->createEntity("AiCharacter");
 		e->addComponent<ModelComponent>(characterModel);
