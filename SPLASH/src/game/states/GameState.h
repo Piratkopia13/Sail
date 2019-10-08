@@ -128,6 +128,7 @@ private:
 	std::string m_ftCount;
 
 	bool m_paused = false;
+	bool m_isSingleplayer = true;
 	
 	Octree* m_octree;
 	bool m_disableLightComponents;

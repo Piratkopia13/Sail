@@ -3,10 +3,12 @@
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/graphics/geometry/Model.h"
+#include "Sail/graphics/camera/Camera.h"
 
 #include "Intersection.h"
 
 #include "Octree.h"
+
 
 Octree::Octree(Model* boundingBoxModel) {
 	
@@ -467,6 +469,27 @@ int Octree::pruneTreeRec(Node* currentNode) {
 	return returnValue;
 }
 
+int Octree::frustumCulledDrawRec(const Frustum& frustum, Node* currentNode) {
+	int returnValue = 0;
+
+	//Check if node is in frustum
+	if (Intersection::FrustumWithAabb(frustum, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) {
+		//In frustum
+
+		//Draw meshes in node
+		for (int i = 0; i < currentNode->nrOfEntities; i++) {
+			//TODO: Let the renderer know that this entity should be rendered.
+			returnValue++;
+		}
+
+		//Call draw for all children
+		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
+			returnValue += frustumCulledDrawRec(frustum, &currentNode->childNodes[i]);
+		}
+	}
+	return returnValue;
+}
+
 void Octree::addEntity(Entity* newEntity) {
 	//See if the base node needs to be bigger
 	glm::vec3 directionVec = findCornerOutside(newEntity, &m_baseNode);
@@ -521,4 +544,8 @@ void Octree::getCollisionsSpheres(Entity* entity, std::vector<CollisionInfo>* ou
 
 void Octree::getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding) {
 	getRayIntersectionRec(rayStart, rayDir, &m_baseNode, outIntersectionData, ignoreThis, padding);
+}
+
+int Octree::frustumCulledDraw(Camera& camera) {
+	return frustumCulledDrawRec(camera.getFrustum(), &m_baseNode);
 }

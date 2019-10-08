@@ -21,8 +21,9 @@ ECS::~ECS() {
 }
 
 void ECS::stopAllSystems() {
-	for (auto &i : m_systems) {
-		i.second->stop();
+	for (auto& sys : m_systems) {
+		sys.second->stop();
+		sys.second->clearEntities();
 	}
 }
 
@@ -81,6 +82,9 @@ void ECS::destroyAllEntities() {
 		e->removeAllComponents();
 		e->removeFromSystems();
 	}
+
+	stopAllSystems();
+
 	m_entities.clear();
 }
 

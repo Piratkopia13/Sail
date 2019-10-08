@@ -21,6 +21,7 @@ public:
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
 	void clean();
+	void stop() override;
 	void updateCameraPosition(float alpha);
 
 private:

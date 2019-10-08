@@ -47,6 +47,10 @@ void GameInputSystem::clean() {
 	Memory::SafeDelete(m_cam);
 }
 
+void GameInputSystem::stop() {
+	clean();
+}
+
 void GameInputSystem::processKeyboardInput(const float& dt) {
 	for (auto e : entities) {
 		MovementComponent* movement = e->getComponent<MovementComponent>();
