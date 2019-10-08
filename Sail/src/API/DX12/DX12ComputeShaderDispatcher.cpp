@@ -49,13 +49,11 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		} else {
 			dxShaderPipeline->setTexture2D(tex.first, (Texture*)texture, dxCmdList);
 		}
-		// Skip the next 2 heap slots to match root signature layout
+		// Skip the next 9 heap slots to match root signature layout
 		// TODO: read this from the root signature, currently it will crash if the root signature changes num srv descriptors
-		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
-		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
+		m_context->getComputeGPUDescriptorHeap()->getAndStepIndex(9);
 	}
 	// Bind output resources
-	/*dxShaderPipeline->bind_new(dxCmdList, 3); // TODO: why 3?*/
 	dxShaderPipeline->bind_new(dxCmdList, meshIndex);
 
 	dxShaderPipeline->dispatch(input.threadGroupCountX, input.threadGroupCountY, input.threadGroupCountZ, dxCmdList);
