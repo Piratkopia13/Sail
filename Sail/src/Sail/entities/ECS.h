@@ -32,7 +32,7 @@ class EntityRemovalSystem;
 		PhysicSystem* ps = ecs->createSystem<PhysicSystem>();
 		Entity::SPtr e = ecs->createEntity("FirstEntity");
 		e->addComponent<TransformComponent>();
-		e->addComponent<PhysicsComponent>(glm::vec3(1, 2, 3));
+		e->addComponent<MovementComponent>(glm::vec3(1, 2, 3));
 		entities.push_back(e);
 
 

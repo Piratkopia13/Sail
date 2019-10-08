@@ -8,9 +8,10 @@
 #include "Sail/entities/components/LifeTimeComponent.h"
 #include "Sail/entities/components/BoundingBoxComponent.h"
 #include "Sail/entities/components/ModelComponent.h"
-#include "Sail/entities/components/PhysicsComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
+#include "Sail/entities/components/CollisionComponent.h"
 
 #include "Sail/entities/components/MetaballComponent.h"
 #include "Sail/utils/GameDataTracker.h"
@@ -54,19 +55,19 @@ void GunSystem::update(float dt) {
 						randPos.b = ((float)rand() / RAND_MAX) * maxrand;
 
 						e->addComponent<MetaballComponent>();
-						e->addComponent<BoundingBoxComponent>();
-						e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
+						e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
 						e->addComponent<LifeTimeComponent>(4.0f);
 						e->addComponent<ProjectileComponent>();
 						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
 
-						e->addComponent<PhysicsComponent>();
-						PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-						physics->velocity = gun->direction * gun->projectileSpeed;
-						physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
-						physics->drag = 2.0f;
-						physics->bounciness = 0.1f;
-						physics->padding = 0.16f;
+						MovementComponent* movement = e->addComponent<MovementComponent>();
+						movement->velocity = gun->direction * gun->projectileSpeed;
+						movement->acceleration = glm::vec3(0.f, -9.8f, 0.f);
+
+						CollisionComponent* collision = e->addComponent<CollisionComponent>();
+						collision->drag = 2.0f;
+						collision->bounciness = 0.1f;
+						collision->padding = 0.16f;
 
 						m_gameDataTracker->logWeaponFired();
 					}

@@ -13,6 +13,10 @@
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<PlayerComponent>(true, true, false);
+	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<SpeedLimitComponent>(true, true, false);
+	registerComponent<CollisionComponent>(true, true, false);
+	registerComponent<AudioComponent>(true, true, true);
 	
 	// cam variables
 	m_yaw = 90.f;
@@ -44,13 +48,11 @@ void GameInputSystem::clean() {
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
-
-
-	
 	for (auto e : entities) {
-		PhysicsComponent* physicsComp = e->getComponent<PhysicsComponent>();
-		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
-		AudioComponent* audioComp = e->getComponent<AudioComponent>();
+		MovementComponent* movement = e->getComponent<MovementComponent>();
+		CollisionComponent* collision = e->getComponent<CollisionComponent>();
+		SpeedLimitComponent* speedLimit = e->getComponent<SpeedLimitComponent>();
+		AudioComponent* audio = e->getComponent<AudioComponent>();
 
 		// Get player movement inputs
 		Movement playerMovement = getPlayerMovementInput(e);
@@ -74,27 +76,27 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		// Prevent division by zero
 		if (playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f) {
 			// Calculate total movement
-			float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
-			if (!physicsComp->onGround) {
+			float acceleration = 70.0f - (glm::length(movement->velocity) / speedLimit->maxSpeed) * 20.0f;
+			if (!collision->onGround) {
 				acceleration = acceleration * 0.5f;
 				// AUDIO TESTING (turn OFF looping running sound)
-				audioComp->m_isPlaying[SoundType::RUN] = false;
+				audio->m_isPlaying[SoundType::RUN] = false;
 			}
 			// AUDIO TESTING (playing a looping running sound)
 			else if (m_runSoundTimer > 0.3f) {
-				audioComp->m_isPlaying[SoundType::RUN] = true;
+				audio->m_isPlaying[SoundType::RUN] = true;
 			}
 			else {
 				m_runSoundTimer += dt;
 			}
 
-			physicsComp->accelerationToAdd = 
+			movement->accelerationToAdd =
 				glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
 				* acceleration;
 		}
 		else {
 			// AUDIO TESTING (turn OFF looping running sound)
-			audioComp->m_isPlaying[SoundType::RUN] = false;
+			audio->m_isPlaying[SoundType::RUN] = false;
 			m_runSoundTimer = 0.0f;
 		}
 	}
@@ -165,9 +167,9 @@ void GameInputSystem::putDownCandle(Entity* e) {
 		auto candleComp = candleE->getComponent<CandleComponent>();
 
 		auto candleTransComp = candleE->getComponent<TransformComponent>();
-		PhysicsComponent* playerPhysicsComp = e->getComponent<PhysicsComponent>();
+		CollisionComponent* collision = e->getComponent<CollisionComponent>();
 		auto playerTransComp = e->getComponent<TransformComponent>();
-		if (candleComp->isCarried() && playerPhysicsComp->onGround) {
+		if (candleComp->isCarried() && collision->onGround) {
 			candleComp->toggleCarried();
 
 			candleTransComp->removeParent();
@@ -186,17 +188,15 @@ void GameInputSystem::putDownCandle(Entity* e) {
 
 Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	Movement playerMovement;
-	PhysicsComponent* playerPhysicsComp = e->getComponent<PhysicsComponent>();
-
+	
 	if (Input::IsKeyPressed(KeyBinds::sprint)) { playerMovement.speedModifier = m_runSpeed; }
-
 	if (Input::IsKeyPressed(KeyBinds::moveForward)) { playerMovement.forwardMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveBackward)) { playerMovement.forwardMovement -= 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveLeft)) { playerMovement.rightMovement -= 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveRight)) { playerMovement.rightMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
-		if (!m_wasSpacePressed && playerPhysicsComp->onGround) {
-			playerPhysicsComp->velocity.y = 5.0f;
+		if (!m_wasSpacePressed && e->getComponent<CollisionComponent>()->onGround) {
+			e->getComponent<MovementComponent>()->velocity.y = 5.0f;
 			// AUDIO TESTING - JUMPING
 			e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
 			m_gameDataTracker->logJump();

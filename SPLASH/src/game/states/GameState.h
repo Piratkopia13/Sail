@@ -10,7 +10,9 @@ class EntityRemovalSystem;
 class LifeTimeSystem;
 class LightSystem;
 class OctreeAddRemoverSystem;
-class PhysicSystem;
+class MovementSystem;
+class CollisionSystem;
+class SpeedLimitSystem;
 class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
@@ -76,7 +78,6 @@ private:
 		LifeTimeSystem* lifeTimeSystem = nullptr;
 		LightSystem* lightSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
-		PhysicSystem* physicSystem = nullptr;
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 		GunSystem* gunSystem = nullptr;
@@ -87,6 +88,9 @@ private:
 		AudioSystem* audioSystem = nullptr;
 		RenderSystem* renderSystem = nullptr;
 		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
+		MovementSystem* movementSystem = nullptr;
+		CollisionSystem* collisionSystem = nullptr;
+		SpeedLimitSystem* speedLimitSystem = nullptr;
 	};
 
 	Application* m_app;
