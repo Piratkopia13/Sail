@@ -393,7 +393,7 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 
-	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
+	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
@@ -408,10 +408,13 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 	return true;
 }
 
-bool GameState::onPlayerCandleHit(PlayerCandleHitEvent& event) {
-	this->requestStackPop();
-	this->requestStackPush(States::EndGame);
-	m_poppedThisFrame = true;
+bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
+	// TODO: Initiate spectator mode
+
+
+	//this->requestStackPop();
+	//this->requestStackPush(States::EndGame);
+	//m_poppedThisFrame = true;
 	return true;
 }
 
