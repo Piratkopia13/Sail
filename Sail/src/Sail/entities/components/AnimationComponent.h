@@ -16,7 +16,7 @@ public:
 		nextAnimation(nullptr),
 		blending(false),
 		dataSize(0),
-		computeUpdate(false),
+		computeUpdate(true),
 		//transformedPositions(nullptr),
 		//transformedNormals(nullptr),
 		//transformedTangents(nullptr),

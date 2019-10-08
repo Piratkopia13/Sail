@@ -108,6 +108,12 @@ void ShaderPipeline::parse(const std::string& source) {
 		parsedData.cBuffers.reserve(numCBuffers);
 	}
 	{
+		int numStructBuffers = 0;
+		src = cleanSource.c_str();
+		while (src = findToken("StructuredBuffer", src)) numStructBuffers++;
+		parsedData.structuredBuffers.reserve(numStructBuffers);
+	}
+	{
 		int numSamplers = 0;
 		src = cleanSource.c_str();
 		while (src = findToken("SamplerState", src)) numSamplers++;
@@ -244,16 +250,24 @@ void ShaderPipeline::parseStructuredBuffer(const char* source) {
 	std::string type = nextTokenAsType(source, tokenSize);
 	source += tokenSize;
 
+
 	tokenSize = 0;
 	std::string name = nextTokenAsName(source, tokenSize);
 	source += tokenSize;
+	auto bindShader = getBindShaderFromName(name);
 
 	int slot = findNextIntOnLine(source);
 	if (slot == -1) {
 		slot = 0; // No slot specified, use 0 as default
 	}
 
-	parsedData.structuredBuffers.emplace_back(name, slot);
+	UINT numElements = 1; // Buffers larger than one element will have to resize on first usage
+	UINT stride = getSizeOfType(type);
+	UINT size = numElements * stride;
+
+	void* initData = malloc(size);
+	memset(initData, 0, size);
+	parsedData.structuredBuffers.emplace_back(name, initData, size, numElements, stride, bindShader, slot);
 }
 
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
@@ -351,6 +365,24 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 	return false;
 }
 
+void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT size) {
+	bool success = trySetStructBufferVar(name, data, size);
+	if (!success) {
+		Logger::Warning("Tried to set StructuredBuffer variable that did not exist (" + name + ")");
+	}
+}
+
+bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT size) {
+	for (auto& it : parsedData.structuredBuffers) {
+		if (it.name == name) {
+			ShaderComponent::StructuredBuffer& sbuffer = *it.sBuffer.get();
+			sbuffer.updateData(data, size);
+			return true;
+		}
+	}
+	return false;
+}
+
 // TODO: registerTypeSize(typeName, size)
 UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "uint") { return 4; }
@@ -368,6 +400,8 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "PointLightInput") { return 272; }
 	if (typeName == "DeferredPointLightData") { return 48; }
 	if (typeName == "DeferredDirLightData") { return 32; }
+	if (typeName == "Vertex") { return 4 * 13; }
+	if (typeName == "VertConnections") { return 4 + 4*5 + 4*5; }
 
 	Logger::Error("Found shader variable type with unknown size (" + typeName + ")");
 	return 0;

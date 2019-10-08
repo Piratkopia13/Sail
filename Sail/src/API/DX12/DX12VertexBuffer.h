@@ -12,10 +12,14 @@ public:
 	void update(Mesh::Data& data);
 	bool hasBeenUpdated() const;
 	void resetHasBeenUpdated();
+	void init(ID3D12GraphicsCommandList4* cmdList);
 
 private:
 	DX12API* m_context;
-	std::vector<wComPtr<ID3D12Resource1>> m_vertexBuffers;
+	unsigned int m_byteSize;
+	std::vector<wComPtr<ID3D12Resource1>> m_uploadVertexBuffers;
+	std::vector<wComPtr<ID3D12Resource1>> m_defaultVertexBuffers;
+	std::vector<bool> m_hasBeenInitialized;
 	std::vector<bool> m_hasBeenUpdated;
 };
 

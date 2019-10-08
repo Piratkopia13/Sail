@@ -1,22 +1,22 @@
 #define SAIL_BONES_PER_VERTEX 5
-struct Vertex {
+struct Vertex { // Size of this type is hardcoded in ShaderPipeline.cpp - change this if struct changes
 	float3 position;
 	float2 texCoords;
 	float3 normal;
 	float3 tangent;
 	float3 bitangent;
 };
-struct VertConnections {
+struct VertConnections { // Size of this type is hardcoded in ShaderPipeline.cpp - change this if struct changes
 	unsigned int count;
 	unsigned int transform[SAIL_BONES_PER_VERTEX];
 	float weight[SAIL_BONES_PER_VERTEX];
 };
 
-StructuredBuffer<float4x4> m_transforms : register();
-StructuredBuffer<Vertex> m_vertices : register();
-StructuredBuffer<VertConnections> m_vertConnections : register();
+StructuredBuffer<float4x4> CSTransforms : register(t0);
+StructuredBuffer<Vertex> CSVertices : register(t1);
+StructuredBuffer<VertConnections> CSVertConnections : register(t2);
 
-RWStructuredBuffer<Vertex> m_vertexBuffer: register();
+RWStructuredBuffer<Vertex> CSVertexBuffer: register(u0);
 
 struct ComputeShaderInput {
 	uint3 GroupID           : SV_GroupID;           // 3D index of the thread group in the dispatch.
@@ -28,6 +28,6 @@ struct ComputeShaderInput {
 [numthreads(1, 1, 1)]
 void CSMain(ComputeShaderInput input) {
     
-	m_vertexBuffer[dispatchThreadID.xy].texCoords = 0.0f;
+	CSVertexBuffer[input.DispatchThreadID.x].texCoords = 0.0f;
 
 }

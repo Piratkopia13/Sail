@@ -83,6 +83,7 @@ public:
 	RendererWrapper* getRenderWrapper();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
+	float getDelta() const;
 
 private:
 
@@ -100,6 +101,7 @@ private:
 	// Timer
 	Timer m_timer;
 	UINT m_fps;
+	float m_delta;
 
 	static std::atomic_bool s_isRunning;
 };

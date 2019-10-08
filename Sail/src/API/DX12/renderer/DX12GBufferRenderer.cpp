@@ -14,6 +14,7 @@
 #include "../DX12Utils.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "Sail/entities/ECS.h"
+#include "../DX12VertexBuffer.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
 	Application* app = Application::getInstance();
@@ -124,13 +125,18 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 		// Update animations on compute shader here
 
-		ECS::Instance()->getSystem<AnimationSystem>()->setCommandList(cmdList.Get());
+		auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem>();
+		if (animationSystem) { 
+			animationSystem->updateOnGPU(Application::getInstance()->getDelta(), cmdList.Get());
+		}
 
 
-		// Init all textures - this needs to be done on ONE thread
+		// Init all vbuffers and textures - this needs to be done on ONE thread
 		// TODO: optimize!
 		int meshIndex = 0;
 		for (auto& renderCommand : commandQueue) {
+			auto& vbuffer = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
+			vbuffer.init(cmdList.Get());
 			for (int i = 0; i < 3; i++) {
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
 				if (tex && !tex->hasBeenInitialized()) {

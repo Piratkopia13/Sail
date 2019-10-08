@@ -10,12 +10,10 @@ public:
 	AnimationSystem();
 	~AnimationSystem();
 
-	void setCommandList(ID3D12GraphicsCommandList4* cmdList);
 	void update(float dt) override;
+	void updateOnGPU(float dt, ID3D12GraphicsCommandList4* cmdList);
 
 private:
-
-	ID3D12GraphicsCommandList4* m_cmdList;
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
 	Shader* m_updateShader;
 	

@@ -288,6 +288,9 @@ void DX12API::createGlobalRootSignature() {
 	m_globalRootSignatureRegisters["t0"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
 	m_globalRootSignatureRegisters["t1"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
 	m_globalRootSignatureRegisters["t2"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+	m_globalRootSignatureRegisters["u0"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+	m_globalRootSignatureRegisters["u1"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+	m_globalRootSignatureRegisters["u2"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
 
 	// Create descriptor table
 	D3D12_ROOT_DESCRIPTOR_TABLE dtSrvUav;

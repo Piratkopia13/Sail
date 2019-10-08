@@ -6,7 +6,6 @@ class AnimationUpdateComputeShader : public Shader {
 public:
 	class Input : public Shader::ComputeShaderInput {
 	public:
-
 	};
 	class Output : public Shader::ComputeShaderOutput {
 	public:

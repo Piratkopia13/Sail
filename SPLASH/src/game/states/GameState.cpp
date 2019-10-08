@@ -858,11 +858,11 @@ void GameState::loadAnimations() {
 	//m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-#ifndef _DEBUG
+//#ifndef _DEBUG
 	//m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-#endif
+//#endif
 
 
 
@@ -911,7 +911,7 @@ void GameState::initAnimations() {
 	animationEntity3->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity3->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/BaseMesh_Anim.fbx"));
 	animationEntity3->getComponent<AnimationComponent>()->currentAnimation = animationEntity3->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);*/
-#ifndef _DEBUG
+//#ifndef _DEBUG
 	//auto animationEntity4 = ECS::Instance()->createEntity("animatedModel4");
 	//animationEntity4->addComponent<TransformComponent>();
 	//animationEntity4->getComponent<TransformComponent>()->translate(-1,2,-3);
@@ -936,7 +936,7 @@ void GameState::initAnimations() {
 	}
 	
 
-#endif
+//#endif
 
 
 
