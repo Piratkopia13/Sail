@@ -91,6 +91,14 @@ bool CandleComponent::isCarried() const {
 	return m_carried;
 }
 
+void CandleComponent::setWasCarriedLastUpdate(const bool wasCarried) {
+	m_wasCarriedLastUpdate = wasCarried;
+}
+
+bool CandleComponent::getWasCarriedLastUpdate() const {
+	return m_wasCarriedLastUpdate;
+}
+
 void CandleComponent::toggleCarried() {
 	m_carried = !m_carried;
 }

@@ -16,6 +16,9 @@ public:
 	void lightCandle(const std::string& name);
 
 	void update(float dt) override;
+
+	void putDownCandle(Entity* e);
+
 private:
 	int m_playerEntityID;
 	float m_candleForceRespawnTimer = 15.f;

@@ -19,6 +19,8 @@ public:
 	void addToDownTime(float time);
 	void resetDownTime();
 	bool isCarried() const;
+	void setWasCarriedLastUpdate(const bool wasCarried);
+	bool getWasCarriedLastUpdate() const;
 	void toggleCarried();
 	float getDownTime() const;
 	bool getIsLit() const;
@@ -34,6 +36,7 @@ private:
 	bool m_isAlive = true;
 	bool m_activate = true;
 	bool m_carried = true;
+	bool m_wasCarriedLastUpdate = true;
 
 	/* Should probably be removed later */
 	float m_downTime = 0.f;

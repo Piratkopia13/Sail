@@ -8,6 +8,9 @@
 
 #include "Sail/graphics/camera/CameraController.h"
 
+#include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
+
 #include "Sail/Application.h"
 
 CandleSystem::CandleSystem() : BaseComponentSystem() {
@@ -41,6 +44,11 @@ void CandleSystem::update(float dt) {
 
 		auto candle = e->getComponent<CandleComponent>();
 
+
+		if ( candle->isCarried() != candle->getWasCarriedLastUpdate() ) {
+			putDownCandle(e);
+		}
+
 		
 		if ( candle->getIsAlive() ) {
 			// Remove light from candles that were hit by projectiles
@@ -49,9 +57,11 @@ void CandleSystem::update(float dt) {
 				e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
 				candle->setIsLit(false);
 
+				if ( candle->getOwner() == m_playerEntityID ) {
+					candle->toggleCarried();
+				}
+
 				if ( candle->getNumRespawns() == m_maxNumRespawns ) {
-					Logger::Log(e->getName() + ": Lel, I'm dead...");
-					candle->incrementRespawns();
 					candle->setIsAlive(false);
 
 					// Check if the extinguished candle is owned by the player
@@ -71,8 +81,30 @@ void CandleSystem::update(float dt) {
 				candle->addToDownTime(dt);
 			}
 
+			candle->setWasCarriedLastUpdate(candle->isCarried());
 			glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
 			e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
+		}
+	}
+}
+
+void CandleSystem::putDownCandle(Entity* e) {
+	auto candleComp = e->getComponent<CandleComponent>();
+
+	auto candleTransComp = e->getComponent<TransformComponent>();
+	auto parentTransComp = e->getParent()->getComponent<TransformComponent>();
+	/* TODO: Raycast and see if the hit location is ground within x units */
+	if ( !candleComp->isCarried() ) {
+		candleTransComp->removeParent();
+		glm::vec3 dir = glm::vec3(1.0f, 0.f, 1.0f);// TODO: parentTransComp->getForward()
+		candleTransComp->setTranslation(parentTransComp->getTranslation() + dir);
+		ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+	} else if ( candleComp->isCarried() ) {
+		if ( glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f ) {
+			candleTransComp->setTranslation(glm::vec3(0.f, 2.0f, 0.f));
+			candleTransComp->setParent(parentTransComp);
+		} else {
+			candleComp->toggleCarried();
 		}
 	}
 }
