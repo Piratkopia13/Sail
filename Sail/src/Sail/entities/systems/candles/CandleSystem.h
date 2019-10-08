@@ -3,7 +3,7 @@
 #include "Sail/entities/systems/BaseComponentSystem.h"
 
 #define INVINCIBLE_DURATION 1.0f
-#define MAX_HEALTH 10
+#define MAX_HEALTH 100.0f
 
 class CameraController;
 class LightSetup;
@@ -21,7 +21,7 @@ public:
 	void update(float dt) override;
 private:
 	int m_playerEntityID;
-	int m_health = 10;
+	float m_health = MAX_HEALTH;
 	bool m_isHit = false;
 	float m_invincibleTimer = INVINCIBLE_DURATION;
 

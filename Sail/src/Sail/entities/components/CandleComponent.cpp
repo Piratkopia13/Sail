@@ -9,7 +9,8 @@ CandleComponent::~CandleComponent() {
 
 }
 
-void CandleComponent::hitWithWater() {
+void CandleComponent::hitWithWater(int damage) {
+	m_damageTakenLastHit = damage;
 	m_wasHitByWater = true;
 }
 
@@ -67,6 +68,10 @@ void CandleComponent::setOwner(int playerEntityID) {
 
 int CandleComponent::getOwner() const {
 	return m_playerEntityID;
+}
+
+int CandleComponent::getDamageTakenLastHit() const {
+	return m_damageTakenLastHit;
 }
 
 bool CandleComponent::isCarried() const {

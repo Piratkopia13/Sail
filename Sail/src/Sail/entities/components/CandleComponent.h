@@ -7,7 +7,7 @@ public:
 	CandleComponent();
 	virtual ~CandleComponent();
 
-	void hitWithWater();
+	void hitWithWater(int damage);
 	void resetHitByWater();
 	bool wasHitByWater() const;
 	bool getIsAlive() const;
@@ -23,10 +23,11 @@ public:
 	float getDownTime() const;
 	void setOwner(int playerEntityID);
 	int getOwner() const;
-
+	int getDamageTakenLastHit() const;
 
 private:
 	bool m_wasHitByWater = false;
+	int m_damageTakenLastHit = 0;
 	bool m_isAlive = true;
 	bool m_activate = true;
 	bool m_carried = true;

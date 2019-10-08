@@ -52,14 +52,12 @@ void CandleSystem::update(float dt) {
 			}
 		}
 
-		else if (candle->wasHitByWater() && m_health > 0) {
+		else if (candle->wasHitByWater() && m_health > 0.0f) {
 			m_isHit = true;
-			m_health--;
+			m_health -= candle->getDamageTakenLastHit();
 
-			float tempNewHealth = (static_cast<float>(m_health) / static_cast<float>(MAX_HEALTH));
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempNewHealth, tempNewHealth, tempNewHealth));
-			
-			if (m_health == 0) {
+			if (m_health <= 0.0f) {
+				m_health = 0.0f;
 				candle->setIsAlive(false);
 
 				// Check if the extinguished candle is owned by the player
@@ -70,7 +68,6 @@ void CandleSystem::update(float dt) {
 			}
 		}
 		else if (!candle->getIsAlive() && candle->getDownTime() >= 4.0f /* Relight the candle every 5 seconds (should probably be removed later) */) {
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 			candle->setIsAlive(true);
 			m_health = MAX_HEALTH;
 			candle->resetDownTime();
@@ -79,6 +76,10 @@ void CandleSystem::update(float dt) {
 			candle->addToDownTime(dt);
 		}
 
+		// COLOR/INTENSITY
+		float tempHealthRatio = (m_health / MAX_HEALTH);
+		e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio, tempHealthRatio));
+		// POS-OF-LIGHT/-FLAME
 		glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
 		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
