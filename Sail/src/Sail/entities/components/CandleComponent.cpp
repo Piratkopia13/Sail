@@ -9,7 +9,7 @@ CandleComponent::~CandleComponent() {
 
 }
 
-void CandleComponent::hitWithWater(int damage) {
+void CandleComponent::hitWithWater(float damage) {
 	m_damageTakenLastHit = damage;
 	m_wasHitByWater = true;
 }

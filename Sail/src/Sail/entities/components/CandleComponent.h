@@ -7,7 +7,7 @@ public:
 	CandleComponent();
 	virtual ~CandleComponent();
 
-	void hitWithWater(int damage);
+	void hitWithWater(float damage);
 	void resetHitByWater();
 	bool wasHitByWater() const;
 	bool getIsAlive() const;
@@ -27,7 +27,7 @@ public:
 
 private:
 	bool m_wasHitByWater = false;
-	int m_damageTakenLastHit = 0;
+	float m_damageTakenLastHit = 0;
 	bool m_isAlive = true;
 	bool m_activate = true;
 	bool m_carried = true;
