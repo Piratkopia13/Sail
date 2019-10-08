@@ -16,7 +16,7 @@
 #include <string>
 
 
-OmnidirectionalSound::OmnidirectionalSound(const std::string& path) : _filename(path)
+OmnidirectionalSound::OmnidirectionalSound(const std::string& path) : _filename(path), _positionOffset({0,10,0})
 {
 	/*int stringLength = MultiByteToWideChar(CP_ACP, 0, path.data(), path.length(), 0, 0);
 	std::wstring wstr(stringLength, 0);

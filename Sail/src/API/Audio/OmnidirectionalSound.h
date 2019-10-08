@@ -84,9 +84,10 @@ public:
 
 //private:
 	std::string                 _filename = "";
+	glm::vec3                   _positionOffset;
 	bool                        _isQueued = false;
 	bool                        _isPlaying = false;
-	AudioFileReader             _audioFile;
+	AudioFileReader             _audioFile; // TODO: remove
 	ComPtr<IXAudio2>            _xaudio2;
 	IXAudio2SourceVoice*        _sourceVoice = nullptr;
 	ComPtr<IXAPOHrtfParameters> _hrtfParams;

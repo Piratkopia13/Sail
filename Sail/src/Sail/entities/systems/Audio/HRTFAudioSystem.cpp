@@ -96,7 +96,7 @@ void HRTFAudioSystem::update(Camera& cam, float alpha) const {
 		for (auto& sound : e->getComponent<SoundComponent>()->sounds) {
 			if (sound->_isPlaying || sound->_isQueued) {
 				//auto* transform = e->getComponent<TransformComponent>();
-				updateSoundWithNewPosition(*sound, cam, *e->getComponent<TransformComponent>(), alpha);
+				updateSoundWithCurrentPosition(*sound, cam, *e->getComponent<TransformComponent>(), alpha);
 			}
 			if (sound->_isQueued) {
 				sound->Start();
@@ -167,26 +167,19 @@ void HRTFAudioSystem::initializeSound(OmnidirectionalSound& sound) const {
 	}
 }
 
-// TODO: position offset stuff
-void HRTFAudioSystem::updateSoundWithNewPosition(OmnidirectionalSound& sound, Camera& cam, TransformComponent& transform, float alpha) const {
-	// Sound source position currently hard coded
-	// TODO: use the position from the entities transform component,
-	// perhaps with a per-sound offset if you want footsteps to come from the feet for example
-	//glm::vec4 soundPosition = { 1.6 - 10.f,1.8,10.0f,1 };
-
-
-	// soundPos = transformPos + offset*rotation
+// Based on the Microsoft's example code at: https://github.com/MicrosoftDocs/mixed-reality/blob/master/mixed-reality-docs/spatial-sound-in-directx.md
+void HRTFAudioSystem::updateSoundWithCurrentPosition(OmnidirectionalSound& sound, Camera& cam, TransformComponent& transform, float alpha) const {
 	glm::vec3 soundPos = transform.getInterpolatedTranslation(alpha);
 
-	// if (offset != 0) { rotate offset }
-	//if ()
+	// If the sound has an offset position from the entity's transform then rotate the offset with the transform's rotation and add it to the position
+	if (sound._positionOffset != glm::vec3(0, 0, 0)) {
+		soundPos += glm::rotate(transform.getInterpolatedRotation(alpha), sound._positionOffset);
+	}
 
-
-	glm::vec3 negativeZAxis = glm::normalize(cam.getDirection());
+	glm::vec3 negativeZAxis      = glm::normalize(cam.getDirection());
 	glm::vec3 positiveYAxisGuess = glm::normalize(-cam.getUp());
-	glm::vec3 positiveXAxis = glm::normalize(glm::cross(negativeZAxis, positiveYAxisGuess));
-	glm::vec3 positiveYAxis = glm::normalize(cross(negativeZAxis, positiveXAxis));
-
+	glm::vec3 positiveXAxis      = glm::normalize(glm::cross(negativeZAxis, positiveYAxisGuess));
+	glm::vec3 positiveYAxis      = glm::normalize(cross(negativeZAxis, positiveXAxis));
 
 	glm::mat4x4 rotationTransform{
 		positiveXAxis.x, positiveYAxis.x, negativeZAxis.x, 0.f,
@@ -202,10 +195,6 @@ void HRTFAudioSystem::updateSoundWithNewPosition(OmnidirectionalSound& sound, Ca
 	// to simulate a zero distance when the hologram position vector is exactly at the device origin in order to
 	// allow HRTF to continue functioning in this edge case.
 	float distanceFromHologramToHead = glm::length(soundRelativeToHead);
-
-	Logger::Log("X: " + std::to_string(soundRelativeToHead.x) 
-		+ " Y: " + std::to_string(soundRelativeToHead.y) +
-		+ " Z: " + std::to_string(soundRelativeToHead.z) );
 
 	static const float distanceMin = 0.00001f;
 	if (distanceFromHologramToHead < distanceMin) {

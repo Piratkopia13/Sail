@@ -79,6 +79,7 @@ public:
 	const glm::vec3& getScale() const;
 
 	const glm::vec3 getInterpolatedTranslation(float alpha) const;
+	const glm::quat getInterpolatedRotation(float alpha) const;
 
 	// Matrix used by collision etc.
 	glm::mat4 getMatrix();

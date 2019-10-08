@@ -702,7 +702,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	}
 
 	//m_componentSystems.audioSystem->update(dt);
-	m_componentSystems.hrtfAudioSystem->update(m_cam);
+	m_componentSystems.hrtfAudioSystem->update(m_cam, alpha);
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
@@ -864,12 +864,6 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
-
-	// REMOVE: For testing audio
-	e->addComponent<SoundComponent>();
-	e->getComponent<SoundComponent>()->addSound("../Audio/guitar.wav");
-	
-
 
 	e = ECS::Instance()->createEntity("Map_Barrier1");
 	e->addComponent<ModelComponent>(barrierModel);
