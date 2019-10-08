@@ -294,7 +294,7 @@ bool GameState::processInput(float dt) {
 	}
 
 	// Show boudning boxes
-	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
+	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
 		m_componentSystems.renderSystem->toggleHitboxes();
 	}
 
@@ -305,6 +305,12 @@ bool GameState::processInput(float dt) {
 		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
 			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
+	}
+
+	//Test frustum culling
+	if (Input::IsKeyPressed(KeyBinds::testFrustumCulling)) {
+		int nrOfDraws = m_octree->frustumCulledDraw(m_cam);
+		Logger::Log("Number of draws " + std::to_string(nrOfDraws));
 	}
 
 	// TODO: Move this to a system
