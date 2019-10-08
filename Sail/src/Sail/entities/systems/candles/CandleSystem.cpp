@@ -43,9 +43,6 @@ void CandleSystem::update(float dt) {
 	for (auto e : entities) {
 
 		auto candle = e->getComponent<CandleComponent>();
-
-
-
 		
 		if ( candle->getIsAlive() ) {
 			// Remove light from candles that were hit by projectiles
@@ -70,7 +67,7 @@ void CandleSystem::update(float dt) {
 					}
 				}
 
-			} else if ( candle->getDoActivate() || candle->getDownTime() >= m_candleForceRespawnTimer /* Relight the candle every 5 seconds (should probably be removed later) */ ) {
+			} else if ( candle->getDoActivate() || candle->getDownTime() >= m_candleForceRespawnTimer /* Relight the candle every x seconds (should probably be removed later) */ ) {
 				e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.3f, 0.3f, 0.3f));
 				candle->setIsLit(true);
 				candle->incrementRespawns();
@@ -98,10 +95,14 @@ void CandleSystem::putDownCandle(Entity* e) {
 	auto parentTransComp = e->getParent()->getComponent<TransformComponent>();
 	/* TODO: Raycast and see if the hit location is ground within x units */
 	if ( !candleComp->isCarried() ) {
-		candleTransComp->removeParent();
-		glm::vec3 dir = glm::vec3(1.0f, 0.f, 1.0f);// TODO: parentTransComp->getForward()
-		candleTransComp->setTranslation(parentTransComp->getTranslation() + dir);
-		ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+		if ( candleComp->getIsLit() ) {
+			candleTransComp->removeParent();
+			glm::vec3 dir = glm::vec3(1.0f, 0.f, 1.0f);// TODO: parentTransComp->getForward()
+			candleTransComp->setTranslation(parentTransComp->getTranslation() + dir);
+			ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+		} else {
+			candleComp->toggleCarried();
+		}
 	} else if ( candleComp->isCarried() ) {
 		if ( glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit() ) {
 			candleTransComp->setTranslation(glm::vec3(0.f, 2.0f, 0.f));
