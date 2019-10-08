@@ -217,6 +217,7 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 	{
 		std::lock_guard<std::mutex> mu(m_mutex_connections);
 		if (!m_connections.count(receiverID)) {
+			delete[] msg;
 			return false;
 		}
 
@@ -224,14 +225,17 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 	}
 
 	if (!conn) {
+		delete[] msg;
 		return false;
 	}
 
 	if (!conn->isConnected) {
+		delete[] msg;
 		return false;
 	}
 
 	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
+		delete[] msg;
 		return false;
 	}
 

@@ -64,12 +64,11 @@ void NetworkSenderSystem::update(float dt) {
 		ar(static_cast<__int32>(nsc->m_dataTypes.size()));	// NrOfMessages
 
 		// Per type of data
-		for (auto& type : nsc->m_dataTypes)	{
-			ar(type);
-			//ar(Netcode::MessageType::ROTATION_TRANSFORM);
+		for (auto& messageType : nsc->m_dataTypes)	{
+			ar(messageType);										// Current MessageType
 
 			// Package it depending on the type
-			switch (type) {
+			switch (messageType) {
 				// Send necessary info to create the networked entity 
 			case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
 			{
@@ -77,7 +76,7 @@ void NetworkSenderSystem::update(float dt) {
 				Archive::archiveVec3(ar, t->getTranslation()); // Send translation
 
 				// After the remote entity has been created we'll want to be able to modify its transform
-				type = Netcode::MODIFY_TRANSFORM;
+				messageType = Netcode::MODIFY_TRANSFORM;
 			}
 			break;
 			case Netcode::MessageType::MODIFY_TRANSFORM:
@@ -94,7 +93,15 @@ void NetworkSenderSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
-				// TODO: Send the information needed to spawn a projectile
+				PhysicsComponent* p = e->getComponent<PhysicsComponent>();
+				TransformComponent* t = e->getComponent<TransformComponent>();
+				Archive::archiveVec3(ar, t->getTranslation());
+				Archive::archiveVec3(ar, p->velocity);
+				glm::vec3 pos = t->getTranslation();
+				std::cout << pos.x << " " << pos.y << " " << pos.z << "\n";
+
+				// Only iterate through this once per entity.
+				e->removeComponent<NetworkSenderComponent>();
 			}
 			break;
 			default:

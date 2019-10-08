@@ -9,6 +9,7 @@
 #include "Sail/entities/components/BoundingBoxComponent.h"
 #include "Sail/entities/components/ModelComponent.h"
 #include "Sail/entities/components/PhysicsComponent.h"
+#include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
 
@@ -44,30 +45,18 @@ void GunSystem::update(float dt) {
 					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
 					for (int i = 0; i <= 1; i++) {
-						auto e = ECS::Instance()->createEntity("projectile");
-						glm::vec3 randPos;
-						float maxrand = 0.2f;
+						// Create entity and attach necessary components etc
+						Entity* e = GunFactory::createWaterBullet(gun->position, gun->direction, i);
 
-						//Will remove rand later.
-						randPos.r = ((float)rand() / RAND_MAX) * maxrand;
-						randPos.g = ((float)rand() / RAND_MAX) * maxrand;
-						randPos.b = ((float)rand() / RAND_MAX) * maxrand;
+						// Let network know that a projectile was spawned.
+						unsigned char id = e->getID();
+						e->addComponent<NetworkSenderComponent>(
+							Netcode::MessageType::SPAWN_PROJECTILE,
+							Netcode::EntityType::PLAYER_ENTITY,
+							id
+						);
 
-						e->addComponent<MetaballComponent>();
-						e->addComponent<BoundingBoxComponent>();
-						e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
-						e->addComponent<LifeTimeComponent>(4.0f);
-						e->addComponent<ProjectileComponent>();
-						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
-
-						e->addComponent<PhysicsComponent>();
-						PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-						physics->velocity = gun->direction * gun->projectileSpeed;
-						physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
-						physics->drag = 2.0f;
-						physics->bounciness = 0.1f;
-						physics->padding = 0.16f;
-
+						// Log it for stats.
 						m_gameDataTracker->logWeaponFired();
 					}
 				}
@@ -85,3 +74,33 @@ void GunSystem::update(float dt) {
 		gun->projectileSpawnTimer -= dt;
 	}
 }
+
+Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, int i) {
+	auto e = ECS::Instance()->createEntity("projectile");
+	glm::vec3 randPos;
+	float maxrand = 0.2f;
+
+	//Will remove rand later.
+	randPos.r = ((float)rand() / RAND_MAX) * maxrand;
+	randPos.g = ((float)rand() / RAND_MAX) * maxrand;
+	randPos.b = ((float)rand() / RAND_MAX) * maxrand;
+
+	e->addComponent<MetaballComponent>();
+	e->addComponent<BoundingBoxComponent>();
+	e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
+	e->addComponent<LifeTimeComponent>(4.0f);
+	e->addComponent<ProjectileComponent>();
+	e->addComponent<TransformComponent>((pos + randPos) - dir * (0.15f * i));
+
+	e->addComponent<PhysicsComponent>();
+	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+	physics->velocity = dir * 10.0f;		// HARDCODED, SAME AS IN GUN.H
+	physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+	physics->drag = 2.0f;
+	physics->bounciness = 0.1f;
+	physics->padding = 0.16f;
+
+	return e.get();
+}
+
+

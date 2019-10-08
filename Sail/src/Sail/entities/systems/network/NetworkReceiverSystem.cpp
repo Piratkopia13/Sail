@@ -6,6 +6,9 @@
 #include "Network/NWrapperSingleton.h"
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
+// Creation of mid-air bullets from here.
+#include "Sail/entities/systems/Gameplay/GunSystem.h"
+
 NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 	registerComponent<NetworkReceiverComponent>(true, true, true);
 	
@@ -70,6 +73,8 @@ void NetworkReceiverSystem::update(float dt) {
 	EntityType entityType;
 	glm::vec3 translation;
 	glm::vec3 rotation;
+	glm::vec3 gunPosition;
+	glm::vec3 gunDirection;
 
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
@@ -118,7 +123,12 @@ void NetworkReceiverSystem::update(float dt) {
 				break;
 				case MessageType::SPAWN_PROJECTILE:
 				{
-					// TODO: Spawn (or tell some system to spawn) a projectile
+					// Read data
+					Archive::loadVec3(ar, gunPosition);
+					Archive::loadVec3(ar, gunDirection);
+
+					// Use data
+					GunFactory::createWaterBullet(gunPosition, gunDirection, 0);
 				}
 				break;
 				default:

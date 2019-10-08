@@ -2,6 +2,11 @@
 #include "..//BaseComponentSystem.h"
 
 class GameDataTracker;
+class GunComponent;
+
+namespace GunFactory {
+	Entity* createWaterBullet(glm::vec3 pos, glm::vec3 dir, int i);
+}
 
 class GunSystem final : public BaseComponentSystem {
 public:
