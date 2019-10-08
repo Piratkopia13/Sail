@@ -153,7 +153,6 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
-
 	// Get the player id's and names from the lobby
 	const unsigned char playerID = m_app->getStateStorage().getLobbyToGameData()->myPlayer.id;
 
