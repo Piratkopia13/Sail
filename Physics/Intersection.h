@@ -4,6 +4,8 @@
 #include "Cylinder.h"
 #include "Sphere.h"
 
+struct Frustum;
+
 class Intersection {
 public:
 	static bool AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2);
@@ -24,6 +26,8 @@ public:
 	static float RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
 	static float RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb, float padding);
 	static float RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, float padding);
+
+	static bool FrustumWithAabb(const Frustum& frustum, const BoundingBox& aabb);
 private:
 	//Private constructor so an instance can't be created
 	Intersection() {};
