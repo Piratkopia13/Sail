@@ -993,7 +993,13 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
 		Netcode::EntityType::PLAYER_ENTITY,
-		playerID);
+		playerID
+	);
+	NetworkSenderComponent* networkComponent = player->getComponent<NetworkSenderComponent>();
+	networkComponent->addDataType(Netcode::MessageType::ROTATION_TRANSFORM);
+
+
+
 
 	// Add physics component and setting initial variables
 	player->addComponent<PhysicsComponent>();

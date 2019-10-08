@@ -20,6 +20,9 @@ private:
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
 	unsigned char m_playerID;
 
+	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
+
 	void createEntity(Netcode::NetworkObjectID id, Netcode::EntityType entityType, const glm::vec3& translation);
 	void setEntityTranslation(Netcode::NetworkObjectID id, const glm::vec3& translation);
+	void setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation);
 };

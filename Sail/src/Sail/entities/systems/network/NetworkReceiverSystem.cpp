@@ -36,17 +36,27 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 
   Logical structure of the packages that will be decoded by this function:
 
-    __int32         nrOfEntities
-    NetworkObjectID entity[0].id
-    MessageType     entity[0].messageType
-    MessageData     entity[0].data
-	NetworkObjectID entity[1].id
-	MessageType     entity[1].messageType
-	MessageData     entity[1].data
-	NetworkObjectID entity[2].id
-	MessageType     entity[2].messageType
-	MessageData     entity[2].data
-    ....
+	__int32         nrOfEntities
+
+		NetworkObjectID entity[0].id
+		EntityType		entity[0].type
+		__int32			nrOfMessages
+			MessageType     entity[0].messageType
+			MessageData     entity[0].data
+		
+		NetworkObjectID entity[0].id
+		EntityType		entity[0].type
+		__int32			nrOfMessages
+			MessageType     entity[0].messageType
+			MessageData     entity[0].data
+
+		NetworkObjectID entity[0].id
+		EntityType		entity[0].type
+		__int32			nrOfMessages
+			MessageType     entity[0].messageType
+			MessageData     entity[0].data
+		....
+		
 */
 void NetworkReceiverSystem::update(float dt) {
 	using namespace Netcode;
@@ -55,50 +65,65 @@ void NetworkReceiverSystem::update(float dt) {
 	std::scoped_lock lock(m_bufferLock);
 
 	NetworkObjectID id = 0;
-	MessageType dataType;
+	Netcode::MessageType dataType;
+	__int32 messageTypes = 0;
 	EntityType entityType;
 	glm::vec3 translation;
+	glm::vec3 rotation;
 
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
 		std::istringstream is(m_incomingDataBuffer.front());
 		cereal::PortableBinaryInputArchive ar(is);
 
-		// Read message metadata
-		__int32 nrOfObjectsInMessage = 0;
+		// Read entityCount
+		__int32 nrOfEntitiesInMessage = 0;
 		{
-			ar(nrOfObjectsInMessage);
+			ar(nrOfEntitiesInMessage);
 		}
 
-		// Read and process data
-		for (int i = 0; i < nrOfObjectsInMessage; ++i) {
+
+		// Read the data per entity
+		for (int i = 0; i < nrOfEntitiesInMessage; ++i) {
 			{
-				ar(id, dataType); // Get the entity ID and what type of data it is
+				ar(id);					// Entity.id
+				ar(entityType);			// Entity type
+				ar(messageTypes);		// Nr of Messages (for this entity)
 			}
 
-			// Read and process the data
-			switch (dataType) {
-				// Send necessary info to create the networked entity 
-			case MessageType::CREATE_NETWORKED_ENTITY:
-			{
-				ar(entityType);                     // Read entity type
-				Archive::loadVec3(ar, translation); // Read translation
-				createEntity(id, entityType, translation);
-			}
-			break;
-			case MessageType::MODIFY_TRANSFORM:
-			{
-				Archive::loadVec3(ar, translation); // Read translation
-				setEntityTranslation(id, translation);
-			}
-			break;
-			case MessageType::SPAWN_PROJECTILE:
-			{
-				// TODO: Spawn (or tell some system to spawn) a projectile
-			}
-			break;
-			default:
+			// Read per data type
+			for (int j = 0; j < messageTypes; j++) {
+				ar(dataType);
+
+				// Read and process the data
+				switch (dataType) {
+					// Send necessary info to create the networked entity 
+				case MessageType::CREATE_NETWORKED_ENTITY:
+				{
+					Archive::loadVec3(ar, translation); // Read translation
+					createEntity(id, entityType, translation);
+				}
 				break;
+				case MessageType::MODIFY_TRANSFORM:
+				{
+					Archive::loadVec3(ar, translation); // Read translation
+					setEntityTranslation(id, translation);
+				}
+				break;
+				case MessageType::ROTATION_TRANSFORM:
+				{
+					Archive::loadVec3(ar, rotation);	// Read rotation
+					setEntityRotation(id, rotation);
+				}
+				break;
+				case MessageType::SPAWN_PROJECTILE:
+				{
+					// TODO: Spawn (or tell some system to spawn) a projectile
+				}
+				break;
+				default:
+					break;
+				}
 			}
 		}
 		m_incomingDataBuffer.pop();
@@ -190,5 +215,15 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, co
 			break;
 		}
 	}
+}
+
+void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation){
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<TransformComponent>()->setRotations(rotation);
+			break;
+		}
+	}
+
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "Component.h"
 #include "Sail/netcode/NetworkedStructs.h"
+#include <vector>
 
 class NetworkSenderComponent : public Component<NetworkSenderComponent> {
 public:
@@ -12,7 +13,10 @@ public:
 	*/
 	NetworkSenderComponent(Netcode::MessageType dataType, Netcode::EntityType entityType, unsigned char ownerID) :
 		m_id(Netcode::createNetworkID() | (static_cast<Netcode::NetworkObjectID>(ownerID) << 18)),
-		m_dataType(dataType), m_entityType(entityType) {}
+		m_entityType(entityType) {
+		
+		addDataType(dataType);
+	}
 
 	/*
 	  This function should only be used by the host to create pass-through sender components.
@@ -22,10 +26,12 @@ public:
 
 	~NetworkSenderComponent() {}
 
+	void addDataType(Netcode::MessageType type) { m_dataTypes.push_back(type); }
 
 	Netcode::NetworkObjectID m_id;
 	Netcode::EntityType m_entityType;
 
 	// Could eventually be changed to a list of types if there are multiple data types per entity one wants to send over the network
+	std::vector<Netcode::MessageType> m_dataTypes;
 	Netcode::MessageType m_dataType;
 };
