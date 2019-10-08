@@ -16,7 +16,7 @@ StructuredBuffer<float4x4> CSTransforms : register(t0);
 StructuredBuffer<Vertex> CSVertices : register(t1);
 StructuredBuffer<VertConnections> CSVertConnections : register(t2);
 
-RWStructuredBuffer<Vertex> CSVertexBuffer: register(u0);
+RWStructuredBuffer<Vertex> CSVertexBuffer: register(u10) : SAIL_IGNORE;
 
 struct ComputeShaderInput {
 	uint3 GroupID           : SV_GroupID;           // 3D index of the thread group in the dispatch.
@@ -28,6 +28,6 @@ struct ComputeShaderInput {
 [numthreads(1, 1, 1)]
 void CSMain(ComputeShaderInput input) {
     
-	CSVertexBuffer[input.DispatchThreadID.x].texCoords = 0.0f;
+	CSVertexBuffer[input.DispatchThreadID.x].position.x += CSVertConnections[0].count + CSTransforms[0][0][0] + CSVertices[0].position.x;
 
 }

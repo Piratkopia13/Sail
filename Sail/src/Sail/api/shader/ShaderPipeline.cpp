@@ -400,7 +400,7 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "PointLightInput") { return 272; }
 	if (typeName == "DeferredPointLightData") { return 48; }
 	if (typeName == "DeferredDirLightData") { return 32; }
-	if (typeName == "Vertex") { return 4 * 13; }
+	if (typeName == "Vertex") { return 4 * 14; }
 	if (typeName == "VertConnections") { return 4 + 4*5 + 4*5; }
 
 	Logger::Error("Found shader variable type with unknown size (" + typeName + ")");

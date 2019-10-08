@@ -141,14 +141,16 @@ void AnimationSystem::updateOnGPU(float dt, ID3D12GraphicsCommandList4* cmdList)
 				cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10; // TODO: read offset (10) from root params
 
 				auto& vbuffer = static_cast<DX12VertexBuffer&>(mesh->getVertexBuffer());
+				// Make sure vertex buffer data has been uploaded to its default buffer
+				vbuffer.init(cmdList);
 
 				// Create a unordered access view in the correct place in the heap
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 				uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 				uavDesc.Buffer.FirstElement = 0;
-				uavDesc.Buffer.NumElements = mesh->getNumVertices();
-				uavDesc.Buffer.StructureByteStride = 4 * 13; // TODO: replace with sizeof(Vertex)
+				uavDesc.Buffer.NumElements = connectionSize;
+				uavDesc.Buffer.StructureByteStride = 4 * 14; // TODO: replace with sizeof(Vertex)
 				context->getDevice()->CreateUnorderedAccessView(vbuffer.getBuffer(), nullptr, &uavDesc, cdh);
 
 				AnimationUpdateComputeShader::Input input;

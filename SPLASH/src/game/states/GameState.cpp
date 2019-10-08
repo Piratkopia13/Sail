@@ -273,6 +273,10 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
+	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
+		m_animEnt->getComponent<AnimationComponent>()->computeUpdate = true;
+	}
+
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
@@ -933,6 +937,8 @@ void GameState::initAnimations() {
 		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
 		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
+
+		m_animEnt = animationEntity5;
 	}
 	
 
