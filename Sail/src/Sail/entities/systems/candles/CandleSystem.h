@@ -19,8 +19,13 @@ public:
 	void lightCandle(const std::string& name);
 
 	void update(float dt) override;
+
+	void putDownCandle(Entity* e);
+
 private:
 	int m_playerEntityID;
+	float m_candleForceRespawnTimer = 15.f;
+	int m_maxNumRespawns = 3;
 	float m_health = MAX_HEALTH;
 	bool m_isHit = false;
 	float m_invincibleTimer = INVINCIBLE_DURATION;
