@@ -16,6 +16,7 @@ public:
 		nextAnimation(nullptr),
 		blending(false),
 		dataSize(0),
+		computeUpdate(false),
 		//transformedPositions(nullptr),
 		//transformedNormals(nullptr),
 		//transformedTangents(nullptr),
@@ -57,6 +58,7 @@ public:
 	}
 	
 
+	bool computeUpdate;
 	float animationTime;
 	unsigned int animationIndex;
 	float animationSpeed;

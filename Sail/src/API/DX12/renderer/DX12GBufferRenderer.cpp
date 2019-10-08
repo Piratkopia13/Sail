@@ -12,6 +12,8 @@
 #include "../shader/DX12ShaderPipeline.h"
 #include "../DX12Mesh.h"
 #include "../DX12Utils.h"
+#include "Sail/entities/systems/Graphics/AnimationSystem.h"
+#include "Sail/entities/ECS.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
 	Application* app = Application::getInstance();
@@ -119,6 +121,11 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	}
 #else
 	if (threadID == 0) {
+
+		// Update animations on compute shader here
+
+		ECS::Instance()->getSystem<AnimationSystem>()->setCommandList(cmdList.Get());
+
 
 		// Init all textures - this needs to be done on ONE thread
 		// TODO: optimize!

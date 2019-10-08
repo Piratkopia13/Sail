@@ -6,21 +6,36 @@
 #include "Sail/graphics/geometry/Model.h"
 #include "sail/api/VertexBuffer.h"
 #include "API/DX12/DX12VertexBuffer.h"
-
+#include "Sail/Application.h"
+#include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 
 AnimationSystem::AnimationSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<AnimationComponent>(true, true, true);
 	registerComponent<ModelComponent>(true, true, true);
+
+	m_updateShader = &Application::getInstance()->getResourceManager().getShaderSet<AnimationUpdateComputeShader>();
+	m_dispatcher = std::make_unique<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 }
 
 AnimationSystem::~AnimationSystem() {
 }
 
+void AnimationSystem::setCommandList(ID3D12GraphicsCommandList4* cmdList) {
+	m_cmdList = cmdList;
+}
+
 void AnimationSystem::update(float dt) {
+
+	m_dispatcher->begin(m_cmdList);
+	unsigned int meshIndex = 0;
+
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		ModelComponent* modelC = e->getComponent<ModelComponent>();
+
+
+
 		animationC->animationTime += dt;
 		if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime()) {
 			animationC->animationTime -= animationC->currentAnimation->getMaxAnimationTime();
@@ -52,33 +67,51 @@ void AnimationSystem::update(float dt) {
 			AnimationStack::VertConnection* connections = animationC->getAnimationStack()->getConnections();
 			const unsigned int connectionSize = animationC->getAnimationStack()->getConnectionSize();
 
-			if (connections && transforms) {
-				glm::mat mat = glm::identity<glm::mat4>();
-				glm::mat matInv = glm::identity<glm::mat4>();
-
-				for (unsigned int connectionIndex = 0; connectionIndex < connectionSize; connectionIndex++) {
-					unsigned int count = connections[connectionIndex].count;
-					mat = glm::zero<glm::mat4>();
-					matInv = glm::zero<glm::mat4>();
-
-					float weightTotal = 0.0f;
-					for (unsigned int countIndex = 0; countIndex < count; countIndex++) {
-						mat += transforms[connections[connectionIndex].transform[countIndex]] * connections[connectionIndex].weight[countIndex];
-						weightTotal += connections[connectionIndex].weight[countIndex];
-					}
-					matInv = glm::inverseTranspose(mat);
 
 
 
-					animationC->data.positions[connectionIndex].vec = glm::vec3(mat * glm::vec4(pos[connectionIndex].vec, 1));
-					animationC->data.normals[connectionIndex].vec = glm::vec3(matInv * glm::vec4(norm[connectionIndex].vec, 0));
-					animationC->data.tangents[connectionIndex].vec = glm::vec3(matInv * glm::vec4(tangent[connectionIndex].vec, 0));
-					animationC->data.bitangents[connectionIndex].vec = glm::vec3(matInv * glm::vec4(bitangent[connectionIndex].vec, 0));
+			if (animationC->computeUpdate && m_cmdList) {
+				
 
-					animationC->data.texCoords[connectionIndex].vec = uv[connectionIndex].vec;
-				}
+
+				AnimationUpdateComputeShader::Input input;
+				input.threadGroupCountX = connectionSize;
+				m_dispatcher->dispatch(*m_updateShader, input, meshIndex++, m_cmdList);
+
+
 			}
-			mesh->getVertexBuffer().update(animationC->data);
+			else {
+				if (connections && transforms) {
+					glm::mat mat = glm::identity<glm::mat4>();
+					glm::mat matInv = glm::identity<glm::mat4>();
+
+					for (unsigned int connectionIndex = 0; connectionIndex < connectionSize; connectionIndex++) {
+						unsigned int count = connections[connectionIndex].count;
+						mat = glm::zero<glm::mat4>();
+						matInv = glm::zero<glm::mat4>();
+
+						float weightTotal = 0.0f;
+						for (unsigned int countIndex = 0; countIndex < count; countIndex++) {
+							mat += transforms[connections[connectionIndex].transform[countIndex]] * connections[connectionIndex].weight[countIndex];
+							weightTotal += connections[connectionIndex].weight[countIndex];
+						}
+						matInv = glm::inverseTranspose(mat);
+
+
+
+						animationC->data.positions[connectionIndex].vec = glm::vec3(mat * glm::vec4(pos[connectionIndex].vec, 1));
+						animationC->data.normals[connectionIndex].vec = glm::vec3(matInv * glm::vec4(norm[connectionIndex].vec, 0));
+						animationC->data.tangents[connectionIndex].vec = glm::vec3(matInv * glm::vec4(tangent[connectionIndex].vec, 0));
+						animationC->data.bitangents[connectionIndex].vec = glm::vec3(matInv * glm::vec4(bitangent[connectionIndex].vec, 0));
+
+						animationC->data.texCoords[connectionIndex].vec = uv[connectionIndex].vec;
+					}
+				}
+				mesh->getVertexBuffer().update(animationC->data);
+
+
+
+			}
 		}
 	}
 }
