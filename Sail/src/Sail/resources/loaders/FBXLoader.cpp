@@ -210,7 +210,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 		unsigned int numVertices = mesh->GetPolygonSize(polyIndex);
 		unsigned int CPIndex[3] = { (unsigned int)indices[vertexIndex], (unsigned int)indices[vertexIndex + 1], (unsigned int)indices[vertexIndex + 2] };
 		for (unsigned int vertIndex = 0; vertIndex < numVertices; vertIndex += 3) {
-			
+
 #pragma region POSITIONS
 			/*
 			--	Positions
@@ -226,11 +226,11 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			*/
 			FbxLayerElementNormal* leNormal = mesh->GetLayer(0)->GetNormals();
 			if (leNormal == nullptr && norms) {
-				#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-					Logger::Warning("Couldn't find any normals in the mesh in the file " + name);
-				#endif
+#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
+				Logger::Warning("Couldn't find any normals in the mesh in the file " + name);
+#endif
 				norms = false;
-			} 
+			}
 			else if (norms) {
 				if (leNormal->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int normIndex = 0;
@@ -238,7 +238,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 						normIndex = vertexIndex;
 					if (leNormal->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
 						normIndex = leNormal->GetIndexArray().GetAt(vertexIndex);
-					
+
 					FbxVector4 norm = leNormal->GetDirectArray().GetAt(normIndex);
 					FBXtoGLM(vertNormal[0].vec, norm);
 
@@ -259,13 +259,13 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			/*
 			--	Tangents
 			*/
-			FbxGeometryElementTangent *geTang = mesh->GetElementTangent(0);
+			FbxGeometryElementTangent* geTang = mesh->GetElementTangent(0);
 			if (geTang == nullptr && tangs) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 				Logger::Warning("Couldn't find any tangents in the mesh in the file " + name);
 #endif
 				tangs = false;
-			} 
+			}
 			else if (tangs) {
 				if (geTang->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int tangIndex = 0;
@@ -285,53 +285,59 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 				}
 			}
 			else {
-				vertTangent[0] = { 0,0,0 };
-				vertTangent[1] = { 0,0,0 };
-				vertTangent[2] = { 0,0,0 };
+				//Keep 
+				//vertTangent[0].vec = glm::normalize(vertPosition[0].vec - vertPosition[1].vec);
+				//vertTangent[1].vec = glm::normalize(vertPosition[1].vec - vertPosition[2].vec);
+				//vertTangent[2].vec = glm::normalize(vertPosition[2].vec - vertPosition[0].vec);
+
+				vertTangent[0].vec = { 0,0,0 };
+				vertTangent[1].vec = { 0,0,0 };
+				vertTangent[2].vec = { 0,0,0 };
+
 			}
 #pragma endregion
 #pragma region BINORMALS
 			/*
 			--	Binormals
 			*/
-			FbxGeometryElementBinormal *geBN = mesh->GetElementBinormal(0);
+			FbxGeometryElementBinormal* geBN = mesh->GetElementBinormal(0);
 			if (geBN == nullptr && bitangs) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
 				Logger::Warning("Couldn't find any binormals in the mesh in the file " + name);
 #endif
 				bitangs = false;
-			} 
+			}
 			else if (bitangs) {
 				if (geBN->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int biNormIndex = 0;
-
 					if (geBN->GetReferenceMode() == FbxLayerElement::eDirect)
 						biNormIndex = vertexIndex;
-
-
 					if (geBN->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
 						biNormIndex = geBN->GetIndexArray().GetAt(vertexIndex);
 
+
 					FbxVector4 biNorm = geBN->GetDirectArray().GetAt(biNormIndex);
-					for (unsigned int axis = 0; axis < 3; axis++) {
-						vertBitangent[2].vec[axis] = (float)biNorm[axis];
-					}
+					FBXtoGLM(vertBitangent[0].vec, biNorm);
 
 					biNorm = geBN->GetDirectArray().GetAt(biNormIndex + 1);
-					for (unsigned int axis = 0; axis < 3; axis++) {
-						vertBitangent[2].vec[axis] = (float)biNorm[axis];
-					}
+					FBXtoGLM(vertBitangent[1].vec, biNorm);
 
 					biNorm = geBN->GetDirectArray().GetAt(biNormIndex + 2);
-					for (unsigned int axis = 0; axis < 3; axis++) {
-						vertBitangent[2].vec[axis] = (float)biNorm[axis];
-					}
+					FBXtoGLM(vertBitangent[2].vec, biNorm);
+
 				}
 			}
 			else {
-				vertBitangent[0] = { 0,0,0 };
-				vertBitangent[1] = { 0,0,0 };
-				vertBitangent[2] = { 0,0,0 };
+
+				//Keep 
+				//vertBitangent[0].vec = glm::cross(vertNormal[0].vec, vertTangent[0].vec);
+				//vertBitangent[1].vec = glm::cross(vertNormal[1].vec, vertTangent[1].vec);
+				//vertBitangent[2].vec = glm::cross(vertNormal[2].vec, vertTangent[2].vec);
+
+				vertBitangent[0].vec = {0,0,0};
+				vertBitangent[1].vec = {0,0,0};
+				vertBitangent[2].vec = {0,0,0};
+
 			}
 #pragma endregion
 #pragma region TEXCOORDS
@@ -344,7 +350,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 				Logger::Warning("Couldn't find any texture coordinates in the mesh in the file " + name);
 #endif
 				uvs = false;
-			} 
+			}
 			else if (uvs) {
 				FbxVector2 texCoord;
 				int cpIndex;
@@ -363,13 +369,13 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 				texCoord = getTexCoord(cpIndex, geUV, mesh, polyIndex, vertIndex + 2);
 				vertTexCoord[2].vec[0] = static_cast<float>(texCoord[0]);
 				vertTexCoord[2].vec[1] = -static_cast<float>(texCoord[1]);
-			} 
+			}
 			else {
 				vertTexCoord[0] = { 0,0 };
 				vertTexCoord[1] = { 0,0 };
 				vertTexCoord[2] = { 0,0 };
 			}
-#pragma endregion		
+#pragma endregion
 
 			unsigned long oldUnique = uniqueVertices;
 			addVertex(buildData, uniqueVertices, vertexIndex++, vertPosition[0], vertNormal[0], vertTangent[0], vertBitangent[0], vertTexCoord[0]);
