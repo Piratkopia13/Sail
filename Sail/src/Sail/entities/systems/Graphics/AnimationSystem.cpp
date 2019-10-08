@@ -82,3 +82,12 @@ void AnimationSystem::update(float dt) {
 		}
 	}
 }
+
+void AnimationSystem::updatePerFrame(float dt) {
+	for (auto& e : entities) {
+		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
+		ModelComponent* modelC = e->getComponent<ModelComponent>();
+		Mesh* mesh = modelC->getModel()->getMesh(0);
+		mesh->getVertexBuffer().update(animationC->data);
+	}
+}

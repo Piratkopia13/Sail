@@ -791,7 +791,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	if (m_showcaseProcGen) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
-
+	m_componentSystems.animationSystem->updatePerFrame(dt);
 	m_componentSystems.audioSystem->update(dt);
 }
 
@@ -861,7 +861,7 @@ Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* light
 
 void GameState::loadAnimations() {
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-	//m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
 #ifndef _DEBUG
@@ -877,18 +877,18 @@ void GameState::loadAnimations() {
 void GameState::initAnimations() {
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 
-/*
+
 
 	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
 	animationEntity2->addComponent<TransformComponent>();
 	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
 	animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
-	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/walkTri.fbx"));
+	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
 
-
+	/*
 
 	auto animationEntity1 = ECS::Instance()->createEntity("animatedModel1");
 	animationEntity1->addComponent<TransformComponent>();
