@@ -42,20 +42,37 @@ void CandleSystem::update(float dt) {
 		auto candle = e->getComponent<CandleComponent>();
 
 		// Remove light from candles that were hit by projectiles
-		if ( candle->wasHitByWater()) {
-			candle->resetHitByWater();
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
-			candle->setIsAlive(false);
+		if (m_isHit) {
+			m_invincibleTimer -= dt;
 
-			// Check if the extinguished candle is owned by the player
-			// If so, dispatch an event (received by GameState for now)
-			if (candle->getOwner() == m_playerEntityID) {
-				Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_HIT));
+			if (m_invincibleTimer < 0.0f) {
+				m_isHit = false;
+				m_invincibleTimer = INVINCIBLE_DURATION;
+				candle->resetHitByWater();
 			}
+		}
 
-		} else if ( candle->getDoActivate() || candle->getDownTime() >= 5.f /* Relight the candle every 5 seconds (should probably be removed later) */ ) {
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.3f, 0.3f, 0.3f));
+		else if (candle->wasHitByWater() && m_health > 0) {
+			m_isHit = true;
+			m_health--;
+
+			float tempNewHealth = (static_cast<float>(m_health) / static_cast<float>(MAX_HEALTH));
+			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempNewHealth, tempNewHealth, tempNewHealth));
+			
+			if (m_health == 0) {
+				candle->setIsAlive(false);
+
+				// Check if the extinguished candle is owned by the player
+				// If so, dispatch an event (received by GameState for now)
+				if (candle->getOwner() == m_playerEntityID) {
+					Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_HIT));
+				}
+			}
+		}
+		else if (!candle->getIsAlive() && candle->getDownTime() >= 4.0f /* Relight the candle every 5 seconds (should probably be removed later) */) {
+			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 			candle->setIsAlive(true);
+			m_health = MAX_HEALTH;
 			candle->resetDownTime();
 			candle->resetDoActivate();
 		} else if (!candle->getIsAlive()) {

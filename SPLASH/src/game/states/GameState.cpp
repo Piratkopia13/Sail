@@ -843,7 +843,7 @@ Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* light
 	e->addComponent<BoundingBoxComponent>(bbModel);
 	e->addComponent<CollidableComponent>();
 	PointLight pl;
-	pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+	pl.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
 	pl.setAttenuation(.0f, 0.1f, 0.02f);
 	pl.setIndex(m_currLightIndex);
