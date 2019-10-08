@@ -5,6 +5,8 @@
 #include "Sail/entities/Entity.h"
 
 class Model;
+class Camera;
+struct Frustum;
 
 class Octree {
 public:
@@ -48,6 +50,7 @@ private:
 	void getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData, float padding);
 	void getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding);
 	int pruneTreeRec(Node* currentNode);
+	int frustumCulledDrawRec(const Frustum& frustum, Node* currentNode);
 
 public:
 	Octree(Model *boundingBoxModel);
@@ -64,4 +67,6 @@ public:
 	void getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollisionData);
 	void getCollisionsSpheres(Entity* entity, std::vector<CollisionInfo>* outCollisionData);
 	void getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis = nullptr, float padding = 0.0f);
+
+	int frustumCulledDraw(Camera& camera);
 };

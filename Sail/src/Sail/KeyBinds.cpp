@@ -7,9 +7,9 @@
 namespace KeyBinds {
 	// GameState + Player controls
 	int addLight;
-	int showBoundingBoxes;
-	int hideBoundingBoxes;
+	int toggleBoundingBoxes;
 	int testRayIntersection;
+	int testFrustumCulling;
 	int toggleAIFollowing;
 	int setDirectionalLight;
 	int toggleConsole;
@@ -55,9 +55,9 @@ namespace KeyBinds {
 void KeyBinds::init() {
 	// GameState
 	addLight = SAIL_KEY_E;
-	showBoundingBoxes = SAIL_KEY_B;
-	hideBoundingBoxes = SAIL_KEY_N;
+	toggleBoundingBoxes = SAIL_KEY_B;
 	testRayIntersection = SAIL_KEY_O;
+	testFrustumCulling = SAIL_KEY_N;
 	toggleAIFollowing = SAIL_KEY_H;
 	setDirectionalLight = SAIL_KEY_G;
 	toggleConsole = SAIL_KEY_OEM_5;
