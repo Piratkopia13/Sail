@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "Intersection.h"
+#include "Sail/graphics/camera/Camera.h"
 
 BoundingBox Intersection::sPaddedReserved;
 
@@ -63,7 +64,7 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 				glm::vec3 a = glm::cross(e[i], f[j]);
 				glm::vec3 p = glm::vec3(glm::dot(a, newV0), glm::dot(a, newV1), glm::dot(a, newV2));
 				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
+				if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z)) < -r) {
 					return false;
 				}
 			}
@@ -558,4 +559,21 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 	}
 	
 	return returnValue;
+}
+
+bool Intersection::FrustumWithAabb(const Frustum& frustum, const BoundingBox& aabb) {
+	for (int i = 0; i < 6; i++) {
+		glm::vec4 c(aabb.getPosition(), 1.f);
+
+		glm::vec3 h = aabb.getHalfSize();
+		float e = h.x * fabs(frustum.planes[i].x) + h.y * fabs(frustum.planes[i].y) + h.z * fabs(frustum.planes[i].z);
+		float s = glm::dot(c, frustum.planes[i]);
+
+		if (s - e > 0) {
+			return false; // Outside
+		}
+
+		// Else inside or intersecting
+	}
+	return true;
 }
