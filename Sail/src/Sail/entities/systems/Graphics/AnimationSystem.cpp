@@ -9,7 +9,9 @@
 #include <glm/gtx/compatibility.hpp>
 
 
-AnimationSystem::AnimationSystem() : BaseComponentSystem() {
+AnimationSystem::AnimationSystem() : BaseComponentSystem(),
+	m_interpolate(true) 
+{
 	// TODO: System owner should check if this is correct
 	registerComponent<AnimationComponent>(true, true, true);
 	registerComponent<ModelComponent>(true, true, true);
@@ -58,11 +60,11 @@ void AnimationSystem::update(float dt) {
 		
 			
 			//INTERPOLATE
-			if (transforms1 && transforms2) {
+			if (transforms1 && transforms2 && m_interpolate) {
 				const float frame0Time = animationC->currentAnimation->getTimeAtFrame(frame);
 				const float frame1Time = animationC->currentAnimation->getTimeAtFrame(frame2);
 				// weight = time - time(0) / time(1) - time(0)
-				const float w = (animationC->animationTime - frame0Time)- (frame1Time - frame0Time);
+				const float w = (animationC->animationTime - frame0Time)/(frame1Time - frame0Time);
 				for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 					interpolate(animationC->transforms[transformIndex], transforms1[transformIndex], transforms2[transformIndex], w);
 				}
@@ -81,7 +83,7 @@ void AnimationSystem::update(float dt) {
 
 
 			// CPU UPDATE
-			if (connections && transforms1) {
+			if (connections && animationC->transforms) {
 				glm::mat mat = glm::identity<glm::mat4>();
 				glm::mat matInv = glm::identity<glm::mat4>();
 
@@ -142,4 +144,16 @@ void AnimationSystem::updatePerFrame(float dt) {
 		Mesh* mesh = modelC->getModel()->getMesh(0);
 		mesh->getVertexBuffer().update(animationC->data);
 	}
+}
+
+void AnimationSystem::toggleInterpolation() {
+	m_interpolate != m_interpolate;
+}
+
+const bool AnimationSystem::getInterpolation() {
+	return m_interpolate;
+}
+
+void AnimationSystem::setInterpolation(const bool interpolation) {
+	m_interpolate = interpolation;
 }
