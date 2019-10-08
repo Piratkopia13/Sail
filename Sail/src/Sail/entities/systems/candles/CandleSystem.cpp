@@ -41,28 +41,38 @@ void CandleSystem::update(float dt) {
 
 		auto candle = e->getComponent<CandleComponent>();
 
-		// Remove light from candles that were hit by projectiles
-		if ( candle->wasHitByWater()) {
-			candle->resetHitByWater();
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
-			candle->setIsAlive(false);
+		
+		if ( candle->getIsAlive() ) {
+			// Remove light from candles that were hit by projectiles
+			if ( candle->wasHitByWater() ) {
+				candle->resetHitByWater();
+				e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
+				candle->setIsLit(false);
 
-			// Check if the extinguished candle is owned by the player
-			// If so, dispatch an event (received by GameState for now)
-			if (candle->getOwner() == m_playerEntityID) {
-				Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_HIT));
+				if ( candle->getNumRespawns() == m_maxNumRespawns ) {
+					Logger::Log(e->getName() + ": Lel, I'm dead...");
+					candle->incrementRespawns();
+					candle->setIsAlive(false);
+
+					// Check if the extinguished candle is owned by the player
+					// If so, dispatch an event (received by GameState for now)
+					if ( candle->getOwner() == m_playerEntityID ) {
+						Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_HIT));
+					}
+				}
+
+			} else if ( candle->getDoActivate() || candle->getDownTime() >= m_candleForceRespawnTimer /* Relight the candle every 5 seconds (should probably be removed later) */ ) {
+				e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.3f, 0.3f, 0.3f));
+				candle->setIsLit(true);
+				candle->incrementRespawns();
+				candle->resetDownTime();
+				candle->resetDoActivate();
+			} else if ( !candle->getIsLit() ) {
+				candle->addToDownTime(dt);
 			}
 
-		} else if ( candle->getDoActivate() || candle->getDownTime() >= 5.f /* Relight the candle every 5 seconds (should probably be removed later) */ ) {
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.3f, 0.3f, 0.3f));
-			candle->setIsAlive(true);
-			candle->resetDownTime();
-			candle->resetDoActivate();
-		} else if (!candle->getIsAlive()) {
-			candle->addToDownTime(dt);
+			glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
+			e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 		}
-
-		glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
-		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
 }

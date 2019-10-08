@@ -1228,8 +1228,6 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 
 			fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);
 		}
-		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
-
 	}
 }
 

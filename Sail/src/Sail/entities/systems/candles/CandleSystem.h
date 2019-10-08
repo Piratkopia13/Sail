@@ -18,4 +18,6 @@ public:
 	void update(float dt) override;
 private:
 	int m_playerEntityID;
+	float m_candleForceRespawnTimer = 15.f;
+	int m_maxNumRespawns = 3;
 };

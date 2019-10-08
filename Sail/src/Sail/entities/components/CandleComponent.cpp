@@ -45,8 +45,10 @@ void CandleComponent::resetDoActivate() {
 	m_activate = false;
 }
 
-void CandleComponent::setDoActivate() {
-	m_activate = true;
+void CandleComponent::activate() {
+	if ( !m_activate && m_isAlive && !m_isLit ) {
+		m_activate = true;
+	}
 }
 
 void CandleComponent::addToDownTime(float time) {
@@ -59,6 +61,22 @@ void CandleComponent::resetDownTime() {
 
 float CandleComponent::getDownTime() const {
 	return m_downTime;
+}
+
+bool CandleComponent::getIsLit() const {
+	return m_isLit;
+}
+
+void CandleComponent::setIsLit(const bool isLit) {
+	m_isLit = isLit;
+}
+
+int CandleComponent::getNumRespawns() const {
+	return m_respawns;
+}
+
+void CandleComponent::incrementRespawns() {
+	m_respawns++;
 }
 
 void CandleComponent::setOwner(int playerEntityID) {

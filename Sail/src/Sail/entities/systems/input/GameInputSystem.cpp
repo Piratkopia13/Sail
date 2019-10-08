@@ -13,6 +13,7 @@
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<PlayerComponent>(true, true, false);
+	registerComponent<CandleComponent>(false, true, true);
 	
 	// cam variables
 	m_yaw = 90.f;
@@ -61,6 +62,14 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			putDownCandle(e);
 		}
 #endif
+
+		if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
+			for ( auto child : e->getChildEntities() ) {
+				if ( child->hasComponent<CandleComponent>() ) {
+					child->getComponent<CandleComponent>()->activate();
+				}
+			}
+		}
 
 		// Calculate forward vector for player
 		glm::vec3 forward = m_cam->getCameraDirection();

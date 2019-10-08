@@ -14,13 +14,17 @@ public:
 	bool* getPtrToIsAlive();
 	void setIsAlive(bool alive);
 	bool getDoActivate() const;
-	void setDoActivate();
+	void activate();
 	void resetDoActivate();
 	void addToDownTime(float time);
 	void resetDownTime();
 	bool isCarried() const;
 	void toggleCarried();
 	float getDownTime() const;
+	bool getIsLit() const;
+	void setIsLit(const bool isLit);
+	int getNumRespawns() const;
+	void incrementRespawns();
 	void setOwner(int playerEntityID);
 	int getOwner() const;
 
@@ -33,6 +37,9 @@ private:
 
 	/* Should probably be removed later */
 	float m_downTime = 0.f;
+
+	bool m_isLit = true;
+	int m_respawns = 0;
 
 	int m_playerEntityID = -1;
 };
