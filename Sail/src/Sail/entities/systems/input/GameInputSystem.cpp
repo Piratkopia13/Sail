@@ -57,11 +57,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		Movement playerMovement = getPlayerMovementInput(e);
 
 		// Player puts down candle
-#ifndef _DEBUG
 		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
 			putDownCandle(e);
 		}
-#endif
 
 		if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
 			for ( auto child : e->getChildEntities() ) {

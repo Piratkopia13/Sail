@@ -45,9 +45,6 @@ void CandleSystem::update(float dt) {
 		auto candle = e->getComponent<CandleComponent>();
 
 
-		if ( candle->isCarried() != candle->getWasCarriedLastUpdate() ) {
-			putDownCandle(e);
-		}
 
 		
 		if ( candle->getIsAlive() ) {
@@ -58,7 +55,9 @@ void CandleSystem::update(float dt) {
 				candle->setIsLit(false);
 
 				if ( candle->getOwner() == m_playerEntityID ) {
-					candle->toggleCarried();
+					if ( !candle->isCarried() ) {
+						candle->toggleCarried();
+					}
 				}
 
 				if ( candle->getNumRespawns() == m_maxNumRespawns ) {
@@ -81,6 +80,10 @@ void CandleSystem::update(float dt) {
 				candle->addToDownTime(dt);
 			}
 
+			if ( candle->isCarried() != candle->getWasCarriedLastUpdate() ) {
+				putDownCandle(e);
+			}
+
 			candle->setWasCarriedLastUpdate(candle->isCarried());
 			glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
 			e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
@@ -100,7 +103,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 		candleTransComp->setTranslation(parentTransComp->getTranslation() + dir);
 		ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 	} else if ( candleComp->isCarried() ) {
-		if ( glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f ) {
+		if ( glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit() ) {
 			candleTransComp->setTranslation(glm::vec3(0.f, 2.0f, 0.f));
 			candleTransComp->setParent(parentTransComp);
 		} else {
