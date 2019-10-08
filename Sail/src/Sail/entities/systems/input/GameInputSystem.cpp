@@ -45,66 +45,90 @@ void GameInputSystem::clean() {
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
-
-
-	
-	for (auto e : entities) {
-		PhysicsComponent* physicsComp = e->getComponent<PhysicsComponent>();
-		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
-		AudioComponent* audioComp = e->getComponent<AudioComponent>();
-
+	for ( auto e : entities ) {
 		// Get player movement inputs
 		Movement playerMovement = getPlayerMovementInput(e);
 
-		// Player puts down candle
-#ifndef _DEBUG
-		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
-			putDownCandle(e);
-		}
-#endif
-
-		if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
-			for ( auto child : e->getChildEntities() ) {
-				if ( child->hasComponent<CandleComponent>() ) {
-					child->getComponent<CandleComponent>()->activate();
-				}
-			}
-		}
-
 		// Calculate forward vector for player
 		glm::vec3 forward = m_cam->getCameraDirection();
-		forward.y = 0.f;
-		forward = glm::normalize(forward);
 
-		// Calculate right vector for player
-		glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-		right = glm::normalize(right);
+		// Do flying movement if in spectator mode
+		if ( e->hasComponent<SpectatorComponent>() ) {
+			forward = glm::normalize(forward);
 
-		// Prevent division by zero
-		if (playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f) {
-			// Calculate total movement
-			float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
-			if (!physicsComp->onGround) {
-				acceleration = acceleration * 0.5f;
+			// Calculate right vector for player
+			glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+			right = glm::normalize(right);
+
+			auto transComp = e->getComponent<TransformComponent>();
+			float speed = 5.f;
+			transComp->translate((playerMovement.forwardMovement * forward + playerMovement.rightMovement * right) * dt * playerMovement.speedModifier);
+
+		// Else do normal movement
+		} else {
+			PhysicsComponent* physicsComp = e->getComponent<PhysicsComponent>();
+			BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
+			AudioComponent* audioComp = e->getComponent<AudioComponent>();
+
+			// Player puts down candle
+#ifndef _DEBUG
+			if ( Input::WasKeyJustPressed(KeyBinds::putDownCandle) ) {
+				putDownCandle(e);
+			}
+#endif
+
+			if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
+				for ( auto child : e->getChildEntities() ) {
+					if ( child->hasComponent<CandleComponent>() ) {
+						child->getComponent<CandleComponent>()->activate();
+					}
+				}
+			}
+
+			if ( playerMovement.upMovement == 1.0f ) {
+				if ( !m_wasSpacePressed && physicsComp->onGround ) {
+					physicsComp->velocity.y = 5.0f;
+					// AUDIO TESTING - JUMPING
+					e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+					m_gameDataTracker->logJump();
+				}
+				m_wasSpacePressed = true;
+			} else {
+				m_wasSpacePressed = false;
+			}
+
+			forward.y = 0.f;
+			forward = glm::normalize(forward);
+
+			// Calculate right vector for player
+			glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+			right = glm::normalize(right);
+
+			// Prevent division by zero
+			if ( playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f ) {
+				// Calculate total movement
+				float acceleration = 70.0f - ( glm::length(physicsComp->velocity) / physicsComp->maxSpeed ) * 20.0f;
+				if ( !physicsComp->onGround ) {
+					acceleration = acceleration * 0.5f;
+					// AUDIO TESTING (turn OFF looping running sound)
+					audioComp->m_isPlaying[SoundType::RUN] = false;
+				}
+				// AUDIO TESTING (playing a looping running sound)
+				else if ( m_runSoundTimer > 0.3f ) {
+					audioComp->m_isPlaying[SoundType::RUN] = true;
+				} else {
+					m_runSoundTimer += dt;
+				}
+
+				physicsComp->accelerationToAdd =
+					glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
+					* acceleration;
+			} else {
 				// AUDIO TESTING (turn OFF looping running sound)
 				audioComp->m_isPlaying[SoundType::RUN] = false;
-			}
-			// AUDIO TESTING (playing a looping running sound)
-			else if (m_runSoundTimer > 0.3f) {
-				audioComp->m_isPlaying[SoundType::RUN] = true;
-			}
-			else {
-				m_runSoundTimer += dt;
+				m_runSoundTimer = 0.0f;
 			}
 
-			physicsComp->accelerationToAdd = 
-				glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
-				* acceleration;
-		}
-		else {
-			// AUDIO TESTING (turn OFF looping running sound)
-			audioComp->m_isPlaying[SoundType::RUN] = false;
-			m_runSoundTimer = 0.0f;
 		}
 	}
 }
@@ -151,8 +175,6 @@ void GameInputSystem::processMouseInput(const float& dt) {
 
 void GameInputSystem::updateCameraPosition(float alpha) {
 	for (auto e : entities) {
-
-
 		TransformComponent* playerTrans = e->getComponent<TransformComponent>();
 		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 
@@ -182,7 +204,6 @@ void GameInputSystem::putDownCandle(Entity* e) {
 
 Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	Movement playerMovement;
-	PhysicsComponent* playerPhysicsComp = e->getComponent<PhysicsComponent>();
 
 	if (Input::IsKeyPressed(KeyBinds::sprint)) { playerMovement.speedModifier = m_runSpeed; }
 
@@ -190,18 +211,7 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	if (Input::IsKeyPressed(KeyBinds::moveBackward)) { playerMovement.forwardMovement -= 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveLeft)) { playerMovement.rightMovement -= 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::moveRight)) { playerMovement.rightMovement += 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::moveUp)) {
-		if (!m_wasSpacePressed && playerPhysicsComp->onGround) {
-			playerPhysicsComp->velocity.y = 5.0f;
-			// AUDIO TESTING - JUMPING
-			e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
-			m_gameDataTracker->logJump();
-		}
-		m_wasSpacePressed = true;
-	}
-	else {
-		m_wasSpacePressed = false;
-	}
+	if (Input::IsKeyPressed(KeyBinds::moveUp)) { playerMovement.upMovement += 1.0f; }
 
 	return playerMovement;
 }

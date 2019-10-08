@@ -409,7 +409,9 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 }
 
 bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
-	// TODO: Initiate spectator mode
+	// TODO: removed unused components when in spectator mode
+	m_player->addComponent<SpectatorComponent>();
+
 
 
 	//this->requestStackPop();

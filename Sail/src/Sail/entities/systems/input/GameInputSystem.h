@@ -9,6 +9,7 @@ struct Movement {
 	float speedModifier = 1.f;
 	float forwardMovement = 0.0f;
 	float rightMovement = 0.0f;
+	float upMovement = 0.0f;
 };
 
 class GameInputSystem final : public BaseComponentSystem {
