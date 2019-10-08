@@ -38,6 +38,11 @@
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
 
+#include "API/Audio/AudioFileReader.h"
+//#include "API/Audio/WaveBankReader.h" // TODO: Use this instead/too?
+#include "API/Audio/XAudio2Helpers.h"
+
+
 #pragma comment(lib, "Mfreadwrite.lib")
 #pragma comment(lib, "Mfplat.lib")
 #pragma comment(lib, "Mfuuid.lib")
@@ -55,9 +60,6 @@ using namespace Windows::Foundation;
 //#include "CardioidSound.h"
 //#include "CustomDecay.h"
 
-#include "API/Audio/AudioFileReader.h"
-//#include "API/Audio/WaveBankReader.h" // TODO: Use this instead/too?
-#include "API/Audio/XAudio2Helpers.h"
 
 //
 // Sound with omnidirectional radiation pattern i.e. emits sound equally in all directions.

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Sail/entities/components/Component.h"
-#include "API/Audio/OmnidirectionalSound.h"
+//#include "API/Audio/OmnidirectionalSound.h"
+#include "../../../API/Audio/OmnidirectionalSound.h"
 //
 //namespace SoundType {
 //	enum SoundType { WALK, RUN, SHOOT, JUMP, LANDING, COUNT };
@@ -17,7 +18,7 @@ public:
 	virtual ~SoundComponent() {}
 
 	void addSound(std::string filename) {
-		OmnidirectionalSound* sound = new OmnidirectionalSound(filename);
+		OmnidirectionalSound* sound = SAIL_NEW OmnidirectionalSound(filename);
 		if (SUCCEEDED(sound->Initialize())) {
 			sound->_isQueued = true; // so that it plays
 			sounds.emplace_back(sound);
