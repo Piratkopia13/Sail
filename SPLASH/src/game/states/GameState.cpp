@@ -777,7 +777,6 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 
-	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 
 	// There is an imgui debug toggle to override lights
 	if (!m_disableLightComponents) {
@@ -1177,16 +1176,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 
 	if (botCount < 0) {
 		botCount = 0;
-	}// TODO: Remove this when more bots can be added safely
-#ifdef _DEBUG
-	int maxBots = 1;
-	if (botCount > maxBots) {
-		botCount = maxBots;
-		std::string msg = "Number of bots is clamped to " + std::to_string(maxBots) + " in DEBUG to preserve performance.";
-		Logger::Warning(msg);
 	}
-#endif // _DEBUG
-
 
 	for (size_t i = 0; i < botCount; i++) {
 		auto e = ECS::Instance()->createEntity("AiCharacter");
