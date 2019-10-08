@@ -723,9 +723,6 @@ void GameState::shutDownGameState() {
 
 	// Clear all entities
 	ECS::Instance()->destroyAllEntities();
-
-	// Clear all necessary systems
-	m_componentSystems.gameInputSystem->clean();
 }
 
 // HERE BE DRAGONS

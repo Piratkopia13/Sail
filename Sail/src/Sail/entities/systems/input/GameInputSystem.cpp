@@ -41,6 +41,11 @@ void GameInputSystem::initialize(Camera* cam) {
 	if (m_cam == nullptr) {
 		m_cam = SAIL_NEW CameraController(cam);
 	}
+	else {
+		CameraController* tempCam = m_cam;
+		Memory::SafeDelete(tempCam);
+		m_cam = SAIL_NEW CameraController(cam);
+	}
 }
 
 void GameInputSystem::clean() {
