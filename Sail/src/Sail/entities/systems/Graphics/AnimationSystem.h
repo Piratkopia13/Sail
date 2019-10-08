@@ -10,6 +10,7 @@ public:
 	~AnimationSystem();
 
 	void update(float dt) override;
+	void updatePerFrame(float dt);
 
 private:
 	

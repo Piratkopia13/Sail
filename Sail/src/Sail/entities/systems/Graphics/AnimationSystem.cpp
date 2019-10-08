@@ -134,3 +134,12 @@ void AnimationSystem::interpolate(glm::mat4& res, const glm::mat4& mat1, const g
 	res = glm::scale(res, resScale);
 	res = res * glm::toMat4(resRot);
 }
+
+void AnimationSystem::updatePerFrame(float dt) {
+	for (auto& e : entities) {
+		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
+		ModelComponent* modelC = e->getComponent<ModelComponent>();
+		Mesh* mesh = modelC->getModel()->getMesh(0);
+		mesh->getVertexBuffer().update(animationC->data);
+	}
+}
