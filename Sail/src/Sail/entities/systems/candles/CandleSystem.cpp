@@ -30,8 +30,8 @@ void CandleSystem::setPlayerEntityID(int entityID) {
 
 // turn on the light of a specified candle if it doesn't have one already
 void CandleSystem::lightCandle(const std::string& name) {
-	for (auto e : entities) {
-		if (e->getName() == name) {
+	for ( auto e : entities ) {
+		if ( e->getName() == name ) {
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 			break;
 		}
@@ -40,80 +40,61 @@ void CandleSystem::lightCandle(const std::string& name) {
 
 // should be updated after collision detection has been done
 void CandleSystem::update(float dt) {
-	for (auto e : entities) {
+	for ( auto e : entities ) {
 
 		auto candle = e->getComponent<CandleComponent>();
-		
+
 		if ( candle->getIsAlive() ) {
 			// Remove light from candles that were hit by projectiles
 			if ( candle->wasHitByWater() ) {
 				candle->resetHitByWater();
-				e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.0f, 0.0f, 0.0f));
-				candle->setIsLit(false);
 
-				if ( candle->getOwner() == m_playerEntityID ) {
-					if ( !candle->isCarried() ) {
-						candle->toggleCarried();
+				if ( candle->getInvincibleTimer() <= 0.f ) {
+					candle->decrementHealth(candle->getDamageTakenLastHit());
+					candle->setInvincibleTimer(INVINCIBLE_DURATION);
+
+					if ( candle->getHealth() <= 0.f ) {
+						candle->setIsLit(false);
+
+						if ( candle->getOwner() == m_playerEntityID ) {
+							if ( !candle->isCarried() ) {
+								candle->toggleCarried();
+							}
+						}
+
+						if ( candle->getNumRespawns() == m_maxNumRespawns ) {
+							candle->setIsAlive(false);
+
+							// Check if the extinguished candle is owned by the player
+							// If so, dispatch an event (received by GameState for now)
+							if ( candle->getOwner() == m_playerEntityID ) {
+								Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_HIT));
+							}
+						}
 					}
 				}
 
-				if ( candle->getNumRespawns() == m_maxNumRespawns ) {
-					candle->setIsAlive(false);
-
-		// Remove light from candles that were hit by projectiles
-		if (m_isHit) {
-			m_invincibleTimer -= dt;
-
-			if (m_invincibleTimer < 0.0f) {
-				m_isHit = false;
-				m_invincibleTimer = INVINCIBLE_DURATION;
-				candle->resetHitByWater();
-			}
-		}
-
-		else if (candle->wasHitByWater() && m_health > 0.0f) {
-			m_isHit = true;
-			m_health -= candle->getDamageTakenLastHit();
-
-			if (m_health <= 0.0f) {
-				m_health = 0.0f;
-				candle->setIsAlive(false);
-
-					// Check if the extinguished candle is owned by the player
-					// If so, dispatch an event (received by GameState for now)
-					if ( candle->getOwner() == m_playerEntityID ) {
-						Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_HIT));
-					}
-				}
-
-			} else if ( candle->getDoActivate() || candle->getDownTime() >= m_candleForceRespawnTimer /* Relight the candle every x seconds (should probably be removed later) */ ) {
-				e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(0.3f, 0.3f, 0.3f));
+			} else if ( (candle->getDoActivate() || candle->getDownTime() >= m_candleForceRespawnTimer) && !candle->getIsLit() ) {
 				candle->setIsLit(true);
+				candle->setHealth(MAX_HEALTH);
 				candle->incrementRespawns();
 				candle->resetDownTime();
 				candle->resetDoActivate();
 			} else if ( !candle->getIsLit() ) {
 				candle->addToDownTime(dt);
 			}
-				// Check if the extinguished candle is owned by the player
-				// If so, dispatch an event (received by GameState for now)
-				if (candle->getOwner() == m_playerEntityID) {
-					Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_HIT));
-				}
-			}
-		}
-		else if (!candle->getIsAlive() && candle->getDownTime() >= 4.0f /* Relight the candle every 5 seconds (should probably be removed later) */) {
-			candle->setIsAlive(true);
-			m_health = MAX_HEALTH;
-			candle->resetDownTime();
-			candle->resetDoActivate();
-		} else if (!candle->getIsAlive()) {
-			candle->addToDownTime(dt);
-		}
 
 			if ( candle->isCarried() != candle->getWasCarriedLastUpdate() ) {
 				putDownCandle(e);
 			}
+
+			if ( candle->getInvincibleTimer() > 0.f ) {
+				candle->decrementInvincibleTimer(dt);
+			}
+
+			// COLOR/INTENSITY
+			float tempHealthRatio = ( candle->getHealth() / MAX_HEALTH );
+			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio, tempHealthRatio));
 
 			candle->setWasCarriedLastUpdate(candle->isCarried());
 			glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);

@@ -92,6 +92,30 @@ int CandleComponent::getDamageTakenLastHit() const {
 	return m_damageTakenLastHit;
 }
 
+float CandleComponent::getInvincibleTimer() const {
+	return m_invincibleTimer;
+}
+
+void CandleComponent::decrementInvincibleTimer(const float dt) {
+	m_invincibleTimer -= dt;
+}
+
+void CandleComponent::setInvincibleTimer(const float time) {
+	m_invincibleTimer = time;
+}
+
+float CandleComponent::getHealth() const {
+	return m_health;
+}
+
+void CandleComponent::setHealth(const float health) {
+	m_health = health;
+}
+
+void CandleComponent::decrementHealth(const float health) {
+	m_health -= health;
+}
+
 bool CandleComponent::isCarried() const {
 	return m_carried;
 }
