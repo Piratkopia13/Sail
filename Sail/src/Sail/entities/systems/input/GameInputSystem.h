@@ -40,7 +40,7 @@ private:
 	float m_runSoundTimer = 0.0f;
 	bool m_wasSpacePressed = false;
 	float m_projectileSpawnCounter = 0.f;
-	float m_lookSensitivityMouse = 0.1;
+	float m_lookSensitivityMouse = 0.1f;
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
