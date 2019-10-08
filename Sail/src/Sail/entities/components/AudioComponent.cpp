@@ -13,7 +13,7 @@ AudioComponent::AudioComponent() {
 		m_playOnce[i] = true;
 	}
 
-	listener.pCone = nullptr;
+	//listener.pCone = nullptr;
 }
 
 AudioComponent::~AudioComponent() {

@@ -1,8 +1,8 @@
-#ifndef AUDIO_COMPONENT_H
-#define AUDIO_COMPONENT_H
+#pragma once
 
+// TODO: remove includes
 #include "Sail/entities/components/Component.h"
-#include <x3daudio.h>
+//#include <x3daudio.h>
 #include <string>
 #include <stack>
 
@@ -16,7 +16,7 @@ public:
 	AudioComponent();
 	virtual ~AudioComponent();
 
-	X3DAUDIO_LISTENER listener;
+	//X3DAUDIO_LISTENER listener;
 
 	std::string m_soundEffects[SoundType::COUNT];
 	int m_soundID[SoundType::COUNT];
@@ -36,4 +36,3 @@ public:
 	void defineSound(SoundType::SoundType type, std::string filename, float dtThreshold = 0.0f, bool playOnce = true);
 };
 
-#endif

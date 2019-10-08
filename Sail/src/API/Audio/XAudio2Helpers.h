@@ -55,7 +55,7 @@ static HRESULT SetupXAudio2(_In_ const WAVEFORMATEX* format, _In_ IXAPO* xApo, _
 	}
 
 	// Create a submix voice that will host the xAPO.
-	// This submix voice will be detroyed when XAudio2 instance is destroyed.
+	// This submix voice will be destroyed when XAudio2 instance is destroyed.
 	IXAudio2SubmixVoice* submixVoice = nullptr;
 
 	if (SUCCEEDED(hr))

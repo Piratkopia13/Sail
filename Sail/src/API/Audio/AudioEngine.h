@@ -4,7 +4,7 @@
 enum AudioType { MUSIC };
 
 #include <xaudio2.h>
-#include <x3daudio.h>
+//#include <x3daudio.h>
 
 //#pragma comment (lib, "../../../../libraries/Audio/x3daudio.lib")
 //#pragma comment (lib, "../../../../libraries/Audio/xaudio2.lib")
@@ -25,16 +25,18 @@ enum AudioType { MUSIC };
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid")
 
-
+#include "wrl\client.h"
+#include "wrl\implements.h"
 
 
 // HRTF
 #include <xapo.h>
 #include <hrtfapoapi.h>
 
-#pragma comment(lib, "hrtfapo.lib");
+#pragma comment(lib, "hrtfapo.lib")
 
 #include "XAudio2Helpers.h"
+
 
 
 #define SOUND_COUNT 236
@@ -47,6 +49,13 @@ enum AudioType { MUSIC };
 
 #define SPEED_OF_SOUND 343.0f
 #define DISTANCE_SCALER 1.0f
+
+
+
+class Camera;
+class Transform;
+
+
 
 struct StreamingVoiceContext : public IXAudio2VoiceCallback
 {
@@ -91,10 +100,13 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 };
 #pragma endregion
 
-struct soundStruct {
 
+struct soundStruct {
 	IXAudio2SourceVoice* sourceVoice = nullptr;
-	X3DAUDIO_EMITTER emitter = { 0 };
+	HrtfEnvironment      environment = HrtfEnvironment::Outdoors;
+	glm::vec3            positionOffset = { 0,0,0 };
+	Microsoft::WRL::ComPtr<IXAPOHrtfParameters> hrtfParams; // TODO: remove?
+	//X3DAUDIO_EMITTER emitter = { 0 };
 };
 
 class AudioEngine
@@ -104,8 +116,12 @@ public:
 	~AudioEngine();
 
 	void loadSound(const std::string& filename);
-	int playSound(const std::string& filename, X3DAUDIO_LISTENER& listener);
+	int initializeSound(const std::string& filename);
+	int playSound(const std::string& filename);
 	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
+
+	void updateSoundWithCurrentPosition(int index, Camera& cam, Transform& transform, float alpha);
+
 	void stopSpecificSound(int index);
 	void stopSpecificStream(int index);
 	void stopAllStreams();
@@ -120,7 +136,7 @@ public:
 	void setStreamVolume(int index, float value = VOL_HALF);
 
 	std::atomic<bool> m_streamLocks[STREAMED_SOUNDS_COUNT];
-	X3DAUDIO_DSP_SETTINGS m_DSPSettings = { 0 };
+	//X3DAUDIO_DSP_SETTINGS m_DSPSettings = { 0 };
 
 private: 
 	bool m_isRunning = true;
@@ -128,7 +144,7 @@ private:
 	// The main audio 'core'
 	IXAudio2* m_xAudio2 = nullptr;
 	// The main 3D-audio 'core'
-	X3DAUDIO_HANDLE m_X3DInstance;
+	//X3DAUDIO_HANDLE m_X3DInstance;
 	
 
 	// Represents the audio output device
@@ -152,8 +168,8 @@ private:
 
 	// PRIVATE FUNCTION
 	//-----------------
-	void initXAudio2();
-	void initXAudio3D();
+	HRESULT initXAudio2();
+	//void initXAudio3D();
 
 	void streamSoundInternal(const std::string& filename, int myIndex, bool loop);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);

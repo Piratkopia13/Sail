@@ -2,26 +2,31 @@
 
 #include "AudioSystem.h"
 #include "..//Sail/src/Sail/entities/components/AudioComponent.h"
-#include "..//Sail/src/Sail/entities/components/PhysicsComponent.h"
+#include "..//Sail/src/Sail/entities/components/TransformComponent.h"
+//#include "..//Sail/src/Sail/entities/components/PhysicsComponent.h"
 #include "..//Sail/src/Sail/graphics/camera/PerspectiveCamera.h"
 #include "..//..//Entity.h"
 #include <iterator>
 #include "..//Sail/src/Sail/Application.h"
 
-AudioSystem::AudioSystem() {
+AudioSystem::AudioSystem() : BaseComponentSystem() {
+	registerComponent<AudioComponent>(true, true, true);
+	registerComponent<TransformComponent>(true, true, true);
+
 }
 
 AudioSystem::~AudioSystem() {
 	m_audioEngine.stopAllSounds();
 }
 
-void AudioSystem::initialize(PerspectiveCamera* camPtr) {
+//void AudioSystem::initialize(PerspectiveCamera* camPtr) {
+void AudioSystem::initialize() {
 	// TODO: System owner should check if this is correct
 	registerComponent<AudioComponent>(true, true, true);
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/jump.wav");
 
-	m_camPtr = camPtr;
+	//m_camPtr = camPtr;
 }
 
 void AudioSystem::update(float dt) {
@@ -150,6 +155,75 @@ void AudioSystem::update(float dt) {
 			}
 		}
 	}
+}
+
+void AudioSystem::update(Camera& cam, float dt, float alpha) {
+	// Loop through entities
+	for (auto e : entities) {
+		auto audioC = e->getComponent<AudioComponent>();
+		// Loop through sounds
+		for (int i = 0; i < SoundType::COUNT; i++) {
+
+			if (audioC->m_isPlaying[i]) {
+				// if < threshold
+				if (audioC->m_soundEffectTimers[i] == 0.0f) {
+					audioC->m_soundID[i] = m_audioEngine.initializeSound(audioC->m_soundEffects[i]);
+					//audioC->m_soundID[i] = m_audioEngine.playSound(audioC->m_soundEffects[i]);
+					
+					m_audioEngine.updateSoundWithCurrentPosition(audioC->m_soundID[i], cam, *e->getComponent<TransformComponent>(), alpha);					
+					m_audioEngine.playSound(audioC->m_soundEffects[i]);
+					
+					audioC->m_soundEffectTimers[i] += dt;
+
+					audioC->m_isPlaying[i] = !audioC->m_playOnce[i]; // NOTE: Opposite, hence '!'
+				} else {
+					audioC->m_soundEffectTimers[i] += dt;
+
+					if (audioC->m_soundEffectTimers[i] > audioC->m_soundEffectThresholds[i]) {
+						audioC->m_soundEffectTimers[i] = 0.0f;
+					}
+				}
+			}
+
+			else if (audioC->m_soundEffectTimers[i] != 0.0f && !audioC->m_playOnce[i]) {
+				m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
+				audioC->m_soundEffectTimers[i] = 0.0f;
+			}
+
+			// NOTE:
+			//		This is a correct solution for FADING, I believe, however it has to be done using a thread
+			//
+			//else if (audioC->m_soundEffectTimers[i] != 0.0f && !audioC->m_playOnce[i]) {
+				//float volumeHolder = m_audioEngine.getSoundVolume(audioC->m_soundID[i]);
+				//if (volumeHolder > 0.0f) {
+				//	m_audioEngine.setSoundVolume(audioC->m_soundID[i], (volumeHolder - (1.0f * dt)));
+				//}
+				//else {
+				//	m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
+				//	audioC->m_soundEffectTimers[i] = 0.0f;
+				//}
+			//}
+
+		}
+
+
+
+		for (auto& sound : e->getComponent<AudioComponent>()) {
+			if (sound->_isPlaying || sound->_isQueued) {
+				//auto* transform = e->getComponent<TransformComponent>();
+				updateSoundWithCurrentPosition(*sound, cam, *e->getComponent<TransformComponent>(), alpha);
+			}
+			if (sound->_isQueued) {
+				sound->Start();
+				sound->_isPlaying = true;
+				sound->_isQueued = false;
+			}
+		}
+	}
+}
+
+void AudioSystem::updateSoundWithCurrentPosition() {
+
 }
 
 void AudioSystem::stop() {
