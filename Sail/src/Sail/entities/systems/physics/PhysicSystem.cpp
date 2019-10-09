@@ -11,8 +11,6 @@
 #include "..//Sail/src/Sail/api/Input.h"
 #include "..//Sail/src/Sail/KeyCodes.h"
 
-#include <map>
-
 PhysicSystem::PhysicSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<TransformComponent>(true, true, true);
