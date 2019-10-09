@@ -5,6 +5,8 @@
 class GameDataTracker;
 class PhysicsComponent;
 class TransformComponent;
+class BoundingBoxComponent;
+class CollisionSpheresComponent;
 
 class PhysicSystem final : public BaseComponentSystem
 {
@@ -24,5 +26,8 @@ private:
 	void rayCastUpdate(Entity* e, PhysicsComponent* physicsComp, BoundingBox* boundingBox, TransformComponent* transform, float& dt);
 	const bool collisionUpdate(Entity* thisPhysicalObject, PhysicsComponent* physicsComp, const float& dt);
 	const bool handleCollisions(Entity* e, PhysicsComponent* physicsComp, const std::vector<Octree::CollisionInfo>& collisions, const float& dt);
-	void surfaceFromCollision(Entity* e, BoundingBox* boundingBox, TransformComponent* transform, const std::vector<Octree::CollisionInfo>& collisions);
+	void surfaceFromCollision(BoundingBoxComponent* bbComp, CollisionSpheresComponent* csc, PhysicsComponent* physics, TransformComponent* transform, const std::vector<Octree::CollisionInfo>& collisions);
+
+
+	float findIntersectionDepth(BoundingBoxComponent* bbComp, CollisionSpheresComponent* csc, const Octree::CollisionInfo& collision);
 };
