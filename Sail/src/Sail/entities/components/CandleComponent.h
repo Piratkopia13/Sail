@@ -11,7 +11,7 @@ public:
 	void resetHitByWater();
 	bool wasHitByWater() const;
 	bool getIsAlive() const;
-	bool* getPtrToIsAlive();
+	bool* getPtrToIsLit();
 	void setIsAlive(bool alive);
 	bool getDoActivate() const;
 	void activate();

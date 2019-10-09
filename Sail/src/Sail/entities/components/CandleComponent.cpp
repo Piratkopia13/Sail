@@ -26,8 +26,8 @@ bool CandleComponent::getIsAlive() const {
 	return m_isAlive;
 }
 
-bool* CandleComponent::getPtrToIsAlive() {
-	return &m_isAlive;
+bool* CandleComponent::getPtrToIsLit() {
+	return &m_isLit;
 }
 
 void CandleComponent::setIsAlive(bool alive) {
