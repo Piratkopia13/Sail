@@ -12,8 +12,10 @@
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<PlayerComponent>(true, true, false);
-	registerComponent<AudioComponent>(true, false, true);
-	registerComponent<PhysicsComponent>(true, true, true);
+	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<SpeedLimitComponent>(true, true, false);
+	registerComponent<CollisionComponent>(true, true, false);
+	registerComponent<AudioComponent>(true, true, true);
 	registerComponent<BoundingBoxComponent>(true, true, false);
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<CandleComponent>(false, true, true);
@@ -52,6 +54,10 @@ void GameInputSystem::clean() {
 	Memory::SafeDelete(m_cam);
 }
 
+void GameInputSystem::stop() {
+	clean();
+}
+
 void GameInputSystem::processKeyboardInput(const float& dt) {
 	for ( auto e : entities ) {
 		// Get player movement inputs
@@ -80,9 +86,10 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 			// Else do normal movement
 		} else {
-			PhysicsComponent* physicsComp = e->getComponent<PhysicsComponent>();
-			BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
-			AudioComponent* audioComp = e->getComponent<AudioComponent>();
+			auto collision = e->getComponent<CollisionComponent>();
+			auto movement = e->getComponent<MovementComponent>();
+			auto speedLimit = e->getComponent<SpeedLimitComponent>();
+			auto audioComp = e->getComponent<AudioComponent>();
 
 
 			// Get player movement inputs
@@ -102,8 +109,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			if ( playerMovement.upMovement == 1.0f ) {
-				if ( !m_wasSpacePressed && physicsComp->onGround ) {
-					physicsComp->velocity.y = 5.0f;
+				if ( !m_wasSpacePressed && collision->onGround ) {
+					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
 					e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
 					m_gameDataTracker->logJump();
@@ -123,8 +130,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			// Prevent division by zero
 			if ( playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f ) {
 				// Calculate total movement
-				float acceleration = 70.0f - ( glm::length(physicsComp->velocity) / physicsComp->maxSpeed ) * 20.0f;
-				if ( !physicsComp->onGround ) {
+				float acceleration = 70.0f - ( glm::length(movement->velocity) / speedLimit->maxSpeed ) * 20.0f;
+				if ( !collision->onGround ) {
 					acceleration = acceleration * 0.5f;
 					// AUDIO TESTING (turn OFF looping running sound)
 					audioComp->m_isPlaying[SoundType::RUN] = false;
@@ -136,7 +143,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					m_runSoundTimer += dt;
 				}
 
-				physicsComp->accelerationToAdd =
+				movement->accelerationToAdd =
 					glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
 					* acceleration;
 			} else {
@@ -144,7 +151,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				audioComp->m_isPlaying[SoundType::RUN] = false;
 				m_runSoundTimer = 0.0f;
 			}
-
 		}
 	}
 }

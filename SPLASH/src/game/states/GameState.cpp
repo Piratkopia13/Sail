@@ -13,7 +13,6 @@
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "Sail/entities/systems/LevelGeneratorSystem/LevelGeneratorSystem.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/input/GameInputSystem.h"
@@ -21,6 +20,10 @@
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/physics/MovementSystem.h"
+#include "Sail/entities/systems/physics/MovementPostCollisionSystem.h"
+#include "Sail/entities/systems/physics/CollisionSystem.h"
+#include "Sail/entities/systems/physics/SpeedLimitSystem.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
@@ -95,14 +98,15 @@ GameState::GameState(StateStack& stack)
 	// Setting light index
 	m_currLightIndex = 0;
 
-	/*
-		Create a PhysicSystem
-		If the game developer does not want to add the systems like this,
-		this call could be moved inside the default constructor of ECS,
-		assuming each system is included in ECS.cpp instead of here
-	*/
-	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
-	m_componentSystems.physicSystem->provideOctree(m_octree);
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+	
+	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
+	m_componentSystems.collisionSystem->provideOctree(m_octree);
+	
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+
+	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
+	
 
 	// Create system for animations
 	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
@@ -728,7 +732,8 @@ void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
-	// Clear all entities
+	ECS::Instance()->stopAllSystems();
+
 	ECS::Instance()->destroyAllEntities();
 }
 
@@ -740,16 +745,20 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
-	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
-
+	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	
 	if (!m_isSingleplayer) {
 		// Update entities with info from the network
 		m_componentSystems.networkReceiverSystem->update();
 		// Send out your entity info to the rest of the players
 		m_componentSystems.networkSenderSystem->update(0.0f);
 	}
+	
+	m_componentSystems.movementSystem->update(dt);
+	m_componentSystems.speedLimitSystem->update(0.0f);
+	m_componentSystems.collisionSystem->update(dt);
+	m_componentSystems.movementPostCollisionSystem->update(0.0f);
 
-	m_componentSystems.physicSystem->update(dt);
 
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
@@ -998,7 +1007,6 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 
 	player->addComponent<TransformComponent>();
 
-
 	player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
 		Netcode::EntityType::PLAYER_ENTITY,
@@ -1010,10 +1018,10 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 
 
 
-	// Add physics component and setting initial variables
-	player->addComponent<PhysicsComponent>();
-	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
+	// Add physics components and setting initial variables
+	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	player->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
+	player->addComponent<CollisionComponent>();
 
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
@@ -1196,15 +1204,17 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addComponent<TransformComponent>(glm::vec3(2.f * (i + 1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
+		e->addComponent<MovementComponent>();
+		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>();
 		e->addComponent<AiComponent>();
-		auto fsmComp = e->addComponent<FSMComponent>();
-		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<PhysicsComponent>()->maxSpeed = m_player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<SpeedLimitComponent>()->maxSpeed = m_player->getComponent<SpeedLimitComponent>()->maxSpeed / 2.f;
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
 		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
 		e->addChildEntity(aiCandleEntity);
-
+		auto fsmComp = e->addComponent<FSMComponent>();
+		
 		// Create states and transitions
 		{
 			SearchingState* searchState = fsmComp->createState<SearchingState>(m_componentSystems.aiSystem->getNodeSystem());

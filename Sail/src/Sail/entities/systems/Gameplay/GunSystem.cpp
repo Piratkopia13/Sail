@@ -8,10 +8,11 @@
 #include "Sail/entities/components/LifeTimeComponent.h"
 #include "Sail/entities/components/BoundingBoxComponent.h"
 #include "Sail/entities/components/ModelComponent.h"
-#include "Sail/entities/components/PhysicsComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
+#include "Sail/entities/components/CollisionComponent.h"
 
 #include "Sail/entities/components/MetaballComponent.h"
 #include "Sail/utils/GameDataTracker.h"
@@ -94,14 +95,15 @@ Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, float projSp
 	e->addComponent<ProjectileComponent>(10.0f);
 	e->addComponent<TransformComponent>((pos + randPos) - dir * (0.15f * i));
 
-	e->addComponent<PhysicsComponent>();
-	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-	physics->velocity = dir * projSpeed;
-	physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
-	physics->drag = 2.0f;
-	// NOTE: 0.0f <= Bounciness <= 1.0f
-	physics->bounciness = 0.1f;
-	physics->padding = 0.16f;
+						MovementComponent* movement = e->addComponent<MovementComponent>();
+						movement->velocity = gun->direction * gun->projectileSpeed;
+						movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+
+						CollisionComponent* collision = e->addComponent<CollisionComponent>();
+						collision->drag = 2.0f;
+						// NOTE: 0.0f <= Bounciness <= 1.0f
+						collision->bounciness = 0.1f;
+						collision->padding = 0.16f;
 
 	
 	return e.get();
