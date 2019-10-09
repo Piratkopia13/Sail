@@ -11,7 +11,7 @@
 	They must have a default constructor, but can have default arguments or other constructors as well.
 	No logic SHOULD be within each component, only raw data.
 
-	Example: See PhysicsComponent.h
+	Example: See MovementComponent.h
 */
 
 

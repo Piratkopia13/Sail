@@ -6,7 +6,6 @@
 class AiComponent;
 class TransformComponent;
 class GunComponent;
-class PhysicsComponent;
 class NodeSystem;
 class Octree;
 
