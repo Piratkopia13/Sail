@@ -3,6 +3,7 @@
 #include "Component.h"
 #include "Sail/graphics/geometry/Animation.h"
 #include "Sail/api/Mesh.h"
+#include "Sail/api/VertexBuffer.h"
 
 class AnimationComponent : public Component<AnimationComponent> {
 public:
@@ -17,6 +18,7 @@ public:
 		blending(false),
 		dataSize(0),
 		transformSize(0),
+		computeUpdate(true),
 		//transformedPositions(nullptr),
 		//transformedNormals(nullptr),
 		//transformedTangents(nullptr),
@@ -60,6 +62,7 @@ public:
 	}
 	
 
+	bool computeUpdate;
 	float animationTime;
 	unsigned int animationIndex;
 	float animationSpeed;
@@ -68,6 +71,7 @@ public:
 	Animation* nextAnimation;
 	bool blending;
 	unsigned int transformSize;
+	bool hasUpdated;
 
 	//Mesh::vec3* transformedPositions;
 	//Mesh::vec3* transformedNormals;
@@ -76,6 +80,7 @@ public:
 	Mesh::Data data;
 	glm::mat4* transforms;
 
+	std::unique_ptr<VertexBuffer> tposeVBuffer;
 
 
 	AnimationStack* getAnimationStack() { return m_stack; };

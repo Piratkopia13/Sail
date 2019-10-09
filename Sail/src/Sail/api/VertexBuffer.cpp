@@ -2,7 +2,7 @@
 #include "VertexBuffer.h"
 #include "Sail/utils/Utils.h"
 
-VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData) 
+VertexBuffer::VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData)
 	: inputLayout(inputLayout) 
 {
 	m_stride = inputLayout.getVertexSize();
@@ -13,7 +13,7 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData
 	m_byteSize = modelData.numVertices * m_stride;
 }
 
-void* VertexBuffer::getVertexData(Mesh::Data& modelData) {
+void* VertexBuffer::getVertexData(const Mesh::Data& modelData) {
 	void* vertices = malloc(modelData.numVertices * m_stride);
 
 	UINT byteOffset = 0;

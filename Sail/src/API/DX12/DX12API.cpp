@@ -274,20 +274,23 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_DESCRIPTOR_RANGE descRangeSrvUav[2];
 	descRangeSrvUav[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descRangeSrvUav[0].NumDescriptors = 10;
-	descRangeSrvUav[0].BaseShaderRegister = 0; // register bX
-	descRangeSrvUav[0].RegisterSpace = 0; // register (bX,spaceY)
+	descRangeSrvUav[0].BaseShaderRegister = 0; // register tX
+	descRangeSrvUav[0].RegisterSpace = 0;
 	descRangeSrvUav[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	descRangeSrvUav[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 	descRangeSrvUav[1].NumDescriptors = 10;
-	descRangeSrvUav[1].BaseShaderRegister = 10; // register bX
-	descRangeSrvUav[1].RegisterSpace = 0; // register (bX,spaceY)
+	descRangeSrvUav[1].BaseShaderRegister = 10; // register uX
+	descRangeSrvUav[1].RegisterSpace = 0;
 	descRangeSrvUav[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	// TODO: autogen from other data
 	m_globalRootSignatureRegisters["t0"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
 	m_globalRootSignatureRegisters["t1"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
 	m_globalRootSignatureRegisters["t2"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+	m_globalRootSignatureRegisters["u10"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+	m_globalRootSignatureRegisters["u11"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+	m_globalRootSignatureRegisters["u12"] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
 
 	// Create descriptor table
 	D3D12_ROOT_DESCRIPTOR_TABLE dtSrvUav;

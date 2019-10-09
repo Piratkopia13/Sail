@@ -25,6 +25,7 @@
 #include "Sail/entities/systems/physics/CollisionSystem.h"
 #include "Sail/entities/systems/physics/SpeedLimitSystem.h"
 #include "Sail/ai/states/AttackingState.h"
+#include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
 #include "Sail/TimeSettings.h"
@@ -279,6 +280,10 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
+	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
+		m_animEnt->getComponent<AnimationComponent>()->computeUpdate = true;
+	}
+
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
@@ -357,7 +362,7 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
-		m_app->getResourceManager().reloadShader<GBufferOutShader>();
+		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 	}
 
 	// Pause game
@@ -476,6 +481,7 @@ bool GameState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
+	renderImGuiAnimationSettings(dt);
 
 	return false;
 }
@@ -651,9 +657,6 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Checkbox("Enable post processing",
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
 	);
-	bool interpolate = ECS::Instance()->getSystem<AnimationSystem>()->getInterpolation();
-	ImGui::Checkbox("enable animation interpolation", &interpolate);
-	ECS::Instance()->getSystem<AnimationSystem>()->setInterpolation(interpolate);
 	static Entity* pickedEntity = nullptr;
 	static float metalness = 1.0f;
 	static float roughness = 1.0f;
@@ -725,6 +728,53 @@ bool GameState::renderImGuiLightDebug(float dt) {
 	}
 	ImGui::End();
 	return true;
+}
+
+bool GameState::renderImGuiAnimationSettings(float dt) {
+	ImGui::Begin("Animation settings");
+	bool interpolate = ECS::Instance()->getSystem<AnimationSystem>()->getInterpolation();
+	ImGui::Checkbox("enable animation interpolation", &interpolate);
+	ECS::Instance()->getSystem<AnimationSystem>()->setInterpolation(interpolate);
+	ImGui::Separator();
+
+	std::vector<Entity*>& e = ECS::Instance()->getSystem<AnimationSystem>()->getEntities();
+
+	if (ImGui::CollapsingHeader("Animated Objects")) {
+		for (unsigned int i = 0; i < e.size(); i++) {
+			if (ImGui::TreeNode(e[i]->getName().c_str())) {
+				AnimationComponent* animationC = e[i]->getComponent<AnimationComponent>();
+				//ImGui::Text("Animation: %s", animationC->currentAnimation->getName().c_str());
+				ImGui::Checkbox("Update on GPU", &animationC->computeUpdate);
+				ImGui::SameLine();
+				if (ImGui::SliderFloat("Animation Speed", &animationC->animationSpeed, 0.0f, 3.0f)) {
+
+				}
+				AnimationStack* stack = animationC->getAnimationStack();
+				ImGui::Text("AnimationStack");
+
+				/*static float transitionTime = 1.0f;
+				if (ImGui::SliderFloat("Transition Time", &transitionTime, 0.0f, 3.0f)) {
+
+				}*/
+				/*for (unsigned int animationIndex = 0; animationIndex < stack->getAnimationCount(); animationIndex++) {
+
+
+
+
+					if (ImGui::Button(std::string("Switch to " + stack->getAnimation(animationIndex)->getName()).c_str())) {
+
+						animationC->transitions.push({ stack->getAnimation(animationIndex), transitionTime, 0.0f });
+					}
+					ImGui::Separator();
+				}*/
+
+				ImGui::TreePop();
+			}
+		}
+	}
+
+	ImGui::End();
+	return false;
 }
 
 void GameState::shutDownGameState() {
@@ -876,11 +926,11 @@ void GameState::loadAnimations() {
 	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-#ifndef _DEBUG
+//#ifndef _DEBUG
 	//m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-#endif
+//#endif
 
 
 
@@ -891,14 +941,14 @@ void GameState::initAnimations() {
 
 
 
-	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
+	/*auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
 	animationEntity2->addComponent<TransformComponent>();
 	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
 	animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
 	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);*/
 
 	/*
 
@@ -920,41 +970,43 @@ void GameState::initAnimations() {
 		animationEntity22->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
 		animationEntity22->getComponent<AnimationComponent>()->currentAnimation = animationEntity22->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
 
-		auto animationEntity3 = ECS::Instance()->createEntity("animatedModel3");
-		animationEntity3->addComponent<TransformComponent>();
-		animationEntity3->getComponent<TransformComponent>()->translate(3, 4, 2);
-		animationEntity3->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-		animationEntity3->getComponent<TransformComponent>()->scale(0.005f);
-		animationEntity3->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/BaseMesh_Anim.fbx", shader));
-		animationEntity3->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity3->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/BaseMesh_Anim.fbx"));
-		animationEntity3->getComponent<AnimationComponent>()->currentAnimation = animationEntity3->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);*/
-#ifndef _DEBUG
-		//auto animationEntity4 = ECS::Instance()->createEntity("animatedModel4");
-		//animationEntity4->addComponent<TransformComponent>();
-		//animationEntity4->getComponent<TransformComponent>()->translate(-1,2,-3);
-		//animationEntity4->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-		//animationEntity4->getComponent<TransformComponent>()->scale(0.005f);
-		//animationEntity4->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT.fbx", shader));
-		//animationEntity4->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		//animationEntity4->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
-		//animationEntity4->getComponent<AnimationComponent>()->currentAnimation = animationEntity4->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+	auto animationEntity3 = ECS::Instance()->createEntity("animatedModel3");
+	animationEntity3->addComponent<TransformComponent>();
+	animationEntity3->getComponent<TransformComponent>()->translate(3, 4, 2);
+	animationEntity3->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
+	animationEntity3->getComponent<TransformComponent>()->scale(0.005f);
+	animationEntity3->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/BaseMesh_Anim.fbx", shader));
+	animationEntity3->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity3->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/BaseMesh_Anim.fbx"));
+	animationEntity3->getComponent<AnimationComponent>()->currentAnimation = animationEntity3->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);*/
+//#ifndef _DEBUG
+	//auto animationEntity4 = ECS::Instance()->createEntity("animatedModel4");
+	//animationEntity4->addComponent<TransformComponent>();
+	//animationEntity4->getComponent<TransformComponent>()->translate(-1,2,-3);
+	//animationEntity4->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
+	//animationEntity4->getComponent<TransformComponent>()->scale(0.005f);
+	//animationEntity4->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT.fbx", shader));
+	//animationEntity4->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	//animationEntity4->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
+	//animationEntity4->getComponent<AnimationComponent>()->currentAnimation = animationEntity4->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
 
 	unsigned int count = m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx").getAnimationCount();
 	for (int i = 0; i < count; i++) {
 		auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5-" + std::to_string(i));
 		animationEntity5->addComponent<TransformComponent>();
 		animationEntity5->getComponent<TransformComponent>()->translate(0, 0, 3 + i * 2);
-		animationEntity5->getComponent<TransformComponent>()->translate(110.f, 100.f, 90.f);
+		//animationEntity5->getComponent<TransformComponent>()->translate(110.f, 100.f, 90.f);
 		animationEntity5->getComponent<TransformComponent>()->scale(0.005f);
 		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/DEBUG_BALLBOT.fbx", shader));
 		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
 		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
+
+		m_animEnt = animationEntity5;
 	}
 
 
-#endif
+//#endif
 
 
 

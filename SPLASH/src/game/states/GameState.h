@@ -56,6 +56,7 @@ private:
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
+	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
 
@@ -143,5 +144,7 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_poppedThisFrame = false;
+
+	std::shared_ptr<Entity> m_animEnt;
 
 };
