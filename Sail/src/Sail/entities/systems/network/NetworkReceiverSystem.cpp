@@ -128,7 +128,7 @@ void NetworkReceiverSystem::update(float dt) {
 					Archive::loadVec3(ar, gunDirection);
 
 					// Use data
-					GunFactory::createWaterBullet(gunPosition, gunDirection, 0);
+					GunFactory::createWaterBullet(gunPosition, gunDirection, 10.0f, 0);
 					
 				}
 				break;

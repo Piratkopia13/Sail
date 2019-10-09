@@ -46,7 +46,7 @@ void GunSystem::update(float dt) {
 
 					for (int i = 0; i <= 1; i++) {
 						// Create entity and attach necessary components etc
-						Entity* e = GunFactory::createWaterBullet(gun->position, gun->direction, i);
+						Entity* e = GunFactory::createWaterBullet(gun->position, gun->direction, gun->projectileSpeed, i);
 
 						// Let network know that a projectile was spawned.
 						unsigned char id = e->getID();
@@ -76,7 +76,7 @@ void GunSystem::update(float dt) {
 
 }
 
-Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, int i) {
+Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, float projSpeed, int i) {
 	auto e = ECS::Instance()->createEntity("projectile");
 	
 	glm::vec3 randPos;
@@ -87,21 +87,21 @@ Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, int i) {
 	randPos.g = ((float)rand() / RAND_MAX) * maxrand;
 	randPos.b = ((float)rand() / RAND_MAX) * maxrand;
 
-						e->addComponent<MetaballComponent>();
-						e->addComponent<BoundingBoxComponent>();
-						e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
-						e->addComponent<LifeTimeComponent>(4.0f);
-						e->addComponent<ProjectileComponent>(10.0f);
-						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
+	e->addComponent<MetaballComponent>();
+	e->addComponent<BoundingBoxComponent>();
+	e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
+	e->addComponent<LifeTimeComponent>(4.0f);
+	e->addComponent<ProjectileComponent>(10.0f);
+	e->addComponent<TransformComponent>((pos + randPos) - dir * (0.15f * i));
 
-						e->addComponent<PhysicsComponent>();
-						PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-						physics->velocity = gun->direction * gun->projectileSpeed;
-						physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
-						physics->drag = 2.0f;
-						// NOTE: 0.0f <= Bounciness <= 1.0f
-						physics->bounciness = 0.1f;
-						physics->padding = 0.16f;
+	e->addComponent<PhysicsComponent>();
+	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+	physics->velocity = dir * projSpeed;
+	physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+	physics->drag = 2.0f;
+	// NOTE: 0.0f <= Bounciness <= 1.0f
+	physics->bounciness = 0.1f;
+	physics->padding = 0.16f;
 
 	
 	return e.get();
