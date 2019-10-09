@@ -11,10 +11,13 @@
 
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	// TODO: System owner should check if this is correct
 	registerComponent<PlayerComponent>(true, true, false);
+	registerComponent<AudioComponent>(true, false, true);
+	registerComponent<PhysicsComponent>(true, true, true);
+	registerComponent<BoundingBoxComponent>(true, true, false);
+	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<CandleComponent>(false, true, true);
-	
+
 	// cam variables
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -38,9 +41,14 @@ void GameInputSystem::initialize(Camera* cam) {
 	if (m_cam == nullptr) {
 		m_cam = SAIL_NEW CameraController(cam);
 	}
+	else {
+		CameraController* tempCam = m_cam;
+		Memory::SafeDelete(tempCam);
+		m_cam = SAIL_NEW CameraController(cam);
+	}
 }
 
-void GameInputSystem::clean() { 
+void GameInputSystem::clean() {
 	Memory::SafeDelete(m_cam);
 }
 
@@ -70,12 +78,14 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 			AudioComponent* audioComp = e->getComponent<AudioComponent>();
 
-			// Player puts down candle
-#ifndef _DEBUG
-			if ( Input::WasKeyJustPressed(KeyBinds::putDownCandle) ) {
-				putDownCandle(e);
-			}
-#endif
+
+		// Get player movement inputs
+		Movement playerMovement = getPlayerMovementInput(e);
+
+		// Player puts down candle
+		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
+			putDownCandle(e);
+		}
 
 			if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
 				for ( auto child : e->getChildEntities() ) {
@@ -136,7 +146,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 void GameInputSystem::processMouseInput(const float& dt) {
 	// Toggle cursor capture on right click
 	for (auto e : entities) {
-		AudioComponent* audioComp = e->getComponent<AudioComponent>();
 
 		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
 			Input::HideCursor(!Input::IsCursorHidden());

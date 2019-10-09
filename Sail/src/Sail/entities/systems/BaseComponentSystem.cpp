@@ -45,6 +45,11 @@ const std::bitset<MAX_NUM_COMPONENTS_TYPES>& BaseComponentSystem::getWriteBitMas
 	return writeBits;
 }
 
+void BaseComponentSystem::clearEntities() {
+	entities.clear();
+	entitiesQueuedToAdd.clear();
+}
+
 void BaseComponentSystem::addQueuedEntities() {
 	entities.insert(entities.end(), entitiesQueuedToAdd.begin(), entitiesQueuedToAdd.end());
 	entitiesQueuedToAdd.clear();

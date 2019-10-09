@@ -9,7 +9,8 @@ CandleComponent::~CandleComponent() {
 
 }
 
-void CandleComponent::hitWithWater() {
+void CandleComponent::hitWithWater(float damage) {
+	m_damageTakenLastHit = damage;
 	m_wasHitByWater = true;
 }
 
@@ -85,6 +86,34 @@ void CandleComponent::setOwner(int playerEntityID) {
 
 int CandleComponent::getOwner() const {
 	return m_playerEntityID;
+}
+
+int CandleComponent::getDamageTakenLastHit() const {
+	return m_damageTakenLastHit;
+}
+
+float CandleComponent::getInvincibleTimer() const {
+	return m_invincibleTimer;
+}
+
+void CandleComponent::decrementInvincibleTimer(const float dt) {
+	m_invincibleTimer -= dt;
+}
+
+void CandleComponent::setInvincibleTimer(const float time) {
+	m_invincibleTimer = time;
+}
+
+float CandleComponent::getHealth() const {
+	return m_health;
+}
+
+void CandleComponent::setHealth(const float health) {
+	m_health = health;
+}
+
+void CandleComponent::decrementHealth(const float health) {
+	m_health -= health;
 }
 
 bool CandleComponent::isCarried() const {

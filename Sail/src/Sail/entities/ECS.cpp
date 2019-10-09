@@ -81,6 +81,12 @@ void ECS::destroyAllEntities() {
 		e->removeAllComponents();
 		e->removeFromSystems();
 	}
+
+	for (auto& sys : m_systems) {
+		sys.second->stop();
+		sys.second->clearEntities();
+	}
+
 	m_entities.clear();
 }
 

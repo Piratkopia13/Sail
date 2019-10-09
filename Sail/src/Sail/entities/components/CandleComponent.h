@@ -7,7 +7,7 @@ public:
 	CandleComponent();
 	virtual ~CandleComponent();
 
-	void hitWithWater();
+	void hitWithWater(float damage);
 	void resetHitByWater();
 	bool wasHitByWater() const;
 	bool getIsAlive() const;
@@ -29,14 +29,25 @@ public:
 	void incrementRespawns();
 	void setOwner(int playerEntityID);
 	int getOwner() const;
-
+	int getDamageTakenLastHit() const;
+	float getInvincibleTimer() const;
+	void decrementInvincibleTimer(const float dt);
+	void setInvincibleTimer(const float time);
+	float getHealth() const;
+	void setHealth(const float health);
+	void decrementHealth(const float health);
 
 private:
 	bool m_wasHitByWater = false;
+	float m_damageTakenLastHit = 0;
 	bool m_isAlive = true;
-	bool m_activate = true;
+	bool m_activate = false;
 	bool m_carried = true;
 	bool m_wasCarriedLastUpdate = true;
+
+	float m_invincibleTimer = -2.f;
+	// TODO: Replace using game settings when that is implemented
+	float m_health = 20.f;
 
 	/* Should probably be removed later */
 	float m_downTime = 0.f;
