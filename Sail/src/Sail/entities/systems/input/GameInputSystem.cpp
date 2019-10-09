@@ -89,7 +89,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			auto collision = e->getComponent<CollisionComponent>();
 			auto movement = e->getComponent<MovementComponent>();
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
-			auto playerBB = e->getComponent<BoundingBoxComponent>();
 			auto audioComp = e->getComponent<AudioComponent>();
 
 
