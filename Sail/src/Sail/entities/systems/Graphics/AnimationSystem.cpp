@@ -142,7 +142,12 @@ void AnimationSystem::updatePerFrame(float dt) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		ModelComponent* modelC = e->getComponent<ModelComponent>();
 		Mesh* mesh = modelC->getModel()->getMesh(0);
-		mesh->getVertexBuffer().update(animationC->data);
+		// TODO: This is a temporary band-aid for PerformanceTestState
+		//	the data doesn't exist at startup which seems to be an issue with 
+		//   that per tick update doesn't run before per frame update
+		if ( animationC->dataSize > 0 ) {
+			mesh->getVertexBuffer().update(animationC->data);
+		}
 	}
 }
 
