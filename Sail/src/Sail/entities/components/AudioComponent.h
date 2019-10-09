@@ -1,8 +1,6 @@
 #pragma once
 
-// TODO: remove includes
 #include "Sail/entities/components/Component.h"
-//#include <x3daudio.h>
 #include <string>
 #include <stack>
 
@@ -24,9 +22,6 @@ public:
 	AudioComponent();
 	virtual ~AudioComponent();
 
-	//X3DAUDIO_LISTENER listener;
-
-
 
 	// TODO: array of structs instead for better cache performance
 
@@ -38,6 +33,7 @@ public:
 	bool m_playOnce[SoundType::COUNT];
 	bool m_isInitialized[SoundType::COUNT];
 	glm::vec3 m_positionalOffset[SoundType::COUNT];
+	float m_volume[SoundType::COUNT];
 
 	// • string = filename
 	// • bool = TRUE if START-request, FALSE if STOP-request
@@ -46,13 +42,14 @@ public:
 	// • int = ID of playing streaming; needed for STOPPING the streamed sound
 	std::list<std::pair<std::string, int>> m_currentlyStreaming;
 
-	// TODO: add offset to this function
+
 	// This function is purely here to MAKE LIFE LESS DIFFICULT
 	void defineSound(
 		SoundType::SoundType type,
-		std::string filename,
+		const std::string& filename,
 		float soundLength,
-		const glm::vec3& positionOffset,
-		bool playOnce = true);
+		bool playOnce = true,
+		float volume = 1.0f,
+		const glm::vec3& positionOffset = { 0.f,0.f,0.f });
 };
 

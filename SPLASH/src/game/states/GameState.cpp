@@ -820,8 +820,8 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 
 
 	player->addComponent<AudioComponent>();
-	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.0f, { 0,0,0 }, false);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.7f, { 0,0,0 }, true);
+	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.0f, false, 0.5f);
+	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.7f, true, 0.5f);
 
 
 	// Create candle for the player
@@ -991,7 +991,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 
 		e->addComponent<AudioComponent>();
 		//player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.84f, false);
-		e->getComponent<AudioComponent>()->defineSound(SoundType::AMBIENT, "../Audio/guitar.wav", 104.0f, { 0,1.2,0 }, false);
+		e->getComponent<AudioComponent>()->defineSound(SoundType::AMBIENT, "../Audio/guitar.wav", 104.0f, false, 1.0f, { 0.f, 1.2f, 0.f });
 		e->getComponent<AudioComponent>()->m_isPlaying[SoundType::AMBIENT] = true;
 
 		auto fsmComp = e->addComponent<FSMComponent>();

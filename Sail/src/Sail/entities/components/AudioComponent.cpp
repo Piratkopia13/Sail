@@ -12,9 +12,8 @@ AudioComponent::AudioComponent() {
 		m_isPlaying[i] = false;
 		m_playOnce[i] = true;
 		m_isInitialized[i] = false;
+		m_volume[i] = 1.0f;
 	}
-
-	//listener.pCone = nullptr;
 }
 
 AudioComponent::~AudioComponent() {
@@ -22,13 +21,15 @@ AudioComponent::~AudioComponent() {
 
 void AudioComponent::defineSound(
 	SoundType::SoundType type,
-	std::string filename,
+	const std::string& filename,
 	float soundLength,
-	const glm::vec3& positionOffset,
-	bool playOnce) {
+	bool playOnce,
+	float volume,
+	const glm::vec3& positionOffset) {
 
 	m_soundEffects[type] = filename;
 	m_soundEffectLengths[type] = soundLength;
 	m_playOnce[type] = playOnce;
 	m_positionalOffset[type] = positionOffset;
+	m_volume[type] = volume;
 }
