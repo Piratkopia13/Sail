@@ -21,6 +21,8 @@ public:
 	void updateMeshGPU(ID3D12GraphicsCommandList4* cmdList);
 	void updateMeshCPU();
 
+	std::vector<Entity*>& getEntities();
+
 
 private:
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;

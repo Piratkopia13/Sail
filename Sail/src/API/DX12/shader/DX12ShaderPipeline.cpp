@@ -156,7 +156,7 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 		}
 		if (pShaders)
 			pShaders->Release();
-		ThrowIfFailed(hr);
+			ThrowIfFailed(hr);
 	}
 
 	return pShaders;

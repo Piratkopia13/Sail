@@ -470,6 +470,7 @@ bool GameState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
+	renderImGuiAnimationSettings(dt);
 
 	return false;
 }
@@ -645,9 +646,6 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Checkbox("Enable post processing",
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
 	);
-	bool interpolate = ECS::Instance()->getSystem<AnimationSystem>()->getInterpolation();
-	ImGui::Checkbox("enable animation interpolation", &interpolate);
-	ECS::Instance()->getSystem<AnimationSystem>()->setInterpolation(interpolate);
 	static Entity* pickedEntity = nullptr;
 	static float metalness = 1.0f;
 	static float roughness = 1.0f;
@@ -719,6 +717,53 @@ bool GameState::renderImGuiLightDebug(float dt) {
 	}
 	ImGui::End();
 	return true;
+}
+
+bool GameState::renderImGuiAnimationSettings(float dt) {
+	ImGui::Begin("Animation settings");
+	bool interpolate = ECS::Instance()->getSystem<AnimationSystem>()->getInterpolation();
+	ImGui::Checkbox("enable animation interpolation", &interpolate);
+	ECS::Instance()->getSystem<AnimationSystem>()->setInterpolation(interpolate);
+	ImGui::Separator();
+
+	std::vector<Entity*>& e = ECS::Instance()->getSystem<AnimationSystem>()->getEntities();
+
+	if (ImGui::CollapsingHeader("Animated Objects")) {
+		for (unsigned int i = 0; i < e.size(); i++) {
+			if (ImGui::TreeNode(e[i]->getName().c_str())) {
+				AnimationComponent* animationC = e[i]->getComponent<AnimationComponent>();
+				//ImGui::Text("Animation: %s", animationC->currentAnimation->getName().c_str());
+				ImGui::Checkbox("Update on GPU", &animationC->computeUpdate);
+				ImGui::SameLine();
+				if (ImGui::SliderFloat("Animation Speed", &animationC->animationSpeed, 0.0f, 3.0f)) {
+
+				}
+				AnimationStack* stack = animationC->getAnimationStack();
+				ImGui::Text("AnimationStack");
+
+				/*static float transitionTime = 1.0f;
+				if (ImGui::SliderFloat("Transition Time", &transitionTime, 0.0f, 3.0f)) {
+
+				}*/
+				/*for (unsigned int animationIndex = 0; animationIndex < stack->getAnimationCount(); animationIndex++) {
+
+
+
+
+					if (ImGui::Button(std::string("Switch to " + stack->getAnimation(animationIndex)->getName()).c_str())) {
+
+						animationC->transitions.push({ stack->getAnimation(animationIndex), transitionTime, 0.0f });
+					}
+					ImGui::Separator();
+				}*/
+
+				ImGui::TreePop();
+			}
+		}
+	}
+
+	ImGui::End();
+	return false;
 }
 
 void GameState::shutDownGameState() {

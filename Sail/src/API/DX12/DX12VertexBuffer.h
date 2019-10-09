@@ -8,8 +8,9 @@ public:
 	~DX12VertexBuffer();
 
 	virtual void bind(void* cmdList) const override;
-	ID3D12Resource1* getBuffer() const;
+	ID3D12Resource1* getBuffer(int frameOffset = 0) const;
 	void update(Mesh::Data& data);
+	void setAsUpdated();
 	bool hasBeenUpdated() const;
 	void resetHasBeenUpdated();
 	void init(ID3D12GraphicsCommandList4* cmdList);

@@ -45,10 +45,6 @@ void AnimationSystem::updateTransforms(const float dt) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		addTime(animationC, dt);
 
-
-
-
-
 		const unsigned int frame = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
 		const unsigned int frame2 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::INFRONT);
 
@@ -82,8 +78,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 				animationC->transforms[transformIndex] = transforms1[transformIndex];
 			}
 		}
-
-
+		animationC->hasUpdated = true;
 	}
 }
 
@@ -121,6 +116,17 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		auto& vbuffer = static_cast<DX12VertexBuffer&>(mesh->getVertexBuffer());
 		// Make sure vertex buffer data has been uploaded to its default buffer
 		vbuffer.init(cmdList);
+
+		if (!animationC->hasUpdated) {
+			
+			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST);
+			cmdList->CopyBufferRegion(vbuffer.getBuffer(), 0, vbuffer.getBuffer(-1), 0, m_inputLayout->getVertexSize() * connectionSize);
+			DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());
+			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+			continue;
+		}
+
 		auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
 		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 2; // TODO: read offset from root params
 
@@ -157,6 +163,19 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		DX12Utils::SetResourceTransitionBarrier(cmdList, tposeVBuffer->getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
+		/*DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());
+		D3D12_RESOURCE_BARRIER barrierDesc = {};
+
+		barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+		barrierDesc.Transition.pResource = vbuffer.getBuffer();
+		barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		cmdList->ResourceBarrier(1, &barrierDesc);*/
+
+		vbuffer.setAsUpdated();
+
+		animationC->hasUpdated = false;
 	}
 }
 
@@ -190,8 +209,8 @@ void AnimationSystem::updateMeshCPU() {
 
 			// CPU UPDATE
 			if (connections && animationC->transforms) {
-				glm::mat mat = glm::zero<glm::mat4>();
-				glm::mat matInv = glm::zero<glm::mat4>();
+				glm::mat4 mat;
+				glm::mat4 matInv;
 
 				for (unsigned int connectionIndex = 0; connectionIndex < connectionSize; connectionIndex++) {
 					unsigned int count = connections[connectionIndex].count;
@@ -215,6 +234,10 @@ void AnimationSystem::updateMeshCPU() {
 		}
 	}
 
+}
+
+std::vector<Entity*>& AnimationSystem::getEntities() {
+	return entities;
 }
 
 
@@ -245,6 +268,9 @@ void AnimationSystem::updatePerFrame(float dt) {
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		if (!animationC->computeUpdate) {
+			if (animationC->dataSize == 0) {
+				updateMeshCPU();
+			}
 			ModelComponent* modelC = e->getComponent<ModelComponent>();
 			Mesh* mesh = modelC->getModel()->getMesh(0);
 			mesh->getVertexBuffer().update(animationC->data);

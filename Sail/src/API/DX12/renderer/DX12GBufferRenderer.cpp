@@ -123,8 +123,7 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 #else
 	if (threadID == 0) {
 
-		// Update animations on compute shader here
-
+		// Update animations on compute shader
 		auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem>();
 		if (animationSystem) { 
 			animationSystem->updateMeshGPU(cmdList.Get());

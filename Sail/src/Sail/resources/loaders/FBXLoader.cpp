@@ -561,8 +561,8 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 
 				/*  ANIMATION FETCHING FROM STACK*/
-				//unsigned int stackCount = scene->GetSrcObjectCount<FbxAnimStack>();
-				unsigned int stackCount = 1; // TODO: remove, used for faster debugging
+				unsigned int stackCount = scene->GetSrcObjectCount<FbxAnimStack>();
+				stackCount = 1; // TODO: remove, used for faster debugging
 				for (unsigned int currentStack = 0; currentStack < stackCount; currentStack++) {
 					Animation* animation = SAIL_NEW Animation();
 					FbxAnimStack* currAnimStack = scene->GetSrcObject<FbxAnimStack>(currentStack);

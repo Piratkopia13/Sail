@@ -71,6 +71,7 @@ public:
 	Animation* nextAnimation;
 	bool blending;
 	unsigned int transformSize;
+	bool hasUpdated;
 
 	//Mesh::vec3* transformedPositions;
 	//Mesh::vec3* transformedNormals;
