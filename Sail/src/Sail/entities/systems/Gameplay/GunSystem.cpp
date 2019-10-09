@@ -73,10 +73,12 @@ void GunSystem::update(float dt) {
 		gun->gunOverloadTimer -= dt;
 		gun->projectileSpawnTimer -= dt;
 	}
+
 }
 
 Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, int i) {
 	auto e = ECS::Instance()->createEntity("projectile");
+	
 	glm::vec3 randPos;
 	float maxrand = 0.2f;
 
@@ -100,6 +102,7 @@ Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, int i) {
 	physics->bounciness = 0.1f;
 	physics->padding = 0.16f;
 
+	
 	return e.get();
 }
 

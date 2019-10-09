@@ -4,6 +4,7 @@
 class GameDataTracker;
 class GunComponent;
 
+
 namespace GunFactory {
 	Entity* createWaterBullet(glm::vec3 pos, glm::vec3 dir, int i);
 }
@@ -14,6 +15,8 @@ public:
 	~GunSystem();
 
 	void update(float dt);
+
+	
 
 private:
 	GameDataTracker* m_gameDataTracker = nullptr;

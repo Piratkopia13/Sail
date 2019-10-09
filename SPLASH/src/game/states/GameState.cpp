@@ -981,7 +981,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	
 	auto player = ECS::Instance()->createEntity("player");
 
-	// TODO: Only used for AI, should be removed once AI can target player in a better way.
+	// TODO: Only used for AI,  should be removed once AI can target player in a better way.
 	m_player = player.get();
 
 	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player

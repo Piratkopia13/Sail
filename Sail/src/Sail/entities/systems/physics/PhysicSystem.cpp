@@ -224,10 +224,16 @@ void PhysicSystem::update(float dt) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 
+
 		physics->collisions.clear();
 
 		if (physics->padding < 0.0f) {
 			physics->padding = glm::length(boundingBox->getBoundingBox()->getHalfSize());
+		}
+
+		if (e->getName() == "projectile") {
+			int asdf = 3;
+			
 		}
 
 		physics->velocity += physics->constantAcceleration * dt;
@@ -241,23 +247,33 @@ void PhysicSystem::update(float dt) {
 		float saveY = physics->velocity.y;
 		physics->velocity.y = 0;
 		float vel = glm::length(physics->velocity);
+
+
+		// If we're not jumping in place...
 		if (vel > 0.0f) {
-			//Limit max speed
+			// ...Limit horizontal max speed,
 			if (vel > physics->maxSpeed) {
 				vel = physics->maxSpeed;
 			}
+			// ... or stop the movement.
 			else if (vel < 0.05f) {
 				vel = 0.0f;
 			}
 
+			// ... And apply the normalized (or 0) values to the horizontal velocity.
 			physics->velocity = vel * glm::normalize(physics->velocity);
 		}
 		physics->velocity.y = saveY;
 		//-------------------------
 
+
+
 		float updateableDt = dt;
 
 		if (boundingBox && m_octree) {
+			if (e->getName() == "projectile") {
+				int asdf = 3;
+			}
 			collisionUpdate(e, physics, updateableDt);
 
 			//surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);

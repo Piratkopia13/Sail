@@ -129,6 +129,7 @@ void NetworkReceiverSystem::update(float dt) {
 
 					// Use data
 					GunFactory::createWaterBullet(gunPosition, gunDirection, 0);
+					
 				}
 				break;
 				default:
