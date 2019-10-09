@@ -724,11 +724,9 @@ void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
-	// Clear all entities
-	ECS::Instance()->destroyAllEntities();
+	ECS::Instance()->stopAllSystems();
 
-	// Clear all necessary systems
-	//m_componentSystems.gameInputSystem->clean();
+	ECS::Instance()->destroyAllEntities();
 }
 
 // HERE BE DRAGONS

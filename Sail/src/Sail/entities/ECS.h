@@ -62,6 +62,12 @@ public:
 	void queueDestructionOfEntity(Entity* entity);
 	void destroyEntity(const Entity::SPtr entityToRemove);
 	void destroyEntity(int ecsIndex);
+
+	/*
+		Destroys all entities and their components
+		stopAllSystems() should be called before this,
+		to prevent an entity from being destroyed while still in use by a system
+	*/
 	void destroyAllEntities();
 
 	/*

@@ -79,11 +79,8 @@ void ECS::destroyEntity(int ecsIndex) {
 
 void ECS::destroyAllEntities() {
 	for (auto& e : m_entities) {
-		e->removeAllComponents();
-		e->removeFromSystems();
+		e->removeAllComponents();	// Also removes them from systems
 	}
-
-	stopAllSystems();
 
 	m_entities.clear();
 }
