@@ -102,9 +102,10 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback
 
 
 struct soundStruct {
+	std::string          filename = { "" };
 	IXAudio2SourceVoice* sourceVoice = nullptr;
 	HrtfEnvironment      environment = HrtfEnvironment::Outdoors;
-	glm::vec3            positionOffset = { 0,0,0 };
+	//glm::vec3            positionOffset = { 0,0,0 };
 	Microsoft::WRL::ComPtr<IXAPOHrtfParameters> hrtfParams; // TODO: remove?
 	//X3DAUDIO_EMITTER emitter = { 0 };
 };
@@ -117,11 +118,17 @@ public:
 
 	void loadSound(const std::string& filename);
 	int initializeSound(const std::string& filename);
-	int playSound(const std::string& filename);
+	//int playSound(const std::string& filename);
 	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
 
-	void updateSoundWithCurrentPosition(int index, Camera& cam, Transform& transform, float alpha);
+	void updateSoundWithCurrentPosition(
+		int index, 
+		Camera& cam, 
+		const Transform& transform, 
+		const glm::vec3& positionOffset, 
+		float alpha);
 
+	void startSpecificSound(int index);
 	void stopSpecificSound(int index);
 	void stopSpecificStream(int index);
 	void stopAllStreams();

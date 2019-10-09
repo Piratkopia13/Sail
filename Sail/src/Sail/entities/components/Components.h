@@ -20,7 +20,7 @@
 //#include "MovementComponent.h"
 #include "PhysicsComponent.h"
 #include "RealTimeComponent.h"
-#include "SoundComponent.h"
+//#include "SoundComponent.h"
 //#include "TextComponent.h"
 #include "TransformComponent.h"
 #include "ProjectileComponent.h"

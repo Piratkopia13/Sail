@@ -17,8 +17,8 @@ class ProjectileSystem;
 class GameInputSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
-//class AudioSystem;
-class HRTFAudioSystem;
+class AudioSystem;
+//class HRTFAudioSystem;
 class RenderSystem;
 
 class NetworkSerializedPackageEvent;
@@ -80,8 +80,8 @@ private:
 		GameInputSystem* gameInputSystem = nullptr;
 		NetworkReceiverSystem* networkReceiverSystem = nullptr;
 		NetworkSenderSystem* networkSenderSystem = nullptr;
-		//AudioSystem* audioSystem = nullptr;
-		HRTFAudioSystem* hrtfAudioSystem = nullptr;
+		AudioSystem* audioSystem = nullptr;
+		//HRTFAudioSystem* hrtfAudioSystem = nullptr;
 		RenderSystem* renderSystem = nullptr;
 	};
 

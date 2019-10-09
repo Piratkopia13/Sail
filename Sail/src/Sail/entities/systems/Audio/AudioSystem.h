@@ -23,11 +23,6 @@ public:
 
 
 
-	void updateSoundWithCurrentPosition();
-
-
-
-
 	bool hasUpdated = false;
 
 private:

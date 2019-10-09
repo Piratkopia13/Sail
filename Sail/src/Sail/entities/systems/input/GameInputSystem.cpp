@@ -127,12 +127,13 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				audioComp->m_isPlaying[SoundType::RUN] = false;
 			}
 			// AUDIO TESTING (playing a looping running sound)
-			else if (m_runSoundTimer > 0.3f) {
+			else {
+			//else if (m_runSoundTimer > 0.3f) {
 				audioComp->m_isPlaying[SoundType::RUN] = true;
 			}
-			else {
-				m_runSoundTimer += dt;
-			}
+			//else {
+			//	m_runSoundTimer += dt;
+			//}
 
 			physicsComp->accelerationToAdd = 
 				glm::normalize(right * rightMovement + forward * forwardMovement)

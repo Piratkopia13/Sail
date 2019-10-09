@@ -18,8 +18,8 @@
 #include "Sail/entities/systems/input/GameInputSystem.h"
 #include "Sail/entities/systems/network/NetworkReceiverSystem.h"
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
-//#include "Sail/entities/systems/Audio/AudioSystem.h"
-#include "Sail/entities/systems/Audio/HRTFAudioSystem.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
+//#include "Sail/entities/systems/Audio/HRTFAudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
@@ -155,9 +155,9 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
 
 	// Create system for handling and updating sounds
-	//m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 	//m_componentSystems.audioSystem->initialize(&m_cam);
-	m_componentSystems.hrtfAudioSystem = ECS::Instance()->createSystem<HRTFAudioSystem>();
+	//m_componentSystems.hrtfAudioSystem = ECS::Instance()->createSystem<HRTFAudioSystem>();
 
 
 
@@ -630,7 +630,7 @@ void GameState::shutDownGameState() {
 	// Clear all entities
 	ECS::Instance()->destroyAllEntities();
 	
-	// Clear all neccesary systems
+	// Clear all necessary systems
 	m_componentSystems.gameInputSystem->clean();
 
 }
@@ -701,8 +701,8 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 	}
 
-	//m_componentSystems.audioSystem->update(dt);
-	m_componentSystems.hrtfAudioSystem->update(m_cam, alpha);
+	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
+	//m_componentSystems.hrtfAudioSystem->update(m_cam, alpha);
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
@@ -826,8 +826,10 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 
 
 	player->addComponent<AudioComponent>();
-	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.84f, false);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
+	//player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.84f, false);
+	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.0f, { 0,0,0 }, false);
+	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.7f, { 0,0,0 }, true);
+	//player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
 
 
 	// Create candle for the player
@@ -994,6 +996,12 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addComponent<CollidableComponent>();
 		e->addComponent<PhysicsComponent>();
 		e->addComponent<AiComponent>();
+
+		e->addComponent<AudioComponent>();
+		//player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.84f, false);
+		e->getComponent<AudioComponent>()->defineSound(SoundType::AMBIENT, "../Audio/guitar.wav", 104.0f, { 0,1.2,0 }, false);
+		e->getComponent<AudioComponent>()->m_isPlaying[SoundType::AMBIENT] = true;
+
 		auto fsmComp = e->addComponent<FSMComponent>();
 		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 		e->getComponent<PhysicsComponent>()->maxSpeed = m_player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;

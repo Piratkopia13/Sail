@@ -11,150 +11,154 @@
 
 AudioSystem::AudioSystem() : BaseComponentSystem() {
 	registerComponent<AudioComponent>(true, true, true);
-	registerComponent<TransformComponent>(true, true, true);
+	registerComponent<TransformComponent>(true, true, false);
 
+
+	initialize();
 }
 
 AudioSystem::~AudioSystem() {
 	m_audioEngine.stopAllSounds();
 }
 
+// TODO? move to constructor
 //void AudioSystem::initialize(PerspectiveCamera* camPtr) {
 void AudioSystem::initialize() {
 	// TODO: System owner should check if this is correct
-	registerComponent<AudioComponent>(true, true, true);
+	//registerComponent<AudioComponent>(true, true, true);
 	m_audioEngine.loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine.loadSound("../Audio/jump.wav");
+	m_audioEngine.loadSound("../Audio/guitar.wav");
 
 	//m_camPtr = camPtr;
 }
 
 void AudioSystem::update(float dt) {
 
-	AudioComponent* audioC = nullptr;
-	PhysicsComponent* physicsC = nullptr;
+	//AudioComponent* audioC = nullptr;
+	//PhysicsComponent* physicsC = nullptr;
 
-	glm::vec3 dir;
-	glm::vec3 up;
-	glm::vec3 pos;
-	glm::vec3 vel;
+	//glm::vec3 dir;
+	//glm::vec3 up;
+	//glm::vec3 pos;
+	//glm::vec3 vel;
 
-	for (auto& e : entities) {
+	//for (auto& e : entities) {
 
-		audioC = e->getComponent<AudioComponent>();
-		physicsC = e->getComponent<PhysicsComponent>();
+	//	audioC = e->getComponent<AudioComponent>();
+	//	physicsC = e->getComponent<PhysicsComponent>();
 
-		dir = m_camPtr->getDirection();
-		up = m_camPtr->getUp();
-		pos = m_camPtr->getPosition();
-		vel = physicsC->velocity;
+	//	dir = m_camPtr->getDirection();
+	//	up = m_camPtr->getUp();
+	//	pos = m_camPtr->getPosition();
+	//	vel = physicsC->velocity;
 
-		audioC->listener.OrientFront = X3DAUDIO_VECTOR(dir.x, dir.y, dir.z);
-		audioC->listener.OrientTop = X3DAUDIO_VECTOR(up.x, up.y, up.z);
-		audioC->listener.Position = X3DAUDIO_VECTOR(pos.x, pos.y, pos.z);
-		audioC->listener.Velocity = X3DAUDIO_VECTOR(vel.x, vel.y, vel.z);
+	//	audioC->listener.OrientFront = X3DAUDIO_VECTOR(dir.x, dir.y, dir.z);
+	//	audioC->listener.OrientTop = X3DAUDIO_VECTOR(up.x, up.y, up.z);
+	//	audioC->listener.Position = X3DAUDIO_VECTOR(pos.x, pos.y, pos.z);
+	//	audioC->listener.Velocity = X3DAUDIO_VECTOR(vel.x, vel.y, vel.z);
 
-		if (audioC != nullptr) {
+	//	if (audioC != nullptr) {
 
-			// Playing NORMAL sounds
-			for (int i = 0; i < SoundType::COUNT; i++) {
+	//		// Playing NORMAL sounds
+	//		for (int i = 0; i < SoundType::COUNT; i++) {
 
-				if (audioC->m_isPlaying[i]) {
-					if (audioC->m_soundEffectTimers[i] == 0.0f) {
-						audioC->m_soundID[i] = m_audioEngine.playSound(audioC->m_soundEffects[i], audioC->listener);
-						audioC->m_soundEffectTimers[i] += dt;
+	//			if (audioC->m_isPlaying[i]) {
+	//				if (audioC->m_soundEffectTimers[i] == 0.0f) {
+	//					audioC->m_soundID[i] = m_audioEngine.playSound(audioC->m_soundEffects[i], audioC->listener);
+	//					audioC->m_soundEffectTimers[i] += dt;
 
-						audioC->m_isPlaying[i] = !audioC->m_playOnce[i]; // NOTE: Opposite, hence '!'
-					}
+	//					audioC->m_isPlaying[i] = !audioC->m_playOnce[i]; // NOTE: Opposite, hence '!'
+	//				}
 
-					else {
-						audioC->m_soundEffectTimers[i] += dt;
+	//				else {
+	//					audioC->m_soundEffectTimers[i] += dt;
 
-						if (audioC->m_soundEffectTimers[i] > audioC->m_soundEffectThresholds[i]) {
-							audioC->m_soundEffectTimers[i] = 0.0f;
-						}
-					}
-				}
+	//					if (audioC->m_soundEffectTimers[i] > audioC->m_soundEffectThresholds[i]) {
+	//						audioC->m_soundEffectTimers[i] = 0.0f;
+	//					}
+	//				}
+	//			}
 
-				else if (audioC->m_soundEffectTimers[i] != 0.0f && !audioC->m_playOnce[i]) {
-					m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
-					audioC->m_soundEffectTimers[i] = 0.0f;
-				}
+	//			else if (audioC->m_soundEffectTimers[i] != 0.0f && !audioC->m_playOnce[i]) {
+	//				m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
+	//				audioC->m_soundEffectTimers[i] = 0.0f;
+	//			}
 
-				// NOTE:
-				//		This is a correct solution for FADING, I believe, however it has to be done using a thread
-				//
-				//else if (audioC->m_soundEffectTimers[i] != 0.0f && !audioC->m_playOnce[i]) {
-					//float volumeHolder = m_audioEngine.getSoundVolume(audioC->m_soundID[i]);
-					//if (volumeHolder > 0.0f) {
-					//	m_audioEngine.setSoundVolume(audioC->m_soundID[i], (volumeHolder - (1.0f * dt)));
-					//}
-					//else {
-					//	m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
-					//	audioC->m_soundEffectTimers[i] = 0.0f;
-					//}
-				//}
-			}
-		}
+	//			// NOTE:
+	//			//		This is a correct solution for FADING, I believe, however it has to be done using a thread
+	//			//
+	//			//else if (audioC->m_soundEffectTimers[i] != 0.0f && !audioC->m_playOnce[i]) {
+	//				//float volumeHolder = m_audioEngine.getSoundVolume(audioC->m_soundID[i]);
+	//				//if (volumeHolder > 0.0f) {
+	//				//	m_audioEngine.setSoundVolume(audioC->m_soundID[i], (volumeHolder - (1.0f * dt)));
+	//				//}
+	//				//else {
+	//				//	m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
+	//				//	audioC->m_soundEffectTimers[i] = 0.0f;
+	//				//}
+	//			//}
+	//		}
+	//	}
 
-			// Playing STREAMED sounds
-		std::list<std::pair<std::string, bool>>::iterator i;
-		std::list<std::pair<std::string, bool>>::iterator toBeDeleted;
-		std::list<std::pair<std::string, int>>::iterator j;
-		std::list<std::pair<std::string, int>>::iterator streamToBeDeleted;
-		std::string filename = "";
-		int streamIndex = 0;
+	//		// Playing STREAMED sounds
+	//	std::list<std::pair<std::string, bool>>::iterator i;
+	//	std::list<std::pair<std::string, bool>>::iterator toBeDeleted;
+	//	std::list<std::pair<std::string, int>>::iterator j;
+	//	std::list<std::pair<std::string, int>>::iterator streamToBeDeleted;
+	//	std::string filename = "";
+	//	int streamIndex = 0;
 
-		for (i = audioC->m_streamingRequests.begin(); i != audioC->m_streamingRequests.end();) {
+	//	for (i = audioC->m_streamingRequests.begin(); i != audioC->m_streamingRequests.end();) {
 
-			if (i->second == true) {
+	//		if (i->second == true) {
 
-				filename = i->first;
-				toBeDeleted = i;
-				i++;
+	//			filename = i->first;
+	//			toBeDeleted = i;
+	//			i++;
 
-				streamIndex = m_audioEngine.getAvailableStreamIndex();
+	//			streamIndex = m_audioEngine.getAvailableStreamIndex();
 
-				if (streamIndex == -1) {
-					Logger::Error("Too many sounds already streaming; failed to stream another one!");
-				}
-				else {
+	//			if (streamIndex == -1) {
+	//				Logger::Error("Too many sounds already streaming; failed to stream another one!");
+	//			}
+	//			else {
 
-					Application::getInstance()->pushJobToThreadPool(
-						[this, filename, streamIndex](int id) {
-							return m_audioEngine.streamSound(filename, streamIndex);
-						});
+	//				Application::getInstance()->pushJobToThreadPool(
+	//					[this, filename, streamIndex](int id) {
+	//						return m_audioEngine.streamSound(filename, streamIndex);
+	//					});
 
-					audioC->m_currentlyStreaming.emplace_back(filename, streamIndex);
-					audioC->m_streamingRequests.erase(toBeDeleted);
-				}
-			}
-			else/*if (i.second == false)*/ {
+	//				audioC->m_currentlyStreaming.emplace_back(filename, streamIndex);
+	//				audioC->m_streamingRequests.erase(toBeDeleted);
+	//			}
+	//		}
+	//		else/*if (i.second == false)*/ {
 
-				filename = i->first;
-				toBeDeleted = i;
-				i++;
+	//			filename = i->first;
+	//			toBeDeleted = i;
+	//			i++;
 
-				for (j = audioC->m_currentlyStreaming.begin(); j != audioC->m_currentlyStreaming.end();) {
+	//			for (j = audioC->m_currentlyStreaming.begin(); j != audioC->m_currentlyStreaming.end();) {
 
-					streamToBeDeleted = j;
-					j++;
+	//				streamToBeDeleted = j;
+	//				j++;
 
-					if (streamToBeDeleted->first == filename) {
+	//				if (streamToBeDeleted->first == filename) {
 
-						bool expectedValue = false;
-						while (!m_audioEngine.m_streamLocks[streamToBeDeleted->second].compare_exchange_strong(expectedValue, true));
+	//					bool expectedValue = false;
+	//					while (!m_audioEngine.m_streamLocks[streamToBeDeleted->second].compare_exchange_strong(expectedValue, true));
 
-						m_audioEngine.stopSpecificStream(streamToBeDeleted->second);
-						audioC->m_currentlyStreaming.erase(streamToBeDeleted);
+	//					m_audioEngine.stopSpecificStream(streamToBeDeleted->second);
+	//					audioC->m_currentlyStreaming.erase(streamToBeDeleted);
 
-						break;
-					}
-				}
-				audioC->m_streamingRequests.erase(toBeDeleted);
-			}
-		}
-	}
+	//					break;
+	//				}
+	//			}
+	//			audioC->m_streamingRequests.erase(toBeDeleted);
+	//		}
+	//	}
+	//}
 }
 
 void AudioSystem::update(Camera& cam, float dt, float alpha) {
@@ -163,32 +167,66 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 		auto audioC = e->getComponent<AudioComponent>();
 		// Loop through sounds
 		for (int i = 0; i < SoundType::COUNT; i++) {
-
 			if (audioC->m_isPlaying[i]) {
-				// if < threshold
-				if (audioC->m_soundEffectTimers[i] == 0.0f) {
-					audioC->m_soundID[i] = m_audioEngine.initializeSound(audioC->m_soundEffects[i]);
-					//audioC->m_soundID[i] = m_audioEngine.playSound(audioC->m_soundEffects[i]);
-					
-					m_audioEngine.updateSoundWithCurrentPosition(audioC->m_soundID[i], cam, *e->getComponent<TransformComponent>(), alpha);					
-					m_audioEngine.playSound(audioC->m_soundEffects[i]);
-					
-					audioC->m_soundEffectTimers[i] += dt;
-
-					audioC->m_isPlaying[i] = !audioC->m_playOnce[i]; // NOTE: Opposite, hence '!'
-				} else {
-					audioC->m_soundEffectTimers[i] += dt;
-
-					if (audioC->m_soundEffectTimers[i] > audioC->m_soundEffectThresholds[i]) {
-						audioC->m_soundEffectTimers[i] = 0.0f;
-					}
+				if (i == SoundType::JUMP) { // REMOVE
+					int a = 43;
 				}
-			}
 
-			else if (audioC->m_soundEffectTimers[i] != 0.0f && !audioC->m_playOnce[i]) {
+				// Update sound effect until it's done playing
+				//if (audioC->m_soundEffectTimers[i] == 0.0f) {
+				
+				// Initialize and start playing the sound if that hasn't been done already
+				//if (audioC->m_soundEffectTimers[i] == 0.0f) {
+				if (!audioC->m_isInitialized[i]) {
+					audioC->m_soundID[i] = m_audioEngine.initializeSound(audioC->m_soundEffects[i]);
+					audioC->m_isInitialized[i] = true;
+					audioC->m_soundEffectTimers[i] = 0.0f;
+				}
+
+				// Start playing the sound
+				if (audioC->m_soundEffectTimers[i] == 0.0f) {
+					m_audioEngine.startSpecificSound(audioC->m_soundID[i]);
+				}
+
+				// Update the sound with the current sound and listener position
+				if (audioC->m_soundEffectTimers[i] <= audioC->m_soundEffectLengths[i]) {
+					m_audioEngine.updateSoundWithCurrentPosition(audioC->m_soundID[i], cam, 
+						*e->getComponent<TransformComponent>(), audioC->m_positionalOffset[i], alpha);					
+					
+					audioC->m_soundEffectTimers[i] += dt;
+
+					//audioC->m_isPlaying[i] = !audioC->m_playOnce[i]; // NOTE: Opposite, hence '!'
+				} else {
+					audioC->m_soundEffectTimers[i] = 0.0f; // Reset the sound effect to its beginning
+					m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
+					
+					// If the sound isn't looping then make it stop
+					if (audioC->m_playOnce[i] == true) {
+						audioC->m_isPlaying[i] = false;
+						audioC->m_isInitialized[i] = false;
+					}
+					//audioC->m_isPlaying[i] = !audioC->m_playOnce[i]; // if it's a looping sound keep playing it
+
+					//audioC->m_soundEffectTimers[i] += dt;
+
+					//if (audioC->m_soundEffectTimers[i] > audioC->m_soundEffectLengths[i]) {
+					//	audioC->m_soundEffectTimers[i] = 0.0f;
+					//}
+				}
+			// If the sound should no longer be playing stop it and reset its timer
+			} else if (audioC->m_soundEffectTimers[i] != 0.0f) {
 				m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
 				audioC->m_soundEffectTimers[i] = 0.0f;
 			}
+			
+			//else if (audioC->m_soundEffectTimers[i] != 0.0f) {
+			//	audioC->m_soundEffectTimers[i] = 0.0f;
+			//}
+
+			//else if (audioC->m_soundEffectTimers[i] != 0.0f && !audioC->m_playOnce[i]) {
+			//	m_audioEngine.stopSpecificSound(audioC->m_soundID[i]);
+			//	audioC->m_soundEffectTimers[i] = 0.0f;
+			//}
 
 			// NOTE:
 			//		This is a correct solution for FADING, I believe, however it has to be done using a thread
@@ -208,23 +246,20 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 
 
-		for (auto& sound : e->getComponent<AudioComponent>()) {
-			if (sound->_isPlaying || sound->_isQueued) {
-				//auto* transform = e->getComponent<TransformComponent>();
-				updateSoundWithCurrentPosition(*sound, cam, *e->getComponent<TransformComponent>(), alpha);
-			}
-			if (sound->_isQueued) {
-				sound->Start();
-				sound->_isPlaying = true;
-				sound->_isQueued = false;
-			}
-		}
+		//for (auto& sound : e->getComponent<AudioComponent>()) {
+		//	if (sound->_isPlaying || sound->_isQueued) {
+		//		//auto* transform = e->getComponent<TransformComponent>();
+		//		updateSoundWithCurrentPosition(*sound, cam, *e->getComponent<TransformComponent>(), alpha);
+		//	}
+		//	if (sound->_isQueued) {
+		//		sound->Start();
+		//		sound->_isPlaying = true;
+		//		sound->_isQueued = false;
+		//	}
+		//}
 	}
 }
 
-void AudioSystem::updateSoundWithCurrentPosition() {
-
-}
 
 void AudioSystem::stop() {
 	m_audioEngine.stopAllStreams();
