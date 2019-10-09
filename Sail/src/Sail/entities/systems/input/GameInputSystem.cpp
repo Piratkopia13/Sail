@@ -17,6 +17,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<BoundingBoxComponent>(true, true, false);
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<CandleComponent>(false, true, true);
+	registerComponent<GunComponent>(true, true, true);
 
 	// cam variables
 	m_yaw = 90.f;
