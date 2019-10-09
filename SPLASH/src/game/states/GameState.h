@@ -48,7 +48,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
-	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
+	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);

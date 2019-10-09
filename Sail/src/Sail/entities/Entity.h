@@ -39,6 +39,7 @@ public:
 
 	void addChildEntity(Entity::SPtr child);
 	void removeChildEntity(Entity::SPtr toRemove);
+	void removeAllChildren();
 	/* Currently dangerous, will probably be altered in future */
 	std::vector<Entity::SPtr>& getChildEntities();
 
