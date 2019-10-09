@@ -27,3 +27,4 @@
 #include "ProjectileComponent.h"
 #include "AudioComponent.h"
 #include "FSMComponent.h"
+#include "SpectatorComponent.h"

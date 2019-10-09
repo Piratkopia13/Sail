@@ -29,6 +29,7 @@ namespace KeyBinds {
 	extern int showInGameMenu;
 	extern int toggleSphere;	// Collision
 	extern int toggleSun;
+	extern int lightCandle;
 
 	// Application
 	extern int alt;
