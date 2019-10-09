@@ -95,7 +95,10 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 void ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
 	// Insert the new model
 	Shader* shaderToUse = shader ? shader : m_defaultShader;
+	if (m_models.find(filename) != m_models.end()) {
+		return;
 
+	}
 
 	Model* temp = nullptr;
 	if (type == ResourceManager::ImporterType::SAIL_ASSIMP) {
@@ -150,6 +153,10 @@ bool ResourceManager::hasModel(const std::string& filename) {
 
 void ResourceManager::loadAnimationStack(const std::string& fileName, const ImporterType type) {
 	AnimationStack* temp = nullptr;
+	if (m_animationStacks.find(fileName) != m_animationStacks.end()) {
+		return;
+	}
+
 	if (type == ResourceManager::ImporterType::SAIL_ASSIMP) {
 		temp = m_assimpLoader->importAnimationStack(SAIL_DEFAULT_MODEL_LOCATION + fileName);
 	}
