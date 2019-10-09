@@ -16,6 +16,7 @@ public:
 		nextAnimation(nullptr),
 		blending(false),
 		dataSize(0),
+		transformSize(0),
 		computeUpdate(true),
 		//transformedPositions(nullptr),
 		//transformedNormals(nullptr),
@@ -25,6 +26,8 @@ public:
 		m_stack(animationStack)
 	{
 		//mesh = std::unique_ptr<Mesh>(_mesh);
+		transformSize = m_stack->getAnimation(0)->getAnimationTransformSize(unsigned int(0));
+		transforms = SAIL_NEW glm::mat4[transformSize];
 	}
 	
 
@@ -43,7 +46,7 @@ public:
 		Memory::SafeDeleteArr(data.colors);
 		Memory::SafeDeleteArr(data.tangents);
 		Memory::SafeDeleteArr(data.texCoords);
-
+		Memory::SafeDeleteArr(transforms);
 
 	}
 	unsigned int dataSize;
@@ -66,17 +69,20 @@ public:
 	Animation* currentAnimation;
 	Animation* nextAnimation;
 	bool blending;
+	unsigned int transformSize;
 
 	//Mesh::vec3* transformedPositions;
 	//Mesh::vec3* transformedNormals;
 	//Mesh::vec3* transformedTangents;
 	//Mesh::vec3* transformedBitangents;
 	Mesh::Data data;
+	glm::mat4* transforms;
 
 
 
 	AnimationStack* getAnimationStack() { return m_stack; };
 	//std::unique_ptr<Mesh> mesh;
+	
 	
 
 private:
@@ -85,5 +91,6 @@ private:
 
 	AnimationStack* m_stack;
 	
+
 
 };
