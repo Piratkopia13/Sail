@@ -84,6 +84,7 @@ bool Intersection::AabbWithPlane(const BoundingBox& aabb, const glm::vec3& norma
 	if (glm::abs(glm::dot(normal, aabb.getPosition()) - distance) <= radius) {
 		return true;
 	}
+
 	return false;
 }
 
@@ -158,33 +159,66 @@ bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 }
 
 bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphere) {
-	glm::vec3 toVert = tri[0] - sphere.position;
-	glm::vec3 normal = glm::normalize(glm::cross(tri[1] - tri[0], tri[2] - tri[0]));
-	glm::vec3 toTriPlane = normal * glm::dot(toVert, normal);
-
-	// Check if closest point on triangle plane is farther than radius from sphere center
-	if (glm::length(toTriPlane) >= sphere.radius) {
+	// Calculations found at http://realtimecollisiondetection.net/blog/?p=103
+	
+	const glm::vec3 A = tri[0] - sphere.position;
+	const glm::vec3 B = tri[1] - sphere.position;
+	const glm::vec3 C = tri[2] - sphere.position;
+	const float rr = sphere.radius * sphere.radius;
+	const glm::vec3 V = glm::cross(B - A, C - A);
+	const float d = glm::dot(A, V);
+	const float e = glm::dot(V, V);
+	
+	if (d * d > rr * e) {
 		return false;
 	}
 
-	glm::vec3 p = sphere.position + toTriPlane;
-	glm::vec3 v0 = tri[1] - tri[0];
-	glm::vec3 v1 = tri[2] - tri[0];
-	glm::vec3 v2 = p - tri[0];
+	const float aa = glm::dot(A, A);
+	const float ab = glm::dot(A, B);
+	const float ac = glm::dot(A, C);
+	const float bb = glm::dot(B, B);
+	const float bc = glm::dot(B, C);
+	const float cc = glm::dot(C, C);
 
-	// Determine barycentric coordinates
-	float d00 = glm::dot(v0, v0);
-	float d01 = glm::dot(v0, v1);
-	float d11 = glm::dot(v1, v1);
-	float d20 = glm::dot(v2, v0);
-	float d21 = glm::dot(v2, v1);
-	float denom = d00 * d11 - d01 * d01;
-	float v = (d11 * d20 - d01 * d21) / denom;
-	float w = (d00 * d21 - d01 * d20) / denom;
-	float u = 1.0f - v - w;
+	if (aa > rr && ab > aa && ac > aa) {
+		return false;
+	}
+	if (bb > rr && ab > bb && bc > bb) {
+		return false;
+	}
+	if (cc > rr && ac > cc && bc > cc) {
+		return false;
+	}
 
-	// Check if the point on the triangle plane is within the triangle
-	return ((0.0f < v && v < 1.0f) && (0.0f < w && w < 1.0f) && (0.0f < u && u < 1.0f));
+	const glm::vec3 AB = B - A;
+	const glm::vec3 BC = C - B;
+	const glm::vec3 CA = A - C;
+	 
+	const float d1 = ab - aa;
+	const float d2 = bc - bb;
+	const float d3 = ab - cc;
+	const float e1 = glm::dot(AB, AB);
+	const float e2 = glm::dot(BC, BC);
+	const float e3 = glm::dot(CA, CA);
+	 
+	const glm::vec3 Q1 = A * e1 - d1 * AB;
+	const glm::vec3 Q2 = B * e2 - d2 * BC;
+	const glm::vec3 Q3 = C * e3 - d3 * CA;
+	const glm::vec3 QC = C * e1 - Q1;
+	const glm::vec3 QA = A * e2 - Q2;
+	const glm::vec3 QB = B * e3 - Q3;
+
+	if ((glm::dot(Q1, Q1) > rr * e1 * e1) && (glm::dot(Q1, QC) > 0)) {
+		return false;
+	}
+	if ((glm::dot(Q2, Q2) > rr * e2 * e2) && (glm::dot(Q2, QA) > 0)) {
+		return false;
+	}
+	if ((glm::dot(Q3, Q3) > rr * e3 * e3) && (glm::dot(Q3, QB) > 0)) {
+		return false;
+	}
+
+	return true;
 }
 
 bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
@@ -434,6 +468,28 @@ bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::
 	return false;
 }
 
+void Intersection::Barycentric(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, float& u, float& v, float& w) {
+	const glm::vec3 v0 = b - a;
+	const glm::vec3 v1 = c - a;
+	const glm::vec3 v2 = p - a;
+
+	// Determine barycentric coordinates
+	const float d00 = glm::dot(v0, v0);
+	const float d01 = glm::dot(v0, v1);
+	const float d11 = glm::dot(v1, v1);
+	const float d20 = glm::dot(v2, v0);
+	const float d21 = glm::dot(v2, v1);
+	const float denom = d00 * d11 - d01 * d01;
+	const float divDenom = 1.0f / denom;
+	u = (d11 * d20 - d01 * d21) * divDenom;
+	v = (d00 * d21 - d01 * d20) * divDenom;
+	w = 1.0f - u - v;
+}
+
+bool Intersection::OnTriangle(const float u, const float v, const float w) {
+	return ((0.0f < v && v < 1.0f) && (0.0f < w && w < 1.0f) && (0.0f < u && u < 1.0f));
+}
+
 float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb) {
 	float returnValue = -1.0f;
 	glm::vec3 normalizedRay = glm::normalize(rayVec);
@@ -488,42 +544,27 @@ float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 }
 
 float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
-	float returnValue = -1.0f;
+	const glm::vec3 edge1 = v2 - v1;
+	const glm::vec3 edge2 = v3 - v1;
+	const glm::vec3 planeNormal = glm::normalize(glm::cross(edge1, edge2));
 	
-
+	const float originToPlaneDistance = glm::dot(v1, planeNormal);
+	const float rayToPlaneDistance = RayWithPlane(rayStart, rayDir, planeNormal, originToPlaneDistance);
 	
-	
-
-
-
-	glm::vec3 normalizedRay = glm::normalize(rayDir); //Normalize ray direction vec just to be sure
-
-	//Calculate triangle edges
-	glm::vec3 edge0 = v2 - v1;
-	glm::vec3 edge1 = v3 - v1;
-
-	//Determines s to use in cramer's rule
-	glm::vec3 cramersS = rayStart - v1;
-
-	glm::vec4 tuvw(-1.0f);
-
-	normalizedRay *= -1.0f;
-
-	float determinantVal = glm::determinant(glm::mat3(normalizedRay, edge0, edge1));
-	if (determinantVal != 0) { //Makes sure no division by 0
-		glm::vec3 detVec(glm::determinant(glm::mat3(cramersS, edge0, edge1)), glm::determinant(glm::mat3(normalizedRay, cramersS, edge1)), glm::determinant(glm::mat3(normalizedRay, edge0, cramersS))); //Vector containing determinant of the three matrixes
-		glm::vec3 tuv = detVec * (1 / determinantVal);
-		tuvw = glm::vec4(tuv.x, tuv.y, tuv.z, 1 - tuv.y - tuv.z);
+	if (rayToPlaneDistance == -1.0f) {
+		return -1.0f;
 	}
-
-	if (tuvw.x >= 0.0f &&
-		tuvw.y >= 0.0f && tuvw.y <= 1.0f &&
-		tuvw.z >= 0.0f && tuvw.z <= 1.0f &&
-		tuvw.w >= 0.0f && tuvw.w <= 1.0f) { //Hit if t is not negative and if u, v, and w are all between 0 and 1)
-		returnValue = tuvw.x;
+	
+	// Determine barycentric coordinates u, v, w
+	float u, v, w;
+	const glm::vec3 p = rayStart + rayDir * rayToPlaneDistance;
+	Barycentric(p, v1, v2, v3, u, v, w);
+	
+	// Check if point on triangle plane is within triangle
+	if (OnTriangle(u, v, w)) {
+		return rayToPlaneDistance;
 	}
-
-	return returnValue;
+	return -1.0f;
 }
 
 float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& normal, const float& distance) {
