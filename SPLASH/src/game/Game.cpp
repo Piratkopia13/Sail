@@ -38,7 +38,7 @@ void Game::registerStates() {
 	m_stateStack.registerState<InGameMenuState>(States::Pause);
 	m_stateStack.registerState<EndGameState>(States::EndGame);
 	m_stateStack.registerState<PBRTestState>(States::PBRTest);
-	m_stateStack.registerState<PerformanceTestState>(States::PerformanceTest)
+	m_stateStack.registerState<PerformanceTestState>(States::PerformanceTest);
 }
 
 void Game::dispatchEvent(Event& event) {
