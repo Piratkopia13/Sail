@@ -415,10 +415,15 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 }
 
 bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
-	// TODO: removed unused components when in spectator mode
 	m_player->addComponent<SpectatorComponent>();
 
-
+	m_player->removeComponent<NetworkSenderComponent>();
+	m_player->removeComponent<GunComponent>();
+	m_player->removeAllChildren();
+	// TODO: These can be removed once the GameInputSystem has been divided into movement and input
+	//m_player->removeComponent<PhysicsComponent>();
+	//m_player->removeComponent<AudioComponent>();
+	//m_player->removeComponent<BoundingBoxComponent>();
 
 	//this->requestStackPop();
 	//this->requestStackPush(States::EndGame);

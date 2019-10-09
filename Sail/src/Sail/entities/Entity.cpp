@@ -97,6 +97,13 @@ void Entity::removeChildEntity(Entity::SPtr toRemove) {
 	m_children.erase(child);
 }
 
+void Entity::removeAllChildren() {
+	for ( auto child : m_children ) {
+		child->queueDestruction();
+	}
+	m_children.clear();
+}
+
 std::vector<Entity::SPtr>& Entity::getChildEntities() {
 	return m_children;
 }

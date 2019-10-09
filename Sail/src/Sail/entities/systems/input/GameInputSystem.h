@@ -23,6 +23,7 @@ public:
 	void initialize(Camera* cam);
 	void clean();
 	void updateCameraPosition(float alpha);
+	CameraController* getCamera() const;
 
 private:
 	void processKeyboardInput(const float& dt);
