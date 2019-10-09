@@ -403,7 +403,7 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 
-	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
+	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
@@ -418,10 +418,17 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 	return true;
 }
 
-bool GameState::onPlayerCandleHit(PlayerCandleHitEvent& event) {
-	this->requestStackPop();
-	this->requestStackPush(States::EndGame);
-	m_poppedThisFrame = true;
+bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
+	m_player->addComponent<SpectatorComponent>();
+
+	m_player->removeComponent<NetworkSenderComponent>();
+	m_player->removeComponent<GunComponent>();
+	m_player->removeAllChildren();
+	// TODO: These should be uncommented once the GameInputSystem has been divided into movement and input
+	//m_player->removeComponent<PhysicsComponent>();
+	//m_player->removeComponent<AudioComponent>();
+	//m_player->removeComponent<BoundingBoxComponent>();
+
 	return true;
 }
 
