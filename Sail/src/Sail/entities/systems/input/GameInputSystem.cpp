@@ -17,7 +17,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<BoundingBoxComponent>(true, true, false);
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<CandleComponent>(false, true, true);
-	registerComponent<GunComponent>(true, true, true);
+	registerComponent<GunComponent>(false, true, true);
 
 	// cam variables
 	m_yaw = 90.f;
@@ -157,7 +157,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
 
-		if ( Input::IsMouseButtonPressed(KeyBinds::shoot) ) {
+		if ( !e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot) ) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 			glm::vec3 gunPosition = m_cam->getCameraPosition() + ( m_cam->getCameraDirection() + camRight - m_cam->getCameraUp() );
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
