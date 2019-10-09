@@ -283,5 +283,16 @@ float CollisionSystem::findIntersectionDepth(Entity* e, const Octree::CollisionI
 		}
 	}
 
+	if (csc) {
+		const glm::vec3 tri[] = {
+			collision.positions[0], collision.positions[1], collision.positions[2]
+		};
+		Intersection::TriangleWithSphere(tri, csc->spheres[0]) || Intersection::TriangleWithSphere(tri, csc->spheres[1]);
+	}
+	else {
+		Intersection::AabbWithTriangle(*bbc->getBoundingBox(), collision.positions[0], collision.positions[1], collision.positions[2]);
+	}
+	
+
 	return depth;
 }
