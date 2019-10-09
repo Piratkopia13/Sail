@@ -845,7 +845,7 @@ Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* light
 	e->addComponent<BoundingBoxComponent>(bbModel);
 	e->addComponent<CollidableComponent>();
 	PointLight pl;
-	pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+	pl.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
 	pl.setAttenuation(.0f, 0.1f, 0.02f);
 	pl.setIndex(m_currLightIndex);
@@ -1202,7 +1202,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 			// TODO: unnecessary to create new transitions for each FSM if they're all identical
 			// Attack State
 			FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
-			attackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+			attackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), false);
 			FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
 			attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
 
@@ -1210,11 +1210,11 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 			FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
 			searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
 			FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
-			searchToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
+			searchToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), false);
 
 			// Fleeing State
 			FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
-			fleeingToSearch->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
+			fleeingToSearch->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), true);
 
 			fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
 			fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
@@ -1224,7 +1224,6 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 
 			fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);
 		}
-		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
 	}
 }
 
