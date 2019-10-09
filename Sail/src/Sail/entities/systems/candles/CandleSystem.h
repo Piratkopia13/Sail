@@ -29,7 +29,7 @@ private:
 	// TODO: Replace using game settings when that is implemented
 	float m_candleForceRespawnTimer = 15.f;
 	// TODO: Replace using game settings when that is implemented
-	int m_maxNumRespawns = 3;
+	int m_maxNumRespawns = 2;
 
 	float testTimer = 0.0f;
 };
