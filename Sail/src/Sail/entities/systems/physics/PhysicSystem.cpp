@@ -258,6 +258,14 @@ float PhysicSystem::findIntersectionDepth(BoundingBoxComponent* bbComp, Collisio
 	return depth; 
 }
 
+float PhysicSystem::findIntersectionDepth2(BoundingBoxComponent* bbComp, CollisionSpheresComponent* csc, const Octree::CollisionInfo& collision) {
+	float depth = 0.0f;
+
+	
+
+	return depth;
+}
+
 void PhysicSystem::update(float dt) {
 	for (auto& e : entities) {
 		PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
