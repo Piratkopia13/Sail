@@ -62,7 +62,7 @@ void GunSystem::update(float dt) {
 
 						MovementComponent* movement = e->addComponent<MovementComponent>();
 						movement->velocity = gun->direction * gun->projectileSpeed;
-						movement->acceleration = glm::vec3(0.f, -9.8f, 0.f);
+						movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 						CollisionComponent* collision = e->addComponent<CollisionComponent>();
 						collision->drag = 2.0f;

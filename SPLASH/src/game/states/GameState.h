@@ -11,6 +11,7 @@ class LifeTimeSystem;
 class LightSystem;
 class OctreeAddRemoverSystem;
 class MovementSystem;
+class MovementPostCollisionSystem;
 class CollisionSystem;
 class SpeedLimitSystem;
 class PrepareUpdateSystem;
@@ -89,6 +90,7 @@ private:
 		RenderSystem* renderSystem = nullptr;
 		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
 		MovementSystem* movementSystem = nullptr;
+		MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
 		CollisionSystem* collisionSystem = nullptr;
 		SpeedLimitSystem* speedLimitSystem = nullptr;
 	};

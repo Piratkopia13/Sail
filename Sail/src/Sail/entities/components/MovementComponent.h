@@ -9,8 +9,10 @@ public:
 
 	glm::vec3 velocity = glm::vec3(0.0f);
 	glm::vec3 rotation = glm::vec3(0.0f);
-	glm::vec3 acceleration = glm::vec3(0.0f);
+	glm::vec3 constantAcceleration = glm::vec3(0.0f);
 	glm::vec3 accelerationToAdd = glm::vec3(0.0f);
 
 	glm::vec3 oldVelocity = glm::vec3(0.0f);
+
+	float updateableDt = 0.0f;
 };

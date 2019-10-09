@@ -15,7 +15,6 @@ CollisionSystem::CollisionSystem() {
 	registerComponent<BoundingBoxComponent>(true, true, true);
 
 	m_octree = nullptr;
-	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 CollisionSystem::~CollisionSystem() {
@@ -51,15 +50,8 @@ void CollisionSystem::update(float dt) {
 			}
 		}
 
-		glm::vec3 translation = (movement->oldVelocity + movement->velocity) * (0.5f * updateableDt);
-		if (translation != glm::vec3(0.0f)) {
-			transform->translate(translation);
-			if (e->getName() == "player") {
-				m_gameDataTracker->logDistanceWalked(translation);
-			}
-		}
-
-		movement->oldVelocity = movement->velocity;
+		movement->updateableDt = updateableDt;
+		
 
 		// Dumb thing for now, will hopefully be done cleaner in the future
 		if (CollisionSpheresComponent * csc = e->getComponent<CollisionSpheresComponent>()) {

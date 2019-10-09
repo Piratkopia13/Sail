@@ -21,6 +21,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/entities/systems/physics/MovementSystem.h"
+#include "Sail/entities/systems/physics/MovementPostCollisionSystem.h"
 #include "Sail/entities/systems/physics/CollisionSystem.h"
 #include "Sail/entities/systems/physics/SpeedLimitSystem.h"
 #include "Sail/ai/states/AttackingState.h"
@@ -97,15 +98,13 @@ GameState::GameState(StateStack& stack)
 	// Setting light index
 	m_currLightIndex = 0;
 
-	/*// Create a PhysicSystem
-	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
-	m_componentSystems.physicSystem->provideOctree(m_octree);*/
-
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
 	
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
 	
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 	
 
@@ -582,11 +581,11 @@ bool GameState::renderImguiProfiler(float dt) {
 				m_profilerTimer = 0.f;
 				if (m_profilerCounter < 100) {
 
-					m_virtRAMHistory[m_profilerCounter] = m_profiler.virtMemUsage();
-					m_physRAMHistory[m_profilerCounter] = m_profiler.workSetUsage();
-					m_vramUsageHistory[m_profilerCounter] = m_profiler.vramUsage();
+					m_virtRAMHistory[m_profilerCounter] = (float)m_profiler.virtMemUsage();
+					m_physRAMHistory[m_profilerCounter] = (float)m_profiler.workSetUsage();
+					m_vramUsageHistory[m_profilerCounter] = (float)m_profiler.vramUsage();
 					m_frameTimesHistory[m_profilerCounter] = dt;
-					m_cpuHistory[m_profilerCounter++] = m_profiler.processUsage();
+					m_cpuHistory[m_profilerCounter++] = (float)m_profiler.processUsage();
 					m_virtCount = std::to_string(m_profiler.virtMemUsage());
 					m_physCount = std::to_string(m_profiler.workSetUsage());
 					m_vramUCount = std::to_string(m_profiler.vramUsage());
@@ -597,28 +596,28 @@ bool GameState::renderImguiProfiler(float dt) {
 					// Copying all the history to a new array because ImGui is stupid
 					float* tempFloatArr = SAIL_NEW float[100];
 					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
-					tempFloatArr[99] = m_profiler.virtMemUsage();
+					tempFloatArr[99] = (float)m_profiler.virtMemUsage();
 					delete m_virtRAMHistory;
 					m_virtRAMHistory = tempFloatArr;
 					m_virtCount = std::to_string(m_profiler.virtMemUsage());
 
 					float* tempFloatArr1 = SAIL_NEW float[100];
 					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 100, tempFloatArr1);
-					tempFloatArr1[99] = m_profiler.workSetUsage();
+					tempFloatArr1[99] = (float)m_profiler.workSetUsage();
 					delete m_physRAMHistory;
 					m_physRAMHistory = tempFloatArr1;
 					m_physCount = std::to_string(m_profiler.workSetUsage());
 
 					float* tempFloatArr3 = SAIL_NEW float[100];
 					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
-					tempFloatArr3[99] = m_profiler.vramUsage();
+					tempFloatArr3[99] = (float)m_profiler.vramUsage();
 					delete m_vramUsageHistory;
 					m_vramUsageHistory = tempFloatArr3;
 					m_vramUCount = std::to_string(m_profiler.vramUsage());
 
 					float* tempFloatArr4 = SAIL_NEW float[100];
 					std::copy(m_cpuHistory + 1, m_cpuHistory + 100, tempFloatArr4);
-					tempFloatArr4[99] = m_profiler.processUsage();
+					tempFloatArr4[99] = (float)m_profiler.processUsage();
 					delete m_cpuHistory;
 					m_cpuHistory = tempFloatArr4;
 					m_cpuCount = std::to_string(m_profiler.processUsage());
@@ -645,7 +644,9 @@ bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Checkbox("Enable post processing",
 		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
 	);
-
+	bool interpolate = ECS::Instance()->getSystem<AnimationSystem>()->getInterpolation();
+	ImGui::Checkbox("enable animation interpolation", &interpolate);
+	ECS::Instance()->getSystem<AnimationSystem>()->setInterpolation(interpolate);
 	static Entity* pickedEntity = nullptr;
 	static float metalness = 1.0f;
 	static float roughness = 1.0f;
@@ -749,6 +750,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.movementSystem->update(dt);
 	m_componentSystems.speedLimitSystem->update(0.0f);
 	m_componentSystems.collisionSystem->update(dt);
+	m_componentSystems.movementPostCollisionSystem->update(0.0f);
 
 
 	// This can probably be used once the respective system developers 
@@ -1004,7 +1006,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 		playerID);
 
 	// Add physics components and setting initial variables
-	player->addComponent<MovementComponent>()->acceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 	player->addComponent<CollisionComponent>();
 
@@ -1191,8 +1193,9 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addComponent<CollidableComponent>();
 		e->addComponent<MovementComponent>();
 		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>();
 		e->addComponent<AiComponent>();
-		e->getComponent<MovementComponent>()->acceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 		e->getComponent<SpeedLimitComponent>()->maxSpeed = m_player->getComponent<SpeedLimitComponent>()->maxSpeed / 2.f;
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
 		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
