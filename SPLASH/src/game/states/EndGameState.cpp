@@ -62,3 +62,26 @@ bool EndGameState::renderImgui(float dt) {
 
 	return true;
 }
+
+bool EndGameState::onEvent(Event& event) {
+
+	EventHandler::dispatch<NetworkBackToLobby>(event, SAIL_BIND_EVENT(&EndGameState::onReturnToLobby));
+
+	return true;
+}
+
+bool EndGameState::onReturnToLobby(NetworkBackToLobby& event) {
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		std::string msg = "z";
+
+		// Send it all clients
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(msg);
+	}
+	else {
+		this->requestStackPop();
+		this->requestStackPush(States::JoinLobby);
+	}
+	
+	return true;
+}

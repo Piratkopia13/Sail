@@ -414,6 +414,8 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 }
 
 bool GameState::onPlayerCandleHit(PlayerCandleHitEvent& event) {
+	// Should not look like this later, is based on the player hitting his own candle,
+	// which is an 'overlaying' if-statement previously checked before this function.
 	this->requestStackPop();
 	this->requestStackPush(States::EndGame);
 	m_poppedThisFrame = true;
@@ -470,8 +472,7 @@ bool GameState::renderImgui(float dt) {
 
 bool GameState::prepareStateChange() {
 	if (m_poppedThisFrame) {
-		// Reset network
-		NWrapperSingleton::getInstance().resetNetwork();
+		// Do NOT reset network because we're NOT going to main menu
 	}
 	return true;
 }
