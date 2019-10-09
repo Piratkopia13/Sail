@@ -226,23 +226,17 @@ float PhysicSystem::findIntersectionDepth(BoundingBoxComponent* bbComp, Collisio
 			bbComp->getBoundingBox()->setPosition(bbComp->getBoundingBox()->getPosition() + collision.normal * stepSize);
 		}
 
-
-		glm::vec3 middle = (collision.positions[0] + collision.positions[1] + collision.positions[2]) / 3.0f;
-
-		glm::vec3 newPosition0 = middle + (collision.positions[0] - middle) * 0.9f;
-		glm::vec3 newPosition1 = middle + (collision.positions[1] - middle) * 0.9f;
-		glm::vec3 newPosition2 = middle + (collision.positions[2] - middle) * 0.9f;
-
+		//Check if there is still collision
 		bool currentCollision = false;
 
 		if (csc) {
 			const glm::vec3 tri[] = {
-				newPosition0, newPosition1, newPosition2
+				collision.positions[0], collision.positions[1], collision.positions[2]
 			};
 			currentCollision = Intersection::TriangleWithSphere(tri, csc->spheres[0]) || Intersection::TriangleWithSphere(tri, csc->spheres[1]);
 		}
 		else {
-			currentCollision = Intersection::AabbWithTriangle(*bbComp->getBoundingBox(), newPosition0, newPosition1, newPosition2);
+			currentCollision = Intersection::AabbWithTriangle(*bbComp->getBoundingBox(), collision.positions[0], collision.positions[1], collision.positions[2]);
 		}
 
 		if (!currentCollision) {
@@ -309,7 +303,7 @@ void PhysicSystem::update(float dt) {
 		if ((boundingBox || csc) && m_octree) {
 			collisionUpdate(e, physics, updateableDt);
 
-			//surfaceFromCollision(boundingBox, csc, physics, transform, physics->collisions);
+			surfaceFromCollision(boundingBox, csc, physics, transform, physics->collisions);
 
 			if (boundingBox && rayCastCheck(e, physics, boundingBox->getBoundingBox(), updateableDt)) {
 				//Object is moving fast, ray cast for collisions
