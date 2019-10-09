@@ -489,6 +489,13 @@ float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 
 float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
 	float returnValue = -1.0f;
+	
+
+	
+	
+
+
+
 	glm::vec3 normalizedRay = glm::normalize(rayDir); //Normalize ray direction vec just to be sure
 
 	//Calculate triangle edges
@@ -517,6 +524,22 @@ float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& 
 	}
 
 	return returnValue;
+}
+
+float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& normal, const float& distance) {
+	const float dirDotNormal = glm::dot(rayDir, normal);
+	
+	bool isParallelWithPlane = std::fabsf(dirDotNormal) < 0.001f;
+	if (isParallelWithPlane) {
+		return -1.0f;
+	}
+
+	const glm::vec3 pointOnPlane = normal * distance;
+	const glm::vec3 startToPlane = pointOnPlane - rayStart;
+	const float shortestDistanceToPlane = glm::dot(startToPlane, normal);
+	const float distanceToPlane = shortestDistanceToPlane / dirDotNormal;
+
+	return distanceToPlane;
 }
 
 float Intersection::RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb, float padding) {
