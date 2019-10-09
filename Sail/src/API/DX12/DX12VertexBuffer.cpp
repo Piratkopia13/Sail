@@ -3,13 +3,13 @@
 #include "Sail/Application.h"
 #include "DX12Utils.h"
 
-VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, Mesh::Data& modelData) {
+VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, const Mesh::Data& modelData) {
 	return SAIL_NEW DX12VertexBuffer(inputLayout, modelData);
 }
 
 // TODO: Take in usage (Static or Dynamic) and create a default heap for static only
 // TODO: updateData and/or setData
-DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData)
+DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData)
 	: VertexBuffer(inputLayout, modelData)
 {
 	m_context = Application::getInstance()->getAPI<DX12API>();

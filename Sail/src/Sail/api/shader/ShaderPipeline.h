@@ -49,8 +49,8 @@ public:
 	virtual void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
 
-	virtual void setStructBufferVar(const std::string& name, const void* data, UINT size);
-	bool trySetStructBufferVar(const std::string& name, const void* data, UINT size);
+	virtual void setStructBufferVar(const std::string& name, const void* data, UINT size, UINT numElements);
+	bool trySetStructBufferVar(const std::string& name, const void* data, UINT size, UINT numElements);
 
 protected:
 	// Compiles shaders into blobs
@@ -96,7 +96,9 @@ protected:
 		std::unique_ptr<ShaderComponent::ConstantBuffer> cBuffer;
 	};
 	struct ShaderStructuredBuffer {
-		ShaderStructuredBuffer(const std::string& name, void* initData, UINT size, UINT numElements, UINT stride, ShaderComponent::BIND_SHADER bindShader, UINT slot) {
+		ShaderStructuredBuffer(const std::string& name, void* initData, UINT size, UINT numElements, UINT stride, ShaderComponent::BIND_SHADER bindShader, UINT slot) 
+			: name(name)
+		{
 			sBuffer = std::unique_ptr<ShaderComponent::StructuredBuffer>(ShaderComponent::StructuredBuffer::Create(initData, size, numElements, stride, bindShader, slot));
 		}
 		std::unique_ptr<ShaderComponent::StructuredBuffer> sBuffer;

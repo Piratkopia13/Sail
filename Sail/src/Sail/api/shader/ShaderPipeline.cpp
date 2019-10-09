@@ -250,7 +250,6 @@ void ShaderPipeline::parseStructuredBuffer(const char* source) {
 	std::string type = nextTokenAsType(source, tokenSize);
 	source += tokenSize;
 
-
 	tokenSize = 0;
 	std::string name = nextTokenAsName(source, tokenSize);
 	source += tokenSize;
@@ -365,18 +364,18 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 	return false;
 }
 
-void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT size) {
-	bool success = trySetStructBufferVar(name, data, size);
+void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT size, UINT numElements) {
+	bool success = trySetStructBufferVar(name, data, size, numElements);
 	if (!success) {
 		Logger::Warning("Tried to set StructuredBuffer variable that did not exist (" + name + ")");
 	}
 }
 
-bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT size) {
+bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT size, UINT numElements) {
 	for (auto& it : parsedData.structuredBuffers) {
 		if (it.name == name) {
 			ShaderComponent::StructuredBuffer& sbuffer = *it.sBuffer.get();
-			sbuffer.updateData(data, size);
+			sbuffer.updateData(data, size, numElements);
 			return true;
 		}
 	}

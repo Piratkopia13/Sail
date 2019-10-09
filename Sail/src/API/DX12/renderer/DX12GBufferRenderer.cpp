@@ -127,7 +127,7 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 		auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem>();
 		if (animationSystem) { 
-			animationSystem->updateOnGPU(Application::getInstance()->getDelta(), cmdList.Get());
+			animationSystem->updateMeshGPU(cmdList.Get());
 		}
 
 

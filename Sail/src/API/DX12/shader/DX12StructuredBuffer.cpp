@@ -11,45 +11,46 @@ namespace ShaderComponent {
 
 	DX12StructuredBuffer::DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot)
 		: m_register(slot)
+		, m_stride(stride)
 	{
 		m_context = Application::getInstance()->getAPI<DX12API>();
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
 
 		m_srvHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, numSwapBuffers);
 
-		m_resourceHeapSize = size;;
-
 		m_bufferUploadHeap.resize(numSwapBuffers);
 		m_cbGPUAddress.resize(numSwapBuffers);
 		m_srvCDHs.resize(numSwapBuffers);
+		m_resourceHeapSize.resize(numSwapBuffers);
+		for (UINT i = 0; i < numSwapBuffers; i++) {
+			m_resourceHeapSize[i] = size;
+			// Store srv handles
+			m_srvCDHs[i] = m_srvHeap->getCPUDescriptorHandleForIndex(i);
+		}
 		
-		createBuffers();
-
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		srvDesc.Buffer.FirstElement = 0;
-		srvDesc.Buffer.NumElements = numElements;
-		srvDesc.Buffer.StructureByteStride = stride;
+		createBuffers(numElements);
 		for (UINT i = 0; i < numSwapBuffers; i++) {
 			// Place initData in the buffer
 			memcpy(m_cbGPUAddress[i], initData, size);
-
-			// Create SRV
-			m_srvCDHs[i] = m_srvHeap->getCPUDescriptorHandleForIndex(i);
-			m_context->getDevice()->CreateShaderResourceView(m_bufferUploadHeap[i].Get(), &srvDesc, m_srvCDHs[i]);
 		}
-
 	}
 
 	DX12StructuredBuffer::~DX12StructuredBuffer() {
 		//delete[] m_needsUpdate;
 	}
 
-	void DX12StructuredBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset /*= 0U*/) {
+	void DX12StructuredBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int numElements, unsigned int offset /*= 0U*/) {
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
 		auto frameIndex = m_context->getFrameIndex();
+
+		if (m_resourceHeapSize[frameIndex] < bufferSize) {
+			// Expand buffer
+			Logger::Log("Expanded structured buffer from " + std::to_string(m_resourceHeapSize[frameIndex]) + " to " + std::to_string(bufferSize));
+			m_resourceHeapSize[frameIndex] = bufferSize;
+			createBuffers(numElements);
+		}
+
+
 		memcpy(m_cbGPUAddress[frameIndex] + /*m_byteAlignedSize + */offset, newData, bufferSize);
 	}
 
@@ -68,14 +69,15 @@ namespace ShaderComponent {
 		return m_bufferUploadHeap[m_context->getFrameIndex()].Get();
 	}
 
-	void DX12StructuredBuffer::createBuffers() {
+	void DX12StructuredBuffer::createBuffers(unsigned int numElements) {
+		auto frameIndex = m_context->getFrameIndex();
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
 		static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 		// Create an upload heap to hold the constant buffer
 		// create a resource heap, and pointer to cbv for each frame
 		for (UINT i = 0; i < numSwapBuffers; i++) {
 
-			m_bufferUploadHeap[i].Attach(DX12Utils::CreateBuffer(m_context->getDevice(), m_resourceHeapSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
+			m_bufferUploadHeap[i].Attach(DX12Utils::CreateBuffer(m_context->getDevice(), m_resourceHeapSize[frameIndex], D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 			m_bufferUploadHeap[i]->SetName(L"Constant Buffer Upload Resource Heap");
 
 			// Map the constant buffer and keep it mapped for the duration of its lifetime
@@ -83,6 +85,19 @@ namespace ShaderComponent {
 			ThrowIfFailed(m_bufferUploadHeap[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_cbGPUAddress[i])));
 
 		}
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = numElements;
+		srvDesc.Buffer.StructureByteStride = m_stride;
+		for (UINT i = 0; i < numSwapBuffers; i++) {
+			// Create SRV
+			m_context->getDevice()->CreateShaderResourceView(m_bufferUploadHeap[i].Get(), &srvDesc, m_srvCDHs[i]);
+		}
+
 	}
 
 }

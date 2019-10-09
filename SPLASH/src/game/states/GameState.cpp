@@ -22,6 +22,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include "Sail/ai/states/AttackingState.h"
+#include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
 #include "Sail/TimeSettings.h"
@@ -357,7 +358,7 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
-		m_app->getResourceManager().reloadShader<GBufferOutShader>();
+		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 	}
 
 	// Pause game
@@ -879,14 +880,14 @@ void GameState::initAnimations() {
 
 
 
-	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
+	/*auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
 	animationEntity2->addComponent<TransformComponent>();
 	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
 	animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
 	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);*/
 
 	/*
 
@@ -933,7 +934,7 @@ void GameState::initAnimations() {
 		auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5-" + std::to_string(i));
 		animationEntity5->addComponent<TransformComponent>();
 		animationEntity5->getComponent<TransformComponent>()->translate(0, 0, 3 + i * 2);
-		animationEntity5->getComponent<TransformComponent>()->translate(110.f, 100.f, 90.f);
+		//animationEntity5->getComponent<TransformComponent>()->translate(110.f, 100.f, 90.f);
 		animationEntity5->getComponent<TransformComponent>()->scale(0.005f);
 		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/DEBUG_BALLBOT.fbx", shader));
 		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);

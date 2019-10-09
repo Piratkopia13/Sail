@@ -3,6 +3,7 @@
 #include "Component.h"
 #include "Sail/graphics/geometry/Animation.h"
 #include "Sail/api/Mesh.h"
+#include "Sail/api/VertexBuffer.h"
 
 class AnimationComponent : public Component<AnimationComponent> {
 public:
@@ -78,6 +79,7 @@ public:
 	Mesh::Data data;
 	glm::mat4* transforms;
 
+	std::unique_ptr<VertexBuffer> tposeVBuffer;
 
 
 	AnimationStack* getAnimationStack() { return m_stack; };
