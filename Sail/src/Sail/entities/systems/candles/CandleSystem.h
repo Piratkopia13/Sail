@@ -2,8 +2,10 @@
 
 #include "Sail/entities/systems/BaseComponentSystem.h"
 
+// TODO: Replace using game settings when that is implemented
 #define INVINCIBLE_DURATION 1.0f
-#define MAX_HEALTH 100.0f
+// TODO: Replace using game settings when that is implemented
+#define MAX_HEALTH 20.f
 
 class CameraController;
 class LightSetup;
@@ -24,11 +26,10 @@ public:
 
 private:
 	int m_playerEntityID;
+	// TODO: Replace using game settings when that is implemented
 	float m_candleForceRespawnTimer = 15.f;
+	// TODO: Replace using game settings when that is implemented
 	int m_maxNumRespawns = 3;
-	float m_health = MAX_HEALTH;
-	bool m_isHit = false;
-	float m_invincibleTimer = INVINCIBLE_DURATION;
 
 	float testTimer = 0.0f;
 };

@@ -41,12 +41,13 @@ private:
 	bool m_wasHitByWater = false;
 	float m_damageTakenLastHit = 0;
 	bool m_isAlive = true;
-	bool m_activate = true;
+	bool m_activate = false;
 	bool m_carried = true;
 	bool m_wasCarriedLastUpdate = true;
 
 	float m_invincibleTimer = -2.f;
-	float m_health = 100.f;
+	// TODO: Replace using game settings when that is implemented
+	float m_health = 20.f;
 
 	/* Should probably be removed later */
 	float m_downTime = 0.f;
