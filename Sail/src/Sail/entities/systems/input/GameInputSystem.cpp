@@ -63,7 +63,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		// Do flying movement if in spectator mode
 		if ( e->hasComponent<SpectatorComponent>() ) {
 			if ( playerMovement.forwardMovement != 0.f || playerMovement.rightMovement != 0.f || playerMovement.upMovement != 0.f ) {
-				forward = glm::normalize(forward);
+ 				forward = glm::normalize(forward);
 
 				// Calculate right vector for player
 				glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);

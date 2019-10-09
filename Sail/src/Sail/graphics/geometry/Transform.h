@@ -120,6 +120,7 @@ private:
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);
+	void removeChildren();
 
 	// Modifies the elements of matrix directly instead of multiplying with matrices
 	void createTransformMatrix(glm::mat4& destination, const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale) const;

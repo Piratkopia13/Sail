@@ -99,7 +99,10 @@ void Entity::removeChildEntity(Entity::SPtr toRemove) {
 
 void Entity::removeAllChildren() {
 	for ( auto child : m_children ) {
-		child->queueDestruction();
+		if ( child->hasComponent<TransformComponent>() ) {
+			auto childTransComp = child->getComponent<TransformComponent>();
+			childTransComp->removeParent();
+		}
 	}
 	m_children.clear();
 }
