@@ -48,6 +48,7 @@ public:
 	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getWriteBitMask() const;
 
 	virtual void stop() {}
+	virtual void clearEntities();
 
 	// Do not call this, it is called internally by EntityAdderSystem
 	void addQueuedEntities();
