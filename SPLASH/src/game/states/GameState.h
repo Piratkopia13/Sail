@@ -18,7 +18,6 @@ class GameInputSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
 class AudioSystem;
-//class HRTFAudioSystem;
 class RenderSystem;
 
 class NetworkSerializedPackageEvent;
@@ -81,7 +80,6 @@ private:
 		NetworkReceiverSystem* networkReceiverSystem = nullptr;
 		NetworkSenderSystem* networkSenderSystem = nullptr;
 		AudioSystem* audioSystem = nullptr;
-		//HRTFAudioSystem* hrtfAudioSystem = nullptr;
 		RenderSystem* renderSystem = nullptr;
 	};
 

@@ -3,6 +3,8 @@
 
 enum AudioType { MUSIC };
 
+// TODO: Remove as many includes as possible
+
 #include <xaudio2.h>
 //#include <x3daudio.h>
 
@@ -34,9 +36,6 @@ enum AudioType { MUSIC };
 #include <hrtfapoapi.h>
 
 #pragma comment(lib, "hrtfapo.lib")
-
-#include "XAudio2Helpers.h"
-
 
 
 #define SOUND_COUNT 236
