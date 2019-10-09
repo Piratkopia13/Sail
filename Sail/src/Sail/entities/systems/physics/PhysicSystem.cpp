@@ -255,15 +255,17 @@ float PhysicSystem::findIntersectionDepth(BoundingBoxComponent* bbComp, Collisio
 		}
 	}
 
+	if (csc) {
+		const glm::vec3 tri[] = {
+			collision.positions[0], collision.positions[1], collision.positions[2]
+		};
+		Intersection::TriangleWithSphere(tri, csc->spheres[0]) || Intersection::TriangleWithSphere(tri, csc->spheres[1]);
+	}
+	else {
+		Intersection::AabbWithTriangle(*bbComp->getBoundingBox(), collision.positions[0], collision.positions[1], collision.positions[2]);
+	}
+
 	return depth; 
-}
-
-float PhysicSystem::findIntersectionDepth2(BoundingBoxComponent* bbComp, CollisionSpheresComponent* csc, const Octree::CollisionInfo& collision) {
-	float depth = 0.0f;
-
-	
-
-	return depth;
 }
 
 void PhysicSystem::update(float dt) {

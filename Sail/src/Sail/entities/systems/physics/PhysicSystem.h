@@ -30,5 +30,4 @@ private:
 
 
 	float findIntersectionDepth(BoundingBoxComponent* bbComp, CollisionSpheresComponent* csc, const Octree::CollisionInfo& collision);
-	float findIntersectionDepth2(BoundingBoxComponent* bbComp, CollisionSpheresComponent* csc, const Octree::CollisionInfo& collision);
 };
