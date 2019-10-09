@@ -17,8 +17,8 @@ ProjectileSystem::~ProjectileSystem() {
 
 void ProjectileSystem::update(float dt) {
 	for (auto& e : entities) {
-		CollisionComponent* collision = e->getComponent<CollisionComponent>();
-		auto projectileCollisions = collision->collisions;
+		CollisionComponent* collisionComp = e->getComponent<CollisionComponent>();
+		auto projectileCollisions = collisionComp->collisions;
 		for (auto& collision : projectileCollisions) {
 			if (collision.entity->hasComponent<CandleComponent>()) {
 				// TODO: Consume da waterball (smök)

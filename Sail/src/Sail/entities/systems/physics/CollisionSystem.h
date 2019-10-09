@@ -3,8 +3,6 @@
 #include "..//..//Physics/Octree.h"
 #include "..//..//Physics/BoundingBox.h"
 
-class GameDataTracker;
-
 class CollisionSystem final : public BaseComponentSystem {
 public:
 	CollisionSystem();
@@ -22,6 +20,5 @@ private:
 	float findIntersectionDepth(Entity* e, const Octree::CollisionInfo& collision);
 
 private:
-	Octree* m_octree = nullptr;
-	GameDataTracker* m_gameDataTracker = nullptr;
+	Octree* m_octree;
 };

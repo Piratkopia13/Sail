@@ -14,5 +14,7 @@ public:
 
 	glm::vec3 oldVelocity = glm::vec3(0.0f);
 
+	float airDrag = 1.0f;
+
 	float updateableDt = 0.0f;
 };

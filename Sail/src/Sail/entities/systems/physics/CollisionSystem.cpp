@@ -6,7 +6,6 @@
 #include "..//..//components/BoundingBoxComponent.h"
 #include "..//..//components/CollisionSpheresComponent.h"
 #include "..//..//Physics/Intersection.h"
-#include "Sail/utils/GameDataTracker.h"
 
 CollisionSystem::CollisionSystem() {
 	registerComponent<MovementComponent>(true, true, true);
@@ -27,7 +26,6 @@ void CollisionSystem::provideOctree(Octree* octree) {
 void CollisionSystem::update(float dt) {
 	for (auto& e: entities) {
 		auto movement = e->getComponent<MovementComponent>();
-		auto transform = e->getComponent<TransformComponent>();
 		auto collision = e->getComponent<CollisionComponent>();
 		auto boundingBox = e->getComponent<BoundingBoxComponent>();
 		auto csc = e->getComponent<CollisionSpheresComponent>();
@@ -143,17 +141,6 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 				returnValue = true;
 			}
 		}
-	}
-	else { //Air drag
-		float saveY = movement->velocity.y;
-		movement->velocity.y = 0;
-		float vel = glm::length(movement->velocity);
-
-		if (vel > 0.0f) {
-			vel = glm::max(vel - collision->airDrag * dt, 0.0f);
-			movement->velocity = glm::normalize(movement->velocity) * vel;
-		}
-		movement->velocity.y = saveY;
 	}
 	//------------
 
