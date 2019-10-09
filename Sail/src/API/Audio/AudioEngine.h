@@ -59,12 +59,8 @@ public:
 	int initializeSound(const std::string& filename, float volume = 1.0f);
 	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
 
-	void updateSoundWithCurrentPosition(
-		int index, 
-		Camera& cam, 
-		const Transform& transform, 
-		const glm::vec3& positionOffset, 
-		float alpha);
+	void updateSoundWithCurrentPosition(int index, Camera& cam, const Transform& transform, 
+		const glm::vec3& positionOffset, float alpha);
 
 	void startSpecificSound(int index, float volume = 1.0f);
 	void stopSpecificSound(int index);

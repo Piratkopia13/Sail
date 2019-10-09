@@ -32,45 +32,46 @@ void AudioSystem::initialize() {
 }
 
 void AudioSystem::update(Camera& cam, float dt, float alpha) {
-	// Loop through entities
 	for (auto e : entities) {
 		auto audioC = e->getComponent<AudioComponent>();
 		// Loop through sounds
-		for (int i = 0; i < SoundType::COUNT; i++) {
-			if (audioC->m_isPlaying[i]) {
+		for (int i = 0; i < Audio::SoundType::COUNT; i++) {
+			Audio::SoundInfo& sound = audioC->m_sounds[i]; // To make the code easier to read
+
+			if (sound.isPlaying) {
 				// Initialize the sound if that hasn't been done already
-				if (!audioC->m_isInitialized[i]) {
-					audioC->m_soundID[i] = m_audioEngine->initializeSound(audioC->m_soundEffects[i], audioC->m_volume[i]);
-					audioC->m_isInitialized[i] = true;
-					audioC->m_soundEffectTimers[i] = 0.0f;
+				if (!sound.isInitialized) {
+					sound.soundID = m_audioEngine->initializeSound(sound.fileName, sound.volume);
+					sound.isInitialized = true;
+					sound.soundEffectTimer = 0.0f;
 				}
 
 				// Start playing the sound if it's not already playing
-				if (audioC->m_soundEffectTimers[i] == 0.0f) {
-					m_audioEngine->startSpecificSound(audioC->m_soundID[i]);
+				if (sound.soundEffectTimer == 0.0f) {
+					m_audioEngine->startSpecificSound(sound.soundID);
 				}
 
 				// Update the sound with the current positions if it's playing
-				if (audioC->m_soundEffectTimers[i] <= audioC->m_soundEffectLengths[i]) {
+				if (sound.soundEffectTimer <= sound.soundEffectLength) {
 					m_audioEngine->updateSoundWithCurrentPosition(
-						audioC->m_soundID[i], cam, *e->getComponent<TransformComponent>(), 
-						audioC->m_positionalOffset[i], alpha);					
+						sound.soundID, cam, *e->getComponent<TransformComponent>(), 
+						sound.positionalOffset, alpha);					
 					
-					audioC->m_soundEffectTimers[i] += dt;
+					sound.soundEffectTimer += dt;
 				} else {
-					audioC->m_soundEffectTimers[i] = 0.0f; // Reset the sound effect to its beginning
-					m_audioEngine->stopSpecificSound(audioC->m_soundID[i]);
+					sound.soundEffectTimer = 0.0f; // Reset the sound effect to its beginning
+					m_audioEngine->stopSpecificSound(sound.soundID);
 					
 					// If the sound isn't looping then make it stop
-					if (audioC->m_playOnce[i] == true) {
-						audioC->m_isPlaying[i] = false;
-						audioC->m_isInitialized[i] = false;
+					if (sound.playOnce == true) {
+						sound.isPlaying = false;
+						sound.isInitialized = false;
 					}
 				}
 			// If the sound should no longer be playing stop it and reset its timer
-			} else if (audioC->m_soundEffectTimers[i] != 0.0f) {
-				m_audioEngine->stopSpecificSound(audioC->m_soundID[i]);
-				audioC->m_soundEffectTimers[i] = 0.0f;
+			} else if (sound.soundEffectTimer != 0.0f) {
+				m_audioEngine->stopSpecificSound(sound.soundID);
+				sound.soundEffectTimer = 0.0f;
 			}
 		}
 	}

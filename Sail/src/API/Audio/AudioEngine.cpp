@@ -163,12 +163,9 @@ void AudioEngine::streamSound(const std::string& filename, int streamIndex, bool
 }
 
 // Note: cam is not const since cam.getUp() is not a const function
-void AudioEngine::updateSoundWithCurrentPosition(
-	int index, 
-	Camera& cam, 
-	const Transform& transform, 
-	const glm::vec3& positionOffset, 
-	float alpha) {
+void AudioEngine::updateSoundWithCurrentPosition(int index, Camera& cam, const Transform& transform, 
+	const glm::vec3& positionOffset, float alpha) {
+
 	glm::vec3 soundPos = transform.getInterpolatedTranslation(alpha);
 
 	// If the sound has an offset position from the entity's transform then rotate the offset with the transform's rotation and add it to the position

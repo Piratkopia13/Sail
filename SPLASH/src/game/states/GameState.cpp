@@ -820,9 +820,18 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 
 
 	player->addComponent<AudioComponent>();
-	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.0f, false, 0.5f);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.7f, true, 0.5f);
 
+	Audio::SoundInfo sound{};
+	sound.fileName = "../Audio/footsteps_1.wav";
+	sound.soundEffectLength = 1.0f;
+	sound.volume = 0.5f;
+	sound.playOnce = false;
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
+
+	sound.fileName = "../Audio/jump.wav";
+	sound.soundEffectLength = 0.7f;
+	sound.playOnce = true;
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
 
 	// Create candle for the player
 	m_currLightIndex = 0;
@@ -990,9 +999,16 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addComponent<AiComponent>();
 
 		e->addComponent<AudioComponent>();
-		//player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 1.84f, false);
-		e->getComponent<AudioComponent>()->defineSound(SoundType::AMBIENT, "../Audio/guitar.wav", 104.0f, false, 1.0f, { 0.f, 1.2f, 0.f });
-		e->getComponent<AudioComponent>()->m_isPlaying[SoundType::AMBIENT] = true;
+
+		Audio::SoundInfo sound{};
+		sound.fileName = "../Audio/guitar.wav";
+		sound.soundEffectLength = 104.0f;
+		sound.volume = 1.0f;
+		sound.playOnce = false;
+		sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		sound.isPlaying = true; // Start playing the sound immediately
+
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
 
 		auto fsmComp = e->addComponent<FSMComponent>();
 		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);

@@ -70,7 +70,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			if (!m_wasSpacePressed && physicsComp->onGround) {
 				physicsComp->velocity.y = 5.0f;
 				// AUDIO TESTING - JUMPING
-				audioComp->m_isPlaying[SoundType::JUMP] = true;
+				audioComp->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
 				m_gameDataTracker->logJump();
 			}
 			m_wasSpacePressed = true;
@@ -124,12 +124,12 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			if (!physicsComp->onGround) {
 				acceleration = acceleration * 0.5f;
 				// AUDIO TESTING (turn OFF looping running sound)
-				audioComp->m_isPlaying[SoundType::RUN] = false;
+				audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
 			}
 			// AUDIO TESTING (playing a looping running sound)
 			else {
 			//else if (m_runSoundTimer > 0.3f) {
-				audioComp->m_isPlaying[SoundType::RUN] = true;
+				audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = true;
 			}
 			//else {
 			//	m_runSoundTimer += dt;
@@ -141,7 +141,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		}
 		else {
 			// AUDIO TESTING (turn OFF looping running sound)
-			audioComp->m_isPlaying[SoundType::RUN] = false;
+			audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
 			m_runSoundTimer = 0.0f;
 		}
 	}
