@@ -2,6 +2,7 @@
 #include "MovementPostCollisionSystem.h"
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/MovementComponent.h"
+#include "..//..//components/CollisionSpheresComponent.h"
 #include "..//..//Entity.h"
 #include "Sail/utils/GameDataTracker.h"
 
@@ -28,5 +29,11 @@ void MovementPostCollisionSystem::update(float dt) {
 		}
 
 		movement->oldVelocity = movement->velocity;
+
+		// Dumb thing for now, will hopefully be done cleaner in the future
+		if (CollisionSpheresComponent * csc = e->getComponent<CollisionSpheresComponent>()) {
+			csc->spheres[0].position = transform->getTranslation() + glm::vec3(0, 1, 0) * csc->spheres[0].radius;
+			csc->spheres[1].position = transform->getTranslation() + glm::vec3(0, 1, 0) * (0.9f * 2.0f - csc->spheres[1].radius);
+		}
 	}
 }

@@ -69,11 +69,17 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 		Movement playerMovement = getPlayerMovementInput(e);
 
 		// Player puts down candle
-#ifndef _DEBUG
 		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
 			putDownCandle(e);
 		}
-#endif
+
+		if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
+			for ( auto child : e->getChildEntities() ) {
+				if ( child->hasComponent<CandleComponent>() ) {
+					child->getComponent<CandleComponent>()->activate();
+				}
+			}
+		}
 
 		// Calculate forward vector for player
 		glm::vec3 forward = m_cam->getCameraDirection();
@@ -174,24 +180,11 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 void GameInputSystem::putDownCandle(Entity* e) {
 	for (int i = 0; i < e->getChildEntities().size(); i++) {
 		auto candleE = e->getChildEntities()[i];
-		auto candleComp = candleE->getComponent<CandleComponent>();
-
-		auto candleTransComp = candleE->getComponent<TransformComponent>();
-		CollisionComponent* collision = e->getComponent<CollisionComponent>();
-		auto playerTransComp = e->getComponent<TransformComponent>();
-		if (candleComp->isCarried() && collision->onGround) {
+		if ( candleE->hasComponent<CandleComponent>() ) {
+			auto candleComp = candleE->getComponent<CandleComponent>();
 			candleComp->toggleCarried();
 
-			candleTransComp->removeParent();
-			candleTransComp->setTranslation(playerTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, 0.0f, m_cam->getCameraDirection().z));
-			ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
-			i = (int)e->getChildEntities().size();
-		}
-		else if (!candleComp->isCarried() && glm::length(playerTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f) {
-			candleComp->toggleCarried();
-			candleTransComp->setTranslation(glm::vec3(0.f, 2.0f, 0.f));
-			candleTransComp->setParent(playerTransComp);
-			i = (int)e->getChildEntities().size();
+			return;
 		}
 	}
 }

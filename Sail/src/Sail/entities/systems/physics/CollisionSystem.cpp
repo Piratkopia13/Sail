@@ -26,10 +26,11 @@ void CollisionSystem::provideOctree(Octree* octree) {
 
 void CollisionSystem::update(float dt) {
 	for (auto& e: entities) {
-		MovementComponent* movement = e->getComponent<MovementComponent>();
-		TransformComponent* transform = e->getComponent<TransformComponent>();
-		CollisionComponent* collision = e->getComponent<CollisionComponent>();
-		BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
+		auto movement = e->getComponent<MovementComponent>();
+		auto transform = e->getComponent<TransformComponent>();
+		auto collision = e->getComponent<CollisionComponent>();
+		auto boundingBox = e->getComponent<BoundingBoxComponent>();
+		auto csc = e->getComponent<CollisionSpheresComponent>();
 
 		collision->collisions.clear();
 
@@ -39,11 +40,12 @@ void CollisionSystem::update(float dt) {
 
 		float updateableDt = dt;
 
-		if (m_octree) {
+		if ((boundingBox || csc) && m_octree) {
 			collisionUpdate(e, updateableDt);
-			//surfaceFromCollision(e, boundingBox->getBoundingBox(), transform, physics->collisions);
 
-			if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
+			surfaceFromCollision(e);
+
+			if (boundingBox && rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
 				//Object is moving fast, ray cast for collisions
 				rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
 				movement->oldVelocity = movement->velocity;
@@ -51,13 +53,6 @@ void CollisionSystem::update(float dt) {
 		}
 
 		movement->updateableDt = updateableDt;
-		
-
-		// Dumb thing for now, will hopefully be done cleaner in the future
-		if (CollisionSpheresComponent * csc = e->getComponent<CollisionSpheresComponent>()) {
-			csc->spheres[0].position = transform->getTranslation() + glm::vec3(0, 1, 0) * csc->spheres[0].radius;
-			csc->spheres[1].position = transform->getTranslation() + glm::vec3(0, 1, 0) * (0.9f * 2.0f - csc->spheres[1].radius);
-		}
 	}
 }
 
@@ -224,36 +219,82 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 	}
 }
 
-void CollisionSystem::surfaceFromCollision(Entity* e, BoundingBox& boundingBox, const std::vector<Octree::CollisionInfo>& collisions) {
+void CollisionSystem::surfaceFromCollision(Entity* e) {
 	glm::vec3 distance(0.0f);
-
-	float stepSize = 0.005f;
+	auto& collisions = e->getComponent<CollisionComponent>()->collisions;
+	auto bb = e->getComponent<BoundingBoxComponent>();
+	auto cs = e->getComponent<CollisionSpheresComponent>();
+	auto movement = e->getComponent<MovementComponent>();
+	auto transform = e->getComponent<TransformComponent>();
 
 	for (unsigned int i = 0; i < collisions.size(); i++) {
-		//Find approx how far into the wall the character is
-		bool colliding = true;
-		while (colliding) {
-			//Push the character out of the wall
-			boundingBox.setPosition(boundingBox.getPosition() + collisions[i].normal * stepSize);
+		float depth = findIntersectionDepth(e, collisions[i]);
 
-			glm::vec3 middle = (collisions[i].positions[0] + collisions[i].positions[1] + collisions[i].positions[2]) / 3.0f;
-
-			glm::vec3 newPosition0 = middle + (collisions[i].positions[0] - middle) * 0.9f;
-			glm::vec3 newPosition1 = middle + (collisions[i].positions[1] - middle) * 0.9f;
-			glm::vec3 newPosition2 = middle + (collisions[i].positions[2] - middle) * 0.9f;
-
-			bool currentCollision = Intersection::AabbWithTriangle(boundingBox, newPosition0, newPosition1, newPosition2);
-			if (!currentCollision) {
-				colliding = false;
-
-				//Go back to previous position to avoid loosing contact
-				boundingBox.setPosition(boundingBox.getPosition() - collisions[i].normal * stepSize);
+		if (depth <= glm::dot(movement->oldVelocity, -collisions[i].normal)) {
+			if (cs) {
+				for (int j = 0; j < 2; j++) {
+					cs->spheres[j].position += collisions[i].normal * depth;
+				}
 			}
 			else {
-				distance += collisions[i].normal * stepSize;
+				bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisions[i].normal * depth);
 			}
+			distance += collisions[i].normal * depth;
 		}
 	}
 
-	e->getComponent<TransformComponent>()->translate(distance);
+	transform->translate(distance);
+}
+
+float CollisionSystem::findIntersectionDepth(Entity* e, const Octree::CollisionInfo& collision) {
+	float stepSize = 0.005f;
+	float depth = 0.0f;
+	auto csc = e->getComponent<CollisionSpheresComponent>();
+	auto bbc = e->getComponent<BoundingBoxComponent>();
+
+	//Find approx how far into the wall the character is
+	bool colliding = true;
+	while (colliding) {
+		//Push the character out of the wall
+		if (csc) {
+			for (int j = 0; j < 2; j++) {
+				csc->spheres[j].position += collision.normal * stepSize;
+			}
+		}
+		else {
+			bbc->getBoundingBox()->setPosition(bbc->getBoundingBox()->getPosition() + collision.normal * stepSize);
+		}
+
+		//Check if there is still collision
+		bool currentCollision = false;
+
+		if (csc) {
+			const glm::vec3 tri[] = {
+				collision.positions[0], collision.positions[1], collision.positions[2]
+			};
+			currentCollision = Intersection::TriangleWithSphere(tri, csc->spheres[0]) || Intersection::TriangleWithSphere(tri, csc->spheres[1]);
+		}
+		else {
+			currentCollision = Intersection::AabbWithTriangle(*bbc->getBoundingBox(), collision.positions[0], collision.positions[1], collision.positions[2]);
+		}
+
+		if (!currentCollision) {
+			colliding = false;
+
+			//Go back to start position when depth is found
+			if (csc) {
+				for (int j = 0; j < 2; j++) {
+					csc->spheres[j].position -= collision.normal * depth;
+				}
+			}
+			else {
+				bbc->getBoundingBox()->setPosition(bbc->getBoundingBox()->getPosition() - collision.normal * depth);
+			}
+		}
+		else {
+			depth += stepSize;
+		}
+	}
+
+	return depth;
 }

@@ -57,7 +57,7 @@ void GunSystem::update(float dt) {
 						e->addComponent<MetaballComponent>();
 						e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
 						e->addComponent<LifeTimeComponent>(4.0f);
-						e->addComponent<ProjectileComponent>();
+						e->addComponent<ProjectileComponent>(10.0f);
 						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
 
 						MovementComponent* movement = e->addComponent<MovementComponent>();
@@ -66,6 +66,7 @@ void GunSystem::update(float dt) {
 
 						CollisionComponent* collision = e->addComponent<CollisionComponent>();
 						collision->drag = 2.0f;
+						// NOTE: 0.0f <= Bounciness <= 1.0f
 						collision->bounciness = 0.1f;
 						collision->padding = 0.16f;
 

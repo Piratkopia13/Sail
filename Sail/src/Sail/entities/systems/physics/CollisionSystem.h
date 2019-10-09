@@ -18,7 +18,8 @@ private:
 	void rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt);
 	const bool collisionUpdate(Entity* e, const float& dt);
 	const bool handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt);
-	void surfaceFromCollision(Entity* e, BoundingBox& boundingBox, const std::vector<Octree::CollisionInfo>& collisions);
+	void surfaceFromCollision(Entity* e);
+	float findIntersectionDepth(Entity* e, const Octree::CollisionInfo& collision);
 
 private:
 	Octree* m_octree = nullptr;
