@@ -416,7 +416,7 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 
 bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 	m_player->addComponent<SpectatorComponent>();
-
+	m_player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
 	m_player->removeComponent<NetworkSenderComponent>();
 	m_player->removeComponent<GunComponent>();
 	m_player->removeAllChildren();
