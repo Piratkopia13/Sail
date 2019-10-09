@@ -24,6 +24,10 @@ void Entity::setECSIndex(int index) {
 	m_ECSIndex = index;
 }
 
+void Entity::setParent(Entity* entity) {
+	m_parent = entity;
+}
+
 int Entity::getECSIndex() const {
 	return m_ECSIndex;
 }
@@ -44,6 +48,10 @@ Entity::~Entity() {
 
 bool Entity::hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const {
 	return (m_componentTypes & componentTypes) == componentTypes;
+}
+
+Entity* Entity::getParent() {
+	return m_parent;
 }
 
 bool Entity::isAboutToBeDestroyed() const {
@@ -68,6 +76,7 @@ void Entity::removeAllComponents() {
 
 void Entity::addChildEntity(Entity::SPtr child) {
 	m_children.push_back(child);
+	child->setParent(this);
 
 	auto transComp = getComponent<TransformComponent>();
 	if ( transComp ) {
@@ -79,7 +88,23 @@ void Entity::addChildEntity(Entity::SPtr child) {
 }
 
 void Entity::removeChildEntity(Entity::SPtr toRemove) {
-	m_children.erase(std::find(m_children.begin(), m_children.end(), toRemove));
+	auto child = std::find(m_children.begin(), m_children.end(), toRemove);
+	( *child )->setParent(nullptr);
+	if ( ( *child )->hasComponent<TransformComponent>() ) {
+		auto childTransComp = ( *child )->getComponent<TransformComponent>();
+		childTransComp->removeParent();
+	}	
+	m_children.erase(child);
+}
+
+void Entity::removeAllChildren() {
+	for ( auto child : m_children ) {
+		if ( child->hasComponent<TransformComponent>() ) {
+			auto childTransComp = child->getComponent<TransformComponent>();
+			childTransComp->removeParent();
+		}
+	}
+	m_children.clear();
 }
 
 std::vector<Entity::SPtr>& Entity::getChildEntities() {

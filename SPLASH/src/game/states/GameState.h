@@ -48,7 +48,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
-	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
+	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
@@ -124,6 +124,7 @@ private:
 	std::string m_ftCount;
 
 	bool m_paused = false;
+	bool m_isSingleplayer = true;
 	
 	Octree* m_octree;
 	bool m_disableLightComponents;

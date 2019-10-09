@@ -90,7 +90,6 @@ const float Animation::getTimeAtFrame(const unsigned int frame) {
 	return 0.0f;
 }
 const unsigned int Animation::getFrameAtTime(const float time, const FindType type) {
-	// TODO: fmod
 	if (time >= m_maxFrameTime) {
 		return 0;
 	}
@@ -106,7 +105,7 @@ const unsigned int Animation::getFrameAtTime(const float time, const FindType ty
 					return frame - 1;
 				}
 				else if (type == INFRONT) {
-					return frame;
+					return frame % m_maxFrame;
 				}
 				else {
 					float behind = time - m_frameTimes[frame - 1];
@@ -116,7 +115,7 @@ const unsigned int Animation::getFrameAtTime(const float time, const FindType ty
 						return frame - 1;
 					}
 					else {
-						return frame;
+						return frame % m_maxFrame;
 					}
 				}
 			}	

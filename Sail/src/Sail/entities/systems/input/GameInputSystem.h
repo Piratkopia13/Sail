@@ -9,6 +9,7 @@ struct Movement {
 	float speedModifier = 1.f;
 	float forwardMovement = 0.0f;
 	float rightMovement = 0.0f;
+	float upMovement = 0.0f;
 };
 
 class GameInputSystem final : public BaseComponentSystem {
@@ -22,6 +23,7 @@ public:
 	void initialize(Camera* cam);
 	void clean();
 	void updateCameraPosition(float alpha);
+	CameraController* getCamera() const;
 
 private:
 	void processKeyboardInput(const float& dt);
@@ -40,7 +42,7 @@ private:
 	float m_runSoundTimer = 0.0f;
 	bool m_wasSpacePressed = false;
 	float m_projectileSpawnCounter = 0.f;
-	float m_lookSensitivityMouse = 0.1;
+	float m_lookSensitivityMouse = 0.1f;
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;

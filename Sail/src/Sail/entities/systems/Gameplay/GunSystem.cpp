@@ -87,20 +87,21 @@ Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, int i) {
 	randPos.g = ((float)rand() / RAND_MAX) * maxrand;
 	randPos.b = ((float)rand() / RAND_MAX) * maxrand;
 
-	e->addComponent<MetaballComponent>();
-	e->addComponent<BoundingBoxComponent>();
-	e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
-	e->addComponent<LifeTimeComponent>(4.0f);
-	e->addComponent<ProjectileComponent>();
-	e->addComponent<TransformComponent>((pos + randPos) - dir * (0.15f * i));
+						e->addComponent<MetaballComponent>();
+						e->addComponent<BoundingBoxComponent>();
+						e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
+						e->addComponent<LifeTimeComponent>(4.0f);
+						e->addComponent<ProjectileComponent>(10.0f);
+						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
 
-	e->addComponent<PhysicsComponent>();
-	PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-	physics->velocity = dir * 10.0f;		// HARDCODED, SAME AS IN GUN.H
-	physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
-	physics->drag = 2.0f;
-	physics->bounciness = 0.1f;
-	physics->padding = 0.16f;
+						e->addComponent<PhysicsComponent>();
+						PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
+						physics->velocity = gun->direction * gun->projectileSpeed;
+						physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+						physics->drag = 2.0f;
+						// NOTE: 0.0f <= Bounciness <= 1.0f
+						physics->bounciness = 0.1f;
+						physics->padding = 0.16f;
 
 	
 	return e.get();
