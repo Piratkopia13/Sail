@@ -4,9 +4,10 @@
 #include "Sail/ai/pathfinding/NodeSystem.h"
 
 class TransformComponent;
-class PhysicsComponent;
 class AiComponent;
 class GunComponent;
+class MovementComponent;
+class SpeedLimitComponent;
 class NodeSystem;
 class Model;
 class Octree;
@@ -28,7 +29,7 @@ public:
 	/*
 		Adds an entity to the system
 	*/
-	bool addEntity(Entity* entity) override;
+	//bool addEntity(Entity* entity) override;
 
 	std::vector<Entity*>& getEntities();
 
@@ -37,19 +38,13 @@ public:
 	NodeSystem* getNodeSystem();
 
 private:
-	struct AiEntity {
-		TransformComponent* transComp;
-		PhysicsComponent* physComp;
-		AiComponent* aiComp;
-	};
-
-	void updatePath(AiComponent* aiComp, TransformComponent* transComp);
-	void updatePhysics(AiComponent* aiComp, TransformComponent* transComp, PhysicsComponent* physComp, float dt);
-	void aiUpdateFunc(Entity* entity, const float dt);
+	void updatePath(Entity* e);
+	void updatePhysics(Entity* e, float dt);
+	float getAiYaw(MovementComponent* moveComp, float currYaw, float dt);
+	void aiUpdateFunc(Entity* e, const float dt);
+	glm::vec3& getDesiredDir(AiComponent* aiComp, TransformComponent* transComp);
 
 private:
-	std::unordered_map<int, AiEntity> m_aiEntities;
-
 	float m_timeBetweenPathUpdate;
 
 	std::unique_ptr<NodeSystem> m_nodeSystem;

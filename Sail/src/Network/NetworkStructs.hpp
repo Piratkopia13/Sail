@@ -30,7 +30,7 @@ union NetworkEventData {
 	{
 		union {
 			ULONG ip_full;
-			char ip_part[4];
+			unsigned char ip_part[4];
 		};
 		USHORT hostPort;
 		char description[HOST_META_DESC_SIZE];

@@ -3,6 +3,7 @@
 #include "states/MenuState.h"
 #include "states/LobbyHostState.h"
 #include "states/LobbyClientState.h"
+#include "states/PBRTestState.h"
 #include "states/InGameMenuState.h"
 #include "states/EndGameState.h"
 
@@ -16,7 +17,7 @@ Game::Game(HINSTANCE hInstance)
 
 	// Set starting state
 	m_stateStack.pushState(States::MainMenu);
-	
+
 }
 
 Game::~Game() {
@@ -35,6 +36,7 @@ void Game::registerStates() {
 	m_stateStack.registerState<MenuState>(States::MainMenu);
 	m_stateStack.registerState<InGameMenuState>(States::Pause);
 	m_stateStack.registerState<EndGameState>(States::EndGame);
+	m_stateStack.registerState<PBRTestState>(States::PBRTest);
 }
 
 void Game::dispatchEvent(Event& event) {
@@ -43,6 +45,7 @@ void Game::dispatchEvent(Event& event) {
 }
 
 void Game::applyPendingStateChanges() {
+	m_stateStack.prepareStateChange();
 	this->m_stateStack.applyPendingChanges();
 }
 

@@ -3,6 +3,8 @@
 #include "Network/NetworkModule.hpp"
 #include "Network/NetworkStructs.hpp"
 #include "Sail.h"
+#include "../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
+
 
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
@@ -11,7 +13,6 @@ NWrapperSingleton::~NWrapperSingleton() {
 	}
 
 	Memory::SafeDelete(m_network);
-
 }
 
 NWrapperSingleton::NWrapperSingleton() {
@@ -23,7 +24,12 @@ bool NWrapperSingleton::host(int port) {
 	this->initialize(true);
 
 	if (m_isHost) {
-		return m_wrapper->host(port);
+		if (m_wrapper->host(port) == true) {
+			return true;
+		}
+		else {
+			resetWrapper();
+		}
 	}
 
 	return false;
@@ -33,7 +39,12 @@ bool NWrapperSingleton::connectToIP(char* adress) {
 	this->initialize(false);
 	
 	if (!m_isHost) {
-		return m_wrapper->connectToIP(adress);
+		if (m_wrapper->connectToIP(adress) == true) {
+			return true;
+		}
+		else {
+			resetWrapper();
+		}
 	}
 	
 	return false;
@@ -45,6 +56,14 @@ bool NWrapperSingleton::isHost() {
 
 NWrapper* NWrapperSingleton::getNetworkWrapper() {
 	return m_wrapper;
+}
+
+void NWrapperSingleton::searchForLobbies() {
+	m_network->searchHostsOnLan();
+}
+
+void NWrapperSingleton::checkFoundPackages() {
+	m_network->checkForPackages(*this);
 }
 
 void NWrapperSingleton::initialize(bool asHost) {
@@ -62,8 +81,23 @@ void NWrapperSingleton::initialize(bool asHost) {
 	}
 }
 
-void NWrapperSingleton::resetNetwork() {
+void NWrapperSingleton::resetWrapper() {
 	m_isInitialized = false;
 	m_isHost = false;
 	delete this->m_wrapper;
+}
+
+void NWrapperSingleton::resetNetwork() {
+	m_network->shutdown();
+	m_network->initialize();
+}
+
+void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
+	if (nEvent.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
+		NetworkLanHostFoundEvent event(
+			nEvent.data->HostFoundOnLanData.ip_full,
+			nEvent.data->HostFoundOnLanData.hostPort
+		);
+		Application::getInstance()->dispatchEvent(event);
+	}
 }

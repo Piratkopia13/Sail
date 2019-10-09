@@ -4,6 +4,7 @@
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/RealTimeComponent.h"
 #include "..//..//components/BoundingBoxComponent.h"
+#include "..//..//components/MetaballComponent.h"
 #include "..//..//Entity.h"
 #include "..//..//..//graphics/camera/Camera.h"
 #include "..//..//..//graphics/geometry/Model.h"
@@ -12,7 +13,8 @@
 
 RenderSystem::RenderSystem() {
 
-	registerComponent<ModelComponent>(true, true, false);
+	registerComponent<ModelComponent>(false, true, false);
+	registerComponent<MetaballComponent>(false, true, false);
 	registerComponent<TransformComponent>(true, true, false);
 
 	refreshRenderer();
@@ -43,23 +45,28 @@ RenderSystem::~RenderSystem() {
 
 	 m_renderer->begin(&camera);
 
-	 ModelComponent* mc = nullptr;
 	 for (auto& entity : entities) {
-		 mc = entity->getComponent<ModelComponent>();
 
 		 ModelComponent* model = entity->getComponent<ModelComponent>();
+		 MetaballComponent* metaball = entity->getComponent<MetaballComponent>();
+
 		 TransformComponent* transform = entity->getComponent<TransformComponent>();
 
-		 if (entity->getComponent<RealTimeComponent>()) {
-			 // If it's a real-time entity render with the most recent update
-			 // Not that for these entities should be updated once per frame for this to work correctly
-			 m_renderer->submit(model->getModel(), transform->getMatrix(), 
-				 (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
-		 }
-		 else {
-			 // If not interpolate between the two most recent updates
-			 m_renderer->submit(model->getModel(), transform->getRenderMatrix(alpha),
-				 (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
+		 if (model) {
+			 if (entity->getComponent<RealTimeComponent>()) {
+				 // If it's a real-time entity render with the most recent update
+				 // Not that for these entities should be updated once per frame for this to work correctly
+				 m_renderer->submit(model->getModel(), transform->getMatrix(),
+					 (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
+			 } else {
+				 // If not interpolate between the two most recent updates
+				 m_renderer->submit(model->getModel(), transform->getRenderMatrix(alpha),
+					 (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
+			 }
+		 } else if (metaball) {
+			 m_renderer->submitNonMesh(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getRenderMatrix(alpha), Renderer::MESH_STATIC);
+		 } else {
+			 continue;
 		 }
 
 		 // Solution for bounding boxes
@@ -69,8 +76,8 @@ RenderSystem::~RenderSystem() {
 				 Model* wireframeModel = boundingBox->getWireframeModel();
 				 if (wireframeModel) {
 					 // Bounding boxes are visualized with their most update since that's what's used for hit detection
-					 m_renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), 
-						 Renderer::MESH_STATIC);
+						 m_renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(),
+							 Renderer::MESH_STATIC);
 				 }
 			 }
 		 }

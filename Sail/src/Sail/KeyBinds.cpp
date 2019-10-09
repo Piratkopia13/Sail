@@ -7,9 +7,9 @@
 namespace KeyBinds {
 	// GameState + Player controls
 	int addLight;
-	int showBoundingBoxes;
-	int hideBoundingBoxes;
+	int toggleBoundingBoxes;
 	int testRayIntersection;
+	int testFrustumCulling;
 	int toggleAIFollowing;
 	int setDirectionalLight;
 	int toggleConsole;
@@ -28,6 +28,9 @@ namespace KeyBinds {
 	int disableCursor;
 	int shoot;
 	int showInGameMenu;
+	int toggleSphere;
+	int toggleSun;
+	int lightCandle;
 
 	// Application
 	int alt;
@@ -53,9 +56,9 @@ namespace KeyBinds {
 void KeyBinds::init() {
 	// GameState
 	addLight = SAIL_KEY_E;
-	showBoundingBoxes = SAIL_KEY_B;
-	hideBoundingBoxes = SAIL_KEY_N;
+	toggleBoundingBoxes = SAIL_KEY_B;
 	testRayIntersection = SAIL_KEY_O;
+	testFrustumCulling = SAIL_KEY_N;
 	toggleAIFollowing = SAIL_KEY_H;
 	setDirectionalLight = SAIL_KEY_G;
 	toggleConsole = SAIL_KEY_OEM_5;
@@ -74,6 +77,9 @@ void KeyBinds::init() {
 	disableCursor = SAIL_MOUSE_RIGHT_BUTTON;
 	shoot = SAIL_MOUSE_LEFT_BUTTON;
 	showInGameMenu = SAIL_KEY_ESCAPE;
+	toggleSphere = SAIL_KEY_C;
+	toggleSun = SAIL_KEY_P;
+	lightCandle = SAIL_KEY_J;
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds

@@ -17,7 +17,7 @@ namespace ShaderComponent {
 		virtual void updateData_new(const void* newData, unsigned int bufferSize, int meshIndex, unsigned int offset = 0U);
 		/*[deprecated]. Use bind_new() for thread safety.*/
 		virtual void bind(void* cmdList) const override;
-		virtual void bind_new(void* cmdList, int meshIndex) const;
+		virtual void bind_new(void* cmdList, int meshIndex, bool useComputeShader = false) const;
 
 		void checkBufferSize(unsigned int nMeshes);
 

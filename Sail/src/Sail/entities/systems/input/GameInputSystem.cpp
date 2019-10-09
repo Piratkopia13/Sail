@@ -6,11 +6,21 @@
 #include "Sail/KeyBinds.h"
 #include "Sail/Application.h"
 #include "Sail/utils/GameDataTracker.h"
+#include "../../ECS.h"
+#include "../physics/UpdateBoundingBoxSystem.h"
+
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	// TODO: System owner should check if this is correct
 	registerComponent<PlayerComponent>(true, true, false);
-	
+	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<SpeedLimitComponent>(true, true, false);
+	registerComponent<CollisionComponent>(true, true, false);
+	registerComponent<AudioComponent>(true, true, true);
+	registerComponent<BoundingBoxComponent>(true, true, false);
+	registerComponent<TransformComponent>(true, true, false);
+	registerComponent<CandleComponent>(false, true, true);
+	registerComponent<GunComponent>(false, true, true);
+
 	// cam variables
 	m_yaw = 90.f;
 	m_pitch = 0.f;
@@ -31,178 +41,159 @@ void GameInputSystem::update(float dt, float alpha) {
 }
 
 void GameInputSystem::initialize(Camera* cam) {
-	if (m_cam == nullptr) {
+	if ( m_cam == nullptr ) {
+		m_cam = SAIL_NEW CameraController(cam);
+	} else {
+		CameraController* tempCam = m_cam;
+		Memory::SafeDelete(tempCam);
 		m_cam = SAIL_NEW CameraController(cam);
 	}
 }
 
-void GameInputSystem::clean() { 
+void GameInputSystem::clean() {
 	Memory::SafeDelete(m_cam);
 }
 
-void GameInputSystem::processPerFrameInput() {
-
-}
-
-void GameInputSystem::processPerTickInput() {
-
+void GameInputSystem::stop() {
+	clean();
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
+	for ( auto e : entities ) {
+		// Get player movement inputs
+		Movement playerMovement = getPlayerMovementInput(e);
 
-	float speedModifier = 1.f;
-	float forwardMovement = 0.0f;
-	float rightMovement = 0.0f;
-	float upMovement = 0.0f;
-	
-	for (auto e : entities) {
-		PhysicsComponent* physicsComp = e->getComponent<PhysicsComponent>();
-		AudioComponent* audioComp = e->getComponent<AudioComponent>();
-
-		// Increase speed if shift or right trigger is pressed
-		if (Input::IsKeyPressed(KeyBinds::sprint)) { speedModifier = m_runSpeed; }
-
-		if (Input::IsKeyPressed(KeyBinds::moveForward)) { forwardMovement += 1.0f; }
-		if (Input::IsKeyPressed(KeyBinds::moveBackward)) { forwardMovement -= 1.0f; }
-		if (Input::IsKeyPressed(KeyBinds::moveLeft)) { rightMovement -= 1.0f; }
-		if (Input::IsKeyPressed(KeyBinds::moveRight)) { rightMovement += 1.0f; }
-		if (Input::IsKeyPressed(KeyBinds::moveUp)) {
-			if (!m_wasSpacePressed && physicsComp->onGround) {
-				physicsComp->velocity.y = 5.0f;
-				// AUDIO TESTING - JUMPING
-				audioComp->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
-				m_gameDataTracker->logJump();
-			}
-			m_wasSpacePressed = true;
-		}
-		else {
-			m_wasSpacePressed = false;
-		}
-
-		if (Input::WasKeyJustPressed(KeyBinds::putDownCandle)){
-			for (int i = 0; i < e->getChildEntities().size(); i++) {
-				auto candleE = e->getChildEntities()[i];
-				auto candleComp = candleE->getComponent<CandleComponent>();
-
-				auto candleTransComp = candleE->getComponent<TransformComponent>();
-				auto playerTransComp = e->getComponent<TransformComponent>();
-				if (candleComp->isCarried() && physicsComp->onGround) {
-					candleComp->toggleCarried();
-
-					candleTransComp->setTranslation(playerTransComp->getTranslation() + glm::vec3(m_cam->getCameraDirection().x, -0.9f, m_cam->getCameraDirection().z));
-					candleTransComp->removeParent();
-					i = e->getChildEntities().size();
-				}
-				else if (!candleComp->isCarried() && glm::length(playerTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f) {
-					candleComp->toggleCarried();
-					candleTransComp->setTranslation(glm::vec3(0.f, 1.1f, 0.f));
-					candleTransComp->setParent(playerTransComp);
-					i = e->getChildEntities().size();
-				}
-			}
-		}
-
-		glm::vec3 forwards(
-			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
-			std::sin(glm::radians(m_pitch)),
-			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
-		);
-		forwards = glm::normalize(forwards);
-
+		// Calculate forward vector for player
 		glm::vec3 forward = m_cam->getCameraDirection();
-		forward.y = 0.f;
-		forward = glm::normalize(forward);
 
-		glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
-		right = glm::normalize(right);
+		// Do flying movement if in spectator mode
+		if ( e->hasComponent<SpectatorComponent>() ) {
+			if ( playerMovement.forwardMovement != 0.f || playerMovement.rightMovement != 0.f || playerMovement.upMovement != 0.f ) {
+ 				forward = glm::normalize(forward);
 
-		// Prevent division by zero
-		if (forwardMovement != 0.0f || rightMovement != 0.0f) {
+				// Calculate right vector for player
+				glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+				right = glm::normalize(right);
 
-			// Calculate total movement
-			float acceleration = 70.0f - (glm::length(physicsComp->velocity) / physicsComp->maxSpeed) * 20.0f;
-			if (!physicsComp->onGround) {
-				acceleration = acceleration * 0.5f;
+				glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
+
+				auto transComp = e->getComponent<TransformComponent>();
+				float speed = 5.f;
+				glm::vec3 moveDir = ( playerMovement.forwardMovement * forward + playerMovement.rightMovement * right + playerMovement.upMovement * up );
+				moveDir = glm::normalize(moveDir);
+				transComp->translate(moveDir * dt * playerMovement.speedModifier * 10.f);
+			}
+
+			// Else do normal movement
+		} else {
+			auto collision = e->getComponent<CollisionComponent>();
+			auto movement = e->getComponent<MovementComponent>();
+			auto speedLimit = e->getComponent<SpeedLimitComponent>();
+			auto audioComp = e->getComponent<AudioComponent>();
+
+
+			// Get player movement inputs
+			Movement playerMovement = getPlayerMovementInput(e);
+
+			// Player puts down candle
+			if ( Input::WasKeyJustPressed(KeyBinds::putDownCandle) ) {
+				putDownCandle(e);
+			}
+
+			if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
+				for ( auto child : e->getChildEntities() ) {
+					if ( child->hasComponent<CandleComponent>() ) {
+						child->getComponent<CandleComponent>()->activate();
+					}
+				}
+			}
+
+			if ( playerMovement.upMovement == 1.0f ) {
+				if ( !m_wasSpacePressed && collision->onGround ) {
+					movement->velocity.y = 5.0f;
+					// AUDIO TESTING - JUMPING
+					audioComp->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+					m_gameDataTracker->logJump();
+				}
+				m_wasSpacePressed = true;
+			} else {
+				m_wasSpacePressed = false;
+			}
+
+			forward.y = 0.f;
+			forward = glm::normalize(forward);
+
+			// Calculate right vector for player
+			glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
+			right = glm::normalize(right);
+
+			// Prevent division by zero
+			if ( playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f ) {
+				// Calculate total movement
+				float acceleration = 70.0f - ( glm::length(movement->velocity) / speedLimit->maxSpeed ) * 20.0f;
+				if ( !collision->onGround ) {
+					acceleration = acceleration * 0.5f;
+					// AUDIO TESTING (turn OFF looping running sound)
+					audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
+				}
+				// AUDIO TESTING (playing a looping running sound)
+				else if ( m_runSoundTimer > 0.3f ) {
+					audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = true;
+				} else {
+					m_runSoundTimer += dt;
+				}
+
+				movement->accelerationToAdd =
+					glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
+					* acceleration;
+			} else {
 				// AUDIO TESTING (turn OFF looping running sound)
 				audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
+				m_runSoundTimer = 0.0f;
 			}
-			// AUDIO TESTING (playing a looping running sound)
-			else {
-			//else if (m_runSoundTimer > 0.3f) {
-				audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = true;
-			}
-			//else {
-			//	m_runSoundTimer += dt;
-			//}
-
-			physicsComp->accelerationToAdd = 
-				glm::normalize(right * rightMovement + forward * forwardMovement)
-				* acceleration;
-		}
-		else {
-			// AUDIO TESTING (turn OFF looping running sound)
-			audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
-			m_runSoundTimer = 0.0f;
 		}
 	}
 }
 
 void GameInputSystem::processMouseInput(const float& dt) {
 	// Toggle cursor capture on right click
-	for (auto e : entities) {
-		AudioComponent* audioComp = e->getComponent<AudioComponent>();
+	for ( auto e : entities ) {
 
-		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
+		if ( Input::WasMouseButtonJustPressed(KeyBinds::disableCursor) ) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
 
-		if (Input::IsMouseButtonPressed(KeyBinds::shoot)) {
+		if ( !e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot) ) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			glm::vec3 gunPosition = m_cam->getCameraPosition() +(m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
+			glm::vec3 gunPosition = m_cam->getCameraPosition() + ( m_cam->getCameraDirection() + camRight - m_cam->getCameraUp() );
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 		}
 
 		// Update pitch & yaw if window has focus
-		if (Input::IsCursorHidden()) {
+		if ( Input::IsCursorHidden() ) {
 			glm::ivec2& mouseDelta = Input::GetMouseDelta();
 			m_pitch -= mouseDelta.y * m_lookSensitivityMouse;
 			m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 		}
 
 		// Lock pitch to the range -89 - 89
-		if (m_pitch >= 89) {
+		if ( m_pitch >= 89 ) {
 			m_pitch = 89;
-		}
-		else if (m_pitch <= -89) {
+		} else if ( m_pitch <= -89 ) {
 			m_pitch = -89;
 		}
 
 		// Lock yaw to the range 0 - 360
-		if (m_yaw >= 360) {
+		if ( m_yaw >= 360 ) {
 			m_yaw -= 360;
-		}
-		else if (m_yaw <= 0) {
+		} else if ( m_yaw <= 0 ) {
 			m_yaw += 360;
 		}
 	}
 }
 
-glm::vec3 GameInputSystem::calculateNormalizedRightVector() {
-	// If u want to know how this works, ask gustav.
-	glm::vec3 forwardVector = m_cam->getCameraDirection();
-	forwardVector.y = 0.f;
-	forwardVector = glm::normalize(forwardVector);
-
-	glm::vec3 rightVector = glm::cross(glm::vec3(0.f, 1.f, 0.f), forwardVector);
-	rightVector = glm::normalize(rightVector);
-
-	return rightVector;
-}
-
 void GameInputSystem::updateCameraPosition(float alpha) {
-	for (auto e : entities) {
-
-
+	for ( auto e : entities ) {
 		TransformComponent* playerTrans = e->getComponent<TransformComponent>();
 		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 
@@ -213,7 +204,38 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		);
 		forwards = glm::normalize(forwards);
 
-		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 0.8f, 0.f)));
+		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 1.8f, 0.f)));
 		m_cam->setCameraDirection(forwards);
 	}
+}
+
+CameraController* GameInputSystem::getCamera() const {
+	return m_cam;
+}
+
+void GameInputSystem::putDownCandle(Entity* e) {
+	for ( int i = 0; i < e->getChildEntities().size(); i++ ) {
+		auto candleE = e->getChildEntities()[i];
+		if ( candleE->hasComponent<CandleComponent>() ) {
+			auto candleComp = candleE->getComponent<CandleComponent>();
+			candleComp->toggleCarried();
+
+			return;
+		}
+	}
+}
+
+Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
+	Movement playerMovement;
+
+	if ( Input::IsKeyPressed(KeyBinds::sprint) ) { playerMovement.speedModifier = m_runSpeed; }
+
+	if ( Input::IsKeyPressed(KeyBinds::moveForward) ) { playerMovement.forwardMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::moveBackward) ) { playerMovement.forwardMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::moveLeft) ) { playerMovement.rightMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::moveRight) ) { playerMovement.rightMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::moveUp) ) { playerMovement.upMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::moveDown) ) { playerMovement.upMovement -= 1.0f; }
+
+	return playerMovement;
 }

@@ -2,6 +2,9 @@
 #include <glm/vec3.hpp>
 
 
+#define PI 3.14159265359
+#define PI_2 6.28318530718
+
 // Structs for storing transform data from two consecutive updates
 // so that they can be interpolated between.
 // Should be optimized more in the future.
@@ -102,7 +105,7 @@ private:
 
 	bool m_parentUpdated;
 	bool m_parentRenderUpdated;
-	bool m_hasChanged;     // If the data has been changed since the last update
+	int m_hasChanged;     // If the data has been changed since the last update
 	bool m_matNeedsUpdate; // Will only be false if m_hasChanged == false and a matrix has been created
 
 	Transform* m_parent = nullptr;
@@ -118,11 +121,12 @@ private:
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);
+	void removeChildren();
 
 	// Modifies the elements of matrix directly instead of multiplying with matrices
 	void createTransformMatrix(glm::mat4& destination, const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale) const;
 
 private:
 	friend class UpdateBoundingBoxSystem;
-	const bool getChange(); //Only access this from UpdateBoundingBoxSystem::update()
+	const int getChange(); //Only access this from UpdateBoundingBoxSystem::update()
 };

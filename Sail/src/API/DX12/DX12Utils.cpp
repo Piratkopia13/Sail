@@ -64,14 +64,23 @@ ID3D12Resource1* DX12Utils::CreateBuffer(ID3D12Device5* device, UINT64 size, D3D
 	return pBuffer;
 }
 
-void DX12Utils::SetResourceTransitionBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES StateBefore, D3D12_RESOURCE_STATES StateAfter) {
+void DX12Utils::SetResourceTransitionBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES StateBefore, D3D12_RESOURCE_STATES StateAfter, UINT subResource) {
 	D3D12_RESOURCE_BARRIER barrierDesc = {};
 
 	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrierDesc.Transition.pResource = resource;
-	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierDesc.Transition.Subresource = subResource;
 	barrierDesc.Transition.StateBefore = StateBefore;
 	barrierDesc.Transition.StateAfter = StateAfter;
+
+	commandList->ResourceBarrier(1, &barrierDesc);
+}
+
+void DX12Utils::SetResourceUAVBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource) {
+	D3D12_RESOURCE_BARRIER barrierDesc = {};
+
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	barrierDesc.UAV.pResource = resource;
 
 	commandList->ResourceBarrier(1, &barrierDesc);
 }

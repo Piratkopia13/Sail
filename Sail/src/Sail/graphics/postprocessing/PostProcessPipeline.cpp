@@ -52,7 +52,7 @@ RenderableTexture* PostProcessPipeline::runInternal(PostProcessInput& input, voi
 		input.threadGroupCountX = glm::ceil(input.outputWidth * settings->threadGroupXScale);
 		input.threadGroupCountY = glm::ceil(input.outputHeight * settings->threadGroupYScale);
 
-		output = static_cast<PostProcessOutput&>(m_dispatcher->dispatch(*stage.shader, input, cmdList));
+		output = static_cast<PostProcessOutput&>(m_dispatcher->dispatch(*stage.shader, input, 0, cmdList));
 		input.inputTexture = nullptr;
 		input.inputRenderableTexture = output.outputTexture;
 	}

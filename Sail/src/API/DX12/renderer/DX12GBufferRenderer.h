@@ -11,7 +11,7 @@ class PostProcessPipeline;
 
 class DX12GBufferRenderer : public Renderer {
 public:
-	static const int NUM_GBUFFERS = 2;
+	static const int NUM_GBUFFERS = 3;
 
 public:
 	DX12GBufferRenderer();
@@ -26,7 +26,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 
 private:
-	static const int MAX_RECORD_THREADS = 1;
+	static const int MAX_RECORD_THREADS = 4;
 	static const int MIN_COMMANDS_PER_THREAD = 20;
 
 

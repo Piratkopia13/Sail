@@ -6,9 +6,9 @@ namespace KeyBinds {
 
 	// GameState + Player controls
 	extern int addLight;
-	extern int showBoundingBoxes;
-	extern int hideBoundingBoxes;
+	extern int toggleBoundingBoxes;
 	extern int testRayIntersection;
+	extern int testFrustumCulling;
 	extern int toggleAIFollowing;
 	extern int setDirectionalLight;
 	extern int toggleConsole;
@@ -27,6 +27,9 @@ namespace KeyBinds {
 	extern int disableCursor;
 	extern int shoot;
 	extern int showInGameMenu;
+	extern int toggleSphere;	// Collision
+	extern int toggleSun;
+	extern int lightCandle;
 
 	// Application
 	extern int alt;

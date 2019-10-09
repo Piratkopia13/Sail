@@ -10,7 +10,7 @@ public:
 
 	template <typename T>
 	static void dispatch(Event& event, std::function<bool(T&)> func) {
-		if (event.getType() == T::getStaticType()) {
+		if (event.getType() == T::GetStaticType()) {
 			func((T&)event); // TODO: do something with the return bool
 		}
 	}
