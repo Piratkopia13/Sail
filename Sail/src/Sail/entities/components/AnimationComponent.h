@@ -18,7 +18,7 @@ public:
 		blending(false),
 		dataSize(0),
 		transformSize(0),
-		computeUpdate(true),
+		computeUpdate(false),
 		//transformedPositions(nullptr),
 		//transformedNormals(nullptr),
 		//transformedTangents(nullptr),
@@ -73,27 +73,27 @@ public:
 	unsigned int transformSize;
 	bool hasUpdated;
 
-	//Mesh::vec3* transformedPositions;
-	//Mesh::vec3* transformedNormals;
-	//Mesh::vec3* transformedTangents;
-	//Mesh::vec3* transformedBitangents;
+	class Transition {
+	public:
+		Transition(Animation* _to, const float time = 1.0f, const bool wait = true) {
+			to = _to;
+			transitionTime = time;
+			transpiredTime = 0.0f;
+			waitForEnd = wait;
+		}
+		Animation* to;
+		float transitionTime;
+		float transpiredTime;
+		bool waitForEnd;
+	};
+	std::queue<Transition> transitions;
+
 	Mesh::Data data;
 	glm::mat4* transforms;
 
 	std::unique_ptr<VertexBuffer> tposeVBuffer;
 
-
 	AnimationStack* getAnimationStack() { return m_stack; };
-	//std::unique_ptr<Mesh> mesh;
-	
-	
-
 private:
-
-	
-
 	AnimationStack* m_stack;
-	
-
-
 };

@@ -752,21 +752,23 @@ bool GameState::renderImGuiAnimationSettings(float dt) {
 				AnimationStack* stack = animationC->getAnimationStack();
 				ImGui::Text("AnimationStack");
 
-				/*static float transitionTime = 1.0f;
-				if (ImGui::SliderFloat("Transition Time", &transitionTime, 0.0f, 3.0f)) {
+				static float transitionTime = 0.8f;
+				static bool transitionWait = true;
+				ImGui::Checkbox("transition wait", &transitionWait);
 
-				}*/
-				/*for (unsigned int animationIndex = 0; animationIndex < stack->getAnimationCount(); animationIndex++) {
+				if (ImGui::SliderFloat("Transition Time", &transitionTime, 0.0f, 1.0f)) {
 
+				}
+				for (unsigned int animationIndex = 0; animationIndex < stack->getAnimationCount(); animationIndex++) {
 
+					
 
 
 					if (ImGui::Button(std::string("Switch to " + stack->getAnimation(animationIndex)->getName()).c_str())) {
-
-						animationC->transitions.push({ stack->getAnimation(animationIndex), transitionTime, 0.0f });
+						animationC->transitions.emplace(stack->getAnimation(animationIndex), transitionTime, transitionWait);
 					}
 					ImGui::Separator();
-				}*/
+				}
 
 				ImGui::TreePop();
 			}

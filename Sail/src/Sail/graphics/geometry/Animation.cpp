@@ -42,9 +42,13 @@ const glm::mat4* Animation::Frame::getTransformList() {
 
 Animation::Animation() :
 	m_maxFrame(0) ,
-	m_maxFrameTime(0)
+	m_maxFrameTime(0),
+	m_name("")
 {
 
+}
+Animation::Animation(const std::string& name) : Animation() {
+	m_name = name;
 }
 Animation::~Animation() {
 	for (unsigned int frame = 0; frame <= m_maxFrame; frame++) {
@@ -134,6 +138,13 @@ void Animation::addFrame(const unsigned int frame, const float time, Animation::
 
 	m_frames[frame] = data;
 	m_frameTimes[frame] = time;
+}
+
+void Animation::setName(const std::string& name) {
+	m_name = name;
+}
+const std::string Animation::getName() {
+	return m_name;
 }
 
 inline const bool Animation::exists(const unsigned int frame) {

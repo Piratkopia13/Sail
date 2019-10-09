@@ -45,10 +45,42 @@ void AnimationSystem::updateTransforms(const float dt) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		addTime(animationC, dt);
 
-		const unsigned int frame = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
-		const unsigned int frame2 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::INFRONT);
+		if (animationC->transitions.size() > 0) {
+			if (animationC->transitions.front().transpiredTime >= animationC->transitions.front().transitionTime) {
+				animationC->currentAnimation = animationC->nextAnimation;
+				animationC->nextAnimation = nullptr;
+				animationC->transitions.pop();
+			}
+		}
+		if (animationC->transitions.size() > 0) {
+			if (animationC->nextAnimation) {
+				animationC->transitions.front().transpiredTime += dt * animationC->animationSpeed;
+			} 
+			else {
 
-		const unsigned int transformSize = animationC->currentAnimation->getAnimationTransformSize(frame);
+				if (animationC->transitions.front().waitForEnd) {
+					if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime) {
+						animationC->nextAnimation = animationC->transitions.front().to;
+					}
+
+				}
+				else {
+					animationC->nextAnimation = animationC->transitions.front().to;
+				}
+			}
+		}
+
+
+
+
+
+
+		const unsigned int frame00 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
+		const unsigned int frame01 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::INFRONT); // TODO: make getNextFrame function.
+		const unsigned int frame10 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->transitions.front().transpiredTime, Animation::BEHIND) : 0;
+		const unsigned int frame11 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->transitions.front().transpiredTime, Animation::INFRONT) : 0;
+
+		const unsigned int transformSize = animationC->currentAnimation->getAnimationTransformSize(frame00);
 		if (transformSize != animationC->transformSize) {
 			Memory::SafeDeleteArr(animationC->transforms);
 			animationC->transforms = SAIL_NEW glm::mat4[animationC->currentAnimation->getAnimationTransformSize(unsigned int(0))];
@@ -58,24 +90,52 @@ void AnimationSystem::updateTransforms(const float dt) {
 #endif
 		}
 
-
-		const glm::mat4* transforms1 = animationC->currentAnimation->getAnimationTransform(frame);
-		const glm::mat4* transforms2 = frame2 > frame ? animationC->currentAnimation->getAnimationTransform(frame2) : nullptr;
-
+		const glm::mat4* transforms00 = animationC->currentAnimation->getAnimationTransform(frame00);
+		const glm::mat4* transforms01 = frame01 > frame00 ? animationC->currentAnimation->getAnimationTransform(frame01) : nullptr;
+		const glm::mat4* transforms10 = animationC->nextAnimation ? animationC->nextAnimation->getAnimationTransform(frame10) : nullptr;
+		const glm::mat4* transforms11 = (animationC->nextAnimation && frame11 > frame10) ? animationC->nextAnimation->getAnimationTransform(frame11) : nullptr;
 
 		//INTERPOLATE
-		if (transforms1 && transforms2 && m_interpolate) {
-			const float frame0Time = animationC->currentAnimation->getTimeAtFrame(frame);
-			const float frame1Time = animationC->currentAnimation->getTimeAtFrame(frame2);
+		if (transforms00 && transforms01 && transforms10 && transforms11 && m_interpolate) {
+			const float frame00Time = animationC->currentAnimation->getTimeAtFrame(frame00);
+			const float frame01Time = animationC->currentAnimation->getTimeAtFrame(frame01);
+			const float frame10Time = animationC->currentAnimation->getTimeAtFrame(frame10);
+			const float frame11Time = animationC->currentAnimation->getTimeAtFrame(frame11);
+			// weight = time - time(0) / time(1) - time(0)
+
+			const float w0 = (animationC->animationTime - frame00Time) / (frame01Time - frame00Time);
+			const float w1 = (animationC->transitions.front().transpiredTime - frame10Time) / (frame11Time - frame10Time);
+			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
+
+			glm::mat4 m0;
+			glm::mat4 m1;
+
+			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
+				interpolate(m0, transforms00[transformIndex], transforms01[transformIndex], w0);
+				interpolate(m1, transforms10[transformIndex], transforms11[transformIndex], w1);
+				interpolate(animationC->transforms[transformIndex], m0, m1, wt);
+			}
+
+		}
+		else if (transforms00 && transforms10) {
+			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
+			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
+				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms10[transformIndex], wt);
+				animationC->transforms[transformIndex] = transforms00[transformIndex];
+			}
+		}
+		else if (transforms00 && transforms01 && m_interpolate) {
+			const float frame0Time = animationC->currentAnimation->getTimeAtFrame(frame00);
+			const float frame1Time = animationC->currentAnimation->getTimeAtFrame(frame01);
 			// weight = time - time(0) / time(1) - time(0)
 			const float w = (animationC->animationTime - frame0Time) / (frame1Time - frame0Time);
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
-				interpolate(animationC->transforms[transformIndex], transforms1[transformIndex], transforms2[transformIndex], w);
+				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms01[transformIndex], w);
 			}
 
-		} else if (transforms1) {
+		} else if (transforms00) {
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
-				animationC->transforms[transformIndex] = transforms1[transformIndex];
+				animationC->transforms[transformIndex] = transforms00[transformIndex];
 			}
 		}
 		animationC->hasUpdated = true;
