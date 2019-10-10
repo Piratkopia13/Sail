@@ -41,7 +41,7 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	, m_showcaseProcGen(false) {
 
 #ifdef _DEBUG
-	Logger::Error("Seriously? Don't try to run this in debug...");
+	Logger::Error("Seriously? Don't try to run this in debug... Lel");
 #endif
 
 	// Get the Application instance
