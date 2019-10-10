@@ -51,46 +51,77 @@ void AnimationSystem::updateTransforms(const float dt) {
 #endif
 			continue;
 		}
-
+		//remove empty transitions
 		while (animationC->transitions.size() > 0) {
 			if (animationC->transitions.front().to) {
 				break;
 			}
 			animationC->transitions.pop();
 		}
-		if (animationC->transitions.size() > 0 && animationC->nextAnimation) {
-			if (animationC->transitions.front().transpiredTime >= animationC->transitions.front().transitionTime) {
-				
-				animationC->currentAnimation = animationC->nextAnimation;
-				animationC->animationTime = animationC->transitions.front().transpiredTime;
-				if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime()) {
-					animationC->animationTime -= (int(animationC->animationTime / animationC->currentAnimation->getMaxAnimationTime()) * animationC->currentAnimation->getMaxAnimationTime());
-				}
+		//transition update
+		if (animationC->currentTransition) {
+			//transitions complete
+			if (animationC->currentTransition->transpiredTime >= animationC->currentTransition->transitionTime) {
+				animationC->currentAnimation = animationC->currentTransition->to;
+				animationC->animationTime = animationC->currentTransition->transpiredTime;
 				animationC->nextAnimation = nullptr;
+				animationC->currentTransition = nullptr;
 				animationC->transitions.pop();
 			}
 		}
-		if (animationC->transitions.size() > 0) {
-			if (animationC->nextAnimation) {
-			} 
-			else {
-
-				if (animationC->transitions.front().waitForEnd) {
-					if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime) {
-						animationC->nextAnimation = animationC->transitions.front().to;
-					}
-
-				}
-				else {
-					animationC->nextAnimation = animationC->transitions.front().to;
-				}
+		
+		//set transition
+		if (!animationC->currentTransition && animationC->transitions.size() > 0) {
+			if (!animationC->transitions.front().waitForEnd) {
+				animationC->currentTransition = &animationC->transitions.front();
+				animationC->nextAnimation = animationC->currentTransition->to;
 			}
-			animationC->transitions.front().transpiredTime += dt * animationC->animationSpeed;
-
 		}
 
 
 
+
+		////update transition
+		//if (animationC->nextAnimation) {
+		//}
+		////check for transition completion
+		//if (animationC->transitions.size() > 0 && animationC->nextAnimation) {
+		//	if (animationC->transitions.front().transpiredTime >= animationC->transitions.front().transitionTime) {
+		//		
+		//		animationC->currentAnimation = animationC->nextAnimation;
+		//		animationC->animationTime = animationC->transitions.front().transpiredTime;
+		//		if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime()) {
+		//			animationC->animationTime -= (int(animationC->animationTime / animationC->currentAnimation->getMaxAnimationTime()) * animationC->currentAnimation->getMaxAnimationTime());
+		//		}
+		//		animationC->nextAnimation = nullptr;
+		//		animationC->transitions.pop();
+		//	}
+		//}
+		////check for new transitions
+		//if (animationC->transitions.size() > 0) {
+		//	if (animationC->nextAnimation) {
+
+		//	} 
+		//	else {
+
+		//		if (animationC->transitions.front().waitForEnd) {
+		//			if (animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime < 0) {
+		//				animationC->nextAnimation = animationC->transitions.front().to;
+		//			}
+		//			else if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime) {
+		//				animationC->nextAnimation = animationC->transitions.front().to;
+		//			}
+
+		//		}
+		//		else {
+		//			animationC->nextAnimation = animationC->transitions.front().to;
+		//		}
+		//	}
+		//	
+
+		//}
+
+		//
 
 
 
@@ -125,6 +156,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 			const float w0 = (animationC->animationTime - frame00Time) / (frame01Time - frame00Time);
 			const float w1 = (animationC->transitions.front().transpiredTime - frame10Time) / (frame11Time - frame10Time);
 			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
+			animationC->animationW = wt;
 			Logger::Log(std::to_string(wt));
 			glm::mat4 m0 = glm::identity<glm::mat4>();
 			glm::mat4 m1 = glm::identity<glm::mat4>();
@@ -156,6 +188,10 @@ void AnimationSystem::updateTransforms(const float dt) {
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				animationC->transforms[transformIndex] = transforms00[transformIndex];
 			}
+		}
+
+		if (animationC->currentTransition) {
+			animationC->currentTransition->transpiredTime += dt * animationC->animationSpeed;
 		}
 		animationC->hasUpdated = true;
 	}
@@ -273,9 +309,6 @@ void AnimationSystem::updateMeshCPU() {
 		if (data->numVertices > 0) {
 			if (animationC->data.numVertices != data->numVertices) {
 				animationC->data.deepCopy(*data);
-			}
-			if (animationC->dataSize != data->numVertices) {
-				animationC->resizeData(data->numVertices);
 			}
 			const Mesh::vec3* pos = data->positions;
 			const Mesh::vec3* norm = data->normals;

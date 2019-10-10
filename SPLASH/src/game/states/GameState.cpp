@@ -750,8 +750,9 @@ bool GameState::renderImGuiAnimationSettings(float dt) {
 
 				}
 				AnimationStack* stack = animationC->getAnimationStack();
-				ImGui::Text("AnimationStack");
 
+				ImGui::SliderFloat("weight", &animationC->animationW,0.0f,1.0f);
+				ImGui::Text("AnimationStack");
 				for (unsigned int animationTrack = 0; animationTrack < stack->getAnimationCount(); animationTrack++) {
 					float time = -1;
 					if (animationC->currentAnimation == stack->getAnimation(animationTrack)) {
@@ -779,7 +780,7 @@ bool GameState::renderImGuiAnimationSettings(float dt) {
 				}
 
 				static float transitionTime = 0.4f;
-				static bool transitionWait = true;
+				static bool transitionWait = false;
 				ImGui::Checkbox("transition wait", &transitionWait);
 				ImGui::SameLine();
 				if (ImGui::SliderFloat("Transition Time", &transitionTime, 0.0f, 1.0f)) {
