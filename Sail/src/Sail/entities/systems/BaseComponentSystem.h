@@ -18,13 +18,7 @@ class Entity;
 
 class BaseComponentSystem {
 public:
-	BaseComponentSystem()
-		: requiredComponentTypes(0x0)
-		, readBits(0x0)
-		, writeBits(0x0) {}
 	virtual ~BaseComponentSystem() {}
-
-	virtual void update(float dt) = 0;
 
 	/*
 		Adds an entity to the system
@@ -54,6 +48,11 @@ public:
 	void addQueuedEntities();
 
 protected:
+	BaseComponentSystem()
+		: requiredComponentTypes(0x0)
+		, readBits(0x0)
+		, writeBits(0x0) {}
+
 	/**
 	 * Registers the component to the system and defines how the system uses the component
 	 *
