@@ -109,8 +109,9 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		auto* context = Application::getInstance()->getAPI<DX12API>();
 
-		m_updateShader->getPipeline()->setStructBufferVar("CSTransforms", animationC->transforms, sizeof(glm::mat4) * animationC->transformSize, animationC->transformSize);
-		m_updateShader->getPipeline()->setStructBufferVar("CSVertConnections", connections, sizeof(AnimationStack::VertConnection) * connectionSize, connectionSize);
+		m_updateShader->getPipeline()->setStructBufferVar("CSTransforms", animationC->transforms, animationC->transformSize, meshIndex);
+		m_updateShader->getPipeline()->setStructBufferVar("CSVertConnections", connections, connectionSize, meshIndex);
+
 
 		// Get the vertexbuffer that should contain the animated mesh
 		auto& vbuffer = static_cast<DX12VertexBuffer&>(mesh->getVertexBuffer());
@@ -120,10 +121,15 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		if (!animationC->hasUpdated) {
 			
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST);
-			cmdList->CopyBufferRegion(vbuffer.getBuffer(), 0, vbuffer.getBuffer(-1), 0, m_inputLayout->getVertexSize() * connectionSize);
-			DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());
+			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(-1), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_SOURCE);
+			if (vbuffer.getBuffer() == vbuffer.getBuffer(-1)) {
+				Logger::Warning("Same buffer wut?");
+			}
+			cmdList->CopyResource(vbuffer.getBuffer(), vbuffer.getBuffer(-1));
+			//DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-
+			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(-1), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+			vbuffer.setAsUpdated();
 			continue;
 		}
 
@@ -157,11 +163,14 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		AnimationUpdateComputeShader::Input input;
 		input.threadGroupCountX = connectionSize;
-		m_dispatcher->dispatch(*m_updateShader, input, meshIndex++, cmdList);
+		m_dispatcher->dispatch(*m_updateShader, input, meshIndex, cmdList);
 
 		// Transition back to normal vertex buffer usage
 		DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		DX12Utils::SetResourceTransitionBarrier(cmdList, tposeVBuffer->getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+		context->getComputeGPUDescriptorHeap()->getAndStepIndex(18); // Dispatch steps twice, we need to step 18 more times to align the heap for the next animated entity
+																	 // TODO: read offset from root params
 
 		/*DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());
 		D3D12_RESOURCE_BARRIER barrierDesc = {};
@@ -176,6 +185,7 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		vbuffer.setAsUpdated();
 
 		animationC->hasUpdated = false;
+		meshIndex++;
 	}
 }
 

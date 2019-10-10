@@ -99,10 +99,14 @@ public:
 	void endPIXCapture() const;
 #endif
 
-	void initCommand(Command& cmd);
+	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+	// TODO: generalize this method to be used for all compute related tasks
+	void executeCommandListsComputeAnimation(std::initializer_list<ID3D12CommandList*> cmdLists) const;
+	void waitForComputeAnimation();
 
 	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
-	void executeCommandLists(ID3D12CommandList*const* cmdLists, const int nLists) const;
+	void executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
@@ -144,8 +148,7 @@ private:
 
 	// Queues
 	wComPtr<ID3D12CommandQueue> m_directCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_computeCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_copyCommandQueue;
+	wComPtr<ID3D12CommandQueue> m_computeCommandQueueAnimations;
 
 	// Commands
 	//Command m_preCommand;
@@ -165,7 +168,9 @@ private:
 	// TODO: check which ones are needed
 	std::vector<UINT64> m_fenceValues;
 	wComPtr<ID3D12Fence1> m_fence;
-	//wComPtr<ID3D12Fence1> m_computeQueueFence;
+
+	std::vector<UINT64> m_computeQueueAnimaitonFenceValues;
+	wComPtr<ID3D12Fence1> m_computeQueueAnimaitonFence;
 	//wComPtr<ID3D12Fence1> m_copyQueueFence;
 	//wComPtr<ID3D12Fence1> m_directQueueFence;
 

@@ -46,7 +46,7 @@ void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 	}
 	for (auto& it : parsedData.structuredBuffers) {
 		auto* dxSBuffer = static_cast<ShaderComponent::DX12StructuredBuffer*>(it.sBuffer.get());
-		dxSBuffer->bind(cmdList);
+		dxSBuffer->bind_new(cmdList, meshIndex);
 	}
 	for (auto& it : parsedData.samplers) {
 		it.sampler->bind();
