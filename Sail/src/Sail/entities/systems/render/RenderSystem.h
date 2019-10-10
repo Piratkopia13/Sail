@@ -1,7 +1,7 @@
 #pragma once
 #include "..//BaseComponentSystem.h"
+#include "..//..//..//graphics/camera/Camera.h"
 
-class Camera;
 class Renderer;
 
 class RenderSystem : public BaseComponentSystem {
