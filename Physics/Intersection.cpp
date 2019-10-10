@@ -25,7 +25,7 @@ bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aab
 	return true;
 }
 
-bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
 
 	glm::vec3 center = aabb.getPosition();
 	//Calculate normal for triangle
@@ -45,8 +45,8 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - v0;
 	float distance = -glm::dot(triangleToWorldOrigo, triNormal);
 
-	// Test the AABB against the plane that the triangle is on
-	if (AabbWithPlane(aabb, triNormal, distance)) {
+	// Early exit: Check if a sphere around aabb intersects triangle plane
+	if (SphereWithPlane({ aabb.getPosition(), glm::length(aabb.getHalfSize()) }, triNormal, distance)) {
 		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
@@ -77,15 +77,30 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 	return true;
 }
 
-bool Intersection::AabbWithPlane(const BoundingBox& aabb, const glm::vec3& normal, const float& distance) {
-	//Actually creates a sphere from the aabb half size and tests sphere with plane
-	float radius = glm::length(aabb.getHalfSize());
+bool Intersection::AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, const float distance) {
+	const glm::vec3* corners = aabb.getCorners();
+	
+	const float distFromPlaneAlongNormal[] = {
+		glm::dot(corners[0], normal) - distance,
+		glm::dot(corners[1], normal) - distance,
+		glm::dot(corners[2], normal) - distance,
+		glm::dot(corners[3], normal) - distance,
+		glm::dot(corners[4], normal) - distance,
+		glm::dot(corners[5], normal) - distance,
+		glm::dot(corners[6], normal) - distance,
+		glm::dot(corners[7], normal) - distance
+	};
 
-	if (glm::abs(glm::dot(normal, aabb.getPosition()) - distance) <= radius) {
-		return true;
+	// Find smallest and biggest distance (opposing corners)
+	float minDist = distFromPlaneAlongNormal[0];
+	float maxDist = distFromPlaneAlongNormal[0];
+	for (short i = 1; i < 8; i++) {
+		minDist = std::fminf(minDist, distFromPlaneAlongNormal[i]);
+		maxDist = std::fmaxf(maxDist, distFromPlaneAlongNormal[i]);
 	}
 
-	return false;
+	// True if they are on opposite sides of the plane
+	return minDist * maxDist < 0.0f;
 }
 
 bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
@@ -252,6 +267,13 @@ bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const Ve
 	*/
 	
 	return false;
+}
+
+bool Intersection::SphereWithPlane(const Sphere& sphere, const glm::vec3& normal, const float distance) {
+	const glm::vec3 pointOnPlane = normal * distance;
+	const glm::vec3 centerToPlane = pointOnPlane - sphere.position;
+	const float shortestDistanceToPlane = glm::dot(centerToPlane, normal);
+	return (std::fabsf(shortestDistanceToPlane) < sphere.radius);
 }
 
 bool Intersection::PointWithVerticalCylinder(const glm::vec3 p, const VerticalCylinder& cyl) {
@@ -454,7 +476,7 @@ float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& 
 	return -1.0f;
 }
 
-float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& normal, const float& distance) {
+float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& normal, const float distance) {
 	const float dirDotNormal = glm::dot(rayDir, normal);
 	
 	bool isParallelWithPlane = std::fabsf(dirDotNormal) < 0.001f;
