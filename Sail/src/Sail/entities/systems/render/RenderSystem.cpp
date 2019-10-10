@@ -24,10 +24,6 @@ RenderSystem::RenderSystem() {
 RenderSystem::~RenderSystem() {
 }
 
- void RenderSystem::update(float dt) {
-
-}
-
  void RenderSystem::toggleHitboxes() {
 	 if (m_renderHitboxes) {
 		 m_renderHitboxes = false;

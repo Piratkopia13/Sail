@@ -20,10 +20,6 @@ LightSystem::LightSystem() : BaseComponentSystem() {
 LightSystem::~LightSystem() 
 {}
 
-
-void LightSystem::update(float dt) 
-{}
-
 //check and update all lights for all entities
 void LightSystem::updateLights(LightSetup* lightSetup) {
 	for (auto e : entities) {

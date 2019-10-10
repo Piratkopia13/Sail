@@ -751,19 +751,19 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
-	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
 	if (!m_isSingleplayer) {
 		// Update entities with info from the network
 		m_componentSystems.networkReceiverSystem->update();
 		// Send out your entity info to the rest of the players
-		m_componentSystems.networkSenderSystem->update(0.0f);
+		m_componentSystems.networkSenderSystem->update();
 	}
 	
 	m_componentSystems.movementSystem->update(dt);
-	m_componentSystems.speedLimitSystem->update(0.0f);
+	m_componentSystems.speedLimitSystem->update();
 	m_componentSystems.collisionSystem->update(dt);
-	m_componentSystems.movementPostCollisionSystem->update(0.0f);
+	m_componentSystems.movementPostCollisionSystem->update(dt);
 
 
 	// This can probably be used once the respective system developers 
@@ -771,6 +771,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
 
 	// TODO: Investigate this
+	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
@@ -786,8 +787,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	}
 
 	// Will probably need to be called last
-	m_componentSystems.entityAdderSystem->update(0.0f);
-	m_componentSystems.entityRemovalSystem->update(0.0f);
+	m_componentSystems.entityAdderSystem->update();
+	m_componentSystems.entityRemovalSystem->update();
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
@@ -808,7 +809,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	if (m_showcaseProcGen) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
-	m_componentSystems.animationSystem->updatePerFrame(dt);
+	m_componentSystems.animationSystem->updatePerFrame();
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 }
 

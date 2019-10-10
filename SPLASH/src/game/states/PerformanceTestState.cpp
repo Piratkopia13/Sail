@@ -256,7 +256,6 @@ bool PerformanceTestState::update(float dt, float alpha) {
 
 bool PerformanceTestState::fixedUpdate(float dt) {
 
-	m_componentSystems.entityAdderSystem->update(0.0f);
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 
@@ -272,7 +271,8 @@ bool PerformanceTestState::fixedUpdate(float dt) {
 	counter += dt * 2.0f;
 
 	// Will probably need to be called last
-	m_componentSystems.entityRemovalSystem->update(0.0f);
+	m_componentSystems.entityAdderSystem->update();
+	m_componentSystems.entityRemovalSystem->update();
 
 	return false;
 }

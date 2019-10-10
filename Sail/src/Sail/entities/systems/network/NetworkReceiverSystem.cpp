@@ -48,7 +48,7 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 	MessageData     entity[2].data
     ....
 */
-void NetworkReceiverSystem::update(float dt) {
+void NetworkReceiverSystem::update() {
 	using namespace Netcode;
 
 	// Don't push more data to the buffer whilst this function is running

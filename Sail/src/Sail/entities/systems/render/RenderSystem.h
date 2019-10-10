@@ -8,7 +8,6 @@ class RenderSystem : public BaseComponentSystem {
 public:
 	RenderSystem();
 	~RenderSystem();
-	void update(float dt) override;
 	void toggleHitboxes();
 	void refreshRenderer();
 

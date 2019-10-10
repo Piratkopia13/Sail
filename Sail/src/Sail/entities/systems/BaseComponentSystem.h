@@ -31,6 +31,12 @@ public:
 	virtual void removeEntity(Entity* entity);
 
 	/*
+		Does not have to be overridden, a different function can be created and called in the sub systems
+		This is only here to make GameState::runSystem() work for now
+	*/
+	virtual void update(float dt) { }
+
+	/*
 		Returns the indices of all the component types required to be within this system
 	*/
 	const std::bitset<MAX_NUM_COMPONENTS_TYPES>& getRequiredComponentTypes() const;
