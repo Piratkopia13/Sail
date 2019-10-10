@@ -119,16 +119,17 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		vbuffer.init(cmdList);
 
 		if (!animationC->hasUpdated) {
-			
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST);
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(-1), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_SOURCE);
 			if (vbuffer.getBuffer() == vbuffer.getBuffer(-1)) {
-				Logger::Warning("Same buffer wut?");
+				Logger::Error("Well this is awkward");
 			}
 			cmdList->CopyResource(vbuffer.getBuffer(), vbuffer.getBuffer(-1));
 			//DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(-1), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+			// Mark vbuffer as updated - this makes sure the BLAS gets updated
 			vbuffer.setAsUpdated();
 			continue;
 		}
@@ -162,7 +163,7 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		AnimationUpdateComputeShader::Input input;
-		input.threadGroupCountX = connectionSize;
+		input.threadGroupCountX = connectionSize * m_updateShader->getComputeSettings()->threadGroupXScale;
 		m_dispatcher->dispatch(*m_updateShader, input, meshIndex, cmdList);
 
 		// Transition back to normal vertex buffer usage

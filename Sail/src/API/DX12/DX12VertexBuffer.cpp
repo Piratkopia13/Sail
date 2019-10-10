@@ -99,10 +99,10 @@ void DX12VertexBuffer::resetHasBeenUpdated() {
 	m_hasBeenUpdated[frameIndex] = false;
 }
 
-void DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
+bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 	auto frameIndex = m_context->getFrameIndex();
 	if (m_hasBeenInitialized[frameIndex]) {
-		return;
+		return false;
 	}
 
 	// Copy the data from the uploadBuffer to the defaultBuffer
@@ -111,4 +111,5 @@ void DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_defaultVertexBuffers[frameIndex].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 	DX12Utils::SetResourceUAVBarrier(cmdList, m_defaultVertexBuffers[frameIndex].Get());
 	m_hasBeenInitialized[frameIndex] = true;
+	return true;
 }
