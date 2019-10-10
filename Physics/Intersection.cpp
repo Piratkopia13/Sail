@@ -77,7 +77,7 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v0, cons
 	return true;
 }
 
-bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth) {
+bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth) {
 	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
 	
 	float depth = INFINITY;
@@ -101,8 +101,8 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1
 	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - v1;
 	float distance = -glm::dot(triangleToWorldOrigo, triNormal);
 
-	// Test the AABB against the plane that the triangle is on
-	if (Intersection::AabbWithPlane(aabb, triNormal, distance)) {
+	// Early exit: Check if a sphere around aabb intersects triangle plane
+	if (SphereWithPlane({ aabb.getPosition(), glm::length(aabb.getHalfSize()) }, triNormal, distance)) {
 		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
