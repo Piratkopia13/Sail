@@ -55,11 +55,13 @@ void GunSystem::update(float dt) {
 							Netcode::MessageType::SPAWN_PROJECTILE,
 							Netcode::EntityType::PLAYER_ENTITY,
 							id
-						);
+							);
 
 						// Log it for stats.
 						m_gameDataTracker->logWeaponFired();
 					}
+
+			
 				}
 			}
 
@@ -95,15 +97,15 @@ Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, float projSp
 	e->addComponent<ProjectileComponent>(10.0f);
 	e->addComponent<TransformComponent>((pos + randPos) - dir * (0.15f * i));
 
-						MovementComponent* movement = e->addComponent<MovementComponent>();
-						movement->velocity = gun->direction * gun->projectileSpeed;
-						movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+	MovementComponent* movement = e->addComponent<MovementComponent>();
+	movement->velocity = dir * projSpeed;
+	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
-						CollisionComponent* collision = e->addComponent<CollisionComponent>();
-						collision->drag = 2.0f;
-						// NOTE: 0.0f <= Bounciness <= 1.0f
-						collision->bounciness = 0.1f;
-						collision->padding = 0.16f;
+	CollisionComponent* collision = e->addComponent<CollisionComponent>();
+	collision->drag = 2.0f;
+	// NOTE: 0.0f <= Bounciness <= 1.0f
+	collision->bounciness = 0.1f;
+	collision->padding = 0.16f;
 
 	
 	return e.get();

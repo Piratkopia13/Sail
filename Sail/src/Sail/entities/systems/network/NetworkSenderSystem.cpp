@@ -93,13 +93,14 @@ void NetworkSenderSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
-				PhysicsComponent* p = e->getComponent<PhysicsComponent>();
 				TransformComponent* t = e->getComponent<TransformComponent>();
+				MovementComponent* m = e->getComponent<MovementComponent>();
 				Archive::archiveVec3(ar, t->getTranslation());
-				Archive::archiveVec3(ar, p->velocity);
+				Archive::archiveVec3(ar, glm::normalize(m->velocity));
+				// Debug
 				glm::vec3 pos = t->getTranslation();
 				std::cout << pos.x << " " << pos.y << " " << pos.z << "\n";
-
+				
 				// Only iterate through this once per entity.
 				e->removeComponent<NetworkSenderComponent>();
 			}

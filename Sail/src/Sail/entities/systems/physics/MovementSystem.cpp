@@ -14,10 +14,14 @@ MovementSystem::~MovementSystem() {
 
 void MovementSystem::update(float dt) {
 	for (auto& e : entities) {
+
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		MovementComponent* movement = e->getComponent<MovementComponent>();
 
 		// Update velocity
+		if (e->getName() == "projectile") {
+			int asdf = 3;
+		}
 		movement->velocity += (movement->constantAcceleration + movement->accelerationToAdd) * dt;
 
 		// Reset additional acceleration
