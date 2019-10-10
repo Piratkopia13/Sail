@@ -43,11 +43,11 @@ void CollisionSystem::update(float dt) {
 
 			surfaceFromCollision(e);
 
-			if (boundingBox && rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
-				//Object is moving fast, ray cast for collisions
-				rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
-				movement->oldVelocity = movement->velocity;
-			}
+			//if (boundingBox && rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
+			//	//Object is moving fast, ray cast for collisions
+			//	rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
+			//	movement->oldVelocity = movement->velocity;
+			//}
 		}
 
 		movement->updateableDt = updateableDt;
@@ -79,7 +79,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 	std::vector<int> groundIndices;
 
 	if (collisions.size() > 0) {
-		//Get the combined normals
+		//Get the combined intersectionAxis
 		glm::vec3 sumVec(0.0f);
 		for (unsigned int i = 0; i < collisions.size(); i++) {
 			sumVec += collisions[i].normal;
@@ -111,6 +111,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 				movement->velocity += collisions[i].normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
 			}
 
+			
 			//Tight angle corner special case
 			float dotProduct = glm::dot(collisions[i].normal, glm::normalize(sumVec));
 			if (dotProduct < 0.7072f && dotProduct > 0.0f) { //Colliding in a tight angle corner
@@ -125,6 +126,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 					movement->velocity += normalToNormal * projectionSize * (1.0f + collision->bounciness);
 				}
 			}
+			
 		}
 	}
 	//------------------
@@ -185,14 +187,16 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		bool paddingTooBig = true;
 
 		for (unsigned int i = 0; i < intersectionInfo.info.size(); i++) {
+			glm::vec3 intersectionAxis;
+			float intersectionDepth;
 			if (Intersection::AabbWithTriangle(boundingBox, intersectionInfo.info[i].positions[0], intersectionInfo.info[i].positions[1], intersectionInfo.info[i].positions[2])) {
 				collision->collisions.push_back(intersectionInfo.info[i]);
 
 				//Stop movement towards triangle
-				float projectionSize = glm::dot(movement->velocity, -intersectionInfo.info[i].normal);
+				float projectionSize = glm::dot(movement->velocity, -intersectionAxis);
 
 				if (projectionSize > 0.0f) { //Is pushing against wall
-					movement->velocity += intersectionInfo.info[i].normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
+					movement->velocity += intersectionAxis * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
 					paddingTooBig = false;
 				}
 			}
@@ -215,84 +219,103 @@ void CollisionSystem::surfaceFromCollision(Entity* e) {
 	auto transform = e->getComponent<TransformComponent>();
 
 	for (unsigned int i = 0; i < collisions.size(); i++) {
-		float depth = findIntersectionDepth(e, collisions[i]);
-
-		if (depth <= glm::dot(movement->oldVelocity, -collisions[i].normal)) {
-			if (cs) {
-				for (int j = 0; j < 2; j++) {
-					cs->spheres[j].position += collisions[i].normal * depth;
+		float depth;
+		glm::vec3 axis;
+		
+		if (findIntersectionDepth(e, collisions[i], &axis, &depth)) {
+			//Logger::Log(std::to_string(depth) + ", " + std::to_string(depth2));
+			if (glm::dot(axis, collisions[i].normal) > 0.99f) {
+				if (depth <= glm::dot(movement->oldVelocity, -axis)) {
+					if (cs) {
+						for (int j = 0; j < 2; j++) {
+							cs->spheres[j].position += axis * depth;
+						}
+					}
+					else {
+						bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
+					}
+					distance += axis * depth;
 				}
 			}
-			else {
-				bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisions[i].normal * depth);
-			}
-			distance += collisions[i].normal * depth;
 		}
 	}
 
 	transform->translate(distance);
 }
 
-float CollisionSystem::findIntersectionDepth(Entity* e, const Octree::CollisionInfo& collision) {
-	float stepSize = 0.005f;
-	float depth = 0.0f;
-	auto csc = e->getComponent<CollisionSpheresComponent>();
-	auto bbc = e->getComponent<BoundingBoxComponent>();
+float CollisionSystem::findIntersectionDepth(Entity* e, const Octree::CollisionInfo& collision, glm::vec3* intersectionAxis, float* intersectionDepth) {
+	BoundingBox* aabb = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
 
-	//Find approx how far into the wall the character is
-	bool colliding = true;
-	while (colliding) {
-		//Push the character out of the wall
-		if (csc) {
-			for (int j = 0; j < 2; j++) {
-				csc->spheres[j].position += collision.normal * stepSize;
-			}
-		}
-		else {
-			bbc->getBoundingBox()->setPosition(bbc->getBoundingBox()->getPosition() + collision.normal * stepSize);
-		}
+	float depth = INFINITY;
+	glm::vec3 axis;
 
-		//Check if there is still collision
-		bool currentCollision = false;
+	glm::vec3 center = aabb->getPosition();
+	//Calculate normal for triangle
+	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(collision.positions[0] - collision.positions[1]), glm::vec3(collision.positions[0] - collision.positions[2])));
 
-		if (csc) {
-			const glm::vec3 tri[] = {
-				collision.positions[0], collision.positions[1], collision.positions[2]
-			};
-			currentCollision = Intersection::TriangleWithSphere(tri, csc->spheres[0]) || Intersection::TriangleWithSphere(tri, csc->spheres[1]);
-		}
-		else {
-			currentCollision = Intersection::AabbWithTriangle(*bbc->getBoundingBox(), collision.positions[0], collision.positions[1], collision.positions[2]);
-		}
+	// Calculate triangle points relative to the AABB
+	glm::vec3 newV0 = collision.positions[0] - center;
+	glm::vec3 newV1 = collision.positions[1] - center;
+	glm::vec3 newV2 = collision.positions[2] - center;
 
-		if (!currentCollision) {
-			colliding = false;
+	//Don't intersect with triangles faceing away from the boundingBox
+	if (glm::dot(newV0, triNormal) > 0.0f) {
+		return false;
+	}
 
-			//Go back to start position when depth is found
-			if (csc) {
-				for (int j = 0; j < 2; j++) {
-					csc->spheres[j].position -= collision.normal * depth;
+	// Calculate the plane that the triangle is on
+	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - collision.positions[0];
+	float distance = -glm::dot(triangleToWorldOrigo, triNormal);
+
+	// Test the AABB against the plane that the triangle is on
+	if (Intersection::AabbWithPlane(*aabb, triNormal, distance)) {
+		// Testing AABB with triangle using separating axis theorem(SAT)
+		glm::vec3 e[3];
+		e[0] = glm::vec3(1.f, 0.f, 0.f);
+		e[1] = glm::vec3(0.f, 1.f, 0.f);
+		e[2] = glm::vec3(0.f, 0.f, 1.f);
+
+		glm::vec3 f[3];
+		f[0] = glm::normalize(newV1 - newV0);
+		f[1] = glm::normalize(newV2 - newV1);
+		f[2] = glm::normalize(newV0 - newV2);
+
+		glm::vec3 aabbSize = aabb->getHalfSize();
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				glm::vec3 a = glm::normalize(glm::cross(e[i], f[j]));
+				glm::vec3 p = glm::vec3(glm::dot(a, newV0), glm::dot(a, newV1), glm::dot(a, newV2));
+				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
+				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
+					return false;
+				}
+				else {
+					//if (abs(glm::dot(a, triNormal)) > 0.99f) {
+						//Save depth along normal
+					float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
+					if (tempDepth < depth) {
+						depth = tempDepth;
+						axis = a;
+						//axis = triNormal;
+					}
+					//}
 				}
 			}
-			else {
-				bbc->getBoundingBox()->setPosition(bbc->getBoundingBox()->getPosition() - collision.normal * depth);
-			}
 		}
-		else {
-			depth += stepSize;
-		}
-	}
-
-	if (csc) {
-		const glm::vec3 tri[] = {
-			collision.positions[0], collision.positions[1], collision.positions[2]
-		};
-		Intersection::TriangleWithSphere(tri, csc->spheres[0]) || Intersection::TriangleWithSphere(tri, csc->spheres[1]);
 	}
 	else {
-		Intersection::AabbWithTriangle(*bbc->getBoundingBox(), collision.positions[0], collision.positions[1], collision.positions[2]);
+		return false;
 	}
-	
 
-	return depth;
+
+	//Return intersection axis and depth if not nullptr
+	if (intersectionAxis) {
+		*intersectionAxis = axis;
+	}
+
+	if (intersectionDepth) {
+		*intersectionDepth = depth;
+	}
+
+	return true;
 }

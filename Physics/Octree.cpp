@@ -219,12 +219,12 @@ void Octree::updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd)
 }
 
 void Octree::getCollisionData(BoundingBox* entityBoundingBox, Entity* meshEntity, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, std::vector<CollisionInfo>* outCollisionData) {
+	glm::vec3 intersectionAxis;
+	float intersectionDepth;
 	if (Intersection::AabbWithTriangle(*entityBoundingBox, v0, v1, v2)) {
 		CollisionInfo tempInfo;
-		//Calculate normal for triangle
-		glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
-		tempInfo.normal = triNormal;
+		tempInfo.normal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
 		tempInfo.positions[0] = v0;
 		tempInfo.positions[1] = v1;
