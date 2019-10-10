@@ -13,7 +13,6 @@
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "Sail/entities/systems/LevelGeneratorSystem/LevelGeneratorSystem.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "Sail/entities/systems/physics/PhysicSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/input/GameInputSystem.h"
@@ -21,6 +20,10 @@
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/physics/MovementSystem.h"
+#include "Sail/entities/systems/physics/MovementPostCollisionSystem.h"
+#include "Sail/entities/systems/physics/CollisionSystem.h"
+#include "Sail/entities/systems/physics/SpeedLimitSystem.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
@@ -28,6 +31,7 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
+
 
 #include <sstream>
 #include <iomanip>
@@ -95,14 +99,15 @@ GameState::GameState(StateStack& stack)
 	// Setting light index
 	m_currLightIndex = 0;
 
-	/*
-		Create a PhysicSystem
-		If the game developer does not want to add the systems like this,
-		this call could be moved inside the default constructor of ECS,
-		assuming each system is included in ECS.cpp instead of here
-	*/
-	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
-	m_componentSystems.physicSystem->provideOctree(m_octree);
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+	
+	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
+	m_componentSystems.collisionSystem->provideOctree(m_octree);
+	
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+
+	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
+	
 
 	// Create system for animations
 	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
@@ -141,8 +146,6 @@ GameState::GameState(StateStack& stack)
 	// Create system which checks projectile collisions
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
-	// Create system for handling and updating sounds
-	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 	//create system for level generation
 	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
 
@@ -161,6 +164,10 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
 	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
+
+	// Create system for handling and updating sounds
+	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -415,15 +422,18 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 }
 
 bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
-	m_player->addComponent<SpectatorComponent>();
-	m_player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-	m_player->removeComponent<NetworkSenderComponent>();
-	m_player->removeComponent<GunComponent>();
-	m_player->removeAllChildren();
-	// TODO: These should be uncommented once the GameInputSystem has been divided into movement and input
-	//m_player->removeComponent<PhysicsComponent>();
-	//m_player->removeComponent<AudioComponent>();
-	//m_player->removeComponent<BoundingBoxComponent>();
+	if ( !m_isSingleplayer ) {
+		m_player->addComponent<SpectatorComponent>();
+		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+		m_player->removeComponent<NetworkSenderComponent>();
+		m_player->removeComponent<GunComponent>();
+		m_player->removeAllChildren();
+		// TODO: Remove all the components that can/should be removed
+	} else {
+		this->requestStackPop();
+		this->requestStackPush(States::EndGame);
+		m_poppedThisFrame = true;
+	}
 
 	return true;
 }
@@ -728,7 +738,8 @@ void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
-	// Clear all entities
+	ECS::Instance()->stopAllSystems();
+
 	ECS::Instance()->destroyAllEntities();
 }
 
@@ -740,16 +751,20 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
-	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
-
+	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	
 	if (!m_isSingleplayer) {
 		// Update entities with info from the network
 		m_componentSystems.networkReceiverSystem->update();
 		// Send out your entity info to the rest of the players
 		m_componentSystems.networkSenderSystem->update(0.0f);
 	}
+	
+	m_componentSystems.movementSystem->update(dt);
+	m_componentSystems.speedLimitSystem->update(0.0f);
+	m_componentSystems.collisionSystem->update(dt);
+	m_componentSystems.movementPostCollisionSystem->update(0.0f);
 
-	m_componentSystems.physicSystem->update(dt);
 
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
@@ -764,7 +779,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
-	runSystem(dt, m_componentSystems.audioSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
@@ -795,7 +809,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	m_componentSystems.animationSystem->updatePerFrame(dt);
-	m_componentSystems.audioSystem->update(dt);
+	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
@@ -998,16 +1012,15 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 
 	player->addComponent<TransformComponent>();
 
-
 	player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID);
 
-	// Add physics component and setting initial variables
-	player->addComponent<PhysicsComponent>();
-	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
+	// Add physics components and setting initial variables
+	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	player->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
+	player->addComponent<CollisionComponent>();
 
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
@@ -1018,9 +1031,18 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 
 	// Adding audio component and adding all sounds attached to the player entity
 	player->addComponent<AudioComponent>();
-	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
 
+	Audio::SoundInfo sound{};
+	sound.fileName = "../Audio/footsteps_1.wav";
+	sound.soundEffectLength = 1.0f;
+	sound.volume = 0.5f;
+	sound.playOnce = false;
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
+
+	sound.fileName = "../Audio/jump.wav";
+	sound.soundEffectLength = 0.7f;
+	sound.playOnce = true;
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
 
 	// Create candle for the player
 	auto e = createCandleEntity("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
@@ -1029,7 +1051,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	player->addChildEntity(e);
 
 	// Set up camera
-	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
+	m_cam.setPosition(glm::vec3(1.6f+spawnOffset, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
 	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f + spawnOffset, 0.9f, 10.f));
 }
@@ -1064,7 +1086,6 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
-
 
 	e = ECS::Instance()->createEntity("Map_Barrier1");
 	e->addComponent<ModelComponent>(barrierModel);
@@ -1190,15 +1211,30 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		e->addComponent<TransformComponent>(glm::vec3(2.f * (i + 1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
+		e->addComponent<MovementComponent>();
+		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>();
 		e->addComponent<AiComponent>();
-		auto fsmComp = e->addComponent<FSMComponent>();
-		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<PhysicsComponent>()->maxSpeed = m_player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
+
+		e->addComponent<AudioComponent>();
+
+		Audio::SoundInfo sound{};
+		sound.fileName = "../Audio/guitar.wav";
+		sound.soundEffectLength = 104.0f;
+		sound.volume = 1.0f;
+		sound.playOnce = false;
+		sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		sound.isPlaying = true; // Start playing the sound immediately
+
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
+		
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<SpeedLimitComponent>()->maxSpeed = m_player->getComponent<SpeedLimitComponent>()->maxSpeed / 2.f;
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
 		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
 		e->addChildEntity(aiCandleEntity);
-
+		auto fsmComp = e->addComponent<FSMComponent>();
+		
 		// Create states and transitions
 		{
 			SearchingState* searchState = fsmComp->createState<SearchingState>(m_componentSystems.aiSystem->getNodeSystem());
