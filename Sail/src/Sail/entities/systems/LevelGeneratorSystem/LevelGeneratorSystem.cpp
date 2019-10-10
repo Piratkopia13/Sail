@@ -208,140 +208,6 @@ void LevelGeneratorSystem::createWorld(Model* tileFlat, Model* tileCross,Model* 
 	}
 }
 
-//void LevelGeneratorSystem::createWorld(std::vector<Model*> tiles, Model* bb) {
-//	for (auto& e : entities) {
-//		MapComponent* map = e->getComponent<MapComponent>();
-//
-//		float tileSize = 5.0f; //how big a tile should be. Model has size 10, anything smaller scales everything down.
-//		int worldWidth = map->xsize;
-//		int worldDepth = map->ysize;
-//		int tileOffset = 20; //offset from origo in game
-//
-//		//traverse all positions to find which tile should be there
-//		for (int i = 0; i < worldWidth; i++) {
-//			for (int j = 0; j < worldDepth; j++) {
-//				auto e = ECS::Instance()->createEntity("");
-//				int tileId = map->tileArr[i][j][0];
-//				if (tileId<16 && tileId>-1) {
-//					if (tileId == 0) {
-//						e->addComponent<ModelComponent>(tileFlat);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-//					}
-//					else if (tileId == 1) {
-//						e->addComponent<ModelComponent>(tileEnd);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-//					}
-//					else if (tileId == 2) {
-//						e->addComponent<ModelComponent>(tileEnd);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-//					}
-//					else if (tileId == 3) {
-//						e->addComponent<ModelComponent>(tileCorner);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-//					}
-//					else if (tileId == 4) {
-//						e->addComponent<ModelComponent>(tileEnd);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-//					}
-//					else if (tileId == 5) {
-//						e->addComponent<ModelComponent>(tileStraight);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-//					}
-//					else if (tileId == 6) {
-//						e->addComponent<ModelComponent>(tileCorner);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-//					}
-//					else if (tileId == 7) {
-//						e->addComponent<ModelComponent>(tileT);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-//					}
-//					else if (tileId == 8) {
-//						e->addComponent<ModelComponent>(tileEnd);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-//					}
-//					else if (tileId == 9) {
-//						e->addComponent<ModelComponent>(tileCorner);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-//					}
-//					else if (tileId == 10) {
-//						e->addComponent<ModelComponent>(tileStraight);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-//					}
-//					else if (tileId == 11) {
-//						e->addComponent<ModelComponent>(tileT);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-//					}
-//					else if (tileId == 12) {
-//						e->addComponent<ModelComponent>(tileCorner);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-//					}
-//					else if (tileId == 13) {
-//						e->addComponent<ModelComponent>(tileT);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-//					}
-//					else if (tileId == 14) {
-//						e->addComponent<ModelComponent>(tileT);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-//					}
-//					else if (tileId == 15) {
-//						e->addComponent<ModelComponent>(tileCross);
-//						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-//					}
-//					float height = 1.0f;
-//					e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, height, tileSize / 10));
-//					e->addComponent<BoundingBoxComponent>(bb);
-//					e->addComponent<CollidableComponent>();
-//
-//					//if there is a door place a square tile on the position of the door
-//					//Multiple doors per tile is possible
-//					if (map->tileArr[i][j][2] > 0 && map->tileArr[i][j][1] != 0) {
-//						int offsetx = 0, offsety = 0;
-//						if (map->tileArr[i][j][2] % 2 > 0) {
-//							offsety = 1;
-//							e = ECS::Instance()->createEntity("");
-//							e->addComponent<ModelComponent>(tileCross);
-//							e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset + (tileSize * offsetx * 0.5f), 1.1f, tileSize * j + tileOffset + (tileSize * offsety * 0.5f)));
-//							e->addComponent<BoundingBoxComponent>(bb);
-//							e->addComponent<CollidableComponent>();
-//							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
-//							offsety = 0;
-//						}
-//						if (map->tileArr[i][j][2] % 4 / 2 > 0) {
-//							offsetx = 1;
-//							e = ECS::Instance()->createEntity("");
-//							e->addComponent<ModelComponent>(tileCross);
-//							e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset + (tileSize * offsetx * 0.5f), 1.1f, tileSize * j + tileOffset + (tileSize * offsety * 0.5f)));
-//							e->addComponent<BoundingBoxComponent>(bb);
-//							e->addComponent<CollidableComponent>();
-//							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
-//							offsetx = 0;
-//						}
-//						if (map->tileArr[i][j][2] % 8 / 4 > 0) {
-//							offsety = -1;
-//							e = ECS::Instance()->createEntity("");
-//							e->addComponent<ModelComponent>(tileCross);
-//							e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset + (tileSize * offsetx * 0.5f), 1.1f, tileSize * j + tileOffset + (tileSize * offsety * 0.5f)));
-//							e->addComponent<BoundingBoxComponent>(bb);
-//							e->addComponent<CollidableComponent>();
-//							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
-//							offsety = 0;
-//						}
-//						if (map->tileArr[i][j][2] / 8 > 0) {
-//							offsetx = -1;
-//							e = ECS::Instance()->createEntity("");
-//							e->addComponent<ModelComponent>(tileCross);
-//							e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset + (tileSize * offsetx * 0.5f), 1.1f, tileSize * j + tileOffset + (tileSize * offsety * 0.5f)));
-//							e->addComponent<BoundingBoxComponent>(bb);
-//							e->addComponent<CollidableComponent>();
-//							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//}
-
 //chooses a random tile from all possible tiles that fit
 int LevelGeneratorSystem::randomizeTileId(std::vector<int>* tiles) {
 	if (tiles->size() > 0) {
@@ -610,7 +476,10 @@ void LevelGeneratorSystem::matchRoom() {
 //checks the borders of a rect to see if it borders a corridor.
 //Returns an int which holds all directions in which to find a corridor
 int LevelGeneratorSystem::checkBorder(rect rekt) {
-	bool top=false,bottom=false,left=false,right=false;
+	bool top = false; 
+	bool bottom = false;
+	bool left = false;
+	bool right = false;
 	int corridor = 0;
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
@@ -873,7 +742,7 @@ void LevelGeneratorSystem::addDoors() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		
-		int maxSize = map->matched.size();
+		size_t maxSize = map->matched.size();
 
 		//add one door to each room, which leads to a corridor
 		for (int c = 0; c < maxSize; c++) {

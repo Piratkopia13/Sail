@@ -1269,14 +1269,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
 	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 	
-	
-	//std::vector<Model*> tileModels;
-	//tileModels.push_back(tileFlat);
-	//tileModels.push_back(tileCross);
-	//tileModels.push_back(tileStraight);
-	//tileModels.push_back(tileCorner);
-	//tileModels.push_back(tileT);
-	//tileModels.push_back(tileEnd);
+
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");

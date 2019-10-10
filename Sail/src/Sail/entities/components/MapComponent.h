@@ -52,7 +52,7 @@ public:
 	int minRoomSize = 1; //minimum side of a room
 	int roomMaxSize = 36;//maximum area of a room
 	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
-	int doorModifier = 40;//percentage to spawn a door
+	int doorModifier = 15;//percentage to spawn a door
 	int seed = 2;//seed for generation
 	int totalArea = xsize * ysize;
 	std::queue<rect> chunks, blocks, hallways, rooms, matched;
