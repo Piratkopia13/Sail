@@ -422,15 +422,18 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 }
 
 bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
-	m_player->addComponent<SpectatorComponent>();
-
-	m_player->removeComponent<NetworkSenderComponent>();
-	m_player->removeComponent<GunComponent>();
-	m_player->removeAllChildren();
-	// TODO: These should be uncommented once the GameInputSystem has been divided into movement and input
-	//m_player->removeComponent<PhysicsComponent>();
-	//m_player->removeComponent<AudioComponent>();
-	//m_player->removeComponent<BoundingBoxComponent>();
+	if ( !m_isSingleplayer ) {
+		m_player->addComponent<SpectatorComponent>();
+		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+		m_player->removeComponent<NetworkSenderComponent>();
+		m_player->removeComponent<GunComponent>();
+		m_player->removeAllChildren();
+		// TODO: Remove all the components that can/should be removed
+	} else {
+		this->requestStackPop();
+		this->requestStackPush(States::EndGame);
+		m_poppedThisFrame = true;
+	}
 
 	return true;
 }
