@@ -6,6 +6,10 @@
 //#include "..//..//Entity.h"
 LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
 	registerComponent<MapComponent>(true,true,true);
+	registerComponent<ModelComponent>(false, false, true);
+	registerComponent<TransformComponent>(false, true, true);
+	registerComponent<BoundingBoxComponent>(false, false, true);
+	registerComponent<CollidableComponent>(false, false, true);
 }
 
 LevelGeneratorSystem::~LevelGeneratorSystem() {
@@ -158,7 +162,7 @@ void LevelGeneratorSystem::createWorld(Model* tileFlat, Model* tileCross,Model* 
 					//Multiple doors per tile is possible
 					if (map->tileArr[i][j][2] >0 &&map->tileArr[i][j][1]!=0) {
 						int offsetx=0, offsety=0;
-						if (map->tileArr[i][j][2] %2> 0) {
+						if (map->tileArr[i][j][2] %2 == 1) {
 							offsety = 1;
 							e = ECS::Instance()->createEntity("");
 							e->addComponent<ModelComponent>(tileCross);
@@ -168,7 +172,7 @@ void LevelGeneratorSystem::createWorld(Model* tileFlat, Model* tileCross,Model* 
 							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
 							offsety = 0;
 						}
-						if (map->tileArr[i][j][2]%4/2 > 0) {
+						if (map->tileArr[i][j][2]%4 > 1) {
 							offsetx = 1;
 							e = ECS::Instance()->createEntity("");
 							e->addComponent<ModelComponent>(tileCross);
@@ -178,7 +182,7 @@ void LevelGeneratorSystem::createWorld(Model* tileFlat, Model* tileCross,Model* 
 							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
 							offsetx = 0;
 						}
-						if (map->tileArr[i][j][2]%8/4>0) {
+						if (map->tileArr[i][j][2]%8 > 3) {
 							offsety = -1;
 							e = ECS::Instance()->createEntity("");
 							e->addComponent<ModelComponent>(tileCross);
@@ -188,7 +192,7 @@ void LevelGeneratorSystem::createWorld(Model* tileFlat, Model* tileCross,Model* 
 							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
 							offsety = 0;
 						}
-						if (map->tileArr[i][j][2]/8>0) {
+						if (map->tileArr[i][j][2] > 7) {
 							offsetx = -1;
 							e = ECS::Instance()->createEntity("");
 							e->addComponent<ModelComponent>(tileCross);
@@ -932,53 +936,25 @@ void LevelGeneratorSystem::addDoors() {
 			map->matched.pop();
 			map->matched.emplace(rekt);
 		}
-		//maxSize = map->matched.size();
-		//// Add another door to each room
-		//for (int c = 0; c < maxSize; c++) {
-		//	rect rekt = map->matched.front();
-		//	bool doorAdded = false;
-		//	if ((rekt.sizex == 1 && rekt.posx + 1 >= map->xsize && rekt.hasDoor % 2 != 0) || (rekt.sizey == 1 && rekt.posy + 1 >= map->ysize && rekt.hasDoor % 4 / 2 != 0)) {
-		//		doorAdded = true;
-		//	}
-		//	while (!doorAdded) {
 
-		//		for (int i = 0; i < rekt.sizex; i++) {
-		//			for (int j = 0; j < rekt.sizey; j++) {
-		//				if (map->tileArr[rekt.posx + i][rekt.posy + j][1] != map->tileArr[rekt.posx + i + 1][rekt.posy + j][1] && (map->tileArr[rekt.posx + i][rekt.posy + j][2] % 4) / 2 == 0 && rand() % 100 < map->doorModifier && rekt.hasDoor != 2 && rekt.posx + 1 < map->xsize) {
-		//					map->tileArr[rekt.posx + i][rekt.posy + j][2] += 2;
-		//					map->tileArr[rekt.posx + i + 1][rekt.posy + j][2] += 8;
-		//					doorAdded = true;
-		//				}
-		//				if (map->tileArr[rekt.posx + i][rekt.posy + j][1] != map->tileArr[rekt.posx + i][rekt.posy + j + 1][1] && (map->tileArr[rekt.posx + i][rekt.posy + j][2] % 2 == 0) && rand() % 100 < map->doorModifier && rekt.hasDoor != 1 && rekt.posy + 1 < map->ysize) {
-		//					map->tileArr[rekt.posx + i][rekt.posy + j][2] += 1;
-		//					map->tileArr[rekt.posx + i][rekt.posy + j + 1][2] += 4;
-		//					doorAdded = true;
-		//				}
-		//			}
-		//		}
-
-		//	}
-		//	map->matched.pop();
-		//	map->matched.emplace(rekt);
-		//}
-		//------------------this code produces some weird ass chrash
-		////adds a second door to each room
+		// Adds a second door to each room
 		for (int c = 0; c < maxSize; c++) {
 			std::vector<rect> possibleDoors;
 			rect rekt = map->matched.front();
 			int doorCounter = 0;
 			bool up = false, right = false, down = false, left = false;
+			// Check each room which walls have doors, and how many
 			for (int i = 0; i < rekt.sizex; i++) {
 				for (int j = 0; j < rekt.sizey; j++) {
 					if (map->tileArr[rekt.posx + i][rekt.posy + j][2] % 2 == 1) {
 						up = true;
 						doorCounter++;
 					}
-					if(map->tileArr[rekt.posx + i][rekt.posy + j][2] == 2 || map->tileArr[rekt.posx + i][rekt.posy + j][2] % 4 > 1){
+					if(map->tileArr[rekt.posx + i][rekt.posy + j][2] % 4 > 1){
 						right = true;
 						doorCounter++;
 					}
-					if (map->tileArr[rekt.posx + i][rekt.posy + j][2] == 4 || map->tileArr[rekt.posx + i][rekt.posy + j][2] % 8 > 3 ) {
+					if (map->tileArr[rekt.posx + i][rekt.posy + j][2] % 8 > 3 ) {
 						down = true;
 						doorCounter++;
 					}
@@ -988,8 +964,7 @@ void LevelGeneratorSystem::addDoors() {
 					}
 				}
 			}
-			if (rekt.sizex < 3 && rekt.sizey < 3)
-				int dodastuff = 3;
+			// If the room does not have atleast 2 doors, we add one more on a wall that does not have a door already
 			if (doorCounter < 2) {
 				if (rekt.posx - 1 >= 0 && !left) {
 					for (int i = 0; i < rekt.sizey; i++) {
@@ -1004,7 +979,7 @@ void LevelGeneratorSystem::addDoors() {
 				if (rekt.posx + rekt.sizex + 1 < map->xsize && !right) {
 					for (int i = 0; i < rekt.sizey; i++) {
 						rect a;
-						a.posx = rekt.posx + rekt.sizex;
+						a.posx = rekt.posx + rekt.sizex - 1;
 						a.posy = rekt.posy + i;
 						a.sizex = 1;
 						a.sizey = 2;
@@ -1025,12 +1000,13 @@ void LevelGeneratorSystem::addDoors() {
 					for (int i = 0; i < rekt.sizex; i++) {
 						rect a;
 						a.posx = rekt.posx + i;
-						a.posy = rekt.posy + rekt.sizey;
+						a.posy = rekt.posy + rekt.sizey - 1;
 						a.sizex = 1;
 						a.sizey = 1;
 						possibleDoors.emplace_back(a);
 					}
 				}
+				// Pick one of the possible doors at random
 				if (possibleDoors.size() > 0) {
 					rect door = possibleDoors[rand() % possibleDoors.size()];
 					possibleDoors.clear();
@@ -1059,31 +1035,5 @@ void LevelGeneratorSystem::addDoors() {
 			map->matched.pop();
 			map->matched.push(rekt);
 		}
-		
-		
-		//adds doors on random to add more doors
-		//only adds a door if two tiles aren't in the same "area" AND there isn't already a door there AND rand()%100 is beilow doorModifier
-				
-
-
-		//for(int i = 0; i < map->xsize; i++) {
-		//	for (int j = 0; j < map->ysize; j++) {
-		//		if (i + 1 < map->xsize) {
-		//			if (map->tileArr[i][j][1] != map->tileArr[i + 1][j][1] && (map->tileArr[i][j][2] % 4) / 2 == 0 && rand() % 100 < map->doorModifier) {
-		//				map->tileArr[i][j][2] += 2;
-		//				map->tileArr[i + 1][j][2] += 8;
-		//			}
-		//		}
-		//		if (j + 1 < map->ysize) {
-		//			if (map->tileArr[i][j][1] != map->tileArr[i][j + 1][1] && (map->tileArr[i][j][2] % 2 == 0) && rand() % 100 < map->doorModifier) {
-		//				map->tileArr[i][j][2] += 1;
-		//				map->tileArr[i][j + 1][2] += 4;
-		//			}
-		//		}
-		//	}
-		//}
-
-
-
 	}
 }
