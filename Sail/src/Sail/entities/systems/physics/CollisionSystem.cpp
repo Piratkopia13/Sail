@@ -81,22 +81,26 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 	collision->onGround = false;
 	std::vector<int> groundIndices;
 
-	if (collisions.size() > 0) {
-		//Get the combined intersectionAxis
+	const size_t collisionCount = collisions.size();
+
+	if (collisionCount > 0) {
+		//Get the combined normals
 		glm::vec3 sumVec(0.0f);
-		for (unsigned int i = 0; i < collisions.size(); i++) {
+		for (size_t i = 0; i < collisionCount; i++) {
 			sumVec += collisions[i].normal;
 
 			//Add collision to current collisions
 			collision->collisions.push_back(collisions[i]);
 		}
 
-		for (unsigned int i = 0; i < collisions.size(); i++) {
-			if (collisions[i].normal.y > 0.7f) {
+		for (size_t i = 0; i < collisionCount; i++) {
+			const Octree::CollisionInfo& collisionInfo_i = collisions[i];
+
+			if (collisionInfo_i.normal.y > 0.7f) {
 				collision->onGround = true;
 				bool newGround = true;
-				for (unsigned int j = 0; j < groundIndices.size(); j++) {
-					if (collisions[i].normal == collisions[groundIndices[j]].normal) {
+				for (size_t j = 0; j < groundIndices.size(); j++) {
+					if (collisionInfo_i.normal == collisions[groundIndices[j]].normal) {
 						newGround = false;
 					}
 				}
@@ -107,18 +111,18 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 			}
 
 			//Stop movement towards triangle
-			float projectionSize = glm::dot(movement->velocity, -collisions[i].normal);
+			float projectionSize = glm::dot(movement->velocity, -collisionInfo_i.normal);
 
 			if (projectionSize > 0.0f) { //Is pushing against wall
 				returnValue = true;
-				movement->velocity += collisions[i].normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
+				movement->velocity += collisionInfo_i.normal * (projectionSize * (1.0f + collision->bounciness)); //Limit movement towards wall
 			}
 
 
 			//Tight angle corner special case
-			float dotProduct = glm::dot(collisions[i].normal, glm::normalize(sumVec));
+			const float dotProduct = glm::dot(collisionInfo_i.normal, glm::normalize(sumVec));
 			if (dotProduct < 0.7072f && dotProduct > 0.0f) { //Colliding in a tight angle corner
-				glm::vec3 normalToNormal = sumVec - glm::dot(sumVec, collisions[i].normal) * collisions[i].normal;
+				glm::vec3 normalToNormal = sumVec - glm::dot(sumVec, collisionInfo_i.normal) * collisionInfo_i.normal;
 				normalToNormal = glm::normalize(normalToNormal);
 
 				//Stop movement towards corner
@@ -136,12 +140,13 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 
 	//----Drag----
 	if (collision->onGround) { //Ground drag
-		unsigned int nrOfGroundCollisions = (unsigned int)groundIndices.size();
-		for (unsigned int i = 0; i < nrOfGroundCollisions; i++) {
-			glm::vec3 velAlongPlane = movement->velocity - collisions[groundIndices[i]].normal * glm::dot(collisions[groundIndices[i]].normal, movement->velocity);
-			float sizeOfVel = glm::length(velAlongPlane);
+		size_t nrOfGroundCollisions = groundIndices.size();
+		for (size_t i = 0; i < nrOfGroundCollisions; i++) {
+			const Octree::CollisionInfo& collisionInfo_ground_i = collisions[groundIndices[i]];
+			const glm::vec3 velAlongPlane = movement->velocity - collisionInfo_ground_i.normal * glm::dot(collisionInfo_ground_i.normal, movement->velocity);
+			const float sizeOfVel = glm::length(velAlongPlane);
 			if (sizeOfVel > 0.0f) {
-				float slowdown = glm::min((collision->drag / nrOfGroundCollisions) * dt, sizeOfVel);
+				const float slowdown = glm::min((collision->drag / nrOfGroundCollisions) * dt, sizeOfVel);
 				movement->velocity -= slowdown * glm::normalize(velAlongPlane);
 				returnValue = true;
 			}
@@ -165,12 +170,12 @@ const bool CollisionSystem::rayCastCheck(Entity* e, const BoundingBox& boundingB
 }
 
 void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt) {
-
+	
 	MovementComponent* movement = e->getComponent<MovementComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
-
-	float velocityAmp = glm::length(movement->velocity) * dt;
+	
+	const float velocityAmp = glm::length(movement->velocity) * dt;
 
 	//Ray cast to find upcoming collisions, use padding for "swept sphere"
 	Octree::RayIntersectionInfo intersectionInfo;
@@ -178,7 +183,7 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 
 	if (intersectionInfo.closestHit <= velocityAmp && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
 		//Calculate new dt
-		float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
+		const float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
 
 		//Move untill first overlap
 		boundingBox.setPosition(boundingBox.getPosition() + movement->velocity * newDt);
@@ -189,15 +194,18 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		//Collision update
 		bool paddingTooBig = true;
 
-		for (unsigned int i = 0; i < intersectionInfo.info.size(); i++) {
-			if (Intersection::AabbWithTriangle(boundingBox, intersectionInfo.info[i].positions[0], intersectionInfo.info[i].positions[1], intersectionInfo.info[i].positions[2])) {
-				collision->collisions.push_back(intersectionInfo.info[i]);
+		const size_t count = intersectionInfo.info.size();
+		for (size_t i = 0; i < count; i++) {
+			const Octree::CollisionInfo& collisionInfo_i = intersectionInfo.info[i];
+			
+			if (Intersection::AabbWithTriangle(boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2])) {
+				collision->collisions.push_back(collisionInfo_i);
 
 				//Stop movement towards triangle
-				float projectionSize = glm::dot(movement->velocity, -intersectionInfo.info[i].normal);
+				const float projectionSize = glm::dot(movement->velocity, -collisionInfo_i.normal);
 
 				if (projectionSize > 0.0f) { //Is pushing against wall
-					movement->velocity += intersectionInfo.info[i].normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
+					movement->velocity += collisionInfo_i.normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
 					paddingTooBig = false;
 				}
 			}
@@ -218,13 +226,14 @@ void CollisionSystem::surfaceFromCollision(Entity* e) {
 	auto movement = e->getComponent<MovementComponent>();
 	auto transform = e->getComponent<TransformComponent>();
 
-	if (bb) {
-		for (unsigned int i = 0; i < collisions.size(); i++) {
-			float depth;
-			glm::vec3 axis;
+	const size_t count = collisions.size();
+	for (size_t i = 0; i < count; i++) {
+		const Octree::CollisionInfo& collisionInfo_i = collisions[i];
+		float depth;
+		glm::vec3 axis;
 
-			if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisions[i].positions[0], collisions[i].positions[1], collisions[i].positions[2], &axis, &depth)) {
-				if (glm::dot(axis, collisions[i].normal) > 0.99f) {
+			if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &axis, &depth)) {
+				if (glm::dot(axis, collisionInfo_i.normal) > 0.99f) {
 					if (depth <= glm::dot(movement->oldVelocity, -axis)) {
 						bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
 						distance += axis * depth;
