@@ -93,10 +93,8 @@ const float Animation::getTimeAtFrame(const unsigned int frame) {
 	}
 	return 0.0f;
 }
-const unsigned int Animation::getFrameAtTime(const float time, const FindType type) {
-	if (time >= m_maxFrameTime) {
-		return 0;
-	}
+const unsigned int Animation::getFrameAtTime(float time, const FindType type) {
+	time -= (int(time / getMaxAnimationTime()) * getMaxAnimationTime());
 	for (unsigned int frame = 0; frame < m_maxFrame; frame++) {
 		float lastFrameTime = 0;
 		if (exists(frame)) {

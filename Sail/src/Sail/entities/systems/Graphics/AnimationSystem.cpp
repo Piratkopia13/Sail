@@ -27,7 +27,7 @@ AnimationSystem::AnimationSystem()
 	m_inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 	m_inputLayout->pushVec3(InputLayout::POSITION, "POSITION", 0);
 	m_inputLayout->pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
-	m_inputLayout->pushVec3(InputLayout::NORMAL, "NORMAL", 0);
+	m_inputLayout->pushVec3(InputLayout::NORMAL, "NORMAL", 0);                
 	m_inputLayout->pushVec3(InputLayout::TANGENT, "TANGENT", 0);
 	m_inputLayout->pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
 }
@@ -45,16 +45,33 @@ void AnimationSystem::updateTransforms(const float dt) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		addTime(animationC, dt);
 
-		if (animationC->transitions.size() > 0) {
+		if (!animationC->currentAnimation) {
+#if defined(_DEBUG)
+			Logger::Warning("AnimationComponent without animation set");
+#endif
+			continue;
+		}
+
+		while (animationC->transitions.size() > 0) {
+			if (animationC->transitions.front().to) {
+				break;
+			}
+			animationC->transitions.pop();
+		}
+		if (animationC->transitions.size() > 0 && animationC->nextAnimation) {
 			if (animationC->transitions.front().transpiredTime >= animationC->transitions.front().transitionTime) {
+				
 				animationC->currentAnimation = animationC->nextAnimation;
+				animationC->animationTime = animationC->transitions.front().transpiredTime;
+				if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime()) {
+					animationC->animationTime -= (int(animationC->animationTime / animationC->currentAnimation->getMaxAnimationTime()) * animationC->currentAnimation->getMaxAnimationTime());
+				}
 				animationC->nextAnimation = nullptr;
 				animationC->transitions.pop();
 			}
 		}
 		if (animationC->transitions.size() > 0) {
 			if (animationC->nextAnimation) {
-				animationC->transitions.front().transpiredTime += dt * animationC->animationSpeed;
 			} 
 			else {
 
@@ -68,6 +85,8 @@ void AnimationSystem::updateTransforms(const float dt) {
 					animationC->nextAnimation = animationC->transitions.front().to;
 				}
 			}
+			animationC->transitions.front().transpiredTime += dt * animationC->animationSpeed;
+
 		}
 
 
@@ -99,16 +118,16 @@ void AnimationSystem::updateTransforms(const float dt) {
 		if (transforms00 && transforms01 && transforms10 && transforms11 && m_interpolate) {
 			const float frame00Time = animationC->currentAnimation->getTimeAtFrame(frame00);
 			const float frame01Time = animationC->currentAnimation->getTimeAtFrame(frame01);
-			const float frame10Time = animationC->currentAnimation->getTimeAtFrame(frame10);
-			const float frame11Time = animationC->currentAnimation->getTimeAtFrame(frame11);
+			const float frame10Time = animationC->nextAnimation->getTimeAtFrame(frame10);
+			const float frame11Time = animationC->nextAnimation->getTimeAtFrame(frame11);
 			// weight = time - time(0) / time(1) - time(0)
 
 			const float w0 = (animationC->animationTime - frame00Time) / (frame01Time - frame00Time);
 			const float w1 = (animationC->transitions.front().transpiredTime - frame10Time) / (frame11Time - frame10Time);
 			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
-
-			glm::mat4 m0;
-			glm::mat4 m1;
+			Logger::Log(std::to_string(wt));
+			glm::mat4 m0 = glm::identity<glm::mat4>();
+			glm::mat4 m1 = glm::identity<glm::mat4>();
 
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				interpolate(m0, transforms00[transformIndex], transforms01[transformIndex], w0);
