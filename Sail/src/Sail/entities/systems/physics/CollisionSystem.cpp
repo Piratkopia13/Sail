@@ -40,7 +40,7 @@ void CollisionSystem::update(float dt) {
 
 		if (m_octree) {
 			collisionUpdate(e, updateableDt);
-			
+
 			if (!csc) {
 				//Not implemented for spheres yet
 				surfaceFromCollision(e);
@@ -170,11 +170,11 @@ const bool CollisionSystem::rayCastCheck(Entity* e, const BoundingBox& boundingB
 }
 
 void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt) {
-	
+
 	MovementComponent* movement = e->getComponent<MovementComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
-	
+
 	const float velocityAmp = glm::length(movement->velocity) * dt;
 
 	//Ray cast to find upcoming collisions, use padding for "swept sphere"
@@ -197,7 +197,7 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		const size_t count = intersectionInfo.info.size();
 		for (size_t i = 0; i < count; i++) {
 			const Octree::CollisionInfo& collisionInfo_i = intersectionInfo.info[i];
-			
+
 			if (Intersection::AabbWithTriangle(boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2])) {
 				collision->collisions.push_back(collisionInfo_i);
 
@@ -232,16 +232,14 @@ void CollisionSystem::surfaceFromCollision(Entity* e) {
 		float depth;
 		glm::vec3 axis;
 
-			if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &axis, &depth)) {
-				if (glm::dot(axis, collisionInfo_i.normal) > 0.99f) {
-					if (depth <= glm::dot(movement->oldVelocity, -axis)) {
-						bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
-						distance += axis * depth;
-					}
+		if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &axis, &depth)) {
+			if (glm::dot(axis, collisionInfo_i.normal) > 0.99f) {
+				if (depth <= glm::dot(movement->oldVelocity, -axis)) {
+					bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
+					distance += axis * depth;
 				}
 			}
 		}
-
-		transform->translate(distance);
 	}
+	transform->translate(distance);
 }
