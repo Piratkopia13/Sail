@@ -10,7 +10,10 @@ class EntityRemovalSystem;
 class LifeTimeSystem;
 class LightSystem;
 class OctreeAddRemoverSystem;
-class PhysicSystem;
+class MovementSystem;
+class MovementPostCollisionSystem;
+class CollisionSystem;
+class SpeedLimitSystem;
 class PrepareUpdateSystem;
 class GunSystem;
 class ProjectileSystem;
@@ -48,7 +51,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
-	bool onPlayerCandleHit(PlayerCandleHitEvent& event);
+	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
@@ -76,7 +79,6 @@ private:
 		LifeTimeSystem* lifeTimeSystem = nullptr;
 		LightSystem* lightSystem = nullptr;
 		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
-		PhysicSystem* physicSystem = nullptr;
 		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 		GunSystem* gunSystem = nullptr;
@@ -87,6 +89,10 @@ private:
 		AudioSystem* audioSystem = nullptr;
 		RenderSystem* renderSystem = nullptr;
 		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
+		MovementSystem* movementSystem = nullptr;
+		MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
+		CollisionSystem* collisionSystem = nullptr;
+		SpeedLimitSystem* speedLimitSystem = nullptr;
 	};
 
 	Application* m_app;
