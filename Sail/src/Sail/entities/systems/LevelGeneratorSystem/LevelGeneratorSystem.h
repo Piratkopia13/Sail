@@ -5,6 +5,24 @@
 class Scene;
 class Model;
 struct rect;
+
+enum TileModel {
+	ROOM_FLOOR,
+	ROOM_WALL,
+	ROOM_DOOR,
+	CORRIDOR_FLOOR,
+	CORRIDOR_WALL,
+	CORRIDOR_DOOR,
+	NUMBOFMODELS
+};
+
+enum Direction {
+	UP = 1,
+	RIGHT = 2,
+	DOWN = 4,
+	LEFT = 8
+};
+
 class LevelGeneratorSystem final: public BaseComponentSystem {
 public:
 	LevelGeneratorSystem();
@@ -12,7 +30,8 @@ public:
 
 	void update(float dt) override;
 	void generateMap();
-	void createWorld(Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
+	//void createWorld(Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
+	void createWorld(const std::vector<Model*>& tileModels, Model* bb);
 
 private:
 	int randomizeTileId(std::vector<int>* tiles);
@@ -23,4 +42,6 @@ private:
 	int checkBorder(rect rekt);
 	bool splitDirection(bool ns);
 	void addDoors();
+
+	void createTile(Direction dir, int doors, int posx, int posy, int tileOffset, int tileSize, std::vector<Model*> tileModels, Model* bb);
 };
