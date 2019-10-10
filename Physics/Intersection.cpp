@@ -98,7 +98,6 @@ bool Intersection::AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, con
 		minDist = std::fminf(minDist, distFromPlaneAlongNormal[i]);
 		maxDist = std::fmaxf(maxDist, distFromPlaneAlongNormal[i]);
 	}
-
 	// True if they are on opposite sides of the plane
 	return minDist * maxDist < 0.0f;
 }
@@ -196,7 +195,7 @@ bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphe
 	const float bb = glm::dot(B, B);
 	const float bc = glm::dot(B, C);
 	const float cc = glm::dot(C, C);
-
+  
 	if (aa > rr && ab > aa && ac > aa) {
 		return false;
 	}
