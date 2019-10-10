@@ -133,7 +133,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 
 	//----Drag----
 	if (collision->onGround) { //Ground drag
-		unsigned int nrOfGroundCollisions = groundIndices.size();
+		unsigned int nrOfGroundCollisions = (unsigned int) groundIndices.size();
 		for (unsigned int i = 0; i < nrOfGroundCollisions; i++) {
 			glm::vec3 velAlongPlane = movement->velocity - collisions[groundIndices[i]].normal * glm::dot(collisions[groundIndices[i]].normal, movement->velocity);
 			float sizeOfVel = glm::length(velAlongPlane);
@@ -187,16 +187,14 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		bool paddingTooBig = true;
 
 		for (unsigned int i = 0; i < intersectionInfo.info.size(); i++) {
-			glm::vec3 intersectionAxis;
-			float intersectionDepth;
 			if (Intersection::AabbWithTriangle(boundingBox, intersectionInfo.info[i].positions[0], intersectionInfo.info[i].positions[1], intersectionInfo.info[i].positions[2])) {
 				collision->collisions.push_back(intersectionInfo.info[i]);
 
 				//Stop movement towards triangle
-				float projectionSize = glm::dot(movement->velocity, -intersectionAxis);
+				float projectionSize = glm::dot(movement->velocity, -intersectionInfo.info[i].normal);
 
 				if (projectionSize > 0.0f) { //Is pushing against wall
-					movement->velocity += intersectionAxis * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
+					movement->velocity += intersectionInfo.info[i].normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
 					paddingTooBig = false;
 				}
 			}
