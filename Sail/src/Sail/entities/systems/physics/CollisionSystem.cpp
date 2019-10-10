@@ -24,7 +24,7 @@ void CollisionSystem::provideOctree(Octree* octree) {
 }
 
 void CollisionSystem::update(float dt) {
-	for (auto& e: entities) {
+	for (auto& e : entities) {
 		auto movement = e->getComponent<MovementComponent>();
 		auto collision = e->getComponent<CollisionComponent>();
 		auto boundingBox = e->getComponent<BoundingBoxComponent>();
@@ -38,15 +38,18 @@ void CollisionSystem::update(float dt) {
 
 		float updateableDt = dt;
 
-		if ((boundingBox || csc) && m_octree) {
+		if (m_octree) {
 			collisionUpdate(e, updateableDt);
+			
+			if (!csc) {
+				//Not implemented for spheres yet
+				surfaceFromCollision(e);
 
-			surfaceFromCollision(e);
-
-			if (boundingBox && rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
-				//Object is moving fast, ray cast for collisions
-				rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
-				movement->oldVelocity = movement->velocity;
+				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
+					//Object is moving fast, ray cast for collisions
+					rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
+					movement->oldVelocity = movement->velocity;
+				}
 			}
 		}
 
@@ -111,7 +114,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 				movement->velocity += collisions[i].normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
 			}
 
-			
+
 			//Tight angle corner special case
 			float dotProduct = glm::dot(collisions[i].normal, glm::normalize(sumVec));
 			if (dotProduct < 0.7072f && dotProduct > 0.0f) { //Colliding in a tight angle corner
@@ -126,14 +129,14 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 					movement->velocity += normalToNormal * projectionSize * (1.0f + collision->bounciness);
 				}
 			}
-			
+
 		}
 	}
 	//------------------
 
 	//----Drag----
 	if (collision->onGround) { //Ground drag
-		unsigned int nrOfGroundCollisions = (unsigned int) groundIndices.size();
+		unsigned int nrOfGroundCollisions = (unsigned int)groundIndices.size();
 		for (unsigned int i = 0; i < nrOfGroundCollisions; i++) {
 			glm::vec3 velAlongPlane = movement->velocity - collisions[groundIndices[i]].normal * glm::dot(collisions[groundIndices[i]].normal, movement->velocity);
 			float sizeOfVel = glm::length(velAlongPlane);
@@ -151,7 +154,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 
 const bool CollisionSystem::rayCastCheck(Entity* e, const BoundingBox& boundingBox, float& dt) const {
 	MovementComponent* movementComp = e->getComponent<MovementComponent>();
-	
+
 	if (glm::abs(movementComp->velocity.x * dt) > glm::abs(boundingBox.getHalfSize().x)
 		|| glm::abs(movementComp->velocity.y * dt) > glm::abs(boundingBox.getHalfSize().y)
 		|| glm::abs(movementComp->velocity.z * dt) > glm::abs(boundingBox.getHalfSize().z)) {
@@ -162,11 +165,11 @@ const bool CollisionSystem::rayCastCheck(Entity* e, const BoundingBox& boundingB
 }
 
 void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt) {
-	
+
 	MovementComponent* movement = e->getComponent<MovementComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
-	
+
 	float velocityAmp = glm::length(movement->velocity) * dt;
 
 	//Ray cast to find upcoming collisions, use padding for "swept sphere"
@@ -212,30 +215,24 @@ void CollisionSystem::surfaceFromCollision(Entity* e) {
 	glm::vec3 distance(0.0f);
 	auto& collisions = e->getComponent<CollisionComponent>()->collisions;
 	auto bb = e->getComponent<BoundingBoxComponent>();
-	auto cs = e->getComponent<CollisionSpheresComponent>();
 	auto movement = e->getComponent<MovementComponent>();
 	auto transform = e->getComponent<TransformComponent>();
 
-	for (unsigned int i = 0; i < collisions.size(); i++) {
-		float depth;
-		glm::vec3 axis;
-		
-		if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisions[i].positions[0], collisions[i].positions[1], collisions[i].positions[2], &axis, &depth)) {
-			if (glm::dot(axis, collisions[i].normal) > 0.99f) {
-				if (depth <= glm::dot(movement->oldVelocity, -axis)) {
-					if (cs) {
-						for (int j = 0; j < 2; j++) {
-							cs->spheres[j].position += axis * depth;
-						}
-					}
-					else {
+	if (bb) {
+		for (unsigned int i = 0; i < collisions.size(); i++) {
+			float depth;
+			glm::vec3 axis;
+
+			if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisions[i].positions[0], collisions[i].positions[1], collisions[i].positions[2], &axis, &depth)) {
+				if (glm::dot(axis, collisions[i].normal) > 0.99f) {
+					if (depth <= glm::dot(movement->oldVelocity, -axis)) {
 						bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
+						distance += axis * depth;
 					}
-					distance += axis * depth;
 				}
 			}
 		}
-	}
 
-	transform->translate(distance);
+		transform->translate(distance);
+	}
 }
