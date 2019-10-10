@@ -2,15 +2,13 @@
 #include "ProjectileSystem.h"
 #include "Sail/entities/components/ProjectileComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
-#include "Sail/entities/components/PhysicsComponent.h"
-#include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/CollisionComponent.h"
 
 ProjectileSystem::ProjectileSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<ProjectileComponent>(true, true, true);
-	registerComponent<PhysicsComponent>(true, true, false);
-	/* Does it really need the transform component? - it's not being used */
-	registerComponent<TransformComponent>(true, false, false);
+	registerComponent<CollisionComponent>(true, true, false);
+	registerComponent<CandleComponent>(false, true, true);
 }
 
 ProjectileSystem::~ProjectileSystem() {
@@ -19,11 +17,12 @@ ProjectileSystem::~ProjectileSystem() {
 
 void ProjectileSystem::update(float dt) {
 	for (auto& e : entities) {
-		PhysicsComponent* physComp = e->getComponent<PhysicsComponent>();
-		auto projectileCollisions = physComp->collisions;
+		CollisionComponent* collisionComp = e->getComponent<CollisionComponent>();
+		auto projectileCollisions = collisionComp->collisions;
 		for (auto& collision : projectileCollisions) {
 			if (collision.entity->hasComponent<CandleComponent>()) {
-				collision.entity->getComponent<CandleComponent>()->hitWithWater();
+				// TODO: Consume da waterball (smök)
+				collision.entity->getComponent<CandleComponent>()->hitWithWater(e->getComponent<ProjectileComponent>()->m_damage);
 			}
 		}
 	}

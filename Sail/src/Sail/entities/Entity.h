@@ -31,12 +31,15 @@ public:
 	bool hasComponent() const;
 	bool hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const;
 
+	Entity* getParent();
+
 	bool isAboutToBeDestroyed() const;
 	void queueDestruction();
 	void removeAllComponents();
 
 	void addChildEntity(Entity::SPtr child);
 	void removeChildEntity(Entity::SPtr toRemove);
+	void removeAllChildren();
 	/* Currently dangerous, will probably be altered in future */
 	std::vector<Entity::SPtr>& getChildEntities();
 
@@ -58,6 +61,8 @@ private:
 
 	void setECSIndex(int index);
 
+	void setParent(Entity* entity);
+
 	BaseComponent::Ptr* m_components;
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_componentTypes;
 	std::string m_name;
@@ -65,6 +70,7 @@ private:
 	int m_id;
 	int m_ECSIndex;
 	ECS* m_ecs;
+	Entity* m_parent;
 
 	std::vector<Entity::SPtr> m_children;
 };

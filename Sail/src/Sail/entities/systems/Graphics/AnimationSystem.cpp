@@ -279,7 +279,7 @@ void AnimationSystem::updatePerFrame(float dt) {
 }
 
 void AnimationSystem::toggleInterpolation() {
-	m_interpolate != m_interpolate;
+	m_interpolate = !m_interpolate;
 }
 
 const bool AnimationSystem::getInterpolation() {

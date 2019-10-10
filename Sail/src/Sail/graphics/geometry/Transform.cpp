@@ -37,7 +37,10 @@ Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, co
 		m_parent->addChild(this);
 }
 
-Transform::~Transform() {}
+Transform::~Transform() {
+	removeParent();
+	removeChildren();
+}
 
 void Transform::setParent(Transform* parent) {
 	if (m_parent) {
@@ -311,6 +314,13 @@ void Transform::removeChild(Transform* Transform) {
 			break;
 		}
 	}
+}
+
+void Transform::removeChildren() {
+	for ( auto child : m_children ) {
+		child->removeParent();
+	}
+	m_children.clear();
 }
 
 void Transform::createTransformMatrix(glm::mat4& destination, const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale) const {

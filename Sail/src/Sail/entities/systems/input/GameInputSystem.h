@@ -9,6 +9,7 @@ struct Movement {
 	float speedModifier = 1.f;
 	float forwardMovement = 0.0f;
 	float rightMovement = 0.0f;
+	float upMovement = 0.0f;
 };
 
 class GameInputSystem final : public BaseComponentSystem {
@@ -21,7 +22,9 @@ public:
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
 	void clean();
+	void stop() override;
 	void updateCameraPosition(float alpha);
+	CameraController* getCamera() const;
 
 private:
 	void processKeyboardInput(const float& dt);
