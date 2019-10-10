@@ -160,7 +160,9 @@ bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 
 bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphere) {
 	// Calculations found at http://realtimecollisiondetection.net/blog/?p=103
-	
+	// NOTE: in the comments of the article above, it is mentioned that this test is fast,
+	// but does not necessarily have perfect precision
+
 	const glm::vec3 A = tri[0] - sphere.position;
 	const glm::vec3 B = tri[1] - sphere.position;
 	const glm::vec3 C = tri[2] - sphere.position;
@@ -375,121 +377,6 @@ bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const
 	return isColliding;
 }
 
-bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
-	// Compute the plane normal for triangle U.
-	glm::vec3 edge1 = U[1] - U[0];
-	glm::vec3 edge2 = U[2] - U[0];
-	glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
-
-	// Test whether the edges of triangle V transversely intersect the
-	// plane of triangle U.
-	float d[3];
-	int positive = 0, negative = 0, zero = 0;
-	for (int i = 0; i < 3; ++i)
-	{
-		d[i] = glm::dot(normal, V[i] - U[0]);
-		if (d[i] > 0.0f)
-		{
-			++positive;
-		}
-		else if (d[i] < 0.0f)
-		{
-			++negative;
-		}
-		else
-		{
-			++zero;
-		}
-	}
-	// positive + negative + zero == 3
-
-	if (positive > 0 && negative > 0)
-	{
-		if (positive == 2)  // and negative == 1
-		{
-			if (d[0] < 0.0f)
-			{
-				outSegment[0] = (d[1] * V[0] - d[0] * V[1]) / (d[1] - d[0]);
-				outSegment[1] = (d[2] * V[0] - d[0] * V[2]) / (d[2] - d[0]);
-			}
-			else if (d[1] < 0.0f)
-			{
-				outSegment[0] = (d[0] * V[1] - d[1] * V[0]) / (d[0] - d[1]);
-				outSegment[1] = (d[2] * V[1] - d[1] * V[2]) / (d[2] - d[1]);
-			}
-			else  // d[2] < 0.0f
-			{
-				outSegment[0] = (d[0] * V[2] - d[2] * V[0]) / (d[0] - d[2]);
-				outSegment[1] = (d[1] * V[2] - d[2] * V[1]) / (d[1] - d[2]);
-			}
-		}
-		else if (negative == 2)  // and positive == 1
-		{
-			if (d[0] > 0.0f)
-			{
-				outSegment[0] = (d[1] * V[0] - d[0] * V[1]) / (d[1] - d[0]);
-				outSegment[1] = (d[2] * V[0] - d[0] * V[2]) / (d[2] - d[0]);
-			}
-			else if (d[1] > 0.0f)
-			{
-				outSegment[0] = (d[0] * V[1] - d[1] * V[0]) / (d[0] - d[1]);
-				outSegment[1] = (d[2] * V[1] - d[1] * V[2]) / (d[2] - d[1]);
-			}
-			else  // d[2] > 0.0f
-			{
-				outSegment[0] = (d[0] * V[2] - d[2] * V[0]) / (d[0] - d[2]);
-				outSegment[1] = (d[1] * V[2] - d[2] * V[1]) / (d[1] - d[2]);
-			}
-		}
-		else  // positive == 1, negative == 1, zero == 1
-		{
-			if (d[0] == 0.0f)
-			{
-				outSegment[0] = V[0];
-				outSegment[1] = (d[2] * V[1] - d[1] * V[2]) / (d[2] - d[1]);
-			}
-			else if (d[1] == 0.0f)
-			{
-				outSegment[0] = V[1];
-				outSegment[1] = (d[0] * V[2] - d[2] * V[0]) / (d[0] - d[2]);
-			}
-			else  // d[2] == 0.0f
-			{
-				outSegment[0] = V[2];
-				outSegment[1] = (d[1] * V[0] - d[0] * V[1]) / (d[1] - d[0]);
-			}
-		}
-		return true;
-	}
-
-	// Triangle V does not transversely intersect triangle U, although it is
-	// possible a vertex or edge of V is just touching U.  In this case, we
-	// do not call this an intersection.
-	return false;
-}
-
-void Intersection::Barycentric(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, float& u, float& v, float& w) {
-	const glm::vec3 v0 = b - a;
-	const glm::vec3 v1 = c - a;
-	const glm::vec3 v2 = p - a;
-
-	// Determine barycentric coordinates
-	const float d00 = glm::dot(v0, v0);
-	const float d01 = glm::dot(v0, v1);
-	const float d11 = glm::dot(v1, v1);
-	const float d20 = glm::dot(v2, v0);
-	const float d21 = glm::dot(v2, v1);
-	const float denom = d00 * d11 - d01 * d01;
-	const float divDenom = 1.0f / denom;
-	u = (d11 * d20 - d01 * d21) * divDenom;
-	v = (d00 * d21 - d01 * d20) * divDenom;
-	w = 1.0f - u - v;
-}
-
-bool Intersection::OnTriangle(const float u, const float v, const float w) {
-	return ((0.0f < v && v < 1.0f) && (0.0f < w && w < 1.0f) && (0.0f < u && u < 1.0f));
-}
-
 float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb) {
 	float returnValue = -1.0f;
 	glm::vec3 normalizedRay = glm::normalize(rayVec);
@@ -640,4 +527,119 @@ bool Intersection::FrustumWithAabb(const Frustum& frustum, const BoundingBox& aa
 		// Else inside or intersecting
 	}
 	return true;
+}
+
+bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
+	// Compute the plane normal for triangle U.
+	glm::vec3 edge1 = U[1] - U[0];
+	glm::vec3 edge2 = U[2] - U[0];
+	glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+
+	// Test whether the edges of triangle V transversely intersect the
+	// plane of triangle U.
+	float d[3];
+	int positive = 0, negative = 0, zero = 0;
+	for (int i = 0; i < 3; ++i)
+	{
+		d[i] = glm::dot(normal, V[i] - U[0]);
+		if (d[i] > 0.0f)
+		{
+			++positive;
+		}
+		else if (d[i] < 0.0f)
+		{
+			++negative;
+		}
+		else
+		{
+			++zero;
+		}
+	}
+	// positive + negative + zero == 3
+
+	if (positive > 0 && negative > 0)
+	{
+		if (positive == 2)  // and negative == 1
+		{
+			if (d[0] < 0.0f)
+			{
+				outSegment[0] = (d[1] * V[0] - d[0] * V[1]) / (d[1] - d[0]);
+				outSegment[1] = (d[2] * V[0] - d[0] * V[2]) / (d[2] - d[0]);
+			}
+			else if (d[1] < 0.0f)
+			{
+				outSegment[0] = (d[0] * V[1] - d[1] * V[0]) / (d[0] - d[1]);
+				outSegment[1] = (d[2] * V[1] - d[1] * V[2]) / (d[2] - d[1]);
+			}
+			else  // d[2] < 0.0f
+			{
+				outSegment[0] = (d[0] * V[2] - d[2] * V[0]) / (d[0] - d[2]);
+				outSegment[1] = (d[1] * V[2] - d[2] * V[1]) / (d[1] - d[2]);
+			}
+		}
+		else if (negative == 2)  // and positive == 1
+		{
+			if (d[0] > 0.0f)
+			{
+				outSegment[0] = (d[1] * V[0] - d[0] * V[1]) / (d[1] - d[0]);
+				outSegment[1] = (d[2] * V[0] - d[0] * V[2]) / (d[2] - d[0]);
+			}
+			else if (d[1] > 0.0f)
+			{
+				outSegment[0] = (d[0] * V[1] - d[1] * V[0]) / (d[0] - d[1]);
+				outSegment[1] = (d[2] * V[1] - d[1] * V[2]) / (d[2] - d[1]);
+			}
+			else  // d[2] > 0.0f
+			{
+				outSegment[0] = (d[0] * V[2] - d[2] * V[0]) / (d[0] - d[2]);
+				outSegment[1] = (d[1] * V[2] - d[2] * V[1]) / (d[1] - d[2]);
+			}
+		}
+		else  // positive == 1, negative == 1, zero == 1
+		{
+			if (d[0] == 0.0f)
+			{
+				outSegment[0] = V[0];
+				outSegment[1] = (d[2] * V[1] - d[1] * V[2]) / (d[2] - d[1]);
+			}
+			else if (d[1] == 0.0f)
+			{
+				outSegment[0] = V[1];
+				outSegment[1] = (d[0] * V[2] - d[2] * V[0]) / (d[0] - d[2]);
+			}
+			else  // d[2] == 0.0f
+			{
+				outSegment[0] = V[2];
+				outSegment[1] = (d[1] * V[0] - d[0] * V[1]) / (d[1] - d[0]);
+			}
+		}
+		return true;
+	}
+
+	// Triangle V does not transversely intersect triangle U, although it is
+	// possible a vertex or edge of V is just touching U.  In this case, we
+	// do not call this an intersection.
+	return false;
+}
+
+void Intersection::Barycentric(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, float& u, float& v, float& w) {
+	const glm::vec3 v0 = b - a;
+	const glm::vec3 v1 = c - a;
+	const glm::vec3 v2 = p - a;
+
+	// Determine barycentric coordinates
+	const float d00 = glm::dot(v0, v0);
+	const float d01 = glm::dot(v0, v1);
+	const float d11 = glm::dot(v1, v1);
+	const float d20 = glm::dot(v2, v0);
+	const float d21 = glm::dot(v2, v1);
+	const float denom = d00 * d11 - d01 * d01;
+	const float divDenom = 1.0f / denom;
+	u = (d11 * d20 - d01 * d21) * divDenom;
+	v = (d00 * d21 - d01 * d20) * divDenom;
+	w = 1.0f - u - v;
+}
+
+bool Intersection::OnTriangle(const float u, const float v, const float w) {
+	return ((0.0f < v && v < 1.0f) && (0.0f < w && w < 1.0f) && (0.0f < u && u < 1.0f));
 }
