@@ -204,6 +204,10 @@ project "Sail"
 		defines { "NDEBUG" }
 		optimize "On"
 
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		optimize "On"
+
 project "Physics"
 	location "Physics"
 	kind "StaticLib"
@@ -265,4 +269,8 @@ project "Physics"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
+		optimize "On"
+
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST" }
 		optimize "On"

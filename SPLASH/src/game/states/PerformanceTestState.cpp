@@ -15,14 +15,18 @@
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
-#include "Sail/entities/systems/input/GameInputSystem.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/physics/MovementSystem.h"
+#include "Sail/entities/systems/physics/MovementPostCollisionSystem.h"
+#include "Sail/entities/systems/physics/CollisionSystem.h"
+#include "Sail/entities/systems/physics/SpeedLimitSystem.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
+
 
 #include <sstream>
 #include <iomanip>
@@ -38,14 +42,43 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	, m_profiler(true)
 	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
-
 #ifdef _DEBUG
-	Logger::Error("Seriously? Don't try to run this in debug... Lel");
+#pragma region TESTCASES
+	m_cc.addCommand(std::string("Save"), [&] () { return std::string("saved"); });
+	m_cc.addCommand(std::string("Test <int>"), [&] (int in) { return std::string("test<int>"); });
+	m_cc.addCommand(std::string("Test <float>"), [&] (float in) { return std::string("test<float>"); });
+	m_cc.addCommand(std::string("Test <string>"), [&] (std::string in) { return std::string("test<string>"); });
+	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&] (std::vector<int> in) {return std::string("test<std::vector<int>"); });
+	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&] (std::vector<float> in) {return std::string("test<std::vector<float>"); });
+#pragma endregion
+
+
+	m_cc.addCommand(std::string("AddCube"), [&] () {
+		return createCube(m_cam.getPosition());
+					});
+	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&] (std::vector<int> in) {
+		if ( in.size() == 3 ) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		} else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+					});
+	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&] (std::vector<float> in) {
+		if ( in.size() == 3 ) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		} else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+					});
 #endif
 
 	// Get the Application instance
 	m_app = Application::getInstance();
-	m_isSingleplayer = true;
+	m_isSingleplayer = m_app->getStateStorage().getLobbyToGameData()->playerList.size() == 1;
 
 	//----Octree creation----
 	//Wireframe shader
@@ -62,14 +95,15 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	// Setting light index
 	m_currLightIndex = 0;
 
-	/*
-		Create a PhysicSystem
-		If the game developer does not want to add the systems like this,
-		this call could be moved inside the default constructor of ECS,
-		assuming each system is included in ECS.cpp instead of here
-	*/
-	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
-	m_componentSystems.physicSystem->provideOctree(m_octree);
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+
+	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
+	m_componentSystems.collisionSystem->provideOctree(m_octree);
+
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+
+	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
+
 
 	// Create system for animations
 	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
@@ -108,14 +142,18 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	// Create system which checks projectile collisions
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
-	// Create system for handling and updating sounds
-	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 	//create system for level generation
 	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
 
 	// Create system for rendering
 	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
 
+
+	// Get the player id's and names from the lobby
+	const unsigned char playerID = m_app->getStateStorage().getLobbyToGameData()->myPlayer.id;
+
+	// Create system for handling and updating sounds
+	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
 
 	// Textures needs to be loaded before they can be used
@@ -172,11 +210,12 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 	initAnimations();
-
+	// Level Creation
 	createLevel(shader, boundingBoxModel);
 
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
+
 
 #ifdef _DEBUG
 	// Candle1 holds all lights you can place in debug...
@@ -207,7 +246,9 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
 
-	setupScene();
+	m_camController.setCameraPosition(glm::vec3(105.543f, 2.48814f, 99.5343f));
+	//m_cam.setDirection(glm::normalize(glm::vec3(-0.769527f, -0.202786f, 0.605563f)));
+	m_camController.setDirection(glm::normalize(glm::vec3(-0.769527f, -0.202786f, 0.605563f)));
 }
 
 PerformanceTestState::~PerformanceTestState() {
@@ -267,27 +308,27 @@ bool PerformanceTestState::processInput(float dt) {
 
 	// TODO: Move this to a system
 	// Toggle ai following the player
-	//if ( Input::WasKeyJustPressed(KeyBinds::toggleAIFollowing) ) {
-	//	auto entities = m_componentSystems.aiSystem->getEntities();
-	//	for ( int i = 0; i < entities.size(); i++ ) {
-	//		auto aiComp = entities[i]->getComponent<AiComponent>();
-	//		if ( aiComp->entityTarget == nullptr ) {
+	if ( Input::WasKeyJustPressed(KeyBinds::toggleAIFollowing) ) {
+		/*auto entities = m_componentSystems.aiSystem->getEntities();
+		for ( int i = 0; i < entities.size(); i++ ) {
+			auto aiComp = entities[i]->getComponent<AiComponent>();
+			if ( aiComp->entityTarget == nullptr ) {
 
-	//			// Find the candle child entity of player
-	//			Entity* candle = nullptr;
-	//			std::vector<Entity::SPtr> children = m_player->getChildEntities();
-	//			for ( auto& child : children ) {
-	//				if ( child->hasComponent<CandleComponent>() ) {
-	//					candle = child.get();
-	//					break;
-	//				}
-	//			}
-	//			aiComp->setTarget(candle);
-	//		} else {
-	//			aiComp->setTarget(nullptr);
-	//		}
-	//	}
-	//}
+				// Find the candle child entity of player
+				Entity* candle = nullptr;
+				std::vector<Entity::SPtr> children = m_player->getChildEntities();
+				for ( auto& child : children ) {
+					if ( child->hasComponent<CandleComponent>() ) {
+						candle = child.get();
+						break;
+					}
+				}
+				aiComp->setTarget(candle);
+			} else {
+				aiComp->setTarget(nullptr);
+			}
+		}*/
+	}
 
 	// Set directional light if using forward rendering
 	if ( Input::IsKeyPressed(KeyBinds::setDirectionalLight) ) {
@@ -321,14 +362,28 @@ bool PerformanceTestState::processInput(float dt) {
 
 	}
 
+	if ( Input::WasKeyJustPressed(KeyBinds::toggleSphere) ) {
+		/*static bool attach = false;
+		attach = !attach;
+		if ( attach ) {
+			CollisionSpheresComponent* csc = m_player->addComponent<CollisionSpheresComponent>();
+			csc->spheres[0].radius = 0.4f;
+			csc->spheres[1].radius = csc->spheres[0].radius;
+			csc->spheres[0].position = m_player->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 1, 0) * ( -0.9f + csc->spheres[0].radius );
+			csc->spheres[1].position = m_player->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 1, 0) * ( 0.9f - csc->spheres[1].radius );
+		} else {
+			m_player->removeComponent<CollisionSpheresComponent>();
+		}*/
+	}
+
+	m_camController.update(dt);
+
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if ( Input::WasKeyJustPressed(KeyBinds::removeOldestLight) ) {
 		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
 	}
 #endif
-
-	m_camController.update(dt);
 
 	return true;
 }
@@ -343,7 +398,6 @@ bool PerformanceTestState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
-
 
 bool PerformanceTestState::update(float dt, float alpha) {
 	// UPDATE REAL TIME SYSTEMS
@@ -389,12 +443,15 @@ bool PerformanceTestState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
+	renderImGuiGameValues(dt);
 
 	return false;
 }
 
 bool PerformanceTestState::prepareStateChange() {
 	if ( m_poppedThisFrame ) {
+		// Reset network
+		//NWrapperSingleton::getInstance().resetNetwork();
 	}
 	return true;
 }
@@ -638,12 +695,27 @@ bool PerformanceTestState::renderImGuiLightDebug(float dt) {
 	return true;
 }
 
+bool PerformanceTestState::renderImGuiGameValues(float dt) {
+	ImGui::Begin("Game Values");
+	std::string header;
+
+	header = "Player position: " + Utils::toStr(m_camController.getCameraPosition());
+	ImGui::Text(header.c_str());
+
+	header = "Player dir: " + Utils::toStr(m_camController.getCameraDirection());
+	ImGui::Text(header.c_str());
+
+	ImGui::End();
+	return true;
+}
+
 void PerformanceTestState::shutDownPerformanceTestState() {
 
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
-	// Clear all entities
+	ECS::Instance()->stopAllSystems();
+
 	ECS::Instance()->destroyAllEntities();
 }
 
@@ -655,15 +727,20 @@ void PerformanceTestState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
-	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
+	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 
-	m_componentSystems.physicSystem->update(dt);
+	m_componentSystems.movementSystem->update(dt);
+	m_componentSystems.speedLimitSystem->update(0.0f);
+	m_componentSystems.collisionSystem->update(dt);
+	m_componentSystems.movementPostCollisionSystem->update(0.0f);
+
 
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
 	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
 
-	runSystem(dt, m_componentSystems.gunSystem);
+	// TODO: Investigate this
+	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
@@ -671,7 +748,6 @@ void PerformanceTestState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
-	runSystem(dt, m_componentSystems.audioSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for ( auto& fut : m_runningSystemJobs ) {
@@ -695,7 +771,7 @@ void PerformanceTestState::updatePerFrameComponentSystems(float dt, float alpha)
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	m_componentSystems.animationSystem->updatePerFrame(dt);
-	m_componentSystems.audioSystem->update(dt);
+	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 }
 
 void PerformanceTestState::runSystem(float dt, BaseComponentSystem* toRun) {
@@ -843,11 +919,7 @@ void PerformanceTestState::initAnimations() {
 		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
 		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
 	}
-
-
 #endif
-
-	m_componentSystems.animationSystem->update(0.f);
 }
 
 void PerformanceTestState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
@@ -863,14 +935,29 @@ void PerformanceTestState::createBots(Model* boundingBoxModel, Model* characterM
 		e->addComponent<TransformComponent>(glm::vec3(2.f * ( i + 1 ), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
+		e->addComponent<MovementComponent>();
+		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>();
 		e->addComponent<AiComponent>();
-		auto fsmComp = e->addComponent<FSMComponent>();
-		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<PhysicsComponent>()->maxSpeed = 3.f;
+
+		e->addComponent<AudioComponent>();
+
+		Audio::SoundInfo sound {};
+		sound.fileName = "../Audio/guitar.wav";
+		sound.soundEffectLength = 104.0f;
+		sound.volume = 1.0f;
+		sound.playOnce = false;
+		sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		sound.isPlaying = true; // Start playing the sound immediately
+
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
+
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<SpeedLimitComponent>()->maxSpeed = 6.f / 2.f;
 		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
 		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
 		e->addChildEntity(aiCandleEntity);
+		auto fsmComp = e->addComponent<FSMComponent>();
 
 		// Create states and transitions
 		{
@@ -931,8 +1018,4 @@ void PerformanceTestState::createLevel(Shader* shader, Model* boundingBoxModel) 
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat, tileCross, tileCorner, tileStraight, tileT, tileEnd, boundingBoxModel);
 
-}
-
-void PerformanceTestState::setupScene() {
-	m_camController.setCameraPosition(glm::vec3(40.f, 5.f, 40.f));
 }
