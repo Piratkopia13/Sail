@@ -1024,7 +1024,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f + spawnOffset, 0.9f, 10.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f + spawnOffset, 0.9f, 40.f));
 }
 
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
@@ -1231,19 +1231,36 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
+
+
+
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
 	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
 	tileCross->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
 	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
 	tileStraight->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
 	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
 	tileCorner->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
 	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
 	tileT->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
 	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
 	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	
+	
+	//std::vector<Model*> tileModels;
+	//tileModels.push_back(tileFlat);
+	//tileModels.push_back(tileCross);
+	//tileModels.push_back(tileStraight);
+	//tileModels.push_back(tileCorner);
+	//tileModels.push_back(tileT);
+	//tileModels.push_back(tileEnd);
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
