@@ -42,38 +42,9 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	, m_profiler(true)
 	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
-#ifdef _DEBUG
-#pragma region TESTCASES
-	m_cc.addCommand(std::string("Save"), [&] () { return std::string("saved"); });
-	m_cc.addCommand(std::string("Test <int>"), [&] (int in) { return std::string("test<int>"); });
-	m_cc.addCommand(std::string("Test <float>"), [&] (float in) { return std::string("test<float>"); });
-	m_cc.addCommand(std::string("Test <string>"), [&] (std::string in) { return std::string("test<string>"); });
-	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&] (std::vector<int> in) {return std::string("test<std::vector<int>"); });
-	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&] (std::vector<float> in) {return std::string("test<std::vector<float>"); });
-#pragma endregion
 
-
-	m_cc.addCommand(std::string("AddCube"), [&] () {
-		return createCube(m_cam.getPosition());
-					});
-	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&] (std::vector<int> in) {
-		if ( in.size() == 3 ) {
-			glm::vec3 pos(in[0], in[1], in[2]);
-			return createCube(pos);
-		} else {
-			return std::string("Error: wrong number of inputs. Console Broken");
-		}
-		return std::string("wat");
-					});
-	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&] (std::vector<float> in) {
-		if ( in.size() == 3 ) {
-			glm::vec3 pos(in[0], in[1], in[2]);
-			return createCube(pos);
-		} else {
-			return std::string("Error: wrong number of inputs. Console Broken");
-		}
-		return std::string("wat");
-					});
+#ifndef _PERFORMANCE_TEST
+	Logger::Error("Don't run this state in any other configuration than PerformanceTest");
 #endif
 
 	// Get the Application instance
@@ -209,18 +180,16 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
 	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
-	initAnimations();
+	//initAnimations();
 	// Level Creation
 	createLevel(shader, boundingBoxModel);
 
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 
+	// Populate the performance test scene
+	populateScene(characterModel, lightModel, boundingBoxModel, cubeModel, shader);
 
-#ifdef _DEBUG
-	// Candle1 holds all lights you can place in debug...
-	m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
-#endif
 
 
 
@@ -240,11 +209,7 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	}
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
-#ifdef _DEBUG_NODESYSTEM
-	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader);
-#else
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
-#endif
 
 	m_camController.setCameraPosition(glm::vec3(105.543f, 2.48814f, 99.5343f));
 	//m_cam.setDirection(glm::normalize(glm::vec3(-0.769527f, -0.202786f, 0.605563f)));
@@ -266,16 +231,18 @@ PerformanceTestState::~PerformanceTestState() {
 // NOTE: Done every frame
 bool PerformanceTestState::processInput(float dt) {
 
-#ifdef _DEBUG
-	// Add point light at camera pos
-	if ( Input::WasKeyJustPressed(KeyBinds::addLight) ) {
-		m_componentSystems.lightSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
+
+	if ( Input::IsKeyPressed(KeyBinds::toggleSun) ) {
+		for ( auto e : m_performanceEntities ) {
+			auto pos = e->getComponent<TransformComponent>()->getTranslation();
+			pos.y = pos.y + 2.f;
+			e->getComponent<GunComponent>()->setFiring(pos, glm::normalize(m_camController.getCameraPosition() - pos));
+		}
 	}
 
-#endif
 
 	// Enable bright light and move camera to above procedural generated level
-	if ( Input::WasKeyJustPressed(KeyBinds::toggleSun) ) {
+	/*if ( Input::WasKeyJustPressed(KeyBinds::toggleSun) ) {
 		m_disableLightComponents = !m_disableLightComponents;
 		m_showcaseProcGen = m_disableLightComponents;
 		if ( m_showcaseProcGen ) {
@@ -284,7 +251,7 @@ bool PerformanceTestState::processInput(float dt) {
 		} else {
 			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
 		}
-	}
+	}*/
 
 	// Show boudning boxes
 	if ( Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes) ) {
@@ -378,12 +345,6 @@ bool PerformanceTestState::processInput(float dt) {
 
 	m_camController.update(dt);
 
-#ifdef _DEBUG
-	// Removes first added pointlight in arena
-	if ( Input::WasKeyJustPressed(KeyBinds::removeOldestLight) ) {
-		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
-	}
-#endif
 
 	return true;
 }
@@ -843,11 +804,6 @@ void PerformanceTestState::loadAnimations() {
 	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-#ifndef _DEBUG
-	//m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	//m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-#endif
 
 
 
@@ -867,59 +823,57 @@ void PerformanceTestState::initAnimations() {
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
 
-	/*
+}
 
-		auto animationEntity1 = ECS::Instance()->createEntity("animatedModel1");
-		animationEntity1->addComponent<TransformComponent>();
-		animationEntity1->getComponent<TransformComponent>()->translate(0, 0, 5);
-		animationEntity1->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-		animationEntity1->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/ScuffedSteve_2.fbx", shader));
-		animationEntity1->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity1->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/ScuffedSteve_2.fbx"));
-		animationEntity1->getComponent<AnimationComponent>()->currentAnimation = animationEntity1->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+void PerformanceTestState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
+	/* 12 characters that are constantly shooting their guns */
+	for ( int i = 0; i < 12; i++ ) {
+		float spawnOffsetX = -24.f + float(i) * 2.f;
+		float spawnOffsetZ = float(i) * 1.3f;
+		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		auto animationEntity22 = ECS::Instance()->createEntity("animatedModel22");
-		animationEntity22->addComponent<TransformComponent>();
-		animationEntity22->getComponent<TransformComponent>()->translate(-4, 0, 0);
-		animationEntity22->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-		animationEntity22->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx", shader));
-		animationEntity22->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity22->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-		animationEntity22->getComponent<AnimationComponent>()->currentAnimation = animationEntity22->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+		Model* characterModel = &m_app->getResourceManager().getModelCopy("walkTri.fbx", shader);
+		characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+		characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
+		characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
+		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+		characterModel->setIsAnimated(true);
 
-		auto animationEntity3 = ECS::Instance()->createEntity("animatedModel3");
-		animationEntity3->addComponent<TransformComponent>();
-		animationEntity3->getComponent<TransformComponent>()->translate(3, 4, 2);
-		animationEntity3->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-		animationEntity3->getComponent<TransformComponent>()->scale(0.005f);
-		animationEntity3->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/BaseMesh_Anim.fbx", shader));
-		animationEntity3->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity3->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/BaseMesh_Anim.fbx"));
-		animationEntity3->getComponent<AnimationComponent>()->currentAnimation = animationEntity3->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);*/
-#ifndef _DEBUG
-		//auto animationEntity4 = ECS::Instance()->createEntity("animatedModel4");
-		//animationEntity4->addComponent<TransformComponent>();
-		//animationEntity4->getComponent<TransformComponent>()->translate(-1,2,-3);
-		//animationEntity4->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-		//animationEntity4->getComponent<TransformComponent>()->scale(0.005f);
-		//animationEntity4->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT.fbx", shader));
-		//animationEntity4->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		//animationEntity4->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
-		//animationEntity4->getComponent<AnimationComponent>()->currentAnimation = animationEntity4->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+		e->addComponent<ModelComponent>(characterModel);
+		auto animStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
+		auto animComp = e->addComponent<AnimationComponent>(animStack);
+		animComp->currentAnimation = animStack->getAnimation(0);
+		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
+		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+		e->addComponent<CollidableComponent>();
+		e->addComponent<MovementComponent>();
+		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>();
+		e->addComponent<GunComponent>(projectileModel, bbModel);
 
-	unsigned int count = m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx").getAnimationCount();
-	for ( int i = 0; i < count; i++ ) {
-		auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5-" + std::to_string(i));
-		animationEntity5->addComponent<TransformComponent>();
-		animationEntity5->getComponent<TransformComponent>()->translate(0, 0, 3 + i * 2);
-		animationEntity5->getComponent<TransformComponent>()->translate(110.f, 100.f, 90.f);
-		animationEntity5->getComponent<TransformComponent>()->scale(0.005f);
-		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/DEBUG_BALLBOT.fbx", shader));
-		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
-		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
+		/* Audio */
+		e->addComponent<AudioComponent>();
+		Audio::SoundInfo sound {};
+		sound.fileName = "../Audio/guitar.wav";
+		sound.soundEffectLength = 104.0f;
+		sound.volume = 1.0f;
+		sound.playOnce = false;
+		sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		sound.isPlaying = true; // Start playing the sound immediately
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
+
+		// Add candle
+		auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
+		candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
+		e->addChildEntity(candleEntity);
+
+		/* Movement */
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<SpeedLimitComponent>()->maxSpeed = 6.f;
+
+		m_performanceEntities.push_back(e);
 	}
-#endif
 }
 
 void PerformanceTestState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {

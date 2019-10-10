@@ -63,6 +63,8 @@ private:
 	void loadAnimations();
 	void initAnimations();
 
+	void populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
+
 private:
 	struct Systems {
 		AiSystem* aiSystem = nullptr;
@@ -98,6 +100,8 @@ private:
 	LightSetup m_lights;
 	ConsoleCommands m_cc;
 	Profiler m_profiler;
+
+	std::vector<Entity::SPtr> m_performanceEntities;
 
 	size_t m_currLightIndex;
 
