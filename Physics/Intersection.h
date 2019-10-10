@@ -10,6 +10,7 @@ class Intersection {
 public:
 	static bool AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2);
 	static bool AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
+	static bool AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth);
 	static bool AabbWithPlane(const BoundingBox& aabb, const glm::vec3& normal, const float& distance);
 	static bool AabbWithSphere(BoundingBox& aabb, const Sphere& sphere);
 	static bool AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl);

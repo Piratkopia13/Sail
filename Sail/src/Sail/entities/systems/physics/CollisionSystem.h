@@ -17,7 +17,6 @@ private:
 	const bool collisionUpdate(Entity* e, const float& dt);
 	const bool handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt);
 	void surfaceFromCollision(Entity* e);
-	float findIntersectionDepth(Entity* e, const Octree::CollisionInfo& collision, glm::vec3* intersectionAxis = nullptr, float* intersectionDepth = nullptr);
 
 private:
 	Octree* m_octree;

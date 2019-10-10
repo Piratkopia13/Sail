@@ -77,6 +77,80 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 	return true;
 }
 
+bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth) {
+	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
+	
+	float depth = INFINITY;
+	glm::vec3 axis;
+
+	glm::vec3 center = aabb.getPosition();
+	//Calculate normal for triangle
+	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+
+	// Calculate triangle points relative to the AABB
+	glm::vec3 newV1 = v1 - center;
+	glm::vec3 newV2 = v2 - center;
+	glm::vec3 newV3 = v3 - center;
+
+	//Don't intersect with triangles faceing away from the boundingBox
+	if (glm::dot(newV1, triNormal) > 0.0f) {
+		return false;
+	}
+
+	// Calculate the plane that the triangle is on
+	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - v1;
+	float distance = -glm::dot(triangleToWorldOrigo, triNormal);
+
+	// Test the AABB against the plane that the triangle is on
+	if (Intersection::AabbWithPlane(aabb, triNormal, distance)) {
+		// Testing AABB with triangle using separating axis theorem(SAT)
+		glm::vec3 e[3];
+		e[0] = glm::vec3(1.f, 0.f, 0.f);
+		e[1] = glm::vec3(0.f, 1.f, 0.f);
+		e[2] = glm::vec3(0.f, 0.f, 1.f);
+
+		glm::vec3 f[3];
+		f[0] = glm::normalize(newV2 - newV1);
+		f[1] = glm::normalize(newV3 - newV2);
+		f[2] = glm::normalize(newV1 - newV3);
+
+		glm::vec3 aabbSize = aabb.getHalfSize();
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				glm::vec3 a = glm::normalize(glm::cross(e[i], f[j]));
+				glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
+				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
+				if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z)) < -r) {
+					return false;
+				}
+				else {
+					//Save depth along axis
+					float tempDepth = min(r - min(p.x, min(p.y, p.z)), max(p.x, max(p.y, p.z)) + r);
+					if (tempDepth < depth) {
+						depth = tempDepth;
+						axis = a;
+					}
+				}
+			}
+		}
+	}
+	else {
+		return false;
+	}
+
+
+	//Return intersection axis and depth if not nullptr
+	if (intersectionAxis) {
+		*intersectionAxis = axis;
+	}
+
+	if (intersectionDepth) {
+		*intersectionDepth = depth;
+	}
+
+	return true;
+}
+
 bool Intersection::AabbWithPlane(const BoundingBox& aabb, const glm::vec3& normal, const float& distance) {
 	//Actually creates a sphere from the aabb half size and tests sphere with plane
 	float radius = glm::length(aabb.getHalfSize());
