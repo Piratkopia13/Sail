@@ -75,6 +75,7 @@ void NetworkReceiverSystem::update(float dt) {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunDirection;
+	
 
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
@@ -113,6 +114,7 @@ void NetworkReceiverSystem::update(float dt) {
 				{
 					Archive::loadVec3(ar, translation); // Read translation
 					setEntityTranslation(id, translation);
+
 				}
 				break;
 				case MessageType::ROTATION_TRANSFORM:
@@ -123,12 +125,16 @@ void NetworkReceiverSystem::update(float dt) {
 				break;
 				case MessageType::SPAWN_PROJECTILE:
 				{
-					// Read data
 					Archive::loadVec3(ar, gunPosition);
 					Archive::loadVec3(ar, gunDirection);
 
 					// Use data
-					GunFactory::createWaterBullet(gunPosition, gunDirection, 10.0f, 0);					
+					GunFactory::createWaterBullet(
+						gunPosition,
+						gunDirection,
+						10.0f, 0, 
+						false
+					);					
 				}
 				break;
 				case MessageType::PLAYER_JUMPED:
@@ -138,7 +144,8 @@ void NetworkReceiverSystem::update(float dt) {
 				break;
 				case MessageType::WATER_HIT_PLAYER:
 				{
-
+					// ID For projectiles is the player they hit!
+					waterHitPlayer(id);
 				}
 				break;
 				case Netcode::MessageType::PLAYER_DIED:
@@ -262,6 +269,16 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+		}
+	}
+}
+
+void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {	
+			// Hit player with water
+			std::cout << id << " was hit by a player!\n";
+			e->getComponent<CandleComponent>()->hitWithWater(10.0f);
 		}
 	}
 }

@@ -59,7 +59,7 @@ void NetworkSenderSystem::update(float dt) {
 	// Per entity with sender component
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
-		ar(nsc->m_id);										// Entity.Id
+		ar(nsc->m_id);										// NetworkObjectID
 		ar(nsc->m_entityType);								// Entity type
 		ar(static_cast<__int32>(nsc->m_dataTypes.size()));	// NrOfMessages
 
@@ -93,13 +93,19 @@ void NetworkSenderSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
+				// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
 				TransformComponent* t = e->getComponent<TransformComponent>();
 				MovementComponent* m = e->getComponent<MovementComponent>();
 				Archive::archiveVec3(ar, t->getTranslation());
 				Archive::archiveVec3(ar, glm::normalize(m->velocity));	// Normalize since direction is expected, not velocity
 
-				// Only iterate through this once per entity.
-				e->removeComponent<NetworkSenderComponent>();
+				// Remove data type from it
+				e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::SPAWN_PROJECTILE);
+
+				// If It is empty, and has fulfilled its purpose...
+				if (e->getComponent<NetworkSenderComponent>()->m_dataTypes.size() == 0) {
+					e->removeComponent<NetworkSenderComponent>();
+				}
 			}
 			break;
 			case Netcode::MessageType::PLAYER_JUMPED:
@@ -113,7 +119,20 @@ void NetworkSenderSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
 			{
+				// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
+				std::cout << nsc->m_id << " was hit by me!\n";
 
+				// Who was hit? It was not nsc->m_id, but rather...
+				// 'e' is the projectileEntity.
+			
+				// Remove data type from it
+				NetworkSenderComponent* n = e->getComponent<NetworkSenderComponent>();
+				n->removeDataType(Netcode::MessageType::WATER_HIT_PLAYER);
+
+				// If It is empty, and has fulfilled its purpose...
+				if (n->m_dataTypes.size() == 0) {
+					e->removeComponent<NetworkSenderComponent>();
+				}
 			}
 			break;
 			case Netcode::MessageType::PLAYER_DIED:

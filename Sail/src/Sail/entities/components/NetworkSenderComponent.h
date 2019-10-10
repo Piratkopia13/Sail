@@ -22,7 +22,9 @@ public:
 	  This function should only be used by the host to create pass-through sender components.
 	*/
 	NetworkSenderComponent(Netcode::MessageType dataType, Netcode::EntityType entityType, Netcode::NetworkObjectID objectID) :
-		m_id(objectID), m_dataType(dataType), m_entityType(entityType) {}
+		m_id(objectID), m_dataType(dataType), m_entityType(entityType) {
+		m_dataTypes.clear();
+	}
 
 	~NetworkSenderComponent() {}
 
@@ -36,6 +38,17 @@ public:
 				m_dataTypes.erase(m_dataTypes.begin() + i);
 			}
 		}
+
+		// Then, if size is 0, queue a deletion of this component.
+		
+	}
+	bool getDataTypeExists(Netcode::MessageType type_) {
+		for (auto& type : m_dataTypes)	{
+			if (type == type_) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	Netcode::NetworkObjectID m_id;

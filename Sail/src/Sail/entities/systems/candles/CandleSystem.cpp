@@ -49,11 +49,6 @@ void CandleSystem::update(float dt) {
 			if ( candle->wasHitByWater() ) {
 				candle->resetHitByWater();
 
-				// If 
-				if (candle->getOwner() == m_playerEntityID) {
-
-				}
-
 				if ( candle->getInvincibleTimer() <= 0.f ) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
@@ -62,6 +57,7 @@ void CandleSystem::update(float dt) {
 						candle->setIsLit(false);
 
 						if ( candle->getOwner() == m_playerEntityID ) {
+							std::cout << "I was damaged, ouch!\n";
 							if ( !candle->isCarried() ) {
 								candle->toggleCarried();
 							}

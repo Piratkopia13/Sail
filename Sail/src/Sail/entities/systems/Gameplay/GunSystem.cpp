@@ -47,7 +47,13 @@ void GunSystem::update(float dt) {
 
 					for (int i = 0; i <= 1; i++) {
 						// Create entity and attach necessary components etc
-						Entity* e = GunFactory::createWaterBullet(gun->position, gun->direction, gun->projectileSpeed, i);
+						Entity* e = GunFactory::createWaterBullet(
+							gun->position,
+							gun->direction,
+							gun->projectileSpeed,
+							i,
+							true
+						);
 
 						// Let network know that a projectile was spawned.
 						unsigned char id = e->getID();
@@ -77,7 +83,7 @@ void GunSystem::update(float dt) {
 
 }
 
-Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, float projSpeed, int i) {
+Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, float projSpeed, int i, bool ownedLocally) {
 	auto e = ECS::Instance()->createEntity("projectile");
 	
 	glm::vec3 randPos;
@@ -88,11 +94,12 @@ Entity* GunFactory::createWaterBullet(glm::vec3 pos, glm::vec3 dir, float projSp
 	randPos.g = ((float)rand() / RAND_MAX) * maxrand;
 	randPos.b = ((float)rand() / RAND_MAX) * maxrand;
 
+
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>();
 	e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
 	e->addComponent<LifeTimeComponent>(4.0f);
-	e->addComponent<ProjectileComponent>(10.0f);
+	e->addComponent<ProjectileComponent>(10.0f, ownedLocally);
 	e->addComponent<TransformComponent>((pos + randPos) - dir * (0.15f * i));
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();
