@@ -150,7 +150,6 @@ void LobbyState::renderPlayerList() {
 	));
 	ImGui::Begin("players in lobby:", NULL, flags);
 
-	//for (auto currentplayer : m_players) {
 	unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
 	for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {
 		std::string temp;
