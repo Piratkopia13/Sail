@@ -13,7 +13,7 @@
 #include "Sail/entities/systems/render/RenderSystem.h"
 #include <string>
 
-#define MAX_NAME_LENGTH 100
+
 
 MenuState::MenuState(StateStack& stack) 
 	: State(stack)
@@ -23,14 +23,12 @@ MenuState::MenuState(StateStack& stack)
 	m_app = Application::getInstance();
 
 	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
-	//this->inputName = SAIL_NEW char[100]{ "Hans" };
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 }
 
 MenuState::~MenuState() {
 	delete[] this->inputIP;
-	//delete[] this->inputName;
 	delete[] m_ipBuffer;
 }
 
@@ -69,12 +67,7 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::End();
 
 	ImGui::Begin("Name:");
-	//char* name = SAIL_NEW char[MAX_NAME_LENGTH];
-	//std::string name = NWrapperSingleton::getInstance().getPlayerName();
-	ImGui::InputText("", &NWrapperSingleton::getInstance().getMyPlayerName().front(), 100);
-	//m_app->getStateStorage().setMenuToLobbyData(MenuToLobbyData{ inputName });
-	//NWrapperSingleton::getInstance().setPlayerName(name);
-	//delete[] name;
+	ImGui::InputText("", &NWrapperSingleton::getInstance().getMyPlayerName().front(), MAX_NAME_LENGTH);
 	ImGui::End();
 
 	// 

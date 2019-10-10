@@ -82,7 +82,6 @@ GameState::GameState(StateStack& stack)
 
 	// Get the Application instance
 	m_app = Application::getInstance();
-	//m_isSingleplayer = m_app->getStateStorage().getLobbyToGameData()->playerList.size() == 1;
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
 	//----Octree creation----
@@ -159,7 +158,6 @@ GameState::GameState(StateStack& stack)
 
 
 	// Get the player id's and names from the lobby
-	//const unsigned char playerID = m_app->getStateStorage().getLobbyToGameData()->myPlayer.id;
 	const unsigned char playerID = NWrapperSingleton::getInstance().getMyPlayerID();
 
 	// Create network send and receive systems

@@ -36,7 +36,6 @@ private:
 	Application* m_app = nullptr;
 	// For ImGui Input
 	char* inputIP = nullptr;
-	//char* inputName = nullptr; // Moved to NWRapperSingleton.h
 
 	// Other lobbies
 	bool onLanHostFound(NetworkLanHostFoundEvent& event);
@@ -44,8 +43,6 @@ private:
 	void removeDeadLobbies();		// Only works with sorted lobbies
 	const int m_ipBufferSize = 64;
 	char* m_ipBuffer;
-	/*bool m_lobbiesChanged = false;
-	int m_lobbiesFoundThisFrame = 0;*/
 	int m_sleepTime;
 
 	bool m_refreshing = true;

@@ -5,6 +5,9 @@
 #include "Sail.h"
 #include <string>
 
+#define MAX_NAME_LENGTH 100
+
+
 class Network;
 
 // Move elsewhere?
@@ -15,8 +18,7 @@ struct Player {
 	Player(unsigned char setID = 255, std::string setName = "Hans")
 		: name(setName), id(setID)
 	{
-		std::string test = std::string("test", 100);
-		name.reserve(100);
+		name.reserve(MAX_NAME_LENGTH);
 	}
 
 	bool friend operator==(const Player& left, const Player& right) {
