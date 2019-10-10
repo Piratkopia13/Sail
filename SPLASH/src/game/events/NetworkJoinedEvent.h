@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../../../../Sail/src/Sail/events/Event.h"
-#include "../states/LobbyState.h"
+//#include "../states/LobbyState.h"
+#include "Sail/../Network/NWrapperSingleton.h"
 
 class NetworkJoinedEvent : public Event {
 public:

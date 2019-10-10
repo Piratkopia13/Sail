@@ -36,7 +36,7 @@ private:
 	Application* m_app = nullptr;
 	// For ImGui Input
 	char* inputIP = nullptr;
-	char* inputName = nullptr;
+	//char* inputName = nullptr; // Moved to NWRapperSingleton.h
 
 	// Other lobbies
 	bool onLanHostFound(NetworkLanHostFoundEvent& event);

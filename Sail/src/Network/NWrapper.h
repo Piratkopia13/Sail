@@ -7,6 +7,28 @@
 
 class Network;
 
+// Move elsewhere?
+struct Player {
+	unsigned char id;
+	std::string name;
+
+	Player(unsigned char setID = 255, std::string setName = "Hans")
+		: name(setName), id(setID)
+	{
+		std::string test = std::string("test", 100);
+		name.reserve(100);
+	}
+
+	bool friend operator==(const Player& left, const Player& right) {
+		if (left.id == right.id &&
+			left.name == right.name) {
+			return true;
+		}
+		return false;
+	}
+};
+
+
 class NWrapper : public NetworkEventHandler {
 public:
 	NWrapper(Network* pNetwork);
