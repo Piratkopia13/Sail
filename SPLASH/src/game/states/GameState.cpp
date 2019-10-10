@@ -1058,9 +1058,9 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	player->addChildEntity(e);
 
 	// Set up camera
-	m_cam.setPosition(glm::vec3(1.6f+spawnOffset, 1.8f, 10.f));
+	m_cam.setPosition(glm::vec3(1.6f + spawnOffset, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f + spawnOffset, 0.9f, 40.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f + spawnOffset, 0.9f, 10.f));
 }
 
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {

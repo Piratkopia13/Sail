@@ -1274,7 +1274,7 @@ void LevelGeneratorSystem::addDoors() {
 					}
 					else if (door.sizey == Direction::RIGHT) {
 						map->tileArr[door.posx][door.posy][2] += Direction::RIGHT;
-						map->tileArr[door.posx+1][door.posy][2] += Direction::DOWN;
+						map->tileArr[door.posx+1][door.posy][2] += Direction::LEFT;
 						currentTile.hasDoor += Direction::RIGHT;
 					}
 					else if (door.sizey == Direction::DOWN) {
