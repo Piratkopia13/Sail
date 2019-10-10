@@ -87,6 +87,17 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 		//Get the combined normals
 		glm::vec3 sumVec(0.0f);
 		for (size_t i = 0; i < collisionCount; i++) {
+
+			//----DO STUFF WITH THIS TOMORROW----
+			float depth;
+			glm::vec3 axis;
+
+			if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &axis, &depth)) {
+				//Compare normal and axis, only do collisions if same direction
+			}
+			//-----------------------------------
+
+
 			sumVec += collisions[i].normal;
 
 			//Add collision to current collisions
