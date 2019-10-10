@@ -666,6 +666,15 @@ bool PerformanceTestState::renderImGuiGameValues(float dt) {
 	header = "Player dir: " + Utils::toStr(m_camController.getCameraDirection());
 	ImGui::Text(header.c_str());
 
+	ImGui::Separator();
+	//Collapsing headers for graphs over time
+	if ( ImGui::CollapsingHeader("Systems Info") ) {
+		if ( ImGui::CollapsingHeader("Projectile System") ) {
+			header = "Num entities: " + std::to_string(m_componentSystems.projectileSystem->getNumEntities());
+			ImGui::Text(header.c_str());
+		}
+	}
+
 	ImGui::End();
 	return true;
 }
