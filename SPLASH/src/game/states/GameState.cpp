@@ -1017,7 +1017,6 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 
 
 
-
 	// Add physics components and setting initial variables
 	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;

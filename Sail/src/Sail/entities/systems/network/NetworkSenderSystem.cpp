@@ -64,7 +64,7 @@ void NetworkSenderSystem::update(float dt) {
 		ar(static_cast<__int32>(nsc->m_dataTypes.size()));	// NrOfMessages
 
 		// Per type of data
-		for (auto& messageType : nsc->m_dataTypes)	{
+		for (auto& messageType : nsc->m_dataTypes) {
 			ar(messageType);										// Current MessageType
 
 			// Package it depending on the type
@@ -96,13 +96,29 @@ void NetworkSenderSystem::update(float dt) {
 				TransformComponent* t = e->getComponent<TransformComponent>();
 				MovementComponent* m = e->getComponent<MovementComponent>();
 				Archive::archiveVec3(ar, t->getTranslation());
-				Archive::archiveVec3(ar, glm::normalize(m->velocity));
-				// Debug
-				glm::vec3 pos = t->getTranslation();
-				std::cout << pos.x << " " << pos.y << " " << pos.z << "\n";
-				
+				Archive::archiveVec3(ar, glm::normalize(m->velocity));	// Normalize since direction is expected, not velocity
+
 				// Only iterate through this once per entity.
 				e->removeComponent<NetworkSenderComponent>();
+			}
+			break;
+			case Netcode::MessageType::PLAYER_JUMPED:
+			{
+				// Send ENUM for 'player jumped' the ID for the entity is already appended earlier
+				// ar(Netcode::MessageType::PLAYER_JUMPED); Even necessary?
+
+				// Remove the component for this behavior once executed, as it is not per tick.
+				e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::PLAYER_JUMPED);
+			}
+			break;
+			case Netcode::MessageType::WATER_HIT_PLAYER:
+			{
+
+			}
+			break;
+			case Netcode::MessageType::PLAYER_DIED:
+			{
+
 			}
 			break;
 			default:
@@ -116,43 +132,8 @@ void NetworkSenderSystem::update(float dt) {
 	// send the serialized archive over the network
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);
-	} else {
+	}
+	else {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
 	}
 }
-//
-//void NetworkSenderSystem::archiveData(Netcode::MessageType* type, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
-//
-//	// Package it depending on the type
-//	switch (*type) {
-//		// Send necessary info to create the networked entity 
-//	case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
-//	{
-//		TransformComponent* t = e->getComponent<TransformComponent>();
-//		Archive::archiveVec3(ar, t->getTranslation()); // Send translation
-//
-//		// After the remote entity has been created we'll want to be able to modify its transform
-//		*type = Netcode::MODIFY_TRANSFORM;
-//	}
-//	break;
-//	case Netcode::MessageType::MODIFY_TRANSFORM:
-//	{
-//		TransformComponent* t = e->getComponent<TransformComponent>();
-//	//	Archive::archiveVec3(ar, t->getTranslation()); // Send translation
-//	}
-//	break;
-//	case Netcode::MessageType::ROTATION_TRANSFORM:
-//	{
-//		TransformComponent* t = e->getComponent<TransformComponent>();
-////		Archive::archiveVec3(ar, t->getRotations());	// Send rotation
-//	}
-//	break;
-//	case Netcode::MessageType::SPAWN_PROJECTILE:
-//	{
-//		// TODO: Send the information needed to spawn a projectile
-//	}
-//	break;
-//	default:
-//		break;
-//	}
-//}

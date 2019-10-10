@@ -3,6 +3,7 @@
 
 #include "Sail/entities/components/LightComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
+#include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/Entity.h"
 
@@ -48,6 +49,11 @@ void CandleSystem::update(float dt) {
 			if ( candle->wasHitByWater() ) {
 				candle->resetHitByWater();
 
+				// If 
+				if (candle->getOwner() == m_playerEntityID) {
+
+				}
+
 				if ( candle->getInvincibleTimer() <= 0.f ) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
@@ -68,6 +74,7 @@ void CandleSystem::update(float dt) {
 							// If so, dispatch an event (received by GameState for now)
 							if ( candle->getOwner() == m_playerEntityID ) {
 								Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_DEATH));
+							//	e->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::PLAYER_DIED);
 								e->queueDestruction();
 							}
 						}

@@ -131,6 +131,21 @@ void NetworkReceiverSystem::update(float dt) {
 					GunFactory::createWaterBullet(gunPosition, gunDirection, 10.0f, 0);					
 				}
 				break;
+				case MessageType::PLAYER_JUMPED:
+				{
+					playerJumped(id);
+				}
+				break;
+				case MessageType::WATER_HIT_PLAYER:
+				{
+
+				}
+				break;
+				case Netcode::MessageType::PLAYER_DIED:
+				{
+					//playerDied(id);
+				}
+				break;
 				default:
 					break;
 				}
@@ -163,6 +178,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	}
 	
 	auto e = ECS::Instance()->createEntity("ReceiverEntity");
+	entities.push_back(e.get());	// Needs to be before 'addComponent' or packets might be lost.
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
 
 	// If you are the host create a pass-through sender component to pass on the info to all players
@@ -190,6 +206,11 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
 
+		// Adding audio component and adding all sounds attached to the player entity
+		e->addComponent<AudioComponent>();
+		e->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
+		e->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
+
 		//creates light with model and pointlight
 		auto light = ECS::Instance()->createEntity("ReceiverLight");
 		light->addComponent<CandleComponent>();
@@ -206,7 +227,6 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		light->addComponent<LightComponent>(pl);
 
 		e->addChildEntity(light);
-
 	}
 	break;
 	default:
@@ -214,7 +234,8 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	}
 
 	// Manually add the entity to this system in case there's another message telling us to modify it, don't wait for ECS
-	entities.push_back(e.get());
+	// --- Then we need to prevent ECS from adding all together or we'll end up with 2 instances of the same entity in the list...
+	
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
@@ -234,6 +255,25 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const
 			break;
 		}
 	}
-
 }
+
+void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
+	// How do i trigger a jump from here?
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+		}
+	}
+}
+
+void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
+	// How do i trigger a jump from here?
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->queueDestruction();
+		}
+	}
+}
+
+
 

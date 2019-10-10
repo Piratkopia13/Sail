@@ -27,6 +27,16 @@ public:
 	~NetworkSenderComponent() {}
 
 	void addDataType(Netcode::MessageType type) { m_dataTypes.push_back(type); }
+	void removeDataType(Netcode::MessageType type) {
+		// Search through dataType vector
+		for (int i = 0; i < m_dataTypes.size(); i++) {
+			// If found...
+			if (m_dataTypes.at(i) == type) {
+				// ... Then delete
+				m_dataTypes.erase(m_dataTypes.begin() + i);
+			}
+		}
+	}
 
 	Netcode::NetworkObjectID m_id;
 	Netcode::EntityType m_entityType;

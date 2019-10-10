@@ -29,7 +29,10 @@ namespace Netcode {
 		MODIFY_TRANSFORM = 2,
 		SPAWN_PROJECTILE = 3,
 		ROTATION_TRANSFORM = 4,
-		EMPTY = 5
+		PLAYER_JUMPED = 5,
+		WATER_HIT_PLAYER = 6,
+		PLAYER_DIED = 7,
+		EMPTY = 69
 	};
 
 	/*

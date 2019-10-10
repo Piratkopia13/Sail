@@ -55,13 +55,11 @@ void GunSystem::update(float dt) {
 							Netcode::MessageType::SPAWN_PROJECTILE,
 							Netcode::EntityType::PLAYER_ENTITY,
 							id
-							);
+						);
 
 						// Log it for stats.
 						m_gameDataTracker->logWeaponFired();
 					}
-
-			
 				}
 			}
 
