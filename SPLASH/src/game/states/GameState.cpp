@@ -60,6 +60,7 @@ GameState::GameState(StateStack& stack)
 	m_cc.addCommand(std::string("AddCube"), [&]() {
 		return createCube(m_cam.getPosition());
 		});
+	m_cc.addCommand(std::string("tpmap"), [&]() {return teleportToMap();});
 	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
@@ -78,6 +79,7 @@ GameState::GameState(StateStack& stack)
 		}
 		return std::string("wat");
 		});
+
 #endif
 
 	// Get the Application instance
@@ -972,6 +974,11 @@ void GameState::initAnimations() {
 
 }
 
+const std::string GameState::teleportToMap() {
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f, 0.9f, 40.f));
+	return "";
+}
+
 const std::string GameState::createCube(const glm::vec3& position) {
 
 	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
@@ -1053,7 +1060,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	// Set up camera
 	m_cam.setPosition(glm::vec3(1.6f+spawnOffset, 1.8f, 10.f));
 	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f + spawnOffset, 0.9f, 40.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f + spawnOffset, 0.9f, 40.f));
 }
 
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
@@ -1306,3 +1313,4 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 
 }
+

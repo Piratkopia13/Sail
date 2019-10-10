@@ -43,5 +43,5 @@ private:
 	bool splitDirection(bool ns);
 	void addDoors();
 
-	void createTile(Direction dir, int doors, int posx, int posy, int tileOffset, int tileSize, std::vector<Model*> tileModels, Model* bb);
+	bool hasDoor(Direction dir, int doors);
 };
