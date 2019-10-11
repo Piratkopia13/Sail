@@ -104,7 +104,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		connections.push_back(conns);
 	}
 	//Delete "DeleteMeFirstFrameDummy"
-	ECS::Instance()->destroyEntity(e);
+	e->queueDestruction();
 
 	m_nodeSystem->setNodes(nodes, connections);
 	Memory::SafeDeleteArr(walkable);

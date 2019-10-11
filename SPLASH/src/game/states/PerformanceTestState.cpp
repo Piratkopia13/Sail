@@ -211,9 +211,9 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 
-	m_camController.setCameraPosition(glm::vec3(105.543f, 2.48814f, 99.5343f));
+	m_camController.setCameraPosition(glm::vec3(105.83f, 1.7028f, 99.2561f));
 	//m_cam.setDirection(glm::normalize(glm::vec3(-0.769527f, -0.202786f, 0.605563f)));
-	m_camController.setDirection(glm::normalize(glm::vec3(-0.769527f, -0.202786f, 0.605563f)));
+	m_camController.setDirection(glm::normalize(glm::vec3(-0.715708f, 0.0819399f, 0.693576f)));
 }
 
 PerformanceTestState::~PerformanceTestState() {
@@ -230,16 +230,6 @@ PerformanceTestState::~PerformanceTestState() {
 // Process input for the state
 // NOTE: Done every frame
 bool PerformanceTestState::processInput(float dt) {
-
-
-	if ( Input::IsKeyPressed(KeyBinds::toggleSun) ) {
-		for ( auto e : m_performanceEntities ) {
-			auto pos = e->getComponent<TransformComponent>()->getTranslation();
-			pos.y = pos.y + 2.f;
-			e->getComponent<GunComponent>()->setFiring(pos, glm::normalize(m_camController.getCameraPosition() - pos));
-		}
-	}
-
 
 	// Enable bright light and move camera to above procedural generated level
 	/*if ( Input::WasKeyJustPressed(KeyBinds::toggleSun) ) {
@@ -380,6 +370,16 @@ bool PerformanceTestState::fixedUpdate(float dt) {
 	static float change = 0.4f;
 
 	counter += dt * 2.0f;
+
+	/* here we shoot the guns */
+	for ( auto e : m_performanceEntities ) {
+		auto pos = m_camController.getCameraPosition();
+		auto ePos = e->getComponent<TransformComponent>()->getTranslation();
+		ePos.y = ePos.y + 5.f;
+		auto dir = ePos - pos;
+		auto dirNorm = glm::normalize(dir);
+		e->getComponent<GunComponent>()->setFiring(pos + dirNorm * 3.f, glm::vec3(0.f, -1.f, 0.f));
+	}
 
 	updatePerTickComponentSystems(dt);
 
@@ -673,6 +673,10 @@ bool PerformanceTestState::renderImGuiGameValues(float dt) {
 			header = "Num entities: " + std::to_string(m_componentSystems.projectileSystem->getNumEntities());
 			ImGui::Text(header.c_str());
 		}
+		if ( ImGui::CollapsingHeader("Render System") ) {
+			header = "Num entities: " + std::to_string(m_componentSystems.renderSystem->getNumEntities());
+			ImGui::Text(header.c_str());
+		}
 	}
 
 	ImGui::End();
@@ -835,8 +839,8 @@ void PerformanceTestState::initAnimations() {
 }
 
 void PerformanceTestState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
-	/* 12 characters that are constantly shooting their guns */
-	for ( int i = 0; i < 12; i++ ) {
+	/* 13 characters that are constantly shooting their guns */
+	for ( int i = 0; i < 13; i++ ) {
 		float spawnOffsetX = -24.f + float(i) * 2.f;
 		float spawnOffsetZ = float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
@@ -873,9 +877,11 @@ void PerformanceTestState::populateScene(Model* characterModel, Model* lightMode
 		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
 
 		// Add candle
-		auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
-		candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
-		e->addChildEntity(candleEntity);
+		if ( i != 12 ) {
+			auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
+			candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
+			e->addChildEntity(candleEntity);
+		}
 
 		/* Movement */
 		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
