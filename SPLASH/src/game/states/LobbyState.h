@@ -4,6 +4,7 @@
 #include <string>
 #include <list>
 
+struct Player;
 class NWrapper;
 class TextInputEvent;
 class NetworkJoinedEvent;
@@ -37,16 +38,12 @@ protected:
 	Input* m_input = nullptr;
 	NWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
-	Player m_me;
+	int* m_settingBotCount = nullptr;
+
 	std::list<Message> m_messages;
-	std::list<Player> m_players;
-	Player* getPlayer(unsigned char& id);
 
 	// Front-End Functions
 	bool inputToChatLog(MSG& msg);
-	void resetPlayerList();
-	bool playerJoined(Player& player);
-	bool playerLeft(unsigned char& id);
 	void addTextToChat(Message* text);
 	void resetCurrentMessage();
 
@@ -57,11 +54,8 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 
 	// Back-end variables
-	int* m_settingBotCount = nullptr;
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
-	unsigned int m_playerCount;
-	unsigned int m_playerLimit;
 	unsigned int m_messageCount;
 	unsigned int m_messageLimit;
 	bool m_firstFrame = true;	// Used solely for ImGui
