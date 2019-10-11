@@ -2,6 +2,7 @@
 #include "NetworkReceiverSystem.h"
 #include "Sail/entities/Entity.h"
 #include "Sail/entities/components/NetworkReceiverComponent.h"
+#include "Sail/entities/components/OnlinePlayerComponent.h"
 
 #include "Network/NWrapperSingleton.h"
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
@@ -145,6 +146,7 @@ void NetworkReceiverSystem::update(float dt) {
 				case MessageType::WATER_HIT_PLAYER:
 				{
 					// ID For projectiles is the player they hit!
+					std::cout << "Received WATER_HIT: " << id << "\n";
 					waterHitPlayer(id);
 				}
 				break;
@@ -187,6 +189,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	auto e = ECS::Instance()->createEntity("ReceiverEntity");
 	entities.push_back(e.get());	// Needs to be before 'addComponent' or packets might be lost.
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
+	e->addComponent<OnlinePlayerComponent>(id);
 
 	// If you are the host create a pass-through sender component to pass on the info to all players
 	if (NWrapperSingleton::getInstance().isHost()) {
@@ -225,6 +228,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		light->addComponent<TransformComponent>(glm::vec3(0.f, 2.f, 0.f));
 		light->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		light->addComponent<CollidableComponent>();
+		light->addComponent<OnlinePlayerComponent>(id);
 		PointLight pl;
 		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		pl.setPosition(glm::vec3(0.2f, 0.2f + .37f, 0.2f));

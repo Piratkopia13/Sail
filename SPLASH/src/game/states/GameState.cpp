@@ -24,6 +24,7 @@
 #include "Sail/entities/systems/physics/MovementPostCollisionSystem.h"
 #include "Sail/entities/systems/physics/CollisionSystem.h"
 #include "Sail/entities/systems/physics/SpeedLimitSystem.h"
+#include "Sail/entities/components/LocalPlayerComponent.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
@@ -1003,7 +1004,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	m_player = player.get();
 
 	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player
-	player->addComponent<PlayerComponent>();
+	//player->addComponent<PlayerComponent>();
 
 	player->addComponent<TransformComponent>();
 
@@ -1015,6 +1016,7 @@ void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Mod
 	NetworkSenderComponent* networkComponent = player->getComponent<NetworkSenderComponent>();
 	networkComponent->addDataType(Netcode::MessageType::ROTATION_TRANSFORM);
 
+	player->addComponent<LocalPlayerComponent>(player->getComponent<NetworkSenderComponent>()->m_id);
 
 
 	// Add physics components and setting initial variables

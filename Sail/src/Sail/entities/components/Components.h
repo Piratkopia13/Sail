@@ -21,7 +21,6 @@
 #include "MovementComponent.h"
 #include "NetworkReceiverComponent.h"
 #include "NetworkSenderComponent.h"
-#include "PlayerComponent.h"
 #include "ProjectileComponent.h"
 #include "RealTimeComponent.h"
 #include "SpeedLimitComponent.h"

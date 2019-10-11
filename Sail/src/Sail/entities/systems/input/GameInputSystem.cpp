@@ -8,10 +8,11 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../../ECS.h"
 #include "../physics/UpdateBoundingBoxSystem.h"
+#include "Sail/entities/components/LocalPlayerComponent.h"
 
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	registerComponent<PlayerComponent>(true, true, false);
+	registerComponent<LocalPlayerComponent>(true, true, false);
 	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<SpeedLimitComponent>(true, true, false);
 	registerComponent<CollisionComponent>(true, true, false);
