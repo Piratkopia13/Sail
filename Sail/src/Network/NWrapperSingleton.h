@@ -3,6 +3,7 @@
 #include "NWrapperHost.h"
 #include "NWrapperClient.h"
 
+
 class NWrapperSingleton : public NetworkEventHandler {
 public:
 	// Guaranteed to be destroyed, instantiated on first use.
@@ -26,6 +27,17 @@ public:
 	void searchForLobbies();
 	void checkFoundPackages();
 
+	void resetPlayerList();
+	bool playerJoined(Player& player);
+	bool playerLeft(unsigned char& id);
+
+	Player& getMyPlayer();
+	Player* getPlayer(unsigned char& id);
+	const std::list<Player>& getPlayers() const;
+	void setPlayerName(const char* name);
+	void setPlayerID(const unsigned char ID);
+	std::string& getMyPlayerName();
+	unsigned char getMyPlayerID();
 private:
 	NWrapperSingleton();
 	// Called by 'host' & 'connectToIP'
@@ -34,6 +46,12 @@ private:
 	NWrapper* m_wrapper = nullptr;
 	bool m_isInitialized = false;
 	bool m_isHost = false;
+
+	unsigned int m_playerCount;
+	unsigned int m_playerLimit;
+
+	Player m_me;
+	std::list<Player> m_players;
 
 	void handleNetworkEvents(NetworkEvent nEvent);
 };
