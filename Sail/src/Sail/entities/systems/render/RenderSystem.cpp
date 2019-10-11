@@ -38,7 +38,7 @@ void RenderSystem::refreshRenderer() {
 }
 
 void RenderSystem::draw(Camera& camera, const float alpha) {
-	m_renderer->begin(&camera);
+	//m_renderer->begin(&camera);
 
 	for (auto& entity : entities) {
 		ModelComponent* model = entity->getComponent<ModelComponent>();
@@ -78,9 +78,9 @@ void RenderSystem::draw(Camera& camera, const float alpha) {
 
 	} // for each entity
 
-	m_renderer->end();
+	/*m_renderer->end();
 	m_renderer->present((Application::getInstance()->getRenderWrapper()->getDoPostProcessing()
-		) ? Application::getInstance()->getRenderWrapper()->getPostProcessPipeline() : nullptr);
+		) ? Application::getInstance()->getRenderWrapper()->getPostProcessPipeline() : nullptr);*/
 
 }
 

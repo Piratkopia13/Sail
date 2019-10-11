@@ -8,7 +8,7 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "Network/NWrapperSingleton.h"	// New network
 #include "Network/NWrapper.h"			// 
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include "Sail/entities/ECS.h"
 
 #include <string>
@@ -85,7 +85,7 @@ bool LobbyState::update(float dt, float alpha) {
 
 bool LobbyState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	ECS::Instance()->getSystem<RenderSystem>()->draw();
+	ECS::Instance()->getSystem<BeginEndFrameSystem>()->renderNothing();
 	return false;
 }
 

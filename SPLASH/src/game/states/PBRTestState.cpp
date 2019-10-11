@@ -123,7 +123,6 @@ PBRTestState::PBRTestState(StateStack& stack)
 #ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 	(*Application::getInstance()->getRenderWrapper()).changeRenderer(1);
-	m_componentSystems.renderSystem->refreshRenderer();
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();

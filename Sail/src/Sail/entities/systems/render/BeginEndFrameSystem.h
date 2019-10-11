@@ -7,6 +7,8 @@ public:
 	BeginEndFrameSystem();
 	~BeginEndFrameSystem();
 
+	void renderNothing();
+
 	void beginFrame(Camera& camera);
 	void endFrameAndPresent();
 };

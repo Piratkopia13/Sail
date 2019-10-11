@@ -128,8 +128,12 @@ GameState::GameState(StateStack& stack)
 	//create system for level generation
 	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
 
-	// Create system for rendering
-	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
+	// Create systems for rendering
+	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.hitboxSubmitSystem = ECS::Instance()->createSystem<HitboxSubmitSystem>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 
 	// Create system for player input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -177,7 +181,6 @@ GameState::GameState(StateStack& stack)
 #ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 	(*Application::getInstance()->getRenderWrapper()).changeRenderer(1);
-	m_componentSystems.renderSystem->refreshRenderer();
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -283,7 +286,7 @@ bool GameState::processInput(float dt) {
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
-		m_componentSystems.renderSystem->toggleHitboxes();
+		m_componentSystems.hitboxSubmitSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
@@ -450,7 +453,14 @@ bool GameState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
-	m_componentSystems.renderSystem->draw(m_cam, alpha);
+	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
+	
+	m_componentSystems.modelSubmitSystem->submitAll(alpha);
+	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
+	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
+	m_componentSystems.hitboxSubmitSystem->submitAll();
+
+	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return true;
 }
