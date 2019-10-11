@@ -15,7 +15,8 @@ RenderSystem::RenderSystem() {
 
 	registerComponent<ModelComponent>(false, true, false);
 	registerComponent<MetaballComponent>(false, true, false);
-	registerComponent<TransformComponent>(true, true, false);
+	registerComponent<TransformComponent>(false, true, false);
+	registerComponent<BoundingBoxComponent>(true, true, false);
 
 	refreshRenderer();
 	m_renderHitboxes = false;

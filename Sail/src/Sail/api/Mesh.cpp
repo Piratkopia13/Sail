@@ -6,8 +6,9 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/Application.h"
 
-Mesh::Mesh(Data& buildData, Shader* shader) : 
-	meshData(buildData)
+Mesh::Mesh(Data& buildData, Shader* shader)
+	: meshData(buildData)
+	, m_visibleOnScreen(true)
 {
 }
 
@@ -51,6 +52,14 @@ const IndexBuffer& Mesh::getIndexBuffer() const {
 }
 const Mesh::Data& Mesh::getData() const {
 	return meshData;
+}
+
+bool Mesh::isVisibleOnScreen() const {
+	return m_visibleOnScreen;
+}
+
+void Mesh::setIsVisibleOnScreen(bool visible) {
+	m_visibleOnScreen = visible;
 }
 
 void Mesh::Data::deepCopy(const Mesh::Data& other) {

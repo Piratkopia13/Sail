@@ -42,6 +42,7 @@
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
+	, m_cullCam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_cc(true)
 	, m_profiler(true)
 	, m_disableLightComponents(false)
@@ -118,6 +119,7 @@ GameState::GameState(StateStack& stack)
 	// Create system for handling octree
 	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
 	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
+	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cullCam); // Enable frustum culling
 
 	// Create lifetime system
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
@@ -289,6 +291,11 @@ bool GameState::processInput(float dt) {
 	}
 
 #endif
+
+	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
+		m_cullCam.setDirection(m_cam.getDirection());
+		m_cullCam.setPosition(m_cam.getPosition());
+	}
 
 	// Enable bright light and move camera to above procedural generated level
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {

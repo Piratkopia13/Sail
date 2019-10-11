@@ -44,7 +44,7 @@ public:
 #ifdef _DEBUG
 	const static int xsize = 3, ysize = 3; //size of level
 #else
-	const static int xsize = 15, ysize = 15; //size of level
+	const static int xsize = 100, ysize = 100; //size of level
 #endif
 	int tileArr[xsize][ysize][3]; //0 is tileID, 1 is typeID, 2 is door
 	float hallwayThreshold = 0.3f; // percentage of level that can be corridors

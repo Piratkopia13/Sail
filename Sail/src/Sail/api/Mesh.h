@@ -76,6 +76,8 @@ public:
 	VertexBuffer& getVertexBuffer() const;
 	const IndexBuffer& getIndexBuffer() const;
 	const Mesh::Data& getData() const;
+	bool isVisibleOnScreen() const;
+	void setIsVisibleOnScreen(bool visible);
 
 protected:
 	PBRMaterial::SPtr material;
@@ -83,5 +85,8 @@ protected:
 	std::unique_ptr<VertexBuffer> vertexBuffer;
 	std::unique_ptr<IndexBuffer> indexBuffer;
 	Data meshData;
+
+private:
+	bool m_visibleOnScreen;
 
 };

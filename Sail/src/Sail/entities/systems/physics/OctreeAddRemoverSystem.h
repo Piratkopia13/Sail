@@ -2,6 +2,7 @@
 #include "..//BaseComponentSystem.h"
 
 class Octree;
+class Camera;
 
 class OctreeAddRemoverSystem final : public BaseComponentSystem
 {
@@ -17,6 +18,10 @@ public:
 
 	void update(float dt) override;
 
+	void setCulling(bool activated, Camera* camera);
+
 private:
 	Octree* m_octree;
+	bool m_doCulling;
+	Camera* m_cullCamera;
 };

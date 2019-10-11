@@ -476,7 +476,13 @@ int Octree::frustumCulledDrawRec(const Frustum& frustum, Node* currentNode) {
 
 		//Draw meshes in node
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
-			//TODO: Let the renderer know that this entity should be rendered.
+			// Let the renderer know that this entity should be rendered.
+			auto* modelComponent = currentNode->entities[i]->getComponent<ModelComponent>();
+			if (modelComponent) {
+				for (unsigned int j = 0; j < modelComponent->getModel()->getNumberOfMeshes(); j++) {
+					modelComponent->getModel()->getMesh(j)->setIsVisibleOnScreen(true);
+				}
+			}
 			returnValue++;
 		}
 
