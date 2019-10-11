@@ -17,6 +17,7 @@ enum TileModel {
 };
 
 enum Direction {
+	NONE = 0,
 	UP = 1,
 	RIGHT = 2,
 	DOWN = 4,
@@ -42,6 +43,6 @@ private:
 	int checkBorder(rect rekt);
 	bool splitDirection(bool ns);
 	void addDoors();
-
+	void addTile(Direction dir, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
 };

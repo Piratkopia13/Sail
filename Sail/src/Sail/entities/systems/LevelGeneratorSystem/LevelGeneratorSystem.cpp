@@ -99,13 +99,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					if (tileId == 0) {
-						
-						auto tileEntity = ECS::Instance()->createEntity("");
-						tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_FLOOR]);
-						tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::NONE, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -117,18 +111,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					else if (tileId == 1) {
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::UP, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -140,18 +123,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					else if (tileId == 2) {
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::RIGHT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -163,31 +135,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					else if (tileId == 3) {
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::UP, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::RIGHT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -199,18 +148,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x---------x
 					*/
 					else if (tileId == 4) {
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::DOWN, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -222,31 +160,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x---------x
 					*/
 					else if (tileId == 5) {
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::UP, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::DOWN, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -258,32 +173,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x---------x
 					*/
 					else if (tileId == 6) {
-
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::RIGHT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::DOWN, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -295,44 +186,9 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x---------x
 					*/
 					else if (tileId == 7) {
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::UP, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::RIGHT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::DOWN, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -344,18 +200,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					else if (tileId == 8) {
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::LEFT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -368,31 +213,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 9) {
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::UP, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::LEFT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -405,32 +227,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 10) {
-
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::RIGHT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::LEFT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -443,45 +241,9 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 11) {						
-
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::UP, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::RIGHT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::LEFT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -494,32 +256,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 12) {
-
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::DOWN, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::LEFT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -532,45 +270,9 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 13) {
-
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::UP, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::DOWN, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::LEFT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -583,46 +285,9 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 14) {
-
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::RIGHT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::DOWN, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::LEFT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -635,58 +300,10 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 15) {
-
-						auto tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::UP, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::RIGHT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::DOWN, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
-
-						tileEntity = ECS::Instance()->createEntity("");
-						if (hasDoor(Direction::LEFT, doors)) {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						else {
-							tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
-							tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-						}
-						tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10, 1.0f, tileSize / 10));
-						tileEntity->addComponent<BoundingBoxComponent>(bb);
-						tileEntity->addComponent<CollidableComponent>();
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 				}
 			}
@@ -1409,4 +1026,57 @@ bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
 		return true;
 	}
 	return false;
+}
+
+void LevelGeneratorSystem::addTile(Direction dir, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb) {
+
+	auto tileEntity = ECS::Instance()->createEntity("");
+	if (dir == Direction::RIGHT) {
+		if (hasDoor(Direction::RIGHT, doors)) {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
+		}
+		else {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
+		}
+	}
+	else if (dir == Direction::UP) {
+		if (hasDoor(Direction::UP, doors)) {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
+		}
+		else {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
+		}
+	}
+	else if (dir == Direction::DOWN) {
+		if (hasDoor(Direction::DOWN, doors)) {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
+		}
+		else {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
+		}
+	}
+	else if (dir == Direction::LEFT) {
+		if (hasDoor(Direction::LEFT, doors)) {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
+		}
+		else {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
+		}
+	}
+	else
+	{
+		tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_FLOOR]);
+		tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
+	}
+	tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10.f, 1.0f, tileSize / 10.f));
+	tileEntity->addComponent<BoundingBoxComponent>(bb);
+	tileEntity->addComponent<CollidableComponent>();
 }
