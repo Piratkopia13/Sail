@@ -7,7 +7,7 @@ struct rect {
 	int posy;
 	int sizex;
 	int sizey;
-	int hasDoor = 0;
+	int doors = 0;
 };
 class MapComponent : public Component<MapComponent> {
 public:

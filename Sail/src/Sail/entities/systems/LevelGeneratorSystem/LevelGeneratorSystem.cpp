@@ -851,7 +851,7 @@ void LevelGeneratorSystem::addDoors() {
 		for (int c = 0; c < maxSize; c++) {
 			rect currentTile = map->matched.front();
 			std::vector<rect> possibleDoors;
-			if (currentTile.hasDoor == 0) {
+			if (currentTile.doors == 0) {
 				for (int i = 0; i < currentTile.sizex; i++) {
 					for (int j = 0; j < currentTile.sizey; j++) {
 						rect doorTile;
@@ -887,22 +887,22 @@ void LevelGeneratorSystem::addDoors() {
 					if (door.sizey == Direction::UP) {
 						map->tileArr[door.posx][door.posy][2] += Direction::UP;
 						map->tileArr[door.posx][door.posy + 1][2] += Direction::DOWN;
-						currentTile.hasDoor += Direction::UP;
+						currentTile.doors += Direction::UP;
 					}
 					else if (door.sizey == Direction::RIGHT) {
 						map->tileArr[door.posx][door.posy][2] += Direction::RIGHT;
 						map->tileArr[door.posx+1][door.posy][2] += Direction::LEFT;
-						currentTile.hasDoor += Direction::RIGHT;
+						currentTile.doors += Direction::RIGHT;
 					}
 					else if (door.sizey == Direction::DOWN) {
 						map->tileArr[door.posx][door.posy][2] += Direction::DOWN;
 						map->tileArr[door.posx][door.posy-1][2] += Direction::UP;
-						currentTile.hasDoor += Direction::DOWN;
+						currentTile.doors += Direction::DOWN;
 					}
 					else if (door.sizey == Direction::LEFT) {
 						map->tileArr[door.posx][door.posy][2] += Direction::LEFT;
 						map->tileArr[door.posx - 1][door.posy][2] += Direction::RIGHT;
-						currentTile.hasDoor += Direction::LEFT;
+						currentTile.doors += Direction::LEFT;
 					}
 				}
 			}
@@ -987,22 +987,22 @@ void LevelGeneratorSystem::addDoors() {
 					if (door.sizey == Direction::UP) {
 						map->tileArr[door.posx][door.posy][2] += Direction::UP;
 						map->tileArr[door.posx][door.posy + 1][2] += Direction::DOWN;
-						currentTile.hasDoor += Direction::UP;
+						currentTile.doors += Direction::UP;
 					}
 					if (door.sizey == Direction::RIGHT) {
 						map->tileArr[door.posx][door.posy][2] += Direction::RIGHT;
 						map->tileArr[door.posx + 1][door.posy][2] += Direction::LEFT;
-						currentTile.hasDoor += Direction::RIGHT;
+						currentTile.doors += Direction::RIGHT;
 					}
 					if (door.sizey == Direction::DOWN) {
 						map->tileArr[door.posx][door.posy][2] += Direction::DOWN;
 						map->tileArr[door.posx][door.posy - 1][2] += Direction::UP;
-						currentTile.hasDoor += Direction::DOWN;
+						currentTile.doors += Direction::DOWN;
 					}
 					if (door.sizey == Direction::LEFT) {
 						map->tileArr[door.posx][door.posy][2] += Direction::LEFT;
 						map->tileArr[door.posx - 1][door.posy][2] += Direction::RIGHT;
-						currentTile.hasDoor += Direction::LEFT;
+						currentTile.doors += Direction::LEFT;
 					}
 				}
 			}
