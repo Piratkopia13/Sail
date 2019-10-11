@@ -931,14 +931,11 @@ void GameState::loadAnimations() {
 	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
 
-//#ifndef _DEBUG
+#ifndef _DEBUG
 	//m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	//m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-//#endif
-
-
-
+#endif
 }
 
 void GameState::initAnimations() {
