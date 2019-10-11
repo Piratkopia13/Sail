@@ -3,35 +3,15 @@
 #include <string>
 #include <list>
 
-
-
-// Really should be somewhere else
-struct Player {
-	unsigned char id;
-	std::string name;
-
-	bool friend operator==(const Player& left, const Player& right) {
-		if (left.id == right.id &&
-			left.name == right.name) {
-			return true;
-		}
-		return false;
-	}
-};
-
 struct MenuToLobbyData {
 	std::string name;
 };
 
-
 struct LobbyToGameData {
-	Player myPlayer;
-	std::list<Player> playerList;
 	int botCount = 0;
 
 	LobbyToGameData() {}
-	LobbyToGameData(Player& me, std::list<Player>& players, int nrOfBots = 0) : 
-		myPlayer(me), playerList(players), botCount(nrOfBots) {}
+	LobbyToGameData(int nrOfBots) : botCount(nrOfBots) {}
 };
 
 class StateStorage {
