@@ -36,8 +36,8 @@ bool OctreeAddRemoverSystem::addEntity(Entity* entity) {
 }
 
 void OctreeAddRemoverSystem::removeEntity(Entity* entity) {
-	//BaseComponentSystem::removeEntity(entity);
-	entity->queueDestruction();
+	BaseComponentSystem::removeEntity(entity);
+	//entity->queueDestruction();
 
 	if (m_octree) {
 		m_octree->removeEntity(entity);

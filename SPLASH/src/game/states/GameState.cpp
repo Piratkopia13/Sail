@@ -479,6 +479,7 @@ bool GameState::render(float dt, float alpha) {
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.renderSystem->draw(m_cam, alpha);
+	//Logger::Log(Utils::toStr(m_cam.getPosition()));
 
 	return true;
 }
