@@ -158,31 +158,11 @@ PBRTestState::PBRTestState(StateStack& stack)
 		Creation of entities
 	*/
 
-	{
-		auto e = ECS::Instance()->createEntity("Plane");
-		e->addComponent<ModelComponent>(m_planeModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>();
-		e->addComponent<CollidableComponent>();
-
-		e = ECS::Instance()->createEntity("Cylinder1");
-		e->addComponent<ModelComponent>(cylinderModel0);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 1.f, 0.f));
-		e->addComponent<BoundingBoxComponent>();
-		e->addComponent<CollidableComponent>();
-
-		e = ECS::Instance()->createEntity("Cylinder2");
-		e->addComponent<ModelComponent>(cylinderModel1);
-		e->addComponent<TransformComponent>(glm::vec3(3.f, 1.f, 0.f));
-		e->addComponent<BoundingBoxComponent>();
-		e->addComponent<CollidableComponent>();
-
-		e = ECS::Instance()->createEntity("Cylinder3");
-		e->addComponent<ModelComponent>(cylinderModel2);
-		e->addComponent<TransformComponent>(glm::vec3(-3.f, 1.f, 0.f));
-		e->addComponent<BoundingBoxComponent>();
-		e->addComponent<CollidableComponent>();
-
+	{	
+		auto e = EntityFactory::CreateStaticMapObject("Plane", m_planeModel.get(), nullptr, glm::vec3(0.f, 0.f, 0.f));
+		e = EntityFactory::CreateStaticMapObject("Cylinder1", cylinderModel0, nullptr, glm::vec3(0.f, 1.f, 0.f));
+		e = EntityFactory::CreateStaticMapObject("Cylinder2", cylinderModel1, nullptr, glm::vec3(3.f, 1.f, 0.f));
+		e = EntityFactory::CreateStaticMapObject("Cylinder3", cylinderModel2, nullptr, glm::vec3(-3.f, 1.f, 0.f));
 
 		m_virtRAMHistory = SAIL_NEW float[100];
 		m_physRAMHistory = SAIL_NEW float[100];
