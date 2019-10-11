@@ -7,7 +7,7 @@ struct rect {
 	int posy;
 	int sizex;
 	int sizey;
-	int hasDoor = 0;
+	int doors = 0;
 };
 class MapComponent : public Component<MapComponent> {
 public:
@@ -53,9 +53,9 @@ public:
 	int seed = 2;//seed for generation
 #else
 #ifdef _DEBUG
-	const static int xsize = 3, ysize = 3; //size of level
+	const static int xsize = 7, ysize = 7; //size of level
 #else
-	const static int xsize = 15, ysize = 15; //size of level
+	const static int xsize = 7, ysize = 7; //size of level
 #endif
 	int tileArr[xsize][ysize][3]; //0 is tileID, 1 is typeID, 2 is door
 	float hallwayThreshold = 0.3f; // percentage of level that can be corridors
