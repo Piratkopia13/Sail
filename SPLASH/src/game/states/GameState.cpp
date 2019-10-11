@@ -59,6 +59,7 @@ GameState::GameState(StateStack& stack)
 	m_cc.addCommand(std::string("AddCube"), [&]() {
 		return createCube(m_cam.getPosition());
 		});
+	m_cc.addCommand(std::string("tpmap"), [&]() {return teleportToMap();});
 	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
@@ -77,6 +78,7 @@ GameState::GameState(StateStack& stack)
 		}
 		return std::string("wat");
 		});
+
 #endif
 
 	// Get the Application instance
@@ -943,6 +945,11 @@ void GameState::initAnimations() {
 #endif
 }
 
+const std::string GameState::teleportToMap() {
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f, 0.9f, 40.f));
+	return "";
+}
+
 const std::string GameState::createCube(const glm::vec3& position) {
 
 	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
@@ -1028,25 +1035,37 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
+
+
+
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
-	tileCross->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
-	tileStraight->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
-	tileCorner->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
-	tileT->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
 	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
 	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
+	tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	std::vector<Model*> tileModels;
+	tileModels.resize(TileModel::NUMBOFMODELS);
+	tileModels[TileModel::ROOM_FLOOR] = tileFlat;
+	tileModels[TileModel::ROOM_WALL] = tileEnd;
+	tileModels[TileModel::ROOM_DOOR] = tileDoor;
+
+	tileModels[TileModel::CORRIDOR_FLOOR] = tileFlat;
+	tileModels[TileModel::CORRIDOR_WALL] = tileEnd;
+	tileModels[TileModel::CORRIDOR_DOOR] = tileDoor;
+
+
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat, tileCross, tileCorner, tileStraight, tileT, tileEnd, boundingBoxModel);
+	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 
 }
+

@@ -103,6 +103,7 @@ private:
 	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
 	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
+	const std::string teleportToMap();
 
 	Systems m_componentSystems;
 	LightSetup m_lights;
