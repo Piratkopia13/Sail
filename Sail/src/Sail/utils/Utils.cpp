@@ -31,6 +31,15 @@ float Utils::rnd() {
 	return dis(gen);
 }
 
+static int g_seed = 123123;
+int Utils::fastrand() {
+	g_seed = (214013 * g_seed + 2531011);
+	return (g_seed >> 16) & 0x7FFF;
+}
+void Utils::setfastrandSeed(int seed) {
+	g_seed = seed;
+}
+
 float Utils::clamp(float val, float min, float max) {
 
 	if (val > max) return max;

@@ -150,6 +150,8 @@ namespace Utils {
 	std::string toStr(const glm::vec3& vec);
 	std::string toStr(const glm::vec2& vec);
 	float rnd();
+	int fastrand();
+	void setfastrandSeed(int seed);
 	glm::vec4 getRandomColor();
 	float clamp(float val, float min, float max);
 	float smootherstep(float edge0, float edge1, float x);
