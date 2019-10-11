@@ -14,6 +14,7 @@
 #include <string>
 
 
+
 MenuState::MenuState(StateStack& stack) 
 	: State(stack)
 {
@@ -22,14 +23,12 @@ MenuState::MenuState(StateStack& stack)
 	m_app = Application::getInstance();
 
 	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
-	this->inputName = SAIL_NEW char[100]{ "Hans" };
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 }
 
 MenuState::~MenuState() {
 	delete[] this->inputIP;
-	delete[] this->inputName;
 	delete[] m_ipBuffer;
 }
 
@@ -68,8 +67,7 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::End();
 
 	ImGui::Begin("Name:");
-	ImGui::InputText("", inputName, 100);
-	m_app->getStateStorage().setMenuToLobbyData(MenuToLobbyData{ inputName });
+	ImGui::InputText("", &NWrapperSingleton::getInstance().getMyPlayerName().front(), MAX_NAME_LENGTH);
 	ImGui::End();
 
 	// 
@@ -77,7 +75,7 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::InputText("IP:", inputIP, 100);
 	if (ImGui::Button("S.P.L.A.S.H over there")) {
 		if (m_network->connectToIP(inputIP)) {
-			// Wait until welcome-package is recieved,
+			// Wait until welcome-package is received,
 			// Save the package info,
 			// Pop and push into JoinLobbyState.
 			this->requestStackPop();
@@ -116,7 +114,7 @@ bool MenuState::onEvent(Event& event) {
 }
 
 bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
-	// Get Ip (as int) then convert into char*
+	// Get IP (as int) then convert into char*
 	ULONG ip_as_int = event.getIp();
 	Network::ip_int_to_ip_string(ip_as_int, m_ipBuffer, m_ipBufferSize);
 	std::string ip_as_string(m_ipBuffer);
