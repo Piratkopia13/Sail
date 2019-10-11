@@ -8,13 +8,7 @@
 
 NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 	registerComponent<NetworkReceiverComponent>(true, true, true);
-	
-	// Can create entities with these components:
-	registerComponent<NetworkSenderComponent>(false, true, true);
-	registerComponent<ModelComponent>(false, true, true);
 	registerComponent<TransformComponent>(false, true, true);
-	registerComponent<BoundingBoxComponent>(false, true, true);
-	registerComponent<CollidableComponent>(false, true, true);
 }
 
 NetworkReceiverSystem::~NetworkReceiverSystem() 
