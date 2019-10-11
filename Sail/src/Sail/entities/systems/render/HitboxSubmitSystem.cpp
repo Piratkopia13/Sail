@@ -19,6 +19,10 @@ void HitboxSubmitSystem::submitAll() {
 	if (m_renderHitBoxes) {
 		Renderer* renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
 		for (auto& e : entities) {
+			if (!e->hasComponent<BoundingBoxComponent>())
+			{
+				int apa = 0;
+			}
 			BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 			if (Model* wireframeModel = boundingBox->getWireframeModel()) {
 				renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), Renderer::MESH_STATIC);

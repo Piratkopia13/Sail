@@ -1,10 +1,7 @@
 #pragma once
 
 #include "Sail.h"
-
-class RenderSystem;
-class OctreeAddRemoverSystem;
-class UpdateBoundingBoxSystem;
+#include "Sail/entities/systems/SystemDeclarations.h"
 
 class PBRTestState : public State {
 public:
@@ -34,14 +31,6 @@ private:
 	bool renderImGuiLightDebug(float dt);
 
 private:
-	struct Systems {
-		RenderSystem* renderSystem = nullptr;
-		EntityAdderSystem* entityAdderSystem = nullptr;
-		EntityRemovalSystem* entityRemovalSystem = nullptr;
-		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
-		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
-	};
-
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
