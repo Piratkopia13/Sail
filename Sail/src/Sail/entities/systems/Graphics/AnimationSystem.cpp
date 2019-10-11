@@ -173,16 +173,6 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		context->getComputeGPUDescriptorHeap()->getAndStepIndex(18); // Dispatch steps twice, we need to step 18 more times to align the heap for the next animated entity
 																	 // TODO: read offset from root params
 
-		/*DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());
-		D3D12_RESOURCE_BARRIER barrierDesc = {};
-
-		barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-		barrierDesc.Transition.pResource = vbuffer.getBuffer();
-		barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		cmdList->ResourceBarrier(1, &barrierDesc);*/
-
 		vbuffer.setAsUpdated();
 
 		animationC->hasUpdated = false;

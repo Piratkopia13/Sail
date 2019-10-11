@@ -145,6 +145,4 @@ private:
 
 	bool m_poppedThisFrame = false;
 
-	std::shared_ptr<Entity> m_animEnt;
-
 };

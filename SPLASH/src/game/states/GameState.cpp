@@ -283,10 +283,6 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
-	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
-		m_animEnt->getComponent<AnimationComponent>()->computeUpdate = true;
-	}
-
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
@@ -366,6 +362,7 @@ bool GameState::processInput(float dt) {
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
+		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 	}
 
 	// Pause game
@@ -752,28 +749,7 @@ bool GameState::renderImGuiAnimationSettings(float dt) {
 				//ImGui::Text("Animation: %s", animationC->currentAnimation->getName().c_str());
 				ImGui::Checkbox("Update on GPU", &animationC->computeUpdate);
 				ImGui::SameLine();
-				if (ImGui::SliderFloat("Animation Speed", &animationC->animationSpeed, 0.0f, 3.0f)) {
-
-				}
-				AnimationStack* stack = animationC->getAnimationStack();
-				ImGui::Text("AnimationStack");
-
-				/*static float transitionTime = 1.0f;
-				if (ImGui::SliderFloat("Transition Time", &transitionTime, 0.0f, 3.0f)) {
-
-				}*/
-				/*for (unsigned int animationIndex = 0; animationIndex < stack->getAnimationCount(); animationIndex++) {
-
-
-
-
-					if (ImGui::Button(std::string("Switch to " + stack->getAnimation(animationIndex)->getName()).c_str())) {
-
-						animationC->transitions.push({ stack->getAnimation(animationIndex), transitionTime, 0.0f });
-					}
-					ImGui::Separator();
-				}*/
-
+				ImGui::SliderFloat("Animation Speed", &animationC->animationSpeed, 0.0f, 3.0f);
 				ImGui::TreePop();
 			}
 		}
@@ -1000,8 +976,6 @@ void GameState::initAnimations() {
 		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
 		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
-
-		m_animEnt = animationEntity5;
 	}
 #endif
 
