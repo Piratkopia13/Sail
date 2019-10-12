@@ -51,7 +51,6 @@ private:
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);

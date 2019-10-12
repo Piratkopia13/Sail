@@ -29,6 +29,8 @@ void StateStack::processInput(float dt) {
 
 	// Ignore game mouse input when imgui uses the mouse
 	Input::SetMouseInput(!ImGui::GetIO().WantCaptureMouse || Input::IsCursorHidden());
+	// Ignore game key input when imgui uses the key input
+	Input::SetKeyInput(!ImGui::GetIO().WantCaptureKeyboard);
 	// Ignore imgui input when mouse is hidden / used by game
 	if (Input::IsCursorHidden()) {
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
@@ -36,8 +38,6 @@ void StateStack::processInput(float dt) {
 	} else {
 		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
 	}
-	// Ignore game key input when imgui uses the key input
-	Input::SetKeyInput(!ImGui::GetIO().WantCaptureKeyboard);
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {

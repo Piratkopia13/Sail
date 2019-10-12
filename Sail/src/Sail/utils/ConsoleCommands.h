@@ -2,7 +2,7 @@
 #include <functional>
 #include "SailImGui/SailImGuiWindow.h"
 #include "Regex/Regex.h"
-
+#include "imgui.h"
 
 /*
 	How to create a new type of input parameters:
@@ -24,7 +24,7 @@ class ConsoleCommands : public SailImGuiWindow {
 public:
 
 	ConsoleCommands();
-	ConsoleCommands(const bool windowState);
+	ConsoleCommands(bool showWindow);
 	~ConsoleCommands();
 	//"Command"					For function without paramater
 	void addCommand(const std::string& command, const std::function<std::string(void)> function);
@@ -45,8 +45,15 @@ public:
 	std::string getTextField();
 	void setTextField(const std::string text);
 
+	void addLog(const std::string& log);
 	const std::vector<std::string>& getLog();
 	const std::vector<std::string>& getCommandLog();
+
+	virtual void renderWindow() override;
+	virtual void toggleWindow() override;
+	virtual void showWindow(bool show) override;
+
+	static int StaticInputCallback(ImGuiTextEditCallbackData* data);
 
 private:
 	void createHelpCommand();
@@ -61,17 +68,26 @@ private:
 	const bool floatArrayMatch(const std::string& command, const std::string& parsedCommand);
 	const bool stringMatch(const std::string& command, const std::string& parsedCommand);
 
+	int inputCallback(ImGuiTextEditCallbackData* data);
 
+private:
 	std::string m_textField;
 	std::vector<std::string> m_commandHistory;
 	std::vector<std::string> m_textLog;
 
-	// command storage
+	// Command storage
 	std::vector<std::pair<std::string, std::function<std::string(void)>>> m_voidCommands;
 	std::vector<std::pair<std::string, std::function<std::string(std::string)>>> m_stringCommands;
 	std::vector<std::pair<std::string, std::function<std::string(float)>>> m_numberCommands;
 	std::vector<std::pair<std::string, std::function<std::string(std::vector<int>)>>> m_intArrayCommands;
 	std::vector<std::pair<std::string, std::function<std::string(std::vector<float>)>>> m_floatArrayCommands;
+
+	// List of ALL command names
+	std::vector<std::string> m_commandNames;
+
+	bool m_scrollToBottom;
+	bool m_grabKeyboard;
+	bool m_enableDisabling;
 	
 };
 

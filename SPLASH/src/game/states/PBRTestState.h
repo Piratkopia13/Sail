@@ -28,7 +28,6 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
-	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);

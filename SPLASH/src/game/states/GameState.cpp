@@ -41,7 +41,7 @@
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-	, m_cc(true)
+	, m_cc(false)
 	, m_profiler(true)
 	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
@@ -356,8 +356,8 @@ bool GameState::processInput(float dt) {
 
 	//Toggle console and profiler
 	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole)) {
-		m_cc.toggle();
-		m_profiler.toggle();
+		m_cc.toggleWindow();
+		m_profiler.toggleWindow();
 	}
 
 	// Reload shaders
@@ -480,10 +480,12 @@ bool GameState::render(float dt, float alpha) {
 
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
+
+	m_cc.renderWindow();
+	ImGui::ShowDemoWindow();
 
 	return false;
 }
@@ -496,55 +498,13 @@ bool GameState::prepareStateChange() {
 	return true;
 }
 
-bool GameState::renderImguiConsole(float dt) {
-	bool open = m_cc.windowOpen();
-	if (open) {
-		static char buf[256] = "";
-		if (ImGui::Begin("Console", &open)) {
-			m_cc.windowState(open);
-			std::string txt = "test";
-			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-			for (int i = 0; i < m_cc.getLog().size(); i++) {
-				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
-			}
-
-			ImGui::EndChild();
-			ImGui::Separator();
-			bool reclaim_focus = false;
-
-			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
-			buf[m_cc.getTextField().size()] = '\0';
-
-			std::string original = m_cc.getTextField();
-			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-				ImGuiInputTextFlags_EnterReturnsTrue);
-			ImGui::SameLine();
-			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
-				if (m_cc.execute()) {
-
-				}
-				reclaim_focus = true;
-			} else {
-				m_cc.setTextField(std::string(buf));
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-
-	return false;
-}
-
 bool GameState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.windowOpen();
+	bool open = m_profiler.isWindowOpen();
 	if (open) {
 		if (ImGui::Begin("Profiler", &open)) {
 
 			//Profiler window displaying the current usage
-			m_profiler.windowState(open);
+			m_profiler.showWindow(open);
 			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
 			std::string header;
 
@@ -815,48 +775,49 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
-	bool started = false;
-	while (!started) {
-		// First check if the system can be run
-		if (!(m_currentlyReadingMask & toRun->getWriteBitMask()).any() &&
-			!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
-			!(m_currentlyWritingMask & toRun->getWriteBitMask()).any()) {
+	toRun->update(dt);
+	//bool started = false;
+	//while (!started) {
+	//	// First check if the system can be run
+	//	if (!(m_currentlyReadingMask & toRun->getWriteBitMask()).any() &&
+	//		!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
+	//		!(m_currentlyWritingMask & toRun->getWriteBitMask()).any()) {
 
-			m_currentlyWritingMask |= toRun->getWriteBitMask();
-			m_currentlyReadingMask |= toRun->getReadBitMask();
-			started = true;
-			m_runningSystems.push_back(toRun);
-			m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun](int id) {toRun->update(dt); return toRun; }));
+	//		m_currentlyWritingMask |= toRun->getWriteBitMask();
+	//		m_currentlyReadingMask |= toRun->getReadBitMask();
+	//		started = true;
+	//		m_runningSystems.push_back(toRun);
+	//		m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun](int id) {toRun->update(dt); return toRun; }));
 
-		} else {
-			// Then loop through all futures and see if any of them are done
-			for (int i = 0; i < m_runningSystemJobs.size(); i++) {
-				if (m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-					auto doneSys = m_runningSystemJobs[i].get();
+	//	} else {
+	//		// Then loop through all futures and see if any of them are done
+	//		for (int i = 0; i < m_runningSystemJobs.size(); i++) {
+	//			if (m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+	//				auto doneSys = m_runningSystemJobs[i].get();
 
-					m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
-					i--;
+	//				m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
+	//				i--;
 
-					m_currentlyWritingMask ^= doneSys->getWriteBitMask();
-					m_currentlyReadingMask ^= doneSys->getReadBitMask();
+	//				m_currentlyWritingMask ^= doneSys->getWriteBitMask();
+	//				m_currentlyReadingMask ^= doneSys->getReadBitMask();
 
-					int toRemoveIndex = -1;
-					for (int j = 0; j < m_runningSystems.size(); j++) {
-						// Currently just compares memory adresses (if they point to the same location they're the same object)
-						if (m_runningSystems[j] == doneSys)
-							toRemoveIndex = j;
-					}
+	//				int toRemoveIndex = -1;
+	//				for (int j = 0; j < m_runningSystems.size(); j++) {
+	//					// Currently just compares memory adresses (if they point to the same location they're the same object)
+	//					if (m_runningSystems[j] == doneSys)
+	//						toRemoveIndex = j;
+	//				}
 
-					m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
+	//				m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
 
-					// Since multiple systems can read from components concurrently, currently best solution I came up with
-					for (auto _sys : m_runningSystems) {
-						m_currentlyReadingMask |= _sys->getReadBitMask();
-					}
-				}
-			}
-		}
-	}
+	//				// Since multiple systems can read from components concurrently, currently best solution I came up with
+	//				for (auto _sys : m_runningSystems) {
+	//					m_currentlyReadingMask |= _sys->getReadBitMask();
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 void GameState::loadAnimations() {

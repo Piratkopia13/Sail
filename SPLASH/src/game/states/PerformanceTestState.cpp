@@ -222,8 +222,8 @@ bool PerformanceTestState::processInput(float dt) {
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
 	if ( Input::WasKeyJustPressed(KeyBinds::toggleConsole) ) {
-		m_cc.toggle();
-		m_profiler.toggle();
+		m_cc.toggleWindow();
+		m_profiler.toggleWindow();
 	}
 
 	// Reload shaders
@@ -292,61 +292,19 @@ bool PerformanceTestState::render(float dt, float alpha) {
 bool PerformanceTestState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
-	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
-
-	return false;
-}
-
-bool PerformanceTestState::renderImguiConsole(float dt) {
-	bool open = m_cc.windowOpen();
-	if ( open ) {
-		static char buf[256] = "";
-		if ( ImGui::Begin("Console", &open) ) {
-			m_cc.windowState(open);
-			std::string txt = "test";
-			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-			for ( int i = 0; i < m_cc.getLog().size(); i++ ) {
-				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
-			}
-
-			ImGui::EndChild();
-			ImGui::Separator();
-			bool reclaim_focus = false;
-
-			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
-			buf[m_cc.getTextField().size()] = '\0';
-
-			std::string original = m_cc.getTextField();
-			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-										 ImGuiInputTextFlags_EnterReturnsTrue);
-			ImGui::SameLine();
-			if ( exec || ImGui::Button("Execute", ImVec2(0, 0)) ) {
-				if ( m_cc.execute() ) {
-
-				}
-				reclaim_focus = true;
-			} else {
-				m_cc.setTextField(std::string(buf));
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
+	m_cc.renderWindow();
 
 	return false;
 }
 
 bool PerformanceTestState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.windowOpen();
+	bool open = m_profiler.isWindowOpen();
 	if ( open ) {
 		if ( ImGui::Begin("Profiler", &open) ) {
-			m_profiler.windowState(open);
+			m_profiler.showWindow(open);
 			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
 			std::string header;
 
