@@ -27,15 +27,16 @@ public:
 	ConsoleCommands(bool showWindow);
 	~ConsoleCommands();
 	//"Command"					For function without paramater
-	void addCommand(const std::string& command, const std::function<std::string(void)> function);
+	void addCommand(const std::string& command, const std::function<std::string(void)>& function, const std::string& identifier = "");
 	//"Command <string>"		For single string parameter
-	void addCommand(const std::string& command, const std::function<std::string(std::string)> function);
+	void addCommand(const std::string& command, const std::function<std::string(std::string)>& function, const std::string& identifier = "");
 	//"Command <float>"			For single int parameter
-	void addCommand(const std::string& command, const std::function<std::string(float)> function);
+	void addCommand(const std::string& command, const std::function<std::string(float)>& function, const std::string& identifier = "");
 	//"Command <float> ..."		For List of numbers
-	void addCommand(const std::string& command, const std::function<std::string(std::vector<int>)> function);
-	void addCommand(const std::string& command, const std::function<std::string(std::vector<float>)> function);
+	void addCommand(const std::string& command, const std::function<std::string(std::vector<int>)>& function, const std::string& identifier = "");
+	void addCommand(const std::string& command, const std::function<std::string(std::vector<float>)>& function, const std::string& identifier = "");
 
+	void removeAllCommandsWithIdentifier(const std::string& identifier);
 
 	//using internal textfield
 	const bool execute();
@@ -56,7 +57,24 @@ public:
 	static int StaticInputCallback(ImGuiTextEditCallbackData* data);
 
 private:
+	template <typename T>
+	class Command {
+	public:
+		Command(const std::string& command, const std::function<T>& func, const std::string& identifier) 
+			: command(command)
+			, func(func)
+			, identifier(identifier)
+		{}
+		std::string command;
+		std::function<T> func;
+		std::string identifier;
+	};
+
+	void init();
 	void createHelpCommand();
+
+	template<typename T>
+	void addCommandInternal(std::vector<Command<T>>& vec, const std::string& command, const std::function<T>& function, const std::string& identifier);
 	
 	std::string prune(const std::string& command);
 	const std::string parseCommand(const std::string& command);
@@ -76,18 +94,30 @@ private:
 	std::vector<std::string> m_textLog;
 
 	// Command storage
-	std::vector<std::pair<std::string, std::function<std::string(void)>>> m_voidCommands;
-	std::vector<std::pair<std::string, std::function<std::string(std::string)>>> m_stringCommands;
-	std::vector<std::pair<std::string, std::function<std::string(float)>>> m_numberCommands;
-	std::vector<std::pair<std::string, std::function<std::string(std::vector<int>)>>> m_intArrayCommands;
-	std::vector<std::pair<std::string, std::function<std::string(std::vector<float>)>>> m_floatArrayCommands;
+	std::vector<Command<std::string(void)>> m_voidCommands;
+	std::vector<Command<std::string(std::string)>> m_stringCommands;
+	std::vector<Command<std::string(float)>> m_numberCommands;
+	std::vector<Command<std::string(std::vector<int>)>> m_intArrayCommands;
+	std::vector<Command<std::string(std::vector<float>)>> m_floatArrayCommands;
 
-	// List of ALL command names
-	std::vector<std::string> m_commandNames;
+	// List of ALL command names <command, identifier>
+	std::vector<std::pair<std::string, std::string>> m_commandNames;
 
 	bool m_scrollToBottom;
 	bool m_grabKeyboard;
 	bool m_enableDisabling;
+	int m_historyPos;
 	
 };
 
+template<typename T>
+inline void ConsoleCommands::addCommandInternal(std::vector<Command<T>>& vec, const std::string& command, const std::function<T>& function, const std::string& identifier) {
+	std::string cmd = prune(command);
+	// Add if command doesn't already exist 
+	if (std::find_if(m_commandNames.begin(), m_commandNames.end(), [&command](const std::pair<std::string, std::string>& pair) { return pair.first == command; }) == m_commandNames.end()) {
+		vec.emplace_back(cmd, function, identifier);
+		m_commandNames.emplace_back(cmd, identifier);
+	} else {
+		Logger::Warning("Tried to register duplicate command to console: " + command);
+	}
+}

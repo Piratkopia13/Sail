@@ -96,6 +96,8 @@ void StateStack::render(float dt, float alpha) {
 		for (auto& state : m_stack) {
 			state->renderImgui(dt);
 		}
+		// Render console
+		Application::getInstance()->getConsole().renderWindow();
 		Application::getInstance()->getImGuiHandler()->end();
 	}
 

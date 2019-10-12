@@ -41,26 +41,40 @@
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-	, m_cc(false)
 	, m_profiler(true)
 	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
+	auto& console = Application::getInstance()->getConsole();
+	console.addCommand("state <string>", [&](const std::string& param) {
+		if (param == "menu") {
+			requestStackPop();
+			requestStackPush(States::MainMenu);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to menu requested";
+		} else if (param == "pbr") {
+			requestStackPop();
+			requestStackPush(States::PBRTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to pbr requested";
+		} else if (param == "perftest") {
+			requestStackPop();
+			requestStackPush(States::PerformanceTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to PerformanceTest requested";
+		} else {
+			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+		}
+
+	}, "GameState");
 #ifdef _DEBUG
-#pragma region TESTCASES
-	m_cc.addCommand(std::string("Save"), [&]() { return std::string("saved"); });
-	m_cc.addCommand(std::string("Test <int>"), [&](int in) { return std::string("test<int>"); });
-	m_cc.addCommand(std::string("Test <float>"), [&](float in) { return std::string("test<float>"); });
-	m_cc.addCommand(std::string("Test <string>"), [&](std::string in) { return std::string("test<string>"); });
-	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
-	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
-#pragma endregion
-
-
-	m_cc.addCommand(std::string("AddCube"), [&]() {
+	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
-		});
-	m_cc.addCommand(std::string("tpmap"), [&]() {return teleportToMap();});
-	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
+	}, "GameState");
+	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
+	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -68,8 +82,8 @@ GameState::GameState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-		});
-	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&](std::vector<float> in) {
+	}, "GameState");
+	console.addCommand("AddCube <float> <float> <float>", [&](std::vector<float> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -77,8 +91,7 @@ GameState::GameState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-		});
-
+	}, "GameState");
 #endif
 
 	// Get the Application instance
@@ -353,13 +366,7 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-
-	//Toggle console and profiler
-	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole)) {
-		m_cc.toggleWindow();
-		m_profiler.toggleWindow();
-	}
-
+	
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
@@ -483,9 +490,6 @@ bool GameState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
-
-	m_cc.renderWindow();
-	ImGui::ShowDemoWindow();
 
 	return false;
 }
@@ -775,49 +779,48 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
-	toRun->update(dt);
-	//bool started = false;
-	//while (!started) {
-	//	// First check if the system can be run
-	//	if (!(m_currentlyReadingMask & toRun->getWriteBitMask()).any() &&
-	//		!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
-	//		!(m_currentlyWritingMask & toRun->getWriteBitMask()).any()) {
+	bool started = false;
+	while (!started) {
+		// First check if the system can be run
+		if (!(m_currentlyReadingMask & toRun->getWriteBitMask()).any() &&
+			!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
+			!(m_currentlyWritingMask & toRun->getWriteBitMask()).any()) {
 
-	//		m_currentlyWritingMask |= toRun->getWriteBitMask();
-	//		m_currentlyReadingMask |= toRun->getReadBitMask();
-	//		started = true;
-	//		m_runningSystems.push_back(toRun);
-	//		m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun](int id) {toRun->update(dt); return toRun; }));
+			m_currentlyWritingMask |= toRun->getWriteBitMask();
+			m_currentlyReadingMask |= toRun->getReadBitMask();
+			started = true;
+			m_runningSystems.push_back(toRun);
+			m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun](int id) {toRun->update(dt); return toRun; }));
 
-	//	} else {
-	//		// Then loop through all futures and see if any of them are done
-	//		for (int i = 0; i < m_runningSystemJobs.size(); i++) {
-	//			if (m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-	//				auto doneSys = m_runningSystemJobs[i].get();
+		} else {
+			// Then loop through all futures and see if any of them are done
+			for (int i = 0; i < m_runningSystemJobs.size(); i++) {
+				if (m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+					auto doneSys = m_runningSystemJobs[i].get();
 
-	//				m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
-	//				i--;
+					m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
+					i--;
 
-	//				m_currentlyWritingMask ^= doneSys->getWriteBitMask();
-	//				m_currentlyReadingMask ^= doneSys->getReadBitMask();
+					m_currentlyWritingMask ^= doneSys->getWriteBitMask();
+					m_currentlyReadingMask ^= doneSys->getReadBitMask();
 
-	//				int toRemoveIndex = -1;
-	//				for (int j = 0; j < m_runningSystems.size(); j++) {
-	//					// Currently just compares memory adresses (if they point to the same location they're the same object)
-	//					if (m_runningSystems[j] == doneSys)
-	//						toRemoveIndex = j;
-	//				}
+					int toRemoveIndex = -1;
+					for (int j = 0; j < m_runningSystems.size(); j++) {
+						// Currently just compares memory adresses (if they point to the same location they're the same object)
+						if (m_runningSystems[j] == doneSys)
+							toRemoveIndex = j;
+					}
 
-	//				m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
+					m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
 
-	//				// Since multiple systems can read from components concurrently, currently best solution I came up with
-	//				for (auto _sys : m_runningSystems) {
-	//					m_currentlyReadingMask |= _sys->getReadBitMask();
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+					// Since multiple systems can read from components concurrently, currently best solution I came up with
+					for (auto _sys : m_runningSystems) {
+						m_currentlyReadingMask |= _sys->getReadBitMask();
+					}
+				}
+			}
+		}
+	}
 }
 
 void GameState::loadAnimations() {

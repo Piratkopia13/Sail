@@ -2,6 +2,8 @@
 
 #include "Component.h"
 #include <vector>
+#include <queue>
+
 struct rect {
 	int posx;
 	int posy;

@@ -106,7 +106,6 @@ private:
 
 	Systems m_componentSystems;
 	LightSetup m_lights;
-	ConsoleCommands m_cc;
 	Profiler m_profiler;
 
 	size_t m_currLightIndex;

@@ -1,5 +1,9 @@
 #pragma once
 
+
+//#define SAIL_VERBOSELOGGING
+
+
 // Memory leak detection for debug
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -13,9 +17,8 @@
 #endif
 
 #define NOMINMAX // Removes min max macros which cause issues
-// Exclude some less used APIs to speed up the build process on windows
-#define WIN32_LEAN_AND_MEAN
-//#define SAIL_VERBOSELOGGING
+#define WIN32_LEAN_AND_MEAN // Exclude some less used APIs to speed up the build process on windows
+#include <Windows.h>
 
 // Math
 // TODO: only define GLM_FORCE_DEPTH_ZERO_TO_ONE if directx or vulkan (not opengl)
@@ -27,13 +30,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
-
 // Thread pool
 #include <ctpl/ctpl_stl.h> // From: https://github.com/vit-vit/ctpl
-
-//#include <windows.h>
-
-
 
 #include <algorithm>
 #include <atomic>
@@ -46,12 +44,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-
-
-
-// DirectX Toolkit includes
-//#include <d3d12.h>
-//#include <Keyboard.h>
-//#include <Mouse.h>
-//#include <GamePad.h>
+#include <exception>
+#include <random>
+#include <fstream>

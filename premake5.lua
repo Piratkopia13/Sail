@@ -62,6 +62,9 @@ project "SPLASH"
 		"Physics"
 	}
 
+	defines { "NOMINMAX",				-- Removes min max macros which cause issues
+			  "WIN32_LEAN_AND_MEAN" }	-- Exclude some less used APIs to speed up the build process on windows
+
 	flags { "MultiProcessorCompile" }
 
 	filter "system:windows"

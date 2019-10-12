@@ -28,23 +28,23 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_camController(&m_cam)
-	, m_cc(true)
 	, m_profiler(true) {
+	auto& console = Application::getInstance()->getConsole();
+	console.addCommand("state <string>", [&](const std::string& param) {
+		if (param == "menu") {
+			requestStackPop();
+			requestStackPush(States::MainMenu);
+			console.removeAllCommandsWithIdentifier("PerfTestState");
+			return "State change to menu requested";
+		} else {
+			return "Invalid state. Available states are \"menu\"";
+		}
+		}, "PerfTestState");
 #ifdef _DEBUG
-#pragma region TESTCASES
-	m_cc.addCommand(std::string("Save"), [&] () { return std::string("saved"); });
-	m_cc.addCommand(std::string("Test <int>"), [&] (int in) { return std::string("test<int>"); });
-	m_cc.addCommand(std::string("Test <float>"), [&] (float in) { return std::string("test<float>"); });
-	m_cc.addCommand(std::string("Test <string>"), [&] (std::string in) { return std::string("test<string>"); });
-	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&] (std::vector<int> in) {return std::string("test<std::vector<int>"); });
-	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&] (std::vector<float> in) {return std::string("test<std::vector<float>"); });
-#pragma endregion
-
-
-	m_cc.addCommand(std::string("AddCube"), [&] () {
+	console.addCommand(std::string("AddCube"), [&] () {
 		return createCube(m_cam.getPosition());
-					});
-	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&] (std::vector<int> in) {
+	}, "PerfTestState");
+	console.addCommand(std::string("AddCube <int> <int> <int>"), [&] (std::vector<int> in) {
 		if ( in.size() == 3 ) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -52,8 +52,8 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-					});
-	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&] (std::vector<float> in) {
+	}, "PerfTestState");
+	console.addCommand(std::string("AddCube <float> <float> <float>"), [&] (std::vector<float> in) {
 		if ( in.size() == 3 ) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -61,7 +61,7 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-					});
+	}, "PerfTestState");
 #endif
 
 	// Create octree
@@ -221,10 +221,6 @@ bool PerformanceTestState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-	if ( Input::WasKeyJustPressed(KeyBinds::toggleConsole) ) {
-		m_cc.toggleWindow();
-		m_profiler.toggleWindow();
-	}
 
 	// Reload shaders
 	if ( Input::WasKeyJustPressed(KeyBinds::reloadShader) ) {
@@ -295,7 +291,6 @@ bool PerformanceTestState::renderImgui(float dt) {
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
-	m_cc.renderWindow();
 
 	return false;
 }
