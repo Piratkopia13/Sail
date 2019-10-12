@@ -41,26 +41,40 @@
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-	, m_cc(true)
 	, m_profiler(true)
 	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
+	auto& console = Application::getInstance()->getConsole();
+	console.addCommand("state <string>", [&](const std::string& param) {
+		if (param == "menu") {
+			requestStackPop();
+			requestStackPush(States::MainMenu);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to menu requested";
+		} else if (param == "pbr") {
+			requestStackPop();
+			requestStackPush(States::PBRTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to pbr requested";
+		} else if (param == "perftest") {
+			requestStackPop();
+			requestStackPush(States::PerformanceTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to PerformanceTest requested";
+		} else {
+			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+		}
+
+	}, "GameState");
 #ifdef _DEBUG
-#pragma region TESTCASES
-	m_cc.addCommand(std::string("Save"), [&]() { return std::string("saved"); });
-	m_cc.addCommand(std::string("Test <int>"), [&](int in) { return std::string("test<int>"); });
-	m_cc.addCommand(std::string("Test <float>"), [&](float in) { return std::string("test<float>"); });
-	m_cc.addCommand(std::string("Test <string>"), [&](std::string in) { return std::string("test<string>"); });
-	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
-	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
-#pragma endregion
-
-
-	m_cc.addCommand(std::string("AddCube"), [&]() {
+	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
-		});
-	m_cc.addCommand(std::string("tpmap"), [&]() {return teleportToMap();});
-	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
+	}, "GameState");
+	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
+	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -68,8 +82,8 @@ GameState::GameState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-		});
-	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&](std::vector<float> in) {
+	}, "GameState");
+	console.addCommand("AddCube <float> <float> <float>", [&](std::vector<float> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -77,8 +91,7 @@ GameState::GameState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-		});
-
+	}, "GameState");
 #endif
 
 	// Get the Application instance
@@ -353,13 +366,7 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-
-	//Toggle console and profiler
-	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole)) {
-		m_cc.toggle();
-		m_profiler.toggle();
-	}
-
+	
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
@@ -480,7 +487,6 @@ bool GameState::render(float dt, float alpha) {
 
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
@@ -496,55 +502,13 @@ bool GameState::prepareStateChange() {
 	return true;
 }
 
-bool GameState::renderImguiConsole(float dt) {
-	bool open = m_cc.windowOpen();
-	if (open) {
-		static char buf[256] = "";
-		if (ImGui::Begin("Console", &open)) {
-			m_cc.windowState(open);
-			std::string txt = "test";
-			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-			for (int i = 0; i < m_cc.getLog().size(); i++) {
-				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
-			}
-
-			ImGui::EndChild();
-			ImGui::Separator();
-			bool reclaim_focus = false;
-
-			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
-			buf[m_cc.getTextField().size()] = '\0';
-
-			std::string original = m_cc.getTextField();
-			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-				ImGuiInputTextFlags_EnterReturnsTrue);
-			ImGui::SameLine();
-			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
-				if (m_cc.execute()) {
-
-				}
-				reclaim_focus = true;
-			} else {
-				m_cc.setTextField(std::string(buf));
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-
-	return false;
-}
-
 bool GameState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.windowOpen();
+	bool open = m_profiler.isWindowOpen();
 	if (open) {
 		if (ImGui::Begin("Profiler", &open)) {
 
 			//Profiler window displaying the current usage
-			m_profiler.windowState(open);
+			m_profiler.showWindow(open);
 			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
 			std::string header;
 

@@ -258,7 +258,7 @@ void ShaderPipeline::parseStructuredBuffer(const char* source) {
 
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
 	std::string name = nextToken(source);
-	outTokenSize = name.size() + 1; /// +1 to account for the space before the name
+	outTokenSize = (UINT)name.size() + 1U; /// +1 to account for the space before the name
 	if (name[name.size() - 1] == ';') {
 		name = name.substr(0, name.size() - 1); // Remove ending ';'
 	}
@@ -277,7 +277,7 @@ std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSi
 
 std::string ShaderPipeline::nextTokenAsType(const char* source, UINT& outTokenSize) const {
 	std::string type = nextToken(source);
-	outTokenSize = type.size();
+	outTokenSize = (UINT)type.size();
 	// Remove first '<' and last '>' character
 	type = type.substr(1, type.size() - 2);
 

@@ -6,7 +6,7 @@ class Profiler : public SailImGuiWindow {
 
 public:
 	Profiler();
-	explicit Profiler(const bool windowState);
+	explicit Profiler(bool showWindow);
 	~Profiler();
 
 	unsigned int workSetUsage() const;
@@ -14,6 +14,8 @@ public:
 	double processUsage();
 	unsigned int vramUsage() const;
 	unsigned int vramBudget() const;
+
+	virtual void renderWindow() override;
 
 private:
 	ULARGE_INTEGER m_lastCPU, m_lastSysCPU, m_lastUserCPU;
