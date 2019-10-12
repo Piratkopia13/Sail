@@ -1,5 +1,5 @@
 -- premake5.lua
-workspace "SPLASH"
+workspace "Sail"
 	configurations { "Debug", "Release" }
 	startproject "SPLASH"
 	platforms { "DX12 x64", "DX12 x86" }
