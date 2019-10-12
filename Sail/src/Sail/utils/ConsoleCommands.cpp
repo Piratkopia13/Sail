@@ -3,6 +3,10 @@
 #include "Sail/Application.h"
 #include "Sail/KeyBinds.h"
 
+const ImVec4 ConsoleCommands::ERROR_COLOR	= ImVec4(1.0f, 0.f, 0.f, 1.0f);
+const ImVec4 ConsoleCommands::WARNING_COLOR = ImVec4(1.0f, 1.f, 0.f, 1.0f);
+const ImVec4 ConsoleCommands::LOG_COLOR		= ImVec4(1.0f, 1.f, 1.f, 1.0f);
+
 ConsoleCommands::ConsoleCommands()
 	: SailImGuiWindow(false)
 	, m_textField("")
@@ -109,7 +113,7 @@ const bool ConsoleCommands::execute() {
 		return true;
 	}
 
-	addLog("Unknown command: " + m_textField);
+	addLog("Unknown command: " + m_textField, ERROR_COLOR);
 	m_textField = "";
 	return true;
 }
@@ -131,12 +135,12 @@ void ConsoleCommands::setTextField(const std::string text) {
 	m_textField = text;
 }
 
-void ConsoleCommands::addLog(const std::string& log) {
-	m_textLog.emplace_back(log);
+void ConsoleCommands::addLog(const std::string& log, const ImVec4& color) {
+	m_textLog.emplace_back(log, color);
 	m_scrollToBottom = true;
 }
 
-const std::vector<std::string>& ConsoleCommands::getLog() {
+const std::vector<std::pair<std::string, ImVec4>>& ConsoleCommands::getLog() {
 	return m_textLog;
 }
 const std::vector<std::string>& ConsoleCommands::getCommandLog() {
@@ -161,7 +165,8 @@ void ConsoleCommands::renderWindow() {
 			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -23), false, ImGuiWindowFlags_HorizontalScrollbar);
 
 			for (int i = 0; i < getLog().size(); i++) {
-				ImGui::TextUnformatted(getLog()[i].c_str());
+				//ImGui::TextUnformatted(getLog()[i].c_str());
+				ImGui::TextColored(m_textLog[i].second, m_textLog[i].first.c_str());
 			}
 
 			if (m_scrollToBottom) {

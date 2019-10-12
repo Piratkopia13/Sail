@@ -201,7 +201,7 @@ void Logger::Warning(const std::string& msg) {
 	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 	// Print to in-game console
-	Application::getInstance()->getConsole().addLog("WARNING: " + msg);
+	Application::getInstance()->getConsole().addLog("WARNING: " + msg, ConsoleCommands::WARNING_COLOR);
 
 #ifdef _SAIL_BREAK_ON_WARNING
 	__debugbreak();
@@ -222,7 +222,7 @@ void Logger::Error(const std::string& msg) {
 	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 	// Print to in-game console
-	Application::getInstance()->getConsole().addLog("ERROR: " + msg);
+	Application::getInstance()->getConsole().addLog("ERROR: " + msg, ConsoleCommands::ERROR_COLOR);
 
 #ifdef _SAIL_BREAK_ON_ERROR
 	__debugbreak();

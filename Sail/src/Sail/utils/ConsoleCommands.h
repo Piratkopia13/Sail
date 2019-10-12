@@ -22,7 +22,10 @@
 
 class ConsoleCommands : public SailImGuiWindow {
 public:
-
+	static const ImVec4 ERROR_COLOR;
+	static const ImVec4 WARNING_COLOR;
+	static const ImVec4 LOG_COLOR;
+public:
 	ConsoleCommands();
 	ConsoleCommands(bool showWindow);
 	~ConsoleCommands();
@@ -46,8 +49,8 @@ public:
 	std::string getTextField();
 	void setTextField(const std::string text);
 
-	void addLog(const std::string& log);
-	const std::vector<std::string>& getLog();
+	void addLog(const std::string& log, const ImVec4& color = LOG_COLOR);
+	const std::vector<std::pair<std::string, ImVec4>>& getLog();
 	const std::vector<std::string>& getCommandLog();
 
 	virtual void renderWindow() override;
@@ -60,7 +63,7 @@ private:
 	template <typename T>
 	class Command {
 	public:
-		Command(const std::string& command, const std::function<T>& func, const std::string& identifier) 
+		Command(const std::string& command, const std::function<T>& func, const std::string& identifier)
 			: command(command)
 			, func(func)
 			, identifier(identifier)
@@ -91,7 +94,7 @@ private:
 private:
 	std::string m_textField;
 	std::vector<std::string> m_commandHistory;
-	std::vector<std::string> m_textLog;
+	std::vector<std::pair<std::string, ImVec4>> m_textLog;
 
 	// Command storage
 	std::vector<Command<std::string(void)>> m_voidCommands;
