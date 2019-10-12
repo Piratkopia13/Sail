@@ -34,5 +34,5 @@ private:
 	DX12RenderableTexture* m_gbufferTextures[NUM_GBUFFERS];
 	DX12API::Command m_command[MAX_RECORD_THREADS];
 
-	void recordCommands(PostProcessPipeline* postProcessPipeline, const int threadID, const int frameIndex, const int start, const int nCommands, size_t oobMax, int nThreads);
+	void recordCommands(PostProcessPipeline* postProcessPipeline, const int threadID, const int frameIndex, const int start, const int nCommands, unsigned int oobMax, int nThreads);
 };

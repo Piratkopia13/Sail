@@ -93,7 +93,7 @@ const char* Utils::String::findToken(const std::string& token, const char* sourc
 			size_t lineLength = newLine - match;
 			char* lineCopy = (char*)malloc(lineLength + 1);
 			memset(lineCopy, '\0', lineLength + 1);
-			strncpy(lineCopy, match, lineLength);
+			strncpy_s(lineCopy, lineLength + 1, match, lineLength);
 			if (strstr(lineCopy, "SAIL_IGNORE")) {
 				free(lineCopy);
 				offset += (match - source) + lineLength;

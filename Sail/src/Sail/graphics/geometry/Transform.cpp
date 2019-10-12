@@ -125,7 +125,7 @@ void Transform::rotate(const glm::vec3& rotation) {
 void Transform::rotate(const float x, const float y, const float z) {
 	m_data.m_current.m_rotation += glm::vec3(x, y, z);
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
-	m_matNeedsUpdate |= 2;
+	m_matNeedsUpdate |= 2; // TODO: Check this
 	treeNeedsUpdating();
 }
 
