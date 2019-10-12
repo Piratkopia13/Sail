@@ -2,6 +2,7 @@
 #include "StateStack.h"
 #include "Sail/Application.h"
 #include "Sail/KeyBinds.h"
+#include "imgui.h"
 
 StateStack::StateStack()
 	: m_renderImgui(true)
@@ -25,6 +26,18 @@ void StateStack::processInput(float dt) {
 	// Toggle imgui rendering on key
 	if (Input::WasKeyJustPressed(KeyBinds::toggleImGui))
 		m_renderImgui = !m_renderImgui;
+
+	// Ignore game mouse input when imgui uses the mouse
+	Input::SetMouseInput(!ImGui::GetIO().WantCaptureMouse || Input::IsCursorHidden());
+	// Ignore imgui input when mouse is hidden / used by game
+	if (Input::IsCursorHidden()) {
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+		ImGui::SetWindowFocus();
+	} else {
+		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	}
+	// Ignore game key input when imgui uses the key input
+	Input::SetKeyInput(!ImGui::GetIO().WantCaptureKeyboard);
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
