@@ -28,7 +28,6 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
-	bool renderImGuiLightDebug(float dt);
 
 private:
 	struct Systems {
@@ -51,6 +50,7 @@ private:
 	LightSetup m_lights;
 	Profiler m_profiler;
 	RenderSettingsWindow m_renderSettingsWindow;
+	LightDebugWindow m_lightDebugWindow;
 
 	size_t m_currLightIndex;
 	// For use by non-deterministic entities

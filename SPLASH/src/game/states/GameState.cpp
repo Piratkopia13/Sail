@@ -42,7 +42,6 @@ GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_profiler(true)
-	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
@@ -208,6 +207,8 @@ GameState::GameState(StateStack& stack)
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 
+	m_lightDebugWindow.setLightSetup(&m_lights);
+
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
@@ -286,8 +287,8 @@ bool GameState::processInput(float dt) {
 
 	// Enable bright light and move camera to above procedural generated level
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
-		m_disableLightComponents = !m_disableLightComponents;
-		m_showcaseProcGen = m_disableLightComponents;
+		m_lightDebugWindow.setManualOverride(!m_lightDebugWindow.isManualOverrideOn());
+		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
 			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
 			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
@@ -466,9 +467,9 @@ bool GameState::render(float dt, float alpha) {
 
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImGuiLightDebug(dt);
 	m_profiler.renderWindow();
 	m_renderSettingsWindow.renderWindow();
+	m_lightDebugWindow.renderWindow();
 
 	return false;
 }
@@ -478,40 +479,6 @@ bool GameState::prepareStateChange() {
 		// Reset network
 		NWrapperSingleton::getInstance().resetNetwork();
 	}
-	return true;
-}
-
-bool GameState::renderImGuiLightDebug(float dt) {
-	ImGui::Begin("Light debug");
-	ImGui::Checkbox("Manual override", &m_disableLightComponents);
-	unsigned int i = 0;
-	for (auto& pl : m_lights.getPLs()) {
-		ImGui::PushID(i);
-		std::string label("Point light ");
-		label += std::to_string(i);
-		if (ImGui::CollapsingHeader(label.c_str())) {
-
-			glm::vec3 color = pl.getColor(); // = 1.0f
-			glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
-			float attConstant = pl.getAttenuation().constant; // 0.312f;
-			float attLinear = pl.getAttenuation().linear; // 0.0f;
-			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
-
-			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
-			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
-			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
-			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
-
-			pl.setAttenuation(attConstant, attLinear, attQuadratic);
-			pl.setColor(color);
-			pl.setPosition(position);
-
-		}
-		i++;
-		ImGui::PopID();
-	}
-	ImGui::End();
 	return true;
 }
 
@@ -579,7 +546,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 
 
 	// There is an imgui debug toggle to override lights
-	if (!m_disableLightComponents) {
+	if (!m_lightDebugWindow.isManualOverrideOn()) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);

@@ -51,7 +51,6 @@ private:
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImGuiLightDebug(float dt);
 
 	void shutDownGameState();
 
@@ -106,6 +105,7 @@ private:
 	LightSetup m_lights;
 	Profiler m_profiler;
 	RenderSettingsWindow m_renderSettingsWindow;
+	LightDebugWindow m_lightDebugWindow;
 
 	size_t m_currLightIndex;
 
@@ -113,7 +113,6 @@ private:
 	bool m_isSingleplayer = true;
 	
 	Octree* m_octree;
-	bool m_disableLightComponents;
 	bool m_showcaseProcGen;
 
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyWritingMask;

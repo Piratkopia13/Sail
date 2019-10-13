@@ -28,7 +28,6 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
-	bool renderImGuiLightDebug(float dt);
 
 private:
 	struct Systems {
@@ -44,13 +43,14 @@ private:
 	PerspectiveCamera m_cam;
 	FlyingCameraController m_camController;
 	Octree* m_octree;
-	RenderSettingsWindow m_renderSettingsWindow;
 
 	const std::string createCube(const glm::vec3& position);
 
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;
+	RenderSettingsWindow m_renderSettingsWindow;
+	LightDebugWindow m_lightDebugWindow;
 
 	size_t m_currLightIndex;
 	// For use by non-deterministic entities
