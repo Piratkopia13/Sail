@@ -3,11 +3,15 @@
 #include <Psapi.h>
 #include "Sail/Application.h"
 
-Profiler::Profiler(const bool windowState) : SailImGuiWindow(windowState) {
+Profiler::Profiler(bool showWindow) 
+	: SailImGuiWindow(showWindow)
+{
 	init();
 }
 
-Profiler::Profiler() : SailImGuiWindow(false) {
+Profiler::Profiler() 
+	: SailImGuiWindow(false)
+{
 	init();
 }
 
@@ -82,4 +86,8 @@ unsigned int Profiler::vramUsage() const {
 
 unsigned int Profiler::vramBudget() const {
 	return Application::getInstance()->getAPI()->getMemoryBudget();
+}
+
+void Profiler::renderWindow() {
+	throw std::logic_error("The method or operation is not implemented.");
 }

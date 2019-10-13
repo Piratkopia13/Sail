@@ -38,10 +38,42 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_camController(&m_cam)
-	, m_cc(true)
-	, m_profiler(true)
 	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
+	auto& console = Application::getInstance()->getConsole();
+	console.addCommand("state <string>", [&](const std::string& param) {
+		if (param == "menu") {
+			requestStackPop();
+			requestStackPush(States::MainMenu);
+			console.removeAllCommandsWithIdentifier("PerfTestState");
+			return "State change to menu requested";
+		} else {
+			return "Invalid state. Available states are \"menu\"";
+		}
+		}, "PerfTestState");
+#ifdef _DEBUG
+	console.addCommand(std::string("AddCube"), [&] () {
+		return createCube(m_cam.getPosition());
+	}, "PerfTestState");
+	console.addCommand(std::string("AddCube <int> <int> <int>"), [&] (std::vector<int> in) {
+		if ( in.size() == 3 ) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		} else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	}, "PerfTestState");
+	console.addCommand(std::string("AddCube <float> <float> <float>"), [&] (std::vector<float> in) {
+		if ( in.size() == 3 ) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		} else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	}, "PerfTestState");
+#endif
 
 #ifndef _PERFORMANCE_TEST
 	Logger::Error("Don't run this state in any other configuration than PerformanceTest");
@@ -231,18 +263,6 @@ PerformanceTestState::~PerformanceTestState() {
 // NOTE: Done every frame
 bool PerformanceTestState::processInput(float dt) {
 
-	// Enable bright light and move camera to above procedural generated level
-	/*if ( Input::WasKeyJustPressed(KeyBinds::toggleSun) ) {
-		m_disableLightComponents = !m_disableLightComponents;
-		m_showcaseProcGen = m_disableLightComponents;
-		if ( m_showcaseProcGen ) {
-			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
-			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
-		} else {
-			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
-		}
-	}*/
-
 	// Show boudning boxes
 	if ( Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes) ) {
 		m_componentSystems.renderSystem->toggleHitboxes();
@@ -291,12 +311,6 @@ bool PerformanceTestState::processInput(float dt) {
 	if ( Input::IsKeyPressed(KeyBinds::setDirectionalLight) ) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
-	}
-
-	//Toggle console and profiler
-	if ( Input::WasKeyJustPressed(KeyBinds::toggleConsole) ) {
-		m_cc.toggle();
-		m_profiler.toggle();
 	}
 
 	// Reload shaders
@@ -400,7 +414,6 @@ bool PerformanceTestState::render(float dt, float alpha) {
 
 bool PerformanceTestState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
@@ -417,55 +430,12 @@ bool PerformanceTestState::prepareStateChange() {
 	return true;
 }
 
-bool PerformanceTestState::renderImguiConsole(float dt) {
-	bool open = m_cc.windowOpen();
-	if ( open ) {
-		static char buf[256] = "";
-		if ( ImGui::Begin("Console", &open) ) {
-			m_cc.windowState(open);
-			std::string txt = "test";
-			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-			for ( int i = 0; i < m_cc.getLog().size(); i++ ) {
-				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
-			}
-
-			ImGui::EndChild();
-			ImGui::Separator();
-			bool reclaim_focus = false;
-
-			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
-			buf[m_cc.getTextField().size()] = '\0';
-
-			std::string original = m_cc.getTextField();
-			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-										 ImGuiInputTextFlags_EnterReturnsTrue);
-			ImGui::SameLine();
-			if ( exec || ImGui::Button("Execute", ImVec2(0, 0)) ) {
-				if ( m_cc.execute() ) {
-
-				}
-				reclaim_focus = true;
-			} else {
-				m_cc.setTextField(std::string(buf));
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-
-	return false;
-}
-
 bool PerformanceTestState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.windowOpen();
+	bool open = m_profiler.isWindowOpen();
 	if ( open ) {
 		if ( ImGui::Begin("Profiler", &open) ) {
-
 			//Profiler window displaying the current usage
-			m_profiler.windowState(open);
+			m_profiler.showWindow(open);
 			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
 			std::string header;
 

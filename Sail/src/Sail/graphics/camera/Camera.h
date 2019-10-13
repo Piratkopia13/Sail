@@ -3,38 +3,12 @@
 #include <d3d11.h>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
-#include "../geometry/spatial/AABB.h"
 
 struct Frustum {
 	// In order of left, right, bottom, top, near, far
 	glm::vec4 planes[6];
 
-	bool containsOrIntersects(const AABB& aabb) const { 
-
-		for (int i = 0; i < 6; i++) {
-			if (!planeAABBIntersects(planes[i], aabb))
-				return false;
-		}
-
-		return true; 
-
-	}
-	bool planeAABBIntersects(const glm::vec4& plane, const AABB& aabb) const {
-
-		glm::vec4 c(aabb.getCenterPos(), 1.f);
-		
-		glm::vec3 h = aabb.getHalfSizes();
-		float e = h.x*fabs(plane.x) + h.y*fabs(plane.y) + h.z*fabs(plane.z);
-		float s = glm::dot(c, plane);
-
-		if (s-e > 0)
-			return false; // Outside
-
-		// Else inside or intersecting
-		return true;
-	}
 	void extractPlanes(const glm::mat4& vp) {
-
 		planes[0].x = -(vp[0][3] + vp[0][0]);
 		planes[0].y = -(vp[1][3] + vp[1][0]);
 		planes[0].z = -(vp[2][3] + vp[2][0]);

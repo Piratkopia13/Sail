@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Sail/graphics/shader/component/BindShader.h"
+#include "Sail/graphics/shader/BindShader.h"
 #include "Sail/api/Texture.h"
 
 namespace ShaderComponent {

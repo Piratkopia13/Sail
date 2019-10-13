@@ -149,7 +149,7 @@ glm::vec3& AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* tran
 		desiredDir = glm::vec3(1.0f, 0.f, 0.f);
 	}
 	desiredDir = glm::normalize(desiredDir);
-	return desiredDir;
+	return desiredDir; // TODO: Check this - should probably not return a reference??
 }
 
 
@@ -224,7 +224,7 @@ float AiSystem::getAiYaw(MovementComponent* moveComp, float currYaw, float dt) {
 	float newYaw = currYaw;
 	if ( glm::length2(moveComp->velocity) > 0.f ) {
 		float desiredYaw = 0.f;
-		float turnRate = PI_2 / 2.f; // 2 pi
+		float turnRate = glm::two_pi<float>() / 2.f; // 2 pi
 		auto normalizedVel = glm::normalize(moveComp->velocity);
 		float moveCompX = normalizedVel.x;
 		float moveCompZ = normalizedVel.z;
@@ -234,10 +234,10 @@ float AiSystem::getAiYaw(MovementComponent* moveComp, float currYaw, float dt) {
 		} else {
 			desiredYaw = glm::atan(moveCompX / moveCompZ) - 1.5707f;
 		}
-		desiredYaw = Utils::wrapValue(desiredYaw, 0.f, PI_2);
+		desiredYaw = Utils::wrapValue(desiredYaw, 0.f, glm::two_pi<float>());
 		float diff = desiredYaw - currYaw;
 
-		if ( std::abs(diff) > PI ) {
+		if ( std::abs(diff) > glm::pi<float>() ) {
 			diff = currYaw - desiredYaw;
 		}
 
@@ -249,9 +249,9 @@ float AiSystem::getAiYaw(MovementComponent* moveComp, float currYaw, float dt) {
 		}
 
 		if ( std::abs(diff) > std::abs(toTurn) ) {
-			newYaw = Utils::wrapValue(currYaw + toTurn, 0.f, PI_2);
+			newYaw = Utils::wrapValue(currYaw + toTurn, 0.f, glm::two_pi<float>());
 		} else {
-			newYaw = Utils::wrapValue(currYaw + diff, 0.f, PI_2);
+			newYaw = Utils::wrapValue(currYaw + diff, 0.f, glm::two_pi<float>());
 		}
 
 	}

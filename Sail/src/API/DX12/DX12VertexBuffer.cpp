@@ -37,7 +37,7 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, Mesh::Data& m
 }
 
 DX12VertexBuffer::~DX12VertexBuffer() {
-
+	m_context->waitForGPU();
 }
 
 void DX12VertexBuffer::bind(void* cmdList) const {

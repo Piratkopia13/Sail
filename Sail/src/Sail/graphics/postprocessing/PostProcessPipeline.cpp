@@ -47,10 +47,10 @@ RenderableTexture* PostProcessPipeline::runInternal(PostProcessInput& input, voi
 	for (auto& stage : m_pipelineStages) {
 		auto* settings = stage.shader->getComputeSettings();
 
-		input.outputWidth = stage.resolutionScale * windowWidth;
-		input.outputHeight = stage.resolutionScale * windowHeight;
-		input.threadGroupCountX = glm::ceil(input.outputWidth * settings->threadGroupXScale);
-		input.threadGroupCountY = glm::ceil(input.outputHeight * settings->threadGroupYScale);
+		input.outputWidth = (unsigned int)(stage.resolutionScale * windowWidth);
+		input.outputHeight = (unsigned int)(stage.resolutionScale * windowHeight);
+		input.threadGroupCountX = (unsigned int)glm::ceil(input.outputWidth * settings->threadGroupXScale);
+		input.threadGroupCountY = (unsigned int)glm::ceil(input.outputHeight * settings->threadGroupYScale);
 
 		output = static_cast<PostProcessOutput&>(m_dispatcher->dispatch(*stage.shader, input, 0, cmdList));
 		input.inputTexture = nullptr;

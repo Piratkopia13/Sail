@@ -1,13 +1,13 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
-#include "../../SPLASH/src/game/events/TextInputEvent.h"
+#include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyBinds.h"
+#include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
-#include "Sail/TimeSettings.h"
-#include "Sail/entities/ECS.h"
-#include "Sail/entities/systems/render/RenderSystem.h"
-
+#include "TimeSettings.h"
+#include "entities/ECS.h"
+#include "entities/systems/render/RenderSystem.h"
 
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
@@ -19,6 +19,9 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 		return;
 	}
 	s_instance = this;
+
+	// Set up console
+	m_consoleCommands = std::make_unique<ConsoleCommands>(false);
 
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
@@ -142,8 +145,9 @@ int Application::startGameLoop() {
 				PostQuitMessage(0);
 
 #ifdef _DEBUG
-			/*if (m_input.getKeyboardState().Escape)
-			PostQuitMessage(0);*/
+			if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
+				PostQuitMessage(0);
+			}
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
@@ -212,6 +216,10 @@ ImGuiHandler* const Application::getImGuiHandler() {
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
+}
+
+ConsoleCommands& Application::getConsole() {
+	return *m_consoleCommands;
 }
 
 MemoryManager& Application::getMemoryManager() {
