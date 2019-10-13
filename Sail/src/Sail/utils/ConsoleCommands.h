@@ -113,7 +113,6 @@ private:
 
 	// Animation
 	float m_animTime;
-	float m_animFac;
 	bool m_animRunning;
 	
 };

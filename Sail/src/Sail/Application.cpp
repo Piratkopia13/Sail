@@ -87,9 +87,9 @@ int Application::startGameLoop() {
 	// Initialize key bindings
 	KeyBinds::init();
 
+	m_delta = 0.0f;
 	float currentTime = m_timer.getTimeSince<float>(startTime);
 	float newTime = 0.0f;
-	float delta = 0.0f;
 	float accumulator = 0.0f;
 	float secCounter = 0.0f;
 	float elapsedTime = 0.0f;
@@ -117,16 +117,16 @@ int Application::startGameLoop() {
 
 			// Get delta time from last frame
 			newTime = m_timer.getTimeSince<float>(startTime);
-			delta = newTime - currentTime;
+			m_delta = newTime - currentTime;
 			currentTime = newTime;
 
 			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
 			// when the update is really slow for whatever reason.
-			delta = std::min(delta, 4 * TIMESTEP);
+			m_delta = std::min(m_delta, 4 * TIMESTEP);
 
 			// Update fps counter
-			secCounter += delta;
-			accumulator += delta;
+			secCounter += m_delta;
+			accumulator += m_delta;
 			frameCounter++;
 			if (secCounter >= 1.0) {
 				m_fps = frameCounter;
@@ -145,15 +145,15 @@ int Application::startGameLoop() {
 				PostQuitMessage(0);
 
 #ifdef _DEBUG
-			if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
+			/*if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
 				PostQuitMessage(0);
-			}
-			//if(delta > 0.0166)
-			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
+			}*/
+			//if(m_delta > 0.0166)
+			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(m_delta));
 #endif
 			// Process state specific input
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
-			processInput(delta);
+			processInput(m_delta);
 
 			// Run the update if enough time has passed since the last update
 			while (accumulator >= TIMESTEP) {
@@ -165,11 +165,11 @@ int Application::startGameLoop() {
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
 
-			update(delta, alpha);
+			update(m_delta, alpha);
 
 			// Render
-			render(delta, alpha);
-			//render(delta, 1.0f); // disable interpolation
+			render(m_delta, alpha);
+			//render(m_delta, 1.0f); // disable interpolation
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
@@ -234,4 +234,7 @@ StateStorage& Application::getStateStorage() {
 }
 const UINT Application::getFPS() const {
 	return m_fps;
+}
+float Application::getDelta() const {
+	return m_delta;
 }
