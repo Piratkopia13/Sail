@@ -26,7 +26,7 @@
 #include "Sail/ai/states/SearchingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
-
+#include "Network/NWrapperSingleton.h"
 
 #include <sstream>
 #include <iomanip>
@@ -51,29 +51,6 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 			return "Invalid state. Available states are \"menu\"";
 		}
 		}, "PerfTestState");
-#ifdef _DEBUG
-	console.addCommand(std::string("AddCube"), [&] () {
-		return createCube(m_cam.getPosition());
-	}, "PerfTestState");
-	console.addCommand(std::string("AddCube <int> <int> <int>"), [&] (std::vector<int> in) {
-		if ( in.size() == 3 ) {
-			glm::vec3 pos(in[0], in[1], in[2]);
-			return createCube(pos);
-		} else {
-			return std::string("Error: wrong number of inputs. Console Broken");
-		}
-		return std::string("wat");
-	}, "PerfTestState");
-	console.addCommand(std::string("AddCube <float> <float> <float>"), [&] (std::vector<float> in) {
-		if ( in.size() == 3 ) {
-			glm::vec3 pos(in[0], in[1], in[2]);
-			return createCube(pos);
-		} else {
-			return std::string("Error: wrong number of inputs. Console Broken");
-		}
-		return std::string("wat");
-	}, "PerfTestState");
-#endif
 
 #ifndef _PERFORMANCE_TEST
 	Logger::Error("Don't run this state in any other configuration than PerformanceTest");
@@ -81,7 +58,7 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 
 	// Get the Application instance
 	m_app = Application::getInstance();
-	m_isSingleplayer = m_app->getStateStorage().getLobbyToGameData()->playerList.size() == 1;
+	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
 	//----Octree creation----
 	//Wireframe shader
@@ -150,11 +127,7 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 
 	// Create system for rendering
 	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
-
-
-	// Get the player id's and names from the lobby
-	const unsigned char playerID = m_app->getStateStorage().getLobbyToGameData()->myPlayer.id;
-
+	
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
@@ -864,97 +837,48 @@ void PerformanceTestState::populateScene(Model* characterModel, Model* lightMode
 void PerformanceTestState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
 	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
-	if ( botCount < 0 ) {
+	if (botCount < 0) {
 		botCount = 0;
 	}
 
-	for ( size_t i = 0; i < botCount; i++ ) {
-		auto e = ECS::Instance()->createEntity("AiCharacter");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(2.f * ( i + 1 ), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-		e->addComponent<CollidableComponent>();
-		e->addComponent<MovementComponent>();
-		e->addComponent<SpeedLimitComponent>();
-		e->addComponent<CollisionComponent>();
-		e->addComponent<AiComponent>();
-
-		e->addComponent<AudioComponent>();
-
-		Audio::SoundInfo sound {};
-		sound.fileName = "../Audio/guitar.wav";
-		sound.soundEffectLength = 104.0f;
-		sound.volume = 1.0f;
-		sound.playOnce = false;
-		sound.positionalOffset = { 0.f, 1.2f, 0.f };
-		sound.isPlaying = true; // Start playing the sound immediately
-
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
-
-		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<SpeedLimitComponent>()->maxSpeed = 6.f / 2.f;
-		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
-		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
-		e->addChildEntity(aiCandleEntity);
-		auto fsmComp = e->addComponent<FSMComponent>();
-
-		// Create states and transitions
-		{
-			SearchingState* searchState = fsmComp->createState<SearchingState>(m_componentSystems.aiSystem->getNodeSystem());
-			AttackingState* attackState = fsmComp->createState<AttackingState>();
-			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
-
-
-			// TODO: unnecessary to create new transitions for each FSM if they're all identical
-			// Attack State
-			FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
-			attackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), false);
-			FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
-			attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
-
-			// Search State
-			FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
-			searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
-			FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
-			searchToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), false);
-
-			// Fleeing State
-			FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
-			fleeingToSearch->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), true);
-
-			fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
-			fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
-
-			fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
-			fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
-
-			fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);
-		}
+	for (size_t i = 0; i < botCount; i++) {
+		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, glm::vec3(2.f * (i + 1), 10.f, 0.f), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 	}
 }
 
 void PerformanceTestState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
+
+
+
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
-	tileCross->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
-	tileStraight->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
-	tileCorner->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
-	tileT->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
 	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
 	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
+	tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	std::vector<Model*> tileModels;
+	tileModels.resize(TileModel::NUMBOFMODELS);
+	tileModels[TileModel::ROOM_FLOOR] = tileFlat;
+	tileModels[TileModel::ROOM_WALL] = tileEnd;
+	tileModels[TileModel::ROOM_DOOR] = tileDoor;
+
+	tileModels[TileModel::CORRIDOR_FLOOR] = tileFlat;
+	tileModels[TileModel::CORRIDOR_WALL] = tileEnd;
+	tileModels[TileModel::CORRIDOR_DOOR] = tileDoor;
+
+
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat, tileCross, tileCorner, tileStraight, tileT, tileEnd, boundingBoxModel);
+	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 
 }
