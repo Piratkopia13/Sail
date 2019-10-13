@@ -110,6 +110,11 @@ private:
 	bool m_grabKeyboard;
 	bool m_enableDisabling;
 	int m_historyPos;
+
+	// Animation
+	float m_animTime;
+	float m_animFac;
+	bool m_animRunning;
 	
 };
 

@@ -26,6 +26,8 @@ ConsoleCommands::~ConsoleCommands() {}
 
 void ConsoleCommands::init() {
 	m_historyPos = -1;
+	m_animTime = 0.f;
+	m_animRunning = false;
 	createHelpCommand();
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -154,13 +156,29 @@ void ConsoleCommands::renderWindow() {
 	}
 
 	bool open = isWindowOpen();
-	if (open) {
+	if (open && !m_animRunning) {
+		m_animRunning = true;
+		m_animTime = 0.f;
+		m_animFac = 1.0f;
+	} else if (!open && !m_animRunning) {
+		m_animRunning = true;
+		m_animTime = 0.f;
+		m_animFac = 1.0f;
+	}
+	if (m_animRunning) {
+		//m_animTime += Application::getInstance()->getDelta() * m_animFac;
+		if (m_animTime >= 1.0f) {
+			m_animRunning = false;
+		}
+	}
+	if (m_animRunning || open) {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
 		static char buf[256] = "";
 		if (ImGui::Begin("Console", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove)) {
 			auto* window = Application::getInstance()->getWindow();
-			ImGui::SetWindowSize(ImVec2((float)window->getWindowWidth(), glm::min((float)window->getWindowHeight(), 200.f)), ImGuiCond_Always);
-			ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
+			auto windowHeight = glm::min((float)window->getWindowHeight(), 200.f);
+			ImGui::SetWindowSize(ImVec2((float)window->getWindowWidth(), windowHeight), ImGuiCond_Always);
+			ImGui::SetWindowPos(ImVec2(0.f, EaseInOut(m_animTime, -windowHeight, 0.f, 1.f)), ImGuiCond_Always);
 
 			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -23), false, ImGuiWindowFlags_HorizontalScrollbar);
 

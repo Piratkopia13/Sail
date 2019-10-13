@@ -174,6 +174,12 @@ PBRTestState::PBRTestState(StateStack& stack)
 }
 
 PBRTestState::~PBRTestState() {
+	// Show mouse cursor if hidden
+	Input::HideCursor(false);
+
+	ECS::Instance()->stopAllSystems();
+	ECS::Instance()->destroyAllEntities();
+
 	delete m_virtRAMHistory;
 	delete m_physRAMHistory;
 	delete m_vramUsageHistory;

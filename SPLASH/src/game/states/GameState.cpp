@@ -700,12 +700,10 @@ bool GameState::renderImGuiLightDebug(float dt) {
 }
 
 void GameState::shutDownGameState() {
-
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
 	ECS::Instance()->stopAllSystems();
-
 	ECS::Instance()->destroyAllEntities();
 }
 
