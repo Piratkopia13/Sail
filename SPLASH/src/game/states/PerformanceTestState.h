@@ -28,7 +28,6 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
-	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
 
@@ -56,20 +55,6 @@ private:
 	size_t m_currLightIndex;
 	// For use by non-deterministic entities
 	const float* pAlpha = nullptr;
-
-	// ImGUI profiler data
-	float m_profilerTimer = 0.f;
-	int m_profilerCounter = 0;
-	float* m_virtRAMHistory;
-	float* m_physRAMHistory;
-	float* m_cpuHistory;
-	float* m_vramUsageHistory;
-	float* m_frameTimesHistory;
-	std::string m_virtCount;
-	std::string m_physCount;
-	std::string m_vramUCount;
-	std::string m_cpuCount;
-	std::string m_ftCount;
 
 	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
