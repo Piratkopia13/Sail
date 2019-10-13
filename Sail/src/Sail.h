@@ -35,5 +35,6 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/graphics/geometry/Transform.h"
-#include "Sail/utils/ConsoleCommands.h"
-#include "Sail/utils/Profiler.h"
+#include "Sail/utils/SailImGui/ConsoleCommands.h"
+#include "Sail/utils/SailImGui/Profiler.h"
+#include "Sail/utils/SailImGui/RenderSettingsWindow.h"

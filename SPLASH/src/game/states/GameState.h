@@ -51,7 +51,6 @@ private:
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
 
 	void shutDownGameState();
@@ -106,6 +105,7 @@ private:
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;
+	RenderSettingsWindow m_renderSettingsWindow;
 
 	size_t m_currLightIndex;
 

@@ -1,8 +1,8 @@
 #pragma once
-#include <functional>
-#include "SailImGui/SailImGuiWindow.h"
-#include "Regex/Regex.h"
+#include "SailImGuiWindow.h"
+#include "../Regex/Regex.h"
 #include "imgui.h"
+#include <functional>
 
 /*
 	How to create a new type of input parameters:

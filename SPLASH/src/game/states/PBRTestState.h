@@ -28,7 +28,6 @@ public:
 
 private:
 	bool onResize(WindowResizeEvent& event);
-	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
 
 private:
@@ -45,6 +44,7 @@ private:
 	PerspectiveCamera m_cam;
 	FlyingCameraController m_camController;
 	Octree* m_octree;
+	RenderSettingsWindow m_renderSettingsWindow;
 
 	const std::string createCube(const glm::vec3& position);
 

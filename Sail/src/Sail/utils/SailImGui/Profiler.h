@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SailImGui/SailImGuiWindow.h"
+#include "SailImGuiWindow.h"
 
 class Profiler : public SailImGuiWindow {
 

@@ -110,6 +110,8 @@ GameState::GameState(StateStack& stack)
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
 	//-----------------------
 
+	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
+
 	// Setting light index
 	m_currLightIndex = 0;
 
@@ -464,9 +466,9 @@ bool GameState::render(float dt, float alpha) {
 
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
 	m_profiler.renderWindow();
+	m_renderSettingsWindow.renderWindow();
 
 	return false;
 }
@@ -477,53 +479,6 @@ bool GameState::prepareStateChange() {
 		NWrapperSingleton::getInstance().resetNetwork();
 	}
 	return true;
-}
-
-bool GameState::renderImGuiRenderSettings(float dt) {
-	ImGui::Begin("Rendering settings");
-	ImGui::Checkbox("Enable post processing",
-		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
-	);
-	bool interpolate = ECS::Instance()->getSystem<AnimationSystem>()->getInterpolation();
-	ImGui::Checkbox("enable animation interpolation", &interpolate);
-	ECS::Instance()->getSystem<AnimationSystem>()->setInterpolation(interpolate);
-	static Entity* pickedEntity = nullptr;
-	static float metalness = 1.0f;
-	static float roughness = 1.0f;
-	static float ao = 1.0f;
-
-	ImGui::Separator();
-	if (ImGui::Button("Pick entity")) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHitIndex != -1) {
-			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
-		}
-	}
-
-	if (pickedEntity) {
-		ImGui::Text("Material properties for %s", pickedEntity->getName().c_str());
-		if (auto * model = pickedEntity->getComponent<ModelComponent>()) {
-			auto* mat = model->getModel()->getMesh(0)->getMaterial();
-			const auto& pbrSettings = mat->getPBRSettings();
-			metalness = pbrSettings.metalnessScale;
-			roughness = pbrSettings.roughnessScale;
-			ao = pbrSettings.aoScale;
-			if (ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f)) {
-				mat->setMetalnessScale(metalness);
-			}
-			if (ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f)) {
-				mat->setRoughnessScale(roughness);
-			}
-			if (ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f)) {
-				mat->setAOScale(ao);
-			}
-		}
-	}
-
-	ImGui::End();
-
-	return false;
 }
 
 bool GameState::renderImGuiLightDebug(float dt) {
