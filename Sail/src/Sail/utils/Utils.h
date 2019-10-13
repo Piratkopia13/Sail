@@ -1,12 +1,7 @@
 #pragma once
-#include "pch.h" // TODO: REMOVE
-
-#include <exception>
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <random>
 #include <glm/glm.hpp>
+#include <string>
+#include <random>
 
 #define BIT(x) 1 << x
 
@@ -82,66 +77,10 @@ public:
 };
 
 class Logger {
-
 public:
-
-	inline static void Log(const std::string& msg) {
-
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0x0F);
-		std::cout << "LOG: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-
-	}
-
-
-	inline static void Warning(const std::string& msg) {
-
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0xE0);
-		std::cout << "WARNING: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-#ifdef _SAIL_BREAK_ON_WARNING
-		__debugbreak();
-#endif
-	}
-
-	inline static void Error(const std::string& msg) {
-
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0xC0);
-		std::cout << "ERROR: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-
-#ifdef _SAIL_BREAK_ON_ERROR
-		__debugbreak();
-#endif
-	}
-
+	static void Log(const std::string& msg);
+	static void Warning(const std::string& msg);
+	static void Error(const std::string& msg);
 };
 
 namespace Utils {

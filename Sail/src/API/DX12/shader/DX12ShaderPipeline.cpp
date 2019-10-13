@@ -214,7 +214,7 @@ unsigned int DX12ShaderPipeline::setMaterial(PBRMaterial* material, void* cmdLis
 	unsigned int indexStart = m_context->getMainGPUDescriptorHeap()->getAndStepIndex(nTextures);
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_context->getMainGPUDescriptorHeap()->getCPUDescriptorHandleForIndex(indexStart);
 
-	for (size_t i = 0; i < nTextures; i++) {
+	for (int i = 0; i < nTextures; i++) {
 		if (!textures[i]->hasBeenInitialized()) {
 			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList), i);
 		}

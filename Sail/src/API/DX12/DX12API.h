@@ -7,7 +7,6 @@
 
 // Include the minimal needed from windows.h
 #define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wrl/client.h>
 #include <d3d12.h>
