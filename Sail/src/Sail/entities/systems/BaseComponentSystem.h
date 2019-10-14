@@ -49,6 +49,7 @@ public:
 
 	virtual void stop() {}
 	virtual void clearEntities();
+	virtual size_t getNumEntities();
 
 	// Do not call this, it is called internally by EntityAdderSystem
 	void addQueuedEntities();
