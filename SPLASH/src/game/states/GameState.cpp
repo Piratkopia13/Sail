@@ -1044,14 +1044,20 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallMRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallNM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
+
 
 
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
-	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
-	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
+	tileEnd->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
+	tileEnd->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
+	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
 
 	Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
 	tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
