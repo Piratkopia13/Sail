@@ -220,15 +220,23 @@ GameState::GameState(StateStack& stack)
 	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
 	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
-	// Player creation
-
-	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++).get();
-
-	initAnimations();
 	// Level Creation
-	createTestLevel(shader, boundingBoxModel);
 
 	createLevel(shader, boundingBoxModel);
+
+	// Player creation
+
+
+	int id = static_cast<int>(playerID);
+	glm::vec3 spawnLocation;
+	for (int i = -1; i < id; i++) {
+		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+	}
+
+	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+
+	initAnimations();
+
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
@@ -1031,7 +1039,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	}
 
 	for (size_t i = 0; i < botCount; i++) {
-		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, glm::vec3(2.f * (i + 1), 10.f, 0.f), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, m_componentSystems.levelGeneratorSystem->getSpawnPoint(), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 	}
 }
 
@@ -1069,6 +1077,5 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
-
 }
 
