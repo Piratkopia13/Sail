@@ -244,7 +244,13 @@ GameState::GameState(StateStack& stack)
 	// Player creation
 
 
-	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, m_componentSystems.levelGeneratorSystem->getSpawnPoint()).get();
+	int id = static_cast<int>(playerID);
+	glm::vec3 spawnLocation;
+	for (int i = -1; i < id; i++) {
+		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+	}
+
+	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
 
 	initAnimations();
 
