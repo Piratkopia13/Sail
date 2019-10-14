@@ -1031,7 +1031,7 @@ bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
 
 void LevelGeneratorSystem::addTile(Direction dir, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb) {
 
-	auto tileEntity = ECS::Instance()->createEntity("");
+	auto tileEntity = ECS::Instance()->createEntity("Map_tile");
 	if (dir == Direction::RIGHT) {
 		if (hasDoor(Direction::RIGHT, doors)) {
 			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
@@ -1088,6 +1088,7 @@ void LevelGeneratorSystem::addSpawnPoints() {
 
 		std::vector<glm::vec3> availableSpawnPoints;
 
+		// Room IDs
 		int roomBottomLeft = 0;
 		int roomTopLeft = 0;
 		int roomBottomRight = 0;
@@ -1097,9 +1098,11 @@ void LevelGeneratorSystem::addSpawnPoints() {
 		int roomsRightEdge = 0;
 		int roomsTopEdge = 0;
 
-		// Get all rooms which are on the edges and corners of the map
+		// Find all available spawn locations, one in each room
 		for (int x = 0; x < map->xsize; x++) {
+			// Get all rooms on the bottom edge of the map
 			if (map->tileArr[x][0][1] > 0 && map->tileArr[x][0][1] != roomsBottomEdge && map->tileArr[x][0][1] != roomBottomLeft) {
+				// Bottom left room, added first to the spawn points
 				if (roomBottomLeft == 0) {
 					roomBottomLeft = map->tileArr[x][0][1];
 					map->spawnPoints.push_back(glm::vec3(0.f, 0.f, 0.f));
@@ -1110,24 +1113,27 @@ void LevelGeneratorSystem::addSpawnPoints() {
 				}
 
 			}
+			// Get all rooms on the top edge of the map
 			if (map->tileArr[x][map->ysize - 1][1] > 0 && map->tileArr[x][map->ysize - 1][1] != roomsTopEdge && map->tileArr[x][map->ysize - 1][1] != roomTopLeft) {
+				// Top left room, added to the spawn points
 				if (roomTopLeft == 0) {
 					roomTopLeft = map->tileArr[x][map->ysize - 1][1];
 					map->spawnPoints.push_back(glm::vec3(0.f, 0.f, ((map->ysize - 1) * map->tileSize)));
 				}
 				else {
-					availableSpawnPoints.push_back(glm::vec3((x * map->tileSize), 0.f, (map->ysize * map->tileSize)));
+					availableSpawnPoints.push_back(glm::vec3((x * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
 					roomsTopEdge = map->tileArr[x][map->ysize - 1][1];
 				}
 
 			}
 		}
-		// Adding the corner spawn points first
+		// Adding the rest of the corner spawn points.
 		roomTopRight = roomsTopEdge;
 		map->spawnPoints.insert(map->spawnPoints.begin() + 1, glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
 		roomBottomRight = roomsBottomEdge;
 		map->spawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, 0.f));
 
+		// Get all rooms for the right and left edge of the map, except for the corner rooms
 		for (int y = 0; y < map->ysize; y++) {
 			if (map->tileArr[0][y][1] > 0 && map->tileArr[0][y][1] != roomsLeftEdge && map->tileArr[0][y][1] != roomBottomLeft && map->tileArr[0][y][1] != roomTopLeft){
 				availableSpawnPoints.push_back(glm::vec3(0.f, 0.f, (y * map->tileSize)));
@@ -1141,8 +1147,8 @@ void LevelGeneratorSystem::addSpawnPoints() {
 
 		std::default_random_engine generator;
 		
-		// Find available rooms around the edges and randomly choose spawn points for the rest of the players
-		for (int i = 0; i < map->players - 4; i++) {
+		// Add the rest of the spawn points in a randomized order
+		while(availableSpawnPoints.size() > 0){
 			std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size() - 1);
 			int randomRoom = distribution(generator);
 			map->spawnPoints.push_back(availableSpawnPoints[randomRoom]);
@@ -1152,13 +1158,20 @@ void LevelGeneratorSystem::addSpawnPoints() {
 	}
 }
 
+// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
 glm::vec3 LevelGeneratorSystem::getSpawnPoint() {
-	glm::vec3 spawnLocation;
+	glm::vec3 spawnLocation = glm::vec3(-10.f);
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		
-		spawnLocation = map->spawnPoints.front();
-		map->spawnPoints.erase(map->spawnPoints.begin());
+		if (map->spawnPoints.size() > 0) {
+			spawnLocation = map->spawnPoints.front();
+			map->spawnPoints.erase(map->spawnPoints.begin());
+		}
+		else {
+			Logger::Error("Not enough spawn locations.");
+		}
+
 	}
 
 	return spawnLocation;
