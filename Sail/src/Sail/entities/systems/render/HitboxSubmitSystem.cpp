@@ -28,5 +28,12 @@ void HitboxSubmitSystem::submitAll() {
 				renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), Renderer::MESH_STATIC);
 			}
 		}
+	} else {
+		for (auto&e : entities) {
+			if (e == nullptr)
+			{
+				int apa = 0;
+			}
+		}
 	}
 }

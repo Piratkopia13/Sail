@@ -45,7 +45,7 @@ unsigned ECS::nrOfComponentTypes() const {
 
 Entity::SPtr ECS::createEntity(const std::string& name) {
 	m_entities.push_back(Entity::Create(this, name));
-	m_entities.back()->setECSIndex(m_entities.size() - 1);
+	m_entities.back()->setECSIndex((int)m_entities.size() - 1);
 	return m_entities.back();
 }
 

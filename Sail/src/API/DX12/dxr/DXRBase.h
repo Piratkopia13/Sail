@@ -91,8 +91,8 @@ private:
 
 	std::string m_shaderFilename;
 
-	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_sceneCB;
-	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_meshCB;
+	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_sceneCB;
+	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_meshCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
@@ -121,7 +121,7 @@ private:
 
 
 	std::vector<MeshHandles> m_rtMeshHandles;
-	//Metaballs
+	// Metaballs
 	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
 	UINT m_metaballsToRender;
 
@@ -141,8 +141,8 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
-	//Metaball Stuff
-	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2, -0.2, -0.2, 0.2, 0.2, 0.2 };
-	ID3D12Resource1* m_aabb_desc_resource; //m_aabb_desc uploaded to GPU
+	// Metaball Stuff
+	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2f, -0.2f, -0.2f, 0.2f, 0.2f, 0.2f };
+	ID3D12Resource1* m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
 
 };
