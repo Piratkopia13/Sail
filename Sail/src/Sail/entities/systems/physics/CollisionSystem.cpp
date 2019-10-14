@@ -43,7 +43,7 @@ void CollisionSystem::update(float dt) {
 				//Not implemented for spheres yet
 				collisionUpdate(e, updateableDt);
 
-				surfaceFromCollision(e);
+				//surfaceFromCollision(e, updateableDt);
 
 				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
 					//Object is moving fast, ray cast for collisions
@@ -82,7 +82,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 	collision->onGround = false;
 
 	const size_t collisionCount = collisions.size();
-	
+
 	if (collisionCount > 0) {
 		std::vector<int> groundIndices;
 		glm::vec3 sumVec(0.0f);
@@ -94,11 +94,13 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 
 			glm::vec3 intersectionAxis;
 			float intersectionDepth;
+			float normalDepth;
+			float upDepth;
 
 			//Get intersection axis and depth
-			Intersection::AabbWithTriangle(*boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth);
+			Intersection::AabbWithTriangle(*boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth, &upDepth);
 
-			if (abs(glm::dot(intersectionAxis, collisionInfo_i.normal)) > 0.98f) {
+			if (intersectionDepth == normalDepth || normalDepth <= glm::dot(movement->oldVelocity * dt, -collisionInfo_i.normal)) {
 				//Compare normal and axis, only do collisions if same direction. I.e "true" collision
 				sumVec += collisionInfo_i.normal;
 
@@ -240,7 +242,7 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 	}
 }
 
-void CollisionSystem::surfaceFromCollision(Entity* e) {
+void CollisionSystem::surfaceFromCollision(Entity* e, const float& dt) {
 	glm::vec3 distance(0.0f);
 	auto& collisions = e->getComponent<CollisionComponent>()->collisions;
 	auto bb = e->getComponent<BoundingBoxComponent>();
@@ -250,16 +252,16 @@ void CollisionSystem::surfaceFromCollision(Entity* e) {
 	const size_t count = collisions.size();
 	for (size_t i = 0; i < count; i++) {
 		const Octree::CollisionInfo& collisionInfo_i = collisions[i];
-		float depth;
-		glm::vec3 axis;
+		glm::vec3 intersectionAxis;
+		float intersectionDepth;
+		float normalDepth;
+		float upDepth;
 
-		if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &axis, &depth)) {
-			if (glm::dot(axis, collisionInfo_i.normal) > 0.98f) {
-				if (depth <= glm::dot(movement->oldVelocity, -axis)) {
-					bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
-					distance += axis * depth;
-				}
-			}
+		Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth, &upDepth);
+
+		if (glm::abs(glm::dot(intersectionAxis, collisionInfo_i.normal)) > 0.98f) {
+			bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
+			distance += intersectionAxis * intersectionDepth;
 		}
 	}
 	transform->translate(distance);
