@@ -143,7 +143,7 @@ void AiSystem::aiUpdateFunc(Entity* e, const float dt) {
 	updatePhysics(e, dt);
 }
 
-glm::vec3& AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* transComp) {
+glm::vec3 AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* transComp) {
 	glm::vec3 desiredDir = aiComp->currPath[aiComp->currNodeIndex].position - transComp->getTranslation();
 	if ( desiredDir == glm::vec3(0.f) ) {
 		desiredDir = glm::vec3(1.0f, 0.f, 0.f);
