@@ -70,11 +70,11 @@ GameState::GameState(StateStack& stack)
 		}
 
 	}, "GameState");
+	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
 #ifdef _DEBUG
 	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
 	}, "GameState");
-	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
 	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
 	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
 		if (in.size() == 3) {
@@ -95,6 +95,7 @@ GameState::GameState(StateStack& stack)
 		return std::string("wat");
 	}, "GameState");
 #endif
+
 
 	// Get the Application instance
 	m_app = Application::getInstance();
