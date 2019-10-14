@@ -153,6 +153,7 @@ GameState::GameState(StateStack& stack)
 	// Create system for the candles
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
 	m_componentSystems.candleSystem->setGameStatePtr(this);
+	m_componentSystems.candleSystem->setLivingCandles(NWrapperSingleton::getInstance().getPlayers().size());
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();

@@ -157,7 +157,12 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
 	{
-		// Send additional info if needed
+		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
+		(*ar)(NetObjectID); // Send
+	}
+	break;
+	case Netcode::MessageType::MATCH_ENDED:
+	{
 	}
 	break;
 

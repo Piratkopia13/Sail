@@ -151,6 +151,14 @@ void NetworkReceiverSystem::update(float dt) {
 
 				EntityFactory::CreateProjectile(gunPosition, gunVelocity);
 			}
+			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
+				ar(netObjectID);
+
+				playerDied(netObjectID);
+			}
+			else if (eventType == Netcode::MessageType::MATCH_ENDED) {
+				matchEnded();
+			}
 		}
 
 
@@ -281,13 +289,25 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
-	// How do i trigger a jump from here?
+
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->addComponent<SpectatorComponent>();
+			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+			e->removeComponent<GunComponent>();
+			e->removeAllChildren();
+			// TODO: Remove all the components that can/should be removed
+
 			e->queueDestruction();
+
+			break; // Break because should only be one candle; stop looping!
 		}
 	}
 }
 
+void NetworkReceiverSystem::matchEnded() {
 
+	//gameState->requestStackPop();
+	//m_gameStatePtr->requestStackPush(States::EndGame);
+}
 

@@ -11,6 +11,7 @@
 #include "Sail/entities/components/SpectatorComponent.h"
 #include "Sail/entities/components/LocalPlayerComponent.h"
 #include "Sail/entities/components/OnlinePlayerComponent.h"
+#include "../Sail/src/Network/NWrapperSingleton.h"
 
 #include "Sail/entities/Entity.h"
 
@@ -62,11 +63,6 @@ void CandleSystem::update(float dt) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
-					//if (e->hasComponent<OnlinePlayerComponent>()) {
-					//	// We can see if the hit entity was an Online,
-					//	// But we can't see if the local player hit it..
-					//}
-
 					if (candle->getHealth() <= 0.f) {
 						candle->setIsLit(false);
 
@@ -82,25 +78,21 @@ void CandleSystem::update(float dt) {
 
 							// Check if the extinguished candle is owned by the player
 							if (candle->getOwner() == m_playerEntityID) {
-								//Entity* tempPlayerEntity;
-								//if (e->hasComponent<LocalPlayerComponent>()) {
-								//	tempPlayerEntity = e->getComponent<LocalPlayerComponent>();
-								//}
-
-								e->addComponent<SpectatorComponent>();
-								e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-								e->removeComponent<GunComponent>();
-								e->removeAllChildren();
-								// TODO: Remove all the components that can/should be removed
-
-								// e->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::PLAYER_DIED);
-
-								e->queueDestruction();
 								LivingCandles--;
 
-								if (LivingCandles <= 1) {
-									m_gameStatePtr->requestStackPop();
-									m_gameStatePtr->requestStackPush(States::EndGame);
+								if (LivingCandles <= 1) { // Match IS over
+									NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+										Netcode::MessageType::MATCH_ENDED,
+										e->getParent()
+										// Can I send gameStatePtr through above function?
+									);
+								}
+								else { // Match IS NOT over, player died
+									// SEND MESSAGE PLAYER DIED
+									NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+										Netcode::MessageType::PLAYER_DIED,
+										e->getParent()
+									);
 								}
 							}
 						}

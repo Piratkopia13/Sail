@@ -26,7 +26,7 @@ public:
 	void putDownCandle(Entity* e);
 
 	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
-	void resetGameStatePtr() { m_gameStatePtr = nullptr; }
+	void setLivingCandles(int candles) { /*m_livingCandles = candles*/; }
 
 private:
 	int m_playerEntityID;
@@ -36,6 +36,8 @@ private:
 	float m_candleForceRespawnTimer = 2.0f;
 	// TODO: Replace using game settings when that is implemented
 	int m_maxNumRespawns = 1;
+	// TO DO: Move or something
+	//int m_livingCandles = 0;
 
 	float testTimer = 0.0f;
 };
