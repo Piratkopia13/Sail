@@ -31,7 +31,7 @@ class State : public IEventListener {
 		virtual bool onEvent(Event& event) { return true; }
 		// Called at the end of the frame to reset the state before it changes
 		virtual bool prepareStateChange() { return true; }
-	protected:
+//	protected:
 		// Request the push of a new state to the stack next update
 		void requestStackPush(States::ID stateID);
 		// Request to pop the top state in the stack next update

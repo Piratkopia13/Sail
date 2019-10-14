@@ -152,6 +152,7 @@ GameState::GameState(StateStack& stack)
 
 	// Create system for the candles
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
+	m_componentSystems.candleSystem->setGameStatePtr(this);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -419,7 +420,7 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 
-	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
+	//EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
@@ -434,22 +435,10 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 	return true;
 }
 
-bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
-	if ( !m_isSingleplayer ) {
-		m_player->addComponent<SpectatorComponent>();
-		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-		m_player->removeComponent<NetworkSenderComponent>();
-		m_player->removeComponent<GunComponent>();
-		m_player->removeAllChildren();
-		// TODO: Remove all the components that can/should be removed
-	} else {
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
-		m_poppedThisFrame = true;
-	}
-
-	return true;
-}
+//bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
+//
+//	return true;
+//}
 
 bool GameState::update(float dt, float alpha) {
 	// UPDATE REAL TIME SYSTEMS

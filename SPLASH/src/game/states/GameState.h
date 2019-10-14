@@ -50,7 +50,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
-	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
+	//bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
