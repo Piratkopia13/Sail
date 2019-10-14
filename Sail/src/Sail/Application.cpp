@@ -1,13 +1,13 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
-#include "../../SPLASH/src/game/events/TextInputEvent.h"
+#include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyBinds.h"
+#include "KeyCodes.h"
 #include "graphics/geometry/Transform.h"
-#include "Sail/TimeSettings.h"
-#include "Sail/entities/ECS.h"
-#include "Sail/entities/systems/render/RenderSystem.h"
-
+#include "TimeSettings.h"
+#include "entities/ECS.h"
+#include "entities/systems/render/RenderSystem.h"
 
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
@@ -19,6 +19,9 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 		return;
 	}
 	s_instance = this;
+
+	// Set up console
+	m_consoleCommands = std::make_unique<ConsoleCommands>(false);
 
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
@@ -84,9 +87,9 @@ int Application::startGameLoop() {
 	// Initialize key bindings
 	KeyBinds::init();
 
+	m_delta = 0.0f;
 	float currentTime = m_timer.getTimeSince<float>(startTime);
 	float newTime = 0.0f;
-	float delta = 0.0f;
 	float accumulator = 0.0f;
 	float secCounter = 0.0f;
 	float elapsedTime = 0.0f;
@@ -114,16 +117,16 @@ int Application::startGameLoop() {
 
 			// Get delta time from last frame
 			newTime = m_timer.getTimeSince<float>(startTime);
-			delta = newTime - currentTime;
+			m_delta = newTime - currentTime;
 			currentTime = newTime;
 
 			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
 			// when the update is really slow for whatever reason.
-			delta = std::min(delta, 4 * TIMESTEP);
+			m_delta = std::min(m_delta, 4 * TIMESTEP);
 
 			// Update fps counter
-			secCounter += delta;
-			accumulator += delta;
+			secCounter += m_delta;
+			accumulator += m_delta;
 			frameCounter++;
 			if (secCounter >= 1.0) {
 				m_fps = frameCounter;
@@ -142,14 +145,15 @@ int Application::startGameLoop() {
 				PostQuitMessage(0);
 
 #ifdef _DEBUG
-			/*if (m_input.getKeyboardState().Escape)
-			PostQuitMessage(0);*/
+			if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
+				PostQuitMessage(0);
+			}
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
 			// Process state specific input
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
-			processInput(delta);
+			processInput(m_delta);
 
 			// Run the update if enough time has passed since the last update
 			while (accumulator >= TIMESTEP) {
@@ -161,11 +165,11 @@ int Application::startGameLoop() {
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
 
-			update(delta, alpha);
+			update(m_delta, alpha);
 
 			// Render
-			render(delta, alpha);
-			//render(delta, 1.0f); // disable interpolation
+			render(m_delta, alpha);
+			//render(m_delta, 1.0f); // disable interpolation
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
@@ -214,6 +218,10 @@ ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
 }
 
+ConsoleCommands& Application::getConsole() {
+	return *m_consoleCommands;
+}
+
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }
@@ -226,4 +234,8 @@ StateStorage& Application::getStateStorage() {
 }
 const UINT Application::getFPS() const {
 	return m_fps;
+}
+
+float Application::getDelta() const {
+	return m_delta;
 }

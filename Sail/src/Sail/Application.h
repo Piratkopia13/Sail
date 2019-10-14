@@ -7,15 +7,18 @@
 #include "api/ImGuiHandler.h"
 
 #include "utils/Timer.h"
+#include "utils/ConsoleCommands.h"
+#include "utils/StateStorage.h"
 #include "resources/ResourceManager.h"
+#include "resources/loaders/AssimpLoader.h"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "events/IEventDispatcher.h"
-#include "utils/StateStorage.h"
 #include "RendererWrapper.h"
+
+#include <ctpl/ctpl_stl.h>
 
 #include <future>
 
-#include "resources/loaders/AssimpLoader.h"
 // Forward declarations
 namespace ctpl {
 	class thread_pool;
@@ -78,11 +81,13 @@ public:
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
+	ConsoleCommands& getConsole();
 
 	MemoryManager& getMemoryManager();
 	RendererWrapper* getRenderWrapper();
 	StateStorage& getStateStorage();
 	const UINT getFPS() const;
+	float getDelta() const;
 
 private:
 
@@ -91,6 +96,7 @@ private:
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	std::unique_ptr<ctpl::thread_pool> m_threadPool;
+	std::unique_ptr<ConsoleCommands> m_consoleCommands;
 	ResourceManager m_resourceManager;
 	RendererWrapper m_rendererWrapper;
 
@@ -100,6 +106,7 @@ private:
 	// Timer
 	Timer m_timer;
 	UINT m_fps;
+	float m_delta;
 
 	static std::atomic_bool s_isRunning;
 };

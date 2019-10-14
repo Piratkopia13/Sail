@@ -60,7 +60,15 @@ ID3D12Resource1* DX12Utils::CreateBuffer(ID3D12Device5* device, UINT64 size, D3D
 	}
 
 	ID3D12Resource1* pBuffer = nullptr;
-	device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, bufDesc, initState, nullptr, IID_PPV_ARGS(&pBuffer));
+	auto hr = device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, bufDesc, initState, nullptr, IID_PPV_ARGS(&pBuffer));
+	if (FAILED(hr)) {
+		_com_error err(hr);
+		std::cout << err.ErrorMessage() << std::endl;
+
+		hr = device->GetDeviceRemovedReason();
+		_com_error err2(hr);
+		std::cout << err2.ErrorMessage() << std::endl;
+	}
 	return pBuffer;
 }
 

@@ -1,6 +1,6 @@
 -- premake5.lua
-workspace "SPLASH"
-	configurations { "Debug", "Release" }
+workspace "Sail"
+	configurations { "Debug", "Release", "PerformanceTest" }
 	startproject "SPLASH"
 	platforms { "DX12 x64", "DX12 x86" }
 
@@ -62,6 +62,9 @@ project "SPLASH"
 		"Physics"
 	}
 
+	defines { "NOMINMAX",				-- Removes min max macros which cause issues
+			  "WIN32_LEAN_AND_MEAN" }	-- Exclude some less used APIs to speed up the build process on windows
+
 	flags { "MultiProcessorCompile" }
 
 	filter "system:windows"
@@ -73,6 +76,10 @@ project "SPLASH"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
+		optimize "On"
+
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST" }
 		optimize "On"
 
 	-- Copy dlls to executable path
@@ -177,6 +184,9 @@ project "Sail"
 		defines { "NDEBUG" }
 		optimize "On"
 
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		optimize "On"
 
 -----------------------------------
 -------------  Physics ------------
@@ -218,4 +228,8 @@ project "Physics"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
+		optimize "On"
+
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST" }
 		optimize "On"
