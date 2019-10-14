@@ -41,6 +41,8 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	memcpy(pMappedData, &m_aabb_desc, sizeof(m_aabb_desc));
 	m_aabb_desc_resource->Unmap(0, nullptr);
 
+	m_decalsToRender = 0;
+
 }
 
 DXRBase::~DXRBase() {
@@ -189,10 +191,21 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.cameraPosition = cam.getPosition();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 	newData.nMetaballs = m_metaballsToRender;
+	newData.nDecals = m_decalsToRender;
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
 	m_sceneCB[m_context->getFrameIndex()]->updateData(&newData, sizeof(newData));
+}
+
+void DXRBase::updateDecalData(const std::vector<DXRShaderCommon::DecalData>& decals) {
+	DXRShaderCommon::DecalCBuffer newData;
+	for (int i = 0; i < decals.size(); i++) {
+		newData.data[(i + m_decalsToRender) % MAX_DECALS] = decals[i];
+	}
+	m_decalsToRender += decals.size();
+
+	m_decalCB->updateData(&newData, sizeof(newData));
 }
 
 void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
@@ -551,6 +564,14 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			}
 			free(initData);
 		}
+		// Decal CB
+		{
+			unsigned int size = sizeof(DXRShaderCommon::DecalCBuffer);
+			void* initData = malloc(size);
+			memset(initData, 0, size);
+			m_decalCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
+			free(initData);
+		}
 	}
 
 }
@@ -666,6 +687,8 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
+		D3D12_GPU_VIRTUAL_ADDRESS decalCBHandle = m_decalCB->getBuffer()->GetGPUVirtualAddress();
+		tableBuilder.addDescriptor(decalCBHandle);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -784,6 +807,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
+	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);

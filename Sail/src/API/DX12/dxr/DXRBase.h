@@ -31,6 +31,7 @@ public:
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
+	void updateDecalData(const std::vector<DXRShaderCommon::DecalData>& decals);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void reloadShaders();
@@ -93,6 +94,7 @@ private:
 
 	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_sceneCB;
 	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_meshCB;
+	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_decalCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
@@ -124,6 +126,8 @@ private:
 	//Metaballs
 	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
 	UINT m_metaballsToRender;
+	// Decals
+	UINT m_decalsToRender;
 
 	const WCHAR* m_rayGenName = L"rayGen";
 	const WCHAR* m_closestHitName = L"closestHitTriangle";

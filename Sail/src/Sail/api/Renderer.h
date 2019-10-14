@@ -31,6 +31,7 @@ public:
 	enum RenderCommandType {
 		RENDER_COMMAND_TYPE_MODEL,
 		RENDER_COMMAND_TYPE_NON_MODEL_METABALL,
+		RENDER_COMMAND_TYPE_NON_MODEL_DECAL
 	};
 
 	struct RenderCommand {
