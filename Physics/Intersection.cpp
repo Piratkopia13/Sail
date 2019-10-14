@@ -607,19 +607,24 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 	return returnValue;
 }
 
-bool Intersection::FrustumWithAabb(const Frustum& frustum, const BoundingBox& aabb) {
-	for (int i = 0; i < 6; i++) {
-		glm::vec4 c(aabb.getPosition(), 1.f);
+bool Intersection::FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& normal, const float distance) {
+	const glm::vec3* corners = aabb.getCorners();
 
-		glm::vec3 h = aabb.getHalfSize();
-		float e = h.x * fabs(frustum.planes[i].x) + h.y * fabs(frustum.planes[i].y) + h.z * fabs(frustum.planes[i].z);
-		float s = glm::dot(c, frustum.planes[i]);
-
-		if (s - e > 0) {
-			return false; // Outside
+	// Find point on positive side of plane
+	for (short i = 0; i < 8; i++) {
+		if ((glm::dot(corners[i], normal) - distance) >= 0.0f) {
+			return true;
 		}
+	}
+	return false;
+}
 
-		// Else inside or intersecting
+bool Intersection::FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb) {
+	for (int i = 0; i < 6; i++) {
+		if (!FrustumPlaneWithAabb(aabb, glm::vec3(frustum.planes[i].x, frustum.planes[i].y, frustum.planes[i].z), frustum.planes[i].w)) {
+			//Aabb is on the wrong side of a plane - it is outside the frustum.
+			return false;
+		}
 	}
 	return true;
 }

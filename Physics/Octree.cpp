@@ -11,13 +11,13 @@
 
 
 Octree::Octree(Model* boundingBoxModel) {
-	
+
 	m_boundingBoxModel = boundingBoxModel;
 	m_softLimitMeshes = 4;
 	m_minimumNodeHalfSize = 4.0f;
 
 	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	
+
 	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* tempBoundingBox = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	tempBoundingBox->setPosition(glm::vec3(0.0f));
@@ -40,7 +40,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 	Node newBaseNode;
 	const BoundingBox* baseNodeBB = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	
+
 	newBaseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* newBaseNodeBoundingBox = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNodeBoundingBox->setPosition(baseNodeBB->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(x * baseNodeBB->getHalfSize().x * 2.0f, y * baseNodeBB->getHalfSize().y * 2.0f, z * baseNodeBB->getHalfSize().z * 2.0f));
@@ -57,7 +57,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 				}
 				else {
 					tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-					
+
 					tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 					BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 					tempChildBoundingBox->setHalfSize(baseNodeBB->getHalfSize());
@@ -136,7 +136,7 @@ bool Octree::addEntityRec(Entity* newEntity, Node* currentNode) {
 							const BoundingBox* currentNodeBB = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							Node tempChildNode;
 							tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-							
+
 							tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 							BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							tempChildBoundingBox->setHalfSize(currentNodeBB->getHalfSize() / 2.0f);
@@ -382,7 +382,7 @@ void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& ray
 
 		if (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
 			outIntersectionData->closestHit = intersectionDistance;
-			outIntersectionData->closestHitIndex = (int) (outIntersectionData->info.size() - 1);
+			outIntersectionData->closestHitIndex = (int)(outIntersectionData->info.size() - 1);
 		}
 	}
 }
@@ -471,26 +471,29 @@ int Octree::frustumCulledDrawRec(const Frustum& frustum, Node* currentNode) {
 	int returnValue = 0;
 
 	//Check if node is in frustum
-	if (Intersection::FrustumWithAabb(frustum, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) {
+	//if (Intersection::FrustumWithAabb(frustum, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) {
 		//In frustum
 
 		//Draw meshes in node
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
-			// Let the renderer know that this entity should be rendered.
-			auto* modelComponent = currentNode->entities[i]->getComponent<ModelComponent>();
-			if (modelComponent) {
-				for (unsigned int j = 0; j < modelComponent->getModel()->getNumberOfMeshes(); j++) {
-					modelComponent->getModel()->getMesh(j)->setIsVisibleOnScreen(true);
+
+			if (Intersection::FrustumWithAabb(frustum, *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox())) {
+				// Let the renderer know that this entity should be rendered.
+				auto* modelComponent = currentNode->entities[i]->getComponent<ModelComponent>();
+				if (modelComponent) {
+					for (unsigned int j = 0; j < modelComponent->getModel()->getNumberOfMeshes(); j++) {
+						modelComponent->getModel()->getMesh(j)->setIsVisibleOnScreen(true);
+					}
 				}
+				returnValue++;
 			}
-			returnValue++;
 		}
 
 		//Call draw for all children
 		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
 			returnValue += frustumCulledDrawRec(frustum, &currentNode->childNodes[i]);
 		}
-	}
+	//}
 	return returnValue;
 }
 
