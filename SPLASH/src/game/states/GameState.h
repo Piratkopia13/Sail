@@ -96,7 +96,6 @@ private:
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
-	PerspectiveCamera m_cullCam;
 
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	Entity* m_player;

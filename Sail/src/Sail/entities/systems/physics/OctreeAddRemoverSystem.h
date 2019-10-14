@@ -17,6 +17,7 @@ public:
 	void removeEntity(Entity* entity) override;
 
 	void update(float dt) override;
+	void updatePerFrame(float dt);
 
 	void setCulling(bool activated, Camera* camera);
 

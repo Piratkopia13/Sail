@@ -44,7 +44,9 @@ void OctreeAddRemoverSystem::removeEntity(Entity* entity) {
 
 void OctreeAddRemoverSystem::update(float dt) {
 	m_octree->update();
-	
+}
+
+void OctreeAddRemoverSystem::updatePerFrame(float dt) {
 	if (m_doCulling) {
 		// Let the renderer know that all entities should not be rendered - will be set to true in cull method call if they are visible
 		for (auto& entity : entities) {
