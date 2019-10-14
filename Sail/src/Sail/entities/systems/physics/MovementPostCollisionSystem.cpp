@@ -9,6 +9,7 @@
 MovementPostCollisionSystem::MovementPostCollisionSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<CollisionSpheresComponent>(false, true, true);
 }
 
 MovementPostCollisionSystem::~MovementPostCollisionSystem() {
