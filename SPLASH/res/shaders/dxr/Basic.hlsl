@@ -134,18 +134,18 @@ void rayGen() {
 
     //===========DECALS START===========//
     // Init temp test variables
-    float3 decalSize = { 0.9f, 0.9f, 0.9f };
+    float3 decalSize = { 4.0f, 4.0f, 4.0f };
     float3x3 decalRot = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
-    float3 decalPos = { -2.0f, 1.0f, 7.5f };
+    float3 decalPos = { 13.0f, 0.0f, 13.0f };
 
     // Test rotation
-    float angle = PI;
-    float3 axis = { 0.0f, 0.0f, 1.0f };
+    float angle = PI * 0.5f;
+    float3 axis = { 0.0f, 1.0f, 0.0f };
     decalRot = Utils::rotateMatrix(angle, axis);
    
-    //angle = -PI * 0.5f;
-    //axis = float3(1.0f, 0.0f, 0.0f);
-    decalRot = Utils::rotateMatrix(angle, axis);
+    angle = PI * -0.25f;
+    axis = float3(0.0f, 0.0f,1.0f);
+    //decalRot = Utils::rotateMatrix(angle, axis);
 
     //float3 ddx = ddx_coarse(vsPosition).xyz;
     float3 posNeighborX = vsPosition.xyz;
@@ -164,7 +164,7 @@ void rayGen() {
         decalUVW.z >= -1.0f && decalUVW.z <= 1.0f) {
 
         // Get current decal textures
-        float2 decalUV = saturate(decalUVW.xz * 0.5f + 0.5f);
+        float2 decalUV = saturate(decalUVW.xy * 0.5f + 0.5f);
         Texture2D decalAlbedoMap = sys_inTex_albedo;
         //Texture2D decalNormalMap = sys_inTex_normals;
 
@@ -173,13 +173,13 @@ void rayGen() {
         decalPosNeighborX = mul(decalPosNeighborX, transpose(decalRot));
         decalPosNeighborX = decalPosNeighborX / decalSize;
         decalPosNeighborX.y *= -1;
-        float2 uvDX = saturate(decalPosNeighborX.xz * 0.5f + 0.5f) - decalUV;
+        float2 uvDX = saturate(decalPosNeighborX.xy * 0.5f + 0.5f) - decalUV;
 
         float3 decalPosNeighborY = posNeighborY - decalPos;
         decalPosNeighborY = mul(decalPosNeighborY, transpose(decalRot));
         decalPosNeighborY = decalPosNeighborY / decalSize;
         decalPosNeighborY.y *= -1;
-        float2 uvDY = saturate(decalPosNeighborY.xz * 0.5f + 0.5f) - decalUV;
+        float2 uvDY = saturate(decalPosNeighborY.xy * 0.5f + 0.5f) - decalUV;
 
         float4 decalAlbedo = decalAlbedoMap.SampleGrad(ss, decalUV, uvDX, uvDY);
         //float3 decalNormalTS = { 0.0f, 0.0f, 0.0f };
@@ -203,13 +203,12 @@ void rayGen() {
     // Init temp test variables
     decalSize = float3(2.0f, 2.0f, 2.0f);
     decalRot = float3x3(float3(1.0f, 0.0f, 0.0f), float3(0.0f, 1.0f, 0.0f), float3(0.0f, 0.0f, 1.0f));
-    decalPos = float3(-3.0f, 0.0f, 15.0f);
+    decalPos = float3(2.0f, 0.0f, 6.0f);
 
     // Test rotation
-    //angle = PI * 0.5;
-    //axis = float3(1.0f, 0.0f, 0.0f);
-
-    //decalRot = Utils::rotateMatrix(angle, axis);
+    angle = PI * -0.25;
+    axis = float3(1.0f, 0.0f, 0.0f);
+    decalRot = Utils::rotateMatrix(angle, axis);
    
     //angle = PI;
     //axis = float3(0.0f, 0.0f, 1.0f);
@@ -233,7 +232,7 @@ void rayGen() {
     {
 
         // Get current decal textures
-        float2 decalUV = saturate(decalUVW.xz * 0.5f + 0.5f);
+        float2 decalUV = saturate(decalUVW.xy * 0.5f + 0.5f);
         Texture2D decalAlbedoMap = sys_inTex_albedo;
         //Texture2D decalNormalMap = sys_inTex_normals;
 
@@ -242,13 +241,13 @@ void rayGen() {
         decalPosNeighborX = mul(decalPosNeighborX, transpose(decalRot));
         decalPosNeighborX = decalPosNeighborX / decalSize;
         decalPosNeighborX.y *= -1;
-        float2 uvDX = saturate(decalPosNeighborX.xz * 0.5f + 0.5f) - decalUV;
+        float2 uvDX = saturate(decalPosNeighborX.xy * 0.5f + 0.5f) - decalUV;
 
         float3 decalPosNeighborY = posNeighborY - decalPos;
         decalPosNeighborY = mul(decalPosNeighborY, transpose(decalRot));
         decalPosNeighborY = decalPosNeighborY / decalSize;
         decalPosNeighborY.y *= -1;
-        float2 uvDY = saturate(decalPosNeighborY.xz * 0.5f + 0.5f) - decalUV;
+        float2 uvDY = saturate(decalPosNeighborY.xy * 0.5f + 0.5f) - decalUV;
 
         float4 decalAlbedo = decalAlbedoMap.SampleGrad(ss, decalUV, uvDX, uvDY);
         //float3 decalNormalTS = { 0.0f, 0.0f, 0.0f };
