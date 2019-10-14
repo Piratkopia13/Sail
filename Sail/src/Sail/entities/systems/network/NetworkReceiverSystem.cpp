@@ -93,7 +93,7 @@ void NetworkReceiverSystem::update(float dt) {
 		// Read the data per entity
 		for (int i = 0; i < nrOfEntitiesInMessage; ++i) {
 			{
-				ar(id);					// Entity.id
+				ar(id);					// NetworkObjectEntity.id
 				ar(entityType);			// Entity type
 				ar(messageTypes);		// Nr of Messages (for this entity)
 			}
@@ -101,6 +101,9 @@ void NetworkReceiverSystem::update(float dt) {
 			// Read per data type
 			for (int j = 0; j < messageTypes; j++) {
 				ar(dataType);
+
+
+
 
 				// Read and process the data
 				switch (dataType) {
@@ -160,6 +163,12 @@ void NetworkReceiverSystem::update(float dt) {
 				}
 			}
 		}
+
+
+		// Recieve 'one-time' events
+
+
+
 		m_incomingDataBuffer.pop();
 	}
 }
@@ -173,8 +182,7 @@ void NetworkReceiverSystem::update(float dt) {
 void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::EntityType entityType, const glm::vec3& translation) {
 	using namespace Netcode;
 
-	// Early exit if the entity belongs to the player 
-	// (since host sends out messages to all players including the one who sent it to them)
+	// If the message was sent from me but rerouted back from the host, ignore it.
 	if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
 		return;
 	}
