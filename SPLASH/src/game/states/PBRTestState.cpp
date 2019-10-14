@@ -1,21 +1,7 @@
 #include "PBRTestState.h"
 #include "imgui.h"
 #include "Sail/entities/ECS.h"
-#include "Sail/entities/components/Components.h"
-#include "Sail/entities/systems/candles/CandleSystem.h"
-#include "Sail/entities/systems/entityManagement/EntityRemovalSystem.h"
-#include "Sail/entities/systems/entityManagement/EntityAdderSystem.h"
-#include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
-#include "Sail/entities/systems/light/LightSystem.h"
-#include "Sail/entities/systems/gameplay/GunSystem.h"
-#include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
-#include "Sail/entities/systems/Graphics/AnimationSystem.h"
-#include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
-#include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
-#include "Sail/entities/systems/Input/GameInputSystem.h"
-#include "Sail/entities/systems/Audio/AudioSystem.h"
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/Systems.h"
 #include "Sail/TimeSettings.h"
 
 #include <sstream>
@@ -73,7 +59,13 @@ PBRTestState::PBRTestState(StateStack& stack)
 
 	// Get the Application instance
 	m_app = Application::getInstance();
-	m_componentSystems.renderSystem = ECS::Instance()->getSystem<RenderSystem>();
+	
+	// Create systems for rendering
+	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 
 	// Create entity adder system
 	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
@@ -127,7 +119,6 @@ PBRTestState::PBRTestState(StateStack& stack)
 #ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 	(*Application::getInstance()->getRenderWrapper()).changeRenderer(1);
-	m_componentSystems.renderSystem->refreshRenderer();
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -231,7 +222,6 @@ bool PBRTestState::update(float dt, float alpha) {
 
 bool PBRTestState::fixedUpdate(float dt) {
 
-	m_componentSystems.entityAdderSystem->update(0.0f);
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 
@@ -247,7 +237,8 @@ bool PBRTestState::fixedUpdate(float dt) {
 	counter += dt * 2.0f;
 
 	// Will probably need to be called last
-	m_componentSystems.entityRemovalSystem->update(0.0f);
+	m_componentSystems.entityAdderSystem->update();
+	m_componentSystems.entityRemovalSystem->update();
 
 	return false;
 }
@@ -259,7 +250,14 @@ bool PBRTestState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
-	m_componentSystems.renderSystem->draw(m_cam, alpha);
+	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
+
+	m_componentSystems.modelSubmitSystem->submitAll(alpha);
+	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
+	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
+	m_componentSystems.boundingboxSubmitSystem->submitAll();
+
+	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return false;
 }

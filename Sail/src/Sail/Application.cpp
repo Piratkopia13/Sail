@@ -7,7 +7,7 @@
 #include "graphics/geometry/Transform.h"
 #include "TimeSettings.h"
 #include "entities/ECS.h"
-#include "entities/systems/render/RenderSystem.h"
+#include "entities/systems/Systems.h"
 
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
@@ -57,7 +57,12 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Initialize Renderers
 	m_rendererWrapper.initialize();
-	ECS::Instance()->createSystem<RenderSystem>();
+	ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	ECS::Instance()->createSystem<ModelSubmitSystem>();
+	ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+
 
 	// Initialize imgui
 	m_imguiHandler->init();
