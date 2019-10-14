@@ -113,7 +113,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				if ( !m_wasSpacePressed && collision->onGround ) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
-					e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+			//		e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
 					// Add networkcomponent for jump 
 					e->getComponent<NetworkSenderComponent>()->addDataType(
 						Netcode::MessageType::PLAYER_JUMPED

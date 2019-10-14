@@ -218,8 +218,8 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 
 		// Adding audio component and adding all sounds attached to the player entity
 		e->addComponent<AudioComponent>();
-		e->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
-		e->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
+	//	e->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
+	//	e->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
 
 		//creates light with model and pointlight
 		auto light = ECS::Instance()->createEntity("ReceiverLight");
@@ -272,7 +272,7 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 	// How do i trigger a jump from here?
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+		//	e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
 		}
 	}
 }
