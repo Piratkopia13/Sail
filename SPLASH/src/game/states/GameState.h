@@ -54,6 +54,7 @@ private:
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
+	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
 
