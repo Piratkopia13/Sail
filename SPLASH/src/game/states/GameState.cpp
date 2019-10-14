@@ -24,7 +24,7 @@
 #include "Sail/entities/systems/physics/MovementPostCollisionSystem.h"
 #include "Sail/entities/systems/physics/CollisionSystem.h"
 #include "Sail/entities/systems/physics/SpeedLimitSystem.h"
-#include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/ai/states/FleeingState.h"
@@ -250,7 +250,7 @@ GameState::GameState(StateStack& stack)
 	createLevel(shader, boundingBoxModel);
 
 	// Inform CandleSystem of the player
-	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
+	m_componentSystems.candleSystem->setPlayerEntityID(playerID);
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 

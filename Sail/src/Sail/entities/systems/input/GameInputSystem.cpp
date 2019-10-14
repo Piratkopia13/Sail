@@ -8,12 +8,12 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../../ECS.h"
 #include "../physics/UpdateBoundingBoxSystem.h"
-#include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/components/AudioComponent.h"
 #include "../src/Network/NWrapperSingleton.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	registerComponent<LocalPlayerComponent>(true, true, false);
+	registerComponent<LocalOwnerComponent>(true, true, false);
 	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<SpeedLimitComponent>(true, true, false);
 	registerComponent<CollisionComponent>(true, true, false);

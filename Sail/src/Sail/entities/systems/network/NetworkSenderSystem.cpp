@@ -2,6 +2,7 @@
 #include "NetworkSenderSystem.h"
 
 #include "Sail/entities/components/NetworkSenderComponent.h"
+#include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/Entity.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -17,7 +18,11 @@ NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 }
 
 NetworkSenderSystem::~NetworkSenderSystem() {
-
+	while (eventQueue.size() > 0) {
+		NetworkSenderEvent* pEvent = eventQueue.front();
+		eventQueue.pop();
+		delete pEvent;
+	}
 }
 
 /*
@@ -151,7 +156,7 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
+		__int32 NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
 		(*ar)(NetObjectID);	// Send 
 	}
 	break;

@@ -4,6 +4,7 @@
 #include "Sail/entities/components/LightComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
+#include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/Entity.h"
 
@@ -11,6 +12,7 @@
 
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
+#include "../Sail/src/Network/NWrapperSingleton.h"
 
 #include "Sail/Application.h"
 
@@ -53,10 +55,26 @@ void CandleSystem::update(float dt) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
-					//if (e->hasComponent<OnlinePlayerComponent>()) {
-					//	// We can see if the hit entity was an Online,
-					//	// But we can't see if the local player hit it..
-					//}
+
+
+					// A candle which is owned by a player has been hit
+					// -- Does the candle belong to an online player?
+					// -- Was it hit by the local player?
+					
+					// If the player is controlled through the network
+					if (e->hasComponent<OnlineOwnerComponent>()) {
+						CandleComponent* c = e->getComponent<CandleComponent>();
+
+						// If the player who hit him was the local player
+						if (c->hitByLocalPlayer == true) {
+							// It (An online player) was hit by the local player
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::WATER_HIT_PLAYER, 
+								e->getParent()
+							);
+						}
+					}
+					
 
 					if ( candle->getHealth() <= 0.f ) {
 						candle->setIsLit(false);

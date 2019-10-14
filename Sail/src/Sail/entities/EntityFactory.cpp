@@ -8,7 +8,9 @@
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
-#include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Sail/entities/components/OnlineOwnerComponent.h"
+#include "../Sail/src/Network/NWrapperSingleton.h"
 
 Entity::SPtr EntityFactory::CreateCandle(const std::string& name, Model* lightModel, Model* bbModel, const glm::vec3& lightPos, size_t lightIndex) {
 	//creates light with model and pointlight
@@ -39,14 +41,16 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//m_player = player.get();
 
 	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player
-	player->addComponent<LocalPlayerComponent>();
+	//player->addComponent<LocalPlayerComponent>();
 
 	player->addComponent<TransformComponent>();
 
 	player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
 		Netcode::EntityType::PLAYER_ENTITY,
-		playerID);
+		playerID
+	);
+	player->addComponent<LocalOwnerComponent>(playerID);
 
 	// Add physics components and setting initial variables
 	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
@@ -169,7 +173,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(std::string name, Model* model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velosity, bool hasLocalOwner, float lifetime, float randomSpreed) {
+Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velosity, bool hasLocalOwner, unsigned __int32 ownersNetId, float lifetime, float randomSpreed) {
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
 
@@ -181,7 +185,16 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
 	e->addComponent<LifeTimeComponent>(lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
+	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
 	e->addComponent<TransformComponent>(pos + randPos);
+	if (hasLocalOwner == true) {
+		e->addComponent<LocalOwnerComponent>(ownersNetId);
+		
+	}
+	else {
+		e->addComponent<OnlineOwnerComponent>(ownersNetId);
+	}
+	
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();
 	movement->velocity = velosity;
