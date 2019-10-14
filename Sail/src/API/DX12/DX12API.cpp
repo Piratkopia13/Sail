@@ -20,6 +20,7 @@ DX12API::DX12API()
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 	m_fenceValues.resize(NUM_SWAP_BUFFERS, 0);
+	m_computeQueueAnimaitonFenceValues.resize(NUM_SWAP_BUFFERS, 0);
 }
 
 DX12API::~DX12API() {
@@ -31,10 +32,10 @@ DX12API::~DX12API() {
 	{
 		m_dxgiFactory.Reset();
 		m_directCommandQueue.Reset();
-		m_computeCommandQueue.Reset();
-		m_copyCommandQueue.Reset();
+		m_computeCommandQueueAnimations.Reset();
 		m_swapChain.Reset();
 		m_fence.Reset();
+		m_computeQueueAnimaitonFence.Reset();
 		m_globalRootSignature.Reset();
 		m_renderTargetsHeap.Reset();
 		m_depthStencilBuffer.Reset();
@@ -170,35 +171,8 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 
 	// Create compute command queue
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_computeCommandQueue)));
-	m_computeCommandQueue->SetName(L"Compute Command Queue");
-
-	// Create copy command queue
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_copyCommandQueue)));
-	m_copyCommandQueue->SetName(L"Copy Command Queue");
-
-	// Create allocators
-	//m_postCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	//m_computeCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	//m_copyCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	//for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
-	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_postCommand.allocators[i])));
-	//	// TODO: Is this required?
-	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&m_computeCommand.allocators[i])));
-	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_copyCommand.allocators[i])));
-	//}
-	//// Create command lists
-	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_postCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_postCommand.list)));
-	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_computeCommand.list)));
-	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_copyCommand.list)));
-
-	//// Command lists are created in the recording state. Since there is nothing to
-	//// record right now and the main loop expects it to be closed, we close them
-	//m_postCommand.list->Close();
-	//m_computeCommand.list->Close();
-	//m_copyCommand.list->Close();
-
+	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_computeCommandQueueAnimations)));
+	m_computeCommandQueueAnimations->SetName(L"Compute Command Queue Animations");
 
 	// 5. Create swap chain
 	DXGI_SWAP_CHAIN_DESC1 scDesc = {};
@@ -233,10 +207,13 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 }
 
 void DX12API::createFenceAndEventHandle() {
-	// 4. Create fence
+	// Create fences
 	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
-	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++)
+	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeQueueAnimaitonFence)));
+	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
 		m_fenceValues[i] = 1;
+		m_computeQueueAnimaitonFenceValues[i] = 1;
+	}
 	// Create an event handle to use for GPU synchronization
 	m_eventHandle = CreateEvent(0, false, false, 0);
 
@@ -733,17 +710,36 @@ void DX12API::endPIXCapture() const {
 }
 #endif
 
-void DX12API::initCommand(Command& cmd) {
+void DX12API::initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type) {
 	// Create allocators
 	cmd.allocators.resize(NUM_SWAP_BUFFERS);
 	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
-		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmd.allocators[i])));
+		ThrowIfFailed(m_device->CreateCommandAllocator(type, IID_PPV_ARGS(&cmd.allocators[i])));
 	}
 	// Create command lists
-	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmd.allocators[0].Get(), nullptr, IID_PPV_ARGS(&cmd.list)));
+	ThrowIfFailed(m_device->CreateCommandList(0, type, cmd.allocators[0].Get(), nullptr, IID_PPV_ARGS(&cmd.list)));
 	// Command lists are created in the recording state. Since there is nothing to
 	// record right now and the main loop expects it to be closed, we close them
 	cmd.list->Close();
+}
+
+void DX12API::executeCommandListsComputeAnimation(std::initializer_list<ID3D12CommandList*> cmdLists) const {
+	// Command lists needs to be closed before sent to this method
+	m_computeCommandQueueAnimations->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
+}
+
+void DX12API::waitForComputeAnimation() {
+	// Waits for the GPU to finish all current tasks in the COMPUTE ANIMATION queue
+
+	// Schedule a signal
+	ThrowIfFailed(m_computeCommandQueueAnimations->Signal(m_computeQueueAnimaitonFence.Get(), m_computeQueueAnimaitonFenceValues[m_backBufferIndex]));
+
+	// Wait until command queue is done
+	m_computeQueueAnimaitonFence->SetEventOnCompletion(m_computeQueueAnimaitonFenceValues[m_backBufferIndex], m_eventHandle);
+	WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
+
+	// Increment fence value for current frame
+	m_computeQueueAnimaitonFenceValues[m_backBufferIndex]++;
 }
 
 void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const {

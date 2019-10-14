@@ -6,22 +6,12 @@ const Shader::ComputeSettings* AnimationUpdateComputeShader::getComputeSettings(
 }
 
 std::pair<std::string, void*> AnimationUpdateComputeShader::getComputeInputForIndex(Shader::ComputeShaderInput& input, unsigned int index) {
-	auto& thisInput = static_cast<AnimationUpdateComputeShader::Input&>(input);
-	switch (index) {
-	//case 0:
-		//return { "input", thisInput.inputTexture };
-	}
-	Logger::Error("Tried to get compute input from unknown index - " + std::to_string(index));
+	Logger::Error("This shader has no compute inputs");
 	return { "", nullptr };
 }
 
 RenderableTexture* AnimationUpdateComputeShader::getComputeOutputForIndex(Shader::ComputeShaderOutput& output, unsigned int index) {
-	auto& thisOutput = static_cast<AnimationUpdateComputeShader::Output&>(output);
-	switch (index) {
-	//case 0:
-		//return thisOutput.outputTexture;
-	}
-	Logger::Error("Tried to get compute output from unknown index - " + std::to_string(index));
+	Logger::Error("This shader has no compute outputs");
 	return nullptr;
 }
 
@@ -38,6 +28,7 @@ AnimationUpdateComputeShader::AnimationUpdateComputeShader()
 	m_settings.usesCBV_SRV_UAV = true;
 	m_settings.numInputTextures = 0;
 	m_settings.numOutputTextures = 0;
+	m_settings.threadGroupXScale = 1.f;
 
 }
 AnimationUpdateComputeShader::~AnimationUpdateComputeShader() {}

@@ -562,11 +562,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 				/*  ANIMATION FETCHING FROM STACK*/
 				unsigned int stackCount = scene->GetSrcObjectCount<FbxAnimStack>();
-#ifdef _DEBUG
-				if (stackCount > 2) {
-					stackCount = 2; // TODO: remove, used for faster debugging
-				}
-#endif
+				// stackCount = 1; // Used for faster debugging
 				for (unsigned int currentStack = 0; currentStack < stackCount; currentStack++) {
 					FbxAnimStack* currAnimStack = scene->GetSrcObject<FbxAnimStack>(currentStack);
 					FbxTakeInfo* takeInfo = scene->GetTakeInfo(currAnimStack->GetName());

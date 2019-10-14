@@ -12,6 +12,8 @@ namespace ShaderComponent {
 	DX12StructuredBuffer::DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot)
 		: m_register(slot)
 		, m_stride(stride)
+		, m_numElements(numElements)
+		, m_elementByteSize(size)
 	{
 		m_context = Application::getInstance()->getAPI<DX12API>();
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
@@ -23,7 +25,7 @@ namespace ShaderComponent {
 		m_srvCDHs.resize(numSwapBuffers);
 		m_resourceHeapSize.resize(numSwapBuffers);
 		for (UINT i = 0; i < numSwapBuffers; i++) {
-			m_resourceHeapSize[i] = size;
+			m_resourceHeapSize[i] = size * MAX_ELEMENTS * MAX_MESHES_PER_FRAME;
 			// Store srv handles
 			m_srvCDHs[i] = m_srvHeap->getCPUDescriptorHandleForIndex(i);
 		}
@@ -36,22 +38,18 @@ namespace ShaderComponent {
 	}
 
 	DX12StructuredBuffer::~DX12StructuredBuffer() {
-		//delete[] m_needsUpdate;
 	}
 
-	void DX12StructuredBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int numElements, unsigned int offset /*= 0U*/) {
+	void DX12StructuredBuffer::updateData(const void* newData, unsigned int numElements, int meshIndex) {
+		assert(numElements <= MAX_ELEMENTS && "Too many elements! Increase MAX_ELEMENTS in DX12StrucutedBuffer.h");
+		assert(meshIndex <= MAX_MESHES_PER_FRAME && "Too many meshes! Increase MAX_MESHES_PER_FRAME in DX12StrucutedBuffer.h");
+
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
 		auto frameIndex = m_context->getFrameIndex();
+		auto numSwapBuffers = m_context->getNumSwapBuffers();
 
-		if (m_resourceHeapSize[frameIndex] < bufferSize) {
-			// Expand buffer
-			Logger::Log("Expanded structured buffer from " + std::to_string(m_resourceHeapSize[frameIndex]) + " to " + std::to_string(bufferSize));
-			m_resourceHeapSize[frameIndex] = bufferSize;
-			createBuffers(numElements);
-		}
-
-
-		memcpy(m_cbGPUAddress[frameIndex] + /*m_byteAlignedSize + */offset, newData, bufferSize);
+		memcpy(m_cbGPUAddress[frameIndex] + MAX_ELEMENTS * m_elementByteSize * meshIndex, newData, m_elementByteSize * numElements);
+		m_numElements = numElements;
 	}
 
 	void DX12StructuredBuffer::bind(void* cmdList) const {
@@ -62,7 +60,25 @@ namespace ShaderComponent {
 
 		// Copy SRV and bind
 		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), m_srvCDHs[frameIndex], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		//dxCmdList->SetComputeRootDescriptorTable(rootIndex, m_context->getComputeGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
+	}
+
+	void DX12StructuredBuffer::bind_new(void* cmdList, int meshIndex) const {
+		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+		auto frameIndex = m_context->getFrameIndex();
+
+		UINT rootIndex = m_context->getRootIndexFromRegister("t" + std::to_string(m_register));
+
+		// Create SRV with correct starting index
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Buffer.FirstElement = MAX_ELEMENTS * meshIndex;
+		srvDesc.Buffer.NumElements = MAX_ELEMENTS * (meshIndex + 1); // Cheesy
+		srvDesc.Buffer.StructureByteStride = m_stride;
+		m_context->getDevice()->CreateShaderResourceView(m_bufferUploadHeap[frameIndex].Get(), &srvDesc, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle());
+
+		//m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), m_srvCDHs[frameIndex], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	ID3D12Resource* DX12StructuredBuffer::getBuffer() const {

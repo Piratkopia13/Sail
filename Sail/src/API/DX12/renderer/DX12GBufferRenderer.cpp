@@ -25,6 +25,9 @@ DX12GBufferRenderer::DX12GBufferRenderer() {
 		std::wstring name = L"Forward Renderer main command list for render thread: " + std::to_wstring(i);
 		m_command[i].list->SetName(name.c_str());
 	}
+	m_context->initCommand(m_computeCommand, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	m_computeCommand.list->SetName(L"Animation compute command list");
+
 
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
@@ -46,7 +49,23 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	auto frameIndex = m_context->getFrameIndex();
 	int count = static_cast<int>(commandQueue.size());
 
+	// Run animation updates on the gpu first
+	auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem>();
+	if (animationSystem) {
+		m_computeCommand.allocators[frameIndex]->Reset();
+		m_computeCommand.list->Reset(m_computeCommand.allocators[frameIndex].Get(), nullptr);
+
+		// Update animations on compute shader
+		animationSystem->updateMeshGPU(m_computeCommand.list.Get());
+
+		m_computeCommand.list->Close();
+		m_context->executeCommandListsComputeAnimation({ m_computeCommand.list.Get() });
+		m_context->waitForComputeAnimation();
+	}
+
+
 #ifdef MULTI_THREADED_COMMAND_RECORDING
+
 	int nThreadsToUse = (count / MIN_COMMANDS_PER_THREAD) + (count % MIN_COMMANDS_PER_THREAD > 0);
 	if (nThreadsToUse < 0) {
 		nThreadsToUse = 1;
@@ -58,10 +77,10 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	std::future<void> fut[MAX_RECORD_THREADS];
 
 	int mainThreadIndex = nThreadsToUse - 1;
-	int commandsPerThread = round(count / (float)nThreadsToUse);
+	int commandsPerThread = (int)round(count / (float)nThreadsToUse);
 	int start = 0;
 
-	for (size_t i = 0; i < mainThreadIndex; i++) {
+	for (int i = 0; i < mainThreadIndex; i++) {
 		fut[i] = Application::getInstance()->pushJobToThreadPool(
 			[this, postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse](int id) {
 			return this->recordCommands(postProcessPipeline, i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
@@ -89,7 +108,7 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // MULTI_THREADED_COMMAND_RECORDING
 }
 
-void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipeline, const int threadID, const int frameIndex, const int start, const int nCommands, size_t oobMax, int nThreads) {
+void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipeline, const int threadID, const int frameIndex, const int start, const int nCommands, unsigned int oobMax, int nThreads) {
 	assert(!postProcessPipeline); // Post process not allowed on the GBuffer pass!
 
 	auto& allocator = m_command[threadID].allocators[frameIndex];
@@ -122,13 +141,6 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	}
 #else
 	if (threadID == 0) {
-
-		// Update animations on compute shader
-		auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem>();
-		if (animationSystem) { 
-			animationSystem->updateMeshGPU(cmdList.Get());
-		}
-
 
 		// Init all vbuffers and textures - this needs to be done on ONE thread
 		// TODO: optimize!

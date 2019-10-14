@@ -3,13 +3,14 @@
 class SailImGuiWindow {
 public:
 	SailImGuiWindow();
-	SailImGuiWindow(const bool state);
-	~SailImGuiWindow();
+	SailImGuiWindow(bool showWindow);
+	virtual ~SailImGuiWindow();
 
-	const bool windowOpen();
-	void toggle();
-	void windowState(const bool state);
+	bool isWindowOpen();
+	virtual void toggleWindow();
+	virtual void showWindow(bool show);
+	virtual void renderWindow() = 0;
 
 private:
-	bool m_windowState;
+	bool m_isWindowOpen;
 };

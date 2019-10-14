@@ -13,7 +13,7 @@ public:
 	void setAsUpdated();
 	bool hasBeenUpdated() const;
 	void resetHasBeenUpdated();
-	void init(ID3D12GraphicsCommandList4* cmdList);
+	bool init(ID3D12GraphicsCommandList4* cmdList);
 
 private:
 	DX12API* m_context;

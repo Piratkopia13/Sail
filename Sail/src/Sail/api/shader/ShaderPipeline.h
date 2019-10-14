@@ -49,8 +49,8 @@ public:
 	virtual void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
 
-	virtual void setStructBufferVar(const std::string& name, const void* data, UINT size, UINT numElements);
-	bool trySetStructBufferVar(const std::string& name, const void* data, UINT size, UINT numElements);
+	virtual void setStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex);
+	bool trySetStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex);
 
 protected:
 	// Compiles shaders into blobs

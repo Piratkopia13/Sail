@@ -275,7 +275,7 @@ Animation* AnimationStack::getAnimation(const unsigned int index) {
 }
 
 const unsigned int AnimationStack::getAnimationCount() {
-	return m_stack.size();
+	return (unsigned int)m_stack.size();
 }
 
 const glm::mat4* AnimationStack::getTransform(const std::string& name, const float time) {

@@ -35,7 +35,7 @@ DX12IndexBuffer::DX12IndexBuffer(Mesh::Data& modelData)
 }
 
 DX12IndexBuffer::~DX12IndexBuffer() {
-
+	m_context->waitForGPU();
 }
 
 void DX12IndexBuffer::bind(void* cmdList) const {

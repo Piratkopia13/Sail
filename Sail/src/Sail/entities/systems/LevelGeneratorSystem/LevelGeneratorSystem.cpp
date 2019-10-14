@@ -6,6 +6,10 @@
 //#include "..//..//Entity.h"
 LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
 	registerComponent<MapComponent>(true,true,true);
+	registerComponent<ModelComponent>(false, false, true);
+	registerComponent<TransformComponent>(false, true, true);
+	registerComponent<BoundingBoxComponent>(false, false, true);
+	registerComponent<CollidableComponent>(false, false, true);
 }
 
 LevelGeneratorSystem::~LevelGeneratorSystem() {
@@ -69,8 +73,8 @@ void LevelGeneratorSystem::generateMap() {
 	}
 }
 
-//Creates and places all entities nedded for the world
-void LevelGeneratorSystem::createWorld(Model* tileFlat, Model* tileCross,Model* tileCorner,Model* tileStraight, Model* tileT,Model* tileEnd, Model* bb) {
+void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) {
+	
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 
@@ -82,121 +86,224 @@ void LevelGeneratorSystem::createWorld(Model* tileFlat, Model* tileCross,Model* 
 		//traverse all positions to find which tile should be there
 		for (int i = 0; i < worldWidth; i++) {
 			for (int j = 0; j < worldDepth; j++) {
-				auto e = ECS::Instance()->createEntity("");
 				int tileId = map->tileArr[i][j][0];
+				int doors = map->tileArr[i][j][2];
 				if (tileId<16 && tileId>-1) {
-					if (tileId == 0) {
-						e->addComponent<ModelComponent>(tileFlat);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-					}
-					else if (tileId == 1) {
-						e->addComponent<ModelComponent>(tileEnd);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-					}
-					else if (tileId == 2) {
-						e->addComponent<ModelComponent>(tileEnd);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-					}
-					else if (tileId == 3) {
-						e->addComponent<ModelComponent>(tileCorner);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-					}
-					else if (tileId == 4) {
-						e->addComponent<ModelComponent>(tileEnd);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-					}
-					else if (tileId == 5) {
-						e->addComponent<ModelComponent>(tileStraight);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-					}
-					else if (tileId == 6) {
-						e->addComponent<ModelComponent>(tileCorner);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-					}
-					else if (tileId == 7) {
-						e->addComponent<ModelComponent>(tileT);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
-					}
-					else if (tileId == 8) {
-						e->addComponent<ModelComponent>(tileEnd);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-					}
-					else if (tileId == 9) {
-						e->addComponent<ModelComponent>(tileCorner);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-					}
-					else if (tileId == 10) {
-						e->addComponent<ModelComponent>(tileStraight);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-					}
-					else if (tileId == 11) {
-						e->addComponent<ModelComponent>(tileT);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-					}
-					else if (tileId == 12) {
-						e->addComponent<ModelComponent>(tileCorner);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-					}
-					else if (tileId == 13) {
-						e->addComponent<ModelComponent>(tileT);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
-					}
-					else if (tileId == 14) {
-						e->addComponent<ModelComponent>(tileT);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
-					}
-					else if (tileId == 15) {
-						e->addComponent<ModelComponent>(tileCross);
-						e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
-					}
-					float height = 1.0f;
-					e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize/10, height, tileSize/10));
-					e->addComponent<BoundingBoxComponent>(bb);
-					e->addComponent<CollidableComponent>();
+					/*
+					Adding tile type:
+					x         x
 
-					//if there is a door place a square tile on the position of the door
-					//Multiple doors per tile is possible
-					if (map->tileArr[i][j][2] >0 &&map->tileArr[i][j][1]!=0) {
-						int offsetx=0, offsety=0;
-						if (map->tileArr[i][j][2] %2> 0) {
-							offsety = 1;
-							e = ECS::Instance()->createEntity("");
-							e->addComponent<ModelComponent>(tileCross);
-							e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset + (tileSize * offsetx * 0.5f), 1.1f, tileSize * j + tileOffset + (tileSize * offsety * 0.5f)));
-							e->addComponent<BoundingBoxComponent>(bb);
-							e->addComponent<CollidableComponent>();
-							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
-							offsety = 0;
-						}
-						if (map->tileArr[i][j][2]%4/2 > 0) {
-							offsetx = 1;
-							e = ECS::Instance()->createEntity("");
-							e->addComponent<ModelComponent>(tileCross);
-							e->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset + (tileSize * offsetx * 0.5f), 1.1f, tileSize * j + tileOffset + (tileSize * offsety * 0.5f)));
-							e->addComponent<BoundingBoxComponent>(bb);
-							e->addComponent<CollidableComponent>();
-							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
-							offsetx = 0;
-						}
-						if (map->tileArr[i][j][2]%8/4>0) {
-							offsety = -1;
-							e = ECS::Instance()->createEntity("");
-							e->addComponent<ModelComponent>(tileCross);
-							e->addComponent<TransformComponent>(glm::vec3(tileSize* i + tileOffset + (tileSize * offsetx * 0.5f), 1.1f, tileSize* j + tileOffset + (tileSize * offsety * 0.5f)));
-							e->addComponent<BoundingBoxComponent>(bb);
-							e->addComponent<CollidableComponent>();
-							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
-							offsety = 0;
-						}
-						if (map->tileArr[i][j][2]/8>0) {
-							offsetx = -1;
-							e = ECS::Instance()->createEntity("");
-							e->addComponent<ModelComponent>(tileCross);
-							e->addComponent<TransformComponent>(glm::vec3(tileSize* i + tileOffset + (tileSize * offsetx * 0.5f), 1.1f, tileSize* j + tileOffset + (tileSize * offsety * 0.5f)));
-							e->addComponent<BoundingBoxComponent>(bb);
-							e->addComponent<CollidableComponent>();
-							e->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 40, height, tileSize / 40));
-						}
+
+
+
+					x         x
+					*/
+					if (tileId == 0) {
+						addTile(Direction::NONE, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x---------x
+
+
+
+
+					x         x
+					*/
+					else if (tileId == 1) {
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x         x
+					          |
+					          |
+					          |
+					          |
+					x         x
+					*/
+					else if (tileId == 2) {
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x---------x
+					          |
+					          |
+					          |
+					          |
+					x         x
+					*/
+					else if (tileId == 3) {
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x         x
+
+
+
+
+					x---------x
+					*/
+					else if (tileId == 4) {
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x---------x
+
+
+
+
+					x---------x
+					*/
+					else if (tileId == 5) {
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x         x
+							  |
+							  |
+							  |
+							  |
+					x---------x
+					*/
+					else if (tileId == 6) {
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x---------x
+							  |
+							  |
+							  |
+							  |
+					x---------x
+					*/
+					else if (tileId == 7) {
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x         x
+					|
+					|
+					|
+					|
+					x         x
+					*/
+					else if (tileId == 8) {
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x---------x
+					|
+					|
+					|
+					|
+					x         x
+
+					*/
+					else if (tileId == 9) {
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x         x
+					|		  |
+					|		  |
+					|		  |
+					|		  |
+					x         x
+
+					*/
+					else if (tileId == 10) {
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x---------x
+					|		  |
+					|		  |
+					|		  |
+					|		  |
+					x         x
+
+					*/
+					else if (tileId == 11) {						
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x         x
+					|
+					|
+					|
+					|
+					x---------x
+
+					*/
+					else if (tileId == 12) {
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x---------x
+					|
+					|
+					|
+					|
+					x---------x
+
+					*/
+					else if (tileId == 13) {
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x         x
+					|		  |
+					|		  |
+					|		  |
+					|		  |
+					x---------x
+
+					*/
+					else if (tileId == 14) {
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+					}
+					/*
+					Adding tile type:
+					x---------x
+					|		  |
+					|		  |
+					|		  |
+					|		  |
+					x---------x
+
+					*/
+					else if (tileId == 15) {
+						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
 					}
 				}
 			}
@@ -472,7 +579,10 @@ void LevelGeneratorSystem::matchRoom() {
 //checks the borders of a rect to see if it borders a corridor.
 //Returns an int which holds all directions in which to find a corridor
 int LevelGeneratorSystem::checkBorder(rect rekt) {
-	bool top=false,bottom=false,left=false,right=false;
+	bool top = false; 
+	bool bottom = false;
+	bool left = false;
+	bool right = false;
 	int corridor = 0;
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
@@ -735,200 +845,238 @@ void LevelGeneratorSystem::addDoors() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		
-		int maxSize = map->matched.size();
+		size_t maxSize = map->matched.size();
 
 		//add one door to each room, which leads to a corridor
 		for (int c = 0; c < maxSize; c++) {
-			rect rekt = map->matched.front();
+			rect currentTile = map->matched.front();
 			std::vector<rect> possibleDoors;
-			if (rekt.hasDoor == 0) {
-				for (int i = 0; i < rekt.sizex; i++) {
-					for (int j = 0; j < rekt.sizey; j++) {
-						rect a;
-						a.posx = rekt.posx + i;
-						a.posy = rekt.posy + j;
-						a.sizex = 1;
-						a.sizey = 1;
-						a.sizex = checkBorder(a);
-						if (a.sizex > 0) {
-							if (a.sizex / 8 > 0) {
-								a.sizey = 8;
-								possibleDoors.emplace_back(a);
+			if (currentTile.doors == 0) {
+				for (int i = 0; i < currentTile.sizex; i++) {
+					for (int j = 0; j < currentTile.sizey; j++) {
+						rect doorTile;
+						doorTile.posx = currentTile.posx + i;
+						doorTile.posy = currentTile.posy + j;
+						doorTile.sizex = 1;
+						doorTile.sizey = 1;
+						doorTile.sizex = checkBorder(doorTile);
+						if (doorTile.sizex > 0) {
+							if (hasDoor(Direction::LEFT, doorTile.sizex)) {
+								doorTile.sizey = Direction::LEFT;
+								possibleDoors.emplace_back(doorTile);
 							}
-							if ((a.sizex % 8) / 4 > 0) {
-								a.sizey = 4;
-								possibleDoors.emplace_back(a);
+							if (hasDoor(Direction::DOWN, doorTile.sizex)) {
+								doorTile.sizey = Direction::DOWN;
+								possibleDoors.emplace_back(doorTile);
 							}
-							if ((a.sizex % 4) / 2 > 0) {
-								a.sizey = 2;
-								possibleDoors.emplace_back(a);
+							if (hasDoor(Direction::RIGHT, doorTile.sizex)) {
+								doorTile.sizey = Direction::RIGHT;
+								possibleDoors.emplace_back(doorTile);
 							}
-							if (a.sizex % 2 > 0) {
-								a.sizey = 1;
-								possibleDoors.emplace_back(a);
+							if (hasDoor(Direction::UP, doorTile.sizex)) {
+								doorTile.sizey = Direction::UP;
+								possibleDoors.emplace_back(doorTile);
 							}
 						}
 					}
 				}
+				// Pick one of the possible doors at random
 				if (possibleDoors.size() > 0) {
 					rect door = possibleDoors[rand() % possibleDoors.size()];
 					possibleDoors.clear();
-					if (door.sizey == 1) {
-						map->tileArr[door.posx][door.posy][2] += 1;
-						map->tileArr[door.posx][door.posy + 1][2] += 4;
-						rekt.hasDoor += 1;
+					if (door.sizey == Direction::UP) {
+						map->tileArr[door.posx][door.posy][2] += Direction::UP;
+						map->tileArr[door.posx][door.posy + 1][2] += Direction::DOWN;
+						currentTile.doors += Direction::UP;
 					}
-					if (door.sizey == 2) {
-						map->tileArr[door.posx][door.posy][2] += 2;
-						map->tileArr[door.posx+1][door.posy][2] += 8;
-						rekt.hasDoor += 2;
+					else if (door.sizey == Direction::RIGHT) {
+						map->tileArr[door.posx][door.posy][2] += Direction::RIGHT;
+						map->tileArr[door.posx+1][door.posy][2] += Direction::LEFT;
+						currentTile.doors += Direction::RIGHT;
 					}
-					if (door.sizey == 4) {
-						map->tileArr[door.posx][door.posy][2] += 4;
-						map->tileArr[door.posx][door.posy-1][2] += 1;
-						rekt.hasDoor += 4;
+					else if (door.sizey == Direction::DOWN) {
+						map->tileArr[door.posx][door.posy][2] += Direction::DOWN;
+						map->tileArr[door.posx][door.posy-1][2] += Direction::UP;
+						currentTile.doors += Direction::DOWN;
 					}
-					if (door.sizey == 8) {
-						map->tileArr[door.posx][door.posy][2] += 8;
-						map->tileArr[door.posx - 1][door.posy][2] += 2;
-						rekt.hasDoor += 8;
+					else if (door.sizey == Direction::LEFT) {
+						map->tileArr[door.posx][door.posy][2] += Direction::LEFT;
+						map->tileArr[door.posx - 1][door.posy][2] += Direction::RIGHT;
+						currentTile.doors += Direction::LEFT;
 					}
 				}
 			}
 			map->matched.pop();
-			map->matched.emplace(rekt);
+			map->matched.emplace(currentTile);
 		}
 
-		//------------------this code produces some weird ass chrash
-		////adds a second door to each room
-		//for (int c = 0; c < maxSize; c++) {
-		//	std::vector<rect> possibleDoors;
-		//	rect rekt = map->matched.front();
-		//	rekt.hasDoor = 0;
-		//	int doorCounter = 0;
-		//	bool up = false, right = false, down = false, left = false;
-		//	for (int i = 0; i < rekt.sizex; i++) {
-		//		for (int j = 0; j < rekt.sizey; j++) {
-		//			if (map->tileArr[rekt.posx + i][rekt.posy + j][2] == 1) {
-		//				up = true;
-		//			}
-		//			if(map->tileArr[rekt.posx + i][rekt.posy + j][2]==2){
-		//				right = true;
-		//			}
-		//			if (map->tileArr[rekt.posx + i][rekt.posy + j][2] == 4) {
-		//				down = true;
-		//			}
-		//			if (map->tileArr[rekt.posx + i][rekt.posy + j][2] == 8) {
-		//				left = true;
-		//			}
-		//			if (map->tileArr[rekt.posx + i][rekt.posy + j][2] > 0) {
-		//				doorCounter++;
-		//			}
-		//		}
-		//	}
-		//	if (up) {
-		//		rekt.hasDoor += 1;
-		//	}
-		//	if (right) {
-		//		rekt.hasDoor += 2;
-		//	}
-		//	if (down) {
-		//		rekt.hasDoor += 4;
-		//	}
-		//	if (left) {
-		//		rekt.hasDoor += 8;
-		//	}
-		//	if (doorCounter < 2) {
-		//		if (rekt.posx - 1 >= 0 && rekt.hasDoor / 8 == 0) {
-		//			for (int i = 0; i < rekt.sizey; i++) {
-		//				rect a;
-		//				a.posx = rekt.posx;
-		//				a.posy = rekt.posy + i;
-		//				a.sizex = 1;
-		//				a.sizey = 8;
-		//				possibleDoors.emplace_back(a);
-		//			}
-		//		}
-		//		if (rekt.posx + rekt.sizex <= map->xsize && (rekt.hasDoor % 4) / 2 == 0) {
-		//			for (int i = 0; i < rekt.sizey; i++) {
-		//				rect a;
-		//				a.posx = rekt.posx + rekt.sizex;
-		//				a.posy = rekt.posy + i;
-		//				a.sizex = 1;
-		//				a.sizey = 2;
-		//				possibleDoors.emplace_back(a);
-		//			}
-		//		}
-		//		if (rekt.posy - 1 >= 0 && rekt.hasDoor % 8 / 4 == 0) {
-		//			for (int i = 0; i < rekt.sizex; i++) {
-		//				rect a;
-		//				a.posx = rekt.posx + i;
-		//				a.posy = rekt.posy;
-		//				a.sizex = 1;
-		//				a.sizey = 4;
-		//				possibleDoors.emplace_back(a);
-		//			}
-		//		}
-		//		if (rekt.posy + rekt.sizey <= map->ysize && rekt.hasDoor % 2 == 0) {
-		//			for (int i = 0; i < rekt.sizex; i++) {
-		//				rect a;
-		//				a.posx = rekt.posx + i;
-		//				a.posy = rekt.posy + rekt.sizey;
-		//				a.sizex = 1;
-		//				a.sizey = 1;
-		//				possibleDoors.emplace_back(a);
-		//			}
-		//		}
-		//		if (possibleDoors.size() > 0) {
-		//			rect door = possibleDoors[rand() % possibleDoors.size()];
-		//			possibleDoors.clear();
-		//			if (door.sizey == 1) {
-		//				map->tileArr[door.posx][door.posy][2] += 1;
-		//				map->tileArr[door.posx][door.posy + 1][2] += 4;
-		//				rekt.hasDoor += 1;
-		//			}
-		//			if (door.sizey == 2) {
-		//				map->tileArr[door.posx][door.posy][2] += 2;
-		//				map->tileArr[door.posx + 1][door.posy][2] += 8;
-		//				rekt.hasDoor += 2;
-		//			}
-		//			if (door.sizey == 4) {
-		//				map->tileArr[door.posx][door.posy][2] += 4;
-		//				map->tileArr[door.posx][door.posy - 1][2] += 1;
-		//				rekt.hasDoor += 4;
-		//			}
-		//			if (door.sizey == 8) {
-		//				map->tileArr[door.posx][door.posy][2] += 8;
-		//				map->tileArr[door.posx - 1][door.posy][2] += 2;
-		//				rekt.hasDoor += 8;
-		//			}
-		//		}
-		//	}
-		//	map->matched.pop();
-		//	map->matched.push(rekt);
-		//}
-		
-		
-		//adds doors on random to add more doors
-		//only adds a door if two tiles aren't in the same "area" AND there isn't already a door there AND rand()%100 is beilow doorModifier
-		for(int i = 0; i < map->xsize; i++) {
-			for (int j = 0; j < map->ysize; j++) {
-				if (i + 1 < map->xsize) {
-					if (map->tileArr[i][j][1] != map->tileArr[i + 1][j][1] && (map->tileArr[i][j][2] % 4) / 2 == 0 && rand() % 100 < map->doorModifier) {
-						map->tileArr[i][j][2] += 2;
-						map->tileArr[i + 1][j][2] += 8;
+		// Adds a second door to each room
+		for (int c = 0; c < maxSize; c++) {
+			std::vector<rect> possibleDoors;
+			rect currentTile = map->matched.front();
+			int doorCounter = 0;
+			bool up = false, right = false, down = false, left = false;
+			// Check each room which walls have doors, and how many
+			for (int i = 0; i < currentTile.sizex; i++) {
+				for (int j = 0; j < currentTile.sizey; j++) {
+					int doors = map->tileArr[currentTile.posx + i][currentTile.posy + j][2];
+					if (hasDoor(Direction::UP, doors)) {
+						up = true;
+						doorCounter++;
 					}
-				}
-				if (j + 1 < map->ysize) {
-					if (map->tileArr[i][j][1] != map->tileArr[i][j + 1][1] && (map->tileArr[i][j][2] % 2 == 0) && rand() % 100 < map->doorModifier) {
-						map->tileArr[i][j][2] += 1;
-						map->tileArr[i][j + 1][2] += 4;
+					if(hasDoor(Direction::RIGHT, doors)){
+						right = true;
+						doorCounter++;
+					}
+					if (hasDoor(Direction::DOWN, doors)) {
+						down = true;
+						doorCounter++;
+					}
+					if (hasDoor(Direction::LEFT, doors)) {
+						left = true;
+						doorCounter++;
 					}
 				}
 			}
+			// If the room does not have atleast 2 doors, we add one more on a wall that does not have a door already
+			if (doorCounter < 2) {
+				if (currentTile.posx - 1 >= 0 && !left) {
+					for (int i = 0; i < currentTile.sizey; i++) {
+						rect doorTile;
+						doorTile.posx = currentTile.posx;
+						doorTile.posy = currentTile.posy + i;
+						doorTile.sizex = 1;
+						doorTile.sizey = 8;
+						possibleDoors.emplace_back(doorTile);
+					}
+				}
+				if (currentTile.posx + currentTile.sizex + 1 < map->xsize && !right) {
+					for (int i = 0; i < currentTile.sizey; i++) {
+						rect doorTile;
+						doorTile.posx = currentTile.posx + currentTile.sizex - 1;
+						doorTile.posy = currentTile.posy + i;
+						doorTile.sizex = 1;
+						doorTile.sizey = 2;
+						possibleDoors.emplace_back(doorTile);
+					}
+				}
+				if (currentTile.posy - 1 >= 0 && !down) {
+					for (int i = 0; i < currentTile.sizex; i++) {
+						rect doorTile;
+						doorTile.posx = currentTile.posx + i;
+						doorTile.posy = currentTile.posy;
+						doorTile.sizex = 1;
+						doorTile.sizey = 4;
+						possibleDoors.emplace_back(doorTile);
+					}
+				}
+				if (currentTile.posy + currentTile.sizey + 1 < map->ysize && !up) {
+					for (int i = 0; i < currentTile.sizex; i++) {
+						rect doorTile;
+						doorTile.posx = currentTile.posx + i;
+						doorTile.posy = currentTile.posy + currentTile.sizey - 1;
+						doorTile.sizex = 1;
+						doorTile.sizey = 1;
+						possibleDoors.emplace_back(doorTile);
+					}
+				}
+				// Pick one of the possible doors at random
+				if (possibleDoors.size() > 0) {
+					rect door = possibleDoors[rand() % possibleDoors.size()];
+					possibleDoors.clear();
+					if (door.sizey == Direction::UP) {
+						map->tileArr[door.posx][door.posy][2] += Direction::UP;
+						map->tileArr[door.posx][door.posy + 1][2] += Direction::DOWN;
+						currentTile.doors += Direction::UP;
+					}
+					if (door.sizey == Direction::RIGHT) {
+						map->tileArr[door.posx][door.posy][2] += Direction::RIGHT;
+						map->tileArr[door.posx + 1][door.posy][2] += Direction::LEFT;
+						currentTile.doors += Direction::RIGHT;
+					}
+					if (door.sizey == Direction::DOWN) {
+						map->tileArr[door.posx][door.posy][2] += Direction::DOWN;
+						map->tileArr[door.posx][door.posy - 1][2] += Direction::UP;
+						currentTile.doors += Direction::DOWN;
+					}
+					if (door.sizey == Direction::LEFT) {
+						map->tileArr[door.posx][door.posy][2] += Direction::LEFT;
+						map->tileArr[door.posx - 1][door.posy][2] += Direction::RIGHT;
+						currentTile.doors += Direction::LEFT;
+					}
+				}
+			}
+			map->matched.pop();
+			map->matched.push(currentTile);
 		}
-
-
-
 	}
+}
+
+bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
+	if (dir == Direction::UP && doors % 2 == Direction::UP) {
+		return true;
+	}
+	else if(dir == Direction::DOWN && doors % 8 >= Direction::DOWN){
+		return true;
+	}
+	else if (dir == Direction::RIGHT && doors % 4 >= Direction::RIGHT) {
+		return true;
+	}
+	else if (dir == Direction::LEFT && doors >= Direction::LEFT) {
+		return true;
+	}
+	return false;
+}
+
+void LevelGeneratorSystem::addTile(Direction dir, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb) {
+
+	auto tileEntity = ECS::Instance()->createEntity("");
+	if (dir == Direction::RIGHT) {
+		if (hasDoor(Direction::RIGHT, doors)) {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
+		}
+		else {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
+		}
+	}
+	else if (dir == Direction::UP) {
+		if (hasDoor(Direction::UP, doors)) {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
+		}
+		else {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f));
+		}
+	}
+	else if (dir == Direction::DOWN) {
+		if (hasDoor(Direction::DOWN, doors)) {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
+		}
+		else {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f));
+		}
+	}
+	else if (dir == Direction::LEFT) {
+		if (hasDoor(Direction::LEFT, doors)) {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
+		}
+		else {
+			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_WALL]);
+			tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f));
+		}
+	}
+	else
+	{
+		tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_FLOOR]);
+		tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
+	}
+	tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10.f, 1.0f, tileSize / 10.f));
+	tileEntity->addComponent<BoundingBoxComponent>(bb);
+	tileEntity->addComponent<CollidableComponent>();
 }

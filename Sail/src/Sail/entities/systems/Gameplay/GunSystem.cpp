@@ -4,18 +4,9 @@
 
 #include "Sail/entities/ECS.h"
 
-#include "Sail/entities/components/ProjectileComponent.h"
-#include "Sail/entities/components/LifeTimeComponent.h"
-#include "Sail/entities/components/BoundingBoxComponent.h"
-#include "Sail/entities/components/ModelComponent.h"
-#include "Sail/entities/components/MovementComponent.h"
-#include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
-#include "Sail/entities/components/CollisionComponent.h"
-
-#include "Sail/entities/components/MetaballComponent.h"
 #include "Sail/utils/GameDataTracker.h"
-#include "Sail/entities/components/CollidableComponent.h"
+
 
 #include <random>
 
@@ -44,34 +35,8 @@ void GunSystem::update(float dt) {
 				if (gun->projectileSpawnTimer <= 0.f) {
 					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
-					for (int i = 0; i <= 1; i++) {
-						auto e = ECS::Instance()->createEntity("projectile");
-						glm::vec3 randPos;
-						float maxrand = 0.2f;
-
-						//Will remove rand later.
-						randPos.r = ((float)rand() / RAND_MAX) * maxrand;
-						randPos.g = ((float)rand() / RAND_MAX) * maxrand;
-						randPos.b = ((float)rand() / RAND_MAX) * maxrand;
-
-						e->addComponent<MetaballComponent>();
-						e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
-						e->addComponent<LifeTimeComponent>(4.0f);
-						e->addComponent<ProjectileComponent>(10.0f);
-						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
-
-						MovementComponent* movement = e->addComponent<MovementComponent>();
-						movement->velocity = gun->direction * gun->projectileSpeed;
-						movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
-
-						CollisionComponent* collision = e->addComponent<CollisionComponent>();
-						collision->drag = 2.0f;
-						// NOTE: 0.0f <= Bounciness <= 1.0f
-						collision->bounciness = 0.1f;
-						collision->padding = 0.16f;
-
-						m_gameDataTracker->logWeaponFired();
-					}
+					auto e = EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed);
+					m_gameDataTracker->logWeaponFired();
 				}
 			}
 

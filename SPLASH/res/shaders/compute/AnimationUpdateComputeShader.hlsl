@@ -66,20 +66,18 @@ float4x4 inverse(float4x4 m) {
 
 [numthreads(1, 1, 1)]
 void CSMain(ComputeShaderInput input) {
-    
-	const unsigned int index = input.DispatchThreadID.x;
+    const unsigned int index = input.DispatchThreadID.x;
 
-	float4x4 posMat = 0.f;
-	const unsigned int count = CSVertConnections[index].count;
-	for (unsigned int countIndex = 0; countIndex < count; countIndex++) {
-		posMat += CSTransforms[CSVertConnections[index].transform[countIndex]] * CSVertConnections[index].weight[countIndex];
-	}
-	float4x4 normalMat = inverse(transpose(posMat)); // TODO check if inverse is needed as well
+    float4x4 posMat = 0.f;
+    const unsigned int count = CSVertConnections[index].count;
+    for (unsigned int countIndex = 0; countIndex < count; countIndex++) {
+        posMat += CSTransforms[CSVertConnections[index].transform[countIndex]] * CSVertConnections[index].weight[countIndex];
+    }
+    float4x4 normalMat = inverse(transpose(posMat));
 
-	CSOuputVertices[index].position = mul(posMat, float4(CSTPoseVertices[index].position, 1.0f)).xyz;
-	CSOuputVertices[index].normal = mul(normalMat, float4(CSTPoseVertices[index].normal, 0.0f));
-	CSOuputVertices[index].tangent = mul(normalMat, float4(CSTPoseVertices[index].tangent, 0.0f));
-	CSOuputVertices[index].bitangent = mul(normalMat, float4(CSTPoseVertices[index].bitangent, 0.0f));
-	CSOuputVertices[index].texCoords = CSTPoseVertices[index].texCoords;
-
+    CSOuputVertices[index].position = mul(posMat, float4(CSTPoseVertices[index].position, 1.0f)).xyz;
+    CSOuputVertices[index].normal = mul(normalMat, float4(CSTPoseVertices[index].normal, 0.0f)).xyz;
+    CSOuputVertices[index].tangent = mul(normalMat, float4(CSTPoseVertices[index].tangent, 0.0f)).xyz;
+    CSOuputVertices[index].bitangent = mul(normalMat, float4(CSTPoseVertices[index].bitangent, 0.0f)).xyz;
+    CSOuputVertices[index].texCoords = CSTPoseVertices[index].texCoords;
 }

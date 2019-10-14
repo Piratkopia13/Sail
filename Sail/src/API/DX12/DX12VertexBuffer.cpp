@@ -48,7 +48,7 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::D
 }
 
 DX12VertexBuffer::~DX12VertexBuffer() {
-
+	m_context->waitForGPU();
 }
 
 void DX12VertexBuffer::bind(void* cmdList) const {
@@ -64,7 +64,8 @@ void DX12VertexBuffer::bind(void* cmdList) const {
 }
 
 ID3D12Resource1* DX12VertexBuffer::getBuffer(int frameOffset) const {
-	auto frameIndex = (m_context->getFrameIndex() + frameOffset) % m_context->getNumSwapBuffers();
+	unsigned int frameIndex = (m_context->getFrameIndex() + m_context->getNumSwapBuffers() + frameOffset) % m_context->getNumSwapBuffers();
+	assert(m_hasBeenInitialized[frameIndex] && "Vertex buffer has to be initialized before call to getBuffer");
 	return m_defaultVertexBuffers[frameIndex].Get();
 }
 
@@ -98,16 +99,17 @@ void DX12VertexBuffer::resetHasBeenUpdated() {
 	m_hasBeenUpdated[frameIndex] = false;
 }
 
-void DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
+bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 	auto frameIndex = m_context->getFrameIndex();
 	if (m_hasBeenInitialized[frameIndex]) {
-		return;
+		return false;
 	}
 
 	// Copy the data from the uploadBuffer to the defaultBuffer
 	cmdList->CopyBufferRegion(m_defaultVertexBuffers[frameIndex].Get(), 0, m_uploadVertexBuffers[frameIndex].Get(), 0, m_byteSize);
-	DX12Utils::SetResourceUAVBarrier(cmdList, m_defaultVertexBuffers[frameIndex].Get());
-	// Transition to generic read
+	// Transition to usage state
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_defaultVertexBuffers[frameIndex].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	DX12Utils::SetResourceUAVBarrier(cmdList, m_defaultVertexBuffers[frameIndex].Get());
 	m_hasBeenInitialized[frameIndex] = true;
+	return true;
 }

@@ -267,11 +267,12 @@ void ShaderPipeline::parseStructuredBuffer(const char* source) {
 	void* initData = malloc(size);
 	memset(initData, 0, size);
 	parsedData.structuredBuffers.emplace_back(name, initData, size, numElements, stride, bindShader, slot);
+	free(initData);
 }
 
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
 	std::string name = nextToken(source);
-	outTokenSize = name.size() + 1; /// +1 to account for the space before the name
+	outTokenSize = (UINT)name.size() + 1U; /// +1 to account for the space before the name
 	if (name[name.size() - 1] == ';') {
 		name = name.substr(0, name.size() - 1); // Remove ending ';'
 	}
@@ -290,7 +291,7 @@ std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSi
 
 std::string ShaderPipeline::nextTokenAsType(const char* source, UINT& outTokenSize) const {
 	std::string type = nextToken(source);
-	outTokenSize = type.size();
+	outTokenSize = (UINT)type.size();
 	// Remove first '<' and last '>' character
 	type = type.substr(1, type.size() - 2);
 
@@ -364,18 +365,18 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 	return false;
 }
 
-void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT size, UINT numElements) {
-	bool success = trySetStructBufferVar(name, data, size, numElements);
+void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex) {
+	bool success = trySetStructBufferVar(name, data, numElements, meshIndex);
 	if (!success) {
 		Logger::Warning("Tried to set StructuredBuffer variable that did not exist (" + name + ")");
 	}
 }
 
-bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT size, UINT numElements) {
+bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex) {
 	for (auto& it : parsedData.structuredBuffers) {
 		if (it.name == name) {
 			ShaderComponent::StructuredBuffer& sbuffer = *it.sBuffer.get();
-			sbuffer.updateData(data, size, numElements);
+			sbuffer.updateData(data, numElements, meshIndex);
 			return true;
 		}
 	}

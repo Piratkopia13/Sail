@@ -11,8 +11,9 @@ namespace ShaderComponent {
 		DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot = 0);
 		~DX12StructuredBuffer();
 
-		virtual void updateData(const void* newData, unsigned int bufferSize, unsigned int numElements, unsigned int offset = 0U) override;
+		virtual void updateData(const void* newData, unsigned int numElements, int meshIndex) override;
 		virtual void bind(void* cmdList) const override;
+		void bind_new(void* cmdList, int meshIndex) const;
 
 		ID3D12Resource* getBuffer() const;
 
@@ -22,8 +23,13 @@ namespace ShaderComponent {
 	private:
 		DX12API* m_context;
 
+		static const unsigned int MAX_ELEMENTS = 10000;
+		static const unsigned int MAX_MESHES_PER_FRAME = 20;
+
 		std::vector<unsigned int> m_resourceHeapSize;
+		unsigned int m_numElements;
 		unsigned int m_stride;
+		unsigned int m_elementByteSize;
 
 		unsigned int m_register;
 		std::vector<wComPtr<ID3D12Resource1>> m_bufferUploadHeap;

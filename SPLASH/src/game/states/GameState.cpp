@@ -33,7 +33,6 @@
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
 
-
 #include <sstream>
 #include <iomanip>
 
@@ -43,25 +42,40 @@
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-	, m_cc(true)
 	, m_profiler(true)
 	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
+	auto& console = Application::getInstance()->getConsole();
+	console.addCommand("state <string>", [&](const std::string& param) {
+		if (param == "menu") {
+			requestStackPop();
+			requestStackPush(States::MainMenu);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to menu requested";
+		} else if (param == "pbr") {
+			requestStackPop();
+			requestStackPush(States::PBRTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to pbr requested";
+		} else if (param == "perftest") {
+			requestStackPop();
+			requestStackPush(States::PerformanceTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to PerformanceTest requested";
+		} else {
+			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+		}
+
+	}, "GameState");
 #ifdef _DEBUG
-#pragma region TESTCASES
-	m_cc.addCommand(std::string("Save"), [&]() { return std::string("saved"); });
-	m_cc.addCommand(std::string("Test <int>"), [&](int in) { return std::string("test<int>"); });
-	m_cc.addCommand(std::string("Test <float>"), [&](float in) { return std::string("test<float>"); });
-	m_cc.addCommand(std::string("Test <string>"), [&](std::string in) { return std::string("test<string>"); });
-	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
-	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
-#pragma endregion
-
-
-	m_cc.addCommand(std::string("AddCube"), [&]() {
+	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
-		});
-	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
+	}, "GameState");
+	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
+	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -69,8 +83,8 @@ GameState::GameState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-		});
-	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&](std::vector<float> in) {
+	}, "GameState");
+	console.addCommand("AddCube <float> <float> <float>", [&](std::vector<float> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -78,7 +92,7 @@ GameState::GameState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-		});
+	}, "GameState");
 #endif
 
 	// Get the Application instance
@@ -225,7 +239,8 @@ GameState::GameState(StateStack& stack)
 
 	// Player creation
 
-	setUpPlayer(boundingBoxModel, cubeModel, lightModel, playerID);
+	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++).get();
+
 	initAnimations();
 	// Level Creation
 	createTestLevel(shader, boundingBoxModel);
@@ -282,10 +297,6 @@ GameState::~GameState() {
 // Process input for the state
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
-
-	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
-		m_animEnt->getComponent<AnimationComponent>()->computeUpdate = true;
-	}
 
 #ifdef _DEBUG
 	// Add point light at camera pos
@@ -356,16 +367,11 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-
-	//Toggle console and profiler
-	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole)) {
-		m_cc.toggle();
-		m_profiler.toggle();
-	}
-
+	
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
+		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 	}
 
 	// Pause game
@@ -483,7 +489,6 @@ bool GameState::render(float dt, float alpha) {
 
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
@@ -500,55 +505,13 @@ bool GameState::prepareStateChange() {
 	return true;
 }
 
-bool GameState::renderImguiConsole(float dt) {
-	bool open = m_cc.windowOpen();
-	if (open) {
-		static char buf[256] = "";
-		if (ImGui::Begin("Console", &open)) {
-			m_cc.windowState(open);
-			std::string txt = "test";
-			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-			for (int i = 0; i < m_cc.getLog().size(); i++) {
-				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
-			}
-
-			ImGui::EndChild();
-			ImGui::Separator();
-			bool reclaim_focus = false;
-
-			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
-			buf[m_cc.getTextField().size()] = '\0';
-
-			std::string original = m_cc.getTextField();
-			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-				ImGuiInputTextFlags_EnterReturnsTrue);
-			ImGui::SameLine();
-			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
-				if (m_cc.execute()) {
-
-				}
-				reclaim_focus = true;
-			} else {
-				m_cc.setTextField(std::string(buf));
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-
-	return false;
-}
-
 bool GameState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.windowOpen();
+	bool open = m_profiler.isWindowOpen();
 	if (open) {
 		if (ImGui::Begin("Profiler", &open)) {
 
 			//Profiler window displaying the current usage
-			m_profiler.windowState(open);
+			m_profiler.showWindow(open);
 			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
 			std::string header;
 
@@ -936,44 +899,22 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 	}
 }
 
-Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos) {
-	//creates light with model and pointlight
-	auto e = ECS::Instance()->createEntity(name.c_str());
-	e->addComponent<CandleComponent>();
-	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(lightPos);
-	e->addComponent<BoundingBoxComponent>(bbModel);
-	e->addComponent<CollidableComponent>();
-	PointLight pl;
-	pl.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-	pl.setAttenuation(.0f, 0.1f, 0.02f);
-	pl.setIndex(m_currLightIndex);
-	m_currLightIndex++;
-	e->addComponent<LightComponent>(pl);
-
-	return e;
-}
-
 void GameState::loadAnimations() {
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
+
 #ifndef _DEBUG
+	//m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
+	//m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
 #endif
-	m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-
-
-
-
 }
 
 void GameState::initAnimations() {
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 
-
-
-	/*auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
+	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
 	animationEntity2->addComponent<TransformComponent>();
 	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
 	animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
@@ -1040,65 +981,6 @@ const std::string GameState::createCube(const glm::vec3& position) {
 		std::to_string(position.z) + ")");
 }
 
-void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID) {
-	// Player spawn positions are based on their unique id
-	// This will most likely be changed later so that the host sets all the players' start positions
-	float spawnOffset = static_cast<float>(2 * static_cast<int>(playerID) - 10);
-
-	auto player = ECS::Instance()->createEntity("player");
-
-	// TODO: Only used for AI, should be removed once AI can target player in a better way.
-	m_player = player.get();
-
-	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player
-	player->addComponent<PlayerComponent>();
-
-	player->addComponent<TransformComponent>();
-
-	player->addComponent<NetworkSenderComponent>(
-		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
-		Netcode::EntityType::PLAYER_ENTITY,
-		playerID);
-
-	// Add physics components and setting initial variables
-	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	player->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
-	player->addComponent<CollisionComponent>();
-
-	// Give player a bounding box
-	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-
-	// Temporary projectile model for the player's gun
-	player->addComponent<GunComponent>(projectileModel, boundingBoxModel);
-
-	// Adding audio component and adding all sounds attached to the player entity
-	player->addComponent<AudioComponent>();
-
-	Audio::SoundInfo sound{};
-	sound.fileName = "../Audio/footsteps_1.wav";
-	sound.soundEffectLength = 1.0f;
-	sound.volume = 0.5f;
-	sound.playOnce = false;
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
-
-	sound.fileName = "../Audio/jump.wav";
-	sound.soundEffectLength = 0.7f;
-	sound.playOnce = true;
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
-
-	// Create candle for the player
-	auto e = createCandleEntity("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
-	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	e->getComponent<CandleComponent>()->setOwner(player->getID());
-	player->addChildEntity(e);
-
-	// Set up camera
-	m_cam.setPosition(glm::vec3(1.6f+spawnOffset, 1.8f, 10.f));
-	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f + spawnOffset, 0.9f, 10.f));
-}
-
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	// Load models used for test level
 	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
@@ -1123,122 +1005,25 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	rampModel->getMesh(0)->getMaterial()->setAOScale(1.0f);
 
 	// Create entities for test level
-
-	auto e = ECS::Instance()->createEntity("Arena");
-	e->addComponent<ModelComponent>(arenaModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-	e = ECS::Instance()->createEntity("Map_Barrier1");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(-16.15f * 0.3f, 0.f, 3.83f * 0.3f), glm::vec3(0.f, -0.79f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Barrier2");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(-4.54f * 0.3f, 0.f, 8.06f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Barrier3");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(8.46f * 0.3f, 0.f, 8.06f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container1");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(6.95f * 0.3f, 0.f, 25.f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container2");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-25.f * 0.3f, 0.f, 12.43f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container3");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-25.f * 0.3f, 2.4f, -7.73f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container4");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-19.67f * 0.3f, 0.f, -24.83f * 0.3f), glm::vec3(0.f, 0.79f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container5");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container6");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.20f * 0.3f, 0.f, -8.f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container7");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.2f * 0.3f, 2.4f, -22.8f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container8");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.36f * 0.3f, 0.f, -32.41f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Ramp1");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(5.2f * 0.3f, 0.f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-	e = ECS::Instance()->createEntity("Map_Ramp2");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(15.2f * 0.3f, 2.4f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-	e = ECS::Instance()->createEntity("Map_Ramp3");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.f * 0.3f, 2.4f, -5.5f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-	e = ECS::Instance()->createEntity("Map_Ramp4");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.f * 0.3f, 0.f, 9.f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-	e = ECS::Instance()->createEntity("Map_Ramp5");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(-16.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 0.f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-	e = ECS::Instance()->createEntity("Map_Ramp6");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
+	
+	auto e = EntityFactory::CreateStaticMapObject("Arena", arenaModel, boundingBoxModel, glm::vec3(0.0f , 0.0f, 0.0f));
+	e = EntityFactory::CreateStaticMapObject("Map_Barrier1", barrierModel, boundingBoxModel, glm::vec3(-16.15f * 0.3f, 0.f, 3.83f * 0.3f), glm::vec3(0.f, -0.79f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Barrier2", barrierModel, boundingBoxModel, glm::vec3(-4.54f * 0.3f, 0.f, 8.06f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Barrier3", barrierModel, boundingBoxModel, glm::vec3(8.46f * 0.3f, 0.f, 8.06f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container1", containerModel, boundingBoxModel, glm::vec3(6.95f * 0.3f, 0.f, 25.f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container2", containerModel, boundingBoxModel, glm::vec3(-25.f * 0.3f, 0.f, 12.43f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container3", containerModel, boundingBoxModel, glm::vec3(-25.f * 0.3f, 2.4f, -7.73f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container4", containerModel, boundingBoxModel, glm::vec3(-19.67f * 0.3f, 0.f, -24.83f * 0.3f), glm::vec3(0.f, 0.79f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container5", containerModel, boundingBoxModel, glm::vec3(-0.f, 0.f, -14.f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container6", containerModel, boundingBoxModel, glm::vec3(24.20f * 0.3f, 0.f, -8.f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container7", containerModel, boundingBoxModel, glm::vec3(24.2f * 0.3f, 2.4f, -22.8f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container8", containerModel, boundingBoxModel, glm::vec3(24.36f * 0.3f, 0.f, -32.41f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp1", rampModel, boundingBoxModel, glm::vec3(5.2f * 0.3f, 0.f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp2", rampModel, boundingBoxModel, glm::vec3(15.2f * 0.3f, 2.4f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp3", rampModel, boundingBoxModel, glm::vec3(24.f * 0.3f, 2.4f, -5.5f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp4", rampModel, boundingBoxModel, glm::vec3(24.f * 0.3f, 0.f, 9.f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp5", rampModel, boundingBoxModel, glm::vec3(-16.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 0.f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp6", rampModel, boundingBoxModel, glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
 }
 
 void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
@@ -1249,92 +1034,44 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	}
 
 	for (size_t i = 0; i < botCount; i++) {
-		auto e = ECS::Instance()->createEntity("AiCharacter");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(2.f * (i + 1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-		e->addComponent<CollidableComponent>();
-		e->addComponent<MovementComponent>();
-		e->addComponent<SpeedLimitComponent>();
-		e->addComponent<CollisionComponent>();
-		e->addComponent<AiComponent>();
-
-		e->addComponent<AudioComponent>();
-
-		Audio::SoundInfo sound{};
-		sound.fileName = "../Audio/guitar.wav";
-		sound.soundEffectLength = 104.0f;
-		sound.volume = 1.0f;
-		sound.playOnce = false;
-		sound.positionalOffset = { 0.f, 1.2f, 0.f };
-		sound.isPlaying = true; // Start playing the sound immediately
-
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
-		
-		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<SpeedLimitComponent>()->maxSpeed = m_player->getComponent<SpeedLimitComponent>()->maxSpeed / 2.f;
-		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
-		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
-		e->addChildEntity(aiCandleEntity);
-		auto fsmComp = e->addComponent<FSMComponent>();
-		
-		// Create states and transitions
-		{
-			SearchingState* searchState = fsmComp->createState<SearchingState>(m_componentSystems.aiSystem->getNodeSystem());
-			AttackingState* attackState = fsmComp->createState<AttackingState>();
-			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
-
-
-			// TODO: unnecessary to create new transitions for each FSM if they're all identical
-			// Attack State
-			FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
-			attackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), false);
-			FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
-			attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
-
-			// Search State
-			FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
-			searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
-			FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
-			searchToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), false);
-
-			// Fleeing State
-			FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
-			fleeingToSearch->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), true);
-
-			fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
-			fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
-
-			fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
-			fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
-
-			fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);
-		}
+		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, glm::vec3(2.f * (i + 1), 10.f, 0.f), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 	}
 }
 
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
+
+
+
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
-	tileCross->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
-	tileStraight->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
-	tileCorner->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
-	tileT->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
 	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
 	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
+	tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	std::vector<Model*> tileModels;
+	tileModels.resize(TileModel::NUMBOFMODELS);
+	tileModels[TileModel::ROOM_FLOOR] = tileFlat;
+	tileModels[TileModel::ROOM_WALL] = tileEnd;
+	tileModels[TileModel::ROOM_DOOR] = tileDoor;
+
+	tileModels[TileModel::CORRIDOR_FLOOR] = tileFlat;
+	tileModels[TileModel::CORRIDOR_WALL] = tileEnd;
+	tileModels[TileModel::CORRIDOR_DOOR] = tileDoor;
+
+
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat, tileCross, tileCorner, tileStraight, tileT, tileEnd, boundingBoxModel);
+	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 
 }
+
