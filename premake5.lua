@@ -1,11 +1,8 @@
 -- premake5.lua
 workspace "Sail"
-	configurations { "Debug", "Release" }
+	configurations { "Debug", "Release", "PerformanceTest" }
 	startproject "SPLASH"
-	platforms { "DX11 x64", "DX11 x86",
-				"DX12 x64", "DX12 x86"
-				-- "Vulkan x64", "Vulkan x86",
-			  }
+	platforms { "DX12 x64", "DX12 x86" }
 
 	filter "platforms:*86"
 		architecture "x86"
@@ -29,6 +26,10 @@ include "libraries/imgui"
 include "libraries/MemoryManager"
 
 group ""
+
+-----------------------------------
+-------------  SPLASH -------------
+-----------------------------------
 project "SPLASH"
 	location "SPLASH"
 	kind "WindowedApp"
@@ -41,17 +42,10 @@ project "SPLASH"
 
 	files {
 		"%{prj.name}/SPLASH.rc",    -- For icon
-		"%{prj.name}/resource.h", -- For icon
+		"%{prj.name}/resource.h", 	-- For icon
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
-	}
-
-	-- include and fix these as soon as new cross-platform architecture is finished
-	removefiles {
-		"**/ParticleHandler.*",
-		"**/PlayerCameraController.*",
-		"**/Scene.*"
 	}
 
 	includedirs {
@@ -68,6 +62,9 @@ project "SPLASH"
 		"Physics"
 	}
 
+	defines { "NOMINMAX",				-- Removes min max macros which cause issues
+			  "WIN32_LEAN_AND_MEAN" }	-- Exclude some less used APIs to speed up the build process on windows
+
 	flags { "MultiProcessorCompile" }
 
 	filter "system:windows"
@@ -79,6 +76,10 @@ project "SPLASH"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
+		optimize "On"
+
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST" }
 		optimize "On"
 
 	-- Copy dlls to executable path
@@ -94,6 +95,9 @@ project "SPLASH"
 		}
 
 
+-----------------------------------
+--------------  Sail --------------
+-----------------------------------
 project "Sail"
 	location "Sail"
 	kind "StaticLib"
@@ -114,22 +118,10 @@ project "Sail"
 
 	-- include and fix these as soon as new cross-platform architecture is finished
 	removefiles {
-		"%{prj.name}/src/API/DX11/**",
 		"%{prj.name}/src/API/DX12/**",
 		"%{prj.name}/src/API/VULKAN/**",
 
-		"**/DXCubeMap.*",
-		"%{prj.name}/src/Sail/resources/audio/**",
-		"**/Skybox.*",
-		"**/ParticleEmitter.*",
-		"%{prj.name}/src/Sail/graphics/shadows/**",
-		"%{prj.name}/src/Sail/graphics/shader/instanced/**",
-		"%{prj.name}/src/Sail/graphics/shader/deferred/**",
-		"%{prj.name}/src/Sail/graphics/shader/component/ConstantBuffer**",
-		"%{prj.name}/src/Sail/graphics/shader/component/Sampler**",
-		"%{prj.name}/src/Sail/graphics/shader/basic/**",
-		"%{prj.name}/src/Sail/graphics/renderer/**",
-		"**/Quadtree.*"
+		"**/Particle*.*",
 	}
 
 	includedirs {
@@ -156,14 +148,6 @@ project "Sail"
 		"SAIL_PLATFORM=\"%{cfg.platform}\""
 	}
 
-	filter { "platforms:DX11*" }
-		defines {
-			"_SAIL_DX11"
-		}
-		files {
-			"%{prj.name}/src/API/DX11/**",
-			"%{prj.name}/src/API/Windows/**"
-		}
 	filter { "platforms:DX12*" }
 		defines {
 			"_SAIL_DX12"
@@ -200,6 +184,13 @@ project "Sail"
 		defines { "NDEBUG" }
 		optimize "On"
 
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		optimize "On"
+
+-----------------------------------
+-------------  Physics ------------
+-----------------------------------
 project "Physics"
 	location "Physics"
 	kind "StaticLib"
@@ -219,41 +210,17 @@ project "Physics"
 
 	includedirs {
 		"libraries",
-		"Sail/src",
-		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.Assimp}"
+		"Sail/src"
 	}
 
 	links {
-		"Sail",
-		"libfbxsdk",
-		"GLFW",
-		"ImGui",
-		"assimp-vc140-mt"
+		"Sail"
 	}
 
 	flags { "MultiProcessorCompile" }
 
-	filter { "action:vs2017 or vs2019", "platforms:*64" }
-		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
-			"libraries/assimp/lib/x64"
-		}
-	filter { "action:vs2017 or vs2019", "platforms:*86" }
-		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
-			"libraries/assimp/lib/x86"
-		}
-
 	filter "system:windows"
 		systemversion "latest"
-
-		defines {
-			"FBXSDK_SHARED",
-			"GLFW_INCLUDE_NONE"
-		}
 
 	filter "configurations:Debug"
 		defines { "DEBUG" }
@@ -261,4 +228,8 @@ project "Physics"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
+		optimize "On"
+
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST" }
 		optimize "On"

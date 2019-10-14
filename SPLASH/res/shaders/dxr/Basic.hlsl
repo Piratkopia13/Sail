@@ -130,6 +130,7 @@ void rayGen() {
 	else {
 		lOutput[launchIndex] = payload.color;
 	}
+
 #else
 	// Fully RT
 

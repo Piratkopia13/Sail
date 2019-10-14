@@ -5,6 +5,7 @@
 #include <vector>
 #include "Entity.h"
 #include "systems/BaseComponentSystem.h"
+#include "Sail/entities/EntityFactory.hpp"
 
 class EntityAdderSystem;
 class EntityRemovalSystem;

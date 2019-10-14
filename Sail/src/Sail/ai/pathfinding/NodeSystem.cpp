@@ -44,8 +44,9 @@ std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, 
 	std::vector<NodeSystem::Node> nPath;
 	if ( from.index != to.index ) {
 		auto path = aStar(from.index, to.index);
-
-		for ( int i = path.size() - 1; i > -1; i-- ) {
+		
+		size_t size = path.size();
+		for ( size_t i = size - 1; i < size; i-- ) {
 			nPath.push_back(m_nodes[path[i]]);
 		}
 	}
@@ -72,7 +73,7 @@ const NodeSystem::Node& NodeSystem::getNearestNode(const glm::vec3& position) co
 }
 
 unsigned int NodeSystem::getDistance(unsigned int n1, unsigned int n2) const {
-	return glm::distance(m_nodes[n1].position, m_nodes[n2].position);
+	return glm::distance(m_nodes[n1].position, m_nodes[n2].position); // TOOD: Check this - should be ceil, floor or round
 }
 
 const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
@@ -136,7 +137,7 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 
 	openSet.push_back(from);
 	unsigned int current = from;
-	unsigned int maxNodes = m_nodes.size();
+	unsigned int maxNodes = (unsigned int)m_nodes.size();
 	unsigned int* camefrom = SAIL_NEW unsigned int[maxNodes];
 	unsigned int* gScores = SAIL_NEW unsigned int[maxNodes];
 	unsigned int* fScores = SAIL_NEW unsigned int[maxNodes];
