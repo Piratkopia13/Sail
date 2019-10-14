@@ -69,6 +69,10 @@ public:
 	int seed = 2;//seed for generation
 #endif
 	int totalArea = xsize * ysize;
+	int numberOfRooms = 1;
+	float tileSize = 7.f;
+	int tileOffset = 0;
+	std::vector<glm::vec3> spawnPoints;
 	std::queue<rect> chunks, blocks, hallways, rooms, matched;
 private:
 };
