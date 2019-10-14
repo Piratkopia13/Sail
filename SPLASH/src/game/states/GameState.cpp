@@ -180,6 +180,10 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
+
 
 
 
@@ -211,14 +215,15 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-	characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
-	characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	Model* characterModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
+	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
-	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	Model* aiModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
+	aiModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+	aiModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
 	// Player creation
 
