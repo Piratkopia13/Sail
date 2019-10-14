@@ -4,7 +4,7 @@
 #include "Network/NetworkStructs.hpp"
 #include "Sail.h"
 #include "../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
-
+#include "Sail/entities/systems/network/NetworkSenderSystem.h"
 
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
@@ -133,6 +133,18 @@ std::string& NWrapperSingleton::getMyPlayerName() {
 
 unsigned char NWrapperSingleton::getMyPlayerID() {
 	return m_me.id;
+}
+
+void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
+	NSS = NSS_;
+}
+
+void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity* pRelevantEntity) {
+	// Cleaning is handled by the NSS later on.
+	NetworkSenderEvent* e = new NetworkSenderEvent;
+	e->type = type;
+	e->pRelevantEntity = pRelevantEntity;
+	NSS->queueEvent(e);
 }
 
 void NWrapperSingleton::initialize(bool asHost) {

@@ -7,11 +7,7 @@
 
 class Entity;
 class MessageType;
-struct NetworkSenderEvent {
-	Netcode::MessageType type;
-	Entity* pRelevantEntity = nullptr;
-};
-
+class NetworkSenderEvent;
 
 class NetworkSenderSystem : public BaseComponentSystem {
 public:
@@ -19,13 +15,13 @@ public:
 	~NetworkSenderSystem();
 	void update(float dt) override;
 
-	void queueEvent(NetworkSenderEvent event);
+	const void queueEvent(NetworkSenderEvent* event);
 	
 
 private:
-	void handleEvent(Netcode::MessageType messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);
-	void handleEvent(NetworkSenderEvent event, cereal::PortableBinaryOutputArchive* ar);
-	std::queue<NetworkSenderEvent> eventQueue;
+	void handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);
+	void handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar);
+	std::queue<NetworkSenderEvent*> eventQueue;
 
 	//void archiveData(Netcode::MessageType* type, Entity* e, cereal::PortableBinaryOutputArchive* ar);
 };

@@ -7,6 +7,8 @@
 #include "Network/NWrapperSingleton.h"
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
+#include "../src/Network/NWrapperSingleton.h"
+
 #include <vector>
 
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
@@ -72,11 +74,13 @@ void NetworkSenderSystem::update(float dt) {
 	}
 
 	// Handle 'one-time' events which do not occurr each frame
-	//ar(eventQueue.size());
-	//while (eventQueue.empty() == false) {
-	//	handleEvent(eventQueue.front(), &ar);
-	//	eventQueue.pop();
-	//}
+	ar(static_cast<__int32>(eventQueue.size()));
+	while (eventQueue.empty() == false) {
+		NetworkSenderEvent* pE = eventQueue.front();	// Fetch
+		handleEvent(pE, &ar);							// Deal with
+		eventQueue.pop();								// Pop
+		delete pE;										// Delete
+	}
 
 	// send the serialized archive over the network
 	std::string binaryData = os.str();
@@ -88,11 +92,11 @@ void NetworkSenderSystem::update(float dt) {
 	}
 }
 
-void NetworkSenderSystem::queueEvent(NetworkSenderEvent type) {
+const void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 	this->eventQueue.push(type);
 }
 
-void NetworkSenderSystem::handleEvent(Netcode::MessageType messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
+void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
 	// Package it depending on the type
 	switch (messageType) {
 		// Send necessary info to create the networked entity 
@@ -136,9 +140,6 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType messageType, Entity* 
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED:
 	{
-		// Send ENUM for 'player jumped' the ID for the entity is already appended earlier
-		// ar(Netcode::MessageType::PLAYER_JUMPED); Even necessary?
-
 		// Remove the component for this behavior once executed, as it is not per tick.
 		e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::PLAYER_JUMPED);
 	}
@@ -173,7 +174,29 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType messageType, Entity* 
 
 }
 
-void NetworkSenderSystem::handleEvent(NetworkSenderEvent event, cereal::PortableBinaryOutputArchive* ar) {
-
-
+void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar) {
+	(*ar)(event->type); // Send the event-type
+	
+	switch (event->type) {
+	case Netcode::MessageType::PLAYER_JUMPED: 
+	{
+		// Get netObjectID so that all connected applications execute the target behavior for the same entity
+		__int32 NetObjectID = event->pRelevantEntity->getComponent<NetworkSenderComponent>()->m_id;
+		(*ar)(NetObjectID);	// Send 
+	}
+	break;
+	case Netcode::MessageType::WATER_HIT_PLAYER:
+	{
+		__int32 NetObjectID = event->pRelevantEntity->getComponent<NetworkSenderComponent>()->m_id;
+		(*ar)(NetObjectID);	// Send 
+	}
+	break;
+	case Netcode::MessageType::PLAYER_DIED:
+	{
+		// Send additional info if needed
+	}
+	break;
+	default:
+		break;
+	}
 }

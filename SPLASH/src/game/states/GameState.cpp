@@ -180,6 +180,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
 	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
+	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);	// Grant NSS to singleton for access to single-frame event stack
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -621,6 +622,7 @@ bool GameState::renderImguiProfiler(float dt) {
 
 	return false;
 }
+
 
 bool GameState::renderImGuiRenderSettings(float dt) {
 	ImGui::Begin("Rendering settings");

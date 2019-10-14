@@ -3,6 +3,14 @@
 #include "NWrapperHost.h"
 #include "NWrapperClient.h"
 
+class NetworkSenderSystem;
+class NetworkSenderEvent;
+
+struct NetworkSenderEvent {
+	Netcode::MessageType type;
+	Entity* pRelevantEntity = nullptr;
+};
+
 
 class NWrapperSingleton : public NetworkEventHandler {
 public:
@@ -38,6 +46,13 @@ public:
 	void setPlayerID(const unsigned char ID);
 	std::string& getMyPlayerName();
 	unsigned char getMyPlayerID();
+
+	// Specifically for One-Time-Events during the gamestate
+	void setNSS(NetworkSenderSystem* NSS);
+	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity* pRelevantEntity);
+private:
+	// Specifically for One-Time-Events during the gamestate
+	NetworkSenderSystem* NSS = nullptr;
 private:
 	NWrapperSingleton();
 	// Called by 'host' & 'connectToIP'

@@ -94,31 +94,96 @@ void NetworkReceiverSystem::update(float dt) {
 				ar(id, dataType); // Get the entity ID and what type of data it is
 			}
 
-			// Read and process the data
-			switch (dataType) {
-				// Send necessary info to create the networked entity 
-			case MessageType::CREATE_NETWORKED_ENTITY:
-			{
-				ar(entityType);                     // Read entity type
-				Archive::loadVec3(ar, translation); // Read translation
-				createEntity(id, entityType, translation);
-			}
-			break;
-			case MessageType::MODIFY_TRANSFORM:
-			{
-				Archive::loadVec3(ar, translation); // Read translation
-				setEntityTranslation(id, translation);
-			}
-			break;
-			case MessageType::SPAWN_PROJECTILE:
-			{
-				// TODO: Spawn (or tell some system to spawn) a projectile
-			}
-			break;
-			default:
+			// Read per data type
+			for (int j = 0; j < messageTypes; j++) {
+				ar(dataType);
+
+
+
+
+				// Read and process the data
+				switch (dataType) {
+					// Send necessary info to create the networked entity 
+				case MessageType::CREATE_NETWORKED_ENTITY:
+				{
+					Archive::loadVec3(ar, translation); // Read translation
+					createEntity(id, entityType, translation);
+				}
 				break;
+				case MessageType::MODIFY_TRANSFORM:
+				{
+					Archive::loadVec3(ar, translation); // Read translation
+					setEntityTranslation(id, translation);
+
+				}
+				break;
+				case MessageType::ROTATION_TRANSFORM:
+				{
+					Archive::loadVec3(ar, rotation);	// Read rotation
+					setEntityRotation(id, rotation);
+				}
+				break;
+				case MessageType::SPAWN_PROJECTILE:
+				{
+					Archive::loadVec3(ar, gunPosition);
+					Archive::loadVec3(ar, gunDirection);
+
+					// Use data
+					GunFactory::createWaterBullet(
+						gunPosition,
+						gunDirection,
+						10.0f, 0, 
+						false
+					);					
+				}
+				break;
+				case MessageType::PLAYER_JUMPED:
+				{
+					playerJumped(id);
+				}
+				break;
+				case MessageType::WATER_HIT_PLAYER:
+				{
+					// ID For projectiles is the player they hit!
+					std::cout << "Received WATER_HIT: " << id << "\n";
+					waterHitPlayer(id);
+				}
+				break;
+				case Netcode::MessageType::PLAYER_DIED:
+				{
+					//playerDied(id);
+				}
+				break;
+				default:
+					break;
+				}
 			}
 		}
+
+
+		// Recieve 'one-time' events
+		__int32 eventSize;
+		Netcode::MessageType eventType;
+		__int32 netObjectID;
+		ar(eventSize);
+
+		for (int i = 0; i < eventSize; i++) {
+			// Handle-Single-Frame events
+			ar(eventType);
+
+			if (eventType == Netcode::MessageType::PLAYER_JUMPED) {
+				ar(netObjectID);
+				playerJumped(netObjectID);
+			} 
+			else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {
+				ar(netObjectID);
+				waterHitPlayer(netObjectID);
+			}
+		}
+
+
+
+
 		m_incomingDataBuffer.pop();
 	}
 }

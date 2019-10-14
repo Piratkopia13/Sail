@@ -53,16 +53,21 @@ void CandleSystem::update(float dt) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
+					if (e->hasComponent<OnlinePlayerComponent>()) {
+						// We can see if the hit entity was an Online,
+						// But we can't see if the local player hit it.
+					}
+
 					if ( candle->getHealth() <= 0.f ) {
 						candle->setIsLit(false);
 
 						if ( candle->getOwner() == m_playerEntityID ) {
-							std::cout << "I was damaged, ouch!\n";
 							if ( !candle->isCarried() ) {
 								candle->toggleCarried();
 							}
 						}
 
+						// Did current player die?
 						if ( candle->getNumRespawns() == m_maxNumRespawns ) {
 							candle->setIsAlive(false);
 
@@ -71,6 +76,7 @@ void CandleSystem::update(float dt) {
 							if ( candle->getOwner() == m_playerEntityID ) {
 								Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_DEATH));
 							//	e->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::PLAYER_DIED);
+								
 								e->queueDestruction();
 							}
 						}
