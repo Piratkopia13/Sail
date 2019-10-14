@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "Sail/api/shader/ConstantBuffer.h"
+#include "Sail/api/shader/StructuredBuffer.h"
 #include "Sail/api/shader/Sampler.h"
 #include "Sail/api/GraphicsAPI.h"
 #include "Sail/api/RenderableTexture.h"
@@ -47,6 +48,9 @@ public:
 
 	virtual void setCBufferVar(const std::string& name, const void* data, UINT size);
 	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
+
+	virtual void setStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex);
+	bool trySetStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex);
 
 protected:
 	// Compiles shaders into blobs
@@ -89,7 +93,16 @@ protected:
 			cBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(ShaderComponent::ConstantBuffer::Create(initData, size, bindShader, slot));
 		}
 		std::vector<CBufferVariable> vars;
-		std::unique_ptr <ShaderComponent::ConstantBuffer> cBuffer;
+		std::unique_ptr<ShaderComponent::ConstantBuffer> cBuffer;
+	};
+	struct ShaderStructuredBuffer {
+		ShaderStructuredBuffer(const std::string& name, void* initData, UINT size, UINT numElements, UINT stride, ShaderComponent::BIND_SHADER bindShader, UINT slot) 
+			: name(name)
+		{
+			sBuffer = std::unique_ptr<ShaderComponent::StructuredBuffer>(ShaderComponent::StructuredBuffer::Create(initData, size, numElements, stride, bindShader, slot));
+		}
+		std::unique_ptr<ShaderComponent::StructuredBuffer> sBuffer;
+		std::string name;
 	};
 	struct ShaderSampler {
 		ShaderSampler(ShaderResource res, Texture::ADDRESS_MODE adressMode, Texture::FILTER filter, ShaderComponent::BIND_SHADER bindShader, UINT slot)
@@ -115,7 +128,7 @@ protected:
 		std::vector<ShaderCBuffer> cBuffers;
 		std::vector<ShaderSampler> samplers;
 		std::vector<ShaderResource> textures;
-		std::vector<ShaderResource> structuredBuffers;
+		std::vector<ShaderStructuredBuffer> structuredBuffers;
 		std::vector<ShaderRenderableTexture> renderableTextures;
 		void clear() {
 			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false, hasCS = false;

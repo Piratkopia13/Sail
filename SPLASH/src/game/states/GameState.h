@@ -51,6 +51,7 @@ private:
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
+	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
 

@@ -394,9 +394,11 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 
 	D3D12_RAYTRACING_GEOMETRY_DESC geomDesc = {};
 	if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
-
-		auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
+		auto& vb = static_cast<DX12VertexBuffer&>(mesh->getVertexBuffer());
 		auto& ib = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer());
+
+		// Make sure vbuffer is initialized
+		vb.init(cmdList);
 
 		geomDesc.Flags = (renderCommand.flags & Renderer::MESH_TRANSPARENT) ? D3D12_RAYTRACING_GEOMETRY_FLAG_NONE : D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 		geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
@@ -581,41 +583,41 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
 			}
 
-		auto& materialSettings = mesh->getMaterial()->getPBRSettings();
+			auto& materialSettings = mesh->getMaterial()->getPBRSettings();
 
-		// Three textures
-		for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-			DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
-			bool hasTexture = (textureNum == 0) ? materialSettings.hasAlbedoTexture : materialSettings.hasNormalTexture;
-			hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
-			if (hasTexture) {
-				// Make sure textures have initialized / uploaded their data to its default buffer
-				if (!texture->hasBeenInitialized()) {
-					texture->initBuffers(cmdList, textureNum * blasIndex);
+			// Three textures
+			for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+				DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
+				bool hasTexture = (textureNum == 0) ? materialSettings.hasAlbedoTexture : materialSettings.hasNormalTexture;
+				hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
+				if (hasTexture) {
+					// Make sure textures have initialized / uploaded their data to its default buffer
+					if (!texture->hasBeenInitialized()) {
+						texture->initBuffers(cmdList, textureNum * blasIndex);
+					}
+
+						// Copy SRV to DXR heap
+						m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+						handles.textureHandles[textureNum] = gpuHandle;
+					}
+					// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
+					cpuHandle.ptr += m_heapIncr;
+					gpuHandle.ptr += m_heapIncr;
 				}
 
-					// Copy SRV to DXR heap
-					m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-					handles.textureHandles[textureNum] = gpuHandle;
-				}
-				// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
-				cpuHandle.ptr += m_heapIncr;
-				gpuHandle.ptr += m_heapIncr;
-			}
-
-		// Update per mesh data
-		// Such as flags telling the shader to use indices, textures or not
-		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
-		DXRShaderCommon::MeshData meshData;
-		meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
-		meshData.flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData.flags;
-		meshData.flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
-		meshData.flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData.flags;
-		meshData.color = materialSettings.modelColor;
-		meshData.metalnessRoughnessAoScales.r = materialSettings.metalnessScale;
-		meshData.metalnessRoughnessAoScales.g = materialSettings.roughnessScale;
-		meshData.metalnessRoughnessAoScales.b = materialSettings.aoScale;
-		m_meshCB->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
+      // Update per mesh data
+      // Such as flags telling the shader to use indices, textures or not
+      unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
+      DXRShaderCommon::MeshData meshData;
+      meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+      meshData.flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData.flags;
+      meshData.flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
+      meshData.flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData.flags;
+      meshData.color = materialSettings.modelColor;
+      meshData.metalnessRoughnessAoScales.r = materialSettings.metalnessScale;
+      meshData.metalnessRoughnessAoScales.g = materialSettings.roughnessScale;
+      meshData.metalnessRoughnessAoScales.b = materialSettings.aoScale;
+      m_meshCB->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 
 			m_rtMeshHandles.emplace_back(handles);
 		} else {

@@ -238,3 +238,4 @@ const UINT Application::getFPS() const {
 float Application::getDelta() const {
 	return m_delta;
 }
+
