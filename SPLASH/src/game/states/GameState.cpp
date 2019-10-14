@@ -237,15 +237,18 @@ GameState::GameState(StateStack& stack)
 	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
 	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
-	// Player creation
-
-	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++).get();
-
-	initAnimations();
 	// Level Creation
-	createTestLevel(shader, boundingBoxModel);
+	//createTestLevel(shader, boundingBoxModel);
 
 	createLevel(shader, boundingBoxModel);
+
+	// Player creation
+
+
+	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, m_componentSystems.levelGeneratorSystem->getSpawnPoint()).get();
+
+	initAnimations();
+
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
@@ -1036,8 +1039,12 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 		botCount = 0;
 	}
 
-	for (size_t i = 0; i < botCount; i++) {
+	/*for (size_t i = 0; i < botCount; i++) {
 		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, glm::vec3(2.f * (i + 1), 10.f, 0.f), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+	}*/
+
+	for (size_t i = 0; i < botCount; i++) {
+		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, m_componentSystems.levelGeneratorSystem->getSpawnPoint(), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 	}
 }
 
@@ -1072,10 +1079,9 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
-	map->getComponent<MapComponent>()->players = 6; // TODO: get the right number of players to the map from the lobby
+	map->getComponent<MapComponent>()->players = m_app->getStateStorage().getLobbyToGameData()->botCount + 1; // TODO: get the right number of players to the map from the lobby
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
-
 }
 

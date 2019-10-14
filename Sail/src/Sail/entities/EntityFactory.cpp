@@ -27,10 +27,7 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, Model* lightMo
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID, size_t lightIndex) {
-	// Player spawn positions are based on their unique id
-	// This will most likely be changed later so that the host sets all the players' start positions
-	float spawnOffset = static_cast<float>(2 * static_cast<int>(playerID) - 10);
+Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID, size_t lightIndex, glm::vec3 spawnLocation) {
 
 	auto player = ECS::Instance()->createEntity("player");
 
@@ -84,7 +81,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//m_cam.setPosition(glm::vec3(1.6f + spawnOffset, 1.8f, 10.f));
 	//m_cam.lookAt(glm::vec3(0.f));
 
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f + spawnOffset, 0.9f, 10.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
 
 	return player;
 }
