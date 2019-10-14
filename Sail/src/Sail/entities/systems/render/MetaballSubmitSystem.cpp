@@ -3,6 +3,7 @@
 #include "..//..//..//Application.h"
 #include "..//..//components//MetaballComponent.h"
 #include "..//..//components//TransformComponent.h"
+#include "..//..//components//CullingComponent.h"
 #include "..//..//Entity.h"
 
 MetaballSubmitSystem::MetaballSubmitSystem() {
@@ -18,6 +19,12 @@ void MetaballSubmitSystem::submitAll(const float alpha) {
 
 	for (auto& e : entities) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
-		renderer->submitNonMesh(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getRenderMatrix(alpha), Renderer::MESH_STATIC);
+		CullingComponent* culling = e->getComponent<CullingComponent>();
+
+		Renderer::RenderFlag flags = Renderer::MESH_STATIC;
+		if (!culling || (culling && culling->isVisible)) {
+			flags |= Renderer::IS_VISIBLE_ON_SCREEN;
+		}
+		renderer->submitNonMesh(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getRenderMatrix(alpha), flags);
 	}
 }

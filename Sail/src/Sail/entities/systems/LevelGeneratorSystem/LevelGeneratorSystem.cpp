@@ -1076,4 +1076,5 @@ void LevelGeneratorSystem::addTile(Direction dir, int doors, const std::vector<M
 	tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10.f, 1.0f, tileSize / 10.f));
 	tileEntity->addComponent<BoundingBoxComponent>(bb);
 	tileEntity->addComponent<CollidableComponent>();
+	tileEntity->addComponent<CullingComponent>();
 }

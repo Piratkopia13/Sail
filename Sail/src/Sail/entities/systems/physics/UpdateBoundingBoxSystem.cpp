@@ -8,7 +8,6 @@
 #include "../../../graphics/geometry/Model.h"
 
 UpdateBoundingBoxSystem::UpdateBoundingBoxSystem() : BaseComponentSystem() {
-	// TODO: System owner should check if this is correct
 	registerComponent<BoundingBoxComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<ModelComponent>(false, true, true);

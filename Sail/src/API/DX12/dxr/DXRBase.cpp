@@ -394,9 +394,11 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 
 	D3D12_RAYTRACING_GEOMETRY_DESC geomDesc = {};
 	if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
-
-		auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
+		auto& vb = static_cast<DX12VertexBuffer&>(mesh->getVertexBuffer());
 		auto& ib = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer());
+
+		// Make sure vbuffer is initialized
+		vb.init(cmdList);
 
 		geomDesc.Flags = (renderCommand.flags & Renderer::MESH_TRANSPARENT) ? D3D12_RAYTRACING_GEOMETRY_FLAG_NONE : D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 		geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;

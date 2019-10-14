@@ -6,7 +6,7 @@
 
 SpeedLimitSystem::SpeedLimitSystem() {
 	registerComponent<MovementComponent>(true, true, true);
-	registerComponent<SpeedLimitComponent>(true, true, true);
+	registerComponent<SpeedLimitComponent>(true, true, false);
 }
 
 SpeedLimitSystem::~SpeedLimitSystem() {

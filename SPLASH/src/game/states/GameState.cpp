@@ -112,6 +112,7 @@ GameState::GameState(StateStack& stack)
 	// Create system for handling octree
 	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
 	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
+	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
 
 	// Create lifetime system
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
@@ -843,6 +844,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	}
 	m_componentSystems.animationSystem->updatePerFrame();
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
+	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {

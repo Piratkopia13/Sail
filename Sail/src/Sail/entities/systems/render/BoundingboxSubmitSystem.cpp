@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "BoundingboxSubmitSystem.h"
 #include "..//..//components/BoundingBoxComponent.h"
+#include "..//..//components/CullingComponent.h"
 #include "..//..//Entity.h"
 #include "..//..//..//Application.h"
 
@@ -21,7 +22,12 @@ void BoundingboxSubmitSystem::submitAll() {
 		for (auto& e : entities) {
 			BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 			if (Model* wireframeModel = boundingBox->getWireframeModel()) {
-				renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), Renderer::MESH_STATIC);
+				Renderer::RenderFlag flags = Renderer::MESH_STATIC;
+				CullingComponent* culling = e->getComponent<CullingComponent>();
+				if (!culling || (culling && culling->isVisible)) {
+					flags |= Renderer::IS_VISIBLE_ON_SCREEN;
+				}
+				renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), flags);
 			}
 		}
 	}
