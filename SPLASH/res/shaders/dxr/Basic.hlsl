@@ -26,6 +26,7 @@ SamplerState ss : register(s0);
 #include "Utils.hlsl"
 #include "Shading.hlsl"
 
+
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
 	float2 xy = index + 0.5f; // center in the middle of the pixel.
@@ -46,7 +47,7 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-// #define TRACE_FROM_GBUFFERS
+#define TRACE_FROM_GBUFFERS
 #ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
@@ -130,6 +131,143 @@ void rayGen() {
 	else {
 		lOutput[launchIndex] = payload.color;
 	}
+
+    //===========DECALS START===========//
+    // Init temp test variables
+    float3 decalSize = { 0.9f, 0.9f, 0.9f };
+    float3x3 decalRot = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
+    float3 decalPos = { -2.0f, 1.0f, 7.5f };
+
+    // Test rotation
+    float angle = PI;
+    float3 axis = { 0.0f, 0.0f, 1.0f };
+    decalRot = Utils::rotateMatrix(angle, axis);
+   
+    //angle = -PI * 0.5f;
+    //axis = float3(1.0f, 0.0f, 0.0f);
+    decalRot = Utils::rotateMatrix(angle, axis);
+
+    //float3 ddx = ddx_coarse(vsPosition).xyz;
+    float3 posNeighborX = vsPosition.xyz;
+
+    //float3 ddy = ddy_coarse(vsPosition).xyz;
+    float3 posNeighborY = vsPosition.xyz;
+
+    // Apply projection, discard if outside its bb
+    float3 localPos = worldPosition - decalPos;
+    localPos = mul(localPos, transpose(decalRot));
+    float3 decalUVW = localPos / decalSize;
+    decalUVW *= -1;
+
+    if (decalUVW.x >= -1.0f && decalUVW.x <= 1.0f &&
+        decalUVW.y >= -1.0f && decalUVW.y <= 1.0f &&
+        decalUVW.z >= -1.0f && decalUVW.z <= 1.0f) {
+
+        // Get current decal textures
+        float2 decalUV = saturate(decalUVW.xz * 0.5f + 0.5f);
+        Texture2D decalAlbedoMap = sys_inTex_albedo;
+        //Texture2D decalNormalMap = sys_inTex_normals;
+
+        // Calculate gradient
+        float3 decalPosNeighborX = posNeighborX - decalPos;
+        decalPosNeighborX = mul(decalPosNeighborX, transpose(decalRot));
+        decalPosNeighborX = decalPosNeighborX / decalSize;
+        decalPosNeighborX.y *= -1;
+        float2 uvDX = saturate(decalPosNeighborX.xz * 0.5f + 0.5f) - decalUV;
+
+        float3 decalPosNeighborY = posNeighborY - decalPos;
+        decalPosNeighborY = mul(decalPosNeighborY, transpose(decalRot));
+        decalPosNeighborY = decalPosNeighborY / decalSize;
+        decalPosNeighborY.y *= -1;
+        float2 uvDY = saturate(decalPosNeighborY.xz * 0.5f + 0.5f) - decalUV;
+
+        float4 decalAlbedo = decalAlbedoMap.SampleGrad(ss, decalUV, uvDX, uvDY);
+        //float3 decalNormalTS = { 0.0f, 0.0f, 0.0f };
+
+        float decalBlend = decalAlbedo.w;
+
+       // decalNormalTS = decalNormalTS * 2.0f - 1.0f;
+       // decalNormalTS.z *= -1.0f;
+       // float3 decalNormalWS = mul(decalNormalTS, decalRot);
+
+        // Blend the decal properties with the material properties
+        float4 diffuseAlbedo = 1.0f;
+        diffuseAlbedo.xyz = lerp(diffuseAlbedo.xyz, decalAlbedo.xyz, decalBlend);
+        lOutput[launchIndex] = diffuseAlbedo;
+
+        } // if decal
+
+    //===========DECALS END  ===========//
+
+    //===========DECALS START2===========//
+    // Init temp test variables
+    decalSize = float3(2.0f, 2.0f, 2.0f);
+    decalRot = float3x3(float3(1.0f, 0.0f, 0.0f), float3(0.0f, 1.0f, 0.0f), float3(0.0f, 0.0f, 1.0f));
+    decalPos = float3(-3.0f, 0.0f, 15.0f);
+
+    // Test rotation
+    //angle = PI * 0.5;
+    //axis = float3(1.0f, 0.0f, 0.0f);
+
+    //decalRot = Utils::rotateMatrix(angle, axis);
+   
+    //angle = PI;
+    //axis = float3(0.0f, 0.0f, 1.0f);
+    //decalRot = Utils::rotateMatrix(angle, axis);
+
+    //float3 ddx = ddx_coarse(vsPosition).xyz;
+    posNeighborX = vsPosition.xyz;
+
+    //float3 ddy = ddy_coarse(vsPosition).xyz;
+    posNeighborY = vsPosition.xyz;
+
+    // Apply projection, discard if outside its bb
+    localPos = worldPosition - decalPos;
+    localPos = mul(localPos, transpose(decalRot));
+    decalUVW = localPos / decalSize;
+    decalUVW *= -1;
+
+    if (decalUVW.x >= -1.0f && decalUVW.x <= 1.0f &&
+        decalUVW.y >= -1.0f && decalUVW.y <= 1.0f &&
+        decalUVW.z >= -1.0f && decalUVW.z <= 1.0f)
+    {
+
+        // Get current decal textures
+        float2 decalUV = saturate(decalUVW.xz * 0.5f + 0.5f);
+        Texture2D decalAlbedoMap = sys_inTex_albedo;
+        //Texture2D decalNormalMap = sys_inTex_normals;
+
+        // Calculate gradient
+        float3 decalPosNeighborX = posNeighborX - decalPos;
+        decalPosNeighborX = mul(decalPosNeighborX, transpose(decalRot));
+        decalPosNeighborX = decalPosNeighborX / decalSize;
+        decalPosNeighborX.y *= -1;
+        float2 uvDX = saturate(decalPosNeighborX.xz * 0.5f + 0.5f) - decalUV;
+
+        float3 decalPosNeighborY = posNeighborY - decalPos;
+        decalPosNeighborY = mul(decalPosNeighborY, transpose(decalRot));
+        decalPosNeighborY = decalPosNeighborY / decalSize;
+        decalPosNeighborY.y *= -1;
+        float2 uvDY = saturate(decalPosNeighborY.xz * 0.5f + 0.5f) - decalUV;
+
+        float4 decalAlbedo = decalAlbedoMap.SampleGrad(ss, decalUV, uvDX, uvDY);
+        //float3 decalNormalTS = { 0.0f, 0.0f, 0.0f };
+
+        float decalBlend = decalAlbedo.w;
+
+       // decalNormalTS = decalNormalTS * 2.0f - 1.0f;
+       // decalNormalTS.z *= -1.0f;
+       // float3 decalNormalWS = mul(decalNormalTS, decalRot);
+
+        // Blend the decal properties with the material properties
+        float4 diffuseAlbedo = 1.0f;
+        diffuseAlbedo.xyz = lerp(diffuseAlbedo.xyz, decalAlbedo.xyz, decalBlend);
+        lOutput[launchIndex] = diffuseAlbedo;
+
+    } // if decal
+
+    //===========DECALS END  ===========//
+
 #else
 	// Fully RT
 
