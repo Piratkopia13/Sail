@@ -4,6 +4,7 @@
 
 class LocalPlayerComponent : public Component<LocalPlayerComponent> {
 public:
+	LocalPlayerComponent() { ; }
 	LocalPlayerComponent(Netcode::NetworkObjectID netEntityId_) : netEntityID(netEntityId_) {	}
 	~LocalPlayerComponent() { }
 

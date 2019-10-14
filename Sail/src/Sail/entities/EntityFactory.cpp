@@ -8,6 +8,7 @@
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
+#include "Sail/entities/components/LocalPlayerComponent.h"
 
 Entity::SPtr EntityFactory::CreateCandle(const std::string& name, Model* lightModel, Model* bbModel, const glm::vec3& lightPos, size_t lightIndex) {
 	//creates light with model and pointlight
@@ -38,7 +39,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//m_player = player.get();
 
 	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player
-	player->addComponent<PlayerComponent>();
+	player->addComponent<LocalPlayerComponent>();
 
 	player->addComponent<TransformComponent>();
 
@@ -179,7 +180,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
 	e->addComponent<LifeTimeComponent>(lifetime);
-	e->addComponent<ProjectileComponent>(10.0f);
+	e->addComponent<ProjectileComponent>(10.0f, true); // TO DO should not be manually set to true
 	e->addComponent<TransformComponent>(pos + randPos);
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();

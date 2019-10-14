@@ -99,7 +99,7 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType messageType, Entity* 
 	case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
 	{
 		TransformComponent* t = e->getComponent<TransformComponent>();
-		Archive::archiveVec3(ar, t->getTranslation()); // Send translation
+		Archive::archiveVec3(*ar, t->getTranslation()); // Send translation
 
 		// After the remote entity has been created we'll want to be able to modify its transform
 		messageType = Netcode::MODIFY_TRANSFORM;
@@ -108,13 +108,13 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType messageType, Entity* 
 	case Netcode::MessageType::MODIFY_TRANSFORM:
 	{
 		TransformComponent* t = e->getComponent<TransformComponent>();
-		Archive::archiveVec3(ar, t->getTranslation()); // Send translation
+		Archive::archiveVec3(*ar, t->getTranslation()); // Send translation
 	}
 	break;
 	case Netcode::MessageType::ROTATION_TRANSFORM:
 	{
 		TransformComponent* t = e->getComponent<TransformComponent>();
-		Archive::archiveVec3(ar, t->getRotations());	// Send rotation
+		Archive::archiveVec3(*ar, t->getRotations());	// Send rotation
 	}
 	break;
 	case Netcode::MessageType::SPAWN_PROJECTILE:
@@ -122,8 +122,8 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType messageType, Entity* 
 		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
 		TransformComponent* t = e->getComponent<TransformComponent>();
 		MovementComponent* m = e->getComponent<MovementComponent>();
-		Archive::archiveVec3(ar, t->getTranslation());
-		Archive::archiveVec3(ar, glm::normalize(m->velocity));	// Normalize since direction is expected, not velocity
+		Archive::archiveVec3(*ar, t->getTranslation());
+		Archive::archiveVec3(*ar, glm::normalize(m->velocity));	// Normalize since direction is expected, not velocity
 
 		// Remove data type from it
 		e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::SPAWN_PROJECTILE);

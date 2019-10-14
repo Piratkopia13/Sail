@@ -4,18 +4,8 @@
 
 #include "Sail/entities/ECS.h"
 
-#include "Sail/entities/components/ProjectileComponent.h"
-#include "Sail/entities/components/LifeTimeComponent.h"
-#include "Sail/entities/components/BoundingBoxComponent.h"
-#include "Sail/entities/components/ModelComponent.h"
-#include "Sail/entities/components/MovementComponent.h"
-#include "Sail/entities/components/NetworkSenderComponent.h"
-#include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
-#include "Sail/entities/components/CollisionComponent.h"
-#include "Sail/entities/components/MetaballComponent.h"
 #include "Sail/utils/GameDataTracker.h"
-#include "Sail/entities/components/CollidableComponent.h"
 
 
 #include <random>
@@ -50,4 +40,15 @@ void GunSystem::update(float dt) {
 				}
 			}
 
+			gun->firing = false;
+		}
+		else {
+			if (gun->gunOverloadvalue > 0) {
+				gun->gunOverloadvalue -= dt;
+			}
+		}
 
+		gun->gunOverloadTimer -= dt;
+		gun->projectileSpawnTimer -= dt;
+	}
+}

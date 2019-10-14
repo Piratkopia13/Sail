@@ -77,98 +77,48 @@ void NetworkReceiverSystem::update(float dt) {
 	glm::vec3 gunPosition;
 	glm::vec3 gunDirection;
 	
-
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
 		std::istringstream is(m_incomingDataBuffer.front());
 		cereal::PortableBinaryInputArchive ar(is);
 
-		// Read entityCount
-		__int32 nrOfEntitiesInMessage = 0;
+		// Read message metadata
+		__int32 nrOfObjectsInMessage = 0;
 		{
-			ar(nrOfEntitiesInMessage);
+			ar(nrOfObjectsInMessage);
 		}
 
-
-		// Read the data per entity
-		for (int i = 0; i < nrOfEntitiesInMessage; ++i) {
+		// Read and process data
+		for (int i = 0; i < nrOfObjectsInMessage; ++i) {
 			{
-				ar(id);					// NetworkObjectEntity.id
-				ar(entityType);			// Entity type
-				ar(messageTypes);		// Nr of Messages (for this entity)
+				ar(id, dataType); // Get the entity ID and what type of data it is
 			}
 
-			// Read per data type
-			for (int j = 0; j < messageTypes; j++) {
-				ar(dataType);
-
-
-
-
-				// Read and process the data
-				switch (dataType) {
-					// Send necessary info to create the networked entity 
-				case MessageType::CREATE_NETWORKED_ENTITY:
-				{
-					Archive::loadVec3(ar, translation); // Read translation
-					createEntity(id, entityType, translation);
-				}
+			// Read and process the data
+			switch (dataType) {
+				// Send necessary info to create the networked entity 
+			case MessageType::CREATE_NETWORKED_ENTITY:
+			{
+				ar(entityType);                     // Read entity type
+				Archive::loadVec3(ar, translation); // Read translation
+				createEntity(id, entityType, translation);
+			}
+			break;
+			case MessageType::MODIFY_TRANSFORM:
+			{
+				Archive::loadVec3(ar, translation); // Read translation
+				setEntityTranslation(id, translation);
+			}
+			break;
+			case MessageType::SPAWN_PROJECTILE:
+			{
+				// TODO: Spawn (or tell some system to spawn) a projectile
+			}
+			break;
+			default:
 				break;
-				case MessageType::MODIFY_TRANSFORM:
-				{
-					Archive::loadVec3(ar, translation); // Read translation
-					setEntityTranslation(id, translation);
-
-				}
-				break;
-				case MessageType::ROTATION_TRANSFORM:
-				{
-					Archive::loadVec3(ar, rotation);	// Read rotation
-					setEntityRotation(id, rotation);
-				}
-				break;
-				case MessageType::SPAWN_PROJECTILE:
-				{
-					Archive::loadVec3(ar, gunPosition);
-					Archive::loadVec3(ar, gunDirection);
-
-					// Use data
-					GunFactory::createWaterBullet(
-						gunPosition,
-						gunDirection,
-						10.0f, 0, 
-						false
-					);					
-				}
-				break;
-				case MessageType::PLAYER_JUMPED:
-				{
-					playerJumped(id);
-				}
-				break;
-				case MessageType::WATER_HIT_PLAYER:
-				{
-					// ID For projectiles is the player they hit!
-					std::cout << "Received WATER_HIT: " << id << "\n";
-					waterHitPlayer(id);
-				}
-				break;
-				case Netcode::MessageType::PLAYER_DIED:
-				{
-					//playerDied(id);
-				}
-				break;
-				default:
-					break;
-				}
 			}
 		}
-
-
-		// Recieve 'one-time' events
-
-
-
 		m_incomingDataBuffer.pop();
 	}
 }
@@ -224,11 +174,6 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
 
-		// Adding audio component and adding all sounds attached to the player entity
-		e->addComponent<AudioComponent>();
-		e->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
-		e->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
-
 		//creates light with model and pointlight
 		auto light = ECS::Instance()->createEntity("ReceiverLight");
 		light->addComponent<CandleComponent>();
@@ -266,43 +211,3 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, co
 		}
 	}
 }
-
-void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation){
-	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->getComponent<TransformComponent>()->setRotations(rotation);
-			break;
-		}
-	}
-}
-
-void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
-	// How do i trigger a jump from here?
-	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
-		}
-	}
-}
-
-void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
-	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {	
-			// Hit player with water
-			std::cout << id << " was hit by a player!\n";
-			e->getComponent<CandleComponent>()->hitWithWater(10.0f);
-		}
-	}
-}
-
-void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
-	// How do i trigger a jump from here?
-	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->queueDestruction();
-		}
-	}
-}
-
-
-
