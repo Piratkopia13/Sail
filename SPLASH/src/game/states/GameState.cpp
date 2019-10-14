@@ -955,6 +955,11 @@ void GameState::initAnimations() {
 #endif
 }
 
+const std::string GameState::teleportToMap() {
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f, 0.9f, 40.f));
+	return "";
+}
+
 const std::string GameState::createCube(const glm::vec3& position) {
 
 	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
