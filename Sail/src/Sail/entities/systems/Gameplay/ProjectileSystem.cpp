@@ -2,6 +2,7 @@
 #include "ProjectileSystem.h"
 #include "Sail/entities/components/ProjectileComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
+#include "Sail/entities/components/LocalPlayerComponent.h"
 #include "Sail/entities/components/OnlinePlayerComponent.h"
 #include "Sail/entities/components/CollisionComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
@@ -27,8 +28,8 @@ void ProjectileSystem::update(float dt) {
 			if (collision.entity->hasComponent<CandleComponent>()) {
 				ProjectileComponent* p = e->getComponent<ProjectileComponent>();
 				
-				// Only do hitdetection with bullets from local player
-				if (p->ownedbyLocalPlayer == true && collision.entity->getName() != "player") {
+				// Only do hitdetection with bullets from local player which hit online players
+				if (p->ownedbyLocalPlayer == true && !collision.entity->hasComponent<LocalPlayerComponent>()) {
 					// TODO: Consume da waterball (smök)
 					collision.entity->getComponent<CandleComponent>()->hitWithWater(e->getComponent<ProjectileComponent>()->m_damage);
 				
@@ -46,6 +47,7 @@ void ProjectileSystem::update(float dt) {
 							e->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::WATER_HIT_PLAYER);
 						}
 					}
+					netSystem.pushEvent(WaterhitPlayer);
 
 					NetworkSenderComponent* n = e->getComponent<NetworkSenderComponent>();
 					n->m_id = collision.entity->getComponent<OnlinePlayerComponent>()->netEntityID;

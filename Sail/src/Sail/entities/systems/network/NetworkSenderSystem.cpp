@@ -67,92 +67,113 @@ void NetworkSenderSystem::update(float dt) {
 		for (auto& messageType : nsc->m_dataTypes) {
 			ar(messageType);										// Current MessageType
 
-			// Package it depending on the type
-			switch (messageType) {
-				// Send necessary info to create the networked entity 
-			case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
-			{
-				TransformComponent* t = e->getComponent<TransformComponent>();
-				Archive::archiveVec3(ar, t->getTranslation()); // Send translation
-
-				// After the remote entity has been created we'll want to be able to modify its transform
-				messageType = Netcode::MODIFY_TRANSFORM;
-			}
-			break;
-			case Netcode::MessageType::MODIFY_TRANSFORM:
-			{
-				TransformComponent* t = e->getComponent<TransformComponent>();
-				Archive::archiveVec3(ar, t->getTranslation()); // Send translation
-			}
-			break;
-			case Netcode::MessageType::ROTATION_TRANSFORM:
-			{
-				TransformComponent* t = e->getComponent<TransformComponent>();
-				Archive::archiveVec3(ar, t->getRotations());	// Send rotation
-			}
-			break;
-			case Netcode::MessageType::SPAWN_PROJECTILE:
-			{
-				// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
-				TransformComponent* t = e->getComponent<TransformComponent>();
-				MovementComponent* m = e->getComponent<MovementComponent>();
-				Archive::archiveVec3(ar, t->getTranslation());
-				Archive::archiveVec3(ar, glm::normalize(m->velocity));	// Normalize since direction is expected, not velocity
-
-				// Remove data type from it
-				e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::SPAWN_PROJECTILE);
-
-				// If It is empty, and has fulfilled its purpose...
-				if (e->getComponent<NetworkSenderComponent>()->m_dataTypes.size() == 0) {
-					e->removeComponent<NetworkSenderComponent>();
-				}
-			}
-			break;
-			case Netcode::MessageType::PLAYER_JUMPED:
-			{
-				// Send ENUM for 'player jumped' the ID for the entity is already appended earlier
-				// ar(Netcode::MessageType::PLAYER_JUMPED); Even necessary?
-
-				// Remove the component for this behavior once executed, as it is not per tick.
-				e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::PLAYER_JUMPED);
-			}
-			break;
-			case Netcode::MessageType::WATER_HIT_PLAYER:
-			{
-				// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
-				std::cout << nsc->m_id << " was hit by me!\n";
-
-				// Who was hit? It was not nsc->m_id, but rather...
-				// 'e' is the projectileEntity.
-			
-				// Remove data type from it
-				NetworkSenderComponent* n = e->getComponent<NetworkSenderComponent>();
-				n->removeDataType(Netcode::MessageType::WATER_HIT_PLAYER);
-
-				// If It is empty, and has fulfilled its purpose...
-				if (n->m_dataTypes.size() == 0) {
-					e->removeComponent<NetworkSenderComponent>();
-				}
-			}
-			break;
-			case Netcode::MessageType::PLAYER_DIED:
-			{
-
-			}
-			break;
-			default:
-				break;
-			}
+			handleEvent(messageType, e, &ar);
 		}
 	}
 
-	std::string binaryData = os.str();
+	// Handle 'one-time' events which do not occurr each frame
+	ar(eventQueue.size());
+	while (eventQueue.empty() == false) {
+		handleEvent(eventQueue.front(), &ar);
+		eventQueue.pop();
+	}
 
 	// send the serialized archive over the network
+	std::string binaryData = os.str();
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);
 	}
 	else {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
 	}
+}
+
+void NetworkSenderSystem::queueEvent(NetworkSenderEvent type) {
+	this->eventQueue.push(type);
+}
+
+void NetworkSenderSystem::handleEvent(Netcode::MessageType messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
+	// Package it depending on the type
+	switch (messageType) {
+		// Send necessary info to create the networked entity 
+	case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
+	{
+		TransformComponent* t = e->getComponent<TransformComponent>();
+		Archive::archiveVec3(ar, t->getTranslation()); // Send translation
+
+		// After the remote entity has been created we'll want to be able to modify its transform
+		messageType = Netcode::MODIFY_TRANSFORM;
+	}
+	break;
+	case Netcode::MessageType::MODIFY_TRANSFORM:
+	{
+		TransformComponent* t = e->getComponent<TransformComponent>();
+		Archive::archiveVec3(ar, t->getTranslation()); // Send translation
+	}
+	break;
+	case Netcode::MessageType::ROTATION_TRANSFORM:
+	{
+		TransformComponent* t = e->getComponent<TransformComponent>();
+		Archive::archiveVec3(ar, t->getRotations());	// Send rotation
+	}
+	break;
+	case Netcode::MessageType::SPAWN_PROJECTILE:
+	{
+		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
+		TransformComponent* t = e->getComponent<TransformComponent>();
+		MovementComponent* m = e->getComponent<MovementComponent>();
+		Archive::archiveVec3(ar, t->getTranslation());
+		Archive::archiveVec3(ar, glm::normalize(m->velocity));	// Normalize since direction is expected, not velocity
+
+		// Remove data type from it
+		e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::SPAWN_PROJECTILE);
+
+		// If It is empty, and has fulfilled its purpose...
+		if (e->getComponent<NetworkSenderComponent>()->m_dataTypes.size() == 0) {
+			e->removeComponent<NetworkSenderComponent>();
+		}
+	}
+	break;
+	case Netcode::MessageType::PLAYER_JUMPED:
+	{
+		// Send ENUM for 'player jumped' the ID for the entity is already appended earlier
+		// ar(Netcode::MessageType::PLAYER_JUMPED); Even necessary?
+
+		// Remove the component for this behavior once executed, as it is not per tick.
+		e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::PLAYER_JUMPED);
+	}
+	break;
+	case Netcode::MessageType::WATER_HIT_PLAYER:
+	{
+		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
+		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
+		std::cout << nsc->m_id << " was hit by me!\n";
+
+		// Who was hit? It was not nsc->m_id, but rather...
+		// 'e' is the projectileEntity.
+
+		// Remove data type from it
+		NetworkSenderComponent* n = e->getComponent<NetworkSenderComponent>();
+		n->removeDataType(Netcode::MessageType::WATER_HIT_PLAYER);
+
+		// If It is empty, and has fulfilled its purpose...
+		if (n->m_dataTypes.size() == 0) {
+			e->removeComponent<NetworkSenderComponent>();
+		}
+	}
+	break;
+	case Netcode::MessageType::PLAYER_DIED:
+	{
+
+	}
+	break;
+	default:
+		break;
+	}
+
+}
+
+void NetworkSenderSystem::handleEvent(NetworkSenderEvent event, cereal::PortableBinaryOutputArchive* ar) {
+
+
 }
