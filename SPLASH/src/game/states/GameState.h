@@ -26,6 +26,7 @@ public:
 
 
 private:
+	void initSystems(const unsigned char playerID);
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
