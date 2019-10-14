@@ -3,8 +3,7 @@
 #include "BoundingBox.h"
 #include "Cylinder.h"
 #include "Sphere.h"
-
-struct Frustum;
+#include "Sail/graphics/camera/Frustum.h"
 
 class Intersection {
 public:
