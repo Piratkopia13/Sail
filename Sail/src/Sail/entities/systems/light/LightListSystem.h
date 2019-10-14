@@ -1,6 +1,8 @@
 #pragma once
 #include "../BaseComponentSystem.h"
+#ifdef _DEBUG
 #include <string>
+#endif
 
 class LightSetup;
 class PerspectiveCamera;
