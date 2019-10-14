@@ -4,6 +4,7 @@
 #include "Sail/graphics/geometry/Animation.h"
 #include "Sail/api/Mesh.h"
 #include "Sail/api/VertexBuffer.h"
+#include <queue>
 
 class AnimationComponent : public Component<AnimationComponent> {
 public:

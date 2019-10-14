@@ -921,7 +921,7 @@ void GameState::initAnimations() {
 	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);*/
+	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
 	std::string animName = "";
 #ifndef _DEBUG
 	animName = "AnimationTest/DEBUG_BALLBOT.fbx";
@@ -937,9 +937,8 @@ void GameState::initAnimations() {
 		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack(animName));
 		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
 
-		m_animEnt = animationEntity5;
 	}
-#endif
+
 	animName = "AnimationTest/BaseMesh_Anim.fbx";
 	for (int i = 0; i < 1; i++) {
 		auto animationEntity5 = ECS::Instance()->createEntity("BaseMesh_Anim-" + std::to_string(i));
@@ -952,8 +951,8 @@ void GameState::initAnimations() {
 		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack(animName));
 		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
 
-		m_animEnt = animationEntity5;
 	}
+#endif
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
