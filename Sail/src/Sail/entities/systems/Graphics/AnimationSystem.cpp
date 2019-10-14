@@ -76,55 +76,13 @@ void AnimationSystem::updateTransforms(const float dt) {
 				animationC->currentTransition = &animationC->transitions.front();
 				animationC->nextAnimation = animationC->currentTransition->to;
 			}
+			else {
+				if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime) {
+					animationC->currentTransition = &animationC->transitions.front();
+					animationC->nextAnimation = animationC->currentTransition->to;
+				}
+			}
 		}
-
-
-
-
-		////update transition
-		//if (animationC->nextAnimation) {
-		//}
-		////check for transition completion
-		//if (animationC->transitions.size() > 0 && animationC->nextAnimation) {
-		//	if (animationC->transitions.front().transpiredTime >= animationC->transitions.front().transitionTime) {
-		//		
-		//		animationC->currentAnimation = animationC->nextAnimation;
-		//		animationC->animationTime = animationC->transitions.front().transpiredTime;
-		//		if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime()) {
-		//			animationC->animationTime -= (int(animationC->animationTime / animationC->currentAnimation->getMaxAnimationTime()) * animationC->currentAnimation->getMaxAnimationTime());
-		//		}
-		//		animationC->nextAnimation = nullptr;
-		//		animationC->transitions.pop();
-		//	}
-		//}
-		////check for new transitions
-		//if (animationC->transitions.size() > 0) {
-		//	if (animationC->nextAnimation) {
-
-		//	} 
-		//	else {
-
-		//		if (animationC->transitions.front().waitForEnd) {
-		//			if (animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime < 0) {
-		//				animationC->nextAnimation = animationC->transitions.front().to;
-		//			}
-		//			else if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime) {
-		//				animationC->nextAnimation = animationC->transitions.front().to;
-		//			}
-
-		//		}
-		//		else {
-		//			animationC->nextAnimation = animationC->transitions.front().to;
-		//		}
-		//	}
-		//	
-
-		//}
-
-		//
-
-
-
 		const unsigned int frame00 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
 		const unsigned int frame01 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::INFRONT); // TODO: make getNextFrame function.
 		const unsigned int frame10 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->transitions.front().transpiredTime, Animation::BEHIND) : 0;

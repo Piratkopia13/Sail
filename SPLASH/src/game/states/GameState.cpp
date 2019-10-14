@@ -714,13 +714,12 @@ bool GameState::renderImGuiAnimationSettings(float dt) {
 				AnimationComponent* animationC = e[i]->getComponent<AnimationComponent>();
 				ImGui::Text("Animation: %s", animationC->currentAnimation->getName().c_str());
 				ImGui::Checkbox("Update on GPU", &animationC->computeUpdate);
-				ImGui::SameLine();
 				if (ImGui::SliderFloat("Animation Speed", &animationC->animationSpeed, 0.0f, 3.0f)) {
 
 				}
 				AnimationStack* stack = animationC->getAnimationStack();
-
-				ImGui::SliderFloat("weight", &animationC->animationW,0.0f,1.0f);
+				float w = animationC->animationW;
+				ImGui::SliderFloat("weight", &w, 0.0f, 1.0f);
 				ImGui::Text("AnimationStack");
 				for (unsigned int animationTrack = 0; animationTrack < stack->getAnimationCount(); animationTrack++) {
 					float time = -1;
