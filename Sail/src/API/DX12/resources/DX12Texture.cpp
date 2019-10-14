@@ -176,8 +176,8 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		
 		// Dispatch compute shader to generate mip levels
 		GenerateMipsComputeShader::Input input;
-		input.threadGroupCountX = glm::ceil(dstWidth * settings->threadGroupXScale);
-		input.threadGroupCountY = glm::ceil(dstHeight * settings->threadGroupYScale);
+		input.threadGroupCountX = (unsigned int)glm::ceil(dstWidth * settings->threadGroupXScale);
+		input.threadGroupCountY = (unsigned int)glm::ceil(dstHeight * settings->threadGroupYScale);
 		csDispatcher.dispatch(mipsShader, input, meshIndex, cmdList);
 
 		// Transition all subresources to the state that the texture think it is in

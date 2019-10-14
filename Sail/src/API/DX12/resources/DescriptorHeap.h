@@ -18,6 +18,7 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE getNextGPUDescriptorHandle();
 	D3D12_GPU_DESCRIPTOR_HANDLE getGPUDescriptorHandleForIndex(unsigned int index) const;
 
+	D3D12_CPU_DESCRIPTOR_HANDLE	getCurentCPUDescriptorHandle() const;
 	D3D12_GPU_DESCRIPTOR_HANDLE	getCurentGPUDescriptorHandle() const;
 	unsigned int getDescriptorIncrementSize() const;
 

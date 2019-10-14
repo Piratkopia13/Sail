@@ -23,7 +23,6 @@ class NetworkReceiverSystem;
 class NetworkSenderSystem;
 class AudioSystem;
 class RenderSystem;
-
 class NetworkSerializedPackageEvent;
 
 class GameState : public State {
@@ -52,10 +51,10 @@ private:
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImguiConsole(float dt);
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);
+	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
 
@@ -63,8 +62,6 @@ private:
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
-
-	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos);
 
 	void loadAnimations();
 	void initAnimations();
@@ -103,14 +100,13 @@ private:
 	Entity* m_player;
 
 	void createTestLevel(Shader* shader, Model* boundingBoxModel);
-	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID);
 	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
 	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
+	const std::string teleportToMap();
 
 	Systems m_componentSystems;
 	LightSetup m_lights;
-	ConsoleCommands m_cc;
 	Profiler m_profiler;
 
 	size_t m_currLightIndex;

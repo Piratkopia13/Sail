@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Utils.h"
-#include <fstream>
+#include "Sail/Application.h"
 
 std::string Utils::readFile(const std::string& filepath) {
 	std::ifstream t(filepath);
@@ -29,6 +29,15 @@ std::string Utils::toStr(const glm::vec2& vec) {
 
 float Utils::rnd() {
 	return dis(gen);
+}
+
+static int g_seed = 123123;
+int Utils::fastrand() {
+	g_seed = (214013 * g_seed + 2531011);
+	return (g_seed >> 16) & 0x7FFF;
+}
+void Utils::setfastrandSeed(int seed) {
+	g_seed = seed;
 }
 
 float Utils::clamp(float val, float min, float max) {
@@ -84,7 +93,7 @@ const char* Utils::String::findToken(const std::string& token, const char* sourc
 			size_t lineLength = newLine - match;
 			char* lineCopy = (char*)malloc(lineLength + 1);
 			memset(lineCopy, '\0', lineLength + 1);
-			strncpy(lineCopy, match, lineLength);
+			strncpy_s(lineCopy, lineLength + 1, match, lineLength);
 			if (strstr(lineCopy, "SAIL_IGNORE")) {
 				free(lineCopy);
 				offset += (match - source) + lineLength;
@@ -159,4 +168,63 @@ std::string Utils::String::removeComments(const std::string& source) {
 
 bool Utils::String::startsWith(const char* source, const std::string& prefix) {
 	return strncmp(source, prefix.c_str(), prefix.size()) == 0;
+}
+
+void Logger::Log(const std::string& msg) {
+	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// Save currently set color
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(hstdout, &csbi);
+
+	SetConsoleTextAttribute(hstdout, 0x0F);
+	std::cout << "LOG: " << msg << std::endl;
+
+	// Revert color
+	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
+
+	// Print to in-game console
+	Application::getInstance()->getConsole().addLog("LOG: " + msg);
+}
+
+void Logger::Warning(const std::string& msg) {
+	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// Save currently set color
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(hstdout, &csbi);
+
+	SetConsoleTextAttribute(hstdout, 0xE0);
+	std::cout << "WARNING: " << msg << std::endl;
+
+	// Revert color
+	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
+
+	// Print to in-game console
+	Application::getInstance()->getConsole().addLog("WARNING: " + msg, ConsoleCommands::WARNING_COLOR);
+
+#ifdef _SAIL_BREAK_ON_WARNING
+	__debugbreak();
+#endif
+}
+
+void Logger::Error(const std::string& msg) {
+	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// Save currently set color
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(hstdout, &csbi);
+
+	SetConsoleTextAttribute(hstdout, 0xC0);
+	std::cout << "ERROR: " << msg << std::endl;
+
+	// Revert color
+	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
+
+	// Print to in-game console
+	Application::getInstance()->getConsole().addLog("ERROR: " + msg, ConsoleCommands::ERROR_COLOR);
+
+#ifdef _SAIL_BREAK_ON_ERROR
+	__debugbreak();
+#endif
 }

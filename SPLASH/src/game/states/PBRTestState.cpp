@@ -28,23 +28,23 @@ PBRTestState::PBRTestState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_camController(&m_cam)
-	, m_cc(true)
 	, m_profiler(true) {
+	auto& console = Application::getInstance()->getConsole();
+	console.addCommand("state <string>", [&](const std::string& param) {
+		if (param == "menu") {
+			requestStackPop();
+			requestStackPush(States::MainMenu);
+			console.removeAllCommandsWithIdentifier("PBRTestState");
+			return "State change to menu requested";
+		} else {
+			return "Invalid state. Available states are \"menu\"";
+		}
+	}, "PBRTestState");
 #ifdef _DEBUG
-#pragma region TESTCASES
-	m_cc.addCommand(std::string("Save"), [&]() { return std::string("saved"); });
-	m_cc.addCommand(std::string("Test <int>"), [&](int in) { return std::string("test<int>"); });
-	m_cc.addCommand(std::string("Test <float>"), [&](float in) { return std::string("test<float>"); });
-	m_cc.addCommand(std::string("Test <string>"), [&](std::string in) { return std::string("test<string>"); });
-	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
-	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
-#pragma endregion
-
-
-	m_cc.addCommand(std::string("AddCube"), [&]() {
+	console.addCommand(std::string("AddCube"), [&]() {
 		return createCube(m_cam.getPosition());
-	});
-	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
+	}, "PBRTestState");
+	console.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -52,8 +52,8 @@ PBRTestState::PBRTestState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-	});
-	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&](std::vector<float> in) {
+	}, "PBRTestState");
+	console.addCommand(std::string("AddCube <float> <float> <float>"), [&](std::vector<float> in) {
 		if (in.size() == 3) {
 			glm::vec3 pos(in[0], in[1], in[2]);
 			return createCube(pos);
@@ -61,7 +61,7 @@ PBRTestState::PBRTestState(StateStack& stack)
 			return std::string("Error: wrong number of inputs. Console Broken");
 		}
 		return std::string("wat");
-	});
+	}, "PBRTestState");
 #endif
 
 	// Create octree
@@ -158,31 +158,11 @@ PBRTestState::PBRTestState(StateStack& stack)
 		Creation of entities
 	*/
 
-	{
-		auto e = ECS::Instance()->createEntity("Plane");
-		e->addComponent<ModelComponent>(m_planeModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>();
-		e->addComponent<CollidableComponent>();
-
-		e = ECS::Instance()->createEntity("Cylinder1");
-		e->addComponent<ModelComponent>(cylinderModel0);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 1.f, 0.f));
-		e->addComponent<BoundingBoxComponent>();
-		e->addComponent<CollidableComponent>();
-
-		e = ECS::Instance()->createEntity("Cylinder2");
-		e->addComponent<ModelComponent>(cylinderModel1);
-		e->addComponent<TransformComponent>(glm::vec3(3.f, 1.f, 0.f));
-		e->addComponent<BoundingBoxComponent>();
-		e->addComponent<CollidableComponent>();
-
-		e = ECS::Instance()->createEntity("Cylinder3");
-		e->addComponent<ModelComponent>(cylinderModel2);
-		e->addComponent<TransformComponent>(glm::vec3(-3.f, 1.f, 0.f));
-		e->addComponent<BoundingBoxComponent>();
-		e->addComponent<CollidableComponent>();
-
+	{	
+		auto e = EntityFactory::CreateStaticMapObject("Plane", m_planeModel.get(), nullptr, glm::vec3(0.f, 0.f, 0.f));
+		e = EntityFactory::CreateStaticMapObject("Cylinder1", cylinderModel0, nullptr, glm::vec3(0.f, 1.f, 0.f));
+		e = EntityFactory::CreateStaticMapObject("Cylinder2", cylinderModel1, nullptr, glm::vec3(3.f, 1.f, 0.f));
+		e = EntityFactory::CreateStaticMapObject("Cylinder3", cylinderModel2, nullptr, glm::vec3(-3.f, 1.f, 0.f));
 
 		m_virtRAMHistory = SAIL_NEW float[100];
 		m_physRAMHistory = SAIL_NEW float[100];
@@ -220,10 +200,6 @@ bool PBRTestState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::setDirectionalLight)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
-	}
-	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole)) {
-		m_cc.toggle();
-		m_profiler.toggle();
 	}
 
 	// Reload shaders
@@ -292,7 +268,6 @@ bool PBRTestState::render(float dt, float alpha) {
 bool PBRTestState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
-	renderImguiConsole(dt);
 	renderImguiProfiler(dt);
 	renderImGuiRenderSettings(dt);
 	renderImGuiLightDebug(dt);
@@ -300,53 +275,11 @@ bool PBRTestState::renderImgui(float dt) {
 	return false;
 }
 
-bool PBRTestState::renderImguiConsole(float dt) {
-	bool open = m_cc.windowOpen();
-	if (open) {
-		static char buf[256] = "";
-		if (ImGui::Begin("Console", &open)) {
-			m_cc.windowState(open);
-			std::string txt = "test";
-			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-			for (int i = 0; i < m_cc.getLog().size(); i++) {
-				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
-			}
-
-			ImGui::EndChild();
-			ImGui::Separator();
-			bool reclaim_focus = false;
-
-			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
-			buf[m_cc.getTextField().size()] = '\0';
-
-			std::string original = m_cc.getTextField();
-			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-				ImGuiInputTextFlags_EnterReturnsTrue);
-			ImGui::SameLine();
-			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
-				if (m_cc.execute()) {
-
-				}
-				reclaim_focus = true;
-			} else {
-				m_cc.setTextField(std::string(buf));
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-
-	return false;
-}
-
 bool PBRTestState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.windowOpen();
+	bool open = m_profiler.isWindowOpen();
 	if (open) {
 		if (ImGui::Begin("Profiler", &open)) {
-			m_profiler.windowState(open);
+			m_profiler.showWindow(open);
 			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
 			std::string header;
 
