@@ -43,7 +43,6 @@ GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_cullCam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-	, m_cc(true)
 	, m_profiler(true)
 	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
