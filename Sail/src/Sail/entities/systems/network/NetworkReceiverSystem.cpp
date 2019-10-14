@@ -239,6 +239,11 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
 
+		// Adding audio component and adding all sounds attached to the player entity
+		e->addComponent<AudioComponent>();
+	//	e->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
+	//	e->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
+
 		//creates light with model and pointlight
 		auto light = ECS::Instance()->createEntity("ReceiverLight");
 		light->addComponent<CandleComponent>();
@@ -276,3 +281,43 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, co
 		}
 	}
 }
+
+void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation){
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<TransformComponent>()->setRotations(rotation);
+			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
+	// How do i trigger a jump from here?
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+		//	e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+		}
+	}
+}
+
+void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {	
+			// Hit player with water
+			std::cout << id << " was hit by a player!\n";
+			e->getComponent<CandleComponent>()->hitWithWater(10.0f);
+		}
+	}
+}
+
+void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
+	// How do i trigger a jump from here?
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->queueDestruction();
+		}
+	}
+}
+
+
+
