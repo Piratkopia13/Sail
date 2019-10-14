@@ -6,5 +6,5 @@ class NetworkSenderSystem : public BaseComponentSystem {
 public:
 	NetworkSenderSystem();
 	~NetworkSenderSystem();
-	void update(float dt) override;
+	void update();
 };

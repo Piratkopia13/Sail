@@ -15,9 +15,6 @@ LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
 LevelGeneratorSystem::~LevelGeneratorSystem() {
 }
 
-void LevelGeneratorSystem::update(float dt) {
-}
-
 //generates all necessary data for the world
 void LevelGeneratorSystem::generateMap() {
 	for (auto& e : entities) {
