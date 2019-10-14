@@ -6,5 +6,5 @@ public:
 	MovementSystem();
 	~MovementSystem();
 
-	void update(float dt) override;
+	void update(float dt);
 };

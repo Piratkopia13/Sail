@@ -18,13 +18,7 @@ class Entity;
 
 class BaseComponentSystem {
 public:
-	BaseComponentSystem()
-		: requiredComponentTypes(0x0)
-		, readBits(0x0)
-		, writeBits(0x0) {}
 	virtual ~BaseComponentSystem() {}
-
-	virtual void update(float dt) = 0;
 
 	/*
 		Adds an entity to the system
@@ -35,6 +29,12 @@ public:
 		Removes an entity from the system
 	*/
 	virtual void removeEntity(Entity* entity);
+
+	/*
+		Does not have to be overridden, a different function can be created and called in the sub systems
+		This is only here to make GameState::runSystem() work for now
+	*/
+	virtual void update(float dt) { }
 
 	/*
 		Returns the indices of all the component types required to be within this system
@@ -55,6 +55,11 @@ public:
 	void addQueuedEntities();
 
 protected:
+	BaseComponentSystem()
+		: requiredComponentTypes(0x0)
+		, readBits(0x0)
+		, writeBits(0x0) {}
+
 	/**
 	 * Registers the component to the system and defines how the system uses the component
 	 *
@@ -77,12 +82,12 @@ protected:
 template<typename ComponentType>
 inline void BaseComponentSystem::registerComponent(bool required, bool read, bool write) {
 	if ( required ) { 
-		requiredComponentTypes |= ComponentType::BID; 
+		requiredComponentTypes |= ComponentType::getBID(); 
 	}
 	if ( read ) { 
-		readBits |= ComponentType::BID; 
+		readBits |= ComponentType::getBID(); 
 	}
 	if ( write ) { 
-		writeBits |= ComponentType::BID; 
+		writeBits |= ComponentType::getBID(); 
 	}
 }

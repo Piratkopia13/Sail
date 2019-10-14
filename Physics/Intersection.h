@@ -3,8 +3,7 @@
 #include "BoundingBox.h"
 #include "Cylinder.h"
 #include "Sphere.h"
-
-struct Frustum;
+#include "Sail/graphics/camera/Frustum.h"
 
 class Intersection {
 public:
@@ -31,7 +30,8 @@ public:
 	static float RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb, float padding);
 	static float RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, float padding);
 
-	static bool FrustumWithAabb(const Frustum& frustum, const BoundingBox& aabb);
+	static bool FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& normal, const float distance);
+	static bool FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb);
 private:
 	//Private constructor so an instance can't be created
 	Intersection() {};

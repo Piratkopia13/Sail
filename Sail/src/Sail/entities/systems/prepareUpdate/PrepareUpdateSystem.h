@@ -6,5 +6,5 @@ class PrepareUpdateSystem : public BaseComponentSystem {
 public:
 	PrepareUpdateSystem();
 	~PrepareUpdateSystem();
-	void update(float dt) override;
+	void update();
 };

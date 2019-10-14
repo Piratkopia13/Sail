@@ -335,7 +335,7 @@ void AnimationSystem::interpolate(glm::mat4& res, const glm::mat4& mat1, const g
 	res = res * glm::toMat4(resRot);
 }
 
-void AnimationSystem::updatePerFrame(float dt) {
+void AnimationSystem::updatePerFrame() {
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		if (!animationC->computeUpdate) {

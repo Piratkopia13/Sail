@@ -13,7 +13,7 @@ PrepareUpdateSystem::~PrepareUpdateSystem() {
 
 }
 
-void PrepareUpdateSystem::update(float dt) {
+void PrepareUpdateSystem::update() {
 	for (auto e : entities) {
 		e->getComponent<TransformComponent>()->prepareUpdate();
 	}
