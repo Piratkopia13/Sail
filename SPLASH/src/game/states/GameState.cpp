@@ -74,6 +74,7 @@ GameState::GameState(StateStack& stack)
 	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
 	}, "GameState");
+	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
 	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
 	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
 		if (in.size() == 3) {
@@ -957,6 +958,11 @@ void GameState::initAnimations() {
 const std::string GameState::teleportToMap() {
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f, 0.9f, 40.f));
 	return "";
+}
+
+const std::string GameState::toggleProfiler() {
+	m_profiler.toggleWindow();
+	return "Toggling profiler";
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

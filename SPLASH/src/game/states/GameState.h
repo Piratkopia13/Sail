@@ -104,6 +104,7 @@ private:
 	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
 	const std::string teleportToMap();
+	const std::string toggleProfiler();
 
 	Systems m_componentSystems;
 	LightSetup m_lights;
