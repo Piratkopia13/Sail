@@ -238,7 +238,6 @@ GameState::GameState(StateStack& stack)
 	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
 
 	// Level Creation
-	//createTestLevel(shader, boundingBoxModel);
 
 	createLevel(shader, boundingBoxModel);
 
@@ -1038,10 +1037,6 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	if (botCount < 0) {
 		botCount = 0;
 	}
-
-	/*for (size_t i = 0; i < botCount; i++) {
-		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, glm::vec3(2.f * (i + 1), 10.f, 0.f), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
-	}*/
 
 	for (size_t i = 0; i < botCount; i++) {
 		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, m_componentSystems.levelGeneratorSystem->getSpawnPoint(), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
