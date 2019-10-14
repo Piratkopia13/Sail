@@ -68,14 +68,15 @@ void NetworkReceiverSystem::update(float dt) {
 	// Don't push more data to the buffer whilst this function is running
 	std::scoped_lock lock(m_bufferLock);
 
+	__int32 nrOfObjectsInMessage = 0;
 	NetworkObjectID id = 0;
-	Netcode::MessageType dataType;
-	__int32 messageTypes = 0;
-	EntityType entityType;
+	Netcode::MessageType messageType;
+	Netcode::EntityType entityType;
+	__int32 messageTypesSize = 0;
 	glm::vec3 translation;
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
-	glm::vec3 gunDirection;
+	glm::vec3 gunVelocity;
 	
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
@@ -83,26 +84,20 @@ void NetworkReceiverSystem::update(float dt) {
 		cereal::PortableBinaryInputArchive ar(is);
 
 		// Read message metadata
-		__int32 nrOfObjectsInMessage = 0;
-		{
-			ar(nrOfObjectsInMessage);
-		}
+		ar(nrOfObjectsInMessage);
 
 		// Read and process data
 		for (int i = 0; i < nrOfObjectsInMessage; ++i) {
-			{
-				ar(id, dataType); // Get the entity ID and what type of data it is
-			}
+			ar(id);				// NetworkObject-ID
+			ar(entityType);		//
+			ar(messageTypesSize);	//
 
 			// Read per data type
-			for (int j = 0; j < messageTypes; j++) {
-				ar(dataType);
-
-
-
+			for (int j = 0; j < messageTypesSize; j++) {
+				ar(messageType);
 
 				// Read and process the data
-				switch (dataType) {
+				switch (messageType) {
 					// Send necessary info to create the networked entity 
 				case MessageType::CREATE_NETWORKED_ENTITY:
 				{
@@ -121,37 +116,6 @@ void NetworkReceiverSystem::update(float dt) {
 				{
 					Archive::loadVec3(ar, rotation);	// Read rotation
 					setEntityRotation(id, rotation);
-				}
-				break;
-				case MessageType::SPAWN_PROJECTILE:
-				{
-					Archive::loadVec3(ar, gunPosition);
-					Archive::loadVec3(ar, gunDirection);
-
-					// Use data
-					GunFactory::createWaterBullet(
-						gunPosition,
-						gunDirection,
-						10.0f, 0, 
-						false
-					);					
-				}
-				break;
-				case MessageType::PLAYER_JUMPED:
-				{
-					playerJumped(id);
-				}
-				break;
-				case MessageType::WATER_HIT_PLAYER:
-				{
-					// ID For projectiles is the player they hit!
-					std::cout << "Received WATER_HIT: " << id << "\n";
-					waterHitPlayer(id);
-				}
-				break;
-				case Netcode::MessageType::PLAYER_DIED:
-				{
-					//playerDied(id);
 				}
 				break;
 				default:
@@ -173,15 +137,21 @@ void NetworkReceiverSystem::update(float dt) {
 
 			if (eventType == Netcode::MessageType::PLAYER_JUMPED) {
 				ar(netObjectID);
+
 				playerJumped(netObjectID);
 			} 
 			else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {
 				ar(netObjectID);
+
 				waterHitPlayer(netObjectID);
 			}
+			else if (eventType == Netcode::MessageType::SPAWN_PROJECTILE) {
+				Archive::loadVec3(ar, gunPosition);
+				Archive::loadVec3(ar, gunVelocity);
+
+				EntityFactory::CreateProjectile(gunPosition, gunVelocity);
+			}
 		}
-
-
 
 
 		m_incomingDataBuffer.pop();

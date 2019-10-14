@@ -53,12 +53,12 @@ void NetworkSenderSystem::update(float dt) {
 	std::ostringstream os(std::ios::binary);
 	cereal::PortableBinaryOutputArchive ar(os);
 
+	// TODO: Add game tick here in the future
+
+	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame recieves via components -+-+-+-+-+-+-+-+ 
 	// Write nrOfEntities
 	ar(static_cast<__int32>(entities.size()));
 
-	// TODO: Add game tick here in the future
-
-	// Per entity with sender component
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
 		ar(nsc->m_id);										// NetworkObjectID
@@ -67,19 +67,20 @@ void NetworkSenderSystem::update(float dt) {
 
 		// Per type of data
 		for (auto& messageType : nsc->m_dataTypes) {
-			ar(messageType);										// Current MessageType
+			ar(messageType);								// Current MessageType
 
-			handleEvent(messageType, e, &ar);
+			handleEvent(messageType, e, &ar);				// Add to archive depending on the message
 		}
 	}
 
-	// Handle 'one-time' events which do not occurr each frame
-	ar(static_cast<__int32>(eventQueue.size()));
+	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
+	__int32 test = static_cast<__int32>(eventQueue.size());
+	ar(test);
 	while (eventQueue.empty() == false) {
-		NetworkSenderEvent* pE = eventQueue.front();	// Fetch
-		handleEvent(pE, &ar);							// Deal with
-		eventQueue.pop();								// Pop
-		delete pE;										// Delete
+		NetworkSenderEvent* pE = eventQueue.front();		// Fetch
+		handleEvent(pE, &ar);								// Deal with
+		eventQueue.pop();									// Pop
+		delete pE;											// Delete
 	}
 
 	// send the serialized archive over the network
@@ -121,73 +122,36 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 		Archive::archiveVec3(*ar, t->getRotations());	// Send rotation
 	}
 	break;
+	default:
+		break;
+	}
+}
+
+void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar) {
+	(*ar)(event->type); // Send the event-type
+	Entity* e = event->pRelevantEntity;
+	
+	switch (event->type) {
 	case Netcode::MessageType::SPAWN_PROJECTILE:
 	{
 		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
 		TransformComponent* t = e->getComponent<TransformComponent>();
 		MovementComponent* m = e->getComponent<MovementComponent>();
+
 		Archive::archiveVec3(*ar, t->getTranslation());
-		Archive::archiveVec3(*ar, glm::normalize(m->velocity));	// Normalize since direction is expected, not velocity
-
-		// Remove data type from it
-		e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::SPAWN_PROJECTILE);
-
-		// If It is empty, and has fulfilled its purpose...
-		if (e->getComponent<NetworkSenderComponent>()->m_dataTypes.size() == 0) {
-			e->removeComponent<NetworkSenderComponent>();
-		}
+		Archive::archiveVec3(*ar, m->velocity);
 	}
 	break;
-	case Netcode::MessageType::PLAYER_JUMPED:
-	{
-		// Remove the component for this behavior once executed, as it is not per tick.
-		e->getComponent<NetworkSenderComponent>()->removeDataType(Netcode::MessageType::PLAYER_JUMPED);
-	}
-	break;
-	case Netcode::MessageType::WATER_HIT_PLAYER:
-	{
-		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
-		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
-		std::cout << nsc->m_id << " was hit by me!\n";
-
-		// Who was hit? It was not nsc->m_id, but rather...
-		// 'e' is the projectileEntity.
-
-		// Remove data type from it
-		NetworkSenderComponent* n = e->getComponent<NetworkSenderComponent>();
-		n->removeDataType(Netcode::MessageType::WATER_HIT_PLAYER);
-
-		// If It is empty, and has fulfilled its purpose...
-		if (n->m_dataTypes.size() == 0) {
-			e->removeComponent<NetworkSenderComponent>();
-		}
-	}
-	break;
-	case Netcode::MessageType::PLAYER_DIED:
-	{
-
-	}
-	break;
-	default:
-		break;
-	}
-
-}
-
-void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar) {
-	(*ar)(event->type); // Send the event-type
-	
-	switch (event->type) {
 	case Netcode::MessageType::PLAYER_JUMPED: 
 	{
 		// Get netObjectID so that all connected applications execute the target behavior for the same entity
-		__int32 NetObjectID = event->pRelevantEntity->getComponent<NetworkSenderComponent>()->m_id;
+		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
 		(*ar)(NetObjectID);	// Send 
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		__int32 NetObjectID = event->pRelevantEntity->getComponent<NetworkSenderComponent>()->m_id;
+		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
 		(*ar)(NetObjectID);	// Send 
 	}
 	break;
@@ -196,6 +160,7 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 		// Send additional info if needed
 	}
 	break;
+
 	default:
 		break;
 	}

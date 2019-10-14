@@ -169,7 +169,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(std::string name, Model* model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velosity, float lifetime, float randomSpreed) {
+Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velosity, bool hasLocalOwner, float lifetime, float randomSpreed) {
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
 
@@ -180,7 +180,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
 	e->addComponent<LifeTimeComponent>(lifetime);
-	e->addComponent<ProjectileComponent>(10.0f, true); // TO DO should not be manually set to true
+	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
 	e->addComponent<TransformComponent>(pos + randPos);
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();

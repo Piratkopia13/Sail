@@ -53,10 +53,10 @@ void CandleSystem::update(float dt) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
-					if (e->hasComponent<OnlinePlayerComponent>()) {
-						// We can see if the hit entity was an Online,
-						// But we can't see if the local player hit it.
-					}
+					//if (e->hasComponent<OnlinePlayerComponent>()) {
+					//	// We can see if the hit entity was an Online,
+					//	// But we can't see if the local player hit it..
+					//}
 
 					if ( candle->getHealth() <= 0.f ) {
 						candle->setIsLit(false);
