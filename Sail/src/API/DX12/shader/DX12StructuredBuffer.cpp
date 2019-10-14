@@ -48,13 +48,6 @@ namespace ShaderComponent {
 		auto frameIndex = m_context->getFrameIndex();
 		auto numSwapBuffers = m_context->getNumSwapBuffers();
 
-		//if (m_resourceHeapSize[frameIndex] < m_elementByteSize * MAX_ELEMENTS) {
-		//	// Expand buffer
-		//	Logger::Log("Expanded structured buffer from " + std::to_string(m_resourceHeapSize[frameIndex]) + " to " + std::to_string(m_elementByteSize * MAX_ELEMENTS));
-		//	m_resourceHeapSize[frameIndex] = m_elementByteSize * MAX_ELEMENTS;
-		//	createBuffers(numElements);
-		//}
-
 		memcpy(m_cbGPUAddress[frameIndex] + MAX_ELEMENTS * m_elementByteSize * meshIndex, newData, m_elementByteSize * numElements);
 		m_numElements = numElements;
 	}
@@ -67,7 +60,6 @@ namespace ShaderComponent {
 
 		// Copy SRV and bind
 		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), m_srvCDHs[frameIndex], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		//dxCmdList->SetComputeRootDescriptorTable(rootIndex, m_context->getComputeGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 	}
 
 	void DX12StructuredBuffer::bind_new(void* cmdList, int meshIndex) const {

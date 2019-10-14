@@ -149,11 +149,6 @@ private:
 	wComPtr<ID3D12CommandQueue> m_directCommandQueue;
 	wComPtr<ID3D12CommandQueue> m_computeCommandQueueAnimations;
 
-	// Commands
-	//Command m_preCommand;
-	//Command m_postCommand;
-	//Command m_copyCommand;
-	//Command m_computeCommand;
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapGraphics;
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapCompute;
 

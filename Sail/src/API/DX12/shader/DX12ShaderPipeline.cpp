@@ -154,9 +154,10 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 			MessageBoxA(0, ss.str().c_str(), "", 0);
 			errorBlob->Release();
 		}
-		if (pShaders)
+		if (pShaders) {
 			pShaders->Release();
-			ThrowIfFailed(hr);
+		}
+		ThrowIfFailed(hr);
 	}
 
 	return pShaders;
