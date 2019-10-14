@@ -17,7 +17,6 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_camController(&m_cam)
-	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
@@ -180,8 +179,6 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 
 	// Populate the performance test scene
 	populateScene(characterModel, lightModel, boundingBoxModel, cubeModel, shader);
-
-	}
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
@@ -374,40 +371,6 @@ bool PerformanceTestState::prepareStateChange() {
 	return true;
 }
 
-bool PerformanceTestState::renderImGuiLightDebug(float dt) {
-	ImGui::Begin("Light debug");
-	ImGui::Checkbox("Manual override", &m_disableLightComponents);
-	unsigned int i = 0;
-	for ( auto& pl : m_lights.getPLs() ) {
-		ImGui::PushID(i);
-		std::string label("Point light ");
-		label += std::to_string(i);
-		if ( ImGui::CollapsingHeader(label.c_str()) ) {
-
-			glm::vec3 color = pl.getColor(); // = 1.0f
-			glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
-			float attConstant = pl.getAttenuation().constant; // 0.312f;
-			float attLinear = pl.getAttenuation().linear; // 0.0f;
-			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
-
-			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
-			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
-			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
-			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
-
-			pl.setAttenuation(attConstant, attLinear, attQuadratic);
-			pl.setColor(color);
-			pl.setPosition(position);
-
-		}
-		i++;
-		ImGui::PopID();
-	}
-	ImGui::End();
-	return true;
-}
-
 bool PerformanceTestState::renderImGuiGameValues(float dt) {
 	ImGui::Begin("Game Values");
 	std::string header;
@@ -487,7 +450,7 @@ void PerformanceTestState::updatePerTickComponentSystems(float dt) {
 
 void PerformanceTestState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// There is an imgui debug toggle to override lights
-	if ( !m_disableLightComponents ) {
+	if ( !m_lightDebugWindow.isManualOverrideOn() ) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
