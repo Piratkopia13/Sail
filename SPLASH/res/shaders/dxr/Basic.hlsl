@@ -46,7 +46,7 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-// #define TRACE_FROM_GBUFFERS
+//#define TRACE_FROM_GBUFFERS
 #ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
@@ -380,13 +380,13 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 }
 
 // Calculate field potential from all active metaballs.
-float CalculateMetaballsPotential(in float3 position) {
+float CalculateMetaballsPotential(in uint index, in float3 position) {
 	//return 1;
 	float sumFieldPotential = 0;
 	uint nballs = CB_SceneData.nMetaballs;
 
-	int mid = InstanceID();
-	int nWeights = 6;
+	int mid = index;
+	int nWeights = 200;
 
 	int start = mid - nWeights;
 	int end = mid + nWeights;
@@ -403,20 +403,20 @@ float CalculateMetaballsPotential(in float3 position) {
 }
 
 // Calculate a normal via central differences.
-float3 CalculateMetaballsNormal(in float3 position) {
+float3 CalculateMetaballsNormal(in uint index, in float3 position) {
 	float e = 0.5773 * 0.00001;
 	return normalize(float3(
-		CalculateMetaballsPotential(position + float3(-e, 0, 0)) -
-		CalculateMetaballsPotential(position + float3(e, 0, 0)),
-		CalculateMetaballsPotential(position + float3(0, -e, 0)) -
-		CalculateMetaballsPotential(position + float3(0, e, 0)),
-		CalculateMetaballsPotential(position + float3(0, 0, -e)) -
-		CalculateMetaballsPotential(position + float3(0, 0, e))));
+		CalculateMetaballsPotential(index, position + float3(-e, 0, 0)) -
+		CalculateMetaballsPotential(index, position + float3(e, 0, 0)),
+		CalculateMetaballsPotential(index, position + float3(0, -e, 0)) -
+		CalculateMetaballsPotential(index, position + float3(0, e, 0)),
+		CalculateMetaballsPotential(index, position + float3(0, 0, -e)) -
+		CalculateMetaballsPotential(index, position + float3(0, 0, e))));
 }
 
 [shader("intersection")]
 void IntersectionShader() {
-	float startT = 0;
+	float startT = 1000;
 
 	RayDesc rayWorld;
 	rayWorld.Origin = WorldRayOrigin();
@@ -424,28 +424,46 @@ void IntersectionShader() {
 	rayWorld.TMax = 1000000;
 	rayWorld.TMin = 0.00001;
 
-	RayDesc rayLocal;
-	rayLocal.Origin = ObjectRayOrigin();
-	rayLocal.Direction = ObjectRayDirection();
-	rayLocal.TMax = 1000000;
-	rayLocal.TMin = 0.00001;
+	//RayDesc rayLocal;
+	//rayLocal.Origin = ObjectRayOrigin();
+	//rayLocal.Direction = ObjectRayDirection();
+	//rayLocal.TMax = 1000000;
+	//rayLocal.TMin = 0.00001;
 
 	ProceduralPrimitiveAttributes attr;
 
-	////////////////////////////////
-	/*find a point on the ray that are close to the metaballs and start stepping from there instead of using the rays origin as starting point.*/
 	float4 dummy;
 	float val;
-	if (length(ObjectRayOrigin()) > 0.2) {//TODO: CHANGE THIS
-		if (intersectSphere(rayLocal, float3(0, 0, 0), 0.2, val, dummy)) {
-			startT = val;
-			rayWorld.Origin += startT * rayWorld.Direction;
+	uint nballs = CB_SceneData.nMetaballs;
+	uint index = 1000;
+	for (int i = 0; i < nballs; i++) {
+		if (intersectSphere(rayWorld, metaballs[i], 0.2, val, dummy)) {
+			if (val < startT) {
+				startT = val;
+				//rayWorld.Origin += startT * rayWorld.Direction;
+				index = i;
+			}
 		}
 	}
+
+	if (index == 1000)
+		return;
+	//index = 0;
+	//ReportHit(startT, 0, attr);
+
+	//return;
+	////////////////////////////////
+	/*find a point on the ray that are close to the metaballs and start stepping from there instead of using the rays origin as starting point.*/
+	//if (length(ObjectRayOrigin()) > 0.2) {//TODO: CHANGE THIS
+	//	if (intersectSphere(rayLocal, float3(0, 0, 0), 0.2, val, dummy)) {
+	//		startT = val;
+	//		rayWorld.Origin += startT * rayWorld.Direction;
+	//	}
+	//}
 	////////////////////////////////
 
-	float tmin = 0, tmax = 1;
-	unsigned int MAX_LARGE_STEPS = 16;//If these steps dont hit any metaball no hit is reported.
+	float tmin = startT, tmax = startT + 1;
+	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
 	unsigned int MAX_SMALL_STEPS = 32;//If a large step hit a metaball, use small steps to adjust go backwards
 
 	float t = tmin;
@@ -454,7 +472,7 @@ void IntersectionShader() {
 
 	float3 currPos = rayWorld.Origin + t * rayWorld.Direction;
 	while (iStep++ < MAX_LARGE_STEPS) {
-		float sumFieldPotential = CalculateMetaballsPotential(currPos); // Sum of all metaball field potentials.
+		float sumFieldPotential = CalculateMetaballsPotential(index, currPos); // Sum of all metaball field potentials.
 
 		const float Threshold = 0.95f;
 
@@ -465,7 +483,7 @@ void IntersectionShader() {
 			for (int i = 0; i < MAX_SMALL_STEPS; i++) {
 				t += restep_step * restep_step_dir;
 				currPos = rayWorld.Origin + t * rayWorld.Direction;
-				float sumFieldPotential_recomp = CalculateMetaballsPotential(currPos); // Sum of all metaball field potentials.
+				float sumFieldPotential_recomp = CalculateMetaballsPotential(index, currPos); // Sum of all metaball field potentials.
 				if (sumFieldPotential_recomp >= Threshold) {
 					restep_step *= 0.5;
 					restep_step_dir = -1;
@@ -475,8 +493,8 @@ void IntersectionShader() {
 				}
 			}
 
-			attr.normal = float4(CalculateMetaballsNormal(currPos), 0);
-			ReportHit(t + startT, 0, attr);
+			attr.normal = float4(CalculateMetaballsNormal(index, currPos), 0);
+			ReportHit(t, 0, attr);
 			return;
 		}
 

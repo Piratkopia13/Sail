@@ -27,8 +27,8 @@ public:
 
 	float projectileSpawnTimer = 0.f;
 	float gunOverloadTimer = 0.f;
-	float m_projectileSpawnCooldown = 0.02f;
-	float m_gunOverloadCooldown = .5f;
+	float m_projectileSpawnCooldown = 0.005f;
+	float m_gunOverloadCooldown = .0f;
 
 
 	float projectileSpeed = 10.f;

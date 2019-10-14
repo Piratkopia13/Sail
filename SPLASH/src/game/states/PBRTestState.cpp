@@ -164,6 +164,10 @@ PBRTestState::PBRTestState(StateStack& stack)
 		e = EntityFactory::CreateStaticMapObject("Cylinder2", cylinderModel1, nullptr, glm::vec3(3.f, 1.f, 0.f));
 		e = EntityFactory::CreateStaticMapObject("Cylinder3", cylinderModel2, nullptr, glm::vec3(-3.f, 1.f, 0.f));
 
+		for (size_t i = 0; i < 2500; i++) {
+			e = EntityFactory::CreateStaticMapObject("Cylinder3", cylinderModel2, nullptr, glm::vec3(floor((i * 2.0f) / 50), 1.f, (i * 2) % 50));
+		}
+
 		m_virtRAMHistory = SAIL_NEW float[100];
 		m_physRAMHistory = SAIL_NEW float[100];
 		m_vramUsageHistory = SAIL_NEW float[100];

@@ -35,7 +35,7 @@ void GunSystem::update(float dt) {
 				if (gun->projectileSpawnTimer <= 0.f) {
 					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
-					auto e = EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed);
+					auto e = EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed, 10.0f);
 					m_gameDataTracker->logWeaponFired();
 				}
 			}

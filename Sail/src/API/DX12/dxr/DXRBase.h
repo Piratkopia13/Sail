@@ -142,7 +142,7 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
 	// Metaball Stuff
-	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2f, -0.2f, -0.2f, 0.2f, 0.2f, 0.2f };
+	D3D12_RAYTRACING_AABB m_aabb_desc = { -10.0f, -0.2f, -10.0f, 10.0f, 10.0f, 10.0f };
 	ID3D12Resource1* m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
 
 };

@@ -41,16 +41,31 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 			return a.distToCamera < b.distToCamera;
 		});
 
-	for (size_t i = 0; i < MAX_NUM_METABALLS && i < m_metaballpositions.size(); i++) {
+	if (m_metaballpositions.size() > 0) {
 		commandQueue.emplace_back();
 		RenderCommand& cmd = commandQueue.back();
 		cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
 		cmd.nonModel.material = nullptr;
 		cmd.transform = glm::identity<glm::mat4>();
-		cmd.transform = glm::translate(cmd.transform, m_metaballpositions[i].pos);
+		cmd.transform = glm::identity<glm::mat4>();
+		cmd.transform[3].x = camera->getPosition().x;
+		cmd.transform[3].y = camera->getPosition().y;
+		cmd.transform[3].z = camera->getPosition().z;
+		//cmd.transform = glm::translate(cmd.transform, m_metaballpositions[i].pos);
 		cmd.transform = glm::transpose(cmd.transform);
 		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
 	}
+
+	//for (size_t i = 0; i < MAX_NUM_METABALLS && i < m_metaballpositions.size(); i++) {
+	//	commandQueue.emplace_back();
+	//	RenderCommand& cmd = commandQueue.back();
+	//	cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
+	//	cmd.nonModel.material = nullptr;
+	//	cmd.transform = glm::identity<glm::mat4>();
+	//	cmd.transform = glm::translate(cmd.transform, m_metaballpositions[i].pos);
+	//	cmd.transform = glm::transpose(cmd.transform);
+	//	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+	//}
 
 	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
 		m_dxr.reloadShaders();

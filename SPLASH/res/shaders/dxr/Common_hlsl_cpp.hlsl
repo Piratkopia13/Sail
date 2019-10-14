@@ -28,7 +28,7 @@ namespace DXRShaderCommon {
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
-#define MAX_NUM_METABALLS 200
+#define MAX_NUM_METABALLS 1000
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
