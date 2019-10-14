@@ -4,19 +4,20 @@
 #include "PointLight.h"
 #include <vector>
 
+
 class LightSetup {
 public:
 
-	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 8;  // Max number of lights as set in shader
+	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 12;  // Max number of lights as set in shader
 
 	struct PointLightStruct {
 		glm::vec3 color = glm::vec3(0.f);
 		float padding;
 		glm::vec3 position = glm::vec3(0.f);
 		float attConstant = 0.f;
-		/*float attLinear;
+		float attLinear;
 		float attQuadratic;
-		float padding1, padding2;*/
+		float padding1, padding2;
 	};
 	struct DirLightBuffer {
 		DirLightBuffer() { };
@@ -39,12 +40,13 @@ public:
 	void setDirectionalLight(const DirectionalLight& dl);
 
 	const DirectionalLight& getDL() const;
-	const std::vector<PointLight>& getPLs() const;
+	std::vector<PointLight>& getPLs();
 
 	const DirLightBuffer& getDirLightData() const;
 	const PointLightsBuffer& getPointLightsData() const;
-
-private:
+	void clearPointLights();
+	void removePointLight();
+	void removePLByIndex(int index);
 	void updateBufferData();
 private:
 

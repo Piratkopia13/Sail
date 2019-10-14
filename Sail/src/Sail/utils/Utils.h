@@ -1,18 +1,22 @@
 #pragma once
-
-#include <exception>
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <random>
 #include <glm/glm.hpp>
+#include <string>
+#include <random>
 
 #define BIT(x) 1 << x
 
 // Break on failed HRESULT return
 #define ThrowIfFailed(result)	\
 	if (FAILED(result))			\
+		throw std::exception();
+// Show message box and break on failed blob creation
+#define ThrowIfBlobError(hr, blob) { \
+	if (FAILED(hr)) { \
+		MessageBoxA(0, (char*)blob->GetBufferPointer(), "", 0); \
+		OutputDebugStringA((char*)blob->GetBufferPointer()); \
 		throw std::exception(); \
+	} \
+}
 
 // Macro to easier track down memory leaks
 #ifdef _DEBUG
@@ -73,66 +77,10 @@ public:
 };
 
 class Logger {
-
 public:
-
-	inline static void Log(const std::string& msg) {
-
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0x0F);
-		std::cout << "LOG: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-
-	}
-
-
-	inline static void Warning(const std::string& msg) {
-		
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0xE0);
-		std::cout << "WARNING: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-#ifdef _SAIL_BREAK_ON_WARNING
- 		__debugbreak();
-#endif
-	}
-
-	inline static void Error(const std::string& msg) {
-
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0xC0);
-		std::cout << "ERROR: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-
-#ifdef _SAIL_BREAK_ON_ERROR
-		__debugbreak();
-#endif
-	}
-
+	static void Log(const std::string& msg);
+	static void Warning(const std::string& msg);
+	static void Error(const std::string& msg);
 };
 
 namespace Utils {
@@ -141,9 +89,12 @@ namespace Utils {
 	std::string toStr(const glm::vec3& vec);
 	std::string toStr(const glm::vec2& vec);
 	float rnd();
+	int fastrand();
+	void setfastrandSeed(int seed);
 	glm::vec4 getRandomColor();
 	float clamp(float val, float min, float max);
 	float smootherstep(float edge0, float edge1, float x);
+	float wrapValue(float value, float lowerBound, float upperBound);
 
 	static std::random_device rd;
 	static std::mt19937 gen(rd());

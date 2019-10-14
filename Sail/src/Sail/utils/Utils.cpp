@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Utils.h"
-#include <fstream>
+#include "Sail/Application.h"
 
 std::string Utils::readFile(const std::string& filepath) {
 	std::ifstream t(filepath);
@@ -31,6 +31,15 @@ float Utils::rnd() {
 	return dis(gen);
 }
 
+static int g_seed = 123123;
+int Utils::fastrand() {
+	g_seed = (214013 * g_seed + 2531011);
+	return (g_seed >> 16) & 0x7FFF;
+}
+void Utils::setfastrandSeed(int seed) {
+	g_seed = seed;
+}
+
 float Utils::clamp(float val, float min, float max) {
 
 	if (val > max) return max;
@@ -44,6 +53,15 @@ float Utils::smootherstep(float edge0, float edge1, float x) {
 	x = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
 	// Evaluate polynomial
 	return x * x * x * (x * (x * 6 - 15) + 10);
+}
+
+float Utils::wrapValue(float value, float lowerBound, float upperBound) {
+	float val = value;
+	value = std::fmodf(value - lowerBound, upperBound - lowerBound) + lowerBound;
+	if ( value < lowerBound ) {
+		value += (upperBound - lowerBound);
+	}
+	return value;
 }
 
 
@@ -63,11 +81,30 @@ std::string Utils::String::getBlockStartingFrom(const char* source) {
 
 const char* Utils::String::findToken(const std::string& token, const char* source) {
 	const char* match;
-	if (match = strstr(source, token.c_str())) {
-		bool left = match == source || isspace((match - 1)[0]);
-		match += token.size();
-		bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
-		return match;
+	size_t offset = 0;
+	while (true) {
+		if (match = strstr(source + offset, token.c_str())) {
+			bool left = match == source || isspace((match - 1)[0]);
+			match += token.size();
+			bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
+
+			// Ignore match if line contains "SAIL_IGNORE"
+			const char* newLine = strchr(match, '\n');
+			size_t lineLength = newLine - match;
+			char* lineCopy = (char*)malloc(lineLength + 1);
+			memset(lineCopy, '\0', lineLength + 1);
+			strncpy_s(lineCopy, lineLength + 1, match, lineLength);
+			if (strstr(lineCopy, "SAIL_IGNORE")) {
+				free(lineCopy);
+				offset += (match - source) + lineLength;
+				continue;
+			} else {
+				free(lineCopy);
+				return match;
+			}
+		} else {
+			break;
+		}
 	}
 	return nullptr;
 }
@@ -131,4 +168,63 @@ std::string Utils::String::removeComments(const std::string& source) {
 
 bool Utils::String::startsWith(const char* source, const std::string& prefix) {
 	return strncmp(source, prefix.c_str(), prefix.size()) == 0;
+}
+
+void Logger::Log(const std::string& msg) {
+	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// Save currently set color
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(hstdout, &csbi);
+
+	SetConsoleTextAttribute(hstdout, 0x0F);
+	std::cout << "LOG: " << msg << std::endl;
+
+	// Revert color
+	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
+
+	// Print to in-game console
+	Application::getInstance()->getConsole().addLog("LOG: " + msg);
+}
+
+void Logger::Warning(const std::string& msg) {
+	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// Save currently set color
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(hstdout, &csbi);
+
+	SetConsoleTextAttribute(hstdout, 0xE0);
+	std::cout << "WARNING: " << msg << std::endl;
+
+	// Revert color
+	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
+
+	// Print to in-game console
+	Application::getInstance()->getConsole().addLog("WARNING: " + msg, ConsoleCommands::WARNING_COLOR);
+
+#ifdef _SAIL_BREAK_ON_WARNING
+	__debugbreak();
+#endif
+}
+
+void Logger::Error(const std::string& msg) {
+	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// Save currently set color
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(hstdout, &csbi);
+
+	SetConsoleTextAttribute(hstdout, 0xC0);
+	std::cout << "ERROR: " << msg << std::endl;
+
+	// Revert color
+	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
+
+	// Print to in-game console
+	Application::getInstance()->getConsole().addLog("ERROR: " + msg, ConsoleCommands::ERROR_COLOR);
+
+#ifdef _SAIL_BREAK_ON_ERROR
+	__debugbreak();
+#endif
 }

@@ -1,18 +1,32 @@
 #include "pch.h"
 #include "Application.h"
 #include "events/WindowResizeEvent.h"
+#include "../SPLASH/src/game/events/TextInputEvent.h"
+#include "KeyBinds.h"
 #include "KeyCodes.h"
+#include "graphics/geometry/Transform.h"
+#include "TimeSettings.h"
+#include "entities/ECS.h"
+#include "entities/systems/Systems.h"
 
-Application* Application::m_instance = nullptr;
+Application* Application::s_instance = nullptr;
+std::atomic_bool Application::s_isRunning = true;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
-
 	// Set up instance if not set
-	if (m_instance) {
+	if (s_instance) {
 		Logger::Error("Only one application can exist!");
 		return;
 	}
-	m_instance = this;
+	s_instance = this;
+
+	// Set up console
+	m_consoleCommands = std::make_unique<ConsoleCommands>(false);
+
+	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
+	// Note: this value might need future optimization
+	unsigned int poolSize = std::max<unsigned int>(4, (10 * std::thread::hardware_concurrency()));
+	m_threadPool = std::unique_ptr<ctpl::thread_pool>(SAIL_NEW ctpl::thread_pool(poolSize));
 
 	// Set up window
 	Window::WindowProps windowProps;
@@ -27,7 +41,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Set up imgui handler
 	m_imguiHandler = std::unique_ptr<ImGuiHandler>(ImGuiHandler::Create());
 
-	// Initalize the window
+	// Initialize the window
 	if (!m_window->initialize()) {
 		OutputDebugString(L"\nFailed to initialize Win32Window\n");
 		Logger::Error("Failed to initialize Win32Window!");
@@ -37,9 +51,18 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Initialize the graphics API
 	if (!m_api->init(m_window.get())) {
 		OutputDebugString(L"\nFailed to initialize the graphics API\n");
-		Logger::Error("Failed to initialize the grahics API!");
+		Logger::Error("Failed to initialize the graphics API!");
 		return;
 	}
+
+	// Initialize Renderers
+	m_rendererWrapper.initialize();
+	ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	ECS::Instance()->createSystem<ModelSubmitSystem>();
+	ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+
 
 	// Initialize imgui
 	m_imguiHandler->init();
@@ -56,32 +79,38 @@ Application::~Application() {
 	delete Input::GetInstance();
 }
 
-int Application::startGameLoop() {
 
+// CAUTION: HERE BE DRAGONS!
+// Moving around function calls in this function is likely to cause bugs and crashes
+int Application::startGameLoop() {
+	MSG msg = { 0 };
+	m_fps = 0;
 	// Start delta timer
 	m_timer.startTimer();
-	
-	MSG msg = {0};
+	const INT64 startTime = m_timer.getStartTime();
 
-	m_fps = 0;
+	// Initialize key bindings
+	KeyBinds::init();
 
-	float secCounter = 0.f;
-	float elapsedTime = 0.f;
+	m_delta = 0.0f;
+	float currentTime = m_timer.getTimeSince<float>(startTime);
+	float newTime = 0.0f;
+	float accumulator = 0.0f;
+	float secCounter = 0.0f;
+	float elapsedTime = 0.0f;
 	UINT frameCounter = 0;
 
-	float updateTimer = 0.f;
-	float timeBetweenUpdates = 1.f / 60.f;
-
-	// TODO: move windows loop to api specific section
-
-	// Main message loop
+	// Render loop, each iteration of it results in one rendered frame
 	while (msg.message != WM_QUIT) {
-
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-		} else {
 
+			if (msg.message == WM_KEYDOWN) {
+				dispatchEvent(TextInputEvent(msg));
+			}
+		
+		} else {
 			// Handle window resizing
 			if (m_window->hasBeenResized()) {
 				UINT newWidth = m_window->getWindowWidth();
@@ -90,66 +119,77 @@ int Application::startGameLoop() {
 				// Send resize event
 				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
-			
+
 			// Get delta time from last frame
-			float delta = static_cast<float>(m_timer.getFrameTime());
-			delta = std::min(delta, 0.04f);
+			newTime = m_timer.getTimeSince<float>(startTime);
+			m_delta = newTime - currentTime;
+			currentTime = newTime;
+
+			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
+			// when the update is really slow for whatever reason.
+			m_delta = std::min(m_delta, 4 * TIMESTEP);
 
 			// Update fps counter
-			secCounter += delta;
+			secCounter += m_delta;
+			accumulator += m_delta;
 			frameCounter++;
-
-			if (secCounter >= 1) {
+			if (secCounter >= 1.0) {
 				m_fps = frameCounter;
 				frameCounter = 0;
-				secCounter = 0.f;
+				secCounter = 0.0;
 			}
-
-			// Update input states
-			//m_input.updateStates();
 
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
+			//UPDATES AUDIO
+			//Application::getAudioManager()->updateAudio();
+
 			// Quit on alt-f4
-			if (Input::IsKeyPressed(SAIL_KEY_MENU) && Input::IsKeyPressed(SAIL_KEY_F4))
+			if (Input::IsKeyPressed(KeyBinds::alt) && Input::IsKeyPressed(KeyBinds::f4))
 				PostQuitMessage(0);
 
-			processInput(delta);
-
-			// Update
 #ifdef _DEBUG
-			/*if (m_input.getKeyboardState().Escape)
-				PostQuitMessage(0);*/
-
-
+			if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
+				PostQuitMessage(0);
+			}
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
-			updateTimer += delta;
+			// Process state specific input
+			// NOTE: player movement is processed in update() except for mouse movement which is processed here
+			processInput(m_delta);
 
-			int maxCounter = 0;
-		
-
-			while (updateTimer >= timeBetweenUpdates) {
-				if (maxCounter >= 4)
-					break;
-				update(timeBetweenUpdates);
-				updateTimer -= timeBetweenUpdates;
-				maxCounter++;
+			// Run the update if enough time has passed since the last update
+			while (accumulator >= TIMESTEP) {
+				accumulator -= TIMESTEP;
+				fixedUpdate(TIMESTEP);
 			}
 
+
+			// alpha value used for the interpolation
+			float alpha = accumulator / TIMESTEP;
+
+			update(m_delta, alpha);
+
 			// Render
-			render(delta);
-			
+			render(m_delta, alpha);
+			//render(m_delta, 1.0f); // disable interpolation
+
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
+			
+			// Do changes on the stack between states
+			applyPendingStateChanges();
 		}
-
 	}
 
+	s_isRunning = false;
+	// Need to set all streams as 'm_isStreaming[i] = false' BEFORE stopping threads
+	ECS::Instance()->stopAllSystems();
+	m_threadPool->stop();
+	ECS::Instance()->destroyAllSystems();
 	return (int)msg.wParam;
-
 }
 
 std::string Application::getPlatformName() {
@@ -157,14 +197,17 @@ std::string Application::getPlatformName() {
 }
 
 Application* Application::getInstance() {
-	if (!m_instance)
+	if (!s_instance)
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
-	return m_instance;
+	return s_instance;
 }
 
 void Application::dispatchEvent(Event& event) {
 	m_api->onEvent(event);
 	Input::GetInstance()->onEvent(event);
+
+	m_rendererWrapper.onEvent(event);
+	
 }
 
 GraphicsAPI* const Application::getAPI() {
@@ -179,6 +222,25 @@ ImGuiHandler* const Application::getImGuiHandler() {
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
 }
+
+ConsoleCommands& Application::getConsole() {
+	return *m_consoleCommands;
+}
+
+MemoryManager& Application::getMemoryManager() {
+	return m_memoryManager;
+}
+
+RendererWrapper* Application::getRenderWrapper() {
+	return &m_rendererWrapper;
+}
+StateStorage& Application::getStateStorage() {
+	return this->m_stateStorage;
+}
 const UINT Application::getFPS() const {
 	return m_fps;
+}
+
+float Application::getDelta() const {
+	return m_delta;
 }

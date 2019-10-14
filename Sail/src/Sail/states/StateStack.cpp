@@ -1,10 +1,11 @@
 #include "pch.h"
 #include "StateStack.h"
 #include "Sail/Application.h"
-#include "Sail/KeyCodes.h"
+#include "Sail/KeyBinds.h"
+#include "imgui.h"
 
 StateStack::StateStack()
-	: m_renderImgui(false)
+	: m_renderImgui(true)
 {
 }
 
@@ -23,8 +24,20 @@ State::Ptr StateStack::createState(States::ID stateID) {
 void StateStack::processInput(float dt) {
 
 	// Toggle imgui rendering on key
-	if (Input::WasKeyJustPressed(SAIL_KEY_F10))
+	if (Input::WasKeyJustPressed(KeyBinds::toggleImGui))
 		m_renderImgui = !m_renderImgui;
+
+	// Ignore game mouse input when imgui uses the mouse
+	Input::SetMouseInput(!ImGui::GetIO().WantCaptureMouse || Input::IsCursorHidden());
+	// Ignore game key input when imgui uses the key input
+	Input::SetKeyInput(!ImGui::GetIO().WantCaptureKeyboard);
+	// Ignore imgui input when mouse is hidden / used by game
+	if (Input::IsCursorHidden()) {
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+		ImGui::SetWindowFocus();
+	} else {
+		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	}
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
@@ -41,34 +54,50 @@ void StateStack::processInput(float dt) {
 
 }
 
-void StateStack::update(float dt) {
+void StateStack::update(float dt, float alpha) {
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
 
 		// Return if a state returns false
 		// This allows states to stop underlying states from updating
-		if (!(*itr)->update(dt))
+		if (!(*itr)->update(dt, alpha))
 			break;
 
 	}
-	applyPendingChanges();
 
 }
 
-void StateStack::render(float dt) {
+void StateStack::fixedUpdate(float dt) {
+
+	// Loop through the stack reversed
+	for ( auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr ) {
+
+		// Return if a state returns false
+		// This allows states to stop underlying states from updating
+		if ( !( *itr )->fixedUpdate(dt) )
+			break;
+
+	}
+}
+
+void StateStack::render(float dt, float alpha) {
 
 	// Loop through the states and draw them all
 	/*for (int i = m_stack.size() - 1; i >= 0; i--) {
 		m_stack.at(i)->render(dt);
 	}*/
-	for (auto& state : m_stack)
-		state->render(dt);
-	
+	for (auto& state : m_stack) {
+		state->render(dt, alpha);
+	}
+
 	if (m_renderImgui) {
 		Application::getInstance()->getImGuiHandler()->begin();
-		for (auto& state : m_stack)
+		for (auto& state : m_stack) {
 			state->renderImgui(dt);
+		}
+		// Render console
+		Application::getInstance()->getConsole().renderWindow();
 		Application::getInstance()->getImGuiHandler()->end();
 	}
 
@@ -88,16 +117,22 @@ void StateStack::onEvent(Event& event) {
 }
 
 void StateStack::pushState(States::ID stateID) {
-	m_pendingList.push_back(PendingChange(Push, stateID));
+	m_pendingList.emplace_back(Push, stateID);
 }
 void StateStack::popState() {
-	m_pendingList.push_back(PendingChange(Pop));
+	m_pendingList.emplace_back(Pop);
 }
 void StateStack::clearStack() {
-	m_pendingList.push_back(PendingChange(Clear));
+	m_pendingList.emplace_back(Clear);
 }
 bool StateStack::isEmpty() const {
-	return m_stack.size() == 0;
+	return m_stack.empty();
+}
+
+void StateStack::prepareStateChange() {
+	for (auto& state : m_stack) {
+		state->prepareStateChange();
+	}
 }
 
 void StateStack::applyPendingChanges() {

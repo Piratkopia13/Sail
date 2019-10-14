@@ -7,10 +7,12 @@
 #include "Sail/Application.h"
 
 Mesh::Mesh(Data& buildData, Shader* shader)
-	: meshData(buildData) 
+	: meshData(buildData)
 {
-	
 }
+
+
+
 
 Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.indices);
@@ -22,7 +24,13 @@ Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.texCoords);
 }
 
-Material* Mesh::getMaterial() {
+
+
+const Mesh::Data& Mesh::getMeshData() {
+	return meshData;
+}
+
+PBRMaterial* Mesh::getMaterial() {
 	return material.get();
 }
 
@@ -35,14 +43,17 @@ unsigned int Mesh::getNumIndices() const {
 unsigned int Mesh::getNumInstances() const {
 	return meshData.numInstances;
 }
-const VertexBuffer& Mesh::getVertexBuffer() const {
+VertexBuffer& Mesh::getVertexBuffer() const {
 	return *vertexBuffer;
 }
 const IndexBuffer& Mesh::getIndexBuffer() const {
 	return *indexBuffer;
 }
+const Mesh::Data& Mesh::getData() const {
+	return meshData;
+}
 
-void Mesh::Data::deepCopy(const Data& other) {
+void Mesh::Data::deepCopy(const Mesh::Data& other) {
 	this->numIndices = other.numIndices;
 	this->numVertices = other.numVertices;
 	this->numInstances = other.numInstances;
@@ -51,7 +62,7 @@ void Mesh::Data::deepCopy(const Data& other) {
 		for (unsigned int i = 0; i < other.numIndices; i++)
 			this->indices[i] = other.indices[i];
 	}
-	unsigned int numVerts = (other.numIndices > 0) ? other.numIndices : other.numVertices;
+	unsigned int numVerts = (other.numIndices > 0) ? other.numVertices : other.numIndices;
 	if (other.positions) {
 		this->positions = SAIL_NEW Mesh::vec3[numVerts];
 		for (unsigned int i = 0; i < numVerts; i++)
@@ -82,4 +93,33 @@ void Mesh::Data::deepCopy(const Data& other) {
 		for (unsigned int i = 0; i < numVerts; i++)
 			this->bitangents[i] = other.bitangents[i];
 	}
+}
+
+void Mesh::Data::resizeVertices(const unsigned int num) {
+	assert(num != 0 && "resize in mesh was 0" );
+	numVertices = num;
+
+	Mesh::vec3* tempPositions = SAIL_NEW Mesh::vec3[num];
+	Mesh::vec3* tempNormals = SAIL_NEW Mesh::vec3[num];
+	Mesh::vec3* tempTangents = SAIL_NEW Mesh::vec3[num];
+	Mesh::vec3* tempBitangents = SAIL_NEW Mesh::vec3[num];
+	Mesh::vec2* tempUV = SAIL_NEW Mesh::vec2[num];
+
+	memcpy(tempPositions, positions, num * sizeof(Mesh::vec3));
+	memcpy(tempNormals, normals, num * sizeof(Mesh::vec3));
+	memcpy(tempTangents, tangents, num * sizeof(Mesh::vec3));
+	memcpy(tempBitangents, bitangents, num * sizeof(Mesh::vec3));
+	memcpy(tempUV, texCoords, num * sizeof(Mesh::vec2));
+
+	Memory::SafeDeleteArr(positions);
+	Memory::SafeDeleteArr(normals);
+	Memory::SafeDeleteArr(tangents);
+	Memory::SafeDeleteArr(bitangents);
+	Memory::SafeDeleteArr(texCoords);
+
+	positions = tempPositions;
+	normals = tempNormals;
+	tangents = tempTangents;
+	bitangents = tempBitangents;
+	texCoords = tempUV;
 }

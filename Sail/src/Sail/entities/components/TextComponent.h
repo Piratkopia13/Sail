@@ -5,12 +5,8 @@
 #include "../../graphics/text/SailFont.h"
 #include "../../graphics/text/Text.h"
 
-class TextComponent : public Component/*, public IDrawable*/ {
+class TextComponent : public Component<TextComponent> /*, public IDrawable*/ {
 public:
-	SAIL_COMPONENT
-	/*static int getStaticID() {
-		return 2;
-	}*/
 	TextComponent();
 	~TextComponent();
 

@@ -7,7 +7,6 @@
 
 // Include the minimal needed from windows.h
 #define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wrl/client.h>
 #include <d3d12.h>
@@ -16,6 +15,7 @@
 #ifdef _DEBUG
 #include <initguid.h>
 #include <DXGIDebug.h>
+#include <DXProgrammableCapture.h>
 #endif
 #include "Sail/api/GraphicsAPI.h"
 #include <map>
@@ -32,13 +32,18 @@ namespace GlobalRootParam {
 		CBV_TRANSFORM = 0,
 		CBV_DIFFUSE_TINT,
 		CBV_CAMERA,
-		DT_SRVS,
+		DT_SRV_0TO9_UAV_10TO20,
+		SRV_GENERAL10,
+		SRV_GENERAL11,
+		UAV_GENERAL0,
+		UAV_GENERAL1,
 		SIZE
 	};
 }
 
 class DX12API : public GraphicsAPI {
 public:
+	static const UINT NUM_SWAP_BUFFERS;
 	struct Command {
 		std::vector<wComPtr<ID3D12CommandAllocator>> allocators; // Allocator only grows, use multple (one for each thing)
 		wComPtr<ID3D12GraphicsCommandList4> list;
@@ -48,8 +53,22 @@ public:
 	DX12API();
 	~DX12API();
 
+	// Helper method to create resources that require one for each swap buffer
+	template <typename T>
+	std::vector<T> createFrameResource() {
+		auto resource = std::vector<T>();
+		resource.resize(NUM_SWAP_BUFFERS);
+		return resource;
+	}
+	// Retrieves the resource for the current back buffer index
+	template <typename T>
+	T getFrameResource(const std::vector<T>& resource) {
+		return resource[m_context->getFrameIndex()];
+	}
+
 	virtual bool init(Window* window) override;
 	virtual void clear(const glm::vec4& color) override;
+	virtual void clear(ID3D12GraphicsCommandList4* cmdList, const glm::vec4& color = {0,0,0,1});
 	virtual void setDepthMask(DepthMask setting) override;
 	virtual void setFaceCulling(Culling setting) override;
 	virtual void setBlending(Blending setting) override;
@@ -65,13 +84,28 @@ public:
 	UINT getFrameIndex() const;
 	UINT getNumSwapBuffers() const;
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
+	DescriptorHeap* const getComputeGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
+	const D3D12_CPU_DESCRIPTOR_HANDLE& getDepthStencilViewCDH() const;
+	ID3D12Resource* getCurrentRenderTargetResource() const;
 	IDXGISwapChain4* const getSwapChain() const;
+	const D3D12_VIEWPORT* getViewport() const;
+	const D3D12_RECT* getScissorRect() const;
 
-	void initCommand(Command& cmd);
+#ifdef _DEBUG
+	void beginPIXCapture() const;
+	void endPIXCapture() const;
+#endif
+
+	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+	// TODO: generalize this method to be used for all compute related tasks
+	void executeCommandListsComputeAnimation(std::initializer_list<ID3D12CommandList*> cmdLists) const;
+	void waitForComputeAnimation();
 
 	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
+	void executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
@@ -90,9 +124,7 @@ private:
 
 	void resizeBuffers(UINT width, UINT height);
 
-
 private:
-	static const UINT NUM_SWAP_BUFFERS;
 
 	// Whether or not tearing is available for fullscreen borderless windowed mode.
 	bool m_tearingSupport;
@@ -107,22 +139,18 @@ private:
 	wComPtr<ID3D12Device5> m_device;
 #ifdef _DEBUG
 	wComPtr<IDXGIFactory2> m_dxgiFactory;
+	wComPtr<IDXGraphicsAnalysis> m_pixGa;
 #endif
 	// Only used for initialization
-	IDXGIFactory7* m_factory;
+	IDXGIFactory6* m_factory;
 	IDXGIAdapter3* m_adapter3;
 
 	// Queues
 	wComPtr<ID3D12CommandQueue> m_directCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_computeCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_copyCommandQueue;
+	wComPtr<ID3D12CommandQueue> m_computeCommandQueueAnimations;
 
-	// Commands
-	//Command m_preCommand;
-	//Command m_postCommand;
-	//Command m_copyCommand;
-	//Command m_computeCommand;
-	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeap;
+	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapGraphics;
+	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapCompute;
 
 	wComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
 	wComPtr<IDXGISwapChain4> m_swapChain;
@@ -134,7 +162,9 @@ private:
 	// TODO: check which ones are needed
 	std::vector<UINT64> m_fenceValues;
 	wComPtr<ID3D12Fence1> m_fence;
-	//wComPtr<ID3D12Fence1> m_computeQueueFence;
+
+	std::vector<UINT64> m_computeQueueAnimaitonFenceValues;
+	wComPtr<ID3D12Fence1> m_computeQueueAnimaitonFence;
 	//wComPtr<ID3D12Fence1> m_copyQueueFence;
 	//wComPtr<ID3D12Fence1> m_directQueueFence;
 
