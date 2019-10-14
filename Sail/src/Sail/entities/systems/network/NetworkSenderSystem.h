@@ -2,6 +2,7 @@
 
 #include "../BaseComponentSystem.h"
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
+#include "Sail/netcode/NetworkedStructs.h"
 // "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
 class Entity;

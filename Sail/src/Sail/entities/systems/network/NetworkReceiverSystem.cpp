@@ -163,6 +163,12 @@ void NetworkReceiverSystem::update(float dt) {
 				}
 			}
 		}
+
+
+		// Recieve 'one-time' events
+
+
+
 		m_incomingDataBuffer.pop();
 	}
 }

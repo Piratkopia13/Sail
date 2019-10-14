@@ -9,6 +9,7 @@
 #include "../../ECS.h"
 #include "../physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/AudioComponent.h"
 
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
@@ -113,11 +114,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				if ( !m_wasSpacePressed && collision->onGround ) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
-					e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
 					// Add networkcomponent for jump 
-					e->getComponent<NetworkSenderComponent>()->addDataType(
+				/*	e->getComponent<NetworkSenderComponent>()->addDataType(
 						Netcode::MessageType::PLAYER_JUMPED
-					);
+					);*/
 					m_gameDataTracker->logJump();
 				}
 				m_wasSpacePressed = true;

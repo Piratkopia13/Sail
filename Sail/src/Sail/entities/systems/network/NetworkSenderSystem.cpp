@@ -72,11 +72,11 @@ void NetworkSenderSystem::update(float dt) {
 	}
 
 	// Handle 'one-time' events which do not occurr each frame
-	ar(eventQueue.size());
-	while (eventQueue.empty() == false) {
-		handleEvent(eventQueue.front(), &ar);
-		eventQueue.pop();
-	}
+	//ar(eventQueue.size());
+	//while (eventQueue.empty() == false) {
+	//	handleEvent(eventQueue.front(), &ar);
+	//	eventQueue.pop();
+	//}
 
 	// send the serialized archive over the network
 	std::string binaryData = os.str();
