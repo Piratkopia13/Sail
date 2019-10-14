@@ -26,6 +26,8 @@ ConsoleCommands::~ConsoleCommands() {}
 
 void ConsoleCommands::init() {
 	m_historyPos = -1;
+	m_animTime = 0.f;
+	m_animRunning = false;
 	createHelpCommand();
 #ifdef _DEBUG
 #pragma region TESTCASES
@@ -154,12 +156,29 @@ void ConsoleCommands::renderWindow() {
 	}
 
 	bool open = isWindowOpen();
-	if (open) {
+	if (open && !m_animRunning && m_animTime < 1.0f) {
+		m_animRunning = true;
+	}
+	if (!open && !m_animRunning && m_animTime > 0.f) {
+		m_animRunning = true;
+	}
+	if (m_animRunning) {
+		m_animTime += Application::getInstance()->getDelta() * ((open) ? 1.f : -1.f) * 6.f;
+		if (m_animTime >= 1.0f || m_animTime <= 0.f) {
+			m_animTime = glm::clamp(m_animTime, 0.f, 1.0f);
+		}
+	}
+	if (m_animRunning && (m_animTime == 1.0f || m_animTime == 0.0f)) {
+		m_animRunning = false;
+	}
+	if (m_animRunning || open) {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
 		static char buf[256] = "";
 		if (ImGui::Begin("Console", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove)) {
 			auto* window = Application::getInstance()->getWindow();
-			ImGui::SetWindowSize(ImVec2((float)window->getWindowWidth(), glm::min((float)window->getWindowHeight(), 200.f)), ImGuiCond_Always);
+			auto windowHeight = glm::min((float)window->getWindowHeight(), 200.f);
+			float ease = EaseOut(m_animTime, 0.01f, windowHeight, 1.0f);
+			ImGui::SetWindowSize(ImVec2((float)window->getWindowWidth(), ease), ImGuiCond_Always);
 			ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
 
 			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -23), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -189,7 +208,7 @@ void ConsoleCommands::renderWindow() {
 
 			ImGui::SetNextItemWidth((float)window->getWindowWidth() - 85.f);
 			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf), 
-				ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion, &StaticInputCallback, (void*)this);
+				ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackCharFilter, &StaticInputCallback, (void*)this);
 			ImGui::SameLine();
 			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
 				execute(); // TODO: do something with return value(?)
@@ -391,86 +410,93 @@ const bool ConsoleCommands::stringMatch(const std::string& command, const std::s
 
 int ConsoleCommands::inputCallback(ImGuiTextEditCallbackData* data) {
 	switch (data->EventFlag) {
+	case ImGuiInputTextFlags_CallbackCharFilter:
+	{
+		// Filter out '§' character
+		return data->EventChar == 167;
+	}
+	break;
 	case ImGuiInputTextFlags_CallbackCompletion:
-		{
-			// Example of TEXT COMPLETION
-			// Locate beginning of current word
-			const char* word_end = data->Buf + data->CursorPos;
-			const char* word_start = word_end;
-			while (word_start > data->Buf) {
-				const char c = word_start[-1];
-				if (c == ' ' || c == '\t' || c == ',' || c == ';')
+	{
+		// Example of TEXT COMPLETION
+		// Locate beginning of current word
+		const char* word_end = data->Buf + data->CursorPos;
+		const char* word_start = word_end;
+		while (word_start > data->Buf) {
+			const char c = word_start[-1];
+			if (c == ' ' || c == '\t' || c == ',' || c == ';')
+				break;
+			word_start--;
+		}
+		// Build a list of candidates
+		ImVector<const char*> candidates;
+		for (int i = 0; i < m_commandNames.size(); i++)
+			if (_strnicmp(m_commandNames[i].first.c_str(), word_start, (int)(word_end - word_start)) == 0)
+				candidates.push_back(m_commandNames[i].first.c_str());
+		if (candidates.Size == 0) {
+			// No match
+			std::ostringstream stringStream;
+			std::string s(word_start, word_end - word_start);
+			stringStream << "No match for " << s << "\n";
+			addLog(stringStream.str());
+		} else if (candidates.Size == 1) {
+			// Single match. Delete the beginning of the word and replace it entirely so we've got nice casing
+			data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
+			data->InsertChars(data->CursorPos, candidates[0]);
+			data->InsertChars(data->CursorPos, " ");
+		} else {
+			// Multiple matches. Complete as much as we can, so inputing "C" will complete to "CL" and display "CLEAR" and "CLASSIFY"
+			int match_len = (int)(word_end - word_start);
+			for (;;) {
+				int c = 0;
+				bool all_candidates_matches = true;
+				for (int i = 0; i < candidates.Size && all_candidates_matches; i++)
+					if (i == 0)
+						c = toupper(candidates[i][match_len]);
+					else if (c == 0 || c != toupper(candidates[i][match_len]))
+						all_candidates_matches = false;
+				if (!all_candidates_matches)
 					break;
-				word_start--;
+				match_len++;
 			}
-			// Build a list of candidates
-			ImVector<const char*> candidates;
-			for (int i = 0; i < m_commandNames.size(); i++)
-				if (_strnicmp(m_commandNames[i].first.c_str(), word_start, (int)(word_end - word_start)) == 0)
-					candidates.push_back(m_commandNames[i].first.c_str());
-			if (candidates.Size == 0) {
-				// No match
-				std::ostringstream stringStream;
-				std::string s(word_start, word_end - word_start);
-				stringStream << "No match for " << s << "\n";
-				addLog(stringStream.str());
-			} else if (candidates.Size == 1) {
-				// Single match. Delete the beginning of the word and replace it entirely so we've got nice casing
+			if (match_len > 0) {
 				data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
-				data->InsertChars(data->CursorPos, candidates[0]);
-				data->InsertChars(data->CursorPos, " ");
-			} else {
-				// Multiple matches. Complete as much as we can, so inputing "C" will complete to "CL" and display "CLEAR" and "CLASSIFY"
-				int match_len = (int)(word_end - word_start);
-				for (;;) {
-					int c = 0;
-					bool all_candidates_matches = true;
-					for (int i = 0; i < candidates.Size && all_candidates_matches; i++)
-						if (i == 0)
-							c = toupper(candidates[i][match_len]);
-						else if (c == 0 || c != toupper(candidates[i][match_len]))
-							all_candidates_matches = false;
-					if (!all_candidates_matches)
-						break;
-					match_len++;
-				}
-				if (match_len > 0) {
-					data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
-					data->InsertChars(data->CursorPos, candidates[0], candidates[0] + match_len);
-				}
-				// List matches
-				addLog("Possible matches:\n");
-				for (int i = 0; i < candidates.Size; i++) {
-					std::ostringstream stringStream;
-					stringStream << "- " << candidates[i] << "\n";
-					addLog(stringStream.str());
-				}
+				data->InsertChars(data->CursorPos, candidates[0], candidates[0] + match_len);
 			}
-			break;
+			// List matches
+			addLog("Possible matches:\n");
+			for (int i = 0; i < candidates.Size; i++) {
+				std::ostringstream stringStream;
+				stringStream << "- " << candidates[i] << "\n";
+				addLog(stringStream.str());
+			}
 		}
+		break;
+	}
 	case ImGuiInputTextFlags_CallbackHistory:
-		{
-			// Example of HISTORY
-			const int prev_history_pos = m_historyPos;
-			if (data->EventKey == ImGuiKey_UpArrow) {
-				if (m_historyPos == -1) {
-					m_historyPos = (int)m_commandHistory.size() - 1;
-				} else if (m_historyPos > 0) {
-					m_historyPos--;
-				}
-			} else if (data->EventKey == ImGuiKey_DownArrow) {
-				if (m_historyPos != -1) {
-					if (++m_historyPos >= m_commandHistory.size()) {
-						m_historyPos = -1;
-					}
-				}
+	{
+		// Example of HISTORY
+		const int prev_history_pos = m_historyPos;
+		if (data->EventKey == ImGuiKey_UpArrow) {
+			if (m_historyPos == -1) {
+				m_historyPos = (int)m_commandHistory.size() - 1;
+			} else if (m_historyPos > 0) {
+				m_historyPos--;
 			}
-			// A better implementation would preserve the data on the current input line along with cursor position.
-			if (prev_history_pos != m_historyPos) {
-				data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = (int)_snprintf_s(data->Buf, (size_t)data->BufSize, (size_t)data->BufSize, "%s", (m_historyPos >= 0) ? m_commandHistory[m_historyPos].c_str() : "");
-				data->BufDirty = true;
+		} else if (data->EventKey == ImGuiKey_DownArrow) {
+			if (m_historyPos != -1) {
+				if (++m_historyPos >= m_commandHistory.size()) {
+					m_historyPos = -1;
+				}
 			}
 		}
+		// A better implementation would preserve the data on the current input line along with cursor position.
+		if (prev_history_pos != m_historyPos) {
+			data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = (int)_snprintf_s(data->Buf, (size_t)data->BufSize, (size_t)data->BufSize, "%s", (m_historyPos >= 0) ? m_commandHistory[m_historyPos].c_str() : "");
+			data->BufDirty = true;
+		}
+		break;
+	}
 	}
 
 	return 0;
