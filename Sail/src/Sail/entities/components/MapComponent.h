@@ -70,7 +70,6 @@ public:
 #endif
 	int totalArea = xsize * ysize;
 	int numberOfRooms = 1;
-	int players;
 	float tileSize = 7.f;
 	int tileOffset = 0;
 	std::vector<glm::vec3> spawnPoints;

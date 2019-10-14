@@ -1089,49 +1089,34 @@ void LevelGeneratorSystem::addSpawnPoints() {
 		std::vector<glm::vec3> availableSpawnPoints;
 
 		// Room IDs
-		int roomBottomLeft = 0;
-		int roomTopLeft = 0;
-		int roomBottomRight = 0;
-		int roomTopRight = 0;
+		int roomBottomLeft = map->tileArr[0][0][1];
+		int roomTopLeft = map->tileArr[0][map->ysize - 1][1];
+		int roomBottomRight = map->tileArr[map->xsize - 1][0][1];
+		int roomTopRight = map->tileArr[map->xsize - 1][map->ysize - 1][1];
 		int roomsLeftEdge = 0;
 		int roomsBottomEdge = 0;
 		int roomsRightEdge = 0;
 		int roomsTopEdge = 0;
 
+		// Adding all corner spawn location first
+		map->spawnPoints.push_back(glm::vec3(0.f, 0.f, 0.f));
+		map->spawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
+		map->spawnPoints.push_back(glm::vec3(0.f, 0.f, ((map->ysize - 1) * map->tileSize)));
+		map->spawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, 0.f));
+
 		// Find all available spawn locations, one in each room
 		for (int x = 0; x < map->xsize; x++) {
 			// Get all rooms on the bottom edge of the map
-			if (map->tileArr[x][0][1] > 0 && map->tileArr[x][0][1] != roomsBottomEdge && map->tileArr[x][0][1] != roomBottomLeft) {
-				// Bottom left room, added first to the spawn points
-				if (roomBottomLeft == 0) {
-					roomBottomLeft = map->tileArr[x][0][1];
-					map->spawnPoints.push_back(glm::vec3(0.f, 0.f, 0.f));
-				}
-				else {
-					availableSpawnPoints.push_back(glm::vec3(x * map->tileSize, 0.f, 0.f));
-					roomsBottomEdge = map->tileArr[x][0][1];
-				}
-
+			if (map->tileArr[x][0][1] > 0 && map->tileArr[x][0][1] != roomsBottomEdge && map->tileArr[x][0][1] != roomBottomLeft && map->tileArr[x][0][1] != roomBottomRight) {
+				availableSpawnPoints.push_back(glm::vec3(x * map->tileSize, 0.f, 0.f));
+				roomsBottomEdge = map->tileArr[x][0][1];
 			}
 			// Get all rooms on the top edge of the map
-			if (map->tileArr[x][map->ysize - 1][1] > 0 && map->tileArr[x][map->ysize - 1][1] != roomsTopEdge && map->tileArr[x][map->ysize - 1][1] != roomTopLeft) {
-				// Top left room, added to the spawn points
-				if (roomTopLeft == 0) {
-					roomTopLeft = map->tileArr[x][map->ysize - 1][1];
-					map->spawnPoints.push_back(glm::vec3(0.f, 0.f, ((map->ysize - 1) * map->tileSize)));
-				}
-				else {
-					availableSpawnPoints.push_back(glm::vec3((x * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
-					roomsTopEdge = map->tileArr[x][map->ysize - 1][1];
-				}
-
+			if (map->tileArr[x][map->ysize - 1][1] > 0 && map->tileArr[x][map->ysize - 1][1] != roomsTopEdge && map->tileArr[x][map->ysize - 1][1] != roomTopLeft && map->tileArr[x][map->ysize - 1][1] != roomTopRight) {
+				availableSpawnPoints.push_back(glm::vec3((x * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
+				roomsTopEdge = map->tileArr[x][map->ysize - 1][1];
 			}
 		}
-		// Adding the rest of the corner spawn points.
-		roomTopRight = roomsTopEdge;
-		map->spawnPoints.insert(map->spawnPoints.begin() + 1, glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
-		roomBottomRight = roomsBottomEdge;
-		map->spawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, 0.f));
 
 		// Get all rooms for the right and left edge of the map, except for the corner rooms
 		for (int y = 0; y < map->ysize; y++) {
