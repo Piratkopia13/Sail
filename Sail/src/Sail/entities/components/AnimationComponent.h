@@ -20,7 +20,7 @@ public:
 		blending(false),
 		dataSize(0),
 		transformSize(0),
-		computeUpdate(false),
+		computeUpdate(true),
 		animationW(0.0f), //TODO: REMOVE
 		m_stack(animationStack)
 	{
