@@ -23,7 +23,7 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
-#include "Sail/entities/systems/render/HitboxSubmitSystem.h"
+#include "Sail/entities/systems/render/BoundingboxSubmitSystem.h"
 #include "Sail/entities/systems/render/MetaballSubmitSystem.h"
 #include "Sail/entities/systems/render/ModelSubmitSystem.h"
 #include "Sail/entities/systems/render/RealTimeModelSubmitSystem.h"

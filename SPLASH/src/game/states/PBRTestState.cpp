@@ -58,7 +58,7 @@ PBRTestState::PBRTestState(StateStack& stack)
 	
 	// Create systems for rendering
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
-	m_componentSystems.hitboxSubmitSystem = ECS::Instance()->createSystem<HitboxSubmitSystem>();
+	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
 	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
 	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
@@ -256,7 +256,7 @@ bool PBRTestState::render(float dt, float alpha) {
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
 	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
-	m_componentSystems.hitboxSubmitSystem->submitAll();
+	m_componentSystems.boundingboxSubmitSystem->submitAll();
 
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 

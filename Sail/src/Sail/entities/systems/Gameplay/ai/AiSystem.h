@@ -42,7 +42,7 @@ private:
 	void updatePhysics(Entity* e, float dt);
 	float getAiYaw(MovementComponent* moveComp, float currYaw, float dt);
 	void aiUpdateFunc(Entity* e, const float dt);
-	glm::vec3& getDesiredDir(AiComponent* aiComp, TransformComponent* transComp);
+	glm::vec3 getDesiredDir(AiComponent* aiComp, TransformComponent* transComp);
 
 private:
 	float m_timeBetweenPathUpdate;
