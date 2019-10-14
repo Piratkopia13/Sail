@@ -83,7 +83,7 @@ const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
 #ifdef _DEBUG_NODESYSTEM
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);
-	m_nodeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
+	m_nodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 }
 #endif
 
