@@ -2,28 +2,7 @@
 #include "imgui.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
-#include "Sail/entities/systems/candles/CandleSystem.h"
-#include "Sail/entities/systems/entityManagement/EntityAdderSystem.h"
-#include "Sail/entities/systems/entityManagement/EntityRemovalSystem.h"
-#include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
-#include "Sail/entities/systems/light/LightSystem.h"
-#include "Sail/entities/systems/Gameplay/ai/AiSystem.h"
-#include "Sail/entities/systems/Gameplay/GunSystem.h"
-#include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
-#include "Sail/entities/systems/Graphics/AnimationSystem.h"
-#include "Sail/entities/systems/LevelGeneratorSystem/LevelGeneratorSystem.h"
-#include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
-#include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
-#include "Sail/entities/systems/Audio/AudioSystem.h"
-#include "Sail/entities/systems/render/RenderSystem.h"
-#include "Sail/entities/systems/physics/MovementSystem.h"
-#include "Sail/entities/systems/physics/MovementPostCollisionSystem.h"
-#include "Sail/entities/systems/physics/CollisionSystem.h"
-#include "Sail/entities/systems/physics/SpeedLimitSystem.h"
-#include "Sail/ai/states/AttackingState.h"
-#include "Sail/ai/states/FleeingState.h"
-#include "Sail/ai/states/SearchingState.h"
+#include "Sail/entities/systems/Systems.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Network/NWrapperSingleton.h"
@@ -58,6 +37,14 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 
 	// Get the Application instance
 	m_app = Application::getInstance();
+	
+	// Create systems for rendering
+	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
 	//----Octree creation----
@@ -124,9 +111,6 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 
 	//create system for level generation
 	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-
-	// Create system for rendering
-	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
 	
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -161,7 +145,6 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 #ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 	( *Application::getInstance()->getRenderWrapper() ).changeRenderer(1);
-	m_componentSystems.renderSystem->refreshRenderer();
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -238,7 +221,7 @@ bool PerformanceTestState::processInput(float dt) {
 
 	// Show boudning boxes
 	if ( Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes) ) {
-		m_componentSystems.renderSystem->toggleHitboxes();
+		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
@@ -380,7 +363,14 @@ bool PerformanceTestState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
-	m_componentSystems.renderSystem->draw(m_cam, alpha);
+	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
+
+	m_componentSystems.modelSubmitSystem->submitAll(alpha);
+	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
+	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
+	m_componentSystems.boundingboxSubmitSystem->submitAll();
+
+	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return true;
 }
@@ -617,7 +607,7 @@ bool PerformanceTestState::renderImGuiGameValues(float dt) {
 			ImGui::Text(header.c_str());
 		}
 		if ( ImGui::CollapsingHeader("Render System") ) {
-			header = "Num entities: " + std::to_string(m_componentSystems.renderSystem->getNumEntities());
+			header = "Num entities: " + std::to_string(m_componentSystems.modelSubmitSystem->getNumEntities());
 			ImGui::Text(header.c_str());
 		}
 	}
@@ -644,10 +634,10 @@ void PerformanceTestState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
-	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 
 	m_componentSystems.movementSystem->update(dt);
-	m_componentSystems.speedLimitSystem->update(0.0f);
+	m_componentSystems.speedLimitSystem->update();
 	m_componentSystems.collisionSystem->update(dt);
 	m_componentSystems.movementPostCollisionSystem->update(0.0f);
 
@@ -672,8 +662,8 @@ void PerformanceTestState::updatePerTickComponentSystems(float dt) {
 	}
 
 	// Will probably need to be called last
-	m_componentSystems.entityAdderSystem->update(0.0f);
-	m_componentSystems.entityRemovalSystem->update(0.0f);
+	m_componentSystems.entityAdderSystem->update();
+	m_componentSystems.entityRemovalSystem->update();
 }
 
 void PerformanceTestState::updatePerFrameComponentSystems(float dt, float alpha) {
@@ -687,7 +677,7 @@ void PerformanceTestState::updatePerFrameComponentSystems(float dt, float alpha)
 	if ( m_showcaseProcGen ) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
-	m_componentSystems.animationSystem->updatePerFrame(dt);
+	m_componentSystems.animationSystem->updatePerFrame();
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 }
 

@@ -11,7 +11,7 @@ public:
 	void initWithPlayerID(unsigned char playerID);
 	void pushDataToBuffer(std::string data);
 
-	void update(float dt = 0.0f) override;
+	void update();
 private:
 	// FIFO container of serialized data-strings to decode
 	std::queue<std::string> m_incomingDataBuffer;

@@ -15,6 +15,7 @@
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
+#include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
 	Application* app = Application::getInstance();

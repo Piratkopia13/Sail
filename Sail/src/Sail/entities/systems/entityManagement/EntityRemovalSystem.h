@@ -5,5 +5,5 @@ class EntityRemovalSystem final : public BaseComponentSystem {
 public:
 	EntityRemovalSystem();
 	~EntityRemovalSystem();
-	void update(float dt) override;
+	void update();
 };

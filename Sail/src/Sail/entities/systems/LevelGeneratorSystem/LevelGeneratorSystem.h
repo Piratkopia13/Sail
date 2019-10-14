@@ -29,7 +29,6 @@ public:
 	LevelGeneratorSystem();
 	~LevelGeneratorSystem();
 
-	void update(float dt) override;
 	void generateMap();
 	//void createWorld(Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
 	void createWorld(const std::vector<Model*>& tileModels, Model* bb);

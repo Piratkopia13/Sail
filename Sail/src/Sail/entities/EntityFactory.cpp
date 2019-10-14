@@ -17,6 +17,7 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, Model* lightMo
 	e->addComponent<TransformComponent>(lightPos);
 	e->addComponent<BoundingBoxComponent>(bbModel);
 	e->addComponent<CollidableComponent>();
+	e->addComponent<CullingComponent>();
 	PointLight pl;
 	pl.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
@@ -38,6 +39,8 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	player->addComponent<PlayerComponent>();
 
 	player->addComponent<TransformComponent>();
+
+	player->addComponent<CullingComponent>();
 
 	player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
@@ -97,6 +100,7 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->addComponent<SpeedLimitComponent>();
 	e->addComponent<CollisionComponent>();
 	e->addComponent<AiComponent>();
+	e->addComponent<CullingComponent>();
 
 	e->addComponent<AudioComponent>();
 
@@ -161,6 +165,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(std::string name, Model* model
 	e->addComponent<TransformComponent>(pos, rot, scale);
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
+	e->addComponent<CullingComponent>();
 
 	return e;
 }

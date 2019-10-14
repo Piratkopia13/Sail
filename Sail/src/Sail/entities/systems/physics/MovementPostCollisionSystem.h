@@ -6,7 +6,7 @@ public:
 	MovementPostCollisionSystem();
 	~MovementPostCollisionSystem();
 
-	void update(float dt) override;
+	void update(float dt);
 private:
 
 };

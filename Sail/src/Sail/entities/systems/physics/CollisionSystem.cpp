@@ -12,6 +12,7 @@ CollisionSystem::CollisionSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<CollisionComponent>(true, true, true);
 	registerComponent<BoundingBoxComponent>(true, true, true);
+	registerComponent<CollisionSpheresComponent>(false, true, false);
 
 	m_octree = nullptr;
 }

@@ -10,7 +10,6 @@ public:
 	LightSystem();
 	~LightSystem();
 
-	void update(float dt) override;
 	void updateLights(LightSetup* lightSetup);
 
 #ifdef _DEBUG
