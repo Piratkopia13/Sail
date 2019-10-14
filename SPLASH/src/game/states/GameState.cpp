@@ -1045,6 +1045,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
+	map->getComponent<MapComponent>()->players = 6; // TODO: get the right number of players to the map from the lobby
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);

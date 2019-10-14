@@ -3,6 +3,7 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/components/MapComponent.h"
+#include <random>
 //#include "..//..//Entity.h"
 LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
 	registerComponent<MapComponent>(true,true,true);
@@ -51,22 +52,24 @@ void LevelGeneratorSystem::generateMap() {
 		//create rooms from blocks
 		splitBlock();
 		//add rooms with individual type to type-layer
-		int roomCounter = 1;
 		while (!map->rooms.empty()) {
 			rect tile;
 			tile = map->rooms.front();
 			map->rooms.pop();
 			for (int i = 0; i < tile.sizex; i++) {
 				for (int j = 0; j < tile.sizey; j++) {
-					map->tileArr[tile.posx + i][tile.posy + j][1] = roomCounter;
+					map->tileArr[tile.posx + i][tile.posy + j][1] = map->numberOfRooms;
 				}
 			}
 			map->matched.emplace(tile);
-			roomCounter++;
+			map->numberOfRooms++;
 		}
 
 		//adds doors to the layout
 		addDoors();
+
+		// Find spawn points
+		addSpawnPoints();
 
 		//creates tilemap for the level
 		matchRoom();
@@ -1020,10 +1023,10 @@ bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
 		return true;
 	}
 	else if (dir == Direction::RIGHT && doors % 4 >= Direction::RIGHT) {
-		return true;
+	return true;
 	}
 	else if (dir == Direction::LEFT && doors >= Direction::LEFT) {
-		return true;
+	return true;
 	}
 	return false;
 }
@@ -1079,4 +1082,78 @@ void LevelGeneratorSystem::addTile(Direction dir, int doors, const std::vector<M
 	tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10.f, 1.0f, tileSize / 10.f));
 	tileEntity->addComponent<BoundingBoxComponent>(bb);
 	tileEntity->addComponent<CollidableComponent>();
+}
+
+void LevelGeneratorSystem::addSpawnPoints() {
+	for (auto& e : entities) {
+		MapComponent* map = e->getComponent<MapComponent>();
+
+		int players = map->players;
+		std::vector<int> availableSpawnPoints;
+
+
+		int roomBottomLeft = 0;
+		int roomTopLeft = 0;
+		int roomBottomRight = 0;
+		int roomTopRight = 0;
+		int roomsLeftEdge = 0;
+		int roomsBottomEdge = 0;
+		int roomsRightEdge = 0;
+		int roomsTopEdge = 0;
+
+		// Get all rooms which are on the edges and corners of the map
+		for (int x = 0; x < map->xsize; x++) {
+			if (map->tileArr[x][0][1] > 0 && map->tileArr[x][0][1] != roomsBottomEdge && map->tileArr[x][0][1] != roomBottomLeft) {
+				if (roomBottomLeft == 0) {
+					roomBottomLeft = map->tileArr[x][0][1];
+				}
+				else {
+					availableSpawnPoints.push_back(map->tileArr[x][0][1]);
+					roomsBottomEdge = map->tileArr[x][0][1];
+				}
+
+			}
+			if (map->tileArr[x][map->ysize - 1][1] > 0 && map->tileArr[x][map->ysize - 1][1] != roomsTopEdge && map->tileArr[x][map->ysize - 1][1] != roomTopLeft) {
+				if (roomTopLeft == 0) {
+					roomTopLeft = map->tileArr[x][map->ysize - 1][1];
+				}
+				else {
+					availableSpawnPoints.push_back(map->tileArr[x][map->ysize - 1][1]);
+					roomsTopEdge = map->tileArr[x][map->ysize - 1][1];
+				}
+
+			}
+		}
+		roomBottomRight = roomsBottomEdge;
+		roomTopRight = roomsTopEdge;
+
+		for (int y = 0; y < map->ysize; y++) {
+			if (map->tileArr[0][y][1] > 0 && map->tileArr[0][y][1] != roomsLeftEdge && map->tileArr[0][y][1] != roomBottomLeft && map->tileArr[0][y][1] != roomTopLeft){
+				availableSpawnPoints.push_back(map->tileArr[0][y][1]);
+				roomsLeftEdge = map->tileArr[0][y][1];
+			}
+			if (map->tileArr[map->xsize-1][y][1] > 0 && map->tileArr[map->xsize - 1][y][1] != roomsRightEdge && map->tileArr[map->xsize - 1][y][1] != roomBottomRight && map->tileArr[map->xsize - 1][y][1] != roomTopRight) {
+				availableSpawnPoints.push_back(map->tileArr[map->xsize - 1][y][1]);
+				roomsRightEdge = map->tileArr[map->xsize - 1][y][1];
+			}
+		}
+		
+		// Add corners as they are the optimal spawn points
+		map->spawnRooms.push_back(roomBottomLeft);
+		map->spawnRooms.push_back(roomTopRight);
+		map->spawnRooms.push_back(roomBottomRight);
+		map->spawnRooms.push_back(roomTopLeft);
+
+
+		std::default_random_engine generator;
+		
+		// Find available rooms around the edges and randomly choose spawn points for the rest of the players
+		for (int i = 0; i < players - 4; i++) {
+			std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size());
+			int randomRoom = distribution(generator);
+			map->spawnRooms.push_back(availableSpawnPoints[randomRoom]);
+			availableSpawnPoints.erase(availableSpawnPoints.begin() + randomRoom);
+		}
+
+	}
 }

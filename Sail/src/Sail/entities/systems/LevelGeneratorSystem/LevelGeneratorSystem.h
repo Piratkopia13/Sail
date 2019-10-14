@@ -42,6 +42,7 @@ private:
 	void matchRoom();
 	int checkBorder(rect rekt);
 	bool splitDirection(bool ns);
+	void addSpawnPoints();
 	void addDoors();
 	void addTile(Direction dir, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);

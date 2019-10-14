@@ -57,6 +57,9 @@ public:
 	int doorModifier = 15;//percentage to spawn a door
 	int seed = 2;//seed for generation
 	int totalArea = xsize * ysize;
+	int numberOfRooms = 1;
+	int players;
+	std::vector<int> spawnRooms;
 	std::queue<rect> chunks, blocks, hallways, rooms, matched;
 private:
 };
