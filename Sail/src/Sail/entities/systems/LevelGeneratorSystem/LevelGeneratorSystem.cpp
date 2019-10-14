@@ -1023,10 +1023,10 @@ bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
 		return true;
 	}
 	else if (dir == Direction::RIGHT && doors % 4 >= Direction::RIGHT) {
-	return true;
+		return true;
 	}
 	else if (dir == Direction::LEFT && doors >= Direction::LEFT) {
-	return true;
+		return true;
 	}
 	return false;
 }
