@@ -1,11 +1,8 @@
 #include "pch.h"
 #include "OctreeAddRemoverSystem.h"
 
-#include "..//../Physics/Physics.h"
-#include "..//..//components/TransformComponent.h"
-#include "..//..//components/BoundingBoxComponent.h"
-#include "..//..//components/CollidableComponent.h"
-#include "..//..//components/ModelComponent.h"
+#include "../Physics/Physics.h"
+#include "Sail/entities/components/Components.h"
 #include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/camera/Camera.h"
 
@@ -51,11 +48,9 @@ void OctreeAddRemoverSystem::update(float dt) {
 	if (m_doCulling) {
 		// Let the renderer know that all entities should not be rendered - will be set to true in cull method call if they are visible
 		for (auto& entity : entities) {
-			auto* modelComponent = entity->getComponent<ModelComponent>();
-			if (modelComponent) {
-				for (unsigned int j = 0; j < modelComponent->getModel()->getNumberOfMeshes(); j++) {
-					modelComponent->getModel()->getMesh(j)->setIsVisibleOnScreen(false);
-				}
+			auto* cullComponent = entity->getComponent<CullingComponent>();
+			if (cullComponent) {
+				cullComponent->isVisible = false;
 			}
 		}
 		m_octree->frustumCulledDraw(*m_cullCamera);

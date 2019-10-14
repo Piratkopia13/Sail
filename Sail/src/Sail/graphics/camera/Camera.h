@@ -1,6 +1,5 @@
 #pragma once
 
-#include <d3d11.h>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
@@ -39,6 +38,13 @@ struct Frustum {
 		planes[5].y = -(vp[1][3] - vp[1][2]);
 		planes[5].z = -(vp[2][3] - vp[2][2]);
 		planes[5].w = -(vp[3][3] - vp[3][2]);
+
+		auto normal = glm::normalize(glm::vec3(planes[0].x, planes[0].y, planes[0].z));
+		normal = glm::normalize(glm::vec3(planes[1].x, planes[1].y, planes[1].z));
+		normal = glm::normalize(glm::vec3(planes[2].x, planes[2].y, planes[2].z));
+		normal = glm::normalize(glm::vec3(planes[3].x, planes[3].y, planes[3].z));
+		normal = glm::normalize(glm::vec3(planes[4].x, planes[4].y, planes[4].z));
+		//Logger::Log(Utils::toStr(normal));
 	}
 };
 

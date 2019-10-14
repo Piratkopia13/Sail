@@ -47,13 +47,6 @@ DX12GBufferRenderer::~DX12GBufferRenderer() {
 void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
-	// Remove all meshes from commandQueue that are outside camera frustum
-	if (!commandQueue.empty()) {
-		commandQueue.erase(std::remove_if(commandQueue.begin(), commandQueue.end(), [](const RenderCommand& cmd) {
-			return cmd.model.mesh && !cmd.model.mesh->isVisibleOnScreen();
-		}), commandQueue.end());
-	}
-
 	auto frameIndex = m_context->getFrameIndex();
 	int count = static_cast<int>(commandQueue.size());
 

@@ -471,29 +471,24 @@ int Octree::frustumCulledDrawRec(const Frustum& frustum, Node* currentNode) {
 	int returnValue = 0;
 
 	//Check if node is in frustum
-	//if (Intersection::FrustumWithAabb(frustum, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) {
+	if (Intersection::FrustumWithAabb(frustum, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) {
 		//In frustum
 
 		//Draw meshes in node
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
-
-			if (Intersection::FrustumWithAabb(frustum, *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox())) {
-				// Let the renderer know that this entity should be rendered.
-				auto* modelComponent = currentNode->entities[i]->getComponent<ModelComponent>();
-				if (modelComponent) {
-					for (unsigned int j = 0; j < modelComponent->getModel()->getNumberOfMeshes(); j++) {
-						modelComponent->getModel()->getMesh(j)->setIsVisibleOnScreen(true);
-					}
-				}
-				returnValue++;
+			// Let the renderer know that this entity should be rendered.
+			auto* cullComponent = currentNode->entities[i]->getComponent<CullingComponent>();
+			if (cullComponent) {
+				cullComponent->isVisible = true;
 			}
+			returnValue++;
 		}
 
 		//Call draw for all children
 		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
 			returnValue += frustumCulledDrawRec(frustum, &currentNode->childNodes[i]);
 		}
-	//}
+	}
 	return returnValue;
 }
 

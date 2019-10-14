@@ -308,7 +308,7 @@ bool GameState::processInput(float dt) {
 
 #endif
 
-	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
+	if (Input::IsKeyPressed(KeyBinds::addLight)) {
 		m_cullCam.setDirection(m_cam.getDirection());
 		m_cullCam.setPosition(m_cam.getPosition());
 	}

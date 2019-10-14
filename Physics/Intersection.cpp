@@ -64,7 +64,7 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v0, cons
 				glm::vec3 a = glm::cross(e[i], f[j]);
 				glm::vec3 p = glm::vec3(glm::dot(a, newV0), glm::dot(a, newV1), glm::dot(a, newV2));
 				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-				if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z)) < -r) {
+				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
 					return false;
 				}
 			}
@@ -120,12 +120,12 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 				glm::vec3 a = glm::normalize(glm::cross(e[i], f[j]));
 				glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
 				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-				if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z)) < -r) {
+				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
 					return false;
 				}
 				else {
 					//Save depth along axis
-					float tempDepth = min(r - min(p.x, min(p.y, p.z)), max(p.x, max(p.y, p.z)) + r);
+					float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
 					if (tempDepth < depth) {
 						depth = tempDepth;
 						axis = a;
@@ -612,7 +612,7 @@ bool Intersection::FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& norm
 
 	// Find point on positive side of plane
 	for (short i = 0; i < 8; i++) {
-		if ((glm::dot(corners[i], normal) - distance) >= 0.0f) {
+		if ((glm::dot(corners[i], normal) + distance) < 0.0f) {
 			return true;
 		}
 	}

@@ -1,14 +1,10 @@
 #include "pch.h"
 #include "RenderSystem.h"
-#include "..//..//components/ModelComponent.h"
-#include "..//..//components/TransformComponent.h"
-#include "..//..//components/RealTimeComponent.h"
-#include "..//..//components/BoundingBoxComponent.h"
-#include "..//..//components/MetaballComponent.h"
-#include "..//..//Entity.h"
-#include "..//..//..//graphics/camera/Camera.h"
-#include "..//..//..//graphics/geometry/Model.h"
-#include "..//..//..//Application.h"
+#include "Sail/entities/components/Components.h"
+#include "Sail/entities/Entity.h"
+#include "Sail/graphics/camera/Camera.h"
+#include "Sail/graphics/geometry/Model.h"
+#include "Sail/Application.h"
 
 
 RenderSystem::RenderSystem() {
@@ -50,22 +46,28 @@ RenderSystem::~RenderSystem() {
 
 		 ModelComponent* model = entity->getComponent<ModelComponent>();
 		 MetaballComponent* metaball = entity->getComponent<MetaballComponent>();
-
 		 TransformComponent* transform = entity->getComponent<TransformComponent>();
+		 CullingComponent* cullComponent = entity->getComponent<CullingComponent>();
 
 		 if (model) {
+			Renderer::RenderFlag flags = (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC;
+			if (!cullComponent || (cullComponent && cullComponent->isVisible)) {
+				flags |= Renderer::IS_VISIBLE_ON_SCREEN;
+			}
 			 if (entity->getComponent<RealTimeComponent>()) {
 				 // If it's a real-time entity render with the most recent update
 				 // Not that for these entities should be updated once per frame for this to work correctly
-				 m_renderer->submit(model->getModel(), transform->getMatrix(),
-					 (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
+				 m_renderer->submit(model->getModel(), transform->getMatrix(), flags);
 			 } else {
 				 // If not interpolate between the two most recent updates
-				 m_renderer->submit(model->getModel(), transform->getRenderMatrix(alpha),
-					 (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC);
+				 m_renderer->submit(model->getModel(), transform->getRenderMatrix(alpha), flags);
 			 }
 		 } else if (metaball) {
-			 m_renderer->submitNonMesh(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getRenderMatrix(alpha), Renderer::MESH_STATIC);
+			 Renderer::RenderFlag flags = Renderer::MESH_STATIC;
+			 if (!cullComponent || (cullComponent && cullComponent->isVisible)) {
+				 flags |= Renderer::IS_VISIBLE_ON_SCREEN;
+			 }
+			 m_renderer->submitNonMesh(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getRenderMatrix(alpha), flags);
 		 } else {
 			 continue;
 		 }
@@ -74,12 +76,15 @@ RenderSystem::~RenderSystem() {
 		 if (m_renderHitboxes) {
 			 BoundingBoxComponent* boundingBox = entity->getComponent<BoundingBoxComponent>();
 			 if (boundingBox) {
-				 Model* wireframeModel = boundingBox->getWireframeModel();
-				 if (wireframeModel) {
-					 // Bounding boxes are visualized with their most update since that's what's used for hit detection
-						 m_renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(),
-							 Renderer::MESH_STATIC);
-				 }
+				Model* wireframeModel = boundingBox->getWireframeModel();
+				if (wireframeModel) {
+					// Bounding boxes are visualized with their most update since that's what's used for hit detection
+					Renderer::RenderFlag flags = Renderer::MESH_STATIC;
+					if (!cullComponent || (cullComponent && cullComponent->isVisible)) {
+						flags |= Renderer::IS_VISIBLE_ON_SCREEN;
+					}
+					m_renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), flags);
+				}
 			 }
 		 }
 
