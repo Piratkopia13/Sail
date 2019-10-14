@@ -56,7 +56,12 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 	// Bind output resources
 	dxShaderPipeline->bind_new(dxCmdList, meshIndex);
 
+	assert(input.threadGroupCountX <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many x threads!!");
+	assert(input.threadGroupCountY <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many y threads!!");
+	assert(input.threadGroupCountZ <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many z threads!!");
+
 	dxShaderPipeline->dispatch(input.threadGroupCountX, input.threadGroupCountY, input.threadGroupCountZ, dxCmdList);
+
 
 	return *computeShader.getComputeOutput();
 }

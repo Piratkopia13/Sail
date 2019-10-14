@@ -2,12 +2,14 @@
 
 #include "Component.h"
 #include <vector>
+#include <queue>
+
 struct rect {
 	int posx;
 	int posy;
 	int sizex;
 	int sizey;
-	int hasDoor = 0;
+	int doors = 0;
 };
 class MapComponent : public Component<MapComponent> {
 public:
@@ -42,7 +44,7 @@ public:
 
 	}
 #ifdef _DEBUG
-	const static int xsize = 3, ysize = 3; //size of level
+	const static int xsize = 7, ysize = 7; //size of level
 #else
 	const static int xsize = 100, ysize = 100; //size of level
 #endif

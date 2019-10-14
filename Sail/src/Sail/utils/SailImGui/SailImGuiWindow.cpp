@@ -1,30 +1,25 @@
 #include "pch.h"
 #include "SailImGuiWindow.h"
 
-SailImGuiWindow::SailImGuiWindow() :
-m_windowState(false)
-{
+SailImGuiWindow::SailImGuiWindow()
+	: m_isWindowOpen(false)
+{ }
 
-}
-
-SailImGuiWindow::SailImGuiWindow(const bool state) : 
-m_windowState(state)
-{
-
-}
+SailImGuiWindow::SailImGuiWindow(bool showWindow)
+	: m_isWindowOpen(showWindow)
+{ }
 
 SailImGuiWindow::~SailImGuiWindow() {
 }
 
-const bool SailImGuiWindow::windowOpen()
-{
-	return m_windowState;
+bool SailImGuiWindow::isWindowOpen() {
+	return m_isWindowOpen;
 }
 
-void SailImGuiWindow::toggle() {
-	m_windowState = !m_windowState;
+void SailImGuiWindow::toggleWindow() {
+	m_isWindowOpen = !m_isWindowOpen;
 }
 
-void SailImGuiWindow::windowState(const bool state) {
-	m_windowState = state;
+void SailImGuiWindow::showWindow(bool show) {
+	m_isWindowOpen = show;
 }
