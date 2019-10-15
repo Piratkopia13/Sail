@@ -48,6 +48,7 @@ GameState::GameState(StateStack& stack)
 		}
 
 	}, "GameState");
+	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
 #ifdef _DEBUG
 	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
@@ -72,6 +73,7 @@ GameState::GameState(StateStack& stack)
 		return std::string("wat");
 	}, "GameState");
 #endif
+
 
 	// Get the Application instance
 	m_app = Application::getInstance();
@@ -600,7 +602,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.candleSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
-	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
 	// Wait for all the systems to finish before starting the removal system
@@ -611,6 +612,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Will probably need to be called last
 	m_componentSystems.entityAdderSystem->update();
 	m_componentSystems.entityRemovalSystem->update();
+	m_componentSystems.octreeAddRemoverSystem->update(dt);
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
@@ -705,6 +707,7 @@ void GameState::initAnimations() {
 	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
 	std::string animName = "";
 #ifndef _DEBUG
 	animName = "AnimationTest/DEBUG_BALLBOT.fbx";
@@ -741,6 +744,11 @@ void GameState::initAnimations() {
 const std::string GameState::teleportToMap() {
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f, 0.9f, 40.f));
 	return "";
+}
+
+const std::string GameState::toggleProfiler() {
+	m_profiler.toggleWindow();
+	return "Toggling profiler";
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
