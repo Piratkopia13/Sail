@@ -48,6 +48,7 @@ GameState::GameState(StateStack& stack)
 		}
 
 	}, "GameState");
+	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
 #ifdef _DEBUG
 	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
@@ -72,6 +73,7 @@ GameState::GameState(StateStack& stack)
 		return std::string("wat");
 	}, "GameState");
 #endif
+
 
 	// Get the Application instance
 	m_app = Application::getInstance();
@@ -742,6 +744,11 @@ void GameState::initAnimations() {
 const std::string GameState::teleportToMap() {
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f, 0.9f, 40.f));
 	return "";
+}
+
+const std::string GameState::toggleProfiler() {
+	m_profiler.toggleWindow();
+	return "Toggling profiler";
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
