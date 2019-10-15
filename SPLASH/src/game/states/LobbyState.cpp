@@ -234,14 +234,11 @@ void LobbyState::renderChat() {
 	);
 
 	if (m_firstFrame) {
-		//ImGui::SetKeyboardFocusHere(-1);
 		m_firstFrame = false;
 		m_chatFocus = false;
 	}
 	ImGui::Text("Enter message:");
 	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_EnterReturnsTrue)) {
-		//this->sendmessage(&(string)m_currentmessage);
-		//ImGui::SetKeyboardFocusHere(-1);
 		m_chatFocus = false;
 	}
 	ImGui::End();
