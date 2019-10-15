@@ -96,80 +96,11 @@ GameState::GameState(StateStack& stack)
 	// Setting light index
 	m_currLightIndex = 0;
 
-	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
-	
-	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
-	m_componentSystems.collisionSystem->provideOctree(m_octree);
-	
-	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
-
-	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
-	
-
-	// Create system for animations
-	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
-
-	// Create system for updating bounding box
-	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
-
-	// Create system for handling octree
-	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
-	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
-	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
-
-	// Create lifetime system
-	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
-
-	// Create entity adder system
-	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
-
-	// Create entity removal system
-	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
-
-	// Create ai system
-	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
-
-	// Create system for the lights
-	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
-
-	// Create system for the candles
-	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-
-	// Create system which prepares each new update
-	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
-
-	// Create system which handles creation of projectiles
-	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
-
-	// Create system which checks projectile collisions
-	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
-
-	//create system for level generation
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-
-	// Create systems for rendering
-	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
-	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
-	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
-
-	// Create system for player input
-	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_cam);
-
-
 	// Get the player id's and names from the lobby
 	const unsigned char playerID = NWrapperSingleton::getInstance().getMyPlayerID();
 
-	// Create network send and receive systems
-	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
-	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
-	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
-
-	// Create system for handling and updating sounds
-	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
-
+	// Initialize the component systems
+	initSystems(playerID);
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -182,9 +113,6 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
-
-
-
 
 
 	// Add a directional light which is used in forward rendering
@@ -251,7 +179,7 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _DEBUG
 	// Candle1 holds all lights you can place in debug...
-	m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
+	m_componentSystems.lightListSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
@@ -274,7 +202,7 @@ bool GameState::processInput(float dt) {
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
-		m_componentSystems.lightSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
+		m_componentSystems.lightListSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
 #endif
@@ -379,7 +307,7 @@ bool GameState::processInput(float dt) {
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
-		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
+		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
 #endif
 
@@ -393,6 +321,68 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
+}
+
+void GameState::initSystems(const unsigned char playerID) {
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+	
+	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
+	m_componentSystems.collisionSystem->provideOctree(m_octree);
+
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+
+	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
+
+	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
+
+	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
+
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
+	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
+
+	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
+
+	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
+
+	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
+
+	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+
+	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
+	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
+
+	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
+
+	// Create system which prepares each new update
+	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
+
+	// Create system which handles creation of projectiles
+	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
+
+	// Create system which checks projectile collisions
+	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
+
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+
+	// Create systems for rendering
+	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+
+	// Create system for player input
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
+
+	// Create network send and receive systems
+	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
+	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
+
+	// Create system for handling and updating sounds
+	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
@@ -638,6 +628,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
+		m_componentSystems.lightListSystem->updateLights(&m_lights);
 	}
 
 	if (m_showcaseProcGen) {
