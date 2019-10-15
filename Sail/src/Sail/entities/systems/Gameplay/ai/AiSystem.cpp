@@ -45,16 +45,16 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	m_octree = octree;
 
 	std::vector<unsigned int> conns;
-	int x_max = 15;
-	int z_max = 15;
+	int x_max = 5*7;
+	int z_max = 5*7;
 	int x_cur = 0;
 	int z_cur = 0;
 	int size = x_max * z_max;
 
 	int padding = 2;
-	float offsetX = x_max * padding * 0.5f;
-	float offsetZ = z_max * padding * 0.5f;
-	float offsetY = 0;
+	float offsetX = -5.f;
+	float offsetZ = -5.f;
+	float offsetY = 1.f;
 	bool* walkable = SAIL_NEW bool[size];
 
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
@@ -68,7 +68,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		conns.clear();
 		x_cur = i % x_max;
 		z_cur = static_cast<int>(floor(i / x_max));
-		glm::vec3 pos(x_cur * padding - offsetX, offsetY, z_cur * padding - offsetZ);
+		glm::vec3 pos(x_cur * padding + offsetX, offsetY, z_cur * padding + offsetZ);
 
 		bool blocked = false;
 		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(pos);
@@ -104,7 +104,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		connections.push_back(conns);
 	}
 	//Delete "DeleteMeFirstFrameDummy"
-	ECS::Instance()->destroyEntity(e);
+	e->queueDestruction();
 
 	m_nodeSystem->setNodes(nodes, connections);
 	Memory::SafeDeleteArr(walkable);
@@ -143,7 +143,7 @@ void AiSystem::aiUpdateFunc(Entity* e, const float dt) {
 	updatePhysics(e, dt);
 }
 
-glm::vec3& AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* transComp) {
+glm::vec3 AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* transComp) {
 	glm::vec3 desiredDir = aiComp->currPath[aiComp->currNodeIndex].position - transComp->getTranslation();
 	if ( desiredDir == glm::vec3(0.f) ) {
 		desiredDir = glm::vec3(1.0f, 0.f, 0.f);

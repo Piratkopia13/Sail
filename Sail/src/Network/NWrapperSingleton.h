@@ -14,15 +14,7 @@ struct NetworkSenderEvent {
 
 class NWrapperSingleton : public NetworkEventHandler {
 public:
-	// Guaranteed to be destroyed, instantiated on first use.
-	static NWrapperSingleton& getInstance() {
-		static NWrapperSingleton instance;
-		return instance;
-	}
-
-	~NWrapperSingleton();
-	NWrapperSingleton(NWrapperSingleton const&) = delete;
-	void operator=(NWrapperSingleton const&) = delete;
+	virtual ~NWrapperSingleton();
 
 	// Initializes NetworkWrapper as NetworkWrapperHost
 	bool host(int port = 54000);
@@ -54,7 +46,6 @@ private:
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;
 private:
-	NWrapperSingleton();
 	// Called by 'host' & 'connectToIP'
 	void initialize(bool asHost);
 	Network* m_network = nullptr;
@@ -69,4 +60,12 @@ private:
 	std::list<Player> m_players;
 
 	void handleNetworkEvents(NetworkEvent nEvent);
+
+	// -+-+-+-+-+- Singleton requirements below -+-+-+-+-+-
+public:
+	NWrapperSingleton(NWrapperSingleton const&) = delete;
+	void operator=(NWrapperSingleton const&) = delete;
+	static NWrapperSingleton& getInstance();
+private:
+	NWrapperSingleton();
 };

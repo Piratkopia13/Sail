@@ -17,8 +17,6 @@ public:
 	GameInputSystem();
 	~GameInputSystem();
 
-	// This function is only here because it has to. use update with alpha.
-	void update(float dt) { update(dt, 1.0f); }
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
 	void clean();

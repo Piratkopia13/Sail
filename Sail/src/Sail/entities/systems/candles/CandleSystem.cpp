@@ -88,8 +88,6 @@ void CandleSystem::update(float dt) {
 										nullptr
 									);
 
-									std::cout << "SENT ... ";
-
 									m_gameStatePtr->requestStackPop();
 									m_gameStatePtr->requestStackPush(States::EndGame);
 								}
@@ -99,8 +97,6 @@ void CandleSystem::update(float dt) {
 									e->getParent()->removeComponent<GunComponent>();
 									e->getParent()->removeAllChildren();
 									// TODO: Remove all the components that can/should be removed
-
-									//e->getParent()->queueDestruction();
 
 									NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 										Netcode::MessageType::PLAYER_DIED,

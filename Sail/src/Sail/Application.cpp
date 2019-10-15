@@ -7,7 +7,7 @@
 #include "graphics/geometry/Transform.h"
 #include "TimeSettings.h"
 #include "entities/ECS.h"
-#include "entities/systems/render/RenderSystem.h"
+#include "entities/systems/Systems.h"
 
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
@@ -57,7 +57,12 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Initialize Renderers
 	m_rendererWrapper.initialize();
-	ECS::Instance()->createSystem<RenderSystem>();
+	ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	ECS::Instance()->createSystem<ModelSubmitSystem>();
+	ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+
 
 	// Initialize imgui
 	m_imguiHandler->init();
@@ -145,11 +150,11 @@ int Application::startGameLoop() {
 				PostQuitMessage(0);
 
 #ifdef _DEBUG
-			if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
+			/*if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
 				PostQuitMessage(0);
-			}
-			//if(delta > 0.0166)
-			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
+			}*/
+			//if(m_delta > 0.0166)
+			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(m_delta));
 #endif
 			// Process state specific input
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
@@ -235,7 +240,7 @@ StateStorage& Application::getStateStorage() {
 const UINT Application::getFPS() const {
 	return m_fps;
 }
-
 float Application::getDelta() const {
 	return m_delta;
 }
+

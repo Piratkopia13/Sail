@@ -1,7 +1,7 @@
 #include "EndGameState.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/Application.h"
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include "Sail/KeyBinds.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Network/NWrapperSingleton.h"
@@ -26,7 +26,7 @@ bool EndGameState::render(float dt, float alpha) {
 	Application::getInstance()->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
 
 	// Call the empty draw function to just clear the screen until we have actual graphics.
-	ECS::Instance()->getSystem<RenderSystem>()->draw();
+	ECS::Instance()->getSystem<BeginEndFrameSystem>()->renderNothing();
 
 	return true;
 }

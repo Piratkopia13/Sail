@@ -564,10 +564,10 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 				unsigned int stackCount = scene->GetSrcObjectCount<FbxAnimStack>();
 				// stackCount = 1; // Used for faster debugging
 				for (unsigned int currentStack = 0; currentStack < stackCount; currentStack++) {
-					Animation* animation = SAIL_NEW Animation();
 					FbxAnimStack* currAnimStack = scene->GetSrcObject<FbxAnimStack>(currentStack);
 					FbxTakeInfo* takeInfo = scene->GetTakeInfo(currAnimStack->GetName());
 					std::string animationName = currAnimStack->GetName();
+					Animation* animation = SAIL_NEW Animation(animationName);
 					node->GetScene()->SetCurrentAnimationStack(currAnimStack);
 
 					FbxTime start = takeInfo->mLocalTimeSpan.GetStart();

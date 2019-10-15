@@ -46,7 +46,7 @@ NetworkSenderSystem::~NetworkSenderSystem() {
 		....
 
 */
-void NetworkSenderSystem::update(float dt) {
+void NetworkSenderSystem::update() {
 	using namespace Netcode;
 
 	// Loop through networked entities and serialize their data
@@ -94,12 +94,12 @@ void NetworkSenderSystem::update(float dt) {
 }
 
 const void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
-	this->eventQueue.push(type);
+	eventQueue.push(type);
 }
 
 void NetworkSenderSystem::stop() {
 
-	this->update(0.0f);
+	this->update();
 
 	//std::ostringstream os(std::ios::binary);
 	//cereal::PortableBinaryOutputArchive ar(os);

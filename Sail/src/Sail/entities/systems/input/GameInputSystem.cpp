@@ -9,17 +9,18 @@
 #include "../../ECS.h"
 #include "../physics/UpdateBoundingBoxSystem.h"
 #include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/LocalPlayerComponent.h"
 #include "Sail/entities/components/AudioComponent.h"
 #include "../src/Network/NWrapperSingleton.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	registerComponent<LocalPlayerComponent>(true, true, false);
+	registerComponent<LocalPlayerComponent>(true, false, false);
 	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<SpeedLimitComponent>(true, true, false);
 	registerComponent<CollisionComponent>(true, true, false);
 	registerComponent<AudioComponent>(true, true, true);
 	registerComponent<BoundingBoxComponent>(true, true, false);
-	registerComponent<TransformComponent>(true, true, false);
+	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<CandleComponent>(false, true, true);
 	registerComponent<GunComponent>(false, true, true);
 

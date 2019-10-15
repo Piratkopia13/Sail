@@ -14,7 +14,7 @@ public:
 	void init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
 	void pushDataToBuffer(std::string data);
 
-	void update(float dt = 0.0f) override;
+	void update();
 private:
 	GameState* m_gameStatePtr;
 	NetworkSenderSystem* m_netSendSysPtr;
