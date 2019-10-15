@@ -51,15 +51,23 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
         decalPosNeighborY.y *= -1;
         float2 uvDY = saturate(decalPosNeighborY.xy * 0.5f + 0.5f) - decalUV;
 
-        float4 albedoColour = decal_texAlbedo.SampleGrad(ss, decalUV, uvDX, uvDY);
-        float3 decalNormalTS = decal_texNormal.SampleGrad(ss, decalUV, uvDX, uvDY);
+        // float4 albedoColour = decal_texAlbedo.SampleGrad(ss, decalUV, uvDX, uvDY, 0);
+        float4 albedoColour = decal_texAlbedo.SampleLevel(ss, decalUV, 0);
+        // float3 decalNormalTS = decal_texNormal.SampleGrad(ss, decalUV, uvDX, uvDY, 0);
+        float3 decalNormalTS = decal_texNormal.SampleLevel(ss, decalUV, 0);
         decalNormalTS = decalNormalTS * 2.0f - 1.0f;
         decalNormalTS.z *= -1.0f;
         float3 decalNormalWS = mul(decalNormalTS, rot);
-        float3 mra = decal_texMetalnessRoughnessAO.SampleGrad(ss, decalUV, uvDX, uvDY);
+        // float3 mra = decal_texMetalnessRoughnessAO.SampleGrad(ss, decalUV, uvDX, uvDY, 0);
+        float3 mra = decal_texMetalnessRoughnessAO.SampleLevel(ss, decalUV, 0);
         float metalness = mra.r;
         float roughness = mra.g;
         float ao = mra.b;
+
+        // Removed some black edges
+        if (albedoColour.a < 0.4f) {
+            return colourToReturn;
+        }
 
 
         // Blend the decal properties with the material properties
@@ -67,10 +75,15 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
         decalPayload.color = 0.f;
         decalPayload.recursionDepth = 0;
 
-        float3 norm = lerp(wNorm, decalNormalWS, albedoColour.w);
-        shade(wPos, wNorm, payloadColour.rgb, metalness, roughness, ao, decalPayload);
+        // Normal mapping, needs tangents and bitangents!
+        // wNorm.y = 1.0f - wNorm.y;
+		// wNorm = mul(normalize(wNorm * 2.f - 1.f), tbn);
+
+        // float3 norm = lerp(wNorm, decalNormalWS, albedoColour.w);
+        shade(wPos, wNorm, albedoColour.rgb, 0.7f, 0.1f, 0.4f, decalPayload);
         //colourToReturn = lerp(float4(albedo, 1.0f), decalPayload.color, albedoColour.w);
         colourToReturn = decalPayload.color;
+        // colourToReturn = 1.0f;
         // colourToReturn = float4(currDecal.rot[0].rgb, 1.0f);
         //colourToReturn = albedoColour;
     }

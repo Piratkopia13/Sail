@@ -13,6 +13,13 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 , m_gbufferInputTextures(inputs)
 , m_brdfLUTPath("pbr/brdfLUT.tga")
 {
+	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
+	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
+	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
+	m_decalTexPaths[0] = "pbr/splash/PuddleAlbedo.tga";
+	m_decalTexPaths[1] = "pbr/splash/PuddleNM.tga";
+	m_decalTexPaths[2] = "pbr/splash/puddleMRAo.tga";
+
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	// Create frame resources (one per swap buffer)
@@ -42,7 +49,6 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	m_aabb_desc_resource->Unmap(0, nullptr);
 
 	m_decalsToRender = 0;
-
 }
 
 DXRBase::~DXRBase() {
@@ -586,17 +592,17 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Make sure decal textures has been initialized
 	{
-		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture("pbr/water/Water_001_COLOR.tga"));
+		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[0]));
 		if (!decalTex.hasBeenInitialized()) {
 			decalTex.initBuffers(cmdList, 0);
 			decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
-		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture("pbr/water/Water_001_NORM.tga"));
+		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[1]));
 		if (!decalTex1.hasBeenInitialized()) {
 			decalTex1.initBuffers(cmdList, 0);
 			decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
-		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture("pbr/water/Water_001_MAT.tga"));
+		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[2]));
 		if (!decalTex2.hasBeenInitialized()) {
 			decalTex2.initBuffers(cmdList, 0);
 			decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -869,15 +875,15 @@ void DXRBase::initMetaballBuffers() {
 
 void DXRBase::initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle) {
 	auto& resMan = Application::getInstance()->getResourceManager();
-	resMan.loadTexture("pbr/water/Water_001_COLOR.tga");
-	resMan.loadTexture("pbr/water/Water_001_NORM.tga");
-	resMan.loadTexture("pbr/water/Water_001_MAT.tga");
+	resMan.loadTexture(m_decalTexPaths[0]);
+	resMan.loadTexture(m_decalTexPaths[1]);
+	resMan.loadTexture(m_decalTexPaths[2]);
 
 	m_decalTexGPUHandles = *gpuHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
-	srcDescriptors[0] = static_cast<DX12Texture*>(&resMan.getTexture("pbr/water/Water_001_COLOR.tga"))->getSrvCDH();
-	srcDescriptors[1] = static_cast<DX12Texture*>(&resMan.getTexture("pbr/water/Water_001_NORM.tga"))->getSrvCDH();
-	srcDescriptors[2] = static_cast<DX12Texture*>(&resMan.getTexture("pbr/water/Water_001_MAT.tga"))->getSrvCDH();
+	srcDescriptors[0] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[0]))->getSrvCDH();
+	srcDescriptors[1] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[1]))->getSrvCDH();
+	srcDescriptors[2] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[2]))->getSrvCDH();
 
 	UINT dstRangeSizes[] = {3};
 	UINT srcRangeSizes[] = {1, 1, 1};

@@ -115,6 +115,7 @@ private:
 	};
 
 	std::string m_brdfLUTPath;
+	std::string m_decalTexPaths[3];
 
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle;
