@@ -6,5 +6,5 @@ public:
 	SpeedLimitSystem();
 	~SpeedLimitSystem();
 
-	void update(float dt) override;
+	void update();
 };

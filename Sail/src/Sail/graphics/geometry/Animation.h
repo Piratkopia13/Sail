@@ -29,6 +29,7 @@ public:
 	};
 
 	Animation();
+	Animation(const std::string& name);
 	~Animation();
 	const float getMaxAnimationTime();
 	const unsigned int getMaxAnimationFrame();
@@ -37,14 +38,18 @@ public:
 	const unsigned int getAnimationTransformSize(const float time);
 	const unsigned int getAnimationTransformSize(const unsigned int frame);
 	const float getTimeAtFrame(const unsigned int frame);
-	const unsigned int getFrameAtTime(const float time, const FindType type = BEHIND);
+	const unsigned int getFrameAtTime(float time, const FindType type = BEHIND);
 	void addFrame(const unsigned int frame, const float time, Animation::Frame* data);
 
+	void setName(const std::string& name);
+	const std::string getName();
 	
 private:
 	
+	std::string m_name;
 	float m_maxFrameTime;
 	unsigned int m_maxFrame;
+
 
 	inline const bool exists(const unsigned int frame);
 

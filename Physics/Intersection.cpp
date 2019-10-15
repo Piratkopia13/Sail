@@ -64,7 +64,7 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v0, cons
 				glm::vec3 a = glm::cross(e[i], f[j]);
 				glm::vec3 p = glm::vec3(glm::dot(a, newV0), glm::dot(a, newV1), glm::dot(a, newV2));
 				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-				if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z)) < -r) {
+				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
 					return false;
 				}
 			}
@@ -121,12 +121,12 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 				glm::vec3 a = glm::normalize(glm::cross(e[i], f[j]));
 				glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
 				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-				if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z)) < -r) {
+				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
 					return false;
 				}
 				else {
 					//Save depth along axis
-					float tempDepth = min(r - min(p.x, min(p.y, p.z)), max(p.x, max(p.y, p.z)) + r);
+					float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
 					if (tempDepth < depth) {
 						depth = tempDepth;
 						axis = a;
@@ -645,19 +645,24 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 	return returnValue;
 }
 
-bool Intersection::FrustumWithAabb(const Frustum& frustum, const BoundingBox& aabb) {
-	for (int i = 0; i < 6; i++) {
-		glm::vec4 c(aabb.getPosition(), 1.f);
+bool Intersection::FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& normal, const float distance) {
+	const glm::vec3* corners = aabb.getCorners();
 
-		glm::vec3 h = aabb.getHalfSize();
-		float e = h.x * fabs(frustum.planes[i].x) + h.y * fabs(frustum.planes[i].y) + h.z * fabs(frustum.planes[i].z);
-		float s = glm::dot(c, frustum.planes[i]);
-
-		if (s - e > 0) {
-			return false; // Outside
+	// Find point on positive side of plane
+	for (short i = 0; i < 8; i++) {
+		if ((glm::dot(corners[i], normal) + distance) < 0.0f) {
+			return true;
 		}
+	}
+	return false;
+}
 
-		// Else inside or intersecting
+bool Intersection::FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb) {
+	for (int i = 0; i < 6; i++) {
+		if (!FrustumPlaneWithAabb(aabb, glm::vec3(frustum.planes[i].x, frustum.planes[i].y, frustum.planes[i].z), frustum.planes[i].w)) {
+			//Aabb is on the wrong side of a plane - it is outside the frustum.
+			return false;
+		}
 	}
 	return true;
 }

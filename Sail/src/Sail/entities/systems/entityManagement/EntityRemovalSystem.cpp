@@ -8,7 +8,7 @@ EntityRemovalSystem::EntityRemovalSystem() {
 EntityRemovalSystem::~EntityRemovalSystem() {
 }
 
-void EntityRemovalSystem::update(float dt) {
+void EntityRemovalSystem::update() {
 	for (size_t i = 0; i < entities.size(); i++) {
 		ECS::Instance()->destroyEntity(entities[i]->getECSIndex());
 	}

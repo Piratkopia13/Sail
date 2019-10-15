@@ -9,7 +9,7 @@ public:
 	~CollisionSystem();
 	
 	void provideOctree(Octree* octree);
-	void update(float dt) override;
+	void update(float dt);
 
 private:
 	const bool rayCastCheck(Entity* e, const BoundingBox& boundingBox, float& dt) const;

@@ -60,7 +60,15 @@ ID3D12Resource1* DX12Utils::CreateBuffer(ID3D12Device5* device, UINT64 size, D3D
 	}
 
 	ID3D12Resource1* pBuffer = nullptr;
-	device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, bufDesc, initState, nullptr, IID_PPV_ARGS(&pBuffer));
+	auto hr = device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, bufDesc, initState, nullptr, IID_PPV_ARGS(&pBuffer));
+	if (FAILED(hr)) {
+		_com_error err(hr);
+		std::cout << err.ErrorMessage() << std::endl;
+
+		hr = device->GetDeviceRemovedReason();
+		_com_error err2(hr);
+		std::cout << err2.ErrorMessage() << std::endl;
+	}
 	return pBuffer;
 }
 
@@ -157,10 +165,10 @@ void DX12Utils::RootSignature::addStaticSampler(const D3D12_STATIC_SAMPLER_DESC&
 
 void DX12Utils::RootSignature::build(ID3D12Device5* device, const D3D12_ROOT_SIGNATURE_FLAGS& flags) {
 	D3D12_ROOT_SIGNATURE_DESC desc = {};
-	desc.NumParameters = m_rootParams.size();
+	desc.NumParameters = (UINT)m_rootParams.size();
 	desc.pParameters = m_rootParams.data();
 	desc.Flags = flags;
-	desc.NumStaticSamplers = m_staticSamplerDescs.size();
+	desc.NumStaticSamplers = (UINT)m_staticSamplerDescs.size();
 	desc.pStaticSamplers = m_staticSamplerDescs.data();
 
 	ID3DBlob* sigBlob;
@@ -186,7 +194,7 @@ ID3D12RootSignature** DX12Utils::RootSignature::get() {
 }
 
 unsigned int DX12Utils::RootSignature::getIndex(const std::string& name) {
-	return std::find(m_order.begin(), m_order.end(), name) - m_order.begin();
+	return static_cast<unsigned int>(std::find(m_order.begin(), m_order.end(), name) - m_order.begin());
 }
 
 void DX12Utils::RootSignature::doInOrder(std::function<void(const std::string&)> func) {

@@ -2,12 +2,14 @@
 
 #include "Component.h"
 #include <vector>
+#include <queue>
+
 struct rect {
 	int posx;
 	int posy;
 	int sizex;
 	int sizey;
-	int hasDoor = 0;
+	int doors = 0;
 };
 class MapComponent : public Component<MapComponent> {
 public:
@@ -41,10 +43,21 @@ public:
 		}
 
 	}
-#ifdef _DEBUG
-	const static int xsize = 3, ysize = 3; //size of level
+#ifdef _PERFORMANCE_TEST
+	const static int xsize = 50, ysize = 50; //size of level
+	int tileArr[xsize][ysize][3]; //0 is tileID, 1 is typeID, 2 is door
+	float hallwayThreshold = 0.3f; // percentage of level that can be corridors
+	int minSplitSize = 5; //minimum size for splitting chunks
+	int minRoomSize = 1; //minimum side of a room
+	int roomMaxSize = 36;//maximum area of a room
+	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
+	int doorModifier = 15;//percentage to spawn a door
+	int seed = 2;//seed for generation
 #else
-	const static int xsize = 15, ysize = 15; //size of level
+#ifdef _DEBUG
+	const static int xsize = 7, ysize = 7; //size of level
+#else
+	const static int xsize = 7, ysize = 7; //size of level
 #endif
 	int tileArr[xsize][ysize][3]; //0 is tileID, 1 is typeID, 2 is door
 	float hallwayThreshold = 0.3f; // percentage of level that can be corridors
@@ -54,7 +67,12 @@ public:
 	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
 	int doorModifier = 15;//percentage to spawn a door
 	int seed = 2;//seed for generation
+#endif
 	int totalArea = xsize * ysize;
+	int numberOfRooms = 1;
+	float tileSize = 7.f;
+	int tileOffset = 0;
+	std::vector<glm::vec3> spawnPoints;
 	std::queue<rect> chunks, blocks, hallways, rooms, matched;
 private:
 };
