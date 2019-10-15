@@ -30,9 +30,6 @@ private:
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImguiProfiler(float dt);
-	bool renderImGuiRenderSettings(float dt);
-	bool renderImGuiLightDebug(float dt);
 	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
@@ -63,28 +60,15 @@ private:
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;
+	RenderSettingsWindow m_renderSettingsWindow;
+	LightDebugWindow m_lightDebugWindow;
 
 	size_t m_currLightIndex;
-
-	// ImGUI profiler data
-	float m_profilerTimer = 0.f;
-	int m_profilerCounter = 0;
-	float* m_virtRAMHistory;
-	float* m_physRAMHistory;
-	float* m_cpuHistory;
-	float* m_vramUsageHistory;
-	float* m_frameTimesHistory;
-	std::string m_virtCount;
-	std::string m_physCount;
-	std::string m_vramUCount;
-	std::string m_cpuCount;
-	std::string m_ftCount;
 
 	bool m_paused = false;
 	bool m_isSingleplayer = true;
 	
 	Octree* m_octree;
-	bool m_disableLightComponents;
 	bool m_showcaseProcGen;
 
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyWritingMask;

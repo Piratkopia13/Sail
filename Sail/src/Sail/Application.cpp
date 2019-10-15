@@ -150,11 +150,11 @@ int Application::startGameLoop() {
 				PostQuitMessage(0);
 
 #ifdef _DEBUG
-			if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
+			/*if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
 				PostQuitMessage(0);
-			}
-			//if(delta > 0.0166)
-			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
+			}*/
+			//if(m_delta > 0.0166)
+			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(m_delta));
 #endif
 			// Process state specific input
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
@@ -240,7 +240,7 @@ StateStorage& Application::getStateStorage() {
 const UINT Application::getFPS() const {
 	return m_fps;
 }
-
 float Application::getDelta() const {
 	return m_delta;
 }
+

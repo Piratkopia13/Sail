@@ -18,7 +18,6 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_camController(&m_cam)
 	, m_profiler(true)
-	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
@@ -31,10 +30,13 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 			return "Invalid state. Available states are \"menu\"";
 		}
 		}, "PerfTestState");
+	m_lightDebugWindow.setLightSetup(&m_lights);
 
 #ifndef _PERFORMANCE_TEST
 	Logger::Error("Don't run this state in any other configuration than PerformanceTest");
 #endif
+
+	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
 
 	// Get the Application instance
 	m_app = Application::getInstance();
@@ -168,7 +170,7 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 
 	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
 	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
-
+    
 	//initAnimations();
 	// Level Creation
 	createLevel(shader, boundingBoxModel);
@@ -178,24 +180,6 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 
 	// Populate the performance test scene
 	populateScene(characterModel, lightModel, boundingBoxModel, cubeModel, shader);
-
-
-
-
-	// Allocating memory for profiler
-	m_virtRAMHistory = SAIL_NEW float[100];
-	m_physRAMHistory = SAIL_NEW float[100];
-	m_vramUsageHistory = SAIL_NEW float[100];
-	m_cpuHistory = SAIL_NEW float[100];
-	m_frameTimesHistory = SAIL_NEW float[100];
-
-	for ( int i = 0; i < 100; i++ ) {
-		m_virtRAMHistory[i] = 0.f;
-		m_physRAMHistory[i] = 0.f;
-		m_vramUsageHistory[i] = 0.f;
-		m_cpuHistory[i] = 0.f;
-		m_frameTimesHistory[i] = 0.f;
-	}
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
@@ -207,12 +191,6 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 
 PerformanceTestState::~PerformanceTestState() {
 	shutDownPerformanceTestState();
-
-	delete m_virtRAMHistory;
-	delete m_physRAMHistory;
-	delete m_vramUsageHistory;
-	delete m_cpuHistory;
-	delete m_frameTimesHistory;
 	delete m_octree;
 }
 
@@ -378,9 +356,9 @@ bool PerformanceTestState::render(float dt, float alpha) {
 
 bool PerformanceTestState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImguiProfiler(dt);
-	renderImGuiRenderSettings(dt);
-	renderImGuiLightDebug(dt);
+	m_profiler.renderWindow();
+	m_renderSettingsWindow.renderWindow();
+	m_lightDebugWindow.renderWindow();
 	renderImGuiGameValues(dt);
 
 	return false;
@@ -391,202 +369,6 @@ bool PerformanceTestState::prepareStateChange() {
 		// Reset network
 		//NWrapperSingleton::getInstance().resetNetwork();
 	}
-	return true;
-}
-
-bool PerformanceTestState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.isWindowOpen();
-	if ( open ) {
-		if ( ImGui::Begin("Profiler", &open) ) {
-			//Profiler window displaying the current usage
-			m_profiler.showWindow(open);
-			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
-			std::string header;
-
-			header = "CPU (" + m_cpuCount + "%%)";
-			ImGui::Text(header.c_str());
-
-			header = "Frame time (" + m_ftCount + " seconds)";
-			ImGui::Text(header.c_str());
-
-			header = "Virtual RAM (" + m_virtCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			header = "Physical RAM (" + m_physCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			header = "VRAM (" + m_vramUCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			ImGui::Separator();
-			//Collapsing headers for graphs over time
-			if ( ImGui::CollapsingHeader("CPU Graph") ) {
-				header = "\n\n\n" + m_cpuCount + "(%)";
-				ImGui::PlotLines(header.c_str(), m_cpuHistory, 100, 0, "", 0.f, 100.f, ImVec2(0, 100));
-			}
-			if ( ImGui::CollapsingHeader("Frame Times Graph") ) {
-				header = "\n\n\n" + m_ftCount + "(s)";
-				ImGui::PlotLines(header.c_str(), m_frameTimesHistory, 100, 0, "", 0.f, 0.015f, ImVec2(0, 100));
-			}
-			if ( ImGui::CollapsingHeader("Virtual RAM Graph") ) {
-				header = "\n\n\n" + m_virtCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-
-			}
-			if ( ImGui::CollapsingHeader("Physical RAM Graph") ) {
-				header = "\n\n\n" + m_physCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_physRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
-			if ( ImGui::CollapsingHeader("VRAM Graph") ) {
-				header = "\n\n\n" + m_vramUCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
-
-
-			ImGui::EndChild();
-
-			m_profilerTimer += dt;
-			//Updating graphs and current usage
-			if ( m_profilerTimer > 0.2f ) {
-				m_profilerTimer = 0.f;
-				if ( m_profilerCounter < 100 ) {
-
-					m_virtRAMHistory[m_profilerCounter] = ( float ) m_profiler.virtMemUsage();
-					m_physRAMHistory[m_profilerCounter] = ( float ) m_profiler.workSetUsage();
-					m_vramUsageHistory[m_profilerCounter] = ( float ) m_profiler.vramUsage();
-					m_frameTimesHistory[m_profilerCounter] = dt;
-					m_cpuHistory[m_profilerCounter++] = ( float ) m_profiler.processUsage();
-					m_virtCount = std::to_string(m_profiler.virtMemUsage());
-					m_physCount = std::to_string(m_profiler.workSetUsage());
-					m_vramUCount = std::to_string(m_profiler.vramUsage());
-					m_cpuCount = std::to_string(m_profiler.processUsage());
-					m_ftCount = std::to_string(dt);
-
-				} else {
-					// Copying all the history to a new array because ImGui is stupid
-					float* tempFloatArr = SAIL_NEW float[100];
-					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
-					tempFloatArr[99] = ( float ) m_profiler.virtMemUsage();
-					delete m_virtRAMHistory;
-					m_virtRAMHistory = tempFloatArr;
-					m_virtCount = std::to_string(m_profiler.virtMemUsage());
-
-					float* tempFloatArr1 = SAIL_NEW float[100];
-					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 100, tempFloatArr1);
-					tempFloatArr1[99] = ( float ) m_profiler.workSetUsage();
-					delete m_physRAMHistory;
-					m_physRAMHistory = tempFloatArr1;
-					m_physCount = std::to_string(m_profiler.workSetUsage());
-
-					float* tempFloatArr3 = SAIL_NEW float[100];
-					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
-					tempFloatArr3[99] = ( float ) m_profiler.vramUsage();
-					delete m_vramUsageHistory;
-					m_vramUsageHistory = tempFloatArr3;
-					m_vramUCount = std::to_string(m_profiler.vramUsage());
-
-					float* tempFloatArr4 = SAIL_NEW float[100];
-					std::copy(m_cpuHistory + 1, m_cpuHistory + 100, tempFloatArr4);
-					tempFloatArr4[99] = ( float ) m_profiler.processUsage();
-					delete m_cpuHistory;
-					m_cpuHistory = tempFloatArr4;
-					m_cpuCount = std::to_string(m_profiler.processUsage());
-
-					float* tempFloatArr5 = SAIL_NEW float[100];
-					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 100, tempFloatArr5);
-					tempFloatArr5[99] = dt;
-					delete m_frameTimesHistory;
-					m_frameTimesHistory = tempFloatArr5;
-					m_ftCount = std::to_string(dt);
-				}
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-	return false;
-}
-
-bool PerformanceTestState::renderImGuiRenderSettings(float dt) {
-	ImGui::Begin("Rendering settings");
-	ImGui::Checkbox("Enable post processing",
-					&( *Application::getInstance()->getRenderWrapper() ).getDoPostProcessing()
-	);
-	bool interpolate = ECS::Instance()->getSystem<AnimationSystem>()->getInterpolation();
-	ImGui::Checkbox("enable animation interpolation", &interpolate);
-	ECS::Instance()->getSystem<AnimationSystem>()->setInterpolation(interpolate);
-	static Entity* pickedEntity = nullptr;
-	static float metalness = 1.0f;
-	static float roughness = 1.0f;
-	static float ao = 1.0f;
-
-	ImGui::Separator();
-	if ( ImGui::Button("Pick entity") ) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if ( tempInfo.closestHitIndex != -1 ) {
-			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
-		}
-	}
-
-	if ( pickedEntity ) {
-		ImGui::Text("Material properties for %s", pickedEntity->getName().c_str());
-		if ( auto * model = pickedEntity->getComponent<ModelComponent>() ) {
-			auto* mat = model->getModel()->getMesh(0)->getMaterial();
-			const auto& pbrSettings = mat->getPBRSettings();
-			metalness = pbrSettings.metalnessScale;
-			roughness = pbrSettings.roughnessScale;
-			ao = pbrSettings.aoScale;
-			if ( ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f) ) {
-				mat->setMetalnessScale(metalness);
-			}
-			if ( ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f) ) {
-				mat->setRoughnessScale(roughness);
-			}
-			if ( ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f) ) {
-				mat->setAOScale(ao);
-			}
-		}
-	}
-
-	ImGui::End();
-
-	return false;
-}
-
-bool PerformanceTestState::renderImGuiLightDebug(float dt) {
-	ImGui::Begin("Light debug");
-	ImGui::Checkbox("Manual override", &m_disableLightComponents);
-	unsigned int i = 0;
-	for ( auto& pl : m_lights.getPLs() ) {
-		ImGui::PushID(i);
-		std::string label("Point light ");
-		label += std::to_string(i);
-		if ( ImGui::CollapsingHeader(label.c_str()) ) {
-
-			glm::vec3 color = pl.getColor(); // = 1.0f
-			glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
-			float attConstant = pl.getAttenuation().constant; // 0.312f;
-			float attLinear = pl.getAttenuation().linear; // 0.0f;
-			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
-
-			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
-			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
-			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
-			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
-
-			pl.setAttenuation(attConstant, attLinear, attQuadratic);
-			pl.setColor(color);
-			pl.setPosition(position);
-
-		}
-		i++;
-		ImGui::PopID();
-	}
-	ImGui::End();
 	return true;
 }
 
@@ -669,7 +451,7 @@ void PerformanceTestState::updatePerTickComponentSystems(float dt) {
 
 void PerformanceTestState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// There is an imgui debug toggle to override lights
-	if ( !m_disableLightComponents ) {
+	if ( !m_lightDebugWindow.isManualOverrideOn() ) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
@@ -758,9 +540,6 @@ void PerformanceTestState::loadAnimations() {
 
 void PerformanceTestState::initAnimations() {
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-
-
-
 	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
 	animationEntity2->addComponent<TransformComponent>();
 	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
@@ -840,9 +619,7 @@ void PerformanceTestState::createBots(Model* boundingBoxModel, Model* characterM
 void PerformanceTestState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
-
-
-
+  
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
@@ -871,5 +648,4 @@ void PerformanceTestState::createLevel(Shader* shader, Model* boundingBoxModel) 
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
-
 }
