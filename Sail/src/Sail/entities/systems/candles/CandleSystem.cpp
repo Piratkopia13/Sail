@@ -33,8 +33,10 @@ CandleSystem::~CandleSystem() {
 
 }
 
-void CandleSystem::setPlayerEntityID(int entityID) {
+void CandleSystem::setPlayerEntityID(int entityID, Entity* entityPtr) {
 	m_playerEntityID = entityID;
+	m_playerEntityPtr = entityPtr;
+	
 }
 
 // turn on the light of a specified candle if it doesn't have one already
@@ -83,15 +85,26 @@ void CandleSystem::update(float dt) {
 								if (LivingCandles <= 1) { // Match IS over
 									NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 										Netcode::MessageType::MATCH_ENDED,
-										e->getParent()
-										// Can I send gameStatePtr through above function?
+										nullptr
 									);
+
+									std::cout << "SENT ... ";
+
+									m_gameStatePtr->requestStackPop();
+									m_gameStatePtr->requestStackPush(States::EndGame);
 								}
-								else { // Match IS NOT over, player died
-									// SEND MESSAGE PLAYER DIED
+								else { // Match IS NOT over, instead THIS player simply died
+									e->getParent()->addComponent<SpectatorComponent>();
+									e->getParent()->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+									e->getParent()->removeComponent<GunComponent>();
+									e->getParent()->removeAllChildren();
+									// TODO: Remove all the components that can/should be removed
+
+									//e->getParent()->queueDestruction();
+
 									NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 										Netcode::MessageType::PLAYER_DIED,
-										e->getParent()
+										m_playerEntityPtr
 									);
 								}
 							}
@@ -153,4 +166,9 @@ void CandleSystem::putDownCandle(Entity* e) {
 			candleComp->toggleCarried();
 		}
 	}
+}
+
+void CandleSystem::init(GameState* gameStatePtr) {
+
+	this->setGameStatePtr(gameStatePtr);
 }

@@ -2,7 +2,9 @@
 #include "NetworkReceiverSystem.h"
 #include "Sail/entities/Entity.h"
 #include "Sail/entities/components/NetworkReceiverComponent.h"
+#include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "Sail/entities/components/OnlinePlayerComponent.h"
+#include "../SPLASH/src/game/states/GameState.h"
 
 #include "Network/NWrapperSingleton.h"
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
@@ -24,8 +26,10 @@ NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 NetworkReceiverSystem::~NetworkReceiverSystem() 
 {}
 
-void NetworkReceiverSystem::initWithPlayerID(unsigned char playerID) {
+void NetworkReceiverSystem::init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr) {
 	m_playerID = playerID;
+	m_gameStatePtr = gameStatePtr;
+	m_netSendSysPtr = netSendSysPtr;
 }
 
 // Push incoming data strings to the back of a FIFO list
@@ -99,20 +103,20 @@ void NetworkReceiverSystem::update(float dt) {
 				// Read and process the data
 				switch (messageType) {
 					// Send necessary info to create the networked entity 
-				case MessageType::CREATE_NETWORKED_ENTITY:
+				case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
 				{
 					Archive::loadVec3(ar, translation); // Read translation
 					createEntity(id, entityType, translation);
 				}
 				break;
-				case MessageType::MODIFY_TRANSFORM:
+				case Netcode::MessageType::MODIFY_TRANSFORM:
 				{
 					Archive::loadVec3(ar, translation); // Read translation
 					setEntityTranslation(id, translation);
 
 				}
 				break;
-				case MessageType::ROTATION_TRANSFORM:
+				case Netcode::MessageType::ROTATION_TRANSFORM:
 				{
 					Archive::loadVec3(ar, rotation);	// Read rotation
 					setEntityRotation(id, rotation);
@@ -132,6 +136,8 @@ void NetworkReceiverSystem::update(float dt) {
 		ar(eventSize);
 
 		for (int i = 0; i < eventSize; i++) {
+
+			std::cout << "EVENT SIZE: " << eventSize << "\n";
 			// Handle-Single-Frame events
 			ar(eventType);
 
@@ -190,12 +196,15 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	auto e = ECS::Instance()->createEntity("ReceiverEntity");
 	entities.push_back(e.get());	// Needs to be before 'addComponent' or packets might be lost.
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
+	int test = e->getComponent<NetworkReceiverComponent>()->m_id;
 	e->addComponent<OnlinePlayerComponent>(id);
 
 	// If you are the host create a pass-through sender component to pass on the info to all players
 	if (NWrapperSingleton::getInstance().isHost()) {
 		// NOTE: Assumes that the data type is MODIFY_TRANSFORM, might be changed in the future
-		e->addComponent<NetworkSenderComponent>(MessageType::CREATE_NETWORKED_ENTITY, entityType, id);
+		std::cout << "I'd like for y'all to create 1 more dude.\n";
+		m_netSendSysPtr->addEntityToListONLYFORNETWORKRECIEVER(e.get());
+		e->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, entityType, id);
 	}
 
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -219,8 +228,8 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 
 		// Adding audio component and adding all sounds attached to the player entity
 		e->addComponent<AudioComponent>();
-	//	e->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
-	//	e->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
+		// e->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
+		// e->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
 
 		//creates light with model and pointlight
 		auto light = ECS::Instance()->createEntity("ReceiverLight");
@@ -290,12 +299,15 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::PLAYER_DIED, nullptr);
+	}
+
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->addComponent<SpectatorComponent>();
-			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-			e->removeComponent<GunComponent>();
-			e->removeAllChildren();
+	
+			e->removeDeleteAllChildren();
 			// TODO: Remove all the components that can/should be removed
 
 			e->queueDestruction();
@@ -307,7 +319,12 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 
 void NetworkReceiverSystem::matchEnded() {
 
-	//gameState->requestStackPop();
-	//m_gameStatePtr->requestStackPush(States::EndGame);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::MATCH_ENDED, nullptr);
+	}
+
+	m_gameStatePtr->requestStackPop();
+	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 

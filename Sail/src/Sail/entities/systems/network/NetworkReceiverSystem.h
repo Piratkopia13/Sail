@@ -2,17 +2,23 @@
 #include "../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
 
+class GameState;
+class NetworkSenderSystem;
+
 // NOTE: As of right now this system can create entities
 class NetworkReceiverSystem : public BaseComponentSystem {
 public:
 	NetworkReceiverSystem();
 	~NetworkReceiverSystem();
 
-	void initWithPlayerID(unsigned char playerID);
+	void init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
 	void pushDataToBuffer(std::string data);
 
 	void update(float dt = 0.0f) override;
 private:
+	GameState* m_gameStatePtr;
+	NetworkSenderSystem* m_netSendSysPtr;
+
 	// FIFO container of serialized data-strings to decode
 	std::queue<std::string> m_incomingDataBuffer;
 	std::mutex m_bufferLock;
@@ -29,4 +35,6 @@ private:
 	void waterHitPlayer(Netcode::NetworkObjectID id);
 	void playerDied(Netcode::NetworkObjectID id);
 	void matchEnded();
+
+	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
 };

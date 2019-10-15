@@ -97,6 +97,41 @@ const void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 	this->eventQueue.push(type);
 }
 
+void NetworkSenderSystem::stop() {
+
+	this->update(0.0f);
+
+	//std::ostringstream os(std::ios::binary);
+	//cereal::PortableBinaryOutputArchive ar(os);
+
+	//ar(static_cast<__int32>(1));	// 1 message
+	//ar(static_cast<__int32>(1));	// NrOfMessages
+
+	//NetworkSenderEvent* pE;
+	//__int32 test = static_cast<__int32>(eventQueue.size());
+	//ar(test);
+
+	//while (eventQueue.size() > 0) {
+	//	pE = eventQueue.front();		// Fetch
+
+	//	if (pE->type == Netcode::MessageType::MATCH_ENDED) {
+	//		handleEvent(pE, &ar);								// Deal with
+	//	}
+
+	//	eventQueue.pop();									// Pop
+	//	delete pE;											// Delete
+	//}
+
+	//// send the serialized archive over the network
+	//std::string binaryData = os.str();
+	//if (NWrapperSingleton::getInstance().isHost()) {
+	//	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);
+	//}
+	//else {
+	//	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
+	//}
+}
+
 void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
 	// Package it depending on the type
 	switch (messageType) {
@@ -157,6 +192,7 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
 	{
+
 		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
 		(*ar)(NetObjectID); // Send
 	}
@@ -169,4 +205,9 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	default:
 		break;
 	}
+}
+
+void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e)
+{
+	entities.push_back(e);
 }

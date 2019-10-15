@@ -152,8 +152,7 @@ GameState::GameState(StateStack& stack)
 
 	// Create system for the candles
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-	m_componentSystems.candleSystem->setGameStatePtr(this);
-	m_componentSystems.candleSystem->setLivingCandles(NWrapperSingleton::getInstance().getPlayers().size());
+	m_componentSystems.candleSystem->init(this);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -181,7 +180,7 @@ GameState::GameState(StateStack& stack)
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
-	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
+	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);	// Grant NSS to singleton for access to single-frame event stack
 
 	// Create system for handling and updating sounds
@@ -252,7 +251,7 @@ GameState::GameState(StateStack& stack)
 	createLevel(shader, boundingBoxModel);
 
 	// Inform CandleSystem of the player
-	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
+	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 

@@ -17,6 +17,9 @@ public:
 
 	const void queueEvent(NetworkSenderEvent* event);
 	
+	virtual void stop();
+
+	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
 
 private:
 	void handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);
