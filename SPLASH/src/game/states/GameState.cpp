@@ -181,10 +181,10 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
 	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);	// Grant NSS to singleton for access to single-frame event stack
+	m_componentSystems.networkReceiverSystem->addSenderSystemP(m_componentSystems.networkSenderSystem);
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
-
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -242,6 +242,7 @@ GameState::GameState(StateStack& stack)
 	// Player creation
 
 	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++).get();
+	m_componentSystems.networkReceiverSystem->initWithPlayerEntityPointer(m_player);
 
 	initAnimations();
 	// Level Creation

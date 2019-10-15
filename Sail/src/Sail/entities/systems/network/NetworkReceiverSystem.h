@@ -2,6 +2,8 @@
 #include "../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
 
+class NetworkSenderSystem;
+
 // NOTE: As of right now this system can create entities
 class NetworkReceiverSystem : public BaseComponentSystem {
 public:
@@ -9,7 +11,11 @@ public:
 	~NetworkReceiverSystem();
 
 	void initWithPlayerID(unsigned char playerID);
+	void initWithPlayerEntityPointer(Entity* pPlayerEntity);
 	void pushDataToBuffer(std::string data);
+
+	//
+	void addSenderSystemP(NetworkSenderSystem* p);
 
 	void update(float dt = 0.0f) override;
 private:
@@ -19,6 +25,10 @@ private:
 
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
 	unsigned char m_playerID;
+
+	// 
+	Entity* m_playerEntity = nullptr;
+	NetworkSenderSystem* pSenderSystem = nullptr; 
 
 	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
 

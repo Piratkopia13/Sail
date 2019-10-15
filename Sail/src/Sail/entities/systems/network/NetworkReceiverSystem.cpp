@@ -3,9 +3,12 @@
 #include "Sail/entities/Entity.h"
 #include "Sail/entities/components/NetworkReceiverComponent.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
 
 #include "Network/NWrapperSingleton.h"
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
+
+#include "NetworkSenderSystem.h"
 
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
@@ -28,10 +31,18 @@ void NetworkReceiverSystem::initWithPlayerID(unsigned char playerID) {
 	m_playerID = playerID;
 }
 
+void NetworkReceiverSystem::initWithPlayerEntityPointer(Entity* pPlayerEntity_) {
+	m_playerEntity = pPlayerEntity_;
+}
+
 // Push incoming data strings to the back of a FIFO list
 void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 	std::scoped_lock lock(m_bufferLock);
 	m_incomingDataBuffer.push(data);
+}
+
+void NetworkReceiverSystem::addSenderSystemP(NetworkSenderSystem* p) {
+	pSenderSystem = p;
 }
 
 /*
@@ -99,20 +110,20 @@ void NetworkReceiverSystem::update(float dt) {
 				// Read and process the data
 				switch (messageType) {
 					// Send necessary info to create the networked entity 
-				case MessageType::CREATE_NETWORKED_ENTITY:
+				case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
 				{
 					Archive::loadVec3(ar, translation); // Read translation
 					createEntity(id, entityType, translation);
 				}
 				break;
-				case MessageType::MODIFY_TRANSFORM:
+				case Netcode::MessageType::MODIFY_TRANSFORM:
 				{
 					Archive::loadVec3(ar, translation); // Read translation
 					setEntityTranslation(id, translation);
 
 				}
 				break;
-				case MessageType::ROTATION_TRANSFORM:
+				case Netcode::MessageType::ROTATION_TRANSFORM:
 				{
 					Archive::loadVec3(ar, rotation);	// Read rotation
 					setEntityRotation(id, rotation);
@@ -126,7 +137,7 @@ void NetworkReceiverSystem::update(float dt) {
 
 
 		// Recieve 'one-time' events
-		__int32 eventSize;
+		unsigned __int32 eventSize;
 		Netcode::MessageType eventType;
 		Netcode::NetworkObjectID netObjectID;
 		ar(eventSize);
@@ -140,20 +151,25 @@ void NetworkReceiverSystem::update(float dt) {
 
 				playerJumped(netObjectID);
 			} 
-			else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {
-				//ar(netObjectID);
+			else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {	
+				ar(netObjectID);
 
-
-				//waterHitPlayer(netObjectID);
+				waterHitPlayer(netObjectID);
 			}
 			else if (eventType == Netcode::MessageType::SPAWN_PROJECTILE) {
 				Archive::loadVec3(ar, gunPosition);
 				Archive::loadVec3(ar, gunVelocity);
 
+			/*	if (NWrapperSingleton::getInstance().isHost()) {
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::WATER_HIT_PLAYER,
+						relevantEntity
+					);
+				}*/
+
 				EntityFactory::CreateProjectile(gunPosition, gunVelocity);
 			}
 		}
-
 
 		m_incomingDataBuffer.pop();
 	}
@@ -167,6 +183,7 @@ void NetworkReceiverSystem::update(float dt) {
 */
 void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::EntityType entityType, const glm::vec3& translation) {
 	using namespace Netcode;
+	std::cout << "Someone wanted me to create an entity, ";
 
 	// If the message was sent from me but rerouted back from the host, ignore it.
 	if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
@@ -179,16 +196,21 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 			return;
 		}
 	}
+
+	std::cout << " and i did\n";
 	
 	auto e = ECS::Instance()->createEntity("ReceiverEntity");
 	entities.push_back(e.get());	// Needs to be before 'addComponent' or packets might be lost.
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
+	int test = e->getComponent<NetworkReceiverComponent>()->m_id;
 	e->addComponent<OnlineOwnerComponent>(id);
 
 	// If you are the host create a pass-through sender component to pass on the info to all players
 	if (NWrapperSingleton::getInstance().isHost()) {
 		// NOTE: Assumes that the data type is MODIFY_TRANSFORM, might be changed in the future
-		e->addComponent<NetworkSenderComponent>(MessageType::CREATE_NETWORKED_ENTITY, entityType, id);
+		std::cout << "I'd like for y'all to create 1 more dude.\n";
+		pSenderSystem->addEntityToListONLYFORNETWORKRECIEVER(e.get());
+		e->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, entityType, id);
 	}
 
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -267,12 +289,32 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 		//	e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+
 		}
 	}
 }
 
 void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
+	// If the message was sent from me but rerouted back from the host, ignore it.
+	if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
+		return;
+	}
+
+
+	// Was i hit?
+	if (id == m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID) {
+		// Bad way of getting the candle component
+		std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
+		for (auto& child : childEntities) {
+			if (child.get()->hasComponent<CandleComponent>()) {
+
+				child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
+			}
+		}
+	}
+
 	for (auto& e : entities) {
+		NetworkReceiverComponent* n = e->getComponent<NetworkReceiverComponent>();
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {	
 			// Hit player with water
 			std::cout << id << " was hit by a player!\n";

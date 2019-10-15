@@ -79,7 +79,7 @@ void NetworkSenderSystem::update(float dt) {
 	}
 
 	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
-	__int32 test = static_cast<__int32>(eventQueue.size());
+	unsigned __int32 test = static_cast<__int32>(eventQueue.size());
 	ar(test);
 	while (eventQueue.empty() == false) {
 		NetworkSenderEvent* pE = eventQueue.front();		// Fetch
@@ -100,6 +100,10 @@ void NetworkSenderSystem::update(float dt) {
 
 const void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 	this->eventQueue.push(type);
+}
+
+void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e) {
+	entities.push_back(e);
 }
 
 void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
@@ -156,10 +160,8 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		//Netcode::NetworkObjectID NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
-		//(*ar)(3);	// Send 1
-		//(*ar)(NetObjectID);
-		//(*ar)('3');
+ 		Netcode::NetworkObjectID NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
+		(*ar)(NetObjectID);	
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DIED:

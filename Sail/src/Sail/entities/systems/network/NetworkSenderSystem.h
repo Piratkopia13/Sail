@@ -16,7 +16,7 @@ public:
 	void update(float dt) override;
 
 	const void queueEvent(NetworkSenderEvent* event);
-	
+	void addEntityToListONLYFORNETWORKRECIEVER(Entity*);
 
 private:
 	void handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);

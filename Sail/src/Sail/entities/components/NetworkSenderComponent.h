@@ -23,7 +23,7 @@ public:
 	*/
 	NetworkSenderComponent(Netcode::MessageType dataType, Netcode::EntityType entityType, Netcode::NetworkObjectID objectID) :
 		m_id(objectID), m_dataType(dataType), m_entityType(entityType) {
-		m_dataTypes.clear();
+		m_dataTypes.push_back(m_dataType);
 	}
 
 	~NetworkSenderComponent() {}

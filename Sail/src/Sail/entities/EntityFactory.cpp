@@ -50,7 +50,8 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID
 	);
-	player->addComponent<LocalOwnerComponent>(playerID);
+	int test = player->getComponent<NetworkSenderComponent>()->m_id;
+	player->addComponent<LocalOwnerComponent>(player->getComponent<NetworkSenderComponent>()->m_id);
 
 	// Add physics components and setting initial variables
 	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
