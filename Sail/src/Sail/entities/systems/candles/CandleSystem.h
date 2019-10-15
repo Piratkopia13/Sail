@@ -27,7 +27,7 @@ public:
 private:
 	int m_playerEntityID;
 	// TODO: Replace using game settings when that is implemented
-	float m_candleForceRespawnTimer = 15.f;
+	float m_candleForceRespawnTimer = 3.f;
 	// TODO: Replace using game settings when that is implemented
 	int m_maxNumRespawns = 2;
 

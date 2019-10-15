@@ -82,7 +82,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	// Create candle for the player
 	auto e = CreateCandle("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f), lightIndex);
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	e->getComponent<CandleComponent>()->setOwner(player->getID());
+	e->getComponent<CandleComponent>()->setOwner(static_cast<int>(playerID));
 	player->addChildEntity(e);
 
 	// Set up camera

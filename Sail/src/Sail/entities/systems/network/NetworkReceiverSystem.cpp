@@ -150,6 +150,10 @@ void NetworkReceiverSystem::update() {
 				ar(netObjectID);
 				playerDisconnect(netObjectID);
 			}
+			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
+				ar(netObjectID);
+				playerDied(netObjectID);
+			}
 		}
 
 
@@ -280,13 +284,14 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
-	for (auto& e : entities) {
+	/*for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			e->queueDestruction();
 		}
-	}
+	}*/
+	Logger::Log("Receiver Player Died: " + std::to_string(id));
 }
 
 void NetworkReceiverSystem::playerDisconnect(Netcode::NetworkObjectID id) {
-	std::cout << "Receiver Player Disconnect: " << id << "\n";
+	Logger::Log("Receiver Player Disconnect: " + std::to_string(id));
 }

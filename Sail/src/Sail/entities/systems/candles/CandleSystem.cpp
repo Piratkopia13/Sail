@@ -93,7 +93,7 @@ void CandleSystem::update(float dt) {
 							// If so, dispatch an event (received by GameState for now)
 							if ( candle->getOwner() == m_playerEntityID ) {
 								Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_DEATH));
-							//	e->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::PLAYER_DIED);
+								//e->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::PLAYER_DIED);
 								
 								e->queueDestruction();
 							}

@@ -179,7 +179,7 @@ GameState::GameState(StateStack& stack)
 
 
 	// Inform CandleSystem of the player
-	m_componentSystems.candleSystem->setPlayerEntityID(playerID);
+	m_componentSystems.candleSystem->setPlayerEntityID(id);
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 
@@ -406,12 +406,17 @@ bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& e
 
 bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 	if ( !m_isSingleplayer ) {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::PLAYER_DIED,
+			m_player
+		);
+		
 		m_player->addComponent<SpectatorComponent>();
 		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-		m_player->removeComponent<NetworkSenderComponent>();
 		m_player->removeComponent<GunComponent>();
 		m_player->removeAllChildren();
 		// TODO: Remove all the components that can/should be removed
+
 	} else {
 		this->requestStackPop();
 		this->requestStackPush(States::EndGame);
