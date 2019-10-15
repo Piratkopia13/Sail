@@ -699,16 +699,15 @@ void GameState::loadAnimations() {
 void GameState::initAnimations() {
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 
-	for (int i = 0; i < 21; i++) {
-		auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
-		animationEntity2->addComponent<TransformComponent>();
-		animationEntity2->getComponent<TransformComponent>()->translate(-5 + 2.f * i, 0, 0);
-		//animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
-		animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx"));
-		animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-		animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
-	}
+	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
+	animationEntity2->addComponent<TransformComponent>();
+	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
+	animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
+	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx"));
+	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
+	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
+	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
 	std::string animName = "";
 #ifndef _DEBUG
 	animName = "AnimationTest/DEBUG_BALLBOT.fbx";
