@@ -43,7 +43,7 @@ void CollisionSystem::update(float dt) {
 				//Not implemented for spheres yet
 				collisionUpdate(e, updateableDt);
 
-				//surfaceFromCollision(e);
+				surfaceFromCollision(e);
 
 				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
 					//Object is moving fast, ray cast for collisions
@@ -98,12 +98,12 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 
 			//Get intersection axis and depth
 			if (Intersection::AabbWithTriangle(*boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
-				if (intersectionDepth == normalDepth || normalDepth <= glm::dot(movement->oldMovement, -collisionInfo_i.normal)) {
+				if (glm::abs(intersectionDepth - normalDepth) < 0.05f) {//normalDepth <= glm::dot(movement->oldMovement, -collisionInfo_i.normal)) {
 					//Compare normal and axis, only do collisions if same direction. I.e "true" collision
 					sumVec += collisionInfo_i.normal;
 
 					//Add collision to current collisions for collisionComponent
-					collision->collisions.push_back(collisionInfo_i);
+					collision->collisions.push_back(collisionInfo_i); 
 
 					//Add collision to true collisions
 					trueCollisions.push_back(collisionInfo_i);
@@ -255,11 +255,11 @@ void CollisionSystem::surfaceFromCollision(Entity* e) {
 		float intersectionDepth;
 		float normalDepth;
 
-		Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth);
-
-		if (normalDepth <= glm::dot(movement->oldMovement, -collisionInfo_i.normal)) {
-			//bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
-			distance += collisionInfo_i.normal * normalDepth;
+		if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
+			if (intersectionDepth == normalDepth) {
+				bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
+				distance += collisionInfo_i.normal * normalDepth;
+			}
 		}
 	}
 	transform->translate(distance);

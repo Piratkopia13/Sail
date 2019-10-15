@@ -114,7 +114,6 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 		f[0] = glm::normalize(newV2 - newV1);
 		f[1] = glm::normalize(newV3 - newV2);
 		f[2] = glm::normalize(newV1 - newV3);
-		/*f[3] = triNormal;*/
 
 		glm::vec3 aabbSize = aabb.getHalfSize();
 		for (int i = 0; i < 3; i++) {
@@ -141,6 +140,28 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 				}
 			}
 		}
+
+		glm::vec3 a = triNormal;
+		glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
+		float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
+		if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z)) < -r) {
+			return false;
+		}
+		else {
+			//Save depth along axis
+			float tempDepth = min(r - min(p.x, min(p.y, p.z)), max(p.x, max(p.y, p.z)) + r);
+			if (tempDepth < depth) {
+				depth = tempDepth;
+				axis = a;
+			}
+
+			if (glm::abs(glm::dot(a, triNormal)) > 0.98f) {
+				if (tempDepth < normalDepth) {
+					normalDepth = tempDepth;
+				}
+			}
+		}
+
 	}
 	else {
 		return false;
