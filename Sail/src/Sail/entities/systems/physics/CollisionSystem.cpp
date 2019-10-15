@@ -40,10 +40,10 @@ void CollisionSystem::update(float dt) {
 		float updateableDt = dt;
 
 		if (m_octree) {
-			collisionUpdate(e, updateableDt);
-
 			if (!csc) {
 				//Not implemented for spheres yet
+				collisionUpdate(e, updateableDt);
+
 				surfaceFromCollision(e);
 
 				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
@@ -73,35 +73,56 @@ const bool CollisionSystem::collisionUpdate(Entity* e, const float& dt) {
 	return handleCollisions(e, collisions, dt);
 }
 
-const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
+const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
 	bool returnValue = false;
 
 	MovementComponent* movement = e->getComponent<MovementComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
+	BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
 
 	collision->onGround = false;
-	std::vector<int> groundIndices;
 
 	const size_t collisionCount = collisions.size();
 
 	if (collisionCount > 0) {
-		//Get the combined normals
+		std::vector<int> groundIndices;
 		glm::vec3 sumVec(0.0f);
-		for (size_t i = 0; i < collisionCount; i++) {
-			sumVec += collisions[i].normal;
+		std::vector<Octree::CollisionInfo> trueCollisions;
 
-			//Add collision to current collisions
-			collision->collisions.push_back(collisions[i]);
+		//Get the combined normals and detect "true" collisions
+		for (size_t i = 0; i < collisionCount; i++) {
+			Octree::CollisionInfo& collisionInfo_i = collisions[i];
+
+			glm::vec3 intersectionAxis;
+			float intersectionDepth;
+			float normalDepth;
+
+			//Get intersection axis and depth
+			if (Intersection::AabbWithTriangle(*boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
+				if (intersectionDepth == normalDepth) { //If the smallest intersection is with the normal
+					//Compare normal and axis, only do collisions if same axis. I.e "true" collision
+					sumVec += collisionInfo_i.normal;
+
+					//Add collision to current collisions for collisionComponent
+					collision->collisions.push_back(collisionInfo_i); 
+
+					//Add collision to true collisions
+					trueCollisions.push_back(collisionInfo_i);
+				}
+			}
 		}
 
-		for (size_t i = 0; i < collisionCount; i++) {
-			const Octree::CollisionInfo& collisionInfo_i = collisions[i];
+		//Loop through true collisions and handle them
+		const size_t trueCollisionCount = trueCollisions.size();
+		for (size_t i = 0; i < trueCollisionCount; i++) {
+			const Octree::CollisionInfo& collisionInfo_i = trueCollisions[i];
 
+			//Save ground collisions
 			if (collisionInfo_i.normal.y > 0.7f) {
 				collision->onGround = true;
 				bool newGround = true;
 				for (size_t j = 0; j < groundIndices.size(); j++) {
-					if (collisionInfo_i.normal == collisions[groundIndices[j]].normal) {
+					if (collisionInfo_i.normal == trueCollisions[groundIndices[j]].normal) {
 						newGround = false;
 					}
 				}
@@ -110,6 +131,8 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 					groundIndices.push_back(i);
 				}
 			}
+
+			//----Velocity changes from collisions----
 
 			//Stop movement towards triangle
 			float projectionSize = glm::dot(movement->velocity, -collisionInfo_i.normal);
@@ -134,26 +157,25 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 					movement->velocity += normalToNormal * projectionSize * (1.0f + collision->bounciness);
 				}
 			}
-
+			//----------------------------------------
 		}
-	}
-	//------------------
 
-	//----Drag----
-	if (collision->onGround) { //Ground drag
-		size_t nrOfGroundCollisions = groundIndices.size();
-		for (size_t i = 0; i < nrOfGroundCollisions; i++) {
-			const Octree::CollisionInfo& collisionInfo_ground_i = collisions[groundIndices[i]];
-			const glm::vec3 velAlongPlane = movement->velocity - collisionInfo_ground_i.normal * glm::dot(collisionInfo_ground_i.normal, movement->velocity);
-			const float sizeOfVel = glm::length(velAlongPlane);
-			if (sizeOfVel > 0.0f) {
-				const float slowdown = glm::min((collision->drag / nrOfGroundCollisions) * dt, sizeOfVel);
-				movement->velocity -= slowdown * glm::normalize(velAlongPlane);
-				returnValue = true;
+		//----Drag----
+		if (collision->onGround) { //Ground drag
+			size_t nrOfGroundCollisions = groundIndices.size();
+			for (size_t i = 0; i < nrOfGroundCollisions; i++) {
+				const Octree::CollisionInfo& collisionInfo_ground_i = trueCollisions[groundIndices[i]];
+				const glm::vec3 velAlongPlane = movement->velocity - collisionInfo_ground_i.normal * glm::dot(collisionInfo_ground_i.normal, movement->velocity);
+				const float sizeOfVel = glm::length(velAlongPlane);
+				if (sizeOfVel > 0.0f) {
+					const float slowdown = glm::min((collision->drag / nrOfGroundCollisions) * dt, sizeOfVel);
+					movement->velocity -= slowdown * glm::normalize(velAlongPlane);
+					returnValue = true;
+				}
 			}
 		}
+		//------------
 	}
-	//------------
 
 	return returnValue;
 }
@@ -230,15 +252,14 @@ void CollisionSystem::surfaceFromCollision(Entity* e) {
 	const size_t count = collisions.size();
 	for (size_t i = 0; i < count; i++) {
 		const Octree::CollisionInfo& collisionInfo_i = collisions[i];
-		float depth;
-		glm::vec3 axis;
+		glm::vec3 intersectionAxis;
+		float intersectionDepth;
+		float normalDepth;
 
-		if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &axis, &depth)) {
-			if (glm::dot(axis, collisionInfo_i.normal) > 0.99f) {
-				if (depth <= glm::dot(movement->oldVelocity, -axis)) {
-					bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
-					distance += axis * depth;
-				}
+		if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
+			if (intersectionDepth == normalDepth) {
+				bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
+				distance += collisionInfo_i.normal * normalDepth;
 			}
 		}
 	}
