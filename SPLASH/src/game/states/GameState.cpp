@@ -173,7 +173,6 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
-
 	// Get the player id's and names from the lobby
 	const unsigned char playerID = NWrapperSingleton::getInstance().getMyPlayerID();
 
@@ -490,8 +489,7 @@ bool GameState::renderImgui(float dt) {
 
 bool GameState::prepareStateChange() {
 	if (m_poppedThisFrame) {
-		// Reset network
-		NWrapperSingleton::getInstance().resetNetwork();
+		// Do NOT reset network because we're NOT going to main menu
 	}
 	return true;
 }
