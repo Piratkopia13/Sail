@@ -17,6 +17,7 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_camController(&m_cam)
+	, m_profiler(true)
 	, m_showcaseProcGen(false) {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
