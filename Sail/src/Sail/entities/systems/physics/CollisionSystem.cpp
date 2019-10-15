@@ -99,8 +99,8 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 
 			//Get intersection axis and depth
 			if (Intersection::AabbWithTriangle(*boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
-				if (glm::abs(intersectionDepth - normalDepth) < 0.05f) {//normalDepth <= glm::dot(movement->oldMovement, -collisionInfo_i.normal)) {
-					//Compare normal and axis, only do collisions if same direction. I.e "true" collision
+				if (intersectionDepth == normalDepth) { //If the smallest intersection is with the normal
+					//Compare normal and axis, only do collisions if same axis. I.e "true" collision
 					sumVec += collisionInfo_i.normal;
 
 					//Add collision to current collisions for collisionComponent
