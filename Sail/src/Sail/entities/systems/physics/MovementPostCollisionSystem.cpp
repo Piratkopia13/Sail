@@ -38,6 +38,7 @@ void MovementPostCollisionSystem::update(float dt) {
 				GameDataTracker::getInstance().logDistanceWalked(translation);
 			}
 		}
+		movement->oldMovement = translation;
 
 		movement->oldVelocity = movement->velocity;
 

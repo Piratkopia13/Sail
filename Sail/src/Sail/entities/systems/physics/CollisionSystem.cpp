@@ -43,7 +43,7 @@ void CollisionSystem::update(float dt) {
 				//Not implemented for spheres yet
 				collisionUpdate(e, updateableDt);
 
-				//surfaceFromCollision(e, updateableDt);
+				//surfaceFromCollision(e);
 
 				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
 					//Object is moving fast, ray cast for collisions
@@ -72,7 +72,7 @@ const bool CollisionSystem::collisionUpdate(Entity* e, const float& dt) {
 	return handleCollisions(e, collisions, dt);
 }
 
-const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
+const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
 	bool returnValue = false;
 
 	MovementComponent* movement = e->getComponent<MovementComponent>();
@@ -90,25 +90,24 @@ const bool CollisionSystem::handleCollisions(Entity* e, const std::vector<Octree
 
 		//Get the combined normals and detect "true" collisions
 		for (size_t i = 0; i < collisionCount; i++) {
-			const Octree::CollisionInfo& collisionInfo_i = collisions[i];
+			Octree::CollisionInfo& collisionInfo_i = collisions[i];
 
 			glm::vec3 intersectionAxis;
 			float intersectionDepth;
 			float normalDepth;
-			float upDepth;
 
 			//Get intersection axis and depth
-			Intersection::AabbWithTriangle(*boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth, &upDepth);
+			if (Intersection::AabbWithTriangle(*boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
+				if (intersectionDepth == normalDepth || normalDepth <= glm::dot(movement->oldMovement, -collisionInfo_i.normal)) {
+					//Compare normal and axis, only do collisions if same direction. I.e "true" collision
+					sumVec += collisionInfo_i.normal;
 
-			if (intersectionDepth == normalDepth || normalDepth <= glm::dot(movement->oldVelocity * dt, -collisionInfo_i.normal)) {
-				//Compare normal and axis, only do collisions if same direction. I.e "true" collision
-				sumVec += collisionInfo_i.normal;
+					//Add collision to current collisions for collisionComponent
+					collision->collisions.push_back(collisionInfo_i);
 
-				//Add collision to current collisions for collisionComponent
-				collision->collisions.push_back(collisionInfo_i);
-
-				//Add collision to true collisions
-				trueCollisions.push_back(collisionInfo_i);
+					//Add collision to true collisions
+					trueCollisions.push_back(collisionInfo_i);
+				}
 			}
 		}
 
@@ -242,7 +241,7 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 	}
 }
 
-void CollisionSystem::surfaceFromCollision(Entity* e, const float& dt) {
+void CollisionSystem::surfaceFromCollision(Entity* e) {
 	glm::vec3 distance(0.0f);
 	auto& collisions = e->getComponent<CollisionComponent>()->collisions;
 	auto bb = e->getComponent<BoundingBoxComponent>();
@@ -255,13 +254,12 @@ void CollisionSystem::surfaceFromCollision(Entity* e, const float& dt) {
 		glm::vec3 intersectionAxis;
 		float intersectionDepth;
 		float normalDepth;
-		float upDepth;
 
-		Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth, &upDepth);
+		Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth);
 
-		if (glm::abs(glm::dot(intersectionAxis, collisionInfo_i.normal)) > 0.98f) {
-			bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
-			distance += intersectionAxis * intersectionDepth;
+		if (normalDepth <= glm::dot(movement->oldMovement, -collisionInfo_i.normal)) {
+			//bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
+			distance += collisionInfo_i.normal * normalDepth;
 		}
 	}
 	transform->translate(distance);
