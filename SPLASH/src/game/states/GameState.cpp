@@ -707,6 +707,7 @@ void GameState::initAnimations() {
 	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
 	std::string animName = "";
 #ifndef _DEBUG
 	animName = "AnimationTest/DEBUG_BALLBOT.fbx";
