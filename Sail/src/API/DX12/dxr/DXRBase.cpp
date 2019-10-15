@@ -198,12 +198,10 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	m_sceneCB->updateData(&newData, sizeof(newData));
 }
 
-void DXRBase::updateDecalData(const std::vector<DXRShaderCommon::DecalData>& decals) {
+void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 	DXRShaderCommon::DecalCBuffer newData;
-	for (int i = 0; i < decals.size(); i++) {
-		newData.data[(i + m_decalsToRender) % MAX_DECALS] = decals[i];
-	}
-	m_decalsToRender += decals.size();
+	memcpy(newData.data, decals, size * sizeof(DXRShaderCommon::DecalData));
+	m_decalsToRender = size;
 
 	m_decalCB->updateData(&newData, sizeof(newData));
 }
@@ -532,6 +530,9 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			gpuHandle.ptr += m_heapIncr * 4;
 		}
 
+		// Initialize decal SRVs
+		initDecals(&gpuHandle, &cpuHandle);
+
 		//// Ray gen settings CB
 		//m_rayGenCBData.flags = RT_ENABLE_TA | RT_ENABLE_JITTER_AA;
 		//m_rayGenCBData.numAORays = 5;
@@ -581,6 +582,25 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
 	if (!brdfLutTex.hasBeenInitialized()) {
 		brdfLutTex.initBuffers(cmdList, 0);
+	}
+
+	// Make sure decal textures has been initialized
+	{
+		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture("pbr/water/Water_001_COLOR.tga"));
+		if (!decalTex.hasBeenInitialized()) {
+			decalTex.initBuffers(cmdList, 0);
+			decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		}
+		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture("pbr/water/Water_001_NORM.tga"));
+		if (!decalTex1.hasBeenInitialized()) {
+			decalTex1.initBuffers(cmdList, 0);
+			decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		}
+		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture("pbr/water/Water_001_MAT.tga"));
+		if (!decalTex2.hasBeenInitialized()) {
+			decalTex2.initBuffers(cmdList, 0);
+			decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		}
 	}
 
 	// Update descriptors for vertices, indices, textures etc
@@ -680,10 +700,11 @@ void DXRBase::updateShaderTables() {
 			m_rayGenShaderTable[frameIndex].Resource->Release();
 			m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get(), 64U);
 		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
 		D3D12_GPU_VIRTUAL_ADDRESS decalCBHandle = m_decalCB->getBuffer()->GetGPUVirtualAddress();
 		tableBuilder.addDescriptor(decalCBHandle);
@@ -804,6 +825,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
+	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10 + DX12GBufferRenderer::NUM_GBUFFERS + 1, 0U, 3U);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
 	m_localSignatureRayGen->addStaticSampler();
@@ -843,6 +865,25 @@ void DXRBase::initMetaballBuffers() {
 	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
 		m_metaballPositions_srv.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), MAX_NUM_METABALLS * sizeof(glm::vec3), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 	}
+}
+
+void DXRBase::initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle) {
+	auto& resMan = Application::getInstance()->getResourceManager();
+	resMan.loadTexture("pbr/water/Water_001_COLOR.tga");
+	resMan.loadTexture("pbr/water/Water_001_NORM.tga");
+	resMan.loadTexture("pbr/water/Water_001_MAT.tga");
+
+	m_decalTexGPUHandles = *gpuHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
+	srcDescriptors[0] = static_cast<DX12Texture*>(&resMan.getTexture("pbr/water/Water_001_COLOR.tga"))->getSrvCDH();
+	srcDescriptors[1] = static_cast<DX12Texture*>(&resMan.getTexture("pbr/water/Water_001_NORM.tga"))->getSrvCDH();
+	srcDescriptors[2] = static_cast<DX12Texture*>(&resMan.getTexture("pbr/water/Water_001_MAT.tga"))->getSrvCDH();
+
+	UINT dstRangeSizes[] = {3};
+	UINT srcRangeSizes[] = {1, 1, 1};
+	m_context->getDevice()->CopyDescriptors(1, cpuHandle, dstRangeSizes, 3, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	cpuHandle->ptr += m_heapIncr * 3;
+	gpuHandle->ptr += m_heapIncr * 3;
 }
 
 void DXRBase::createEmptyLocalRootSignature() {

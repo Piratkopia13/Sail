@@ -31,7 +31,7 @@ public:
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
-	void updateDecalData(const std::vector<DXRShaderCommon::DecalData>& decals);
+	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void reloadShaders();
@@ -85,10 +85,13 @@ private:
 	void initMetaballBuffers();
 	void updateMetaballpositions(const std::vector<Metaball>& metaballs);
 
+	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
+
 private:
 	DX12API* m_context;
 
 	DX12RenderableTexture** m_gbufferInputTextures;
+	DX12Texture** m_decalInputTextures;
 
 	std::string m_shaderFilename;
 
@@ -119,6 +122,7 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtBrdfLUTGPUHandle;
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_decalTexGPUHandles;
 	UINT m_heapIncr;
 
 

@@ -7,6 +7,10 @@ Texture2D<float4> sys_inTex_normals 				: register(t10);
 Texture2D<float4> sys_inTex_albedo 					: register(t11);
 Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12);
 Texture2D<float>  sys_inTex_depth 					: register(t13);
+// Decal textures
+Texture2D<float4> decal_texAlbedo 					: register(t14);
+Texture2D<float4> decal_texNormal 					: register(t15);
+Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t16);
 
 RWTexture2D<float4> lOutput : register(u0);
 
@@ -26,6 +30,7 @@ SamplerState ss : register(s0);
 
 #include "Utils.hlsl"
 #include "Shading.hlsl"
+#include "Decals.hlsl"
 
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
@@ -132,148 +137,17 @@ void rayGen() {
 	else {
 		lOutput[launchIndex] = payload.color;
 	}
-
-    //===========DECALS START===========//
-    // Init temp test variables
-    float3 decalSize = { 4.0f, 4.0f, 4.0f };
-    float3x3 decalRot = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
-    float3 decalPos = { 13.0f, 0.0f, 13.0f };
-
-    // Test rotation
-    float angle = PI * 0.5f;
-    float3 axis = { 0.0f, 1.0f, 0.0f };
-    decalRot = transpose(Utils::rotateMatrix(angle, axis));
-   
-    angle = PI * -0.25f;
-    axis = float3(0.0f, 0.0f, 1.0f);
-    //decalRot = Utils::rotateMatrix(angle, axis);
-
-    //float3 ddx = ddx_coarse(vsPosition).xyz;
-    float3 posNeighborX = vsPosition.xyz;
-
-    //float3 ddy = ddy_coarse(vsPosition).xyz;
-    float3 posNeighborY = vsPosition.xyz;
-
-    // Apply projection, discard if outside its bb
-    float3 localPos = worldPosition - decalPos;
-    localPos = mul(localPos, decalRot);
-    float3 decalUVW = localPos / decalSize;
-    decalUVW *= -1;
-
-    if (decalUVW.x >= -1.0f && decalUVW.x <= 1.0f &&
-        decalUVW.y >= -1.0f && decalUVW.y <= 1.0f &&
-        decalUVW.z >= -1.0f && decalUVW.z <= 1.0f)
-    {
-
-        // Get current decal textures
-        float2 decalUV = saturate(decalUVW.xy * 0.5f + 0.5f);
-        Texture2D decalAlbedoMap = sys_inTex_albedo;
-        //Texture2D decalNormalMap = sys_inTex_normals;
-
-        // Calculate gradient
-        float3 decalPosNeighborX = posNeighborX - decalPos;
-        decalPosNeighborX = mul(decalPosNeighborX, decalRot);
-        decalPosNeighborX = decalPosNeighborX / decalSize;
-        decalPosNeighborX.y *= -1;
-        float2 uvDX = saturate(decalPosNeighborX.xy * 0.5f + 0.5f) - decalUV;
-
-        float3 decalPosNeighborY = posNeighborY - decalPos;
-        decalPosNeighborY = mul(decalPosNeighborY, decalRot);
-        decalPosNeighborY = decalPosNeighborY / decalSize;
-        decalPosNeighborY.y *= -1;
-        float2 uvDY = saturate(decalPosNeighborY.xy * 0.5f + 0.5f) - decalUV;
-
-        float4 decalAlbedo = decalAlbedoMap.SampleGrad(ss, decalUV, uvDX, uvDY);
-        //float3 decalNormalTS = { 0.0f, 0.0f, 0.0f };
-
-        float decalBlend = decalAlbedo.w + CB_DecalData.data[0].position.x;
-
-       // decalNormalTS = decalNormalTS * 2.0f - 1.0f;
-       // decalNormalTS.z *= -1.0f;
-       // float3 decalNormalWS = mul(decalNormalTS, decalRot);
-
-        // Blend the decal properties with the material properties        
-        payload.color = 0.f;
-        payload.recursionDepth = 0;
-        shade(worldPosition, worldNormal, albedoColor, 1.0f, 0.01f, 0.321f, payload);
-        lOutput[launchIndex] = payload.color;
-
-    } // if decal
-
-    ////===========DECALS END  ===========//
-
-    //===========DECALS START2===========//
-    // Init temp test variables
-    //decalSize = float3(2.0f, 2.0f, 2.0f);
-    //decalRot = float3x3(float3(1.0f, 0.0f, 0.0f), float3(0.0f, 1.0f, 0.0f), float3(0.0f, 0.0f, 1.0f));
-    //decalPos = float3(2.0f, 0.0f, 6.0f);
-
-    //// Test rotation
-    //angle = PI * -0.25;
-    //axis = float3(1.0f, 0.0f, 0.0f);
-    //decalRot = Utils::rotateMatrix(angle, axis);
-   
-    ////angle = PI;
-    ////axis = float3(0.0f, 0.0f, 1.0f);
-    ////decalRot = Utils::rotateMatrix(angle, axis);
-
-    ////float3 ddx = ddx_coarse(vsPosition).xyz;
-    //posNeighborX = vsPosition.xyz;
-
-    ////float3 ddy = ddy_coarse(vsPosition).xyz;
-    //posNeighborY = vsPosition.xyz;
-
-    //// Apply projection, discard if outside its bb
-    //localPos = worldPosition - decalPos;
-    //localPos = mul(localPos, transpose(decalRot));
-    //decalUVW = localPos / decalSize;
-    //decalUVW *= -1;
-
-    //if (decalUVW.x >= -1.0f && decalUVW.x <= 1.0f &&
-    //    decalUVW.y >= -1.0f && decalUVW.y <= 1.0f &&
-    //    decalUVW.z >= -1.0f && decalUVW.z <= 1.0f)
-    //{
-
-    //    // Get current decal textures
-    //    float2 decalUV = saturate(decalUVW.xy * 0.5f + 0.5f);
-    //    Texture2D decalAlbedoMap = sys_inTex_albedo;
-    //    //Texture2D decalNormalMap = sys_inTex_normals;
-
-    //    // Calculate gradient
-    //    float3 decalPosNeighborX = posNeighborX - decalPos;
-    //    decalPosNeighborX = mul(decalPosNeighborX, transpose(decalRot));
-    //    decalPosNeighborX = decalPosNeighborX / decalSize;
-    //    decalPosNeighborX.y *= -1;
-    //    float2 uvDX = saturate(decalPosNeighborX.xy * 0.5f + 0.5f) - decalUV;
-
-    //    float3 decalPosNeighborY = posNeighborY - decalPos;
-    //    decalPosNeighborY = mul(decalPosNeighborY, transpose(decalRot));
-    //    decalPosNeighborY = decalPosNeighborY / decalSize;
-    //    decalPosNeighborY.y *= -1;
-    //    float2 uvDY = saturate(decalPosNeighborY.xy * 0.5f + 0.5f) - decalUV;
-
-    //    float4 decalAlbedo = decalAlbedoMap.SampleGrad(ss, decalUV, uvDX, uvDY);
-    //    //float3 decalNormalTS = { 0.0f, 0.0f, 0.0f };
-
-    //    float decalBlend = decalAlbedo.w;
-
-    //   // decalNormalTS = decalNormalTS * 2.0f - 1.0f;
-    //   // decalNormalTS.z *= -1.0f;
-    //   // float3 decalNormalWS = mul(decalNormalTS, decalRot);
-
-    //    // Blend the decal properties with the material properties
-    //    float4 diffuseAlbedo = 1.0f;
-    //    diffuseAlbedo.xyz = lerp(diffuseAlbedo.xyz, decalAlbedo.xyz, decalBlend);
-    //    //lOutput[launchIndex] = diffuseAlbedo;
-        
-    //    payload.color = 0.f;
-    //    payload.recursionDepth = 0;
-    //    shade(worldPosition, worldNormal, albedoColor, 1.0f, 0.01f, 0.321f, payload);
-    //    lOutput[launchIndex] = payload.color;
-
-    //} // if decal
-
-    //===========DECALS END  ===========//
+	
+	if (CB_SceneData.nDecals > 0) {
+		float4 totDecalColour = 0.0f;
+		for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+			totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+			if (all(totDecalColour != 0.0f)) {
+				lOutput[launchIndex] = totDecalColour;
+				break;
+			}
+		}
+	}
 
 #else
 	// Fully RT

@@ -298,9 +298,12 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
-			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		if (tempInfo.closestHitIndex != -1) {
+			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat3>(), glm::vec3(5.f, 5.f, 2.f));
 		}
+		/*if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		}*/
 	}
 
 	//Test frustum culling
