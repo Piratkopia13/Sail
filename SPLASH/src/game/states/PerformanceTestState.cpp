@@ -436,7 +436,6 @@ void PerformanceTestState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.candleSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
-	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
 	// Wait for all the systems to finish before starting the removal system
@@ -447,6 +446,8 @@ void PerformanceTestState::updatePerTickComponentSystems(float dt) {
 	// Will probably need to be called last
 	m_componentSystems.entityAdderSystem->update();
 	m_componentSystems.entityRemovalSystem->update();
+	m_componentSystems.octreeAddRemoverSystem->update(dt);
+
 }
 
 void PerformanceTestState::updatePerFrameComponentSystems(float dt, float alpha) {
