@@ -74,7 +74,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	if (camera && lightSetup) {
 		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
 	}
-	m_dxr.updateDecalData(m_decals, m_currNumDecals > 99 ? 100 : m_currNumDecals);
+	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
 

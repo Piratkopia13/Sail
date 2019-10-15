@@ -299,7 +299,16 @@ bool GameState::processInput(float dt) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.closestHitIndex != -1) {
-			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat3>(), glm::vec3(5.f, 5.f, 2.f));
+			/*auto normal = tempInfo.info[tempInfo.closestHitIndex].normal;
+			glm::mat4 rotMat = glm::identity<glm::mat4x4>();
+			if (normal.z != -1.f && normal.z != 1.f) {
+				const glm::vec3 a = normal;
+				const glm::vec3 b = glm::vec3(0.f, 0.f, -1.f);
+				glm::vec3 v = glm::cross(b, a);
+				float angle = acos(glm::dot(b, a) / (glm::length(b) * glm::length(a)));
+				rotMat = glm::rotate(glm::identity<glm::mat4>(), angle, v);
+			}*/
+			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(0.3f, 0.3f, 0.3f));
 		}
 		/*if (tempInfo.info[tempInfo.closestHitIndex].entity) {
 			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");

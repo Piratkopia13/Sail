@@ -3,21 +3,18 @@
 
 float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, float4 payloadColour) {
     DecalData currDecal = CB_DecalData.data[index];
-
     
-    // Init temp test variables
-    float3 decalSize = { 0.3f, 0.3f, 0.005f };
-    float3x3 decalRot = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
-    float3 decalPos = { 13.0f, 0.0f, 13.0f };
-
-    // Test rotation
-    float angle = 0.f;//PI / 2.f;
-    float3 axis = { 1.0f, 0.0f, 0.0f };
-    //decalRot = currDecal.rot;
+    float3x3 rotMat = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
+    if (wNorm.z != -1.f && wNorm.z != 1.f) {
+        float3 b = float3(0.f, 0.f, -1.f);
+        float3 v = cross(b, wNorm);
+        float angle = acos(dot(b, wNorm) / (length(b) * length(wNorm)));
+        rotMat = Utils::rotateMatrix(angle, v);
+    }
 
     float3 pos = currDecal.position;
-    float3x3 rot = decalRot;    
-    float3 size = decalSize;
+    float3x3 rot = rotMat;
+    float3 size = currDecal.size;
 
     //float3 ddx = ddx_coarse(vsPosition).xyz;
     float3 posNeighborX = vsPosition;
@@ -58,7 +55,7 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
         float3 decalNormalTS = decal_texNormal.SampleGrad(ss, decalUV, uvDX, uvDY);
         decalNormalTS = decalNormalTS * 2.0f - 1.0f;
         decalNormalTS.z *= -1.0f;
-        float3 decalNormalWS = mul(decalNormalTS, currDecal.rot);
+        float3 decalNormalWS = mul(decalNormalTS, rot);
         float3 mra = decal_texMetalnessRoughnessAO.SampleGrad(ss, decalUV, uvDX, uvDY);
         float metalness = mra.r;
         float roughness = mra.g;
@@ -71,9 +68,10 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
         decalPayload.recursionDepth = 0;
 
         float3 norm = lerp(wNorm, decalNormalWS, albedoColour.w);
-        shade(wPos, wNorm, payloadColour.rgb, 1.0f, 0.01f, 1.f, decalPayload);
+        shade(wPos, wNorm, payloadColour.rgb, metalness, roughness, ao, decalPayload);
         //colourToReturn = lerp(float4(albedo, 1.0f), decalPayload.color, albedoColour.w);
         colourToReturn = decalPayload.color;
+        // colourToReturn = float4(currDecal.rot[0].rgb, 1.0f);
         //colourToReturn = albedoColour;
     }
 

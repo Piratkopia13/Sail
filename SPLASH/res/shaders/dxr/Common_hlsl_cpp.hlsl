@@ -30,7 +30,7 @@ namespace DXRShaderCommon {
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
 #define MAX_NUM_METABALLS 200
-#define MAX_DECALS 100
+#define MAX_DECALS 500
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
@@ -97,8 +97,7 @@ struct DecalData {
 	float padding0;
     float3 size;
 	float padding1;
-    float3x3 rot;
-	float3 padding2;
+    float4x4 rot;
 };
 struct DecalCBuffer {
     DecalData data[MAX_DECALS];

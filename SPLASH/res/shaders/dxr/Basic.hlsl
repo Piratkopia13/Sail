@@ -132,19 +132,21 @@ void rayGen() {
 
 	float metaballDepth = payload_metaball.closestTvalue - CB_SceneData.nearZ * 4;// (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4)* projectionA;
 
-	if (metaballDepth <= linearDepth)
-		lOutput[launchIndex] = payload_metaball.color;
-	else {
-		lOutput[launchIndex] = payload.color;
-	}
 	
-	if (CB_SceneData.nDecals > 0) {
-		float4 totDecalColour = 0.0f;
-		for (uint i = 0; i < CB_SceneData.nDecals; i++) {
-			totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
-			if (all(totDecalColour != 0.0f)) {
-				lOutput[launchIndex] = totDecalColour;
-				break;
+
+	if (metaballDepth <= linearDepth) {
+		lOutput[launchIndex] = payload_metaball.color;	
+	} else {
+		lOutput[launchIndex] = payload.color;
+
+		if (CB_SceneData.nDecals > 0) {
+			float4 totDecalColour = 0.0f;
+			for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+				totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+				if (!all(totDecalColour == 0.0f)) {
+					lOutput[launchIndex] = totDecalColour;
+					break;
+				}
 			}
 		}
 	}
