@@ -417,6 +417,13 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 		m_poppedThisFrame = true;
 	}
 
+	// Set bot target to null when player is dead
+	auto entities = m_componentSystems.aiSystem->getEntities();
+	for (int i = 0; i < entities.size(); i++) {
+		auto aiComp = entities[i]->getComponent<AiComponent>();
+		aiComp->setTarget(nullptr);
+	}
+
 	return true;
 }
 
