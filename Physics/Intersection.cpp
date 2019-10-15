@@ -107,7 +107,7 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
-		e[1] = glm::vec3(0.f, 1.f, 0.f);
+		e[1] = glm::vec3(0.f, 1.f, 0.f); 
 		e[2] = glm::vec3(0.f, 0.f, 1.f);
 
 		glm::vec3 f[3];
@@ -144,12 +144,12 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 		glm::vec3 a = triNormal;
 		glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
 		float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-		if (min(p.x, min(p.y, p.z)) > r || max(p.x, max(p.y, p.z)) < -r) {
+		if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
 			return false;
 		}
 		else {
 			//Save depth along axis
-			float tempDepth = min(r - min(p.x, min(p.y, p.z)), max(p.x, max(p.y, p.z)) + r);
+			float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
 			if (tempDepth < depth) {
 				depth = tempDepth;
 				axis = a;
