@@ -11,13 +11,13 @@
 
 
 Octree::Octree(Model* boundingBoxModel) {
-	
+
 	m_boundingBoxModel = boundingBoxModel;
 	m_softLimitMeshes = 4;
 	m_minimumNodeHalfSize = 4.0f;
 
 	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	
+
 	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* tempBoundingBox = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	tempBoundingBox->setPosition(glm::vec3(0.0f));
@@ -40,7 +40,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 	Node newBaseNode;
 	const BoundingBox* baseNodeBB = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	
+
 	newBaseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 	BoundingBox* newBaseNodeBoundingBox = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	newBaseNodeBoundingBox->setPosition(baseNodeBB->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(x * baseNodeBB->getHalfSize().x * 2.0f, y * baseNodeBB->getHalfSize().y * 2.0f, z * baseNodeBB->getHalfSize().z * 2.0f));
@@ -57,7 +57,7 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 				}
 				else {
 					tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-					
+
 					tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 					BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 					tempChildBoundingBox->setHalfSize(baseNodeBB->getHalfSize());
@@ -136,7 +136,7 @@ bool Octree::addEntityRec(Entity* newEntity, Node* currentNode) {
 							const BoundingBox* currentNodeBB = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							Node tempChildNode;
 							tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-							
+
 							tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
 							BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							tempChildBoundingBox->setHalfSize(currentNodeBB->getHalfSize() / 2.0f);
@@ -221,10 +221,8 @@ void Octree::updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd)
 void Octree::getCollisionData(BoundingBox* entityBoundingBox, Entity* meshEntity, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, std::vector<CollisionInfo>* outCollisionData) {
 	if (Intersection::AabbWithTriangle(*entityBoundingBox, v0, v1, v2)) {
 		CollisionInfo tempInfo;
-		//Calculate normal for triangle
-		glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
-		tempInfo.normal = triNormal;
+		tempInfo.normal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
 		tempInfo.positions[0] = v0;
 		tempInfo.positions[1] = v1;
@@ -384,7 +382,7 @@ void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& ray
 
 		if (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
 			outIntersectionData->closestHit = intersectionDistance;
-			outIntersectionData->closestHitIndex = outIntersectionData->info.size() - 1;
+			outIntersectionData->closestHitIndex = (int)(outIntersectionData->info.size() - 1);
 		}
 	}
 }
@@ -478,7 +476,11 @@ int Octree::frustumCulledDrawRec(const Frustum& frustum, Node* currentNode) {
 
 		//Draw meshes in node
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
-			//TODO: Let the renderer know that this entity should be rendered.
+			// Let the renderer know that this entity should be rendered.
+			auto* cullComponent = currentNode->entities[i]->getComponent<CullingComponent>();
+			if (cullComponent) {
+				cullComponent->isVisible = true;
+			}
 			returnValue++;
 		}
 

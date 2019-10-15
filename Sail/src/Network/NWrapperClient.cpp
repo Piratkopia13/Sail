@@ -78,7 +78,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	unsigned char userID;
 	char charAsInt[4] = { 0 };
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
-	Player currentPlayer{ -1, "" };	// 
+	Player currentPlayer{};	// 
 	int charCounter = 0;			//
 	std::string id_string = "";				//
 	std::string remnants = "";				//

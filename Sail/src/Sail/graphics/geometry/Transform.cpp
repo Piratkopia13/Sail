@@ -125,7 +125,7 @@ void Transform::rotate(const glm::vec3& rotation) {
 void Transform::rotate(const float x, const float y, const float z) {
 	m_data.m_current.m_rotation += glm::vec3(x, y, z);
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
-	m_matNeedsUpdate |= 2;
+	m_matNeedsUpdate |= 2; // TODO: Check this
 	treeNeedsUpdating();
 }
 
@@ -228,6 +228,10 @@ const glm::vec3& Transform::getScale() const {
 
 const glm::vec3 Transform::getInterpolatedTranslation(float alpha) const {
 	return (alpha * m_data.m_current.m_translation) + ((1.0f - alpha) * m_data.m_previous.m_translation);
+}
+
+const glm::quat Transform::getInterpolatedRotation(float alpha) const {
+	return (alpha * m_data.m_current.m_rotationQuat) + ((1.0f - alpha) * m_data.m_previous.m_rotationQuat);
 }
 
 

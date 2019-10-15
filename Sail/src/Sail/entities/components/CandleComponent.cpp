@@ -89,7 +89,7 @@ int CandleComponent::getOwner() const {
 }
 
 int CandleComponent::getDamageTakenLastHit() const {
-	return m_damageTakenLastHit;
+	return m_damageTakenLastHit; // TODO: Check this - implicit cast from float to int
 }
 
 float CandleComponent::getInvincibleTimer() const {

@@ -180,7 +180,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 }
 
 void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs) {
-	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? metaballs.size() : MAX_NUM_METABALLS;
+	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs);
 
 	DXRShaderCommon::SceneCBuffer newData = {};
@@ -195,7 +195,7 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
-	m_sceneCB[m_context->getFrameIndex()]->updateData(&newData, sizeof(newData));
+	m_sceneCB->updateData(&newData, sizeof(newData));
 }
 
 void DXRBase::updateDecalData(const std::vector<DXRShaderCommon::DecalData>& decals) {
@@ -282,7 +282,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	// Set acceleration structure
 	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_DXR_TopBuffer[frameIndex].result->GetGPUVirtualAddress());
 	// Set scene constant buffer
-	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_sceneCB[frameIndex]->getBuffer()->GetGPUVirtualAddress());
+	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_sceneCB->getBuffer()->GetGPUVirtualAddress());
 
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
@@ -407,9 +407,11 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 
 	D3D12_RAYTRACING_GEOMETRY_DESC geomDesc = {};
 	if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
-
-		auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
+		auto& vb = static_cast<DX12VertexBuffer&>(mesh->getVertexBuffer());
 		auto& ib = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer());
+
+		// Make sure vbuffer is initialized
+		vb.init(cmdList);
 
 		geomDesc.Flags = (renderCommand.flags & Renderer::MESH_TRANSPARENT) ? D3D12_RAYTRACING_GEOMETRY_FLAG_NONE : D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 		geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
@@ -549,9 +551,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			unsigned int size = sizeof(DXRShaderCommon::SceneCBuffer);
 			void* initData = malloc(size);
 			memset(initData, 0, size);
-			for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
-				m_sceneCB.emplace_back(std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0));
-			}
+			m_sceneCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
 			free(initData);
 		}
 		// Mesh CB
@@ -559,9 +559,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			unsigned int size = sizeof(DXRShaderCommon::MeshCBuffer);
 			void* initData = malloc(size);
 			memset(initData, 0, size);
-			for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
-				m_meshCB.emplace_back(std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0));
-			}
+			m_meshCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
 			free(initData);
 		}
 		// Decal CB
@@ -606,64 +604,64 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				handles.indexBufferHandle = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getBuffer()->GetGPUVirtualAddress();
 			}
 
-		auto& materialSettings = mesh->getMaterial()->getPBRSettings();
+			auto& materialSettings = mesh->getMaterial()->getPBRSettings();
 
-		// Three textures
-		for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-			DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
-			bool hasTexture = (textureNum == 0) ? materialSettings.hasAlbedoTexture : materialSettings.hasNormalTexture;
-			hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
-			if (hasTexture) {
-				// Make sure textures have initialized / uploaded their data to its default buffer
-				if (!texture->hasBeenInitialized()) {
-					texture->initBuffers(cmdList, textureNum * blasIndex);
+			// Three textures
+			for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+				DX12Texture* texture = static_cast<DX12Texture*>(mesh->getMaterial()->getTexture(textureNum));
+				bool hasTexture = (textureNum == 0) ? materialSettings.hasAlbedoTexture : materialSettings.hasNormalTexture;
+				hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
+				if (hasTexture) {
+					// Make sure textures have initialized / uploaded their data to its default buffer
+					if (!texture->hasBeenInitialized()) {
+						texture->initBuffers(cmdList, textureNum * blasIndex);
+					}
+
+						// Copy SRV to DXR heap
+						m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+						handles.textureHandles[textureNum] = gpuHandle;
+					}
+					// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
+					cpuHandle.ptr += m_heapIncr;
+					gpuHandle.ptr += m_heapIncr;
 				}
 
-					// Copy SRV to DXR heap
-					m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-					handles.textureHandles[textureNum] = gpuHandle;
-				}
-				// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
-				cpuHandle.ptr += m_heapIncr;
-				gpuHandle.ptr += m_heapIncr;
-			}
-
-		// Update per mesh data
-		// Such as flags telling the shader to use indices, textures or not
-		unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
-		DXRShaderCommon::MeshData meshData;
-		meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
-		meshData.flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData.flags;
-		meshData.flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
-		meshData.flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData.flags;
-		meshData.color = materialSettings.modelColor;
-		meshData.metalnessRoughnessAoScales.r = materialSettings.metalnessScale;
-		meshData.metalnessRoughnessAoScales.g = materialSettings.roughnessScale;
-		meshData.metalnessRoughnessAoScales.b = materialSettings.aoScale;
-		m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
+      // Update per mesh data
+      // Such as flags telling the shader to use indices, textures or not
+      unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
+      DXRShaderCommon::MeshData meshData;
+      meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+      meshData.flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData.flags;
+      meshData.flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
+      meshData.flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData.flags;
+      meshData.color = materialSettings.modelColor;
+      meshData.metalnessRoughnessAoScales.r = materialSettings.metalnessScale;
+      meshData.metalnessRoughnessAoScales.g = materialSettings.roughnessScale;
+      meshData.metalnessRoughnessAoScales.b = materialSettings.aoScale;
+      m_meshCB->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 
 			m_rtMeshHandles.emplace_back(handles);
 		} else {
 			m_rtMeshHandles.emplace_back(handles);
-			static float time = 0;
-			static float totalTime = 0;
-			static float inc = 0.001;
+			static float time = 0.f;
+			static float totalTime = 0.f;
+			static float inc = 0.001f;
 			time += inc;
 			totalTime += abs(inc);
 
-			if (time > 1) {
-				time = 1;
-				inc *= -1;
-			} else if(time < 0) {
-				time = 0;
-				inc *= -1;
+			if (time > 1.f) {
+				time = 1.f;
+				inc *= -1.f;
+			} else if(time < 0.f) {
+				time = 0.f;
+				inc *= -1.f;
 			}
 
 			//float r = ((int)time % 10) / 10.0f;
 
 			meshData.flags = DXRShaderCommon::MESH_NO_FLAGS;
-			meshData.color = glm::vec4((float)(metaballIndex++), 1-time, totalTime, 1);
-			m_meshCB[frameIndex]->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
+			meshData.color = glm::vec4((float)(metaballIndex++), 1.f - time, totalTime, 1.f);
+			m_meshCB->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 		}
 
 		blasIndex++;
@@ -713,7 +711,7 @@ void DXRBase::updateShaderTables() {
 			m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
 
-		DXRUtils::ShaderTableBuilder tableBuilder(m_bottomBuffers[frameIndex].size() * 2 /* * 2 for shadow rays (all NULL) */, m_rtPipelineState.Get(), 64U);
+		DXRUtils::ShaderTableBuilder tableBuilder((UINT)m_bottomBuffers[frameIndex].size() * 2U /* * 2 for shadow rays (all NULL) */, m_rtPipelineState.Get(), 64U);
 
 		unsigned int blasIndex = 0;
 		for (auto& it : m_bottomBuffers[frameIndex]) {
@@ -724,7 +722,7 @@ void DXRBase::updateShaderTables() {
 				tableBuilder.addShader(m_hitGroupMetaBallName);//Set the shadergroup to use
 				m_localSignatureHitGroup_metaball->doInOrder([&](const std::string& parameterName) {
 					if (parameterName == "MeshCBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
+						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
 						tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
 					}
 					else if (parameterName == "MetaballPositions") {
@@ -745,7 +743,7 @@ void DXRBase::updateShaderTables() {
 						D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
 						tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[blasIndex].indexBufferHandle : nullAddr, blasIndex * 2);
 					} else if (parameterName == "MeshCBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB[frameIndex]->getBuffer()->GetGPUVirtualAddress();
+						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
 						tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
 					} else if (parameterName == "Textures") {
 						// Three textures

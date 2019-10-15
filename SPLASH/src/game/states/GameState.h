@@ -1,28 +1,6 @@
 #pragma once
-
 #include "Sail.h"
-
-class AiSystem;
-class AnimationSystem;
-class CandleSystem;
-class EntityAdderSystem;
-class EntityRemovalSystem;
-class LifeTimeSystem;
-class LightSystem;
-class OctreeAddRemoverSystem;
-class MovementSystem;
-class MovementPostCollisionSystem;
-class CollisionSystem;
-class SpeedLimitSystem;
-class PrepareUpdateSystem;
-class GunSystem;
-class ProjectileSystem;
-class LevelGeneratorSystem;
-class GameInputSystem;
-class NetworkReceiverSystem;
-class NetworkSenderSystem;
-class AudioSystem;
-class RenderSystem;
+#include "Sail/entities/systems/SystemDeclarations.h"
 
 class NetworkSerializedPackageEvent;
 
@@ -52,10 +30,7 @@ private:
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImguiConsole(float dt);
-	bool renderImguiProfiler(float dt);
-	bool renderImGuiRenderSettings(float dt);
-	bool renderImGuiLightDebug(float dt);
+	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
 
@@ -64,37 +39,10 @@ private:
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
-	Entity::SPtr createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos);
-
 	void loadAnimations();
 	void initAnimations();
 
 private:
-	struct Systems {
-		AiSystem* aiSystem = nullptr;
-		AnimationSystem* animationSystem = nullptr;
-		CandleSystem* candleSystem = nullptr;
-		EntityAdderSystem* entityAdderSystem = nullptr;
-		EntityRemovalSystem* entityRemovalSystem = nullptr;
-		LifeTimeSystem* lifeTimeSystem = nullptr;
-		LightSystem* lightSystem = nullptr;
-		OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
-		UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
-		PrepareUpdateSystem* prepareUpdateSystem = nullptr;
-		GunSystem* gunSystem = nullptr;
-		ProjectileSystem* projectileSystem = nullptr;
-		GameInputSystem* gameInputSystem = nullptr;
-		NetworkReceiverSystem* networkReceiverSystem = nullptr;
-		NetworkSenderSystem* networkSenderSystem = nullptr;
-		AudioSystem* audioSystem = nullptr;
-		RenderSystem* renderSystem = nullptr;
-		LevelGeneratorSystem* levelGeneratorSystem = nullptr;
-		MovementSystem* movementSystem = nullptr;
-		MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
-		CollisionSystem* collisionSystem = nullptr;
-		SpeedLimitSystem* speedLimitSystem = nullptr;
-	};
-
 	Application* m_app;
 	// Camera
 	PerspectiveCamera m_cam;
@@ -103,37 +51,23 @@ private:
 	Entity* m_player;
 
 	void createTestLevel(Shader* shader, Model* boundingBoxModel);
-	void setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID);
 	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
 	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
+	const std::string teleportToMap();
 
 	Systems m_componentSystems;
 	LightSetup m_lights;
-	ConsoleCommands m_cc;
 	Profiler m_profiler;
+	RenderSettingsWindow m_renderSettingsWindow;
+	LightDebugWindow m_lightDebugWindow;
 
 	size_t m_currLightIndex;
-
-	// ImGUI profiler data
-	float m_profilerTimer = 0.f;
-	int m_profilerCounter = 0;
-	float* m_virtRAMHistory;
-	float* m_physRAMHistory;
-	float* m_cpuHistory;
-	float* m_vramUsageHistory;
-	float* m_frameTimesHistory;
-	std::string m_virtCount;
-	std::string m_physCount;
-	std::string m_vramUCount;
-	std::string m_cpuCount;
-	std::string m_ftCount;
 
 	bool m_paused = false;
 	bool m_isSingleplayer = true;
 	
 	Octree* m_octree;
-	bool m_disableLightComponents;
 	bool m_showcaseProcGen;
 
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyWritingMask;

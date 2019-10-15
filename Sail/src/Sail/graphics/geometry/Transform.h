@@ -1,10 +1,6 @@
 #pragma once
 #include <glm/vec3.hpp>
 
-
-#define PI 3.14159265359
-#define PI_2 6.28318530718
-
 // Structs for storing transform data from two consecutive updates
 // so that they can be interpolated between.
 // Should be optimized more in the future.
@@ -82,6 +78,7 @@ public:
 	const glm::vec3& getScale() const;
 
 	const glm::vec3 getInterpolatedTranslation(float alpha) const;
+	const glm::quat getInterpolatedRotation(float alpha) const;
 
 	// Matrix used by collision etc.
 	glm::mat4 getMatrix();
