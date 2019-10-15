@@ -25,7 +25,7 @@ bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aab
 	return true;
 }
 
-bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
 
 	glm::vec3 center = aabb.getPosition();
 	//Calculate normal for triangle
@@ -77,7 +77,7 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v0, cons
 	return true;
 }
 
-bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth) {
+bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth) {
 	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
 	
 	float depth = INFINITY;
@@ -151,7 +151,7 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 	return true;
 }
 
-bool Intersection::AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, const float distance) {
+bool Intersection::AabbWithPlane(const BoundingBox& aabb, const glm::vec3& normal, const float distance) {
 	const glm::vec3* corners = aabb.getCorners();
 	
 	const float distFromPlaneAlongNormal[] = {
@@ -176,7 +176,7 @@ bool Intersection::AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, con
 	return minDist * maxDist < 0.0f;
 }
 
-bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
+bool Intersection::AabbWithSphere(const BoundingBox& aabb, const Sphere& sphere) {
 	const glm::vec3* corners = aabb.getCorners();
 
 	// Find the point on the aabb closest to the sphere
@@ -194,7 +194,7 @@ bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
 	return (distSquared < sphere.radius * sphere.radius);
 }
 
-bool Intersection::AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl) {
+bool Intersection::AabbWithVerticalCylinder(const BoundingBox& aabb, const VerticalCylinder& cyl) {
 	const glm::vec3* corners = aabb.getCorners();
 
 	float yPosDifference = aabb.getPosition().y - cyl.position.y;
@@ -607,7 +607,7 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 	return returnValue;
 }
 
-bool Intersection::FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& normal, const float distance) {
+bool Intersection::FrustumPlaneWithAabb(const BoundingBox& aabb, const glm::vec3& normal, const float distance) {
 	const glm::vec3* corners = aabb.getCorners();
 
 	// Find point on positive side of plane
@@ -619,7 +619,7 @@ bool Intersection::FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& norm
 	return false;
 }
 
-bool Intersection::FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb) {
+bool Intersection::FrustumWithAabb(const Frustum& frustum, const BoundingBox& aabb) {
 	for (int i = 0; i < 6; i++) {
 		if (!FrustumPlaneWithAabb(aabb, glm::vec3(frustum.planes[i].x, frustum.planes[i].y, frustum.planes[i].z), frustum.planes[i].w)) {
 			//Aabb is on the wrong side of a plane - it is outside the frustum.
