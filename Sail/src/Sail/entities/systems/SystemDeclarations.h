@@ -17,6 +17,7 @@ class GunSystem;
 class LevelGeneratorSystem;
 class LifeTimeSystem;
 class LightSystem;
+class LightListSystem;
 class MetaballSubmitSystem;
 class ModelSubmitSystem;
 class MovementPostCollisionSystem;
@@ -46,6 +47,7 @@ struct Systems {
 	LevelGeneratorSystem* levelGeneratorSystem = nullptr;
 	LifeTimeSystem* lifeTimeSystem = nullptr;
 	LightSystem* lightSystem = nullptr;
+	LightListSystem* lightListSystem = nullptr;
 	MetaballSubmitSystem* metaballSubmitSystem = nullptr;
 	ModelSubmitSystem* modelSubmitSystem = nullptr;
 	MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
