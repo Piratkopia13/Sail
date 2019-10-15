@@ -3,9 +3,20 @@
 
 float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, float4 payloadColour) {
     DecalData currDecal = CB_DecalData.data[index];
+
+    // AABB early return test
+    float3 minPos = currDecal.position - currDecal.halfSize;
+    float3 maxPos = currDecal.position + currDecal.halfSize;
+    float4 colourToReturn = 0.f;
+    if (wPos.x < minPos.x || wPos.x > maxPos.x ||
+        wPos.y < minPos.y || wPos.y > maxPos.y ||
+        wPos.z < minPos.z || wPos.z > maxPos.z) {
+        return colourToReturn;
+    }
     
+    // Calculated per pixel to eliminate texture stretching
     float3x3 rotMat = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
-    if (wNorm.z != -1.f && wNorm.z != 1.f) {
+    if (abs(wNorm.z) != 1.f) {
         float3 b = float3(0.f, 0.f, -1.f);
         float3 v = cross(b, wNorm);
         float angle = acos(dot(b, wNorm) / (length(b) * length(wNorm)));
@@ -14,7 +25,7 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
 
     float3 pos = currDecal.position;
     float3x3 rot = rotMat;
-    float3 size = currDecal.size;
+    float3 size = currDecal.halfSize * 2.f;
 
     //float3 ddx = ddx_coarse(vsPosition).xyz;
     float3 posNeighborX = vsPosition;
@@ -25,10 +36,8 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
     // Apply projection, discard if outside its bb
     float3 localPos = wPos - pos;
     localPos = mul(localPos, rot);
-    float3 decalUVW = localPos / size;
+    float3 decalUVW = localPos * size;
     decalUVW *= -1;
-
-    float4 colourToReturn = 0.f;
 
     if (decalUVW.x >= -1.0f && decalUVW.x <= 1.0f &&
         decalUVW.y >= -1.0f && decalUVW.y <= 1.0f &&
@@ -41,13 +50,13 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
         // Calculate gradient
         float3 decalPosNeighborX = posNeighborX - pos;
         decalPosNeighborX = mul(decalPosNeighborX, rot);
-        decalPosNeighborX = decalPosNeighborX / size;
+        decalPosNeighborX = decalPosNeighborX * size;
         decalPosNeighborX.y *= -1;
         float2 uvDX = saturate(decalPosNeighborX.xy * 0.5f + 0.5f) - decalUV;
 
         float3 decalPosNeighborY = posNeighborY - pos;
         decalPosNeighborY = mul(decalPosNeighborY, rot);
-        decalPosNeighborY = decalPosNeighborY / size;
+        decalPosNeighborY = decalPosNeighborY * size;
         decalPosNeighborY.y *= -1;
         float2 uvDY = saturate(decalPosNeighborY.xy * 0.5f + 0.5f) - decalUV;
 

@@ -143,11 +143,11 @@ void DX12RaytracingRenderer::submitNonMesh(RenderCommandType type, Material* mat
 	}
 }
 
-void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& size) {
+void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
 	DXRShaderCommon::DecalData decalData;
 	decalData.position = pos;
 	decalData.rot = rot;
-	decalData.size = size;
+	decalData.halfSize = halfSize;
 	m_decals[m_currNumDecals % MAX_DECALS] = decalData;
 	m_currNumDecals++;
 }

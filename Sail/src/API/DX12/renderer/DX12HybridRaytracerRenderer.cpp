@@ -31,8 +31,8 @@ void DX12HybridRaytracerRenderer::submitNonMesh(RenderCommandType type, Material
 	m_rendererRaytrace->submitNonMesh(type, material, modelMatrix, flags);
 }
 
-void DX12HybridRaytracerRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& size) {
-	m_rendererRaytrace->submitDecal(pos, rot, size);
+void DX12HybridRaytracerRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
+	m_rendererRaytrace->submitDecal(pos, rot, halfSize);
 }
 
 void DX12HybridRaytracerRenderer::setLightSetup(LightSetup* lightSetup) {

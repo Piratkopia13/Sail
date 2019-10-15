@@ -308,7 +308,8 @@ bool GameState::processInput(float dt) {
 				float angle = acos(glm::dot(b, a) / (glm::length(b) * glm::length(a)));
 				rotMat = glm::rotate(glm::identity<glm::mat4>(), angle, v);
 			}*/
-			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(0.5f));
+			// Halfsize = (1/0.5)*0.5 = 2/0.5 = 1
+			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.f));
 		}
 		/*if (tempInfo.info[tempInfo.closestHitIndex].entity) {
 			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");

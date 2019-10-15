@@ -95,7 +95,7 @@ struct MeshCBuffer {
 struct DecalData {
     float3 position;
 	float padding0;
-    float3 size;
+    float3 halfSize;
 	float padding1;
     float4x4 rot;
 };
