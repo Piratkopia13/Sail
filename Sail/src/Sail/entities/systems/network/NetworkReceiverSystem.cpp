@@ -128,7 +128,7 @@ void NetworkReceiverSystem::update(float dt) {
 		// Recieve 'one-time' events
 		__int32 eventSize;
 		Netcode::MessageType eventType;
-		__int32 netObjectID;
+		Netcode::NetworkObjectID netObjectID;
 		ar(eventSize);
 
 		for (int i = 0; i < eventSize; i++) {
@@ -141,9 +141,10 @@ void NetworkReceiverSystem::update(float dt) {
 				playerJumped(netObjectID);
 			} 
 			else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {
-				ar(netObjectID);
+				//ar(netObjectID);
 
-				waterHitPlayer(netObjectID);
+
+				//waterHitPlayer(netObjectID);
 			}
 			else if (eventType == Netcode::MessageType::SPAWN_PROJECTILE) {
 				Archive::loadVec3(ar, gunPosition);

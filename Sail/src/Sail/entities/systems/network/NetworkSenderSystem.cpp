@@ -150,14 +150,16 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	case Netcode::MessageType::PLAYER_JUMPED: 
 	{
 		// Get netObjectID so that all connected applications execute the target behavior for the same entity
-		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
+		unsigned __int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
 		(*ar)(NetObjectID);	// Send 
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		__int32 NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
-		(*ar)(NetObjectID);	// Send 
+		//Netcode::NetworkObjectID NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
+		//(*ar)(3);	// Send 1
+		//(*ar)(NetObjectID);
+		//(*ar)('3');
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
