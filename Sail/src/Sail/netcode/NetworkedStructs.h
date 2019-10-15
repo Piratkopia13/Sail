@@ -32,6 +32,7 @@ namespace Netcode {
 		PLAYER_JUMPED = 5,
 		WATER_HIT_PLAYER = 6,
 		PLAYER_DIED = 7,
+		PLAYER_DISCONNECT = 8, 
 		EMPTY = 69
 	};
 

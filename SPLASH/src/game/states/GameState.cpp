@@ -260,6 +260,8 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
+	unsigned char tempPid = playerID;
+	std::cout << "Player ID: " << std::to_string((unsigned int)tempPid) << "\n";
 
 
 	// Allocating memory for profiler
@@ -322,7 +324,8 @@ bool GameState::processInput(float dt) {
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
-		m_componentSystems.renderSystem->toggleHitboxes();
+		//m_componentSystems.renderSystem->toggleHitboxes();
+		Logger::Log("NrOfPlayer: " + std::to_string(NWrapperSingleton::getInstance().getPlayers().size()));
 	}
 
 	//Test ray intersection
@@ -420,6 +423,7 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
+	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
 
 	return true;
 }
@@ -448,6 +452,16 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 		m_poppedThisFrame = true;
 	}
 
+	return true;
+}
+
+bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
+	//NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+	//	Netcode::MessageType::PLAYER_DISCONNECT,
+	//	nullptr
+	//);
+	Logger::Log(std::to_string(event.getPlayerID()));
+	Logger::Log("NrOfPlayer: " + std::to_string(NWrapperSingleton::getInstance().getPlayers().size()));
 	return true;
 }
 

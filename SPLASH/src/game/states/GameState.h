@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Sail.h"
+#include "../events/NetworkDisconnectEvent.h"
 
 class AiSystem;
 class AnimationSystem;
@@ -51,6 +52,8 @@ private:
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
+	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
+
 	bool renderImguiProfiler(float dt);
 	bool renderImGuiRenderSettings(float dt);
 	bool renderImGuiLightDebug(float dt);

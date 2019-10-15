@@ -28,4 +28,5 @@ private:
 	void playerJumped(Netcode::NetworkObjectID id);
 	void waterHitPlayer(Netcode::NetworkObjectID id);
 	void playerDied(Netcode::NetworkObjectID id);
+	void playerDisconnect(Netcode::NetworkObjectID id);
 };

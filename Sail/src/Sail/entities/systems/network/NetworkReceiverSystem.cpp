@@ -152,6 +152,10 @@ void NetworkReceiverSystem::update(float dt) {
 
 				EntityFactory::CreateProjectile(gunPosition, gunVelocity);
 			}
+			else if (eventType == Netcode::MessageType::PLAYER_DISCONNECT) {
+				ar(netObjectID);
+				playerDisconnect(netObjectID);
+			}
 		}
 
 
@@ -282,7 +286,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
-	// How do i trigger a jump from here?
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			e->queueDestruction();
@@ -290,5 +293,6 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 	}
 }
 
-
-
+void NetworkReceiverSystem::playerDisconnect(Netcode::NetworkObjectID id) {
+	std::cout << "Receiver Player Disconnect: " << id << "\n";
+}
