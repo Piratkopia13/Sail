@@ -115,8 +115,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
 			//		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
-					// Add networkcomponent for jump 
-					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(Netcode::MessageType::PLAYER_JUMPED, e);
+				//	// Add networkcomponent for jump 
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_JUMPED,
+						nullptr	// Don't need to send id that 'we' jumped, it is deducable
+					);
 					m_gameDataTracker->logJump();
 				}
 				m_wasSpacePressed = true;

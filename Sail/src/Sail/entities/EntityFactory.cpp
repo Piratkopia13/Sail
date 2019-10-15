@@ -190,7 +190,6 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	e->addComponent<TransformComponent>(pos + randPos);
 	if (hasLocalOwner == true) {
 		e->addComponent<LocalOwnerComponent>(ownersNetId);
-		
 	}
 	else {
 		e->addComponent<OnlineOwnerComponent>(ownersNetId);

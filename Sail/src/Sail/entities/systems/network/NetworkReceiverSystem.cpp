@@ -142,32 +142,53 @@ void NetworkReceiverSystem::update(float dt) {
 		Netcode::NetworkObjectID netObjectID;
 		ar(eventSize);
 
+
 		for (int i = 0; i < eventSize; i++) {
 			// Handle-Single-Frame events
 			ar(eventType);
+			ar(netObjectID);
 
 			if (eventType == Netcode::MessageType::PLAYER_JUMPED) {
-				ar(netObjectID);
-
 				playerJumped(netObjectID);
 			} 
 			else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {	
-				ar(netObjectID);
+				if (static_cast<unsigned char>(netObjectID >> 18) != m_playerID) {
 
-				waterHitPlayer(netObjectID);
+					ar(netObjectID);	// Find out which player was hit
+
+					if (NWrapperSingleton::getInstance().isHost()) {
+						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+							Netcode::MessageType::WATER_HIT_PLAYER,
+							SAIL_NEW Netcode::MessageDataWaterHitPlayer{
+								netObjectID
+							}
+						);
+					}
+
+					waterHitPlayer(netObjectID);
+				}
 			}
 			else if (eventType == Netcode::MessageType::SPAWN_PROJECTILE) {
-				Archive::loadVec3(ar, gunPosition);
-				Archive::loadVec3(ar, gunVelocity);
+				// If the message was sent from me but rerouted back from the host, ignore it.
+				unsigned char wtf = static_cast<unsigned char>(netObjectID >> 18);
+				std::cout << "I (" << (unsigned __int32)m_playerID << ")" << " think (" << (unsigned __int32)wtf << ") sent this originally\n";
+				
+				if (static_cast<unsigned char>(netObjectID >> 18) != m_playerID) { // First byte is always the ID of the player who created the object
+					// If it wasn't sent from me, deal with it
+					Archive::loadVec3(ar, gunPosition);
+					Archive::loadVec3(ar, gunVelocity);
 
-			/*	if (NWrapperSingleton::getInstance().isHost()) {
-					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-						Netcode::MessageType::WATER_HIT_PLAYER,
-						relevantEntity
-					);
-				}*/
+					if (NWrapperSingleton::getInstance().isHost()) {
+						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+							Netcode::MessageType::SPAWN_PROJECTILE,
+							SAIL_NEW Netcode::MessageDataProjectile{
+								gunPosition, gunVelocity
+							}
+						);
+					}
 
-				EntityFactory::CreateProjectile(gunPosition, gunVelocity);
+					EntityFactory::CreateProjectile(gunPosition, gunVelocity);
+				}
 			}
 		}
 
@@ -183,7 +204,6 @@ void NetworkReceiverSystem::update(float dt) {
 */
 void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::EntityType entityType, const glm::vec3& translation) {
 	using namespace Netcode;
-	std::cout << "Someone wanted me to create an entity, ";
 
 	// If the message was sent from me but rerouted back from the host, ignore it.
 	if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
@@ -196,8 +216,6 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 			return;
 		}
 	}
-
-	std::cout << " and i did\n";
 	
 	auto e = ECS::Instance()->createEntity("ReceiverEntity");
 	entities.push_back(e.get());	// Needs to be before 'addComponent' or packets might be lost.
@@ -289,6 +307,7 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 		//	e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+		
 
 		}
 	}

@@ -16,9 +16,12 @@ public:
 	void update(float dt) override;
 
 	const void queueEvent(NetworkSenderEvent* event);
+	void initWithPlayerID(unsigned char playerID);
 	void addEntityToListONLYFORNETWORKRECIEVER(Entity*);
 
 private:
+	Netcode::NetworkObjectID m_playerID;
+
 	void handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);
 	void handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar);
 	std::queue<NetworkSenderEvent*> eventQueue;

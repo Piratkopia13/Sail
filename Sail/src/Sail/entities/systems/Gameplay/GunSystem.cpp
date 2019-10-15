@@ -43,7 +43,10 @@ void GunSystem::update(float dt) {
 					);
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::SPAWN_PROJECTILE,
-						projectile.get()
+						SAIL_NEW Netcode::MessageDataProjectile{
+							gun->position,
+							gun->direction * gun->projectileSpeed
+						}
 					);
 					m_gameDataTracker->logWeaponFired();
 				}
