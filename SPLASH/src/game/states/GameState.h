@@ -27,11 +27,11 @@ public:
 
 private:
 	void initSystems(const unsigned char playerID);
+	void initConsole();
+
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
-
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
 
@@ -39,9 +39,6 @@ private:
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
-
-	void loadAnimations();
-	void initAnimations();
 
 private:
 	Application* m_app;

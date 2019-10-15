@@ -21,7 +21,7 @@ public:
 	void updateMeshGPU(ID3D12GraphicsCommandList4* cmdList);
 	void updateMeshCPU();
 
-	std::vector<Entity*>& getEntities();
+	const std::vector<Entity*>& getEntities() const;
 
 
 private:
