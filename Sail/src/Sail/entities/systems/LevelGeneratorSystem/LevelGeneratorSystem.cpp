@@ -97,7 +97,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					if (tileId == 0) {
-						addTile(Direction::NONE, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+					addTile(Direction::NONE, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
