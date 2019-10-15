@@ -8,7 +8,7 @@ public:
 	GunSystem();
 	~GunSystem();
 
-	void update(float dt);
+	void update(float dt) override;
 
 private:
 	GameDataTracker* m_gameDataTracker = nullptr;

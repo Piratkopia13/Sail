@@ -7,7 +7,7 @@
 #include "api/ImGuiHandler.h"
 
 #include "utils/Timer.h"
-#include "utils/ConsoleCommands.h"
+#include "utils/SailImGui/ConsoleCommands.h"
 #include "utils/StateStorage.h"
 #include "resources/ResourceManager.h"
 #include "resources/loaders/AssimpLoader.h"

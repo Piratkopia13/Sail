@@ -12,13 +12,7 @@
 
 NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 	registerComponent<NetworkReceiverComponent>(true, true, true);
-	
-	// Can create entities with these components:
-	registerComponent<NetworkSenderComponent>(false, true, true);
-	registerComponent<ModelComponent>(false, true, true);
 	registerComponent<TransformComponent>(false, true, true);
-	registerComponent<BoundingBoxComponent>(false, true, true);
-	registerComponent<CollidableComponent>(false, true, true);
 }
 
 NetworkReceiverSystem::~NetworkReceiverSystem() 
@@ -62,7 +56,7 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 		....
 		
 */
-void NetworkReceiverSystem::update(float dt) {
+void NetworkReceiverSystem::update() {
 	using namespace Netcode;
 
 	// Don't push more data to the buffer whilst this function is running

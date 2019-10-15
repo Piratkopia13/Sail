@@ -13,10 +13,8 @@ class NetworkSenderSystem : public BaseComponentSystem {
 public:
 	NetworkSenderSystem();
 	~NetworkSenderSystem();
-	void update(float dt) override;
-
 	const void queueEvent(NetworkSenderEvent* event);
-	
+	void update();
 
 private:
 	void handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);

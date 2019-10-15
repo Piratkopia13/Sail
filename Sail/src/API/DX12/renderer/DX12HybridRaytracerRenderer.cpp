@@ -18,12 +18,16 @@ void DX12HybridRaytracerRenderer::begin(Camera* camera) {
 }
 
 void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) {
-	m_rendererGbuffer->submit(mesh, modelMatrix, flags);
+	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
+		m_rendererGbuffer->submit(mesh, modelMatrix, flags);
+	}
 	m_rendererRaytrace->submit(mesh, modelMatrix, flags);
 }
 
 void DX12HybridRaytracerRenderer::submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) {
-	m_rendererGbuffer->submitNonMesh(type, material, modelMatrix, flags);
+	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
+		m_rendererGbuffer->submitNonMesh(type, material, modelMatrix, flags);
+	}
 	m_rendererRaytrace->submitNonMesh(type, material, modelMatrix, flags);
 }
 

@@ -3,6 +3,7 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/components/MapComponent.h"
+#include <random>
 //#include "..//..//Entity.h"
 LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
 	registerComponent<MapComponent>(true,true,true);
@@ -13,9 +14,6 @@ LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
 }
 
 LevelGeneratorSystem::~LevelGeneratorSystem() {
-}
-
-void LevelGeneratorSystem::update(float dt) {
 }
 
 //generates all necessary data for the world
@@ -51,22 +49,24 @@ void LevelGeneratorSystem::generateMap() {
 		//create rooms from blocks
 		splitBlock();
 		//add rooms with individual type to type-layer
-		int roomCounter = 1;
 		while (!map->rooms.empty()) {
 			rect tile;
 			tile = map->rooms.front();
 			map->rooms.pop();
 			for (int i = 0; i < tile.sizex; i++) {
 				for (int j = 0; j < tile.sizey; j++) {
-					map->tileArr[tile.posx + i][tile.posy + j][1] = roomCounter;
+					map->tileArr[tile.posx + i][tile.posy + j][1] = map->numberOfRooms;
 				}
 			}
 			map->matched.emplace(tile);
-			roomCounter++;
+			map->numberOfRooms++;
 		}
 
 		//adds doors to the layout
 		addDoors();
+
+		// Find spawn points
+		addSpawnPoints();
 
 		//creates tilemap for the level
 		matchRoom();
@@ -78,10 +78,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 
-		float tileSize = 5.0f; //how big a tile should be. Model has size 10, anything smaller scales everything down.
 		int worldWidth = map->xsize;
 		int worldDepth = map->ysize;
-		int tileOffset = 20; //offset from origo in game
 
 		//traverse all positions to find which tile should be there
 		for (int i = 0; i < worldWidth; i++) {
@@ -99,7 +97,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					if (tileId == 0) {
-						addTile(Direction::NONE, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::NONE, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -111,7 +109,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					else if (tileId == 1) {
-						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -123,7 +121,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					else if (tileId == 2) {
-						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -135,8 +133,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					else if (tileId == 3) {
-						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -148,7 +146,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x---------x
 					*/
 					else if (tileId == 4) {
-						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -160,8 +158,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x---------x
 					*/
 					else if (tileId == 5) {
-						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -173,8 +171,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x---------x
 					*/
 					else if (tileId == 6) {
-						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -186,9 +184,9 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x---------x
 					*/
 					else if (tileId == 7) {
-						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -200,7 +198,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					else if (tileId == 8) {
-						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -213,8 +211,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 9) {
-						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -227,8 +225,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 10) {
-						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -241,9 +239,9 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 11) {						
-						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -256,8 +254,8 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 12) {
-						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -270,9 +268,9 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 13) {
-						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -285,9 +283,9 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 14) {
-						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -300,10 +298,10 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 
 					*/
 					else if (tileId == 15) {
-						addTile(Direction::UP, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::RIGHT, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::DOWN, doors, tileModels, tileSize, tileOffset, i, j, bb);
-						addTile(Direction::LEFT, doors, tileModels, tileSize, tileOffset, i, j, bb);
+						addTile(Direction::UP, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::RIGHT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
+						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 				}
 			}
@@ -1030,7 +1028,7 @@ bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
 
 void LevelGeneratorSystem::addTile(Direction dir, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb) {
 
-	auto tileEntity = ECS::Instance()->createEntity("");
+	auto tileEntity = ECS::Instance()->createEntity("Map_tile");
 	if (dir == Direction::RIGHT) {
 		if (hasDoor(Direction::RIGHT, doors)) {
 			tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_DOOR]);
@@ -1079,4 +1077,86 @@ void LevelGeneratorSystem::addTile(Direction dir, int doors, const std::vector<M
 	tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10.f, 1.0f, tileSize / 10.f));
 	tileEntity->addComponent<BoundingBoxComponent>(bb);
 	tileEntity->addComponent<CollidableComponent>();
+	tileEntity->addComponent<CullingComponent>();
+
+}
+
+void LevelGeneratorSystem::addSpawnPoints() {
+	for (auto& e : entities) {
+		MapComponent* map = e->getComponent<MapComponent>();
+
+		std::vector<glm::vec3> availableSpawnPoints;
+
+		// Room IDs
+		int roomBottomLeft = map->tileArr[0][0][1];
+		int roomTopLeft = map->tileArr[0][map->ysize - 1][1];
+		int roomBottomRight = map->tileArr[map->xsize - 1][0][1];
+		int roomTopRight = map->tileArr[map->xsize - 1][map->ysize - 1][1];
+		int roomsLeftEdge = 0;
+		int roomsBottomEdge = 0;
+		int roomsRightEdge = 0;
+		int roomsTopEdge = 0;
+
+		// Adding all corner spawn location first
+		map->spawnPoints.push_back(glm::vec3(0.f, 0.f, 0.f));
+		map->spawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
+		map->spawnPoints.push_back(glm::vec3(0.f, 0.f, ((map->ysize - 1) * map->tileSize)));
+		map->spawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, 0.f));
+
+		// Find all available spawn locations, one in each room
+		for (int x = 0; x < map->xsize; x++) {
+			// Get all rooms on the bottom edge of the map
+			if (map->tileArr[x][0][1] > 0 && map->tileArr[x][0][1] != roomsBottomEdge && map->tileArr[x][0][1] != roomBottomLeft && map->tileArr[x][0][1] != roomBottomRight) {
+				availableSpawnPoints.push_back(glm::vec3(x * map->tileSize, 0.f, 0.f));
+				roomsBottomEdge = map->tileArr[x][0][1];
+			}
+			// Get all rooms on the top edge of the map
+			if (map->tileArr[x][map->ysize - 1][1] > 0 && map->tileArr[x][map->ysize - 1][1] != roomsTopEdge && map->tileArr[x][map->ysize - 1][1] != roomTopLeft && map->tileArr[x][map->ysize - 1][1] != roomTopRight) {
+				availableSpawnPoints.push_back(glm::vec3((x * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
+				roomsTopEdge = map->tileArr[x][map->ysize - 1][1];
+			}
+		}
+
+		// Get all rooms for the right and left edge of the map, except for the corner rooms
+		for (int y = 0; y < map->ysize; y++) {
+			if (map->tileArr[0][y][1] > 0 && map->tileArr[0][y][1] != roomsLeftEdge && map->tileArr[0][y][1] != roomBottomLeft && map->tileArr[0][y][1] != roomTopLeft){
+				availableSpawnPoints.push_back(glm::vec3(0.f, 0.f, (y * map->tileSize)));
+				roomsLeftEdge = map->tileArr[0][y][1];
+			}
+			if (map->tileArr[map->xsize-1][y][1] > 0 && map->tileArr[map->xsize - 1][y][1] != roomsRightEdge && map->tileArr[map->xsize - 1][y][1] != roomBottomRight && map->tileArr[map->xsize - 1][y][1] != roomTopRight) {
+				availableSpawnPoints.push_back(glm::vec3((map->xsize * map->tileSize), 0.f, (y * map->tileSize)));
+				roomsRightEdge = map->tileArr[map->xsize - 1][y][1];
+			}
+		}
+
+		std::default_random_engine generator;
+		
+		// Add the rest of the spawn points in a randomized order
+		while(availableSpawnPoints.size() > 0){
+			std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size() - 1);
+			int randomRoom = distribution(generator);
+			map->spawnPoints.push_back(availableSpawnPoints[randomRoom]);
+			availableSpawnPoints.erase(availableSpawnPoints.begin() + randomRoom);
+		}
+
+	}
+}
+
+// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
+glm::vec3 LevelGeneratorSystem::getSpawnPoint() {
+	glm::vec3 spawnLocation = glm::vec3(-10.f);
+	for (auto& e : entities) {
+		MapComponent* map = e->getComponent<MapComponent>();
+		
+		if (map->spawnPoints.size() > 0) {
+			spawnLocation = map->spawnPoints.front();
+			map->spawnPoints.erase(map->spawnPoints.begin());
+		}
+		else {
+			Logger::Error("Not enough spawn locations.");
+		}
+
+	}
+
+	return spawnLocation;
 }

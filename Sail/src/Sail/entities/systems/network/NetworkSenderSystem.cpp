@@ -51,7 +51,7 @@ NetworkSenderSystem::~NetworkSenderSystem() {
 		....
 
 */
-void NetworkSenderSystem::update(float dt) {
+void NetworkSenderSystem::update() {
 	using namespace Netcode;
 
 	// Loop through networked entities and serialize their data

@@ -12,7 +12,7 @@ public:
 	~AnimationSystem();
 
 	void update(float dt) override;
-	void updatePerFrame(float dt);
+	void updatePerFrame();
 	void toggleInterpolation();
 	const bool getInterpolation();
 	void setInterpolation(const bool interpolation);
