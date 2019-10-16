@@ -234,7 +234,7 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 					paddingTooBig = false;
 				}
 
-				Logger::Log("Hit, depth " + std::to_string(depthWas));
+				Logger::Log("Hit, depth " + std::to_string(depthWas) + " padding " + std::to_string(collision->padding));
 				depth = -1;
 			}
 		}
