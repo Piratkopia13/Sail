@@ -14,6 +14,7 @@ MovementSystem::~MovementSystem() {
 
 void MovementSystem::update(float dt) {
 	for (auto& e : entities) {
+
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		MovementComponent* movement = e->getComponent<MovementComponent>();
 

@@ -55,9 +55,11 @@ public:
 	int seed = 2;//seed for generation
 #else
 #ifdef _DEBUG
-	const static int xsize = 7, ysize = 7; //size of level
+	const static int xsize = 7;
+	const static int ysize = 7; //size of level
 #else
-	const static int xsize = 7, ysize = 7; //size of level
+	const static int xsize = 7;
+	const static int ysize = 7; //size of level
 #endif
 	int tileArr[xsize][ysize][3]; //0 is tileID, 1 is typeID, 2 is door
 	float hallwayThreshold = 0.3f; // percentage of level that can be corridors
@@ -73,6 +75,10 @@ public:
 	float tileSize = 7.f;
 	int tileOffset = 0;
 	std::vector<glm::vec3> spawnPoints;
-	std::queue<rect> chunks, blocks, hallways, rooms, matched;
+	std::queue<rect> chunks;
+	std::queue<rect> blocks;
+	std::queue<rect> hallways;
+	std::queue<rect> rooms;
+	std::queue<rect> matched;
 private:
 };

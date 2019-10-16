@@ -113,22 +113,29 @@ GameState::GameState(StateStack& stack)
 
 	// Player creation
 
-
 	int id = static_cast<int>(playerID);
-	glm::vec3 spawnLocation;
+	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
 		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 	}
-
-	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	if (spawnLocation.x != -1000.f) {
+		m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	}
+	else {
+		Logger::Error("Unable to spawn player because all spawn points have already been used on this map.");
+	}
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
 
 	// Inform CandleSystem of the player
-	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
+	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
+
+#ifdef _PERFORMANCE_TEST
+	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
+#endif
 
 
 #ifdef _DEBUG
@@ -309,6 +316,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
+	m_componentSystems.candleSystem->init(this);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -335,8 +343,9 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
-	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
+	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -372,6 +381,17 @@ void GameState::initConsole() {
 
 	}, "GameState");
 	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
+	console.addCommand("EndGame", [&]() {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::MATCH_ENDED,
+			nullptr
+		);
+		this->requestStackPop();
+		this->requestStackPush(States::EndGame);
+		console.removeAllCommandsWithIdentifier("GameState");
+
+		return std::string("Match ended.");
+		}, "GameState");
 #ifdef _DEBUG
 	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
@@ -404,7 +424,7 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 
-	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
+//	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
@@ -416,30 +436,6 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
-	return true;
-}
-
-bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
-	if ( !m_isSingleplayer ) {
-		m_player->addComponent<SpectatorComponent>();
-		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-		m_player->removeComponent<NetworkSenderComponent>();
-		m_player->removeComponent<GunComponent>();
-		m_player->removeAllChildren();
-		// TODO: Remove all the components that can/should be removed
-	} else {
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
-		m_poppedThisFrame = true;
-	}
-
-	// Set bot target to null when player is dead
-	auto entities = m_componentSystems.aiSystem->getEntities();
-	for (int i = 0; i < entities.size(); i++) {
-		auto aiComp = entities[i]->getComponent<AiComponent>();
-		aiComp->setTarget(nullptr);
-	}
-
 	return true;
 }
 
@@ -500,8 +496,7 @@ bool GameState::renderImgui(float dt) {
 
 bool GameState::prepareStateChange() {
 	if (m_poppedThisFrame) {
-		// Reset network
-		NWrapperSingleton::getInstance().resetNetwork();
+		// Do NOT reset network because we're NOT going to main menu
 	}
 	return true;
 }
@@ -564,6 +559,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
+
+	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
 
 	// Updates the camera
@@ -719,7 +716,13 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	}
 
 	for (size_t i = 0; i < botCount; i++) {
-		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, m_componentSystems.levelGeneratorSystem->getSpawnPoint(), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		if (spawnLocation.x != -1000.f) {
+			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		}
+		else {
+			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
+		}
 	}
 }
 
@@ -829,3 +832,58 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 }
+
+#ifdef _PERFORMANCE_TEST
+void GameState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
+	/* 13 characters that are constantly shooting their guns */
+	for (int i = 0; i < 13; i++) {
+		float spawnOffsetX = -24.f + float(i) * 2.f;
+		float spawnOffsetZ = float(i) * 1.3f;
+		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
+
+		Model* characterModel = &m_app->getResourceManager().getModelCopy("walkTri.fbx", shader);
+		characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+		characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
+		characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
+		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+		characterModel->setIsAnimated(true);
+
+		e->addComponent<ModelComponent>(characterModel);
+		auto animStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
+		auto animComp = e->addComponent<AnimationComponent>(animStack);
+		animComp->currentAnimation = animStack->getAnimation(0);
+		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
+		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+		e->addComponent<CollidableComponent>();
+		e->addComponent<MovementComponent>();
+		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>();
+		e->addComponent<GunComponent>(projectileModel, bbModel);
+
+		/* Audio */
+		e->addComponent<AudioComponent>();
+		Audio::SoundInfo sound{};
+		sound.fileName = "../Audio/guitar.wav";
+		sound.soundEffectLength = 104.0f;
+		sound.volume = 1.0f;
+		sound.playOnce = false;
+		sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		sound.isPlaying = true; // Start playing the sound immediately
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
+
+		// Add candle
+		/*if (i != 12) {
+			auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
+			candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
+			e->addChildEntity(candleEntity);
+		}*/
+
+		/* Movement */
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<SpeedLimitComponent>()->maxSpeed = 6.f;
+
+		m_performanceEntities.push_back(e);
+	}
+}
+#endif
