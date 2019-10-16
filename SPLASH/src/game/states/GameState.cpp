@@ -33,7 +33,6 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
-
 #include <sstream>
 #include <iomanip>
 

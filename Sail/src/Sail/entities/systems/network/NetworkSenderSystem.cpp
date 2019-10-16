@@ -84,7 +84,7 @@ void NetworkSenderSystem::update(float dt) {
 	while (eventQueue.empty() == false) {
 		NetworkSenderEvent* pE = eventQueue.front();		// Fetch
 		handleEvent(pE, &ar);								// Deal with
-		eventQueue.pop();									// Pop
+		eventQueue.pop();									// Pop.
 		delete pE;											// Delete
 	}
 

@@ -65,7 +65,7 @@ private:
 
 	void loadAnimations();
 	void initAnimations();
-
+	void initSystems(const unsigned char playerID);
 private:
 	struct Systems {
 		AiSystem* aiSystem = nullptr;
