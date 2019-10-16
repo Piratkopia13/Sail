@@ -36,6 +36,7 @@ void GunSystem::update(float dt) {
 					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
 					auto e = EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed, true);
+					
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::SPAWN_PROJECTILE,
 						e.get()

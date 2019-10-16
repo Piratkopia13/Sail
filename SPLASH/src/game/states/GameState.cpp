@@ -125,6 +125,10 @@ GameState::GameState(StateStack& stack)
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 
+#ifdef _PERFORMANCE_TEST
+	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
+#endif
+
 
 #ifdef _DEBUG
 	// Candle1 holds all lights you can place in debug...
@@ -369,10 +373,6 @@ void GameState::initConsole() {
 
 	}, "GameState");
 	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
-#ifdef _DEBUG
-	console.addCommand("AddCube", [&]() {
-		return createCube(m_cam.getPosition());
-	}, "GameState");
 	console.addCommand("EndGame", [&]() {
 		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::MATCH_ENDED,
@@ -384,6 +384,10 @@ void GameState::initConsole() {
 
 		return std::string("Match ended.");
 		}, "GameState");
+#ifdef _DEBUG
+	console.addCommand("AddCube", [&]() {
+		return createCube(m_cam.getPosition());
+	}, "GameState");
 	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
 	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
 		if (in.size() == 3) {
@@ -743,3 +747,58 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 }
+
+#ifdef _PERFORMANCE_TEST
+void GameState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
+	/* 13 characters that are constantly shooting their guns */
+	for (int i = 0; i < 13; i++) {
+		float spawnOffsetX = -24.f + float(i) * 2.f;
+		float spawnOffsetZ = float(i) * 1.3f;
+		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
+
+		Model* characterModel = &m_app->getResourceManager().getModelCopy("walkTri.fbx", shader);
+		characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
+		characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
+		characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
+		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+		characterModel->setIsAnimated(true);
+
+		e->addComponent<ModelComponent>(characterModel);
+		auto animStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
+		auto animComp = e->addComponent<AnimationComponent>(animStack);
+		animComp->currentAnimation = animStack->getAnimation(0);
+		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
+		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+		e->addComponent<CollidableComponent>();
+		e->addComponent<MovementComponent>();
+		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>();
+		e->addComponent<GunComponent>(projectileModel, bbModel);
+
+		/* Audio */
+		e->addComponent<AudioComponent>();
+		Audio::SoundInfo sound{};
+		sound.fileName = "../Audio/guitar.wav";
+		sound.soundEffectLength = 104.0f;
+		sound.volume = 1.0f;
+		sound.playOnce = false;
+		sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		sound.isPlaying = true; // Start playing the sound immediately
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
+
+		// Add candle
+		/*if (i != 12) {
+			auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
+			candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
+			e->addChildEntity(candleEntity);
+		}*/
+
+		/* Movement */
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<SpeedLimitComponent>()->maxSpeed = 6.f;
+
+		m_performanceEntities.push_back(e);
+	}
+}
+#endif
