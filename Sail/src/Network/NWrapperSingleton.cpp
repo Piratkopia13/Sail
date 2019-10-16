@@ -144,16 +144,17 @@ void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
 	NSS = NSS_;
 }
 
-void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity* pRelevantEntity) {
+void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity* pRelevantEntity/*Netcode::MessageData* data*/) {
 	// Cleaning is handled by the NSS later on.
 	NetworkSenderEvent* e = SAIL_NEW NetworkSenderEvent;
 	e->type = type;
+	
+	// OLD
 	e->pRelevantEntity = pRelevantEntity;
-	if (type == Netcode::MessageType::MATCH_ENDED) {
-		// Clear queue
-		// Push to queue
-		// set bool
-	}
+	// NEW
+//	e->data = data; 
+	
+	
 	NSS->queueEvent(e);
 }
 

@@ -254,6 +254,9 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	float roughness = metalnessRoughnessAO.g;
 	float ao = metalnessRoughnessAO.b;
 
+	//payload.color = float4(normalInWorldSpace * 0.5f + 0.5f, 1.0f);
+	//return;
+
 	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
 }
 
