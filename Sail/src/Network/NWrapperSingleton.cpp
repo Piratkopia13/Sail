@@ -174,6 +174,7 @@ void NWrapperSingleton::initialize(bool asHost) {
 }
 
 void NWrapperSingleton::resetWrapper() {
+	resetPlayerList();
 	m_isInitialized = false;
 	m_isHost = false;
 	delete this->m_wrapper;
