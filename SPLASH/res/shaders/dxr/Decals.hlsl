@@ -11,19 +11,17 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
     float4 colourToReturn = 0.f;
     if (wPos.x < minPos.x || wPos.x > maxPos.x ||
         wPos.y < minPos.y || wPos.y > maxPos.y ||
-        wPos.z < minPos.z || wPos.z > maxPos.z)
-    {
+        wPos.z < minPos.z || wPos.z > maxPos.z) {
         return colourToReturn;
     }
     
     // Calculated per pixel to eliminate texture stretching
-    float3x3 rotMat = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
-    if (abs(wNorm.z) != 1.f)
-    {
+    float3x3 rotMat = currDecal.rot; //{ { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
+    if (abs(wNorm.z) != 1.f) {
         float3 b = float3(0.f, 0.f, -1.f);
         float3 v = cross(b, wNorm);
         float angle = acos(dot(b, wNorm) / (length(b) * length(wNorm)));
-        rotMat = Utils::rotateMatrix(angle, v);
+        rotMat = mul(Utils::rotateMatrix(angle, v), rotMat);
     }
 
     float3 pos = currDecal.position;
@@ -96,8 +94,8 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
         // wNorm.y = 1.0f - wNorm.y;
 		// wNorm = mul(normalize(wNorm * 2.f - 1.f), tbn);
 
-        // float3 norm = lerp(wNorm, decalNormalWS, albedoColour.w);
-        shade(wPos, wNorm, albedoColour.rgb, 0.7f, 0.1f, 0.4f, decalPayload);
+        float3 norm = lerp(wNorm, decalNormalWS, albedoColour.w);
+        shade(wPos, wNorm, payloadColour, metalness, roughness, ao, decalPayload);
         //colourToReturn = lerp(float4(albedo, 1.0f), decalPayload.color, albedoColour.w);
         colourToReturn = decalPayload.color;
         // colourToReturn = 1.0f;

@@ -3,12 +3,12 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/Systems.h"
+#include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
-
 #include <sstream>
 #include <iomanip>
 
@@ -116,6 +116,7 @@ GameState::GameState(StateStack& stack)
 	}
 
 	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	m_componentSystems.networkReceiverSystem->initPlayer(m_player);
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
