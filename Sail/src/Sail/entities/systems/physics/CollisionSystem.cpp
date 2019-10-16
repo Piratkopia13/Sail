@@ -48,7 +48,7 @@ void CollisionSystem::update(float dt) {
 
 				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
 					//Object is moving fast, ray cast for collisions
-					rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
+					rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt, 0);
 					movement->oldVelocity = movement->velocity;
 				}
 			}
@@ -192,7 +192,7 @@ const bool CollisionSystem::rayCastCheck(Entity* e, const BoundingBox& boundingB
 	return false;
 }
 
-void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt) {
+void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt, int depth) {
 
 	MovementComponent* movement = e->getComponent<MovementComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
@@ -217,6 +217,8 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		//Collision update
 		bool paddingTooBig = true;
 
+		int depthWas = depth;
+
 		const size_t count = intersectionInfo.info.size();
 		for (size_t i = 0; i < count; i++) {
 			const Octree::CollisionInfo& collisionInfo_i = intersectionInfo.info[i];
@@ -231,6 +233,9 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 					movement->velocity += collisionInfo_i.normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
 					paddingTooBig = false;
 				}
+
+				Logger::Log("Hit, depth " + std::to_string(depthWas));
+				depth = -1;
 			}
 		}
 
@@ -238,7 +243,7 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 			collision->padding *= 0.5f;
 		}
 
-		rayCastUpdate(e, boundingBox, dt);
+		rayCastUpdate(e, boundingBox, dt, depth + 1);
 	}
 }
 

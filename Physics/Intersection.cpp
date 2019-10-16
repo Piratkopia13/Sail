@@ -8,10 +8,10 @@ BoundingBox Intersection::sPaddedReserved;
 
 bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2) {
 
-	glm::vec3 center1 = aabb1.getPosition();
-	glm::vec3 center2 = aabb2.getPosition();
-	glm::vec3 halfWidth1 = aabb1.getHalfSize();
-	glm::vec3 halfWidth2 = aabb2.getHalfSize();
+	const glm::vec3& center1 = aabb1.getPosition();
+	const glm::vec3& center2 = aabb2.getPosition();
+	const glm::vec3& halfWidth1 = aabb1.getHalfSize();
+	const glm::vec3& halfWidth2 = aabb2.getHalfSize();
 
 	if (glm::abs(center1.x - center2.x) > (halfWidth1.x + halfWidth2.x)) {
 		return false;
@@ -625,16 +625,16 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 
 	glm::vec3 triangleNormal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
 
-	glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
-
-	if (glm::dot(middle - rayStart, triangleNormal) < 0.0f) {
+	if (glm::dot(v1 - rayStart, triangleNormal) < 0.0f) {
 		//Only check if triangle is facing ray start
 		if (padding != 0.0f) {
 			//Add padding
-			glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) * 20.0f + triangleNormal) * padding;
-			glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) * 20.0f + triangleNormal) * padding;
-			glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) * 20.0f + triangleNormal) * padding;
-
+			glm::vec3 toRay = (rayStart + rayDir * glm::dot(v1 - rayStart, rayDir)) - v1;
+			glm::vec3 newV1 = v1 - glm::normalize(toRay) * glm::min(glm::length(toRay), padding);
+			toRay = (rayStart + rayDir * glm::dot(v2 - rayStart, rayDir)) - v2;
+			glm::vec3 newV2 = v2 - glm::normalize(toRay) * glm::min(glm::length(toRay), padding);
+			toRay = (rayStart + rayDir * glm::dot(v3 - rayStart, rayDir)) - v3;
+			glm::vec3 newV3 = v3 - glm::normalize(toRay) * glm::min(glm::length(toRay), padding);
 			returnValue = RayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
 		}
 		else {
