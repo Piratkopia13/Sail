@@ -10,8 +10,12 @@ CandleComponent::~CandleComponent() {
 }
 
 void CandleComponent::hitWithWater(float damage) {
-	m_damageTakenLastHit = damage;
-	m_wasHitByWater = true;
+	if (getInvincibleTimer() <= 0.f) {
+		setInvincibleTimer(4);
+		decrementHealth(damage);
+		m_damageTakenLastHit = damage;
+		m_wasHitByWater = true;
+	}
 }
 
 void CandleComponent::resetHitByWater() {

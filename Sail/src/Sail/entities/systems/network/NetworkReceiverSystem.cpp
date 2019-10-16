@@ -186,7 +186,7 @@ void NetworkReceiverSystem::update() {
 			}
 	
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
-				//ar(netObjectID);
+				ar(netObjectID);
 				playerDied(netObjectID);
 			}
 			else if (eventType == Netcode::MessageType::MATCH_ENDED) {
@@ -330,34 +330,16 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
-	// If it is me who was hit
-	if (id == m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID) {
-		// Bad way of getting the candle component
-		std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
-		for (auto& child : childEntities) {
-			if (child.get()->hasComponent<CandleComponent>()) {
-				// Hit me
-				child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
-
-				// If i'm host, relay message onwards
-				if (NWrapperSingleton::getInstance().isHost()) {
-					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-						Netcode::MessageType::WATER_HIT_PLAYER,
-						m_playerEntity
-					);
-				}
-			}
-		}
-	}
-
-	// Needs to be after the function above.
-	// If the message was sent from me but rerouted back from the host, ignore it.
-	//if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
-	//	return;
-	//}
-
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {	
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			// If i'm host, relay message onwards
+			if (NWrapperSingleton::getInstance().isHost()) {
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::WATER_HIT_PLAYER,
+					e
+				);
+			}
+
 			// Bad way of getting the candle component
 			std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
 			for (auto& child : childEntities) {
@@ -366,21 +348,24 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 					// Hit player with water
 					child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
 				}
+
+				break;
 			}
+
+			break;
 		}
 	}
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 
-	if (NWrapperSingleton::getInstance().isHost()) {
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::PLAYER_DIED, nullptr);
-	}
-
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-	
+			if (NWrapperSingleton::getInstance().isHost()) {
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PLAYER_DIED, e);
+			}
+
 			e->removeDeleteAllChildren();
 			// TODO: Remove all the components that can/should be removed
 

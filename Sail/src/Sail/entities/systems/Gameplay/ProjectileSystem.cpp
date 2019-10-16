@@ -4,6 +4,8 @@
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/CollisionComponent.h"
 #include "Sail/entities/components/MovementComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Network/NWrapperSingleton.h"
 #include "Sail/Application.h"
 
 ProjectileSystem::ProjectileSystem() {
@@ -30,7 +32,7 @@ void ProjectileSystem::update(float dt) {
 		auto projComp = e->getComponent<ProjectileComponent>();
 		for (auto& collision : projectileCollisions) {
 			// Check if a decal should be created
-			if (projComp->timeSinceLastDecal > m_splashMinTime && 
+			if (projComp->timeSinceLastDecal > m_splashMinTime &&
 				glm::length(e->getComponent<MovementComponent>()->oldVelocity) > 0.7f) {
 				// TODO: Replace with some "layer-id" check rather than doing a string check
 				if (collision.entity->getName().substr(0U, 4U) == "Map_") {
@@ -47,13 +49,12 @@ void ProjectileSystem::update(float dt) {
 			}
 
 			if (collision.entity->hasComponent<CandleComponent>()) {
-				// TODO: Consume da waterball (smök)
-				collision.entity->getComponent<CandleComponent>()->hitWithWater(e->getComponent<ProjectileComponent>()->m_damage);
-
-				// Queue an instance of this event to the networkSenderSystem
-				unsigned __int32 test = e->getComponent<ProjectileComponent>()->ownedBy;
-
-				collision.entity->getComponent<CandleComponent>()->hitByLocalPlayer = true;
+				if (e->hasComponent<LocalOwnerComponent>()) {
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::WATER_HIT_PLAYER,
+						e
+					);
+				}
 			}
 		}
 
