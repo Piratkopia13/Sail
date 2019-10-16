@@ -193,6 +193,9 @@ void NetworkReceiverSystem::update() {
 			else if (eventType == Netcode::MessageType::MATCH_ENDED) {
 				matchEnded();
 			}
+			else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
+				backToLobby();
+			}
 		}
 
 
@@ -243,7 +246,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 	//Wireframe bounding box model
 	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
-	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 	// create the new entity
 	switch (entityType) {
@@ -388,3 +391,8 @@ void NetworkReceiverSystem::matchEnded() {
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
+void NetworkReceiverSystem::backToLobby() {
+	
+	m_gameStatePtr->requestStackPop();
+	m_gameStatePtr->requestStackPush(States::JoinLobby);
+}
