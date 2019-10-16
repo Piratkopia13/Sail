@@ -11,15 +11,13 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
     float4 colourToReturn = 0.f;
     if (wPos.x < minPos.x || wPos.x > maxPos.x ||
         wPos.y < minPos.y || wPos.y > maxPos.y ||
-        wPos.z < minPos.z || wPos.z > maxPos.z)
-    {
+        wPos.z < minPos.z || wPos.z > maxPos.z) {
         return colourToReturn;
     }
     
     // Calculated per pixel to eliminate texture stretching
     float3x3 rotMat = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
-    if (abs(wNorm.z) != 1.f)
-    {
+    if (abs(wNorm.z) != 1.f) {
         float3 b = float3(0.f, 0.f, -1.f);
         float3 v = cross(b, wNorm);
         float angle = acos(dot(b, wNorm) / (length(b) * length(wNorm)));

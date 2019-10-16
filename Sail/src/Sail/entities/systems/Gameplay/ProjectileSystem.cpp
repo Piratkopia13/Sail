@@ -10,6 +10,11 @@ ProjectileSystem::ProjectileSystem() {
 	registerComponent<ProjectileComponent>(true, true, true);
 	registerComponent<CollisionComponent>(true, true, false);
 	registerComponent<CandleComponent>(false, true, true);
+
+	m_splashMinTime = 0.3f;
+
+	float splashSize = 0.13f;
+	m_projectileSplashSize = (1.f / splashSize) / 2.f;
 }
 
 ProjectileSystem::~ProjectileSystem() {
@@ -20,25 +25,26 @@ void ProjectileSystem::update(float dt) {
 	for (auto& e : entities) {
 		CollisionComponent* collisionComp = e->getComponent<CollisionComponent>();
 		auto projectileCollisions = collisionComp->collisions;
+		auto projComp = e->getComponent<ProjectileComponent>();
 		for (auto& collision : projectileCollisions) {
-			// TODO: Replace with some "layer-id" check rather than doing a string check
-			/*if (collision.entity->getName().substr(0U, 4U) == "Map_") {
-				Octree::RayIntersectionInfo tempInfo;
-				//m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-				if (tempInfo.closestHitIndex != -1) {
-					// size (the size you want) = 0.3
-					// halfSize = (1 / 0.3) * 0.5 = 1.667
+			if (projComp->timeSinceLastDecal > m_splashMinTime) {
+				// TODO: Replace with some "layer-id" check rather than doing a string check
+				if (collision.entity->getName().substr(0U, 4U) == "Map_") {
 					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitDecal(
-						collision./*m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, 
-						glm::identity<glm::mat4>(), 
-						glm::vec3(1.667f));
+						collision.intersectionPosition,
+						glm::identity<glm::mat4>(),
+						glm::vec3(m_projectileSplashSize));
+
+					projComp->timeSinceLastDecal = 0.f;
 				}
-			}*/
+			}
 
 			if (collision.entity->hasComponent<CandleComponent>()) {
 				// TODO: Consume da waterball (smök)
-				collision.entity->getComponent<CandleComponent>()->hitWithWater(e->getComponent<ProjectileComponent>()->m_damage);
+				collision.entity->getComponent<CandleComponent>()->hitWithWater(projComp->m_damage);
 			}
 		}
+
+		projComp->timeSinceLastDecal += dt;
 	}
 }

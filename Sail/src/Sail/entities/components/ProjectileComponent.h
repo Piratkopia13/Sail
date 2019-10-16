@@ -8,4 +8,5 @@ public:
 	~ProjectileComponent() { ; }
 
 	float m_damage = 1.0f;
+	float timeSinceLastDecal = 5000.f;
 };
