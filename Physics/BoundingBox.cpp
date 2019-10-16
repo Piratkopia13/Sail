@@ -12,7 +12,7 @@ BoundingBox::BoundingBox() {
 BoundingBox::~BoundingBox() {
 }
 
-void BoundingBox::updateCorners() const {
+void BoundingBox::updateCorners() {
 	m_corners[0] = m_position + glm::vec3(-m_halfSize.x, m_halfSize.y, -m_halfSize.z); //Left Top Close - 0
 	m_corners[1] = m_position + glm::vec3(m_halfSize.x, m_halfSize.y, -m_halfSize.z); //Right Top Close - 1
 	m_corners[2] = m_position + glm::vec3(-m_halfSize.x, -m_halfSize.y, -m_halfSize.z); //Left Bottom Close - 2
@@ -39,7 +39,7 @@ const glm::vec3& BoundingBox::getHalfSize() const {
 	return m_halfSize;
 }
 
-const glm::vec3* BoundingBox::getCorners() const {
+const glm::vec3* BoundingBox::getCorners() {
 	if (m_cornersNeedUpdate) {
 		updateCorners();
 	}

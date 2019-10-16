@@ -116,6 +116,7 @@ void Transform::scale(const glm::vec3& scale) {
 
 void Transform::rotate(const glm::vec3& rotation) {
 	m_data.m_current.m_rotation += rotation;
+	clampRotation();
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
 	m_hasChanged |= 2;
@@ -124,6 +125,7 @@ void Transform::rotate(const glm::vec3& rotation) {
 
 void Transform::rotate(const float x, const float y, const float z) {
 	m_data.m_current.m_rotation += glm::vec3(x, y, z);
+	clampRotation();
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate |= 2; // TODO: Check this
 	treeNeedsUpdating();
@@ -131,6 +133,7 @@ void Transform::rotate(const float x, const float y, const float z) {
 
 void Transform::rotateAroundX(const float radians) {
 	m_data.m_current.m_rotation.x += radians;
+	clampRotation(m_data.m_current.m_rotation.x);
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
 	m_hasChanged |= 2;
@@ -139,6 +142,7 @@ void Transform::rotateAroundX(const float radians) {
 
 void Transform::rotateAroundY(const float radians) {
 	m_data.m_current.m_rotation.y += radians;
+	clampRotation(m_data.m_current.m_rotation.y);
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
 	m_hasChanged |= 2;
@@ -147,6 +151,7 @@ void Transform::rotateAroundY(const float radians) {
 
 void Transform::rotateAroundZ(const float radians) {
 	m_data.m_current.m_rotation.z += radians;
+	clampRotation(m_data.m_current.m_rotation.z);
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
 	m_hasChanged |= 2;
@@ -169,6 +174,7 @@ void Transform::setTranslation(const float x, const float y, const float z) {
 
 void Transform::setRotations(const glm::vec3& rotations) {
 	m_data.m_current.m_rotation = rotations;
+	clampRotation();
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
 	m_hasChanged |= 2;
@@ -177,6 +183,7 @@ void Transform::setRotations(const glm::vec3& rotations) {
 
 void Transform::setRotations(const float x, const float y, const float z) {
 	m_data.m_current.m_rotation = glm::vec3(x, y, z);
+	clampRotation();
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
 	m_matNeedsUpdate = true;
 	m_hasChanged |= 2;
@@ -325,6 +332,24 @@ void Transform::removeChildren() {
 		child->removeParent();
 	}
 	m_children.clear();
+}
+
+void Transform::clampRotation() {
+	clampRotation(m_data.m_current.m_rotation.x);
+	clampRotation(m_data.m_current.m_rotation.y);
+	clampRotation(m_data.m_current.m_rotation.z);
+}
+
+void Transform::clampRotation(float& axis) {
+	float twoPi = glm::two_pi<float>();
+
+	while (axis < 0) {
+		axis += twoPi;
+	}
+
+	while (axis >= twoPi) {
+		axis -= twoPi;
+	}
 }
 
 void Transform::createTransformMatrix(glm::mat4& destination, const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale) const {

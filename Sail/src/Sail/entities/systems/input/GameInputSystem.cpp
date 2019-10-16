@@ -109,7 +109,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			if ( playerMovement.upMovement == 1.0f ) {
-				if ( !m_wasSpacePressed && collision->onGround ) {
+				if ( !m_wasSpacePressed && collision->onGround) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
 					audioComp->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
