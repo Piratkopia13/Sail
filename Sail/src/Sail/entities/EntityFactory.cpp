@@ -192,7 +192,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	collision->drag = 2.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
 	collision->bounciness = 0.1f;
-	collision->padding = 0.16f;
+	collision->padding = 0.10f;
 
 	return e;
 }

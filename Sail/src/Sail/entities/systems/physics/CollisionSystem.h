@@ -14,9 +14,9 @@ public:
 private:
 	const bool rayCastCheck(Entity* e, const BoundingBox& boundingBox, float& dt) const;
 	void rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt, int depth);
-	const bool collisionUpdate(Entity* e, const float& dt);
-	const bool handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float& dt);
-	void surfaceFromCollision(Entity* e);
+	const bool collisionUpdate(Entity* e, const float dt);
+	const bool handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float dt);
+	void surfaceFromCollision(Entity* e, std::vector<Octree::CollisionInfo>& collisions);
 
 private:
 	Octree* m_octree;
