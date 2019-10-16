@@ -3,12 +3,14 @@
 #include "Sail/entities/components/ProjectileComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/CollisionComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
 #include "Sail/Application.h"
 
 ProjectileSystem::ProjectileSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<ProjectileComponent>(true, true, true);
 	registerComponent<CollisionComponent>(true, true, false);
+	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<CandleComponent>(false, true, true);
 
 	m_splashMinTime = 0.3f;
@@ -27,7 +29,9 @@ void ProjectileSystem::update(float dt) {
 		auto projectileCollisions = collisionComp->collisions;
 		auto projComp = e->getComponent<ProjectileComponent>();
 		for (auto& collision : projectileCollisions) {
-			if (projComp->timeSinceLastDecal > m_splashMinTime) {
+			// Check if a decal should be created
+			if (projComp->timeSinceLastDecal > m_splashMinTime && 
+				glm::length(e->getComponent<MovementComponent>()->oldVelocity) > 0.7f) {
 				// TODO: Replace with some "layer-id" check rather than doing a string check
 				if (collision.entity->getName().substr(0U, 4U) == "Map_") {
 					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitDecal(
