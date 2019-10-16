@@ -1210,8 +1210,9 @@ void LevelGeneratorSystem::addSpawnPoints() {
 	}
 }
 
-// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
+
 glm::vec3 LevelGeneratorSystem::getSpawnPoint() {
+	// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
 	glm::vec3 spawnLocation = glm::vec3(-1000.f);
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
@@ -1221,7 +1222,7 @@ glm::vec3 LevelGeneratorSystem::getSpawnPoint() {
 			map->spawnPoints.erase(map->spawnPoints.begin());
 		}
 		else {
-			Logger::Error("Not enough spawn locations.");
+			Logger::Error("No more spawn locations available.");
 		}
 
 	}
