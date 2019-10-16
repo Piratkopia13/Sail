@@ -13,7 +13,7 @@ ProjectileSystem::ProjectileSystem() {
 
 	m_splashMinTime = 0.3f;
 
-	float splashSize = 0.13f;
+	float splashSize = 0.14f;
 	m_projectileSplashSize = (1.f / splashSize) / 2.f;
 }
 
@@ -30,9 +30,12 @@ void ProjectileSystem::update(float dt) {
 			if (projComp->timeSinceLastDecal > m_splashMinTime) {
 				// TODO: Replace with some "layer-id" check rather than doing a string check
 				if (collision.entity->getName().substr(0U, 4U) == "Map_") {
+
+					glm::mat4 rotMat = glm::rotate(glm::identity<glm::mat4>(), Utils::fastrand() * 3.14f, glm::vec3(0.0f, 0.0f, 1.0f));
+
 					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitDecal(
 						collision.intersectionPosition,
-						glm::identity<glm::mat4>(),
+						rotMat,
 						glm::vec3(m_projectileSplashSize));
 
 					projComp->timeSinceLastDecal = 0.f;
