@@ -30,7 +30,7 @@ namespace DXRShaderCommon {
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
 #define MAX_NUM_METABALLS 200
-#define MAX_DECALS 500
+#define MAX_DECALS 100
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
