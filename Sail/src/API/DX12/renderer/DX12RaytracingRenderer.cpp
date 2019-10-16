@@ -38,6 +38,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
 
+	// Clear output texture
+	m_outputTexture.get()->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
+
 	std::sort(m_metaballpositions.begin(), m_metaballpositions.end(),
 		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
 		{
