@@ -173,7 +173,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velosity, bool hasLocalOwner, unsigned __int32 ownersNetId, float lifetime, float randomSpreed) {
+Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velocity, bool hasLocalOwner, unsigned __int32 ownersNetId, float lifetime, float randomSpread) {
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
 
