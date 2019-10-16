@@ -307,10 +307,9 @@ void AnimationSystem::updateMeshCPU() {
 
 }
 
-std::vector<Entity*>& AnimationSystem::getEntities() {
+const std::vector<Entity*>& AnimationSystem::getEntities() const {
 	return entities;
 }
-
 
 void AnimationSystem::addTime(AnimationComponent* e, const float time) {
 	e->animationTime += time * e->animationSpeed;

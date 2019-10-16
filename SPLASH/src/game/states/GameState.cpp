@@ -3,10 +3,7 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/Systems.h"
-#include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
-#include "Sail/ai/states/FleeingState.h"
-#include "Sail/ai/states/SearchingState.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
@@ -23,57 +20,8 @@ GameState::GameState(StateStack& stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_profiler(true)
 	, m_showcaseProcGen(false) {
-	auto& console = Application::getInstance()->getConsole();
-	console.addCommand("state <string>", [&](const std::string& param) {
-		if (param == "menu") {
-			requestStackPop();
-			requestStackPush(States::MainMenu);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to menu requested";
-		} else if (param == "pbr") {
-			requestStackPop();
-			requestStackPush(States::PBRTest);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to pbr requested";
-		} else if (param == "perftest") {
-			requestStackPop();
-			requestStackPush(States::PerformanceTest);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to PerformanceTest requested";
-		} else {
-			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
-		}
-
-	}, "GameState");
-	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
-#ifdef _DEBUG
-	console.addCommand("AddCube", [&]() {
-		return createCube(m_cam.getPosition());
-	}, "GameState");
-	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
-	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
-		if (in.size() == 3) {
-			glm::vec3 pos(in[0], in[1], in[2]);
-			return createCube(pos);
-		} else {
-			return std::string("Error: wrong number of inputs. Console Broken");
-		}
-		return std::string("wat");
-	}, "GameState");
-	console.addCommand("AddCube <float> <float> <float>", [&](std::vector<float> in) {
-		if (in.size() == 3) {
-			glm::vec3 pos(in[0], in[1], in[2]);
-			return createCube(pos);
-		} else {
-			return std::string("Error: wrong number of inputs. Console Broken");
-		}
-		return std::string("wat");
-	}, "GameState");
-#endif
-
+	
+	initConsole();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
@@ -104,15 +52,15 @@ GameState::GameState(StateStack& stack)
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/arenaBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/barrierBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/containerBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/arenaBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/barrierBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/containerBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
 
 	// Add a directional light which is used in forward rendering
@@ -129,7 +77,7 @@ GameState::GameState(StateStack& stack)
 
 #ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
-	(*Application::getInstance()->getRenderWrapper()).changeRenderer(1);
+	m_app->getRenderWrapper()->changeRenderer(1);
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -139,7 +87,8 @@ GameState::GameState(StateStack& stack)
 	// Create/load models
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-	loadAnimations();
+
+	m_componentSystems.animationInitSystem->loadAnimations();
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
@@ -168,7 +117,7 @@ GameState::GameState(StateStack& stack)
 
 	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
 
-	initAnimations();
+	m_componentSystems.animationInitSystem->initAnimations();
 
 
 	// Inform CandleSystem of the player
@@ -324,15 +273,6 @@ bool GameState::processInput(float dt) {
 	return true;
 }
 
-bool GameState::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
-	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
-
-	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
-
-	return true;
-}
-
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
 	
@@ -344,6 +284,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 
 	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
+	m_componentSystems.animationInitSystem = ECS::Instance()->createSystem<AnimationInitSystem>();
 
 	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 
@@ -381,6 +322,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
 	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
 
 	// Create system for player input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -393,6 +335,73 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+}
+
+void GameState::initConsole() {
+	auto& console = Application::getInstance()->getConsole();
+	console.addCommand("state <string>", [&](const std::string& param) {
+		if (param == "menu") {
+			requestStackPop();
+			requestStackPush(States::MainMenu);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to menu requested";
+		}
+		else if (param == "pbr") {
+			requestStackPop();
+			requestStackPush(States::PBRTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to pbr requested";
+		}
+		else if (param == "perftest") {
+			requestStackPop();
+			requestStackPush(States::PerformanceTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to PerformanceTest requested";
+		}
+		else {
+			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+		}
+
+	}, "GameState");
+	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
+#ifdef _DEBUG
+	console.addCommand("AddCube", [&]() {
+		return createCube(m_cam.getPosition());
+	}, "GameState");
+	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
+	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
+		if (in.size() == 3) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	}, "GameState");
+	console.addCommand("AddCube <float> <float> <float>", [&](std::vector<float> in) {
+		if (in.size() == 3) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	}, "GameState");
+#endif
+}
+
+bool GameState::onEvent(Event& event) {
+	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
+	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
+
+	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
+
+	return true;
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
@@ -462,8 +471,6 @@ bool GameState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
-	ECS::Instance();
-
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 	
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
@@ -481,7 +488,7 @@ bool GameState::renderImgui(float dt) {
 	m_profiler.renderWindow();
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
-	renderImGuiAnimationSettings(dt);
+	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 
 	return false;
 }
@@ -492,81 +499,6 @@ bool GameState::prepareStateChange() {
 		NWrapperSingleton::getInstance().resetNetwork();
 	}
 	return true;
-}
-
-bool GameState::renderImGuiAnimationSettings(float dt) {
-	ImGui::Begin("Animation settings");
-	bool interpolate = ECS::Instance()->getSystem<AnimationSystem>()->getInterpolation();
-	ImGui::Checkbox("enable animation interpolation", &interpolate);
-	ECS::Instance()->getSystem<AnimationSystem>()->setInterpolation(interpolate);
-	ImGui::Separator();
-
-	std::vector<Entity*>& e = ECS::Instance()->getSystem<AnimationSystem>()->getEntities();
-
-	if (ImGui::CollapsingHeader("Animated Objects")) {
-		for (unsigned int i = 0; i < e.size(); i++) {
-			if (ImGui::TreeNode(e[i]->getName().c_str())) {
-				AnimationComponent* animationC = e[i]->getComponent<AnimationComponent>();
-				ImGui::Text("Animation: %s", animationC->currentAnimation->getName().c_str());
-				ImGui::Checkbox("Update on GPU", &animationC->computeUpdate);
-				if (ImGui::SliderFloat("Animation Speed", &animationC->animationSpeed, 0.0f, 3.0f)) {
-
-				}
-				AnimationStack* stack = animationC->getAnimationStack();
-				float w = animationC->animationW;
-				ImGui::SliderFloat("weight", &w, 0.0f, 1.0f);
-				ImGui::Text("AnimationStack");
-				for (unsigned int animationTrack = 0; animationTrack < stack->getAnimationCount(); animationTrack++) {
-					float time = -1;
-					if (animationC->currentAnimation == stack->getAnimation(animationTrack)) {
-						time = animationC->animationTime;
-					}
-					if (animationC->nextAnimation == stack->getAnimation(animationTrack)) {
-						if (time > -1) {
-							float time2 = animationC->transitions.front().transpiredTime;
-							ImGui::SliderFloat(std::string("CurrentTime: " + std::to_string(animationTrack) + "T").c_str(), &time2, 0.0f, stack->getAnimation(animationTrack)->getMaxAnimationTime());
-
-						}
-						else {
-							time = animationC->transitions.front().transpiredTime;
-
-						}
-					}
-					if (time == -1) {
-						time = 0;
-
-					}
-					ImGui::SliderFloat(std::string("CurrentTime: "+std::to_string(animationTrack)).c_str(), &time, 0.0f, stack->getAnimation(animationTrack)->getMaxAnimationTime());
-					if (animationC->currentAnimation == stack->getAnimation(animationTrack)) {
-						animationC->animationTime = time;
-					}
-				}
-
-				static float transitionTime = 0.4f;
-				static bool transitionWait = false;
-				ImGui::Checkbox("transition wait", &transitionWait);
-				ImGui::SameLine();
-				if (ImGui::SliderFloat("Transition Time", &transitionTime, 0.0f, 1.0f)) {
-
-				}
-				for (unsigned int animationIndex = 0; animationIndex < stack->getAnimationCount(); animationIndex++) {
-
-					
-
-
-					if (ImGui::Button(std::string("Switch to " + stack->getAnimation(animationIndex)->getName()).c_str())) {
-						animationC->transitions.emplace(stack->getAnimation(animationIndex), transitionTime, transitionWait);
-					}
-					ImGui::Separator();
-				}
-
-				ImGui::TreePop();
-			}
-		}
-	}
-
-	ImGui::End();
-	return false;
 }
 
 void GameState::shutDownGameState() {
@@ -692,63 +624,6 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 			}
 		}
 	}
-}
-
-void GameState::loadAnimations() {
-	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-	m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
-
-#ifndef _DEBUG
-	//m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	//m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-#endif
-}
-
-void GameState::initAnimations() {
-	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-
-	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
-	animationEntity2->addComponent<TransformComponent>();
-	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
-	animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
-	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx"));
-	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
-
-	std::string animName = "";
-#ifndef _DEBUG
-	animName = "AnimationTest/DEBUG_BALLBOT.fbx";
-	unsigned int count = m_app->getResourceManager().getAnimationStack(animName).getAnimationCount();
-	for (int i = 0; i < 2; i++) {
-		auto animationEntity5 = ECS::Instance()->createEntity("DEBUG_BALLBOT-" + std::to_string(i));
-		animationEntity5->addComponent<TransformComponent>();
-		animationEntity5->getComponent<TransformComponent>()->translate(1.0f+ (i * 2), 1, 0);
-		//animationEntity5->getComponent<TransformComponent>()->rotateAroundX(-3.14f*0.5f);
-		animationEntity5->getComponent<TransformComponent>()->scale(0.005f);
-		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy(animName, shader));
-		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack(animName));
-		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
-
-	}
-
-	animName = "AnimationTest/BaseMesh_Anim.fbx";
-	for (int i = 0; i < 1; i++) {
-		auto animationEntity5 = ECS::Instance()->createEntity("BaseMesh_Anim-" + std::to_string(i));
-		animationEntity5->addComponent<TransformComponent>();
-		animationEntity5->getComponent<TransformComponent>()->translate(-1.0f - (i * 2), 1, 0);
-		animationEntity5->getComponent<TransformComponent>()->rotateAroundX(-3.14f * 0.5f);
-		animationEntity5->getComponent<TransformComponent>()->scale(0.01f);
-		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy(animName, shader));
-		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack(animName));
-		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
-
-	}
-#endif
 }
 
 const std::string GameState::teleportToMap() {
@@ -878,4 +753,3 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 }
-
