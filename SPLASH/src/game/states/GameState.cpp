@@ -334,7 +334,12 @@ void GameState::initSystems(const unsigned char playerID) {
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
-
+	//m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	//m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
+	//m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
+	//m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
+	//NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);	// Grant NSS to singleton for access to single-frame event stack
+	//m_componentSystems.networkReceiverSystem->addSenderSystemP(m_componentSystems.networkSenderSystem);
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();

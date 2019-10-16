@@ -156,14 +156,15 @@ void NetworkReceiverSystem::update() {
 
 					ar(netObjectID);	// Find out which player was hit
 
-					if (NWrapperSingleton::getInstance().isHost()) {
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::WATER_HIT_PLAYER,
-							SAIL_NEW Netcode::MessageDataWaterHitPlayer{
-								netObjectID
-							}
-						);
-					}
+					// CURRENT SPRINT IS FOR 2-PLAYER MULTIPLAYER ONLY.
+				//	if (NWrapperSingleton::getInstance().isHost()) {
+				//		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				//			Netcode::MessageType::WATER_HIT_PLAYER,
+				//			SAIL_NEW Netcode::MessageDataWaterHitPlayer{
+				//				netObjectID
+				//			}
+				//		);
+				//	}
 
 					waterHitPlayer(netObjectID);
 				}
@@ -178,14 +179,15 @@ void NetworkReceiverSystem::update() {
 					Archive::loadVec3(ar, gunPosition);
 					Archive::loadVec3(ar, gunVelocity);
 
-					if (NWrapperSingleton::getInstance().isHost()) {
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::SPAWN_PROJECTILE,
-							SAIL_NEW Netcode::MessageDataProjectile{
-								gunPosition, gunVelocity
-							}
-						);
-					}
+					// CURRENT SPRINT IS FOR 2-PLAYER MULTIPLAYER ONLY.
+				//	if (NWrapperSingleton::getInstance().isHost()) {
+				//		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				//			Netcode::MessageType::SPAWN_PROJECTILE,
+				//			SAIL_NEW Netcode::MessageDataProjectile{
+				//				gunPosition, gunVelocity
+				//			}
+				//		);
+				//	}
 
 					EntityFactory::CreateProjectile(gunPosition, gunVelocity);
 				}

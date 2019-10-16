@@ -81,9 +81,10 @@ void CandleSystem::update(float dt) {
 							// It (An online player) was hit by the local player
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::WATER_HIT_PLAYER, 
-								SAIL_NEW Netcode::MessageDataWaterHitPlayer{
+								e // OLD
+								/* SAIL_NEW Netcode::MessageDataWaterHitPlayer{ 
 									e->getComponent<OnlineOwnerComponent>()->netEntityID
-								}
+								}*/
 							);
 						}
 					}

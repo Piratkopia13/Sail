@@ -108,7 +108,7 @@ void NetworkSenderSystem::stop() {
 
 	using namespace Netcode;
 
-	// Loop through networked entities and serialize their data
+	// Loop through networked entities and serialize their data.
 	std::ostringstream os(std::ios::binary);
 	cereal::PortableBinaryOutputArchive ar(os);
 
@@ -187,32 +187,39 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 
 void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar) {
 	(*ar)(event->type); // Send the event-type
-	(*ar)(static_cast<unsigned __int32>(m_playerID));
+	//(*ar)(static_cast<unsigned __int32>(m_playerID));
+	Entity* e = event->pRelevantEntity;
+
 	
 	switch (event->type) {
 	case Netcode::MessageType::SPAWN_PROJECTILE:
 	{
-		Netcode::MessageDataProjectile* data = dynamic_cast<Netcode::MessageDataProjectile*>(event->data);
+		// SHOULD BE:
+	//	Netcode::MessageDataProjectile* data = dynamic_cast<Netcode::MessageDataProjectile*>(event->data);
+	//	Archive::archiveVec3(*ar, data->translation);
+	//	Archive::archiveVec3(*ar, data->velocity);
+	//	delete data;
 
-		Archive::archiveVec3(*ar, data->translation);
-		Archive::archiveVec3(*ar, data->velocity);
-
-		delete data;
+		// CURRENTLY IS:
+		GunComponent* gun = e->getComponent<GunComponent>();
+		(*ar)(gun->position);
+		(*ar)(gun->direction * gun->projectileSpeed);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED: 
 	{
-		// it is easy to deduce which player jumped based on who sent the first message
-		// No need to send additional info here.
+		// No need to send additional info here, we(this computer) made the jump
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		Netcode::MessageDataWaterHitPlayer* data = dynamic_cast<Netcode::MessageDataWaterHitPlayer*>(event->data);
- 		
-		(*ar)(data->playerWhoWasHitID);	
+		// SHOULD BE:
+	//	Netcode::MessageDataWaterHitPlayer* data = dynamic_cast<Netcode::MessageDataWaterHitPlayer*>(event->data);
+	//	(*ar)(data->playerWhoWasHitID);	
+	//	delete data;
 
-		delete data;
+		// CURRENTLY IS:
+		(*ar)(e->getComponent<OnlineOwnerComponent>()->netEntityID);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
