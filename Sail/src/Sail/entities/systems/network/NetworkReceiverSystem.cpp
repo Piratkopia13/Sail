@@ -176,6 +176,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			Logger::Warning("I tried to create an entity which already exists.");
 			return;
 		}
 	}
@@ -238,9 +239,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		break;
 	}
 
-	// Manually add the entity to this system in case there's another message telling us to modify it, don't wait for ECS
-	// --- Then we need to prevent ECS from adding all together or we'll end up with 2 instances of the same entity in the list...
-	
+
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
