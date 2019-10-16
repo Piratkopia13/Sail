@@ -47,8 +47,11 @@ PerformanceTestState::PerformanceTestState(StateStack& stack)
 	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
 	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
-
+	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	//m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
+	//m_componentSystems.networkReceiverSystem->init();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
+
 
 	//----Octree creation----
 	//Wireframe shader
