@@ -93,7 +93,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	NWrapperSingleton::getInstance().playerJoined(Player{
 			id_int,
 			message	// Which at this point is only the name
-		});
+	});
 
 
 	printf("Got name: \"%s\" from %i\n", message.c_str(), id_int);

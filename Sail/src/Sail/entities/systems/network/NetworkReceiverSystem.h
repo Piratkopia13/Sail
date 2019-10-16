@@ -12,6 +12,7 @@ public:
 	~NetworkReceiverSystem();
 
 	void init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
+	void initPlayer(Entity* pPlayerEntity);
 	void pushDataToBuffer(std::string data);
 
 	void update();
@@ -25,6 +26,10 @@ private:
 
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
 	unsigned char m_playerID;
+
+	// 
+	Entity* m_playerEntity = nullptr;
+	NetworkSenderSystem* pSenderSystem = nullptr; 
 
 	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
 
