@@ -38,11 +38,11 @@ bool EndGameState::renderImgui(float dt) {
 
 	ImGui::Begin("Return");
 	ImGui::SetWindowPos({ 500,550 });
-	if (ImGui::Button("Lobby")) {
-		this->requestStackPop();
-		this->requestStackPush(States::HostLobby);
-		Application::getInstance()->dispatchEvent(Event(Event::Type::NETWORK_BACK_TO_LOBBY));
-	}
+	//if (ImGui::Button("Lobby")) {
+	//	this->requestStackPop();
+	//	this->requestStackPush(States::HostLobby);
+	//	Application::getInstance()->dispatchEvent(Event(Event::Type::NETWORK_BACK_TO_LOBBY));
+	//}
 	if (ImGui::Button("Main menu")) {
 		NWrapperSingleton::getInstance().resetNetwork();
 		NWrapperSingleton::getInstance().resetWrapper();

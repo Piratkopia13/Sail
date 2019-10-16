@@ -26,5 +26,6 @@ private:
 	void handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar);
 	std::queue<NetworkSenderEvent*> eventQueue;
 
+
 	//void archiveData(Netcode::MessageType* type, Entity* e, cereal::PortableBinaryOutputArchive* ar);
 };

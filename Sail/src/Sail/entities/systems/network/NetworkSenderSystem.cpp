@@ -99,37 +99,46 @@ const void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 
 void NetworkSenderSystem::stop() {
 
-	this->update();
 
-	//std::ostringstream os(std::ios::binary);
-	//cereal::PortableBinaryOutputArchive ar(os);
+	using namespace Netcode;
 
-	//ar(static_cast<__int32>(1));	// 1 message
-	//ar(static_cast<__int32>(1));	// NrOfMessages
+	// Loop through networked entities and serialize their data
+	std::ostringstream os(std::ios::binary);
+	cereal::PortableBinaryOutputArchive ar(os);
 
-	//NetworkSenderEvent* pE;
+	// TODO: Add game tick here in the future
+
+	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame recieves via components -+-+-+-+-+-+-+-+ 
+	// Write nrOfEntities
+	ar(static_cast<__int32>(0));
+
+	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
 	//__int32 test = static_cast<__int32>(eventQueue.size());
-	//ar(test);
+	bool ended = false;
+	while (eventQueue.empty() == false) {
+		NetworkSenderEvent* pE = eventQueue.front();		// Fetch
+		if (pE->type == Netcode::MessageType::MATCH_ENDED) {
+			ended = true;
+			ar(static_cast<__int32>(1));
+			handleEvent(pE, &ar);
+		}
+		eventQueue.pop();									// Pop
+		delete pE;											// Delete
+	}
+	if (!ended) {
+		ar(static_cast<__int32>(0));
+	}
 
-	//while (eventQueue.size() > 0) {
-	//	pE = eventQueue.front();		// Fetch
-
-	//	if (pE->type == Netcode::MessageType::MATCH_ENDED) {
-	//		handleEvent(pE, &ar);								// Deal with
-	//	}
-
-	//	eventQueue.pop();									// Pop
-	//	delete pE;											// Delete
-	//}
-
-	//// send the serialized archive over the network
-	//std::string binaryData = os.str();
-	//if (NWrapperSingleton::getInstance().isHost()) {
-	//	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);
-	//}
-	//else {
-	//	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
-	//}
+	else {
+		// send the serialized archive over the network
+		std::string binaryData = os.str();
+		if (NWrapperSingleton::getInstance().isHost()) {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);
+		}
+		else {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
+		}
+	}
 }
 
 void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
@@ -192,7 +201,6 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
 	{
-
 		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
 		(*ar)(NetObjectID); // Send
 	}

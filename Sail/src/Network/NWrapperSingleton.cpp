@@ -149,6 +149,11 @@ void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType ty
 	NetworkSenderEvent* e = SAIL_NEW NetworkSenderEvent;
 	e->type = type;
 	e->pRelevantEntity = pRelevantEntity;
+	if (type == Netcode::MessageType::MATCH_ENDED) {
+		// Clear queue
+		// Push to queue
+		// set bool
+	}
 	NSS->queueEvent(e);
 }
 
