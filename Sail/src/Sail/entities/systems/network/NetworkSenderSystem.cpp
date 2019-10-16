@@ -3,6 +3,7 @@
 
 #include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/Entity.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -221,7 +222,14 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	//	delete data;
 
 		// CURRENTLY IS:
-		__int32 NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
+		unsigned __int32 NetObjectID;
+		if (e->hasComponent<LocalOwnerComponent>()) {
+			NetObjectID = e->getComponent<LocalOwnerComponent>()->netEntityID;
+		}
+		else {
+			NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
+		}
+		
 		(*ar)(NetObjectID);
 	}
 	break;
@@ -240,9 +248,4 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	default:
 		break;
 	}
-}
-
-void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e)
-{
-	entities.push_back(e);
 }

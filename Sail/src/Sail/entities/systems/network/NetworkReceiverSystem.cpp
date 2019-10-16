@@ -3,7 +3,8 @@
 #include "Sail/entities/Entity.h"
 #include "Sail/entities/components/NetworkReceiverComponent.h"
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
-#include "Sail/entities/components/OnlinePlayerComponent.h"
+#include "Sail/entities/components/OnlineOwnerComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
 #include "../SPLASH/src/game/states/GameState.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -224,7 +225,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	entities.push_back(e.get());	// Needs to be before 'addComponent' or packets might be lost.
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
 	int test = e->getComponent<NetworkReceiverComponent>()->m_id;
-	e->addComponent<OnlinePlayerComponent>(id);
+	e->addComponent<OnlineOwnerComponent>(id);
 
 	// If you are the host create a pass-through sender component to pass on the info to all players
 	if (NWrapperSingleton::getInstance().isHost()) {
@@ -265,7 +266,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		light->addComponent<TransformComponent>(glm::vec3(0.f, 2.f, 0.f));
 		light->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		light->addComponent<CollidableComponent>();
-		light->addComponent<OnlinePlayerComponent>(id);
+		light->addComponent<OnlineOwnerComponent>(id);
 		PointLight pl;
 		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		pl.setPosition(glm::vec3(0.2f, 0.2f + .37f, 0.2f));
@@ -315,33 +316,43 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
-	if (NWrapperSingleton::getInstance().isHost()) {
-		if (id == m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID) {
-			// Bad way of getting the candle component
-			std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
-			for (auto& child : childEntities) {
-				if (child.get()->hasComponent<CandleComponent>()) {
+	// If it is me who was hit
+	if (id == m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID) {
+		// Bad way of getting the candle component
+		std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
+		for (auto& child : childEntities) {
+			if (child.get()->hasComponent<CandleComponent>()) {
+				// Hit me
+				child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
 
-					child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
+				// If i'm host, relay message onwards
+				if (NWrapperSingleton::getInstance().isHost()) {
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::WATER_HIT_PLAYER,
+						m_playerEntity
+					);
 				}
 			}
 		}
-
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::PLAYER_DIED, nullptr);
 	}
 
 	// Needs to be after the function above.
 	// If the message was sent from me but rerouted back from the host, ignore it.
-	if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
-		return;
-	}
+	//if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
+	//	return;
+	//}
 
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {	
-			// Hit player with water
-			std::cout << id << " was hit by a player!\n";
-			e->getComponent<CandleComponent>()->hitWithWater(10.0f);
+			// Bad way of getting the candle component
+			std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
+			for (auto& child : childEntities) {
+
+				if (child.get()->hasComponent<CandleComponent>()) {
+					// Hit player with water
+					child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
+				}
+			}
 		}
 	}
 }
