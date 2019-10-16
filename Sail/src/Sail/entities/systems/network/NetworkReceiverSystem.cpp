@@ -149,7 +149,7 @@ void NetworkReceiverSystem::update() {
 				Archive::loadVec3(ar, gunPosition);
 				Archive::loadVec3(ar, gunVelocity);
 
-				//EntityFactory::CreateProjectile(gunPosition, gunVelocity);
+				EntityFactory::CreateProjectile(gunPosition, gunVelocity);
 			}
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
 				ar(netObjectID);
