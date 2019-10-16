@@ -44,6 +44,7 @@ private:
 	bool splitDirection(bool ns);
 	void addSpawnPoints();
 	void addDoors();
-	void addTile(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
+	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
+	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize, float tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
 };

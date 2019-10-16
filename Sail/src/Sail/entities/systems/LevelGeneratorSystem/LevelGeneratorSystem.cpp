@@ -88,222 +88,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 				int typeId = map->tileArr[i][j][1];
 				int doors = map->tileArr[i][j][2];
 				if (tileId<16 && tileId>-1) {
-					/*
-					Adding tile type:
-					x         x
-
-
-
-
-					x         x
-					*/
-					if (tileId == 0) {
-						addTile(Direction::NONE, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x---------x
-
-
-
-
-					x         x
-					*/
-					else if (tileId == 1) {
-						addTile(Direction::UP, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x         x
-					          |
-					          |
-					          |
-					          |
-					x         x
-					*/
-					else if (tileId == 2) {
-						addTile(Direction::RIGHT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x---------x
-					          |
-					          |
-					          |
-					          |
-					x         x
-					*/
-					else if (tileId == 3) {
-						addTile(Direction::UP, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::RIGHT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x         x
-
-
-
-
-					x---------x
-					*/
-					else if (tileId == 4) {
-						addTile(Direction::DOWN, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x---------x
-
-
-
-
-					x---------x
-					*/
-					else if (tileId == 5) {
-						addTile(Direction::UP, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::DOWN, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x         x
-							  |
-							  |
-							  |
-							  |
-					x---------x
-					*/
-					else if (tileId == 6) {
-						addTile(Direction::RIGHT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::DOWN, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x---------x
-							  |
-							  |
-							  |
-							  |
-					x---------x
-					*/
-					else if (tileId == 7) {
-						addTile(Direction::UP, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::DOWN, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::RIGHT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x         x
-					|
-					|
-					|
-					|
-					x         x
-					*/
-					else if (tileId == 8) {
-						addTile(Direction::LEFT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x---------x
-					|
-					|
-					|
-					|
-					x         x
-
-					*/
-					else if (tileId == 9) {
-						addTile(Direction::UP, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::LEFT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x         x
-					|		  |
-					|		  |
-					|		  |
-					|		  |
-					x         x
-
-					*/
-					else if (tileId == 10) {
-						addTile(Direction::RIGHT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::LEFT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x---------x
-					|		  |
-					|		  |
-					|		  |
-					|		  |
-					x         x
-
-					*/
-					else if (tileId == 11) {						
-						addTile(Direction::RIGHT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::LEFT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::UP, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x         x
-					|
-					|
-					|
-					|
-					x---------x
-
-					*/
-					else if (tileId == 12) {
-						addTile(Direction::DOWN, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::LEFT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x---------x
-					|
-					|
-					|
-					|
-					x---------x
-
-					*/
-					else if (tileId == 13) {
-						addTile(Direction::UP, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::DOWN, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::LEFT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x         x
-					|		  |
-					|		  |
-					|		  |
-					|		  |
-					x---------x
-
-					*/
-					else if (tileId == 14) {
-						addTile(Direction::RIGHT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::DOWN, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::LEFT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
-					/*
-					Adding tile type:
-					x---------x
-					|		  |
-					|		  |
-					|		  |
-					|		  |
-					x---------x
-
-					*/
-					else if (tileId == 15) {
-						addTile(Direction::UP, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::RIGHT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::DOWN, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-						addTile(Direction::LEFT, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
-					}
+					addTile(tileId, typeId, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 				}
 			}
 		}
@@ -1027,7 +812,7 @@ bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
 	return false;
 }
 
-void LevelGeneratorSystem::addTile(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb) {
+void LevelGeneratorSystem::addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb) {
 	if (dir == Direction::RIGHT) {
 		if (hasDoor(Direction::RIGHT, doors)) {
 			if (typeID == 0) {
@@ -1110,6 +895,257 @@ void LevelGeneratorSystem::addTile(Direction dir, int typeID, int doors, const s
 		else {
 			EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_FLOOR], bb, glm::vec3(tileSize* i + tileOffset, 0.f, tileSize* j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f), glm::vec3(tileSize / 10.f, 1.0f, tileSize / 10.f));
 		}
+	}
+}
+
+void LevelGeneratorSystem::addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize, float tileOffset, int i, int j, Model* bb) {
+
+	switch (tileId)
+	{
+	case 0:
+		/*
+		
+		Adding tile type:
+		x         x
+
+
+
+
+		x         x
+		
+		*/
+		addMapModel(Direction::NONE, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+
+		break;
+	case 1:
+		/*
+		
+		Adding tile type:
+		x---------x
+
+
+
+
+		x         x
+		
+		*/
+		addMapModel(Direction::UP, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 2:	
+		/*
+		
+		Adding tile type:
+		x         x
+				  |
+				  |
+				  |
+				  |
+		x         x
+		
+		*/
+		addMapModel(Direction::RIGHT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 3:
+		/*
+		
+		Adding tile type:
+		x---------x
+				  |
+				  |
+				  |
+				  |
+		x         x
+		
+		*/
+		addMapModel(Direction::UP, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::RIGHT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 4:
+		/*
+		
+		Adding tile type:
+		x         x
+
+
+
+
+		x---------x
+		
+		*/
+		addMapModel(Direction::DOWN, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 5:
+		/*
+		
+		Adding tile type:
+		x---------x
+
+
+
+
+		x---------x
+		
+		*/
+		addMapModel(Direction::UP, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::DOWN, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 6:
+		/*
+		
+		Adding tile type:
+		x         x
+				  |
+				  |
+				  |
+				  |
+		x---------x
+		
+		*/
+		addMapModel(Direction::RIGHT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::DOWN, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 7:
+		/*
+		
+		Adding tile type:
+		x---------x
+				  |
+				  |
+				  |
+				  |
+		x---------x
+		
+		*/
+		addMapModel(Direction::UP, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::DOWN, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::RIGHT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 8:
+		/*
+		
+		Adding tile type:
+		x         x
+		|
+		|
+		|
+		|
+		x         x
+		
+		*/
+		addMapModel(Direction::LEFT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 9:
+		/*
+		
+		Adding tile type:
+		x---------x
+		|
+		|
+		|
+		|
+		x         x
+
+		*/
+		addMapModel(Direction::UP, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::LEFT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 10:
+		/*
+		
+		Adding tile type:
+		x         x
+		|		  |
+		|		  |
+		|		  |
+		|		  |
+		x         x
+
+		*/
+		addMapModel(Direction::RIGHT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::LEFT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 11:
+		/*
+		
+		Adding tile type:
+		x---------x
+		|		  |
+		|		  |
+		|		  |
+		|		  |
+		x         x
+
+		*/
+		addMapModel(Direction::RIGHT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::LEFT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::UP, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 12:
+		/*
+		
+		Adding tile type:
+		x         x
+		|
+		|
+		|
+		|
+		x---------x
+
+		*/
+		addMapModel(Direction::DOWN, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::LEFT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 13:
+		/*
+		
+		Adding tile type:
+		x---------x
+		|
+		|
+		|
+		|
+		x---------x
+
+		*/
+		addMapModel(Direction::UP, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::DOWN, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::LEFT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 14:
+		/*
+	
+		Adding tile type:
+		x         x
+		|		  |
+		|		  |
+		|		  |
+		|		  |
+		x---------x
+
+		*/
+		addMapModel(Direction::RIGHT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::DOWN, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::LEFT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	case 15:
+		/*
+
+		Adding tile type:
+		x---------x
+		|		  |
+		|		  |
+		|		  |
+		|		  |
+		x---------x
+
+		*/
+		addMapModel(Direction::UP, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::RIGHT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::DOWN, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		addMapModel(Direction::LEFT, typeId, doors, tileModels, tileSize, tileOffset, i, j, bb);
+		break;
+	default:
+		break;
 	}
 }
 

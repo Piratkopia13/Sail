@@ -75,6 +75,10 @@ public:
 	float tileSize = 7.f;
 	int tileOffset = 0;
 	std::vector<glm::vec3> spawnPoints;
-	std::queue<rect> chunks, blocks, hallways, rooms, matched;
+	std::queue<rect> chunks;
+	std::queue<rect> blocks;
+	std::queue<rect> hallways;
+	std::queue<rect> rooms;
+	std::queue<rect> matched;
 private:
 };
