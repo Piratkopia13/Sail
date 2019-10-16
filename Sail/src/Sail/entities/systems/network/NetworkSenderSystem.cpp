@@ -89,7 +89,7 @@ void NetworkSenderSystem::update() {
 		delete pE;											// Delete
 	}
 
-	// send the serialized archive over the network
+	// -+-+-+-+-+-+-+-+ send the serialized archive over the network -+-+-+-+-+-+-+-+ 
 	std::string binaryData = os.str();
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);

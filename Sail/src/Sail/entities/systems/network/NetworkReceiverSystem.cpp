@@ -147,6 +147,12 @@ void NetworkReceiverSystem::update() {
 			// NEW STUFF
 		//	ar(netObjectID);
 
+			/* READ ALL DATA */
+
+			/* EARLY EXIT */
+
+			/* */
+
 			if (eventType == Netcode::MessageType::PLAYER_JUMPED) {
 			//	playerJumped(netObjectID);
 			} 
@@ -313,15 +319,20 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
-	if (id == m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID) {
-		// Bad way of getting the candle component
-		std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
-		for (auto& child : childEntities) {
-			if (child.get()->hasComponent<CandleComponent>()) {
+	if (NWrapperSingleton::getInstance().isHost()) {
+		if (id == m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID) {
+			// Bad way of getting the candle component
+			std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
+			for (auto& child : childEntities) {
+				if (child.get()->hasComponent<CandleComponent>()) {
 
-				child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
+					child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
+				}
 			}
 		}
+
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::PLAYER_DIED, nullptr);
 	}
 
 	// Needs to be after the function above.
