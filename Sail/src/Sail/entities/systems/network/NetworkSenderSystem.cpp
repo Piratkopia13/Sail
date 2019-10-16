@@ -79,8 +79,9 @@ void NetworkSenderSystem::update() {
 	}
 
 	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
-	__int32 test = static_cast<__int32>(eventQueue.size());
-	ar(test);
+	unsigned __int32 queueSize = static_cast<__int32>(eventQueue.size());
+	ar(queueSize);
+
 	while (eventQueue.empty() == false) {
 		NetworkSenderEvent* pE = eventQueue.front();		// Fetch
 		handleEvent(pE, &ar);								// Deal with
@@ -146,6 +147,14 @@ void NetworkSenderSystem::stop() {
 	}
 }
 
+void NetworkSenderSystem::initWithPlayerID(unsigned char playerID) {
+	m_playerID = playerID;
+}
+
+void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e) {
+	entities.push_back(e);
+}
+
 void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
 	// Package it depending on the type
 	switch (messageType) {
@@ -178,32 +187,32 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 
 void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar) {
 	(*ar)(event->type); // Send the event-type
-	Entity* e = event->pRelevantEntity;
+	(*ar)(static_cast<unsigned __int32>(m_playerID));
 	
 	switch (event->type) {
 	case Netcode::MessageType::SPAWN_PROJECTILE:
 	{
-		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
-		TransformComponent* t = e->getComponent<TransformComponent>();
-		MovementComponent* m = e->getComponent<MovementComponent>();
+		Netcode::MessageDataProjectile* data = dynamic_cast<Netcode::MessageDataProjectile*>(event->data);
 
-		Archive::archiveVec3(*ar, t->getTranslation());
-		Archive::archiveVec3(*ar, m->velocity);
+		Archive::archiveVec3(*ar, data->translation);
+		Archive::archiveVec3(*ar, data->velocity);
+
+		delete data;
 	}
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED: 
 	{
-		// Get netObjectID so that all connected applications execute the target behavior for the same entity
-		unsigned __int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
-		(*ar)(NetObjectID);	// Send 
+		// it is easy to deduce which player jumped based on who sent the first message
+		// No need to send additional info here.
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		//Netcode::NetworkObjectID NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
-		//(*ar)(3);	// Send 1
-		//(*ar)(NetObjectID);
-		//(*ar)('3');
+		Netcode::MessageDataWaterHitPlayer* data = dynamic_cast<Netcode::MessageDataWaterHitPlayer*>(event->data);
+ 		
+		(*ar)(data->playerWhoWasHitID);	
+
+		delete data;
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DIED:

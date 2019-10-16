@@ -8,7 +8,7 @@ class NetworkSenderEvent;
 
 struct NetworkSenderEvent {
 	Netcode::MessageType type;
-	Entity* pRelevantEntity = nullptr;
+	Netcode::MessageData* data = nullptr;
 };
 
 
@@ -41,7 +41,7 @@ public:
 
 	// Specifically for One-Time-Events during the gamestate
 	void setNSS(NetworkSenderSystem* NSS);
-	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity* pRelevantEntity);
+	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData);
 private:
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;

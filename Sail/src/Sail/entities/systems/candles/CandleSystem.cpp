@@ -66,7 +66,30 @@ void CandleSystem::update(float dt) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
-					if (candle->getHealth() <= 0.f) {
+
+
+					// A candle which is owned by a player has been hit
+					// -- Does the candle belong to an online player?
+					// -- Was it hit by the local player?
+					
+					// If the player is controlled through the network
+					if (e->hasComponent<OnlineOwnerComponent>()) {
+						CandleComponent* c = e->getComponent<CandleComponent>();
+
+						// If the player who hit him was the local player
+						if (c->hitByLocalPlayer == true) {
+							// It (An online player) was hit by the local player
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::WATER_HIT_PLAYER, 
+								SAIL_NEW Netcode::MessageDataWaterHitPlayer{
+									e->getComponent<OnlineOwnerComponent>()->netEntityID
+								}
+							);
+						}
+					}
+					
+
+					if ( candle->getHealth() <= 0.f ) {
 						candle->setIsLit(false);
 
 						if (candle->getOwner() == m_playerEntityID) {

@@ -50,7 +50,8 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID
 	);
-	player->addComponent<LocalOwnerComponent>(playerID);
+	int test = player->getComponent<NetworkSenderComponent>()->m_id;
+	player->addComponent<LocalOwnerComponent>(player->getComponent<NetworkSenderComponent>()->m_id);
 
 	// Add physics components and setting initial variables
 	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
@@ -191,7 +192,6 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	e->addComponent<TransformComponent>(pos + randPos);
 	if (hasLocalOwner == true) {
 		e->addComponent<LocalOwnerComponent>(ownersNetId);
-		
 	}
 	else {
 		e->addComponent<OnlineOwnerComponent>(ownersNetId);
