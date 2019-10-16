@@ -3,6 +3,7 @@
 // Ordered by name
 
 class AiSystem;
+class AnimationInitSystem;
 class AnimationSystem;
 class AudioSystem;
 class BeginEndFrameSystem;
@@ -28,11 +29,13 @@ class OctreeAddRemoverSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class RealTimeModelSubmitSystem;
+class RenderImGuiSystem;
 class SpeedLimitSystem;
 class UpdateBoundingBoxSystem;
 
 struct Systems {
 	AiSystem* aiSystem = nullptr;
+	AnimationInitSystem* animationInitSystem = nullptr;
 	AnimationSystem* animationSystem = nullptr;
 	AudioSystem* audioSystem = nullptr;
 	BeginEndFrameSystem* beginEndFrameSystem = nullptr;
@@ -58,6 +61,7 @@ struct Systems {
 	PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 	ProjectileSystem* projectileSystem = nullptr;
 	RealTimeModelSubmitSystem* realTimeModelSubmitSystem = nullptr;
+	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 };
