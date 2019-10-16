@@ -31,6 +31,7 @@ namespace KeyBinds {
 	int toggleSphere;
 	int toggleSun;
 	int lightCandle;
+	int spray;
 
 	// Application
 	int alt;
@@ -80,6 +81,7 @@ void KeyBinds::init() {
 	toggleSphere = SAIL_KEY_C;
 	toggleSun = SAIL_KEY_P;
 	lightCandle = SAIL_KEY_J;
+	spray = SAIL_KEY_L;
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds

@@ -8,6 +8,7 @@
 #include "Gameplay/ai/AiSystem.h"
 #include "Gameplay/GunSystem.h"
 #include "Gameplay/ProjectileSystem.h"
+#include "Graphics/AnimationInitSystem.h"
 #include "Graphics/AnimationSystem.h"
 #include "input/GameInputSystem.h"
 #include "LevelGeneratorSystem/LevelGeneratorSystem.h"
@@ -28,3 +29,4 @@
 #include "render/MetaballSubmitSystem.h"
 #include "render/ModelSubmitSystem.h"
 #include "render/RealTimeModelSubmitSystem.h"
+#include "render/ImGui/RenderImGuiSystem.h"
