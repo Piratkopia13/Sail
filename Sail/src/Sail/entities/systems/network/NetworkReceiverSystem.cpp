@@ -173,7 +173,6 @@ void NetworkReceiverSystem::update() {
 			//	unsigned char wtf = static_cast<unsigned char>(netObjectID >> 18);
 			//	std::cout << "I (" << (unsigned __int32)m_playerID << ")" << " think (" << (unsigned __int32)wtf << ") sent this originally\n";
 				
-
 			//	if (static_cast<unsigned char>(netObjectID >> 18) != m_playerID) { // First byte is always the ID of the player who created the object
 					
 					// If it wasn't sent from me, deal with it
