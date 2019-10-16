@@ -210,7 +210,7 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED: 
 	{
-		// No need to send additional info here, we(this computer) made the jump
+		// No need to send additional info here, we(this computer) made the jump´.
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
