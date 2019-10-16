@@ -22,7 +22,7 @@ void BoundingboxSubmitSystem::submitAll() {
 		for (auto& e : entities) {
 			BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 			if (Model* wireframeModel = boundingBox->getWireframeModel()) {
-				Renderer::RenderFlag flags = Renderer::MESH_STATIC;
+				Renderer::RenderFlag flags = Renderer::MESH_STATIC | Renderer::HIDE_IN_DXR;
 				CullingComponent* culling = e->getComponent<CullingComponent>();
 				if (!culling || (culling && culling->isVisible)) {
 					flags |= Renderer::IS_VISIBLE_ON_SCREEN;

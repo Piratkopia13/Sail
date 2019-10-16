@@ -16,12 +16,16 @@ Octree::Octree(Model* boundingBoxModel) {
 	m_softLimitMeshes = 4;
 	m_minimumNodeHalfSize = 4.0f;
 
-	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-
+	m_baseNode.bbEntity = ECS::Instance()->createEntity("OBB");
 	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
-	BoundingBox* tempBoundingBox = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+	BoundingBoxComponent* bc = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>();
+	BoundingBox* tempBoundingBox = bc->getBoundingBox();
 	tempBoundingBox->setPosition(glm::vec3(0.0f));
 	tempBoundingBox->setHalfSize(glm::vec3(20.0f, 20.0f, 20.0f));
+
+	bc->getTransform()->setTranslation(tempBoundingBox->getPosition() - glm::vec3(0.0f, tempBoundingBox->getHalfSize().y, 0.0f));
+	bc->getTransform()->setScale(tempBoundingBox->getHalfSize() * 2.0f);
+
 	m_baseNode.parentNode = nullptr;
 	m_baseNode.nrOfEntities = 0;
 }
@@ -39,12 +43,17 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 
 	Node newBaseNode;
 	const BoundingBox* baseNodeBB = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
-	newBaseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
+	newBaseNode.bbEntity = ECS::Instance()->createEntity("OBB");
 
 	newBaseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
-	BoundingBox* newBaseNodeBoundingBox = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+	BoundingBoxComponent* bc = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>();
+	BoundingBox* newBaseNodeBoundingBox = bc->getBoundingBox();
 	newBaseNodeBoundingBox->setPosition(baseNodeBB->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(x * baseNodeBB->getHalfSize().x * 2.0f, y * baseNodeBB->getHalfSize().y * 2.0f, z * baseNodeBB->getHalfSize().z * 2.0f));
 	newBaseNodeBoundingBox->setHalfSize(baseNodeBB->getHalfSize() * 2.0f);
+
+	bc->getTransform()->setTranslation(newBaseNodeBoundingBox->getPosition() - glm::vec3(0.0f, newBaseNodeBoundingBox->getHalfSize().y, 0.0f));
+	bc->getTransform()->setScale(newBaseNodeBoundingBox->getHalfSize() * 2.0f);
+
 	newBaseNode.nrOfEntities = 0;
 	newBaseNode.parentNode = nullptr;
 
@@ -56,13 +65,16 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 					tempChildNode = m_baseNode;
 				}
 				else {
-					tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-
+					tempChildNode.bbEntity = ECS::Instance()->createEntity("OBB");
 					tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
-					BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+					bc = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>();
+					BoundingBox* tempChildBoundingBox = bc->getBoundingBox();
 					tempChildBoundingBox->setHalfSize(baseNodeBB->getHalfSize());
 					tempChildBoundingBox->setPosition(newBaseNodeBoundingBox->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(tempChildBoundingBox->getHalfSize().x * 2.0f * i, tempChildBoundingBox->getHalfSize().y * 2.0f * j, tempChildBoundingBox->getHalfSize().z * 2.0f * k));
 					tempChildNode.nrOfEntities = 0;
+
+					bc->getTransform()->setTranslation(tempChildBoundingBox->getPosition() - glm::vec3(0.0f, tempChildBoundingBox->getHalfSize().y, 0.0f));
+					bc->getTransform()->setScale(tempChildBoundingBox->getHalfSize() * 2.0f);
 				}
 				tempChildNode.parentNode = &newBaseNode;
 				newBaseNode.childNodes.push_back(tempChildNode);
@@ -135,15 +147,18 @@ bool Octree::addEntityRec(Entity* newEntity, Node* currentNode) {
 						for (int k = 0; k < 2; k++) {
 							const BoundingBox* currentNodeBB = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							Node tempChildNode;
-							tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-
+							tempChildNode.bbEntity = ECS::Instance()->createEntity("OBB");
 							tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
-							BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+							BoundingBoxComponent* bc = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>();
+							BoundingBox* tempChildBoundingBox = bc->getBoundingBox();
 							tempChildBoundingBox->setHalfSize(currentNodeBB->getHalfSize() / 2.0f);
 							tempChildBoundingBox->setPosition(currentNodeBB->getPosition() - tempChildBoundingBox->getHalfSize() + glm::vec3(tempChildBoundingBox->getHalfSize().x * 2.0f * i, tempChildBoundingBox->getHalfSize().y * 2.0f * j, tempChildBoundingBox->getHalfSize().z * 2.0f * k));
 							tempChildNode.nrOfEntities = 0;
 							tempChildNode.parentNode = currentNode;
 							currentNode->childNodes.push_back(tempChildNode);
+
+							bc->getTransform()->setTranslation(tempChildBoundingBox->getPosition() - glm::vec3(0.0f, tempChildBoundingBox->getHalfSize().y, 0.0f));
+							bc->getTransform()->setScale(tempChildBoundingBox->getHalfSize() * 2.0f);
 
 							//Try to put meshes that was in this leaf node in the new child nodes.
 							for (int l = 0; l < currentNode->nrOfEntities; l++) {
