@@ -65,7 +65,7 @@ void CandleSystem::update(float dt) {
 							candle->setIsAlive(false);
 
 							// Check if the extinguished candle is owned by the player
-							// If so, dispatch an event (received by GameState for now)
+							// If so, dispatch an event (received by GameState for now).
 							if ( candle->getOwner() == m_playerEntityID ) {
 								Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_DEATH));
 								e->queueDestruction();
