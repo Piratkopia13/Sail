@@ -11,14 +11,14 @@ RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int he
 DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, bool createDepthStencilView, bool createOnlyDSV, UINT bindFlags, UINT cpuAccessFlags, const std::string& name)
 	: m_width(width)
 	, m_height(height)
-	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers())
-	, m_cpuDsvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers())
+	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
+	, m_cpuDsvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
 	, m_hasDepthTextures(createDepthStencilView)
 {
 	isRenderableTex = true;
 	context = Application::getInstance()->getAPI<DX12API>();
 
-	const auto& numSwapBuffers = context->getNumSwapBuffers();
+	const auto& numSwapBuffers = context->getNumGPUBuffers();
 	m_rtvHeapCDHs.resize(numSwapBuffers);
 	m_dsvHeapCDHs.resize(numSwapBuffers);
 	if (m_hasDepthTextures) {
@@ -41,8 +41,8 @@ void DX12RenderableTexture::begin(void* cmdList) {
 
 	//transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE* dsvCdh = (m_hasDepthTextures) ? &m_dsvHeapCDHs[context->getFrameIndex()] : &context->getDepthStencilViewCDH();
-	dxCmdList->OMSetRenderTargets(1, &m_rtvHeapCDHs[context->getFrameIndex()], true, dsvCdh);
+	const D3D12_CPU_DESCRIPTOR_HANDLE* dsvCdh = (m_hasDepthTextures) ? &m_dsvHeapCDHs[context->getSwapIndex()] : &context->getDepthStencilViewCDH();
+	dxCmdList->OMSetRenderTargets(1, &m_rtvHeapCDHs[context->getSwapIndex()], true, dsvCdh);
 
 	dxCmdList->RSSetViewports(1, context->getViewport());
 	dxCmdList->RSSetScissorRects(1, context->getScissorRect());
@@ -63,9 +63,9 @@ void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 
 	// Resource state must be set to render target before clearing
 	transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	dxCmdList->ClearRenderTargetView(m_rtvHeapCDHs[context->getFrameIndex()], clearColor, 0, nullptr);
+	dxCmdList->ClearRenderTargetView(m_rtvHeapCDHs[context->getSwapIndex()], clearColor, 0, nullptr);
 	if (m_hasDepthTextures) {
-		dxCmdList->ClearDepthStencilView(m_dsvHeapCDHs[context->getFrameIndex()], D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+		dxCmdList->ClearDepthStencilView(m_dsvHeapCDHs[context->getSwapIndex()], D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	}
 }
 
@@ -80,32 +80,32 @@ void DX12RenderableTexture::resize(int width, int height) {
 }
 
 ID3D12Resource1* DX12RenderableTexture::getResource() const {
-	return textureDefaultBuffers[context->getFrameIndex()].Get();
+	return textureDefaultBuffers[context->getSwapIndex()].Get();
 }
 
 ID3D12Resource* DX12RenderableTexture::getDepthResource() const {
-	return m_depthStencilBuffers[context->getFrameIndex()].Get();
+	return m_depthStencilBuffers[context->getSwapIndex()].Get();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDepthSrvCDH(int frameIndex) const {
 	assert(m_hasDepthTextures); // Tried to get depth srv without a valid depth stencil resource
-	int i = (frameIndex == -1) ? context->getFrameIndex() : frameIndex;
+	int i = (frameIndex == -1) ? context->getSwapIndex() : frameIndex;
 	return depthSrvHeapCDHs[i];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH(int frameIndex) const {
-	int i = (frameIndex == -1) ? context->getFrameIndex() : frameIndex;
+	int i = (frameIndex == -1) ? context->getSwapIndex() : frameIndex;
 	return m_rtvHeapCDHs[i];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH(int frameIndex) const {
-	int i = (frameIndex == -1) ? context->getFrameIndex() : frameIndex;
+	int i = (frameIndex == -1) ? context->getSwapIndex() : frameIndex;
 	return m_dsvHeapCDHs[i];
 }
 
 void DX12RenderableTexture::createTextures() {
 
-	for (unsigned int i = 0; i < context->getNumSwapBuffers(); i++) {
+	for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
 		D3D12_RESOURCE_DESC textureDesc = {};
 		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Width = m_width;
@@ -149,7 +149,7 @@ void DX12RenderableTexture::createTextures() {
 }
 
 void DX12RenderableTexture::createDepthTextures() {
-	for (unsigned int i = 0; i < context->getNumSwapBuffers(); i++) {
+	for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
 
 		D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
 		depthOptimizedClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
