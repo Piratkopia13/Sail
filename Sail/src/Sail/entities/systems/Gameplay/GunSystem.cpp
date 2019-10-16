@@ -35,19 +35,11 @@ void GunSystem::update(float dt) {
 				if (gun->projectileSpawnTimer <= 0.f) {
 					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
-					auto projectile = EntityFactory::CreateProjectile(
-						gun->position,
-						gun->direction * gun->projectileSpeed,
-						true,
-						e->getComponent<NetworkSenderComponent>()->m_id
-					);
+					auto e = EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed, true);
+					
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::SPAWN_PROJECTILE,
-						e
-						/*SAIL_NEW Netcode::MessageDataProjectile{
-							gun->position,
-							gun->direction * gun->projectileSpeed
-						}*/
+						e.get()
 					);
 					m_gameDataTracker->logWeaponFired();
 				}
