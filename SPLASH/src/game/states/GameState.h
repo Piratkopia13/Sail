@@ -44,7 +44,6 @@ private:
 
 	void loadAnimations();
 	void initAnimations();
-	void initSystems(const unsigned char playerID);
 private:
 	Application* m_app;
 	// Camera

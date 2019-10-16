@@ -335,6 +335,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
 
+
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 }
@@ -415,69 +416,6 @@ bool GameState::onEvent(Event& event) {
 //	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
-}
-
-void GameState::initSystems(const unsigned char playerID) {
-	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
-	
-	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
-	m_componentSystems.collisionSystem->provideOctree(m_octree);
-
-	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
-
-	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
-
-	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
-
-	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
-
-	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
-	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
-	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
-
-	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
-
-	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
-
-	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
-
-	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
-
-	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
-	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
-
-	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-
-	// Create system which prepares each new update
-	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
-
-	// Create system which handles creation of projectiles
-	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
-
-	// Create system which checks projectile collisions
-	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
-
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-
-	// Create systems for rendering
-	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
-	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
-	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
-
-	// Create system for player input
-	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_cam);
-
-	// Create network send and receive systems
-	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
-	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
-	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
-	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);	// Grant NSS to singleton for access to single-frame event stack
-
-	// Create system for handling and updating sounds
-	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
