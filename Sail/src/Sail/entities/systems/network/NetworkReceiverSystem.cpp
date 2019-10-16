@@ -193,6 +193,9 @@ void NetworkReceiverSystem::update() {
 			else if (eventType == Netcode::MessageType::MATCH_ENDED) {
 				matchEnded();
 			}
+			else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
+				backToLobby();
+			}
 		}
 
 
@@ -388,3 +391,8 @@ void NetworkReceiverSystem::matchEnded() {
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
+void NetworkReceiverSystem::backToLobby() {
+	
+	m_gameStatePtr->requestStackPop();
+	m_gameStatePtr->requestStackPush(States::JoinLobby);
+}

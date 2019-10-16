@@ -40,6 +40,7 @@ private:
 	void waterHitPlayer(Netcode::NetworkObjectID id);
 	void playerDied(Netcode::NetworkObjectID id);
 	void matchEnded();
+	void backToLobby();
 
 	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
 };
