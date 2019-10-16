@@ -463,8 +463,6 @@ bool GameState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
-	ECS::Instance();
-
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 	
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
