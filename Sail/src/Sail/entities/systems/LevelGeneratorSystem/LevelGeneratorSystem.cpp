@@ -97,7 +97,6 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 					x         x
 					*/
 					if (tileId == 0) {
-					addTile(Direction::NONE, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
 					/*
 					Adding tile type:
@@ -303,6 +302,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 						addTile(Direction::DOWN, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 						addTile(Direction::LEFT, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 					}
+					addTile(Direction::NONE, doors, tileModels, map->tileSize, map->tileOffset, i, j, bb);
 				}
 			}
 		}
@@ -1074,7 +1074,7 @@ void LevelGeneratorSystem::addTile(Direction dir, int doors, const std::vector<M
 		tileEntity->addComponent<ModelComponent>(tileModels[TileModel::ROOM_FLOOR]);
 		tileEntity->addComponent<TransformComponent>(glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset));
 	}
-	tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10.f, 1.0f, tileSize / 10.f));
+	tileEntity->getComponent<TransformComponent>()->setScale(glm::vec3(tileSize / 10.f, 0.7f, tileSize / 10.f));
 	tileEntity->addComponent<BoundingBoxComponent>(bb);
 	tileEntity->addComponent<CollidableComponent>();
 	tileEntity->addComponent<CullingComponent>();

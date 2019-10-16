@@ -46,7 +46,7 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-// #define TRACE_FROM_GBUFFERS
+ //#define TRACE_FROM_GBUFFERS
 #ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
@@ -230,6 +230,9 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	float metalness = metalnessRoughnessAO.r;
 	float roughness = metalnessRoughnessAO.g;
 	float ao = metalnessRoughnessAO.b;
+
+	//payload.color = float4(normalInWorldSpace * 0.5f + 0.5f, 1.0f);
+	//return;
 
 	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
 }
