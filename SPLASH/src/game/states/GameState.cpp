@@ -89,7 +89,6 @@ GameState::GameState(StateStack& stack)
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	m_componentSystems.animationInitSystem->loadAnimations();
-	//loadAnimations();
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
@@ -119,7 +118,6 @@ GameState::GameState(StateStack& stack)
 	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
 
 	m_componentSystems.animationInitSystem->initAnimations();
-	//initAnimations();
 
 
 	// Inform CandleSystem of the player
