@@ -38,6 +38,11 @@ bool EndGameState::renderImgui(float dt) {
 
 	ImGui::Begin("Return");
 	ImGui::SetWindowPos({ 500,550 });
+	//if (ImGui::Button("Lobby")) {
+	//	this->requestStackPop();
+	//	this->requestStackPush(States::HostLobby);
+	//	Application::getInstance()->dispatchEvent(Event(Event::Type::NETWORK_BACK_TO_LOBBY));
+	//}
 	if (ImGui::Button("Main menu")) {
 		NWrapperSingleton::getInstance().resetNetwork();
 		NWrapperSingleton::getInstance().resetWrapper();
@@ -55,5 +60,28 @@ bool EndGameState::renderImgui(float dt) {
 
 	GameDataTracker::getInstance().renderImgui();
 
+	return true;
+}
+
+bool EndGameState::onEvent(Event& event) {
+
+	EventHandler::dispatch<NetworkBackToLobby>(event, SAIL_BIND_EVENT(&EndGameState::onReturnToLobby));
+
+	return true;
+}
+
+bool EndGameState::onReturnToLobby(NetworkBackToLobby& event) {
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		std::string msg = "z";
+
+		// Send it all clients
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(msg);
+	}
+	else {
+		this->requestStackPop();
+		this->requestStackPush(States::JoinLobby);
+	}
+	
 	return true;
 }

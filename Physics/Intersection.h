@@ -8,8 +8,8 @@
 class Intersection {
 public:
 	static bool AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2);
-	static bool AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
-	static bool AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth, float* depthAlongNormal);
+	static bool AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
+	static bool AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth, float* depthAlongNormal);
 	static bool AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, const float distance);
 	static bool AabbWithSphere(BoundingBox& aabb, const Sphere& sphere);
 	static bool AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl);
@@ -42,6 +42,6 @@ private:
 	static BoundingBox sPaddedReserved; //Used in RayWithPaddedAabb to avoid having to create a new bounding box every time
 
 	static bool TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]);
-	static void Barycentric(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, float& u, float& v, float& w);
+	static void Barycentric(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, float& outU, float& outV, float& outW);
 	static bool OnTriangle(const float u, const float v, const float w);
 };

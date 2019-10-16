@@ -48,7 +48,10 @@ void ProjectileSystem::update(float dt) {
 
 			if (collision.entity->hasComponent<CandleComponent>()) {
 				// TODO: Consume da waterball (smök)
-				collision.entity->getComponent<CandleComponent>()->hitWithWater(projComp->m_damage);
+				collision.entity->getComponent<CandleComponent>()->hitWithWater(e->getComponent<ProjectileComponent>()->m_damage);
+
+		/*		CandleComponent* c = collision.entity->getComponent<CandleComponent>();
+				collision.entity->get*/
 			}
 		}
 
