@@ -4,7 +4,7 @@
 #include "Network/NetworkStructs.hpp"
 #include "Sail.h"
 #include "../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
-
+#include "Sail/entities/systems/network/NetworkSenderSystem.h"
 
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
@@ -15,6 +15,10 @@ NWrapperSingleton::~NWrapperSingleton() {
 	Memory::SafeDelete(m_network);
 }
 
+NWrapperSingleton& NWrapperSingleton::getInstance() {
+	static NWrapperSingleton instance;
+	return instance;
+}
 NWrapperSingleton::NWrapperSingleton() {
 	m_network = SAIL_NEW Network;
 	m_network->initialize();
@@ -134,6 +138,23 @@ std::string& NWrapperSingleton::getMyPlayerName() {
 
 unsigned char NWrapperSingleton::getMyPlayerID() {
 	return m_me.id;
+}
+
+void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
+	NSS = NSS_;
+}
+
+void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity* pRelevantEntity) {
+	// Cleaning is handled by the NSS later on.
+	NetworkSenderEvent* e = SAIL_NEW NetworkSenderEvent;
+	e->type = type;
+	e->pRelevantEntity = pRelevantEntity;
+	if (type == Netcode::MessageType::MATCH_ENDED) {
+		// Clear queue
+		// Push to queue
+		// set bool
+	}
+	NSS->queueEvent(e);
 }
 
 void NWrapperSingleton::initialize(bool asHost) {

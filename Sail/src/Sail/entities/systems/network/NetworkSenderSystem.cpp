@@ -79,13 +79,12 @@ void NetworkSenderSystem::update() {
 	}
 
 	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
-	unsigned __int32 queueSize = static_cast<__int32>(eventQueue.size());
-	ar(queueSize);
-
+	__int32 test = static_cast<__int32>(eventQueue.size());
+	ar(test);
 	while (eventQueue.empty() == false) {
 		NetworkSenderEvent* pE = eventQueue.front();		// Fetch
 		handleEvent(pE, &ar);								// Deal with
-		eventQueue.pop();									// Pop.
+		eventQueue.pop();									// Pop
 		delete pE;											// Delete
 	}
 
@@ -108,7 +107,7 @@ void NetworkSenderSystem::stop() {
 
 	using namespace Netcode;
 
-	// Loop through networked entities and serialize their data.
+	// Loop through networked entities and serialize their data
 	std::ostringstream os(std::ios::binary);
 	cereal::PortableBinaryOutputArchive ar(os);
 
@@ -145,10 +144,6 @@ void NetworkSenderSystem::stop() {
 			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
 		}
 	}
-}
-
-void NetworkSenderSystem::initWithPlayerID(unsigned char playerID) {
-	m_playerID = playerID;
 }
 
 void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e) {
@@ -239,4 +234,9 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	default:
 		break;
 	}
+}
+
+void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e)
+{
+	entities.push_back(e);
 }
