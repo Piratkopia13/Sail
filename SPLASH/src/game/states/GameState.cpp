@@ -79,11 +79,16 @@ GameState::GameState(StateStack& stack)
 
 	//----Octree creation----
 	//Wireframe shader
-	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
+	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
 
 	//Wireframe bounding box model
 	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	//boundingBoxModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
+	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
+	boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);
 
 	//Create octree
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
@@ -111,7 +116,6 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
-
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -453,12 +457,10 @@ bool GameState::render(float dt, float alpha) {
 	ECS::Instance();
 
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
-	
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
 	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
-
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return true;
@@ -750,7 +752,7 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* tmpbbModel = &m_app->getResourceManager().getModel(
-		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<WireframeShader>());
+		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	auto e = ECS::Instance()->createEntity("new cube");

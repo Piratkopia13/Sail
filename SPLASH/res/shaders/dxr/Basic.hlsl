@@ -46,7 +46,7 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-// #define TRACE_FROM_GBUFFERS
+#define TRACE_FROM_GBUFFERS
 #ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
@@ -86,8 +86,13 @@ void rayGen() {
 	payload.recursionDepth = 1;
 	payload.closestTvalue = 0;
 	payload.color = float4(0,0,0,0);
-	shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
-	lOutput[launchIndex] = payload.color;
+	if (worldNormal.x == -1 && worldNormal.y == -1) {
+		//Bounding boxes dont need shadeing
+		lOutput[launchIndex] = float4(albedoColor, 1.0f);
+		return;
+	} else {
+		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+	}
 
 
 	//===========MetaBalls RT START===========
@@ -121,7 +126,6 @@ void rayGen() {
 	t = min(linearDepth, payload_metaball.closestTvalue) / 10.0f;
 	//t = payload_metaball.closestTvalue / 3;// / CB_SceneData.farZ;
 
-	lOutput[launchIndex] = float4(t, t, t, 1);
 
 	float metaballDepth = payload_metaball.closestTvalue - CB_SceneData.nearZ * 4;// (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4)* projectionA;
 
@@ -160,8 +164,9 @@ void rayGen() {
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
+	payload.color = float4(1.00f, 1.0f, 1.0f, 1.0f);
 	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
-	payload.closestTvalue = 10000000;
+	payload.closestTvalue = 1000;
 }
 
 float3 getAlbedo(MeshData data, float2 texCoords) {
