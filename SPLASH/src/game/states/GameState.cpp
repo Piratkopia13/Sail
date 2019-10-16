@@ -751,6 +751,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_NM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_Albedo.tga");
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_Albedo.tga");
+
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/albedo.tga");
@@ -799,15 +803,22 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	floor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
 	floor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
 
+	Model* corridorCeiling = &m_app->getResourceManager().getModel("Tiles/CorridorCeiling.fbx", shader);
+	corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CC_MRAo.tga");
+	corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
+	corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
+
+
 	std::vector<Model*> tileModels;
 	tileModels.resize(TileModel::NUMBOFMODELS);
-	tileModels[TileModel::ROOM_FLOOR] = floor;
-	tileModels[TileModel::ROOM_WALL] = roomWall;
-	tileModels[TileModel::ROOM_DOOR] = roomDoor;
+	tileModels[TileModel::ROOM_FLOOR] = corridorFloor;
+	tileModels[TileModel::ROOM_WALL] = corridorWall;
+	tileModels[TileModel::ROOM_DOOR] = corridorDoor;
 
 	tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
 	tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
 	tileModels[TileModel::CORRIDOR_DOOR] = corridorDoor;
+	tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
 
 
 
