@@ -444,6 +444,11 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+
+	// The host will also save the data in the sender system so that it can be forwarded to all other clients
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.networkSenderSystem->pushDataToBuffer(event.getSerializedData());
+	}
 	return true;
 }
 

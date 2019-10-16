@@ -33,6 +33,7 @@ NetworkSenderSystem::~NetworkSenderSystem() {
   Logical structure of the package that will be sent by this function:
 
 	__int32         nrOfEntities
+	__int32         senderID
 
 		NetworkObjectID entity[0].id
 		EntityType		entity[0].type
@@ -61,9 +62,13 @@ void NetworkSenderSystem::update() {
 
 	// TODO: Add game tick here in the future
 
-	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame recieves via components -+-+-+-+-+-+-+-+ 
+	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame receives via components -+-+-+-+-+-+-+-+ 
 	// Write nrOfEntities
 	ar(static_cast<__int32>(entities.size()));
+
+
+	// Send our playerID so that we can ignore this packet when it gets back to us from the host
+	ar(m_playerID);
 
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
@@ -94,9 +99,23 @@ void NetworkSenderSystem::update() {
 	std::string binaryData = os.str();
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);
-	}
-	else {
+	} else {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
+	}
+
+
+
+	std::scoped_lock lock(m_forwardBufferLock);
+	// The host forwards all the incoming messages they have to all the clients
+	while (!m_HOSTONLY_dataToForward.empty()) {
+		std::string dataFromClient = m_HOSTONLY_dataToForward.front();
+
+
+		// This if statement shouldn't be needed since m_dataToForwardToClients will be empty unless you're the host
+		if (NWrapperSingleton::getInstance().isHost()) {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(dataFromClient);
+		}
+		m_HOSTONLY_dataToForward.pop();
 	}
 }
 
@@ -104,6 +123,17 @@ const void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 	eventQueue.push(type);
 }
 
+
+// ONLY DO FOR THE HOST
+// Push incoming data strings to the back of a FIFO list which will be forwarded to all other players
+void NetworkSenderSystem::pushDataToBuffer(std::string data) {
+	std::scoped_lock lock(m_forwardBufferLock);
+	m_HOSTONLY_dataToForward.push(data);
+}
+
+
+// Why is this its own function?
+// Can't it just be a message in the normal update()?
 void NetworkSenderSystem::stop() {
 
 
@@ -115,9 +145,12 @@ void NetworkSenderSystem::stop() {
 
 	// TODO: Add game tick here in the future
 
-	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame recieves via components -+-+-+-+-+-+-+-+ 
+	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame receives via components -+-+-+-+-+-+-+-+ 
 	// Write nrOfEntities
 	ar(static_cast<__int32>(0));
+
+	// Send our playerID so that we can ignore this packet when it gets back to us from the host
+	ar(m_playerID);
 
 	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
 	//__int32 test = static_cast<__int32>(eventQueue.size());
@@ -132,11 +165,10 @@ void NetworkSenderSystem::stop() {
 		eventQueue.pop();									// Pop
 		delete pE;											// Delete
 	}
+
 	if (!ended) {
 		ar(static_cast<__int32>(0));
-	}
-
-	else {
+	} else {
 		// send the serialized archive over the network
 		std::string binaryData = os.str();
 		if (NWrapperSingleton::getInstance().isHost()) {
@@ -144,6 +176,20 @@ void NetworkSenderSystem::stop() {
 		}
 		else {
 			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
+		}
+
+
+		std::scoped_lock lock(m_forwardBufferLock);
+		// The host forwards all the incoming messages they have to all the clients
+		while (!m_HOSTONLY_dataToForward.empty()) {
+			std::string dataFromClient = m_HOSTONLY_dataToForward.front();
+
+
+			// This if statement shouldn't be needed since m_dataToForwardToClients will be empty unless you're the host
+			if (NWrapperSingleton::getInstance().isHost()) {
+				NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(dataFromClient);
+			}
+			m_HOSTONLY_dataToForward.pop();
 		}
 	}
 }
@@ -187,7 +233,9 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 }
 
 void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar) {
-	(*ar)(event->type); // Send the event-type
+	{
+		(*ar)(event->type); // Send the event-type
+	}
 
 	// NEW STUFF
 //	(*ar)(static_cast<unsigned __int32>(m_playerID));
@@ -237,7 +285,9 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	{
 		// NetObjectID should be send outside of this loop.
 		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
-		(*ar)(NetObjectID); // Send
+		{
+			(*ar)(NetObjectID); // Send
+		}
 	}
 	break;
 	case Netcode::MessageType::MATCH_ENDED:
