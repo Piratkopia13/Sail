@@ -32,6 +32,8 @@ public:
 
 	static bool FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& normal, const float distance);
 	static bool FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb);
+
+	static glm::vec3 PointProjectedOnPlane(const glm::vec3& point, const glm::vec3& planeNormal, const float distance);
 private:
 	//Private constructor so an instance can't be created
 	Intersection() {};

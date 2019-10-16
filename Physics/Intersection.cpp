@@ -667,6 +667,13 @@ bool Intersection::FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb) {
 	return true;
 }
 
+glm::vec3 Intersection::PointProjectedOnPlane(const glm::vec3& point, const glm::vec3& normal, const float distance) {
+	const glm::vec3 pointOnPlane = normal * distance;
+	const glm::vec3 planeToCenter = point - pointOnPlane;
+	const float shortestDistanceToPlane = glm::dot(planeToCenter, normal);
+	return point - normal * shortestDistanceToPlane;
+}
+
 bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
 	// Compute the plane normal for triangle U.
 	glm::vec3 edge1 = U[1] - U[0];
