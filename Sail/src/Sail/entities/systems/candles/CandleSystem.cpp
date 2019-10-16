@@ -3,7 +3,16 @@
 
 #include "Sail/entities/components/LightComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
+#include "Sail/entities/components/NetworkSenderComponent.h"
+#include "Sail/entities/components/LocalPlayerComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/GunComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
+#include "Sail/entities/components/SpectatorComponent.h"
+#include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/OnlinePlayerComponent.h"
+#include "../Sail/src/Network/NWrapperSingleton.h"
+
 #include "Sail/entities/Entity.h"
 
 #include "Sail/graphics/camera/CameraController.h"
@@ -24,8 +33,10 @@ CandleSystem::~CandleSystem() {
 
 }
 
-void CandleSystem::setPlayerEntityID(int entityID) {
+void CandleSystem::setPlayerEntityID(int entityID, Entity* entityPtr) {
 	m_playerEntityID = entityID;
+	m_playerEntityPtr = entityPtr;
+	
 }
 
 // turn on the light of a specified candle if it doesn't have one already
@@ -40,6 +51,8 @@ void CandleSystem::lightCandle(const std::string& name) {
 
 // should be updated after collision detection has been done
 void CandleSystem::update(float dt) {
+	int LivingCandles = entities.size();
+
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
 
@@ -48,27 +61,48 @@ void CandleSystem::update(float dt) {
 			if ( candle->wasHitByWater() ) {
 				candle->resetHitByWater();
 
-				if ( candle->getInvincibleTimer() <= 0.f ) {
+				if (candle->getInvincibleTimer() <= 0.f) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
-					if ( candle->getHealth() <= 0.f ) {
+					if (candle->getHealth() <= 0.f) {
 						candle->setIsLit(false);
 
-						if ( candle->getOwner() == m_playerEntityID ) {
-							if ( !candle->isCarried() ) {
+						if (candle->getOwner() == m_playerEntityID) {
+							if (!candle->isCarried()) {
 								candle->toggleCarried();
 							}
 						}
 
-						if ( candle->getNumRespawns() == m_maxNumRespawns ) {
+						// Did current player die?
+						if (candle->getNumRespawns() == m_maxNumRespawns) {
 							candle->setIsAlive(false);
 
 							// Check if the extinguished candle is owned by the player
-							// If so, dispatch an event (received by GameState for now)
-							if ( candle->getOwner() == m_playerEntityID ) {
-								Application::getInstance()->dispatchEvent(Event(Event::Type::PLAYER_CANDLE_DEATH));
-								e->queueDestruction();
+							if (candle->getOwner() == m_playerEntityID) {
+								LivingCandles--;
+
+								if (LivingCandles <= 1) { // Match IS over
+									NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+										Netcode::MessageType::MATCH_ENDED,
+										nullptr
+									);
+
+									m_gameStatePtr->requestStackPop();
+									m_gameStatePtr->requestStackPush(States::EndGame);
+								}
+								else { // Match IS NOT over, instead THIS player simply died
+									e->getParent()->addComponent<SpectatorComponent>();
+									e->getParent()->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+									e->getParent()->removeComponent<GunComponent>();
+									e->getParent()->removeAllChildren();
+									// TODO: Remove all the components that can/should be removed
+
+									NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+										Netcode::MessageType::PLAYER_DIED,
+										m_playerEntityPtr
+									);
+								}
 							}
 						}
 					}
@@ -128,4 +162,9 @@ void CandleSystem::putDownCandle(Entity* e) {
 			candleComp->toggleCarried();
 		}
 	}
+}
+
+void CandleSystem::init(GameState* gameStatePtr) {
+
+	this->setGameStatePtr(gameStatePtr);
 }

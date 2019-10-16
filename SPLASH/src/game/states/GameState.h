@@ -27,10 +27,12 @@ public:
 
 private:
 	void initSystems(const unsigned char playerID);
+	void initConsole();
+
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 
-	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
+	//bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
@@ -40,8 +42,6 @@ private:
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
-	void loadAnimations();
-	void initAnimations();
 
 private:
 	Application* m_app;
@@ -56,6 +56,7 @@ private:
 	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
 	const std::string teleportToMap();
+	const std::string toggleProfiler();
 
 	Systems m_componentSystems;
 	LightSetup m_lights;
@@ -78,5 +79,13 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_poppedThisFrame = false;
+
+
+
+#ifdef _PERFORMANCE_TEST
+	void populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
+
+	std::vector<Entity::SPtr> m_performanceEntities;
+#endif
 
 };

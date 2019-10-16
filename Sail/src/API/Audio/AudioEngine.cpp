@@ -337,9 +337,9 @@ void AudioEngine::initialize() {
 HRESULT AudioEngine::initXAudio2() {
 	UINT32 flags = XAUDIO2_1024_QUANTUM;
 
-#ifdef _DEBUG
-	flags |= XAUDIO2_DEBUG_ENGINE;
-#endif
+//#ifdef _DEBUG
+//	flags |= XAUDIO2_DEBUG_ENGINE;
+//#endif
 
 	HRESULT hr = XAudio2Create(&m_xAudio2, flags);
 

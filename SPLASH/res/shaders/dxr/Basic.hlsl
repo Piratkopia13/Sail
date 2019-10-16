@@ -7,11 +7,16 @@ Texture2D<float4> sys_inTex_normals 				: register(t10);
 Texture2D<float4> sys_inTex_albedo 					: register(t11);
 Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12);
 Texture2D<float>  sys_inTex_depth 					: register(t13);
+// Decal textures
+Texture2D<float4> decal_texAlbedo 					: register(t14);
+Texture2D<float4> decal_texNormal 					: register(t15);
+Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t16);
 
 RWTexture2D<float4> lOutput : register(u0);
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
+ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0);
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
@@ -25,6 +30,8 @@ SamplerState ss : register(s0);
 
 #include "Utils.hlsl"
 #include "Shading.hlsl"
+#include "Decals.hlsl"
+
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -129,10 +136,21 @@ void rayGen() {
 
 	float metaballDepth = payload_metaball.closestTvalue - CB_SceneData.nearZ * 4;// (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4)* projectionA;
 
-	if (metaballDepth <= linearDepth)
-		lOutput[launchIndex] = payload_metaball.color;
-	else {
+	
+
+	if (metaballDepth <= linearDepth) {
+		lOutput[launchIndex] = payload_metaball.color;	
+	} else {
 		lOutput[launchIndex] = payload.color;
+
+		float4 totDecalColour = 0.0f;
+		for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+			totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+			if (!all(totDecalColour == 0.0f)) {
+				lOutput[launchIndex] = totDecalColour;
+				break;
+			}
+		}
 	}
 
 #else
