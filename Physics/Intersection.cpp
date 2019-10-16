@@ -24,8 +24,7 @@ bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aab
 	}
 	return true;
 }
-
-bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
 
 	glm::vec3 center = aabb.getPosition();
 	//Calculate normal for triangle
@@ -76,11 +75,11 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v0, cons
 
 	return true;
 }
-
-bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth) {
+bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth, float* depthAlongNormal) {
 	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
-	
+
 	float depth = INFINITY;
+	float normalDepth = INFINITY;
 	glm::vec3 axis;
 
 	glm::vec3 center = aabb.getPosition();
@@ -106,7 +105,7 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
-		e[1] = glm::vec3(0.f, 1.f, 0.f);
+		e[1] = glm::vec3(0.f, 1.f, 0.f); 
 		e[2] = glm::vec3(0.f, 0.f, 1.f);
 
 		glm::vec3 f[3];
@@ -130,9 +129,37 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 						depth = tempDepth;
 						axis = a;
 					}
+
+					if (glm::abs(glm::dot(a, triNormal)) > 0.98f) {
+						if (tempDepth < normalDepth) {
+							normalDepth = tempDepth;
+						}
+					}
 				}
 			}
 		}
+
+		glm::vec3 a = triNormal;
+		glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
+		float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
+		if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
+			return false;
+		}
+		else {
+			//Save depth along axis
+			float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
+			if (tempDepth < depth) {
+				depth = tempDepth;
+				axis = a;
+			}
+
+			if (glm::abs(glm::dot(a, triNormal)) > 0.98f) {
+				if (tempDepth < normalDepth) {
+					normalDepth = tempDepth;
+				}
+			}
+		}
+
 	}
 	else {
 		return false;
@@ -148,12 +175,15 @@ bool Intersection::AabbWithTriangle(BoundingBox& aabb, const glm::vec3& v1, cons
 		*intersectionDepth = depth;
 	}
 
+	if (depthAlongNormal) {
+		*depthAlongNormal = normalDepth;
+	}
+
 	return true;
 }
-
 bool Intersection::AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, const float distance) {
 	const glm::vec3* corners = aabb.getCorners();
-	
+
 	const float distFromPlaneAlongNormal[] = {
 		glm::dot(corners[0], normal) - distance,
 		glm::dot(corners[1], normal) - distance,
@@ -175,7 +205,6 @@ bool Intersection::AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, con
 	// True if they are on opposite sides of the plane
 	return minDist * maxDist < 0.0f;
 }
-
 bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
 	const glm::vec3* corners = aabb.getCorners();
 
@@ -193,7 +222,6 @@ bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
 	// True if the distance is smaller than the radius
 	return (distSquared < sphere.radius * sphere.radius);
 }
-
 bool Intersection::AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl) {
 	const glm::vec3* corners = aabb.getCorners();
 
@@ -241,11 +269,10 @@ bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 		float t10 = glm::dot(D, S1[0] - A), t11 = glm::dot(D, S1[1] - A);
 		auto I0 = std::minmax(t00, t01);
 		auto I1 = std::minmax(t10, t11);
-		return (I0.second > I1.first && I0.first < I1.second);
+		return (I0.second > I1.first&& I0.first < I1.second);
 	}
 	return false;
 }
-
 bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphere) {
 	// Calculations found at http://realtimecollisiondetection.net/blog/?p=103
 	// NOTE: in the comments of the article above, it is mentioned that this test is fast,
@@ -258,8 +285,8 @@ bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphe
 	const glm::vec3 V = glm::cross(B - A, C - A);
 	const float d = glm::dot(A, V);
 	const float e = glm::dot(V, V);
-	
-	if (d * d > rr * e) {
+
+	if (d * d > rr* e) {
 		return false;
 	}
 
@@ -269,28 +296,28 @@ bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphe
 	const float bb = glm::dot(B, B);
 	const float bc = glm::dot(B, C);
 	const float cc = glm::dot(C, C);
-  
-	if (aa > rr && ab > aa && ac > aa) {
+
+	if (aa > rr&& ab > aa&& ac > aa) {
 		return false;
 	}
-	if (bb > rr && ab > bb && bc > bb) {
+	if (bb > rr&& ab > bb&& bc > bb) {
 		return false;
 	}
-	if (cc > rr && ac > cc && bc > cc) {
+	if (cc > rr&& ac > cc&& bc > cc) {
 		return false;
 	}
 
 	const glm::vec3 AB = B - A;
 	const glm::vec3 BC = C - B;
 	const glm::vec3 CA = A - C;
-	 
+
 	const float d1 = ab - aa;
 	const float d2 = bc - bb;
 	const float d3 = ab - cc;
 	const float e1 = glm::dot(AB, AB);
 	const float e2 = glm::dot(BC, BC);
 	const float e3 = glm::dot(CA, CA);
-	 
+
 	const glm::vec3 Q1 = A * e1 - d1 * AB;
 	const glm::vec3 Q2 = B * e2 - d2 * BC;
 	const glm::vec3 Q3 = C * e3 - d3 * CA;
@@ -298,19 +325,18 @@ bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphe
 	const glm::vec3 QA = A * e2 - Q2;
 	const glm::vec3 QB = B * e3 - Q3;
 
-	if ((glm::dot(Q1, Q1) > rr * e1 * e1) && (glm::dot(Q1, QC) > 0)) {
+	if ((glm::dot(Q1, Q1) > rr* e1* e1) && (glm::dot(Q1, QC) > 0)) {
 		return false;
 	}
-	if ((glm::dot(Q2, Q2) > rr * e2 * e2) && (glm::dot(Q2, QA) > 0)) {
+	if ((glm::dot(Q2, Q2) > rr* e2* e2) && (glm::dot(Q2, QA) > 0)) {
 		return false;
 	}
-	if ((glm::dot(Q3, Q3) > rr * e3 * e3) && (glm::dot(Q3, QB) > 0)) {
+	if ((glm::dot(Q3, Q3) > rr* e3* e3) && (glm::dot(Q3, QB) > 0)) {
 		return false;
 	}
 
 	return true;
 }
-
 bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
 	if (PointWithVerticalCylinder(tri[0], cyl)) {
 		return true;
@@ -338,7 +364,7 @@ bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const Ve
 		These tests are NOT enough to guarantee a collision
 		More will need to be done
 	*/
-	
+
 	return false;
 }
 
@@ -351,7 +377,7 @@ bool Intersection::SphereWithPlane(const Sphere& sphere, const glm::vec3& normal
 
 bool Intersection::PointWithVerticalCylinder(const glm::vec3 p, const VerticalCylinder& cyl) {
 	float distY = p.y - cyl.position.y;
-	
+
 	// Check if point is above or below cylinder
 	if (std::fabsf(distY) > cyl.halfHeight) {
 		return false;
@@ -427,14 +453,16 @@ bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const
 		if (t_1 < 0.0f) {
 			// Both intersections are "behind" the segment
 			// Collision is impossible
-		} else if (t_1 < t_end) {
+		}
+		else if (t_1 < t_end) {
 			// First intersection is "behind" the segment, second is "within"
 
 			// Check if the second intersection is within the cylinder height
 			if (lowY < y_1 && y_1 < highY) {
 				isColliding = true;
 			}
-		} else {
+		}
+		else {
 			// First intersection is "behind" the segment, second is "in front of"
 			// Neither start nor end are within the cylinder (first thing checked in this function)
 			// This means the points of the segment are one of three cases
@@ -445,12 +473,13 @@ bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const
 			// Check whether both points are either above or below
 			// NOTE: this has to check the POINTS, not the intersections
 			//     If one intersection is above and the other within or below, the segment (both points) can still be above (among other cases)
-			bool bothAboveOrBelow = (start.y > highY && end.y > highY) || (start.y < lowY && end.y < lowY);
+			bool bothAboveOrBelow = (start.y > highY&& end.y > highY) || (start.y < lowY && end.y < lowY);
 			if (!bothAboveOrBelow) {
 				isColliding = true;
 			}
 		}
-	} else if (t_0 < t_end) {
+	}
+	else if (t_0 < t_end) {
 		if (t_1 < t_end) {
 			// Both intersections are "within" the segment
 
@@ -458,13 +487,15 @@ bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const
 			if ((lowY < y_0 && y_0 < highY) || (lowY < y_1 && y_1 < highY)) {
 				isColliding = true;
 			}
-		} else {
+		}
+		else {
 			// First intersection is "within" the segment, second is "in front of"
 			if (lowY < y_0 && y_0 < highY) {
 				isColliding = true;
 			}
 		}
-	} else {
+	}
+	else {
 		// Both intersections are "in front of" the segment
 		// Collision is impossible
 	}
@@ -524,34 +555,32 @@ float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 	}
 	return returnValue;
 }
-
 float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
 	const glm::vec3 edge1 = v2 - v1;
 	const glm::vec3 edge2 = v3 - v1;
 	const glm::vec3 planeNormal = glm::normalize(glm::cross(edge1, edge2));
-	
+
 	const float originToPlaneDistance = glm::dot(v1, planeNormal);
 	const float rayToPlaneDistance = RayWithPlane(rayStart, rayDir, planeNormal, originToPlaneDistance);
-	
+
 	if (rayToPlaneDistance == -1.0f) {
 		return -1.0f;
 	}
-	
+
 	// Determine barycentric coordinates u, v, w
 	float u, v, w;
 	const glm::vec3 p = rayStart + rayDir * rayToPlaneDistance;
 	Barycentric(p, v1, v2, v3, u, v, w);
-	
+
 	// Check if point on triangle plane is within triangle
 	if (OnTriangle(u, v, w)) {
 		return rayToPlaneDistance;
 	}
 	return -1.0f;
 }
-
 float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& normal, const float distance) {
 	const float dirDotNormal = glm::dot(rayDir, normal);
-	
+
 	bool isParallelWithPlane = std::fabsf(dirDotNormal) < 0.001f;
 	if (isParallelWithPlane) {
 		return -1.0f;
@@ -564,10 +593,9 @@ float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& ray
 
 	return distanceToPlane;
 }
-
 float Intersection::RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb, float padding) {
 	float returnValue = -1.0f;
-	
+
 	if (padding != 0.0f) {
 		//Add padding
 		sPaddedReserved.setPosition(aabb.getPosition());
@@ -581,10 +609,9 @@ float Intersection::RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3
 
 	return returnValue;
 }
-
 float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, float padding) {
 	float returnValue = -1.0f;
-	
+
 	glm::vec3 triangleNormal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
 
 	glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
@@ -603,7 +630,7 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 			returnValue = RayWithTriangle(rayStart, rayDir, v1, v2, v3);
 		}
 	}
-	
+
 	return returnValue;
 }
 
@@ -618,7 +645,6 @@ bool Intersection::FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& norm
 	}
 	return false;
 }
-
 bool Intersection::FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb) {
 	for (int i = 0; i < 6; i++) {
 		if (!FrustumPlaneWithAabb(aabb, glm::vec3(frustum.planes[i].x, frustum.planes[i].y, frustum.planes[i].z), frustum.planes[i].w)) {
@@ -721,7 +747,6 @@ bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::
 	// do not call this an intersection.
 	return false;
 }
-
 void Intersection::Barycentric(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, float& u, float& v, float& w) {
 	const glm::vec3 v0 = b - a;
 	const glm::vec3 v1 = c - a;
@@ -739,7 +764,6 @@ void Intersection::Barycentric(const glm::vec3& p, const glm::vec3& a, const glm
 	v = (d00 * d21 - d01 * d20) * divDenom;
 	w = 1.0f - u - v;
 }
-
 bool Intersection::OnTriangle(const float u, const float v, const float w) {
 	return ((0.0f < v && v < 1.0f) && (0.0f < w && w < 1.0f) && (0.0f < u && u < 1.0f));
 }
