@@ -249,6 +249,19 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	}
 	break;
 
+	case Netcode::MessageType::CANDLE_HELD_STATE:
+	{
+		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
+		TransformComponent* t = e->getComponent<TransformComponent>();
+		CandleComponent* c = e->getComponent<CandleComponent>();
+
+		__int32 NetObjectID = e->getParent()->getComponent<NetworkSenderComponent>()->m_id;
+		(*ar)(NetObjectID);
+		Archive::archiveVec3(*ar, glm::vec3(c->isCarried(), 0, 0));
+		Archive::archiveVec3(*ar, t->getTranslation());
+	}
+	break;
+
 	default:
 		break;
 	}

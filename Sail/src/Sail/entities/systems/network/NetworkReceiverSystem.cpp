@@ -182,16 +182,23 @@ void NetworkReceiverSystem::update() {
 					Archive::loadVec3(ar, gunPosition);
 					Archive::loadVec3(ar, gunVelocity);
 
-					EntityFactory::CreateProjectile(gunPosition, gunVelocity);
+				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 4, 0);
 			}
 	
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
-				ar(netObjectID);
-
+				//ar(netObjectID);
 				playerDied(netObjectID);
 			}
 			else if (eventType == Netcode::MessageType::MATCH_ENDED) {
 				matchEnded();
+			} else if (eventType == Netcode::MessageType::CANDLE_HELD_STATE) {
+				glm::vec3 candlepos;
+				glm::vec3 isCarried;
+				ar(netObjectID);
+
+				Archive::loadVec3(ar, isCarried);
+				Archive::loadVec3(ar, candlepos);
+				setCandleHeldState(netObjectID, (isCarried.x > 0), candlepos);
 			}
 			else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
 				backToLobby();
@@ -314,6 +321,8 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 		//	e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+
+			break;
 		}
 	}
 }
@@ -376,6 +385,35 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 			e->queueDestruction();
 
 			break; // Break because should only be one candle; stop looping!
+		}
+	}
+}
+
+void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			
+			for (int i = 0; i < e->getChildEntities().size(); i++) {
+				auto candleE = e->getChildEntities()[i];
+
+				if (candleE->hasComponent<CandleComponent>()) {
+					auto candleComp = candleE->getComponent<CandleComponent>();
+
+					candleComp->setCarried(b);
+					if (!b) {
+						candleE->getComponent<TransformComponent>()->setTranslation(pos);
+					}
+
+					if (NWrapperSingleton::getInstance().isHost()) {
+						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+							Netcode::MessageType::CANDLE_HELD_STATE, candleE.get());
+					}
+
+					return;
+				}
+			}
+			
+			break;
 		}
 	}
 }

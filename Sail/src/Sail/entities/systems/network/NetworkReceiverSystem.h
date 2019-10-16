@@ -39,6 +39,7 @@ private:
 	void playerJumped(Netcode::NetworkObjectID id);
 	void waterHitPlayer(Netcode::NetworkObjectID id);
 	void playerDied(Netcode::NetworkObjectID id);
+	void setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos = glm::vec3(0,0,0));
 	void matchEnded();
 	void backToLobby();
 
