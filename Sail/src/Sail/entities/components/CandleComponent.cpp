@@ -116,6 +116,14 @@ void CandleComponent::decrementHealth(const float health) {
 	m_health -= health;
 }
 
+void CandleComponent::setWasHitByNetID(unsigned __int32 netIdOfPlayerWhoHitThisCandle) {
+	wasHitByNetID = netIdOfPlayerWhoHitThisCandle;
+}
+
+unsigned __int32 CandleComponent::getWasHitByNetID() {
+	return wasHitByNetID;
+}
+
 bool CandleComponent::isCarried() const {
 	return m_carried;
 }

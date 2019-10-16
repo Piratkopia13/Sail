@@ -2,6 +2,7 @@
 #include "CandleSystem.h"
 
 #include "Sail/entities/components/Components.h"
+
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/entities/Entity.h"
 #include "Sail/graphics/camera/CameraController.h"
@@ -52,7 +53,31 @@ void CandleSystem::update(float dt) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
-					if (candle->getHealth() <= 0.f) {
+
+
+					// A candle which is owned by a player has been hit
+					// -- Does the candle belong to an online player?
+					// -- Was it hit by the local player?
+					
+					// If the player is controlled through the network
+					if (e->hasComponent<OnlineOwnerComponent>()) {
+						CandleComponent* c = e->getComponent<CandleComponent>();
+
+						// If the player who hit him was the local player
+						if (c->hitByLocalPlayer == true) {
+							// It (An online player) was hit by the local player
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::WATER_HIT_PLAYER, 
+								e // OLD
+								/* SAIL_NEW Netcode::MessageDataWaterHitPlayer{ 
+									e->getComponent<OnlineOwnerComponent>()->netEntityID
+								}*/
+							);
+						}
+					}
+					
+
+					if ( candle->getHealth() <= 0.f ) {
 						candle->setIsLit(false);
 
 						if (candle->getOwner() == m_playerEntityID) {

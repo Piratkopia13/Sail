@@ -170,7 +170,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     kD *= 1.0f - metalness;	  
     
     // float3 irradiance = texture(irradianceMap, N).rgb;
-    float3 irradiance = 0.01f;
+    float3 irradiance = 0.0f;
     float3 diffuse    = irradiance * albedo;
     
     float3 R = reflect(-V, N);  
