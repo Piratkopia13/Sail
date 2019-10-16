@@ -2,16 +2,24 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/Application.h"
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
+#include "Sail/entities/systems/Systems.h"
 #include "Sail/KeyBinds.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Network/NWrapperSingleton.h"
 #include "../libraries/imgui/imgui.h"
 
 EndGameState::EndGameState(StateStack& stack) : State(stack) {
+	auto* ptr = Application::getInstance();
+	auto* ecs = ECS::Instance();
+	std::cout << "TEST";
 
+	// Create network send and receive systems
+	NWrapperSingleton::getInstance().setNSS(ECS::Instance()->getSystem<NetworkSenderSystem>());
+	ECS::Instance()->getSystem<NetworkReceiverSystem>()->init(NWrapperSingleton::getInstance().getMyPlayerID(), this, ECS::Instance()->getSystem<NetworkSenderSystem>());
 }
 
 EndGameState::~EndGameState() {
+	ECS::Instance()->stopAllSystems();
 }
 
 bool EndGameState::processInput(float dt) {
@@ -19,6 +27,12 @@ bool EndGameState::processInput(float dt) {
 }
 
 bool EndGameState::update(float dt, float alpha) {
+	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+	return true;
+}
+bool EndGameState::fixedUpdate(float dt) {
+
+
 	return true;
 }
 
@@ -38,11 +52,18 @@ bool EndGameState::renderImgui(float dt) {
 
 	ImGui::Begin("Return");
 	ImGui::SetWindowPos({ 500,550 });
-	//if (ImGui::Button("Lobby")) {
-	//	this->requestStackPop();
-	//	this->requestStackPush(States::HostLobby);
-	//	Application::getInstance()->dispatchEvent(Event(Event::Type::NETWORK_BACK_TO_LOBBY));
-	//}
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		if (ImGui::Button("Lobby")) {
+			//NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			//	Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY,
+			//	nullptr);
+
+			Application::getInstance()->dispatchEvent(Event(Event::Type::NETWORK_BACK_TO_LOBBY)); 
+			this->requestStackPop();
+			this->requestStackPush(States::HostLobby);
+		}
+	}
 	if (ImGui::Button("Main menu")) {
 		NWrapperSingleton::getInstance().resetNetwork();
 		NWrapperSingleton::getInstance().resetWrapper();
@@ -79,9 +100,19 @@ bool EndGameState::onReturnToLobby(NetworkBackToLobby& event) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(msg);
 	}
 	else {
+		std::cout << "MEOW";
 		this->requestStackPop();
 		this->requestStackPush(States::JoinLobby);
 	}
 	
 	return true;
 }
+
+void EndGameState::updatePerTickComponentSystems(float dt)
+{
+}
+
+void EndGameState::updatePerFrameComponentSystems(float dt, float alpha)
+{
+}
+

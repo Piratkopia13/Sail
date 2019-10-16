@@ -117,7 +117,7 @@ void NetworkSenderSystem::stop() {
 	bool ended = false;
 	while (eventQueue.empty() == false) {
 		NetworkSenderEvent* pE = eventQueue.front();		// Fetch
-		if (pE->type == Netcode::MessageType::MATCH_ENDED) {
+		if ((pE->type == Netcode::MessageType::MATCH_ENDED || pE->type == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) && ended == false) {
 			ended = true;
 			ar(static_cast<__int32>(1));
 			handleEvent(pE, &ar);
@@ -206,6 +206,10 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	}
 	break;
 	case Netcode::MessageType::MATCH_ENDED:
+	{
+	}
+	break;
+	case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
 	{
 	}
 	break;

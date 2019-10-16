@@ -20,7 +20,7 @@ NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 NetworkReceiverSystem::~NetworkReceiverSystem() 
 {}
 
-void NetworkReceiverSystem::init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr) {
+void NetworkReceiverSystem::init(unsigned char playerID, State* gameStatePtr, NetworkSenderSystem* netSendSysPtr) {
 	m_playerID = playerID;
 	m_gameStatePtr = gameStatePtr;
 	m_netSendSysPtr = netSendSysPtr;
@@ -158,6 +158,9 @@ void NetworkReceiverSystem::update() {
 			}
 			else if (eventType == Netcode::MessageType::MATCH_ENDED) {
 				matchEnded();
+			}
+			else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
+				backToLobby();
 			}
 		}
 
@@ -322,3 +325,8 @@ void NetworkReceiverSystem::matchEnded() {
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
+void NetworkReceiverSystem::backToLobby() {
+	
+	m_gameStatePtr->requestStackPop();
+	m_gameStatePtr->requestStackPush(States::JoinLobby);
+}
