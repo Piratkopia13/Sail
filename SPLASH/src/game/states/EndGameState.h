@@ -12,6 +12,7 @@ public:
 	bool processInput(float dt) override;
 	// Updates the state
 	bool update(float dt, float alpha = 1.0f) override;
+	bool fixedUpdate(float dt) override;
 	// Renders the state
 	bool render(float dt, float alpha = 1.0f) override;
 	// Renders imgui
@@ -21,4 +22,10 @@ public:
 
 private:
 	bool onReturnToLobby(NetworkBackToLobby& event);
+
+	void updatePerTickComponentSystems(float dt);
+	void updatePerFrameComponentSystems(float dt, float alpha);
+
+
+
 };

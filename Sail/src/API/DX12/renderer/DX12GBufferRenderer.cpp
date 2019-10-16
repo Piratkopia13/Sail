@@ -158,7 +158,6 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 			}
 		}
 
-
 		// Transition output textures to render target
 		for (int i = 0; i < NUM_GBUFFERS; i++) {
 			// TODO: transition in batch

@@ -26,7 +26,8 @@ public:
 		MESH_STATIC				= 1 << 1,	// Vertices will never change
 		MESH_TRANSPARENT		= 1 << 2,	// Should be rendered see-through
 		MESH_HERO				= 1 << 3,	// Mesh takes up a relatively large area of the screen 
-		IS_VISIBLE_ON_SCREEN	= 1 << 4	// Mesh should be rendered in raster pass(es)
+		IS_VISIBLE_ON_SCREEN	= 1 << 4,	// Mesh should be rendered in raster pass(es)
+		HIDE_IN_DXR				= 1 << 5	// Mesh should not be rendered in dxr pass(es)
 	};
 
 	enum RenderCommandType {

@@ -34,6 +34,7 @@ namespace Netcode {
 		PLAYER_DIED,
 		MATCH_ENDED,
 		CANDLE_HELD_STATE,
+    SEND_ALL_BACK_TO_LOBBY,
 		EMPTY = 69
 	};
 

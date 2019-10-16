@@ -52,7 +52,6 @@ void UpdateBoundingBoxSystem::recalculateBoundingBoxFully(Entity* e) {
 				checkDistances(minPositions, maxPositions, posAfterTransform);
 			}
 		}
-
 		boundingBox->getBoundingBox()->setHalfSize((maxPositions - minPositions) * 0.5f);
 		boundingBox->getBoundingBox()->setPosition(minPositions + boundingBox->getBoundingBox()->getHalfSize());
 	}

@@ -41,6 +41,7 @@ private:
 	void playerDied(Netcode::NetworkObjectID id);
 	void setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos = glm::vec3(0,0,0));
 	void matchEnded();
+	void backToLobby();
 
 	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
 };
