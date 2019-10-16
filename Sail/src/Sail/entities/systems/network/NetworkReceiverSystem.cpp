@@ -179,16 +179,6 @@ void NetworkReceiverSystem::update() {
 					Archive::loadVec3(ar, gunPosition);
 					Archive::loadVec3(ar, gunVelocity);
 
-					// CURRENT SPRINT IS FOR 2-PLAYER MULTIPLAYER ONLY.
-			//		if (NWrapperSingleton::getInstance().isHost()) {
-			//			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			//				Netcode::MessageType::SPAWN_PROJECTILE,
-			//				SAIL_NEW Netcode::MessageDataProjectile{
-			//					gunPosition, gunVelocity
-			//				}
-			//			);
-			//		}
-
 					EntityFactory::CreateProjectile(gunPosition, gunVelocity);
 			}
 	
