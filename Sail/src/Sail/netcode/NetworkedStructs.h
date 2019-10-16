@@ -101,5 +101,33 @@ namespace Netcode {
 			Archive::serializeVec3(ar, position);
 		}
 	};
+
+
+	class MessageData {
+	public:
+		MessageData() {}
+		virtual ~MessageData() {}
+	};
+
+	class MessageDataProjectile : public MessageData {
+	public:
+		MessageDataProjectile(glm::vec3 translation_, glm::vec3 velocity_)
+			: translation(translation_), velocity(velocity_)
+		{}
+		virtual ~MessageDataProjectile() {}
+
+		glm::vec3 translation;
+		glm::vec3 velocity;
+	};
+
+	class MessageDataWaterHitPlayer : public MessageData {
+	public:
+		MessageDataWaterHitPlayer(Netcode::NetworkObjectID id)
+			: playerWhoWasHitID(id)
+		{}
+		~MessageDataWaterHitPlayer() {}
+
+		Netcode::NetworkObjectID playerWhoWasHitID;
+	};
 }
 
