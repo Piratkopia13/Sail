@@ -47,7 +47,7 @@ DX12GBufferRenderer::~DX12GBufferRenderer() {
 void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	int count = static_cast<int>(commandQueue.size());
 
 	// Run animation updates on the gpu first

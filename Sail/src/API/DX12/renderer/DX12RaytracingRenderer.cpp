@@ -29,7 +29,7 @@ DX12RaytracingRenderer::~DX12RaytracingRenderer() {
 }
 
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 
 	auto& allocator = m_command.allocators[frameIndex];
 	auto& cmdList = m_command.list;
@@ -55,7 +55,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		cmd.transform = glm::identity<glm::mat4>();
 		cmd.transform = glm::translate(cmd.transform, m_metaballpositions[i].pos);
 		cmd.transform = glm::transpose(cmd.transform);
-		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
@@ -131,7 +131,7 @@ void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, Re
 	cmd.transform = glm::transpose(modelMatrix);
 	cmd.flags = flags;
 	// Resize to match numSwapBuffers (specific to dx12)
-	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	commandQueue.push_back(cmd);
 }
 
