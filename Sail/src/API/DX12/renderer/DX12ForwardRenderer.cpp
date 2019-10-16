@@ -38,7 +38,7 @@ DX12ForwardRenderer::~DX12ForwardRenderer() {
 void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	int count = static_cast<int>(commandQueue.size());
 
 #ifdef MULTI_THREADED_COMMAND_RECORDING

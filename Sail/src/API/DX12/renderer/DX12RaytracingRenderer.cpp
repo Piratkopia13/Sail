@@ -29,14 +29,18 @@ DX12RaytracingRenderer::~DX12RaytracingRenderer() {
 }
 
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 
-	auto& allocator = m_command.allocators[frameIndex];
+	// There is one allocator per swap buffer
+	auto& allocator = m_command.allocators[m_context->getFrameIndex()];
 	auto& cmdList = m_command.list;
 
 	// Reset allocators and lists for this frame
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
+
+	// Clear output texture
+	m_outputTexture.get()->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
 
 	std::sort(m_metaballpositions.begin(), m_metaballpositions.end(),
 		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
@@ -52,7 +56,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		cmd.transform = glm::identity<glm::mat4>();
 		cmd.transform = glm::translate(cmd.transform, m_metaballpositions[i].pos);
 		cmd.transform = glm::transpose(cmd.transform);
-		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
@@ -128,7 +132,7 @@ void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, Re
 	cmd.transform = glm::transpose(modelMatrix);
 	cmd.flags = flags;
 	// Resize to match numSwapBuffers (specific to dx12)
-	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	commandQueue.push_back(cmd);
 }
 
