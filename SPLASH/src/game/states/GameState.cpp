@@ -159,14 +159,17 @@ GameState::GameState(StateStack& stack)
 
 	// Player creation
 
-
 	int id = static_cast<int>(playerID);
-	glm::vec3 spawnLocation;
+	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
 		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 	}
-
-	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	if (spawnLocation.x != -1000.f) {
+		m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	}
+	else {
+		Logger::Error("Unable to spawn player because all spawn points have already been used on this map.");
+	}
 
 	initAnimations();
 
@@ -829,7 +832,13 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	}
 
 	for (size_t i = 0; i < botCount; i++) {
-		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, m_componentSystems.levelGeneratorSystem->getSpawnPoint(), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		if (spawnLocation.x != -1000.f) {
+			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		}
+		else {
+			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
+		}
 	}
 }
 

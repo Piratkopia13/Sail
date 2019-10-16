@@ -30,7 +30,6 @@ public:
 	~LevelGeneratorSystem();
 
 	void generateMap();
-	//void createWorld(Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
 	void createWorld(const std::vector<Model*>& tileModels, Model* bb);
 
 	glm::vec3 getSpawnPoint();
@@ -45,6 +44,6 @@ private:
 	bool splitDirection(bool ns);
 	void addSpawnPoints();
 	void addDoors();
-	void addTile(Direction dir, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
+	void addTile(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
 };

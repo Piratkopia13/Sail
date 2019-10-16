@@ -3,9 +3,9 @@
 
 class ProjectileComponent : public Component<ProjectileComponent> {
 public:
-	ProjectileComponent() { ; }
-	ProjectileComponent(float damage) { m_damage = damage; }
-	~ProjectileComponent() { ; }
+	ProjectileComponent() {}
+	explicit ProjectileComponent(float damage): m_damage(damage) { }
+	~ProjectileComponent() {}
 
 	float m_damage = 1.0f;
 };
