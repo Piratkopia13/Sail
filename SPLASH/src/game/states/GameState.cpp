@@ -758,6 +758,11 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_NM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_Albedo.tga");
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_Albedo.tga");
+
+
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/albedo.tga");
@@ -792,8 +797,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	corridorWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CW_NM.tga");
 	corridorWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CW_Albedo.tga");
 
-	Model* ceiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
-	ceiling->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
+	roomCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RC_MRAo.tga");
+	roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
+	roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
 
 
 	Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
@@ -801,10 +808,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
 	corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
 
-	Model* floor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
-	floor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
-	floor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
-	floor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
+	Model* roomFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
+	roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
+	roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
+	roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
 
 	Model* corridorCeiling = &m_app->getResourceManager().getModel("Tiles/CorridorCeiling.fbx", shader);
 	corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CC_MRAo.tga");
@@ -814,9 +821,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	std::vector<Model*> tileModels;
 	tileModels.resize(TileModel::NUMBOFMODELS);
-	tileModels[TileModel::ROOM_FLOOR] = corridorFloor;
-	tileModels[TileModel::ROOM_WALL] = corridorWall;
-	tileModels[TileModel::ROOM_DOOR] = corridorDoor;
+	tileModels[TileModel::ROOM_FLOOR] = roomFloor;
+	tileModels[TileModel::ROOM_WALL] = roomWall;
+	tileModels[TileModel::ROOM_DOOR] = roomDoor;
+	tileModels[TileModel::ROOM_CEILING] = roomCeiling;
 
 	tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
 	tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
