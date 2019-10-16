@@ -24,7 +24,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<GunComponent>(false, true, true);
 
 	// cam variables
-	m_yaw = 90.f;
+	m_yaw = 160.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
 
