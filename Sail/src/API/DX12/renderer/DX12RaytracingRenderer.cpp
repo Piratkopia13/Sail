@@ -31,7 +31,8 @@ DX12RaytracingRenderer::~DX12RaytracingRenderer() {
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	auto frameIndex = m_context->getSwapIndex();
 
-	auto& allocator = m_command.allocators[frameIndex];
+	// There is one allocator per swap buffer
+	auto& allocator = m_command.allocators[m_context->getFrameIndex()];
 	auto& cmdList = m_command.list;
 
 	// Reset allocators and lists for this frame

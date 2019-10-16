@@ -652,6 +652,10 @@ UINT DX12API::getSwapIndex() const {
 	return m_swapIndex;
 }
 
+UINT DX12API::getFrameIndex() const {
+	return m_backBufferIndex;
+}
+
 UINT DX12API::getNumGPUBuffers() const {
 	return NUM_GPU_BUFFERS;
 }

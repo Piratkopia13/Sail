@@ -58,7 +58,7 @@ public:
 	template <typename T>
 	std::vector<T> createFrameResource() {
 		auto resource = std::vector<T>();
-		resource.resize(NUM_SWAP_BUFFERS);
+		resource.resize(NUM_GPU_BUFFERS);
 		return resource;
 	}
 	// Retrieves the resource for the current back buffer index
@@ -83,6 +83,7 @@ public:
 	ID3D12RootSignature* getGlobalRootSignature() const;
 	UINT getRootIndexFromRegister(const std::string& reg) const;
 	UINT getSwapIndex() const; // Returns 0 or 1
+	UINT getFrameIndex() const; // Returns 0, 1, ... NUM_SWAP_BUFFERS
 	UINT getNumGPUBuffers() const; // Always returns 2 - as no more than two buffers are needed for any gpu based resource
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 	DescriptorHeap* const getComputeGPUDescriptorHeap() const;
