@@ -86,10 +86,6 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	e->getComponent<CandleComponent>()->setOwner(player->getID());
 	player->addChildEntity(e);
 
-	// Set up camera
-	//m_cam.setPosition(glm::vec3(1.6f + spawnOffset, 1.8f, 10.f));
-	//m_cam.lookAt(glm::vec3(0.f));
-
 	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
 
 	return player;
@@ -110,6 +106,7 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 
 	e->addComponent<AudioComponent>();
 
+	// Placeholder sound effect for bots
 	Audio::SoundInfo sound{};
 	sound.fileName = "../Audio/guitar.wav";
 	sound.soundEffectLength = 104.0f;
@@ -165,7 +162,7 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateStaticMapObject(std::string name, Model* model, Model* boundingBoxModel, const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale) {
+Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model* model, Model* boundingBoxModel, const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale) {
 	auto e = ECS::Instance()->createEntity(name);
 	e->addComponent<ModelComponent>(model);
 	e->addComponent<TransformComponent>(pos, rot, scale);
@@ -176,13 +173,13 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(std::string name, Model* model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velosity, bool hasLocalOwner, unsigned __int32 ownersNetId, float lifetime, float randomSpreed) {
+Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velocity, bool hasLocalOwner, unsigned __int32 ownersNetId, float lifetime, float randomSpread) {
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
 
-	randPos.r = Utils::rnd() * randomSpreed;
-	randPos.g = Utils::rnd() * randomSpreed;
-	randPos.b = Utils::rnd() * randomSpreed;
+	randPos.r = Utils::rnd() * randomSpread;
+	randPos.g = Utils::rnd() * randomSpread;
+	randPos.b = Utils::rnd() * randomSpread;
 
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
@@ -199,7 +196,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();
-	movement->velocity = velosity;
+	movement->velocity = velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 	CollisionComponent* collision = e->addComponent<CollisionComponent>();
