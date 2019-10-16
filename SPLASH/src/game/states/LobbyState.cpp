@@ -219,6 +219,8 @@ void LobbyState::renderChat() {
 	chatFlags |= ImGuiWindowFlags_NoTitleBar;
 	chatFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 	chatFlags |= ImGuiWindowFlags_NoSavedSettings;
+	chatFlags |= ImGuiWindowFlags_NoFocusOnAppearing;
+	chatFlags |= ImGuiWindowFlags_NoInputs;
 
 	// ------- message BOX ------- 
 	ImGui::SetNextWindowPos(ImVec2(
@@ -232,15 +234,12 @@ void LobbyState::renderChat() {
 	);
 
 	if (m_firstFrame) {
-		ImGui::SetKeyboardFocusHere(-1);
 		m_firstFrame = false;
-		m_chatFocus = true;
+		m_chatFocus = false;
 	}
 	ImGui::Text("Enter message:");
-	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
-		//this->sendmessage(&(string)m_currentmessage);
-		ImGui::SetKeyboardFocusHere(-1);
-		m_chatFocus = true;
+	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_EnterReturnsTrue)) {
+		m_chatFocus = false;
 	}
 	ImGui::End();
 

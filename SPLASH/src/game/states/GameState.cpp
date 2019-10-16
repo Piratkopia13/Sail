@@ -22,7 +22,6 @@ GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_profiler(true)
-	, m_disableLightComponents(false)
 	, m_showcaseProcGen(false) {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
@@ -49,6 +48,7 @@ GameState::GameState(StateStack& stack)
 		}
 
 	}, "GameState");
+	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
 #ifdef _DEBUG
 	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
@@ -74,6 +74,7 @@ GameState::GameState(StateStack& stack)
 	}, "GameState");
 #endif
 
+
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
@@ -90,83 +91,16 @@ GameState::GameState(StateStack& stack)
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
 	//-----------------------
 
+	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
+
 	// Setting light index
 	m_currLightIndex = 0;
-
-	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
-	
-	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
-	m_componentSystems.collisionSystem->provideOctree(m_octree);
-	
-	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
-
-	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
-	
-
-	// Create system for animations
-	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
-
-	// Create system for updating bounding box
-	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
-
-	// Create system for handling octree
-	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
-	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
-	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
-
-	// Create lifetime system
-	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
-
-	// Create entity adder system
-	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
-
-	// Create entity removal system
-	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
-
-	// Create ai system
-	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
-
-	// Create system for the lights
-	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
-
-	// Create system for the candles
-	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-
-	// Create system which prepares each new update
-	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
-
-	// Create system which handles creation of projectiles
-	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
-
-	// Create system which checks projectile collisions
-	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
-
-	//create system for level generation
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-
-	// Create systems for rendering
-	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
-	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
-	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
-
-	// Create system for player input
-	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_cam);
-
 
 	// Get the player id's and names from the lobby
 	const unsigned char playerID = NWrapperSingleton::getInstance().getMyPlayerID();
 
-	// Create network send and receive systems
-	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
-	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
-	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
-
-	// Create system for handling and updating sounds
-	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
-
+	// Initialize the component systems
+	initSystems(playerID);
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
@@ -185,15 +119,14 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 
 
-
-
-
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
 	direction = glm::normalize(direction);
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
+
+	m_lightDebugWindow.setLightSetup(&m_lights);
 
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
@@ -251,25 +184,8 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _DEBUG
 	// Candle1 holds all lights you can place in debug...
-	m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
+	m_componentSystems.lightListSystem->setDebugLightListEntity("Map_Candle1");
 #endif
-
-
-
-	// Allocating memory for profiler
-	m_virtRAMHistory = SAIL_NEW float[100];
-	m_physRAMHistory = SAIL_NEW float[100];
-	m_vramUsageHistory = SAIL_NEW float[100];
-	m_cpuHistory = SAIL_NEW float[100];
-	m_frameTimesHistory = SAIL_NEW float[100];
-
-	for (int i = 0; i < 100; i++) {
-		m_virtRAMHistory[i] = 0.f;
-		m_physRAMHistory[i] = 0.f;
-		m_vramUsageHistory[i] = 0.f;
-		m_cpuHistory[i] = 0.f;
-		m_frameTimesHistory[i] = 0.f;
-	}
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 #ifdef _DEBUG_NODESYSTEM
@@ -281,12 +197,6 @@ GameState::GameState(StateStack& stack)
 
 GameState::~GameState() {
 	shutDownGameState();
-
-	delete m_virtRAMHistory;
-	delete m_physRAMHistory;
-	delete m_vramUsageHistory;
-	delete m_cpuHistory;
-	delete m_frameTimesHistory;
 	delete m_octree;
 }
 
@@ -297,15 +207,15 @@ bool GameState::processInput(float dt) {
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
-		m_componentSystems.lightSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
+		m_componentSystems.lightListSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
 #endif
 
 	// Enable bright light and move camera to above procedural generated level
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
-		m_disableLightComponents = !m_disableLightComponents;
-		m_showcaseProcGen = m_disableLightComponents;
+		m_lightDebugWindow.setManualOverride(!m_lightDebugWindow.isManualOverrideOn());
+		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
 			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
 			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
@@ -402,7 +312,7 @@ bool GameState::processInput(float dt) {
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
-		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
+		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
 #endif
 
@@ -416,6 +326,68 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
+}
+
+void GameState::initSystems(const unsigned char playerID) {
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+	
+	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
+	m_componentSystems.collisionSystem->provideOctree(m_octree);
+
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+
+	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
+
+	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
+
+	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
+
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
+	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
+
+	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
+
+	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
+
+	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
+
+	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+
+	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
+	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
+
+	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
+
+	// Create system which prepares each new update
+	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
+
+	// Create system which handles creation of projectiles
+	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
+
+	// Create system which checks projectile collisions
+	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
+
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+
+	// Create systems for rendering
+	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+
+	// Create system for player input
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
+
+	// Create network send and receive systems
+	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
+	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
+
+	// Create system for handling and updating sounds
+	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
@@ -440,6 +412,13 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 		this->requestStackPop();
 		this->requestStackPush(States::EndGame);
 		m_poppedThisFrame = true;
+	}
+
+	// Set bot target to null when player is dead
+	auto entities = m_componentSystems.aiSystem->getEntities();
+	for (int i = 0; i < entities.size(); i++) {
+		auto aiComp = entities[i]->getComponent<AiComponent>();
+		aiComp->setTarget(nullptr);
 	}
 
 	return true;
@@ -494,9 +473,9 @@ bool GameState::render(float dt, float alpha) {
 
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImguiProfiler(dt);
-	renderImGuiRenderSettings(dt);
-	renderImGuiLightDebug(dt);
+	m_profiler.renderWindow();
+	m_renderSettingsWindow.renderWindow();
+	m_lightDebugWindow.renderWindow();
 	renderImGuiAnimationSettings(dt);
 
 	return false;
@@ -507,200 +486,6 @@ bool GameState::prepareStateChange() {
 		// Reset network
 		NWrapperSingleton::getInstance().resetNetwork();
 	}
-	return true;
-}
-
-bool GameState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.isWindowOpen();
-	if (open) {
-		if (ImGui::Begin("Profiler", &open)) {
-
-			//Profiler window displaying the current usage
-			m_profiler.showWindow(open);
-			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
-			std::string header;
-
-			header = "CPU (" + m_cpuCount + "%%)";
-			ImGui::Text(header.c_str());
-
-			header = "Frame time (" + m_ftCount + " seconds)";
-			ImGui::Text(header.c_str());
-
-			header = "Virtual RAM (" + m_virtCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			header = "Physical RAM (" + m_physCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			header = "VRAM (" + m_vramUCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			ImGui::Separator();
-			//Collapsing headers for graphs over time
-			if (ImGui::CollapsingHeader("CPU Graph")) {
-				header = "\n\n\n" + m_cpuCount + "(%)";
-				ImGui::PlotLines(header.c_str(), m_cpuHistory, 100, 0, "", 0.f, 100.f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("Frame Times Graph")) {
-				header = "\n\n\n" + m_ftCount + "(s)";
-				ImGui::PlotLines(header.c_str(), m_frameTimesHistory, 100, 0, "", 0.f, 0.015f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
-				header = "\n\n\n" + m_virtCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-
-			}
-			if (ImGui::CollapsingHeader("Physical RAM Graph")) {
-				header = "\n\n\n" + m_physCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_physRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("VRAM Graph")) {
-				header = "\n\n\n" + m_vramUCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
-
-
-			ImGui::EndChild();
-
-			m_profilerTimer += dt;
-			//Updating graphs and current usage
-			if (m_profilerTimer > 0.2f) {
-				m_profilerTimer = 0.f;
-				if (m_profilerCounter < 100) {
-
-					m_virtRAMHistory[m_profilerCounter] = (float)m_profiler.virtMemUsage();
-					m_physRAMHistory[m_profilerCounter] = (float)m_profiler.workSetUsage();
-					m_vramUsageHistory[m_profilerCounter] = (float)m_profiler.vramUsage();
-					m_frameTimesHistory[m_profilerCounter] = dt;
-					m_cpuHistory[m_profilerCounter++] = (float)m_profiler.processUsage();
-					m_virtCount = std::to_string(m_profiler.virtMemUsage());
-					m_physCount = std::to_string(m_profiler.workSetUsage());
-					m_vramUCount = std::to_string(m_profiler.vramUsage());
-					m_cpuCount = std::to_string(m_profiler.processUsage());
-					m_ftCount = std::to_string(dt);
-
-				} else {
-					// Copying all the history to a new array because ImGui is stupid
-					float* tempFloatArr = SAIL_NEW float[100];
-					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
-					tempFloatArr[99] = (float)m_profiler.virtMemUsage();
-					delete m_virtRAMHistory;
-					m_virtRAMHistory = tempFloatArr;
-					m_virtCount = std::to_string(m_profiler.virtMemUsage());
-
-					float* tempFloatArr1 = SAIL_NEW float[100];
-					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 100, tempFloatArr1);
-					tempFloatArr1[99] = (float)m_profiler.workSetUsage();
-					delete m_physRAMHistory;
-					m_physRAMHistory = tempFloatArr1;
-					m_physCount = std::to_string(m_profiler.workSetUsage());
-
-					float* tempFloatArr3 = SAIL_NEW float[100];
-					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
-					tempFloatArr3[99] = (float)m_profiler.vramUsage();
-					delete m_vramUsageHistory;
-					m_vramUsageHistory = tempFloatArr3;
-					m_vramUCount = std::to_string(m_profiler.vramUsage());
-
-					float* tempFloatArr4 = SAIL_NEW float[100];
-					std::copy(m_cpuHistory + 1, m_cpuHistory + 100, tempFloatArr4);
-					tempFloatArr4[99] = (float)m_profiler.processUsage();
-					delete m_cpuHistory;
-					m_cpuHistory = tempFloatArr4;
-					m_cpuCount = std::to_string(m_profiler.processUsage());
-
-					float* tempFloatArr5 = SAIL_NEW float[100];
-					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 100, tempFloatArr5);
-					tempFloatArr5[99] = dt;
-					delete m_frameTimesHistory;
-					m_frameTimesHistory = tempFloatArr5;
-					m_ftCount = std::to_string(dt);
-				}
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-	return false;
-}
-
-bool GameState::renderImGuiRenderSettings(float dt) {
-	ImGui::Begin("Rendering settings");
-	ImGui::Checkbox("Enable post processing",
-		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
-	);
-	static Entity* pickedEntity = nullptr;
-	static float metalness = 1.0f;
-	static float roughness = 1.0f;
-	static float ao = 1.0f;
-
-	ImGui::Separator();
-	if (ImGui::Button("Pick entity")) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHitIndex != -1) {
-			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
-		}
-	}
-
-	if (pickedEntity) {
-		ImGui::Text("Material properties for %s", pickedEntity->getName().c_str());
-		if (auto * model = pickedEntity->getComponent<ModelComponent>()) {
-			auto* mat = model->getModel()->getMesh(0)->getMaterial();
-			const auto& pbrSettings = mat->getPBRSettings();
-			metalness = pbrSettings.metalnessScale;
-			roughness = pbrSettings.roughnessScale;
-			ao = pbrSettings.aoScale;
-			if (ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f)) {
-				mat->setMetalnessScale(metalness);
-			}
-			if (ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f)) {
-				mat->setRoughnessScale(roughness);
-			}
-			if (ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f)) {
-				mat->setAOScale(ao);
-			}
-		}
-	}
-
-	ImGui::End();
-
-	return false;
-}
-
-bool GameState::renderImGuiLightDebug(float dt) {
-	ImGui::Begin("Light debug");
-	ImGui::Checkbox("Manual override", &m_disableLightComponents);
-	unsigned int i = 0;
-	for (auto& pl : m_lights.getPLs()) {
-		ImGui::PushID(i);
-		std::string label("Point light ");
-		label += std::to_string(i);
-		if (ImGui::CollapsingHeader(label.c_str())) {
-
-			glm::vec3 color = pl.getColor(); // = 1.0f
-			glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
-			float attConstant = pl.getAttenuation().constant; // 0.312f;
-			float attLinear = pl.getAttenuation().linear; // 0.0f;
-			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
-
-			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
-			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
-			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
-			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
-
-			pl.setAttenuation(attConstant, attLinear, attQuadratic);
-			pl.setColor(color);
-			pl.setPosition(position);
-
-		}
-		i++;
-		ImGui::PopID();
-	}
-	ImGui::End();
 	return true;
 }
 
@@ -780,12 +565,10 @@ bool GameState::renderImGuiAnimationSettings(float dt) {
 }
 
 void GameState::shutDownGameState() {
-
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
 	ECS::Instance()->stopAllSystems();
-
 	ECS::Instance()->destroyAllEntities();
 }
 
@@ -824,7 +607,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.candleSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
-	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
 	// Wait for all the systems to finish before starting the removal system
@@ -835,6 +617,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Will probably need to be called last
 	m_componentSystems.entityAdderSystem->update();
 	m_componentSystems.entityRemovalSystem->update();
+	m_componentSystems.octreeAddRemoverSystem->update(dt);
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
@@ -846,10 +629,11 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 
 
 	// There is an imgui debug toggle to override lights
-	if (!m_disableLightComponents) {
+	if (!m_lightDebugWindow.isManualOverrideOn()) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
+		m_componentSystems.lightListSystem->updateLights(&m_lights);
 	}
 
 	if (m_showcaseProcGen) {
@@ -928,6 +712,7 @@ void GameState::initAnimations() {
 	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
 	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
 	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
+
 	std::string animName = "";
 #ifndef _DEBUG
 	animName = "AnimationTest/DEBUG_BALLBOT.fbx";
@@ -964,6 +749,11 @@ void GameState::initAnimations() {
 const std::string GameState::teleportToMap() {
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f, 0.9f, 40.f));
 	return "";
+}
+
+const std::string GameState::toggleProfiler() {
+	m_profiler.toggleWindow();
+	return "Toggling profiler";
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

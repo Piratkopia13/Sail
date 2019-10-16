@@ -92,12 +92,14 @@ bool LobbyClientState::onNameRequest(NetworkNameEvent& event) {
 	std::string temp = event.getRepliedName();	// And replace our current HOSTID
 	int newId = std::stoi(temp);					//
 	NWrapperSingleton::getInstance().getMyPlayer().id = newId;
-	NWrapperSingleton::getInstance().playerJoined(Player{ 0, NWrapperSingleton::getInstance().getMyPlayerName() });
+	NWrapperSingleton::getInstance().playerJoined(Player{ 0, NWrapperSingleton::getInstance().getMyPlayerName().c_str() });
 	
 	// Append :NAME onto ?ID --> ?ID:NAME and answer the host
 	std::string message = "?";
 	message += event.getRepliedName();
-	message += ":" + NWrapperSingleton::getInstance().getMyPlayerName() + ":";
+	message += ":";
+	message += NWrapperSingleton::getInstance().getMyPlayerName().c_str();
+	message += ":";
 	m_network->sendMsg(message);
 	return false;
 }

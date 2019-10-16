@@ -41,8 +41,8 @@ namespace ShaderComponent {
 	}
 
 	void DX12StructuredBuffer::updateData(const void* newData, unsigned int numElements, int meshIndex) {
-		assert(numElements <= MAX_ELEMENTS && "Too many elements! Increase MAX_ELEMENTS in DX12StrucutedBuffer.h");
-		assert(meshIndex <= MAX_MESHES_PER_FRAME && "Too many meshes! Increase MAX_MESHES_PER_FRAME in DX12StrucutedBuffer.h");
+		assert(numElements < MAX_ELEMENTS && "Too many elements! Increase MAX_ELEMENTS in DX12StrucutedBuffer.h");
+		assert(meshIndex < MAX_MESHES_PER_FRAME && "Too many meshes! Increase MAX_MESHES_PER_FRAME in DX12StrucutedBuffer.h");
 
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
 		auto frameIndex = m_context->getFrameIndex();
@@ -74,11 +74,9 @@ namespace ShaderComponent {
 		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 		srvDesc.Buffer.FirstElement = MAX_ELEMENTS * meshIndex;
-		srvDesc.Buffer.NumElements = MAX_ELEMENTS * (meshIndex + 1); // Cheesy
+		srvDesc.Buffer.NumElements = MAX_ELEMENTS;
 		srvDesc.Buffer.StructureByteStride = m_stride;
 		m_context->getDevice()->CreateShaderResourceView(m_bufferUploadHeap[frameIndex].Get(), &srvDesc, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle());
-
-		//m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), m_srvCDHs[frameIndex], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	ID3D12Resource* DX12StructuredBuffer::getBuffer() const {
