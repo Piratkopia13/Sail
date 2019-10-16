@@ -28,7 +28,12 @@ namespace Netcode {
 		CREATE_NETWORKED_ENTITY = 1,
 		MODIFY_TRANSFORM = 2,
 		SPAWN_PROJECTILE = 3,
-
+		ROTATION_TRANSFORM = 4,
+		PLAYER_JUMPED = 5,
+		WATER_HIT_PLAYER = 6,
+		PLAYER_DIED = 7,
+		MATCH_ENDED = 8,
+		EMPTY = 69
 	};
 
 	/*
@@ -51,6 +56,21 @@ namespace Netcode {
 	// MODIFY_TRANSFORM
 	struct ModifyTransform {
 		glm::vec3 transform;
+
+		template <class Archive>
+		void save(Archive& ar) const {
+			Archive::serializeVec3(ar, position);
+		}
+
+		template <class Archive>
+		void load(Archive& ar) {
+			Archive::serializeVec3(ar, position);
+		}
+	};
+
+	// ROTATION_TRANSFORM
+	struct RotationTransform {
+		glm::vec3 rotation;
 
 		template <class Archive>
 		void save(Archive& ar) const {

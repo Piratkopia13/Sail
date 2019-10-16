@@ -17,11 +17,8 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 
 	// Set starting state
-#ifdef _PERFORMANCE_TEST
-	m_stateStack.pushState(States::PerformanceTest);
-#else
 	m_stateStack.pushState(States::MainMenu);
-#endif
+
 
 }
 

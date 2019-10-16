@@ -186,6 +186,8 @@ int Application::startGameLoop() {
 
 	s_isRunning = false;
 	// Need to set all streams as 'm_isStreaming[i] = false' BEFORE stopping threads
+	
+	// NOTE: 'stopAllSystems()' / 'destroyAllSystems()' SHOULD already have been called
 	ECS::Instance()->stopAllSystems();
 	m_threadPool->stop();
 	ECS::Instance()->destroyAllSystems();

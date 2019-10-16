@@ -8,10 +8,13 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../../ECS.h"
 #include "../physics/UpdateBoundingBoxSystem.h"
-
+#include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/AudioComponent.h"
+#include "../src/Network/NWrapperSingleton.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	registerComponent<PlayerComponent>(true, false, false);
+	registerComponent<LocalPlayerComponent>(true, false, false);
 	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<SpeedLimitComponent>(true, true, false);
 	registerComponent<CollisionComponent>(true, true, false);
@@ -109,10 +112,12 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			if ( playerMovement.upMovement == 1.0f ) {
-				if ( !m_wasSpacePressed && collision->onGround) {
+				if (!m_wasSpacePressed && collision->onGround) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
-					audioComp->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+			//		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+					// Add networkcomponent for jump 
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(Netcode::MessageType::PLAYER_JUMPED, e);
 					m_gameDataTracker->logJump();
 				}
 				m_wasSpacePressed = true;
