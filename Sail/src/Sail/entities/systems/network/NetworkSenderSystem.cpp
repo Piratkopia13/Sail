@@ -241,3 +241,8 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 		break;
 	}
 }
+
+void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e)
+{
+	entities.push_back(e);
+}

@@ -2,15 +2,12 @@
 #include "NetworkReceiverSystem.h"
 #include "Sail/entities/Entity.h"
 #include "Sail/entities/components/NetworkReceiverComponent.h"
-#include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
+#include "Sail/entities/components/OnlinePlayerComponent.h"
 #include "../SPLASH/src/game/states/GameState.h"
-#include "Sail/entities/components/LocalOwnerComponent.h"
 
 #include "Network/NWrapperSingleton.h"
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
-
-#include "NetworkSenderSystem.h"
 
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
@@ -132,11 +129,10 @@ void NetworkReceiverSystem::update() {
 
 
 		// Recieve 'one-time' events
-		unsigned __int32 eventSize;
+		__int32 eventSize;
 		Netcode::MessageType eventType;
-		Netcode::NetworkObjectID netObjectID;
+		__int32 netObjectID;
 		ar(eventSize);
-
 
 		for (int i = 0; i < eventSize; i++) {
 
@@ -198,6 +194,7 @@ void NetworkReceiverSystem::update() {
 			}
 		}
 
+
 		m_incomingDataBuffer.pop();
 	}
 }
@@ -219,7 +216,6 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			Logger::Warning("I tried to create an entity which already exists.");
 			return;
 		}
 	}
@@ -228,7 +224,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	entities.push_back(e.get());	// Needs to be before 'addComponent' or packets might be lost.
 	e->addComponent<NetworkReceiverComponent>(id, entityType);
 	int test = e->getComponent<NetworkReceiverComponent>()->m_id;
-	e->addComponent<OnlineOwnerComponent>(id);
+	e->addComponent<OnlinePlayerComponent>(id);
 
 	// If you are the host create a pass-through sender component to pass on the info to all players
 	if (NWrapperSingleton::getInstance().isHost()) {
@@ -269,7 +265,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		light->addComponent<TransformComponent>(glm::vec3(0.f, 2.f, 0.f));
 		light->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		light->addComponent<CollidableComponent>();
-		light->addComponent<OnlineOwnerComponent>(id);
+		light->addComponent<OnlinePlayerComponent>(id);
 		PointLight pl;
 		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		pl.setPosition(glm::vec3(0.2f, 0.2f + .37f, 0.2f));
@@ -285,7 +281,9 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		break;
 	}
 
-
+	// Manually add the entity to this system in case there's another message telling us to modify it, don't wait for ECS
+	// --- Then we need to prevent ECS from adding all together or we'll end up with 2 instances of the same entity in the list...
+	
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
@@ -312,8 +310,6 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 		//	e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
-		
-
 		}
 	}
 }
@@ -342,7 +338,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 	}
 
 	for (auto& e : entities) {
-		NetworkReceiverComponent* n = e->getComponent<NetworkReceiverComponent>();
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {	
 			// Hit player with water
 			std::cout << id << " was hit by a player!\n";
