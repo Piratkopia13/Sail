@@ -47,6 +47,11 @@ GameState::GameState(StateStack& stack)
 	// Get the player id's and names from the lobby
 	const unsigned char playerID = NWrapperSingleton::getInstance().getMyPlayerID();
 
+#ifdef _PERFORMANCE_TEST
+	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
+	m_cam.setDirection(glm::normalize(glm::vec3(-0.715708f, 0.0819399f, 0.693576f)));
+#endif
+
 	// Initialize the component systems
 	initSystems(playerID);
 
@@ -127,6 +132,8 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
+
+	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(120.83f, 1.7028f, 114.2561f));
 #endif
 
 
@@ -452,6 +459,18 @@ bool GameState::fixedUpdate(float dt) {
 
 	counter += dt * 2.0f;
 
+#ifdef _PERFORMANCE_TEST
+	/* here we shoot the guns */
+	for (auto e : m_performanceEntities) {
+		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrix()[3]);
+		auto ePos = e->getComponent<TransformComponent>()->getTranslation();
+		ePos.y = ePos.y + 5.f;
+		auto dir = ePos - pos;
+		auto dirNorm = glm::normalize(dir);
+		e->getComponent<GunComponent>()->setFiring(pos + dirNorm * 3.f, glm::vec3(0.f, -1.f, 0.f));
+	}
+#endif
+
 	updatePerTickComponentSystems(dt);
 
 	return true;
@@ -752,8 +771,8 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 void GameState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
 	/* 13 characters that are constantly shooting their guns */
 	for (int i = 0; i < 13; i++) {
-		float spawnOffsetX = -24.f + float(i) * 2.f;
-		float spawnOffsetZ = float(i) * 1.3f;
+		float spawnOffsetX = -19.f + float(i) * 2.f;
+		float spawnOffsetZ = 13.f + float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
 		Model* characterModel = &m_app->getResourceManager().getModelCopy("walkTri.fbx", shader);
