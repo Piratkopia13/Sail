@@ -33,6 +33,7 @@ namespace Netcode {
 		WATER_HIT_PLAYER = 6,
 		PLAYER_DIED = 7,
 		MATCH_ENDED = 8,
+		SEND_ALL_BACK_TO_LOBBY = 9,
 		EMPTY = 69
 	};
 

@@ -67,6 +67,10 @@ GameState::GameState(StateStack& stack)
 	m_app->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
+
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -98,14 +102,15 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-	characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
-	characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	Model* characterModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
+	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
-	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	Model* aiModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
+	aiModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+	aiModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
 	// Level Creation
 
@@ -113,9 +118,8 @@ GameState::GameState(StateStack& stack)
 
 	// Player creation
 
-
 	int id = static_cast<int>(playerID);
-	glm::vec3 spawnLocation;
+	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
 		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 	}
@@ -728,7 +732,13 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	}
 
 	for (size_t i = 0; i < botCount; i++) {
-		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, m_componentSystems.levelGeneratorSystem->getSpawnPoint(), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		if (spawnLocation.x != -1000.f) {
+			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		}
+		else {
+			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
+		}
 	}
 }
 
@@ -736,27 +746,106 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallMRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallNM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_Albedo.tga");
+
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/albedo.tga");
+
 
 
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
-	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
-	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
+	roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
+	roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
+	roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
 
 	Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
 	tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
+	Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
+	roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RD_MRAo.tga");
+	roomDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RD_NM.tga");
+	roomDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RD_Albedo.tga");
+
+
+	Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor.fbx", shader);
+	corridorDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CD_MRAo.tga");
+	corridorDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CD_NM.tga");
+	corridorDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CD_Albedo.tga");
+
+	Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall.fbx", shader);
+	corridorWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CW_MRAo.tga");
+	corridorWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CW_NM.tga");
+	corridorWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CW_Albedo.tga");
+
+	Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
+	roomCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RC_MRAo.tga");
+	roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
+	roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
+
+
+	Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
+	corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
+	corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
+	corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
+
+	Model* roomFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
+	roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
+	roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
+	roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
+
+	Model* corridorCeiling = &m_app->getResourceManager().getModel("Tiles/CorridorCeiling.fbx", shader);
+	corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CC_MRAo.tga");
+	corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
+	corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
+
+
 	std::vector<Model*> tileModels;
 	tileModels.resize(TileModel::NUMBOFMODELS);
-	tileModels[TileModel::ROOM_FLOOR] = tileFlat;
-	tileModels[TileModel::ROOM_WALL] = tileEnd;
-	tileModels[TileModel::ROOM_DOOR] = tileDoor;
+	tileModels[TileModel::ROOM_FLOOR] = roomFloor;
+	tileModels[TileModel::ROOM_WALL] = roomWall;
+	tileModels[TileModel::ROOM_DOOR] = roomDoor;
+	tileModels[TileModel::ROOM_CEILING] = roomCeiling;
 
-	tileModels[TileModel::CORRIDOR_FLOOR] = tileFlat;
-	tileModels[TileModel::CORRIDOR_WALL] = tileEnd;
-	tileModels[TileModel::CORRIDOR_DOOR] = tileDoor;
+	tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
+	tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
+	tileModels[TileModel::CORRIDOR_DOOR] = corridorDoor;
+	tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
 
 
 
