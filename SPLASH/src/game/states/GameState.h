@@ -31,7 +31,9 @@ private:
 
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
-	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
+
+	//bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
+	bool renderImGuiAnimationSettings(float dt);
 
 	void shutDownGameState();
 
@@ -39,6 +41,7 @@ private:
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
+
 
 private:
 	Application* m_app;
@@ -76,5 +79,13 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_poppedThisFrame = false;
+
+
+
+#ifdef _PERFORMANCE_TEST
+	void populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
+
+	std::vector<Entity::SPtr> m_performanceEntities;
+#endif
 
 };
