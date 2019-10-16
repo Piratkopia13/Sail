@@ -227,6 +227,7 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
 	{
+		// NetObjectID should be send outside of this loop.
 		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
 		(*ar)(NetObjectID); // Send
 	}
