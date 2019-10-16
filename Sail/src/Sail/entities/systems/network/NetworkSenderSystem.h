@@ -21,7 +21,6 @@ public:
 
 	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
 	void initWithPlayerID(unsigned char playerID);
-	void addEntityToListONLYFORNETWORKRECIEVER(Entity*);
 
 private:
 	Netcode::NetworkObjectID m_playerID;

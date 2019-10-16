@@ -29,8 +29,8 @@ void NetworkReceiverSystem::init(unsigned char playerID, GameState* gameStatePtr
 	m_netSendSysPtr = netSendSysPtr;
 }
 
-void NetworkReceiverSystem::initWithPlayerEntityPointer(Entity* pPlayerEntity_) {
-	m_playerEntity = pPlayerEntity_;
+void NetworkReceiverSystem::initPlayer(Entity* pPlayerEntity) {
+	m_playerEntity = pPlayerEntity;
 }
 
 // Push incoming data strings to the back of a FIFO list
@@ -39,9 +39,6 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 	m_incomingDataBuffer.push(data);
 }
 
-void NetworkReceiverSystem::addSenderSystemP(NetworkSenderSystem* p) {
-	pSenderSystem = p;
-}
 
 /*
   The parsing of messages needs to match how the NetworkSenderSystem constructs them so
@@ -146,52 +143,56 @@ void NetworkReceiverSystem::update() {
 			std::cout << "EVENT SIZE: " << eventSize << "\n";
 			// Handle-Single-Frame events
 			ar(eventType);
-			ar(netObjectID);
+
+			// NEW STUFF
+		//	ar(netObjectID);
 
 			if (eventType == Netcode::MessageType::PLAYER_JUMPED) {
-				playerJumped(netObjectID);
+			//	playerJumped(netObjectID);
 			} 
 			else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {	
-				if (static_cast<unsigned char>(netObjectID >> 18) != m_playerID) {
+			//	if (static_cast<unsigned char>(netObjectID >> 18) != m_playerID) {
 
 					ar(netObjectID);	// Find out which player was hit
 
 					// CURRENT SPRINT IS FOR 2-PLAYER MULTIPLAYER ONLY.
-				//	if (NWrapperSingleton::getInstance().isHost()) {
-				//		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-				//			Netcode::MessageType::WATER_HIT_PLAYER,
-				//			SAIL_NEW Netcode::MessageDataWaterHitPlayer{
-				//				netObjectID
-				//			}
-				//		);
-				//	}
+			//		if (NWrapperSingleton::getInstance().isHost()) {
+			//			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			//				Netcode::MessageType::WATER_HIT_PLAYER,
+			//				SAIL_NEW Netcode::MessageDataWaterHitPlayer{
+			//					netObjectID
+			//				}
+			//			);
+			//		}
 
 					waterHitPlayer(netObjectID);
-				}
+			//	}
 			}
 			else if (eventType == Netcode::MessageType::SPAWN_PROJECTILE) {
 				// If the message was sent from me but rerouted back from the host, ignore it.
-				unsigned char wtf = static_cast<unsigned char>(netObjectID >> 18);
-				std::cout << "I (" << (unsigned __int32)m_playerID << ")" << " think (" << (unsigned __int32)wtf << ") sent this originally\n";
+			//	unsigned char wtf = static_cast<unsigned char>(netObjectID >> 18);
+			//	std::cout << "I (" << (unsigned __int32)m_playerID << ")" << " think (" << (unsigned __int32)wtf << ") sent this originally\n";
 				
-				if (static_cast<unsigned char>(netObjectID >> 18) != m_playerID) { // First byte is always the ID of the player who created the object
+
+			//	if (static_cast<unsigned char>(netObjectID >> 18) != m_playerID) { // First byte is always the ID of the player who created the object
+					
 					// If it wasn't sent from me, deal with it
 					Archive::loadVec3(ar, gunPosition);
 					Archive::loadVec3(ar, gunVelocity);
 
 					// CURRENT SPRINT IS FOR 2-PLAYER MULTIPLAYER ONLY.
-				//	if (NWrapperSingleton::getInstance().isHost()) {
-				//		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-				//			Netcode::MessageType::SPAWN_PROJECTILE,
-				//			SAIL_NEW Netcode::MessageDataProjectile{
-				//				gunPosition, gunVelocity
-				//			}
-				//		);
-				//	}
+			//		if (NWrapperSingleton::getInstance().isHost()) {
+			//			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			//				Netcode::MessageType::SPAWN_PROJECTILE,
+			//				SAIL_NEW Netcode::MessageDataProjectile{
+			//					gunPosition, gunVelocity
+			//				}
+			//			);
+			//		}
 
 					EntityFactory::CreateProjectile(gunPosition, gunVelocity);
-				}
 			}
+	
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
 				ar(netObjectID);
 
@@ -323,13 +324,6 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
-	// If the message was sent from me but rerouted back from the host, ignore it.
-	if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
-		return;
-	}
-
-
-	// Was i hit?
 	if (id == m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID) {
 		// Bad way of getting the candle component
 		std::vector<Entity::SPtr> childEntities = m_playerEntity->getChildEntities();
@@ -339,6 +333,12 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 				child.get()->getComponent<CandleComponent>()->hitWithWater(10.0f);
 			}
 		}
+	}
+
+	// Needs to be after the function above.
+	// If the message was sent from me but rerouted back from the host, ignore it.
+	if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
+		return;
 	}
 
 	for (auto& e : entities) {

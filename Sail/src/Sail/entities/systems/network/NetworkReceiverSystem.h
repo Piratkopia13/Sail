@@ -12,6 +12,7 @@ public:
 	~NetworkReceiverSystem();
 
 	void init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
+	void initPlayer(Entity* pPlayerEntity);
 	void pushDataToBuffer(std::string data);
 
 	void update();

@@ -187,7 +187,9 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 
 void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar) {
 	(*ar)(event->type); // Send the event-type
-	//(*ar)(static_cast<unsigned __int32>(m_playerID));
+
+	// NEW STUFF
+//	(*ar)(static_cast<unsigned __int32>(m_playerID));
 	Entity* e = event->pRelevantEntity;
 
 	
@@ -202,8 +204,8 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 
 		// CURRENTLY IS:
 		GunComponent* gun = e->getComponent<GunComponent>();
-		(*ar)(gun->position);
-		(*ar)(gun->direction * gun->projectileSpeed);
+		Archive::archiveVec3(*ar, gun->position);
+		Archive::archiveVec3(*ar, gun->direction * gun->projectileSpeed);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED: 
@@ -219,7 +221,8 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	//	delete data;
 
 		// CURRENTLY IS:
-		(*ar)(e->getComponent<OnlineOwnerComponent>()->netEntityID);
+		__int32 NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
+		(*ar)(NetObjectID);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
@@ -236,9 +239,4 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	default:
 		break;
 	}
-}
-
-void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e)
-{
-	entities.push_back(e);
 }
