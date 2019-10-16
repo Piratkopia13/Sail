@@ -30,6 +30,7 @@ namespace KeyBinds {
 	extern int toggleSphere;	// Collision
 	extern int toggleSun;
 	extern int lightCandle;
+	extern int spray;
 
 	// Application
 	extern int alt;
