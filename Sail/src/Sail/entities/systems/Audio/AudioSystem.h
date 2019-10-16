@@ -14,7 +14,6 @@ public:
 	AudioEngine* getAudioEngine();
 
 	void initialize();
-	void update(float dt) override {} // Use the below function instead
 	void update(Camera& cam, float dt, float alpha);
 	void stop() override;
 

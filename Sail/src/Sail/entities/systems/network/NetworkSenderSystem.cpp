@@ -51,7 +51,7 @@ NetworkSenderSystem::~NetworkSenderSystem() {
 		....
 
 */
-void NetworkSenderSystem::update(float dt) {
+void NetworkSenderSystem::update() {
 	using namespace Netcode;
 
 	// Loop through networked entities and serialize their data
@@ -99,7 +99,51 @@ void NetworkSenderSystem::update(float dt) {
 }
 
 const void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
-	this->eventQueue.push(type);
+	eventQueue.push(type);
+}
+
+void NetworkSenderSystem::stop() {
+
+
+	using namespace Netcode;
+
+	// Loop through networked entities and serialize their data
+	std::ostringstream os(std::ios::binary);
+	cereal::PortableBinaryOutputArchive ar(os);
+
+	// TODO: Add game tick here in the future
+
+	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame recieves via components -+-+-+-+-+-+-+-+ 
+	// Write nrOfEntities
+	ar(static_cast<__int32>(0));
+
+	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
+	//__int32 test = static_cast<__int32>(eventQueue.size());
+	bool ended = false;
+	while (eventQueue.empty() == false) {
+		NetworkSenderEvent* pE = eventQueue.front();		// Fetch
+		if (pE->type == Netcode::MessageType::MATCH_ENDED) {
+			ended = true;
+			ar(static_cast<__int32>(1));
+			handleEvent(pE, &ar);
+		}
+		eventQueue.pop();									// Pop
+		delete pE;											// Delete
+	}
+	if (!ended) {
+		ar(static_cast<__int32>(0));
+	}
+
+	else {
+		// send the serialized archive over the network
+		std::string binaryData = os.str();
+		if (NWrapperSingleton::getInstance().isHost()) {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryData);
+		}
+		else {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
+		}
+	}
 }
 
 void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar) {
@@ -164,11 +208,21 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
 	{
-		// Send additional info if needed
+		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
+		(*ar)(NetObjectID); // Send
+	}
+	break;
+	case Netcode::MessageType::MATCH_ENDED:
+	{
 	}
 	break;
 
 	default:
 		break;
 	}
+}
+
+void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e)
+{
+	entities.push_back(e);
 }

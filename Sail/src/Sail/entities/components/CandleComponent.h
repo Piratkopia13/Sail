@@ -1,6 +1,8 @@
 #pragma once
 #include "Component.h"
 
+class Entity;
+
 // This component will eventually contain the health etc of the candles
 class CandleComponent : public Component<CandleComponent> {
 public:
@@ -40,6 +42,9 @@ public:
 	unsigned __int32 getWasHitByNetID();
 
 	bool hitByLocalPlayer = false;
+
+	
+	Entity* m_ptrToOwner = nullptr;
 
 private:
 	bool m_wasHitByWater = false;

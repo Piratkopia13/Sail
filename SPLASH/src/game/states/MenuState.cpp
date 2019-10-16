@@ -10,7 +10,7 @@
 
 #include "Sail/../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
 
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include <string>
 
 
@@ -50,7 +50,7 @@ bool MenuState::update(float dt, float alpha) {
 
 bool MenuState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	ECS::Instance()->getSystem<RenderSystem>()->draw();
+	ECS::Instance()->getSystem<BeginEndFrameSystem>()->renderNothing();
 	return false;
 }
 

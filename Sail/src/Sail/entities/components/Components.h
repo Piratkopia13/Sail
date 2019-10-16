@@ -10,6 +10,7 @@
 #include "CollidableComponent.h"
 #include "CollisionComponent.h"
 #include "CollisionSpheresComponent.h"
+#include "CullingComponent.h"
 #include "FSMComponent.h"
 #include "GunComponent.h"
 #include "LifeTimeComponent.h"

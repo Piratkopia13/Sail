@@ -44,8 +44,9 @@ std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, 
 	std::vector<NodeSystem::Node> nPath;
 	if ( from.index != to.index ) {
 		auto path = aStar(from.index, to.index);
-
-		for ( size_t i = path.size() - 1; i > -1; i-- ) {
+		
+		size_t size = path.size();
+		for ( size_t i = size - 1; i < size; i-- ) {
 			nPath.push_back(m_nodes[path[i]]);
 		}
 	}
@@ -82,7 +83,7 @@ const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
 #ifdef _DEBUG_NODESYSTEM
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);
-	m_nodeModel->getMesh(0)->getMaterial()->setDiffuseTexture("missing.tga");
+	m_nodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 }
 #endif
 

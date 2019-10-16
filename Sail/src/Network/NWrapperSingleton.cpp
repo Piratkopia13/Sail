@@ -15,6 +15,10 @@ NWrapperSingleton::~NWrapperSingleton() {
 	Memory::SafeDelete(m_network);
 }
 
+NWrapperSingleton& NWrapperSingleton::getInstance() {
+	static NWrapperSingleton instance;
+	return instance;
+}
 NWrapperSingleton::NWrapperSingleton() {
 	m_network = SAIL_NEW Network;
 	m_network->initialize();
@@ -74,6 +78,7 @@ void NWrapperSingleton::resetPlayerList()
 }
 
 bool NWrapperSingleton::playerJoined(Player& player) {
+	player.name = player.name.c_str(); // This will fix currupt string size.
 	if (m_playerCount < m_playerLimit) {
 		m_players.push_back(player);
 		m_playerCount++;
@@ -141,9 +146,14 @@ void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
 
 void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity* pRelevantEntity) {
 	// Cleaning is handled by the NSS later on.
-	NetworkSenderEvent* e = new NetworkSenderEvent;
+	NetworkSenderEvent* e = SAIL_NEW NetworkSenderEvent;
 	e->type = type;
 	e->pRelevantEntity = pRelevantEntity;
+	if (type == Netcode::MessageType::MATCH_ENDED) {
+		// Clear queue
+		// Push to queue
+		// set bool
+	}
 	NSS->queueEvent(e);
 }
 

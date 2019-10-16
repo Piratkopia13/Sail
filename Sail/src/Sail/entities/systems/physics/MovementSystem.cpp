@@ -19,9 +19,6 @@ void MovementSystem::update(float dt) {
 		MovementComponent* movement = e->getComponent<MovementComponent>();
 
 		// Update velocity
-		if (e->getName() == "projectile") {
-			int asdf = 3;
-		}
 		movement->velocity += (movement->constantAcceleration + movement->accelerationToAdd) * dt;
 
 		// Reset additional acceleration

@@ -13,15 +13,19 @@ class NetworkSenderSystem : public BaseComponentSystem {
 public:
 	NetworkSenderSystem();
 	~NetworkSenderSystem();
-	void update(float dt) override;
+	void update();
 
 	const void queueEvent(NetworkSenderEvent* event);
 	
+	virtual void stop();
+
+	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
 
 private:
 	void handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);
 	void handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar);
 	std::queue<NetworkSenderEvent*> eventQueue;
+
 
 	//void archiveData(Netcode::MessageType* type, Entity* e, cereal::PortableBinaryOutputArchive* ar);
 };

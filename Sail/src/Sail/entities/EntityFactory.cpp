@@ -20,6 +20,7 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, Model* lightMo
 	e->addComponent<TransformComponent>(lightPos);
 	e->addComponent<BoundingBoxComponent>(bbModel);
 	e->addComponent<CollidableComponent>();
+	e->addComponent<CullingComponent>();
 	PointLight pl;
 	pl.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
@@ -30,10 +31,7 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, Model* lightMo
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID, size_t lightIndex) {
-	// Player spawn positions are based on their unique id
-	// This will most likely be changed later so that the host sets all the players' start positions
-	float spawnOffset = static_cast<float>(2 * static_cast<int>(playerID) - 10);
+Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID, size_t lightIndex, glm::vec3 spawnLocation) {
 
 	auto player = ECS::Instance()->createEntity("player");
 
@@ -44,6 +42,8 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//player->addComponent<LocalPlayerComponent>();
 
 	player->addComponent<TransformComponent>();
+
+	player->addComponent<CullingComponent>();
 
 	player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
@@ -89,7 +89,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//m_cam.setPosition(glm::vec3(1.6f + spawnOffset, 1.8f, 10.f));
 	//m_cam.lookAt(glm::vec3(0.f));
 
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f + spawnOffset, 0.9f, 10.f));
+	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
 
 	return player;
 }
@@ -105,6 +105,7 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->addComponent<SpeedLimitComponent>();
 	e->addComponent<CollisionComponent>();
 	e->addComponent<AiComponent>();
+	e->addComponent<CullingComponent>();
 
 	e->addComponent<AudioComponent>();
 
@@ -169,6 +170,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(std::string name, Model* model
 	e->addComponent<TransformComponent>(pos, rot, scale);
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
+	e->addComponent<CullingComponent>();
 
 	return e;
 }

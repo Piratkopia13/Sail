@@ -50,6 +50,12 @@ bool Network::initialize()
 
 void Network::checkForPackages(NetworkEventHandler& handler)
 {
+	//for (auto& temp : m_connections) {
+	//	std::cout << "--------------------\n";
+	//	std::cout << temp.second->id << "\n";
+	//	std::cout << "--------------------\n\n";
+	//}
+
 	bool morePackages = true;
 	while (morePackages)
 	{

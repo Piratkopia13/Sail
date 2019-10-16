@@ -12,7 +12,7 @@ public:
 	~AnimationSystem();
 
 	void update(float dt) override;
-	void updatePerFrame(float dt);
+	void updatePerFrame();
 	void toggleInterpolation();
 	const bool getInterpolation();
 	void setInterpolation(const bool interpolation);
@@ -21,7 +21,7 @@ public:
 	void updateMeshGPU(ID3D12GraphicsCommandList4* cmdList);
 	void updateMeshCPU();
 
-	std::vector<Entity*>& getEntities();
+	const std::vector<Entity*>& getEntities() const;
 
 
 private:

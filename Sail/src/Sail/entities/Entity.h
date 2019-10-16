@@ -40,6 +40,7 @@ public:
 	void addChildEntity(Entity::SPtr child);
 	void removeChildEntity(Entity::SPtr toRemove);
 	void removeAllChildren();
+	void removeDeleteAllChildren();
 	/* Currently dangerous, will probably be altered in future */
 	std::vector<Entity::SPtr>& getChildEntities();
 
@@ -82,7 +83,7 @@ inline ComponentType* Entity::addComponent(Targs... args) {
 	} else {
 		m_components[ComponentType::ID] = std::make_unique<ComponentType>(args...);
 
-		m_componentTypes |= ComponentType::BID;
+		m_componentTypes |= ComponentType::getBID();
 
 		// Place this entity within the correct systems if told to
 		if (tryToAddToSystems) {
@@ -100,7 +101,7 @@ inline void Entity::removeComponent() {
 		m_components[ComponentType::ID].reset();
 		
 		// Set the component type bit to 0 if it was 1
-		m_componentTypes ^= ComponentType::BID;
+		m_componentTypes ^= ComponentType::getBID();
 
 		// Remove this entity from systems which required the removed component
 		removeFromSystems();
@@ -114,5 +115,5 @@ inline ComponentType* Entity::getComponent() {
 
 template<typename ComponentType>
 inline bool Entity::hasComponent() const {
-	return ( m_componentTypes & ComponentType::BID ).any();
+	return ( m_componentTypes & ComponentType::getBID() ).any();
 }
