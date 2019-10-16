@@ -20,7 +20,7 @@ NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 NetworkReceiverSystem::~NetworkReceiverSystem() 
 {}
 
-void NetworkReceiverSystem::init(unsigned char playerID, State* gameStatePtr, NetworkSenderSystem* netSendSysPtr) {
+void NetworkReceiverSystem::init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr) {
 	m_playerID = playerID;
 	m_gameStatePtr = gameStatePtr;
 	m_netSendSysPtr = netSendSysPtr;

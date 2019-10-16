@@ -9,13 +9,7 @@
 #include "../libraries/imgui/imgui.h"
 
 EndGameState::EndGameState(StateStack& stack) : State(stack) {
-	auto* ptr = Application::getInstance();
-	auto* ecs = ECS::Instance();
-	std::cout << "TEST";
 
-	// Create network send and receive systems
-	NWrapperSingleton::getInstance().setNSS(ECS::Instance()->getSystem<NetworkSenderSystem>());
-	ECS::Instance()->getSystem<NetworkReceiverSystem>()->init(NWrapperSingleton::getInstance().getMyPlayerID(), this, ECS::Instance()->getSystem<NetworkSenderSystem>());
 }
 
 EndGameState::~EndGameState() {
@@ -108,11 +102,4 @@ bool EndGameState::onReturnToLobby(NetworkBackToLobby& event) {
 	return true;
 }
 
-void EndGameState::updatePerTickComponentSystems(float dt)
-{
-}
-
-void EndGameState::updatePerFrameComponentSystems(float dt, float alpha)
-{
-}
 
