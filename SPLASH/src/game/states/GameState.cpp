@@ -3,12 +3,12 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/Systems.h"
+#include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
-
 #include <sstream>
 #include <iomanip>
 
@@ -118,12 +118,9 @@ GameState::GameState(StateStack& stack)
 	for (int i = -1; i < id; i++) {
 		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 	}
-	if (spawnLocation.x != -1000.f) {
-		m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
-	}
-	else {
-		Logger::Error("Unable to spawn player because all spawn points have already been used on this map.");
-	}
+
+	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	m_componentSystems.networkReceiverSystem->initPlayer(m_player);
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
