@@ -223,7 +223,11 @@ void GameInputSystem::putDownCandle(Entity* e) {
 		auto candleE = e->getChildEntities()[i];
 		if ( candleE->hasComponent<CandleComponent>() ) {
 			auto candleComp = candleE->getComponent<CandleComponent>();
-			candleComp->toggleCarried();
+			candleComp->setCarried(!candleComp->isCarried());
+			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				Netcode::MessageType::CANDLE_HELD_STATE,
+				candleE.get()
+			);
 
 			return;
 		}

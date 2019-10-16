@@ -128,6 +128,6 @@ bool CandleComponent::getWasCarriedLastUpdate() const {
 	return m_wasCarriedLastUpdate;
 }
 
-void CandleComponent::toggleCarried() {
-	m_carried = !m_carried;
+void CandleComponent::setCarried(bool b) {
+	m_carried = b;
 }

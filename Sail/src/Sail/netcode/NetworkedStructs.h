@@ -26,13 +26,14 @@ namespace Netcode {
 	// The message type decides how the subsequent data will be parsed and used
 	enum MessageType : __int32 {
 		CREATE_NETWORKED_ENTITY = 1,
-		MODIFY_TRANSFORM = 2,
-		SPAWN_PROJECTILE = 3,
-		ROTATION_TRANSFORM = 4,
-		PLAYER_JUMPED = 5,
-		WATER_HIT_PLAYER = 6,
-		PLAYER_DIED = 7,
-		MATCH_ENDED = 8,
+		MODIFY_TRANSFORM,
+		SPAWN_PROJECTILE,
+		ROTATION_TRANSFORM,
+		PLAYER_JUMPED,
+		WATER_HIT_PLAYER,
+		PLAYER_DIED,
+		MATCH_ENDED,
+		CANDLE_HELD_STATE,
 		EMPTY = 69
 	};
 

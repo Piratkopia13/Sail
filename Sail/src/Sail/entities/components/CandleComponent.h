@@ -23,7 +23,7 @@ public:
 	bool isCarried() const;
 	void setWasCarriedLastUpdate(const bool wasCarried);
 	bool getWasCarriedLastUpdate() const;
-	void toggleCarried();
+	void setCarried(bool b);
 	float getDownTime() const;
 	bool getIsLit() const;
 	void setIsLit(const bool isLit);
