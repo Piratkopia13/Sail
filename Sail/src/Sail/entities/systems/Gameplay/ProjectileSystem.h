@@ -7,4 +7,10 @@ public:
 	~ProjectileSystem();
 
 	void update(float dt) override;
+
+private:
+	// TODO: Replace with game settings
+	float m_splashMinTime;
+
+	float m_projectileSplashSize;
 };

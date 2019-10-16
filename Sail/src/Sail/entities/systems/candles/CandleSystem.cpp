@@ -4,13 +4,13 @@
 #include "Sail/entities/components/LightComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
-#include "Sail/entities/components/LocalPlayerComponent.h"
+#include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
 #include "Sail/entities/components/MovementComponent.h"
 #include "Sail/entities/components/SpectatorComponent.h"
-#include "Sail/entities/components/LocalPlayerComponent.h"
-#include "Sail/entities/components/OnlinePlayerComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
 
 #include "Sail/entities/Entity.h"
@@ -19,6 +19,7 @@
 
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
+#include "../Sail/src/Network/NWrapperSingleton.h"
 
 #include "Sail/Application.h"
 
@@ -65,7 +66,31 @@ void CandleSystem::update(float dt) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
-					if (candle->getHealth() <= 0.f) {
+
+
+					// A candle which is owned by a player has been hit
+					// -- Does the candle belong to an online player?
+					// -- Was it hit by the local player?
+					
+					// If the player is controlled through the network
+					if (e->hasComponent<OnlineOwnerComponent>()) {
+						CandleComponent* c = e->getComponent<CandleComponent>();
+
+						// If the player who hit him was the local player
+						if (c->hitByLocalPlayer == true) {
+							// It (An online player) was hit by the local player
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::WATER_HIT_PLAYER, 
+								e // OLD
+								/* SAIL_NEW Netcode::MessageDataWaterHitPlayer{ 
+									e->getComponent<OnlineOwnerComponent>()->netEntityID
+								}*/
+							);
+						}
+					}
+					
+
+					if ( candle->getHealth() <= 0.f ) {
 						candle->setIsLit(false);
 
 						if (candle->getOwner() == m_playerEntityID) {
