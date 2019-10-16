@@ -228,23 +228,19 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		}
+	}
+
+	if (Input::WasKeyJustPressed(KeyBinds::spray)) {
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.closestHitIndex != -1) {
-			/*auto normal = tempInfo.info[tempInfo.closestHitIndex].normal;
-			glm::mat4 rotMat = glm::identity<glm::mat4x4>();
-			if (normal.z != -1.f && normal.z != 1.f) {
-				const glm::vec3 a = normal;
-				const glm::vec3 b = glm::vec3(0.f, 0.f, -1.f);
-				glm::vec3 v = glm::cross(b, a);
-				float angle = acos(glm::dot(b, a) / (glm::length(b) * glm::length(a)));
-				rotMat = glm::rotate(glm::identity<glm::mat4>(), angle, v);
-			}*/
 			// size (the size you want) = 0.3
 			// halfSize = (1 / 0.3) * 0.5 = 1.667
 			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));
 		}
-		/*if (tempInfo.info[tempInfo.closestHitIndex].entity) {
-			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
-		}*/
 	}
 
 	//Test frustum culling
