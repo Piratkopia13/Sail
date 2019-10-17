@@ -10,6 +10,8 @@
 #include "Network/NWrapper.h"			// 
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
+#include "Sail/entities/components/AudioComponent.h"
 
 #include <string>
 #include <list>
@@ -32,11 +34,18 @@ LobbyState::LobbyState(StateStack& stack)
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
+
+	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
+	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
+	//m_lobbyAudio->addComponent<AudioComponent>();
+	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, true);
 }
+
 
 LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
 	delete m_settingBotCount;
+
 }
 
 bool LobbyState::processInput(float dt) {

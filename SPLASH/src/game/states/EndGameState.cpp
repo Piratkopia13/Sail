@@ -94,7 +94,6 @@ bool EndGameState::onReturnToLobby(NetworkBackToLobby& event) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(msg);
 	}
 	else {
-		std::cout << "MEOW";
 		this->requestStackPop();
 		this->requestStackPush(States::JoinLobby);
 	}

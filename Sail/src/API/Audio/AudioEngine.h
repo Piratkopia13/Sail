@@ -57,9 +57,11 @@ public:
 
 	void loadSound(const std::string& filename);
 	int initializeSound(const std::string& filename, float volume = 1.0f);
-	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
+	void streamSound(const std::string& filename, int streamIndex, float volume, bool loop = true);
 
 	void updateSoundWithCurrentPosition(int index, Camera& cam, const Transform& transform, 
+		const glm::vec3& positionOffset, float alpha);
+	void updateStreamWithCurrentPosition(int index, Camera& cam, const Transform& transform,
 		const glm::vec3& positionOffset, float alpha);
 
 	void startSpecificSound(int index, float volume = 1.0f);
@@ -72,6 +74,8 @@ public:
 	float getStreamVolume(int index);
 	int getSoundIndex();
 	int getAvailableStreamIndex();
+	soundStruct* getSound(int index);
+	soundStruct* getStream(int index);
 
 	void setSoundVolume(int index, float value = VOL_HALF);
 	void setStreamVolume(int index, float value = VOL_HALF);
@@ -106,7 +110,7 @@ private:
 	//-----------------
 	HRESULT initXAudio2();
 
-	void streamSoundInternal(const std::string& filename, int myIndex, bool loop);
+	void streamSoundInternal(const std::string& filename, int myIndex, float volume, bool loop);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
 
 	bool checkSoundIndex(int index);
