@@ -11,6 +11,7 @@ class SpeedLimitComponent;
 class NodeSystem;
 class Model;
 class Octree;
+class MapComponent;
 
 #ifdef _DEBUG_NODESYSTEM
 class Shader;
@@ -43,6 +44,7 @@ private:
 	float getAiYaw(MovementComponent* moveComp, float currYaw, float dt);
 	void aiUpdateFunc(Entity* e, const float dt);
 	glm::vec3 getDesiredDir(AiComponent* aiComp, TransformComponent* transComp);
+	bool nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos);
 
 private:
 	float m_timeBetweenPathUpdate;

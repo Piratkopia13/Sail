@@ -6,6 +6,7 @@
 #include "../../../components/MovementComponent.h"
 #include "../../../components/SpeedLimitComponent.h"
 #include "Sail/ai/pathfinding/NodeSystem.h"
+#include "Sail/entities/components/MapComponent.h"
 
 #include "../../../ECS.h"
 #include "../../../components/BoundingBoxComponent.h"
@@ -16,6 +17,9 @@
 #include "Sail/Application.h"
 #include "../../Physics/Intersection.h"
 #include "../../Physics/Physics.h"
+
+#include <glm/gtx/vector_angle.hpp>
+
 
 AiSystem::AiSystem() {
 	registerComponent<TransformComponent>(true, true, true);
@@ -38,33 +42,129 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree, Shader* shader) {
 #endif
 
 void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
-
-	std::vector<NodeSystem::Node> nodes;
-	std::vector<std::vector<unsigned int>> connections;
-
 	m_octree = octree;
 
-	std::vector<unsigned int> conns;
-	int x_max = 5*7;
-	int z_max = 5*7;
-	int x_cur = 0;
-	int z_cur = 0;
-	int size = x_max * z_max;
+	// To be able to get the map dimensions and such
+	// TODO: should probably be replaced with some form of settings singleton
+	MapComponent mapComp;
 
-	int padding = 2;
-	float offsetX = -5.f;
-	float offsetZ = -5.f;
-	float offsetY = 1.f;
-	bool* walkable = SAIL_NEW bool[size];
+	float realXMax = mapComp.xsize * mapComp.tileSize;
+	float realZMax = mapComp.ysize * mapComp.tileSize;
+	float realSize = realZMax * realXMax;
+	float nodeSize = 0.5f;
+	float nodePadding = nodeSize;
+	int xMax = static_cast<int>(std::floor(realXMax / (nodeSize + nodePadding)));
+	int zMax = static_cast<int>(std::floor(realZMax / (nodeSize + nodePadding)));
+	int size = xMax * zMax;
 
+	int currX = 0;
+	int currZ = 0;
+
+	// Currently needed cause map doesn't start creation from (0,0)
+	float startOffsetX = -mapComp.tileSize / 2.f;
+	float startOffsetZ = -mapComp.tileSize / 2.f;
+	float startOffsetY = 0.f;
+	//bool* walkable = SAIL_NEW bool[size];
+
+	// Entity used for collision checking
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
-	e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+	float collisionBoxHeight = 0.9f;
+	float collisionBoxHalfHeight = collisionBoxHeight / 2.f;
+	e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(nodeSize / 2.f, collisionBoxHalfHeight, nodeSize / 2.f));
 
 
 	/*Nodesystem*/
 	ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.f);
 	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->update(0.f);
-	for ( size_t i = 0; i < size; i++ ) {
+
+
+	std::vector<NodeSystem::Node> nodes;
+	std::vector<std::vector<unsigned int>> connections;
+	std::vector<unsigned int> conns;
+	float yPos = 0.f;
+	for (int i = 0; i < size; i++) {
+		conns.clear();
+
+		/*
+			Node position
+		*/
+		currX = i % xMax;
+		currZ = static_cast<int>(floor(i / xMax));
+
+		float xPos = static_cast<float>(currX) * (nodeSize + nodePadding) + startOffsetX;
+		float zPos = static_cast<float>(currZ) * (nodeSize + nodePadding) + startOffsetZ;
+		glm::vec3 nodePos(xPos, yPos, zPos);
+
+		/*
+			Is there floor here?
+		*/
+		bool blocked = false;
+		Octree::RayIntersectionInfo tempInfo;
+		glm::vec3 down(0.f, -1.f, 0.f);
+		m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + collisionBoxHalfHeight, nodePos.z), down, &tempInfo);
+		if (tempInfo.closestHitIndex != -1) {
+			float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].normal, -down);
+			// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
+			bool isFloor = (floorCheckVal < 0.1f) ? true : false;
+			if (!isFloor) {
+				blocked = true;
+			} else {
+				// Update the height of the node position
+				nodePos.y = nodePos.y + (collisionBoxHalfHeight - tempInfo.closestHit);
+			}
+		} else {
+			blocked = true;
+		}
+
+		/*
+			Is node blocked
+		*/
+		glm::vec3 bbPos = nodePos;
+		//bbPos.x -= nodeSize;
+		bbPos.y += collisionBoxHalfHeight + 0.1f; // Plus a little offset to avoid the floor
+		//bbPos.z -= nodeSize;
+		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(bbPos);
+		std::vector < Octree::CollisionInfo> vec;
+		m_octree->getCollisions(e.get(), &vec);
+
+		for (Octree::CollisionInfo& info : vec) {
+			int j = (info.entity->getName().compare("Map_"));
+			if (j >= 0) {
+				//Not walkable
+
+				blocked = true;
+				break;
+			}
+		}
+
+		/*
+			Node connections
+		*/
+		if (!blocked) {
+			// Each node currently only have 4 connections
+			for (int x = currX - 1; x < currX + 2; x++) {
+				for (int z = currZ - 1; z < currZ + 2; z++) {
+					if (x > -1 && x < xMax && z > -1 && z < zMax && (x != currX || z != currZ)) {
+						int otherNodeX = currX - x;
+						int otherNodeZ = currZ - z;
+						if (nodeConnectionCheck(nodePos,
+												glm::vec3(static_cast<float>(otherNodeX) * nodeSize,
+														  nodePos.y,
+														  static_cast<float>(otherNodeZ) * nodeSize))) {
+							// get index
+							int index = otherNodeZ * xMax + otherNodeX;
+							conns.push_back(index);
+						}
+					}
+				}
+			}
+		}
+
+		nodes.emplace_back(nodePos, blocked, i);
+		connections.push_back(conns);
+	}
+
+	/*for ( size_t i = 0; i < size; i++ ) {
 		conns.clear();
 		x_cur = i % x_max;
 		z_cur = static_cast<int>(floor(i / x_max));
@@ -102,12 +202,11 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		}
 
 		connections.push_back(conns);
-	}
+	}*/
 	//Delete "DeleteMeFirstFrameDummy"
 	e->queueDestruction();
 
 	m_nodeSystem->setNodes(nodes, connections);
-	Memory::SafeDeleteArr(walkable);
 }
 
 std::vector<Entity*>& AiSystem::getEntities() {
@@ -150,6 +249,25 @@ glm::vec3 AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* trans
 	}
 	desiredDir = glm::normalize(desiredDir);
 	return desiredDir; // TODO: Check this - should probably not return a reference??
+}
+
+bool AiSystem::nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos) {
+	// Setup
+	float dst = glm::distance(nodePos, otherNodePos);
+	glm::vec3 dir = glm::normalize(otherNodePos - nodePos);
+
+	// Intersection check
+	Octree::RayIntersectionInfo tempInfo;
+	m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + 0.5f, nodePos.z), dir, &tempInfo);
+
+	// Nothing between the two nodes
+	if (tempInfo.closestHit > dst ||
+		tempInfo.closestHitIndex == -1 /* Shouldn't be able to happen but just a safety precaution */) {
+		return true;
+	}
+
+	// The nodes shouldn't be connected
+	return false;
 }
 
 

@@ -4,7 +4,7 @@
 #include <list>
 
 //Keep this define in case debugging is needed
-//#define _DEBUG_NODESYSTEM
+#define _DEBUG_NODESYSTEM
 
 #ifdef _DEBUG_NODESYSTEM
 #include "Sail/entities/Entity.h"
@@ -59,6 +59,7 @@ public:
 #ifdef _DEBUG_NODESYSTEM
 	void setDebugModelAndScene(Shader* shader);
 	Model* m_nodeModel;
+	Model* m_blockedNodeModel;
 	std::vector<Entity::SPtr> m_nodeEntities;
 #endif
 

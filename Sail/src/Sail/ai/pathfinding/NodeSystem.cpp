@@ -31,9 +31,11 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 	m_nodeEntities.clear();
 	int currNodeEntity = 0;
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
-		if ( !m_nodes[i].blocked ) {
-			m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
-			m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position);
+		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
+		m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position)->setScale(0.5f);
+		if (m_nodes[i].blocked) {
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_blockedNodeModel);
+		} else {
 			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_nodeModel);
 		}
 	}
@@ -84,6 +86,10 @@ const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);
 	m_nodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+	m_nodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
+	m_blockedNodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", shader);
+	m_blockedNodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+	m_blockedNodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 0.f, 0.f, 1.f));
 }
 #endif
 
