@@ -4,7 +4,7 @@
 #include "NWrapperClient.h"
 
 class NetworkSenderSystem;
-class NetworkSenderEvent;
+//struct NetworkSenderEvent;
 
 struct NetworkSenderEvent {
 	Netcode::MessageType type;

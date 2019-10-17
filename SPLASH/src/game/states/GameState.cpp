@@ -351,6 +351,8 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
+
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
@@ -444,6 +446,11 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+
+	// The host will also save the data in the sender system so that it can be forwarded to all other clients
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.networkSenderSystem->pushDataToBuffer(event.getSerializedData());
+	}
 	return true;
 }
 

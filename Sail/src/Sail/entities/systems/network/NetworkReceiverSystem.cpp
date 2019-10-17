@@ -13,6 +13,15 @@
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
 
+
+#define BANNED(func) sorry_##func##_is_a_banned_function
+
+// The host will now automatically forward all incoming messages to other players so
+// no need to use any host-specific logic in this system
+#undef isHost
+#define isHost() BANNED(isHost())
+
+
 NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 	registerComponent<NetworkReceiverComponent>(true, true, true);
 	registerComponent<TransformComponent>(false, true, true);
@@ -37,7 +46,6 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 	m_incomingDataBuffer.push(data);
 }
 
-
 /*
   The parsing of messages needs to match how the NetworkSenderSystem constructs them so
   any changes made here needs to be made there as well!
@@ -45,6 +53,7 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
   Logical structure of the packages that will be decoded by this function:
 
 	__int32         nrOfEntities
+	__int32         senderID
 
 		NetworkObjectID entity[0].id
 		EntityType		entity[0].type
@@ -73,6 +82,7 @@ void NetworkReceiverSystem::update() {
 	std::scoped_lock lock(m_bufferLock);
 
 	__int32 nrOfObjectsInMessage = 0;
+	unsigned char senderID = 0;
 	NetworkObjectID id = 0;
 	Netcode::MessageType messageType;
 	Netcode::EntityType entityType;
@@ -86,9 +96,19 @@ void NetworkReceiverSystem::update() {
 	while (!m_incomingDataBuffer.empty()) {
 		std::istringstream is(m_incomingDataBuffer.front());
 		cereal::PortableBinaryInputArchive ar(is);
+		{
+			// Read message metadata
+			ar(nrOfObjectsInMessage);
 
-		// Read message metadata
-		ar(nrOfObjectsInMessage);
+			// Get the ID of whoever sent the package so that we can ignore it if it was sent by ourself.
+			ar(senderID);
+		}
+		// If the packet was sent from ourself then don't process it
+		// NOTE: Because of this we no longer need to check if parts of messages were sent from ourselves
+		if (senderID == m_playerID) {
+			m_incomingDataBuffer.pop();
+			continue; // This will go to the next iteration of the while loop.
+		}
 
 		// Read and process data
 		for (int i = 0; i < nrOfObjectsInMessage; ++i) {
@@ -105,20 +125,20 @@ void NetworkReceiverSystem::update() {
 					// Send necessary info to create the networked entity 
 				case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
 				{
-					Archive::loadVec3(ar, translation); // Read translation
+					ArchiveHelpers::loadVec3(ar, translation); // Read translation
 					createEntity(id, entityType, translation);
 				}
 				break;
 				case Netcode::MessageType::MODIFY_TRANSFORM:
 				{
-					Archive::loadVec3(ar, translation); // Read translation
+					ArchiveHelpers::loadVec3(ar, translation); // Read translation
 					setEntityTranslation(id, translation);
 
 				}
 				break;
 				case Netcode::MessageType::ROTATION_TRANSFORM:
 				{
-					Archive::loadVec3(ar, rotation);	// Read rotation
+					ArchiveHelpers::loadVec3(ar, rotation);	// Read rotation
 					setEntityRotation(id, rotation);
 				}
 				break;
@@ -129,18 +149,18 @@ void NetworkReceiverSystem::update() {
 		}
 
 
-		// Recieve 'one-time' events
+		// Receive 'one-time' events
 		__int32 eventSize;
 		Netcode::MessageType eventType;
 		__int32 netObjectID;
 		ar(eventSize);
+
 
 		for (int i = 0; i < eventSize; i++) {
 			// Handle-Single-Frame events
 			ar(eventType);
 
 			// NEW STUFF
-		//	ar(netObjectID);
 
 			/* READ ALL DATA */
 
@@ -154,10 +174,10 @@ void NetworkReceiverSystem::update() {
 				ar(netObjectID);
 				waterHitPlayer(netObjectID);
 			} else if (eventType == Netcode::MessageType::SPAWN_PROJECTILE) {
-				Archive::loadVec3(ar, gunPosition);
-				Archive::loadVec3(ar, gunVelocity);
+				ArchiveHelpers::loadVec3(ar, gunPosition);
+				ArchiveHelpers::loadVec3(ar, gunVelocity);
 
-				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 4, 0);
+				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 100, 4, 0); //Owner id not set, 100 for now.
 			}
 
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
@@ -167,12 +187,12 @@ void NetworkReceiverSystem::update() {
 				matchEnded();
 			} else if (eventType == Netcode::MessageType::CANDLE_HELD_STATE) {
 				glm::vec3 candlepos;
-				glm::vec3 isCarried;
+				bool isCarried;
 				ar(netObjectID);
 
-				Archive::loadVec3(ar, isCarried);
-				Archive::loadVec3(ar, candlepos);
-				setCandleHeldState(netObjectID, (isCarried.x > 0), candlepos);
+				ar(isCarried);
+				ArchiveHelpers::loadVec3(ar, candlepos);
+				setCandleHeldState(netObjectID, isCarried, candlepos);
 			} else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
 				backToLobby();
 			}
@@ -183,7 +203,6 @@ void NetworkReceiverSystem::update() {
 	}
 }
 
-
 /*
   Creates a new entity of the specified entity type and with a NetworkReceiverComponent attached to it
 
@@ -193,9 +212,9 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	using namespace Netcode;
 
 	// If the message was sent from me but rerouted back from the host, ignore it.
-	if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
-		return;
-	}
+	//if (static_cast<unsigned char>(id >> 18) == m_playerID) { // First byte is always the ID of the player who created the object
+	//	return;
+	//}
 
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
@@ -211,12 +230,12 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	e->addComponent<OnlineOwnerComponent>(id);
 
 	// If you are the host create a pass-through sender component to pass on the info to all players
-	if (NWrapperSingleton::getInstance().isHost()) {
-		// NOTE: Assumes that the data type is MODIFY_TRANSFORM, might be changed in the future
-		std::cout << "I'd like for y'all to create 1 more dude.\n";
-		m_netSendSysPtr->addEntityToListONLYFORNETWORKRECIEVER(e.get());
-		e->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, entityType, id);
-	}
+	//if (NWrapperSingleton::getInstance().isHost()) {
+	//	// NOTE: Assumes that the data type is MODIFY_TRANSFORM, might be changed in the future
+	//	std::cout << "I'd like for y'all to create 1 more dude.\n";
+	//	m_netSendSysPtr->addEntityToListONLYFORNETWORKRECIEVER(e.get());
+	//	e->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, entityType, id);
+	//}
 
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModel("Character.fbx", shader);
@@ -311,15 +330,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 	for (auto& e : entities) {
 		//Look for the entity that OWNS the candle (player entity)
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			
-			// If i'm host, relay message to all other players
-			if (NWrapperSingleton::getInstance().isHost()) {
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::WATER_HIT_PLAYER,
-					e
-				);
-			}
-
 			//Look for the entity that IS the candle (candle entity)
 			std::vector<Entity::SPtr> childEntities = e->getChildEntities();
 			for (auto& child : childEntities) {
@@ -341,24 +351,22 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 	std::cout << "Player - " << std::to_string(id) << " Died!\n";
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			if (NWrapperSingleton::getInstance().isHost()) {
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::PLAYER_DIED, e);
-			}
-
+			
+			//This should remove the candle entity from game
 			e->removeDeleteAllChildren();
 
 			// Check if the extinguished candle is owned by the player
-			if (id >> 18 == NWrapperSingleton::getInstance().getMyPlayerID()) {
-				e->getParent()->addComponent<SpectatorComponent>();
-				e->getParent()->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-				e->getParent()->removeComponent<GunComponent>();
+			if (id >> 18 == m_playerID) {
+				//If it is me that died, become spectator.
+				e->addComponent<SpectatorComponent>();
+				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+				e->removeComponent<GunComponent>();
 			} else {
-				// TODO: Remove all the components that can/should be removed
+				//If it wasnt me that died, compleatly remove the player entity from game.
 				e->queueDestruction();
 			}
 
-			break; // Break because should only be one candle; stop looping!
+			break; // Break because should only be one player; stop looping!
 		}
 	}
 }
@@ -377,12 +385,6 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool
 					if (!b) {
 						candleE->getComponent<TransformComponent>()->setTranslation(pos);
 					}
-
-					if (NWrapperSingleton::getInstance().isHost()) {
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::CANDLE_HELD_STATE, candleE.get());
-					}
-
 					return;
 				}
 			}
@@ -393,12 +395,6 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool
 }
 
 void NetworkReceiverSystem::matchEnded() {
-
-	if (NWrapperSingleton::getInstance().isHost()) {
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::MATCH_ENDED, nullptr);
-	}
-
 	m_gameStatePtr->requestStackPop();
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
