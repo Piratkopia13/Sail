@@ -157,6 +157,8 @@ GameState::GameState(StateStack& stack)
 #else
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
+
+	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
 
 GameState::~GameState() {
@@ -507,6 +509,7 @@ bool GameState::renderImgui(float dt) {
 	m_profiler.renderWindow();
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
+	m_playerInfoWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 
 	return false;
