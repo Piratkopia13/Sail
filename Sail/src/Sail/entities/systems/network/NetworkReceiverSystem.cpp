@@ -206,10 +206,6 @@ void NetworkReceiverSystem::update() {
 				ar(playerID);
 				playerDisconnect(playerID);
 			}
-			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
-				ar(netObjectID);
-				playerDied(netObjectID);
-			}
 		}
 
 
