@@ -40,3 +40,4 @@
 #include "Sail/utils/SailImGui/Profiler.h"
 #include "Sail/utils/SailImGui/RenderSettingsWindow.h"
 #include "Sail/utils/SailImGui/LightDebugWindow.h"
+#include "Sail/utils/SailImGui/PlayerInfoWindow.h"
