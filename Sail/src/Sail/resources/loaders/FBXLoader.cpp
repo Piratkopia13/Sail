@@ -559,6 +559,26 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 				stack->checkWeights();
 
 
+				FbxTime::EMode fps = FbxTime::eFrames24;
+
+				Animation* defaultAnimation = SAIL_NEW Animation("Default");
+				for (unsigned int frameIndex = 0; frameIndex < 3; frameIndex++) {
+					Animation::Frame* frame = SAIL_NEW Animation::Frame((unsigned int)m_sceneData[name].bones.size());
+					glm::mat4 matrix = glm::identity<glm::mat4>();
+					FbxTime currTime;
+					for (unsigned int boneIndex = 0; boneIndex < clusterCount; boneIndex++) {
+						currTime.SetFrame(frameIndex, fps);
+
+						//FbxAMatrix currentTransformOffset = node->EvaluateGlobalTransform(currTime) * geometryTransform;
+						//FBXtoGLM(matrix, currentTransformOffset.Inverse() * FbxAMatrix());
+						frame->setTransform(limbIndexes[boneIndex], matrix);
+					}
+					defaultAnimation->addFrame(frameIndex, (float)frameIndex/1.0f, frame);
+				}
+				stack->addAnimation("Default", defaultAnimation);
+
+
+
 
 				/*  ANIMATION FETCHING FROM STACK*/
 				unsigned int stackCount = scene->GetSrcObjectCount<FbxAnimStack>();
@@ -576,7 +596,6 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					float firstFrameTime = 0.0f;
 
 					//TODO: find way to import FPS from file.
-					FbxTime::EMode fps = FbxTime::eFrames24;
 					for (FbxLongLong frameIndex = start.GetFrameCount(fps); frameIndex <= end.GetFrameCount(fps); frameIndex++) {
 						Animation::Frame* frame = SAIL_NEW Animation::Frame((unsigned int)m_sceneData[name].bones.size());
 						FbxTime currTime;

@@ -257,11 +257,15 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		e->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, entityType, id);
 	}
 
+	std::string modelName = "DocGunRun4.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	Model* characterModel = &Application::getInstance()->getResourceManager().getModel("Character.fbx", shader);
+	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
 	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
 	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
 	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
+	characterModel->setIsAnimated(true);
+	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
+
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
 	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
@@ -274,6 +278,8 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	case EntityType::PLAYER_ENTITY:
 	{
 		e->addComponent<ModelComponent>(characterModel);
+		AnimationComponent* ac = e->addComponent<AnimationComponent>(stack);
+		ac->currentAnimation = stack->getAnimation(1);
 		e->addComponent<TransformComponent>(translation);
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
@@ -315,7 +321,19 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, const glm::vec3& translation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			glm::vec3 pos = e->getComponent<TransformComponent>()->getTranslation();
+			if (pos != translation) {
+				if (e->getComponent<AnimationComponent>()->currentAnimation == e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0) && e->getComponent<AnimationComponent>()->transitions.size() == 0) {
+					e->getComponent<AnimationComponent>()->transitions.emplace(e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(1), 0.01f, false);
+				}
+			}
+			else {
+				if (e->getComponent<AnimationComponent>()->currentAnimation == e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(1) && e->getComponent<AnimationComponent>()->transitions.size() == 0) {
+					e->getComponent<AnimationComponent>()->transitions.emplace(e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0), 0.01f, false);
+				}
+			}
 			e->getComponent<TransformComponent>()->setTranslation(translation);
+			
 			break;
 		}
 	}
@@ -324,7 +342,14 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, co
 void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation){
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->getComponent<TransformComponent>()->setRotations(rotation);
+			//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
+			//TODO: REMOVE
+			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
+			glm::vec3 rot = rotation;
+			if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
+				rot.y += 3.14f * 0.5f;
+			}
+			e->getComponent<TransformComponent>()->setRotations(rot);
 			break;
 		}
 	}
