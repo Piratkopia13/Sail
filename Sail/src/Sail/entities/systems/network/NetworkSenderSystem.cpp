@@ -243,6 +243,13 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 		(*ar)(NetObjectID); // Send
 	}
 	break;
+	case Netcode::MessageType::PLAYER_DISCONNECT:
+	{
+		// NetObjectID should be send outside of this loop.
+		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
+		(*ar)(NetObjectID); // Send
+	}
+	break;
 	case Netcode::MessageType::MATCH_ENDED:
 	{
 	}
@@ -251,7 +258,6 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	{
 	}
 	break;
-
 	case Netcode::MessageType::CANDLE_HELD_STATE:
 	{
 		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!
