@@ -37,6 +37,10 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 	m_incomingDataBuffer.push(data);
 }
 
+const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
+	return entities;
+}
+
 
 /*
   The parsing of messages needs to match how the NetworkSenderSystem constructs them so
@@ -182,7 +186,7 @@ void NetworkReceiverSystem::update() {
 					Archive::loadVec3(ar, gunPosition);
 					Archive::loadVec3(ar, gunVelocity);
 
-				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 4, 0);
+				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 4, 4.f);
 			}
 	
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
@@ -202,6 +206,14 @@ void NetworkReceiverSystem::update() {
 			}
 			else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
 				backToLobby();
+			}
+			else if (eventType == Netcode::MessageType::PLAYER_DISCONNECT) {
+				ar(netObjectID);
+				playerDisconnect(netObjectID);
+			}
+			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
+				ar(netObjectID);
+				playerDied(netObjectID);
 			}
 		}
 
@@ -245,11 +257,15 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		e->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, entityType, id);
 	}
 
+	std::string modelName = "DocGunRun4.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	Model* characterModel = &Application::getInstance()->getResourceManager().getModel("Character.fbx", shader);
+	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
 	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
 	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
 	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
+	characterModel->setIsAnimated(true);
+	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
+
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
 	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
@@ -262,6 +278,8 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	case EntityType::PLAYER_ENTITY:
 	{
 		e->addComponent<ModelComponent>(characterModel);
+		AnimationComponent* ac = e->addComponent<AnimationComponent>(stack);
+		ac->currentAnimation = stack->getAnimation(1);
 		e->addComponent<TransformComponent>(translation);
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
@@ -303,7 +321,19 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, const glm::vec3& translation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			glm::vec3 pos = e->getComponent<TransformComponent>()->getTranslation();
+			if (pos != translation) {
+				if (e->getComponent<AnimationComponent>()->currentAnimation == e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0) && e->getComponent<AnimationComponent>()->transitions.size() == 0) {
+					e->getComponent<AnimationComponent>()->transitions.emplace(e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(1), 0.01f, false);
+				}
+			}
+			else {
+				if (e->getComponent<AnimationComponent>()->currentAnimation == e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(1) && e->getComponent<AnimationComponent>()->transitions.size() == 0) {
+					e->getComponent<AnimationComponent>()->transitions.emplace(e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0), 0.01f, false);
+				}
+			}
 			e->getComponent<TransformComponent>()->setTranslation(translation);
+			
 			break;
 		}
 	}
@@ -312,7 +342,14 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, co
 void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation){
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->getComponent<TransformComponent>()->setRotations(rotation);
+			//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
+			//TODO: REMOVE
+			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
+			glm::vec3 rot = rotation;
+			if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
+				rot.y += 3.14f * 0.5f;
+			}
+			e->getComponent<TransformComponent>()->setRotations(rot);
 			break;
 		}
 	}
@@ -372,7 +409,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
-
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::PLAYER_DIED, nullptr);
@@ -391,10 +427,24 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 	}
 }
 
+void NetworkReceiverSystem::playerDisconnect(Netcode::NetworkObjectID id) {
+	// This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->removeDeleteAllChildren();
+			// TODO: Remove all the components that can/should be removed
+
+			e->queueDestruction();
+
+			break; // Break because should only be one candle; stop looping!
+		}
+	}
+}
 void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			
+
 			for (int i = 0; i < e->getChildEntities().size(); i++) {
 				auto candleE = e->getChildEntities()[i];
 
@@ -414,12 +464,11 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool
 					return;
 				}
 			}
-			
+
 			break;
 		}
 	}
 }
-
 void NetworkReceiverSystem::matchEnded() {
 
 	if (NWrapperSingleton::getInstance().isHost()) {
