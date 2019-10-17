@@ -49,8 +49,6 @@ private:
 	void addSpawnPoints();
 	void addDoors();
 	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
-	void addCornerModel(int tileID, int typeID, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
-
 	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize, float tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
 };
