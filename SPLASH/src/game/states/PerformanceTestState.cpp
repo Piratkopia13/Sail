@@ -557,7 +557,9 @@ void PerformanceTestState::initAnimations() {
 
 void PerformanceTestState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
 	/* 13 characters that are constantly shooting their guns */
-	for ( int i = 0; i < 13; i++ ) {
+	int characters = 13;
+
+	for ( int i = 0; i < characters; i++ ) {
 		float spawnOffsetX = -24.f + float(i) * 2.f;
 		float spawnOffsetZ = float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
@@ -580,6 +582,7 @@ void PerformanceTestState::populateScene(Model* characterModel, Model* lightMode
 		e->addComponent<MovementComponent>();
 		e->addComponent<SpeedLimitComponent>();
 		e->addComponent<CollisionComponent>();
+
 		e->addComponent<GunComponent>(projectileModel, bbModel);
 
 		/* Audio */
@@ -594,7 +597,7 @@ void PerformanceTestState::populateScene(Model* characterModel, Model* lightMode
 		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
 
 		// Add candle
-		if ( i != 12 ) {
+		if ( i != characters - 1) {
 			auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
 			candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
 			e->addChildEntity(candleEntity);
