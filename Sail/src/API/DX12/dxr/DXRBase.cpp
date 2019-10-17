@@ -13,6 +13,13 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 , m_gbufferInputTextures(inputs)
 , m_brdfLUTPath("pbr/brdfLUT.tga")
 {
+	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
+	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
+	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
+	m_decalTexPaths[0] = "pbr/splash/PuddleAlbedo.tga";
+	m_decalTexPaths[1] = "pbr/splash/PuddleNM.tga";
+	m_decalTexPaths[2] = "pbr/splash/puddleMRAo.tga";
+
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	// Create frame resources (one per swap buffer)
@@ -41,6 +48,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	memcpy(pMappedData, &m_aabb_desc, sizeof(m_aabb_desc));
 	m_aabb_desc_resource->Unmap(0, nullptr);
 
+	m_decalsToRender = 0;
 }
 
 DXRBase::~DXRBase() {
@@ -76,7 +84,7 @@ void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 
-	unsigned int frameIndex = m_context->getFrameIndex();
+	unsigned int frameIndex = m_context->getSwapIndex();
 	unsigned int totalNumInstances = 0;
 
 	auto flagNone = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
@@ -189,10 +197,19 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.cameraPosition = cam.getPosition();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 	newData.nMetaballs = m_metaballsToRender;
+	newData.nDecals = m_decalsToRender;
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
 	m_sceneCB->updateData(&newData, sizeof(newData));
+}
+
+void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
+	DXRShaderCommon::DecalCBuffer newData;
+	memcpy(newData.data, decals, size * sizeof(DXRShaderCommon::DecalData));
+	m_decalsToRender = size;
+
+	m_decalCB->updateData(&newData, sizeof(newData));
 }
 
 void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
@@ -201,7 +218,7 @@ void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
 	}
 
 	void* pMappedData;
-	ID3D12Resource1* res = m_metaballPositions_srv[m_context->getFrameIndex()];
+	ID3D12Resource1* res = m_metaballPositions_srv[m_context->getSwapIndex()];
 
  	HRESULT hr =  res->Map(0, nullptr, &pMappedData);
 	if (FAILED(hr)) {
@@ -231,11 +248,13 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 		m_gbufferInputTextures[i]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 	
-	unsigned int frameIndex = m_context->getFrameIndex();
+	unsigned int frameIndex = m_context->getSwapIndex();
 
 	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	// Copy output texture srv to beginning of heap
-	m_context->getDevice()->CopyDescriptorsSimple(1, m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), outputTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	D3D12_CPU_DESCRIPTOR_HANDLE outputTexHandle;
+	outputTexHandle.ptr = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_heapIncr * frameIndex;
+	m_context->getDevice()->CopyDescriptorsSimple(1, outputTexHandle, outputTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	//Set constant buffer descriptor heap
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_rtDescriptorHeap.Get() };
@@ -297,7 +316,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 	// Always rebuilds TLAS instead of updating it according to nvidia recommendations
 
-	unsigned int frameIndex = m_context->getFrameIndex();
+	unsigned int frameIndex = m_context->getSwapIndex();
 
 	// First, get the size of the TLAS buffers and create them
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
@@ -374,7 +393,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 }
 
 void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate) {
-	unsigned int frameIndex = m_context->getFrameIndex();
+	unsigned int frameIndex = m_context->getSwapIndex();
 	Mesh* mesh = nullptr; 
 	if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
 		mesh = renderCommand.model.mesh;
@@ -488,8 +507,11 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-		// The first slot in the heap will be used for the output UAV, therefore we step once
-		m_rtOutputTextureUavGPUHandle = gpuHandle;
+		// The first two slots in the heap will be used for the output UAV
+		m_rtOutputTextureUavGPUHandles[0] = gpuHandle;
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+		m_rtOutputTextureUavGPUHandles[1] = gpuHandle;
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 
@@ -504,7 +526,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		gpuHandle.ptr += m_heapIncr;
 
 		// Next (4 * numSwapBuffers) slots are used for input gbuffers
-		for (unsigned int i = 0; i < m_context->getNumSwapBuffers(); i++) {
+		for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++) {
 			m_gbufferStartGPUHandles[i] = gpuHandle;
 			D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[4];
 			srcDescriptors[0] = m_gbufferInputTextures[0]->getSrvCDH(i);
@@ -518,6 +540,9 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			cpuHandle.ptr += m_heapIncr * 4;
 			gpuHandle.ptr += m_heapIncr * 4;
 		}
+
+		// Initialize decal SRVs
+		initDecals(&gpuHandle, &cpuHandle);
 
 		//// Ray gen settings CB
 		//m_rayGenCBData.flags = RT_ENABLE_TA | RT_ENABLE_JITTER_AA;
@@ -549,17 +574,44 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			m_meshCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
 			free(initData);
 		}
+		// Decal CB
+		{
+			unsigned int size = sizeof(DXRShaderCommon::DecalCBuffer);
+			void* initData = malloc(size);
+			memset(initData, 0, size);
+			m_decalCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
+			free(initData);
+		}
 	}
 
 }
 
 void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
-	unsigned int frameIndex = m_context->getFrameIndex();
+	unsigned int frameIndex = m_context->getSwapIndex();
 
 	// Make sure brdfLut texture has been initialized
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
 	if (!brdfLutTex.hasBeenInitialized()) {
 		brdfLutTex.initBuffers(cmdList, 0);
+	}
+
+	// Make sure decal textures has been initialized
+	{
+		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[0]));
+		if (!decalTex.hasBeenInitialized()) {
+			decalTex.initBuffers(cmdList, 0);
+			decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		}
+		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[1]));
+		if (!decalTex1.hasBeenInitialized()) {
+			decalTex1.initBuffers(cmdList, 0);
+			decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		}
+		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[2]));
+		if (!decalTex2.hasBeenInitialized()) {
+			decalTex2.initBuffers(cmdList, 0);
+			decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		}
 	}
 
 	// Update descriptors for vertices, indices, textures etc
@@ -651,7 +703,7 @@ void DXRBase::updateShaderTables() {
 
 	// 	 "Shader tables can be modified freely by the application (with appropriate state barriers)"
 
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 
 	// Ray gen
 	{
@@ -659,11 +711,14 @@ void DXRBase::updateShaderTables() {
 			m_rayGenShaderTable[frameIndex].Resource->Release();
 			m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
-		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get());
+		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get(), 64U);
 		tableBuilder.addShader(m_rayGenName);
-		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandle.ptr);
+		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
+		D3D12_GPU_VIRTUAL_ADDRESS decalCBHandle = m_decalCB->getBuffer()->GetGPUVirtualAddress();
+		tableBuilder.addDescriptor(decalCBHandle);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -781,7 +836,9 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
+	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10 + DX12GBufferRenderer::NUM_GBUFFERS + 1, 0U, 3U);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
+	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
@@ -819,6 +876,25 @@ void DXRBase::initMetaballBuffers() {
 	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
 		m_metaballPositions_srv.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), MAX_NUM_METABALLS * sizeof(glm::vec3), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 	}
+}
+
+void DXRBase::initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle) {
+	auto& resMan = Application::getInstance()->getResourceManager();
+	resMan.loadTexture(m_decalTexPaths[0]);
+	resMan.loadTexture(m_decalTexPaths[1]);
+	resMan.loadTexture(m_decalTexPaths[2]);
+
+	m_decalTexGPUHandles = *gpuHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
+	srcDescriptors[0] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[0]))->getSrvCDH();
+	srcDescriptors[1] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[1]))->getSrvCDH();
+	srcDescriptors[2] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[2]))->getSrvCDH();
+
+	UINT dstRangeSizes[] = {3};
+	UINT srcRangeSizes[] = {1, 1, 1};
+	m_context->getDevice()->CopyDescriptors(1, cpuHandle, dstRangeSizes, 3, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	cpuHandle->ptr += m_heapIncr * 3;
+	gpuHandle->ptr += m_heapIncr * 3;
 }
 
 void DXRBase::createEmptyLocalRootSignature() {

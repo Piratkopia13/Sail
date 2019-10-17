@@ -13,6 +13,7 @@ namespace KeyBinds {
 	int toggleAIFollowing;
 	int setDirectionalLight;
 	int toggleConsole;
+	int toggleConsoleUS;
 	int reloadShader;
 	int removeOldestLight;
 	int sprint;
@@ -31,6 +32,7 @@ namespace KeyBinds {
 	int toggleSphere;
 	int toggleSun;
 	int lightCandle;
+	int spray;
 
 	// Application
 	int alt;
@@ -62,6 +64,7 @@ void KeyBinds::init() {
 	toggleAIFollowing = SAIL_KEY_H;
 	setDirectionalLight = SAIL_KEY_G;
 	toggleConsole = SAIL_KEY_OEM_5;
+	toggleConsoleUS = SAIL_KEY_OEM_3;
 	reloadShader = SAIL_KEY_R;
 	removeOldestLight = SAIL_KEY_X;
 	sprint = SAIL_KEY_SHIFT;
@@ -80,6 +83,7 @@ void KeyBinds::init() {
 	toggleSphere = SAIL_KEY_C;
 	toggleSun = SAIL_KEY_P;
 	lightCandle = SAIL_KEY_J;
+	spray = SAIL_KEY_L;
 
 	// Application
 	alt = SAIL_KEY_MENU;		// Did not know what to call these binds

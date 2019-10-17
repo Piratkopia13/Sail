@@ -2,23 +2,36 @@
 #include "../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
 
+class GameState;
+class NetworkSenderSystem;
+
 // NOTE: As of right now this system can create entities
 class NetworkReceiverSystem : public BaseComponentSystem {
 public:
 	NetworkReceiverSystem();
 	~NetworkReceiverSystem();
 
-	void initWithPlayerID(unsigned char playerID);
+	void init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
+	void initPlayer(Entity* pPlayerEntity);
 	void pushDataToBuffer(std::string data);
+
+	const std::vector<Entity*>& getEntities() const;
 
 	void update();
 private:
+	GameState* m_gameStatePtr;
+	NetworkSenderSystem* m_netSendSysPtr;
+
 	// FIFO container of serialized data-strings to decode
 	std::queue<std::string> m_incomingDataBuffer;
 	std::mutex m_bufferLock;
 
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
 	unsigned char m_playerID;
+
+	// 
+	Entity* m_playerEntity = nullptr;
+	NetworkSenderSystem* pSenderSystem = nullptr; 
 
 	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
 
@@ -29,4 +42,9 @@ private:
 	void waterHitPlayer(Netcode::NetworkObjectID id);
 	void playerDied(Netcode::NetworkObjectID id);
 	void playerDisconnect(Netcode::NetworkObjectID id);
+	void setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos = glm::vec3(0,0,0));
+	void matchEnded();
+	void backToLobby();
+
+	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
 };

@@ -28,13 +28,12 @@ public:
 
 private:
 	void initSystems(const unsigned char playerID);
+	void initConsole();
+
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
-
-	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
-
-	bool renderImGuiAnimationSettings(float dt);
+	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 
 	void shutDownGameState();
 
@@ -43,8 +42,12 @@ private:
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
-	void loadAnimations();
-	void initAnimations();
+	void createTestLevel(Shader* shader, Model* boundingBoxModel);
+	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
+	void createLevel(Shader* shader, Model* boundingBoxModel);
+	const std::string createCube(const glm::vec3& position);
+	const std::string teleportToMap();
+	const std::string toggleProfiler();
 
 private:
 	Application* m_app;
@@ -53,12 +56,6 @@ private:
 
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	Entity* m_player;
-
-	void createTestLevel(Shader* shader, Model* boundingBoxModel);
-	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
-	void createLevel(Shader* shader, Model* boundingBoxModel);
-	const std::string createCube(const glm::vec3& position);
-	const std::string teleportToMap();
 
 	Systems m_componentSystems;
 	LightSetup m_lights;
@@ -81,5 +78,13 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_poppedThisFrame = false;
+
+
+
+#ifdef _PERFORMANCE_TEST
+	void populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
+
+	std::vector<Entity::SPtr> m_performanceEntities;
+#endif
 
 };

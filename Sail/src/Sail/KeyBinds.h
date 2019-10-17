@@ -12,6 +12,7 @@ namespace KeyBinds {
 	extern int toggleAIFollowing;
 	extern int setDirectionalLight;
 	extern int toggleConsole;
+	extern int toggleConsoleUS;
 	extern int reloadShader;
 	extern int removeOldestLight;
 	extern int sprint;
@@ -30,6 +31,7 @@ namespace KeyBinds {
 	extern int toggleSphere;	// Collision
 	extern int toggleSun;
 	extern int lightCandle;
+	extern int spray;
 
 	// Application
 	extern int alt;

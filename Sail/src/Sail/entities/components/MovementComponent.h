@@ -13,6 +13,7 @@ public:
 	glm::vec3 accelerationToAdd = glm::vec3(0.0f);
 
 	glm::vec3 oldVelocity = glm::vec3(0.0f);
+	glm::vec3 oldMovement = glm::vec3(0.0f);
 
 	float airDrag = 1.0f;
 

@@ -24,7 +24,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<GunComponent>(false, true, true);
 
 	// cam variables
-	m_yaw = 90.f;
+	m_yaw = 160.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
 
@@ -115,8 +115,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
 			//		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
-					// Add networkcomponent for jump 
-					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(Netcode::MessageType::PLAYER_JUMPED, e);
+				//	// Add networkcomponent for jump 
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_JUMPED,
+						nullptr	// Don't need to send id that 'we' jumped, it is deducable
+					);
 					m_gameDataTracker->logJump();
 				}
 				m_wasSpacePressed = true;
@@ -222,7 +225,11 @@ void GameInputSystem::putDownCandle(Entity* e) {
 		auto candleE = e->getChildEntities()[i];
 		if ( candleE->hasComponent<CandleComponent>() ) {
 			auto candleComp = candleE->getComponent<CandleComponent>();
-			candleComp->toggleCarried();
+			candleComp->setCarried(!candleComp->isCarried());
+			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				Netcode::MessageType::CANDLE_HELD_STATE,
+				candleE.get()
+			);
 
 			return;
 		}

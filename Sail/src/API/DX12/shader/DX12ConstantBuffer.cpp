@@ -13,7 +13,7 @@ namespace ShaderComponent {
 		: m_register(slot)
 		, m_resourceHeapMeshIndex(0) {
 		m_context = Application::getInstance()->getAPI<DX12API>();
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 		// Store offset size for each mesh
 		m_byteAlignedSize = (size + 255) & ~255;
@@ -37,13 +37,13 @@ namespace ShaderComponent {
 
 	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset /*= 0U*/) {
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
-		auto frameIndex = m_context->getFrameIndex();
+		auto frameIndex = m_context->getSwapIndex();
 		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * m_resourceHeapMeshIndex + offset, newData, bufferSize);
 	}
 
 	void DX12ConstantBuffer::updateData_new(const void* newData, unsigned int bufferSize, int meshIndex, unsigned int offset) {
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
-		auto frameIndex = m_context->getFrameIndex();
+		auto frameIndex = m_context->getSwapIndex();
 		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * meshIndex + offset, newData, bufferSize);
 	}
 
@@ -54,7 +54,7 @@ namespace ShaderComponent {
 
 	void DX12ConstantBuffer::bind_new(void* cmdList, int meshIndex, bool useComputeShader) const {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-		auto frameIndex = m_context->getFrameIndex();
+		auto frameIndex = m_context->getSwapIndex();
 
 		UINT rootIndex = m_context->getRootIndexFromRegister("b" + std::to_string(m_register));
 		if (useComputeShader) {
@@ -65,8 +65,8 @@ namespace ShaderComponent {
 	}
 
 	void DX12ConstantBuffer::checkBufferSize(unsigned int nMeshes) {
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
-		auto frameIndex = m_context->getFrameIndex();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
+		auto frameIndex = m_context->getSwapIndex();
 		// Expand resource heap if index is out of range
 		if ((nMeshes + 1) * m_byteAlignedSize >= m_resourceHeapSize || expanding) {
 			std::lock_guard<std::mutex> lock(m_mutex_bufferExpander);
@@ -98,11 +98,11 @@ namespace ShaderComponent {
 	}
 
 	ID3D12Resource* DX12ConstantBuffer::getBuffer() const {
-		return m_constantBufferUploadHeap[m_context->getFrameIndex()].Get();
+		return m_constantBufferUploadHeap[m_context->getSwapIndex()].Get();
 	}
 
 	void DX12ConstantBuffer::createBuffers() {
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
 		static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 		// Create an upload heap to hold the constant buffer
 		// create a resource heap, and pointer to cbv for each frame
