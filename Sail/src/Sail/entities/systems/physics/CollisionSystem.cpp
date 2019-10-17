@@ -44,7 +44,7 @@ void CollisionSystem::update(float dt) {
 				//Not implemented for spheres yet
 				collisionUpdate(e, updateableDt);
 
-				surfaceFromCollision(e);
+				surfaceFromCollision(e, collision->collisions);
 
 				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
 					//Object is moving fast, ray cast for collisions
@@ -58,7 +58,7 @@ void CollisionSystem::update(float dt) {
 	}
 }
 
-const bool CollisionSystem::collisionUpdate(Entity* e, const float& dt) {
+const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
 	//Update collision data
 	std::vector<Octree::CollisionInfo> collisions;
 
@@ -73,7 +73,7 @@ const bool CollisionSystem::collisionUpdate(Entity* e, const float& dt) {
 	return handleCollisions(e, collisions, dt);
 }
 
-const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float& dt) {
+const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float dt) {
 	bool returnValue = false;
 
 	MovementComponent* movement = e->getComponent<MovementComponent>();
@@ -109,10 +109,13 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 					collisionInfo_i.intersectionPosition = Intersection::PointProjectedOnPlane(boundingBox->getPosition(), collisionInfo_i.normal, distance);
 
 					//Add collision to current collisions for collisionComponent
-					collision->collisions.push_back(collisionInfo_i); 
+					collision->collisions.push_back(collisionInfo_i);
 
 					//Add collision to true collisions
 					trueCollisions.push_back(collisionInfo_i);
+
+
+					returnValue = true;
 				}
 			}
 		}
@@ -143,7 +146,6 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 			float projectionSize = glm::dot(movement->velocity, -collisionInfo_i.normal);
 
 			if (projectionSize > 0.0f) { //Is pushing against wall
-				returnValue = true;
 				movement->velocity += collisionInfo_i.normal * (projectionSize * (1.0f + collision->bounciness)); //Limit movement towards wall
 			}
 
@@ -158,7 +160,6 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 				projectionSize = glm::dot(movement->velocity, -normalToNormal);
 
 				if (projectionSize > 0.0f) {
-					returnValue = true;
 					movement->velocity += normalToNormal * projectionSize * (1.0f + collision->bounciness);
 				}
 			}
@@ -175,7 +176,6 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 				if (sizeOfVel > 0.0f) {
 					const float slowdown = glm::min((collision->drag / nrOfGroundCollisions) * dt, sizeOfVel);
 					movement->velocity -= slowdown * glm::normalize(velAlongPlane);
-					returnValue = true;
 				}
 			}
 		}
@@ -198,7 +198,6 @@ const bool CollisionSystem::rayCastCheck(Entity* e, const BoundingBox& boundingB
 }
 
 void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt) {
-
 	MovementComponent* movement = e->getComponent<MovementComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
@@ -207,11 +206,11 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 
 	//Ray cast to find upcoming collisions, use padding for "swept sphere"
 	Octree::RayIntersectionInfo intersectionInfo;
-	m_octree->getRayIntersection(boundingBox.getPosition(), movement->velocity, &intersectionInfo, e, collision->padding);
+	m_octree->getRayIntersection(boundingBox.getPosition(), glm::normalize(movement->velocity), &intersectionInfo, e, collision->padding);
 
 	if (intersectionInfo.closestHit <= velocityAmp && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
 		//Calculate new dt
-		const float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
+		float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
 
 		//Move untill first overlap
 		boundingBox.setPosition(boundingBox.getPosition() + movement->velocity * newDt);
@@ -220,41 +219,48 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		dt -= newDt;
 
 		//Collision update
-		bool paddingTooBig = true;
-
-		const size_t count = intersectionInfo.info.size();
-		for (size_t i = 0; i < count; i++) {
-			Octree::CollisionInfo& collisionInfo_i = intersectionInfo.info[i];
-
-			if (Intersection::AabbWithTriangle(boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2])) {
-				// Calculate the plane that the triangle is on
-				glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - collisionInfo_i.positions[0];
-				float distance = -glm::dot(triangleToWorldOrigo, collisionInfo_i.normal);
-				collisionInfo_i.intersectionPosition = Intersection::PointProjectedOnPlane(boundingBox.getPosition(), collisionInfo_i.normal, distance);
-
-				collision->collisions.push_back(collisionInfo_i);
-
-				//Stop movement towards triangle
-				const float projectionSize = glm::dot(movement->velocity, -collisionInfo_i.normal);
-
-				if (projectionSize > 0.0f) { //Is pushing against wall
-					movement->velocity += collisionInfo_i.normal * projectionSize * (1.0f + collision->bounciness); //Limit movement towards wall
-					paddingTooBig = false;
-				}
-			}
+		if (handleCollisions(e, intersectionInfo.info, 0.0f)) {
+			surfaceFromCollision(e, intersectionInfo.info);
+			rayCastUpdate(e, boundingBox, dt);
 		}
+		else {
+			//Move back 
+			const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
+			boundingBox.setPosition(boundingBox.getPosition() - normalizedVel * collision->padding);
+			transform->translate(-normalizedVel * collision->padding);
 
-		if (paddingTooBig) {
-			collision->padding *= 0.5f;
+			//Step forward to find collision
+			stepToFindMissedCollision(e, boundingBox, intersectionInfo.info, collision->padding * 2.0f);
+
+			//Keep updating
+			rayCastUpdate(e, boundingBox, dt);
 		}
-
-		rayCastUpdate(e, boundingBox, dt);
 	}
 }
 
-void CollisionSystem::surfaceFromCollision(Entity* e) {
+void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& boundingBox, std::vector<Octree::CollisionInfo>& collisions, float distance) {
+	MovementComponent* movement = e->getComponent<MovementComponent>();
+	TransformComponent* transform = e->getComponent<TransformComponent>();
+	CollisionComponent* collision = e->getComponent<CollisionComponent>();
+
+	const int split = 5;
+
+	const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
+	const glm::vec3 distancePerStep = (distance / (float) split) * normalizedVel;
+
+	for (int i = 0; i < split; i++) {
+		boundingBox.setPosition(boundingBox.getPosition() + distancePerStep);
+		transform->translate(distancePerStep);
+
+		if (handleCollisions(e, collisions, 0.0f)) {
+			surfaceFromCollision(e, collisions);
+			i = split;
+		}
+	}
+}
+
+void CollisionSystem::surfaceFromCollision(Entity* e, std::vector<Octree::CollisionInfo>& collisions) {
 	glm::vec3 distance(0.0f);
-	auto& collisions = e->getComponent<CollisionComponent>()->collisions;
 	auto bb = e->getComponent<BoundingBoxComponent>();
 	auto movement = e->getComponent<MovementComponent>();
 	auto transform = e->getComponent<TransformComponent>();
