@@ -192,7 +192,7 @@ bool GameState::processInput(float dt) {
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
-		m_componentSystems.renderSystem->toggleHitboxes();
+		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
