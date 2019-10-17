@@ -883,17 +883,17 @@ void GameState::populateScene(Model* characterModel, Model* lightModel, Model* b
 		float spawnOffsetZ = 13.f + float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		Model* characterModel = &m_app->getResourceManager().getModelCopy("walkTri.fbx", shader);
-		characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-		characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
-		characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
-		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+		std::string name = "DocGunRun4.fbx";
+		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
+		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+		characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 		characterModel->setIsAnimated(true);
 
 		e->addComponent<ModelComponent>(characterModel);
-		auto animStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
+		auto animStack = &m_app->getResourceManager().getAnimationStack(name);
 		auto animComp = e->addComponent<AnimationComponent>(animStack);
-		animComp->currentAnimation = animStack->getAnimation(0);
+		animComp->currentAnimation = animStack->getAnimation(1);
 		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
 		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
