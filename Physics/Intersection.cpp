@@ -617,29 +617,15 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 	if (glm::dot(v1 - rayStart, triangleNormal) < 0.0f) {
 		//Only check if triangle is facing ray start
 		if (padding != 0.0f) {
-			//Add padding
-			/*glm::vec3 toRay = (rayStart + rayDir * glm::dot(v1 - rayStart, rayDir)) - v1;
-			glm::vec3 newV1 = v1 - glm::normalize(toRay) * padding;
-			toRay = (rayStart + rayDir * glm::dot(v2 - rayStart, rayDir)) - v2;
-			glm::vec3 newV2 = v2 - glm::normalize(toRay) * padding;
-			toRay = (rayStart + rayDir * glm::dot(v3 - rayStart, rayDir)) - v3;
-			glm::vec3 newV3 = v3 - glm::normalize(toRay) * padding;*/
-
-
 			glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
 
 			glm::vec3 toRay = (rayStart + rayDir * glm::dot(middle - rayStart, rayDir)) - middle;
-			//float distance = glm::min(glm::length(toRay), padding);
 			float distance = padding * 0.7f;
 
 			//Add padding
 			glm::vec3 newV1 = v1 + glm::normalize(toRay) * distance - rayDir * distance;
 			glm::vec3 newV2 = v2 + glm::normalize(toRay) * distance - rayDir * distance;
 			glm::vec3 newV3 = v3 + glm::normalize(toRay) * distance - rayDir * distance;
-			
-			/*glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) * 20.0f + triangleNormal) * padding;
-			glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) * 20.0f + triangleNormal) * padding;
-			glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) * 20.0f + triangleNormal) * padding;*/
 
 			returnValue = RayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
 		}
