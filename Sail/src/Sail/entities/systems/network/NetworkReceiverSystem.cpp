@@ -119,8 +119,6 @@ void NetworkReceiverSystem::update() {
 				case Netcode::MessageType::ROTATION_TRANSFORM:
 				{
 					Archive::loadVec3(ar, rotation);	// Read rotation
-
-				
 					setEntityRotation(id, rotation);
 				}
 				break;
@@ -255,7 +253,6 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 	characterModel->setIsAnimated(true);
 	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
-
 
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
 	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
