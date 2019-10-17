@@ -3,12 +3,12 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/Systems.h"
+#include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
-
 #include <sstream>
 #include <iomanip>
 
@@ -29,11 +29,16 @@ GameState::GameState(StateStack& stack)
 
 	//----Octree creation----
 	//Wireframe shader
-	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
+	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
 
 	//Wireframe bounding box model
 	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	//boundingBoxModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
+	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
+	boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);
 
 	//Create octree
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
@@ -46,6 +51,11 @@ GameState::GameState(StateStack& stack)
 
 	// Get the player id's and names from the lobby
 	const unsigned char playerID = NWrapperSingleton::getInstance().getMyPlayerID();
+
+#ifdef _PERFORMANCE_TEST
+	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
+	m_cam.setDirection(glm::normalize(glm::vec3(-0.715708f, 0.0819399f, 0.693576f)));
+#endif
 
 	// Initialize the component systems
 	initSystems(playerID);
@@ -62,6 +72,9 @@ GameState::GameState(StateStack& stack)
 	m_app->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -93,14 +106,15 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-	characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
-	characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	Model* characterModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
+	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
-	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	Model* aiModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
+	aiModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+	aiModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
 	// Level Creation
 
@@ -108,14 +122,14 @@ GameState::GameState(StateStack& stack)
 
 	// Player creation
 
-
 	int id = static_cast<int>(playerID);
-	glm::vec3 spawnLocation;
+	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
 		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 	}
 
 	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	m_componentSystems.networkReceiverSystem->initPlayer(m_player);
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
@@ -127,6 +141,8 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
+
+	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(120.83f, 1.7028f, 114.2561f));
 #endif
 
 
@@ -141,6 +157,8 @@ GameState::GameState(StateStack& stack)
 #else
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
+
+	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
 
 GameState::~GameState() {
@@ -452,6 +470,18 @@ bool GameState::fixedUpdate(float dt) {
 
 	counter += dt * 2.0f;
 
+#ifdef _PERFORMANCE_TEST
+	/* here we shoot the guns */
+	for (auto e : m_performanceEntities) {
+		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrix()[3]);
+		auto ePos = e->getComponent<TransformComponent>()->getTranslation();
+		ePos.y = ePos.y + 5.f;
+		auto dir = ePos - pos;
+		auto dirNorm = glm::normalize(dir);
+		e->getComponent<GunComponent>()->setFiring(pos + dirNorm * 3.f, glm::vec3(0.f, -1.f, 0.f));
+	}
+#endif
+
 	updatePerTickComponentSystems(dt);
 
 	return true;
@@ -465,12 +495,10 @@ bool GameState::render(float dt, float alpha) {
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
-	
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
 	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
-
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return true;
@@ -481,6 +509,7 @@ bool GameState::renderImgui(float dt) {
 	m_profiler.renderWindow();
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
+	m_playerInfoWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 
 	return false;
@@ -637,7 +666,7 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* tmpbbModel = &m_app->getResourceManager().getModel(
-		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<WireframeShader>());
+		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	auto e = ECS::Instance()->createEntity("new cube");
@@ -708,7 +737,13 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	}
 
 	for (size_t i = 0; i < botCount; i++) {
-		auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, m_componentSystems.levelGeneratorSystem->getSpawnPoint(), lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		if (spawnLocation.x != -1000.f) {
+			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+		}
+		else {
+			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
+		}
 	}
 }
 
@@ -716,28 +751,120 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallMRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallNM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/albedo.tga");
+
 
 
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
-	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
-	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
+	roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
+	roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
+	roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
 
 	Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
 	tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
+	Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
+	roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RD_MRAo.tga");
+	roomDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RD_NM.tga");
+	roomDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RD_Albedo.tga");
+
+
+	Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor.fbx", shader);
+	corridorDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CD_MRAo.tga");
+	corridorDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CD_NM.tga");
+	corridorDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CD_Albedo.tga");
+
+	Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall.fbx", shader);
+	corridorWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CW_MRAo.tga");
+	corridorWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CW_NM.tga");
+	corridorWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CW_Albedo.tga");
+
+	Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
+	roomCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RC_MRAo.tga");
+	roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
+	roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
+
+
+	Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
+	corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
+	corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
+	corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
+
+	Model* roomFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
+	roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
+	roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
+	roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
+
+	Model* corridorCeiling = &m_app->getResourceManager().getModel("Tiles/CorridorCeiling.fbx", shader);
+	corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CC_MRAo.tga");
+	corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
+	corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
+
+	Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner.fbx", shader);
+	corridorCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+	corridorCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+	corridorCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+
+	Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner.fbx", shader);
+	roomCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+	roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+	roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+
 	std::vector<Model*> tileModels;
 	tileModels.resize(TileModel::NUMBOFMODELS);
-	tileModels[TileModel::ROOM_FLOOR] = tileFlat;
-	tileModels[TileModel::ROOM_WALL] = tileEnd;
-	tileModels[TileModel::ROOM_DOOR] = tileDoor;
+	tileModels[TileModel::ROOM_FLOOR] = roomFloor;
+	tileModels[TileModel::ROOM_WALL] = roomWall;
+	tileModels[TileModel::ROOM_DOOR] = roomDoor;
+	tileModels[TileModel::ROOM_CEILING] = roomCeiling;
+	tileModels[TileModel::ROOM_CORNER] = roomCorner;
 
-	tileModels[TileModel::CORRIDOR_FLOOR] = tileFlat;
-	tileModels[TileModel::CORRIDOR_WALL] = tileEnd;
-	tileModels[TileModel::CORRIDOR_DOOR] = tileDoor;
-
+	tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
+	tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
+	tileModels[TileModel::CORRIDOR_DOOR] = corridorDoor;
+	tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
+	tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
 
 
 	// Create the level generator system and put it into the datatype.
@@ -752,21 +879,21 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 void GameState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
 	/* 13 characters that are constantly shooting their guns */
 	for (int i = 0; i < 13; i++) {
-		float spawnOffsetX = -24.f + float(i) * 2.f;
-		float spawnOffsetZ = float(i) * 1.3f;
+		float spawnOffsetX = -19.f + float(i) * 2.f;
+		float spawnOffsetZ = 13.f + float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		Model* characterModel = &m_app->getResourceManager().getModelCopy("walkTri.fbx", shader);
-		characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-		characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
-		characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
-		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+		std::string name = "DocGunRun4.fbx";
+		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
+		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+		characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 		characterModel->setIsAnimated(true);
 
 		e->addComponent<ModelComponent>(characterModel);
-		auto animStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
+		auto animStack = &m_app->getResourceManager().getAnimationStack(name);
 		auto animComp = e->addComponent<AnimationComponent>(animStack);
-		animComp->currentAnimation = animStack->getAnimation(0);
+		animComp->currentAnimation = animStack->getAnimation(1);
 		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
 		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));

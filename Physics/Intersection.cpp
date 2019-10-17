@@ -8,10 +8,10 @@ BoundingBox Intersection::sPaddedReserved;
 
 bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2) {
 
-	glm::vec3 center1 = aabb1.getPosition();
-	glm::vec3 center2 = aabb2.getPosition();
-	glm::vec3 halfWidth1 = aabb1.getHalfSize();
-	glm::vec3 halfWidth2 = aabb2.getHalfSize();
+	const glm::vec3& center1 = aabb1.getPosition();
+	const glm::vec3& center2 = aabb2.getPosition();
+	const glm::vec3& halfWidth1 = aabb1.getHalfSize();
+	const glm::vec3& halfWidth2 = aabb2.getHalfSize();
 
 	if (glm::abs(center1.x - center2.x) > (halfWidth1.x + halfWidth2.x)) {
 		return false;
@@ -105,7 +105,7 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1
 		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
-		e[1] = glm::vec3(0.f, 1.f, 0.f); 
+		e[1] = glm::vec3(0.f, 1.f, 0.f);
 		e[2] = glm::vec3(0.f, 0.f, 1.f);
 
 		glm::vec3 f[3];
@@ -614,15 +614,18 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 
 	glm::vec3 triangleNormal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
 
-	glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
-
-	if (glm::dot(middle - rayStart, triangleNormal) < 0.0f) {
+	if (glm::dot(v1 - rayStart, triangleNormal) < 0.0f) {
 		//Only check if triangle is facing ray start
 		if (padding != 0.0f) {
+			glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
+
+			glm::vec3 toRay = (rayStart + rayDir * glm::dot(middle - rayStart, rayDir)) - middle;
+			float distance = padding * 0.7f;
+
 			//Add padding
-			glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) * 20.0f + triangleNormal) * padding;
-			glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) * 20.0f + triangleNormal) * padding;
-			glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) * 20.0f + triangleNormal) * padding;
+			glm::vec3 newV1 = v1 + glm::normalize(toRay) * distance - rayDir * distance;
+			glm::vec3 newV2 = v2 + glm::normalize(toRay) * distance - rayDir * distance;
+			glm::vec3 newV3 = v3 + glm::normalize(toRay) * distance - rayDir * distance;
 
 			returnValue = RayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
 		}
@@ -653,6 +656,13 @@ bool Intersection::FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb) {
 		}
 	}
 	return true;
+}
+
+glm::vec3 Intersection::PointProjectedOnPlane(const glm::vec3& point, const glm::vec3& normal, const float distance) {
+	const glm::vec3 pointOnPlane = normal * distance;
+	const glm::vec3 planeToCenter = point - pointOnPlane;
+	const float shortestDistanceToPlane = glm::dot(planeToCenter, normal);
+	return point - normal * shortestDistanceToPlane;
 }
 
 bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {

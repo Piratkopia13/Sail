@@ -22,6 +22,7 @@
 #include "MovementComponent.h"
 #include "NetworkReceiverComponent.h"
 #include "NetworkSenderComponent.h"
+#include "OnlineOwnerComponent.h"
 #include "ProjectileComponent.h"
 #include "RealTimeComponent.h"
 #include "SpectatorComponent.h"

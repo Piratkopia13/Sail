@@ -1,25 +1,13 @@
 #include "pch.h"
 #include "CandleSystem.h"
 
-#include "Sail/entities/components/LightComponent.h"
-#include "Sail/entities/components/CandleComponent.h"
-#include "Sail/entities/components/NetworkSenderComponent.h"
-#include "Sail/entities/components/LocalPlayerComponent.h"
-#include "Sail/entities/components/TransformComponent.h"
-#include "Sail/entities/components/GunComponent.h"
-#include "Sail/entities/components/MovementComponent.h"
-#include "Sail/entities/components/SpectatorComponent.h"
-#include "Sail/entities/components/LocalPlayerComponent.h"
-#include "Sail/entities/components/OnlinePlayerComponent.h"
+#include "Sail/entities/components/Components.h"
+
 #include "../Sail/src/Network/NWrapperSingleton.h"
-
 #include "Sail/entities/Entity.h"
-
 #include "Sail/graphics/camera/CameraController.h"
-
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
-
 #include "Sail/Application.h"
 
 CandleSystem::CandleSystem() : BaseComponentSystem() {
@@ -65,13 +53,36 @@ void CandleSystem::update(float dt) {
 					candle->decrementHealth(candle->getDamageTakenLastHit());
 					candle->setInvincibleTimer(INVINCIBLE_DURATION);
 
-					if (candle->getHealth() <= 0.f) {
+
+
+					// A candle which is owned by a player has been hit
+					// -- Does the candle belong to an online player?
+					// -- Was it hit by the local player?
+					
+					// If the player is controlled through the network
+					if (e->hasComponent<OnlineOwnerComponent>()) {
+						CandleComponent* c = e->getComponent<CandleComponent>();
+
+						// If the player who hit him was the local player
+						if (c->hitByLocalPlayer == true) {
+							// It (An online player) was hit by the local player
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::WATER_HIT_PLAYER, 
+								e // OLD
+								/* SAIL_NEW Netcode::MessageDataWaterHitPlayer{ 
+									e->getComponent<OnlineOwnerComponent>()->netEntityID
+								}*/
+							);
+						}
+					}
+					
+
+					if ( candle->getHealth() <= 0.f ) {
 						candle->setIsLit(false);
 
 						if (candle->getOwner() == m_playerEntityID) {
-							if (!candle->isCarried()) {
-								candle->toggleCarried();
-							}
+							candle->setCarried(true);
+							
 						}
 
 						// Did current player die?
@@ -152,14 +163,14 @@ void CandleSystem::putDownCandle(Entity* e) {
 			candleTransComp->setTranslation(parentTransComp->getTranslation() + dir);
 			ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 		} else {
-			candleComp->toggleCarried();
+			candleComp->setCarried(true);
 		}
-	} else if ( candleComp->isCarried() ) {
+	} else {
 		if ( glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit() ) {
 			candleTransComp->setTranslation(glm::vec3(0.f, 2.0f, 0.f));
 			candleTransComp->setParent(parentTransComp);
 		} else {
-			candleComp->toggleCarried();
+			candleComp->setCarried(false);
 		}
 	}
 }

@@ -16,7 +16,7 @@ namespace ShaderComponent {
 		, m_elementByteSize(size)
 	{
 		m_context = Application::getInstance()->getAPI<DX12API>();
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 		m_srvHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, numSwapBuffers);
 
@@ -45,8 +45,8 @@ namespace ShaderComponent {
 		assert(meshIndex < MAX_MESHES_PER_FRAME && "Too many meshes! Increase MAX_MESHES_PER_FRAME in DX12StrucutedBuffer.h");
 
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
-		auto frameIndex = m_context->getFrameIndex();
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
+		auto frameIndex = m_context->getSwapIndex();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 		memcpy(m_cbGPUAddress[frameIndex] + MAX_ELEMENTS * m_elementByteSize * meshIndex, newData, m_elementByteSize * numElements);
 		m_numElements = numElements;
@@ -54,7 +54,7 @@ namespace ShaderComponent {
 
 	void DX12StructuredBuffer::bind(void* cmdList) const {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-		auto frameIndex = m_context->getFrameIndex();
+		auto frameIndex = m_context->getSwapIndex();
 
 		UINT rootIndex = m_context->getRootIndexFromRegister("t" + std::to_string(m_register));
 
@@ -64,7 +64,7 @@ namespace ShaderComponent {
 
 	void DX12StructuredBuffer::bind_new(void* cmdList, int meshIndex) const {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-		auto frameIndex = m_context->getFrameIndex();
+		auto frameIndex = m_context->getSwapIndex();
 
 		UINT rootIndex = m_context->getRootIndexFromRegister("t" + std::to_string(m_register));
 
@@ -80,12 +80,12 @@ namespace ShaderComponent {
 	}
 
 	ID3D12Resource* DX12StructuredBuffer::getBuffer() const {
-		return m_bufferUploadHeap[m_context->getFrameIndex()].Get();
+		return m_bufferUploadHeap[m_context->getSwapIndex()].Get();
 	}
 
 	void DX12StructuredBuffer::createBuffers(unsigned int numElements) {
-		auto frameIndex = m_context->getFrameIndex();
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
+		auto frameIndex = m_context->getSwapIndex();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
 		static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 		// Create an upload heap to hold the constant buffer
 		// create a resource heap, and pointer to cbv for each frame

@@ -26,13 +26,15 @@ namespace Netcode {
 	// The message type decides how the subsequent data will be parsed and used
 	enum MessageType : __int32 {
 		CREATE_NETWORKED_ENTITY = 1,
-		MODIFY_TRANSFORM = 2,
-		SPAWN_PROJECTILE = 3,
-		ROTATION_TRANSFORM = 4,
-		PLAYER_JUMPED = 5,
-		WATER_HIT_PLAYER = 6,
-		PLAYER_DIED = 7,
-		MATCH_ENDED = 8,
+		MODIFY_TRANSFORM,
+		SPAWN_PROJECTILE,
+		ROTATION_TRANSFORM,
+		PLAYER_JUMPED,
+		WATER_HIT_PLAYER,
+		PLAYER_DIED,
+		MATCH_ENDED,
+		CANDLE_HELD_STATE,
+    SEND_ALL_BACK_TO_LOBBY,
 		EMPTY = 69
 	};
 
@@ -100,6 +102,34 @@ namespace Netcode {
 			Archive::serealizeQuat(ar, rotation);
 			Archive::serializeVec3(ar, position);
 		}
+	};
+
+
+	class MessageData {
+	public:
+		MessageData() {}
+		virtual ~MessageData() {}
+	};
+
+	class MessageDataProjectile : public MessageData {
+	public:
+		MessageDataProjectile(glm::vec3 translation_, glm::vec3 velocity_)
+			: translation(translation_), velocity(velocity_)
+		{}
+		virtual ~MessageDataProjectile() {}
+
+		glm::vec3 translation;
+		glm::vec3 velocity;
+	};
+
+	class MessageDataWaterHitPlayer : public MessageData {
+	public:
+		MessageDataWaterHitPlayer(Netcode::NetworkObjectID id)
+			: playerWhoWasHitID(id)
+		{}
+		~MessageDataWaterHitPlayer() {}
+
+		Netcode::NetworkObjectID playerWhoWasHitID;
 	};
 }
 

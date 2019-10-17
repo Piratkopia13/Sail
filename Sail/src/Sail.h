@@ -27,6 +27,7 @@
 #include "Sail/graphics/shader/material/MaterialShader.h"
 #include "Sail/graphics/shader/material/WireframeShader.h"
 #include "Sail/graphics/shader/dxr/GBufferOutShader.h"
+#include "Sail/graphics/shader/dxr/GBufferWireframe.h"
 #include "Sail/graphics/geometry/factory/CubeModel.h"
 #include "Sail/graphics/geometry/factory/ConeModel.h"
 #include "Sail/graphics/geometry/factory/PlaneModel.h"
@@ -39,3 +40,4 @@
 #include "Sail/utils/SailImGui/Profiler.h"
 #include "Sail/utils/SailImGui/RenderSettingsWindow.h"
 #include "Sail/utils/SailImGui/LightDebugWindow.h"
+#include "Sail/utils/SailImGui/PlayerInfoWindow.h"

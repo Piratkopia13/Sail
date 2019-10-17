@@ -93,8 +93,13 @@ void rayGen() {
 	payload.recursionDepth = 1;
 	payload.closestTvalue = 0;
 	payload.color = float4(0,0,0,0);
-	shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
-	lOutput[launchIndex] = payload.color;
+	if (worldNormal.x == -1 && worldNormal.y == -1) {
+		//Bounding boxes dont need shadeing
+		lOutput[launchIndex] = float4(albedoColor, 1.0f);
+		return;
+	} else {
+		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+	}
 
 
 	//===========MetaBalls RT START===========
@@ -128,7 +133,6 @@ void rayGen() {
 	t = min(linearDepth, payload_metaball.closestTvalue) / 10.0f;
 	//t = payload_metaball.closestTvalue / 3;// / CB_SceneData.farZ;
 
-	lOutput[launchIndex] = float4(t, t, t, 1);
 
 	float metaballDepth = payload_metaball.closestTvalue - CB_SceneData.nearZ * 4;// (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4)* projectionA;
 
@@ -178,8 +182,9 @@ void rayGen() {
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
+	payload.color = float4(1.00f, 1.0f, 1.0f, 1.0f);
 	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
-	payload.closestTvalue = 10000000;
+	payload.closestTvalue = 1000;
 }
 
 float3 getAlbedo(MeshData data, float2 texCoords) {
@@ -248,6 +253,9 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	float metalness = metalnessRoughnessAO.r;
 	float roughness = metalnessRoughnessAO.g;
 	float ao = metalnessRoughnessAO.b;
+
+	//payload.color = float4(normalInWorldSpace * 0.5f + 0.5f, 1.0f);
+	//return;
 
 	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
 }
