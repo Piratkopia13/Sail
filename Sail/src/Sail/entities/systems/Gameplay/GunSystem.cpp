@@ -7,7 +7,7 @@
 #include "Sail/entities/components/GunComponent.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
-
+#include "Sail/netcode/NetworkedStructs.h"
 #include <random>
 
 GunSystem::GunSystem() : BaseComponentSystem() {
@@ -39,7 +39,10 @@ void GunSystem::update(float dt) {
 					
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::SPAWN_PROJECTILE,
-						e
+						SAIL_NEW Netcode::MessageDataProjectile{
+							gun->position,
+							gun->direction * gun->projectileSpeed
+						}
 					);
 					m_gameDataTracker->logWeaponFired();
 				}

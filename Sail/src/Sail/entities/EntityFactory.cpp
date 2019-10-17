@@ -50,7 +50,9 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID
 	);
-	int test = player->getComponent<NetworkSenderComponent>()->m_id;
+	Netcode::NetworkObjectID netComponentID = player->getComponent<NetworkSenderComponent>()->m_id;
+	player->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
+	
 	player->addComponent<LocalOwnerComponent>(player->getComponent<NetworkSenderComponent>()->m_id);
 
 	// Add physics components and setting initial variables

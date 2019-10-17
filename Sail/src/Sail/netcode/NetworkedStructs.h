@@ -62,12 +62,12 @@ namespace Netcode {
 
 		template <class Archive>
 		void save(Archive& ar) const {
-			Archive::serializeVec3(ar, position);
+			ArchiveHelpers::serializeVec3(ar, position);
 		}
 
 		template <class Archive>
 		void load(Archive& ar) {
-			Archive::serializeVec3(ar, position);
+			ArchiveHelpers::serializeVec3(ar, position);
 		}
 	};
 
@@ -77,31 +77,12 @@ namespace Netcode {
 
 		template <class Archive>
 		void save(Archive& ar) const {
-			Archive::serializeVec3(ar, position);
+			ArchiveHelpers::serializeVec3(ar, position);
 		}
 
 		template <class Archive>
 		void load(Archive& ar) {
-			Archive::serializeVec3(ar, position);
-		}
-	};
-
-	// SPAWN_PROJECTILE
-	struct SpawnProjectile {
-		glm::vec3 position;
-		glm::quat rotation;
-		// velocity or something maybe?
-	
-		template <class Archive>
-		void save(Archive& ar) const {
-			Archive::serializeVec3(ar, position);
-			Archive::serealizeQuat(ar, rotation);
-		}
-
-		template <class Archive>
-		void load(Archive& ar) {
-			Archive::serealizeQuat(ar, rotation);
-			Archive::serializeVec3(ar, position);
+			ArchiveHelpers::serializeVec3(ar, position);
 		}
 	};
 
@@ -131,6 +112,22 @@ namespace Netcode {
 		~MessageDataWaterHitPlayer() {}
 
 		Netcode::NetworkObjectID playerWhoWasHitID;
+	};
+
+	class MessageDataPlayerDied : public MessageData {
+	public:
+		MessageDataPlayerDied(Netcode::NetworkObjectID id) : playerWhoDied(id){}
+				~MessageDataPlayerDied() {}
+				Netcode::NetworkObjectID playerWhoDied;
+		};
+
+	class MessageDataCandleHeldState : public MessageData {
+	public:
+		MessageDataCandleHeldState(Netcode::NetworkObjectID id, bool b, glm::vec3 pos) : candleOwnerID(id), isHeld(b), candlePos(pos) {}
+		~MessageDataCandleHeldState() {}
+		Netcode::NetworkObjectID candleOwnerID;
+		bool isHeld;
+		glm::vec3 candlePos;
 	};
 }
 

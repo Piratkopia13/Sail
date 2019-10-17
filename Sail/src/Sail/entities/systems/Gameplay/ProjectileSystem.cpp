@@ -14,6 +14,8 @@ ProjectileSystem::ProjectileSystem() {
 	registerComponent<CollisionComponent>(true, true, false);
 	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<CandleComponent>(false, true, true);
+	registerComponent<NetworkReceiverComponent>(false, true, false);
+	registerComponent<LocalOwnerComponent>(false, true, false);
 
 	m_splashMinTime = 0.3f;
 
@@ -55,8 +57,15 @@ void ProjectileSystem::update(float dt) {
 					//Inform the host about the hit.( in case you are host this will broadcast to everyone else)
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::WATER_HIT_PLAYER,
-						collision.entity->getParent() //relevant entity is the player that owns the candle that was hitted
+						SAIL_NEW Netcode::MessageDataWaterHitPlayer{
+							collision.entity->getParent()->getComponent<NetworkReceiverComponent>()->m_id
+						}
 					);
+
+					if (NWrapperSingleton::getInstance().isHost()) {
+						collision.entity->getComponent<CandleComponent>()->hitWithWater(10.0f);
+					}
+
 					//Check in NetworkReceiverSystem what happens next
 				}
 			}

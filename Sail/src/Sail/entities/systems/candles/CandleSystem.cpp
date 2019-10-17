@@ -2,6 +2,7 @@
 #include "CandleSystem.h"
 
 #include "Sail/entities/components/Components.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
 
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/entities/Entity.h"
@@ -59,8 +60,24 @@ void CandleSystem::update(float dt) {
 					if (NWrapperSingleton::getInstance().isHost()) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::PLAYER_DIED,
-							e->getParent()
+							SAIL_NEW Netcode::MessageDataPlayerDied{
+								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
+							}
 						);
+
+						//This should remove the candle entity from game
+						e->getParent()->removeDeleteAllChildren();
+
+						// Check if the extinguished candle is owned by the player
+						if (e->getParent()->getComponent<NetworkReceiverComponent>()->m_id >> 18 == NWrapperSingleton::getInstance().getMyPlayerID()) {
+							//If it is me that died, become spectator.
+							e->getParent()->addComponent<SpectatorComponent>();
+							e->getParent()->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+							e->getParent()->removeComponent<GunComponent>();
+						} else {
+							//If it wasnt me that died, compleatly remove the player entity from game.
+							e->getParent()->queueDestruction();
+						}
 
 						if (LivingCandles <= 1) { // Match IS over
 							//TODO: move MATCH_ENDED event to host side and not to client side.
@@ -127,6 +144,17 @@ void CandleSystem::putDownCandle(Entity* e) {
 		} else {
 			candleComp->setCarried(false);
 		}
+	}
+
+	if (e->getParent()->getComponent<LocalOwnerComponent>()) {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::CANDLE_HELD_STATE,
+			SAIL_NEW Netcode::MessageDataCandleHeldState{
+				e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
+				candleComp->isCarried(),
+				e->getComponent<TransformComponent>()->getTranslation()
+			}
+		);
 	}
 }
 
