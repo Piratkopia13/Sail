@@ -62,6 +62,8 @@ private:
 	Profiler m_profiler;
 	RenderSettingsWindow m_renderSettingsWindow;
 	LightDebugWindow m_lightDebugWindow;
+	PlayerInfoWindow m_playerInfoWindow;
+
 
 	size_t m_currLightIndex;
 

@@ -165,8 +165,11 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 		TransformComponent* t = e->getComponent<TransformComponent>();
 		Archive::archiveVec3(*ar, t->getTranslation()); // Send translation
 
-		// After the remote entity has been created we'll want to be able to modify its transform
-		messageType = Netcode::MODIFY_TRANSFORM;
+		// When the remote entity has been created we want to update translation and rotation of that entity
+		auto networkComp = e->getComponent<NetworkSenderComponent>();
+		networkComp->removeDataType(Netcode::CREATE_NETWORKED_ENTITY);
+		networkComp->addDataType(Netcode::MODIFY_TRANSFORM);
+		networkComp->addDataType(Netcode::ROTATION_TRANSFORM);
 	}
 	break;
 	case Netcode::MessageType::MODIFY_TRANSFORM:
