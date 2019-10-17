@@ -783,6 +783,9 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_NM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_Albedo.tga");
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_Albedo.tga");
 
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
@@ -839,6 +842,15 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
 	corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
 
+	Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner.fbx", shader);
+	corridorCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+	corridorCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+	corridorCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+
+	Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner.fbx", shader);
+	roomCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+	roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+	roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
 
 	std::vector<Model*> tileModels;
 	tileModels.resize(TileModel::NUMBOFMODELS);
@@ -846,12 +858,13 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	tileModels[TileModel::ROOM_WALL] = roomWall;
 	tileModels[TileModel::ROOM_DOOR] = roomDoor;
 	tileModels[TileModel::ROOM_CEILING] = roomCeiling;
+	tileModels[TileModel::ROOM_CORNER] = roomCorner;
 
 	tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
 	tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
 	tileModels[TileModel::CORRIDOR_DOOR] = corridorDoor;
 	tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
-
+	tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
 
 
 	// Create the level generator system and put it into the datatype.
