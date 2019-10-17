@@ -48,8 +48,8 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	// TODO: should probably be replaced with some form of settings singleton
 	MapComponent mapComp;
 
-	float realXMax = 20;
-	float realZMax = 20;
+	float realXMax = mapComp.xsize * mapComp.tileSize;
+	float realZMax = mapComp.ysize * mapComp.tileSize;
 	float realSize = realZMax * realXMax;
 	float nodeSize = 0.5f;
 	float nodePadding = nodeSize;
@@ -150,14 +150,14 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 					}
 
 					if (x > -1 && x < xMax && z > -1 && z < zMax) {
-						if (nodeConnectionCheck(nodePos,
+						/*if (nodeConnectionCheck(nodePos,
 												glm::vec3(static_cast<float>(x) * nodeSize,
 														  nodePos.y,
-														  static_cast<float>(z) * nodeSize))) {
+														  static_cast<float>(z) * nodeSize))) {*/
 							// get index
 							int index = z * xMax + x;
 							conns.push_back(index);
-						}
+						//}
 					}
 				}
 			}
