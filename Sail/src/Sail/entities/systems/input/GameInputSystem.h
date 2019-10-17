@@ -43,6 +43,9 @@ private:
 	float m_projectileSpawnCounter = 0.f;
 	float m_lookSensitivityMouse = 0.1f;
 
+	float onGroundTimer = 0.0f;
+	float onGroundThreshold = 0.3f;
+
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
 

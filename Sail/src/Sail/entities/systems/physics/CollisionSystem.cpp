@@ -182,6 +182,13 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 		//------------
 	}
 
+	if (collision->onGround) {
+		std::cout << "ON GROUND!\n";
+	}
+	else if (!collision->onGround) {
+		std::cout << "OFF GROUND!\n";
+	}
+
 	return returnValue;
 }
 

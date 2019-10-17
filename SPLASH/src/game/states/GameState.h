@@ -58,6 +58,7 @@ private:
 	const std::string teleportToMap();
 	const std::string toggleProfiler();
 
+	Entity* m_gameMusic = nullptr;
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;
