@@ -243,7 +243,7 @@ void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& bounding
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
 
-	const int split = 10;
+	const int split = 5;
 
 	const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
 	const glm::vec3 distancePerStep = (distance / (float) split) * normalizedVel;
