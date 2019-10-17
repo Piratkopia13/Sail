@@ -1,5 +1,6 @@
 #pragma once
 #include "Sail.h"
+#include "../events/NetworkDisconnectEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
 class NetworkSerializedPackageEvent;
@@ -31,9 +32,8 @@ private:
 
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
-
-	//bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImGuiAnimationSettings(float dt);
+	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
+	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 
 	void shutDownGameState();
 
@@ -42,6 +42,12 @@ private:
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
+	void createTestLevel(Shader* shader, Model* boundingBoxModel);
+	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
+	void createLevel(Shader* shader, Model* boundingBoxModel);
+	const std::string createCube(const glm::vec3& position);
+	const std::string teleportToMap();
+	const std::string toggleProfiler();
 
 private:
 	Application* m_app;
@@ -51,19 +57,14 @@ private:
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	Entity* m_player;
 
-	void createTestLevel(Shader* shader, Model* boundingBoxModel);
-	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
-	void createLevel(Shader* shader, Model* boundingBoxModel);
-	const std::string createCube(const glm::vec3& position);
-	const std::string teleportToMap();
-	const std::string toggleProfiler();
-
 	Entity* m_gameMusic = nullptr;
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;
 	RenderSettingsWindow m_renderSettingsWindow;
 	LightDebugWindow m_lightDebugWindow;
+	PlayerInfoWindow m_playerInfoWindow;
+
 
 	size_t m_currLightIndex;
 

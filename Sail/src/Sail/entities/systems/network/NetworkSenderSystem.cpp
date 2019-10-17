@@ -165,8 +165,11 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 		TransformComponent* t = e->getComponent<TransformComponent>();
 		Archive::archiveVec3(*ar, t->getTranslation()); // Send translation
 
-		// After the remote entity has been created we'll want to be able to modify its transform
-		messageType = Netcode::MODIFY_TRANSFORM;
+		// When the remote entity has been created we want to update translation and rotation of that entity
+		auto networkComp = e->getComponent<NetworkSenderComponent>();
+		networkComp->removeDataType(Netcode::CREATE_NETWORKED_ENTITY);
+		networkComp->addDataType(Netcode::MODIFY_TRANSFORM);
+		networkComp->addDataType(Netcode::ROTATION_TRANSFORM);
 	}
 	break;
 	case Netcode::MessageType::MODIFY_TRANSFORM:
@@ -240,6 +243,13 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 		(*ar)(NetObjectID); // Send
 	}
 	break;
+	case Netcode::MessageType::PLAYER_DISCONNECT:
+	{
+		// NetObjectID should be send outside of this loop.
+		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
+		(*ar)(NetObjectID); // Send
+	}
+	break;
 	case Netcode::MessageType::MATCH_ENDED:
 	{
 	}
@@ -248,7 +258,6 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	{
 	}
 	break;
-
 	case Netcode::MessageType::CANDLE_HELD_STATE:
 	{
 		// For projectiles, 'nsc->m_id' corresponds to the id of the entity they hit!

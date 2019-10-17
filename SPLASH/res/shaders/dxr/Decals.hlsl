@@ -18,9 +18,9 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
     // Calculated per pixel to eliminate texture stretching
     float3x3 rotMat = currDecal.rot; //{ { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
     if (abs(wNorm.z) != 1.f) {
-        float3 b = float3(0.f, 0.f, -1.f);
+        float3 b = float3(0.f, 0.f, 1.f * sign(wNorm.z));
         float3 v = cross(b, wNorm);
-        float angle = acos(dot(b, wNorm) / (length(b) * length(wNorm)));
+        float angle = acos((wNorm.z * b.z) / (length(b) * length(wNorm)));
         rotMat = mul(Utils::rotateMatrix(angle, v), rotMat);
     }
 
@@ -79,8 +79,7 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
         float ao = mra.b;
 
         // Removed some black edges
-        if (albedoColour.a < 0.4f)
-        {
+        if (albedoColour.a < 0.4f) {
             return colourToReturn;
         }
 

@@ -133,9 +133,9 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
-
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
+
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 
@@ -162,6 +162,8 @@ GameState::GameState(StateStack& stack)
 	m_gameMusic->addComponent<AudioComponent>();
 	m_gameMusic->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
 	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
+
+	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
 
 GameState::~GameState() {
@@ -436,8 +438,8 @@ void GameState::initConsole() {
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
-
-//	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
+	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
+	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
@@ -449,6 +451,67 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+	return true;
+}
+
+bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
+	if ( !m_isSingleplayer ) {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::PLAYER_DIED,
+			m_player
+		);
+		
+		m_player->addComponent<SpectatorComponent>();
+		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+		m_player->removeComponent<GunComponent>();
+		m_player->removeAllChildren();
+		// TODO: Remove all the components that can/should be removed
+
+	} else {
+		this->requestStackPop();
+		this->requestStackPush(States::EndGame);
+		m_poppedThisFrame = true;
+	}
+
+	// Set bot target to null when player is dead
+	auto entities = m_componentSystems.aiSystem->getEntities();
+	for (int i = 0; i < entities.size(); i++) {
+		auto aiComp = entities[i]->getComponent<AiComponent>();
+		aiComp->setTarget(nullptr);
+	}
+
+	return true;
+}
+
+bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
+	// This function is called from NWrapperHost::playerDisconnected()
+	// Then the host sends PLAYER_DISCONNECT over the network
+	// Each client recieves it in NetworkReceiverSystem::handleEvent()
+	// and removes their local copy of the player there
+	// Host local copy is destroyed here
+	
+	if (!m_isSingleplayer) {
+		if (NWrapperSingleton::getInstance().isHost()) {	// Should always be true
+			
+			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
+			for (auto& e : receiverEntities)
+			{
+				if (e->getComponent<NetworkSenderComponent>()->m_id >> 18 == event.getPlayerID())
+				{
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_DISCONNECT,
+						e
+					);
+
+					// This will remove the entity 
+					e->removeDeleteAllChildren();
+					e->queueDestruction();
+
+					// No loop break. If other entities has the same player id they should all be removed
+				}
+			}
+		}
+	}
 	return true;
 }
 
@@ -512,6 +575,7 @@ bool GameState::renderImgui(float dt) {
 	m_profiler.renderWindow();
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
+	m_playerInfoWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 
 	return false;
@@ -785,6 +849,9 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_NM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_Albedo.tga");
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_Albedo.tga");
 
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
@@ -841,6 +908,15 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
 	corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
 
+	Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner.fbx", shader);
+	corridorCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+	corridorCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+	corridorCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+
+	Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner.fbx", shader);
+	roomCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+	roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+	roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
 
 	std::vector<Model*> tileModels;
 	tileModels.resize(TileModel::NUMBOFMODELS);
@@ -848,12 +924,13 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	tileModels[TileModel::ROOM_WALL] = roomWall;
 	tileModels[TileModel::ROOM_DOOR] = roomDoor;
 	tileModels[TileModel::ROOM_CEILING] = roomCeiling;
+	tileModels[TileModel::ROOM_CORNER] = roomCorner;
 
 	tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
 	tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
 	tileModels[TileModel::CORRIDOR_DOOR] = corridorDoor;
 	tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
-
+	tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
 
 
 	// Create the level generator system and put it into the datatype.
@@ -872,17 +949,17 @@ void GameState::populateScene(Model* characterModel, Model* lightModel, Model* b
 		float spawnOffsetZ = 13.f + float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		Model* characterModel = &m_app->getResourceManager().getModelCopy("walkTri.fbx", shader);
-		characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-		characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
-		characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
-		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+		std::string name = "DocGunRun4.fbx";
+		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
+		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+		characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 		characterModel->setIsAnimated(true);
 
 		e->addComponent<ModelComponent>(characterModel);
-		auto animStack = &m_app->getResourceManager().getAnimationStack("walkTri.fbx");
+		auto animStack = &m_app->getResourceManager().getAnimationStack(name);
 		auto animComp = e->addComponent<AnimationComponent>(animStack);
-		animComp->currentAnimation = animStack->getAnimation(0);
+		animComp->currentAnimation = animStack->getAnimation(1);
 		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
 		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
 		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));

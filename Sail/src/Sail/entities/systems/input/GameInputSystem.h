@@ -45,6 +45,7 @@ private:
 
 	float onGroundTimer = 0.0f;
 	float onGroundThreshold = 0.3f;
+	float isPlayingRunningSound = false;
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;

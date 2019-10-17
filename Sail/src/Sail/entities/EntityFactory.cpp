@@ -83,7 +83,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	// Create candle for the player
 	auto e = CreateCandle("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f), lightIndex);
 	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	e->getComponent<CandleComponent>()->setOwner(player->getID());
+	e->getComponent<CandleComponent>()->setOwner(static_cast<int>(playerID));
 	player->addChildEntity(e);
 
 	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
@@ -182,7 +182,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	randPos.b = Utils::rnd() * randomSpread;
 
 	e->addComponent<MetaballComponent>();
-	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
+	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
 	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
@@ -203,7 +203,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	collision->drag = 2.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
 	collision->bounciness = 0.1f;
-	collision->padding = 0.16f;
+	collision->padding = 0.2f;
 
 	return e;
 }
