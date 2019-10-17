@@ -45,6 +45,7 @@ void CandleSystem::update(float dt) {
 		auto candle = e->getComponent<CandleComponent>();
 
 		if (candle->getIsAlive()) {
+			//If a candle is out of health.
 			if (candle->getHealth() <= 0.f) {
 				candle->setIsLit(false);
 				candle->setCarried(true);
@@ -54,10 +55,11 @@ void CandleSystem::update(float dt) {
 					candle->setIsAlive(false);
 					LivingCandles--;
 
+					//Only let the host sent PLAYER_DIED message
 					if (NWrapperSingleton::getInstance().isHost()) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::PLAYER_DIED,
-							m_playerEntityPtr
+							e->getParent()
 						);
 
 						if (LivingCandles <= 1) { // Match IS over
@@ -70,15 +72,6 @@ void CandleSystem::update(float dt) {
 							m_gameStatePtr->requestStackPop();
 							m_gameStatePtr->requestStackPush(States::EndGame);
 						}
-					}
-
-					// Check if the extinguished candle is owned by the player
-					if (candle->getOwner() == m_playerEntityID) {
-						// Match IS NOT over, instead THIS player simply died
-							e->getParent()->addComponent<SpectatorComponent>();
-							e->getParent()->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-							e->getParent()->removeComponent<GunComponent>();
-							e->getParent()->removeAllChildren();
 					}
 				}
 			} else if ((candle->getDoActivate() || candle->getDownTime() >= m_candleForceRespawnTimer) && !candle->getIsLit()) {

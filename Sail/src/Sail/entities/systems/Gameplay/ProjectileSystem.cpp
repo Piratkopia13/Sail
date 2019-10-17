@@ -48,12 +48,16 @@ void ProjectileSystem::update(float dt) {
 				}
 			}
 
+			//If projectile collided with a candle
 			if (collision.entity->hasComponent<CandleComponent>()) {
+				//If local player owned the projectile
 				if (e->hasComponent<LocalOwnerComponent>()) {
+					//Inform the host about the hit.( in case you are host this will broadcast to everyone else)
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::WATER_HIT_PLAYER,
-						e
+						collision.entity->getParent() //relevant entity is the player that owns the candle that was hitted
 					);
+					//Check in NetworkReceiverSystem what happens next
 				}
 			}
 		}

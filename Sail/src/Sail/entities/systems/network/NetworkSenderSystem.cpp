@@ -216,20 +216,15 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		// SHOULD BE:
-	//	Netcode::MessageDataWaterHitPlayer* data = dynamic_cast<Netcode::MessageDataWaterHitPlayer*>(event->data);
-	//	(*ar)(data->playerWhoWasHitID);	
-	//	delete data;
-
-		// CURRENTLY IS:
 		unsigned __int32 NetObjectID;
 		if (e->hasComponent<LocalOwnerComponent>()) {
-			NetObjectID = e->getComponent<LocalOwnerComponent>()->netEntityID;
+			NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
 		}
 		else {
-			NetObjectID = e->getComponent<OnlineOwnerComponent>()->netEntityID;
+			NetObjectID = e->getComponent<NetworkReceiverComponent>()->m_id;
 		}
 		
+		std::cout << "Sending: Player - " << std::to_string(NetObjectID) << " was hit!\n";
 		(*ar)(NetObjectID);
 	}
 	break;
@@ -237,6 +232,7 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	{
 		// NetObjectID should be send outside of this loop.
 		__int32 NetObjectID = e->getComponent<NetworkSenderComponent>()->m_id;
+		std::cout << "Sending: Player - " << std::to_string(NetObjectID) << " died!\n";
 		(*ar)(NetObjectID); // Send
 	}
 	break;
