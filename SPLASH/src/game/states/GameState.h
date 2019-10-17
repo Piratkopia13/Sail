@@ -57,6 +57,7 @@ private:
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	Entity* m_player;
 
+	Entity* m_gameMusic = nullptr;
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;

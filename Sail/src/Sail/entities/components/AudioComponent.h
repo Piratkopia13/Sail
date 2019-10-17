@@ -36,14 +36,19 @@ public:
 
 	Audio::SoundInfo m_sounds[Audio::SoundType::COUNT]{};
 
-	// • string = filename
-	// • bool = TRUE if START-request, FALSE if STOP-request
-	std::list<std::pair<std::string, bool>> m_streamingRequests;
-	// • string = filename
-	// • int = ID of playing streaming; needed for STOPPING the streamed sound
-	std::list<std::pair<std::string, int>> m_currentlyStreaming;
-
-	// This function is purely here to MAKE LIFE LESS DIFFICULT
+	// An 'easy-mode' helper function for starting/stopping a streamed sound
+	void streamSoundRequest_HELPERFUNC(std::string filename, bool startTrue_stopFalse, float volume, bool isLooping);
+	// A helpful function that simplifies the process of defining a new sound
 	void defineSound(Audio::SoundType type, Audio::SoundInfo info);
+
+	// VARIABLE DEFINITIONS/CLARIFICATIONS
+		// • string = filename
+		// • bool = TRUE if START-request, FALSE if STOP-request
+	std::list<std::pair<std::string, bool>> m_streamingRequests;
+	std::list<std::pair<std::string, std::pair<float, bool>>> m_Vol_isLooping_Requests;
+	// VARIABLE DEFINITIONS/CLARIFICATIONS
+		// • string = filename
+		// • int = ID of playing streaming; needed for STOPPING the streamed sound
+	std::list<std::pair<std::string, int>> m_currentlyStreaming;
 };
 
