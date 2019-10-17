@@ -11,10 +11,12 @@ enum TileModel {
 	ROOM_WALL,
 	ROOM_DOOR,
 	ROOM_CEILING,
+	ROOM_CORNER,
 	CORRIDOR_FLOOR,
 	CORRIDOR_WALL,
 	CORRIDOR_DOOR,
 	CORRIDOR_CEILING,
+	CORRIDOR_CORNER,
 	NUMBOFMODELS
 };
 
@@ -47,6 +49,8 @@ private:
 	void addSpawnPoints();
 	void addDoors();
 	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
+	void addCornerModel(int tileID, int typeID, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
+
 	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize, float tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
 };
