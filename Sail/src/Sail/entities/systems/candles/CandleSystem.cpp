@@ -89,7 +89,6 @@ void CandleSystem::update(float dt) {
 						if (candle->getNumRespawns() == m_maxNumRespawns) {
 							candle->setIsAlive(false);
 
-							// Check if the extinguished candle is owned by the player
 							if (candle->getOwner() == m_playerEntityID) {
 								LivingCandles--;
 

@@ -133,9 +133,9 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
-
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
+
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 
@@ -433,8 +433,8 @@ void GameState::initConsole() {
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
-
-//	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
+	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
+	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
@@ -446,6 +446,67 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+	return true;
+}
+
+bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
+	if ( !m_isSingleplayer ) {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::PLAYER_DIED,
+			m_player
+		);
+		
+		m_player->addComponent<SpectatorComponent>();
+		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+		m_player->removeComponent<GunComponent>();
+		m_player->removeAllChildren();
+		// TODO: Remove all the components that can/should be removed
+
+	} else {
+		this->requestStackPop();
+		this->requestStackPush(States::EndGame);
+		m_poppedThisFrame = true;
+	}
+
+	// Set bot target to null when player is dead
+	auto entities = m_componentSystems.aiSystem->getEntities();
+	for (int i = 0; i < entities.size(); i++) {
+		auto aiComp = entities[i]->getComponent<AiComponent>();
+		aiComp->setTarget(nullptr);
+	}
+
+	return true;
+}
+
+bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
+	// This function is called from NWrapperHost::playerDisconnected()
+	// Then the host sends PLAYER_DISCONNECT over the network
+	// Each client recieves it in NetworkReceiverSystem::handleEvent()
+	// and removes their local copy of the player there
+	// Host local copy is destroyed here
+	
+	if (!m_isSingleplayer) {
+		if (NWrapperSingleton::getInstance().isHost()) {	// Should always be true
+			
+			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
+			for (auto& e : receiverEntities)
+			{
+				if (e->getComponent<NetworkSenderComponent>()->m_id >> 18 == event.getPlayerID())
+				{
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_DISCONNECT,
+						e
+					);
+
+					// This will remove the entity 
+					e->removeDeleteAllChildren();
+					e->queueDestruction();
+
+					// No loop break. If other entities has the same player id they should all be removed
+				}
+			}
+		}
+	}
 	return true;
 }
 
