@@ -38,6 +38,16 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		} else {
 			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_nodeModel);
 		}
+
+		auto currNodeConnections = m_connections[i];
+		for (int j = 0; j < currNodeConnections.size(); j++) {
+			glm::vec3 pos = m_nodes[i].position;
+			glm::vec3 dir = m_nodes[currNodeConnections[j]].position - pos;
+			pos += glm::normalize(dir) * glm::length(dir) * 0.5f;
+			m_nodeEntities.push_back(ECS::Instance()->createEntity("Connection " + std::to_string(i)));
+			m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(pos)->setScale(0.25f);
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_connectionModel);
+		}
 	}
 #endif
 }
@@ -46,6 +56,7 @@ std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, 
 	std::vector<NodeSystem::Node> nPath;
 	if ( from.index != to.index ) {
 		auto path = aStar(from.index, to.index);
+		//auto path = BFS(from.index, to.index);
 		
 		size_t size = path.size();
 		for ( size_t i = size - 1; i < size; i-- ) {
@@ -87,9 +98,15 @@ void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);
 	m_nodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_nodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
+
 	m_blockedNodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", shader);
 	m_blockedNodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_blockedNodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 0.f, 0.f, 1.f));
+
+	m_connectionModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", shader);
+	m_connectionModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+	m_connectionModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 1.f, 1.f, 1.f));
+
 }
 #endif
 

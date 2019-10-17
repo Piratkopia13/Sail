@@ -48,8 +48,8 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	// TODO: should probably be replaced with some form of settings singleton
 	MapComponent mapComp;
 
-	float realXMax = mapComp.xsize * mapComp.tileSize;
-	float realZMax = mapComp.ysize * mapComp.tileSize;
+	float realXMax = 20;
+	float realZMax = 20;
 	float realSize = realZMax * realXMax;
 	float nodeSize = 0.5f;
 	float nodePadding = nodeSize;
@@ -70,6 +70,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
 	float collisionBoxHeight = 0.9f;
 	float collisionBoxHalfHeight = collisionBoxHeight / 2.f;
+	//e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, collisionBoxHalfHeight, 0.7f));
 	e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(nodeSize / 2.f, collisionBoxHalfHeight, nodeSize / 2.f));
 
 
@@ -101,7 +102,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		bool blocked = false;
 		Octree::RayIntersectionInfo tempInfo;
 		glm::vec3 down(0.f, -1.f, 0.f);
-		m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + collisionBoxHalfHeight, nodePos.z), down, &tempInfo);
+		m_octree->getRayIntersection(glm::vec3(nodePos.x - 0.00001f, nodePos.y + collisionBoxHalfHeight, nodePos.z - 0.00001f), down, &tempInfo);
 		if (tempInfo.closestHitIndex != -1) {
 			float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].normal, -down);
 			// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
@@ -113,7 +114,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 				nodePos.y = nodePos.y + (collisionBoxHalfHeight - tempInfo.closestHit);
 			}
 		} else {
-			blocked = true;
+			//blocked = true;
 		}
 
 		/*
@@ -144,15 +145,17 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 			// Each node currently only have 4 connections
 			for (int x = currX - 1; x < currX + 2; x++) {
 				for (int z = currZ - 1; z < currZ + 2; z++) {
-					if (x > -1 && x < xMax && z > -1 && z < zMax && (x != currX || z != currZ)) {
-						int otherNodeX = currX - x;
-						int otherNodeZ = currZ - z;
+					if (x == currX && z == currZ) {
+						continue;
+					}
+
+					if (x > -1 && x < xMax && z > -1 && z < zMax) {
 						if (nodeConnectionCheck(nodePos,
-												glm::vec3(static_cast<float>(otherNodeX) * nodeSize,
+												glm::vec3(static_cast<float>(x) * nodeSize,
 														  nodePos.y,
-														  static_cast<float>(otherNodeZ) * nodeSize))) {
+														  static_cast<float>(z) * nodeSize))) {
 							// get index
-							int index = otherNodeZ * xMax + otherNodeX;
+							int index = z * xMax + x;
 							conns.push_back(index);
 						}
 					}
@@ -204,6 +207,22 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		connections.push_back(conns);
 	}*/
 	//Delete "DeleteMeFirstFrameDummy"
+
+	std::vector<unsigned int> toRemove;
+	for (auto& n : connections) {
+		toRemove.clear();
+		for (int c = 0; c < n.size(); c++) {
+			if (nodes[n[c]].blocked) {
+				toRemove.emplace_back(c);
+			}
+		}
+		auto it = n.begin();
+		for (int i = toRemove.size() - 1; i > -1; i--) {
+			n.erase(it + toRemove[i]);
+		}
+	}
+
+
 	e->queueDestruction();
 
 	m_nodeSystem->setNodes(nodes, connections);
@@ -227,7 +246,6 @@ void AiSystem::update(float dt) {
 NodeSystem* AiSystem::getNodeSystem() {
 	return m_nodeSystem.get();
 }
-
 
 void AiSystem::aiUpdateFunc(Entity* e, const float dt) {
 	e->getComponent<FSMComponent>()->update(dt, e);
@@ -269,7 +287,6 @@ bool AiSystem::nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos) {
 	// The nodes shouldn't be connected
 	return false;
 }
-
 
 void AiSystem::updatePath(Entity* e) {
 	AiComponent* ai = e->getComponent<AiComponent>();

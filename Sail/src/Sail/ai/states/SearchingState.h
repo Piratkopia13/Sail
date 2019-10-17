@@ -23,4 +23,6 @@ private:
 	// This needs to be changed when playing with multiple players / bots
 	float m_distToHost;
 	int m_targetNode;
+
+	float m_searchingClock;
 };

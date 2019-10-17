@@ -60,6 +60,7 @@ public:
 	void setDebugModelAndScene(Shader* shader);
 	Model* m_nodeModel;
 	Model* m_blockedNodeModel;
+	Model* m_connectionModel;
 	std::vector<Entity::SPtr> m_nodeEntities;
 #endif
 

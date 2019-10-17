@@ -10,6 +10,7 @@
 SearchingState::SearchingState(NodeSystem* nodeSystem) : m_nodeSystem(nodeSystem) {
 	m_distToHost = INFINITY;
 	m_targetNode = 0;
+	m_searchingClock = 4.f;
 }
 
 SearchingState::~SearchingState() {
@@ -20,14 +21,13 @@ void SearchingState::update(float dt, Entity* entity) {
 	auto aiComp = entity->getComponent<AiComponent>();
 	auto aiPos = entity->getComponent<TransformComponent>()->getMatrix()[3];
 
-	static float clock = 0;
-	clock += dt;
+	m_searchingClock += dt;
 	// Change condition to not use a clock to get new directions
-	if (clock > 5) {
+	if (m_searchingClock > 5.f) {
 		findRandomNodeIndex();
 		// Save this comment to later track how to fine the way.
 		//Logger::Log("node: " + std::to_string(m_targetNode) + " clock: " + std::to_string(clock));
-		clock = 0;
+		m_searchingClock = 0.f;
 	}
 	if (aiComp->entityTarget != nullptr) {
 		auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
@@ -50,9 +50,11 @@ void SearchingState::update(float dt, Entity* entity) {
 }
 
 void SearchingState::reset(Entity* entity) {
+	m_searchingClock = 0.f;
 }
 
 void SearchingState::init(Entity* entity) {
+	m_searchingClock = 4.f;
 }
 
 float* SearchingState::getDistToHost() {
