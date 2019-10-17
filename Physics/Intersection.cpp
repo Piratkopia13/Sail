@@ -630,13 +630,13 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 
 			glm::vec3 toRay = (rayStart + rayDir * glm::dot(middle - rayStart, rayDir)) - middle;
 			//float distance = glm::min(glm::length(toRay), padding);
-			float distance = padding;
-
-			glm::vec3 newV1 = v1 + glm::normalize(toRay) * distance;
-			glm::vec3 newV2 = v2 + glm::normalize(toRay) * distance;
-			glm::vec3 newV3 = v3 + glm::normalize(toRay) * distance;
+			float distance = padding * 0.7f;
 
 			//Add padding
+			glm::vec3 newV1 = v1 + glm::normalize(toRay) * distance - rayDir * distance;
+			glm::vec3 newV2 = v2 + glm::normalize(toRay) * distance - rayDir * distance;
+			glm::vec3 newV3 = v3 + glm::normalize(toRay) * distance - rayDir * distance;
+			
 			/*glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) * 20.0f + triangleNormal) * padding;
 			glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) * 20.0f + triangleNormal) * padding;
 			glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) * 20.0f + triangleNormal) * padding;*/
