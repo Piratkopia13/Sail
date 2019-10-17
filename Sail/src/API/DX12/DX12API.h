@@ -7,7 +7,6 @@
 
 // Include the minimal needed from windows.h
 #define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wrl/client.h>
 #include <d3d12.h>
@@ -45,6 +44,7 @@ namespace GlobalRootParam {
 class DX12API : public GraphicsAPI {
 public:
 	static const UINT NUM_SWAP_BUFFERS;
+	static const UINT NUM_GPU_BUFFERS;
 	struct Command {
 		std::vector<wComPtr<ID3D12CommandAllocator>> allocators; // Allocator only grows, use multple (one for each thing)
 		wComPtr<ID3D12GraphicsCommandList4> list;
@@ -58,13 +58,13 @@ public:
 	template <typename T>
 	std::vector<T> createFrameResource() {
 		auto resource = std::vector<T>();
-		resource.resize(NUM_SWAP_BUFFERS);
+		resource.resize(NUM_GPU_BUFFERS);
 		return resource;
 	}
 	// Retrieves the resource for the current back buffer index
 	template <typename T>
 	T getFrameResource(const std::vector<T>& resource) {
-		return resource[m_context->getFrameIndex()];
+		return resource[m_context->getSwapIndex()];
 	}
 
 	virtual bool init(Window* window) override;
@@ -82,8 +82,9 @@ public:
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
 	UINT getRootIndexFromRegister(const std::string& reg) const;
-	UINT getFrameIndex() const;
-	UINT getNumSwapBuffers() const;
+	UINT getSwapIndex() const; // Returns 0 or 1
+	UINT getFrameIndex() const; // Returns 0, 1, ... NUM_SWAP_BUFFERS
+	UINT getNumGPUBuffers() const; // Always returns 2 - as no more than two buffers are needed for any gpu based resource
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 	DescriptorHeap* const getComputeGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
@@ -99,10 +100,14 @@ public:
 	void endPIXCapture() const;
 #endif
 
-	void initCommand(Command& cmd);
+	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+	// TODO: generalize this method to be used for all compute related tasks
+	void executeCommandListsComputeAnimation(std::initializer_list<ID3D12CommandList*> cmdLists) const;
+	void waitForComputeAnimation();
 
 	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
-	void executeCommandLists(ID3D12CommandList*const* cmdLists, const int nLists) const;
+	void executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
@@ -128,7 +133,8 @@ private:
 	bool m_windowedMode;
 	RECT m_windowRect;
 	
-	UINT m_backBufferIndex;
+	UINT m_backBufferIndex; // 0, 1, .. numSwapBuffers
+	UINT m_swapIndex; // 0 or 1
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentRenderTargetCDH;
 	ID3D12Resource* m_currentRenderTargetResource;
 	float m_clearColor[4];
@@ -144,14 +150,8 @@ private:
 
 	// Queues
 	wComPtr<ID3D12CommandQueue> m_directCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_computeCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_copyCommandQueue;
+	wComPtr<ID3D12CommandQueue> m_computeCommandQueueAnimations;
 
-	// Commands
-	//Command m_preCommand;
-	//Command m_postCommand;
-	//Command m_copyCommand;
-	//Command m_computeCommand;
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapGraphics;
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapCompute;
 
@@ -165,9 +165,9 @@ private:
 	// TODO: check which ones are needed
 	std::vector<UINT64> m_fenceValues;
 	wComPtr<ID3D12Fence1> m_fence;
-	//wComPtr<ID3D12Fence1> m_computeQueueFence;
-	//wComPtr<ID3D12Fence1> m_copyQueueFence;
-	//wComPtr<ID3D12Fence1> m_directQueueFence;
+
+	std::vector<UINT64> m_computeQueueAnimaitonFenceValues;
+	wComPtr<ID3D12Fence1> m_computeQueueAnimaitonFence;
 
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;

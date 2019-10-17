@@ -31,6 +31,7 @@ public:
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
+	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void reloadShaders();
@@ -84,15 +85,19 @@ private:
 	void initMetaballBuffers();
 	void updateMetaballpositions(const std::vector<Metaball>& metaballs);
 
+	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
+
 private:
 	DX12API* m_context;
 
 	DX12RenderableTexture** m_gbufferInputTextures;
+	DX12Texture** m_decalInputTextures;
 
 	std::string m_shaderFilename;
 
-	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_sceneCB;
-	std::vector<std::unique_ptr<ShaderComponent::DX12ConstantBuffer>> m_meshCB;
+	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_sceneCB;
+	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_meshCB;
+	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_decalCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
@@ -110,20 +115,24 @@ private:
 	};
 
 	std::string m_brdfLUTPath;
+	std::string m_decalTexPaths[3];
 
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandles[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtBrdfLUTGPUHandle;
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_decalTexGPUHandles;
 	UINT m_heapIncr;
 
 
 	std::vector<MeshHandles> m_rtMeshHandles;
-	//Metaballs
+	// Metaballs
 	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
 	UINT m_metaballsToRender;
+	// Decals
+	UINT m_decalsToRender;
 
 	const WCHAR* m_rayGenName = L"rayGen";
 	const WCHAR* m_closestHitName = L"closestHitTriangle";
@@ -141,8 +150,8 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureMiss;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
-	//Metaball Stuff
-	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2, -0.2, -0.2, 0.2, 0.2, 0.2 };
-	ID3D12Resource1* m_aabb_desc_resource; //m_aabb_desc uploaded to GPU
+	// Metaball Stuff
+	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2f, -0.2f, -0.2f, 0.2f, 0.2f, 0.2f };
+	ID3D12Resource1* m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
 
 };

@@ -33,7 +33,7 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID id) {
 	unsigned char newId = m_IdDistribution;
 	m_connectionsMap.insert(std::pair<TCP_CONNECTION_ID, unsigned char>(id, newId));
 
-	// Request a name from the client, which upon recieval will be sent to all clients.
+	// Request a name from the client, which upon retrieval will be sent to all clients.
 	char msgRequest[64];
 	msgRequest[0] = '?';
 	msgRequest[1] = newId;
@@ -68,7 +68,6 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 	std::string message;
 	char charAsInt[4] = { 0 };
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
-	Player currentPlayer{ -1, "" };	// 
 	int charCounter = 0;			//
 	std::string id_string = "";				//
 	std::string remnants = "";				//

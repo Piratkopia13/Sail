@@ -3,23 +3,29 @@
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/graphics/geometry/Model.h"
+#include "Sail/graphics/camera/Camera.h"
 
 #include "Intersection.h"
 
 #include "Octree.h"
 
+
 Octree::Octree(Model* boundingBoxModel) {
-	
+
 	m_boundingBoxModel = boundingBoxModel;
 	m_softLimitMeshes = 4;
 	m_minimumNodeHalfSize = 4.0f;
 
-	m_baseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	
+	m_baseNode.bbEntity = ECS::Instance()->createEntity("OBB");
 	m_baseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
-	BoundingBox* tempBoundingBox = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+	BoundingBoxComponent* bc = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>();
+	BoundingBox* tempBoundingBox = bc->getBoundingBox();
 	tempBoundingBox->setPosition(glm::vec3(0.0f));
 	tempBoundingBox->setHalfSize(glm::vec3(20.0f, 20.0f, 20.0f));
+
+	bc->getTransform()->setTranslation(tempBoundingBox->getPosition() - glm::vec3(0.0f, tempBoundingBox->getHalfSize().y, 0.0f));
+	bc->getTransform()->setScale(tempBoundingBox->getHalfSize() * 2.0f);
+
 	m_baseNode.parentNode = nullptr;
 	m_baseNode.nrOfEntities = 0;
 }
@@ -37,12 +43,17 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 
 	Node newBaseNode;
 	const BoundingBox* baseNodeBB = m_baseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
-	newBaseNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-	
+	newBaseNode.bbEntity = ECS::Instance()->createEntity("OBB");
+
 	newBaseNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
-	BoundingBox* newBaseNodeBoundingBox = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+	BoundingBoxComponent* bc = newBaseNode.bbEntity->getComponent<BoundingBoxComponent>();
+	BoundingBox* newBaseNodeBoundingBox = bc->getBoundingBox();
 	newBaseNodeBoundingBox->setPosition(baseNodeBB->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(x * baseNodeBB->getHalfSize().x * 2.0f, y * baseNodeBB->getHalfSize().y * 2.0f, z * baseNodeBB->getHalfSize().z * 2.0f));
 	newBaseNodeBoundingBox->setHalfSize(baseNodeBB->getHalfSize() * 2.0f);
+
+	bc->getTransform()->setTranslation(newBaseNodeBoundingBox->getPosition() - glm::vec3(0.0f, newBaseNodeBoundingBox->getHalfSize().y, 0.0f));
+	bc->getTransform()->setScale(newBaseNodeBoundingBox->getHalfSize() * 2.0f);
+
 	newBaseNode.nrOfEntities = 0;
 	newBaseNode.parentNode = nullptr;
 
@@ -54,13 +65,16 @@ void Octree::expandBaseNode(glm::vec3 direction) {
 					tempChildNode = m_baseNode;
 				}
 				else {
-					tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-					
+					tempChildNode.bbEntity = ECS::Instance()->createEntity("OBB");
 					tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
-					BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+					bc = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>();
+					BoundingBox* tempChildBoundingBox = bc->getBoundingBox();
 					tempChildBoundingBox->setHalfSize(baseNodeBB->getHalfSize());
 					tempChildBoundingBox->setPosition(newBaseNodeBoundingBox->getPosition() - baseNodeBB->getHalfSize() + glm::vec3(tempChildBoundingBox->getHalfSize().x * 2.0f * i, tempChildBoundingBox->getHalfSize().y * 2.0f * j, tempChildBoundingBox->getHalfSize().z * 2.0f * k));
 					tempChildNode.nrOfEntities = 0;
+
+					bc->getTransform()->setTranslation(tempChildBoundingBox->getPosition() - glm::vec3(0.0f, tempChildBoundingBox->getHalfSize().y, 0.0f));
+					bc->getTransform()->setScale(tempChildBoundingBox->getHalfSize() * 2.0f);
 				}
 				tempChildNode.parentNode = &newBaseNode;
 				newBaseNode.childNodes.push_back(tempChildNode);
@@ -133,15 +147,18 @@ bool Octree::addEntityRec(Entity* newEntity, Node* currentNode) {
 						for (int k = 0; k < 2; k++) {
 							const BoundingBox* currentNodeBB = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 							Node tempChildNode;
-							tempChildNode.bbEntity = ECS::Instance()->createEntity("Bounding Box");
-							
+							tempChildNode.bbEntity = ECS::Instance()->createEntity("OBB");
 							tempChildNode.bbEntity->addComponent<BoundingBoxComponent>(m_boundingBoxModel);
-							BoundingBox* tempChildBoundingBox = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
+							BoundingBoxComponent* bc = tempChildNode.bbEntity->getComponent<BoundingBoxComponent>();
+							BoundingBox* tempChildBoundingBox = bc->getBoundingBox();
 							tempChildBoundingBox->setHalfSize(currentNodeBB->getHalfSize() / 2.0f);
 							tempChildBoundingBox->setPosition(currentNodeBB->getPosition() - tempChildBoundingBox->getHalfSize() + glm::vec3(tempChildBoundingBox->getHalfSize().x * 2.0f * i, tempChildBoundingBox->getHalfSize().y * 2.0f * j, tempChildBoundingBox->getHalfSize().z * 2.0f * k));
 							tempChildNode.nrOfEntities = 0;
 							tempChildNode.parentNode = currentNode;
 							currentNode->childNodes.push_back(tempChildNode);
+
+							bc->getTransform()->setTranslation(tempChildBoundingBox->getPosition() - glm::vec3(0.0f, tempChildBoundingBox->getHalfSize().y, 0.0f));
+							bc->getTransform()->setScale(tempChildBoundingBox->getHalfSize() * 2.0f);
 
 							//Try to put meshes that was in this leaf node in the new child nodes.
 							for (int l = 0; l < currentNode->nrOfEntities; l++) {
@@ -219,10 +236,8 @@ void Octree::updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd)
 void Octree::getCollisionData(BoundingBox* entityBoundingBox, Entity* meshEntity, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, std::vector<CollisionInfo>* outCollisionData) {
 	if (Intersection::AabbWithTriangle(*entityBoundingBox, v0, v1, v2)) {
 		CollisionInfo tempInfo;
-		//Calculate normal for triangle
-		glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
-		tempInfo.normal = triNormal;
+		tempInfo.normal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
 		tempInfo.positions[0] = v0;
 		tempInfo.positions[1] = v1;
@@ -382,7 +397,7 @@ void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& ray
 
 		if (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
 			outIntersectionData->closestHit = intersectionDistance;
-			outIntersectionData->closestHitIndex = outIntersectionData->info.size() - 1;
+			outIntersectionData->closestHitIndex = (int)(outIntersectionData->info.size() - 1);
 		}
 	}
 }
@@ -467,6 +482,31 @@ int Octree::pruneTreeRec(Node* currentNode) {
 	return returnValue;
 }
 
+int Octree::frustumCulledDrawRec(const Frustum& frustum, Node* currentNode) {
+	int returnValue = 0;
+
+	//Check if node is in frustum
+	if (Intersection::FrustumWithAabb(frustum, *currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox())) {
+		//In frustum
+
+		//Draw meshes in node
+		for (int i = 0; i < currentNode->nrOfEntities; i++) {
+			// Let the renderer know that this entity should be rendered.
+			auto* cullComponent = currentNode->entities[i]->getComponent<CullingComponent>();
+			if (cullComponent) {
+				cullComponent->isVisible = true;
+			}
+			returnValue++;
+		}
+
+		//Call draw for all children
+		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
+			returnValue += frustumCulledDrawRec(frustum, &currentNode->childNodes[i]);
+		}
+	}
+	return returnValue;
+}
+
 void Octree::addEntity(Entity* newEntity) {
 	//See if the base node needs to be bigger
 	glm::vec3 directionVec = findCornerOutside(newEntity, &m_baseNode);
@@ -521,4 +561,8 @@ void Octree::getCollisionsSpheres(Entity* entity, std::vector<CollisionInfo>* ou
 
 void Octree::getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding) {
 	getRayIntersectionRec(rayStart, rayDir, &m_baseNode, outIntersectionData, ignoreThis, padding);
+}
+
+int Octree::frustumCulledDraw(Camera& camera) {
+	return frustumCulledDrawRec(camera.getFrustum(), &m_baseNode);
 }

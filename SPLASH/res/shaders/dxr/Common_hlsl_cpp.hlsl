@@ -17,6 +17,7 @@
 typedef glm::vec2 float2;
 typedef glm::vec3 float3;
 typedef glm::vec4 float4;
+typedef glm::mat3x3 float3x3;
 typedef glm::mat4x4 float4x4;
 typedef UINT32 uint;
 
@@ -27,8 +28,9 @@ namespace DXRShaderCommon {
 
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
-#define NUM_POINT_LIGHTS 8
+#define NUM_POINT_LIGHTS 12
 #define MAX_NUM_METABALLS 200
+#define MAX_DECALS 100
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
@@ -71,9 +73,10 @@ struct SceneCBuffer {
 	float4x4 clipToView;
 	float3 cameraPosition;
 	uint nMetaballs;
+    uint nDecals;
 	float nearZ;
 	float farZ;
-	float2 padding;
+	float padding;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 };
 
@@ -87,6 +90,17 @@ struct MeshData {
 };
 struct MeshCBuffer {
 	MeshData data[MAX_INSTANCES]; // cbuffer min size is 64kb, fill with flags
+};
+
+struct DecalData {
+    float3 position;
+	float padding0;
+    float3 halfSize;
+	float padding1;
+    float4x4 rot;
+};
+struct DecalCBuffer {
+    DecalData data[MAX_DECALS];
 };
 
 struct ProceduralPrimitiveAttributes {

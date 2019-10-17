@@ -1,6 +1,5 @@
 #pragma once
 
-#include <unordered_map>
 #include <memory>
 #include <bitset>
 #include "components/Component.h"
@@ -32,12 +31,16 @@ public:
 	bool hasComponent() const;
 	bool hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const;
 
+	Entity* getParent();
+
 	bool isAboutToBeDestroyed() const;
 	void queueDestruction();
 	void removeAllComponents();
 
 	void addChildEntity(Entity::SPtr child);
 	void removeChildEntity(Entity::SPtr toRemove);
+	void removeAllChildren();
+	void removeDeleteAllChildren();
 	/* Currently dangerous, will probably be altered in future */
 	std::vector<Entity::SPtr>& getChildEntities();
 
@@ -59,67 +62,58 @@ private:
 
 	void setECSIndex(int index);
 
-	std::unordered_map<int, BaseComponent::Ptr> m_components;
+	void setParent(Entity* entity);
+
+	BaseComponent::Ptr* m_components;
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_componentTypes;
 	std::string m_name;
 	bool m_destructionQueued = false;
 	int m_id;
 	int m_ECSIndex;
 	ECS* m_ecs;
+	Entity* m_parent;
 
 	std::vector<Entity::SPtr> m_children;
 };
 
 template<typename ComponentType, typename... Targs>
 inline ComponentType* Entity::addComponent(Targs... args) {
-	auto res = m_components.insert({ ComponentType::ID, std::make_unique<ComponentType>(args...) });
-	if ( !res.second ) {
+	if (m_components[ComponentType::ID]) {
 		Logger::Warning("Tried to add a duplicate component to an entity");
+	} else {
+		m_components[ComponentType::ID] = std::make_unique<ComponentType>(args...);
+
+		m_componentTypes |= ComponentType::getBID();
+
+		// Place this entity within the correct systems if told to
+		if (tryToAddToSystems) {
+			addToSystems();
+		}
 	}
 
-	m_componentTypes |= ComponentType::BID;
-
-	// Place this entity within the correct systems if told to
-	if ( tryToAddToSystems ) {
-		addToSystems();
-	}
-
-	// Return pointer to the inserted component
-	return static_cast< ComponentType* >( res.first->second.get() );
+	// Return pointer to the component
+	return static_cast<ComponentType*>(m_components[ComponentType::ID].get());
 }
 
 template<typename ComponentType>
 inline void Entity::removeComponent() {
 	if ( hasComponent<ComponentType>() ) {
-		auto it = m_components.find(ComponentType::ID);
-		if ( it != m_components.end() ) {
-			// Simply erasing the result of find() appears to be undefined behavior if the iterator points to end()
-			m_components.erase(it);
+		m_components[ComponentType::ID].reset();
+		
+		// Set the component type bit to 0 if it was 1
+		m_componentTypes ^= ComponentType::getBID();
 
-			// Set the component type bit to 0 if it was 1
-			m_componentTypes ^= ComponentType::BID;
-
-			// Remove this entity from systems which required the removed component
-			removeFromSystems();
-		}
+		// Remove this entity from systems which required the removed component
+		removeFromSystems();
 	}
 }
 
 template<typename ComponentType>
 inline ComponentType* Entity::getComponent() {
-	// If the following line causes compile errors, then a class 
-	// deriving from component is missing public SAIL_COMPONENT macro
-	if ( hasComponent<ComponentType>() ) {
-		auto it = m_components.find(ComponentType::ID);
-		if ( it != m_components.end() ) {
-			return static_cast< ComponentType* >( it->second.get() );
-		}
-	}
-
-	return nullptr;
+	return static_cast<ComponentType*>(m_components[ComponentType::ID].get());
 }
 
 template<typename ComponentType>
 inline bool Entity::hasComponent() const {
-	return ( m_componentTypes & ComponentType::BID ).any();
+	return ( m_componentTypes & ComponentType::getBID() ).any();
 }

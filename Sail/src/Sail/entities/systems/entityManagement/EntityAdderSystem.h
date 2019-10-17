@@ -6,5 +6,5 @@ public:
 	EntityAdderSystem();
 	~EntityAdderSystem();
 
-	void update(float dt) override;
+	void update();
 };

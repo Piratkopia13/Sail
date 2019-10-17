@@ -22,14 +22,14 @@ public:
 	~PostProcessPipeline();
 
 	template <typename T>
-	int add(float resolutionScale = 1.0f) {
+	unsigned int add(float resolutionScale = 1.0f) {
 		Application* app = Application::getInstance();
 
 		// Create a new stage instance with the given scale
 		m_pipelineStages.emplace_back(std::make_unique<T>(), resolutionScale);
 
 		// Return the index of the inserted stage
-		return m_pipelineStages.size() - 1;
+		return (unsigned int)m_pipelineStages.size() - 1U;
 	}
 	void clear();
 

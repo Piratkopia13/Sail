@@ -7,11 +7,16 @@ Texture2D<float4> sys_inTex_normals 				: register(t10);
 Texture2D<float4> sys_inTex_albedo 					: register(t11);
 Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12);
 Texture2D<float>  sys_inTex_depth 					: register(t13);
+// Decal textures
+Texture2D<float4> decal_texAlbedo 					: register(t14);
+Texture2D<float4> decal_texNormal 					: register(t15);
+Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t16);
 
 RWTexture2D<float4> lOutput : register(u0);
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
+ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0);
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
@@ -25,6 +30,8 @@ SamplerState ss : register(s0);
 
 #include "Utils.hlsl"
 #include "Shading.hlsl"
+#include "Decals.hlsl"
+
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -46,7 +53,7 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-// #define TRACE_FROM_GBUFFERS
+#define TRACE_FROM_GBUFFERS
 #ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
@@ -86,8 +93,13 @@ void rayGen() {
 	payload.recursionDepth = 1;
 	payload.closestTvalue = 0;
 	payload.color = float4(0,0,0,0);
-	shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
-	lOutput[launchIndex] = payload.color;
+	if (worldNormal.x == -1 && worldNormal.y == -1) {
+		//Bounding boxes dont need shadeing
+		lOutput[launchIndex] = float4(albedoColor, 1.0f);
+		return;
+	} else {
+		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+	}
 
 
 	//===========MetaBalls RT START===========
@@ -121,15 +133,26 @@ void rayGen() {
 	t = min(linearDepth, payload_metaball.closestTvalue) / 10.0f;
 	//t = payload_metaball.closestTvalue / 3;// / CB_SceneData.farZ;
 
-	lOutput[launchIndex] = float4(t, t, t, 1);
 
 	float metaballDepth = payload_metaball.closestTvalue - CB_SceneData.nearZ * 4;// (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4)* projectionA;
 
-	if (metaballDepth <= linearDepth)
-		lOutput[launchIndex] = payload_metaball.color;
-	else {
+	
+
+	if (metaballDepth <= linearDepth) {
+		lOutput[launchIndex] = payload_metaball.color;	
+	} else {
 		lOutput[launchIndex] = payload.color;
+
+		float4 totDecalColour = 0.0f;
+		for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+			totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+			if (!all(totDecalColour == 0.0f)) {
+				lOutput[launchIndex] = totDecalColour;
+				break;
+			}
+		}
 	}
+
 #else
 	// Fully RT
 
@@ -159,8 +182,9 @@ void rayGen() {
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
+	payload.color = float4(1.00f, 1.0f, 1.0f, 1.0f);
 	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
-	payload.closestTvalue = 10000000;
+	payload.closestTvalue = 1000;
 }
 
 float3 getAlbedo(MeshData data, float2 texCoords) {
@@ -229,6 +253,9 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	float metalness = metalnessRoughnessAO.r;
 	float roughness = metalnessRoughnessAO.g;
 	float ao = metalnessRoughnessAO.b;
+
+	//payload.color = float4(normalInWorldSpace * 0.5f + 0.5f, 1.0f);
+	//return;
 
 	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
 }

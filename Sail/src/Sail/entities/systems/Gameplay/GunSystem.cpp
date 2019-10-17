@@ -4,18 +4,10 @@
 
 #include "Sail/entities/ECS.h"
 
-#include "Sail/entities/components/ProjectileComponent.h"
-#include "Sail/entities/components/LifeTimeComponent.h"
-#include "Sail/entities/components/BoundingBoxComponent.h"
-#include "Sail/entities/components/ModelComponent.h"
-#include "Sail/entities/components/PhysicsComponent.h"
-#include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/GunComponent.h"
-
-#include "Sail/entities/components/MetaballComponent.h"
 #include "Sail/utils/GameDataTracker.h"
-#include "Sail/entities/components/CollidableComponent.h"
-
+#include "../Sail/src/Network/NWrapperSingleton.h"
+#include "Sail/netcode/NetworkedStructs.h"
 #include <random>
 
 GunSystem::GunSystem() : BaseComponentSystem() {
@@ -43,33 +35,16 @@ void GunSystem::update(float dt) {
 				if (gun->projectileSpawnTimer <= 0.f) {
 					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
-					for (int i = 0; i <= 1; i++) {
-						auto e = ECS::Instance()->createEntity("projectile");
-						glm::vec3 randPos;
-						float maxrand = 0.2f;
-
-						//Will remove rand later.
-						randPos.r = ((float)rand() / RAND_MAX) * maxrand;
-						randPos.g = ((float)rand() / RAND_MAX) * maxrand;
-						randPos.b = ((float)rand() / RAND_MAX) * maxrand;
-
-						e->addComponent<MetaballComponent>();
-						e->addComponent<BoundingBoxComponent>();
-						e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.1, 0.1, 0.1));
-						e->addComponent<LifeTimeComponent>(4.0f);
-						e->addComponent<ProjectileComponent>();
-						e->addComponent<TransformComponent>((gun->position + randPos) - gun->direction * (0.15f * i));
-
-						e->addComponent<PhysicsComponent>();
-						PhysicsComponent* physics = e->getComponent<PhysicsComponent>();
-						physics->velocity = gun->direction * gun->projectileSpeed;
-						physics->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
-						physics->drag = 2.0f;
-						physics->bounciness = 0.1f;
-						physics->padding = 0.16f;
-
-						m_gameDataTracker->logWeaponFired();
-					}
+					EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed, true);
+					
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::SPAWN_PROJECTILE,
+						SAIL_NEW Netcode::MessageDataProjectile{
+							gun->position,
+							gun->direction * gun->projectileSpeed
+						}
+					);
+					m_gameDataTracker->logWeaponFired();
 				}
 			}
 

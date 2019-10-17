@@ -18,6 +18,7 @@ Game::Game(HINSTANCE hInstance)
 	// Set starting state
 	m_stateStack.pushState(States::MainMenu);
 
+
 }
 
 Game::~Game() {

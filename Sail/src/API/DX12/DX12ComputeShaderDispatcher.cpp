@@ -49,16 +49,19 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		} else {
 			dxShaderPipeline->setTexture2D(tex.first, (Texture*)texture, dxCmdList);
 		}
-		// Skip the next 2 heap slots to match root signature layout
+		// Skip the next 9 heap slots to match root signature layout
 		// TODO: read this from the root signature, currently it will crash if the root signature changes num srv descriptors
-		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
-		m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle();
+		m_context->getComputeGPUDescriptorHeap()->getAndStepIndex(9);
 	}
 	// Bind output resources
-	/*dxShaderPipeline->bind_new(dxCmdList, 3); // TODO: why 3?*/
 	dxShaderPipeline->bind_new(dxCmdList, meshIndex);
 
+	assert(input.threadGroupCountX <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many x threads!!");
+	assert(input.threadGroupCountY <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many y threads!!");
+	assert(input.threadGroupCountZ <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many z threads!!");
+
 	dxShaderPipeline->dispatch(input.threadGroupCountX, input.threadGroupCountY, input.threadGroupCountZ, dxCmdList);
+
 
 	return *computeShader.getComputeOutput();
 }

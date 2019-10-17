@@ -4,6 +4,7 @@
 #include "DX12InputLayout.h"
 #include "../DX12API.h"
 #include "DX12ConstantBuffer.h"
+#include "DX12StructuredBuffer.h"
 #include "../resources/DX12Texture.h"
 #include "../resources/DX12RenderableTexture.h"
 
@@ -42,6 +43,10 @@ void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 	for (auto& it : parsedData.cBuffers) {
 		auto* dxCBuffer = static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get());
 		dxCBuffer->bind_new(cmdList, meshIndex, csBlob != nullptr);
+	}
+	for (auto& it : parsedData.structuredBuffers) {
+		auto* dxSBuffer = static_cast<ShaderComponent::DX12StructuredBuffer*>(it.sBuffer.get());
+		dxSBuffer->bind_new(cmdList, meshIndex);
 	}
 	for (auto& it : parsedData.samplers) {
 		it.sampler->bind();
@@ -117,6 +122,7 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 #if defined( DEBUG ) || defined( _DEBUG )
 	flags |= D3DCOMPILE_DEBUG;
 	flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+	flags |= D3DCOMPILE_ALL_RESOURCES_BOUND;
 #endif
 	HRESULT hr;
 	switch (shaderType) {
@@ -148,8 +154,9 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 			MessageBoxA(0, ss.str().c_str(), "", 0);
 			errorBlob->Release();
 		}
-		if (pShaders)
+		if (pShaders) {
 			pShaders->Release();
+		}
 		ThrowIfFailed(hr);
 	}
 
@@ -208,7 +215,7 @@ unsigned int DX12ShaderPipeline::setMaterial(PBRMaterial* material, void* cmdLis
 	unsigned int indexStart = m_context->getMainGPUDescriptorHeap()->getAndStepIndex(nTextures);
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_context->getMainGPUDescriptorHeap()->getCPUDescriptorHandleForIndex(indexStart);
 
-	for (size_t i = 0; i < nTextures; i++) {
+	for (int i = 0; i < nTextures; i++) {
 		if (!textures[i]->hasBeenInitialized()) {
 			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList), i);
 		}

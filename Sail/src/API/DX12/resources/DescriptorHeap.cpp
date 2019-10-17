@@ -44,6 +44,10 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurentGPUDescriptorHandle() const
 	return getGPUDescriptorHandleForIndex(m_index);
 }
 
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurentCPUDescriptorHandle() const {
+	return getCPUDescriptorHandleForIndex(m_index);
+}
+
 unsigned int DescriptorHeap::getDescriptorIncrementSize() const {
 	return m_incrementSize;
 }

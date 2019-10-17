@@ -1,11 +1,10 @@
 #include "pch.h"
 #include "AiSystem.h"
 #include "../../../components/AiComponent.h"
-#include "../../../components/PhysicsComponent.h"
 #include "../../../components/TransformComponent.h"
-#include "../../../components/CandleComponent.h"
-#include "../../../components/GunComponent.h"
 #include "../../../components/FSMComponent.h"
+#include "../../../components/MovementComponent.h"
+#include "../../../components/SpeedLimitComponent.h"
 #include "Sail/ai/pathfinding/NodeSystem.h"
 
 #include "../../../ECS.h"
@@ -20,11 +19,10 @@
 
 AiSystem::AiSystem() {
 	registerComponent<TransformComponent>(true, true, true);
-	registerComponent<PhysicsComponent>(true, true, true);
+	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<SpeedLimitComponent>(true, true, true);
 	registerComponent<AiComponent>(true, true, true);
 	registerComponent<FSMComponent>(true, true, true);
-	registerComponent<GunComponent>(true, true, true);
-	registerComponent<CandleComponent>(false, true, false);
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
 	m_timeBetweenPathUpdate = 0.5f;
@@ -47,16 +45,16 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	m_octree = octree;
 
 	std::vector<unsigned int> conns;
-	int x_max = 15;
-	int z_max = 15;
+	int x_max = 5*7;
+	int z_max = 5*7;
 	int x_cur = 0;
 	int z_cur = 0;
 	int size = x_max * z_max;
 
 	int padding = 2;
-	float offsetX = x_max * padding * 0.5f;
-	float offsetZ = z_max * padding * 0.5f;
-	float offsetY = 0;
+	float offsetX = -5.f;
+	float offsetZ = -5.f;
+	float offsetY = 1.f;
 	bool* walkable = SAIL_NEW bool[size];
 
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
@@ -70,7 +68,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		conns.clear();
 		x_cur = i % x_max;
 		z_cur = static_cast<int>(floor(i / x_max));
-		glm::vec3 pos(x_cur * padding - offsetX, offsetY, z_cur * padding - offsetZ);
+		glm::vec3 pos(x_cur * padding + offsetX, offsetY, z_cur * padding + offsetZ);
 
 		bool blocked = false;
 		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(pos);
@@ -106,26 +104,11 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		connections.push_back(conns);
 	}
 	//Delete "DeleteMeFirstFrameDummy"
-	ECS::Instance()->destroyEntity(e);
+	e->queueDestruction();
 
 	m_nodeSystem->setNodes(nodes, connections);
 	Memory::SafeDeleteArr(walkable);
 }
-
-
-bool AiSystem::addEntity(Entity* entity) {
-	bool returnValue = BaseComponentSystem::addEntity(entity);
-
-	AiEntity aiEntity;
-	aiEntity.transComp = entity->getComponent<TransformComponent>();
-	aiEntity.physComp = entity->getComponent<PhysicsComponent>();
-	aiEntity.aiComp = entity->getComponent<AiComponent>();
-
-	m_aiEntities.try_emplace(entity->getID(), aiEntity);
-
-	return returnValue;
-}
-
 
 std::vector<Entity*>& AiSystem::getEntities() {
 	return entities;
@@ -147,107 +130,114 @@ NodeSystem* AiSystem::getNodeSystem() {
 }
 
 
-void AiSystem::aiUpdateFunc(Entity* entity, const float dt) {
-	entity->getComponent<FSMComponent>()->update(dt, entity);
-	auto transComp = entity->getComponent<TransformComponent>();
-	auto aiComp = entity->getComponent<AiComponent>();
+void AiSystem::aiUpdateFunc(Entity* e, const float dt) {
+	e->getComponent<FSMComponent>()->update(dt, e);
+	
+	AiComponent* ai = e->getComponent<AiComponent>();
 
-	if ( aiComp->timeTakenOnPath > m_timeBetweenPathUpdate && aiComp->doWalk ) {
-		aiComp->updatePath = true;
+	if ( ai->timeTakenOnPath > m_timeBetweenPathUpdate && ai->doWalk ) {
+		ai->updatePath = true;
 	}
 
-	updatePath(aiComp, transComp);
-	updatePhysics(aiComp, transComp, entity->getComponent<PhysicsComponent>(), dt);
+	updatePath(e);
+	updatePhysics(e, dt);
 }
 
-glm::vec3& AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* transComp) {
+glm::vec3 AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* transComp) {
 	glm::vec3 desiredDir = aiComp->currPath[aiComp->currNodeIndex].position - transComp->getTranslation();
 	if ( desiredDir == glm::vec3(0.f) ) {
 		desiredDir = glm::vec3(1.0f, 0.f, 0.f);
 	}
 	desiredDir = glm::normalize(desiredDir);
-	return desiredDir;
+	return desiredDir; // TODO: Check this - should probably not return a reference??
 }
 
 
-void AiSystem::updatePath(AiComponent* aiComp, TransformComponent* transComp) {
-	if ( aiComp->updatePath ) {
+void AiSystem::updatePath(Entity* e) {
+	AiComponent* ai = e->getComponent<AiComponent>();
+	TransformComponent* transform = e->getComponent<TransformComponent>();
+	if (ai->updatePath ) {
 
-		aiComp->timeTakenOnPath = 0.f;
-		aiComp->reachedPathingTarget = false;
+		ai->timeTakenOnPath = 0.f;
+		ai->reachedPathingTarget = false;
 
-		// aiComp->posTarget is updated in each FSM state
-		aiComp->lastTargetPos = aiComp->posTarget;
+		// ai->posTarget is updated in each FSM state
+		ai->lastTargetPos = ai->posTarget;
 
-		auto tempPath = m_nodeSystem->getPath(transComp->getTranslation(), aiComp->posTarget);
+		auto tempPath = m_nodeSystem->getPath(transform->getTranslation(), ai->posTarget);
 
-		aiComp->currNodeIndex = 0;
+		ai->currNodeIndex = 0;
 
 		// Fix problem of always going toward closest node
-		if ( tempPath.size() > 1 && glm::distance(tempPath[1].position, transComp->getTranslation()) < glm::distance(tempPath[1].position, tempPath[0].position) ) {
-			aiComp->currNodeIndex += 1;
+		if ( tempPath.size() > 1 && glm::distance(tempPath[1].position, transform->getTranslation()) < glm::distance(tempPath[1].position, tempPath[0].position) ) {
+			ai->currNodeIndex += 1;
 		}
 
-		aiComp->currPath = tempPath;
+		ai->currPath = tempPath;
 
-		aiComp->updatePath = false;
+		ai->updatePath = false;
 	}
 }
 
-void AiSystem::updatePhysics(AiComponent* aiComp, TransformComponent* transComp, PhysicsComponent* physComp, float dt) {
+void AiSystem::updatePhysics(Entity* e, float dt) {
+	AiComponent* ai = e->getComponent<AiComponent>();
+	MovementComponent* movement = e->getComponent<MovementComponent>();
+	TransformComponent* transform = e->getComponent<TransformComponent>();
+	SpeedLimitComponent* speedLimit = e->getComponent<SpeedLimitComponent>();
+
 	// Check if there is a path currently active and if the ai should be walking
-	if ( aiComp->currPath.size() > 0 && aiComp->doWalk ) {
+	if ( ai->currPath.size() > 0 && ai->doWalk ) {
 		// Check if the ai hasn't reached the current pathing target yet
-		if ( !aiComp->reachedPathingTarget ) {
-			aiComp->timeTakenOnPath += dt;
+		if ( !ai->reachedPathingTarget ) {
+			ai->timeTakenOnPath += dt;
 
 			// Check if the distance between current node target and ai is low enough to begin targeting next node
-			if ( glm::distance(transComp->getTranslation(), aiComp->currPath[aiComp->currNodeIndex].position) < aiComp->targetReachedThreshold ) {
-				aiComp->lastVisitedNode = aiComp->currPath[aiComp->currNodeIndex];
-				aiComp->reachedPathingTarget = true;
+			if ( glm::distance(transform->getTranslation(), ai->currPath[ai->currNodeIndex].position) < ai->targetReachedThreshold ) {
+				ai->lastVisitedNode = ai->currPath[ai->currNodeIndex];
+				ai->reachedPathingTarget = true;
 			// Else continue walking
 			} else {
-				float acceleration = 70.0f - ( glm::length(physComp->velocity) / physComp->maxSpeed ) * 20.0f;
-				physComp->accelerationToAdd = getDesiredDir(aiComp, transComp) * acceleration;
+				float acceleration = 70.0f - ( glm::length(movement->velocity) / speedLimit->maxSpeed ) * 20.0f;
+				movement->accelerationToAdd = getDesiredDir(ai, transform) * acceleration;
 			}
 		// Else increment the current node path
-		} else if ( aiComp->currPath.size() > 0 ) {
+		} else if (ai->currPath.size() > 0 ) {
 			// Update next node target
-			if ( aiComp->currNodeIndex < aiComp->currPath.size() - 1 ) {
-				aiComp->currNodeIndex++;
+			if (ai->currNodeIndex < ai->currPath.size() - 1 ) {
+				ai->currNodeIndex++;
 			}
-			aiComp->reachedPathingTarget = false;
+			ai->reachedPathingTarget = false;
 		}
 
-		float newYaw = getAiYaw(physComp, transComp->getRotations().y, dt);
-		transComp->setRotations(0.f, newYaw, 0.f);
+		float newYaw = getAiYaw(movement, transform->getRotations().y, dt);
+		transform->setRotations(0.f, newYaw, 0.f);
 
 	// If the ai shouldn't walk, just stop walking
 	} else {
 		// Set velocity to 0
-		physComp->velocity = glm::vec3(0.f, physComp->velocity.y, 0.f);
-		aiComp->timeTakenOnPath = 3.f;
+		movement->velocity = glm::vec3(0.f, movement->velocity.y, 0.f);
+		ai->timeTakenOnPath = 3.f;
 	}
 }
 
-float AiSystem::getAiYaw(PhysicsComponent* physComp, float currYaw, float dt) {
+float AiSystem::getAiYaw(MovementComponent* moveComp, float currYaw, float dt) {
 	float newYaw = currYaw;
-	if ( glm::length2(physComp->velocity) > 0.f ) {
+	if ( glm::length2(moveComp->velocity) > 0.f ) {
 		float desiredYaw = 0.f;
-		float turnRate = PI_2 / 2.f; // 2 pi
-		auto normalizedVel = glm::normalize(physComp->velocity);
-		float physCompX = normalizedVel.x;
-		float physCompZ = normalizedVel.z;
-		physCompZ = physCompZ != 0 ? physCompZ : 0.1f;
-		if ( physComp->velocity.z < 0.f ) {
-			desiredYaw = glm::atan(physCompX / physCompZ) + 1.5707f;
+		float turnRate = glm::two_pi<float>() / 2.f; // 2 pi
+		auto normalizedVel = glm::normalize(moveComp->velocity);
+		float moveCompX = normalizedVel.x;
+		float moveCompZ = normalizedVel.z;
+		moveCompZ = moveCompZ != 0 ? moveCompZ : 0.1f;
+		if (moveComp->velocity.z < 0.f ) {
+			desiredYaw = glm::atan(moveCompX / moveCompZ) + 1.5707f;
 		} else {
-			desiredYaw = glm::atan(physCompX / physCompZ) - 1.5707f;
+			desiredYaw = glm::atan(moveCompX / moveCompZ) - 1.5707f;
 		}
-		desiredYaw = Utils::wrapValue(desiredYaw, 0.f, PI_2);
+		desiredYaw = Utils::wrapValue(desiredYaw, 0.f, glm::two_pi<float>());
 		float diff = desiredYaw - currYaw;
 
-		if ( std::abs(diff) > PI ) {
+		if ( std::abs(diff) > glm::pi<float>() ) {
 			diff = currYaw - desiredYaw;
 		}
 
@@ -259,9 +249,9 @@ float AiSystem::getAiYaw(PhysicsComponent* physComp, float currYaw, float dt) {
 		}
 
 		if ( std::abs(diff) > std::abs(toTurn) ) {
-			newYaw = Utils::wrapValue(currYaw + toTurn, 0.f, PI_2);
+			newYaw = Utils::wrapValue(currYaw + toTurn, 0.f, glm::two_pi<float>());
 		} else {
-			newYaw = Utils::wrapValue(currYaw + diff, 0.f, PI_2);
+			newYaw = Utils::wrapValue(currYaw + diff, 0.f, glm::two_pi<float>());
 		}
 
 	}

@@ -1,10 +1,6 @@
 #pragma once
 #include <glm/vec3.hpp>
 
-
-#define PI 3.14159265359
-#define PI_2 6.28318530718
-
 // Structs for storing transform data from two consecutive updates
 // so that they can be interpolated between.
 // Should be optimized more in the future.
@@ -82,6 +78,7 @@ public:
 	const glm::vec3& getScale() const;
 
 	const glm::vec3 getInterpolatedTranslation(float alpha) const;
+	const glm::quat getInterpolatedRotation(float alpha) const;
 
 	// Matrix used by collision etc.
 	glm::mat4 getMatrix();
@@ -120,6 +117,9 @@ private:
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
 	void removeChild(Transform* transform);
+	void removeChildren();
+	void clampRotation();
+	void clampRotation(float& axis);
 
 	// Modifies the elements of matrix directly instead of multiplying with matrices
 	void createTransformMatrix(glm::mat4& destination, const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale) const;

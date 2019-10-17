@@ -42,9 +42,13 @@ const glm::mat4* Animation::Frame::getTransformList() {
 
 Animation::Animation() :
 	m_maxFrame(0) ,
-	m_maxFrameTime(0)
+	m_maxFrameTime(0),
+	m_name("")
 {
 
+}
+Animation::Animation(const std::string& name) : Animation() {
+	m_name = name;
 }
 Animation::~Animation() {
 	for (unsigned int frame = 0; frame <= m_maxFrame; frame++) {
@@ -89,11 +93,8 @@ const float Animation::getTimeAtFrame(const unsigned int frame) {
 	}
 	return 0.0f;
 }
-const unsigned int Animation::getFrameAtTime(const float time, const FindType type) {
-	// TODO: fmod
-	if (time >= m_maxFrameTime) {
-		return 0;
-	}
+const unsigned int Animation::getFrameAtTime(float time, const FindType type) {
+	time -= (int(time / getMaxAnimationTime()) * getMaxAnimationTime());
 	for (unsigned int frame = 0; frame < m_maxFrame; frame++) {
 		float lastFrameTime = 0;
 		if (exists(frame)) {
@@ -106,7 +107,7 @@ const unsigned int Animation::getFrameAtTime(const float time, const FindType ty
 					return frame - 1;
 				}
 				else if (type == INFRONT) {
-					return frame;
+					return frame % m_maxFrame;
 				}
 				else {
 					float behind = time - m_frameTimes[frame - 1];
@@ -116,7 +117,7 @@ const unsigned int Animation::getFrameAtTime(const float time, const FindType ty
 						return frame - 1;
 					}
 					else {
-						return frame;
+						return frame % m_maxFrame;
 					}
 				}
 			}	
@@ -135,6 +136,13 @@ void Animation::addFrame(const unsigned int frame, const float time, Animation::
 
 	m_frames[frame] = data;
 	m_frameTimes[frame] = time;
+}
+
+void Animation::setName(const std::string& name) {
+	m_name = name;
+}
+const std::string Animation::getName() {
+	return m_name;
 }
 
 inline const bool Animation::exists(const unsigned int frame) {
@@ -267,7 +275,7 @@ Animation* AnimationStack::getAnimation(const unsigned int index) {
 }
 
 const unsigned int AnimationStack::getAnimationCount() {
-	return m_stack.size();
+	return (unsigned int)m_stack.size();
 }
 
 const glm::mat4* AnimationStack::getTransform(const std::string& name, const float time) {

@@ -8,6 +8,6 @@ EntityAdderSystem::EntityAdderSystem() {
 EntityAdderSystem::~EntityAdderSystem() {
 }
 
-void EntityAdderSystem::update(float dt) {
+void EntityAdderSystem::update() {
 	ECS::Instance()->addAllQueuedEntities();
 }

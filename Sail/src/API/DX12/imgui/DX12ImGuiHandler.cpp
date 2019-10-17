@@ -53,8 +53,9 @@ void DX12ImGuiHandler::init() {
 	//io.ConfigDockingTransparentPayload = true;
 
 	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
+	applySailStyle();
 
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -65,7 +66,7 @@ void DX12ImGuiHandler::init() {
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplWin32_Init((void*)*window->getHwnd());
-	ImGui_ImplDX12_Init(m_context->getDevice(), m_context->getNumSwapBuffers(),
+	ImGui_ImplDX12_Init(m_context->getDevice(), m_context->getNumGPUBuffers(),
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		m_descHeap->getCPUDescriptorHandleForIndex(0),
 		m_descHeap->getGPUDescriptorHandleForIndex(0));
@@ -80,7 +81,7 @@ void DX12ImGuiHandler::begin() {
 
 void DX12ImGuiHandler::end() {
 
-	auto& allocator = m_command.allocators[m_context->getFrameIndex()];
+	auto& allocator = m_command.allocators[m_context->getSwapIndex()];
 	auto& cmdList = m_command.list;
 
 	// Reset allocators and lists for this frame

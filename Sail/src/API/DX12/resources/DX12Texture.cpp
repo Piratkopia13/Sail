@@ -76,8 +76,7 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList, int meshIndex
 	textureData.SlicePitch = textureData.RowPitch * m_textureData.getHeight();
 	// Copy the upload buffer contents to the default heap using a helper method from d3dx12.h
 	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffers[0].Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
-	//DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffer.Get(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	//transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	//transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // Uncomment if generateMips is disabled
 
 	DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
 
@@ -176,8 +175,8 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		
 		// Dispatch compute shader to generate mip levels
 		GenerateMipsComputeShader::Input input;
-		input.threadGroupCountX = glm::ceil(dstWidth * settings->threadGroupXScale);
-		input.threadGroupCountY = glm::ceil(dstHeight * settings->threadGroupYScale);
+		input.threadGroupCountX = (unsigned int)glm::ceil(dstWidth * settings->threadGroupXScale);
+		input.threadGroupCountY = (unsigned int)glm::ceil(dstHeight * settings->threadGroupYScale);
 		csDispatcher.dispatch(mipsShader, input, meshIndex, cmdList);
 
 		// Transition all subresources to the state that the texture think it is in

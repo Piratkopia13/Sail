@@ -2,33 +2,13 @@
 #include "imgui.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
-#include "Sail/entities/systems/candles/CandleSystem.h"
-#include "Sail/entities/systems/entityManagement/EntityAdderSystem.h"
-#include "Sail/entities/systems/entityManagement/EntityRemovalSystem.h"
-#include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
-#include "Sail/entities/systems/light/LightSystem.h"
-#include "Sail/entities/systems/Gameplay/ai/AiSystem.h"
-#include "Sail/entities/systems/Gameplay/GunSystem.h"
-#include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
-#include "Sail/entities/systems/Graphics/AnimationSystem.h"
-#include "Sail/entities/systems/LevelGeneratorSystem/LevelGeneratorSystem.h"
-#include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "Sail/entities/systems/physics/PhysicSystem.h"
-#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
-#include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
-#include "Sail/entities/systems/input/GameInputSystem.h"
-#include "Sail/entities/systems/network/NetworkReceiverSystem.h"
-#include "Sail/entities/systems/network/NetworkSenderSystem.h"
-#include "Sail/entities/systems/Audio/AudioSystem.h"
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/Systems.h"
 #include "Sail/ai/states/AttackingState.h"
-#include "Sail/ai/states/FleeingState.h"
-#include "Sail/ai/states/SearchingState.h"
+#include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "Network/NWrapperSingleton.h"
-
 #include <sstream>
 #include <iomanip>
 
@@ -36,147 +16,65 @@
 //#define DISABLE_RT
 
 GameState::GameState(StateStack& stack)
-: State(stack)
-, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
-, m_cc(true)
-, m_profiler(true)
-, m_disableLightComponents(false)
-, m_showcaseProcGen(false)
-{
-#ifdef _DEBUG
-#pragma region TESTCASES
-	m_cc.addCommand(std::string("Save"), [&]() { return std::string("saved"); });
-	m_cc.addCommand(std::string("Test <int>"), [&](int in) { return std::string("test<int>"); });
-	m_cc.addCommand(std::string("Test <float>"), [&](float in) { return std::string("test<float>"); });
-	m_cc.addCommand(std::string("Test <string>"), [&](std::string in) { return std::string("test<string>"); });
-	m_cc.addCommand(std::string("Test <int> <int> <int>"/*...*/), [&](std::vector<int> in) {return std::string("test<std::vector<int>"); });
-	m_cc.addCommand(std::string("Test <float> <float> <float>"/*...*/), [&](std::vector<float> in) {return std::string("test<std::vector<float>"); });
-#pragma endregion
-
-
-	m_cc.addCommand(std::string("AddCube"), [&]() {
-		return createCube(m_cam.getPosition());
-		});
-	m_cc.addCommand(std::string("AddCube <int> <int> <int>"), [&](std::vector<int> in) {
-		if (in.size() == 3) {
-			glm::vec3 pos(in[0], in[1], in[2]);
-			return createCube(pos);
-		} else {
-			return std::string("Error: wrong number of inputs. Console Broken");
-		}
-		return std::string("wat");
-		});
-	m_cc.addCommand(std::string("AddCube <float> <float> <float>"), [&](std::vector<float> in) {
-		if (in.size() == 3) {
-			glm::vec3 pos(in[0], in[1], in[2]);
-			return createCube(pos);
-		} else {
-			return std::string("Error: wrong number of inputs. Console Broken");
-		}
-		return std::string("wat");
-		});
-#endif
+	: State(stack)
+	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
+	, m_profiler(true)
+	, m_showcaseProcGen(false) {
+	
+	initConsole();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
+	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
 	//----Octree creation----
 	//Wireframe shader
-	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<WireframeShader>();
+	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
 
 	//Wireframe bounding box model
 	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	//boundingBoxModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
+	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
+	boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);
 
 	//Create octree
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
 	//-----------------------
 
+	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
+
 	// Setting light index
 	m_currLightIndex = 0;
 
-	/*
-		Create a PhysicSystem
-		If the game developer does not want to add the systems like this,
-		this call could be moved inside the default constructor of ECS,
-		assuming each system is included in ECS.cpp instead of here
-	*/
-	m_componentSystems.physicSystem = ECS::Instance()->createSystem<PhysicSystem>();
-	m_componentSystems.physicSystem->provideOctree(m_octree);
-
-	// Create system for animations
-	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
-
-	// Create system for updating bounding box
-	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
-
-	// Create system for handling octree
-	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
-	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
-
-	// Create lifetime system
-	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
-
-	// Create entity adder system
-	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
-
-	// Create entity removal system
-	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
-  
-	// Create ai system
-	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
-
-	// Create system for the lights
-	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
-	
-	// Create system for the candles
-	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-
-	// Create system which prepares each new update
-	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
-
-	// Create system which handles creation of projectiles
-	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
-	
-	// Create system which checks projectile collisions
-	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
-
-	// Create system for handling and updating sounds
-	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
-	//create system for level generation
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
-
-	// Create system for rendering
-	m_componentSystems.renderSystem = ECS::Instance()->createSystem<RenderSystem>();
-
-	// Create system for player input
-	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
-	m_componentSystems.gameInputSystem->initialize(&m_cam);
-
-
 	// Get the player id's and names from the lobby
-	const unsigned char playerID = m_app->getStateStorage().getLobbyToGameData()->myPlayer.id;
+	const unsigned char playerID = NWrapperSingleton::getInstance().getMyPlayerID();
 
-	// Create network send and receive systems
-	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
-	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
-	m_componentSystems.networkReceiverSystem->initWithPlayerID(playerID);
+#ifdef _PERFORMANCE_TEST
+	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
+	m_cam.setDirection(glm::normalize(glm::vec3(-0.715708f, 0.0819399f, 0.693576f)));
+#endif
+
+	// Initialize the component systems
+	initSystems(playerID);
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/arenaBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/barrierBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/containerBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/arenaBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/barrierBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/containerBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
+	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
-
-
-
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -185,13 +83,14 @@ GameState::GameState(StateStack& stack)
 	m_lights.setDirectionalLight(DirectionalLight(color, direction));
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 
+	m_lightDebugWindow.setLightSetup(&m_lights);
+
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
 #ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
-	(*Application::getInstance()->getRenderWrapper()).changeRenderer(1);
-	m_componentSystems.renderSystem->refreshRenderer();
+	m_app->getRenderWrapper()->changeRenderer(1);
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -201,56 +100,56 @@ GameState::GameState(StateStack& stack)
 	// Create/load models
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-	loadAnimations();
+
+	m_componentSystems.animationInitSystem->loadAnimations();
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-	Model* characterModel = &m_app->getResourceManager().getModel("character1.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-	characterModel->getMesh(0)->getMaterial()->setRoughnessScale(0.217f);
-	characterModel->getMesh(0)->getMaterial()->setAOScale(0.0f);
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	Model* characterModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
+	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
-	Model* aiModel = &m_app->getResourceManager().getModel("cylinderRadii0_7.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/character1texture.tga");
+	Model* aiModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
+	aiModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+	aiModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
-	// Player creation
-
-	setUpPlayer(boundingBoxModel, cubeModel, lightModel, playerID);
-	initAnimations();
 	// Level Creation
-	createTestLevel(shader, boundingBoxModel);
 
 	createLevel(shader, boundingBoxModel);
 
+	// Player creation
+
+	int id = static_cast<int>(playerID);
+	glm::vec3 spawnLocation = glm::vec3(0.f);
+	for (int i = -1; i < id; i++) {
+		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+	}
+
+	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	m_componentSystems.networkReceiverSystem->initPlayer(m_player);
+
+	m_componentSystems.animationInitSystem->initAnimations();
+
 	// Inform CandleSystem of the player
-	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID());
+	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
+
 	// Bots creation
 	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
 
+#ifdef _PERFORMANCE_TEST
+	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
 
-#ifdef _DEBUG
-		// Candle1 holds all lights you can place in debug...
-		m_componentSystems.lightSystem->setDebugLightListEntity("Map_Candle1");
+	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(120.83f, 1.7028f, 114.2561f));
 #endif
 
 
-
-	// Allocating memory for profiler
-	m_virtRAMHistory = SAIL_NEW float[100];
-	m_physRAMHistory = SAIL_NEW float[100];
-	m_vramUsageHistory = SAIL_NEW float[100];
-	m_cpuHistory = SAIL_NEW float[100];
-	m_frameTimesHistory = SAIL_NEW float[100];
-	
-	for (int i = 0; i < 100; i++) {
-		m_virtRAMHistory[i] = 0.f;
-		m_physRAMHistory[i] = 0.f;
-		m_vramUsageHistory[i] = 0.f;
-		m_cpuHistory[i] = 0.f;
-		m_frameTimesHistory[i] = 0.f;
-	}
+#ifdef _DEBUG
+	// Candle1 holds all lights you can place in debug...
+	m_componentSystems.lightListSystem->setDebugLightListEntity("Map_Candle1");
+#endif
 
 	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 #ifdef _DEBUG_NODESYSTEM
@@ -258,14 +157,17 @@ GameState::GameState(StateStack& stack)
 #else
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
+
+	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();
+	m_gameMusic->addComponent<AudioComponent>();
+	m_gameMusic->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
+	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
+
+	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
 
 GameState::~GameState() {
-	delete m_virtRAMHistory;
-	delete m_physRAMHistory;
-	delete m_vramUsageHistory;
-	delete m_cpuHistory;
-	delete m_frameTimesHistory;
+	shutDownGameState();
 	delete m_octree;
 }
 
@@ -276,15 +178,15 @@ bool GameState::processInput(float dt) {
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
-		m_componentSystems.lightSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
+		m_componentSystems.lightListSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
 #endif
 
 	// Enable bright light and move camera to above procedural generated level
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
-		m_disableLightComponents = !m_disableLightComponents;
-		m_showcaseProcGen = m_disableLightComponents;
+		m_lightDebugWindow.setManualOverride(!m_lightDebugWindow.isManualOverrideOn());
+		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
 			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
 			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
@@ -294,8 +196,8 @@ bool GameState::processInput(float dt) {
 	}
 
 	// Show boudning boxes
-	if (Input::WasKeyJustPressed(KeyBinds::showBoundingBoxes)) {
-		m_componentSystems.renderSystem->toggleHitboxes();
+	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
+		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
@@ -307,14 +209,30 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::spray)) {
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+		if (tempInfo.closestHitIndex != -1) {
+			// size (the size you want) = 0.3
+			// halfSize = (1 / 0.3) * 0.5 = 1.667
+			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));
+		}
+	}
+
+	//Test frustum culling
+	if (Input::IsKeyPressed(KeyBinds::testFrustumCulling)) {
+		int nrOfDraws = m_octree->frustumCulledDraw(m_cam);
+		Logger::Log("Number of draws " + std::to_string(nrOfDraws));
+	}
+
 	// TODO: Move this to a system
 	// Toggle ai following the player
 	if (Input::WasKeyJustPressed(KeyBinds::toggleAIFollowing)) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
-		for ( int i = 0; i < entities.size(); i++ ) {
+		for (int i = 0; i < entities.size(); i++) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
-			if ( aiComp->entityTarget == nullptr ) {
-				
+			if (aiComp->entityTarget == nullptr) {
+
 				// Find the candle child entity of player
 				Entity* candle = nullptr;
 				std::vector<Entity::SPtr> children = m_player->getChildEntities();
@@ -336,15 +254,10 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-
-	//Toggle console and profiler
-	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole)) {
-		m_cc.toggle();
-		m_profiler.toggle();
-	}
-
+	
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
+		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 	}
 
@@ -354,8 +267,7 @@ bool GameState::processInput(float dt) {
 			Input::HideCursor(true);
 			m_paused = false;
 			requestStackPop();
-		}
-		else if(!m_paused){
+		} else if (!m_paused && m_isSingleplayer) {
 			Input::HideCursor(false);
 			m_paused = true;
 			requestStackPush(States::Pause);
@@ -373,8 +285,7 @@ bool GameState::processInput(float dt) {
 			csc->spheres[1].radius = csc->spheres[0].radius;
 			csc->spheres[0].position = m_player->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 1, 0) * (-0.9f + csc->spheres[0].radius);
 			csc->spheres[1].position = m_player->getComponent<TransformComponent>()->getTranslation() + glm::vec3(0, 1, 0) * (0.9f - csc->spheres[1].radius);
-		}
-		else {
+		} else {
 			m_player->removeComponent<CollisionSpheresComponent>();
 		}
 	}
@@ -382,18 +293,155 @@ bool GameState::processInput(float dt) {
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
-		m_componentSystems.lightSystem->removePointLightFromDebugEntity();
+		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
 #endif
 
 	return true;
 }
 
+void GameState::initSystems(const unsigned char playerID) {
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+	
+	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
+	m_componentSystems.collisionSystem->provideOctree(m_octree);
+
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+
+	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
+
+	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
+	m_componentSystems.animationInitSystem = ECS::Instance()->createSystem<AnimationInitSystem>();
+
+	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
+
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
+	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
+
+	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
+
+	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
+
+	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
+
+	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+
+	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
+	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
+
+	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
+	m_componentSystems.candleSystem->init(this);
+
+	// Create system which prepares each new update
+	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
+
+	// Create system which handles creation of projectiles
+	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
+
+	// Create system which checks projectile collisions
+	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
+
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+
+	// Create systems for rendering
+	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
+
+	// Create system for player input
+	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
+	m_componentSystems.gameInputSystem->initialize(&m_cam);
+
+	// Create network send and receive systems
+	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
+
+	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
+	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
+
+	// Create system for handling and updating sounds
+	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+}
+
+void GameState::initConsole() {
+	auto& console = Application::getInstance()->getConsole();
+	console.addCommand("state <string>", [&](const std::string& param) {
+		if (param == "menu") {
+			requestStackPop();
+			requestStackPush(States::MainMenu);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to menu requested";
+		}
+		else if (param == "pbr") {
+			requestStackPop();
+			requestStackPush(States::PBRTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to pbr requested";
+		}
+		else if (param == "perftest") {
+			requestStackPop();
+			requestStackPush(States::PerformanceTest);
+			m_poppedThisFrame = true;
+			console.removeAllCommandsWithIdentifier("GameState");
+			return "State change to PerformanceTest requested";
+		}
+		else {
+			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+		}
+
+	}, "GameState");
+	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
+	console.addCommand("EndGame", [&]() {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::MATCH_ENDED,
+			nullptr
+		);
+		this->requestStackPop();
+		this->requestStackPush(States::EndGame);
+		console.removeAllCommandsWithIdentifier("GameState");
+
+		return std::string("Match ended.");
+		}, "GameState");
+#ifdef _DEBUG
+	console.addCommand("AddCube", [&]() {
+		return createCube(m_cam.getPosition());
+	}, "GameState");
+	console.addCommand("tpmap", [&]() {return teleportToMap(); }, "GameState");
+	console.addCommand("AddCube <int> <int> <int>", [&](std::vector<int> in) {
+		if (in.size() == 3) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	}, "GameState");
+	console.addCommand("AddCube <float> <float> <float>", [&](std::vector<float> in) {
+		if (in.size() == 3) {
+			glm::vec3 pos(in[0], in[1], in[2]);
+			return createCube(pos);
+		}
+		else {
+			return std::string("Error: wrong number of inputs. Console Broken");
+		}
+		return std::string("wat");
+	}, "GameState");
+#endif
+}
+
 bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
-
-	EventHandler::dispatch<PlayerCandleHitEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleHit));
+	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
+	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
@@ -405,13 +453,74 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+
+	// The host will also save the data in the sender system so that it can be forwarded to all other clients
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.networkSenderSystem->pushDataToBuffer(event.getSerializedData());
+	}
 	return true;
 }
 
-bool GameState::onPlayerCandleHit(PlayerCandleHitEvent& event) {
-	this->requestStackPop();
-	this->requestStackPush(States::EndGame);
-	m_poppedThisFrame = true;
+bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
+	if ( !m_isSingleplayer ) {
+		/*NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::PLAYER_DIED,
+			m_player
+		);
+		
+		m_player->addComponent<SpectatorComponent>();
+		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+		m_player->removeComponent<GunComponent>();
+		m_player->removeAllChildren();*/
+		// TODO: Remove all the components that can/should be removed
+
+	} else {
+		this->requestStackPop();
+		this->requestStackPush(States::EndGame);
+		m_poppedThisFrame = true;
+	}
+
+	// Set bot target to null when player is dead
+	auto entities = m_componentSystems.aiSystem->getEntities();
+	for (int i = 0; i < entities.size(); i++) {
+		auto aiComp = entities[i]->getComponent<AiComponent>();
+		aiComp->setTarget(nullptr);
+	}
+
+	return true;
+}
+
+bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
+	// This function is called from NWrapperHost::playerDisconnected()
+	// Then the host sends PLAYER_DISCONNECT over the network
+	// Each client recieves it in NetworkReceiverSystem::handleEvent()
+	// and removes their local copy of the player there
+	// Host local copy is destroyed here
+	
+	if (!m_isSingleplayer) {
+		if (NWrapperSingleton::getInstance().isHost()) {	// Should always be true
+			
+			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
+			for (auto& e : receiverEntities)
+			{
+				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID())
+				{
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_DISCONNECT,
+						SAIL_NEW Netcode::MessageDataPlayerDisconnect{
+							event.getPlayerID()
+						}
+					);
+
+					// This will remove the entity 
+					e->removeDeleteAllChildren();
+					e->queueDestruction();
+
+					// No loop break. If other entities has the same player id they should all be removed
+				}
+			}
+		}
+	}
 	return true;
 }
 
@@ -427,7 +536,7 @@ bool GameState::update(float dt, float alpha) {
 bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " 
+	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | "
 		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
 
 	static float counter = 0.0f;
@@ -436,6 +545,18 @@ bool GameState::fixedUpdate(float dt) {
 
 	counter += dt * 2.0f;
 
+#ifdef _PERFORMANCE_TEST
+	/* here we shoot the guns */
+	for (auto e : m_performanceEntities) {
+		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrix()[3]);
+		auto ePos = e->getComponent<TransformComponent>()->getTranslation();
+		ePos.y = ePos.y + 5.f;
+		auto dir = ePos - pos;
+		auto dirNorm = glm::normalize(dir);
+		e->getComponent<GunComponent>()->setFiring(pos + dirNorm * 3.f, glm::vec3(0.f, -1.f, 0.f));
+	}
+#endif
+
 	updatePerTickComponentSystems(dt);
 
 	return true;
@@ -443,281 +564,45 @@ bool GameState::fixedUpdate(float dt) {
 
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
-bool GameState::render(float dt, float alpha) {	
+bool GameState::render(float dt, float alpha) {
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
-	m_componentSystems.renderSystem->draw(m_cam, alpha);
-	
+	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
+	m_componentSystems.modelSubmitSystem->submitAll(alpha);
+	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
+	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
+	m_componentSystems.boundingboxSubmitSystem->submitAll();
+	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
+
 	return true;
 }
 
 bool GameState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
-	renderImguiConsole(dt);
-	renderImguiProfiler(dt);
-	renderImGuiRenderSettings(dt);
-	renderImGuiLightDebug(dt);
+	m_profiler.renderWindow();
+	m_renderSettingsWindow.renderWindow();
+	m_lightDebugWindow.renderWindow();
+	m_playerInfoWindow.renderWindow();
+	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 
 	return false;
 }
 
 bool GameState::prepareStateChange() {
 	if (m_poppedThisFrame) {
-		// Reset network
-		NWrapperSingleton::getInstance().resetNetwork();
+		// Do NOT reset network because we're NOT going to main menu
 	}
-	return true;
-}
-
-bool GameState::renderImguiConsole(float dt) {
-	bool open = m_cc.windowOpen();
-	if (open) {
-		static char buf[256] = "";
-		if (ImGui::Begin("Console", &open)) {
-			m_cc.windowState(open);
-			std::string txt = "test";
-			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -30), false, ImGuiWindowFlags_HorizontalScrollbar);
-			
-			for (int i = 0; i < m_cc.getLog().size(); i++) {
-				ImGui::TextUnformatted(m_cc.getLog()[i].c_str());
-			}
-
-			ImGui::EndChild();
-			ImGui::Separator();
-			bool reclaim_focus = false;
-
-			m_cc.getTextField().copy(buf, m_cc.getTextField().size() + 1);
-			buf[m_cc.getTextField().size()] = '\0';
-
-			std::string original = m_cc.getTextField();
-			bool exec = ImGui::InputText("", buf, IM_ARRAYSIZE(buf),
-				ImGuiInputTextFlags_EnterReturnsTrue);
-			ImGui::SameLine();
-			if (exec || ImGui::Button("Execute", ImVec2(0, 0))) {
-				if (m_cc.execute()) {
-
-				}
-				reclaim_focus = true;
-			} else {
-				m_cc.setTextField(std::string(buf));
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-
-	return false;
-}
-
-bool GameState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.windowOpen();
-	if (open) {
-		if (ImGui::Begin("Profiler", &open)) {
-
-			//Profiler window displaying the current usage
-			m_profiler.windowState(open);
-			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
-			std::string header;
-
-			header = "CPU (" + m_cpuCount + "%%)";
-			ImGui::Text(header.c_str());
-
-			header = "Frame time (" + m_ftCount + " seconds)";
-			ImGui::Text(header.c_str());
-
-			header = "Virtual RAM (" + m_virtCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			header = "Physical RAM (" + m_physCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			header = "VRAM (" + m_vramUCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			ImGui::Separator();
-			//Collapsing headers for graphs over time
-			if (ImGui::CollapsingHeader("CPU Graph")) {
-				header = "\n\n\n" + m_cpuCount + "(%)";
-				ImGui::PlotLines(header.c_str(), m_cpuHistory, 100, 0, "", 0.f, 100.f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("Frame Times Graph")) {
-				header = "\n\n\n" + m_ftCount + "(s)";
-				ImGui::PlotLines(header.c_str(), m_frameTimesHistory, 100, 0, "", 0.f, 0.015f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
-				header = "\n\n\n" + m_virtCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-
-			}
-			if (ImGui::CollapsingHeader("Physical RAM Graph")) {
-				header = "\n\n\n" + m_physCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_physRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("VRAM Graph")) {
-				header = "\n\n\n" + m_vramUCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
-
-
-			ImGui::EndChild();
-
-			m_profilerTimer += dt;
-			//Updating graphs and current usage
-			if (m_profilerTimer > 0.2f) {
-				m_profilerTimer = 0.f;
-				if (m_profilerCounter < 100) {
-
-					m_virtRAMHistory[m_profilerCounter] = m_profiler.virtMemUsage();
-					m_physRAMHistory[m_profilerCounter] = m_profiler.workSetUsage();
-					m_vramUsageHistory[m_profilerCounter] = m_profiler.vramUsage();
-					m_frameTimesHistory[m_profilerCounter] = dt;
-					m_cpuHistory[m_profilerCounter++] = m_profiler.processUsage();
-					m_virtCount = std::to_string(m_profiler.virtMemUsage());
-					m_physCount = std::to_string(m_profiler.workSetUsage());
-					m_vramUCount = std::to_string(m_profiler.vramUsage());
-					m_cpuCount = std::to_string(m_profiler.processUsage());
-					m_ftCount = std::to_string(dt);
-
-				} else {
-					// Copying all the history to a new array because ImGui is stupid
-					float* tempFloatArr = SAIL_NEW float[100];
-					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
-					tempFloatArr[99] = m_profiler.virtMemUsage();
-					delete m_virtRAMHistory;
-					m_virtRAMHistory = tempFloatArr;
-					m_virtCount = std::to_string(m_profiler.virtMemUsage());
-
-					float* tempFloatArr1 = SAIL_NEW float[100];
-					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 100, tempFloatArr1);
-					tempFloatArr1[99] = m_profiler.workSetUsage();
-					delete m_physRAMHistory;
-					m_physRAMHistory = tempFloatArr1;
-					m_physCount = std::to_string(m_profiler.workSetUsage());
-
-					float* tempFloatArr3 = SAIL_NEW float[100];
-					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
-					tempFloatArr3[99] = m_profiler.vramUsage();
-					delete m_vramUsageHistory;
-					m_vramUsageHistory = tempFloatArr3;
-					m_vramUCount = std::to_string(m_profiler.vramUsage());
-
-					float* tempFloatArr4 = SAIL_NEW float[100];
-					std::copy(m_cpuHistory + 1, m_cpuHistory + 100, tempFloatArr4);
-					tempFloatArr4[99] = m_profiler.processUsage();
-					delete m_cpuHistory;
-					m_cpuHistory = tempFloatArr4;
-					m_cpuCount = std::to_string(m_profiler.processUsage());
-
-					float* tempFloatArr5 = SAIL_NEW float[100];
-					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 100, tempFloatArr5);
-					tempFloatArr5[99] = dt;
-					delete m_frameTimesHistory;
-					m_frameTimesHistory = tempFloatArr5;
-					m_ftCount = std::to_string(dt);
-				}
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-	return false;
-}
-
-bool GameState::renderImGuiRenderSettings(float dt) {
-	ImGui::Begin("Rendering settings");
-	ImGui::Checkbox("Enable post processing", 
-		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
-	);
-
-	static Entity* pickedEntity = nullptr;
-	static float metalness = 1.0f;
-	static float roughness = 1.0f;
-	static float ao = 1.0f;
-
-	ImGui::Separator();
-	if (ImGui::Button("Pick entity")) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHitIndex != -1) {
-			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
-		}
-	}
-
-	if (pickedEntity) {
-		ImGui::Text("Material properties for %s", pickedEntity->getName().c_str());
-		if (auto* model = pickedEntity->getComponent<ModelComponent>()) {
-			auto* mat = model->getModel()->getMesh(0)->getMaterial();
-			const auto& pbrSettings = mat->getPBRSettings();
-			metalness = pbrSettings.metalnessScale;
-			roughness = pbrSettings.roughnessScale;
-			ao = pbrSettings.aoScale;
-			if (ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f)) {
-				mat->setMetalnessScale(metalness);
-			}
-			if (ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f)) {
-				mat->setRoughnessScale(roughness);
-			}
-			if (ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f)) {
-				mat->setAOScale(ao);
-			}
-		}
-	}
-
-	ImGui::End();
-
-	return false;
-}
-
-bool GameState::renderImGuiLightDebug(float dt) {
-	ImGui::Begin("Light debug");
-	ImGui::Checkbox("Manual override", &m_disableLightComponents);
-	unsigned int i = 0;
-	for (auto& pl : m_lights.getPLs()) {
-		ImGui::PushID(i);
-		std::string label("Point light ");
-		label += std::to_string(i);
-		if (ImGui::CollapsingHeader(label.c_str())) {
-
-			glm::vec3 color = pl.getColor(); // = 1.0f
-			glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
-			float attConstant = pl.getAttenuation().constant; // 0.312f;
-			float attLinear = pl.getAttenuation().linear; // 0.0f;
-			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
-
-			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
-			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
-			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
-			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
-
-			pl.setAttenuation(attConstant, attLinear, attQuadratic);
-			pl.setColor(color);
-			pl.setPosition(position);
-
-		}
-		i++;
-		ImGui::PopID();
-	}
-	ImGui::End();
 	return true;
 }
 
 void GameState::shutDownGameState() {
-
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
-	// Clear all entities
+	ECS::Instance()->stopAllSystems();
 	ECS::Instance()->destroyAllEntities();
-	
-	// Clear all necessary systems
-	m_componentSystems.gameInputSystem->clean();
 }
 
 // HERE BE DRAGONS
@@ -728,85 +613,90 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
-	m_componentSystems.prepareUpdateSystem->update(dt); // HAS TO BE RUN BEFORE OTHER SYSTEMS
+	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
-	// Update entities with info from the network
-	m_componentSystems.networkReceiverSystem->update();
-	m_componentSystems.entityAdderSystem->update(0.0f);
-	m_componentSystems.physicSystem->update(dt);
+	if (!m_isSingleplayer) {
+		// Update entities with info from the network
+		m_componentSystems.networkReceiverSystem->update();
+		// Send out your entity info to the rest of the players
+		m_componentSystems.networkSenderSystem->update();
+	}
+	
+	m_componentSystems.movementSystem->update(dt);
+	m_componentSystems.speedLimitSystem->update();
+	m_componentSystems.collisionSystem->update(dt);
+	m_componentSystems.movementPostCollisionSystem->update(dt);
+
 
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
 	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
 
 	// TODO: Investigate this
+	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.candleSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
-	runSystem(dt, m_componentSystems.octreeAddRemoverSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
-	runSystem(dt, m_componentSystems.audioSystem);
 
 	// Wait for all the systems to finish before starting the removal system
-	for ( auto& fut : m_runningSystemJobs ) {
+	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
 	}
 
-	// Send out your entity info to the rest of the players
-	m_componentSystems.networkSenderSystem->update(0.0f);
-
 	// Will probably need to be called last
-	m_componentSystems.entityRemovalSystem->update(0.0f);
-
-	if (m_poppedThisFrame) {
-		shutDownGameState();
-	}
+	m_componentSystems.entityAdderSystem->update();
+	m_componentSystems.entityRemovalSystem->update();
+	m_componentSystems.octreeAddRemoverSystem->update(dt);
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
+
+	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
-	
+
 	// Updates the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 
-	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 
 	// There is an imgui debug toggle to override lights
-	if (!m_disableLightComponents) {
+	if (!m_lightDebugWindow.isManualOverrideOn()) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
-	} 
-	
+		m_componentSystems.lightListSystem->updateLights(&m_lights);
+	}
+
 	if (m_showcaseProcGen) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
-
-	m_componentSystems.audioSystem->update(dt);
+	m_componentSystems.animationSystem->updatePerFrame();
+	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
+	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 	bool started = false;
-	while ( !started ) {
+	while (!started) {
 		// First check if the system can be run
-		if ( !(m_currentlyReadingMask & toRun->getWriteBitMask()).any() && 
+		if (!(m_currentlyReadingMask & toRun->getWriteBitMask()).any() &&
 			!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
-			!( m_currentlyWritingMask & toRun->getWriteBitMask() ).any() ) {
+			!(m_currentlyWritingMask & toRun->getWriteBitMask()).any()) {
 
 			m_currentlyWritingMask |= toRun->getWriteBitMask();
 			m_currentlyReadingMask |= toRun->getReadBitMask();
 			started = true;
 			m_runningSystems.push_back(toRun);
-			m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun] (int id) {toRun->update(dt); return toRun; }));
-			
+			m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun](int id) {toRun->update(dt); return toRun; }));
+
 		} else {
 			// Then loop through all futures and see if any of them are done
-			for ( int i = 0; i < m_runningSystemJobs.size(); i++ ) {
-				if ( m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready ) {
+			for (int i = 0; i < m_runningSystemJobs.size(); i++) {
+				if (m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
 					auto doneSys = m_runningSystemJobs[i].get();
 
 					m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
@@ -816,16 +706,16 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 					m_currentlyReadingMask ^= doneSys->getReadBitMask();
 
 					int toRemoveIndex = -1;
-					for ( int j = 0; j < m_runningSystems.size(); j++ ) {
+					for (int j = 0; j < m_runningSystems.size(); j++) {
 						// Currently just compares memory adresses (if they point to the same location they're the same object)
-						if ( m_runningSystems[j] == doneSys )
+						if (m_runningSystems[j] == doneSys)
 							toRemoveIndex = j;
 					}
 
 					m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
 
 					// Since multiple systems can read from components concurrently, currently best solution I came up with
-					for ( auto _sys : m_runningSystems ) {
+					for (auto _sys : m_runningSystems) {
 						m_currentlyReadingMask |= _sys->getReadBitMask();
 					}
 				}
@@ -834,119 +724,14 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 	}
 }
 
-Entity::SPtr GameState::createCandleEntity(const std::string& name, Model* lightModel, Model* bbModel, glm::vec3 lightPos) {
-	//creates light with model and pointlight
-	auto e = ECS::Instance()->createEntity(name.c_str());
-	e->addComponent<CandleComponent>();
-	e->addComponent<ModelComponent>(lightModel);
-	e->addComponent<TransformComponent>(lightPos);
-	e->addComponent<BoundingBoxComponent>(bbModel);
-	e->addComponent<CollidableComponent>();
-	PointLight pl;
-	pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
-	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-	pl.setAttenuation(.0f, 0.1f, 0.02f);
-	pl.setIndex(m_currLightIndex);
-	m_currLightIndex++;
-	e->addComponent<LightComponent>(pl);
-
-	return e;
+const std::string GameState::teleportToMap() {
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(30.6f, 0.9f, 40.f));
+	return "";
 }
 
-void GameState::loadAnimations() {
-	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-	//m_app->getResourceManager().loadModel("AnimationTest/walkTri.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	//animatedModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/character1texture.tga");
-
-#ifndef _DEBUG
-	//m_app->getResourceManager().loadModel("AnimationTest/ScuffedSteve_2.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	//m_app->getResourceManager().loadModel("AnimationTest/BaseMesh_Anim.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-	m_app->getResourceManager().loadModel("AnimationTest/DEBUG_BALLBOT.fbx", shader, ResourceManager::ImporterType::SAIL_FBXSDK);
-#endif
-
-
-
-}
-
-void GameState::initAnimations() {
-	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-
-/*
-
-	auto animationEntity2 = ECS::Instance()->createEntity("animatedModel2");
-	animationEntity2->addComponent<TransformComponent>();
-	animationEntity2->getComponent<TransformComponent>()->translate(-5, 0, 0);
-	animationEntity2->getComponent<TransformComponent>()->translate(100.f, 100.f, 100.f);
-	animationEntity2->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/walkTri.fbx"));
-	animationEntity2->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	animationEntity2->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-	animationEntity2->getComponent<AnimationComponent>()->currentAnimation = animationEntity2->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
-
-
-
-	auto animationEntity1 = ECS::Instance()->createEntity("animatedModel1");
-	animationEntity1->addComponent<TransformComponent>();
-	animationEntity1->getComponent<TransformComponent>()->translate(0, 0, 5);
-	animationEntity1->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-	animationEntity1->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/ScuffedSteve_2.fbx", shader));
-	animationEntity1->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	animationEntity1->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/ScuffedSteve_2.fbx"));
-	animationEntity1->getComponent<AnimationComponent>()->currentAnimation = animationEntity1->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
-
-	auto animationEntity22 = ECS::Instance()->createEntity("animatedModel22");
-	animationEntity22->addComponent<TransformComponent>();
-	animationEntity22->getComponent<TransformComponent>()->translate(-4, 0, 0);
-	animationEntity22->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-	animationEntity22->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/walkTri.fbx", shader));
-	animationEntity22->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	animationEntity22->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/walkTri.fbx"));
-	animationEntity22->getComponent<AnimationComponent>()->currentAnimation = animationEntity22->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
-
-	auto animationEntity3 = ECS::Instance()->createEntity("animatedModel3");
-	animationEntity3->addComponent<TransformComponent>();
-	animationEntity3->getComponent<TransformComponent>()->translate(3, 4, 2);
-	animationEntity3->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-	animationEntity3->getComponent<TransformComponent>()->scale(0.005f);
-	animationEntity3->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/BaseMesh_Anim.fbx", shader));
-	animationEntity3->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	animationEntity3->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/BaseMesh_Anim.fbx"));
-	animationEntity3->getComponent<AnimationComponent>()->currentAnimation = animationEntity3->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);*/
-#ifndef _DEBUG
-	//auto animationEntity4 = ECS::Instance()->createEntity("animatedModel4");
-	//animationEntity4->addComponent<TransformComponent>();
-	//animationEntity4->getComponent<TransformComponent>()->translate(-1,2,-3);
-	//animationEntity4->getComponent<TransformComponent>()->translate(110.f, 100.f, 100.f);
-	//animationEntity4->getComponent<TransformComponent>()->scale(0.005f);
-	//animationEntity4->addComponent<ModelComponent>(&m_app->getResourceManager().getModel("AnimationTest/DEBUG_BALLBOT.fbx", shader));
-	//animationEntity4->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-	//animationEntity4->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
-	//animationEntity4->getComponent<AnimationComponent>()->currentAnimation = animationEntity4->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0);
-
-	unsigned int count = m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx").getAnimationCount();
-	for (int i = 0; i < count; i++) {
-		auto animationEntity5 = ECS::Instance()->createEntity("animatedModel5-"+std::to_string(i));
-		animationEntity5->addComponent<TransformComponent>();
-		animationEntity5->getComponent<TransformComponent>()->translate(0, 0, 3 + i * 2);
-		animationEntity5->getComponent<TransformComponent>()->translate(110.f, 100.f, 90.f);
-		animationEntity5->getComponent<TransformComponent>()->scale(0.005f);
-		animationEntity5->addComponent<ModelComponent>(&m_app->getResourceManager().getModelCopy("AnimationTest/DEBUG_BALLBOT.fbx", shader));
-		animationEntity5->getComponent<ModelComponent>()->getModel()->setIsAnimated(true);
-		animationEntity5->addComponent<AnimationComponent>(&m_app->getResourceManager().getAnimationStack("AnimationTest/DEBUG_BALLBOT.fbx"));
-		animationEntity5->getComponent<AnimationComponent>()->currentAnimation = animationEntity5->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(i);
-	}
-	
-
-#endif
-
-
-
-
-
-
-
-
-
-
+const std::string GameState::toggleProfiler() {
+	m_profiler.toggleWindow();
+	return "Toggling profiler";
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
@@ -956,7 +741,7 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* tmpbbModel = &m_app->getResourceManager().getModel(
-		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<WireframeShader>());
+		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	auto e = ECS::Instance()->createEntity("new cube");
@@ -972,57 +757,6 @@ const std::string GameState::createCube(const glm::vec3& position) {
 		std::to_string(position.x) + ":" +
 		std::to_string(position.y) + ":" +
 		std::to_string(position.z) + ")");
-}
-
-void GameState::setUpPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID) {
-	// Player spawn positions are based on their unique id
-	// This will most likely be changed later so that the host sets all the players' start positions
-	float spawnOffset = static_cast<float>(2 * static_cast<int>(playerID) - 10);
-	
-	auto player = ECS::Instance()->createEntity("player");
-
-	// TODO: Only used for AI, should be removed once AI can target player in a better way.
-	m_player = player.get();
-
-	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player
-	player->addComponent<PlayerComponent>();
-
-	player->addComponent<TransformComponent>();
-
-
-	player->addComponent<NetworkSenderComponent>(
-		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
-		Netcode::EntityType::PLAYER_ENTITY,
-		playerID);
-
-	// Add physics component and setting initial variables
-	player->addComponent<PhysicsComponent>();
-	player->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	player->getComponent<PhysicsComponent>()->maxSpeed = 6.0f;
-
-	// Give player a bounding box
-	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-
-	// Temporary projectile model for the player's gun
-	player->addComponent<GunComponent>(projectileModel, boundingBoxModel);
-
-	// Adding audio component and adding all sounds attached to the player entity
-	player->addComponent<AudioComponent>();
-	player->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
-	player->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
-
-
-	// Create candle for the player
-	auto e = createCandleEntity("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
-	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	e->getComponent<CandleComponent>()->setOwner(player->getID());
-	player->addChildEntity(e);
-
-	// Set up camera
-	m_cam.setPosition(glm::vec3(1.6f, 1.8f, 10.f));
-	m_cam.lookAt(glm::vec3(0.f));
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f+spawnOffset, 0.9f, 10.f));
 }
 
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
@@ -1049,123 +783,25 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	rampModel->getMesh(0)->getMaterial()->setAOScale(1.0f);
 
 	// Create entities for test level
-
-	auto e = ECS::Instance()->createEntity("Arena");
-	e->addComponent<ModelComponent>(arenaModel);
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Barrier1");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(-16.15f * 0.3f, 0.f, 3.83f * 0.3f), glm::vec3(0.f, -0.79f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Barrier2");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(-4.54f * 0.3f, 0.f, 8.06f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Barrier3");
-	e->addComponent<ModelComponent>(barrierModel);
-	e->addComponent<TransformComponent>(glm::vec3(8.46f * 0.3f, 0.f, 8.06f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container1");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(6.95f * 0.3f, 0.f, 25.f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container2");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-25.f * 0.3f, 0.f, 12.43f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container3");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-25.f * 0.3f, 2.4f, -7.73f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container4");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-19.67f * 0.3f, 0.f, -24.83f * 0.3f), glm::vec3(0.f, 0.79f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container5");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(-0.f, 0.f, -14.f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container6");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.20f * 0.3f, 0.f, -8.f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container7");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.2f * 0.3f, 2.4f, -22.8f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Container8");
-	e->addComponent<ModelComponent>(containerModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.36f * 0.3f, 0.f, -32.41f * 0.3f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-
-	e = ECS::Instance()->createEntity("Map_Ramp1");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(5.2f * 0.3f, 0.f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-	e = ECS::Instance()->createEntity("Map_Ramp2");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(15.2f * 0.3f, 2.4f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-
-	e = ECS::Instance()->createEntity("Map_Ramp3");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.f * 0.3f, 2.4f, -5.5f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-	e = ECS::Instance()->createEntity("Map_Ramp4");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(24.f * 0.3f, 0.f, 9.f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-	e = ECS::Instance()->createEntity("Map_Ramp5");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(-16.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 0.f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
-	e = ECS::Instance()->createEntity("Map_Ramp6");
-	e->addComponent<ModelComponent>(rampModel);
-	e->addComponent<TransformComponent>(glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	e->addComponent<CollidableComponent>();
+	
+	auto e = EntityFactory::CreateStaticMapObject("Arena", arenaModel, boundingBoxModel, glm::vec3(0.0f , 0.0f, 0.0f));
+	e = EntityFactory::CreateStaticMapObject("Map_Barrier1", barrierModel, boundingBoxModel, glm::vec3(-16.15f * 0.3f, 0.f, 3.83f * 0.3f), glm::vec3(0.f, -0.79f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Barrier2", barrierModel, boundingBoxModel, glm::vec3(-4.54f * 0.3f, 0.f, 8.06f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Barrier3", barrierModel, boundingBoxModel, glm::vec3(8.46f * 0.3f, 0.f, 8.06f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container1", containerModel, boundingBoxModel, glm::vec3(6.95f * 0.3f, 0.f, 25.f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container2", containerModel, boundingBoxModel, glm::vec3(-25.f * 0.3f, 0.f, 12.43f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container3", containerModel, boundingBoxModel, glm::vec3(-25.f * 0.3f, 2.4f, -7.73f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container4", containerModel, boundingBoxModel, glm::vec3(-19.67f * 0.3f, 0.f, -24.83f * 0.3f), glm::vec3(0.f, 0.79f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container5", containerModel, boundingBoxModel, glm::vec3(-0.f, 0.f, -14.f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container6", containerModel, boundingBoxModel, glm::vec3(24.20f * 0.3f, 0.f, -8.f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container7", containerModel, boundingBoxModel, glm::vec3(24.2f * 0.3f, 2.4f, -22.8f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Container8", containerModel, boundingBoxModel, glm::vec3(24.36f * 0.3f, 0.f, -32.41f * 0.3f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp1", rampModel, boundingBoxModel, glm::vec3(5.2f * 0.3f, 0.f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp2", rampModel, boundingBoxModel, glm::vec3(15.2f * 0.3f, 2.4f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp3", rampModel, boundingBoxModel, glm::vec3(24.f * 0.3f, 2.4f, -5.5f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp4", rampModel, boundingBoxModel, glm::vec3(24.f * 0.3f, 0.f, 9.f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp5", rampModel, boundingBoxModel, glm::vec3(-16.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 0.f, 0.f));
+	e = EntityFactory::CreateStaticMapObject("Map_Ramp6", rampModel, boundingBoxModel, glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
 }
 
 void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
@@ -1173,88 +809,198 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 
 	if (botCount < 0) {
 		botCount = 0;
-	}// TODO: Remove this when more bots can be added safely
-#ifdef _DEBUG
-	if (botCount > 1) {
-		botCount = 0;
 	}
-#endif // _DEBUG
 
-
-	for (size_t i = 0; i < botCount; i++) {		
-		auto e = ECS::Instance()->createEntity("AiCharacter");
-		e->addComponent<ModelComponent>(characterModel);
-		e->addComponent<TransformComponent>(glm::vec3(2.f*(i+1), 10.f, 0.f), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-		e->addComponent<CollidableComponent>();
-		e->addComponent<PhysicsComponent>();
-		e->addComponent<AiComponent>();
-		auto fsmComp = e->addComponent<FSMComponent>();
-		e->getComponent<PhysicsComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<PhysicsComponent>()->maxSpeed = m_player->getComponent<PhysicsComponent>()->maxSpeed / 2.f;
-		e->addComponent<GunComponent>(projectileModel, boundingBoxModel);
-		auto aiCandleEntity = createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f));
-		e->addChildEntity(aiCandleEntity);
-		
-		// Create states and transitions
-		{
-			SearchingState* searchState = fsmComp->createState<SearchingState>(m_componentSystems.aiSystem->getNodeSystem());
-			AttackingState* attackState = fsmComp->createState<AttackingState>();
-			fsmComp->createState<FleeingState>(m_componentSystems.aiSystem->getNodeSystem());
-			
-
-			// TODO: unnecessary to create new transitions for each FSM if they're all identical
-			// Attack State
-			FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
-			attackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
-			FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
-			attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
-
-			// Search State
-			FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
-			searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
-			FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
-			searchToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), false);
-
-			// Fleeing State
-			FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
-			fleeingToSearch->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsAlive(), true);
-
-			fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
-			fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
-
-			fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
-			fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
-
-			fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);
+	for (size_t i = 0; i < botCount; i++) {
+		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		if (spawnLocation.x != -1000.f) {
+			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 		}
-		e->addChildEntity(createCandleEntity("AiCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f)));
-
+		else {
+			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
+		}
 	}
 }
 
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	Application::getInstance()->getResourceManager().loadTexture(tileTex);
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallMRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallNM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_MRAo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_Albedo.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/albedo.tga");
+
+
+
 	//Load tileset for world
 	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
 	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileCross = &m_app->getResourceManager().getModel("Tiles/tileCross.fbx", shader);
-	tileCross->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileStraight = &m_app->getResourceManager().getModel("Tiles/tileStraight.fbx", shader);
-	tileStraight->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileCorner = &m_app->getResourceManager().getModel("Tiles/tileCorner.fbx", shader);
-	tileCorner->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileT = &m_app->getResourceManager().getModel("Tiles/tileT.fbx", shader);
-	tileT->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-	Model* tileEnd = &m_app->getResourceManager().getModel("Tiles/tileEnd.fbx", shader);
-	tileEnd->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
+	roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
+	roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
+	roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
+
+	Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
+	tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+
+	Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
+	roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RD_MRAo.tga");
+	roomDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RD_NM.tga");
+	roomDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RD_Albedo.tga");
+
+
+	Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor.fbx", shader);
+	corridorDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CD_MRAo.tga");
+	corridorDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CD_NM.tga");
+	corridorDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CD_Albedo.tga");
+
+	Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall.fbx", shader);
+	corridorWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CW_MRAo.tga");
+	corridorWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CW_NM.tga");
+	corridorWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CW_Albedo.tga");
+
+	Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
+	roomCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RC_MRAo.tga");
+	roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
+	roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
+
+
+	Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
+	corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
+	corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
+	corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
+
+	Model* roomFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
+	roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
+	roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
+	roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
+
+	Model* corridorCeiling = &m_app->getResourceManager().getModel("Tiles/CorridorCeiling.fbx", shader);
+	corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CC_MRAo.tga");
+	corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
+	corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
+
+	Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner.fbx", shader);
+	corridorCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+	corridorCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+	corridorCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+
+	Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner.fbx", shader);
+	roomCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+	roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+	roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+
+	std::vector<Model*> tileModels;
+	tileModels.resize(TileModel::NUMBOFMODELS);
+	tileModels[TileModel::ROOM_FLOOR] = roomFloor;
+	tileModels[TileModel::ROOM_WALL] = roomWall;
+	tileModels[TileModel::ROOM_DOOR] = roomDoor;
+	tileModels[TileModel::ROOM_CEILING] = roomCeiling;
+	tileModels[TileModel::ROOM_CORNER] = roomCorner;
+
+	tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
+	tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
+	tileModels[TileModel::CORRIDOR_DOOR] = corridorDoor;
+	tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
+	tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
+
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(tileFlat, tileCross, tileCorner, tileStraight, tileT, tileEnd, boundingBoxModel);
-
+	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 }
+
+#ifdef _PERFORMANCE_TEST
+void GameState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
+	/* 13 characters that are constantly shooting their guns */
+	for (int i = 0; i < 13; i++) {
+		float spawnOffsetX = -19.f + float(i) * 2.f;
+		float spawnOffsetZ = 13.f + float(i) * 1.3f;
+		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
+
+		std::string name = "DocGunRun4.fbx";
+		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
+		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
+		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
+		characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
+		characterModel->setIsAnimated(true);
+
+		e->addComponent<ModelComponent>(characterModel);
+		auto animStack = &m_app->getResourceManager().getAnimationStack(name);
+		auto animComp = e->addComponent<AnimationComponent>(animStack);
+		animComp->currentAnimation = animStack->getAnimation(1);
+		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
+		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
+		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+		e->addComponent<CollidableComponent>();
+		e->addComponent<MovementComponent>();
+		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>();
+		e->addComponent<GunComponent>(projectileModel, bbModel);
+
+		/* Audio */
+		e->addComponent<AudioComponent>();
+		Audio::SoundInfo sound{};
+		sound.fileName = "../Audio/guitar.wav";
+		sound.soundEffectLength = 104.0f;
+		sound.volume = 1.0f;
+		sound.playOnce = false;
+		sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		sound.isPlaying = true; // Start playing the sound immediately
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
+
+		// Add candle
+		/*if (i != 12) {
+			auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
+			candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
+			e->addChildEntity(candleEntity);
+		}*/
+
+		/* Movement */
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+		e->getComponent<SpeedLimitComponent>()->maxSpeed = 6.f;
+
+		m_performanceEntities.push_back(e);
+	}
+}
+#endif

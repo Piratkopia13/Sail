@@ -2,24 +2,16 @@
 
 #include "AudioComponent.h"
 
-AudioComponent::AudioComponent() {
-	for (int i = 0; i < SoundType::COUNT; i++) {
+AudioComponent::AudioComponent() {}
 
-		m_soundEffects[i] = "";
-		m_soundID[i] = -1;
-		m_soundEffectTimers[i] = 0.0f;
-		m_soundEffectThresholds[i] = 0.0f;
-		m_isPlaying[i] = false;
-		m_playOnce[i] = true;
-	}
+AudioComponent::~AudioComponent() {}
+
+void AudioComponent::streamSoundRequest_HELPERFUNC(std::string filename, bool startTRUE_stopFALSE, float volume, bool isLooping) {
+
+	m_streamingRequests.push_back(std::pair(filename, startTRUE_stopFALSE));
+	m_Vol_isLooping_Requests.push_back(std::pair(filename, std::pair(volume, isLooping)));
 }
 
-AudioComponent::~AudioComponent() {
-}
-
-void AudioComponent::defineSound(SoundType::SoundType type, std::string filename, float dtThreshold, bool playOnce) {
-
-	m_soundEffects[type] = filename;
-	m_soundEffectThresholds[type] = dtThreshold;
-	m_playOnce[type] = playOnce;
+void AudioComponent::defineSound(Audio::SoundType type, Audio::SoundInfo info) {
+	m_sounds[type] = info;
 }

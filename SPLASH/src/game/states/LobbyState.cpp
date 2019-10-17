@@ -8,12 +8,13 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "Network/NWrapperSingleton.h"	// New network
 #include "Network/NWrapper.h"			// 
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
+#include "Sail/entities/components/AudioComponent.h"
 
 #include <string>
 #include <list>
-using namespace std;
 
 LobbyState::LobbyState(StateStack& stack)
 	: State(stack)
@@ -26,23 +27,25 @@ LobbyState::LobbyState(StateStack& stack)
 	m_outerPadding = 15;
 
 	m_messageLimit = 14;		// Should be based on size of chatbox instead of fixed
-	m_playerLimit = 12;
-	m_playerCount = 0;
 	m_messageCount = 0;
 	m_settingBotCount = new int;
 	*m_settingBotCount = 0;
 
-	// Set name according to data from menustate
-	m_me.name = m_app->getStateStorage().getMenuToLobbyData()->name;
-
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
+
+	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
+	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
+	//m_lobbyAudio->addComponent<AudioComponent>();
+	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, true);
 }
+
 
 LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
 	delete m_settingBotCount;
+
 }
 
 bool LobbyState::processInput(float dt) {
@@ -66,12 +69,6 @@ bool LobbyState::inputToChatLog(MSG& msg) {
 	return false;
 }
 
-void LobbyState::resetPlayerList()
-{
-	m_players.clear();
-	m_playerCount = 0;
-}
-
 bool LobbyState::update(float dt, float alpha) {
 	// Update screen dimensions & ImGui related
 	// (Sure, events, but the only thing consuming resources is the LobbyState)
@@ -85,7 +82,7 @@ bool LobbyState::update(float dt, float alpha) {
 
 bool LobbyState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	ECS::Instance()->getSystem<RenderSystem>()->draw();
+	ECS::Instance()->getSystem<BeginEndFrameSystem>()->renderNothing();
 	return false;
 }
 
@@ -101,30 +98,6 @@ bool LobbyState::renderImgui(float dt) {
 
 	// ------- START BUTTON ------- 
 	renderStartButton();
-
-	return false;
-}
-
-bool LobbyState::playerJoined(Player& player) {
-	if (m_playerCount < m_playerLimit) {
-		m_players.push_back(player);
-		m_playerCount++;
-		return true;
-	}
-	return false;
-}
-
-bool LobbyState::playerLeft(unsigned char& id) {
-	// Linear search to get target 'player' struct, then erase that from the list
-	Player* toBeRemoved = nullptr;
-	int pos = 0;
-	for (auto playerIt : m_players) {
-		if (playerIt.id == id) {
-			toBeRemoved = &playerIt;
-			m_players.remove(*toBeRemoved);
-			return true;
-		}
-	}
 
 	return false;
 }
@@ -157,7 +130,7 @@ void LobbyState::addMessageToChat(Message& message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
 	unsigned char id = stoi(message.sender);
-	Player* playa = this->getPlayer(id);
+	Player* playa = NWrapperSingleton::getInstance().getPlayer(id);
 	std::string msg = playa->name + ": ";
 	message.content.insert(0, msg);
 
@@ -168,19 +141,6 @@ void LobbyState::addMessageToChat(Message& message) {
 	if (m_messages.size() > m_messageLimit) {
 		m_messages.pop_front();
 	}
-}
-
-Player* LobbyState::getPlayer(unsigned char& id) {
-	Player* foundPlayer = nullptr;
-	for (Player& player : m_players) {
-		if (player.id == id) {
-			foundPlayer = &player;
-			break;
-			//return foundPlayer;
-		}
-	}
-	
-	return foundPlayer;
 }
 
 void LobbyState::renderPlayerList() {
@@ -199,12 +159,13 @@ void LobbyState::renderPlayerList() {
 	));
 	ImGui::Begin("players in lobby:", NULL, flags);
 
-	for (auto currentplayer : m_players) {
+	unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
+	for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {
 		std::string temp;
 		temp += " - ";
 		temp += currentplayer.name.c_str();
 
-		if (currentplayer.id == m_me.id) {
+		if (currentplayer.id == myID) {
 			temp += " (You)";
 		}
 		
@@ -229,7 +190,7 @@ void LobbyState::renderStartButton() {
 
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
-			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(m_me, m_players, *m_settingBotCount));
+			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
 			m_network->sendMsgAllClients("t");
 			this->requestStackPop();
 			this->requestStackPush(States::Game);
@@ -267,6 +228,8 @@ void LobbyState::renderChat() {
 	chatFlags |= ImGuiWindowFlags_NoTitleBar;
 	chatFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 	chatFlags |= ImGuiWindowFlags_NoSavedSettings;
+	chatFlags |= ImGuiWindowFlags_NoFocusOnAppearing;
+	chatFlags |= ImGuiWindowFlags_NoInputs;
 
 	// ------- message BOX ------- 
 	ImGui::SetNextWindowPos(ImVec2(
@@ -280,15 +243,12 @@ void LobbyState::renderChat() {
 	);
 
 	if (m_firstFrame) {
-		ImGui::SetKeyboardFocusHere(-1);
 		m_firstFrame = false;
-		m_chatFocus = true;
+		m_chatFocus = false;
 	}
 	ImGui::Text("Enter message:");
-	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
-		//this->sendmessage(&(string)m_currentmessage);
-		ImGui::SetKeyboardFocusHere(-1);
-		m_chatFocus = true;
+	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_EnterReturnsTrue)) {
+		m_chatFocus = false;
 	}
 	ImGui::End();
 

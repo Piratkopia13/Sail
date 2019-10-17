@@ -12,6 +12,7 @@
 #include "../../SPLASH/src/game/events/NetworkStartGameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
+#include "../../SPLASH/src/game/events/NetworkBackToLobby.h"
 
 bool NWrapperClient::host(int port) {
 	// A client does not host, do nothing.
@@ -78,7 +79,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	unsigned char userID;
 	char charAsInt[4] = { 0 };
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
-	Player currentPlayer{ -1, "" };	// 
+	Player currentPlayer{};	// 
 	int charCounter = 0;			//
 	std::string id_string = "";				//
 	std::string remnants = "";				//
@@ -161,8 +162,12 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 
 		// Send the serialized stringData as an event to the networkSystem which parses it.
 		Application::getInstance()->dispatchEvent(NetworkSerializedPackageEvent(dataString));
-
 		break;
+
+	case 'z':
+		Application::getInstance()->dispatchEvent(NetworkBackToLobby());
+		break;
+
 	default:
 		break;
 	}

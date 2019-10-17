@@ -11,7 +11,7 @@
 	They must have a default constructor, but can have default arguments or other constructors as well.
 	No logic SHOULD be within each component, only raw data.
 
-	Example: See PhysicsComponent.h
+	Example: See MovementComponent.h
 */
 
 
@@ -69,7 +69,10 @@ public:
 	virtual ~Component() {}
 
 	static const ComponentTypeID ID;
-	static const ComponentTypeBitID BID;
+	static const ComponentTypeBitID& getBID() {
+		static ComponentTypeBitID BID = static_cast<ComponentTypeBitID>(1ULL << ComponentType::ID);
+		return BID;
+	}
 protected:
 	Component() {}
 };
@@ -79,9 +82,3 @@ protected:
 */
 template<typename ComponentType>
 const ComponentTypeID Component<ComponentType>::ID = BaseComponent::createID();
-
-/*
-	Defines the constant static bit-ID of each component type at compile time
-*/
-template<typename ComponentType>
-const ComponentTypeBitID Component<ComponentType>::BID = 1ULL << ComponentType::ID;

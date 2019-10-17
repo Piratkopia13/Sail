@@ -10,8 +10,9 @@
 
 #include "Sail/../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
 
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include <string>
+
 
 
 MenuState::MenuState(StateStack& stack) 
@@ -22,14 +23,12 @@ MenuState::MenuState(StateStack& stack)
 	m_app = Application::getInstance();
 
 	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
-	this->inputName = SAIL_NEW char[100]{ "Hans" };
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 }
 
 MenuState::~MenuState() {
 	delete[] this->inputIP;
-	delete[] this->inputName;
 	delete[] m_ipBuffer;
 }
 
@@ -51,40 +50,55 @@ bool MenuState::update(float dt, float alpha) {
 
 bool MenuState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	ECS::Instance()->getSystem<RenderSystem>()->draw();
+	ECS::Instance()->getSystem<BeginEndFrameSystem>()->renderNothing();
 	return false;
 }
 
 bool MenuState::renderImgui(float dt) {
 	
 	// Host
-	ImGui::Begin("Host Game");
-	if (ImGui::Button("S.P.L.A.S.H over here")) {
-		if (m_network->host()) {
+	if(ImGui::Begin("Main Menu")) {
+		ImGui::Text("Name:");
+		ImGui::SameLine();
+		ImGui::InputText("##name", &NWrapperSingleton::getInstance().getMyPlayerName().front(), MAX_NAME_LENGTH);
+		ImGui::Separator();
+		if (ImGui::Button("Single Player")) {
+			if (m_network->host()) {
+				NWrapperSingleton::getInstance().setPlayerID(HOST_ID);
+				if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
+					NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+				}
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
+
 			this->requestStackPop();
-			this->requestStackPush(States::HostLobby);
+			this->requestStackPush(States::Game);
+			}
 		}
+		ImGui::SameLine(200);
+		if (ImGui::Button("Host Game")) {
+			if (m_network->host()) {
+				this->requestStackPop();
+				this->requestStackPush(States::HostLobby);
+			}
+		}
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("IP:");
+		ImGui::SameLine();
+		ImGui::InputText("##IP:", inputIP, 100);
+		if (ImGui::Button("Join Local Game")) {
+			if (m_network->connectToIP(inputIP)) {
+				// Wait until welcome-package is received,
+				// Save the package info,
+				// Pop and push into JoinLobbyState.
+				this->requestStackPop();
+				this->requestStackPush(States::JoinLobby);
+			}
+		}
+
 	}
 	ImGui::End();
 
-	ImGui::Begin("Name:");
-	ImGui::InputText("", inputName, 100);
-	m_app->getStateStorage().setMenuToLobbyData(MenuToLobbyData{ inputName });
-	ImGui::End();
-
-	// 
-	ImGui::Begin("Join Game");
-	ImGui::InputText("IP:", inputIP, 100);
-	if (ImGui::Button("S.P.L.A.S.H over there")) {
-		if (m_network->connectToIP(inputIP)) {
-			// Wait until welcome-package is recieved,
-			// Save the package info,
-			// Pop and push into JoinLobbyState.
-			this->requestStackPop();
-			this->requestStackPush(States::JoinLobby);
-		}
-	}
-	ImGui::End();
 
 	// Display open lobbies
 	ImGui::Begin("Hosted Lobbies on LAN", NULL);
@@ -116,7 +130,7 @@ bool MenuState::onEvent(Event& event) {
 }
 
 bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
-	// Get Ip (as int) then convert into char*
+	// Get IP (as int) then convert into char*
 	ULONG ip_as_int = event.getIp();
 	Network::ip_int_to_ip_string(ip_as_int, m_ipBuffer, m_ipBufferSize);
 	std::string ip_as_string(m_ipBuffer);

@@ -8,8 +8,6 @@
 // 218 of these in the fbx sdk
 #pragma warning(disable:26495)
 
-#define NOMINMAX // Removes min max macros which cause issues
-
 // TODO: only define GLM_FORCE_DEPTH_ZERO_TO_ONE if directx or vulkan (not opengl)
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -29,6 +27,7 @@
 #include "Sail/graphics/shader/material/MaterialShader.h"
 #include "Sail/graphics/shader/material/WireframeShader.h"
 #include "Sail/graphics/shader/dxr/GBufferOutShader.h"
+#include "Sail/graphics/shader/dxr/GBufferWireframe.h"
 #include "Sail/graphics/geometry/factory/CubeModel.h"
 #include "Sail/graphics/geometry/factory/ConeModel.h"
 #include "Sail/graphics/geometry/factory/PlaneModel.h"
@@ -37,5 +36,8 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/graphics/geometry/Transform.h"
-#include "Sail/utils/ConsoleCommands.h"
-#include "Sail/utils/Profiler.h"
+#include "Sail/utils/SailImGui/ConsoleCommands.h"
+#include "Sail/utils/SailImGui/Profiler.h"
+#include "Sail/utils/SailImGui/RenderSettingsWindow.h"
+#include "Sail/utils/SailImGui/LightDebugWindow.h"
+#include "Sail/utils/SailImGui/PlayerInfoWindow.h"
