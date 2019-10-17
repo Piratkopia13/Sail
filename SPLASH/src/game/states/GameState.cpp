@@ -192,8 +192,7 @@ bool GameState::processInput(float dt) {
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
-		//m_componentSystems.renderSystem->toggleHitboxes();
-		Logger::Log("NrOfPlayer: " + std::to_string(NWrapperSingleton::getInstance().getPlayers().size()));
+		m_componentSystems.renderSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
