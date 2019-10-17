@@ -358,6 +358,8 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
+	m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
+
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
@@ -451,12 +453,17 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+
+	// The host will also save the data in the sender system so that it can be forwarded to all other clients
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.networkSenderSystem->pushDataToBuffer(event.getSerializedData());
+	}
 	return true;
 }
 
 bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 	if ( !m_isSingleplayer ) {
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+		/*NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::PLAYER_DIED,
 			m_player
 		);
@@ -464,7 +471,7 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 		m_player->addComponent<SpectatorComponent>();
 		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
 		m_player->removeComponent<GunComponent>();
-		m_player->removeAllChildren();
+		m_player->removeAllChildren();*/
 		// TODO: Remove all the components that can/should be removed
 
 	} else {
@@ -496,11 +503,13 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
 			for (auto& e : receiverEntities)
 			{
-				if (e->getComponent<NetworkSenderComponent>()->m_id >> 18 == event.getPlayerID())
+				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID())
 				{
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_DISCONNECT,
-						e
+						SAIL_NEW Netcode::MessageDataPlayerDisconnect{
+							event.getPlayerID()
+						}
 					);
 
 					// This will remove the entity 

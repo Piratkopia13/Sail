@@ -4,16 +4,15 @@
 #include "NWrapperClient.h"
 
 class NetworkSenderSystem;
-class NetworkSenderEvent;
 
 struct NetworkSenderEvent {
 	Netcode::MessageType type;
-	
-	// OLD
-	Entity* pRelevantEntity = nullptr;
-
-	// NEW
-//	Netcode::MessageData* data = nullptr;  
+	Netcode::MessageData* data = nullptr;  
+	virtual ~NetworkSenderEvent() {
+		if (data) {
+			delete data;
+		}
+	}
 };
 
 
@@ -46,7 +45,7 @@ public:
 
 	// Specifically for One-Time-Events during the gamestate
 	void setNSS(NetworkSenderSystem* NSS);
-	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity *pRelevantEntity/*Netcode::MessageData* messageData*/);
+	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData);
 private:
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;
