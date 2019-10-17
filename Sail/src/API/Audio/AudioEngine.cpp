@@ -206,7 +206,7 @@ void AudioEngine::updateSoundWithCurrentPosition(int index, Camera& cam, const T
 	};
 
 	// update the source position with the new relative position
-	m_sound[index].hrtfParams->SetSourcePosition(&hrtfPosition);
+ 	m_sound[index].hrtfParams->SetSourcePosition(&hrtfPosition);
 }
 
 void AudioEngine::startSpecificSound(int index, float volume) {

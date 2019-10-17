@@ -27,7 +27,7 @@ public:
 
 
 private:
-	Netcode::NetworkObjectID m_playerID;
+	unsigned char m_playerID;
 
 	void handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);
 	void handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar);

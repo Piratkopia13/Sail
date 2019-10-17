@@ -26,6 +26,10 @@ NetworkSenderSystem::~NetworkSenderSystem() {
 	}
 }
 
+void NetworkSenderSystem::initWithPlayerID(unsigned char playerID) {
+	m_playerID = playerID;
+}
+
 /*
   The construction of messages needs to match how the NetworkReceiverSystem parses them so
   any changes made here needs to be made there as well!
@@ -192,10 +196,6 @@ void NetworkSenderSystem::stop() {
 			m_HOSTONLY_dataToForward.pop();
 		}
 	}
-}
-
-void NetworkSenderSystem::initWithPlayerID(unsigned char playerID) {
-	m_playerID = playerID;
 }
 
 void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e) {
