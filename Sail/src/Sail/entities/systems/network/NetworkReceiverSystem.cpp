@@ -37,6 +37,10 @@ void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
 	m_incomingDataBuffer.push(data);
 }
 
+const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
+	return entities;
+}
+
 
 /*
   The parsing of messages needs to match how the NetworkSenderSystem constructs them so
@@ -202,6 +206,14 @@ void NetworkReceiverSystem::update() {
 			}
 			else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
 				backToLobby();
+			}
+			else if (eventType == Netcode::MessageType::PLAYER_DISCONNECT) {
+				ar(netObjectID);
+				playerDisconnect(netObjectID);
+			}
+			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
+				ar(netObjectID);
+				playerDied(netObjectID);
 			}
 		}
 
@@ -397,7 +409,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
-
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::PLAYER_DIED, nullptr);
@@ -416,10 +427,24 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 	}
 }
 
+void NetworkReceiverSystem::playerDisconnect(Netcode::NetworkObjectID id) {
+	// This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->removeDeleteAllChildren();
+			// TODO: Remove all the components that can/should be removed
+
+			e->queueDestruction();
+
+			break; // Break because should only be one candle; stop looping!
+		}
+	}
+}
 void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			
+
 			for (int i = 0; i < e->getChildEntities().size(); i++) {
 				auto candleE = e->getChildEntities()[i];
 
@@ -439,12 +464,11 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool
 					return;
 				}
 			}
-			
+
 			break;
 		}
 	}
 }
-
 void NetworkReceiverSystem::matchEnded() {
 
 	if (NWrapperSingleton::getInstance().isHost()) {
