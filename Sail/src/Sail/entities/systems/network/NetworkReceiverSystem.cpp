@@ -186,7 +186,7 @@ void NetworkReceiverSystem::update() {
 					Archive::loadVec3(ar, gunPosition);
 					Archive::loadVec3(ar, gunVelocity);
 
-				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 4, 0);
+				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 4, 4.f);
 			}
 	
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
