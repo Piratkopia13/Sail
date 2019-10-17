@@ -110,11 +110,34 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				}
 			}
 
+			if (collision->onGround) {
+				isPlayingRunningSound = true;
+
+				if (onGroundTimer > onGroundThreshold) {
+					onGroundTimer = onGroundThreshold;
+				}
+				else {
+					onGroundTimer += dt;
+				}
+			}
+
+			else if (!collision->onGround) {
+				if (onGroundTimer < 0.0f) {
+					onGroundTimer = 0.0f;
+					isPlayingRunningSound = false;
+				}
+				else {
+					onGroundTimer -= dt;
+				}
+				
+			}
+
 			if ( playerMovement.upMovement == 1.0f ) {
 				if (!m_wasSpacePressed && collision->onGround) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
-			//		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+				e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+				e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
 				//	// Add networkcomponent for jump 
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_JUMPED,
@@ -141,7 +164,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				if ( !collision->onGround ) {
 					acceleration = acceleration * 0.5f;
 					// AUDIO TESTING (turn OFF looping running sound)
-					audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
+					if (!isPlayingRunningSound) {
+						audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
+					}
 				}
 				// AUDIO TESTING (playing a looping running sound)
 				else if ( m_runSoundTimer > 0.3f ) {
