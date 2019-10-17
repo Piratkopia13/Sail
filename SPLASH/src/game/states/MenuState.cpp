@@ -57,32 +57,48 @@ bool MenuState::render(float dt, float alpha) {
 bool MenuState::renderImgui(float dt) {
 	
 	// Host
-	ImGui::Begin("Host Game");
-	if (ImGui::Button("S.P.L.A.S.H over here")) {
-		if (m_network->host()) {
+	if(ImGui::Begin("Main Menu")) {
+		ImGui::Text("Name:");
+		ImGui::SameLine();
+		ImGui::InputText("##name", &NWrapperSingleton::getInstance().getMyPlayerName().front(), MAX_NAME_LENGTH);
+		ImGui::Separator();
+		if (ImGui::Button("Single Player")) {
+			if (m_network->host()) {
+				NWrapperSingleton::getInstance().setPlayerID(HOST_ID);
+				if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
+					NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+				}
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
+
 			this->requestStackPop();
-			this->requestStackPush(States::HostLobby);
+			this->requestStackPush(States::Game);
+			}
 		}
+		ImGui::SameLine(200);
+		if (ImGui::Button("Host Game")) {
+			if (m_network->host()) {
+				this->requestStackPop();
+				this->requestStackPush(States::HostLobby);
+			}
+		}
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("IP:");
+		ImGui::SameLine();
+		ImGui::InputText("##IP:", inputIP, 100);
+		if (ImGui::Button("Join Local Game")) {
+			if (m_network->connectToIP(inputIP)) {
+				// Wait until welcome-package is received,
+				// Save the package info,
+				// Pop and push into JoinLobbyState.
+				this->requestStackPop();
+				this->requestStackPush(States::JoinLobby);
+			}
+		}
+
 	}
 	ImGui::End();
 
-	ImGui::Begin("Name:");
-	ImGui::InputText("", &NWrapperSingleton::getInstance().getMyPlayerName().front(), MAX_NAME_LENGTH);
-	ImGui::End();
-
-	// 
-	ImGui::Begin("Join Game");
-	ImGui::InputText("IP:", inputIP, 100);
-	if (ImGui::Button("S.P.L.A.S.H over there")) {
-		if (m_network->connectToIP(inputIP)) {
-			// Wait until welcome-package is received,
-			// Save the package info,
-			// Pop and push into JoinLobbyState.
-			this->requestStackPop();
-			this->requestStackPush(States::JoinLobby);
-		}
-	}
-	ImGui::End();
 
 	// Display open lobbies
 	ImGui::Begin("Hosted Lobbies on LAN", NULL);

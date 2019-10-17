@@ -40,7 +40,29 @@ bool EndGameState::render(float dt, float alpha) {
 }
 
 bool EndGameState::renderImgui(float dt) {
-	ImGui::Begin("Game over");
+
+	if (ImGui::Begin("Game Over")) {
+		if (NWrapperSingleton::getInstance().isHost()) {
+			if (ImGui::Button("Lobby")) {
+				onReturnToLobby(NetworkBackToLobby{});
+			}
+		}
+		if (ImGui::Button("Main menu")) {
+			NWrapperSingleton::getInstance().resetNetwork();
+			NWrapperSingleton::getInstance().resetWrapper();
+			this->requestStackPop();
+			this->requestStackPush(States::MainMenu);
+		}
+		if (ImGui::Button("Quit")) {
+			PostQuitMessage(0);
+		}
+
+	}
+	ImGui::End();
+
+
+
+	/*ImGui::Begin("Game over");
 	ImGui::SetWindowPos({500,500});
 	ImGui::End();
 
@@ -64,7 +86,7 @@ bool EndGameState::renderImgui(float dt) {
 	if (ImGui::Button("Quit Button")) {
 		PostQuitMessage(0);
 	}
-	ImGui::End();
+	ImGui::End();*/
 
 	GameDataTracker::getInstance().renderImgui();
 
