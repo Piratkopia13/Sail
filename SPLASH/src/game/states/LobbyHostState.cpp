@@ -62,7 +62,7 @@ bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 }
 
 bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
-	// Remove player from player list
+	// Remove player from player list.
 	unsigned char id = event.getPlayerID();
 	NWrapperSingleton::getInstance().playerLeft(id);
 	
