@@ -38,11 +38,9 @@ bool EndGameState::renderImgui(float dt) {
 
 	ImGui::Begin("Return");
 	ImGui::SetWindowPos({ 500,550 });
-	//if (ImGui::Button("Lobby")) {
-	//	this->requestStackPop();
-	//	this->requestStackPush(States::HostLobby);
-	//	Application::getInstance()->dispatchEvent(Event(Event::Type::NETWORK_BACK_TO_LOBBY));
-	//}
+	if (ImGui::Button("Lobby")) {
+		onReturnToLobby(NetworkBackToLobby{});
+	}
 	if (ImGui::Button("Main menu")) {
 		NWrapperSingleton::getInstance().resetNetwork();
 		NWrapperSingleton::getInstance().resetWrapper();
@@ -71,17 +69,18 @@ bool EndGameState::onEvent(Event& event) {
 }
 
 bool EndGameState::onReturnToLobby(NetworkBackToLobby& event) {
-
+	// If host, propagate to other clients
 	if (NWrapperSingleton::getInstance().isHost()) {
 		std::string msg = "z";
 
 		// Send it all clients
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(msg);
 	}
-	else {
-		this->requestStackPop();
-		this->requestStackPush(States::JoinLobby);
-	}
+
+	// Go to lobby!
+	this->requestStackPop();
+	this->requestStackPush(States::JoinLobby);
+	
 	
 	return true;
 }
