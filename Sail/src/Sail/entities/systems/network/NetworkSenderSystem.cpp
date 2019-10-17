@@ -211,8 +211,11 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 		TransformComponent* t = e->getComponent<TransformComponent>();
 		ArchiveHelpers::archiveVec3(*ar, t->getTranslation()); // Send translation
 
-		// After the remote entity has been created we'll want to be able to modify its transform
-		messageType = Netcode::MODIFY_TRANSFORM;
+		// When the remote entity has been created we want to update translation and rotation of that entity
+		auto networkComp = e->getComponent<NetworkSenderComponent>();
+		networkComp->removeDataType(Netcode::CREATE_NETWORKED_ENTITY);
+		networkComp->addDataType(Netcode::MODIFY_TRANSFORM);
+		networkComp->addDataType(Netcode::ROTATION_TRANSFORM);
 	}
 	break;
 	case Netcode::MessageType::MODIFY_TRANSFORM:
@@ -259,7 +262,6 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 		Netcode::MessageDataWaterHitPlayer* data = static_cast<Netcode::MessageDataWaterHitPlayer*>(event->data);
 		unsigned __int32 NetObjectID = data->playerWhoWasHitID;
 		
-		std::cout << "Sending: Player - " << std::to_string(NetObjectID) << " was hit!\n";
 		(*ar)(NetObjectID);
 	}
 	break;
@@ -268,7 +270,15 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 		Netcode::MessageDataPlayerDied* data = static_cast<Netcode::MessageDataPlayerDied*>(event->data);
 		unsigned __int32 NetObjectID = data->playerWhoDied;
 
-		std::cout << "Sending: Player - " << std::to_string(NetObjectID) << " died!\n";
+		(*ar)(NetObjectID); // Send
+	}
+	break;
+	case Netcode::MessageType::PLAYER_DISCONNECT:
+	{
+		// NetObjectID should be send outside of this loop.
+		Netcode::MessageDataPlayerDisconnect* data = static_cast<Netcode::MessageDataPlayerDisconnect*>(event->data);
+		unsigned char NetObjectID = data->playerID;
+
 		(*ar)(NetObjectID); // Send
 	}
 	break;
@@ -280,7 +290,6 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	{
 	}
 	break;
-
 	case Netcode::MessageType::CANDLE_HELD_STATE:
 	{
 		Netcode::MessageDataCandleHeldState* data = static_cast<Netcode::MessageDataCandleHeldState*>(event->data);

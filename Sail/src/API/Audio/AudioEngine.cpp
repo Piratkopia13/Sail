@@ -147,8 +147,7 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 	return indexValue;
 }
 
-
-void AudioEngine::streamSound(const std::string& filename, int streamIndex, bool loop) {
+void AudioEngine::streamSound(const std::string& filename, int streamIndex, float volume, bool loop) {
 	bool expectedValue = false;
 	while (!m_streamLocks[streamIndex].compare_exchange_strong(expectedValue, true));
 
@@ -156,7 +155,7 @@ void AudioEngine::streamSound(const std::string& filename, int streamIndex, bool
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		m_streamLocks[streamIndex].store(false);
 	} else {
-		this->streamSoundInternal(filename, streamIndex, loop);
+		this->streamSoundInternal(filename, streamIndex, volume, loop);
 	}
 
 	return;
@@ -207,6 +206,54 @@ void AudioEngine::updateSoundWithCurrentPosition(int index, Camera& cam, const T
 
 	// update the source position with the new relative position
  	m_sound[index].hrtfParams->SetSourcePosition(&hrtfPosition);
+}
+
+void AudioEngine::updateStreamWithCurrentPosition(int index, Camera& cam, const Transform& transform,
+	const glm::vec3& positionOffset, float alpha) {
+
+	glm::vec3 streamPos = transform.getInterpolatedTranslation(alpha);
+
+	// If the sound has an offset position from the entity's transform then rotate the offset with the transform's rotation and add it to the position
+	//if (m_sound[index].positionOffset != glm::vec3(0, 0, 0)) {
+	if (positionOffset != glm::vec3(0, 0, 0)) {
+		streamPos += glm::rotate(transform.getInterpolatedRotation(alpha), positionOffset);
+	}
+
+	glm::vec3 negativeZAxis = glm::normalize(cam.getDirection());
+	glm::vec3 positiveYAxisGuess = glm::normalize(-cam.getUp());
+	glm::vec3 positiveXAxis = glm::normalize(glm::cross(negativeZAxis, positiveYAxisGuess));
+	glm::vec3 positiveYAxis = glm::normalize(cross(negativeZAxis, positiveXAxis));
+
+	glm::mat4x4 rotationTransform{
+		positiveXAxis.x, positiveYAxis.x, negativeZAxis.x, 0.f,
+		positiveXAxis.y, positiveYAxis.y, negativeZAxis.y, 0.f,
+		positiveXAxis.z, positiveYAxis.z, negativeZAxis.z, 0.f,
+		0.f, 0.f, 0.f, 1.f,
+	};
+
+	// Reinterpret the sound's position in the device's coordinate system.
+	glm::vec3 soundRelativeToHead = glm::vec3((rotationTransform * glm::translate(-cam.getPosition())) * glm::vec4(streamPos, 1.f));
+
+	// Note that at (0, 0, 0) exactly, the HRTF audio will simply pass through audio. We can use a minimal offset
+	// to simulate a zero distance when the hologram position vector is exactly at the device origin in order to
+	// allow HRTF to continue functioning in this edge case.
+	float distanceFromHologramToHead = glm::length(soundRelativeToHead);
+
+	static const float distanceMin = 0.00001f;
+	if (distanceFromHologramToHead < distanceMin) {
+		soundRelativeToHead = glm::vec3(0.f, distanceMin, 0.f);
+	}
+
+	auto hrtfPosition = HrtfPosition{
+		soundRelativeToHead.x,
+		soundRelativeToHead.y,
+		soundRelativeToHead.z
+	};
+
+	// update the source position with the new relative position
+	if (m_stream[index].sourceVoice != nullptr) {
+		m_stream[index].hrtfParams->SetSourcePosition(&hrtfPosition);
+	}
 }
 
 void AudioEngine::startSpecificSound(int index, float volume) {
@@ -302,6 +349,16 @@ int AudioEngine::getAvailableStreamIndex() {
 	return returnValue;
 }
 
+soundStruct* AudioEngine::getSound(int index)
+{
+	return &m_sound[index];
+}
+
+soundStruct* AudioEngine::getStream(int index)
+{
+	return &m_stream[index];
+}
+
 // Note: the sourceVoice's volume might not actually be doing anything atm, use the submix volume instead
 void AudioEngine::setSoundVolume(int index, float value) {
 	if (this->checkSoundIndex(index)) {
@@ -353,7 +410,7 @@ HRESULT AudioEngine::initXAudio2() {
 }
 
 
-void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, bool loop) {
+void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, float volume, bool loop) {
 
 	if (!m_isRunning) {
 		return;
@@ -412,12 +469,75 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 				Logger::Error("Failed to get meta data for '.xwb' file!");
 			}
 
+			Microsoft::WRL::ComPtr<IXAPO> xapo;
+			// Passing in nullptr as the first arg for HrtfApoInit initializes the APO with defaults of
+			// omnidirectional sound with natural distance decay behavior.
+			// CreateHrtfApo will fail with E_NOTIMPL on unsupported platforms.
+			HRESULT hr = CreateHrtfApo(nullptr, &xapo);
+
+			if (SUCCEEDED(hr)) {
+				hr = xapo.As(&m_stream[myIndex].hrtfParams);
+			}
+
+			// Set the default environment.
+			if (SUCCEEDED(hr)) {
+				hr = m_stream[myIndex].hrtfParams->SetEnvironment(m_stream[myIndex].environment);
+			}
+
+			// creating a 'sourceVoice' for WAV file-type
+			//if (SUCCEEDED(hr)) {
+			//	hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+			//}
 			hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, wfx, 0, 1.0f, &voiceContext);
 			if (hr != S_OK) {
 				Logger::Error("Failed to create source voice!");
 			}
 
 			m_stream[myIndex].sourceVoice->SetVolume(0);
+
+			// THIS IS THE OTHER VERSION FOR ADPC
+					// ... for ADPC-WAV compressed file-type
+					//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
+
+			if (FAILED(hr)) {
+				Logger::Error("Failed to create the actual 'SourceVoice' for a sound file!");
+			}
+
+			// Create a submix voice that will host the xAPO.
+			// This submix voice will be destroyed when XAudio2 instance is destroyed.
+			IXAudio2SubmixVoice* submixVoice = nullptr;
+			if (SUCCEEDED(hr)) {
+				XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
+				fxDesc.InitialState = TRUE;
+				fxDesc.OutputChannels = 2;          // Stereo output
+				fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
+
+				XAUDIO2_EFFECT_CHAIN fxChain{};
+				fxChain.EffectCount = 1;
+				fxChain.pEffectDescriptors = &fxDesc;
+
+				XAUDIO2_VOICE_SENDS sends = {};
+				XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+				sendDesc.pOutputVoice = m_masterVoice;
+				sends.SendCount = 1;
+				sends.pSends = &sendDesc;
+
+				// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
+				hr = m_xAudio2->CreateSubmixVoice(&submixVoice, 1, 48000, 0, 0, &sends, &fxChain);
+				submixVoice->SetVolume(volume);
+			}
+
+			// Route the source voice to the submix voice.
+			// The complete graph pipeline looks like this -
+			// Source Voice -> Submix Voice (HRTF xAPO) -> Mastering Voice
+			if (SUCCEEDED(hr)) {
+				XAUDIO2_VOICE_SENDS sends = {};
+				XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+				sendDesc.pOutputVoice = submixVoice;
+				sends.SendCount = 1;
+				sends.pSends = &sendDesc;
+				hr = m_stream[myIndex].sourceVoice->SetOutputVoices(&sends);
+			}
 
 			// Create the 'overlapped' structure as well as buffers to handle async I/O
 #if (_WIN32_WINNT >= _WIN32_WINNT_VISTA)

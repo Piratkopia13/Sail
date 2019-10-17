@@ -33,6 +33,7 @@ namespace Netcode {
 		WATER_HIT_PLAYER,
 		SET_CANDLE_HEALTH,
 		PLAYER_DIED,
+		PLAYER_DISCONNECT,
 		MATCH_ENDED,
 		CANDLE_HELD_STATE,
 		SEND_ALL_BACK_TO_LOBBY,
@@ -128,6 +129,13 @@ namespace Netcode {
 		Netcode::NetworkObjectID candleOwnerID;
 		bool isHeld;
 		glm::vec3 candlePos;
+	};
+
+	class MessageDataPlayerDisconnect : public MessageData {
+	public:
+		MessageDataPlayerDisconnect(unsigned char id) : playerID(id) {}
+		~MessageDataPlayerDisconnect() {}
+		unsigned char playerID;
 	};
 }
 

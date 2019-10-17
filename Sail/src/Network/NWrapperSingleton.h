@@ -4,11 +4,15 @@
 #include "NWrapperClient.h"
 
 class NetworkSenderSystem;
-//struct NetworkSenderEvent;
 
 struct NetworkSenderEvent {
 	Netcode::MessageType type;
 	Netcode::MessageData* data = nullptr;  
+	virtual ~NetworkSenderEvent() {
+		if (data) {
+			delete data;
+		}
+	}
 };
 
 
