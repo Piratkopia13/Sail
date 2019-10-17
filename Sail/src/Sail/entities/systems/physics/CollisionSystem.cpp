@@ -103,6 +103,11 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 					//Compare normal and axis, only do collisions if same axis. I.e "true" collision
 					sumVec += collisionInfo_i.normal;
 
+					// Calculate the plane that the triangle is on
+					glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - collisionInfo_i.positions[0];
+					float distance = -glm::dot(triangleToWorldOrigo, collisionInfo_i.normal);
+					collisionInfo_i.intersectionPosition = Intersection::PointProjectedOnPlane(boundingBox->getPosition(), collisionInfo_i.normal, distance);
+
 					//Add collision to current collisions for collisionComponent
 					collision->collisions.push_back(collisionInfo_i);
 

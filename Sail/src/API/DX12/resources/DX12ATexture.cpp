@@ -4,12 +4,12 @@
 #include "Sail/Application.h"
 
 DX12ATexture::DX12ATexture()
-	: cpuDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers() * 3)
+	: cpuDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers() * 3)
 	, isRenderableTex(false) 
 	, useOneResource(false)
 {
 	context = Application::getInstance()->getAPI<DX12API>();
-	const auto& numSwapBuffers = context->getNumSwapBuffers();
+	const auto& numSwapBuffers = context->getNumGPUBuffers();
 
 	// States needs to be handled on a per-thread basis
 	// They are therefore contained in a 2D vector as states[threadID][frameIndex]
@@ -32,13 +32,13 @@ DX12ATexture::~DX12ATexture() {
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getSrvCDH(int swapBuffer) const {
-	int i = (swapBuffer == -1) ? context->getFrameIndex() : swapBuffer;
+	int i = (swapBuffer == -1) ? context->getSwapIndex() : swapBuffer;
 	if (useOneResource) { i = 0; }
 	return srvHeapCDHs[i];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH(int swapBuffer) const {
-	int i = (swapBuffer == -1) ? context->getFrameIndex() : swapBuffer;
+	int i = (swapBuffer == -1) ? context->getSwapIndex() : swapBuffer;
 	if (useOneResource) { i = 0; }
 	return uavHeapCDHs[i];
 }
@@ -61,7 +61,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH(int swapBuffer) const {
 //}
 
 void DX12ATexture::transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState) {
-	unsigned int frameIndex = context->getFrameIndex();
+	unsigned int frameIndex = context->getSwapIndex();
 	auto index = (useOneResource) ? 0 : frameIndex;
 
 	if (state[index] == newState) return;
@@ -77,7 +77,7 @@ bool DX12ATexture::isRenderable() const {
 void DX12ATexture::renameBuffer(const std::string& name) const {
 	std::wstring stemp = std::wstring(name.begin(), name.end());
 	LPCWSTR sw = stemp.c_str();
-	for (unsigned int i = 0; i < context->getNumSwapBuffers(); i++) {
+	for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
 		if (textureDefaultBuffers[i]) {
 			textureDefaultBuffers[i]->SetName(sw);
 		}

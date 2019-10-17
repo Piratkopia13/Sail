@@ -13,6 +13,7 @@ public:
 	struct CollisionInfo {
 		glm::vec3 normal;
 		glm::vec3 positions[3];
+		glm::vec3 intersectionPosition;
 		Entity* entity;
 	};
 

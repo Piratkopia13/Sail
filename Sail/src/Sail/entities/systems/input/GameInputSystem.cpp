@@ -8,10 +8,12 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../../ECS.h"
 #include "../physics/UpdateBoundingBoxSystem.h"
-
+#include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Sail/entities/components/AudioComponent.h"
+#include "../src/Network/NWrapperSingleton.h"
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
-	registerComponent<PlayerComponent>(true, false, false);
+	registerComponent<LocalOwnerComponent>(true, true, false);
 	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<SpeedLimitComponent>(true, true, false);
 	registerComponent<CollisionComponent>(true, true, false);
@@ -22,7 +24,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<GunComponent>(false, true, true);
 
 	// cam variables
-	m_yaw = 90.f;
+	m_yaw = 160.f;
 	m_pitch = 0.f;
 	m_roll = 0.f;
 
@@ -109,10 +111,15 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			if ( playerMovement.upMovement == 1.0f ) {
-				if ( !m_wasSpacePressed && collision->onGround) {
+				if (!m_wasSpacePressed && collision->onGround) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
-					audioComp->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+			//		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+				//	// Add networkcomponent for jump 
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_JUMPED,
+						nullptr	// Don't need to send id that 'we' jumped, it is deducable
+					);
 					m_gameDataTracker->logJump();
 				}
 				m_wasSpacePressed = true;
@@ -204,6 +211,8 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		);
 		forwards = glm::normalize(forwards);
 
+		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
+
 		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 1.8f, 0.f)));
 		m_cam->setCameraDirection(forwards);
 	}
@@ -218,7 +227,11 @@ void GameInputSystem::putDownCandle(Entity* e) {
 		auto candleE = e->getChildEntities()[i];
 		if ( candleE->hasComponent<CandleComponent>() ) {
 			auto candleComp = candleE->getComponent<CandleComponent>();
-			candleComp->toggleCarried();
+			candleComp->setCarried(!candleComp->isCarried());
+			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				Netcode::MessageType::CANDLE_HELD_STATE,
+				candleE.get()
+			);
 
 			return;
 		}
