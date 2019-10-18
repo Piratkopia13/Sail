@@ -130,8 +130,9 @@ void CandleSystem::putDownCandle(Entity* e) {
 	/* TODO: Raycast and see if the hit location is ground within x units */
 	if (!candleComp->isCarried()) {
 		if (candleComp->getIsLit()) {
-			candleTransComp->removeParent();
-			glm::vec3 dir = glm::vec3(1.0f, 0.f, 1.0f);// TODO: parentTransComp->getForward()
+			float yaw = -candleTransComp->getParent()->getRotations().y;
+			glm::vec3 dir = glm::vec3(cos(yaw), 0.f, sin(yaw));
+			candleTransComp->removeParent();			
 			candleTransComp->setTranslation(parentTransComp->getTranslation() + dir);
 			ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 		} else {
