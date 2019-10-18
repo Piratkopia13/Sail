@@ -195,6 +195,7 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.nearZ = cam.getNearZ();
 	newData.farZ = cam.getFarZ();
 	newData.cameraPosition = cam.getPosition();
+	newData.cameraDirection = cam.getDirection();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 	newData.nMetaballs = m_metaballsToRender;
 	newData.nDecals = m_decalsToRender;

@@ -72,11 +72,13 @@ struct SceneCBuffer {
 	float4x4 viewToWorld;
 	float4x4 clipToView;
 	float3 cameraPosition;
+	float padding1;
+	float3 cameraDirection;
 	uint nMetaballs;
     uint nDecals;
 	float nearZ;
 	float farZ;
-	float padding;
+	float padding2;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 };
 

@@ -124,19 +124,7 @@ void rayGen() {
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payload_metaball);
 	//===========MetaBalls RT END===========
 
-
-	//lOutput[launchIndex] = (payload_metaball.color);
-	//return;
-	//return;
-	float t;
-	//linearDepth /= CB_SceneData.farZ;
-	t = min(linearDepth, payload_metaball.closestTvalue) / 10.0f;
-	//t = payload_metaball.closestTvalue / 3;// / CB_SceneData.farZ;
-
-
-	float metaballDepth = payload_metaball.closestTvalue - CB_SceneData.nearZ * 4;// (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4)* projectionA;
-
-	
+	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payload_metaball.closestTvalue);
 
 	if (metaballDepth <= linearDepth) {
 		lOutput[launchIndex] = payload_metaball.color;	
