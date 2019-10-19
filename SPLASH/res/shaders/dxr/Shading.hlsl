@@ -95,7 +95,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 
 	if (sum > 10.f) {
 		renderWater = true;
-		waterOpacity = clamp(sqrt(sum) / 10.f, 0.f, 0.8f);
+		waterOpacity = clamp(sqrt(sum) / 6.f, 0.f, 0.8f);
 		// lOutput[launchIndex] = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
 		// return;
 	}
