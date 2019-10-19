@@ -61,8 +61,6 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	static const float3 mapStart = float3(-3.5f, 0.0f, -3.5f);
 	static const float maxRadius = 0.2f;
 
-	float waterOpacity = 1.0f;
-
 	float3 cellWorldSize = mapSize / arrSize;
 	// int3 ind = round(( (worldPosition - mapStart) / mapSize) * arrSize);
 	// int3 indMin = ind;
@@ -98,7 +96,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	}
 
 	if (sum > 10.f) {
-		waterOpacity = clamp(sum / 20.f, 0.f, 0.8f);
+		float waterOpacity = clamp(sum / 20.f, 0.f, 0.8f);
 		// lOutput[launchIndex] = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
 		// return;
 
@@ -108,12 +106,13 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 		roughness = lerp(roughness, 0.01f, waterOpacity);
 		ao 		  = lerp(ao, 0.5f, waterOpacity);
 		albedo = lerp(albedo, albedo * 0.8f, waterOpacity);
-		worldNormal += normalize(normalOffset) * clamp( ( -0.1f*sum + 2.f ), 0.f, 0.8f);
+		worldNormal += normalize(normalOffset) * clamp( ( -0.1f*sum + 2.f ), 0.0f, 0.8f);
 		worldNormal = normalize(worldNormal);
 		// metalness = 1.0f;
 		// roughness = 0.01f;
 		// ao = 0.5f;
 	}
 	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
+	// payload.color = float4(worldNormal * 0.5f + 0.5f, 1.0f);
 	// payload.color = phongShade(worldPosition, worldNormal, albedo);
 }
