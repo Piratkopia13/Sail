@@ -9,6 +9,35 @@ namespace ShaderComponent {
 		return SAIL_NEW DX12StructuredBuffer(initData, size, numElements, stride, bindShader, slot);
 	}
 
+	// This constructor is not used by ShaderPipeline
+	DX12StructuredBuffer::DX12StructuredBuffer(void* initData, unsigned int numElements, unsigned int stride)
+	:	m_register(-1)
+	, m_stride(stride)
+	, m_numElements(numElements)
+	, m_elementByteSize(stride)
+	{
+		m_context = Application::getInstance()->getAPI<DX12API>();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
+
+		m_srvHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, numSwapBuffers);
+
+		m_bufferUploadHeap.resize(numSwapBuffers);
+		m_cbGPUAddress.resize(numSwapBuffers);
+		m_srvCDHs.resize(numSwapBuffers);
+		m_resourceHeapSize.resize(numSwapBuffers);
+		for (UINT i = 0; i < numSwapBuffers; i++) {
+			m_resourceHeapSize[i] = stride * numElements;
+			// Store srv handles
+			m_srvCDHs[i] = m_srvHeap->getCPUDescriptorHandleForIndex(i);
+		}
+
+		createBuffers(numElements);
+		for (UINT i = 0; i < numSwapBuffers; i++) {
+			// Place initData in the buffer
+			memcpy(m_cbGPUAddress[i], initData, stride * numElements);
+		}
+	}
+
 	DX12StructuredBuffer::DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot)
 		: m_register(slot)
 		, m_stride(stride)
@@ -41,7 +70,7 @@ namespace ShaderComponent {
 	}
 
 	void DX12StructuredBuffer::updateData(const void* newData, unsigned int numElements, int meshIndex) {
-		assert(numElements < MAX_ELEMENTS && "Too many elements! Increase MAX_ELEMENTS in DX12StrucutedBuffer.h");
+		//assert(numElements < MAX_ELEMENTS && "Too many elements! Increase MAX_ELEMENTS in DX12StrucutedBuffer.h");
 		assert(meshIndex < MAX_MESHES_PER_FRAME && "Too many meshes! Increase MAX_MESHES_PER_FRAME in DX12StrucutedBuffer.h");
 
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated

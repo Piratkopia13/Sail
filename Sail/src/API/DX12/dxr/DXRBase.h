@@ -5,6 +5,7 @@
 #include "../DX12Utils.h"
 #include "Sail/api/Renderer.h"
 #include "../shader/DX12ConstantBuffer.h"
+#include "../shader/DX12StructuredBuffer.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
 
 // Include defines shared with dxr shaders
@@ -32,6 +33,7 @@ public:
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
+	void updateWaterData(unsigned int* data);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void reloadShaders();
@@ -153,5 +155,8 @@ private:
 	// Metaball Stuff
 	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2f, -0.2f, -0.2f, 0.2f, 0.2f, 0.2f };
 	ID3D12Resource1* m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
+
+	// Water "decals"
+	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
 
 };

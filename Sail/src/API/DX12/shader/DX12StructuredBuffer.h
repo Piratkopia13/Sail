@@ -8,6 +8,7 @@ namespace ShaderComponent {
 
 	class DX12StructuredBuffer : public StructuredBuffer {
 	public:
+		DX12StructuredBuffer(void* initData, unsigned int numElements, unsigned int stride);
 		DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot = 0);
 		~DX12StructuredBuffer();
 
@@ -33,7 +34,6 @@ namespace ShaderComponent {
 
 		unsigned int m_register;
 		std::vector<wComPtr<ID3D12Resource1>> m_bufferUploadHeap;
-		std::vector<wComPtr<ID3D12Resource1>> m_bufferDefaultHeap;
 		std::vector<UINT8*> m_cbGPUAddress;
 
 		std::unique_ptr<DescriptorHeap> m_srvHeap;

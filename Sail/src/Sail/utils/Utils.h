@@ -95,6 +95,8 @@ namespace Utils {
 	float clamp(float val, float min, float max);
 	float smootherstep(float edge0, float edge1, float x);
 	float wrapValue(float value, float lowerBound, float upperBound);
+	int to1D(const glm::i32vec3& ind, int xMax, int yMax);
+	glm::i32vec3 to3D(int ind, int xMax, int yMax);
 
 	static std::random_device rd;
 	static std::mt19937 gen(rd());

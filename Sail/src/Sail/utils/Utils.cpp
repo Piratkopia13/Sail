@@ -64,6 +64,18 @@ float Utils::wrapValue(float value, float lowerBound, float upperBound) {
 	return value;
 }
 
+int Utils::to1D(const glm::i32vec3& ind, int xMax, int yMax) {
+	return ind.x + xMax * (ind.y + yMax * ind.z);
+}
+
+glm::i32vec3 Utils::to3D(int ind, int xMax, int yMax) {
+	glm::i32vec3 ind3d;
+	ind3d.z = ind / (xMax * yMax);
+	ind -= (ind3d.z * xMax * yMax);
+	ind3d.y = ind / xMax;
+	ind3d.x = ind % xMax;
+	return ind3d;
+}
 
 glm::vec4 Utils::getRandomColor() {
 	return glm::vec4(Utils::rnd(), Utils::rnd(), Utils::rnd(), 1);

@@ -9,10 +9,9 @@
 #include "../renderer/DX12GBufferRenderer.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
-: m_shaderFilename(shaderFilename)
-, m_gbufferInputTextures(inputs)
-, m_brdfLUTPath("pbr/brdfLUT.tga")
-{
+	: m_shaderFilename(shaderFilename)
+	, m_gbufferInputTextures(inputs)
+	, m_brdfLUTPath("pbr/brdfLUT.tga") {
 	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
 	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
 	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
@@ -49,6 +48,23 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	m_aabb_desc_resource->Unmap(0, nullptr);
 
 	m_decalsToRender = 0;
+
+	// Init water "decals"
+	unsigned int numElements = WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z;
+	unsigned int waterDataSize = sizeof(unsigned int) * numElements;
+	int* initData = new int[waterDataSize];
+	memset(initData, 0, waterDataSize);
+	//for (int x = 0; x < WATER_GRID_X; x++) {
+	//	for (int y = 0; y < WATER_GRID_Y; y++) {
+	// 		for (int z = 0; z < WATER_GRID_Z; z++) {
+	// 			int i = Utils::to1D(glm::i32vec3(x,y,z), WATER_GRID_X, WATER_GRID_Y);
+	// 			initData[i] = (x % 2 + z % 2 + y % 2) % 2;
+	// 		}
+	//	}
+	//}
+	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(int));
+	delete initData;
+
 }
 
 DXRBase::~DXRBase() {
@@ -211,6 +227,10 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 	m_decalsToRender = size;
 
 	m_decalCB->updateData(&newData, sizeof(newData));
+}
+
+void DXRBase::updateWaterData(unsigned int* data) {
+	m_waterStructuredBuffer->updateData(data, WATER_ARR_SIZE, 0);
 }
 
 void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
@@ -720,6 +740,8 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
 		D3D12_GPU_VIRTUAL_ADDRESS decalCBHandle = m_decalCB->getBuffer()->GetGPUVirtualAddress();
 		tableBuilder.addDescriptor(decalCBHandle);
+		D3D12_GPU_VIRTUAL_ADDRESS waterDataAddr = m_waterStructuredBuffer->getBuffer()->GetGPUVirtualAddress();
+		tableBuilder.addDescriptor(waterDataAddr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -840,6 +862,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10 + DX12GBufferRenderer::NUM_GBUFFERS + 1, 0U, 3U);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
+	m_localSignatureRayGen->addSRV("WaterData", 6, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);

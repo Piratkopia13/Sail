@@ -22,6 +22,8 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 
 	m_currNumDecals = 0;
 	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);
+
+	memset(m_waterData, 0.f, WATER_ARR_SIZE * sizeof(unsigned int));
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
@@ -79,6 +81,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
 	}
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
+	m_dxr.updateWaterData(m_waterData);
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
 
@@ -154,6 +157,14 @@ void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& 
 	decalData.halfSize = halfSize;
 	m_decals[m_currNumDecals % MAX_DECALS] = decalData;
 	m_currNumDecals++;
+
+	static const glm::vec3 mapSize(56.f, 10.f, 56.f);
+	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+	static const glm::vec3 mapStart(-3.5f, 0.f, -3.5f);
+
+	glm::i32vec3 ind = round(((pos - mapStart) / mapSize) * arrSize);
+	int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
+	m_waterData[i] = 1;
 }
 
 void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {

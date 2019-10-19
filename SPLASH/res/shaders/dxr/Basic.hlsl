@@ -17,9 +17,12 @@ RWTexture2D<float4> lOutput : register(u0);
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
 ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0);
+
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
+
+StructuredBuffer<uint> waterData : register(t6, space0);
 
 // Texture2DArray<float4> textures : register(t2, space0);
 Texture2D<float4> sys_texAlbedo : register(t2);
@@ -94,11 +97,58 @@ void rayGen() {
 	payload.closestTvalue = 0;
 	payload.color = float4(0,0,0,0);
 	if (worldNormal.x == -1 && worldNormal.y == -1) {
-		//Bounding boxes dont need shadeing
+		// Bounding boxes dont need shading
 		lOutput[launchIndex] = float4(albedoColor, 1.0f);
 		return;
 	} else {
-		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+
+		// Render pixel as water if close to a water point
+		static const float3 mapSize = float3(56.f, 10.f, 56.f);
+		static const float3 arrSize = float3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+		static const float3 mapStart = float3(-3.5f, 0.0f, -3.5f);
+		
+		bool renderWater = false;
+		float radius = 0.2f;
+
+		float3 cellWorldSize = mapSize / arrSize;
+		// int3 ind = round(( (worldPosition - mapStart) / mapSize) * arrSize);
+		// int3 indMin = ind;
+		// int3 indMax = ind;
+		int3 indMin = round(( (worldPosition - radius - mapStart) / mapSize) * arrSize);
+		int3 indMax = round(( (worldPosition + radius - mapStart) / mapSize) * arrSize);
+
+		float sum = 0.f;
+		for (int x = indMin.x; x <= indMax.x; x++) {
+			for (int y = indMin.y; y <= indMax.y; y++) {
+				for (int z = indMin.z; z <= indMax.z; z++) {
+					int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
+					i = clamp(i, 0, WATER_ARR_SIZE - 1);
+					
+					if (waterData[i]) {
+						// lOutput[launchIndex] = float4(1.0f, 0.f, 0.f, 1.0f);
+						// return;
+						float3 waterPointWorldPos = float3(x,y,z) * cellWorldSize + mapStart;
+
+						float3 dstV = worldPosition - waterPointWorldPos;
+						float dstSqrd = dot(dstV, dstV);
+						sum += radius / dstSqrd;
+					}
+				}
+			}
+		}
+
+		if (sum > 20.f) {
+			renderWater = true;
+			// lOutput[launchIndex] = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
+			// return;
+		}
+
+		if (renderWater) {
+			shade(worldPosition, worldNormal, albedoColor * 0.5f, 1.0f, 0.01f, 0.5f, payload);
+		} else {
+			shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+		}
+
 	}
 
 
@@ -131,15 +181,32 @@ void rayGen() {
 	} else {
 		lOutput[launchIndex] = payload.color;
 
-		float4 totDecalColour = 0.0f;
-		for (uint i = 0; i < CB_SceneData.nDecals; i++) {
-			totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
-			if (!all(totDecalColour == 0.0f)) {
-				lOutput[launchIndex] = totDecalColour;
-				break;
-			}
-		}
+		// float4 totDecalColour = 0.0f;
+		// for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+		// 	totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+		// 	if (!all(totDecalColour == 0.0f)) {
+		// 		lOutput[launchIndex] = totDecalColour;
+		// 		break;
+		// 	}
+		// }
 	}
+
+
+	// float3 mapSize = float3(56.f, 10.f, 56.f);
+	// float3 arrSize = float3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+	// float3 mapStart = float3(-3.5f, 0.f, -3.5f);
+	// int3 ind = round(( (worldPosition - mapStart) / mapSize ) * arrSize);
+	// int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
+	// i = clamp(i, 0, int(arrSize.x * arrSize.y * arrSize.z) - 1);
+
+	// lOutput[launchIndex].r = waterData[i];
+	// lOutput[launchIndex].gb = 0.f;
+	// lOutput[launchIndex].a = 1.f;
+
+	// lOutput[launchIndex].x = i / (arrSize.x * arrSize.y * arrSize.z);
+	// lOutput[launchIndex].x = ind.x / arrSize.x;
+	// lOutput[launchIndex].y = ind.y / arrSize.y;
+	// lOutput[launchIndex].z = ind.z / arrSize.z;
 
 #else
 	// Fully RT
@@ -234,7 +301,6 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
         normalSample.y = 1.0f - normalSample.y;
         normalInWorldSpace = mul(normalize(normalSample * 2.f - 1.f), tbn);
 	}
-
 
 	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
 	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
