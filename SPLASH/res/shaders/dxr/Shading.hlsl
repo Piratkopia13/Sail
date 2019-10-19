@@ -51,19 +51,57 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.5f) {
 	// Ray direction for first ray when cast from GBuffer must be calculated using camera position
 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
-	
-	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
-	// payload.color = phongShade(worldPosition, worldNormal, albedo);
 
-	// float4 phongColor = phongShade(worldPosition, worldNormal, albedo);
+	// =================================================
+	//  Render pixel as water if close to a water point
+	// =================================================
+
+	static const float3 mapSize = float3(56.f, 10.f, 56.f);
+	static const float3 arrSize = float3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+	static const float3 mapStart = float3(-3.5f, 0.0f, -3.5f);
 	
-	// if (payload.recursionDepth < reflectionBounces + 1) {
-	// 	// Trace reflection ray
-	// 	float3 reflectedDir = reflect(rayDir, worldNormal);
-	// 	TraceRay(gRtScene, 0, 0xFF, 0, 0, 0, Utils::getRayDesc(reflectedDir, worldPosition), payload);
-	// 	payload.color = payload.color * (1.0f - reflectionAtt) + phongColor * reflectionAtt;
-	// } else {
-	// 	// Reflection ray, return color
-	// 	payload.color = phongColor;
-	// }
+	bool renderWater = false;
+	float radius = 0.2f;
+
+	float3 cellWorldSize = mapSize / arrSize;
+	// int3 ind = round(( (worldPosition - mapStart) / mapSize) * arrSize);
+	// int3 indMin = ind;
+	// int3 indMax = ind;
+	int3 indMin = round(( (worldPosition - radius - mapStart) / mapSize) * arrSize);
+	int3 indMax = round(( (worldPosition + radius - mapStart) / mapSize) * arrSize);
+
+	float sum = 0.f;
+	for (int x = indMin.x; x <= indMax.x; x++) {
+		for (int y = indMin.y; y <= indMax.y; y++) {
+			for (int z = indMin.z; z <= indMax.z; z++) {
+				int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
+				i = clamp(i, 0, WATER_ARR_SIZE - 1);
+				
+				if (waterData[i]) {
+					// lOutput[launchIndex] = float4(1.0f, 0.f, 0.f, 1.0f);
+					// return;
+					float3 waterPointWorldPos = float3(x,y,z) * cellWorldSize + mapStart;
+
+					float3 dstV = worldPosition - waterPointWorldPos;
+					float dstSqrd = dot(dstV, dstV);
+					sum += radius / dstSqrd;
+				}
+			}
+		}
+	}
+
+	if (sum > 20.f) {
+		renderWater = true;
+		// lOutput[launchIndex] = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
+		// return;
+	}
+
+	if (renderWater) {
+		// Shade as water
+		payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo * 0.5f, 1.0f, 0.01f, 0.5f, payload);
+	} else {
+		// Shade normally
+		payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
+		// payload.color = phongShade(worldPosition, worldNormal, albedo);
+	}
 }

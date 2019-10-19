@@ -310,6 +310,8 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_DXR_TopBuffer[frameIndex].result->GetGPUVirtualAddress());
 	// Set scene constant buffer
 	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_sceneCB->getBuffer()->GetGPUVirtualAddress());
+	// Set water "decal" data
+	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("WaterData"), m_waterStructuredBuffer->getBuffer()->GetGPUVirtualAddress());
 
 	// Dispatch
 	cmdList->SetPipelineState1(m_rtPipelineState.Get());
@@ -740,8 +742,6 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
 		D3D12_GPU_VIRTUAL_ADDRESS decalCBHandle = m_decalCB->getBuffer()->GetGPUVirtualAddress();
 		tableBuilder.addDescriptor(decalCBHandle);
-		D3D12_GPU_VIRTUAL_ADDRESS waterDataAddr = m_waterStructuredBuffer->getBuffer()->GetGPUVirtualAddress();
-		tableBuilder.addDescriptor(waterDataAddr);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -755,7 +755,6 @@ void DXRBase::updateShaderTables() {
 		DXRUtils::ShaderTableBuilder tableBuilder(2U, m_rtPipelineState.Get());
 		tableBuilder.addShader(m_missName);
 		tableBuilder.addShader(m_shadowMissName);
-		//tableBuilder.addDescriptor(m_skyboxGPUDescHandle.ptr);
 		m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -851,6 +850,7 @@ void DXRBase::createDXRGlobalRootSignature() {
 	m_dxrGlobalRootSignature = std::make_unique<DX12Utils::RootSignature>("dxrGlobal");
 	m_dxrGlobalRootSignature->addSRV("AccelerationStructure", 0);
 	m_dxrGlobalRootSignature->addCBV("SceneCBuffer", 0);
+	m_dxrGlobalRootSignature->addSRV("WaterData", 6, 0);
 
 	m_dxrGlobalRootSignature->build(m_context->getDevice());
 }
@@ -862,7 +862,6 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10 + DX12GBufferRenderer::NUM_GBUFFERS + 1, 0U, 3U);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
-	m_localSignatureRayGen->addSRV("WaterData", 6, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);

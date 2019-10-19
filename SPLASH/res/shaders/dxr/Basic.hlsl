@@ -101,54 +101,7 @@ void rayGen() {
 		lOutput[launchIndex] = float4(albedoColor, 1.0f);
 		return;
 	} else {
-
-		// Render pixel as water if close to a water point
-		static const float3 mapSize = float3(56.f, 10.f, 56.f);
-		static const float3 arrSize = float3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
-		static const float3 mapStart = float3(-3.5f, 0.0f, -3.5f);
-		
-		bool renderWater = false;
-		float radius = 0.2f;
-
-		float3 cellWorldSize = mapSize / arrSize;
-		// int3 ind = round(( (worldPosition - mapStart) / mapSize) * arrSize);
-		// int3 indMin = ind;
-		// int3 indMax = ind;
-		int3 indMin = round(( (worldPosition - radius - mapStart) / mapSize) * arrSize);
-		int3 indMax = round(( (worldPosition + radius - mapStart) / mapSize) * arrSize);
-
-		float sum = 0.f;
-		for (int x = indMin.x; x <= indMax.x; x++) {
-			for (int y = indMin.y; y <= indMax.y; y++) {
-				for (int z = indMin.z; z <= indMax.z; z++) {
-					int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
-					i = clamp(i, 0, WATER_ARR_SIZE - 1);
-					
-					if (waterData[i]) {
-						// lOutput[launchIndex] = float4(1.0f, 0.f, 0.f, 1.0f);
-						// return;
-						float3 waterPointWorldPos = float3(x,y,z) * cellWorldSize + mapStart;
-
-						float3 dstV = worldPosition - waterPointWorldPos;
-						float dstSqrd = dot(dstV, dstV);
-						sum += radius / dstSqrd;
-					}
-				}
-			}
-		}
-
-		if (sum > 20.f) {
-			renderWater = true;
-			// lOutput[launchIndex] = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
-			// return;
-		}
-
-		if (renderWater) {
-			shade(worldPosition, worldNormal, albedoColor * 0.5f, 1.0f, 0.01f, 0.5f, payload);
-		} else {
-			shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
-		}
-
+		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
 	}
 
 
