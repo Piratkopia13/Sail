@@ -33,7 +33,7 @@ public:
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
-	void updateWaterData(unsigned int* data);
+	void updateWaterData(float* data);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void reloadShaders();

@@ -77,6 +77,13 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 
+	// Decrease water radius over time
+	for (auto& r : m_waterData) {
+		if (r > 0.f) {
+			r -= Application::getInstance()->getDelta() * 0.01f;
+		}
+	}
+
 	if (camera && lightSetup) {
 		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
 	}
@@ -164,7 +171,7 @@ void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& 
 
 	glm::i32vec3 ind = round(((pos - mapStart) / mapSize) * arrSize);
 	int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
-	m_waterData[i] = 1;
+	m_waterData[i] = 1.0f;
 }
 
 void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {

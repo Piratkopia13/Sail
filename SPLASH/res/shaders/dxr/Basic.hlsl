@@ -22,7 +22,7 @@ StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
 
-StructuredBuffer<uint> waterData : register(t6, space0);
+StructuredBuffer<float> waterData : register(t6, space0);
 
 // Texture2DArray<float4> textures : register(t2, space0);
 Texture2D<float4> sys_texAlbedo : register(t2);

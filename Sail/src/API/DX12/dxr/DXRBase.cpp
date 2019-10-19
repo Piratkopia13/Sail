@@ -62,7 +62,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	// 		}
 	//	}
 	//}
-	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(int));
+	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(float));
 	delete initData;
 
 }
@@ -229,7 +229,7 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 	m_decalCB->updateData(&newData, sizeof(newData));
 }
 
-void DXRBase::updateWaterData(unsigned int* data) {
+void DXRBase::updateWaterData(float* data) {
 	m_waterStructuredBuffer->updateData(data, WATER_ARR_SIZE, 0);
 }
 
