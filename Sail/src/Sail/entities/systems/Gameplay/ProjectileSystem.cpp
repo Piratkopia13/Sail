@@ -34,8 +34,8 @@ void ProjectileSystem::update(float dt) {
 		auto projComp = e->getComponent<ProjectileComponent>();
 		for (auto& collision : projectileCollisions) {
 			// Check if a decal should be created
-			if (projComp->timeSinceLastDecal > m_splashMinTime &&
-				glm::length(e->getComponent<MovementComponent>()->oldVelocity) > 0.7f) {
+			/*if (projComp->timeSinceLastDecal > m_splashMinTime &&
+				glm::length(e->getComponent<MovementComponent>()->oldVelocity) > 0.7f) {*/
 				// TODO: Replace with some "layer-id" check rather than doing a string check
 				if (collision.entity->getName().substr(0U, 4U) == "Map_") {
 
@@ -48,7 +48,7 @@ void ProjectileSystem::update(float dt) {
 
 					projComp->timeSinceLastDecal = 0.f;
 				}
-			}
+			//}
 
 			//If projectile collided with a candle
 			if (collision.entity->hasComponent<CandleComponent>()) {

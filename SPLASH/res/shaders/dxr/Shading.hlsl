@@ -62,7 +62,6 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	static const float maxRadius = 0.2f;
 
 	float waterOpacity = 1.0f;
-	bool renderWater = false;
 
 	float3 cellWorldSize = mapSize / arrSize;
 	// int3 ind = round(( (worldPosition - mapStart) / mapSize) * arrSize);
@@ -70,6 +69,8 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	// int3 indMax = ind;
 	int3 indMin = round(( (worldPosition - maxRadius - mapStart) / mapSize) * arrSize);
 	int3 indMax = round(( (worldPosition + maxRadius - mapStart) / mapSize) * arrSize);
+
+	float3 normalOffset = 0.f;
 
 	float sum = 0.f;
 	for (int x = indMin.x; x <= indMax.x; x++) {
@@ -84,29 +85,31 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 					// return;
 					float3 waterPointWorldPos = float3(x,y,z) * cellWorldSize + mapStart;
 
-					float3 dstV = worldPosition - waterPointWorldPos;
+					float3 dstV = waterPointWorldPos - worldPosition;
 					float dstSqrd = dot(dstV, dstV);
 					// r = clamp(r, 0.08f, 10.f);
-					sum += r / dstSqrd;
+					float charge = r / dstSqrd;
+					sum += charge;
+					normalOffset += normalize(-dstV);
+					normalOffset += normalize(float3(x,y,z) - indMin);
 				}
 			}
 		}
 	}
 
 	if (sum > 10.f) {
-		renderWater = true;
-		waterOpacity = clamp(sqrt(sum) / 6.f, 0.f, 0.8f);
+		waterOpacity = clamp(sum / 20.f, 0.f, 0.8f);
 		// lOutput[launchIndex] = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
 		// return;
-	}
 
-	if (renderWater) {
 		// Shade as water
 
 		metalness = lerp(metalness, 1.0f, waterOpacity);
 		roughness = lerp(roughness, 0.01f, waterOpacity);
 		ao 		  = lerp(ao, 0.5f, waterOpacity);
 		albedo = lerp(albedo, albedo * 0.8f, waterOpacity);
+		worldNormal += normalize(normalOffset) * clamp( ( -0.1f*sum + 2.f ), 0.f, 0.8f);
+		worldNormal = normalize(worldNormal);
 		// metalness = 1.0f;
 		// roughness = 0.01f;
 		// ao = 0.5f;
