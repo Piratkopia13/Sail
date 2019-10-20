@@ -336,12 +336,12 @@ void DX12API::createGlobalRootSignature() {
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[3];
 	staticSamplerDesc[0] = {};
-	staticSamplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	staticSamplerDesc[0].Filter = D3D12_FILTER_ANISOTROPIC;
 	staticSamplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	staticSamplerDesc[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	staticSamplerDesc[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	staticSamplerDesc[0].MipLODBias = 0.f;
-	staticSamplerDesc[0].MaxAnisotropy = 1;
+	staticSamplerDesc[0].MaxAnisotropy = 16;
 	staticSamplerDesc[0].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	staticSamplerDesc[0].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
 	staticSamplerDesc[0].MinLOD = 0.f;
