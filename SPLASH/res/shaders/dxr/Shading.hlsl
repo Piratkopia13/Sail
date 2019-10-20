@@ -59,14 +59,14 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	static const float3 mapSize = float3(56.f, 10.f, 56.f);
 	static const float3 arrSize = float3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
 	static const float3 mapStart = float3(-3.5f, 0.0f, -3.5f);
-	static const float maxRadius = 0.2f;
+	static const float cutoff = 0.3f;
 
 	float3 cellWorldSize = mapSize / arrSize;
 	// int3 ind = round(( (worldPosition - mapStart) / mapSize) * arrSize);
 	// int3 indMin = ind;
 	// int3 indMax = ind;
-	int3 indMin = round(( (worldPosition - maxRadius - mapStart) / mapSize) * arrSize);
-	int3 indMax = round(( (worldPosition + maxRadius - mapStart) / mapSize) * arrSize);
+	int3 indMin = round(( (worldPosition - cutoff - mapStart) / mapSize) * arrSize);
+	int3 indMax = round(( (worldPosition + cutoff - mapStart) / mapSize) * arrSize);
 
 	float3 normalOffset = 0.f;
 
@@ -77,27 +77,27 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 				int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
 				i = clamp(i, 0, WATER_ARR_SIZE - 1);
 				
-				float r = waterData[i] * maxRadius;
+				float r = waterData[i];
 				if (r > 0.f) {
-					// lOutput[launchIndex] = float4(1.0f, 0.f, 0.f, 1.0f);
-					// return;
 					float3 waterPointWorldPos = float3(x,y,z) * cellWorldSize + mapStart;
 
 					float3 dstV = waterPointWorldPos - worldPosition;
 					float dstSqrd = dot(dstV, dstV);
-					// r = clamp(r, 0.08f, 10.f);
-					float charge = r / dstSqrd;
-					sum += charge;
-					normalOffset += normalize(-dstV);
-					normalOffset += normalize(float3(x,y,z) - indMin);
+					if (dstSqrd <= 0.09f * r) { // cutoff^2, reomve "* r" if CHARGE1 is used below
+						// float charge = 1.f-(dstSqrd)*10.f; // CHARGE1: Disregards r
+						float charge = 1.f-(dstSqrd * (1.f / r))*10.f; // CHARGE2: can handle changing blob sizes
+						sum += charge * charge;
+						normalOffset += normalize(-dstV);
+						normalOffset += normalize(float3(x,y,z) - indMin);
+					}
 				}
 			}
 		}
 	}
 
-	if (sum > 10.f) {
-		float waterOpacity = clamp(sum / 20.f, 0.f, 0.8f);
-		// lOutput[launchIndex] = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
+	if (sum > 0.8f) {
+		float waterOpacity = clamp(sum / 1.f, 0.f, 0.8f);
+		// payload.color = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
 		// return;
 
 		// Shade as water
@@ -106,7 +106,9 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 		roughness = lerp(roughness, 0.01f, waterOpacity);
 		ao 		  = lerp(ao, 0.5f, waterOpacity);
 		albedo = lerp(albedo, albedo * 0.8f, waterOpacity);
-		worldNormal += normalize(normalOffset) * clamp( ( -0.1f*sum + 2.f ), 0.0f, 0.8f);
+
+		float height = 1.6f; // normal smoothness / water "height" apperance
+		worldNormal += normalize(normalOffset) * clamp( ( -height*sum + 2.f ), 0.0f, 0.8f);
 		worldNormal = normalize(worldNormal);
 		// metalness = 1.0f;
 		// roughness = 0.01f;
