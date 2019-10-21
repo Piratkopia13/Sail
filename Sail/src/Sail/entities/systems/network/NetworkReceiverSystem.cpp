@@ -182,9 +182,7 @@ void NetworkReceiverSystem::update() {
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
 
 				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 100, 4, 0); //Owner id not set, 100 for now.
-			}
-
-			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
+			} else if (eventType == Netcode::MessageType::PLAYER_DIED) {
 				ar(netObjectID);
 				playerDied(netObjectID);
 			} else if (eventType == Netcode::MessageType::MATCH_ENDED) {
@@ -199,8 +197,7 @@ void NetworkReceiverSystem::update() {
 				setCandleHeldState(netObjectID, isCarried, candlepos);
 			} else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
 				backToLobby();
-			}
-			else if (eventType == Netcode::MessageType::PLAYER_DISCONNECT) {
+			} else if (eventType == Netcode::MessageType::PLAYER_DISCONNECT) {
 				unsigned char playerID;
 				
 				ar(playerID);
@@ -228,12 +225,8 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		}
 	}
 
-	auto e = ECS::Instance()->createEntity("ReceiverEntity");
-	entities.push_back(e.get());	// Needs to be before 'addComponent' or packets might be lost.
-	e->addComponent<NetworkReceiverComponent>(id, entityType);
-	int test = e->getComponent<NetworkReceiverComponent>()->m_id;
-	e->addComponent<OnlineOwnerComponent>(id);
-
+	// -------------------------------------------
+	// TODO: THIS SECTION SHOULD BE A PART OF ENTITY FACTORY
 	std::string modelName = "DocGunRun4.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
@@ -249,6 +242,17 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	//Wireframe bounding box model
 	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	// -------------------------------------------
+
+
+	auto e = ECS::Instance()->createEntity("ReceiverEntity");
+
+	// Manually add the entity to this system in case there's another message telling us to modify it, don't wait for ECS
+	entities.push_back(e.get());	// Needs to happen before any 'addComponent' or packets might be lost.
+
+
+	e->addComponent<NetworkReceiverComponent>(id, entityType);
+	e->addComponent<OnlineOwnerComponent>(id);
 
 	// create the new entity
 	switch (entityType) {
@@ -288,10 +292,6 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	default:
 		break;
 	}
-
-	// Manually add the entity to this system in case there's another message telling us to modify it, don't wait for ECS
-	// --- Then we need to prevent ECS from adding all together or we'll end up with 2 instances of the same entity in the list...
-
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
@@ -356,9 +356,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 					// Check in Candle System What happens next
 					break;
 				}
-
 			}
-
 			break;
 		}
 	}
@@ -378,7 +376,7 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
 				e->removeComponent<GunComponent>();
 			} else {
-				//If it wasnt me that died, compleatly remove the player entity from game.
+				//If it wasn't me that died, completely remove the player entity from game.
 				e->queueDestruction();
 			}
 
@@ -401,14 +399,13 @@ void NetworkReceiverSystem::playerDisconnect(unsigned char id) {
 		}
 	}
 }
+
 void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 
 			for (int i = 0; i < e->getChildEntities().size(); i++) {
-				auto candleE = e->getChildEntities()[i];
-
-				if (candleE->hasComponent<CandleComponent>()) {
+				if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
 					auto candleComp = candleE->getComponent<CandleComponent>();
 
 					candleComp->setCarried(b);
@@ -418,7 +415,6 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool
 					return;
 				}
 			}
-
 			break;
 		}
 	}
@@ -429,7 +425,6 @@ void NetworkReceiverSystem::matchEnded() {
 }
 
 void NetworkReceiverSystem::backToLobby() {
-
 	m_gameStatePtr->requestStackPop();
 	m_gameStatePtr->requestStackPush(States::JoinLobby);
 }
