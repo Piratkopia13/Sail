@@ -1,23 +1,26 @@
 #pragma once
-#include "../BaseComponentSystem.h"
+
+#include "../../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
 
 class GameState;
 class NetworkSenderSystem;
 
-// NOTE: As of right now this system can create entities
 class NetworkReceiverSystem : public BaseComponentSystem {
 public:
 	NetworkReceiverSystem();
 	~NetworkReceiverSystem();
 
+	// Functions which differ from host to client
+	virtual void pushDataToBuffer(std::string data) = 0;
+
 	void init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
 	void initPlayer(Entity* pPlayerEntity);
-	void pushDataToBuffer(std::string data);
+
 	const std::vector<Entity*>& getEntities() const;
 
 	void update();
-private:
+protected:
 	GameState* m_gameStatePtr;
 	NetworkSenderSystem* m_netSendSysPtr;
 
@@ -29,8 +32,6 @@ private:
 	unsigned char m_playerID;
 
 	Entity* m_playerEntity = nullptr;
-	NetworkSenderSystem* pSenderSystem = nullptr; 
-
 private:
 	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
 
@@ -41,7 +42,7 @@ private:
 	void waterHitPlayer(Netcode::NetworkObjectID id);
 	void playerDied(Netcode::NetworkObjectID id);
 	void playerDisconnect(unsigned char id);
-	void setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos = glm::vec3(0,0,0));
+	void setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
 	void matchEnded();
 	void backToLobby();
 
