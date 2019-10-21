@@ -77,6 +77,19 @@ glm::i32vec3 Utils::to3D(int ind, int xMax, int yMax) {
 	return ind3d;
 }
 
+float Utils::packQuarterFloat(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
+	float out;
+	out = (a << 24) | (b << 16) | (c << 8) | d;
+	return out;
+}
+
+uint32_t Utils::unpackQuarterFloat(float in, unsigned int index) {
+	uint32_t out = 0U;
+	out |= ((uint32_t)in >> ((3-index) * 8)) & 255;
+
+	return out;
+}
+
 glm::vec4 Utils::getRandomColor() {
 	return glm::vec4(Utils::rnd(), Utils::rnd(), Utils::rnd(), 1);
 }

@@ -114,4 +114,11 @@ namespace Utils {
         return ind3d;
     }
 
+    half unpackQuarterFloat(float input, uint index) {
+        uint output = 0U;
+        output |= ((uint)input >> ((3-index) * 8)) & 255;
+
+        return (half)output;
+    }
+
 }
