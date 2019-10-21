@@ -361,7 +361,13 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
-	m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystem>();
+	// Create Network Reciever System depending on host or client.
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
+	}
+	else {
+		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
+	}
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
 
 	// Create system for handling and updating sounds
@@ -453,11 +459,6 @@ bool GameState::onResize(WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
-
-	// The host will also save the data in the sender system so that it can be forwarded to all other clients
-	if (NWrapperSingleton::getInstance().isHost()) {
-		m_componentSystems.networkSenderSystem->pushDataToBuffer(event.getSerializedData());
-	}
 	return true;
 }
 
