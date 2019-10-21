@@ -14,8 +14,6 @@ public:
 	// Functions which differ from host to client
 	virtual void pushDataToBuffer(std::string data) = 0;
 
-	// --- 
-
 	void init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
 	void initPlayer(Entity* pPlayerEntity);
 
@@ -33,9 +31,7 @@ protected:
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
 	unsigned char m_playerID;
 
-	// 
 	Entity* m_playerEntity = nullptr;
-
 private:
 	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
 
