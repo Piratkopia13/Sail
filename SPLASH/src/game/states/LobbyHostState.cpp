@@ -8,7 +8,9 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 	// Reserved for host, all other will get 1,2,3,...,n
 	NWrapperSingleton::getInstance().setPlayerID(HOST_ID); 
 
-	NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+	if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
+		NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+	}
 }
 
 LobbyHostState::~LobbyHostState() {
@@ -60,7 +62,7 @@ bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 }
 
 bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
-	// Remove player from player list
+	// Remove player from player list.
 	unsigned char id = event.getPlayerID();
 	NWrapperSingleton::getInstance().playerLeft(id);
 	
@@ -93,7 +95,7 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	NWrapperSingleton::getInstance().playerJoined(Player{
 			id_int,
 			message	// Which at this point is only the name
-		});
+	});
 
 
 	printf("Got name: \"%s\" from %i\n", message.c_str(), id_int);

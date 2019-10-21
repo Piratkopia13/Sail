@@ -6,7 +6,6 @@
 #include "states/PBRTestState.h"
 #include "states/InGameMenuState.h"
 #include "states/EndGameState.h"
-#include "states/PerformanceTestState.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
@@ -17,11 +16,8 @@ Game::Game(HINSTANCE hInstance)
 	registerStates();
 
 	// Set starting state
-#ifdef _PERFORMANCE_TEST
-	m_stateStack.pushState(States::PerformanceTest);
-#else
 	m_stateStack.pushState(States::MainMenu);
-#endif
+
 
 }
 
@@ -42,7 +38,6 @@ void Game::registerStates() {
 	m_stateStack.registerState<InGameMenuState>(States::Pause);
 	m_stateStack.registerState<EndGameState>(States::EndGame);
 	m_stateStack.registerState<PBRTestState>(States::PBRTest);
-	m_stateStack.registerState<PerformanceTestState>(States::PerformanceTest);
 }
 
 void Game::dispatchEvent(Event& event) {

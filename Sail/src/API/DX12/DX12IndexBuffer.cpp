@@ -14,7 +14,7 @@ DX12IndexBuffer::DX12IndexBuffer(Mesh::Data& modelData)
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	unsigned long* indices = getIndexData(modelData);
-	auto numSwapBuffers = m_context->getNumSwapBuffers();
+	auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 	m_indexBuffers.resize(numSwapBuffers);
 
@@ -39,7 +39,7 @@ DX12IndexBuffer::~DX12IndexBuffer() {
 }
 
 void DX12IndexBuffer::bind(void* cmdList) const {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
 	D3D12_INDEX_BUFFER_VIEW ibView = {};
@@ -51,6 +51,6 @@ void DX12IndexBuffer::bind(void* cmdList) const {
 }
 
 ID3D12Resource1* DX12IndexBuffer::getBuffer() const {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	return m_indexBuffers[frameIndex].Get();
 }

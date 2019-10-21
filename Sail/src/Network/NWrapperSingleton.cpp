@@ -4,7 +4,7 @@
 #include "Network/NetworkStructs.hpp"
 #include "Sail.h"
 #include "../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
-
+#include "Sail/entities/systems/network/NetworkSenderSystem.h"
 
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
@@ -15,6 +15,10 @@ NWrapperSingleton::~NWrapperSingleton() {
 	Memory::SafeDelete(m_network);
 }
 
+NWrapperSingleton& NWrapperSingleton::getInstance() {
+	static NWrapperSingleton instance;
+	return instance;
+}
 NWrapperSingleton::NWrapperSingleton() {
 	m_network = SAIL_NEW Network;
 	m_network->initialize();
@@ -74,6 +78,7 @@ void NWrapperSingleton::resetPlayerList()
 }
 
 bool NWrapperSingleton::playerJoined(Player& player) {
+	player.name = player.name.c_str(); // This will fix currupt string size.
 	if (m_playerCount < m_playerLimit) {
 		m_players.push_back(player);
 		m_playerCount++;
@@ -135,6 +140,19 @@ unsigned char NWrapperSingleton::getMyPlayerID() {
 	return m_me.id;
 }
 
+void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
+	NSS = NSS_;
+}
+
+void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* data) {
+	// Cleaning is handled by the NSS later on.
+	NetworkSenderEvent* e = SAIL_NEW NetworkSenderEvent;
+	e->type = type;
+	e->data = data;
+
+	NSS->queueEvent(e);
+}
+
 void NWrapperSingleton::initialize(bool asHost) {
 	if (m_isInitialized == false) {
 		m_isInitialized = true;
@@ -151,6 +169,7 @@ void NWrapperSingleton::initialize(bool asHost) {
 }
 
 void NWrapperSingleton::resetWrapper() {
+	resetPlayerList();
 	m_isInitialized = false;
 	m_isHost = false;
 	delete this->m_wrapper;

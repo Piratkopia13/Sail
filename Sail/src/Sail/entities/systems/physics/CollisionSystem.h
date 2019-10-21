@@ -9,14 +9,15 @@ public:
 	~CollisionSystem();
 	
 	void provideOctree(Octree* octree);
-	void update(float dt) override;
+	void update(float dt);
 
 private:
 	const bool rayCastCheck(Entity* e, const BoundingBox& boundingBox, float& dt) const;
 	void rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt);
-	const bool collisionUpdate(Entity* e, const float& dt);
-	const bool handleCollisions(Entity* e, const std::vector<Octree::CollisionInfo>& collisions, const float& dt);
-	void surfaceFromCollision(Entity* e);
+	void stepToFindMissedCollision(Entity* e, BoundingBox& boundingBox, std::vector<Octree::CollisionInfo>& collisions, float distance);
+	const bool collisionUpdate(Entity* e, const float dt);
+	const bool handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float dt);
+	void surfaceFromCollision(Entity* e, std::vector<Octree::CollisionInfo>& collisions);
 
 private:
 	Octree* m_octree;

@@ -31,7 +31,7 @@ public:
 	float m_gunOverloadCooldown = .0f;
 
 
-	float projectileSpeed = 10.f;
+	float projectileSpeed = 15.f;
 
 	float gunOverloadvalue = 0.f;
 	float gunOverloadThreshold = .5f;
@@ -41,5 +41,5 @@ public:
 private:
 	Model* m_projectileModel;
 	Model* m_wireframeModel;
-	float m_projectileSpawnLimit = 0.3f;
+	float m_projectileSpawnLimit = .3f;
 };

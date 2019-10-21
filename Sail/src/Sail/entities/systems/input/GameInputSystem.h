@@ -17,8 +17,6 @@ public:
 	GameInputSystem();
 	~GameInputSystem();
 
-	// This function is only here because it has to. use update with alpha.
-	void update(float dt) { update(dt, 1.0f); }
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
 	void clean();
@@ -44,6 +42,10 @@ private:
 	bool m_wasSpacePressed = false;
 	float m_projectileSpawnCounter = 0.f;
 	float m_lookSensitivityMouse = 0.1f;
+
+	float onGroundTimer = 0.0f;
+	float onGroundThreshold = 0.3f;
+	float isPlayingRunningSound = false;
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;

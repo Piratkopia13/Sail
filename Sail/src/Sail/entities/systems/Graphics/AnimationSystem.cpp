@@ -307,10 +307,9 @@ void AnimationSystem::updateMeshCPU() {
 
 }
 
-std::vector<Entity*>& AnimationSystem::getEntities() {
+const std::vector<Entity*>& AnimationSystem::getEntities() const {
 	return entities;
 }
-
 
 void AnimationSystem::addTime(AnimationComponent* e, const float time) {
 	e->animationTime += time * e->animationSpeed;
@@ -335,7 +334,7 @@ void AnimationSystem::interpolate(glm::mat4& res, const glm::mat4& mat1, const g
 	res = res * glm::toMat4(resRot);
 }
 
-void AnimationSystem::updatePerFrame(float dt) {
+void AnimationSystem::updatePerFrame() {
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		if (!animationC->computeUpdate) {

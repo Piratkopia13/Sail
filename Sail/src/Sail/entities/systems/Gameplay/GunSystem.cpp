@@ -6,8 +6,8 @@
 
 #include "Sail/entities/components/GunComponent.h"
 #include "Sail/utils/GameDataTracker.h"
-
-
+#include "../Sail/src/Network/NWrapperSingleton.h"
+#include "Sail/netcode/NetworkedStructs.h"
 #include <random>
 
 GunSystem::GunSystem() : BaseComponentSystem() {
@@ -35,7 +35,15 @@ void GunSystem::update(float dt) {
 				if (gun->projectileSpawnTimer <= 0.f) {
 					gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
-					auto e = EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed, 10.0f);
+					auto e = EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed, true);
+					
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::SPAWN_PROJECTILE,
+						SAIL_NEW Netcode::MessageDataProjectile{
+							gun->position,
+							gun->direction * gun->projectileSpeed
+						}
+					);
 					m_gameDataTracker->logWeaponFired();
 				}
 			}

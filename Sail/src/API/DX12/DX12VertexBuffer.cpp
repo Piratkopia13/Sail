@@ -15,7 +15,7 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::D
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	void* vertices = getVertexData(modelData);
 
-	auto numSwapBuffers = m_context->getNumSwapBuffers();
+	auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 	m_hasBeenUpdated.resize(numSwapBuffers, false);
 	m_hasBeenInitialized.resize(numSwapBuffers, false);
@@ -52,7 +52,7 @@ DX12VertexBuffer::~DX12VertexBuffer() {
 }
 
 void DX12VertexBuffer::bind(void* cmdList) const {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
 	D3D12_VERTEX_BUFFER_VIEW vbView = {};
@@ -64,13 +64,13 @@ void DX12VertexBuffer::bind(void* cmdList) const {
 }
 
 ID3D12Resource1* DX12VertexBuffer::getBuffer(int frameOffset) const {
-	unsigned int frameIndex = (m_context->getFrameIndex() + m_context->getNumSwapBuffers() + frameOffset) % m_context->getNumSwapBuffers();
+	unsigned int frameIndex = (m_context->getSwapIndex() + m_context->getNumGPUBuffers() + frameOffset) % m_context->getNumGPUBuffers();
 	assert(m_hasBeenInitialized[frameIndex] && "Vertex buffer has to be initialized before call to getBuffer");
 	return m_defaultVertexBuffers[frameIndex].Get();
 }
 
 void DX12VertexBuffer::update(Mesh::Data& data) {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	void* vertices = getVertexData(data);
 	// Place verticies in the buffer
 	void* pData;
@@ -85,22 +85,22 @@ void DX12VertexBuffer::update(Mesh::Data& data) {
 }
 
 void DX12VertexBuffer::setAsUpdated() {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	m_hasBeenUpdated[frameIndex] = true;
 }
 
 bool DX12VertexBuffer::hasBeenUpdated() const {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	return m_hasBeenUpdated[frameIndex];
 }
 
 void DX12VertexBuffer::resetHasBeenUpdated() { 
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	m_hasBeenUpdated[frameIndex] = false;
 }
 
 bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 	if (m_hasBeenInitialized[frameIndex]) {
 		return false;
 	}

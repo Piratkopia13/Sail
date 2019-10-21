@@ -8,7 +8,6 @@
 #include "../../../graphics/geometry/Model.h"
 
 UpdateBoundingBoxSystem::UpdateBoundingBoxSystem() : BaseComponentSystem() {
-	// TODO: System owner should check if this is correct
 	registerComponent<BoundingBoxComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<ModelComponent>(false, true, true);
@@ -53,7 +52,6 @@ void UpdateBoundingBoxSystem::recalculateBoundingBoxFully(Entity* e) {
 				checkDistances(minPositions, maxPositions, posAfterTransform);
 			}
 		}
-
 		boundingBox->getBoundingBox()->setHalfSize((maxPositions - minPositions) * 0.5f);
 		boundingBox->getBoundingBox()->setPosition(minPositions + boundingBox->getBoundingBox()->getHalfSize());
 	}
@@ -61,6 +59,8 @@ void UpdateBoundingBoxSystem::recalculateBoundingBoxFully(Entity* e) {
 		boundingBox->getBoundingBox()->setPosition(transform->getTranslation() + glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
 	}
 
+	/*transform->setTranslation(boundingBox->getBoundingBox()->getPosition() - glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
+	transform->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);*/
 	boundingBox->getTransform()->setTranslation(boundingBox->getBoundingBox()->getPosition() - glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
 	boundingBox->getTransform()->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);
 }
@@ -70,6 +70,8 @@ void UpdateBoundingBoxSystem::recalculateBoundingBoxPosition(Entity* e) {
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	glm::mat4 transformationMatrix = transform->getMatrix();
 	boundingBox->getBoundingBox()->setPosition(glm::vec3(transformationMatrix[3]) + glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
+	/*transform->setTranslation(boundingBox->getBoundingBox()->getPosition() - glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
+	transform->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);*/
 	boundingBox->getTransform()->setTranslation(boundingBox->getBoundingBox()->getPosition() - glm::vec3(0.0f, boundingBox->getBoundingBox()->getHalfSize().y, 0.0f));
 	boundingBox->getTransform()->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);
 }

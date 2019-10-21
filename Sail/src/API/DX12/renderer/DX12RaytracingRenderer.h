@@ -17,6 +17,7 @@ public:
 	virtual bool onEvent(Event& event) override;
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
 	virtual void submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) override;
+	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
@@ -30,4 +31,8 @@ private:
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 
 	std::vector<DXRBase::Metaball> m_metaballpositions;
+
+	// Decals
+	DXRShaderCommon::DecalData m_decals[MAX_DECALS];
+	size_t m_currNumDecals;
 };

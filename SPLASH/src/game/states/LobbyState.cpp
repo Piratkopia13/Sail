@@ -8,8 +8,10 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "Network/NWrapperSingleton.h"	// New network
 #include "Network/NWrapper.h"			// 
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
+#include "Sail/entities/components/AudioComponent.h"
 
 #include <string>
 #include <list>
@@ -32,11 +34,18 @@ LobbyState::LobbyState(StateStack& stack)
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
+
+	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
+	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
+	//m_lobbyAudio->addComponent<AudioComponent>();
+	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, true);
 }
+
 
 LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
 	delete m_settingBotCount;
+
 }
 
 bool LobbyState::processInput(float dt) {
@@ -73,7 +82,7 @@ bool LobbyState::update(float dt, float alpha) {
 
 bool LobbyState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	ECS::Instance()->getSystem<RenderSystem>()->draw();
+	ECS::Instance()->getSystem<BeginEndFrameSystem>()->renderNothing();
 	return false;
 }
 
@@ -219,6 +228,8 @@ void LobbyState::renderChat() {
 	chatFlags |= ImGuiWindowFlags_NoTitleBar;
 	chatFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 	chatFlags |= ImGuiWindowFlags_NoSavedSettings;
+	chatFlags |= ImGuiWindowFlags_NoFocusOnAppearing;
+	chatFlags |= ImGuiWindowFlags_NoInputs;
 
 	// ------- message BOX ------- 
 	ImGui::SetNextWindowPos(ImVec2(
@@ -232,15 +243,12 @@ void LobbyState::renderChat() {
 	);
 
 	if (m_firstFrame) {
-		ImGui::SetKeyboardFocusHere(-1);
 		m_firstFrame = false;
-		m_chatFocus = true;
+		m_chatFocus = false;
 	}
 	ImGui::Text("Enter message:");
-	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
-		//this->sendmessage(&(string)m_currentmessage);
-		ImGui::SetKeyboardFocusHere(-1);
-		m_chatFocus = true;
+	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_EnterReturnsTrue)) {
+		m_chatFocus = false;
 	}
 	ImGui::End();
 

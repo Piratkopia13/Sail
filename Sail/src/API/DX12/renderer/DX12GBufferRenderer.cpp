@@ -15,6 +15,7 @@
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
+#include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
 	Application* app = Application::getInstance();
@@ -83,7 +84,7 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	for (int i = 0; i < mainThreadIndex; i++) {
 		fut[i] = Application::getInstance()->pushJobToThreadPool(
 			[this, postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse](int id) {
-			return this->recordCommands(postProcessPipeline, i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
+			return this->recordCommands(postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse);
 		});
 		start += commandsPerThread;
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
@@ -91,7 +92,7 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	}
 
-	recordCommands(postProcessPipeline, mainThreadIndex, frameIndex, start, commandsPerThread, count, nThreadsToUse);
+	recordCommands(postProcessPipeline, mainThreadIndex, frameIndex, start, commandsPerThread + 1 /* +1 to account for rounding */, count, nThreadsToUse);
 	ID3D12CommandList* commandlists[MAX_RECORD_THREADS];
 	commandlists[mainThreadIndex] = m_command[mainThreadIndex].list.Get();
 
@@ -156,7 +157,6 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 				}
 			}
 		}
-
 
 		// Transition output textures to render target
 		for (int i = 0; i < NUM_GBUFFERS; i++) {

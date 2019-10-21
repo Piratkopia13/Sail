@@ -1,6 +1,8 @@
 #pragma once
 #include "Component.h"
 
+class Entity;
+
 // This component will eventually contain the health etc of the candles
 class CandleComponent : public Component<CandleComponent> {
 public:
@@ -21,7 +23,7 @@ public:
 	bool isCarried() const;
 	void setWasCarriedLastUpdate(const bool wasCarried);
 	bool getWasCarriedLastUpdate() const;
-	void toggleCarried();
+	void setCarried(bool b);
 	float getDownTime() const;
 	bool getIsLit() const;
 	void setIsLit(const bool isLit);
@@ -36,6 +38,13 @@ public:
 	float getHealth() const;
 	void setHealth(const float health);
 	void decrementHealth(const float health);
+	void setWasHitByNetID(unsigned __int32 netIdOfPlayerWhoHitThisCandle);
+	unsigned __int32 getWasHitByNetID();
+
+	bool hitByLocalPlayer = false;
+
+	
+	Entity* m_ptrToOwner = nullptr;
 
 private:
 	bool m_wasHitByWater = false;
@@ -44,6 +53,7 @@ private:
 	bool m_activate = false;
 	bool m_carried = true;
 	bool m_wasCarriedLastUpdate = true;
+	unsigned __int32 wasHitByNetID = 0;
 
 	float m_invincibleTimer = -2.f;
 	// TODO: Replace using game settings when that is implemented

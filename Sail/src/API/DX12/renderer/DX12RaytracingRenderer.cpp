@@ -19,6 +19,9 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
 	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+
+	m_currNumDecals = 0;
+	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
@@ -26,14 +29,18 @@ DX12RaytracingRenderer::~DX12RaytracingRenderer() {
 }
 
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
-	auto frameIndex = m_context->getFrameIndex();
+	auto frameIndex = m_context->getSwapIndex();
 
-	auto& allocator = m_command.allocators[frameIndex];
+	// There is one allocator per swap buffer
+	auto& allocator = m_command.allocators[m_context->getFrameIndex()];
 	auto& cmdList = m_command.list;
 
 	// Reset allocators and lists for this frame
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
+
+	// Clear output texture
+	m_outputTexture.get()->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
 
 	std::sort(m_metaballpositions.begin(), m_metaballpositions.end(),
 		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
@@ -53,7 +60,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		cmd.transform[3].z = camera->getPosition().z;
 		//cmd.transform = glm::translate(cmd.transform, m_metaballpositions[i].pos);
 		cmd.transform = glm::transpose(cmd.transform);
-		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	}
 
 	//for (size_t i = 0; i < MAX_NUM_METABALLS && i < m_metaballpositions.size(); i++) {
@@ -86,6 +93,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	if (camera && lightSetup) {
 		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
 	}
+	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
 
@@ -139,7 +147,7 @@ void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, Re
 	cmd.transform = glm::transpose(modelMatrix);
 	cmd.flags = flags;
 	// Resize to match numSwapBuffers (specific to dx12)
-	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
+	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	commandQueue.push_back(cmd);
 }
 
@@ -152,6 +160,15 @@ void DX12RaytracingRenderer::submitNonMesh(RenderCommandType type, Material* mat
 		ball.distToCamera = glm::length(ball.pos - camera->getPosition());
 		m_metaballpositions.emplace_back(ball);
 	}
+}
+
+void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
+	DXRShaderCommon::DecalData decalData;
+	decalData.position = pos;
+	decalData.rot = rot;
+	decalData.halfSize = halfSize;
+	m_decals[m_currNumDecals % MAX_DECALS] = decalData;
+	m_currNumDecals++;
 }
 
 void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {

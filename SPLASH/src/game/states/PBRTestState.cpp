@@ -1,21 +1,7 @@
 #include "PBRTestState.h"
 #include "imgui.h"
 #include "Sail/entities/ECS.h"
-#include "Sail/entities/components/Components.h"
-#include "Sail/entities/systems/candles/CandleSystem.h"
-#include "Sail/entities/systems/entityManagement/EntityRemovalSystem.h"
-#include "Sail/entities/systems/entityManagement/EntityAdderSystem.h"
-#include "Sail/entities/systems/lifetime/LifeTimeSystem.h"
-#include "Sail/entities/systems/light/LightSystem.h"
-#include "Sail/entities/systems/gameplay/GunSystem.h"
-#include "Sail/entities/systems/Gameplay/ProjectileSystem.h"
-#include "Sail/entities/systems/Graphics/AnimationSystem.h"
-#include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
-#include "Sail/entities/systems/prepareUpdate/PrepareUpdateSystem.h"
-#include "Sail/entities/systems/Input/GameInputSystem.h"
-#include "Sail/entities/systems/Audio/AudioSystem.h"
-#include "Sail/entities/systems/render/RenderSystem.h"
+#include "Sail/entities/systems/Systems.h"
 #include "Sail/TimeSettings.h"
 
 #include <sstream>
@@ -64,12 +50,22 @@ PBRTestState::PBRTestState(StateStack& stack)
 	}, "PBRTestState");
 #endif
 
+	m_lightDebugWindow.setLightSetup(&m_lights);
+
 	// Create octree
 	m_octree = SAIL_NEW Octree(nullptr);
 
+	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
+
 	// Get the Application instance
 	m_app = Application::getInstance();
-	m_componentSystems.renderSystem = ECS::Instance()->getSystem<RenderSystem>();
+	
+	// Create systems for rendering
+	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 
 	// Create entity adder system
 	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
@@ -123,7 +119,6 @@ PBRTestState::PBRTestState(StateStack& stack)
 #ifdef DISABLE_RT
 	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 	(*Application::getInstance()->getRenderWrapper()).changeRenderer(1);
-	m_componentSystems.renderSystem->refreshRenderer();
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
 #else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -163,26 +158,17 @@ PBRTestState::PBRTestState(StateStack& stack)
 		e = EntityFactory::CreateStaticMapObject("Cylinder1", cylinderModel0, nullptr, glm::vec3(0.f, 1.f, 0.f));
 		e = EntityFactory::CreateStaticMapObject("Cylinder2", cylinderModel1, nullptr, glm::vec3(3.f, 1.f, 0.f));
 		e = EntityFactory::CreateStaticMapObject("Cylinder3", cylinderModel2, nullptr, glm::vec3(-3.f, 1.f, 0.f));
-
-		for (size_t i = 0; i < 2500; i++) {
-			e = EntityFactory::CreateStaticMapObject("Cylinder3", cylinderModel2, nullptr, glm::vec3(floor((i * 2.0f) / 50), 1.f, (i * 2) % 50));
-		}
-
-		m_virtRAMHistory = SAIL_NEW float[100];
-		m_physRAMHistory = SAIL_NEW float[100];
-		m_vramUsageHistory = SAIL_NEW float[100];
-		m_cpuHistory = SAIL_NEW float[100];
-		m_frameTimesHistory = SAIL_NEW float[100];
 	}
 
 }
 
 PBRTestState::~PBRTestState() {
-	delete m_virtRAMHistory;
-	delete m_physRAMHistory;
-	delete m_vramUsageHistory;
-	delete m_cpuHistory;
-	delete m_frameTimesHistory;
+	// Show mouse cursor if hidden
+	Input::HideCursor(false);
+
+	ECS::Instance()->stopAllSystems();
+	ECS::Instance()->destroyAllEntities();
+
 	delete m_octree;
 }
 
@@ -236,7 +222,6 @@ bool PBRTestState::update(float dt, float alpha) {
 
 bool PBRTestState::fixedUpdate(float dt) {
 
-	m_componentSystems.entityAdderSystem->update(0.0f);
 	m_componentSystems.updateBoundingBoxSystem->update(dt);
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 
@@ -252,7 +237,8 @@ bool PBRTestState::fixedUpdate(float dt) {
 	counter += dt * 2.0f;
 
 	// Will probably need to be called last
-	m_componentSystems.entityRemovalSystem->update(0.0f);
+	m_componentSystems.entityAdderSystem->update();
+	m_componentSystems.entityRemovalSystem->update();
 
 	return false;
 }
@@ -264,7 +250,14 @@ bool PBRTestState::render(float dt, float alpha) {
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
 	// Draw the scene. Entities with model and trans component will be rendered.
-	m_componentSystems.renderSystem->draw(m_cam, alpha);
+	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
+
+	m_componentSystems.modelSubmitSystem->submitAll(alpha);
+	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
+	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
+	m_componentSystems.boundingboxSubmitSystem->submitAll();
+
+	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return false;
 }
@@ -272,200 +265,11 @@ bool PBRTestState::render(float dt, float alpha) {
 bool PBRTestState::renderImgui(float dt) {
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
-	renderImguiProfiler(dt);
-	renderImGuiRenderSettings(dt);
-	renderImGuiLightDebug(dt);
+	m_profiler.renderWindow();
+	m_renderSettingsWindow.renderWindow();
+	m_lightDebugWindow.renderWindow();
 
 	return false;
-}
-
-bool PBRTestState::renderImguiProfiler(float dt) {
-	bool open = m_profiler.isWindowOpen();
-	if (open) {
-		if (ImGui::Begin("Profiler", &open)) {
-			m_profiler.showWindow(open);
-			ImGui::BeginChild("Window", ImVec2(0, 0), false, 0);
-			std::string header;
-
-			header = "CPU (" + m_cpuCount + "%%)";
-			ImGui::Text(header.c_str());
-
-			header = "Frame time (" + m_ftCount + " seconds)";
-			ImGui::Text(header.c_str());
-
-			header = "Virtual RAM (" + m_virtCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			header = "Physical RAM (" + m_physCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			header = "VRAM (" + m_vramUCount + " MB)";
-			ImGui::Text(header.c_str());
-
-			ImGui::Separator();
-			if (ImGui::CollapsingHeader("CPU Graph")) {
-				header = "\n\n\n" + m_cpuCount + "(%)";
-				ImGui::PlotLines(header.c_str(), m_cpuHistory, 100, 0, "", 0.f, 100.f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("Frame Times Graph")) {
-				header = "\n\n\n" + m_ftCount + "(s)";
-				ImGui::PlotLines(header.c_str(), m_frameTimesHistory, 100, 0, "", 0.f, 0.01f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
-				header = "\n\n\n" + m_virtCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-
-			}
-			if (ImGui::CollapsingHeader("Physical RAM Graph")) {
-				header = "\n\n\n" + m_physCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_physRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
-			if (ImGui::CollapsingHeader("VRAM Graph")) {
-				header = "\n\n\n" + m_vramUCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
-
-
-			ImGui::EndChild();
-
-			m_profilerTimer += dt;
-			if (m_profilerTimer > 0.2f) {
-				m_profilerTimer = 0.f;
-				if (m_profilerCounter < 100) {
-
-					m_virtRAMHistory[m_profilerCounter] = m_profiler.virtMemUsage();
-					m_physRAMHistory[m_profilerCounter] = m_profiler.workSetUsage();
-					m_vramUsageHistory[m_profilerCounter] = m_profiler.vramUsage();
-					m_frameTimesHistory[m_profilerCounter] = dt;
-					m_cpuHistory[m_profilerCounter++] = m_profiler.processUsage();
-					m_virtCount = std::to_string(m_profiler.virtMemUsage());
-					m_physCount = std::to_string(m_profiler.workSetUsage());
-					m_vramUCount = std::to_string(m_profiler.vramUsage());
-					m_cpuCount = std::to_string(m_profiler.processUsage());
-					m_ftCount = std::to_string(dt);
-
-				} else {
-					float* tempFloatArr = SAIL_NEW float[100];
-					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
-					tempFloatArr[99] = m_profiler.virtMemUsage();
-					delete m_virtRAMHistory;
-					m_virtRAMHistory = tempFloatArr;
-					m_virtCount = std::to_string(m_profiler.virtMemUsage());
-
-					float* tempFloatArr1 = SAIL_NEW float[100];
-					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 100, tempFloatArr1);
-					tempFloatArr1[99] = m_profiler.workSetUsage();
-					delete m_physRAMHistory;
-					m_physRAMHistory = tempFloatArr1;
-					m_physCount = std::to_string(m_profiler.workSetUsage());
-
-					float* tempFloatArr3 = SAIL_NEW float[100];
-					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
-					tempFloatArr3[99] = m_profiler.vramUsage();
-					delete m_vramUsageHistory;
-					m_vramUsageHistory = tempFloatArr3;
-					m_vramUCount = std::to_string(m_profiler.vramUsage());
-
-					float* tempFloatArr4 = SAIL_NEW float[100];
-					std::copy(m_cpuHistory + 1, m_cpuHistory + 100, tempFloatArr4);
-					tempFloatArr4[99] = m_profiler.processUsage();
-					delete m_cpuHistory;
-					m_cpuHistory = tempFloatArr4;
-					m_cpuCount = std::to_string(m_profiler.processUsage());
-
-					float* tempFloatArr5 = SAIL_NEW float[100];
-					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 100, tempFloatArr5);
-					tempFloatArr5[99] = dt;
-					delete m_frameTimesHistory;
-					m_frameTimesHistory = tempFloatArr5;
-					m_ftCount = std::to_string(dt);
-				}
-			}
-			ImGui::End();
-		} else {
-			ImGui::End();
-		}
-	}
-
-	return false;
-}
-
-bool PBRTestState::renderImGuiRenderSettings(float dt) {
-	ImGui::Begin("Rendering settings");
-	ImGui::Checkbox("Enable post processing",
-		&(*Application::getInstance()->getRenderWrapper()).getDoPostProcessing()
-	);
-
-	static Entity* pickedEntity = nullptr;
-	static float metalness = 1.0f;
-	static float roughness = 1.0f;
-	static float ao = 1.0f;
-
-	ImGui::Separator();
-	if (ImGui::Button("Pick entity")) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHitIndex != -1) {
-			pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
-		}
-	}
-
-	if (pickedEntity) {
-		ImGui::Text("Material properties for %s", pickedEntity->getName());
-		if (auto * model = pickedEntity->getComponent<ModelComponent>()) {
-			auto* mat = model->getModel()->getMesh(0)->getMaterial();
-			const auto& pbrSettings = mat->getPBRSettings();
-			metalness = pbrSettings.metalnessScale;
-			roughness = pbrSettings.roughnessScale;
-			ao = pbrSettings.aoScale;
-			if (ImGui::SliderFloat("Metalness scale", &metalness, 0.f, 1.f)) {
-				mat->setMetalnessScale(metalness);
-			}
-			if (ImGui::SliderFloat("Roughness scale", &roughness, 0.f, 1.f)) {
-				mat->setRoughnessScale(roughness);
-			}
-			if (ImGui::SliderFloat("AO scale", &ao, 0.f, 1.f)) {
-				mat->setAOScale(ao);
-			}
-		}
-	}
-
-	ImGui::End();
-
-	return false;
-}
-
-bool PBRTestState::renderImGuiLightDebug(float dt) {
-	ImGui::Begin("Light debug");
-	unsigned int i = 0;
-	for (auto& pl : m_lights.getPLs()) {
-		ImGui::PushID(i);
-		std::string label("Point light ");
-		label += std::to_string(i);
-		if (ImGui::CollapsingHeader(label.c_str())) {
-
-			glm::vec3 color = pl.getColor(); // = 1.0f
-			glm::vec3 position = pl.getPosition(); // (12.f, 4.f, 0.f);
-			float attConstant = pl.getAttenuation().constant; // 0.312f;
-			float attLinear = pl.getAttenuation().linear; // 0.0f;
-			float attQuadratic = pl.getAttenuation().quadratic; // 0.0009f;
-
-			ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
-			ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
-			ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
-			ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
-			ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
-
-			pl.setAttenuation(attConstant, attLinear, attQuadratic);
-			pl.setColor(color);
-			pl.setPosition(position);
-
-		}
-		i++;
-		ImGui::PopID();
-	}
-	ImGui::End();
-	return true;
 }
 
 const std::string PBRTestState::createCube(const glm::vec3& position) {

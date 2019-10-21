@@ -10,9 +10,13 @@ enum TileModel {
 	ROOM_FLOOR,
 	ROOM_WALL,
 	ROOM_DOOR,
+	ROOM_CEILING,
+	ROOM_CORNER,
 	CORRIDOR_FLOOR,
 	CORRIDOR_WALL,
 	CORRIDOR_DOOR,
+	CORRIDOR_CEILING,
+	CORRIDOR_CORNER,
 	NUMBOFMODELS
 };
 
@@ -29,10 +33,10 @@ public:
 	LevelGeneratorSystem();
 	~LevelGeneratorSystem();
 
-	void update(float dt) override;
 	void generateMap();
-	//void createWorld(Model* tile1,Model* tile2,Model* tile3,Model* tile4, Model* tile5,Model* tile6, Model* bb);
 	void createWorld(const std::vector<Model*>& tileModels, Model* bb);
+
+	glm::vec3 getSpawnPoint();
 
 private:
 	int randomizeTileId(std::vector<int>* tiles);
@@ -42,7 +46,9 @@ private:
 	void matchRoom();
 	int checkBorder(rect rekt);
 	bool splitDirection(bool ns);
+	void addSpawnPoints();
 	void addDoors();
-	void addTile(Direction dir, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
+	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
+	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize, float tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
 };
