@@ -23,7 +23,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_currNumDecals = 0;
 	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);
 
-	memset(m_waterData, 0.f, WATER_ARR_SIZE * sizeof(unsigned int));
+	memset(m_waterData, 0.f, WATER_ARR_SIZE * sizeof(float));
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
@@ -78,11 +78,11 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	// Decrease water radius over time
-	for (auto& r : m_waterData) {
+	/*for (auto& r : m_waterData) {
 		if (r > 0.f) {
 			r -= Application::getInstance()->getDelta() * 0.01f;
 		}
-	}
+	}*/
 
 	if (camera && lightSetup) {
 		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);

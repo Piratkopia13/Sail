@@ -51,9 +51,9 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 
 	// Init water "decals"
 	unsigned int numElements = WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z;
-	unsigned int waterDataSize = sizeof(unsigned int) * numElements;
-	int* initData = new int[waterDataSize];
-	memset(initData, 0, waterDataSize);
+	unsigned int waterDataSize = sizeof(float) * numElements;
+	float* initData = new float[waterDataSize];
+	memset(initData, 0.0f, waterDataSize);
 	//for (int x = 0; x < WATER_GRID_X; x++) {
 	//	for (int y = 0; y < WATER_GRID_Y; y++) {
 	// 		for (int z = 0; z < WATER_GRID_Z; z++) {
