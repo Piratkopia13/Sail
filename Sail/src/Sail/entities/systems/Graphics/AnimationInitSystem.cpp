@@ -22,7 +22,7 @@ void AnimationInitSystem::loadAnimations() {
 void AnimationInitSystem::initAnimations() {
 	Application* app = Application::getInstance();
 	auto* shader = &app->getResourceManager().getShaderSet<GBufferOutShader>();
-	std::string name = "Docfbx.fbx";
+	std::string name = "Doc.fbx";
 
 	AnimationStack* stack = &app->getResourceManager().getAnimationStack(name);
 	unsigned int animationCount = stack->getAnimationCount();

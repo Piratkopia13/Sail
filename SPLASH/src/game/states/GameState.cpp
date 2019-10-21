@@ -96,6 +96,8 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 #endif
 	m_app->getResourceManager().setDefaultShader(shader);
+	std::string playerModelName = "Doc.fbx";
+
 
 	// Create/load models
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
@@ -106,15 +108,6 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-	Model* characterModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
-
-	Model* aiModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	aiModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
 	// Level Creation
 
@@ -137,7 +130,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
 
 	// Bots creation
-	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
+	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
@@ -805,7 +798,7 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e = EntityFactory::CreateStaticMapObject("Map_Ramp6", rampModel, boundingBoxModel, glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
 }
 
-void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
+void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel) {
 	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	if (botCount < 0) {
@@ -815,7 +808,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 		}
 		else {
 			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
