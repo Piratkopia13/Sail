@@ -45,6 +45,7 @@ private:
 	void aiUpdateFunc(Entity* e, const float dt);
 	glm::vec3 getDesiredDir(AiComponent* aiComp, TransformComponent* transComp);
 	bool nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos);
+	glm::vec3 getNodePos(const int x, const int z, float nodeSize, float nodePadding, float startOffsetX, float startOffsetZ);
 
 private:
 	float m_timeBetweenPathUpdate;

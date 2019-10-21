@@ -82,7 +82,6 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	std::vector<NodeSystem::Node> nodes;
 	std::vector<std::vector<unsigned int>> connections;
 	std::vector<unsigned int> conns;
-	float yPos = 0.f;
 	for (int i = 0; i < size; i++) {
 		conns.clear();
 
@@ -92,9 +91,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		currX = i % xMax;
 		currZ = static_cast<int>(floor(i / xMax));
 
-		float xPos = static_cast<float>(currX) * (nodeSize + nodePadding) + startOffsetX;
-		float zPos = static_cast<float>(currZ) * (nodeSize + nodePadding) + startOffsetZ;
-		glm::vec3 nodePos(xPos, yPos, zPos);
+		glm::vec3 nodePos = getNodePos(currX, currZ, nodeSize, nodePadding, startOffsetX, startOffsetZ);
 
 		/*
 			Is there floor here?
@@ -150,14 +147,15 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 					}
 
 					if (x > -1 && x < xMax && z > -1 && z < zMax) {
-						/*if (nodeConnectionCheck(nodePos,
-												glm::vec3(static_cast<float>(x) * nodeSize,
-														  nodePos.y,
-														  static_cast<float>(z) * nodeSize))) {*/
+						// Doesn't work with backfaces :( - but its kinda fine cause no "truly walkable" nodes has a connection to the
+						// in-wall nodes, only the other way round
+						bool doConnect = nodeConnectionCheck(nodePos,
+															 getNodePos(x, z, nodeSize, nodePadding, startOffsetX, startOffsetZ));						
+						if (doConnect) {
 							// get index
 							int index = z * xMax + x;
 							conns.push_back(index);
-						//}
+						}
 					}
 				}
 			}
@@ -279,13 +277,18 @@ bool AiSystem::nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos) {
 	m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + 0.5f, nodePos.z), dir, &tempInfo);
 
 	// Nothing between the two nodes
-	if (tempInfo.closestHit > dst ||
-		tempInfo.closestHitIndex == -1 /* Shouldn't be able to happen but just a safety precaution */) {
+	if (tempInfo.closestHit > dst || tempInfo.closestHit < 0.0f) {
 		return true;
 	}
 
 	// The nodes shouldn't be connected
 	return false;
+}
+
+glm::vec3 AiSystem::getNodePos(const int x, const int z, float nodeSize, float nodePadding, float startOffsetX, float startOffsetZ) {
+	float xPos = static_cast<float>(x) * (nodeSize + nodePadding) + startOffsetX;
+	float zPos = static_cast<float>(z) * (nodeSize + nodePadding) + startOffsetZ;
+	return glm::vec3(xPos, 0.f, zPos);
 }
 
 void AiSystem::updatePath(Entity* e) {
