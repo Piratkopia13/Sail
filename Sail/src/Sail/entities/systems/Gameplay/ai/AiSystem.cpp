@@ -99,7 +99,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		bool blocked = false;
 		Octree::RayIntersectionInfo tempInfo;
 		glm::vec3 down(0.f, -1.f, 0.f);
-		m_octree->getRayIntersection(glm::vec3(nodePos.x - 0.00001f, nodePos.y + collisionBoxHalfHeight, nodePos.z - 0.00001f), down, &tempInfo);
+		m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + collisionBoxHalfHeight, nodePos.z), down, &tempInfo, nullptr, 0.01f);
 		if (tempInfo.closestHitIndex != -1) {
 			float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].normal, -down);
 			// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
@@ -111,7 +111,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 				nodePos.y = nodePos.y + (collisionBoxHalfHeight - tempInfo.closestHit);
 			}
 		} else {
-			//blocked = true;
+			blocked = true;
 		}
 
 		/*
@@ -164,47 +164,6 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		nodes.emplace_back(nodePos, blocked, i);
 		connections.push_back(conns);
 	}
-
-	/*for ( size_t i = 0; i < size; i++ ) {
-		conns.clear();
-		x_cur = i % x_max;
-		z_cur = static_cast<int>(floor(i / x_max));
-		glm::vec3 pos(x_cur * padding + offsetX, offsetY, z_cur * padding + offsetZ);
-
-		bool blocked = false;
-		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(pos);
-		std::vector < Octree::CollisionInfo> vec;
-		m_octree->getCollisions(e.get(), &vec);
-
-		for ( Octree::CollisionInfo& info : vec ) {
-			int j = ( info.entity->getName().compare("Map_") );
-			if ( j >= 0 ) {
-				//Not walkable
-
-				blocked = true;
-				break;
-			}
-		}
-
-		nodes.emplace_back(pos, blocked, i);
-
-		for ( int dx = -1; dx <= 1; dx++ ) {
-			for ( int dz = -1; dz <= 1; dz++ ) {
-				if ( dx == 0 && dz == 0 )
-					continue;
-
-				int nx = x_cur + dx;
-				int nz = z_cur + dz;
-				if ( nx >= 0 && nx < x_max && nz >= 0 && nz < z_max ) {
-					int ni = nx + nz * x_max;
-					conns.push_back(ni);
-				}
-			}
-		}
-
-		connections.push_back(conns);
-	}*/
-	//Delete "DeleteMeFirstFrameDummy"
 
 	std::vector<unsigned int> toRemove;
 	for (auto& n : connections) {
