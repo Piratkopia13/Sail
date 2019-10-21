@@ -34,6 +34,5 @@ private:
 
 	// Decals
 	DXRShaderCommon::DecalData m_decals[MAX_DECALS];
-	float m_waterData[WATER_ARR_SIZE];
 	size_t m_currNumDecals;
 };

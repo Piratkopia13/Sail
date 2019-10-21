@@ -69,7 +69,7 @@ namespace ShaderComponent {
 	DX12StructuredBuffer::~DX12StructuredBuffer() {
 	}
 
-	void DX12StructuredBuffer::updateData(const void* newData, unsigned int numElements, int meshIndex) {
+	void DX12StructuredBuffer::updateData(const void* newData, unsigned int numElements, int meshIndex, unsigned int offset) {
 		//assert(numElements < MAX_ELEMENTS && "Too many elements! Increase MAX_ELEMENTS in DX12StrucutedBuffer.h");
 		assert(meshIndex < MAX_MESHES_PER_FRAME && "Too many meshes! Increase MAX_MESHES_PER_FRAME in DX12StrucutedBuffer.h");
 
@@ -77,7 +77,7 @@ namespace ShaderComponent {
 		auto frameIndex = m_context->getSwapIndex();
 		auto numSwapBuffers = m_context->getNumGPUBuffers();
 
-		memcpy(m_cbGPUAddress[frameIndex] + MAX_ELEMENTS * m_elementByteSize * meshIndex, newData, m_elementByteSize * numElements);
+		memcpy(m_cbGPUAddress[frameIndex] + MAX_ELEMENTS * m_elementByteSize * meshIndex + offset, newData, m_elementByteSize * numElements);
 		m_numElements = numElements;
 	}
 

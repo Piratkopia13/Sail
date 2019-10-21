@@ -33,7 +33,8 @@ public:
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
-	void updateWaterData(float* data);
+	void addWaterAtWorldPosition(const glm::vec3& position);
+	void updateWaterData();
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void reloadShaders();
@@ -156,7 +157,9 @@ private:
 	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2f, -0.2f, -0.2f, 0.2f, 0.2f, 0.2f };
 	ID3D12Resource1* m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
 
-	// Water "decals"
+	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
+	std::unordered_map<unsigned int, float> m_waterDeltas; // Changed water voxels over the last 2 frames
+	bool m_waterChanged;
 
 };

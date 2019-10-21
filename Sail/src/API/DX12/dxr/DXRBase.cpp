@@ -11,7 +11,8 @@
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 	: m_shaderFilename(shaderFilename)
 	, m_gbufferInputTextures(inputs)
-	, m_brdfLUTPath("pbr/brdfLUT.tga") {
+	, m_brdfLUTPath("pbr/brdfLUT.tga")
+	, m_waterChanged(false) {
 	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
 	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
 	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
@@ -229,8 +230,29 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 	m_decalCB->updateData(&newData, sizeof(newData));
 }
 
-void DXRBase::updateWaterData(float* data) {
-	m_waterStructuredBuffer->updateData(data, WATER_ARR_SIZE, 0);
+void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
+	static const glm::vec3 mapSize(56.f, 10.f, 56.f);
+	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+	static const glm::vec3 mapStart(-3.5f, 0.f, -3.5f);
+
+	glm::i32vec3 ind = round(((position - mapStart) / mapSize) * arrSize);
+	int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
+	m_waterDeltas[i] = 1.0f;
+	m_waterChanged = true;
+}
+
+void DXRBase::updateWaterData() {
+	for (auto& pair : m_waterDeltas) {
+		unsigned int offset = sizeof(float) * pair.first;
+		float& data = pair.second;
+		m_waterStructuredBuffer->updateData(&data, 1, 0, offset);
+	}
+
+	// Reset every other frame because of double buffering
+	if (!m_waterChanged) {
+		m_waterDeltas.clear();
+	}
+	m_waterChanged = false;
 }
 
 void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
