@@ -11,7 +11,7 @@ namespace States {
 		HostLobby,
 		JoinLobby,
 		Game,
-		Pause,
+		InGameMenu,
 		EndGame,
 		Score,
 		PBRTest,
