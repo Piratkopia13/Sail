@@ -163,7 +163,7 @@ GameState::GameState(StateStack& stack)
 	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();
 	m_gameMusic->addComponent<AudioComponent>();
 	m_gameMusic->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-//	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
+	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
@@ -527,13 +527,25 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 					e->removeDeleteAllChildren();
 					e->queueDestruction();
 
+					// Log it (Temporary until killfeed is implemented)
+					logSomeoneDisconnected(event.getPlayerID());
+
 					// No loop break. If other entities has the same player id they should all be removed
 				}
 			}
 		}
 		// 'I' Am a client
 		else {
-			// Some other client was dropped, use id to figure out name and output here or something.
+		
+			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
+			for (auto& e : receiverEntities) {
+
+				// Upon finding who disconnected...
+				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID()) {
+					// Log it (Temporary until killfeed is implemented)
+					logSomeoneDisconnected(event.getPlayerID());
+				}
+			}
 		}
 	}
 	return true;
@@ -543,6 +555,7 @@ bool GameState::onPlayerDropped(NetworkDroppedEvent& event) {
 	// I was dropped!
 	// Saddest of bois.
 
+	Logger::Warning("CONNECTION TO HOST HAS BEEN LOST");
 	m_wasDropped = true;	// Activates a renderImgui window
 
 	return false;
@@ -759,6 +772,16 @@ const std::string GameState::teleportToMap() {
 const std::string GameState::toggleProfiler() {
 	m_profiler.toggleWindow();
 	return "Toggling profiler";
+}
+
+void GameState::logSomeoneDisconnected(unsigned char id) {
+	// Construct log message
+	std::string logMessage = "'";
+	logMessage += NWrapperSingleton::getInstance().getPlayer(id)->name;
+	logMessage += "' has disconnected from the game.";
+
+	// Log it
+	Logger::Log(logMessage);
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
