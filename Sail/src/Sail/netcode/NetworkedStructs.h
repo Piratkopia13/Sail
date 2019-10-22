@@ -1,15 +1,16 @@
 #pragma once
 #include "ArchiveHelperFunctions.h"
+#include "NetcodeTypes.h"
 
 namespace Netcode {
-	typedef unsigned __int32 NetworkObjectID;
-	
 	// Global counter
-	extern NetworkObjectID gNetworkIDCounter;
+	extern NetworkComponentID gNetworkIDCounter;
 	
-	static NetworkObjectID createNetworkID()    { return ++gNetworkIDCounter; }
-	static NetworkObjectID nrOfNetworkObjects() { return gNetworkIDCounter; }
+	static NetworkComponentID createNetworkID()    { return ++gNetworkIDCounter; }
+	static NetworkComponentID nrOfNetworkObjects() { return gNetworkIDCounter; }
 
+	// Used to signify NetworkMessages sent Internally
+	constexpr PlayerID MESSAGE_FROM_SELF_ID = 255;
 
 	/*
 	  Enums for the kind of entities/data that will be sent over the network,
@@ -23,21 +24,22 @@ namespace Netcode {
 		MECHA_ENTITY = 2,
 	};
 
+	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
 	enum MessageType : __int32 {
 		CREATE_NETWORKED_ENTITY = 1,
-		MODIFY_TRANSFORM,
-		SPAWN_PROJECTILE,
-		ROTATION_TRANSFORM,
-		PLAYER_JUMPED,
-		WATER_HIT_PLAYER,
-		SET_CANDLE_HEALTH,
-		PLAYER_DIED,
-		PLAYER_DISCONNECT,
-		MATCH_ENDED,
-		CANDLE_HELD_STATE,
-		SEND_ALL_BACK_TO_LOBBY,
-		EMPTY = 69
+		MODIFY_TRANSFORM        = 2,
+		SPAWN_PROJECTILE        = 3,
+		ROTATION_TRANSFORM      = 4,
+		PLAYER_JUMPED           = 5,
+		WATER_HIT_PLAYER        = 6,
+		SET_CANDLE_HEALTH       = 7,
+		PLAYER_DIED             = 8,
+		PLAYER_DISCONNECT       = 9,
+		MATCH_ENDED             = 10,
+		CANDLE_HELD_STATE       = 11,
+		SEND_ALL_BACK_TO_LOBBY  = 12,
+		EMPTY                   = 69
 	};
 
 	/*
@@ -107,26 +109,26 @@ namespace Netcode {
 
 	class MessageDataWaterHitPlayer : public MessageData {
 	public:
-		MessageDataWaterHitPlayer(Netcode::NetworkObjectID id)
+		MessageDataWaterHitPlayer(Netcode::NetworkComponentID id)
 			: playerWhoWasHitID(id)
 		{}
 		~MessageDataWaterHitPlayer() {}
 
-		Netcode::NetworkObjectID playerWhoWasHitID;
+		Netcode::NetworkComponentID playerWhoWasHitID;
 	};
 
 	class MessageDataPlayerDied : public MessageData {
 	public:
-		MessageDataPlayerDied(Netcode::NetworkObjectID id) : playerWhoDied(id){}
-				~MessageDataPlayerDied() {}
-				Netcode::NetworkObjectID playerWhoDied;
-		};
+		MessageDataPlayerDied(Netcode::NetworkComponentID id) : playerWhoDied(id) {}
+		~MessageDataPlayerDied() {}
+		Netcode::NetworkComponentID playerWhoDied;
+	};
 
 	class MessageDataCandleHeldState : public MessageData {
 	public:
-		MessageDataCandleHeldState(Netcode::NetworkObjectID id, bool b, glm::vec3 pos) : candleOwnerID(id), isHeld(b), candlePos(pos) {}
+		MessageDataCandleHeldState(Netcode::NetworkComponentID id, bool b, glm::vec3 pos) : candleOwnerID(id), isHeld(b), candlePos(pos) {}
 		~MessageDataCandleHeldState() {}
-		Netcode::NetworkObjectID candleOwnerID;
+		Netcode::NetworkComponentID candleOwnerID;
 		bool isHeld;
 		glm::vec3 candlePos;
 	};

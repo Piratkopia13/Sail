@@ -14,7 +14,7 @@ public:
 	// Functions which differ from host to client
 	virtual void pushDataToBuffer(std::string data) = 0;
 
-	void init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
+	void init(Netcode::PlayerID playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
 	void initPlayer(Entity* pPlayerEntity);
 
 	const std::vector<Entity*>& getEntities() const;
@@ -29,20 +29,18 @@ protected:
 	std::mutex m_bufferLock;
 
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
-	unsigned char m_playerID;
+	Netcode::PlayerID m_playerID;
 
 	Entity* m_playerEntity = nullptr;
 private:
-	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
-
-	void createEntity(Netcode::NetworkObjectID id, Netcode::EntityType entityType, const glm::vec3& translation);
-	void setEntityTranslation(Netcode::NetworkObjectID id, const glm::vec3& translation);
-	void setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation);
-	void playerJumped(Netcode::NetworkObjectID id);
-	void waterHitPlayer(Netcode::NetworkObjectID id);
-	void playerDied(Netcode::NetworkObjectID id);
-	void playerDisconnect(unsigned char id);
-	void setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
+	void createEntity(Netcode::NetworkComponentID id, Netcode::EntityType entityType, const glm::vec3& translation);
+	void setEntityTranslation(Netcode::NetworkComponentID id, const glm::vec3& translation);
+	void setEntityRotation(Netcode::NetworkComponentID id, const glm::vec3& rotation);
+	void playerJumped(Netcode::NetworkComponentID id);
+	void waterHitPlayer(Netcode::NetworkComponentID id);
+	void playerDied(Netcode::NetworkComponentID id);
+	void playerDisconnect(Netcode::PlayerID id);
+	void setCandleHeldState(Netcode::NetworkComponentID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
 	void matchEnded();
 	void backToLobby();
 

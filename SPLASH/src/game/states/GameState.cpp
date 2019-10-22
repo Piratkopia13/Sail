@@ -358,17 +358,16 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
-	m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
-	// Create Network Reciever System depending on host or client.
+	// Create NetworkReceiverSystem depending on host or client.
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
-	}
-	else {
+	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -617,10 +616,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
 	if (!m_isSingleplayer) {
-		// Update entities with info from the network
+		// Update entities with info from the network and our own network events
 		m_componentSystems.networkReceiverSystem->update();
-		// Send out your entity info to the rest of the players
-		m_componentSystems.networkSenderSystem->update();
 	}
 	
 	m_componentSystems.movementSystem->update(dt);
@@ -634,6 +631,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
 
 	// TODO: Investigate this
+	// TODO: Remove the arguments from all systems
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
 	runSystem(dt, m_componentSystems.projectileSystem);
@@ -646,6 +644,11 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
+	}
+	
+	if (!m_isSingleplayer) {
+		// Send out your entity info to the rest of the players
+		m_componentSystems.networkSenderSystem->update();
 	}
 
 	// Will probably need to be called last

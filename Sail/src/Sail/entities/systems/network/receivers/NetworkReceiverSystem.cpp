@@ -8,7 +8,8 @@
 #include "../SPLASH/src/game/states/GameState.h"
 
 #include "Network/NWrapperSingleton.h"
-#include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
+#include "Sail/netcode/ArchiveTypes.h"
+
 
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
@@ -30,7 +31,7 @@ NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 NetworkReceiverSystem::~NetworkReceiverSystem() {
 }
 
-void NetworkReceiverSystem::init(unsigned char playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr) {
+void NetworkReceiverSystem::init(Netcode::PlayerID playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr) {
 	m_playerID = playerID;
 	m_gameStatePtr = gameStatePtr;
 	m_netSendSysPtr = netSendSysPtr;
@@ -49,48 +50,45 @@ const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
   any changes made here needs to be made there as well!
 
   Logical structure of the packages that will be decoded by this function:
-
-	__int32         senderID
-
-	__int32         nrOfEntities
-		NetworkObjectID entity[0].id
-		EntityType		entity[0].type
-		__int32			nrOfMessages
-			MessageType     entity[0].messageType
-			MessageData     entity[0].data
-			...
-		NetworkObjectID entity[1].id
-		EntityType		entity[1].type
-		__int32			nrOfMessages
-			MessageType     entity[0].messageType
-			MessageData     entity[0].data
-			...
-		NetworkObjectID entity[2].id
-		EntityType		entity[2].type
-		__int32			nrOfMessages
-			MessageType     entity[0].messageType
-			MessageData     entity[0].data
-			...
-		...
-	__int32         nrOfEvents
-		MessageType     eventType[0]
-		EventData       eventData[0]
-		...
+  ---------------------------------------------------
+	PlayerID        senderID
+	size_t          nrOfEntities
+	    NetworkObjectID entity[0].id
+	    EntityType      entity[0].type
+	    size_t          nrOfMessages
+	        MessageType     entity[0].messageType
+	        MessageData     entity[0].data
+	        ...
+	    NetworkObjectID entity[1].id
+	    EntityType      entity[1].type
+	    size_t          nrOfMessages
+	        MessageType     entity[0].messageType
+	        MessageData     entity[0].data
+	        ...
+	    NetworkObjectID entity[2].id
+	    EntityType      entity[2].type
+	    size_t          nrOfMessages
+	        MessageType     entity[0].messageType
+	        MessageData     entity[0].data
+	        ...
+	    ...
+	size_t          nrOfEvents
+	    MessageType     eventType[0]
+	    EventData       eventData[0]
+	    ...
 	...
+  ---------------------------------------------------
 
 */
 void NetworkReceiverSystem::update() {
-	using namespace Netcode;
+	std::scoped_lock lock(m_bufferLock); // Don't push more data to the buffer whilst this function is running
 
-	// Don't push more data to the buffer whilst this function is running
-	std::scoped_lock lock(m_bufferLock);
-
-	__int32 nrOfObjectsInMessage = 0;
-	unsigned char senderID = 0;
-	NetworkObjectID id = 0;
+	size_t nrOfSenderComponents = 0;
+	Netcode::PlayerID senderID = 0;
+	Netcode::NetworkComponentID id = 0;
 	Netcode::MessageType messageType;
 	Netcode::EntityType entityType;
-	__int32 messageTypesSize = 0;
+	size_t nrOfMessagesInComponent = 0;
 	glm::vec3 translation;
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
@@ -99,23 +97,28 @@ void NetworkReceiverSystem::update() {
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
 		std::istringstream is(m_incomingDataBuffer.front());
-		cereal::PortableBinaryInputArchive ar(is);
-		ar(senderID);
-		// If the packet was sent from ourself then don't process it and go to the next packet
-		if (senderID == m_playerID) {
-			m_incomingDataBuffer.pop();
-			continue;
-		}
+		Netcode::InArchive ar(is);
 
-		ar(nrOfObjectsInMessage);
+		ar(senderID);
+		
+		// If the packet was originally sent over the network from ourself 
+		// then don't process it and go to the next packet
+		if (senderID == m_playerID) { m_incomingDataBuffer.pop(); continue; }
+
+		// If the message was sent internally to ourself then correct the senderID
+		if (senderID == Netcode::MESSAGE_FROM_SELF_ID) { senderID = m_playerID; }
+
+		// -+-+-+-+-+-+-+-+ Process data from senderComponents -+-+-+-+-+-+-+-+ 
+
+		ar(nrOfSenderComponents);
 		// Read and process data from SenderComponents (i.e. stuff that is continuously updated such as positions)
-		for (int i = 0; i < nrOfObjectsInMessage; ++i) {
+		for (size_t i = 0; i < nrOfSenderComponents; ++i) {
 			ar(id);               // NetworkObject-ID
 			ar(entityType);       //
-			ar(messageTypesSize); //
+			ar(nrOfMessagesInComponent); //
 
 			// Read per data type
-			for (int j = 0; j < messageTypesSize; j++) {
+			for (size_t j = 0; j < nrOfMessagesInComponent; j++) {
 				ar(messageType);
 
 				// Read and process the data
@@ -148,13 +151,15 @@ void NetworkReceiverSystem::update() {
 
 
 		// Receive 'one-time' events
-		__int32 eventSize;
+		size_t nrOfEvents;
 		Netcode::MessageType eventType;
-		__int32 netObjectID;
+		Netcode::NetworkComponentID netObjectID;
 
-		ar(eventSize);
+
+		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
+		ar(nrOfEvents);
 		// Read and process data from SenderComponents (i.e. stuff that is continuously updated such as positions)
-		for (int i = 0; i < eventSize; i++) {
+		for (size_t i = 0; i < nrOfEvents; i++) {
 			// Handle-Single-Frame events
 			ar(eventType);
 
@@ -166,8 +171,9 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
 			{
-				ar(netObjectID);
-				waterHitPlayer(netObjectID);
+				Netcode::NetworkComponentID playerwhoWasHit;
+				ar(playerwhoWasHit);
+				waterHitPlayer(playerwhoWasHit);
 			}
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
@@ -218,45 +224,6 @@ void NetworkReceiverSystem::update() {
 			}
 
 		}
-		//// OLD VERSION
-		{
-			//if (eventType == Netcode::MessageType::PLAYER_JUMPED) {
-			//	//	playerJumped(netObjectID);
-			//}
-			//else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {
-			//	ar(netObjectID);
-			//	waterHitPlayer(netObjectID);
-			//}
-			//else if (eventType == Netcode::MessageType::SPAWN_PROJECTILE) {
-			//	ArchiveHelpers::loadVec3(ar, gunPosition);
-			//	ArchiveHelpers::loadVec3(ar, gunVelocity);
-
-			//	EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 100, 4, 0); //Owner id not set, 100 for now.
-			//} else if (eventType == Netcode::MessageType::PLAYER_DIED) {
-			//	ar(netObjectID);
-			//	playerDied(netObjectID);
-			//}
-			//else if (eventType == Netcode::MessageType::MATCH_ENDED) {
-			//	matchEnded();
-			//}
-			//else if (eventType == Netcode::MessageType::CANDLE_HELD_STATE) {
-			//	glm::vec3 candlepos;
-			//	bool isCarried;
-			//	ar(netObjectID);
-
-			//	ar(isCarried);
-			//	ArchiveHelpers::loadVec3(ar, candlepos);
-			//	setCandleHeldState(netObjectID, isCarried, candlepos);
-			//}
-			//else if (eventType == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) {
-			//	backToLobby();
-			//} else if (eventType == Netcode::MessageType::PLAYER_DISCONNECT) {
-			//	unsigned char playerID;
-
-			//	ar(playerID);
-			//	playerDisconnect(playerID);
-			//}
-		}
 
 		m_incomingDataBuffer.pop();
 	}
@@ -267,9 +234,7 @@ void NetworkReceiverSystem::update() {
 
   TODO: Use an entity factory with blueprints or something like that instead of manually constructing entities here
 */
-void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::EntityType entityType, const glm::vec3& translation) {
-	using namespace Netcode;
-
+void NetworkReceiverSystem::createEntity(Netcode::NetworkComponentID id, Netcode::EntityType entityType, const glm::vec3& translation) {
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
@@ -308,7 +273,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 
 	// create the new entity
 	switch (entityType) {
-	case EntityType::PLAYER_ENTITY:
+	case Netcode::EntityType::PLAYER_ENTITY:
 	{
 		e->addComponent<ModelComponent>(characterModel);
 		AnimationComponent* ac = e->addComponent<AnimationComponent>(stack);
@@ -347,7 +312,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
-void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, const glm::vec3& translation) {
+void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkComponentID id, const glm::vec3& translation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -370,7 +335,7 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, co
 	}
 }
 
-void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation) {
+void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkComponentID id, const glm::vec3& rotation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -388,7 +353,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const
 	}
 }
 
-void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
+void NetworkReceiverSystem::playerJumped(Netcode::NetworkComponentID id) {
 	// How do i trigger a jump from here?
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
@@ -399,7 +364,7 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 	}
 }
 
-void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
+void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkComponentID id) {
 	for (auto& e : entities) {
 		//Look for the entity that OWNS the candle (player entity)
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
@@ -420,7 +385,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 	}
 }
 
-void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
+void NetworkReceiverSystem::playerDied(Netcode::NetworkComponentID id) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -444,10 +409,10 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 	}
 }
 
-void NetworkReceiverSystem::playerDisconnect(unsigned char id) {
-	// This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
+// NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
+void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID id) {
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == id) {
+		if (static_cast<Netcode::PlayerID>(e->getComponent<NetworkReceiverComponent>()->m_id >> 18) == id) {
 
 			e->removeDeleteAllChildren();
 			// TODO: Remove all the components that can/should be removed
@@ -459,7 +424,7 @@ void NetworkReceiverSystem::playerDisconnect(unsigned char id) {
 	}
 }
 
-void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos) {
+void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkComponentID id, bool b, const glm::vec3& pos) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;

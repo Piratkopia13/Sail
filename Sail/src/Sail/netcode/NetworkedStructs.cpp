@@ -2,5 +2,5 @@
 #include "NetworkedStructs.h"
 
 namespace Netcode {
-	extern NetworkObjectID gNetworkIDCounter = 0;
+	extern NetworkComponentID gNetworkIDCounter = 0;
 }

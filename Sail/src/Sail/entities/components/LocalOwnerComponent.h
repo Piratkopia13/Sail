@@ -5,8 +5,8 @@
 class LocalOwnerComponent : public Component<LocalOwnerComponent> {
 public:
 	LocalOwnerComponent() { ; }
-	LocalOwnerComponent(Netcode::NetworkObjectID netEntityId_) : netEntityID(netEntityId_) {	}
+	LocalOwnerComponent(Netcode::NetworkComponentID netEntityId_) : netEntityID(netEntityId_) {	}
 	~LocalOwnerComponent() { }
 
-	Netcode::NetworkObjectID netEntityID;
+	Netcode::NetworkComponentID netEntityID;
 };

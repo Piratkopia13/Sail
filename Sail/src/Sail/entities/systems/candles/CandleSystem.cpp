@@ -1,3 +1,4 @@
+
 #include "pch.h"
 #include "CandleSystem.h"
 
@@ -43,9 +44,7 @@ void CandleSystem::update(float dt) {
 	int LivingCandles = entities.size();
 
 	for (auto e : entities) {
-		auto candle = e->getComponent<CandleComponent>();
-
-		if (candle->getIsAlive()) {
+		if (auto candle = e->getComponent<CandleComponent>(); candle->getIsAlive()) {
 			//If a candle is out of health.
 			if (candle->getHealth() <= 0.f) {
 				candle->setIsLit(false);
@@ -60,34 +59,17 @@ void CandleSystem::update(float dt) {
 					if (NWrapperSingleton::getInstance().isHost()) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::PLAYER_DIED,
-							SAIL_NEW Netcode::MessageDataPlayerDied{
-								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
-							}
+							SAIL_NEW Netcode::MessageDataPlayerDied{e->getParent()->getComponent<NetworkReceiverComponent>()->m_id}, 
+							true
 						);
-
-						//This should remove the candle entity from game
-						e->getParent()->removeDeleteAllChildren();
-
-						// Check if the extinguished candle is owned by the player
-						if (e->getParent()->getComponent<NetworkReceiverComponent>()->m_id >> 18 == NWrapperSingleton::getInstance().getMyPlayerID()) {
-							//If it is me that died, become spectator.
-							e->getParent()->addComponent<SpectatorComponent>();
-							e->getParent()->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-							e->getParent()->removeComponent<GunComponent>();
-						} else {
-							//If it wasnt me that died, compleatly remove the player entity from game.
-							e->getParent()->queueDestruction();
-						}
 
 						if (LivingCandles <= 1) { // Match IS over
 							//TODO: move MATCH_ENDED event to host side and not to client side.
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::MATCH_ENDED,
-								nullptr
+								nullptr,
+								true
 							);
-
-							m_gameStatePtr->requestStackPop();
-							m_gameStatePtr->requestStackPush(States::EndGame);
 						}
 					}
 				}
