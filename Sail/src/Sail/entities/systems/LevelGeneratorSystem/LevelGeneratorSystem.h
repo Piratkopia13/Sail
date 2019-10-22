@@ -20,6 +20,13 @@ enum TileModel {
 	NUMBOFMODELS
 };
 
+enum ClutterModel {
+	CLUTTER_LO,
+	CLUTTER_MO,
+	CLUTTER_SO,
+	NUMBOFMODELS
+};
+
 enum Direction {
 	NONE = 0,
 	UP = 1,
