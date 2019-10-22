@@ -70,6 +70,8 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	// Adding audio component and adding all sounds attached to the player entity
 	player->addComponent<AudioComponent>();
 
+#pragma region DEFINING PLAYER SOUNDS
+
 	Audio::SoundInfo sound{};
 	sound.fileName = "../Audio/footsteps_1.wav";
 	sound.soundEffectLength = 1.0f;
@@ -83,6 +85,41 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	sound.playOnce = true;
 	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
 	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
+
+	sound.fileName = "../Audio/watergun_start.wav";
+	sound.soundEffectLength = 0.578f;
+	sound.playOnce = true;
+	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_START, sound);
+
+	sound.fileName = "../Audio/watergun_loop.wav";
+	sound.soundEffectLength = 1.4f;
+	sound.playOnce = false;
+	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_LOOP, sound);
+
+	sound.fileName = "../Audio/watergun_end.wav";
+	sound.soundEffectLength = 0.722f;
+	sound.playOnce = true;
+	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_END, sound);
+
+	sound.fileName = "../Audio/water_drip_1.wav";
+	sound.playOnce = true;
+	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_LEVEL, sound);
+
+	sound.fileName = "../Audio/water_impact_enemy.wav";
+	sound.playOnce = true;
+	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_ENEMY, sound);
+
+	sound.fileName = "../Audio/water_impact_my_candle.wav";
+	sound.playOnce = true;
+	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_MY_CANDLE, sound);
+
+#pragma endregion
 
 	// Create candle for the player
 	auto e = CreateCandle("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f), lightIndex);

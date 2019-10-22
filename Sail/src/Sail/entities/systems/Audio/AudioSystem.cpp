@@ -27,8 +27,36 @@ AudioSystem::~AudioSystem() {
 // TODO: move to constructor?
 void AudioSystem::initialize() {
 	m_audioEngine->loadSound("../Audio/footsteps_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_metal_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_metal_2.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_metal_3.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_metal_4.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_tile_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_tile_2.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_tile_3.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_tile_4.wav");
 	m_audioEngine->loadSound("../Audio/jump.wav");
 	m_audioEngine->loadSound("../Audio/guitar.wav");
+	m_audioEngine->loadSound("../Audio/watergun_start.wav");
+	m_audioEngine->loadSound("../Audio/watergun_loop.wav");
+	m_audioEngine->loadSound("../Audio/watergun_end.wav");
+	m_audioEngine->loadSound("../Audio/reload_watergun.wav");
+	m_audioEngine->loadSound("../Audio/water_impact_enemy.wav");
+	m_audioEngine->loadSound("../Audio/water_impact_my_candle.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_1.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_2.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_3.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_4.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_5.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_6.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_7.wav");
+	m_audioEngine->loadSound("../Audio/death_enemy.wav");
+	m_audioEngine->loadSound("../Audio/death_me_1.wav");
+	m_audioEngine->loadSound("../Audio/death_me_2.wav");
+	m_audioEngine->loadSound("../Audio/death_me_3.wav");
+	m_audioEngine->loadSound("../Audio/death_me_4.wav");
+	m_audioEngine->loadSound("../Audio/death_me_5.wav");
+	m_audioEngine->loadSound("../Audio/death_me_6.wav");
 }
 
 void AudioSystem::update(Camera& cam, float dt, float alpha) {

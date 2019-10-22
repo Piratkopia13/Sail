@@ -9,7 +9,12 @@ namespace Audio {
 		AMBIENT,
 		WALK, 
 		RUN, 
-		SHOOT, 
+		SHOOT_START,
+		SHOOT_LOOP,
+		SHOOT_END,
+		WATER_IMPACT_LEVEL,
+		WATER_IMPACT_ENEMY,
+		WATER_IMPACT_MY_CANDLE,
 		JUMP, 
 		LANDING, 
 		COUNT // Keep at the bottom so that COUNT == nr of sound types
