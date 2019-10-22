@@ -75,11 +75,13 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	sound.soundEffectLength = 1.0f;
 	sound.volume = 0.5f;
 	sound.playOnce = false;
+	sound.positionalOffset = { 0.0f, -1.6f, 0.0f };
 	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
 
 	sound.fileName = "../Audio/jump.wav";
 	sound.soundEffectLength = 0.7f;
 	sound.playOnce = true;
+	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
 	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
 
 	// Create candle for the player
