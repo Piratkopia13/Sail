@@ -38,6 +38,7 @@ private:
 	void createEntity(Netcode::NetworkObjectID id, Netcode::EntityType entityType, const glm::vec3& translation);
 	void setEntityTranslation(Netcode::NetworkObjectID id, const glm::vec3& translation);
 	void setEntityRotation(Netcode::NetworkObjectID id, const glm::vec3& rotation);
+	void setEntityAnimation(Netcode::NetworkObjectID id, int animationStack, float animationTime);
 	void playerJumped(Netcode::NetworkObjectID id);
 	void waterHitPlayer(Netcode::NetworkObjectID id);
 	void playerDied(Netcode::NetworkObjectID id);
