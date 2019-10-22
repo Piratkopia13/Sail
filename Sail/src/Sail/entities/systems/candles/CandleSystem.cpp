@@ -11,8 +11,6 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/Application.h"
 
-#include "Sail/entities/components/MapComponent.h"
-
 CandleSystem::CandleSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<CandleComponent>(true, true, true);
@@ -90,6 +88,7 @@ void CandleSystem::update(float dt) {
 								auto rots = Utils::getRotations(dir);
 								parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
 							}
+
 						} else {
 							//If it wasnt me that died, compleatly remove the player entity from game.
 							e->getParent()->queueDestruction();
