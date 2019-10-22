@@ -32,13 +32,13 @@ namespace DXRShaderCommon {
 #define MAX_NUM_METABALLS 200
 #define MAX_DECALS 100
 
-#define WATER_GRID_X 400
+#define WATER_GRID_X 400 / 4
 #define WATER_GRID_Y 100
 #define WATER_GRID_Z 400
 // #define WATER_GRID_X 100
 // #define WATER_GRID_Y 25
 // #define WATER_GRID_Z 100
-#define WATER_ARR_SIZE WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z / 4
+#define WATER_ARR_SIZE (WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z)
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;

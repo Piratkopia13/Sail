@@ -57,45 +57,52 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	// =================================================
 
 	static const float3 mapSize = float3(56.f, 10.f, 56.f);
-	static const int3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+	static const float3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z) - 1;
 	static const float3 mapStart = float3(-3.5f, 0.0f, -3.5f);
 	static const float cutoff = 0.3f;
 
 	float3 cellWorldSize = mapSize / arrSize;
-	// int3 ind = round(( (worldPosition - mapStart) / mapSize) * arrSize);
+	cellWorldSize.x /= 4.f;
+	
+	// float3 floatIndMin = ((worldPosition - mapStart) / mapSize) * arrSize;
+	// float3 floatIndMax = ((worldPosition - mapStart) / mapSize) * arrSize;
+	// int3 ind = floor(( (worldPosition - mapStart) / mapSize) * arrSize);
 	// int3 indMin = ind;
 	// int3 indMax = ind;
-	int3 indMin = round(( (worldPosition - cutoff - mapStart) / mapSize) * arrSize);
-	int3 indMax = round(( (worldPosition + cutoff - mapStart) / mapSize) * arrSize);
+	float3 floatIndMin = ((worldPosition - cutoff - mapStart) / mapSize) * arrSize;
+	float3 floatIndMax = ((worldPosition + cutoff - mapStart) / mapSize) * arrSize;
+	int3 indMin = floor(floatIndMin);
+	int3 indMax = floor(floatIndMax);
+	// indMin.x = floor(indMin.x / 4);
+	// indMax.x = ceil(indMax.x / 4);
 
 	float3 normalOffset = 0.f;
 
-	uint xStart = indMin.x - indMin.x % 4;
-	uint xEnd = indMax.x + indMax.x % 4;
+	// uint xStart = indMin.x - indMin.x % 4;
+	// uint xEnd = indMax.x + indMax.x % 4;
 	// uint xEnd = indMax.x + indMax.x % 4;
 
 	float sum = 0.f;
 	for (int z = indMin.z; z <= indMax.z; z++) {
 		for (int y = indMin.y; y <= indMax.y; y++) {
-			for (int x = xStart; x <= xEnd; x+=4) {
-				int i = Utils::to1D(int3(floor(x/4),y,z), arrSize.x, arrSize.y);
+			for (int x = indMin.x; x <= indMax.x; x++) {
+				int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
 				i = clamp(i, 0, floor(WATER_ARR_SIZE) - 1);
 				uint packedR = waterData[i];
 
-				uint start = (x == xStart) ? indMin.x % 4 : 0;
-				uint end = (x == xEnd) ? indMax.x % 4 : 3;
+				uint start = (x == indMin.x) ? floor(((floatIndMin.x - floor(floatIndMin.x)) * 4.f) % 4) : 0;
+				uint end = (x == indMax.x) ? floor(((floatIndMax.x - floor(floatIndMax.x)) * 4.f) % 4) : 3;
 
 				[unroll]
 				for (uint index = start; index <= end; index++) {
 					// uint index = 0;
 					// half r = Utils::unpackQuarterFloat(0.f, index); // 1 / 1 = 1
 					// uint res = Utils::unpackQuarterFloat(0xFFFFFFFFU, index); // 1 / 255 = 0.0039
-					uint res = Utils::unpackQuarterFloat(packedR, index);
-					// res = 0;
-					// r = 0.00392156862h;
-					if (res < 255) {
-						half r = (255 - res) / 255;
-						float3 waterPointWorldPos = float3(x+index,y,z) * cellWorldSize + mapStart;
+					uint up = Utils::unpackQuarterFloat(packedR, index);
+					if (up < 255) {
+						half r = (255 - up) / 255;
+						// r = 1.0f;
+						float3 waterPointWorldPos = float3(x*4+index + 0.5f,y,z) * cellWorldSize + mapStart;
 
 						float3 dstV = waterPointWorldPos - worldPosition;
 						float dstSqrd = dot(dstV, dstV);
@@ -104,7 +111,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 							float charge = 1.f-(dstSqrd * (1.f / r))*10.f; // CHARGE2: can handle changing blob sizes
 							sum += charge * charge;
 							normalOffset += normalize(-dstV);
-							normalOffset += normalize(float3(x+index,y,z) - indMin);
+							normalOffset += normalize(float3(x*4+index+0.5f,y,z) - indMin);
 						}
 					}
 				}
@@ -115,7 +122,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 
 	if (sum > 0.8f) {
 		float waterOpacity = clamp(sum / 1.f, 0.f, 0.8f);
-		// payload.color = float4(sum / 10.0f, 0.f, 0.f, 1.0f);
+		// payload.color = float4(1.0f, 0.f, 0.f, 1.0f);
 		// return;
 
 		// Shade as water

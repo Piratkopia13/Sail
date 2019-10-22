@@ -53,7 +53,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	// Init water "decals"
 	unsigned int numElements = WATER_ARR_SIZE;
 	unsigned int waterDataSize = sizeof(unsigned int) * numElements;
-	unsigned int* initData = new unsigned int[waterDataSize];
+	unsigned int* initData = new unsigned int[WATER_ARR_SIZE];
 	memset(initData, UINT_MAX, waterDataSize);
 	memset(m_waterDataCPU, UINT_MAX, waterDataSize);
 	//for (int x = 0; x < WATER_GRID_X; x++) {
@@ -233,12 +233,13 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 
 void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	static const glm::vec3 mapSize(56.f, 10.f, 56.f);
-	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
 	static const glm::vec3 mapStart(-3.5f, 0.f, -3.5f);
 
-	glm::i32vec3 ind = round(((position - mapStart) / mapSize) * arrSize);
-	int index = ind.x % 4;
-	ind.x /= 4; // We pack four radii in each float
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
+	int index = (int)glm::floor(floatInd.x * 4.f) % 4;
+	glm::i32vec3 ind = round(floatInd);
+	//ind.x = glm::floor(ind.x / 4.f); // We pack four radii in each float
 	int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
 	
 	uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
