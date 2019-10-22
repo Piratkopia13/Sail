@@ -234,6 +234,18 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 		ArchiveHelpers::archiveVec3(*ar, t->getRotations());	// Send rotation
 	}
 	break;
+	case Netcode::MessageType::ANIMATION:
+	{
+		// CURRENTLY IS:
+		(*ar)(0);		// AnimationStack
+		(*ar)(0.0f);	// AnimationTime
+
+		// SHOULD BE:
+	//	AnimationComponent* a = e->getComponent<AnimationComponent>();
+	//	(*ar)(a->getAnimationStack());					// Animation Stack
+	//	(*ar)(a->animationTime);						// Animation Time
+	}
+	break;
 	default:
 		break;
 	}
