@@ -1340,7 +1340,32 @@ void LevelGeneratorSystem::generateClutter() {
 			for (int x = 0; x < room.sizex; x++) {
 				for (int y = 0; y < room.sizey; y++) {
 					if (map->tileArr[x + room.posx][y + room.posy][2] < 1) {
-
+						float xrange = map->tileSize;
+						float yrange = map->tileSize;
+						float xmin = 0;
+						float ymin = 0;
+						int tile = map->tileArr[x + room.posx][y + room.posy][0];
+						if (tile % 2 == 1) {
+							yrange -= 2*map->tileSize/10.f;
+						}
+						if ((tile % 4) / 2 == 1) {
+							xrange -= 2 * map->tileSize / 10.f;
+						}
+						if ((tile % 8) / 4 == 1) {
+							ymin += 2 * map->tileSize / 10.f;
+						}
+						if (tile / 8 == 1) {
+							xmin += 2 * map->tileSize / 10.f;
+						}
+						float xpos = ((rand() % 100) / 100.f) * (xrange - xmin) + xmin + (x + room.posx) * map->tileSize + map->tileOffset - map->tileSize / 2.f;
+						float ypos = ((rand() % 100) / 100.f) * (yrange - ymin) + ymin + (y + room.posy) * map->tileSize + map->tileOffset - map->tileSize / 2.f;
+						int rot = rand() % 360;
+						clutter cL;
+						cL.posx = xpos;
+						cL.posy = ypos;
+						cL.rot = rot;
+						cL.size = 0;
+						map->largeClutter.push(cL);
 					}
 				}
 			}
@@ -1351,6 +1376,23 @@ void LevelGeneratorSystem::generateClutter() {
 	}
 }
 
-void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterModels) {
-
+void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterModels, Model* bb) {
+	for (auto e : entities) {
+		MapComponent* map = e->getComponent<MapComponent>();
+		int amountOfClutter = map->largeClutter.size();
+		for (int i = 0; i < amountOfClutter; i++) {
+			clutter clut = map->largeClutter.front();
+			map->largeClutter.pop();
+			int size = rand() % 3;
+			if (size == 0) {
+				EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::CLUTTER_LO], bb, glm::vec3(clut.posx, 0.f,clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1,1));
+			}
+			else if (size == 1) {
+				EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::CLUTTER_MO], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			}
+			else if (size == 2) {
+				EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			}
+		}
+	}
 }
