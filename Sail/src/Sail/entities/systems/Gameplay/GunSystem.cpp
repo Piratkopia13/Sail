@@ -45,6 +45,7 @@ void GunSystem::update(float dt) {
 						);
 						m_gameDataTracker->logWeaponFired();
 					}
+
 				}
 			}
 

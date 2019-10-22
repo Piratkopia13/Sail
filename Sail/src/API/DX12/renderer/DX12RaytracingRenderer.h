@@ -17,7 +17,6 @@ public:
 	virtual bool onEvent(Event& event) override;
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, const glm::vec3& vel, RenderFlag flags) override;
-
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
