@@ -42,13 +42,13 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	// Clear output texture
 	m_outputTexture.get()->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
 
-	std::sort(m_metaballpositions.begin(), m_metaballpositions.end(),
+	std::sort(m_metaballs.begin(), m_metaballs.end(),
 		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
 		{
 			return a.distToCamera < b.distToCamera;
 		});
 
-	if (m_metaballpositions.size() > 0) {
+	if (m_metaballs.size() > 0) {
 		commandQueue.emplace_back();
 		RenderCommand& cmd = commandQueue.back();
 		cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
@@ -62,17 +62,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		cmd.transform = glm::transpose(cmd.transform);
 		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	}
-
-	//for (size_t i = 0; i < MAX_NUM_METABALLS && i < m_metaballpositions.size(); i++) {
-	//	commandQueue.emplace_back();
-	//	RenderCommand& cmd = commandQueue.back();
-	//	cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
-	//	cmd.nonModel.material = nullptr;
-	//	cmd.transform = glm::identity<glm::mat4>();
-	//	cmd.transform = glm::translate(cmd.transform, m_metaballpositions[i].pos);
-	//	cmd.transform = glm::transpose(cmd.transform);
-	//	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumSwapBuffers(), false);
-	//}
 
 	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
 		m_dxr.reloadShaders();
@@ -91,8 +80,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	if (camera && lightSetup) {
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs);
 	}
+
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
 	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
@@ -129,7 +119,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 void DX12RaytracingRenderer::begin(Camera* camera) {
 	Renderer::begin(camera);
-	m_metaballpositions.clear();
+	m_metaballs.clear();
 }
 
 bool DX12RaytracingRenderer::onEvent(Event& event) {
@@ -151,14 +141,16 @@ void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, Re
 	commandQueue.push_back(cmd);
 }
 
-void DX12RaytracingRenderer::submitNonMesh(RenderCommandType type, Material* material, const glm::mat4& modelMatrix, RenderFlag flags) {
+void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, const glm::vec3& vel, RenderFlag flags){
 	assert(type != RenderCommandType::RENDER_COMMAND_TYPE_MODEL);
 
 	if (type == RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL) {
 		DXRBase::Metaball ball;
-		ball.pos = glm::vec3(modelMatrix[3].x, modelMatrix[3].y, modelMatrix[3].z);
+		ball.pos = pos;
+		ball.vel = vel;
 		ball.distToCamera = glm::length(ball.pos - camera->getPosition());
-		m_metaballpositions.emplace_back(ball);
+
+		m_metaballs.emplace_back(ball);
 	}
 }
 

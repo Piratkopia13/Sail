@@ -69,6 +69,10 @@ void ProjectileSystem::update(float dt) {
 					//Check in NetworkReceiverSystem what happens next
 				}
 			}
+
+			if (Utils::rnd() < 0.2) {
+				e->queueDestruction();
+			}
 		}
 
 		projComp->timeSinceLastDecal += dt;

@@ -20,6 +20,7 @@ ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0);
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
+StructuredBuffer<float3> metaballsVelosity : register(t1, space3);
 
 // Texture2DArray<float4> textures : register(t2, space0);
 Texture2D<float4> sys_texAlbedo : register(t2);
@@ -356,9 +357,17 @@ bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out floa
 // Calculate a magnitude of an influence from a Metaball charge.
 // Return metaball potential range: <0,1>
 // mbRadius - largest possible area of metaball contribution - AKA its bounding sphere.
-float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float ballradius) {
-	float distance = length(position - ballpos) / ballradius;
+float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float3 velosity, in float ballradius) {
+	
+	//float3 a = normalize(position - ballpos);
+	//float3 b = normalize(velosity);
+	//
+	//float f = abs(1- dot(a,b));
+	//sqrt(f);
+	//f += 1.0f;
+	//f = clamp(f, 0, 10.0f);
 
+	float distance = length(position - ballpos) / ballradius;
 	////float3 rel = (ballpos - position) / ballradius;
 
 	if (distance <= 1) {
@@ -368,6 +377,7 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 		/*===OK Quality===*/
 
 		float t = (1 - distance * distance);
+
 		return t * t;
 
 
@@ -407,12 +417,14 @@ float CalculateMetaballsPotential(in uint index, in float3 position) {
 
 	if (start < 0)
 		start = 0;
-	if (end > nballs)
+	if (end > nballs) 
 		end = nballs;
 
-	for (int i = start; i < end; i++) {
-		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], 0.15f);
+	float rad = 0.12;
+	for (int i = start; i < end - 1; i++) {
+		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], metaballsVelosity[i], rad);
 	}
+
 	return sumFieldPotential;
 }
 
@@ -451,7 +463,7 @@ void IntersectionShader() {
 	uint nballs = CB_SceneData.nMetaballs;
 	uint index = 1000;
 	for (int i = 0; i < nballs; i++) {
-		if (intersectSphere(rayWorld, metaballs[i], 0.2, val, dummy)) {
+		if (intersectSphere(rayWorld, metaballs[i], 0.1, val, dummy)) {
 			if (val < startT) {
 				startT = val;
 				//rayWorld.Origin += startT * rayWorld.Direction;
@@ -476,7 +488,7 @@ void IntersectionShader() {
 	//}
 	////////////////////////////////
 
-	float tmin = startT, tmax = startT + 1;
+	float tmin = startT, tmax = startT + 3;
 	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
 	unsigned int MAX_SMALL_STEPS = 32;//If a large step hit a metaball, use small steps to adjust go backwards
 

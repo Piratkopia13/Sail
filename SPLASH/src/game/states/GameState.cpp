@@ -525,6 +525,12 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 }
 
 bool GameState::update(float dt, float alpha) {
+	//static Entity* testing = EntityFactory::CreateProjectile(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), false, 0, 1000, 0).get();
+	//
+	//testing->getComponent<MovementComponent>()->velocity = glm::vec3(1, 0, 0);
+	//testing->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0, 0, 0);
+	//testing->getComponent<TransformComponent>()->setTranslation(m_player->getComponent<TransformComponent>()->getTranslation() +  glm::vec3(0.5, 1.1, 0));
+	
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
