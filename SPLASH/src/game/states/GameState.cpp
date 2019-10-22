@@ -341,7 +341,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-	m_componentSystems.candleSystem->init(this);
+	m_componentSystems.candleSystem->init(this, m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
