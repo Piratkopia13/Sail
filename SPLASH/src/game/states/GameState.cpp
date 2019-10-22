@@ -290,6 +290,24 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::spectatorDebugging)) {
+		// Get position and rotation to look at middle of the map from above
+		{
+			auto parTrans = m_player->getComponent<TransformComponent>();
+			auto pos = glm::vec3(parTrans->getMatrix()[3]);
+			pos.y = 20.f;
+			parTrans->setTranslation(pos);
+			MapComponent temp;
+			auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
+			auto dir = glm::normalize(middleOfLevel - pos);
+			auto rots = Utils::getRotations(dir);
+			parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+			m_player->addComponent<SpectatorComponent>();
+			m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
+			m_player->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
+		}	
+	}
+
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
