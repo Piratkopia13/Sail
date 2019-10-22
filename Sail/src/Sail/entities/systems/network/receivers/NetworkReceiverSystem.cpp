@@ -179,6 +179,7 @@ void NetworkReceiverSystem::update() {
 				ArchiveHelpers::loadVec3(ar, gunPosition);
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
 
+
 				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 100, 4, 0); //Owner id not set, 100 for now.
 			}
 
@@ -277,6 +278,10 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		sound.soundEffectLength = 0.7f;
 		sound.playOnce = true;
 		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
+		// SHOOT sound
+		sound.fileName = "../Audio/testSoundShoot.wav";
+		sound.soundEffectLength = 1.0f;
+		sound.playOnce = true;
 
 		//creates light with model and pointlight
 		auto light = ECS::Instance()->createEntity("ReceiverLight");

@@ -42,6 +42,7 @@ private:
 	void waterHitPlayer(Netcode::NetworkObjectID id);
 	void playerDied(Netcode::NetworkObjectID id);
 	void playerDisconnect(unsigned char id);
+	void projectileSpawned(glm::vec3& pos, glm::vec3& dir);
 	void setCandleHeldState(Netcode::NetworkObjectID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
 	void matchEnded();
 	void backToLobby();
