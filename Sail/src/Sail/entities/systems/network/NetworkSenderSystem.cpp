@@ -139,6 +139,10 @@ void NetworkSenderSystem::pushDataToBuffer(std::string data) {
 	m_HOSTONLY_dataToForward.push(data);
 }
 
+const std::vector<Entity*>& NetworkSenderSystem::getEntities() const {
+	return entities;
+}
+
 
 // Why is this its own function?
 // Can't it just be a message in the normal update()?
