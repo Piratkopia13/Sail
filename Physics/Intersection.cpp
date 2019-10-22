@@ -43,6 +43,7 @@ bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aab
 			*intersectionDepth = tempDepth;
 			*intersectionAxis = glm::vec3(0.0f);
 			(*intersectionAxis)[i] = center1[i] - center2[i];
+			(*intersectionAxis)[i] /= abs((*intersectionAxis)[i]); //Normalize
 		}
 	}
 	return true;

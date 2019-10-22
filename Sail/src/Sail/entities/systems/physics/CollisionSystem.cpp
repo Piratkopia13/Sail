@@ -46,11 +46,11 @@ void CollisionSystem::update(float dt) {
 
 				surfaceFromCollision(e, collision->collisions);
 
-				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
-					//Object is moving fast, ray cast for collisions
-					rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
-					movement->oldVelocity = movement->velocity;
-				}
+				//if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
+				//	//Object is moving fast, ray cast for collisions
+				//	rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
+				//	movement->oldVelocity = movement->velocity;
+				//}
 			}
 		}
 
@@ -64,7 +64,7 @@ const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
 
 	bool hasSpheres = e->hasComponent<CollisionSpheresComponent>();
 	if (hasSpheres) {
-		m_octree->getCollisionsSpheres(e, &collisions);
+		assert(false); //Not implemented
 	}
 	else {
 		m_octree->getCollisions(e, &collisions);
@@ -98,15 +98,11 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 			float normalDepth;
 
 			//Get intersection axis and depth
-			if (Intersection::AabbWithTriangle(*boundingBox, collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
-				if (intersectionDepth == normalDepth) { //If the smallest intersection is with the normal
-					//Compare normal and axis, only do collisions if same axis. I.e "true" collision
+				if (collisionInfo_i.shape->isTrueCollision(boundingBox)) {
+
 					sumVec += collisionInfo_i.normal;
 
-					// Calculate the plane that the triangle is on
-					glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - collisionInfo_i.positions[0];
-					float distance = -glm::dot(triangleToWorldOrigo, collisionInfo_i.normal);
-					collisionInfo_i.intersectionPosition = Intersection::PointProjectedOnPlane(boundingBox->getPosition(), collisionInfo_i.normal, distance);
+					collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
 
 					//Add collision to current collisions for collisionComponent
 					collision->collisions.push_back(collisionInfo_i);
@@ -117,7 +113,6 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 
 					returnValue = true;
 				}
-			}
 		}
 
 		//Loop through true collisions and handle them
@@ -272,12 +267,12 @@ void CollisionSystem::surfaceFromCollision(Entity* e, std::vector<Octree::Collis
 		float intersectionDepth;
 		float normalDepth;
 
-		if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
+		/*if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
 			if (intersectionDepth == normalDepth) {
 				bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
 				distance += collisionInfo_i.normal * normalDepth;
 			}
-		}
+		}*/
 	}
 	transform->translate(distance);
 }
