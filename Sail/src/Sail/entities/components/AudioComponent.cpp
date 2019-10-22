@@ -6,10 +6,15 @@ AudioComponent::AudioComponent() {}
 
 AudioComponent::~AudioComponent() {}
 
-void AudioComponent::streamSoundRequest_HELPERFUNC(std::string filename, bool startTRUE_stopFALSE, float volume, bool isLooping) {
+void AudioComponent::streamSoundRequest_HELPERFUNC(std::string filename, bool startTRUE_stopFALSE, float volume, bool isPositionalAudio, bool isLooping) {
 
-	m_streamingRequests.push_back(std::pair(filename, startTRUE_stopFALSE));
-	m_Vol_isLooping_Requests.push_back(std::pair(filename, std::pair(volume, isLooping)));
+	Audio::StreamRequestInfo info;
+	info.startTRUE_stopFALSE = startTRUE_stopFALSE;
+	info.volume = volume;
+	info.isPositionalAudio = isPositionalAudio;
+	info.isLooping = isLooping;
+
+	m_streamingRequests.push_back(std::pair(filename, info));
 }
 
 void AudioComponent::defineSound(Audio::SoundType type, Audio::SoundInfo info) {

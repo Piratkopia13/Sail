@@ -58,6 +58,7 @@ private:
 	Entity* m_player;
 
 	Entity* m_gameMusic = nullptr;
+	Entity* m_ambiance = nullptr;
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;
