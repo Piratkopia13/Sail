@@ -25,6 +25,8 @@ public:
 
 	void pushDataToBuffer(std::string data);
 
+	const std::vector<Entity*>& getEntities() const;
+
 
 private:
 	unsigned char m_playerID;
