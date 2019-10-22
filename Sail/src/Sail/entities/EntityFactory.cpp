@@ -39,7 +39,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//m_player = player.get();.
 
 	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player
-	//player->addComponent<LocalPlayerComponent>();
+	//player->addComponent<LocalPlayerComponent>();.
 
 	player->addComponent<TransformComponent>();
 
