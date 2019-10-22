@@ -830,59 +830,60 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::vector<Model*> clutterModels;
 	//Load textures for level
 	{
-		Application::getInstance()->getResourceManager().loadTexture(tileTex);
+		ResourceManager& manager = Application::getInstance()->getResourceManager();
+		manager.loadTexture(tileTex);
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallMRAO.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallNM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
+		manager.loadTexture("pbr/Tiles/RoomWallMRAO.tga");
+		manager.loadTexture("pbr/Tiles/RoomWallNM.tga");
+		manager.loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_MRAo.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/RD_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/RD_NM.tga");
+		manager.loadTexture("pbr/Tiles/RD_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_MRAo.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/CD_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/CD_NM.tga");
+		manager.loadTexture("pbr/Tiles/CD_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_MRAo.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/CW_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/CW_NM.tga");
+		manager.loadTexture("pbr/Tiles/CW_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_MRAo.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/F_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/F_NM.tga");
+		manager.loadTexture("pbr/Tiles/F_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_MRAo.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/CF_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/CF_NM.tga");
+		manager.loadTexture("pbr/Tiles/CF_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_MRAo.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/CC_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/CC_NM.tga");
+		manager.loadTexture("pbr/Tiles/CC_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_MRAo.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/RC_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/RC_NM.tga");
+		manager.loadTexture("pbr/Tiles/RC_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_MRAo.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/Corner_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/Corner_NM.tga");
+		manager.loadTexture("pbr/Tiles/Corner_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/metal/albedo.tga");
+		manager.loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+		manager.loadTexture("pbr/metal/normal.tga");
+		manager.loadTexture("pbr/metal/albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/LO_MRAO.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/LO_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/LO_Albedo.tga");
+		manager.loadTexture("pbr/Clutter/LO_MRAO.tga");
+		manager.loadTexture("pbr/Clutter/LO_NM.tga");
+		manager.loadTexture("pbr/Clutter/LO_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/MO_MRAO.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/MO_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/MO_Albedo.tga");
+		manager.loadTexture("pbr/Clutter/MO_MRAO.tga");
+		manager.loadTexture("pbr/Clutter/MO_NM.tga");
+		manager.loadTexture("pbr/Clutter/MO_Albedo.tga");
 
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/SO_MRAO.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/SO_NM.tga");
-		Application::getInstance()->getResourceManager().loadTexture("pbr/Clutter/SO_Albedo.tga");
+		manager.loadTexture("pbr/Clutter/SO_MRAO.tga");
+		manager.loadTexture("pbr/Clutter/SO_NM.tga");
+		manager.loadTexture("pbr/Clutter/SO_Albedo.tga");
 
 	}
 
