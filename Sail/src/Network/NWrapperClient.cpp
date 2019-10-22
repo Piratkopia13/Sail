@@ -66,7 +66,7 @@ void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
 }
 
 void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id_) {
-	// Connection to host was lost.
+	// My connection to host was lost :(
 	
 	m_app->dispatchEvent(NetworkDroppedEvent());
 }

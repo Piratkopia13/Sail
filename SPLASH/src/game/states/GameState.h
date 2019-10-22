@@ -51,6 +51,8 @@ private:
 	const std::string teleportToMap();
 	const std::string toggleProfiler();
 
+	void logSomeoneDisconnected(unsigned char id);
+
 private:
 	Application* m_app;
 	// Camera
