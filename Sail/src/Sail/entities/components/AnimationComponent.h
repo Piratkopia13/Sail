@@ -56,7 +56,11 @@ public:
 	bool blending;
 	unsigned int transformSize;
 	bool hasUpdated;
-	float animationW;
+	float animationW;	
+	glm::mat4 rightHand;
+	glm::mat4 leftHand;
+	
+
 
 	class Transition {
 	public:
