@@ -258,6 +258,18 @@ void AnimationStack::setConnectionData(const unsigned int vertexIndex, const uns
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
 }
 
+void AnimationStack::addBone(AnimationStack::Bone& bone) {
+	m_bones.push_back(bone);
+}
+
+const unsigned int AnimationStack::boneCount() {
+	return m_bones.size();
+}
+
+AnimationStack::Bone& AnimationStack::getBone(const unsigned int index) {
+	return m_bones[index];
+}
+
 
 Animation* AnimationStack::getAnimation(const std::string& name) {
 	if (m_stack.find(name) == m_stack.end()) {

@@ -73,10 +73,9 @@ bool FBXLoader::importScene(const std::string& filePath, Shader* shader) {
 		//here would getMaterial for model be
 	}
 
-	AnimationStack* stack = importAnimationStack(filePath);
-	if (stack) {
+	m_sceneData[filePath].stack = importAnimationStack(filePath);
+	if (m_sceneData[filePath].stack) {
 		m_sceneData[filePath].hasAnimation = true;
-		m_sceneData[filePath].stack = stack;
 	}
 
 	return true;
@@ -441,22 +440,16 @@ FbxVector2 FBXLoader::getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMe
 
 #pragma region animationLoading
 AnimationStack* FBXLoader::importAnimationStack(const std::string& filePath) {
-
 	const FbxScene* scene = m_scenes[filePath];
 	assert(scene);
 
 	FbxNode* root = scene->GetRootNode();
-
 	
 	AnimationStack* stack = SAIL_NEW AnimationStack();
-	fetchSkeleton(root, filePath);
+	m_sceneData[filePath].stack = stack;
+	fetchSkeleton(root, filePath, stack);
 	fetchAnimations(root, stack, filePath);
-
-
-
 	return stack;
-
-
 }
 void FBXLoader::fetchAnimations(FbxNode* node, AnimationStack* stack, const std::string& name) {
 	FbxScene* scene = node->GetScene();
@@ -535,7 +528,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 					FBXtoGLM(globalBindposeInverse, globalBindposeInverseMatrix);
 
-					m_sceneData[name].bones[limbIndexes[clusterIndex]].globalBindposeInverse = globalBindposeInverse;
+					stack->getBone(limbIndexes[clusterIndex]).globalBindposeInverse = globalBindposeInverse;
 
 					unsigned int indexCount = cluster->GetControlPointIndicesCount();
 					int* CPIndices = cluster->GetControlPointIndices();
@@ -563,7 +556,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 				Animation* defaultAnimation = SAIL_NEW Animation("Default");
 				for (unsigned int frameIndex = 0; frameIndex < 3; frameIndex++) {
-					Animation::Frame* frame = SAIL_NEW Animation::Frame((unsigned int)m_sceneData[name].bones.size());
+					Animation::Frame* frame = SAIL_NEW Animation::Frame(stack->boneCount());
 					glm::mat4 matrix = glm::identity<glm::mat4>();
 					FbxTime currTime;
 					for (unsigned int boneIndex = 0; boneIndex < clusterCount; boneIndex++) {
@@ -597,7 +590,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 					//TODO: find way to import FPS from file.
 					for (FbxLongLong frameIndex = start.GetFrameCount(fps); frameIndex <= end.GetFrameCount(fps); frameIndex++) {
-						Animation::Frame* frame = SAIL_NEW Animation::Frame((unsigned int)m_sceneData[name].bones.size());
+						Animation::Frame* frame = SAIL_NEW Animation::Frame(stack->boneCount());
 						FbxTime currTime;
 						currTime.SetFrame(frameIndex, fps);
 						if (firstFrameTime == 0.0f) {
@@ -612,7 +605,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 							FBXtoGLM(matrix, currentTransformOffset.Inverse() * cluster->GetLink()->EvaluateGlobalTransform(currTime));
 
-							frame->setTransform(limbIndexes[clusterIndex],  matrix * m_sceneData[name].bones[limbIndexes[clusterIndex]].globalBindposeInverse);
+							frame->setTransform(limbIndexes[clusterIndex],  matrix * stack->getBone(limbIndexes[clusterIndex]).globalBindposeInverse);
 						}
 						float time = float(currTime.GetSecondDouble()) - firstFrameTime;
 						animation->addFrame(frameIndex, time, frame);
@@ -671,38 +664,41 @@ void FBXLoader::addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, c
 	buildData.indices[currentIndex] = uniqueVertices;
 	uniqueVertices += 1;
 }
-void FBXLoader::fetchSkeleton(FbxNode* node, const std::string& filename) {
+void FBXLoader::fetchSkeleton(FbxNode* node, const std::string& filename, AnimationStack* stack) {
 
 
 	for (int childIndex = 0; childIndex < node->GetChildCount(); ++childIndex) {
 		FbxNode* currNode = node->GetChild(childIndex);
-		fetchSkeletonRecursive(currNode, filename, 0, 0, -1);
+		fetchSkeletonRecursive(currNode, filename, 0, 0, -1, stack);
 	}
 
 }
-void FBXLoader::fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex) {
+void FBXLoader::fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex, AnimationStack* stack) {
 
 	if (inNode->GetNodeAttribute() && inNode->GetNodeAttribute()->GetAttributeType() && inNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eSkeleton) {
-		FBXLoader::SceneData::Bone limb;
+		AnimationStack::Bone limb;
 		limb.parentIndex = inParentIndex;
 		limb.uniqueID = inNode->GetUniqueID();
+		limb.name = inNode->GetName();
 
-		if (m_sceneData[filename].bones.size() > 0) {
-			m_sceneData[filename].bones[limb.parentIndex].childIndexes.push_back(int(m_sceneData[filename].bones.size()));
+		if (stack->boneCount() > 0) {
+			stack->getBone(limb.parentIndex).childIndexes.emplace_back(stack->boneCount());
 		}
-		m_sceneData[filename].bones.push_back(limb);
+		stack->addBone(limb);
 
 	}
 	for (int i = 0; i < inNode->GetChildCount(); i++) {
-		fetchSkeletonRecursive(inNode->GetChild(i), filename, inDepth + 1, unsigned int(m_sceneData[filename].bones.size()), myIndex);
+		fetchSkeletonRecursive(inNode->GetChild(i), filename, inDepth + 1, stack->boneCount(), myIndex, stack);
 	}
 
 
 }
 int FBXLoader::getBoneIndex(unsigned int uniqueID, const std::string& name) {
-	auto& ref = m_sceneData[name].bones;
-	for (unsigned int i = 0; i < ref.size(); i++) {
-		if (ref[i].uniqueID == uniqueID) {
+	//auto& ref = m_sceneData[name].bones;
+	AnimationStack* stack = m_sceneData[name].stack;
+	unsigned int size = stack->boneCount();
+	for (unsigned int i = 0; i < size; i++) {
+		if (stack->getBone(i).uniqueID == uniqueID) {
 			return i;
 		}
 	}
@@ -756,7 +752,7 @@ void FBXLoader::printNodeTree(FbxNode * node, const std::string& indent) {
 	
 	Logger::Log(indent + name + ":" + attributes);
 	for (int i = 0; i < node->GetChildCount(); i++) {
-		printNodeTree(node->GetChild(i), indent + " ");
+		printNodeTree(node->GetChild(i), indent + "|");
 	}
 }
 void FBXLoader::printAnimationStack(const FbxNode* node) {
