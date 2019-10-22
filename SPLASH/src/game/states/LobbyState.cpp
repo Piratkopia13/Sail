@@ -99,6 +99,9 @@ bool LobbyState::renderImgui(float dt) {
 	// ------- START BUTTON ------- 
 	renderStartButton();
 
+	// ------- Return BUTTON ------- 
+	renderQuitButton();
+
 	return false;
 }
 
@@ -197,6 +200,25 @@ void LobbyState::renderStartButton() {
 		}
 		ImGui::End();
 	}
+}
+
+void LobbyState::renderQuitButton() {
+	ImGui::Begin("Return");
+	if (ImGui::Button("Quit to Lobby")) {
+	
+		// Set temp window pos
+		ImGui::SetWindowPos({ 424,641 });
+		ImGui::SetWindowSize({ 117,63 });
+
+		// Reset the network
+		NWrapperSingleton::getInstance().resetNetwork();
+		NWrapperSingleton::getInstance().resetWrapper();
+
+		// Schedule new state change
+		this->requestStackPop();
+		this->requestStackPush(States::MainMenu);
+	}
+	ImGui::End();
 }
 
 void LobbyState::renderSettings() {
