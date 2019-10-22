@@ -163,7 +163,7 @@ GameState::GameState(StateStack& stack)
 	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();
 	m_gameMusic->addComponent<AudioComponent>();
 	m_gameMusic->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-//	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
+	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
