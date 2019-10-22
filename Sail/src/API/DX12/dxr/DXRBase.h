@@ -159,7 +159,8 @@ private:
 
 	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
-	std::unordered_map<unsigned int, float> m_waterDeltas; // Changed water voxels over the last 2 frames
+	std::unordered_map<unsigned int, unsigned int> m_waterDeltas; // Changed water voxels over the last 2 frames
+	unsigned int m_waterDataCPU[WATER_ARR_SIZE];
 	bool m_waterChanged;
 
 };

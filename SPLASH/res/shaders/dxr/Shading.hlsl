@@ -57,7 +57,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	// =================================================
 
 	static const float3 mapSize = float3(56.f, 10.f, 56.f);
-	static const float3 arrSize = float3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+	static const int3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
 	static const float3 mapStart = float3(-3.5f, 0.0f, -3.5f);
 	static const float cutoff = 0.3f;
 
@@ -70,27 +70,45 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 
 	float3 normalOffset = 0.f;
 
-	float sum = 0.f;
-	for (int x = indMin.x; x <= indMax.x; x++) {
-		for (int y = indMin.y; y <= indMax.y; y++) {
-			for (int z = indMin.z; z <= indMax.z; z++) {
-				int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
-				i = clamp(i, 0, WATER_ARR_SIZE - 1);
-				
-				float r = waterData[i];
-				if (r > 0.f) {
-					float3 waterPointWorldPos = float3(x,y,z) * cellWorldSize + mapStart;
+	uint xStart = indMin.x - indMin.x % 4;
+	uint xEnd = indMax.x + indMax.x % 4;
+	// uint xEnd = indMax.x + indMax.x % 4;
 
-					float3 dstV = waterPointWorldPos - worldPosition;
-					float dstSqrd = dot(dstV, dstV);
-					if (dstSqrd <= 0.09f * r) { // cutoff^2, reomve "* r" if CHARGE1 is used below
-						// float charge = 1.f-(dstSqrd)*10.f; // CHARGE1: Disregards r
-						float charge = 1.f-(dstSqrd * (1.f / r))*10.f; // CHARGE2: can handle changing blob sizes
-						sum += charge * charge;
-						normalOffset += normalize(-dstV);
-						normalOffset += normalize(float3(x,y,z) - indMin);
+	float sum = 0.f;
+	for (int z = indMin.z; z <= indMax.z; z++) {
+		for (int y = indMin.y; y <= indMax.y; y++) {
+			for (int x = xStart; x <= xEnd; x+=4) {
+				int i = Utils::to1D(int3(floor(x/4),y,z), arrSize.x, arrSize.y);
+				i = clamp(i, 0, floor(WATER_ARR_SIZE) - 1);
+				uint packedR = waterData[i];
+
+				uint start = (x == xStart) ? indMin.x % 4 : 0;
+				uint end = (x == xEnd) ? indMax.x % 4 : 3;
+
+				[unroll]
+				for (uint index = start; index <= end; index++) {
+					// uint index = 0;
+					// half r = Utils::unpackQuarterFloat(0.f, index); // 1 / 1 = 1
+					// uint res = Utils::unpackQuarterFloat(0xFFFFFFFFU, index); // 1 / 255 = 0.0039
+					uint res = Utils::unpackQuarterFloat(packedR, index);
+					// res = 0;
+					// r = 0.00392156862h;
+					if (res < 255) {
+						half r = (255 - res) / 255;
+						float3 waterPointWorldPos = float3(x+index,y,z) * cellWorldSize + mapStart;
+
+						float3 dstV = waterPointWorldPos - worldPosition;
+						float dstSqrd = dot(dstV, dstV);
+						if (dstSqrd <= 0.09f * r) { // cutoff^2, reomve "* r" if CHARGE1 is used below
+							// float charge = 1.f-(dstSqrd)*10.f; // CHARGE1: Disregards r
+							float charge = 1.f-(dstSqrd * (1.f / r))*10.f; // CHARGE2: can handle changing blob sizes
+							sum += charge * charge;
+							normalOffset += normalize(-dstV);
+							normalOffset += normalize(float3(x+index,y,z) - indMin);
+						}
 					}
 				}
+
 			}
 		}
 	}

@@ -38,7 +38,7 @@ namespace DXRShaderCommon {
 // #define WATER_GRID_X 100
 // #define WATER_GRID_Y 25
 // #define WATER_GRID_Z 100
-#define WATER_ARR_SIZE WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z
+#define WATER_ARR_SIZE WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z / 4
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;

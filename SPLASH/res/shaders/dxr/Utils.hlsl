@@ -101,7 +101,6 @@ namespace Utils {
     }
 
     int to1D(int3 ind, int xMax, int yMax) {
-        // return (ind.z * xMax * yMax) + (ind.y * xMax) + ind.x;
         return ind.x + xMax * (ind.y + yMax * ind.z);
     }
 
@@ -114,11 +113,10 @@ namespace Utils {
         return ind3d;
     }
 
-    half unpackQuarterFloat(float input, uint index) {
-        uint output = 0U;
-        output |= ((uint)input >> ((3-index) * 8)) & 255;
-
-        return (half)output;
+    uint unpackQuarterFloat(uint input, uint index) {
+        uint output = (input >> ((3-index) * 8)) & 255;
+        // output = max(1, output);
+        return output;
     }
 
 }

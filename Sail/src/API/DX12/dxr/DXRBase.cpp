@@ -51,10 +51,11 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	m_decalsToRender = 0;
 
 	// Init water "decals"
-	unsigned int numElements = WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z;
-	unsigned int waterDataSize = sizeof(float) * numElements;
-	float* initData = new float[waterDataSize];
-	memset(initData, 0.0f, waterDataSize);
+	unsigned int numElements = WATER_ARR_SIZE;
+	unsigned int waterDataSize = sizeof(unsigned int) * numElements;
+	unsigned int* initData = new unsigned int[waterDataSize];
+	memset(initData, UINT_MAX, waterDataSize);
+	memset(m_waterDataCPU, UINT_MAX, waterDataSize);
 	//for (int x = 0; x < WATER_GRID_X; x++) {
 	//	for (int y = 0; y < WATER_GRID_Y; y++) {
 	// 		for (int z = 0; z < WATER_GRID_Z; z++) {
@@ -63,7 +64,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	// 		}
 	//	}
 	//}
-	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(float));
+	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(unsigned int));
 	delete initData;
 
 }
@@ -236,15 +237,39 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	static const glm::vec3 mapStart(-3.5f, 0.f, -3.5f);
 
 	glm::i32vec3 ind = round(((position - mapStart) / mapSize) * arrSize);
+	int index = ind.x % 4;
+	ind.x /= 4; // We pack four radii in each float
 	int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
-	m_waterDeltas[i] = 1.0f;
+	
+	uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
+	uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
+	uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
+	uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+
+	switch (index) {
+	case 0:
+		m_waterDeltas[i] = Utils::packQuarterFloat(0, up1, up2, up3);
+		break;
+	case 1:
+		m_waterDeltas[i] = Utils::packQuarterFloat(up0, 0, up2, up3);
+		break;
+	case 2:
+		m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, 0, up3);
+		break;
+	case 3:
+		m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, up2, 0);
+		break;
+	}
+
+	m_waterDataCPU[i] = m_waterDeltas[i];
+
 	m_waterChanged = true;
 }
 
 void DXRBase::updateWaterData() {
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
-		float& data = pair.second;
+		unsigned int& data = pair.second;
 		m_waterStructuredBuffer->updateData(&data, 1, 0, offset);
 	}
 

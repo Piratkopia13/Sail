@@ -98,8 +98,8 @@ namespace Utils {
 	int to1D(const glm::i32vec3& ind, int xMax, int yMax);
 	glm::i32vec3 to3D(int ind, int xMax, int yMax);
 
-	float packQuarterFloat(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
-	uint32_t unpackQuarterFloat(float in, unsigned int index);
+	uint32_t packQuarterFloat(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
+	uint32_t unpackQuarterFloat(uint32_t in, unsigned int index);
 
 	static std::random_device rd;
 	static std::mt19937 gen(rd());
