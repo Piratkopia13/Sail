@@ -1,6 +1,7 @@
 #pragma once
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
+#include "../events/NetworkDroppedEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
 class NetworkSerializedPackageEvent;
@@ -33,6 +34,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
+	bool onPlayerDropped(NetworkDroppedEvent& event);
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 
 	void shutDownGameState();
@@ -64,6 +66,7 @@ private:
 	RenderSettingsWindow m_renderSettingsWindow;
 	LightDebugWindow m_lightDebugWindow;
 	PlayerInfoWindow m_playerInfoWindow;
+	WasDroppedWindow m_wasDroppedWindow;
 
 
 	size_t m_currLightIndex;
@@ -82,6 +85,8 @@ private:
 
 	bool m_poppedThisFrame = false;
 
+	//
+	bool m_wasDropped = false;
 
 
 #ifdef _PERFORMANCE_TEST

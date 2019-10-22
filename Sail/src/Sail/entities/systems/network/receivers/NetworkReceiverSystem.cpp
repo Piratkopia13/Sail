@@ -189,7 +189,7 @@ void NetworkReceiverSystem::update() {
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
 
 
-				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 100, 4, 0); //Owner id not set, 100 for now.
+				projectileSpawned(gunPosition, gunVelocity);
 			}
 
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
@@ -385,6 +385,13 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 			break;
 		}
 	}
+}
+
+void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir) {
+	// Also play the sound
+
+
+	EntityFactory::CreateProjectile(pos, dir, false, 100, 4, 0); //Owner id not set, 100 for now.
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {

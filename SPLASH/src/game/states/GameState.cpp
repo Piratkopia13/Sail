@@ -8,6 +8,7 @@
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
 #include <sstream>
 #include <iomanip>
@@ -155,7 +156,7 @@ GameState::GameState(StateStack& stack)
 	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();
 	m_gameMusic->addComponent<AudioComponent>();
 	m_gameMusic->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
+//	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
@@ -257,17 +258,7 @@ bool GameState::processInput(float dt) {
 
 	// Pause game
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
-		if (m_paused) {
-			Input::HideCursor(true);
-			m_paused = false;
-			requestStackPop();
-		} else if (!m_paused && m_isSingleplayer) {
-			Input::HideCursor(false);
-			m_paused = true;
-			requestStackPush(States::Pause);
-
-		}
-
+		requestStackPush(States::InGameMenu);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
@@ -343,7 +334,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-	m_componentSystems.candleSystem->init(this);
+	m_componentSystems.candleSystem->init(this, m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -459,6 +450,7 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
+	EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDropped));
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
@@ -504,14 +496,13 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
-	// This function is called from NWrapperHost::playerDisconnected()
-	// Then the host sends PLAYER_DISCONNECT over the network
-	// Each client recieves it in NetworkReceiverSystem::handleEvent()
-	// and removes their local copy of the player there
-	// Host local copy is destroyed here
-	
+	// Here we will recieve when a player disconnected.
+	// In the case of the host, deal with it based on who dc'd.
+	// In the case of the client, deal with it based on who dc'd.
+
 	if (!m_isSingleplayer) {
-		if (NWrapperSingleton::getInstance().isHost()) {	// Should always be true
+		// 'I' Am a host
+		if (NWrapperSingleton::getInstance().isHost()) {
 			
 			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
 			for (auto& e : receiverEntities)
@@ -533,8 +524,21 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 				}
 			}
 		}
+		// 'I' Am a client
+		else {
+			// Some other client was dropped, use id to figure out name and output here or something.
+		}
 	}
 	return true;
+}
+
+bool GameState::onPlayerDropped(NetworkDroppedEvent& event) {
+	// I was dropped!
+	// Saddest of bois.
+
+	m_wasDropped = true;	// Activates a renderImgui window
+
+	return false;
 }
 
 bool GameState::update(float dt, float alpha) {
@@ -599,6 +603,9 @@ bool GameState::renderImgui(float dt) {
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
+	if (m_wasDropped) {
+		m_wasDroppedWindow.renderWindow();
+	}
 
 	return false;
 }

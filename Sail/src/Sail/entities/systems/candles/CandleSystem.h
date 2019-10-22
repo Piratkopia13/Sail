@@ -11,6 +11,7 @@
 class CameraController;
 class LightSetup;
 class PerspectiveCamera;
+class Octree;
 
 class CandleSystem final : public BaseComponentSystem {
 public:
@@ -25,12 +26,13 @@ public:
 
 	void putDownCandle(Entity* e);
 
-	void init(GameState* gameStatePtr);
+	void init(GameState* gameStatePtr, Octree* octree);
 
 private:
 	int m_playerEntityID;
 	Entity* m_playerEntityPtr;
 	GameState* m_gameStatePtr;
+	Octree* m_octree;
 
 	// TODO: Replace using game settings when that is implemented
 	float m_candleForceRespawnTimer = 2.0f;
