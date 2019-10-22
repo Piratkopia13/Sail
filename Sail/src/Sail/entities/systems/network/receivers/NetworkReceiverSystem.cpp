@@ -171,7 +171,7 @@ void NetworkReceiverSystem::update() {
 			}
 			else if (eventType == Netcode::MessageType::WATER_HIT_PLAYER) {
 				ar(netObjectID);
-				waterHitPlayer(netObjectID);
+				waterHitPlayer(netObjectID, senderID);
 			}
 			else if (eventType == Netcode::MessageType::SPAWN_PROJECTILE) {
 				ArchiveHelpers::loadVec3(ar, gunPosition);
@@ -181,8 +181,13 @@ void NetworkReceiverSystem::update() {
 			}
 
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
-				ar(netObjectID);
-				playerDied(netObjectID);
+
+				unsigned char playerIdOfShooter;
+				__int32 networkIdOfKilled;
+
+				ar(networkIdOfKilled); // Recieve
+				ar(playerIdOfShooter);
+				playerDied(networkIdOfKilled, playerIdOfShooter);
 			}
 			else if (eventType == Netcode::MessageType::MATCH_ENDED) {
 				matchEnded();
@@ -338,7 +343,7 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkObjectID id) {
 	}
 }
 
-void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
+void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id, unsigned char senderId) {
 	for (auto& e : entities) {
 		//Look for the entity that OWNS the candle (player entity)
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
@@ -347,7 +352,8 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 			for (auto& child : childEntities) {
 				if (child->hasComponent<CandleComponent>()) {
 					// Damage the candle
-					child->getComponent<CandleComponent>()->hitWithWater(10.0f);
+					// Save the Shooter of the Candle if its lethal
+					child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
 					// Check in Candle System What happens next
 					break;
 				}
@@ -359,15 +365,15 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 	}
 }
 
-void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
+void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID networkIdOfKilled, unsigned char playerIdOfShooter) {
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == networkIdOfKilled) {
 
 			//This should remove the candle entity from game
 			e->removeDeleteAllChildren();
 
 			// Check if the extinguished candle is owned by the player
-			if (id >> 18 == m_playerID) {
+			if (networkIdOfKilled >> 18 == m_playerID) {
 				//If it is me that died, become spectator.
 				e->addComponent<SpectatorComponent>();
 				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
@@ -381,6 +387,12 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
 			break; // Break because should only be one player; stop looping!
 		}
 	}
+
+	// Print who killed who
+	unsigned char idOfDeadPlayer = static_cast<unsigned char>(networkIdOfKilled >> 18);
+	std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
+	std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
+	Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
 }
 
 void NetworkReceiverSystem::playerDisconnect(unsigned char id) {
