@@ -67,12 +67,12 @@ void NetworkSenderSystem::update() {
 	// TODO: Add game tick here in the future
 
 	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame receives via components -+-+-+-+-+-+-+-+ 
-	// Write nrOfEntities
-	ar(static_cast<__int32>(entities.size()));
-
-
 	// Send our playerID so that we can ignore this packet when it gets back to us from the host
 	ar(m_playerID);
+
+
+	// Write nrOfEntities
+	ar(static_cast<__int32>(entities.size()));
 
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
@@ -150,11 +150,11 @@ void NetworkSenderSystem::stop() {
 	// TODO: Add game tick here in the future
 
 	// -+-+-+-+-+-+-+-+ Per-frame sends to per-frame receives via components -+-+-+-+-+-+-+-+ 
-	// Write nrOfEntities
-	ar(static_cast<__int32>(0));
-
 	// Send our playerID so that we can ignore this packet when it gets back to us from the host
 	ar(m_playerID);
+
+	// Write nrOfEntities
+	ar(static_cast<__int32>(0));
 
 	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
 	//__int32 test = static_cast<__int32>(eventQueue.size());
