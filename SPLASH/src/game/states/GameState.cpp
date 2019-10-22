@@ -264,17 +264,7 @@ bool GameState::processInput(float dt) {
 
 	// Pause game
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
-		if (m_paused) {
-			Input::HideCursor(true);
-			m_paused = false;
-			requestStackPop();
-		} else if (!m_paused && m_isSingleplayer) {
-			Input::HideCursor(false);
-			m_paused = true;
-			requestStackPush(States::Pause);
-
-		}
-
+		requestStackPush(States::InGameMenu);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {

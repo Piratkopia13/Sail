@@ -11,7 +11,11 @@ public:
 	virtual void renderWindow() override;
 
 	bool popGameState();
+	bool exitInGameMenu();
+	bool showOptions();
 
 private:
 	bool m_popGameState;
+	bool m_exitInGameMenu;
+	bool m_showOptions;
 };

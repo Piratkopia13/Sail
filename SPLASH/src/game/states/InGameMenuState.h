@@ -24,4 +24,5 @@ public:
 private:
 	InGameMenuWindow m_inGameMenuWindow;
 
+	bool m_isSinglePlayer;
 };

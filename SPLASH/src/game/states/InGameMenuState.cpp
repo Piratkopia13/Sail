@@ -5,7 +5,7 @@
 #include "Network/NWrapperSingleton.h"
 
 InGameMenuState::InGameMenuState(StateStack& stack) : State(stack) {
-
+	m_isSinglePlayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 }
 
 InGameMenuState::~InGameMenuState(){}
@@ -19,23 +19,30 @@ bool InGameMenuState::processInput(float dt) {
 		this->requestStackPop();
 		this->requestStackPop();
 		this->requestStackPush(States::MainMenu);
+	} else if (m_inGameMenuWindow.exitInGameMenu() || Input::IsKeyPressed(KeyBinds::showInGameMenu)) {
+		this->requestStackPop();
 	}
-	return true;
+
+	return false;
 }
 
 bool InGameMenuState::update(float dt, float alpha) {
-	return false;
+	return !m_isSinglePlayer;
 }
 
 bool InGameMenuState::fixedUpdate(float dt) {
-	return false;
+	return !m_isSinglePlayer;
 }
 
 bool InGameMenuState::render(float dt, float alpha) {
-	return false;
+	return true;
 }
 
 bool InGameMenuState::renderImgui(float dt) {
 	m_inGameMenuWindow.renderWindow();
+	if (m_inGameMenuWindow.showOptions()) {
+		// Render options here
+	}
+
 	return false;
 }
