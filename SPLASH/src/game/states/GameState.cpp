@@ -746,7 +746,7 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	auto e = ECS::Instance()->createEntity("new cube");
-	e->addComponent<ModelComponent>(tmpCubeModel);
+	//e->addComponent<ModelComponent>(tmpCubeModel);
 
 	e->addComponent<TransformComponent>(position);
 

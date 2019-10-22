@@ -31,6 +31,10 @@ void CollisionSystem::update(float dt) {
 		auto boundingBox = e->getComponent<BoundingBoxComponent>();
 		auto csc = e->getComponent<CollisionSpheresComponent>();
 
+		for (int i = 0; i < collision->collisions.size(); i++) {
+			delete collision->collisions[i].shape;
+		}
+
 		collision->collisions.clear();
 
 		if (collision->padding < 0.0f) {
@@ -93,26 +97,25 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 		for (size_t i = 0; i < collisionCount; i++) {
 			Octree::CollisionInfo& collisionInfo_i = collisions[i];
 
-			glm::vec3 intersectionAxis;
-			float intersectionDepth;
-			float normalDepth;
-
 			//Get intersection axis and depth
-				if (collisionInfo_i.shape->isTrueCollision(boundingBox)) {
+			if (collisionInfo_i.shape->isTrueCollision(boundingBox)) {
 
-					sumVec += collisionInfo_i.normal;
+				sumVec += collisionInfo_i.normal;
 
-					collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
+				collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
 
-					//Add collision to current collisions for collisionComponent
-					collision->collisions.push_back(collisionInfo_i);
+				//Add collision to current collisions for collisionComponent
+				collision->collisions.push_back(collisionInfo_i);
 
-					//Add collision to true collisions
-					trueCollisions.push_back(collisionInfo_i);
+				//Add collision to true collisions
+				trueCollisions.push_back(collisionInfo_i);
 
 
-					returnValue = true;
-				}
+				returnValue = true;
+			}
+			else {
+				delete collisionInfo_i.shape;
+			}
 		}
 
 		//Loop through true collisions and handle them
@@ -241,7 +244,7 @@ void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& bounding
 	const int split = 5;
 
 	const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
-	const glm::vec3 distancePerStep = (distance / (float) split) * normalizedVel;
+	const glm::vec3 distancePerStep = (distance / (float)split) * normalizedVel;
 
 	for (int i = 0; i < split; i++) {
 		boundingBox.setPosition(boundingBox.getPosition() + distancePerStep);

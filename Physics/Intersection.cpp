@@ -35,7 +35,7 @@ bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aab
 
 	float tempDepth;
 	for (int i = 0; i < 3; i++) {
-		tempDepth = glm::abs(center1[i] - center2[i]) - (halfWidth1[i] + halfWidth2[i]);
+		tempDepth = (halfWidth1[i] + halfWidth2[i]) - glm::abs(center1[i] - center2[i]);
 		if (tempDepth < 0.0f) {
 			return false;
 		}

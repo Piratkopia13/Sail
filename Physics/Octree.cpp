@@ -302,6 +302,8 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 						newInfo.normal = intersectionAxis;
 						newInfo.shape = SAIL_NEW CollisionAABB(otherBoundingBoxComponent->getBoundingBox()->getPosition(), otherBoundingBoxComponent->getBoundingBox()->getHalfSize(), newInfo.normal);
 						newInfo.entity = currentNode->entities[i];
+
+						outCollisionData->push_back(newInfo);
 					}
 				}
 			}
