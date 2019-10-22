@@ -19,7 +19,7 @@ bool InGameMenuState::processInput(float dt) {
 		this->requestStackPop();
 		this->requestStackPop();
 		this->requestStackPush(States::MainMenu);
-	} else if (m_inGameMenuWindow.exitInGameMenu() || Input::IsKeyPressed(KeyBinds::showInGameMenu)) {
+	} else if (m_inGameMenuWindow.exitInGameMenu()) {
 		this->requestStackPop();
 	}
 
