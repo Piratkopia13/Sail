@@ -5,6 +5,7 @@
 class Scene;
 class Model;
 struct rect;
+struct clutter;
 
 enum TileModel {
 	ROOM_FLOOR,
@@ -55,7 +56,9 @@ private:
 	bool splitDirection(bool ns);
 	void addSpawnPoints();
 	void addDoors();
-	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
-	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize, float tileOffset, int i, int j, Model* bb);
+	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize,float tileHeight, int tileOffset, int i, int j, Model* bb);
+	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize,float tileHeight, float tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
+	void addClutterModel(const std::vector<Model*>& clutterModels);
+	void generateClutter();
 };

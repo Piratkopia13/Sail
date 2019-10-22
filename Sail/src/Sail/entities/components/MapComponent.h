@@ -11,6 +11,12 @@ struct rect {
 	int sizey;
 	int doors = 0;
 };
+struct clutter {
+	float posx;
+	float posy;
+	float rot;
+	int size;
+};
 class MapComponent : public Component<MapComponent> {
 public:
 	MapComponent() {
@@ -40,6 +46,18 @@ public:
 
 		while (matched.size() > 0) {
 			matched.pop();
+		}
+
+		while (largeClutter.size() > 0) {
+			largeClutter.pop();
+		}
+		
+		while (mediumClutter.size() > 0) {
+			mediumClutter.pop();
+		}
+		
+		while (smallClutter.size() > 0) {
+			smallClutter.pop();
 		}
 
 	}
@@ -81,5 +99,8 @@ public:
 	std::queue<rect> hallways;
 	std::queue<rect> rooms;
 	std::queue<rect> matched;
+	std::queue<clutter>largeClutter;
+	std::queue<clutter>mediumClutter;
+	std::queue<clutter>smallClutter;
 private:
 };
