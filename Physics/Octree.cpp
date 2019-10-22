@@ -314,8 +314,15 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 						}
 					}
 					else { //No model
-						//Collided with bounding box
-						Logger::Log("Collision detected with " + currentNode->entities[i]->getName() + ", no model was found so no collision information was stored");
+						//Collide with bounding box
+						glm::vec3 intersectionAxis;
+						float intersectionDepth;
+						
+						Intersection::AabbWithAabb(*entityBoundingBox, *currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox(), &intersectionAxis, &intersectionDepth);
+
+						CollisionInfo newInfo;
+						newInfo.normal = intersectionAxis;
+						newInfo.entity = currentNode->entities[i];
 					}
 				}
 			}
