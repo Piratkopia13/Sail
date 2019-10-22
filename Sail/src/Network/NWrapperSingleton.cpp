@@ -82,7 +82,6 @@ bool NWrapperSingleton::playerJoined(Player& player) {
 	if (m_playerCount < m_playerLimit) {
 		m_players.push_back(player);
 		m_playerCount++;
-		return true;
 	}
 	return false;
 }
