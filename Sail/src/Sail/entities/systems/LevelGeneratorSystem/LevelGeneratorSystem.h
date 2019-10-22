@@ -24,7 +24,7 @@ enum ClutterModel {
 	CLUTTER_LO,
 	CLUTTER_MO,
 	CLUTTER_SO,
-	NUMBOFMODELS
+	NUMBOFCLUTTER
 };
 
 enum Direction {

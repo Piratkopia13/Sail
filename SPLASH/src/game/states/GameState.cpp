@@ -974,7 +974,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
 		tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
 
-		clutterModels.resize(ClutterModel::NUMBOFMODELS);
+		clutterModels.resize(ClutterModel::NUMBOFCLUTTER);
 		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
 		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
 		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
