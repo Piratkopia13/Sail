@@ -747,7 +747,7 @@ std::string FBXLoader::PrintAttribute(FbxNodeAttribute* pAttribute) {
 	std::string typeName = GetAttributeTypeName(pAttribute->GetAttributeType());
 	std::string attrName = pAttribute->GetName();
 
-	return typeName + " " + attrName;
+	return "("+typeName + " " + attrName+")";
 }
 void FBXLoader::printNodeTree(FbxNode * node, const std::string& indent) {
 	std::string name = node->GetName();
