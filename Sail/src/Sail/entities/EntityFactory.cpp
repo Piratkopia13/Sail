@@ -50,6 +50,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID
 	);
+	player->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::ANIMATION);
 	Netcode::NetworkObjectID netComponentID = player->getComponent<NetworkSenderComponent>()->m_id;
 	player->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	

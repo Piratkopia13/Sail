@@ -89,6 +89,8 @@ void NetworkReceiverSystem::update() {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
+	int animationStack;
+	float animationTime;
 
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
@@ -138,6 +140,13 @@ void NetworkReceiverSystem::update() {
 				{
 					ArchiveHelpers::loadVec3(ar, rotation);	// Read rotation
 					setEntityRotation(id, rotation);
+				}
+				break;
+				case Netcode::MessageType::ANIMATION: 
+				{
+					ar(animationStack);		// Read
+					ar(animationTime);		//
+					setEntityAnimation(id, animationStack, animationTime);
 				}
 				/* Case Animation Data, int, float */
 				break;
@@ -312,16 +321,6 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkObjectID id, co
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			glm::vec3 pos = e->getComponent<TransformComponent>()->getTranslation();
-			if (pos != translation) {
-				if (e->getComponent<AnimationComponent>()->currentAnimation == e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0) && e->getComponent<AnimationComponent>()->transitions.size() == 0) {
-					e->getComponent<AnimationComponent>()->transitions.emplace(e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(1), 0.01f, false);
-				}
-			}
-			else {
-				if (e->getComponent<AnimationComponent>()->currentAnimation == e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(1) && e->getComponent<AnimationComponent>()->transitions.size() == 0) {
-					e->getComponent<AnimationComponent>()->transitions.emplace(e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0), 0.01f, false);
-				}
-			}
 			e->getComponent<TransformComponent>()->setTranslation(translation);
 
 			break;
@@ -340,7 +339,17 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const
 				rot.y += 3.14f * 0.5f;
 			}
 			e->getComponent<TransformComponent>()->setRotations(rot);
+
 			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::setEntityAnimation(Netcode::NetworkObjectID id, int animationStack, float animationTime) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<AnimationComponent>()->currentAnimation = e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(animationStack);
+			e->getComponent<AnimationComponent>()->animationTime = animationTime;
 		}
 	}
 }
