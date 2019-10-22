@@ -233,10 +233,12 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			else if (norms) {
 				if (leNormal->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int normIndex = 0;
-					if (leNormal->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (leNormal->GetReferenceMode() == FbxLayerElement::eDirect) {
 						normIndex = vertexIndex;
-					if (leNormal->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+					}
+					if (leNormal->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
 						normIndex = leNormal->GetIndexArray().GetAt(vertexIndex);
+					}
 
 					FbxVector4 norm = leNormal->GetDirectArray().GetAt(normIndex);
 					FBXtoGLM(vertNormal[0].vec, norm);
@@ -268,10 +270,12 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			else if (tangs) {
 				if (geTang->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int tangIndex = 0;
-					if (geTang->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (geTang->GetReferenceMode() == FbxLayerElement::eDirect) {
 						tangIndex = vertexIndex;
-					if (geTang->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+					}
+					if (geTang->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
 						tangIndex = geTang->GetIndexArray().GetAt(vertexIndex);
+					}
 
 					FbxVector4 tangent = geTang->GetDirectArray().GetAt(tangIndex);
 					FBXtoGLM(vertTangent[0].vec, tangent);
@@ -309,11 +313,12 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			else if (bitangs) {
 				if (geBN->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int biNormIndex = 0;
-					if (geBN->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (geBN->GetReferenceMode() == FbxLayerElement::eDirect) {
 						biNormIndex = vertexIndex;
-					if (geBN->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+					}
+					if (geBN->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
 						biNormIndex = geBN->GetIndexArray().GetAt(vertexIndex);
-
+					}
 
 					FbxVector4 biNorm = geBN->GetDirectArray().GetAt(biNormIndex);
 					FBXtoGLM(vertBitangent[0].vec, biNorm);
@@ -647,6 +652,8 @@ AnimationStack* FBXLoader::fetchAnimationStack(const std::string& filePath, Shad
 	return temp;
 }
 #pragma endregion
+
+
 
 void FBXLoader::addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, const unsigned long& currentIndex, const Mesh::vec3& position, const Mesh::vec3& normal, const Mesh::vec3& tangent, const Mesh::vec3& bitangent, const Mesh::vec2& uv) {
 	for (unsigned int vert = 0; vert < uniqueVertices; vert++) {
