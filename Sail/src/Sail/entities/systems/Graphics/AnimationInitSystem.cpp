@@ -47,7 +47,7 @@ void AnimationInitSystem::initAnimations() {
 	for (unsigned int i = 0; i < animationCount; i++) {
 		auto animationEntity2 = ECS::Instance()->createEntity("Doc" + std::to_string(i));
 		animationEntity2->addComponent<TransformComponent>();
-		animationEntity2->getComponent<TransformComponent>()->translate(-2.0f+i*1.2f, 0, 0);
+		animationEntity2->getComponent<TransformComponent>()->translate(-2.0f+i*1.2f, 0, -2);
 		Model* model = &app->getResourceManager().getModelCopy(name);
 		animationEntity2->addComponent<ModelComponent>(model);
 		model->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
