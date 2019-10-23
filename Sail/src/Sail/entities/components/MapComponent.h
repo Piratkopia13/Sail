@@ -11,6 +11,13 @@ struct rect {
 	int sizey;
 	int doors = 0;
 };
+struct clutter {
+	float posx;
+	float posy;
+	float height;
+	float rot;
+	int size;
+};
 class MapComponent : public Component<MapComponent> {
 public:
 	MapComponent() {
@@ -42,6 +49,18 @@ public:
 			matched.pop();
 		}
 
+		while (largeClutter.size() > 0) {
+			largeClutter.pop();
+		}
+		
+		while (mediumClutter.size() > 0) {
+			mediumClutter.pop();
+		}
+		
+		while (smallClutter.size() > 0) {
+			smallClutter.pop();
+		}
+
 	}
 #ifdef _PERFORMANCE_TEST
 	const static int xsize = 50, ysize = 50; //size of level
@@ -68,6 +87,7 @@ public:
 	int roomMaxSize = 36;//maximum area of a room
 	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
 	int doorModifier = 15;//percentage to spawn a door
+	int clutterModifier = 101;//percentage to add clutter
 	int seed = 5;//seed for generation
 #endif
 	int totalArea = xsize * ysize;
@@ -81,5 +101,8 @@ public:
 	std::queue<rect> hallways;
 	std::queue<rect> rooms;
 	std::queue<rect> matched;
+	std::queue<clutter>largeClutter;
+	std::queue<clutter>mediumClutter;
+	std::queue<clutter>smallClutter;
 private:
 };
