@@ -164,8 +164,8 @@ void AnimationSystem::updateTransforms(const float dt) {
 			
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
 			
-			animationC->leftHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
 			animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
+			animationC->leftHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
 
 		}
 
@@ -178,8 +178,8 @@ void AnimationSystem::updateTransforms(const float dt) {
 		
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
 		
-			animationC->rightHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
 			animationC->rightHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
+			animationC->rightHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
 		
 		}
 
