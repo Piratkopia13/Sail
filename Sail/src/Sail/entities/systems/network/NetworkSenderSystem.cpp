@@ -30,6 +30,10 @@ void NetworkSenderSystem::initWithPlayerID(unsigned char playerID) {
 	m_playerID = playerID;
 }
 
+void NetworkSenderSystem::initPlayerEntity(Entity* pPlayerEntity) {
+	m_playerEntity = pPlayerEntity;
+}
+
 /*
   The construction of messages needs to match how the NetworkReceiverSystem parses them so
   any changes made here needs to be made there as well!
@@ -135,6 +139,10 @@ void NetworkSenderSystem::pushDataToBuffer(std::string data) {
 	m_HOSTONLY_dataToForward.push(data);
 }
 
+const std::vector<Entity*>& NetworkSenderSystem::getEntities() const {
+	return entities;
+}
+
 
 // Why is this its own function?
 // Can't it just be a message in the normal update()?
@@ -230,6 +238,18 @@ void NetworkSenderSystem::handleEvent(Netcode::MessageType& messageType, Entity*
 		ArchiveHelpers::archiveVec3(*ar, t->getRotations());	// Send rotation
 	}
 	break;
+	case Netcode::MessageType::ANIMATION:
+	{
+		// CURRENTLY IS:
+		(*ar)(0);		// AnimationStack
+		(*ar)(0.0f);	// AnimationTime
+
+		// SHOULD BE:
+	//	AnimationComponent* a = e->getComponent<AnimationComponent>();
+	//	(*ar)(a->getAnimationStack());					// Animation Stack
+	//	(*ar)(a->animationTime);						// Animation Time
+	}
+	break;
 	default:
 		break;
 	}
@@ -240,8 +260,6 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 		(*ar)(event->type); // Send the event-type
 	}
 
-	// NEW STUFF
-//	(*ar)(static_cast<unsigned __int32>(m_playerID));
 	
 	switch (event->type) {
 	case Netcode::MessageType::SPAWN_PROJECTILE:
@@ -254,7 +272,8 @@ void NetworkSenderSystem::handleEvent(NetworkSenderEvent* event, cereal::Portabl
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED: 
 	{
-		// No need to send additional info here, we(this computer) made the jump´.
+		(*ar)(m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID);
+		// No need to send additional info here, we(this computer) made the jump.
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
