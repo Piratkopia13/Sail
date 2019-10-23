@@ -607,7 +607,12 @@ bool GameState::render(float dt, float alpha) {
 }
 
 bool GameState::renderImgui(float dt) {
-	// The ImGui window is rendered when activated on F10
+
+	return false;
+}
+
+bool GameState::renderImguiDebug(float dt) {
+	// The ImGui windows are rendered when activated on F10
 	m_profiler.renderWindow();
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
