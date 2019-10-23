@@ -190,8 +190,7 @@ bool GameState::processInput(float dt) {
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
-		//m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
-		GameDataTracker::getInstance().logPlayerDeath("Someone", "Else", std::to_string(Utils::rnd()));
+		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
