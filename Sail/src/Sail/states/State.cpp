@@ -23,7 +23,6 @@ bool State::renderImgui(float dt) {
 }
 
 bool State::renderImguiDebug(float dt) {
-	ImGui::ShowDemoWindow();
 	return false;
 }
 
