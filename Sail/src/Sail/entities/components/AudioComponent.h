@@ -9,7 +9,12 @@ namespace Audio {
 		AMBIENT,
 		WALK, 
 		RUN, 
-		SHOOT, 
+		SHOOT_START,
+		SHOOT_LOOP,
+		SHOOT_END,
+		WATER_IMPACT_LEVEL,
+		WATER_IMPACT_ENEMY,
+		WATER_IMPACT_MY_CANDLE,
 		JUMP, 
 		LANDING, 
 		COUNT // Keep at the bottom so that COUNT == nr of sound types
@@ -27,6 +32,13 @@ namespace Audio {
 		glm::vec3 positionalOffset = { 0.f, 0.f, 0.f };
 		int soundID = -1;
 	};
+
+	struct StreamRequestInfo {
+		bool startTRUE_stopFALSE;
+		float volume;
+		bool isPositionalAudio;
+		bool isLooping;
+	};
 }
 
 class AudioComponent : public Component<AudioComponent>
@@ -38,18 +50,16 @@ public:
 	Audio::SoundInfo m_sounds[Audio::SoundType::COUNT]{};
 
 	// An 'easy-mode' helper function for starting/stopping a streamed sound
-	void streamSoundRequest_HELPERFUNC(std::string filename, bool startTrue_stopFalse, float volume, bool isLooping);
+	void streamSoundRequest_HELPERFUNC(std::string filename, bool startTrue_stopFalse, float volume, bool isPositionalAudio, bool isLooping);
 	// A helpful function that simplifies the process of defining a new sound
 	void defineSound(Audio::SoundType type, Audio::SoundInfo info);
 
 	// VARIABLE DEFINITIONS/CLARIFICATIONS
 		// • string = filename
 		// • bool = TRUE if START-request, FALSE if STOP-request
-	std::list<std::pair<std::string, bool>> m_streamingRequests;
-	std::list<std::pair<std::string, std::pair<float, bool>>> m_Vol_isLooping_Requests;
+	std::list<std::pair<std::string, Audio::StreamRequestInfo>> m_streamingRequests;
 	// VARIABLE DEFINITIONS/CLARIFICATIONS
 		// • string = filename
 		// • int = ID of playing streaming; needed for STOPPING the streamed sound
-	std::list<std::pair<std::string, int>> m_currentlyStreaming;
+	std::list<std::pair<std::string, std::pair<int, bool>>> m_currentlyStreaming;
 };
-

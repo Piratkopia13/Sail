@@ -127,8 +127,8 @@ namespace Netcode {
 
 	class MessageWaterHitPlayer : public MessageData {
 	public:
-		MessageWaterHitPlayer(Netcode::ComponentID id)
-			: playerWhoWasHitID(id)
+		MessageWaterHitPlayer(Netcode::ComponentID whoWasHit)
+			: playerWhoWasHitID(whoWasHit)
 		{}
 		~MessageWaterHitPlayer() {}
 
@@ -145,9 +145,10 @@ namespace Netcode {
 
 	class MessagePlayerDied : public MessageData {
 	public:
-		MessagePlayerDied(Netcode::ComponentID id) : playerWhoDied(id) {}
+		MessagePlayerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID) : playerWhoDied(id), playerWhoFired(shooterID) {}
 		~MessagePlayerDied() {}
 		Netcode::ComponentID playerWhoDied;
+		Netcode::PlayerID playerWhoFIred;
 	};
 
 	class MessageCandleHeldState : public MessageData {

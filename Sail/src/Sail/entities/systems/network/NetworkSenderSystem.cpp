@@ -285,6 +285,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		Netcode::MessagePlayerDied* data = static_cast<Netcode::MessagePlayerDied*>(event->data);
 
 		(*ar)(data->playerWhoDied); // Send
+		(*ar)(data->playerWhoFired);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DISCONNECT:

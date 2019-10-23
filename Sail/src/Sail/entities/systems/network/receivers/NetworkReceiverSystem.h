@@ -35,9 +35,9 @@ private:
 	void setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation);
 	void setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime);
 	void playerJumped(Netcode::ComponentID id);
-	void waterHitPlayer(Netcode::ComponentID id);
+	void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId);
 	void projectileSpawned(glm::vec3& pos, glm::vec3 vel);
-	void playerDied(Netcode::ComponentID id);
+	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
 	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
