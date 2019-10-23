@@ -1339,23 +1339,23 @@ void LevelGeneratorSystem::generateClutter() {
 			map->matched.pop();
 			for (int x = 0; x < room.sizex; x++) {
 				for (int y = 0; y < room.sizey; y++) {
-					if (map->tileArr[x + room.posx][y + room.posy][2] < 1) {
+					if (map->tileArr[x + room.posx][y + room.posy][2] < 17) {
 						float xrange = map->tileSize;
 						float yrange = map->tileSize;
 						float xmin = 0;
 						float ymin = 0;
 						int tile = map->tileArr[x + room.posx][y + room.posy][0];
 						if (tile % 2 == 1) {
-							yrange -= 2*map->tileSize/10.f;
+							yrange -= 1.5f * map->tileSize / 10.f;
 						}
 						if ((tile % 4) / 2 == 1) {
-							xrange -= 2 * map->tileSize / 10.f;
+							xrange -= 1.5f * map->tileSize / 10.f;
 						}
 						if ((tile % 8) / 4 == 1) {
-							ymin += 2 * map->tileSize / 10.f;
+							ymin += 1.5f * map->tileSize / 10.f;
 						}
 						if (tile / 8 == 1) {
-							xmin += 2 * map->tileSize / 10.f;
+							xmin += 1.5f * map->tileSize / 10.f;
 						}
 						float xpos = ((rand() % 100) / 100.f) * (xrange - xmin) + xmin + (x + room.posx) * map->tileSize + map->tileOffset - map->tileSize / 2.f;
 						float ypos = ((rand() % 100) / 100.f) * (yrange - ymin) + ymin + (y + room.posy) * map->tileSize + map->tileOffset - map->tileSize / 2.f;
@@ -1363,36 +1363,124 @@ void LevelGeneratorSystem::generateClutter() {
 						clutter cL;
 						cL.posx = xpos;
 						cL.posy = ypos;
+						cL.height = 0;
 						cL.rot = rot;
 						cL.size = 0;
-						map->largeClutter.push(cL);
+						if (rand() % 100 < map->clutterModifier) {
+							map->largeClutter.push(cL);
+						}
 					}
 				}
 			}
 			map->matched.push(room);
 		}
 
+		int amount = map->largeClutter.size();
+		for (int i = 0; i < amount; i++) {
+			clutter cL = map->largeClutter.front();
+			map->largeClutter.pop();
+			if (rand() % 100 < map->clutterModifier) {
+				if(rand()%2==0){
+					//add on first half
+					{
+						float posx = (rand() % 50) / 100.f - 0.25f;
+						float posy = (rand() % 50) / 100.f - 0.25f;
 
+						clutter cM;
+						cM.posx = posx * cos(cL.rot) - posy * sin(cL.rot)+cL.posx;
+						cM.posy = posx * sin(cL.rot) + posy * cos(cL.rot)+cL.posy;
+						cM.size = 1 + rand() % 2;
+						cM.height = 1 + cL.height;
+						cM.rot = rand() % 360;
+						if (cM.size == 1) {
+							map->mediumClutter.push(cM);
+						}
+						else {
+							map->smallClutter.push(cM);
+						}
+					}
+					//add on second half
+					{
+						float posx = (rand() % 50) / 100.f + 0.25f;
+						float posy = (rand() % 50) / 100.f - 0.25f;
+
+						clutter cM;
+						cM.posx = posx * cos(cL.rot) - posy * sin(cL.rot)+cL.posx;
+						cM.posy = posx * sin(cL.rot) + posy * cos(cL.rot)+cL.posy;
+						cM.size = 1 + rand() % 2;
+						cM.height = 1 + cL.height;
+						cM.rot = rand() % 360;
+						if (cM.size == 1) {
+							map->mediumClutter.push(cM);
+						}
+						else {
+							map->smallClutter.push(cM);
+						}
+
+					}
+
+				}
+				else {
+					float posx = (rand() % 150) / 100.f - 0.75f;
+					float posy = (rand() % 50) / 100.f - 0.25f;
+
+					clutter cM;
+					cM.posx = posx * cos(cL.rot) - posy * sin(cL.rot)+cL.posx;
+					cM.posy = posx * sin(cL.rot) + posy * cos(cL.rot)+cL.posy;
+					cM.size = 1 + rand() % 2;
+					cM.height = 1 + cL.height;
+					cM.rot = rand() % 360;
+					if (cM.size == 1) {
+						map->mediumClutter.push(cM);
+					}
+					else {
+						map->smallClutter.push(cM);
+					}
+				}
+			}
+
+			map->largeClutter.push(cL);
+		}
+
+		amount = map->mediumClutter.size();
+		for (int i = 0; i < amount; i++) {
+			clutter cM = map->mediumClutter.front();
+			map->mediumClutter.pop();
+			if (rand() % 100 < map->clutterModifier) {
+				float posx = (rand() % 50) / 100.f - 0.25f;
+				float posy = (rand() % 50) / 100.f - 0.25f;
+
+				clutter cS;
+				cS.posx = posx * cos(cM.rot) - posy * sin(cM.rot)+cM.posy;
+				cS.posy = posx * sin(cM.rot) + posy * cos(cM.rot)+cM.posy;
+				cS.size = 2;
+				cS.height = 0.5f + cM.height;
+				cS.rot = rand() % 360;
+				map->smallClutter.push(cS);
+			}
+			map->mediumClutter.push(cM);
+		}
 	}
 }
 
 void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterModels, Model* bb) {
 	for (auto e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
-		int amountOfClutter = map->largeClutter.size();
-		for (int i = 0; i < amountOfClutter; i++) {
+		while(map->largeClutter.size()>0) {
 			clutter clut = map->largeClutter.front();
 			map->largeClutter.pop();
-			int size = rand() % 3;
-			if (size == 0) {
-				EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::CLUTTER_LO], bb, glm::vec3(clut.posx, 0.f,clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1,1));
-			}
-			else if (size == 1) {
-				EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::CLUTTER_MO], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
-			}
-			else if (size == 2) {
-				EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
-			}
+			EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::CLUTTER_LO], bb, glm::vec3(clut.posx, 0.f,clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1,1));
 		}
+		while (map->mediumClutter.size() > 0) {
+			clutter clut = map->mediumClutter.front();
+			map->mediumClutter.pop();
+			EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::CLUTTER_MO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+		}
+		while (map->smallClutter.size() > 0) {
+			clutter clut = map->smallClutter.front();
+			map->smallClutter.pop();
+			EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+		}
+
 	}
 }

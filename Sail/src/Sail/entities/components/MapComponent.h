@@ -14,6 +14,7 @@ struct rect {
 struct clutter {
 	float posx;
 	float posy;
+	float height;
 	float rot;
 	int size;
 };
@@ -86,6 +87,7 @@ public:
 	int roomMaxSize = 36;//maximum area of a room
 	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
 	int doorModifier = 15;//percentage to spawn a door
+	int clutterModifier = 101;//percentage to add clutter
 	int seed = 5;//seed for generation
 #endif
 	int totalArea = xsize * ysize;
