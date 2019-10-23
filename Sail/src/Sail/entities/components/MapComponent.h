@@ -4,14 +4,14 @@
 #include <vector>
 #include <queue>
 
-struct rect {
+struct Rect {
 	int posx;
 	int posy;
 	int sizex;
 	int sizey;
 	int doors = 0;
 };
-struct clutter {
+struct Clutter {
 	float posx;
 	float posy;
 	float height;
@@ -96,13 +96,13 @@ public:
 	float tileHeight = 0.8f;
 	int tileOffset = 0;
 	std::vector<glm::vec3> spawnPoints;
-	std::queue<rect> chunks;
-	std::queue<rect> blocks;
-	std::queue<rect> hallways;
-	std::queue<rect> rooms;
-	std::queue<rect> matched;
-	std::queue<clutter>largeClutter;
-	std::queue<clutter>mediumClutter;
-	std::queue<clutter>smallClutter;
+	std::queue<Rect> chunks;
+	std::queue<Rect> blocks;
+	std::queue<Rect> hallways;
+	std::queue<Rect> rooms;
+	std::queue<Rect> matched;
+	std::queue<Clutter>largeClutter;
+	std::queue<Clutter>mediumClutter;
+	std::queue<Clutter>smallClutter;
 private:
 };
