@@ -166,12 +166,12 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					acceleration = acceleration * 0.5f;
 					// AUDIO TESTING (turn OFF looping running sound)
 					if (!m_isPlayingRunningSound) {
-						audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
+						audioComp->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
 					}
 				}
 				// AUDIO TESTING (playing a looping running sound)
 				else if ( m_runSoundTimer > 0.3f ) {
-					audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = true;
+					audioComp->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = true;
 				} else {
 					m_runSoundTimer += dt;
 				}
@@ -181,7 +181,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					* acceleration;
 			} else {
 				// AUDIO TESTING (turn OFF looping running sound)
-				audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
+				audioComp->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
 				m_runSoundTimer = 0.0f;
 			}
 		}

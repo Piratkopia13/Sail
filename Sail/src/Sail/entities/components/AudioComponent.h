@@ -6,9 +6,9 @@
 
 namespace Audio {
 	enum SoundType{
-		AMBIENT,
 		WALK, 
-		RUN, 
+		RUN_METAL,
+		RUN_TILE,
 		SHOOT_START,
 		SHOOT_LOOP,
 		SHOOT_END,

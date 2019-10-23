@@ -74,12 +74,19 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 #pragma region DEFINING PLAYER SOUNDS
 
 	Audio::SoundInfo sound{};
-	sound.fileName = "../Audio/footsteps_1.wav";
-	sound.soundEffectLength = 1.0f;
-	sound.volume = 0.5f;
+	sound.fileName = "../Audio/footsteps_metal_1.wav";
+	sound.soundEffectLength = 0.91f;
+	sound.volume = 0.7f;
 	sound.playOnce = false;
 	sound.positionalOffset = { 0.0f, -1.6f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN_METAL, sound);
+
+	sound.fileName = "../Audio/footsteps_tile_1.wav";
+	sound.soundEffectLength = 0.795f;
+	sound.volume = 0.7f;
+	sound.playOnce = false;
+	sound.positionalOffset = { 0.0f, -1.6f, 0.0f };
+	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN_TILE, sound);
 
 	sound.fileName = "../Audio/jump.wav";
 	sound.soundEffectLength = 0.7f;
@@ -147,17 +154,6 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->addComponent<CullingComponent>();
 
 	e->addComponent<AudioComponent>();
-
-	// Placeholder sound effect for bots
-	Audio::SoundInfo sound{};
-	sound.fileName = "../Audio/guitar.wav";
-	sound.soundEffectLength = 104.0f;
-	sound.volume = 1.0f;
-	sound.playOnce = false;
-	sound.positionalOffset = { 0.f, 1.2f, 0.f };
-	sound.isPlaying = true; // Start playing the sound immediately
-
-	e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
 
 	e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	e->getComponent<SpeedLimitComponent>()->maxSpeed = 3.0f;

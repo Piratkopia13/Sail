@@ -26,7 +26,6 @@ AudioSystem::~AudioSystem() {
 
 // TODO: move to constructor?
 void AudioSystem::initialize() {
-	m_audioEngine->loadSound("../Audio/footsteps_1.wav");
 	m_audioEngine->loadSound("../Audio/footsteps_metal_1.wav");
 	m_audioEngine->loadSound("../Audio/footsteps_metal_2.wav");
 	m_audioEngine->loadSound("../Audio/footsteps_metal_3.wav");

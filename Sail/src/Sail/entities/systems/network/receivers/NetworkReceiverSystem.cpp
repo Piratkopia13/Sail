@@ -275,13 +275,13 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		// Adding audio component and adding all sounds attached to the player entity
 		e->addComponent<AudioComponent>();
 
-		// RUN Sound
+		// RUN_METAL Sound
 		Audio::SoundInfo sound{};
-		sound.fileName = "../Audio/footsteps_1.wav";
+		sound.fileName = "../Audio/footsteps_mertal_1.wav";
 		sound.soundEffectLength = 1.0f;
 		sound.volume = 0.5f;
 		sound.playOnce = false;
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN_METAL, sound);
 		// JUMP Sound
 		sound.fileName = "../Audio/jump.wav";
 		sound.soundEffectLength = 0.7f;
