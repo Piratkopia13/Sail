@@ -361,7 +361,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
-	// Create NetworkReceiverSystem depending on host or client.
+	// Create Network Reciever System depending on host or client.
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
 	} else {
@@ -452,7 +452,7 @@ bool GameState::onEvent(Event& event) {
 
 	return true;
 }
-
+	
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
@@ -493,7 +493,7 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
-	// Here we will recieve when a player disconnected.
+	// Here we will receive when a player disconnected.
 	// In the case of the host, deal with it based on who dc'd.
 	// In the case of the client, deal with it based on who dc'd.
 
@@ -504,7 +504,7 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
 			for (auto& e : receiverEntities)
 			{
-				if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.getPlayerID())
+				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID())
 				{
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_DISCONNECT,
@@ -646,8 +646,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
 	if (!m_isSingleplayer) {
-		// Update entities with info from the network and our own network events
+		// Update entities with info from the network
 		m_componentSystems.networkReceiverSystem->update();
+		// Send out your entity info to the rest of the players
+		m_componentSystems.networkSenderSystem->update();
 	}
 	
 	m_componentSystems.movementSystem->update(dt);
@@ -661,7 +663,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
 
 	// TODO: Investigate this
-	// TODO: Remove the arguments from all systems
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
 	runSystem(dt, m_componentSystems.projectileSystem);
@@ -674,11 +675,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
-	}
-	
-	if (!m_isSingleplayer) {
-		// Send out your entity info to the rest of the players
-		m_componentSystems.networkSenderSystem->update();
 	}
 
 	// Will probably need to be called last

@@ -424,43 +424,41 @@ void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir) {
 
 void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == networkIdOfKilled) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id != networkIdOfKilled) {
+			continue;
+		}
+
+		// Print who killed who
+		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
+		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
+		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
+		Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
 
 		//This should remove the candle entity from game
 		e->removeDeleteAllChildren();
 
-			// Check if the extinguished candle is owned by the player
-			if (Netcode::getComponentOwner(networkIdOfKilled) == m_playerID) {
-				//If it is me that died, become spectator.
-				e->addComponent<SpectatorComponent>();
-				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
-				e->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
-				e->removeComponent<GunComponent>();
+		// Check if the extinguished candle is owned by the player
+		if (Netcode::getComponentOwner(networkIdOfKilled) == m_playerID) {
+			//If it is me that died, become spectator.
+			e->addComponent<SpectatorComponent>();
+			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
+			e->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
+			e->removeComponent<GunComponent>();
 
-				auto transform = e->getComponent<TransformComponent>();
-				auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
-				pos.y = 20.f;
-				transform->setStartTranslation(pos);
-				MapComponent temp;
-				auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
-				auto dir = glm::normalize(middleOfLevel - pos);
-				auto rots = Utils::getRotations(dir);
-				transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
-			}
-			else {
-				//If it wasn't me that died, completely remove the player entity from game.
-				e->queueDestruction();
-			}
-
-
-			// Print who killed who
-			Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
-			std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
-			std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
-			Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
-
-			break; // Break because should only be one player; stop looping!
+			auto transform = e->getComponent<TransformComponent>();
+			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
+			pos.y = 20.f;
+			transform->setStartTranslation(pos);
+			MapComponent temp;
+			auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
+			auto dir = glm::normalize(middleOfLevel - pos);
+			auto rots = Utils::getRotations(dir);
+			transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+		} else {
+			//If it wasn't me that died, completely remove the player entity from game.
+			e->queueDestruction();
 		}
+		break; // Break because should only be one player; stop looping!
 	}
 }
 
