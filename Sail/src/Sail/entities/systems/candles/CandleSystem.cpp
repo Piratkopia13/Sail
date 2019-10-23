@@ -58,7 +58,7 @@ void CandleSystem::update(float dt) {
 				candle->setIsLit(false);
 				candle->setCarried(true);
 				
-				// Did current player die?
+				// Did this candles owner die?
 				if (candle->getNumRespawns() == m_maxNumRespawns) {
 					candle->setIsAlive(false);
 					LivingCandles--;
@@ -68,9 +68,17 @@ void CandleSystem::update(float dt) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::PLAYER_DIED,
 							SAIL_NEW Netcode::MessageDataPlayerDied{
-								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
+								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
+								candle->getWasHitByNetID()
 							}
 						);
+
+						// Print who killed who
+						unsigned char idOfDeadPlayer = static_cast<unsigned char>(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id >> 18);
+						unsigned char idOfShootingPlayer = candle->getWasHitByNetID();
+						std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
+						std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(idOfShootingPlayer)->name;
+						Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
 
 						//This should remove the candle entity from game
 						e->getParent()->removeDeleteAllChildren();
