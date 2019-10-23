@@ -53,19 +53,19 @@ const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
   ---------------------------------------------------
 	PlayerID        senderID
 	size_t          nrOfEntities
-	    NetworkObjectID entity[0].id
+	    ComponentID     entity[0].id
 	    EntityType      entity[0].type
 	    size_t          nrOfMessages
 	        MessageType     entity[0].messageType
 	        MessageData     entity[0].data
 	        ...
-	    NetworkObjectID entity[1].id
+	    ComponentID     entity[1].id
 	    EntityType      entity[1].type
 	    size_t          nrOfMessages
 	        MessageType     entity[0].messageType
 	        MessageData     entity[0].data
 	        ...
-	    NetworkObjectID entity[2].id
+	    ComponentID     entity[2].id
 	    EntityType      entity[2].type
 	    size_t          nrOfMessages
 	        MessageType     entity[0].messageType

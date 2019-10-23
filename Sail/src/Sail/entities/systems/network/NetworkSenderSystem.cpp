@@ -41,19 +41,19 @@ void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem
   ---------------------------------------------------
 	PlayerID        senderID
 	size_t          nrOfEntities
-	    NetworkObjectID entity[0].id
+	    ComponentID     entity[0].id
 	    EntityType      entity[0].type
 	    size_t          nrOfMessages
 	        MessageType     entity[0].messageType
 	        MessageData     entity[0].data
 	        ...
-	    NetworkObjectID entity[1].id
+	    ComponentID     entity[1].id
 	    EntityType      entity[1].type
 	    size_t          nrOfMessages
 	        MessageType     entity[0].messageType
 	        MessageData     entity[0].data
 	        ...
-	    NetworkObjectID entity[2].id
+	    ComponentID     entity[2].id
 	    EntityType      entity[2].type
 	    size_t          nrOfMessages
 	        MessageType     entity[0].messageType
@@ -90,7 +90,7 @@ void NetworkSenderSystem::update() {
 
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
-		sendToOthers(nsc->m_id);                // NetworkObjectID
+		sendToOthers(nsc->m_id);                // ComponentID    
 		sendToOthers(nsc->m_entityType);        // Entity type
 		sendToOthers(nsc->m_dataTypes.size());  // NrOfMessages
 
