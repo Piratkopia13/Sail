@@ -192,7 +192,8 @@ bool GameState::processInput(float dt) {
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
-		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
+		//m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
+		GameDataTracker::getInstance().logPlayerDeath("Someone", "Else", std::to_string(Utils::rnd()));
 	}
 
 	//Test ray intersection
@@ -558,6 +559,7 @@ bool GameState::update(float dt, float alpha) {
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
+	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -615,7 +617,6 @@ bool GameState::renderImgui(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
-	m_killFeedWindow.setDeaths(GameDataTracker::getInstance().getPlayerDeaths());
 	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 	if (m_wasDropped) {
