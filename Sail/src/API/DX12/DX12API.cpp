@@ -21,8 +21,9 @@ DX12API::DX12API()
 	, m_windowedMode(true)
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
-	m_fenceValues.resize(NUM_GPU_BUFFERS, 0);
+	m_directQueueFenceValues.resize(NUM_GPU_BUFFERS, 0);
 	m_computeQueueAnimaitonFenceValues.resize(NUM_GPU_BUFFERS, 0);
+	m_computeQueueFenceValues.resize(NUM_GPU_BUFFERS, 0);
 }
 
 DX12API::~DX12API() {
@@ -36,7 +37,7 @@ DX12API::~DX12API() {
 		m_directCommandQueue.Reset();
 		m_computeCommandQueueAnimations.Reset();
 		m_swapChain.Reset();
-		m_fence.Reset();
+		m_directQueueFence.Reset();
 		m_computeQueueAnimaitonFence.Reset();
 		m_globalRootSignature.Reset();
 		m_renderTargetsHeap.Reset();
@@ -210,18 +211,16 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 
 void DX12API::createFenceAndEventHandle() {
 	// Create fences
-	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directQueueFence)));
+	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeQueueFence)));
 	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeQueueAnimaitonFence)));
 	for (UINT i = 0; i < NUM_GPU_BUFFERS; i++) {
-		m_fenceValues[i] = 1;
+		m_directQueueFenceValues[i] = 1;
+		m_computeQueueFenceValues[i] = 1;
 		m_computeQueueAnimaitonFenceValues[i] = 1;
 	}
 	// Create an event handle to use for GPU synchronization
 	m_eventHandle = CreateEvent(0, false, false, 0);
-
-	/*ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeQueueFence)));
-	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyQueueFence)));
-	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directQueueFence)));*/
 }
 
 void DX12API::createRenderTargets() {
@@ -436,16 +435,16 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 void DX12API::nextFrame() {
 
 	// Schedule a signal to notify when the current frame has finished presenting
-	UINT64 currentFenceValue = m_fenceValues[m_swapIndex];
-	ThrowIfFailed(m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue));
+	UINT64 currentFenceValue = m_directQueueFenceValues[m_swapIndex];
+	ThrowIfFailed(m_directCommandQueue->Signal(m_directQueueFence.Get(), currentFenceValue));
 
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 	m_swapIndex = 1 - m_swapIndex; // Toggle between 0 and 1
 
 	// Wait until the next frame is ready
-	auto val = m_fence->GetCompletedValue();
-	if (val < m_fenceValues[m_swapIndex]) {
-		m_fence->SetEventOnCompletion(m_fenceValues[m_swapIndex], m_eventHandle);
+	auto val = m_directQueueFence->GetCompletedValue();
+	if (val < m_directQueueFenceValues[m_swapIndex]) {
+		m_directQueueFence->SetEventOnCompletion(m_directQueueFenceValues[m_swapIndex], m_eventHandle);
 		WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
 	}
 
@@ -462,7 +461,7 @@ void DX12API::nextFrame() {
 		waitedCounter = 0;
 	}*/
 
-	m_fenceValues[m_swapIndex] = currentFenceValue + 1;
+	m_directQueueFenceValues[m_swapIndex] = currentFenceValue + 1;
 
 	// Get the handle for the current render target used as back buffer
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
@@ -502,7 +501,7 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 	}
 	// Back buffer index now changes to 0
 	// Rotate fence values to avoid infinite stall
-	std::rotate(m_fenceValues.begin(), m_fenceValues.begin() + m_swapIndex, m_fenceValues.end());
+	std::rotate(m_directQueueFenceValues.begin(), m_directQueueFenceValues.begin() + m_swapIndex, m_directQueueFenceValues.end());
 
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 	m_swapIndex = m_backBufferIndex % NUM_GPU_BUFFERS;
@@ -854,12 +853,12 @@ void DX12API::waitForGPU() {
 	// Waits for the GPU to finish all current tasks in the direct queue
 
 	// Schedule a signal
-	ThrowIfFailed(m_directCommandQueue->Signal(m_fence.Get(), m_fenceValues[m_swapIndex]));
+	ThrowIfFailed(m_directCommandQueue->Signal(m_directQueueFence.Get(), m_directQueueFenceValues[m_swapIndex]));
 
 	// Wait until command queue is done
-	m_fence->SetEventOnCompletion(m_fenceValues[m_swapIndex], m_eventHandle);
+	m_directQueueFence->SetEventOnCompletion(m_directQueueFenceValues[m_swapIndex], m_eventHandle);
 	WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
 
 	// Increment fence value for current frame
-	m_fenceValues[m_swapIndex]++;
+	m_directQueueFenceValues[m_swapIndex]++;
 }

@@ -150,6 +150,7 @@ private:
 
 	// Queues
 	wComPtr<ID3D12CommandQueue> m_directCommandQueue;
+	wComPtr<ID3D12CommandQueue> m_computeCommandQueue;
 	wComPtr<ID3D12CommandQueue> m_computeCommandQueueAnimations;
 
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapGraphics;
@@ -163,9 +164,10 @@ private:
 
 	// Fences
 	// TODO: check which ones are needed
-	std::vector<UINT64> m_fenceValues;
-	wComPtr<ID3D12Fence1> m_fence;
-
+	std::vector<UINT64> m_directQueueFenceValues;
+	wComPtr<ID3D12Fence1> m_directQueueFence;
+	std::vector<UINT64> m_computeQueueFenceValues;
+	wComPtr<ID3D12Fence1> m_computeQueueFence;
 	std::vector<UINT64> m_computeQueueAnimaitonFenceValues;
 	wComPtr<ID3D12Fence1> m_computeQueueAnimaitonFence;
 
