@@ -57,14 +57,6 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	unsigned int* initData = new unsigned int[WATER_ARR_SIZE];
 	memset(initData, UINT_MAX, waterDataSize);
 	memset(m_waterDataCPU, UINT_MAX, waterDataSize);
-	//for (int x = 0; x < WATER_GRID_X; x++) {
-	//	for (int y = 0; y < WATER_GRID_Y; y++) {
-	// 		for (int z = 0; z < WATER_GRID_Z; z++) {
-	// 			int i = Utils::to1D(glm::i32vec3(x,y,z), WATER_GRID_X, WATER_GRID_Y);
-	// 			initData[i] = (x % 2 + z % 2 + y % 2) % 2;
-	// 		}
-	//	}
-	//}
 	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(unsigned int));
 	delete initData;
 
@@ -242,7 +234,6 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
 	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
 	glm::i32vec3 ind = floor(floatInd);
-	//ind.x = glm::floor(ind.x / 4.f); // We pack four radii in each float
 	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
 	
 	uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);

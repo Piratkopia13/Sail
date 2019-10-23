@@ -24,9 +24,6 @@ GameState::GameState(StateStack& stack)
 	
 	initConsole();
 
-	std::cout << Utils::unpackQuarterFloat(0.f, 0) << '\n';
-	std::cout << Utils::unpackQuarterFloat(-1.f, 0) << '\n';
-
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;

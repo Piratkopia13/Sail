@@ -165,8 +165,10 @@ void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& 
 	decalData.halfSize = halfSize;
 	m_decals[m_currNumDecals % MAX_DECALS] = decalData;
 	m_currNumDecals++;
+}
 
-	m_dxr.addWaterAtWorldPosition(pos); // TODO: move to its own method
+void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {
+	m_dxr.addWaterAtWorldPosition(pos);
 }
 
 void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {

@@ -134,32 +134,15 @@ void rayGen() {
 	} else {
 		lOutput[launchIndex] = payload.color;
 
-		// float4 totDecalColour = 0.0f;
-		// for (uint i = 0; i < CB_SceneData.nDecals; i++) {
-		// 	totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
-		// 	if (!all(totDecalColour == 0.0f)) {
-		// 		lOutput[launchIndex] = totDecalColour;
-		// 		break;
-		// 	}
-		// }
+		float4 totDecalColour = 0.0f;
+		for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+			totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+			if (!all(totDecalColour == 0.0f)) {
+				lOutput[launchIndex] = totDecalColour;
+				break;
+			}
+		}
 	}
-
-
-	// float3 mapSize = float3(56.f, 10.f, 56.f);
-	// float3 arrSize = float3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
-	// float3 mapStart = float3(-3.5f, 0.f, -3.5f);
-	// int3 ind = round(( (worldPosition - mapStart) / mapSize ) * arrSize);
-	// int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
-	// i = clamp(i, 0, int(arrSize.x * arrSize.y * arrSize.z) - 1);
-
-	// lOutput[launchIndex].r = waterData[i];
-	// lOutput[launchIndex].gb = 0.f;
-	// lOutput[launchIndex].a = 1.f;
-
-	// lOutput[launchIndex].x = i / (arrSize.x * arrSize.y * arrSize.z);
-	// lOutput[launchIndex].x = ind.x / arrSize.x;
-	// lOutput[launchIndex].y = ind.y / arrSize.y;
-	// lOutput[launchIndex].z = ind.z / arrSize.z;
 
 #else
 	// Fully RT
