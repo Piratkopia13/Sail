@@ -189,7 +189,7 @@ void NetworkReceiverSystem::update() {
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
 
 
-				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 100, 4, 0); //Owner id not set, 100 for now.
+				projectileSpawned(gunPosition, gunVelocity);
 			}
 
 			else if (eventType == Netcode::MessageType::PLAYER_DIED) {
@@ -245,7 +245,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	int test = e->getComponent<NetworkReceiverComponent>()->m_id;
 	e->addComponent<OnlineOwnerComponent>(id);
 
-	std::string modelName = "DocGunRun4.fbx";
+	std::string modelName = "Doc.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
 	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
@@ -267,7 +267,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 	{
 		e->addComponent<ModelComponent>(characterModel);
 		AnimationComponent* ac = e->addComponent<AnimationComponent>(stack);
-		ac->currentAnimation = stack->getAnimation(1);
+		ac->currentAnimation = stack->getAnimation(3);
 		e->addComponent<TransformComponent>(translation);
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
@@ -335,9 +335,9 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkObjectID id, const
 			//TODO: REMOVE
 			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
 			glm::vec3 rot = rotation;
-			if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
-				rot.y += 3.14f * 0.5f;
-			}
+			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
+			rot.y += 3.14f * 0.5f;
+			//}
 			e->getComponent<TransformComponent>()->setRotations(rot);
 
 			break;
@@ -385,6 +385,13 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkObjectID id) {
 			break;
 		}
 	}
+}
+
+void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir) {
+	// Also play the sound
+
+
+	EntityFactory::CreateProjectile(pos, dir, false, 100, 4, 0); //Owner id not set, 100 for now.
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID id) {
