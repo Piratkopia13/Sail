@@ -155,7 +155,7 @@ GameState::GameState(StateStack& stack)
 #ifdef _DEBUG_NODESYSTEM
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader);
 #else
-	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
+	//m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
 
 	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();
@@ -204,15 +204,15 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
-			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+		if (tempInfo.closestHit >= 0.0f) {
+			Logger::Log("Ray intersection with " + tempInfo.info.entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::spray)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHitIndex != -1) {
+		if (tempInfo.closestHit >= 0.0f) {
 			// size (the size you want) = 0.3
 			// halfSize = (1 / 0.3) * 0.5 = 1.667
 			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));

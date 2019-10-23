@@ -31,10 +31,6 @@ void CollisionSystem::update(float dt) {
 		auto boundingBox = e->getComponent<BoundingBoxComponent>();
 		auto csc = e->getComponent<CollisionSpheresComponent>();
 
-		for (int i = 0; i < collision->collisions.size(); i++) {
-			delete collision->collisions[i].shape;
-		}
-
 		collision->collisions.clear();
 
 		if (collision->padding < 0.0f) {
@@ -48,7 +44,7 @@ void CollisionSystem::update(float dt) {
 				//Not implemented for spheres yet
 				collisionUpdate(e, updateableDt);
 
-				surfaceFromCollision(e, collision->collisions);
+				//surfaceFromCollision(e, collision->collisions);
 
 				//if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
 				//	//Object is moving fast, ray cast for collisions
@@ -97,7 +93,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 		for (size_t i = 0; i < collisionCount; i++) {
 			Octree::CollisionInfo& collisionInfo_i = collisions[i];
 
-			//Get intersection axis and depth
+			//Find true collisions
 			if (collisionInfo_i.shape->isTrueCollision(boundingBox)) {
 
 				sumVec += collisionInfo_i.normal;
@@ -106,15 +102,13 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 
 				//Add collision to current collisions for collisionComponent
 				collision->collisions.push_back(collisionInfo_i);
+				collisionInfo_i.shape->keeperTracker++;
 
 				//Add collision to true collisions
 				trueCollisions.push_back(collisionInfo_i);
-
+				collisionInfo_i.shape->keeperTracker++;
 
 				returnValue = true;
-			}
-			else {
-				delete collisionInfo_i.shape;
 			}
 		}
 
@@ -216,9 +210,13 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 
 		dt -= newDt;
 
+		std::vector<Octree::CollisionInfo> collisionsToCheck;
+		collisionsToCheck.push_back(intersectionInfo.info);
+		intersectionInfo.info.shape->keeperTracker++;
+
 		//Collision update
-		if (handleCollisions(e, intersectionInfo.info, 0.0f)) {
-			surfaceFromCollision(e, intersectionInfo.info);
+		if (handleCollisions(e, collisionsToCheck, 0.0f)) {
+			surfaceFromCollision(e, collisionsToCheck);
 			rayCastUpdate(e, boundingBox, dt);
 		}
 		else {
@@ -228,7 +226,7 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 			transform->translate(-normalizedVel * collision->padding);
 
 			//Step forward to find collision
-			stepToFindMissedCollision(e, boundingBox, intersectionInfo.info, collision->padding * 2.0f);
+			stepToFindMissedCollision(e, boundingBox, collisionsToCheck, collision->padding * 2.0f);
 
 			//Keep updating
 			rayCastUpdate(e, boundingBox, dt);
@@ -245,7 +243,7 @@ void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& bounding
 
 	const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
 	const glm::vec3 distancePerStep = (distance / (float)split) * normalizedVel;
-
+	
 	for (int i = 0; i < split; i++) {
 		boundingBox.setPosition(boundingBox.getPosition() + distancePerStep);
 		transform->translate(distancePerStep);

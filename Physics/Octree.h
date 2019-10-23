@@ -11,7 +11,17 @@ struct Frustum;
 
 class Octree {
 public:
-	struct CollisionInfo {
+	class CollisionInfo {
+	public:
+		CollisionInfo() : normal(glm::vec3(0.0f)), intersectionPosition(glm::vec3(0.0f)), shape(nullptr), entity(nullptr){};
+		~CollisionInfo() {
+			if (shape != nullptr) { 
+				shape->keeperTracker--;
+				if (shape->keeperTracker == 0) {
+					//delete shape;
+				}
+			} 
+		};
 		glm::vec3 normal;
 		glm::vec3 intersectionPosition;
 		CollisionShape* shape;
@@ -20,8 +30,7 @@ public:
 
 	struct RayIntersectionInfo {
 		float closestHit = -1.0f;
-		int closestHitIndex = -1;
-		std::vector<CollisionInfo> info;
+		Octree::CollisionInfo info;
 	};
 
 private:

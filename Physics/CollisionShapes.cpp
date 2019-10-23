@@ -50,7 +50,15 @@ CollisionAABB::CollisionAABB(const glm::vec3& position, const glm::vec3& halfSiz
 }
 
 bool CollisionAABB::isTrueCollision(BoundingBox* boundingBox) {
-	return true;
+	glm::vec3 intersectionAxis;
+	float intersectionDepth;
+
+	if (Intersection::AabbWithAabb(boundingBox->getPosition(), boundingBox->getHalfSize(), m_position, m_halfSize, &intersectionAxis, &intersectionDepth)) {
+		if (glm::abs(glm::dot(intersectionAxis, m_intersectionAxis)) > 0.98f) { //The smallest intersection is along the expected axis
+			return true;
+		}
+	}
+	return false;
 }
 
 glm::vec3 CollisionAABB::getIntersectionPosition(BoundingBox* boundingBox) {

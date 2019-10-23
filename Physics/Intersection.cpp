@@ -768,5 +768,5 @@ void Intersection::Barycentric(const glm::vec3& p, const glm::vec3& a, const glm
 }
 
 bool Intersection::OnTriangle(const float u, const float v, const float w) {
-	return ((0.0f < v && v < 1.0f) && (0.0f < w && w < 1.0f) && (0.0f < u && u < 1.0f));
+	return ((0.0f <= v && v <= 1.0f) && (0.0f <= w && w <= 1.0f) && (0.0f <= u && u <= 1.0f));
 }

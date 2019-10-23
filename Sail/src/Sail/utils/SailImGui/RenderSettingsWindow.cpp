@@ -41,8 +41,8 @@ void RenderSettingsWindow::renderWindow() {
 		if (ImGui::Button("Pick entity")) {
 			Octree::RayIntersectionInfo tempInfo;
 			m_octree->getRayIntersection(m_cam->getPosition(), m_cam->getDirection(), &tempInfo);
-			if (tempInfo.closestHitIndex != -1) {
-				pickedEntity = tempInfo.info.at(tempInfo.closestHitIndex).entity;
+			if (tempInfo.closestHit >= 0.0f) {
+				pickedEntity = tempInfo.info.entity;
 			}
 		}
 	}

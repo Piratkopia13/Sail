@@ -235,15 +235,13 @@ void Octree::updateRec(Node* currentNode, std::vector<Entity*>* entitiesToReAdd)
 
 void Octree::getCollisionData(BoundingBox* entityBoundingBox, Entity* meshEntity, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, std::vector<CollisionInfo>* outCollisionData) {
 	if (Intersection::AabbWithTriangle(entityBoundingBox->getPosition(), entityBoundingBox->getHalfSize(), v0, v1, v2)) {
-		CollisionInfo tempInfo;
+		outCollisionData->emplace_back();
 
-		tempInfo.normal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
+		outCollisionData->back().normal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
 
-		tempInfo.shape = SAIL_NEW CollisionTriangle(v0, v1, v2, tempInfo.normal);
-
-		tempInfo.entity = meshEntity;
-
-		outCollisionData->push_back(tempInfo);
+		outCollisionData->back().entity = meshEntity;
+		
+		outCollisionData->back().shape = SAIL_NEW CollisionTriangle(v0, v1, v2, outCollisionData->back().normal);
 
 		//Logger::Log("Collision detected with " + meshEntity->getName());
 	}
@@ -295,16 +293,14 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 						//Collide with bounding box
 						glm::vec3 intersectionAxis;
 						float intersectionDepth;
-						
+
 						Intersection::AabbWithAabb(entityBoundingBox->getPosition(), entityBoundingBox->getHalfSize(), otherBoundingBox->getPosition(), otherBoundingBox->getHalfSize(), &intersectionAxis, &intersectionDepth);
 
-						CollisionInfo newInfo;
+						outCollisionData->emplace_back();
 
-						newInfo.normal = intersectionAxis;
-						newInfo.shape = SAIL_NEW CollisionAABB(otherBoundingBox->getPosition(), otherBoundingBox->getHalfSize(), newInfo.normal);
-						newInfo.entity = currentNode->entities[i];
-
-						outCollisionData->push_back(newInfo);
+						outCollisionData->back().normal = intersectionAxis;
+						outCollisionData->back().shape = SAIL_NEW CollisionAABB(otherBoundingBox->getPosition(), otherBoundingBox->getHalfSize(), outCollisionData->back().normal);
+						outCollisionData->back().entity = currentNode->entities[i];
 					}
 				}
 			}
@@ -319,19 +315,18 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 
 void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData, float padding) {
 	float intersectionDistance = Intersection::RayWithPaddedTriangle(rayStart, rayDir, v1, v2, v3, padding);
-	if (intersectionDistance >= 0.0f) {
-		CollisionInfo newInfo;
-		newInfo.normal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
-		newInfo.shape = SAIL_NEW CollisionTriangle(v1, v2, v3, newInfo.normal);
-		newInfo.entity = meshEntity;
 
-		//Save all intersections
-		outIntersectionData->info.push_back(newInfo);
+	if (intersectionDistance >= 0.0f && (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) {
+		//Save closest hit
+		outIntersectionData->closestHit = intersectionDistance;
 
-		if (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
-			outIntersectionData->closestHit = intersectionDistance;
-			outIntersectionData->closestHitIndex = (int)(outIntersectionData->info.size() - 1);
+		outIntersectionData->info.normal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+
+		if (outIntersectionData->info.shape) {
+			delete outIntersectionData->info.shape;
 		}
+		outIntersectionData->info.shape = SAIL_NEW CollisionTriangle(v1, v2, v3, outIntersectionData->info.normal);
+		outIntersectionData->info.entity = meshEntity;
 	}
 }
 

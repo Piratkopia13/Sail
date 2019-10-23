@@ -10,6 +10,8 @@ public:
 	virtual bool isTrueCollision(BoundingBox* boundingBox) = 0;
 	virtual glm::vec3 getIntersectionPosition(BoundingBox* boundingBox) = 0;
 	virtual bool getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth) = 0;
+
+	int keeperTracker = 1;
 };
 
 
