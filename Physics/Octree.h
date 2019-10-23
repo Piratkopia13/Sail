@@ -18,7 +18,7 @@ public:
 			if (shape != nullptr) { 
 				shape->keeperTracker--;
 				if (shape->keeperTracker == 0) {
-					//delete shape;
+					delete shape;
 				}
 			} 
 		};
