@@ -21,13 +21,16 @@ public:
 
 	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
 	void initWithPlayerID(unsigned char playerID);
-
+	void initPlayerEntity(Entity* pPlayerEntity);
 
 	void pushDataToBuffer(std::string data);
+
+	const std::vector<Entity*>& getEntities() const;
 
 
 private:
 	unsigned char m_playerID;
+	Entity* m_playerEntity = nullptr;
 
 	void handleEvent(Netcode::MessageType& messageType, Entity* e, cereal::PortableBinaryOutputArchive* ar);
 	void handleEvent(NetworkSenderEvent* event, cereal::PortableBinaryOutputArchive* ar);
