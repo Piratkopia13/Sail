@@ -63,7 +63,7 @@ void AnimationInitSystem::initAnimations() {
 		light->addComponent<ModelComponent>(lightModel);
 		light->addComponent<TransformComponent>();
 		light->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		light->addComponent<CollidableComponent>();
+		//light->addComponent<CollidableComponent>();
 		//PointLight pl;
 		//pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		//pl.setPosition(glm::vec3(0.2f, 0.2f + .37f, 0.2f));
@@ -82,11 +82,11 @@ void AnimationInitSystem::initAnimations() {
 
 
 		light = ECS::Instance()->createEntity("ReceiverLight2");
-		light->addComponent<CandleComponent>();
+		//light->addComponent<CandleComponent>();
 		light->addComponent<ModelComponent>(lightModel);
 		light->addComponent<TransformComponent>();
-		light->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		light->addComponent<CollidableComponent>();
+		//light->addComponent<BoundingBoxComponent>(boundingBoxModel);
+		//light->addComponent<CollidableComponent>();
 		//PointLight pl2;
 		//pl2.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
 		//pl2.setPosition(glm::vec3(0.2f, 0.2f + .37f, 0.2f));
