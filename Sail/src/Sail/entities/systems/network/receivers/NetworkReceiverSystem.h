@@ -11,15 +11,18 @@ public:
 	NetworkReceiverSystem();
 	~NetworkReceiverSystem();
 
-	// Functions which differ from host to client
-	virtual void pushDataToBuffer(std::string data) = 0;
+	virtual void handleIncomingData(std::string data) = 0;
+	void pushDataToBuffer(std::string);
 
 	void init(Netcode::PlayerID playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
+
 
 	const std::vector<Entity*>& getEntities() const;
 
 	void update();
 protected:
+
+
 	GameState* m_gameStatePtr;
 	NetworkSenderSystem* m_netSendSysPtr;
 

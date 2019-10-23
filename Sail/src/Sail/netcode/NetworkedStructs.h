@@ -148,7 +148,7 @@ namespace Netcode {
 		MessagePlayerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID) : playerWhoDied(id), playerWhoFired(shooterID) {}
 		~MessagePlayerDied() {}
 		Netcode::ComponentID playerWhoDied;
-		Netcode::PlayerID playerWhoFIred;
+		Netcode::PlayerID playerWhoFired;
 	};
 
 	class MessageCandleHeldState : public MessageData {

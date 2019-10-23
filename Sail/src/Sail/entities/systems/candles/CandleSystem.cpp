@@ -66,47 +66,11 @@ void CandleSystem::update(float dt) {
 					if (NWrapperSingleton::getInstance().isHost()) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::PLAYER_DIED,
-							SAIL_NEW Netcode::MessageDataPlayerDied{
+							SAIL_NEW Netcode::MessagePlayerDied{
 								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
 								candle->getWasHitByNetID()
-							}
+							}, true
 						);
-
-						// Print who killed who
-						unsigned char idOfDeadPlayer = static_cast<unsigned char>(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id >> 18);
-						unsigned char idOfShootingPlayer = candle->getWasHitByNetID();
-						std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
-						std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(idOfShootingPlayer)->name;
-						Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
-
-						//This should remove the candle entity from game
-						e->getParent()->removeDeleteAllChildren();
-
-						// Check if the extinguished candle is owned by the player
-						if (e->getParent()->getComponent<NetworkReceiverComponent>()->m_id >> 18 == NWrapperSingleton::getInstance().getMyPlayerID()) {
-							//If it is me that died, become spectator.
-							e->getParent()->addComponent<SpectatorComponent>();
-							e->getParent()->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
-							e->getParent()->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
-							e->getParent()->removeComponent<GunComponent>();
-
-							// Get position and rotation to look at middle of the map from above
-							{
-								auto parTrans = e->getParent()->getComponent<TransformComponent>();
-								auto pos = glm::vec3(parTrans->getMatrix()[3]);
-								pos.y = 20.f;
-								parTrans->setTranslation(pos);
-								MapComponent temp;
-								auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
-								auto dir = glm::normalize(middleOfLevel - pos);
-								auto rots = Utils::getRotations(dir);
-								parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
-							}
-
-						} else {
-							//If it wasnt me that died, compleatly remove the player entity from game.
-							e->getParent()->queueDestruction();
-						}
 
 						if (LivingCandles <= 1) { // Match IS over
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(

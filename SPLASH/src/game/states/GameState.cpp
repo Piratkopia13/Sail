@@ -459,7 +459,7 @@ bool GameState::onResize(WindowResizeEvent& event) {
 }
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
-	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+	m_componentSystems.networkReceiverSystem->handleIncomingData(event.getSerializedData());
 	return true;
 }
 

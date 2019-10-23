@@ -38,6 +38,11 @@ void NetworkReceiverSystem::init(Netcode::PlayerID playerID, GameState* gameStat
 	m_netSendSysPtr = netSendSysPtr;
 }
 
+void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
+	std::scoped_lock lock(m_bufferLock);
+	m_incomingDataBuffer.push(data);
+}
+
 const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
 	return entities;
 }
@@ -425,7 +430,7 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 		e->removeDeleteAllChildren();
 
 			// Check if the extinguished candle is owned by the player
-			if (Netcode::getComponentOwnder(NetworkIdOfKilled) == m_playerID) {
+			if (Netcode::getComponentOwner(networkIdOfKilled) == m_playerID) {
 				//If it is me that died, become spectator.
 				e->addComponent<SpectatorComponent>();
 				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
@@ -442,19 +447,20 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 				transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
 			}
 			else {
-				//If it wasnt me that died, compleatly remove the player entity from game.
+				//If it wasn't me that died, completely remove the player entity from game.
 				e->queueDestruction();
 			}
+
+
+			// Print who killed who
+			Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
+			std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
+			std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
+			Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
 
 			break; // Break because should only be one player; stop looping!
 		}
 	}
-
-	// Print who killed who
-	Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
-	std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
-	std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
-	Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
 }
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
