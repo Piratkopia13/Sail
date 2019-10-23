@@ -12,6 +12,7 @@
 
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
+#include "Sail/utils/GameDataTracker.h"
 
 
 #define BANNED(func) sorry_##func##_is_a_banned_function
@@ -34,6 +35,8 @@ void NetworkReceiverSystem::init(unsigned char playerID, GameState* gameStatePtr
 	m_playerID = playerID;
 	m_gameStatePtr = gameStatePtr;
 	m_netSendSysPtr = netSendSysPtr;
+
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 void NetworkReceiverSystem::initPlayer(Entity* pPlayerEntity) {
@@ -441,7 +444,11 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID networkIdOfKille
 	unsigned char idOfDeadPlayer = static_cast<unsigned char>(networkIdOfKilled >> 18);
 	std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
 	std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
-	Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
+	std::string deathType = "sprayed down";
+	std::string deathMessage = ShooterPlayer + " " + deathType + " " + deadPlayer;
+	Logger::Log(deathMessage);
+
+	m_gameDataTracker->logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
 }
 
 void NetworkReceiverSystem::playerDisconnect(unsigned char id) {

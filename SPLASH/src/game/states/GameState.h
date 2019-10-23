@@ -70,6 +70,7 @@ private:
 	LightDebugWindow m_lightDebugWindow;
 	PlayerInfoWindow m_playerInfoWindow;
 	WasDroppedWindow m_wasDroppedWindow;
+	KillFeedWindow m_killFeedWindow;
 
 
 	size_t m_currLightIndex;

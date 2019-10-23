@@ -615,6 +615,8 @@ bool GameState::renderImgui(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
+	m_killFeedWindow.setDeaths(GameDataTracker::getInstance().getPlayerDeaths());
+	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();
