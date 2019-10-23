@@ -67,11 +67,11 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 		{
 			int randomSoundIndex = 0;
 			int soundPoolSize = 0;
-			Audio::SoundInfo_General soundGeneral;
-			Audio::SoundInfo_Unique soundUnique;
+			Audio::SoundInfo_General* soundGeneral;
+			Audio::SoundInfo_Unique* soundUnique;
 
 			for (int i = 0; i < Audio::SoundType::COUNT; i++) {
-				soundGeneral = audioC->m_sounds[i];
+				soundGeneral = &audioC->m_sounds[i];
 
 				soundPoolSize = audioC->m_soundsUnique[i].size();
 				if (soundPoolSize > 0) {
@@ -83,48 +83,48 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 						randomSoundIndex = 0;
 					}
 
-					if (soundGeneral.isPlaying) {
+					if (soundGeneral->isPlaying) {
 						
 						// To make the code easier to read
-						soundUnique = audioC->m_soundsUnique[i].at(randomSoundIndex);
+						soundUnique = &audioC->m_soundsUnique[i].at(randomSoundIndex);
 
 						// Initialize the sound if that hasn't been done already
-						if (!soundGeneral.hasStartedPlaying) {
-							soundGeneral.soundID = m_audioEngine->initializeSound(soundUnique.fileName, soundUnique.volume);
-							soundGeneral.hasStartedPlaying = true;
-							soundGeneral.durationElapsed = 0.0f;
-							soundGeneral.currentSoundsLength = soundUnique.soundEffectLength;
+						if (!soundGeneral->hasStartedPlaying) {
+							std::cout << soundUnique->fileName;
+							soundGeneral->soundID = m_audioEngine->initializeSound(soundUnique->fileName, soundUnique->volume);
+							soundGeneral->hasStartedPlaying = true;
+							soundGeneral->durationElapsed = 0.0f;
+							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
 						}
 
 						// Start playing the sound if it's not already playing
-						if (soundGeneral.durationElapsed == 0.0f) {
-							m_audioEngine->startSpecificSound(soundGeneral.soundID);
-
+						if (soundGeneral->durationElapsed == 0.0f) {
+							m_audioEngine->startSpecificSound(soundGeneral->soundID);
 						}
 
 						// Update the sound with the current positions if it's playing
-						if (soundGeneral.durationElapsed <= soundGeneral.currentSoundsLength) {
+						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
 							m_audioEngine->updateSoundWithCurrentPosition(
-								soundGeneral.soundID, cam, *e->getComponent<TransformComponent>(),
-								soundGeneral.positionalOffset, alpha);
+								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
+								soundGeneral->positionalOffset, alpha);
 
-							soundGeneral.durationElapsed += dt;
+							soundGeneral->durationElapsed += dt;
 						}
 						else {
-							soundGeneral.durationElapsed = 0.0f; // Reset the sound effect to its beginning
-							m_audioEngine->stopSpecificSound(soundGeneral.soundID);
+							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
+							m_audioEngine->stopSpecificSound(soundGeneral->soundID);
 
 							// If the sound isn't looping then make it stop
-							if (soundGeneral.playOnce == true) {
-								soundGeneral.isPlaying = false;
-								soundGeneral.hasStartedPlaying = false;
+							if (soundGeneral->playOnce == true) {
+								soundGeneral->isPlaying = false;
+								soundGeneral->hasStartedPlaying = false;
 							}
 						}
 						// If the sound should no longer be playing stop it and reset its timer
 					}
-					else if (soundGeneral.durationElapsed != 0.0f) {
-						m_audioEngine->stopSpecificSound(soundGeneral.soundID);
-						soundGeneral.durationElapsed = 0.0f;
+					else if (soundGeneral->durationElapsed != 0.0f) {
+						m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+						soundGeneral->durationElapsed = 0.0f;
 					}
 				}
 			}

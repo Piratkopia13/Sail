@@ -136,7 +136,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					m_onGroundTimer = -1.0f; // To stop walking sound immediately when jumping
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
-					//	// Add networkcomponent for jump 
+					// Add networkcomponent for jump 
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_JUMPED,
 						SAIL_NEW Netcode::MessagePlayerJumped{e->getComponent<NetworkSenderComponent>()->m_id},
