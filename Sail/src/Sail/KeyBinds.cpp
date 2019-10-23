@@ -34,6 +34,8 @@ namespace KeyBinds {
 	int lightCandle;
 	int spray;
 
+	
+
 	// Application
 	int alt;
 	int f4;
@@ -53,6 +55,9 @@ namespace KeyBinds {
 
 	// DX12RaytracingRenderer
 	int reloadDXRShader;
+
+	// Debugging
+	int spectatorDebugging;
 }
 
 void KeyBinds::init() {
@@ -105,4 +110,6 @@ void KeyBinds::init() {
 	// DX12RaytracingRenderer
 	reloadDXRShader = SAIL_KEY_F5;
 
+	// Debugging
+	spectatorDebugging = SAIL_KEY_M;
 }
