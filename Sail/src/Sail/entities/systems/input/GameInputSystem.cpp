@@ -201,6 +201,11 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 		}
 
+		auto trans = e->getComponent<TransformComponent>();
+		auto rots = trans->getRotations();
+		m_pitch = (rots.z != 0.f) ? glm::degrees(-rots.z) : m_pitch;
+		m_yaw = glm::degrees(-rots.y);
+
 		// Update pitch & yaw if window has focus
 		if ( Input::IsCursorHidden() ) {
 			glm::ivec2& mouseDelta = Input::GetMouseDelta();
@@ -221,6 +226,8 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		} else if ( m_yaw <= 0 ) {
 			m_yaw += 360;
 		}
+
+		trans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 	}
 }
 
@@ -235,8 +242,6 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
 		);
 		forwards = glm::normalize(forwards);
-
-		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 
 		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 1.8f, 0.f)));
 		m_cam->setCameraDirection(forwards);

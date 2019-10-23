@@ -35,8 +35,8 @@ private:
 	void getAnimations(FbxNode* node, AnimationStack* stack, const std::string& name);
 
 	void addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, const unsigned long& currentIndex, const Mesh::vec3& position, const Mesh::vec3& normal, const Mesh::vec3& tangent, const Mesh::vec3& bitangent, const Mesh::vec2& uv);
-	void fetchSkeleton(FbxNode* node, const std::string& filename);
-	void fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex);
+	void fetchSkeleton(FbxNode* node, const std::string& filename, AnimationStack* stack);
+	void fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex, AnimationStack* stack);
 	int getBoneIndex(unsigned int uniqueID, const std::string& name);
 
 	//DEBUG
@@ -51,16 +51,7 @@ private:
 
 	struct SceneData {
 		~SceneData() { Memory::SafeDelete(model); Memory::SafeDelete(stack); }
-		class Bone {
-		public:
-			Bone() { parentIndex = 0; uniqueID = 0; globalBindposeInverse = glm::identity<glm::mat4>(); };
-			~Bone() {}
 
-			int parentIndex;
-			unsigned long uniqueID;
-			std::vector<unsigned int> childIndexes;
-			glm::mat4 globalBindposeInverse;
-		};
 		bool done;
 		bool hasModel;
 		bool hasAnimation;
@@ -69,7 +60,6 @@ private:
 		AnimationStack* stack;
 
 		std::vector<std::vector<unsigned long>> cpToVertMap;
-		std::vector<FBXLoader::SceneData::Bone> bones;
 	};
 
 	std::map<std::string, const FbxScene*> m_scenes;

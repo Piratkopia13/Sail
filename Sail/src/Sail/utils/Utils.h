@@ -100,6 +100,7 @@ namespace Utils {
 
 	uint32_t packQuarterFloat(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
 	uint32_t unpackQuarterFloat(uint32_t in, unsigned int index);
+	glm::vec2 getRotations(const glm::vec3& dir);
 
 	static std::random_device rd;
 	static std::mt19937 gen(rd());

@@ -29,6 +29,7 @@ namespace Netcode {
 		MODIFY_TRANSFORM,
 		SPAWN_PROJECTILE,
 		ROTATION_TRANSFORM,
+		ANIMATION,
 		PLAYER_JUMPED,
 		WATER_HIT_PLAYER,
 		SET_CANDLE_HEALTH,
@@ -137,5 +138,6 @@ namespace Netcode {
 		~MessageDataPlayerDisconnect() {}
 		unsigned char playerID;
 	};
+
 }
 

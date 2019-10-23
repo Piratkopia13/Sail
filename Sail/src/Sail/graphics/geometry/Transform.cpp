@@ -212,7 +212,7 @@ void Transform::setScale(const glm::vec3& scale) {
 }
 
 void Transform::setForward(const glm::vec3& forward) {
-	m_data.m_current.m_forward = glm::vec3(forward.x, forward.y, -forward.z);
+	m_data.m_current.m_forward = glm::vec3(forward.x, forward.y, forward.z);
 	m_data.m_current.m_rotationQuat = glm::rotation(glm::vec3(0.f, 0.f, -1.f), m_data.m_current.m_forward);
 	m_matNeedsUpdate = true;
 	m_hasChanged |= 2;
@@ -239,6 +239,11 @@ const glm::vec3 Transform::getInterpolatedTranslation(float alpha) const {
 
 const glm::quat Transform::getInterpolatedRotation(float alpha) const {
 	return (alpha * m_data.m_current.m_rotationQuat) + ((1.0f - alpha) * m_data.m_previous.m_rotationQuat);
+}
+
+glm::vec3& Transform::getForward() {
+	updateForward();
+	return m_data.m_current.m_forward;
 }
 
 
@@ -288,6 +293,10 @@ void Transform::updateRenderMatrix(float alpha) {
 	} else {
 		m_renderMatrix = m_localRenderMatrix;
 	}
+}
+
+void Transform::updateForward() {
+	m_data.m_current.m_forward = m_data.m_current.m_rotationQuat * glm::vec3(0.f, 0.f, -1.f);
 }
 
 void Transform::updateLocalMatrix() {

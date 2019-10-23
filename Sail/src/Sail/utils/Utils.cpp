@@ -64,6 +64,13 @@ float Utils::wrapValue(float value, float lowerBound, float upperBound) {
 	return value;
 }
 
+// Returns the pitch and yaw from a normalized direction vector: x = pitch, y = yaw
+glm::vec2 Utils::getRotations(const glm::vec3& dir) {
+	float yaw = atan2(dir.z, dir.x != 0.f ? dir.x : 0.01f);
+	float pitch = asin(-dir.y);
+	return glm::vec2(pitch, yaw);
+}
+
 int Utils::to1D(const glm::i32vec3& ind, int xMax, int yMax) {
 	return ind.x + xMax * (ind.y + yMax * ind.z);
 }
