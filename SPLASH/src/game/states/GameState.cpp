@@ -1029,6 +1029,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
+	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
 }
 
 #ifdef _PERFORMANCE_TEST
