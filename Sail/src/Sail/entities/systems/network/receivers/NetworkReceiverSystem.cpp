@@ -411,8 +411,22 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkObjectID networkIdOfKille
 			if (networkIdOfKilled >> 18 == m_playerID) {
 				//If it is me that died, become spectator.
 				e->addComponent<SpectatorComponent>();
-				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
+				e->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 				e->removeComponent<GunComponent>();
+
+				// Get position and rotation to look at middle of the map from above
+				{
+					auto trans = e->getComponent<TransformComponent>();
+					auto pos = glm::vec3(trans->getMatrix()[3]);
+					pos.y = 20.f;
+					trans->setStartTranslation(pos);
+					MapComponent temp;
+					auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
+					auto dir = glm::normalize(middleOfLevel - pos);
+					auto rots = Utils::getRotations(dir);
+					trans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+				}
 			}
 			else {
 				//If it wasnt me that died, compleatly remove the player entity from game.

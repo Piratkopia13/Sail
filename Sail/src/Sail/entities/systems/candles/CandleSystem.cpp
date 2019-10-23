@@ -96,7 +96,7 @@ void CandleSystem::update(float dt) {
 								auto parTrans = e->getParent()->getComponent<TransformComponent>();
 								auto pos = glm::vec3(parTrans->getMatrix()[3]);
 								pos.y = 20.f;
-								parTrans->setTranslation(pos);
+								parTrans->setStartTranslation(pos);
 								MapComponent temp;
 								auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
 								auto dir = glm::normalize(middleOfLevel - pos);
