@@ -433,13 +433,14 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			if (Netcode::getComponentOwner(networkIdOfKilled) == m_playerID) {
 				//If it is me that died, become spectator.
 				e->addComponent<SpectatorComponent>();
-				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+				e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
+				e->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 				e->removeComponent<GunComponent>();
 
 				auto transform = e->getComponent<TransformComponent>();
 				auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
 				pos.y = 20.f;
-				transform->setTranslation(pos);
+				transform->setStartTranslation(pos);
 				MapComponent temp;
 				auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
 				auto dir = glm::normalize(middleOfLevel - pos);
