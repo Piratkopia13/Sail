@@ -136,7 +136,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				if (!m_wasSpacePressed && collision->onGround) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
-					onGroundTimer = -1.0f; // To stop walking sound immediately when jumping
+					m_onGroundTimer = -1.0f; // To stop walking sound immediately when jumping
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
 					//	// Add networkcomponent for jump 
