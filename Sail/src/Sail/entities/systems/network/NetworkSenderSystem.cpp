@@ -264,6 +264,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 		ArchiveHelpers::archiveVec3(*ar, data->translation);
 		ArchiveHelpers::archiveVec3(*ar, data->velocity);
+		(*ar)(data->ownerPlayerComponentID);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED:

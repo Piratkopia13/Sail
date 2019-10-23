@@ -31,7 +31,7 @@ Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, co
 	m_matNeedsUpdate = true;
 	m_parentUpdated = parent;
 	m_parentRenderUpdated = parent;
-	m_hasChanged |= 2;
+	m_hasChanged = 2;
 
 	if (m_parent)
 		m_parent->addChild(this);

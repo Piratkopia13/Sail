@@ -409,8 +409,6 @@ void GameState::initConsole() {
 			Netcode::MessageType::MATCH_ENDED,
 			nullptr
 		);
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
 		console.removeAllCommandsWithIdentifier("GameState");
 
 		return std::string("Match ended.");
@@ -493,48 +491,22 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
-	// Here we will receive when a player disconnected.
-	// In the case of the host, deal with it based on who dc'd.
-	// In the case of the client, deal with it based on who dc'd.
+	if (m_isSingleplayer) {
+		return true;
+	}
 
-	if (!m_isSingleplayer) {
-		// 'I' Am a host
-		if (NWrapperSingleton::getInstance().isHost()) {
-			
-			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
-			for (auto& e : receiverEntities)
-			{
-				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID())
-				{
-					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-						Netcode::MessageType::PLAYER_DISCONNECT,
-						SAIL_NEW Netcode::MessagePlayerDisconnect{
-							event.getPlayerID()
-						}
-					);
+	for (auto& e : m_componentSystems.networkReceiverSystem->getEntities()) {
+		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.getPlayerID()) {
+			// Upon finding who disconnected...
+			// Log it (Temporary until killfeed is implemented)
+			logSomeoneDisconnected(event.getPlayerID());
 
-					// This will remove the entity 
-					e->removeDeleteAllChildren();
-					e->queueDestruction();
-
-					// Log it (Temporary until killfeed is implemented)
-					logSomeoneDisconnected(event.getPlayerID());
-
-					// No loop break. If other entities has the same player id they should all be removed
-				}
-			}
-		}
-		// 'I' Am a client
-		else {
-		
-			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
-			for (auto& e : receiverEntities) {
-
-				// Upon finding who disconnected...
-				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID()) {
-					// Log it (Temporary until killfeed is implemented)
-					logSomeoneDisconnected(event.getPlayerID());
-				}
+			// If I am host notify all other players
+			if (NWrapperSingleton::getInstance().isHost()) {
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PLAYER_DISCONNECT,
+					SAIL_NEW Netcode::MessagePlayerDisconnect{ event.getPlayerID() }
+				);
 			}
 		}
 	}

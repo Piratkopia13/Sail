@@ -31,7 +31,83 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, Model* lightMo
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, unsigned char playerID, size_t lightIndex, glm::vec3 spawnLocation) {
+Entity::SPtr EntityFactory::CreateMyPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation)
+{
+	auto myPlayer = EntityFactory::CreatePlayer(boundingBoxModel, projectileModel, lightModel, playerID, lightIndex, spawnLocation);
+
+
+	myPlayer->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, Netcode::EntityType::PLAYER_ENTITY, playerID);
+	myPlayer->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::ANIMATION);
+
+	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
+	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
+
+	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
+	myPlayer->addComponent<CollisionComponent>();
+	myPlayer->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
+
+	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+
+
+
+	// Create candle for the player
+	auto e = CreateCandle("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f), lightIndex);
+	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
+	e->getComponent<CandleComponent>()->setOwner(playerID);
+	myPlayer->addChildEntity(e);
+
+	myPlayer->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
+
+	// Temporary projectile model for the player's gun
+	myPlayer->addComponent<GunComponent>(projectileModel, boundingBoxModel);
+
+	return myPlayer;
+}
+
+
+// TODO: ComponentID
+Entity::SPtr EntityFactory::CreateOtherPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation)
+{
+	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
+
+
+	auto otherPlayer = EntityFactory::CreatePlayer(boundingBoxModel, projectileModel, lightModel, playerID, lightIndex, spawnLocation);
+
+	// receiver
+	// online owner
+	 
+
+
+	AnimationComponent* ac = otherPlayer->addComponent<AnimationComponent>(stack);
+
+	//creates light with model and pointlight
+	auto light = ECS::Instance()->createEntity("ReceiverLight");
+	light->addComponent<CandleComponent>();
+	light->addComponent<ModelComponent>(lightModel);
+	light->addComponent<TransformComponent>();
+	light->addComponent<BoundingBoxComponent>(boundingBoxModel);
+	light->addComponent<CollidableComponent>();
+	light->addComponent<OnlineOwnerComponent>(id);
+	PointLight pl;
+	pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
+	pl.setPosition(glm::vec3(0.2f, 0.2f + .37f, 0.2f));
+	pl.setAttenuation(.0f, 0.1f, 0.02f);
+	//pl.setIndex(m_currLightIndex++);
+	pl.setIndex(999); // TODO: unique light index needed?
+	light->addComponent<LightComponent>(pl);
+
+	otherPlayer->addChildEntity(light);
+	ac->leftHandEntity = light.get();
+
+	// PUT THINGS IN HAND
+	ac->leftHandPosition = glm::identity<glm::mat4>();
+	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.57f, 1.03f, 0.05f));
+	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
+
+	return otherPlayer;
+}
+
+Entity::SPtr EntityFactory::CreatePlayerGeneric(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
 
 	auto player = ECS::Instance()->createEntity("player");
 
@@ -42,10 +118,9 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//player->addComponent<LocalPlayerComponent>();.
 
 	player->addComponent<TransformComponent>();
-
 	player->addComponent<CullingComponent>();
 
-	player->addComponent<NetworkSenderComponent>(
+	/*player->addComponent<NetworkSenderComponent>(
 		Netcode::MessageType::CREATE_NETWORKED_ENTITY,
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID
@@ -54,19 +129,19 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	Netcode::ComponentID netComponentID = player->getComponent<NetworkSenderComponent>()->m_id;
 	player->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	
-	player->addComponent<LocalOwnerComponent>(netComponentID);
+	player->addComponent<LocalOwnerComponent>(netComponentID);*/
 
 	// Add physics components and setting initial variables
-	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	player->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
-	player->addComponent<CollisionComponent>();
+	//player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	//player->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
+	/*player->addComponent<CollisionComponent>();*/
 
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 
 	// Temporary projectile model for the player's gun
-	player->addComponent<GunComponent>(projectileModel, boundingBoxModel);
+	/*player->addComponent<GunComponent>(projectileModel, boundingBoxModel);*/
 
 	// Adding audio component and adding all sounds attached to the player entity
 	player->addComponent<AudioComponent>();
@@ -122,16 +197,23 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 
 #pragma endregion
 
-	// Create candle for the player
-	auto e = CreateCandle("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f), lightIndex);
-	e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	e->getComponent<CandleComponent>()->setOwner(static_cast<int>(playerID));
-	player->addChildEntity(e);
+	//// Create candle for the player
+	//auto e = CreateCandle("PlayerCandle", lightModel, boundingBoxModel, glm::vec3(0.f, 2.f, 0.f), lightIndex);
+	//e->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
+	//e->getComponent<CandleComponent>()->setOwner(static_cast<int>(playerID));
+	//player->addChildEntity(e);
 
-	player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
+	//player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
 
 	return player;
 }
+
+
+
+
+
+
+
 
 Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterModel, const glm::vec3& pos, Model* lightModel, size_t lightIndex, NodeSystem* ns) {
 
@@ -215,7 +297,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velocity, bool hasLocalOwner, unsigned __int32 ownersNetId, float lifetime, float randomSpread) {
+Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velocity, bool hasLocalOwner, Netcode::ComponentID ownersNetId, float lifetime, float randomSpread) {
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
 

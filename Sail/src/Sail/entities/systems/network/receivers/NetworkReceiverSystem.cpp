@@ -11,6 +11,8 @@
 #include "Network/NWrapperSingleton.h"
 #include "Sail/netcode/ArchiveTypes.h"
 
+#include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
@@ -191,11 +193,13 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
+				Netcode::ComponentID projectileOwnerID;
+
 				ArchiveHelpers::loadVec3(ar, gunPosition);
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
+				ar(projectileOwnerID);
 
-
-				projectileSpawned(gunPosition, gunVelocity);
+				projectileSpawned(gunPosition, gunVelocity, projectileOwnerID);
 			}
 			break;
 			case Netcode::MessageType::PLAYER_DIED:
@@ -203,7 +207,7 @@ void NetworkReceiverSystem::update() {
 				Netcode::PlayerID playerIdOfShooter;
 				Netcode::ComponentID networkIdOfKilled;
 
-				ar(networkIdOfKilled); // Recieve
+				ar(networkIdOfKilled); // Receive
 				ar(playerIdOfShooter);
 				playerDied(networkIdOfKilled, playerIdOfShooter);
 			}
@@ -427,11 +431,13 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 	}
 }
 
-void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir) {
+
+// If I requested the projectile it has a local owner
+void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Netcode::ComponentID ownerID) {
+	bool wasRequestedByMe = (Netcode::getComponentOwner(ownerID) == m_playerID);
+
 	// Also play the sound
-
-
-	EntityFactory::CreateProjectile(pos, dir, false, 100, 4, 0); //Owner id not set, 100 for now.
+	EntityFactory::CreateProjectile(pos, dir, wasRequestedByMe, ownerID);
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
@@ -489,7 +495,10 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 	}
 }
 
-void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool b, const glm::vec3& pos) {
+
+// The player who puts down their candle does this in CandleSystem and tests collisions
+// The candle will be moved for everyone else in here
+void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isHeld, const glm::vec3& pos) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -498,10 +507,20 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool b, 
 		for (int i = 0; i < e->getChildEntities().size(); i++) {
 			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
 				auto candleComp = candleE->getComponent<CandleComponent>();
+				auto candleTransComp = candleE->getComponent<TransformComponent>();
 
-				candleComp->setCarried(b);
-				if (!b) {
-					candleE->getComponent<TransformComponent>()->setTranslation(pos);
+
+				candleComp->setCarried(isHeld);
+				candleComp->setWasCarriedLastUpdate(isHeld);
+				if (!isHeld) {
+					candleTransComp->removeParent();
+					candleTransComp->setStartTranslation(pos);
+
+					// Might be needed
+					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+				} else {
+					candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
+					candleTransComp->setParent(e->getComponent<TransformComponent>());
 				}
 				return;
 			}
