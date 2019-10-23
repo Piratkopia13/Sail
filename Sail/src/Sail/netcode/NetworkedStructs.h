@@ -45,18 +45,19 @@ namespace Netcode {
 	// The message type decides how the subsequent data will be parsed and used
 	enum class MessageType : __int32 {
 		CREATE_NETWORKED_ENTITY = 1,
-		MODIFY_TRANSFORM        = 2,
-		SPAWN_PROJECTILE        = 3,
-		ROTATION_TRANSFORM      = 4,
-		PLAYER_JUMPED           = 5,
-		WATER_HIT_PLAYER        = 6,
-		SET_CANDLE_HEALTH       = 7,
-		PLAYER_DIED             = 8,
-		PLAYER_DISCONNECT       = 9,
-		MATCH_ENDED             = 10,
-		CANDLE_HELD_STATE       = 11,
-		SEND_ALL_BACK_TO_LOBBY  = 12,
-		EMPTY                   = 69
+		MODIFY_TRANSFORM,
+		SPAWN_PROJECTILE,
+		ROTATION_TRANSFORM,
+		ANIMATION,
+		PLAYER_JUMPED,
+		WATER_HIT_PLAYER,
+		SET_CANDLE_HEALTH,
+		PLAYER_DIED,
+		PLAYER_DISCONNECT,
+		MATCH_ENDED,
+		CANDLE_HELD_STATE,
+		SEND_ALL_BACK_TO_LOBBY,
+		EMPTY = 69
 	};
 
 	/*
@@ -156,5 +157,6 @@ namespace Netcode {
 		~MessageDataPlayerDisconnect() {}
 		PlayerID playerID;
 	};
+
 }
 

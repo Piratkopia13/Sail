@@ -12,6 +12,13 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/Application.h"
 
+#include "../../Physics/Octree.h"
+#include "Sail/Application.h"
+#include "../../Physics/Intersection.h"
+#include "../../Physics/Physics.h"
+
+#include "glm/gtx/vector_angle.hpp"
+
 CandleSystem::CandleSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<CandleComponent>(true, true, true);
@@ -63,6 +70,37 @@ void CandleSystem::update(float dt) {
 							true
 						);
 
+						////This should remove the candle entity from game
+						//e->getParent()->removeDeleteAllChildren();
+
+						//// Check if the extinguished candle is owned by the player
+						//if (e->getParent()->getComponent<NetworkReceiverComponent>()->m_id >> 18 == NWrapperSingleton::getInstance().getMyPlayerID()) {
+						//	//If it is me that died, become spectator.
+						//	e->getParent()->addComponent<SpectatorComponent>();
+						//	e->getParent()->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
+						//	e->getParent()->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
+						//	e->getParent()->removeComponent<GunComponent>();
+
+
+						// TODO: Move this to receiversystem
+							// Get position and rotation to look at middle of the map from above
+							{
+								auto parTrans = e->getParent()->getComponent<TransformComponent>();
+								auto pos = glm::vec3(parTrans->getMatrix()[3]);
+								pos.y = 20.f;
+								parTrans->setTranslation(pos);
+								MapComponent temp;
+								auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
+								auto dir = glm::normalize(middleOfLevel - pos);
+								auto rots = Utils::getRotations(dir);
+								parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+							}
+
+						//} else {
+						//	//If it wasnt me that died, compleatly remove the player entity from game.
+						//	e->getParent()->queueDestruction();
+						//}
+
 						if (LivingCandles <= 1) { // Match IS over
 							//TODO: move MATCH_ENDED event to host side and not to client side.
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -112,11 +150,58 @@ void CandleSystem::putDownCandle(Entity* e) {
 	/* TODO: Raycast and see if the hit location is ground within x units */
 	if (!candleComp->isCarried()) {
 		if (candleComp->getIsLit()) {
+			// Get the yaw-angle of the player to get a direction vector
 			float yaw = -candleTransComp->getParent()->getRotations().y;
-			glm::vec3 dir = glm::vec3(cos(yaw), 0.f, sin(yaw));
-			candleTransComp->removeParent();			
-			candleTransComp->setTranslation(parentTransComp->getTranslation() + dir);
-			ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+			glm::vec3 dir = glm::normalize(glm::vec3(cos(yaw), 0.f, sin(yaw)));
+			auto parentPos = parentTransComp->getMatrix()[3];
+
+			glm::vec3 candleTryPosition = glm::vec3(parentPos.x + dir.x, parentPos.y, parentPos.z + dir.z);
+
+			bool blocked = false;
+			glm::vec3 down(0.f, -1.f, 0.f);
+			float heightOffsetFromPlayerFeet = 1.f;
+
+			{
+				Octree::RayIntersectionInfo tempInfo;
+				// Shoot a ray straight down 1 meter ahead of the player to check for floor
+				m_octree->getRayIntersection(glm::vec3(candleTryPosition.x, candleTryPosition.y + heightOffsetFromPlayerFeet, candleTryPosition.z), down, &tempInfo, nullptr, 0.01f);
+				if (tempInfo.closestHitIndex != -1) {
+					float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].normal, -down);
+					// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
+					bool isFloor = (floorCheckVal < 0.1f) ? true : false;
+					if (!isFloor) {
+						blocked = true;
+					} else {
+						// Update the height of the candle position
+						candleTryPosition.y = candleTryPosition.y + (heightOffsetFromPlayerFeet - tempInfo.closestHit);
+					}
+				} else {
+					blocked = true;
+				}
+			}
+
+			{
+				Octree::RayIntersectionInfo tempInfo;
+				// Check if the position is visible for the player
+				auto playerHead = glm::vec3(parentPos.x, parentPos.y + 1.8f, parentPos.z);
+				auto playerHeadToCandle = candleTryPosition - playerHead;
+				float eps = 0.0001f;
+				m_octree->getRayIntersection(playerHead, glm::normalize(playerHeadToCandle), &tempInfo, nullptr);
+				float phtcLength = glm::length(playerHeadToCandle);
+				if (tempInfo.closestHit - phtcLength + eps < 0.f) {
+					// Can't see the position where we try to place the candle
+					blocked = true;
+				}
+			}
+
+			// Place down the candle if it's not blocked
+			if (!blocked) {
+				candleTransComp->removeParent();
+				candleTransComp->setTranslation(candleTryPosition);
+				ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+			} else {
+				candleComp->setCarried(true);
+			}
 		} else {
 			candleComp->setCarried(true);
 		}
@@ -141,7 +226,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 	}
 }
 
-void CandleSystem::init(GameState* gameStatePtr) {
-
+void CandleSystem::init(GameState* gameStatePtr, Octree* octree) {
+	m_octree = octree;
 	this->setGameStatePtr(gameStatePtr);
 }

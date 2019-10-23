@@ -39,7 +39,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//m_player = player.get();.
 
 	// PlayerComponent is added to this entity to indicate that this is the player playing at this location, not a network connected player
-	//player->addComponent<LocalPlayerComponent>();
+	//player->addComponent<LocalPlayerComponent>();.
 
 	player->addComponent<TransformComponent>();
 
@@ -50,10 +50,11 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID
 	);
+	player->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::ANIMATION);
 	Netcode::ComponentID netComponentID = player->getComponent<NetworkSenderComponent>()->m_id;
 	player->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	
-	player->addComponent<LocalOwnerComponent>(player->getComponent<NetworkSenderComponent>()->m_id);
+	player->addComponent<LocalOwnerComponent>(netComponentID);
 
 	// Add physics components and setting initial variables
 	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
@@ -75,11 +76,13 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	sound.soundEffectLength = 1.0f;
 	sound.volume = 0.5f;
 	sound.playOnce = false;
+	sound.positionalOffset = { 0.0f, -1.6f, 0.0f };
 	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
 
 	sound.fileName = "../Audio/jump.wav";
 	sound.soundEffectLength = 0.7f;
 	sound.playOnce = true;
+	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
 	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
 
 	// Create candle for the player

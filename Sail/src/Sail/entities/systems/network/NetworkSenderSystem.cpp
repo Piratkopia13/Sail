@@ -33,6 +33,10 @@ void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem
 	m_receiverSystem = receiverSystem;
 }
 
+void NetworkSenderSystem::initPlayerEntity(Entity* pPlayerEntity) {
+	m_playerEntity = pPlayerEntity;
+}
+
 /*
   The construction of messages needs to match how the NetworkReceiverSystem parses them so
   any changes made here needs to be made there as well!
@@ -166,6 +170,9 @@ void NetworkSenderSystem::pushDataToBuffer(std::string data) {
 	m_HOSTONLY_dataToForward.push(data);
 }
 
+const std::vector<Entity*>& NetworkSenderSystem::getEntities() const {
+	return entities;
+}
 
 // TODO: Test this to see if it's actually needed or not/l
 void NetworkSenderSystem::stop() {
@@ -234,6 +241,18 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		ArchiveHelpers::archiveVec3(*ar, t->getRotations());	// Send rotation
 	}
 	break;
+	case Netcode::MessageType::ANIMATION:
+	{
+		// CURRENTLY IS:
+		(*ar)(0);		// AnimationStack
+		(*ar)(0.0f);	// AnimationTime
+
+		// SHOULD BE:
+	//	AnimationComponent* a = e->getComponent<AnimationComponent>();
+	//	(*ar)(a->getAnimationStack());					// Animation Stack
+	//	(*ar)(a->animationTime);						// Animation Time
+	}
+	break;
 	default:
 		break;
 	}
@@ -255,6 +274,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED:
 	{
+		(*ar)(m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID);
 		// No need to send additional info here, we(this computer) made the jump.
 	}
 	break;

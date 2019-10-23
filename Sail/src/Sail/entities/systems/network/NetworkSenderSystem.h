@@ -26,12 +26,17 @@ public:
 	
 	void queueEvent(NetworkSenderEvent* event);
 	void pushDataToBuffer(std::string data);
+	
+	// TODO: Is this used?
+	const std::vector<Entity*>& getEntities() const;
 
 	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
 private:
 	void writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive* ar);
 	void writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive* ar);
 	
+
+
 private:
 	Netcode::PlayerID m_playerID;
 	std::queue<NetworkSenderEvent*> m_eventQueue;

@@ -167,8 +167,8 @@ void AudioEngine::updateSoundWithCurrentPosition(int index, Camera& cam, const T
 
 	glm::vec3 soundPos = transform.getInterpolatedTranslation(alpha);
 
-	// If the sound has an offset position from the entity's transform then rotate the offset with the transform's rotation and add it to the position
-	//if (m_sound[index].positionOffset != glm::vec3(0, 0, 0)) {
+	// If the sound has an offset position from the entity's transform then
+	// rotate the offset with the transform's rotation and add it to the position.
 	if (positionOffset != glm::vec3(0, 0, 0)) {
 		soundPos += glm::rotate(transform.getInterpolatedRotation(alpha), positionOffset);
 	}

@@ -93,6 +93,8 @@ void NetworkReceiverSystem::update() {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
+	int animationStack;
+	float animationTime;
 
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
@@ -143,6 +145,14 @@ void NetworkReceiverSystem::update() {
 					setEntityRotation(id, rotation);
 				}
 				break;
+				case Netcode::MessageType::ANIMATION: 
+				{
+					ar(animationStack);		// Read
+					ar(animationTime);		//
+					setEntityAnimation(id, animationStack, animationTime);
+				}
+				/* Case Animation Data, int, float */
+				break;
 				default:
 					break;
 				}
@@ -166,7 +176,8 @@ void NetworkReceiverSystem::update() {
 			switch (eventType) {
 			case Netcode::MessageType::PLAYER_JUMPED:
 			{
-				//	playerJumped(netObjectID);
+				ar(netObjectID);
+				playerJumped(netObjectID);
 			}
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
@@ -181,7 +192,8 @@ void NetworkReceiverSystem::update() {
 				ArchiveHelpers::loadVec3(ar, gunPosition);
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
 
-				EntityFactory::CreateProjectile(gunPosition, gunVelocity, false, 100, 4, 0); //Owner id not set, 100 for now.
+
+				projectileSpawned(gunPosition, gunVelocity);
 			}
 			break;
 			case Netcode::MessageType::PLAYER_DIED:
@@ -244,7 +256,7 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 
 	// -------------------------------------------
 	// TODO: THIS SECTION SHOULD BE A PART OF ENTITY FACTORY
-	std::string modelName = "DocGunRun4.fbx";
+	std::string modelName = "Doc.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
 	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
@@ -277,15 +289,30 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 	{
 		e->addComponent<ModelComponent>(characterModel);
 		AnimationComponent* ac = e->addComponent<AnimationComponent>(stack);
-		ac->currentAnimation = stack->getAnimation(1);
+		ac->currentAnimation = stack->getAnimation(3);
 		e->addComponent<TransformComponent>(translation);
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 		e->addComponent<CollidableComponent>();
 
 		// Adding audio component and adding all sounds attached to the player entity
 		e->addComponent<AudioComponent>();
-		// e->getComponent<AudioComponent>()->defineSound(SoundType::RUN, "../Audio/footsteps_1.wav", 0.94f, false);
-		// e->getComponent<AudioComponent>()->defineSound(SoundType::JUMP, "../Audio/jump.wav", 0.0f, true);
+
+		// RUN Sound
+		Audio::SoundInfo sound{};
+		sound.fileName = "../Audio/footsteps_1.wav";
+		sound.soundEffectLength = 1.0f;
+		sound.volume = 0.5f;
+		sound.playOnce = false;
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
+		// JUMP Sound
+		sound.fileName = "../Audio/jump.wav";
+		sound.soundEffectLength = 0.7f;
+		sound.playOnce = true;
+		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
+		// SHOOT sound
+		sound.fileName = "../Audio/testSoundShoot.wav";
+		sound.soundEffectLength = 1.0f;
+		sound.playOnce = true;
 
 		//creates light with model and pointlight
 		auto light = ECS::Instance()->createEntity("ReceiverLight");
@@ -314,24 +341,8 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 // Might need some optimization (like sorting) if we have a lot of networked entities
 void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const glm::vec3& translation) {
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
-			continue;
-		}
-
-		glm::vec3 pos = e->getComponent<TransformComponent>()->getTranslation();
-		auto animation = e->getComponent<AnimationComponent>();
-		auto animationStack = animation->getAnimationStack();
-
-		if (pos != translation) {
-			if (animation->currentAnimation == animationStack->getAnimation(0) && animation->transitions.size() == 0) {
-				animation->transitions.emplace(animationStack->getAnimation(1), 0.01f, false);
-			}
-		} else {
-			if (animation->currentAnimation == animationStack->getAnimation(1) && animation->transitions.size() == 0) {
-				animation->transitions.emplace(animationStack->getAnimation(0), 0.01f, false);
-			}
-		}
-		e->getComponent<TransformComponent>()->setTranslation(translation);
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<TransformComponent>()->setTranslation(translation);
 
 		break;
 	}
@@ -339,19 +350,28 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const 
 
 void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
-			continue;
-		}
-		//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
-		//TODO: REMOVE
-		//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
-		glm::vec3 rot = rotation;
-		if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
+			//TODO: REMOVE
+			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
+			glm::vec3 rot = rotation;
+			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
 			rot.y += 3.14f * 0.5f;
-		}
-		e->getComponent<TransformComponent>()->setRotations(rot);
-		break;
+			//}
+			e->getComponent<TransformComponent>()->setRotations(rot);
 
+			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::setEntityAnimation(Netcode::NetworkObjectID id, int animationStack, float animationTime) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			auto animation = e->getComponent<AnimationComponent>();
+			animation->currentAnimation = animation->getAnimationStack()->getAnimation(animationStack);
+			animation->animationTime = animationTime;
+		}
 	}
 }
 
@@ -359,7 +379,8 @@ void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 	// How do i trigger a jump from here?
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			//	e->getComponent<AudioComponent>()->m_isPlaying[SoundType::JUMP] = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
 
 			break;
 		}
@@ -372,7 +393,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
 		}
-
 		//Look for the entity that IS the candle (candle entity)
 		std::vector<Entity::SPtr> childEntities = e->getChildEntities();
 		for (auto& child : childEntities) {
@@ -385,6 +405,13 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id) {
 		}
 		break;
 	}
+}
+
+void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir) {
+	// Also play the sound
+
+
+	EntityFactory::CreateProjectile(pos, dir, false, 100, 4, 0); //Owner id not set, 100 for now.
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::ComponentID id) {
@@ -447,6 +474,8 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool b, 
 
 	}
 }
+
+
 void NetworkReceiverSystem::matchEnded() {
 	m_gameStatePtr->requestStackPop();
 	m_gameStatePtr->requestStackPush(States::EndGame);

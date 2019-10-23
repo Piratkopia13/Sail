@@ -36,11 +36,15 @@ private:
 	void createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation);
 	void setEntityTranslation(Netcode::ComponentID id, const glm::vec3& translation);
 	void setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation);
+	void setEntityAnimation(Netcode::NetworkObjectID id, int animationStack, float animationTime);
 	void playerJumped(Netcode::ComponentID id);
 	void waterHitPlayer(Netcode::ComponentID id);
+	void projectileSpawned(glm::vec3& pos, glm::vec3 vel);
 	void playerDied(Netcode::ComponentID id);
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
+	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
+
 	void matchEnded();
 	void backToLobby();
 

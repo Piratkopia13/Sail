@@ -5,6 +5,7 @@
 class Scene;
 class Model;
 struct rect;
+struct clutter;
 
 enum TileModel {
 	ROOM_FLOOR,
@@ -18,6 +19,13 @@ enum TileModel {
 	CORRIDOR_CEILING,
 	CORRIDOR_CORNER,
 	NUMBOFMODELS
+};
+
+enum ClutterModel {
+	CLUTTER_LO,
+	CLUTTER_MO,
+	CLUTTER_SO,
+	NUMBOFCLUTTER
 };
 
 enum Direction {
@@ -35,6 +43,7 @@ public:
 
 	void generateMap();
 	void createWorld(const std::vector<Model*>& tileModels, Model* bb);
+	void addClutterModel(const std::vector<Model*>& clutterModels, Model* bb);
 
 	glm::vec3 getSpawnPoint();
 
@@ -48,7 +57,8 @@ private:
 	bool splitDirection(bool ns);
 	void addSpawnPoints();
 	void addDoors();
-	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize, int tileOffset, int i, int j, Model* bb);
-	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize, float tileOffset, int i, int j, Model* bb);
+	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize,float tileHeight, int tileOffset, int i, int j, Model* bb);
+	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize,float tileHeight, float tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
+	void generateClutter();
 };
