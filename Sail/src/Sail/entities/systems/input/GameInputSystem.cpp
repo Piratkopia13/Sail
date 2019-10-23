@@ -115,18 +115,14 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 				if (onGroundTimer > onGroundThreshold) {
 					onGroundTimer = onGroundThreshold;
-				}
-				else {
+				} else {
 					onGroundTimer += dt;
 				}
-			}
-
-			else if (!collision->onGround) {
+			} else if (!collision->onGround) {
 				if (onGroundTimer < 0.0f) {
 					onGroundTimer = 0.0f;
 					isPlayingRunningSound = false;
-				}
-				else {
+				} else {
 					onGroundTimer -= dt;
 				}
 				
@@ -142,7 +138,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					//	// Add networkcomponent for jump 
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_JUMPED,
-						nullptr	// Don't need to send id that 'we' jumped, it is deducable
+						SAIL_NEW Netcode::MessagePlayerJumped{e->getComponent<NetworkSenderComponent>()->m_id},
+						false // Don't delay the jump for ourselves, handle the logic here
 					);
 					m_gameDataTracker->logJump();
 				}

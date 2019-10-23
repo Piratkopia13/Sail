@@ -33,10 +33,6 @@ void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem
 	m_receiverSystem = receiverSystem;
 }
 
-void NetworkSenderSystem::initPlayerEntity(Entity* pPlayerEntity) {
-	m_playerEntity = pPlayerEntity;
-}
-
 /*
   The construction of messages needs to match how the NetworkReceiverSystem parses them so
   any changes made here needs to be made there as well!
@@ -258,15 +254,13 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	}
 }
 
-
-
 void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive* ar) {
 	(*ar)(event->type); // Send the event-type
 
 	switch (event->type) {
 	case Netcode::MessageType::SPAWN_PROJECTILE:
 	{
-		Netcode::MessageDataProjectile* data = static_cast<Netcode::MessageDataProjectile*>(event->data);
+		Netcode::MessageSpawnProjectile* data = static_cast<Netcode::MessageSpawnProjectile*>(event->data);
 
 		ArchiveHelpers::archiveVec3(*ar, data->translation);
 		ArchiveHelpers::archiveVec3(*ar, data->velocity);
@@ -274,27 +268,28 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED:
 	{
-		(*ar)(m_playerEntity->getComponent<LocalOwnerComponent>()->netEntityID);
-		// No need to send additional info here, we(this computer) made the jump.
+		Netcode::MessagePlayerJumped* data = static_cast<Netcode::MessagePlayerJumped*>(event->data);
+
+		(*ar)(data->playerWhoJumped);
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		Netcode::MessageDataWaterHitPlayer* data = static_cast<Netcode::MessageDataWaterHitPlayer*>(event->data);
+		Netcode::MessageWaterHitPlayer* data = static_cast<Netcode::MessageWaterHitPlayer*>(event->data);
 
 		(*ar)(data->playerWhoWasHitID);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
 	{
-		Netcode::MessageDataPlayerDied* data = static_cast<Netcode::MessageDataPlayerDied*>(event->data);
+		Netcode::MessagePlayerDied* data = static_cast<Netcode::MessagePlayerDied*>(event->data);
 
 		(*ar)(data->playerWhoDied); // Send
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DISCONNECT:
 	{
-		Netcode::MessageDataPlayerDisconnect* data = static_cast<Netcode::MessageDataPlayerDisconnect*>(event->data);
+		Netcode::MessagePlayerDisconnect* data = static_cast<Netcode::MessagePlayerDisconnect*>(event->data);
 
 		(*ar)(data->playerID); // Send
 	}
@@ -311,7 +306,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	break;
 	case Netcode::MessageType::CANDLE_HELD_STATE:
 	{
-		Netcode::MessageDataCandleHeldState* data = static_cast<Netcode::MessageDataCandleHeldState*>(event->data);
+		Netcode::MessageCandleHeldState* data = static_cast<Netcode::MessageCandleHeldState*>(event->data);
 
 		(*ar)(data->candleOwnerID);
 		(*ar)(data->isHeld);

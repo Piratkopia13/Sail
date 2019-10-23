@@ -123,8 +123,6 @@ GameState::GameState(StateStack& stack)
 	}
 
 	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
-	m_componentSystems.networkReceiverSystem->initPlayer(m_player);
-	m_componentSystems.networkSenderSystem->initPlayerEntity(m_player);
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
@@ -510,7 +508,7 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 				{
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_DISCONNECT,
-						SAIL_NEW Netcode::MessageDataPlayerDisconnect{
+						SAIL_NEW Netcode::MessagePlayerDisconnect{
 							event.getPlayerID()
 						}
 					);

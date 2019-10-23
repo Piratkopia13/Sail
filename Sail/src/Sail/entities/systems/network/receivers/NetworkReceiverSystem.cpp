@@ -5,6 +5,7 @@
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Sail/entities/components/MapComponent.h"
 #include "../SPLASH/src/game/states/GameState.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -35,10 +36,6 @@ void NetworkReceiverSystem::init(Netcode::PlayerID playerID, GameState* gameStat
 	m_playerID = playerID;
 	m_gameStatePtr = gameStatePtr;
 	m_netSendSysPtr = netSendSysPtr;
-}
-
-void NetworkReceiverSystem::initPlayer(Entity* pPlayerEntity) {
-	m_playerEntity = pPlayerEntity;
 }
 
 const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
@@ -163,7 +160,7 @@ void NetworkReceiverSystem::update() {
 		// Receive 'one-time' events
 		size_t nrOfEvents;
 		Netcode::MessageType eventType;
-		Netcode::ComponentID netObjectID;
+		Netcode::ComponentID componentID;
 
 
 		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
@@ -176,8 +173,8 @@ void NetworkReceiverSystem::update() {
 			switch (eventType) {
 			case Netcode::MessageType::PLAYER_JUMPED:
 			{
-				ar(netObjectID);
-				playerJumped(netObjectID);
+				ar(componentID);
+				playerJumped(componentID);
 			}
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
@@ -198,8 +195,8 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::PLAYER_DIED:
 			{
-				ar(netObjectID);
-				playerDied(netObjectID);
+				ar(componentID);
+				playerDied(componentID);
 			}
 			break;
 			case Netcode::MessageType::MATCH_ENDED:
@@ -211,11 +208,12 @@ void NetworkReceiverSystem::update() {
 			{
 				glm::vec3 candlepos;
 				bool isCarried;
-				ar(netObjectID);
 
+				ar(componentID);
 				ar(isCarried);
 				ArchiveHelpers::loadVec3(ar, candlepos);
-				setCandleHeldState(netObjectID, isCarried, candlepos);
+				
+				setCandleHeldState(componentID, isCarried, candlepos);
 			}
 			break;
 			case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
@@ -343,8 +341,8 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const 
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			e->getComponent<TransformComponent>()->setTranslation(translation);
-
-		break;
+			break;
+		}
 	}
 }
 
@@ -365,7 +363,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 	}
 }
 
-void NetworkReceiverSystem::setEntityAnimation(Netcode::NetworkObjectID id, int animationStack, float animationTime) {
+void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			auto animation = e->getComponent<AnimationComponent>();
@@ -429,6 +427,17 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID id) {
 			e->addComponent<SpectatorComponent>();
 			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
 			e->removeComponent<GunComponent>();
+
+			auto transform = e->getComponent<TransformComponent>();
+			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
+			pos.y = 20.f;
+			transform->setTranslation(pos);
+			MapComponent temp;
+			auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
+			auto dir = glm::normalize(middleOfLevel - pos);
+			auto rots = Utils::getRotations(dir);
+			transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+
 		} else {
 			//If it wasn't me that died, completely remove the player entity from game.
 			e->queueDestruction();

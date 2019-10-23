@@ -114,47 +114,55 @@ namespace Netcode {
 		virtual ~MessageData() {}
 	};
 
-	class MessageDataProjectile : public MessageData {
+	class MessageSpawnProjectile : public MessageData {
 	public:
-		MessageDataProjectile(glm::vec3 translation_, glm::vec3 velocity_)
+		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_)
 			: translation(translation_), velocity(velocity_)
 		{}
-		virtual ~MessageDataProjectile() {}
+		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
 	};
 
-	class MessageDataWaterHitPlayer : public MessageData {
+	class MessageWaterHitPlayer : public MessageData {
 	public:
-		MessageDataWaterHitPlayer(Netcode::ComponentID id)
+		MessageWaterHitPlayer(Netcode::ComponentID id)
 			: playerWhoWasHitID(id)
 		{}
-		~MessageDataWaterHitPlayer() {}
+		~MessageWaterHitPlayer() {}
 
 		Netcode::ComponentID playerWhoWasHitID;
 	};
 
-	class MessageDataPlayerDied : public MessageData {
+
+	class MessagePlayerJumped : public MessageData {
 	public:
-		MessageDataPlayerDied(Netcode::ComponentID id) : playerWhoDied(id) {}
-		~MessageDataPlayerDied() {}
+		MessagePlayerJumped(Netcode::ComponentID id) : playerWhoJumped(id) {}
+		~MessagePlayerJumped() {}
+		Netcode::ComponentID playerWhoJumped;
+	};
+
+	class MessagePlayerDied : public MessageData {
+	public:
+		MessagePlayerDied(Netcode::ComponentID id) : playerWhoDied(id) {}
+		~MessagePlayerDied() {}
 		Netcode::ComponentID playerWhoDied;
 	};
 
-	class MessageDataCandleHeldState : public MessageData {
+	class MessageCandleHeldState : public MessageData {
 	public:
-		MessageDataCandleHeldState(Netcode::ComponentID id, bool b, glm::vec3 pos) : candleOwnerID(id), isHeld(b), candlePos(pos) {}
-		~MessageDataCandleHeldState() {}
+		MessageCandleHeldState(Netcode::ComponentID id, bool b, glm::vec3 pos) : candleOwnerID(id), isHeld(b), candlePos(pos) {}
+		~MessageCandleHeldState() {}
 		Netcode::ComponentID candleOwnerID;
 		bool isHeld;
 		glm::vec3 candlePos;
 	};
 
-	class MessageDataPlayerDisconnect : public MessageData {
+	class MessagePlayerDisconnect : public MessageData {
 	public:
-		MessageDataPlayerDisconnect(PlayerID id) : playerID(id) {}
-		~MessageDataPlayerDisconnect() {}
+		MessagePlayerDisconnect(PlayerID id) : playerID(id) {}
+		~MessagePlayerDisconnect() {}
 		PlayerID playerID;
 	};
 

@@ -15,7 +15,6 @@ public:
 	virtual void pushDataToBuffer(std::string data) = 0;
 
 	void init(Netcode::PlayerID playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
-	void initPlayer(Entity* pPlayerEntity);
 
 	const std::vector<Entity*>& getEntities() const;
 
@@ -30,13 +29,11 @@ protected:
 
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
 	Netcode::PlayerID m_playerID;
-
-	Entity* m_playerEntity = nullptr;
 private:
 	void createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation);
 	void setEntityTranslation(Netcode::ComponentID id, const glm::vec3& translation);
 	void setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation);
-	void setEntityAnimation(Netcode::NetworkObjectID id, int animationStack, float animationTime);
+	void setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime);
 	void playerJumped(Netcode::ComponentID id);
 	void waterHitPlayer(Netcode::ComponentID id);
 	void projectileSpawned(glm::vec3& pos, glm::vec3 vel);
