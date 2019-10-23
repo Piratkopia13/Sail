@@ -1,5 +1,8 @@
 #include "PBR.hlsl"
 
+#define WATER_ON_WALLS
+// #define WATER_DEBUG
+
 float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor) {
     float3 shadedColor = float3(0.f, 0.f, 0.f);
 	
@@ -52,36 +55,31 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	// Ray direction for first ray when cast from GBuffer must be calculated using camera position
 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
 
+#ifdef WATER_ON_WALLS
 	// =================================================
 	//  Render pixel as water if close to a water point
 	// =================================================
 
-	static const float3 mapSize = float3(56.f, 10.f, 56.f);
 	static const float3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z) - 1;
-	static const float3 mapStart = float3(-3.5f, 0.0f, -3.5f);
-	static const float cutoff = 0.3f;
+	static const float cutoff = 0.2f;
 
-	float3 cellWorldSize = mapSize / arrSize;
-	cellWorldSize.x /= 4.f;
-	
-	// float3 floatIndMin = ((worldPosition - mapStart) / mapSize) * arrSize;
-	// float3 floatIndMax = ((worldPosition - mapStart) / mapSize) * arrSize;
-	// int3 ind = floor(( (worldPosition - mapStart) / mapSize) * arrSize);
-	// int3 indMin = ind;
-	// int3 indMax = ind;
-	float3 floatIndMin = ((worldPosition - cutoff - mapStart) / mapSize) * arrSize;
-	float3 floatIndMax = ((worldPosition + cutoff - mapStart) / mapSize) * arrSize;
+	float3 cellWorldSize = CB_SceneData.mapSize / arrSize;
+	cellWorldSize.x *= 0.25f;
+
+#ifdef WATER_DEBUG
+	float3 floatIndMin = ((worldPosition - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize;
+	float3 floatIndMax = ((worldPosition - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize;
+	int3 ind = floor(( (worldPosition - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize);
+	int3 indMin = ind;
+	int3 indMax = ind;
+#else
+	float3 floatIndMin = ((worldPosition - cutoff - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize;
+	float3 floatIndMax = ((worldPosition + cutoff - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize;
 	int3 indMin = floor(floatIndMin);
 	int3 indMax = ceil(floatIndMax);
-	// indMin.x = floor(indMin.x / 4);
-	// indMax.x = ceil(indMax.x / 4);
+#endif
 
 	float3 normalOffset = 0.f;
-
-	// uint xStart = indMin.x - indMin.x % 4;
-	// uint xEnd = indMax.x + indMax.x % 4;
-	// uint xEnd = indMax.x + indMax.x % 4;
-
 	float sum = 0.f;
 	for (int z = indMin.z; z <= indMax.z; z++) {
 		for (int y = indMin.y; y <= indMax.y; y++) {
@@ -95,14 +93,11 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 
 				[unroll]
 				for (uint index = start; index <= end; index++) {
-					// uint index = 0;
-					// half r = Utils::unpackQuarterFloat(0.f, index); // 1 / 1 = 1
-					// uint res = Utils::unpackQuarterFloat(0xFFFFFFFFU, index); // 1 / 255 = 0.0039
 					uint up = Utils::unpackQuarterFloat(packedR, index);
 					if (up < 255) {
-						half r = (255 - up) / 255;
+						half r = (255.h - up) * 0.00392156863h; // That last wierd one is 1 / 255
 						// r = 1.0f;
-						float3 waterPointWorldPos = float3(x*4+index + 0.5f,y,z+0.5f) * cellWorldSize + mapStart;
+						float3 waterPointWorldPos = (float3(x*4+index,y,z) + 0.5f) * cellWorldSize + CB_SceneData.mapStart;
 
 						float3 dstV = waterPointWorldPos - worldPosition;
 						float dstSqrd = dot(dstV, dstV);
@@ -111,26 +106,27 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 							float charge = 1.f-(dstSqrd * (1.f / r))*10.f; // CHARGE2: can handle changing blob sizes
 							sum += charge * charge;
 							normalOffset += normalize(-dstV);
-							normalOffset += normalize(float3(x*4+index+0.5f,y,z+0.5f) - indMin);
+							normalOffset += normalize(float3(x*4+index,y,z) + 0.5f - indMin);
 						}
 					}
 				}
-
 			}
 		}
 	}
 
 	if (sum > 0.8f) {
+#ifdef WATER_DEBUG
+		payload.color = float4(1.0f, 0.f, 0.f, 1.0f);
+		return;
+#endif
 		float waterOpacity = clamp(sum / 1.f, 0.f, 0.8f);
-		// payload.color = float4(1.0f, 0.f, 0.f, 1.0f);
-		// return;
 
 		// Shade as water
 
-		metalness = lerp(metalness, 1.0f, waterOpacity);
-		roughness = lerp(roughness, 0.01f, waterOpacity);
-		ao 		  = lerp(ao, 0.5f, waterOpacity);
-		albedo = lerp(albedo, albedo * 0.8f, waterOpacity);
+		metalness = lerp(metalness, 1.0f, 			waterOpacity);
+		roughness = lerp(roughness, 0.01f, 			waterOpacity);
+		ao 		  = lerp(ao, 		0.5f, 			waterOpacity);
+		albedo 	  = lerp(albedo, 	albedo * 0.8f,  waterOpacity);
 
 		float height = 1.6f; // normal smoothness / water "height" apperance
 		worldNormal += normalize(normalOffset) * clamp( ( -height*sum + 2.f ), 0.0f, 0.8f);
@@ -139,6 +135,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 		// roughness = 0.01f;
 		// ao = 0.5f;
 	}
+#endif
 	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
 	// payload.color = float4(worldNormal * 0.5f + 0.5f, 1.0f);
 	// payload.color = phongShade(worldPosition, worldNormal, albedo);

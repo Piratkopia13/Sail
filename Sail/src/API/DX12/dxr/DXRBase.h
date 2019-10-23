@@ -31,7 +31,7 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const glm::vec3& mapSize, const glm::vec3& mapStart);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();

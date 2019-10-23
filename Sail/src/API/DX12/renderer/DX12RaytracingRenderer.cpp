@@ -5,6 +5,7 @@
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "Sail/KeyBinds.h"
+#include "Sail/entities/components/MapComponent.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
@@ -83,7 +84,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}*/
 
 	if (camera && lightSetup) {
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions);
+		static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
+		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballpositions, mapSize, mapStart);
 	}
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();

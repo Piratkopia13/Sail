@@ -7,6 +7,7 @@
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "../renderer/DX12GBufferRenderer.h"
+#include "Sail/entities/components/MapComponent.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 	: m_shaderFilename(shaderFilename)
@@ -203,7 +204,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const glm::vec3& mapSize, const glm::vec3& mapStart) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs);
 
@@ -217,6 +218,8 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 	newData.nMetaballs = m_metaballsToRender;
 	newData.nDecals = m_decalsToRender;
+	newData.mapSize = mapSize;
+	newData.mapStart = mapStart;
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
@@ -232,15 +235,15 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 }
 
 void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
-	static const glm::vec3 mapSize(56.f, 10.f, 56.f);
+	static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
+	static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
 	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
-	static const glm::vec3 mapStart(-3.5f, 0.f, -3.5f);
 
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
 	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
-	glm::i32vec3 ind = round(floatInd);
+	glm::i32vec3 ind = floor(floatInd);
 	//ind.x = glm::floor(ind.x / 4.f); // We pack four radii in each float
-	int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
+	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
 	
 	uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
 	uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
