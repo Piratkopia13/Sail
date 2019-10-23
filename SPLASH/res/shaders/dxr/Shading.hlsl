@@ -72,7 +72,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 	float3 floatIndMin = ((worldPosition - cutoff - mapStart) / mapSize) * arrSize;
 	float3 floatIndMax = ((worldPosition + cutoff - mapStart) / mapSize) * arrSize;
 	int3 indMin = floor(floatIndMin);
-	int3 indMax = floor(floatIndMax);
+	int3 indMax = ceil(floatIndMax);
 	// indMin.x = floor(indMin.x / 4);
 	// indMax.x = ceil(indMax.x / 4);
 
@@ -102,7 +102,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 					if (up < 255) {
 						half r = (255 - up) / 255;
 						// r = 1.0f;
-						float3 waterPointWorldPos = float3(x*4+index + 0.5f,y,z) * cellWorldSize + mapStart;
+						float3 waterPointWorldPos = float3(x*4+index + 0.5f,y,z+0.5f) * cellWorldSize + mapStart;
 
 						float3 dstV = waterPointWorldPos - worldPosition;
 						float dstSqrd = dot(dstV, dstV);
@@ -111,7 +111,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 							float charge = 1.f-(dstSqrd * (1.f / r))*10.f; // CHARGE2: can handle changing blob sizes
 							sum += charge * charge;
 							normalOffset += normalize(-dstV);
-							normalOffset += normalize(float3(x*4+index+0.5f,y,z) - indMin);
+							normalOffset += normalize(float3(x*4+index+0.5f,y,z+0.5f) - indMin);
 						}
 					}
 				}

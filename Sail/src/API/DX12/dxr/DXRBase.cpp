@@ -237,7 +237,7 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	static const glm::vec3 mapStart(-3.5f, 0.f, -3.5f);
 
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
-	int index = (int)glm::floor(floatInd.x * 4.f) % 4;
+	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
 	glm::i32vec3 ind = round(floatInd);
 	//ind.x = glm::floor(ind.x / 4.f); // We pack four radii in each float
 	int i = Utils::to1D(ind, ceil(arrSize.x), ceil(arrSize.y));
