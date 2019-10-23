@@ -268,14 +268,13 @@ void CollisionSystem::surfaceFromCollision(Entity* e, std::vector<Octree::Collis
 		const Octree::CollisionInfo& collisionInfo_i = collisions[i];
 		glm::vec3 intersectionAxis;
 		float intersectionDepth;
-		float normalDepth;
 
-		/*if (Intersection::AabbWithTriangle(*bb->getBoundingBox(), collisionInfo_i.positions[0], collisionInfo_i.positions[1], collisionInfo_i.positions[2], &intersectionAxis, &intersectionDepth, &normalDepth)) {
-			if (intersectionDepth == normalDepth) {
-				bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
-				distance += collisionInfo_i.normal * normalDepth;
+		if (collisionInfo_i.shape->getIntersectionDepthAndAxis(bb->getBoundingBox(), &intersectionAxis, &intersectionDepth)) {
+			if (glm::abs(glm::dot(intersectionAxis, collisionInfo_i.normal)) > 0.98f) { //True collision
+				bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * intersectionDepth);
+				distance += collisionInfo_i.normal * intersectionDepth;
 			}
-		}*/
+		}
 	}
 	transform->translate(distance);
 }
