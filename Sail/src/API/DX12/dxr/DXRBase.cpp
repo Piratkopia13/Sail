@@ -720,21 +720,21 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 					// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
 					cpuHandle.ptr += m_heapIncr;
 					gpuHandle.ptr += m_heapIncr;
-				}
+			}
 
-      // Update per mesh data
-      // Such as flags telling the shader to use indices, textures or not
-      unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
-      DXRShaderCommon::MeshData meshData;
-      meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
-      meshData.flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData.flags;
-      meshData.flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
-      meshData.flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData.flags;
-      meshData.color = materialSettings.modelColor;
-      meshData.metalnessRoughnessAoScales.r = materialSettings.metalnessScale;
-      meshData.metalnessRoughnessAoScales.g = materialSettings.roughnessScale;
-      meshData.metalnessRoughnessAoScales.b = materialSettings.aoScale;
-      m_meshCB->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
+			// Update per mesh data
+			// Such as flags telling the shader to use indices, textures or not
+			unsigned int meshDataSize = sizeof(DXRShaderCommon::MeshData);
+			DXRShaderCommon::MeshData meshData;
+			meshData.flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+			meshData.flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData.flags;
+			meshData.flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData.flags;
+			meshData.flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData.flags;
+			meshData.color = materialSettings.modelColor;
+			meshData.metalnessRoughnessAoScales.r = materialSettings.metalnessScale;
+			meshData.metalnessRoughnessAoScales.g = materialSettings.roughnessScale;
+			meshData.metalnessRoughnessAoScales.b = materialSettings.aoScale;
+			m_meshCB->updateData(&meshData, meshDataSize, blasIndex * meshDataSize);
 
 			m_rtMeshHandles.emplace_back(handles);
 		} else {
