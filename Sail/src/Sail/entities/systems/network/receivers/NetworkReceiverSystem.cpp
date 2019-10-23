@@ -447,7 +447,10 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
 		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
 		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
-		Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
+		std::string deathType = "sprayed down";
+		Logger::Log(ShooterPlayer + " " + deathType + " " + deadPlayer);
+
+		m_gameDataTracker->logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
 
 		//This should remove the candle entity from game
 		e->removeDeleteAllChildren();
