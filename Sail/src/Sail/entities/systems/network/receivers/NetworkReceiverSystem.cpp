@@ -276,21 +276,21 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkObjectID id, Netcode::E
 		e->addComponent<AudioComponent>();
 
 		// RUN_METAL Sound
-		Audio::SoundInfo sound{};
-		sound.fileName = "../Audio/footsteps_mertal_1.wav";
-		sound.soundEffectLength = 1.0f;
-		sound.volume = 0.5f;
-		sound.playOnce = false;
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN_METAL, sound);
+		//Audio::SoundInfo_General sound{};
+		//sound.fileName = "../Audio/footsteps_mertal_1.wav";
+		//sound.soundEffectLength = 1.0f;
+		//sound.volume = 0.5f;
+		//sound.playOnce = false;
+		//e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN_METAL, sound);
 		// JUMP Sound
-		sound.fileName = "../Audio/jump.wav";
-		sound.soundEffectLength = 0.7f;
-		sound.playOnce = true;
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
+		//sound.fileName = "../Audio/jump.wav";
+		//sound.soundEffectLength = 0.7f;
+		//sound.playOnce = true;
+		//e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
 		// SHOOT sound
-		sound.fileName = "../Audio/testSoundShoot.wav";
-		sound.soundEffectLength = 1.0f;
-		sound.playOnce = true;
+		//sound.fileName = "../Audio/testSoundShoot.wav";
+		//sound.soundEffectLength = 1.0f;
+		//sound.playOnce = true;
 
 		//creates light with model and pointlight
 		auto light = ECS::Instance()->createEntity("ReceiverLight");

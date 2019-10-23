@@ -73,59 +73,302 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 
 #pragma region DEFINING PLAYER SOUNDS
 
-	Audio::SoundInfo sound{};
-	sound.fileName = "../Audio/footsteps_metal_1.wav";
-	sound.soundEffectLength = 0.91f;
-	sound.volume = 0.7f;
-	sound.playOnce = false;
-	sound.positionalOffset = { 0.0f, -1.6f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN_METAL, sound);
+	Audio::SoundInfo_General soundGeneralInfo{};
+	Audio::SoundInfo_Unique soundUniqueInfo{};
+	AudioComponent* playerAudio = player->getComponent<AudioComponent>();
 
-	sound.fileName = "../Audio/footsteps_tile_1.wav";
-	sound.soundEffectLength = 0.795f;
-	sound.volume = 0.7f;
-	sound.playOnce = false;
-	sound.positionalOffset = { 0.0f, -1.6f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN_TILE, sound);
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		 Running, Metal		 //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = false;
+	soundGeneralInfo.positionalOffset = { 0.0f, -1.6f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::RUN_METAL, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/footsteps_metal_1.wav";
+		soundUniqueInfo.soundEffectLength = 0.939f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_METAL, soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "../Audio/footsteps_metal_2.wav";
+		soundUniqueInfo.soundEffectLength = 0.961f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_METAL, soundUniqueInfo);
+		//	• Sample #3
+		soundUniqueInfo.fileName = "../Audio/footsteps_metal_3.wav";
+		soundUniqueInfo.soundEffectLength = 0.941f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_METAL, soundUniqueInfo);
+		//	• Sample #4
+		soundUniqueInfo.fileName = "../Audio/footsteps_metal_4.wav";
+		soundUniqueInfo.soundEffectLength = 0.956f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_METAL, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 
-	sound.fileName = "../Audio/jump.wav";
-	sound.soundEffectLength = 0.7f;
-	sound.playOnce = true;
-	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		 Running, Tiles		 //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = false;
+	soundGeneralInfo.positionalOffset = { 0.0f, -1.6f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::RUN_TILE, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/footsteps_tile_1.wav";
+		soundUniqueInfo.soundEffectLength = 0.795f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "../Audio/footsteps_tile_2.wav";
+		soundUniqueInfo.soundEffectLength = 0.826f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
+		//	• Sample #3
+		soundUniqueInfo.fileName = "../Audio/footsteps_tile_3.wav";
+		soundUniqueInfo.soundEffectLength = 0.898f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
+		//	• Sample #4
+		soundUniqueInfo.fileName = "../Audio/footsteps_tile_4.wav";
+		soundUniqueInfo.soundEffectLength = 0.877f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 
-	sound.fileName = "../Audio/watergun_start.wav";
-	sound.soundEffectLength = 0.578f;
-	sound.playOnce = true;
-	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_START, sound);
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Watergun, Start		 //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = true;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::SHOOT_START, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/watergun_start.wav";
+		soundUniqueInfo.soundEffectLength = 0.578f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::SHOOT_START, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 
-	sound.fileName = "../Audio/watergun_loop.wav";
-	sound.soundEffectLength = 1.4f;
-	sound.playOnce = false;
-	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_LOOP, sound);
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Watergun, Loop		 //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = false;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::SHOOT_LOOP, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/watergun_loop.wav";
+		soundUniqueInfo.soundEffectLength = 1.425f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::SHOOT_LOOP, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 
-	sound.fileName = "../Audio/watergun_end.wav";
-	sound.soundEffectLength = 0.722f;
-	sound.playOnce = true;
-	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_END, sound);
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Watergun, End		 //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = true;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::SHOOT_END, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/watergun_end.wav";
+		soundUniqueInfo.soundEffectLength = 0.722f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::SHOOT_END, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 
-	sound.fileName = "../Audio/water_drip_1.wav";
-	sound.playOnce = true;
-	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_LEVEL, sound);
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Watergun, Reload		 //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = false;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::RELOAD, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/watergun_reload.wav";
+		soundUniqueInfo.soundEffectLength = 1.246f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RELOAD, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 
-	sound.fileName = "../Audio/water_impact_enemy.wav";
-	sound.playOnce = true;
-	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_ENEMY, sound);
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Water Impact, Environment	     //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = true;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::WATER_IMPACT_ENVIRONMENT, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/water_drip_1.wav";
+		soundUniqueInfo.soundEffectLength = 0.26f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_ENVIRONMENT, soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "../Audio/water_drip_2.wav";
+		soundUniqueInfo.soundEffectLength = 0.299f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_ENVIRONMENT, soundUniqueInfo);
+		//	• Sample #3
+		soundUniqueInfo.fileName = "../Audio/water_drip_3.wav";
+		soundUniqueInfo.soundEffectLength = 0.26f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_ENVIRONMENT, soundUniqueInfo);
+		//	• Sample #4
+		soundUniqueInfo.fileName = "../Audio/water_drip_4.wav";
+		soundUniqueInfo.soundEffectLength = 0.207f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_ENVIRONMENT, soundUniqueInfo);
+		//	• Sample #5
+		soundUniqueInfo.fileName = "../Audio/water_drip_5.wav";
+		soundUniqueInfo.soundEffectLength = 0.406f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_ENVIRONMENT, soundUniqueInfo);
+		//	• Sample #6
+		soundUniqueInfo.fileName = "../Audio/water_drip_6.wav";
+		soundUniqueInfo.soundEffectLength = 0.463f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_ENVIRONMENT, soundUniqueInfo);
+		//	• Sample #7
+		soundUniqueInfo.fileName = "../Audio/water_drip_7.wav";
+		soundUniqueInfo.soundEffectLength = 0.593f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_ENVIRONMENT, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 
-	sound.fileName = "../Audio/water_impact_my_candle.wav";
-	sound.playOnce = true;
-	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_MY_CANDLE, sound);
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Water Impact, Enemy Candle		 //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = true;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/water_impact_enemy_candle.wav";
+		soundUniqueInfo.soundEffectLength = 0.523f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Water Impact, My Candle		     //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = true;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::WATER_IMPACT_MY_CANDLE, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/water_impact_my_candle.wav";
+		soundUniqueInfo.soundEffectLength = 1.364f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_MY_CANDLE, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+//
+	//		   Jump	     //
+	// +-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = true;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::JUMP, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/jump.wav";
+		soundUniqueInfo.soundEffectLength = 0.806f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::JUMP, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Landing, Ground		 //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = false;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::LANDING_GROUND, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/landing_ground.wav";
+		soundUniqueInfo.soundEffectLength = 0.602f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::LANDING_GROUND, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Death, Me	     //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = true;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::DEATH_ME, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/death_me_1.wav";
+		soundUniqueInfo.soundEffectLength = 4.013f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "../Audio/death_me_2.wav";
+		soundUniqueInfo.soundEffectLength = 4.013f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
+		//	• Sample #3
+		soundUniqueInfo.fileName = "../Audio/death_me_3.wav";
+		soundUniqueInfo.soundEffectLength = 4.013f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
+		//	• Sample #4
+		soundUniqueInfo.fileName = "../Audio/death_me_4.wav";
+		soundUniqueInfo.soundEffectLength = 4.013f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
+		//	• Sample #5
+		soundUniqueInfo.fileName = "../Audio/death_me_5.wav";
+		soundUniqueInfo.soundEffectLength = 4.013f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
+		//	• Sample #6
+		soundUniqueInfo.fileName = "../Audio/death_me_6.wav";
+		soundUniqueInfo.soundEffectLength = 4.013f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Death, Other	     //
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = true;
+	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::DEATH_OTHER, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/death_enemy.wav";
+		soundUniqueInfo.soundEffectLength = 3.578f;
+		soundUniqueInfo.volume = 0.7f;
+		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_OTHER, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 
 #pragma endregion
 
