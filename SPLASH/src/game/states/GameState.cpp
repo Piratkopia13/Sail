@@ -8,6 +8,7 @@
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
 #include <sstream>
 #include <iomanip>
@@ -96,6 +97,8 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 #endif
 	m_app->getResourceManager().setDefaultShader(shader);
+	std::string playerModelName = "Doc.fbx";
+
 
 	// Create/load models
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
@@ -106,15 +109,6 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-	Model* characterModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
-
-	Model* aiModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	aiModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
 	// Level Creation
 
@@ -138,7 +132,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
 
 	// Bots creation
-	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
+	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
@@ -269,17 +263,7 @@ bool GameState::processInput(float dt) {
 
 	// Pause game
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
-		if (m_paused) {
-			Input::HideCursor(true);
-			m_paused = false;
-			requestStackPop();
-		} else if (!m_paused && m_isSingleplayer) {
-			Input::HideCursor(false);
-			m_paused = true;
-			requestStackPush(States::Pause);
-
-		}
-
+		requestStackPush(States::InGameMenu);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
@@ -355,7 +339,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-	m_componentSystems.candleSystem->init(this);
+	m_componentSystems.candleSystem->init(this, m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -471,6 +455,7 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
+	EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDropped));
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
@@ -516,14 +501,13 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
-	// This function is called from NWrapperHost::playerDisconnected()
-	// Then the host sends PLAYER_DISCONNECT over the network
-	// Each client recieves it in NetworkReceiverSystem::handleEvent()
-	// and removes their local copy of the player there
-	// Host local copy is destroyed here
-	
+	// Here we will recieve when a player disconnected.
+	// In the case of the host, deal with it based on who dc'd.
+	// In the case of the client, deal with it based on who dc'd.
+
 	if (!m_isSingleplayer) {
-		if (NWrapperSingleton::getInstance().isHost()) {	// Should always be true
+		// 'I' Am a host
+		if (NWrapperSingleton::getInstance().isHost()) {
 			
 			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
 			for (auto& e : receiverEntities)
@@ -541,12 +525,38 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 					e->removeDeleteAllChildren();
 					e->queueDestruction();
 
+					// Log it (Temporary until killfeed is implemented)
+					logSomeoneDisconnected(event.getPlayerID());
+
 					// No loop break. If other entities has the same player id they should all be removed
+				}
+			}
+		}
+		// 'I' Am a client
+		else {
+		
+			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
+			for (auto& e : receiverEntities) {
+
+				// Upon finding who disconnected...
+				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID()) {
+					// Log it (Temporary until killfeed is implemented)
+					logSomeoneDisconnected(event.getPlayerID());
 				}
 			}
 		}
 	}
 	return true;
+}
+
+bool GameState::onPlayerDropped(NetworkDroppedEvent& event) {
+	// I was dropped!
+	// Saddest of bois.
+
+	Logger::Warning("CONNECTION TO HOST HAS BEEN LOST");
+	m_wasDropped = true;	// Activates a renderImgui window
+
+	return false;
 }
 
 bool GameState::update(float dt, float alpha) {
@@ -611,6 +621,9 @@ bool GameState::renderImgui(float dt) {
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
+	if (m_wasDropped) {
+		m_wasDroppedWindow.renderWindow();
+	}
 
 	return false;
 }
@@ -759,6 +772,16 @@ const std::string GameState::toggleProfiler() {
 	return "Toggling profiler";
 }
 
+void GameState::logSomeoneDisconnected(unsigned char id) {
+	// Construct log message
+	std::string logMessage = "'";
+	logMessage += NWrapperSingleton::getInstance().getPlayer(id)->name;
+	logMessage += "' has disconnected from the game.";
+
+	// Log it
+	Logger::Log(logMessage);
+}
+
 const std::string GameState::createCube(const glm::vec3& position) {
 
 	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
@@ -829,7 +852,7 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e = EntityFactory::CreateStaticMapObject("Map_Ramp6", rampModel, boundingBoxModel, glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
 }
 
-void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
+void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel) {
 	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	if (botCount < 0) {
@@ -839,7 +862,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 		}
 		else {
 			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
