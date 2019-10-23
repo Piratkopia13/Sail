@@ -28,7 +28,7 @@ namespace Audio {
 		float volume = 1.0f;
 		float soundEffectTimer = 0.0f;
 		float soundEffectLength = 0.0f;
-		// Cam HEIGHT (y-pos) is 1.6f
+		// Cam HEIGHT (y-pos) is 1.6f; useful info for incorporating positonalOffset
 		glm::vec3 positionalOffset = { 0.f, 0.f, 0.f };
 		int soundID = -1;
 	};
