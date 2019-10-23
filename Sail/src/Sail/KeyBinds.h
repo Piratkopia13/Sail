@@ -52,4 +52,9 @@ namespace KeyBinds {
 
 	// DX12RaytracingRenderer
 	extern int reloadDXRShader;
+
+
+	// Keybinds used for debugging
+		// TODO: Move all debugging keybinds here
+	extern int spectatorDebugging;
 };

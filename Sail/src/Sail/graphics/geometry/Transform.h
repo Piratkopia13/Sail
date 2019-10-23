@@ -80,6 +80,8 @@ public:
 	const glm::vec3 getInterpolatedTranslation(float alpha) const;
 	const glm::quat getInterpolatedRotation(float alpha) const;
 
+	glm::vec3& getForward();
+
 	// Matrix used by collision etc.
 	glm::mat4 getMatrix();
 
@@ -113,6 +115,8 @@ private:
 
 	void updateLocalRenderMatrix(float alpha);
 	void updateRenderMatrix(float alpha);
+
+	void updateForward();
 
 	void treeNeedsUpdating();
 	void addChild(Transform* transform);
