@@ -85,7 +85,7 @@ void NetworkReceiverSystem::update() {
 
 	size_t nrOfSenderComponents = 0;
 	Netcode::PlayerID senderID = 0;
-	Netcode::NetworkComponentID id = 0;
+	Netcode::ComponentID id = 0;
 	Netcode::MessageType messageType;
 	Netcode::EntityType entityType;
 	size_t nrOfMessagesInComponent = 0;
@@ -153,7 +153,7 @@ void NetworkReceiverSystem::update() {
 		// Receive 'one-time' events
 		size_t nrOfEvents;
 		Netcode::MessageType eventType;
-		Netcode::NetworkComponentID netObjectID;
+		Netcode::ComponentID netObjectID;
 
 
 		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
@@ -171,7 +171,7 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
 			{
-				Netcode::NetworkComponentID playerwhoWasHit;
+				Netcode::ComponentID playerwhoWasHit;
 				ar(playerwhoWasHit);
 				waterHitPlayer(playerwhoWasHit);
 			}
@@ -234,7 +234,7 @@ void NetworkReceiverSystem::update() {
 
   TODO: Use an entity factory with blueprints or something like that instead of manually constructing entities here
 */
-void NetworkReceiverSystem::createEntity(Netcode::NetworkComponentID id, Netcode::EntityType entityType, const glm::vec3& translation) {
+void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation) {
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
@@ -312,7 +312,7 @@ void NetworkReceiverSystem::createEntity(Netcode::NetworkComponentID id, Netcode
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
-void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkComponentID id, const glm::vec3& translation) {
+void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const glm::vec3& translation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -320,13 +320,15 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkComponentID id,
 
 		glm::vec3 pos = e->getComponent<TransformComponent>()->getTranslation();
 		auto animation = e->getComponent<AnimationComponent>();
+		auto animationStack = animation->getAnimationStack();
+
 		if (pos != translation) {
-			if (animation->currentAnimation == animation->getAnimationStack()->getAnimation(0) && animation->transitions.size() == 0) {
-				animation->transitions.emplace(animation->getAnimationStack()->getAnimation(1), 0.01f, false);
+			if (animation->currentAnimation == animationStack->getAnimation(0) && animation->transitions.size() == 0) {
+				animation->transitions.emplace(animationStack->getAnimation(1), 0.01f, false);
 			}
 		} else {
-			if (animation->currentAnimation == animation->getAnimationStack()->getAnimation(1) && animation->transitions.size() == 0) {
-				animation->transitions.emplace(animation->getAnimationStack()->getAnimation(0), 0.01f, false);
+			if (animation->currentAnimation == animationStack->getAnimation(1) && animation->transitions.size() == 0) {
+				animation->transitions.emplace(animationStack->getAnimation(0), 0.01f, false);
 			}
 		}
 		e->getComponent<TransformComponent>()->setTranslation(translation);
@@ -335,7 +337,7 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::NetworkComponentID id,
 	}
 }
 
-void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkComponentID id, const glm::vec3& rotation) {
+void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -353,7 +355,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::NetworkComponentID id, co
 	}
 }
 
-void NetworkReceiverSystem::playerJumped(Netcode::NetworkComponentID id) {
+void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 	// How do i trigger a jump from here?
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
@@ -364,7 +366,7 @@ void NetworkReceiverSystem::playerJumped(Netcode::NetworkComponentID id) {
 	}
 }
 
-void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkComponentID id) {
+void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id) {
 	for (auto& e : entities) {
 		//Look for the entity that OWNS the candle (player entity)
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
@@ -385,7 +387,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::NetworkComponentID id) {
 	}
 }
 
-void NetworkReceiverSystem::playerDied(Netcode::NetworkComponentID id) {
+void NetworkReceiverSystem::playerDied(Netcode::ComponentID id) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -395,7 +397,7 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkComponentID id) {
 		e->removeDeleteAllChildren();
 
 		// Check if the extinguished candle is owned by the player
-		if (id >> 18 == m_playerID) {
+		if (Netcode::getComponentOwner(id) == m_playerID) {
 			//If it is me that died, become spectator.
 			e->addComponent<SpectatorComponent>();
 			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
@@ -410,9 +412,9 @@ void NetworkReceiverSystem::playerDied(Netcode::NetworkComponentID id) {
 }
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
-void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID id) {
+void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 	for (auto& e : entities) {
-		if (static_cast<Netcode::PlayerID>(e->getComponent<NetworkReceiverComponent>()->m_id >> 18) == id) {
+		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == playerID) {
 
 			e->removeDeleteAllChildren();
 			// TODO: Remove all the components that can/should be removed
@@ -424,7 +426,7 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID id) {
 	}
 }
 
-void NetworkReceiverSystem::setCandleHeldState(Netcode::NetworkComponentID id, bool b, const glm::vec3& pos) {
+void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool b, const glm::vec3& pos) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;

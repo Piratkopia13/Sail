@@ -33,14 +33,14 @@ protected:
 
 	Entity* m_playerEntity = nullptr;
 private:
-	void createEntity(Netcode::NetworkComponentID id, Netcode::EntityType entityType, const glm::vec3& translation);
-	void setEntityTranslation(Netcode::NetworkComponentID id, const glm::vec3& translation);
-	void setEntityRotation(Netcode::NetworkComponentID id, const glm::vec3& rotation);
-	void playerJumped(Netcode::NetworkComponentID id);
-	void waterHitPlayer(Netcode::NetworkComponentID id);
-	void playerDied(Netcode::NetworkComponentID id);
-	void playerDisconnect(Netcode::PlayerID id);
-	void setCandleHeldState(Netcode::NetworkComponentID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
+	void createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation);
+	void setEntityTranslation(Netcode::ComponentID id, const glm::vec3& translation);
+	void setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation);
+	void playerJumped(Netcode::ComponentID id);
+	void waterHitPlayer(Netcode::ComponentID id);
+	void playerDied(Netcode::ComponentID id);
+	void playerDisconnect(Netcode::PlayerID playerID);
+	void setCandleHeldState(Netcode::ComponentID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
 	void matchEnded();
 	void backToLobby();
 

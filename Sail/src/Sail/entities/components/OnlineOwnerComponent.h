@@ -5,9 +5,9 @@
 
 class OnlineOwnerComponent : public Component<OnlineOwnerComponent> {
 public:
-	OnlineOwnerComponent(Netcode::NetworkComponentID netEntityID);
+	OnlineOwnerComponent(Netcode::ComponentID netEntityID);
 	~OnlineOwnerComponent();
 
-	Netcode::NetworkComponentID netEntityID;
+	Netcode::ComponentID netEntityID;
 };
 

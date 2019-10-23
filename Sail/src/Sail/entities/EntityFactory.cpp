@@ -50,7 +50,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		Netcode::EntityType::PLAYER_ENTITY,
 		playerID
 	);
-	Netcode::NetworkComponentID netComponentID = player->getComponent<NetworkSenderComponent>()->m_id;
+	Netcode::ComponentID netComponentID = player->getComponent<NetworkSenderComponent>()->m_id;
 	player->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	
 	player->addComponent<LocalOwnerComponent>(player->getComponent<NetworkSenderComponent>()->m_id);

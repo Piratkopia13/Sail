@@ -7,12 +7,12 @@ class NetworkSenderSystem;
 
 struct NetworkSenderEvent {
 	Netcode::MessageType type;
+	Netcode::MessageData* data = nullptr;  
 
 	// All events will by default be handled by NetworkReceiverSystem for
 	// both the people receiving the event and the person sending it.
-	bool alsoSendToSelf = false; // TODO: set to true once U421 is done
+	bool alsoSendToSelf = false; // TODO: set to true once #U421 is done
 
-	Netcode::MessageData* data = nullptr;  
 	virtual ~NetworkSenderEvent() {
 		if (data) {
 			delete data;
@@ -51,7 +51,7 @@ public:
 
 	// Specifically for One-Time-Events during the gamestate
 	void setNSS(NetworkSenderSystem* NSS);
-	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = false);
+	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = false); // TODO: change default to true once #U421 is done
 private:
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;

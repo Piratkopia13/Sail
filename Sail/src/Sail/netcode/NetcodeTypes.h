@@ -6,5 +6,5 @@ namespace Netcode {
 	
 	// Used to identify Sender-/ReceiverComponents
 	// The first byte == PlayerID of the player the component belongs to
-	typedef unsigned __int32 NetworkComponentID; 
+	typedef unsigned __int32 ComponentID; 
 }

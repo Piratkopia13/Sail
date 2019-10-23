@@ -503,7 +503,7 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
 			for (auto& e : receiverEntities)
 			{
-				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID())
+				if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.getPlayerID())
 				{
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_DISCONNECT,
