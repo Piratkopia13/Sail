@@ -247,7 +247,7 @@ void Octree::getCollisionData(BoundingBox* entityBoundingBox, Entity* meshEntity
 	}
 }
 
-void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, Node* currentNode, std::vector<CollisionInfo>* outCollisionData) {
+void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, Node* currentNode, std::vector<CollisionInfo>* outCollisionData, const bool doSimpleCollisions) {
 	const BoundingBox* nodeBoundingBox = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	if (Intersection::AabbWithAabb(entityBoundingBox->getPosition(), entityBoundingBox->getHalfSize(), nodeBoundingBox->getPosition(), nodeBoundingBox->getHalfSize())) { //Bounding box collides with the current node
 		//Check against entities
@@ -259,8 +259,9 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 					//Get collision
 					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
 					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
+					CollidableComponent* collidable = currentNode->entities[i]->getComponent<CollidableComponent>();
 
-					if (model) {
+					if (model && !(doSimpleCollisions && collidable->allowSimpleCollision)) {
 						//Entity has a model. Check collision with meshes
 						glm::mat4 transformMatrix;
 						if (transform) {
@@ -289,7 +290,7 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 							}
 						}
 					}
-					else { //No model
+					else { //No model or simple collision opportunity
 						//Collide with bounding box
 						glm::vec3 intersectionAxis;
 						float intersectionDepth;
@@ -308,7 +309,7 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 
 		//Check for children
 		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-			getCollisionsRec(entity, entityBoundingBox, &currentNode->childNodes[i], outCollisionData);
+			getCollisionsRec(entity, entityBoundingBox, &currentNode->childNodes[i], outCollisionData, doSimpleCollisions);
 		}
 	}
 }
@@ -330,7 +331,7 @@ void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& ray
 	}
 }
 
-void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding) {
+void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding, const bool doSimpleIntersections) {
 	const BoundingBox* nodeBoundingBox = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	float nodeIntersectionDistance = Intersection::RayWithPaddedAabb(rayStart, rayDir, nodeBoundingBox->getPosition(), nodeBoundingBox->getHalfSize(), padding);
 	if (nodeIntersectionDistance >= 0.0f && (nodeIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects with the current node closer than the closest hit
@@ -338,13 +339,15 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
 			if (currentNode->entities[i] != ignoreThis) {
 				const BoundingBox* collidableBoundingBox = currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox();
-				float entityIntersectionDistance = Intersection::RayWithPaddedAabb(rayStart, rayDir, collidableBoundingBox->getPosition(), collidableBoundingBox->getHalfSize(), padding);
+				glm::vec3 intersectionAxis;
+				float entityIntersectionDistance = Intersection::RayWithPaddedAabb(rayStart, rayDir, collidableBoundingBox->getPosition(), collidableBoundingBox->getHalfSize(), padding, &intersectionAxis);
 				if (entityIntersectionDistance >= 0.0f && (entityIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects the entity bounding box closer than the closest hit
 					//Get Intersection
 					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
 					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
+					CollidableComponent* collidable = currentNode->entities[i]->getComponent<CollidableComponent>();
 
-					if (model) {
+					if (model && !(doSimpleIntersections && collidable->allowSimpleCollision)) {
 						//Entity has a model. Check ray against meshes
 						glm::mat4 transformMatrix;
 						if (transform) {
@@ -373,8 +376,19 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 							}
 						}
 					}
-					else { //No model
-						//Intersected with bounding box
+					else { //No model or simple collision opportunity
+						//Intersect with bounding box
+						
+						//Save closest hit
+						outIntersectionData->closestHit = entityIntersectionDistance;
+
+						outIntersectionData->info.normal = intersectionAxis;
+
+						if (outIntersectionData->info.shape) {
+							delete outIntersectionData->info.shape;
+						}
+						outIntersectionData->info.shape = SAIL_NEW CollisionAABB(collidableBoundingBox->getPosition(), collidableBoundingBox->getHalfSize(), outIntersectionData->info.normal);
+						outIntersectionData->info.entity = currentNode->entities[i];
 					}
 				}
 			}
@@ -382,7 +396,7 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 
 		//Check for children
 		for (unsigned int i = 0; i < currentNode->childNodes.size(); i++) {
-			getRayIntersectionRec(rayStart, rayDir, &currentNode->childNodes[i], outIntersectionData, ignoreThis, padding);
+			getRayIntersectionRec(rayStart, rayDir, &currentNode->childNodes[i], outIntersectionData, ignoreThis, padding, doSimpleIntersections);
 		}
 	}
 }
@@ -480,12 +494,12 @@ void Octree::update() {
 	pruneTreeRec(&m_baseNode);
 }
 
-void Octree::getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollisionData) {
-	getCollisionsRec(entity, entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), &m_baseNode, outCollisionData);
+void Octree::getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollisionData, const bool doSimpleCollisions) {
+	getCollisionsRec(entity, entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), &m_baseNode, outCollisionData, doSimpleCollisions);
 }
 
-void Octree::getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding) {
-	getRayIntersectionRec(rayStart, rayDir, &m_baseNode, outIntersectionData, ignoreThis, padding);
+void Octree::getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding, const bool doSimpleIntersections) {
+	getRayIntersectionRec(rayStart, rayDir, &m_baseNode, outIntersectionData, ignoreThis, padding, doSimpleIntersections);
 }
 
 int Octree::frustumCulledDraw(Camera& camera) {

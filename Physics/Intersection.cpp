@@ -494,15 +494,18 @@ bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const
 	return isColliding;
 }
 
-float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3& aPos, const glm::vec3& aSize) {
+float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3& aPos, const glm::vec3& aSize, glm::vec3* intersectionAxis) {
 	float returnValue = -1.0f;
 	glm::vec3 normalizedRay = glm::normalize(rayVec);
 	bool noHit = false; //Boolean for early exits from the for-loop
 	float tMin = -std::numeric_limits<float>::infinity(); //tMin initialized at negative infinity
 	float tMax = std::numeric_limits<float>::infinity(); //tMax initialized at positive infinity
+	glm::vec3 minAxis(0.0f);
 	glm::vec3 p = aPos - rayStart; //Vector to center off AABB
 	for (int i = 0; i < 3; i++) {
 		float tempH = aSize[i]; //Temporary variable to store the current half axis
+		glm::vec3 tempAxis(0.0f);
+		tempAxis[i] = aSize[i];
 
 		float e = p[i];
 		float f = normalizedRay[i];
@@ -516,9 +519,11 @@ float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 				float tempT = t2;
 				t2 = t1;
 				t1 = tempT;
+				tempAxis = -tempAxis;
 			}
 			if (t1 > tMin) {//Replaces tMin if t1 is bigger
 				tMin = t1;
+				minAxis = tempAxis;
 			}
 			if (t2 < tMax) {//Replaces tMax if t2 is smaller
 				tMax = t2;
@@ -544,6 +549,11 @@ float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 			returnValue = 0.0f; //Ray started in AABB, instant hit. Distance is 0
 		}
 	}
+
+	if (intersectionAxis) {
+		*intersectionAxis = glm::normalize(minAxis);
+	}
+
 	return returnValue;
 }
 
@@ -587,15 +597,15 @@ float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& ray
 	return distanceToPlane;
 }
 
-float Intersection::RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3& aPos, const glm::vec3& aSize, float padding) {
+float Intersection::RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3& aPos, const glm::vec3& aSize, float padding, glm::vec3* intersectionAxis) {
 	float returnValue = -1.0f;
 
 	if (padding != 0.0f) {
 		//Add padding
-		returnValue = RayWithAabb(rayStart, rayVec, aPos, aSize + glm::vec3(padding));
+		returnValue = RayWithAabb(rayStart, rayVec, aPos, aSize + glm::vec3(padding), intersectionAxis);
 	}
 	else {
-		returnValue = RayWithAabb(rayStart, rayVec, aPos, aSize);
+		returnValue = RayWithAabb(rayStart, rayVec, aPos, aSize, intersectionAxis);
 	}
 
 	return returnValue;

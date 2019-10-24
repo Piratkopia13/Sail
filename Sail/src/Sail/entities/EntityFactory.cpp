@@ -59,7 +59,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	// Add physics components and setting initial variables
 	player->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	player->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
-	player->addComponent<CollisionComponent>();
+	player->addComponent<CollisionComponent>(true);
 
 	// Give player a bounding box
 	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
@@ -241,7 +241,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	movement->velocity = velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
-	CollisionComponent* collision = e->addComponent<CollisionComponent>();
+	CollisionComponent* collision = e->addComponent<CollisionComponent>(true);
 	collision->drag = 2.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
 	collision->bounciness = 0.1f;

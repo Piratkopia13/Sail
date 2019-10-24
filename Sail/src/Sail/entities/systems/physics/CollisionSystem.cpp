@@ -61,13 +61,14 @@ void CollisionSystem::update(float dt) {
 const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
 	//Update collision data
 	std::vector<Octree::CollisionInfo> collisions;
+	CollisionComponent* collision = e->getComponent<CollisionComponent>();
 
 	bool hasSpheres = e->hasComponent<CollisionSpheresComponent>();
 	if (hasSpheres) {
 		assert(false); //Not implemented
 	}
 	else {
-		m_octree->getCollisions(e, &collisions);
+		m_octree->getCollisions(e, &collisions, collision->doSimpleCollisions);
 	}
 
 	return handleCollisions(e, collisions, dt);
@@ -196,7 +197,7 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 
 	//Ray cast to find upcoming collisions, use padding for "swept sphere"
 	Octree::RayIntersectionInfo intersectionInfo;
-	m_octree->getRayIntersection(boundingBox.getPosition(), glm::normalize(movement->velocity), &intersectionInfo, e, collision->padding);
+	m_octree->getRayIntersection(boundingBox.getPosition(), glm::normalize(movement->velocity), &intersectionInfo, e, collision->padding, collision->doSimpleCollisions);
 
 	if (intersectionInfo.closestHit <= velocityAmp && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
 		//Calculate new dt

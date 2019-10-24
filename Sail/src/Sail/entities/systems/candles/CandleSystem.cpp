@@ -135,8 +135,8 @@ void CandleSystem::putDownCandle(Entity* e) {
 				Octree::RayIntersectionInfo tempInfo;
 				// Shoot a ray straight down 1 meter ahead of the player to check for floor
 				m_octree->getRayIntersection(glm::vec3(candleTryPosition.x, candleTryPosition.y + heightOffsetFromPlayerFeet, candleTryPosition.z), down, &tempInfo, nullptr, 0.01f);
-				if (tempInfo.closestHitIndex != -1) {
-					float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].normal, -down);
+				if (tempInfo.closestHit >= 0.0f) {
+					float floorCheckVal = glm::angle(tempInfo.info.normal, -down);
 					// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
 					bool isFloor = (floorCheckVal < 0.1f) ? true : false;
 					if (!isFloor) {

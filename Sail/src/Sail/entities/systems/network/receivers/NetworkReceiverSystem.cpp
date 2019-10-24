@@ -302,7 +302,7 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 		ac->currentAnimation = stack->getAnimation(3);
 		e->addComponent<TransformComponent>(translation);
 		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
+		e->addComponent<CollidableComponent>(true);
 
 		// Adding audio component and adding all sounds attached to the player entity
 		e->addComponent<AudioComponent>();
