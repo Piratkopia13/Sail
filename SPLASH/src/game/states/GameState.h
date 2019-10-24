@@ -1,6 +1,7 @@
 #pragma once
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
+#include "../events/NetworkDroppedEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
 class NetworkSerializedPackageEvent;
@@ -33,6 +34,7 @@ private:
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
+	bool onPlayerDropped(NetworkDroppedEvent& event);
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 
 	void shutDownGameState();
@@ -43,11 +45,13 @@ private:
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
 	void createTestLevel(Shader* shader, Model* boundingBoxModel);
-	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
+	void createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel);
 	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
 	const std::string teleportToMap();
 	const std::string toggleProfiler();
+
+	void logSomeoneDisconnected(unsigned char id);
 
 private:
 	Application* m_app;
@@ -58,12 +62,15 @@ private:
 	Entity* m_player;
 
 	Entity* m_gameMusic = nullptr;
+	Entity* m_ambiance = nullptr;
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;
 	RenderSettingsWindow m_renderSettingsWindow;
 	LightDebugWindow m_lightDebugWindow;
 	PlayerInfoWindow m_playerInfoWindow;
+	WasDroppedWindow m_wasDroppedWindow;
+	KillFeedWindow m_killFeedWindow;
 
 
 	size_t m_currLightIndex;
@@ -82,6 +89,8 @@ private:
 
 	bool m_poppedThisFrame = false;
 
+	//
+	bool m_wasDropped = false;
 
 
 #ifdef _PERFORMANCE_TEST

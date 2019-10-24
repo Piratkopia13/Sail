@@ -8,6 +8,7 @@
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
 #include <sstream>
 #include <iomanip>
@@ -96,6 +97,8 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 #endif
 	m_app->getResourceManager().setDefaultShader(shader);
+	std::string playerModelName = "Doc.fbx";
+
 
 	// Create/load models
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
@@ -106,15 +109,6 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-	Model* characterModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
-
-	Model* aiModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	aiModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 
 	// Level Creation
 
@@ -129,7 +123,6 @@ GameState::GameState(StateStack& stack)
 	}
 
 	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
-	m_componentSystems.networkReceiverSystem->initPlayer(m_player);
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
@@ -137,7 +130,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
 
 	// Bots creation
-	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
+	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
@@ -158,10 +151,10 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
 
-	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();
-	m_gameMusic->addComponent<AudioComponent>();
-	m_gameMusic->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
+	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
+	m_ambiance->addComponent<AudioComponent>();
+	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
+	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
@@ -263,17 +256,7 @@ bool GameState::processInput(float dt) {
 
 	// Pause game
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
-		if (m_paused) {
-			Input::HideCursor(true);
-			m_paused = false;
-			requestStackPop();
-		} else if (!m_paused && m_isSingleplayer) {
-			Input::HideCursor(false);
-			m_paused = true;
-			requestStackPush(States::Pause);
-
-		}
-
+		requestStackPush(States::InGameMenu);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
@@ -288,6 +271,24 @@ bool GameState::processInput(float dt) {
 		} else {
 			m_player->removeComponent<CollisionSpheresComponent>();
 		}
+	}
+
+	if (Input::WasKeyJustPressed(KeyBinds::spectatorDebugging)) {
+		// Get position and rotation to look at middle of the map from above
+		{
+			auto parTrans = m_player->getComponent<TransformComponent>();
+			auto pos = glm::vec3(parTrans->getMatrix()[3]);
+			pos.y = 20.f;
+			parTrans->setTranslation(pos);
+			MapComponent temp;
+			auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
+			auto dir = glm::normalize(middleOfLevel - pos);
+			auto rots = Utils::getRotations(dir);
+			parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+			m_player->addComponent<SpectatorComponent>();
+			m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
+			m_player->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
+		}	
 	}
 
 #ifdef _DEBUG
@@ -331,7 +332,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-	m_componentSystems.candleSystem->init(this);
+	m_componentSystems.candleSystem->init(this, m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -358,17 +359,16 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
-	m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	// Create Network Reciever System depending on host or client.
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
-	}
-	else {
+	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -447,18 +447,19 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
+	EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDropped));
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
-
+	
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
-	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+	m_componentSystems.networkReceiverSystem->handleIncomingData(event.getSerializedData());
 	return true;
 }
 
@@ -492,14 +493,13 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
-	// This function is called from NWrapperHost::playerDisconnected()
-	// Then the host sends PLAYER_DISCONNECT over the network
-	// Each client recieves it in NetworkReceiverSystem::handleEvent()
-	// and removes their local copy of the player there
-	// Host local copy is destroyed here
-	
+	// Here we will receive when a player disconnected.
+	// In the case of the host, deal with it based on who dc'd.
+	// In the case of the client, deal with it based on who dc'd.
+
 	if (!m_isSingleplayer) {
-		if (NWrapperSingleton::getInstance().isHost()) {	// Should always be true
+		// 'I' Am a host
+		if (NWrapperSingleton::getInstance().isHost()) {
 			
 			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
 			for (auto& e : receiverEntities)
@@ -508,7 +508,7 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 				{
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_DISCONNECT,
-						SAIL_NEW Netcode::MessageDataPlayerDisconnect{
+						SAIL_NEW Netcode::MessagePlayerDisconnect{
 							event.getPlayerID()
 						}
 					);
@@ -517,7 +517,23 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 					e->removeDeleteAllChildren();
 					e->queueDestruction();
 
+					// Log it (Temporary until killfeed is implemented)
+					logSomeoneDisconnected(event.getPlayerID());
+
 					// No loop break. If other entities has the same player id they should all be removed
+				}
+			}
+		}
+		// 'I' Am a client
+		else {
+		
+			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
+			for (auto& e : receiverEntities) {
+
+				// Upon finding who disconnected...
+				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID()) {
+					// Log it (Temporary until killfeed is implemented)
+					logSomeoneDisconnected(event.getPlayerID());
 				}
 			}
 		}
@@ -525,10 +541,21 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 	return true;
 }
 
+bool GameState::onPlayerDropped(NetworkDroppedEvent& event) {
+	// I was dropped!
+	// Saddest of bois.
+
+	Logger::Warning("CONNECTION TO HOST HAS BEEN LOST");
+	m_wasDropped = true;	// Activates a renderImgui window
+
+	return false;
+}
+
 bool GameState::update(float dt, float alpha) {
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
+	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -586,7 +613,11 @@ bool GameState::renderImgui(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
+	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
+	if (m_wasDropped) {
+		m_wasDroppedWindow.renderWindow();
+	}
 
 	return false;
 }
@@ -735,6 +766,16 @@ const std::string GameState::toggleProfiler() {
 	return "Toggling profiler";
 }
 
+void GameState::logSomeoneDisconnected(unsigned char id) {
+	// Construct log message
+	std::string logMessage = "'";
+	logMessage += NWrapperSingleton::getInstance().getPlayer(id)->name;
+	logMessage += "' has disconnected from the game.";
+
+	// Log it
+	Logger::Log(logMessage);
+}
+
 const std::string GameState::createCube(const glm::vec3& position) {
 
 	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
@@ -805,7 +846,7 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e = EntityFactory::CreateStaticMapObject("Map_Ramp6", rampModel, boundingBoxModel, glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
 }
 
-void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
+void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel) {
 	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	if (botCount < 0) {
@@ -815,7 +856,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 		}
 		else {
 			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
@@ -825,123 +866,161 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	std::string tileTex = "sponza/textures/tileTexture1.tga";
-	Application::getInstance()->getResourceManager().loadTexture(tileTex);
+	std::vector<Model*> tileModels;
+	std::vector<Model*> clutterModels;
+	//Load textures for level
+	{
+		ResourceManager& manager = Application::getInstance()->getResourceManager();
+		manager.loadTexture(tileTex);
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallMRAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallNM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
+		manager.loadTexture("pbr/Tiles/RoomWallMRAO.tga");
+		manager.loadTexture("pbr/Tiles/RoomWallNM.tga");
+		manager.loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_MRAo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_NM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RD_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/RD_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/RD_NM.tga");
+		manager.loadTexture("pbr/Tiles/RD_Albedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_MRAo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_NM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CD_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/CD_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/CD_NM.tga");
+		manager.loadTexture("pbr/Tiles/CD_Albedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_MRAo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_NM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CW_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/CW_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/CW_NM.tga");
+		manager.loadTexture("pbr/Tiles/CW_Albedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_MRAo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_NM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/F_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/F_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/F_NM.tga");
+		manager.loadTexture("pbr/Tiles/F_Albedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_MRAo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_NM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CF_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/CF_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/CF_NM.tga");
+		manager.loadTexture("pbr/Tiles/CF_Albedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_MRAo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_NM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/CC_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/CC_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/CC_NM.tga");
+		manager.loadTexture("pbr/Tiles/CC_Albedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_MRAo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_NM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/RC_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/RC_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/RC_NM.tga");
+		manager.loadTexture("pbr/Tiles/RC_Albedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_MRAo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_NM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Tiles/Corner_Albedo.tga");
+		manager.loadTexture("pbr/Tiles/Corner_MRAo.tga");
+		manager.loadTexture("pbr/Tiles/Corner_NM.tga");
+		manager.loadTexture("pbr/Tiles/Corner_Albedo.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/metalnessRoughnessAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/normal.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/metal/albedo.tga");
+		manager.loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+		manager.loadTexture("pbr/metal/normal.tga");
+		manager.loadTexture("pbr/metal/albedo.tga");
 
+		manager.loadTexture("pbr/Clutter/LO_MRAO.tga");
+		manager.loadTexture("pbr/Clutter/LO_NM.tga");
+		manager.loadTexture("pbr/Clutter/LO_Albedo.tga");
 
+		manager.loadTexture("pbr/Clutter/MO_MRAO.tga");
+		manager.loadTexture("pbr/Clutter/MO_NM.tga");
+		manager.loadTexture("pbr/Clutter/MO_Albedo.tga");
+
+		manager.loadTexture("pbr/Clutter/SO_MRAO.tga");
+		manager.loadTexture("pbr/Clutter/SO_NM.tga");
+		manager.loadTexture("pbr/Clutter/SO_Albedo.tga");
+
+	}
 
 	//Load tileset for world
-	Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
-	tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+	{
+		Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
+		tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
-	Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
-	roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
-	roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
-	roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
+		Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
+		roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
+		roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
+		roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
 
-	Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
-	tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
+		Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
+		tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
-	Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
-	roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RD_MRAo.tga");
-	roomDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RD_NM.tga");
-	roomDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RD_Albedo.tga");
-
-
-	Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor.fbx", shader);
-	corridorDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CD_MRAo.tga");
-	corridorDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CD_NM.tga");
-	corridorDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CD_Albedo.tga");
-
-	Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall.fbx", shader);
-	corridorWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CW_MRAo.tga");
-	corridorWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CW_NM.tga");
-	corridorWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CW_Albedo.tga");
-
-	Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
-	roomCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RC_MRAo.tga");
-	roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
-	roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
+		Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
+		roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RD_MRAo.tga");
+		roomDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RD_NM.tga");
+		roomDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RD_Albedo.tga");
 
 
-	Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
-	corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
-	corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
-	corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
+		Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor.fbx", shader);
+		corridorDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CD_MRAo.tga");
+		corridorDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CD_NM.tga");
+		corridorDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CD_Albedo.tga");
 
-	Model* roomFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
-	roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
-	roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
-	roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
+		Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall.fbx", shader);
+		corridorWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CW_MRAo.tga");
+		corridorWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CW_NM.tga");
+		corridorWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CW_Albedo.tga");
 
-	Model* corridorCeiling = &m_app->getResourceManager().getModel("Tiles/CorridorCeiling.fbx", shader);
-	corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CC_MRAo.tga");
-	corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
-	corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
+		Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
+		roomCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RC_MRAo.tga");
+		roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
+		roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
 
-	Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner.fbx", shader);
-	corridorCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
-	corridorCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
-	corridorCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
 
-	Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner.fbx", shader);
-	roomCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
-	roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
-	roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
+		corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
+		corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
+		corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
 
-	std::vector<Model*> tileModels;
-	tileModels.resize(TileModel::NUMBOFMODELS);
-	tileModels[TileModel::ROOM_FLOOR] = roomFloor;
-	tileModels[TileModel::ROOM_WALL] = roomWall;
-	tileModels[TileModel::ROOM_DOOR] = roomDoor;
-	tileModels[TileModel::ROOM_CEILING] = roomCeiling;
-	tileModels[TileModel::ROOM_CORNER] = roomCorner;
+		Model* roomFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
+		roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
+		roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
+		roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
 
-	tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
-	tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
-	tileModels[TileModel::CORRIDOR_DOOR] = corridorDoor;
-	tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
-	tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
+		Model* corridorCeiling = &m_app->getResourceManager().getModel("Tiles/CorridorCeiling.fbx", shader);
+		corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CC_MRAo.tga");
+		corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
+		corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
 
+		Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner.fbx", shader);
+		corridorCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+		corridorCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+		corridorCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+
+		Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner.fbx", shader);
+		roomCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/Corner_MRAo.tga");
+		roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
+		roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
+
+		Model* cSO = &m_app->getResourceManager().getModel("Clutter/SmallObject.fbx", shader);
+		cSO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/SO_MRAO.tga");
+		cSO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/SO_NM.tga");
+		cSO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/SO_Albedo.tga");
+
+		Model* cMO = &m_app->getResourceManager().getModel("Clutter/MediumObject.fbx", shader);
+		cMO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/MO_MRAO.tga");
+		cMO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/MO_NM.tga");
+		cMO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/MO_Albedo.tga");
+
+		Model* cLO = &m_app->getResourceManager().getModel("Clutter/LargeObject.fbx", shader);
+		cLO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/LO_MRAO.tga");
+		cLO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/LO_NM.tga");
+		cLO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/LO_Albedo.tga");
+
+
+		tileModels.resize(TileModel::NUMBOFMODELS);
+		tileModels[TileModel::ROOM_FLOOR] = roomFloor;
+		tileModels[TileModel::ROOM_WALL] = roomWall;
+		tileModels[TileModel::ROOM_DOOR] = roomDoor;
+		tileModels[TileModel::ROOM_CEILING] = roomCeiling;
+		tileModels[TileModel::ROOM_CORNER] = roomCorner;
+
+		tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
+		tileModels[TileModel::CORRIDOR_WALL] = corridorWall;
+		tileModels[TileModel::CORRIDOR_DOOR] = corridorDoor;
+		tileModels[TileModel::CORRIDOR_CEILING] = corridorCeiling;
+		tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
+
+		clutterModels.resize(ClutterModel::NUMBOFCLUTTER);
+		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
+		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
+		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
+	}
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
@@ -949,6 +1028,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
+	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
 }
 
 #ifdef _PERFORMANCE_TEST
@@ -959,7 +1039,7 @@ void GameState::populateScene(Model* characterModel, Model* lightModel, Model* b
 		float spawnOffsetZ = 13.f + float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		std::string name = "DocGunRun4.fbx";
+		std::string name = "DocTorch.fbx";
 		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
 		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
 		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
