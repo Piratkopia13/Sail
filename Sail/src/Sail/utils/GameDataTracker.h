@@ -49,6 +49,8 @@ public:
 	// nr of player from the start of the match
 	int getPlayerCount();	// Nowhere atm
 
+	const std::vector<std::string>& getPlayerDeaths();
+
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()
 

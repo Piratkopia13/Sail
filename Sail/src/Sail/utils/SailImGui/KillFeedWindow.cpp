@@ -6,7 +6,7 @@
 
 KillFeedWindow::KillFeedWindow(bool showWindow)
 	: m_gameDataTracker(GameDataTracker::getInstance())
-	, m_maxTimeShowed(6.f)
+	, m_maxTimeShowed(3.f)
 	, m_doRender(false)
 {}
 
