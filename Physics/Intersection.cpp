@@ -505,7 +505,7 @@ float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 	for (int i = 0; i < 3; i++) {
 		float tempH = aSize[i]; //Temporary variable to store the current half axis
 		glm::vec3 tempAxis(0.0f);
-		tempAxis[i] = aSize[i];
+		tempAxis[i] = tempH;
 
 		float e = p[i];
 		float f = normalizedRay[i];
@@ -622,12 +622,12 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 			glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
 
 			glm::vec3 toRay = (rayStart + rayDir * glm::dot(middle - rayStart, rayDir)) - middle;
-			float distance = padding * 0.7f;
+			float distance = padding *0.7f;
 
 			//Add padding
-			glm::vec3 newV1 = v1 + glm::normalize(toRay) * distance - rayDir * distance;
-			glm::vec3 newV2 = v2 + glm::normalize(toRay) * distance - rayDir * distance;
-			glm::vec3 newV3 = v3 + glm::normalize(toRay) * distance - rayDir * distance;
+			glm::vec3 newV1 = v1 + glm::normalize(toRay) * distance -rayDir * distance;
+			glm::vec3 newV2 = v2 + glm::normalize(toRay) * distance -rayDir * distance;
+			glm::vec3 newV3 = v3 + glm::normalize(toRay) * distance -rayDir * distance;
 
 			returnValue = RayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
 		}

@@ -317,31 +317,35 @@ void Octree::getCollisionsRec(Entity* entity, BoundingBox* entityBoundingBox, No
 void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& rayDir, Entity* meshEntity, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, RayIntersectionInfo* outIntersectionData, float padding) {
 	float intersectionDistance = Intersection::RayWithPaddedTriangle(rayStart, rayDir, v1, v2, v3, padding);
 
-	if (intersectionDistance >= 0.0f && (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) {
+	if (intersectionDistance >= 0.0f) {// && (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) {
 		//Save closest hit
-		outIntersectionData->closestHit = intersectionDistance;
 
-		outIntersectionData->info.normal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
-
-		if (outIntersectionData->info.shape) {
-			delete outIntersectionData->info.shape;
+		if (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
+			outIntersectionData->closestHit = intersectionDistance;
+			outIntersectionData->closestHitIndex = outIntersectionData->info.size();
 		}
-		outIntersectionData->info.shape = SAIL_NEW CollisionTriangle(v1, v2, v3, outIntersectionData->info.normal);
-		outIntersectionData->info.entity = meshEntity;
+
+		outIntersectionData->info.emplace_back();
+
+		outIntersectionData->info.back().normal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+
+		outIntersectionData->info.back().entity = meshEntity;
+
+		outIntersectionData->info.back().shape = SAIL_NEW CollisionTriangle(v1, v2, v3, outIntersectionData->info.back().normal);
 	}
 }
 
 void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& rayDir, Node* currentNode, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding, const bool doSimpleIntersections) {
 	const BoundingBox* nodeBoundingBox = currentNode->bbEntity->getComponent<BoundingBoxComponent>()->getBoundingBox();
 	float nodeIntersectionDistance = Intersection::RayWithPaddedAabb(rayStart, rayDir, nodeBoundingBox->getPosition(), nodeBoundingBox->getHalfSize(), padding);
-	if (nodeIntersectionDistance >= 0.0f && (nodeIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects with the current node closer than the closest hit
+	if (nodeIntersectionDistance >= 0.0f) {// && (nodeIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects with the current node closer than the closest hit
 		//Check against entities
 		for (int i = 0; i < currentNode->nrOfEntities; i++) {
 			if (currentNode->entities[i] != ignoreThis) {
 				const BoundingBox* collidableBoundingBox = currentNode->entities[i]->getComponent<BoundingBoxComponent>()->getBoundingBox();
 				glm::vec3 intersectionAxis;
 				float entityIntersectionDistance = Intersection::RayWithPaddedAabb(rayStart, rayDir, collidableBoundingBox->getPosition(), collidableBoundingBox->getHalfSize(), padding, &intersectionAxis);
-				if (entityIntersectionDistance >= 0.0f && (entityIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects the entity bounding box closer than the closest hit
+				if (entityIntersectionDistance >= 0.0f) {// && (entityIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { //Ray intersects the entity bounding box closer than the closest hit
 					//Get Intersection
 					ModelComponent* model = currentNode->entities[i]->getComponent<ModelComponent>();
 					TransformComponent* transform = currentNode->entities[i]->getComponent<TransformComponent>();
@@ -380,15 +384,18 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 						//Intersect with bounding box
 						
 						//Save closest hit
-						outIntersectionData->closestHit = entityIntersectionDistance;
-
-						outIntersectionData->info.normal = intersectionAxis;
-
-						if (outIntersectionData->info.shape) {
-							delete outIntersectionData->info.shape;
+						if (entityIntersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
+							outIntersectionData->closestHit = entityIntersectionDistance;
+							outIntersectionData->closestHitIndex = outIntersectionData->info.size();
 						}
-						outIntersectionData->info.shape = SAIL_NEW CollisionAABB(collidableBoundingBox->getPosition(), collidableBoundingBox->getHalfSize(), outIntersectionData->info.normal);
-						outIntersectionData->info.entity = currentNode->entities[i];
+
+						outIntersectionData->info.emplace_back();
+
+						outIntersectionData->info.back().normal = intersectionAxis;
+
+						outIntersectionData->info.back().entity = currentNode->entities[i];;
+
+						outIntersectionData->info.back().shape = SAIL_NEW CollisionAABB(collidableBoundingBox->getPosition(), collidableBoundingBox->getHalfSize(), outIntersectionData->info.back().normal);
 					}
 				}
 			}

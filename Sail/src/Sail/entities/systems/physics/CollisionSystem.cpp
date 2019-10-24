@@ -25,11 +25,18 @@ void CollisionSystem::provideOctree(Octree* octree) {
 }
 
 void CollisionSystem::update(float dt) {
+	int counter = 0;
 	for (auto& e : entities) {
 		auto movement = e->getComponent<MovementComponent>();
 		auto collision = e->getComponent<CollisionComponent>();
 		auto boundingBox = e->getComponent<BoundingBoxComponent>();
 		auto csc = e->getComponent<CollisionSpheresComponent>();
+
+		if (e->getName() == "projectile") {
+			if (boundingBox->getBoundingBox()->getPosition().y < -20.0f || boundingBox->getBoundingBox()->getPosition().y > 20.0f) {
+				counter++;
+			}
+		}
 
 		collision->collisions.clear();
 
@@ -56,6 +63,7 @@ void CollisionSystem::update(float dt) {
 
 		movement->updateableDt = updateableDt;
 	}
+	Logger::Log(std::to_string(counter));
 }
 
 const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
@@ -209,22 +217,19 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 
 		dt -= newDt;
 
-		std::vector<Octree::CollisionInfo> collisionsToCheck;
-		collisionsToCheck.push_back(intersectionInfo.info);
-
 		//Collision update
-		if (handleCollisions(e, collisionsToCheck, 0.0f)) {
-			surfaceFromCollision(e, collisionsToCheck);
+		if (handleCollisions(e, intersectionInfo.info, 0.0f)) {
+			surfaceFromCollision(e, intersectionInfo.info);
 			rayCastUpdate(e, boundingBox, dt);
 		}
 		else {
 			//Move back 
 			const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
-			boundingBox.setPosition(boundingBox.getPosition() - normalizedVel * collision->padding);
-			transform->translate(-normalizedVel * collision->padding);
+			boundingBox.setPosition(boundingBox.getPosition() - normalizedVel * collision->padding * 0.5f);
+			transform->translate(-normalizedVel * collision->padding * 0.5f);
 
 			//Step forward to find collision
-			stepToFindMissedCollision(e, boundingBox, collisionsToCheck, collision->padding * 2.0f);
+			stepToFindMissedCollision(e, boundingBox, intersectionInfo.info, collision->padding * 2.0f);
 
 			//Keep updating
 			rayCastUpdate(e, boundingBox, dt);
@@ -237,7 +242,7 @@ void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& bounding
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
 
-	const int split = 5;
+	const int split = 21;
 
 	const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
 	const glm::vec3 distancePerStep = (distance / (float)split) * normalizedVel;

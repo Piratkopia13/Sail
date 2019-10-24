@@ -48,7 +48,8 @@ public:
 
 	struct RayIntersectionInfo {
 		float closestHit = -1.0f;
-		Octree::CollisionInfo info;
+		int closestHitIndex = -1;
+		std::vector<Octree::CollisionInfo> info;
 	};
 
 private:
