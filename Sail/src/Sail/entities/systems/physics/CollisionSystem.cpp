@@ -44,13 +44,13 @@ void CollisionSystem::update(float dt) {
 				//Not implemented for spheres yet
 				collisionUpdate(e, updateableDt);
 
-				//surfaceFromCollision(e, collision->collisions);
+				surfaceFromCollision(e, collision->collisions);
 
-				//if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
-				//	//Object is moving fast, ray cast for collisions
-				//	rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
-				//	movement->oldVelocity = movement->velocity;
-				//}
+				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
+					//Object is moving fast, ray cast for collisions
+					rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
+					movement->oldVelocity = movement->velocity;
+				}
 			}
 		}
 
@@ -102,11 +102,9 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 
 				//Add collision to current collisions for collisionComponent
 				collision->collisions.push_back(collisionInfo_i);
-				//collisionInfo_i.shape->keeperTracker++;
 
 				//Add collision to true collisions
 				trueCollisions.push_back(collisionInfo_i);
-				//collisionInfo_i.shape->keeperTracker++;
 
 				returnValue = true;
 			}
@@ -212,7 +210,6 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 
 		std::vector<Octree::CollisionInfo> collisionsToCheck;
 		collisionsToCheck.push_back(intersectionInfo.info);
-		//intersectionInfo.info.shape->keeperTracker++;
 
 		//Collision update
 		if (handleCollisions(e, collisionsToCheck, 0.0f)) {
