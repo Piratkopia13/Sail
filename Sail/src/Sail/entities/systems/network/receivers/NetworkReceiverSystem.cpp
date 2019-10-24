@@ -54,34 +54,34 @@ const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
   any changes made here needs to be made there as well!
 
   Logical structure of the packages that will be decoded by this function:
-  ---------------------------------------------------
-	PlayerID        senderID
-	size_t          nrOfEntities
-	    ComponentID     entity[0].id
-	    EntityType      entity[0].type
-	    size_t          nrOfMessages
-	        MessageType     entity[0].messageType
-	        MessageData     entity[0].data
-	        ...
-	    ComponentID     entity[1].id
-	    EntityType      entity[1].type
-	    size_t          nrOfMessages
-	        MessageType     entity[0].messageType
-	        MessageData     entity[0].data
-	        ...
-	    ComponentID     entity[2].id
-	    EntityType      entity[2].type
-	    size_t          nrOfMessages
-	        MessageType     entity[0].messageType
-	        MessageData     entity[0].data
-	        ...
-	    ...
-	size_t          nrOfEvents
-	    MessageType     eventType[0]
-	    EventData       eventData[0]
-	    ...
-	...
-  ---------------------------------------------------
+	--------------------------------------------------
+	| PlayerID        senderID                       |
+	| size_t          nrOfEntities                   |
+	|     ComponentID     entity[0].id               |
+	|     EntityType      entity[0].type             |
+	|     size_t          nrOfMessages               |
+	|         MessageType     entity[0].messageType  |
+	|         MessageData     entity[0].data         |
+	|         ...                                    |
+	|     ComponentID     entity[1].id               |
+	|     EntityType      entity[1].type             |
+	|     size_t          nrOfMessages               |
+	|         MessageType     entity[0].messageType	 |
+	|         MessageData     entity[0].data         |
+	|         ...                                    |
+	|     ComponentID     entity[2].id               |
+	|     EntityType      entity[2].type             |
+	|     size_t          nrOfMessages               |
+	|         MessageType     entity[0].messageType  |
+	|         MessageData     entity[0].data         |
+	|         ...                                    |
+	|     ...                                        |
+	| size_t          nrOfEvents                     |
+	|     MessageType     eventType[0]               |
+	|     EventData       eventData[0]               |
+	|     ...                                        |
+	| ...                                            |
+	--------------------------------------------------
 
 */
 void NetworkReceiverSystem::update() {
@@ -236,7 +236,7 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				unsigned char playerID;
+				Netcode::PlayerID playerID;
 
 				ar(playerID);
 				playerDisconnect(playerID);
@@ -254,8 +254,6 @@ void NetworkReceiverSystem::update() {
 
 /*
   Creates a new entity of the specified entity type and with a NetworkReceiverComponent attached to it
-
-  TODO: Use an entity factory with blueprints or something like that instead of manually constructing entities here
 */
 void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation) {
 	// Early exit if the entity already exists
@@ -265,95 +263,12 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 		}
 	}
 
-	// -------------------------------------------
-	// TODO: THIS SECTION SHOULD BE A PART OF ENTITY FACTORY
-	std::string modelName = "DocTorch.fbx";
-	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
-	characterModel->setIsAnimated(true);
-	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
-
-	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
-	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
-	//Wireframe bounding box model
-	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
-	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-	// -------------------------------------------
-
-
-	auto e = ECS::Instance()->createEntity("ReceiverEntity");
-
-	// Manually add the entity to this system in case there's another message telling us to modify it, don't wait for ECS
-	entities.push_back(e.get());	// Needs to happen before any 'addComponent' or packets might be lost.
-
-
-	e->addComponent<NetworkReceiverComponent>(id, entityType);
-	e->addComponent<OnlineOwnerComponent>(id);
-
 	// create the new entity
 	switch (entityType) {
 	case Netcode::EntityType::PLAYER_ENTITY:
 	{
-		e->addComponent<ModelComponent>(characterModel);
-		AnimationComponent* ac = e->addComponent<AnimationComponent>(stack);
-		ac->currentAnimation = stack->getAnimation(3);
-		e->addComponent<TransformComponent>(translation);
-		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		e->addComponent<CollidableComponent>();
-
-		// Adding audio component and adding all sounds attached to the player entity
-		e->addComponent<AudioComponent>();
-
-		// RUN Sound
-		Audio::SoundInfo sound{};
-		sound.fileName = "../Audio/footsteps_1.wav";
-		sound.soundEffectLength = 1.0f;
-		sound.volume = 0.5f;
-		sound.playOnce = false;
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
-		// JUMP Sound
-		sound.fileName = "../Audio/jump.wav";
-		sound.soundEffectLength = 0.7f;
-		sound.playOnce = true;
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
-		// SHOOT sound
-		sound.fileName = "../Audio/testSoundShoot.wav";
-		sound.soundEffectLength = 1.0f;
-		sound.playOnce = true;
-
-		//creates light with model and pointlight
-		auto light = ECS::Instance()->createEntity("ReceiverLight");
-		light->addComponent<CandleComponent>();
-		light->addComponent<ModelComponent>(lightModel);
-		light->addComponent<TransformComponent>();
-		light->addComponent<BoundingBoxComponent>(boundingBoxModel);
-		light->addComponent<CollidableComponent>();
-		light->addComponent<OnlineOwnerComponent>(id);
-		PointLight pl;
-		pl.setColor(glm::vec3(0.2f, 0.2f, 0.2f));
-		pl.setPosition(glm::vec3(0.2f, 0.2f + .37f, 0.2f));
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		//pl.setIndex(m_currLightIndex++);
-		pl.setIndex(999); // TODO: unique light index needed?
-		light->addComponent<LightComponent>(pl);
-
-		e->addChildEntity(light);
-		ac->leftHandEntity = light.get();
-		
-		// PUT THINGS IN HAND
-		ac->leftHandPosition = glm::identity<glm::mat4>();
-		ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.57f, 1.03f, 0.05f));
-		ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
-
-
-
-
-
-
+		// lightIndex set to 999, can probably be removed since it no longer seems to be used
+		EntityFactory::CreateOtherPlayer(id, 999, translation);
 	}
 	break;
 	default:
@@ -366,9 +281,10 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const 
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			e->getComponent<TransformComponent>()->setTranslation(translation);
-			break;
+			return;
 		}
 	}
+	Logger::Warning("setEntityTranslation called but no matching entity found");
 }
 
 void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
@@ -383,9 +299,10 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 			//}
 			e->getComponent<TransformComponent>()->setRotations(rot);
 
-			break;
+			return;
 		}
 	}
+	Logger::Warning("setEntityRotation called but no matching entity found");
 }
 
 void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime) {
@@ -394,8 +311,10 @@ void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int anim
 			auto animation = e->getComponent<AnimationComponent>();
 			animation->currentAnimation = animation->getAnimationStack()->getAnimation(animationStack);
 			animation->animationTime = animationTime;
+			return;
 		}
 	}
+	Logger::Warning("setEntityAnimation called but no matching entity found");
 }
 
 void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
@@ -405,9 +324,10 @@ void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
 
-			break;
+			return;
 		}
 	}
+	Logger::Warning("playerJumped called but no matching entity found");
 }
 
 void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) {
@@ -424,11 +344,11 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 				// Save the Shooter of the Candle if its lethal
 				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
 				// Check in Candle System What happens next
-				break;
+				return;
 			}
 		}
-		break;
 	}
+	Logger::Warning("waterHitPlayer called but no matching entity found");
 }
 
 
@@ -476,8 +396,9 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			//If it wasn't me that died, completely remove the player entity from game.
 			e->queueDestruction();
 		}
-		break; // Break because should only be one player; stop looping!
+		return;
 	}
+	Logger::Warning("playerDied called but no matching entity found");
 }
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
@@ -490,9 +411,10 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 
 			e->queueDestruction();
 
-			break; // Break because should only be one candle; stop looping!
+			return;
 		}
 	}
+	Logger::Warning("playerDisconnect called but no matching entity found");
 }
 
 
@@ -525,9 +447,8 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 				return;
 			}
 		}
-		break;
-
 	}
+	Logger::Warning("setCandleHeldState called but no matching entity found");
 }
 
 

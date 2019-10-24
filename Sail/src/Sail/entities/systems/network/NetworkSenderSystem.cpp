@@ -21,7 +21,7 @@ NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 }
 
 NetworkSenderSystem::~NetworkSenderSystem() {
-	while (m_eventQueue.size() > 0) {
+	while (!m_eventQueue.empty()) {
 		NetworkSenderEvent* pEvent = m_eventQueue.front();
 		m_eventQueue.pop();
 		delete pEvent;
@@ -37,35 +37,36 @@ void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem
   The construction of messages needs to match how the NetworkReceiverSystem parses them so
   any changes made here needs to be made there as well!
 
-  Logical structure of the package that will be sent by this function:
-  ---------------------------------------------------
-	PlayerID        senderID
-	size_t          nrOfEntities
-	    ComponentID     entity[0].id
-	    EntityType      entity[0].type
-	    size_t          nrOfMessages
-	        MessageType     entity[0].messageType
-	        MessageData     entity[0].data
-	        ...
-	    ComponentID     entity[1].id
-	    EntityType      entity[1].type
-	    size_t          nrOfMessages
-	        MessageType     entity[0].messageType
-	        MessageData     entity[0].data
-	        ...
-	    ComponentID     entity[2].id
-	    EntityType      entity[2].type
-	    size_t          nrOfMessages
-	        MessageType     entity[0].messageType
-	        MessageData     entity[0].data
-	        ...
-	    ...
-	size_t          nrOfEvents
-	    MessageType     eventType[0]
-	    EventData       eventData[0]
-	    ...
-	...
-  ---------------------------------------------------
+
+	Logical structure of the package that will be sent by this function:
+	--------------------------------------------------
+	| PlayerID        senderID                       |
+	| size_t          nrOfEntities                   |
+	|     ComponentID     entity[0].id               |
+	|     EntityType      entity[0].type             |
+	|     size_t          nrOfMessages               |
+	|         MessageType     entity[0].messageType  |
+	|         MessageData     entity[0].data         |
+	|         ...                                    |
+	|     ComponentID     entity[1].id               |
+	|     EntityType      entity[1].type             |
+	|     size_t          nrOfMessages               |
+	|         MessageType     entity[0].messageType	 |
+	|         MessageData     entity[0].data         |
+	|         ...                                    |
+	|     ComponentID     entity[2].id               |
+	|     EntityType      entity[2].type             |
+	|     size_t          nrOfMessages               |
+	|         MessageType     entity[0].messageType  |
+	|         MessageData     entity[0].data         |
+	|         ...                                    |
+	|     ...                                        |
+	| size_t          nrOfEvents                     |
+	|     MessageType     eventType[0]               |
+	|     EventData       eventData[0]               |
+	|     ...                                        |
+	| ...                                            |
+	--------------------------------------------------
 
 */
 void NetworkSenderSystem::update() {
@@ -170,7 +171,7 @@ const std::vector<Entity*>& NetworkSenderSystem::getEntities() const {
 	return entities;
 }
 
-// TODO: Test this to see if it's actually needed or not/l
+// TODO: Test this to see if it's actually needed or not
 void NetworkSenderSystem::stop() {
 	// Loop through networked entities and serialize their data.
 	std::ostringstream osToOthers(std::ios::binary);

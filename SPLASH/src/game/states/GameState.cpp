@@ -13,9 +13,6 @@
 #include <sstream>
 #include <iomanip>
 
-// Uncomment to use forward rendering
-//#define DISABLE_RT
-
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -89,13 +86,8 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-#ifdef DISABLE_RT
-	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
-	m_app->getRenderWrapper()->changeRenderer(1);
-	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
-#else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-#endif
+
 	m_app->getResourceManager().setDefaultShader(shader);
 	std::string playerModelName = "Doc.fbx";
 
@@ -122,7 +114,7 @@ GameState::GameState(StateStack& stack)
 		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 	}
 
-	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
