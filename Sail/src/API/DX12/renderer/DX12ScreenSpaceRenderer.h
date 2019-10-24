@@ -9,7 +9,6 @@ public:
 	~DX12ScreenSpaceRenderer();
 
 	virtual void begin(Camera* camera) override;
-	virtual void end() override;
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
 	virtual bool onEvent(Event& event) override;
 

@@ -26,4 +26,5 @@ void BeginEndFrameSystem::endFrameAndPresent() {
 	renderWrapper->getCurrentRenderer()->end();
 	renderWrapper->getCurrentRenderer()->present((renderWrapper->getDoPostProcessing()
 		) ? renderWrapper->getPostProcessPipeline() : nullptr);
+	renderWrapper->getScreenSpaceRenderer()->present();
 }

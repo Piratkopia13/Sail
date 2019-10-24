@@ -22,6 +22,6 @@ PSIn VSMain(VSIn input) {
 }
 
 float4 PSMain(PSIn input) : SV_Target0{
-	return input.position;
+	return float4(1.f, 0.f, 0.f, 1.f);
 }
 

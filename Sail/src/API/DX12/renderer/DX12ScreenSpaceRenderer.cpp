@@ -23,8 +23,6 @@ DX12ScreenSpaceRenderer::~DX12ScreenSpaceRenderer() {}
 
 void DX12ScreenSpaceRenderer::begin(Camera* camera) {}
 
-void DX12ScreenSpaceRenderer::end() {}
-
 void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
