@@ -245,6 +245,29 @@ void NetworkReceiverSystem::update() {
 				playerDisconnect(playerID);
 			}
 			break;
+			case Netcode::MessageType::ENDGAME_STATS:
+			{
+				// Recieve player count
+				size_t nrOfPlayers;
+				ar(nrOfPlayers);
+
+				// create temporary variables to hold data when reading netmessage
+				Netcode::PlayerID pID;
+				int nKills;
+				int placement;
+
+				// Get all per player data from the Host
+				for (int k = 0; k < nrOfPlayers; k++) {
+					ar(pID);
+					ar(nKills);
+					ar(placement);
+					GameDataTracker::getInstance().setStatsForPlayer(pID, nKills, placement);
+				}
+
+				// Get all specific data from the Host
+
+			}
+			break;
 			default:
 				break;
 			}

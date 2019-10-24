@@ -12,6 +12,7 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/Application.h"
+#include "Sail/utils/GameDataTracker.h"
 
 #include "../../Physics/Octree.h"
 #include "Sail/Application.h"
@@ -58,7 +59,12 @@ void CandleSystem::update(float dt) {
 			if (candle->getHealth() <= 0.f) {
 				candle->setIsLit(false);
 				candle->setCarried(true);
-				
+
+				// Add kill score to host player tracker
+				if (NWrapperSingleton::getInstance().isHost()) {
+					GameDataTracker::getInstance().logEnemyKilled(candle->getWasHitByNetID());
+				}
+
 				// Did this candle's owner die?
 				if (candle->getNumRespawns() == m_maxNumRespawns) {
 					candle->setIsAlive(false);
@@ -74,10 +80,20 @@ void CandleSystem::update(float dt) {
 							}
 						);
 
+						// Save the placement for the player who lost
+						GameDataTracker::getInstance().logPlacement(Netcode::getComponentOwner(
+							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id));
+
 						if (LivingCandles <= 1) { // Match IS over
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::MATCH_ENDED,
 								nullptr
+							);
+							// Send relevant stats to all clients
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::ENDGAME_STATS,
+								nullptr,
+								false
 							);
 						}
 					}
