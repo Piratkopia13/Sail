@@ -111,37 +111,36 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			if (collision->onGround) {
-				isPlayingRunningSound = true;
+				m_isPlayingRunningSound = true;
 
-				if (onGroundTimer > onGroundThreshold) {
-					onGroundTimer = onGroundThreshold;
-				}
-				else {
-					onGroundTimer += dt;
+				if (m_onGroundTimer > m_onGroundThreshold) {
+					m_onGroundTimer = m_onGroundThreshold;
+				} else {
+					m_onGroundTimer += dt;
 				}
 			}
 
 			else if (!collision->onGround) {
-				if (onGroundTimer < 0.0f) {
-					onGroundTimer = 0.0f;
-					isPlayingRunningSound = false;
+				if (m_onGroundTimer < 0.0f) {
+					m_onGroundTimer = 0.0f;
+					m_isPlayingRunningSound = false;
+				} else {
+					m_onGroundTimer -= dt;
 				}
-				else {
-					onGroundTimer -= dt;
-				}
-				
 			}
 
 			if ( playerMovement.upMovement == 1.0f ) {
 				if (!m_wasSpacePressed && collision->onGround) {
 					movement->velocity.y = 5.0f;
 					// AUDIO TESTING - JUMPING
-				e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
-				e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
-				//	// Add networkcomponent for jump 
+					m_onGroundTimer = -1.0f; // To stop walking sound immediately when jumping
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
+					//	// Add networkcomponent for jump 
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_JUMPED,
-						nullptr	// Don't need to send id that 'we' jumped, it is deducable
+						SAIL_NEW Netcode::MessagePlayerJumped{e->getComponent<NetworkSenderComponent>()->m_id},
+						false // Don't delay the jump for ourselves, handle the logic here
 					);
 					m_gameDataTracker->logJump();
 				}
@@ -164,7 +163,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				if ( !collision->onGround ) {
 					acceleration = acceleration * 0.5f;
 					// AUDIO TESTING (turn OFF looping running sound)
-					if (!isPlayingRunningSound) {
+					if (!m_isPlayingRunningSound) {
 						audioComp->m_sounds[Audio::SoundType::RUN].isPlaying = false;
 					}
 				}
@@ -189,15 +188,15 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 void GameInputSystem::processMouseInput(const float& dt) {
 	// Toggle cursor capture on right click
-	for ( auto e : entities ) {
+	for (auto e : entities) {
 
-		if ( Input::WasMouseButtonJustPressed(KeyBinds::disableCursor) ) {
+		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
 
-		if ( !e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot) ) {
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			glm::vec3 gunPosition = m_cam->getCameraPosition() + ( m_cam->getCameraDirection() + camRight - m_cam->getCameraUp() );
+			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 		}
 
@@ -207,29 +206,32 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		m_yaw = glm::degrees(-rots.y);
 
 		// Update pitch & yaw if window has focus
-		if ( Input::IsCursorHidden() ) {
+		if (Input::IsCursorHidden()) {
 			glm::ivec2& mouseDelta = Input::GetMouseDelta();
 			m_pitch -= mouseDelta.y * m_lookSensitivityMouse;
 			m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 		}
 
 		// Lock pitch to the range -89 - 89
-		if ( m_pitch >= 89 ) {
+		if (m_pitch >= 89) {
 			m_pitch = 89;
-		} else if ( m_pitch <= -89 ) {
+		}
+		else if (m_pitch <= -89) {
 			m_pitch = -89;
 		}
 
 		// Lock yaw to the range 0 - 360
-		if ( m_yaw >= 360 ) {
+		if (m_yaw >= 360) {
 			m_yaw -= 360;
-		} else if ( m_yaw <= 0 ) {
+		}
+		else if (m_yaw <= 0) {
 			m_yaw += 360;
 		}
 
 		trans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 	}
 }
+
 
 void GameInputSystem::updateCameraPosition(float alpha) {
 	for ( auto e : entities ) {

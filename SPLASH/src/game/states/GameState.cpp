@@ -145,8 +145,6 @@ GameState::GameState(StateStack& stack)
 	}
 
 	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
-	m_componentSystems.networkReceiverSystem->initPlayer(m_player);
-	m_componentSystems.networkSenderSystem->initPlayerEntity(m_player);
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
@@ -175,10 +173,10 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
 
-	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();
-	m_gameMusic->addComponent<AudioComponent>();
-	m_gameMusic->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
+	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
+	m_ambiance->addComponent<AudioComponent>();
+	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
+	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 }
@@ -384,17 +382,16 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
-	m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	// Create Network Reciever System depending on host or client.
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
-	}
-	else {
+	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -478,14 +475,14 @@ bool GameState::onEvent(Event& event) {
 
 	return true;
 }
-
+	
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
-	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+	m_componentSystems.networkReceiverSystem->handleIncomingData(event.getSerializedData());
 	return true;
 }
 
@@ -519,7 +516,7 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
-	// Here we will recieve when a player disconnected.
+	// Here we will receive when a player disconnected.
 	// In the case of the host, deal with it based on who dc'd.
 	// In the case of the client, deal with it based on who dc'd.
 
@@ -534,7 +531,7 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 				{
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_DISCONNECT,
-						SAIL_NEW Netcode::MessageDataPlayerDisconnect{
+						SAIL_NEW Netcode::MessagePlayerDisconnect{
 							event.getPlayerID()
 						}
 					);
@@ -1053,6 +1050,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
+	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
 }
 
 #ifdef _PERFORMANCE_TEST
@@ -1063,7 +1061,7 @@ void GameState::populateScene(Model* characterModel, Model* lightModel, Model* b
 		float spawnOffsetZ = 13.f + float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		std::string name = "DocGunRun4.fbx";
+		std::string name = "DocTorch.fbx";
 		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
 		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
 		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
