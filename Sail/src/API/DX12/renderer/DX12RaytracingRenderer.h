@@ -32,8 +32,8 @@ private:
 	DX12API::Command m_commandCompute;
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 
-	UINT64 m_fenceValues[2];
-	wComPtr<ID3D12Fence1> m_fences[2];
+	UINT64 m_fenceValue;
+	wComPtr<ID3D12Fence1> m_fence;
 	
 	// Metaballs
 	std::vector<DXRBase::Metaball> m_metaballpositions;

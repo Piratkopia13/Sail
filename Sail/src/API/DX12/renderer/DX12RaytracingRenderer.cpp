@@ -20,10 +20,8 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_commandCompute.list->SetName(L"Raytracing Renderer main command list");
 
 	// Create fence
-	ThrowIfFailed(m_context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fences[0])));
-	ThrowIfFailed(m_context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fences[1])));
-	m_fenceValues[0] = 1;
-	m_fenceValues[1] = 1;
+	ThrowIfFailed(m_context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+	m_fenceValue = 0;
 
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
@@ -53,9 +51,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	cmdListDirect->Reset(allocatorDirect.Get(), nullptr);
 
 	// Wait for the G-Buffer pass to finish execution on the direct queue
-	auto fenceVal = ++m_fenceValues[frameIndex];
-	m_context->getDirectQueue()->Signal(m_fences[frameIndex].Get(), fenceVal);
-	m_context->getComputeQueue()->Wait(m_fences[frameIndex].Get(), fenceVal);
+	auto fenceVal = ++m_fenceValue;
+	m_context->getDirectQueue()->Signal(m_fence.Get(), fenceVal);
+	m_context->getComputeQueue()->Wait(m_fence.Get(), fenceVal);
 
 	// Clear output texture
 	//m_outputTexture.get()->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdListDirect.Get());
@@ -131,8 +129,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	cmdListCompute->Close();
 	m_context->executeCommandLists({ cmdListCompute.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
 	// Place a signal to syncronize copying the raytracing output to the backbuffer when it is available
-	fenceVal = ++m_fenceValues[frameIndex];
-	m_context->getComputeQueue()->Signal(m_fences[frameIndex].Get(), fenceVal);
+	fenceVal = ++m_fenceValue;
+	m_context->getComputeQueue()->Signal(m_fence.Get(), fenceVal);
 
 	// Copy post processing output to back buffer
 	dxRenderOutput->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -143,7 +141,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	DX12Utils::SetResourceTransitionBarrier(cmdListDirect.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
 
 	// Wait for compute to finish
-	m_context->getDirectQueue()->Wait(m_fences[frameIndex].Get(), fenceVal);
+	m_context->getDirectQueue()->Wait(m_fence.Get(), fenceVal);
 	// Execute direct command list
 	cmdListDirect->Close();
 	m_context->executeCommandLists({ cmdListDirect.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
