@@ -35,6 +35,7 @@ DX12API::~DX12API() {
 	{
 		m_dxgiFactory.Reset();
 		m_directCommandQueue.Reset();
+		m_computeCommandQueue.Reset();
 		m_computeCommandQueueAnimations.Reset();
 		m_swapChain.Reset();
 		m_directQueueFence.Reset();
@@ -174,6 +175,8 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 
 	// Create compute command queue
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_computeCommandQueue)));
+	m_computeCommandQueue->SetName(L"Compute Command Queue");
 	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_computeCommandQueueAnimations)));
 	m_computeCommandQueueAnimations->SetName(L"Compute Command Queue Animations");
 
@@ -193,11 +196,13 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	scDesc.Flags = (m_tearingSupport) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
 	IDXGISwapChain1* swapChain1 = nullptr;
-	if (SUCCEEDED(m_factory->CreateSwapChainForHwnd(m_directCommandQueue.Get(), *window->getHwnd(), &scDesc, nullptr, nullptr, &swapChain1))) {
-		if (SUCCEEDED(swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain)))) {
+	HRESULT hr;
+	if (SUCCEEDED(hr = m_factory->CreateSwapChainForHwnd(m_directCommandQueue.Get(), *window->getHwnd(), &scDesc, nullptr, nullptr, &swapChain1))) {
+		if (SUCCEEDED(hr = swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain)))) {
 			m_swapChain->Release();
 		}
 	}
+	ThrowIfFailed(hr);
 
 	if (m_tearingSupport) {
 		// When tearing support is enabled we will handle ALT+Enter key presses in the
@@ -435,33 +440,27 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 void DX12API::nextFrame() {
 
 	// Schedule a signal to notify when the current frame has finished presenting
-	UINT64 currentFenceValue = m_directQueueFenceValues[m_swapIndex];
-	ThrowIfFailed(m_directCommandQueue->Signal(m_directQueueFence.Get(), currentFenceValue));
+	UINT64 currentDirectFenceValue = m_directQueueFenceValues[m_swapIndex];
+	UINT64 currentComputeFenceValue = m_computeQueueFenceValues[m_swapIndex];
+	ThrowIfFailed(m_directCommandQueue->Signal(m_directQueueFence.Get(), currentDirectFenceValue));
+	ThrowIfFailed(m_computeCommandQueue->Signal(m_computeQueueFence.Get(), currentComputeFenceValue));
 
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 	m_swapIndex = 1 - m_swapIndex; // Toggle between 0 and 1
 
-	// Wait until the next frame is ready
-	auto val = m_directQueueFence->GetCompletedValue();
-	if (val < m_directQueueFenceValues[m_swapIndex]) {
+	// Wait until the next frame is ready on the direct queue
+	if (m_directQueueFence->GetCompletedValue() < m_directQueueFenceValues[m_swapIndex]) {
 		m_directQueueFence->SetEventOnCompletion(m_directQueueFenceValues[m_swapIndex], m_eventHandle);
 		WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
 	}
+	// Wait until the next frame is ready on the compute queue
+	if (m_computeQueueFence->GetCompletedValue() < m_computeQueueFenceValues[m_swapIndex]) {
+		m_computeQueueFence->SetEventOnCompletion(m_computeQueueFenceValues[m_swapIndex], m_eventHandle);
+		WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
+	}
 
-	/*if (waitedCounter == waitedMax) {
-		int matches = std::count(waited.begin(), waited.end(), true);
-		std::stringstream stream;
-		stream << std::fixed << std::setprecision(2) << ((matches / (float)waitedMax) * 100.f);
-		std::string percentageStr = stream.str();
-
-		std::string outputStr(percentageStr + "% of the last " + std::to_string(waitedMax) + " frames had to wait for the gpu before rendering");
-		Logger::Log(outputStr);
-		OutputDebugStringA(outputStr.c_str());
-		OutputDebugStringA("\n");
-		waitedCounter = 0;
-	}*/
-
-	m_directQueueFenceValues[m_swapIndex] = currentFenceValue + 1;
+	m_directQueueFenceValues[m_swapIndex] = currentDirectFenceValue + 1;
+	m_computeQueueFenceValues[m_swapIndex] = currentComputeFenceValue + 1;
 
 	// Get the handle for the current render target used as back buffer
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
@@ -695,6 +694,14 @@ const D3D12_RECT* DX12API::getScissorRect() const {
 	return &m_scissorRect;
 }
 
+ID3D12CommandQueue* DX12API::getComputeQueue() const {
+	return m_computeCommandQueue.Get();
+}
+
+ID3D12CommandQueue* DX12API::getDirectQueue() const {
+	return m_directCommandQueue.Get();
+}
+
 #ifdef _DEBUG
 void DX12API::beginPIXCapture() const {
 	if (m_pixGa) {
@@ -721,11 +728,6 @@ void DX12API::initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type) {
 	cmd.list->Close();
 }
 
-void DX12API::executeCommandListsComputeAnimation(std::initializer_list<ID3D12CommandList*> cmdLists) const {
-	// Command lists needs to be closed before sent to this method
-	m_computeCommandQueueAnimations->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
-}
-
 void DX12API::waitForComputeAnimation() {
 	// Waits for the GPU to finish all current tasks in the COMPUTE ANIMATION queue
 
@@ -740,9 +742,20 @@ void DX12API::waitForComputeAnimation() {
 	m_computeQueueAnimaitonFenceValues[m_swapIndex]++;
 }
 
-void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const {
+void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists, D3D12_COMMAND_LIST_TYPE type) const {
 	// Command lists needs to be closed before sent to this method
-	m_directCommandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
+	if (type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
+		m_directCommandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
+	} else if (type == D3D12_COMMAND_LIST_TYPE_COMPUTE) {
+		m_computeCommandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
+	} else {
+		Logger::Error("Cannot execute CommandLists of type " + std::to_string(type));
+	}
+}
+
+void DX12API::executeCommandListsComputeAnimation(std::initializer_list<ID3D12CommandList*> cmdLists) const {
+	// Command lists needs to be closed before sent to this method
+	m_computeCommandQueueAnimations->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
 }
 
 void DX12API::executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const {
@@ -852,13 +865,17 @@ void DX12API::toggleFullscreen() {
 void DX12API::waitForGPU() {
 	// Waits for the GPU to finish all current tasks in the direct queue
 
-	// Schedule a signal
+	// Schedule signals
 	ThrowIfFailed(m_directCommandQueue->Signal(m_directQueueFence.Get(), m_directQueueFenceValues[m_swapIndex]));
+	ThrowIfFailed(m_computeCommandQueue->Signal(m_computeQueueFence.Get(), m_computeQueueFenceValues[m_swapIndex]));
 
-	// Wait until command queue is done
+	// Wait until command queues are done
 	m_directQueueFence->SetEventOnCompletion(m_directQueueFenceValues[m_swapIndex], m_eventHandle);
 	WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
+	m_computeQueueFence->SetEventOnCompletion(m_computeQueueFenceValues[m_swapIndex], m_eventHandle);
+	WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
 
-	// Increment fence value for current frame
+	// Increment fence values for current frame
 	m_directQueueFenceValues[m_swapIndex]++;
+	m_computeQueueFenceValues[m_swapIndex]++;
 }

@@ -309,15 +309,11 @@ void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
 
 	assert(m_gbufferInputTextures); // Input textures not set!
-
-	for (int i = 0; i < DX12GBufferRenderer::NUM_GBUFFERS; i++) {
-		m_gbufferInputTextures[i]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	}
 	
 	unsigned int frameIndex = m_context->getSwapIndex();
 
-	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	// Copy output texture srv to beginning of heap
+	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	D3D12_CPU_DESCRIPTOR_HANDLE outputTexHandle;
 	outputTexHandle.ptr = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_heapIncr * frameIndex;
 	m_context->getDevice()->CopyDescriptorsSimple(1, outputTexHandle, outputTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

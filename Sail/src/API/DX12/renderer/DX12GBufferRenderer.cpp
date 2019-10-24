@@ -204,14 +204,11 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 	if (threadID == nThreads - 1) {
 
-		//// TODO: remove when this pass is used together with RT
-		//// Copy gbuffer output to back buffer
-		//m_gbufferTextures[0]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-		//auto* renderTarget = m_context->getCurrentRenderTargetResource();
-		//DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
-		//cmdList->CopyResource(renderTarget, m_gbufferTextures[0]->getResource());
-		//// Lastly - transition back buffer to present
-		//DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
+		// Transition output textures for use in raytracing
+		for (int i = 0; i < NUM_GBUFFERS; i++) {
+			// TODO: transition in batch
+			m_gbufferTextures[i]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		}
 
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));

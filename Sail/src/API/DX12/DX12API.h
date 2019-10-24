@@ -94,6 +94,8 @@ public:
 	IDXGISwapChain4* const getSwapChain() const;
 	const D3D12_VIEWPORT* getViewport() const;
 	const D3D12_RECT* getScissorRect() const;
+	ID3D12CommandQueue* getComputeQueue() const;
+	ID3D12CommandQueue* getDirectQueue() const;
 
 #ifdef _DEBUG
 	void beginPIXCapture() const;
@@ -106,7 +108,7 @@ public:
 	void executeCommandListsComputeAnimation(std::initializer_list<ID3D12CommandList*> cmdLists) const;
 	void waitForComputeAnimation();
 
-	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
+	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT) const;
 	void executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
