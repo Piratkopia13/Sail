@@ -28,6 +28,8 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
+
+
 	//----Octree creation----
 	//Wireframe shader
 	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
@@ -76,6 +78,26 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
+
+	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
+
+	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
+	
+	/*
+	THIS LINE OF CODE CAUSES AN INTERMITTENT CRASH
+	*/
+//	auto GUIModel = ModelFactory::CubeModel::Create(glm::vec3(1.f), guiShader); 
+	/*
+	THIS LINE OF CODE CAUSES AN INTERMITTENT CRASH
+	*/
+	
+	
+	
+	//GUIModel.get()->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
+	//Model* stuff = GUIModel.get();
+	GUIEntity->addComponent<GUIComponent>();
+	//GUIEntity->addComponent<ModelComponent>(stuff);
+	GUIEntity->addComponent<TransformComponent>();
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -354,6 +376,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
 	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
+	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
 
 	// Create system for player input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -604,6 +627,7 @@ bool GameState::render(float dt, float alpha) {
 	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
+	//m_componentSystems.guiSubmitSystem->submitAll();
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return true;
