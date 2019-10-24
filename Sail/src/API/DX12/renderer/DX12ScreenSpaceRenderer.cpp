@@ -59,7 +59,7 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 
 	// Bind the descriptor heap that will contain all SRVs for this frame
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
-
+	
 	meshIndex = 0;
 	for (auto& command : commandQueue) {
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.model.mesh->getMaterial()->getShader()->getPipeline());
@@ -71,6 +71,9 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 		static_cast<DX12Mesh*>(command.model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
 		meshIndex++;
 	}
+
+	// TODO: Bind text texture
+	// TODO: Draw all text meshes
 
 	// Lastly - transition back buffer to present
 	m_context->prepareToPresent(cmdList.Get());

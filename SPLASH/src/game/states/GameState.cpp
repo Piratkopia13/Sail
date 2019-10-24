@@ -113,10 +113,10 @@ GameState::GameState(StateStack& stack)
 
 	/* GUI testing */
 	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
-
 	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
-
-	auto GUIModel = &m_app->getResourceManager().getModelCopy("cubeWidth1.fbx", guiShader);
+	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
+	auto GUIModel = &m_app->getResourceManager().getModel("box.fbx", guiShader);
+	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
 	GUIEntity->addComponent<GUIComponent>();
 	GUIEntity->addComponent<ModelComponent>(GUIModel);
 	GUIEntity->addComponent<TransformComponent>();
