@@ -157,6 +157,12 @@ GameState::GameState(StateStack& stack)
 	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
+
+	// Host fill its game tracker per player with player data.
+	if (NWrapperSingleton::getInstance().isHost()) {
+		GameDataTracker::getInstance().init();
+	}
+	
 }
 
 GameState::~GameState() {
@@ -555,6 +561,7 @@ bool GameState::update(float dt, float alpha) {
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
+	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -612,6 +619,7 @@ bool GameState::renderImgui(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
+	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();

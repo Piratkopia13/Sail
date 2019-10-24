@@ -11,6 +11,7 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/Application.h"
+#include "Sail/utils/GameDataTracker.h"
 
 #include "../../Physics/Octree.h"
 #include "Sail/Application.h"
@@ -40,7 +41,7 @@ void CandleSystem::setPlayerEntityID(int entityID, Entity* entityPtr) {
 void CandleSystem::lightCandle(const std::string& name) {
 	for (auto e : entities) {
 		if (e->getName() == name) {
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(1.0f, 0.7f, 0.4f));
 			break;
 		}
 	}
@@ -56,7 +57,12 @@ void CandleSystem::update(float dt) {
 			if (candle->getHealth() <= 0.f) {
 				candle->setIsLit(false);
 				candle->setCarried(true);
-				
+
+				// Add kill score to host player tracker
+				if (NWrapperSingleton::getInstance().isHost()) {
+					GameDataTracker::getInstance().logEnemyKilled(candle->getWasHitByNetID());
+				}
+
 				// Did this candle's owner die?
 				if (candle->getNumRespawns() == m_maxNumRespawns) {
 					candle->setIsAlive(false);
@@ -72,11 +78,21 @@ void CandleSystem::update(float dt) {
 							}, true
 						);
 
+						// Save the placement for the player who lost
+						GameDataTracker::getInstance().logPlacement(Netcode::getComponentOwner(
+							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id));
+
 						if (LivingCandles <= 1) { // Match IS over
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::MATCH_ENDED,
 								nullptr,
 								true
+							);
+							// Send relevant stats to all clients
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::ENDGAME_STATS,
+								nullptr,
+								false
 							);
 						}
 					}
@@ -103,7 +119,7 @@ void CandleSystem::update(float dt) {
 			float cHealth = candle->getHealth();
 			cHealth = (cHealth < 0.f) ? 0.f : cHealth;
 			float tempHealthRatio = (cHealth / MAX_HEALTH);
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio, tempHealthRatio));
+			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
 
 			candle->setWasCarriedLastUpdate(candle->isCarried());
 			glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);

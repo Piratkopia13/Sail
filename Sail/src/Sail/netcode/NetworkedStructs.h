@@ -55,6 +55,7 @@ namespace Netcode {
 		PLAYER_DIED,
 		PLAYER_DISCONNECT,
 		MATCH_ENDED,
+		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
 		SEND_ALL_BACK_TO_LOBBY,
 		EMPTY = 69
@@ -165,6 +166,12 @@ namespace Netcode {
 		MessagePlayerDisconnect(PlayerID id) : playerID(id) {}
 		~MessagePlayerDisconnect() {}
 		PlayerID playerID;
+	};
+
+	class MessageEndGameStats : public MessageData {
+	public:
+		MessageEndGameStats() {}
+		~MessageEndGameStats() {}
 	};
 
 }

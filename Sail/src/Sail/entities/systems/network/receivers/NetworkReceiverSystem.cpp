@@ -14,6 +14,7 @@
 
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
+#include "Sail/utils/GameDataTracker.h"
 
 
 // The host will now automatically forward all incoming messages to other players so
@@ -36,6 +37,8 @@ void NetworkReceiverSystem::init(Netcode::PlayerID playerID, GameState* gameStat
 	m_playerID = playerID;
 	m_gameStatePtr = gameStatePtr;
 	m_netSendSysPtr = netSendSysPtr;
+
+	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 void NetworkReceiverSystem::pushDataToBuffer(std::string data) {
@@ -236,6 +239,29 @@ void NetworkReceiverSystem::update() {
 
 				ar(playerID);
 				playerDisconnect(playerID);
+			}
+			break;
+			case Netcode::MessageType::ENDGAME_STATS:
+			{
+				// Recieve player count
+				int nrOfPlayers;
+				ar(nrOfPlayers);
+
+				// create temporary variables to hold data when reading netmessage
+				Netcode::PlayerID pID;
+				int nKills;
+				int placement;
+
+				// Get all per player data from the Host
+				for (int k = 0; k < nrOfPlayers; k++) {
+					ar(pID);
+					ar(nKills);
+					ar(placement);
+					GameDataTracker::getInstance().setStatsForPlayer(pID, nKills, placement);
+				}
+
+				// Get all specific data from the Host
+
 			}
 			break;
 			default:
@@ -444,7 +470,10 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
 		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
 		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
-		Logger::Log(ShooterPlayer + " sprayed down " + deadPlayer);
+		std::string deathType = "sprayed down";
+		Logger::Log(ShooterPlayer + " " + deathType + " " + deadPlayer);
+
+		m_gameDataTracker->logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
 
 		//This should remove the candle entity from game
 		e->removeDeleteAllChildren();
