@@ -322,13 +322,13 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		GameDataTracker* dgtp = &GameDataTracker::getInstance();
 		std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
 		// Send player count to clients for them to loop following data
-		(*ar)(tmpPlayerMap.size());
+		(ar)(tmpPlayerMap.size());
 
 		// Send all per player data. Match this on the reciever end
 		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
-			(*ar)(player->first);
-			(*ar)(player->second.nKills);
-			(*ar)(player->second.placement);
+			(ar)(player->first);
+			(ar)(player->second.nKills);
+			(ar)(player->second.placement);
 		}
 
 		// Send all specific data

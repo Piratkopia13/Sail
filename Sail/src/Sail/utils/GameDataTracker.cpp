@@ -102,7 +102,7 @@ void GameDataTracker::renderImgui() {
 
 
 	ImGui::Text("\n Placement------");
-
+	// Sort rankings
 	for (auto player : m_hostPlayerTracker) {
 		tempPlacementMap[player.second.placement].name = m_network->getPlayer((Netcode::PlayerID)player.first)->name;
 		tempPlacementMap[player.second.placement].nKills = player.second.nKills;
