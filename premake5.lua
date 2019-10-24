@@ -1,6 +1,6 @@
 -- premake5.lua
 workspace "Sail"
-	configurations { "Debug", "Release", "PerformanceTest" }
+	configurations { "Debug", "PerformanceTest", "Dev-Release", "Release"  }
 	startproject "SPLASH"
 	platforms { "DX12 x64", "DX12 x86" }
 
@@ -71,7 +71,7 @@ project "SPLASH"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
 
 	filter "configurations:Release"
@@ -80,6 +80,10 @@ project "SPLASH"
 
 	filter "configurations:PerformanceTest"
 		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		optimize "On"
+
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
 		optimize "On"
 
 	-- Copy dlls to executable path
@@ -177,7 +181,7 @@ project "Sail"
 		}
 
 	filter "configurations:Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
 
 	filter "configurations:Release"
@@ -186,6 +190,10 @@ project "Sail"
 
 	filter "configurations:PerformanceTest"
 		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		optimize "On"
+
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
 		optimize "On"
 
 -----------------------------------
@@ -223,7 +231,7 @@ project "Physics"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
 
 	filter "configurations:Release"
@@ -232,4 +240,8 @@ project "Physics"
 
 	filter "configurations:PerformanceTest"
 		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		optimize "On"
+		
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
 		optimize "On"
