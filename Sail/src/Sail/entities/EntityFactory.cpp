@@ -78,7 +78,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	AudioComponent* playerAudio = player->getComponent<AudioComponent>();
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		 Running, Metal		 //
+	//		 Running, Metal		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = false;
 	soundGeneralInfo.positionalOffset = { 0.0f, -1.6f, 0.0f };
@@ -87,29 +87,29 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/footsteps_metal_1.wav";
-		soundUniqueInfo.soundEffectLength = 0.939f;
+		soundUniqueInfo.soundEffectLength = 0.919f;
 		soundUniqueInfo.volume = 0.7f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_METAL, soundUniqueInfo);
 		//	• Sample #2
 		soundUniqueInfo.fileName = "../Audio/footsteps_metal_2.wav";
-		soundUniqueInfo.soundEffectLength = 0.961f;
+		soundUniqueInfo.soundEffectLength = 0.941f;
 		soundUniqueInfo.volume = 0.7f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_METAL, soundUniqueInfo);
 		//	• Sample #3
 		soundUniqueInfo.fileName = "../Audio/footsteps_metal_3.wav";
-		soundUniqueInfo.soundEffectLength = 0.941f;
+		soundUniqueInfo.soundEffectLength = 0.921f;
 		soundUniqueInfo.volume = 0.7f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_METAL, soundUniqueInfo);
 		//	• Sample #4
 		soundUniqueInfo.fileName = "../Audio/footsteps_metal_4.wav";
-		soundUniqueInfo.soundEffectLength = 0.956f;
+		soundUniqueInfo.soundEffectLength = 0.936f;
 		soundUniqueInfo.volume = 0.7f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_METAL, soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		 Running, Tiles		 //		FIN_1.0
+	//		 Running, Tiles		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = false;
 	soundGeneralInfo.positionalOffset = { 0.0f, -1.6f, 0.0f };
@@ -118,29 +118,91 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/footsteps_tile_1.wav";
-		soundUniqueInfo.soundEffectLength = 0.775f;
+		soundUniqueInfo.soundEffectLength = 0.919f;
 		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
 		//	• Sample #2
 		soundUniqueInfo.fileName = "../Audio/footsteps_tile_2.wav";
-		soundUniqueInfo.soundEffectLength = 0.806f;
+		soundUniqueInfo.soundEffectLength = 0.941f;
 		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
 		//	• Sample #3
 		soundUniqueInfo.fileName = "../Audio/footsteps_tile_3.wav";
-		soundUniqueInfo.soundEffectLength = 0.878f;
+		soundUniqueInfo.soundEffectLength = 0.921f;
 		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
 		//	• Sample #4
 		soundUniqueInfo.fileName = "../Audio/footsteps_tile_4.wav";
-		soundUniqueInfo.soundEffectLength = 0.857f;
+		soundUniqueInfo.soundEffectLength = 0.936f;
 		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		 Running, Water_Metal		 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = false;
+	soundGeneralInfo.positionalOffset = { 0.0f, -1.6f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::RUN_WATER_METAL, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/footsteps_water_metal_1.wav";
+		soundUniqueInfo.soundEffectLength = 0.919f;
+		soundUniqueInfo.volume = 1.0f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_WATER_METAL, soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "../Audio/footsteps_water_metal_2.wav";
+		soundUniqueInfo.soundEffectLength = 0.941f;
+		soundUniqueInfo.volume = 1.0f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_WATER_METAL, soundUniqueInfo);
+		//	• Sample #3
+		soundUniqueInfo.fileName = "../Audio/footsteps_water_metal_3.wav";
+		soundUniqueInfo.soundEffectLength = 0.921f;
+		soundUniqueInfo.volume = 1.0f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_WATER_METAL, soundUniqueInfo);
+		//	• Sample #4
+		soundUniqueInfo.fileName = "../Audio/footsteps_water_metal_4.wav";
+		soundUniqueInfo.soundEffectLength = 0.936f;
+		soundUniqueInfo.volume = 1.0f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_WATER_METAL, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		 Running, Water_Tiles		 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo.playOnce = false;
+	soundGeneralInfo.positionalOffset = { 0.0f, -1.6f, 0.0f };
+	playerAudio->defineSoundGeneral(Audio::SoundType::RUN_WATER_TILE, soundGeneralInfo);
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/footsteps_water_tile_1.wav";
+		soundUniqueInfo.soundEffectLength = 0.919f;
+		soundUniqueInfo.volume = 1.0f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_WATER_TILE, soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "../Audio/footsteps_water_tile_2.wav";
+		soundUniqueInfo.soundEffectLength = 0.941f;
+		soundUniqueInfo.volume = 1.0f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_WATER_TILE, soundUniqueInfo);
+		//	• Sample #3
+		soundUniqueInfo.fileName = "../Audio/footsteps_water_tile_3.wav";
+		soundUniqueInfo.soundEffectLength = 0.921f;
+		soundUniqueInfo.volume = 1.0f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_WATER_TILE, soundUniqueInfo);
+		//	• Sample #4
+		soundUniqueInfo.fileName = "../Audio/footsteps_water_tile_4.wav";
+		soundUniqueInfo.soundEffectLength = 0.936f;
+		soundUniqueInfo.volume = 1.0f;
+		playerAudio->defineSoundUnique(Audio::SoundType::RUN_WATER_TILE, soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Watergun, Start		 //
+	//		   Watergun, Start		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = true;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -156,7 +218,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Watergun, Loop		 //
+	//		   Watergun, Loop		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = false;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -172,7 +234,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Watergun, End		 //
+	//		   Watergun, End		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = true;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -188,7 +250,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Watergun, Reload		 //
+	//		   Watergun, Reload		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = false;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -204,7 +266,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Water Impact, Environment	     //
+	//		   Water Impact, Environment	     //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = true;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -250,7 +312,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Water Impact, Enemy Candle		 //
+	//		   Water Impact, Enemy Candle		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = true;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -266,7 +328,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Water Impact, My Candle		     //
+	//		   Water Impact, My Candle		     //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = true;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -276,13 +338,13 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/water_impact_my_candle.wav";
 		soundUniqueInfo.soundEffectLength = 1.364f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::WATER_IMPACT_MY_CANDLE, soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+//
-	//		   Jump	     //
+	//		   Jump	     //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = true;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -298,7 +360,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Landing, Ground		 //
+	//		   Landing, Ground		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = false;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -308,13 +370,13 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/landing_ground.wav";
 		soundUniqueInfo.soundEffectLength = 0.602f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 0.4f;
 		playerAudio->defineSoundUnique(Audio::SoundType::LANDING_GROUND, soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Death, Me	     //
+	//		   Death, Me	     //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = true;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -324,38 +386,38 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/death_me_1.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
 		//	• Sample #2
 		soundUniqueInfo.fileName = "../Audio/death_me_2.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
 		//	• Sample #3
 		soundUniqueInfo.fileName = "../Audio/death_me_3.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
 		//	• Sample #4
 		soundUniqueInfo.fileName = "../Audio/death_me_4.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
 		//	• Sample #5
 		soundUniqueInfo.fileName = "../Audio/death_me_5.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
 		//	• Sample #6
 		soundUniqueInfo.fileName = "../Audio/death_me_6.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_ME, soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Death, Other	     //
+	//		   Death, Other	     //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = true;
 	soundGeneralInfo.positionalOffset = { 0.0f, 0.0f, 0.0f };
@@ -365,7 +427,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/death_enemy.wav";
 		soundUniqueInfo.soundEffectLength = 3.578f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::DEATH_OTHER, soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------

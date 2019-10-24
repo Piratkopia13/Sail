@@ -8,6 +8,8 @@ namespace Audio {
 	enum SoundType{
 		RUN_METAL,
 		RUN_TILE,
+		RUN_WATER_METAL,
+		RUN_WATER_TILE,
 		SHOOT_START,
 		SHOOT_LOOP,
 		SHOOT_END,
@@ -32,6 +34,7 @@ namespace Audio {
 		// Cam HEIGHT (y-pos) is 1.6f; useful info for incorporating positonalOffset
 		glm::vec3 positionalOffset = { 0.f, 0.f, 0.f };
 		int soundID = -1;
+		int prevRandomNum = 0;
 	};
 
 	// One for LITERALLY EVERY SOUND

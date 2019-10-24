@@ -34,6 +34,14 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("../Audio/footsteps_tile_2.wav");
 	m_audioEngine->loadSound("../Audio/footsteps_tile_3.wav");
 	m_audioEngine->loadSound("../Audio/footsteps_tile_4.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_metal_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_metal_2.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_metal_3.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_metal_4.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_tile_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_tile_2.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_tile_3.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_tile_4.wav");
 	m_audioEngine->loadSound("../Audio/jump.wav");
 	m_audioEngine->loadSound("../Audio/landing_ground.wav");
 	m_audioEngine->loadSound("../Audio/guitar.wav");
@@ -76,32 +84,34 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 				soundPoolSize = audioC->m_soundsUnique[i].size();
 				if (soundPoolSize > 0) {
 
-					if (soundPoolSize > 1) {
-						randomSoundIndex = rand() % soundPoolSize;
-					}
-					else {
-						randomSoundIndex = 0;
-					}
-
 					if (soundGeneral->isPlaying) {
-						
-						// To make the code easier to read
-						soundUnique = &audioC->m_soundsUnique[i].at(randomSoundIndex);
 
-						// Initialize the sound if that hasn't been done already
+						// Starts a new sound from relevant pool of sounds IF NOT ALREADY PLAYING
 						if (!soundGeneral->hasStartedPlaying) {
+
+							if (soundPoolSize > 1) {
+								randomSoundIndex = rand() % soundPoolSize;
+								if (randomSoundIndex == soundGeneral->prevRandomNum) {
+									randomSoundIndex++;
+									randomSoundIndex = (randomSoundIndex % soundPoolSize);
+								}
+								soundGeneral->prevRandomNum = randomSoundIndex;
+							}
+							else {
+								randomSoundIndex = 0;
+							}
+
+							// To make the code easier to read
+							soundUnique = &audioC->m_soundsUnique[i].at(randomSoundIndex);
+
 							soundGeneral->soundID = m_audioEngine->initializeSound(soundUnique->fileName, soundUnique->volume);
 							soundGeneral->hasStartedPlaying = true;
 							soundGeneral->durationElapsed = 0.0f;
 							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
-
-							std::cout << soundUnique->fileName << "\t";
-							std::cout << soundGeneral->soundID << "\t";
 						}
 
 						// Start playing the sound if it's not already playing
 						if (soundGeneral->durationElapsed == 0.0f) {
-							std::cout << soundGeneral->soundID << "\n";
 							m_audioEngine->startSpecificSound(soundGeneral->soundID);
 						}
 
@@ -112,7 +122,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 								soundGeneral->positionalOffset, alpha);
 
 							soundGeneral->durationElapsed += dt;
-							std::cout << soundGeneral->durationElapsed << " / " << soundGeneral->currentSoundsLength << "\n\n";
 						}
 						else {
 							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
