@@ -33,7 +33,7 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, Model* lightMo
 
 Entity::SPtr EntityFactory::CreateMyPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation)
 {
-	auto myPlayer = EntityFactory::CreatePlayer(boundingBoxModel, projectileModel, lightModel, playerID, lightIndex, spawnLocation);
+	auto myPlayer = EntityFactory::CreateGenericPlayer(boundingBoxModel, projectileModel, lightModel, playerID, lightIndex, spawnLocation);
 
 
 	myPlayer->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, Netcode::EntityType::PLAYER_ENTITY, playerID);
@@ -68,10 +68,11 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Model* boundingBoxModel, Model* proje
 // TODO: ComponentID
 Entity::SPtr EntityFactory::CreateOtherPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation)
 {
+	std::string modelName = "DocTorch.fbx";
 	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
 
 
-	auto otherPlayer = EntityFactory::CreatePlayer(boundingBoxModel, projectileModel, lightModel, playerID, lightIndex, spawnLocation);
+	auto otherPlayer = EntityFactory::CreateGenericPlayer(boundingBoxModel, projectileModel, lightModel, playerID, lightIndex, spawnLocation);
 
 	// receiver
 	// online owner
@@ -107,7 +108,7 @@ Entity::SPtr EntityFactory::CreateOtherPlayer(Model* boundingBoxModel, Model* pr
 	return otherPlayer;
 }
 
-Entity::SPtr EntityFactory::CreatePlayerGeneric(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
+Entity::SPtr EntityFactory::CreateGenericPlayer(Model* boundingBoxModel, Model* projectileModel, Model* lightModel, Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
 
 	auto player = ECS::Instance()->createEntity("player");
 
