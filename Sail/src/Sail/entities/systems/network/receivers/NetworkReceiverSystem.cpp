@@ -244,7 +244,7 @@ void NetworkReceiverSystem::update() {
 			case Netcode::MessageType::ENDGAME_STATS:
 			{
 				// Recieve player count
-				int nrOfPlayers;
+				size_t nrOfPlayers;
 				ar(nrOfPlayers);
 
 				// create temporary variables to hold data when reading netmessage

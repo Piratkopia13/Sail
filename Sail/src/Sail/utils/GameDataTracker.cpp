@@ -94,6 +94,58 @@ int GameDataTracker::getPlayerCount() {
 void GameDataTracker::renderImgui() {
 	ImGui::Begin("Game Statistics", NULL);
 
+	struct mapLayout {
+		std::string name;
+		int nKills;
+	};
+	std::map<int, mapLayout> tempPlacementMap;
+
+
+	ImGui::Text("\n Placement------");
+
+	/*for (auto player : m_hostPlayerTracker) {
+		tempPlacementMap[player.second.placement].name = m_network->getPlayer((Netcode::PlayerID)player.first)->name;
+		tempPlacementMap[player.second.placement].nKills = player.second.nKills;
+	}
+
+	int i = 1;
+	for (auto player : tempPlacementMap) {
+		std::string name = tempPlacementMap[i].name;
+
+		std::string playerStats = name + " placed: " + std::to_string(i)
+			+ " Kills: " + std::to_string(tempPlacementMap[i-1].nKills);
+
+		ImGui::Text(playerStats.c_str());
+		i++;
+	}*/
+	///-----------------------------------------------------------------------
+
+	for (auto player : m_hostPlayerTracker) {
+		tempPlacementMap[player.second.placement].name = m_network->getPlayer((Netcode::PlayerID)player.first)->name;
+		tempPlacementMap[player.second.placement].nKills = player.second.nKills;
+	}
+
+	for (int i = 1; i < (int)tempPlacementMap.size() + 1; i++) {
+		std::string name = tempPlacementMap[i].name;
+		std::string playerStats = name + " placed: " + std::to_string(i)
+			+ " Kills: " + std::to_string(tempPlacementMap[i].nKills);
+
+		ImGui::Text(playerStats.c_str());
+	}
+
+	///-----------------------------------------------------------------------
+	//
+	//for (auto player : m_hostPlayerTracker) {
+	//	std::string name = m_network->getPlayer((Netcode::PlayerID)player.first)->name;
+
+	//	std::string playerStats = name + " placed: " + std::to_string(player.second.placement)
+	//		+ " Kills: " + std::to_string(player.second.nKills);
+
+	//	ImGui::Text(playerStats.c_str());
+	//}
+
+	ImGui::Text("\n Random stats------");
+
 	ImGui::Text("Bullets Fired:");
 	ImGui::Text(std::to_string(m_loggedData.bulletsFired.QuadPart).c_str());
 	ImGui::Text("Bullets Hit:");
@@ -105,15 +157,7 @@ void GameDataTracker::renderImgui() {
 	ImGui::Text("JumpsMade:");
 	ImGui::Text(std::to_string(m_loggedData.jumpsMade.QuadPart).c_str());
 
-		ImGui::Text("\n Kills------");
-		int n = 0;
-		for (auto player : m_hostPlayerTracker) {
-			std::string name = m_network->getPlayer((Netcode::PlayerID)player.first)->name + ":";
-			ImGui::Text(name.c_str());
-			ImGui::Text(std::to_string(player.second.nKills).c_str());
-			ImGui::Text(" Placement: ");
-			ImGui::Text(std::to_string(player.second.placement).c_str());
-		}
+		
 	
 	ImGui::End();
 }
