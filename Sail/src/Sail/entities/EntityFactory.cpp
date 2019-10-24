@@ -73,7 +73,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 }
 
 
-// TODO: send in entity pointer so that it can be added
+// TODO: send in entity pointer so the entity can be added to NetworkReceiverSystem before components are added to the entity
 Entity::SPtr EntityFactory::CreateOtherPlayer(Netcode::ComponentID netComponentID, size_t lightIndex, glm::vec3 spawnLocation) {
 	// Other players have a character model and animations
 	std::string modelName = "DocTorch.fbx";
