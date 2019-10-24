@@ -155,7 +155,7 @@ GameState::GameState(StateStack& stack)
 #ifdef _DEBUG_NODESYSTEM
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader);
 #else
-	//m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
+	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
 
 	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();

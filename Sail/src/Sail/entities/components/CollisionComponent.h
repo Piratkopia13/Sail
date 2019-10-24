@@ -4,13 +4,13 @@
 
 class CollisionComponent : public Component<CollisionComponent> {
 public:
-	CollisionComponent() {}
-	~CollisionComponent() {}
+	CollisionComponent();
+	~CollisionComponent();
 
-	float drag = 25.0f;
-	float bounciness = 0.0f;
-	float padding = -1.0f;
-	bool onGround = false;
+	float drag;
+	float bounciness;
+	float padding;
+	bool onGround;
 
 	std::vector<Octree::CollisionInfo> collisions; //Contains the info for current collisions
 };
