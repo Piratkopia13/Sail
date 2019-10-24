@@ -98,7 +98,7 @@ void NetworkReceiverSystem::update() {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
-	int animationStack;
+	int animationIndex;
 	float animationTime;
 
 	// Process all messages in the buffer
@@ -152,9 +152,9 @@ void NetworkReceiverSystem::update() {
 				break;
 				case Netcode::MessageType::ANIMATION: 
 				{
-					ar(animationStack);		// Read
+					ar(animationIndex);		// Read
 					ar(animationTime);		//
-					setEntityAnimation(id, animationStack, animationTime);
+					setEntityAnimation(id, animationIndex, animationTime);
 				}
 				/* Case Animation Data, int, float */
 				break;
@@ -387,11 +387,11 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 	}
 }
 
-void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime) {
+void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationIndex, float animationTime) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			auto animation = e->getComponent<AnimationComponent>();
-			animation->currentAnimation = animation->getAnimationStack()->getAnimation(animationStack);
+			animation->setAnimation(animationIndex);
 			animation->animationTime = animationTime;
 		}
 	}
