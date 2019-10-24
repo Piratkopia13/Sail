@@ -2,8 +2,8 @@
 #define AUDIO_DATA_H
 
 #include <string>
-#include <vector>
 #include "glm/glm.hpp"
+#include <vector>
 
 namespace Audio {
 	enum SoundType {
@@ -53,7 +53,13 @@ namespace Audio {
 	};
 }
 
-	static Audio::SoundInfo_General* m_sounds[Audio::SoundType::COUNT]{};
-	static std::vector<Audio::SoundInfo_Unique*> m_soundsUnique[Audio::SoundType::COUNT]{};
+class AllAudioData {
+private:
+	static Audio::SoundInfo_General m_sounds[Audio::SoundType::COUNT]{};
+	static std::vector<Audio::SoundInfo_Unique> m_soundsUnique[Audio::SoundType::COUNT]{};
 
+public:
+	void init();
+
+}
 #endif
