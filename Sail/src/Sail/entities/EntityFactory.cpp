@@ -109,7 +109,7 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		 Running, Tiles		 //
+	//		 Running, Tiles		 //		FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo.playOnce = false;
 	soundGeneralInfo.positionalOffset = { 0.0f, -1.6f, 0.0f };
@@ -118,23 +118,23 @@ Entity::SPtr EntityFactory::CreatePlayer(Model* boundingBoxModel, Model* project
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/footsteps_tile_1.wav";
-		soundUniqueInfo.soundEffectLength = 0.795f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.soundEffectLength = 0.775f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
 		//	• Sample #2
 		soundUniqueInfo.fileName = "../Audio/footsteps_tile_2.wav";
-		soundUniqueInfo.soundEffectLength = 0.826f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.soundEffectLength = 0.806f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
 		//	• Sample #3
 		soundUniqueInfo.fileName = "../Audio/footsteps_tile_3.wav";
-		soundUniqueInfo.soundEffectLength = 0.898f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.soundEffectLength = 0.878f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
 		//	• Sample #4
 		soundUniqueInfo.fileName = "../Audio/footsteps_tile_4.wav";
-		soundUniqueInfo.soundEffectLength = 0.877f;
-		soundUniqueInfo.volume = 0.7f;
+		soundUniqueInfo.soundEffectLength = 0.857f;
+		soundUniqueInfo.volume = 1.0f;
 		playerAudio->defineSoundUnique(Audio::SoundType::RUN_TILE, soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------

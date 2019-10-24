@@ -90,15 +90,18 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 						// Initialize the sound if that hasn't been done already
 						if (!soundGeneral->hasStartedPlaying) {
-							std::cout << soundUnique->fileName;
 							soundGeneral->soundID = m_audioEngine->initializeSound(soundUnique->fileName, soundUnique->volume);
 							soundGeneral->hasStartedPlaying = true;
 							soundGeneral->durationElapsed = 0.0f;
 							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
+
+							std::cout << soundUnique->fileName << "\t";
+							std::cout << soundGeneral->soundID << "\t";
 						}
 
 						// Start playing the sound if it's not already playing
 						if (soundGeneral->durationElapsed == 0.0f) {
+							std::cout << soundGeneral->soundID << "\n";
 							m_audioEngine->startSpecificSound(soundGeneral->soundID);
 						}
 
@@ -109,15 +112,16 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 								soundGeneral->positionalOffset, alpha);
 
 							soundGeneral->durationElapsed += dt;
+							std::cout << soundGeneral->durationElapsed << " / " << soundGeneral->currentSoundsLength << "\n\n";
 						}
 						else {
 							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
 							m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+							soundGeneral->hasStartedPlaying = false;
 
 							// If the sound isn't looping then make it stop
 							if (soundGeneral->playOnce == true) {
 								soundGeneral->isPlaying = false;
-								soundGeneral->hasStartedPlaying = false;
 							}
 						}
 						// If the sound should no longer be playing stop it and reset its timer
