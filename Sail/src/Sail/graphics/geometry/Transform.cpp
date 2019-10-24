@@ -57,6 +57,9 @@ void Transform::removeParent() {
 		m_parent->removeChild(this);
 		m_parent = nullptr;
 	}
+	m_matNeedsUpdate = true;
+	m_hasChanged = 3; // TODO: test
+	treeNeedsUpdating();
 }
 
 // NOTE: Has to be done at the beginning of each update
@@ -127,7 +130,7 @@ void Transform::rotate(const float x, const float y, const float z) {
 	m_data.m_current.m_rotation += glm::vec3(x, y, z);
 	clampRotation();
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
-	m_matNeedsUpdate |= 2; // TODO: Check this
+	m_matNeedsUpdate = true; // TODO: Check this
 	treeNeedsUpdating();
 }
 

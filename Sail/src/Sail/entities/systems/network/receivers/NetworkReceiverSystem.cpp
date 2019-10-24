@@ -263,6 +263,10 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 		}
 	}
 
+	// TODO: add entity without any components to this sytem before adding components to it
+	//auto e = ECS::Instance()->createEntity("networkedEntity");
+	//entities.push_back(e.get());
+
 	// create the new entity
 	switch (entityType) {
 	case Netcode::EntityType::PLAYER_ENTITY:
@@ -437,12 +441,17 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 				if (!isHeld) {
 					candleTransComp->removeParent();
 					candleTransComp->setStartTranslation(pos);
+					candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
+					e->getComponent<AnimationComponent>()->leftHandEntity = nullptr;
+
 
 					// Might be needed
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 				} else {
 					candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
 					candleTransComp->setParent(e->getComponent<TransformComponent>());
+
+					e->getComponent<AnimationComponent>()->leftHandEntity = candleE.get();
 				}
 				return;
 			}
