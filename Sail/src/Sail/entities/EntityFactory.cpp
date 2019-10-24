@@ -138,17 +138,9 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<AudioComponent>();
 
 #pragma region DEFINING playerEntity SOUNDS
-
-	Audio::SoundInfo sound{};
-	sound.fileName = "../Audio/footsteps_1.wav";
-	sound.soundEffectLength = 1.0f;
-	sound.volume = 0.5f;
-	sound.playOnce = false;
-	sound.positionalOffset = { 0.0f, -1.6f, 0.0f };
-	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
 	Audio::SoundInfo_General soundGeneralInfo{};
 	Audio::SoundInfo_Unique soundUniqueInfo{};
-	AudioComponent* playerAudio = player->getComponent<AudioComponent>();
+	AudioComponent* playerAudio = playerEntity->getComponent<AudioComponent>();
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	//		 Running, Metal		 //   FIN_1.0
