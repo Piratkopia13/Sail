@@ -5,8 +5,8 @@
 
 class DX12Mesh : public Mesh {
 public:
-	DX12Mesh(Data& buildData, Shader* shader);
-	~DX12Mesh();
+	DX12Mesh(Data& buildData, Shader* shader, bool usePBR = true);
+	virtual ~DX12Mesh();
 
 	/*[Depricated]*/
 	virtual void draw(const Renderer& renderer, void* cmdList) override;

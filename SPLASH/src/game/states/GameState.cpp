@@ -86,7 +86,7 @@ GameState::GameState(StateStack& stack)
 	/*
 	THIS LINE OF CODE CAUSES AN INTERMITTENT CRASH
 	*/
-//	auto GUIModel = ModelFactory::CubeModel::Create(glm::vec3(1.f), guiShader); 
+	auto GUIModel = ModelFactory::CubeModel::Create(glm::vec3(1.f), guiShader); 
 	/*
 	THIS LINE OF CODE CAUSES AN INTERMITTENT CRASH
 	*/
