@@ -16,8 +16,8 @@ void GUISubmitSystem::submitAll() {
 	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getScreenSpaceRenderer();
 	for (auto& e : entities) {
 		Renderer::RenderFlag flags = Renderer::MESH_STATIC;
-		Model* model = e->getComponent<ModelComponent>()->getModel();
 		if (e->hasComponent<ModelComponent>()) {
+			Model* model = e->getComponent<ModelComponent>()->getModel();
 			renderer->submit(model, e->getComponent<TransformComponent>()->getMatrix(), flags);
 		}
 

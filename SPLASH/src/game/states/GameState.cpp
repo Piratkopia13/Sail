@@ -79,26 +79,6 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 
-	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
-
-	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
-	
-	/*
-	THIS LINE OF CODE CAUSES AN INTERMITTENT CRASH
-	*/
-	auto GUIModel = ModelFactory::CubeModel::Create(glm::vec3(1.f), guiShader); 
-	/*
-	THIS LINE OF CODE CAUSES AN INTERMITTENT CRASH
-	*/
-	
-	
-	
-	//GUIModel.get()->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
-	//Model* stuff = GUIModel.get();
-	GUIEntity->addComponent<GUIComponent>();
-	//GUIEntity->addComponent<ModelComponent>(stuff);
-	GUIEntity->addComponent<TransformComponent>();
-
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
@@ -131,6 +111,16 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
+	/* GUI testing */
+	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
+
+	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
+
+	auto GUIModel = &m_app->getResourceManager().getModelCopy("cubeWidth1.fbx", guiShader);
+	GUIEntity->addComponent<GUIComponent>();
+	GUIEntity->addComponent<ModelComponent>(GUIModel);
+	GUIEntity->addComponent<TransformComponent>();
+	/* /GUI testing */
 
 	// Level Creation
 
@@ -624,7 +614,7 @@ bool GameState::render(float dt, float alpha) {
 	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
-	//m_componentSystems.guiSubmitSystem->submitAll();
+	m_componentSystems.guiSubmitSystem->submitAll();
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return true;
