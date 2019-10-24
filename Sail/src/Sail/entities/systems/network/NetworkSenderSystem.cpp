@@ -12,6 +12,7 @@
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
 #include "../src/Network/NWrapperSingleton.h"
+#include "Sail/utils/GameDataTracker.h"
 
 #include <vector>
 
@@ -314,6 +315,24 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->candleOwnerID);
 		ar(data->isHeld);
 		ArchiveHelpers::archiveVec3(ar, data->candlePos);
+	}
+	break;
+	case Netcode::MessageType::ENDGAME_STATS:
+	{
+		GameDataTracker* dgtp = &GameDataTracker::getInstance();
+		std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
+		// Send player count to clients for them to loop following data
+		(ar)(tmpPlayerMap.size());
+
+		// Send all per player data. Match this on the reciever end
+		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
+			(ar)(player->first);
+			(ar)(player->second.nKills);
+			(ar)(player->second.placement);
+		}
+
+		// Send all specific data
+
 	}
 	break;
 

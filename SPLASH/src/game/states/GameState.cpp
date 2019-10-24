@@ -149,6 +149,12 @@ GameState::GameState(StateStack& stack)
 	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
+
+	// Host fill its game tracker per player with player data.
+	if (NWrapperSingleton::getInstance().isHost()) {
+		GameDataTracker::getInstance().init();
+	}
+	
 }
 
 GameState::~GameState() {
