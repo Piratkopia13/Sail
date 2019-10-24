@@ -3,7 +3,7 @@
 #include "DX12GBufferRenderer.h"
 #include "DX12RaytracingRenderer.h"
 
-DX12HybridRaytracerRenderer::DX12HybridRaytracerRenderer() { 
+DX12HybridRaytracerRenderer::DX12HybridRaytracerRenderer() {
 	m_rendererGbuffer = std::make_unique<DX12GBufferRenderer>();
 	m_rendererRaytrace = std::make_unique<DX12RaytracingRenderer>(m_rendererGbuffer->getGBufferOutputs());
 }
