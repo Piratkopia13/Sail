@@ -46,7 +46,10 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec
 
 Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
 	// Create my player
-	auto myPlayer = EntityFactory::CreateGenericPlayer(lightIndex, spawnLocation);
+
+	auto myPlayer = ECS::Instance()->createEntity("MyPlayer");
+	EntityFactory::CreateGenericPlayer(myPlayer, lightIndex, spawnLocation);
+
 	myPlayer->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, Netcode::EntityType::PLAYER_ENTITY, playerID);
 	myPlayer->getComponent<NetworkSenderComponent>()->addDataType(Netcode::MessageType::ANIMATION);
 
@@ -73,8 +76,9 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 }
 
 
-// TODO: send in entity pointer so the entity can be added to NetworkReceiverSystem before components are added to the entity
-Entity::SPtr EntityFactory::CreateOtherPlayer(Netcode::ComponentID netComponentID, size_t lightIndex, glm::vec3 spawnLocation) {
+// otherPlayer is an entity that doesn't have any components added to it yet.
+// Needed so that NetworkReceiverSystem can add the entity to itself before 
+void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::ComponentID netComponentID, size_t lightIndex, glm::vec3 spawnLocation) {
 	// Other players have a character model and animations
 	std::string modelName = "DocTorch.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -87,7 +91,7 @@ Entity::SPtr EntityFactory::CreateOtherPlayer(Netcode::ComponentID netComponentI
 
 
 	// Create the player
-	auto otherPlayer = EntityFactory::CreateGenericPlayer(lightIndex, spawnLocation);
+	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation);
 
 	otherPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<OnlineOwnerComponent>(netComponentID);
@@ -111,12 +115,10 @@ Entity::SPtr EntityFactory::CreateOtherPlayer(Netcode::ComponentID netComponentI
 	ac->leftHandPosition = glm::identity<glm::mat4>();
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.57f, 1.03f, 0.05f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
-
-	return otherPlayer;
 }
 
 // Creates a player enitty without a candle and without a model
-Entity::SPtr EntityFactory::CreateGenericPlayer(size_t lightIndex, glm::vec3 spawnLocation) {
+void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation) {
 	// All players have a bounding box
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
 	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
@@ -125,21 +127,17 @@ Entity::SPtr EntityFactory::CreateGenericPlayer(size_t lightIndex, glm::vec3 spa
 	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
 	boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);
 
+	playerEntity->addComponent<TransformComponent>(spawnLocation);
+	playerEntity->addComponent<CullingComponent>();
 
+	// Give playerEntity a bounding box
+	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
+	playerEntity->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f)); // Needed?
 
-	auto player = ECS::Instance()->createEntity("player");
+	// Adding audio component and adding all sounds attached to the playerEntity entity
+	playerEntity->addComponent<AudioComponent>();
 
-	player->addComponent<TransformComponent>(spawnLocation);
-	player->addComponent<CullingComponent>();
-
-	// Give player a bounding box
-	player->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	player->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f)); // Needed?
-
-	// Adding audio component and adding all sounds attached to the player entity
-	player->addComponent<AudioComponent>();
-
-#pragma region DEFINING PLAYER SOUNDS
+#pragma region DEFINING playerEntity SOUNDS
 
 	Audio::SoundInfo sound{};
 	sound.fileName = "../Audio/footsteps_1.wav";
@@ -147,50 +145,49 @@ Entity::SPtr EntityFactory::CreateGenericPlayer(size_t lightIndex, glm::vec3 spa
 	sound.volume = 0.5f;
 	sound.playOnce = false;
 	sound.positionalOffset = { 0.0f, -1.6f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
+	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::RUN, sound);
 
 	sound.fileName = "../Audio/jump.wav";
 	sound.soundEffectLength = 0.7f;
 	sound.playOnce = true;
 	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
+	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::JUMP, sound);
 
 	sound.fileName = "../Audio/watergun_start.wav";
 	sound.soundEffectLength = 0.578f;
 	sound.playOnce = true;
 	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_START, sound);
+	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_START, sound);
 
 	sound.fileName = "../Audio/watergun_loop.wav";
 	sound.soundEffectLength = 1.4f;
 	sound.playOnce = false;
 	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_LOOP, sound);
+	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_LOOP, sound);
 
 	sound.fileName = "../Audio/watergun_end.wav";
 	sound.soundEffectLength = 0.722f;
 	sound.playOnce = true;
 	sound.positionalOffset = { 0.5f, -0.5f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_END, sound);
+	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::SHOOT_END, sound);
 
 	sound.fileName = "../Audio/water_drip_1.wav";
 	sound.playOnce = true;
 	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_LEVEL, sound);
+	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_LEVEL, sound);
 
 	sound.fileName = "../Audio/water_impact_enemy.wav";
 	sound.playOnce = true;
 	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_ENEMY, sound);
+	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_ENEMY, sound);
 
 	sound.fileName = "../Audio/water_impact_my_candle.wav";
 	sound.playOnce = true;
 	sound.positionalOffset = { 0.0f, 0.0f, 0.0f };
-	player->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_MY_CANDLE, sound);
+	playerEntity->getComponent<AudioComponent>()->defineSound(Audio::SoundType::WATER_IMPACT_MY_CANDLE, sound);
 
 #pragma endregion
 
-	return player;
 }
 
 

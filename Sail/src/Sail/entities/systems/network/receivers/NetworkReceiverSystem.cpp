@@ -266,16 +266,15 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 		}
 	}
 
-	// TODO: add entity without any components to this sytem before adding components to it
-	//auto e = ECS::Instance()->createEntity("networkedEntity");
-	//entities.push_back(e.get());
+	auto e = ECS::Instance()->createEntity("networkedEntity");
+	entities.push_back(e.get());
 
 	// create the new entity
 	switch (entityType) {
 	case Netcode::EntityType::PLAYER_ENTITY:
 	{
 		// lightIndex set to 999, can probably be removed since it no longer seems to be used
-		EntityFactory::CreateOtherPlayer(id, 999, translation);
+		EntityFactory::CreateOtherPlayer(e, id, 999, translation);
 	}
 	break;
 	default:
