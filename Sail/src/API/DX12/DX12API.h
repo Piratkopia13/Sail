@@ -60,8 +60,8 @@ public:
 		UINT64 getCurrentFenceValue() const;
 	private:
 		wComPtr<ID3D12CommandQueue> m_commandQueue;
-		static UINT64 m_sFenceValue;
-		static wComPtr<ID3D12Fence1> m_sFence;
+		static UINT64 sFenceValue;
+		static wComPtr<ID3D12Fence1> sFence;
 	};
 
 public:

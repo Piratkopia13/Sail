@@ -826,8 +826,8 @@ void DX12API::waitForGPU() {
 	
 }
 
-UINT64 DX12API::CommandQueue::m_sFenceValue = 0;
-wComPtr<ID3D12Fence1> DX12API::CommandQueue::m_sFence;
+UINT64 DX12API::CommandQueue::sFenceValue = 0;
+wComPtr<ID3D12Fence1> DX12API::CommandQueue::sFence;
 
 DX12API::CommandQueue::CommandQueue(DX12API* context, D3D12_COMMAND_LIST_TYPE type, LPCWSTR name) {
 	// Create command queue
@@ -837,24 +837,24 @@ DX12API::CommandQueue::CommandQueue(DX12API* context, D3D12_COMMAND_LIST_TYPE ty
 	ThrowIfFailed(context->getDevice()->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
 	m_commandQueue->SetName(name);
 	// Create fence
-	if (!m_sFence) {
-		ThrowIfFailed(context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_sFence)));
+	if (!sFence) {
+		ThrowIfFailed(context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&sFence)));
 	}
 }
 
 UINT64 DX12API::CommandQueue::signal() {
-	auto fenceVal = ++m_sFenceValue;
-	m_commandQueue->Signal(m_sFence.Get(), fenceVal);
+	auto fenceVal = ++sFenceValue;
+	m_commandQueue->Signal(sFence.Get(), fenceVal);
 	return fenceVal;
 }
 
 void DX12API::CommandQueue::wait(UINT64 fenceValue) const {
-	m_commandQueue->Wait(m_sFence.Get(), fenceValue);
+	m_commandQueue->Wait(sFence.Get(), fenceValue);
 }
 
 void DX12API::CommandQueue::waitOnCPU(UINT64 fenceValue, HANDLE eventHandle) const {
-	if (m_sFence->GetCompletedValue() < fenceValue) {
-		m_sFence->SetEventOnCompletion(fenceValue, eventHandle);
+	if (sFence->GetCompletedValue() < fenceValue) {
+		sFence->SetEventOnCompletion(fenceValue, eventHandle);
 		WaitForSingleObjectEx(eventHandle, INFINITE, FALSE);
 	}
 }
@@ -864,5 +864,5 @@ ID3D12CommandQueue* DX12API::CommandQueue::get() const {
 }
 
 UINT64 DX12API::CommandQueue::getCurrentFenceValue() const {
-	return m_sFenceValue;
+	return sFenceValue;
 }
