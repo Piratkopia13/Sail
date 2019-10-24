@@ -19,12 +19,10 @@ DX12API::DX12API()
 	, m_clearColor{ 0.8f, 0.2f, 0.2f, 1.0f }
 	, m_tearingSupport(true)
 	, m_windowedMode(true)
+	, m_directQueueFenceValues()
+	, m_computeQueueFenceValues()
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
-	m_directQueueFenceValues[0] = 0;
-	m_directQueueFenceValues[1] = 0;
-	m_computeQueueFenceValues[0] = 0;
-	m_computeQueueFenceValues[1] = 0;
 }
 
 DX12API::~DX12API() {
@@ -68,19 +66,8 @@ bool DX12API::init(Window* window) {
 	createShaderResources();
 	createGlobalRootSignature();
 	createDepthStencilResources(winWindow);
-
+	createViewportAndScissorRect(winWindow);
 	// 7. Viewport and scissor rect
-	m_viewport.TopLeftX = 0.0f;
-	m_viewport.TopLeftY = 0.0f;
-	m_viewport.Width = (float)window->getWindowWidth();
-	m_viewport.Height = (float)window->getWindowHeight();
-	m_viewport.MinDepth = 0.0f;
-	m_viewport.MaxDepth = 1.0f;
-
-	m_scissorRect.left = (long)0;
-	m_scissorRect.right = (long)window->getWindowWidth();
-	m_scissorRect.top = (long)0;
-	m_scissorRect.bottom = (long)window->getWindowHeight();
 
 	OutputDebugString(L"DX12 Initialized.\n");
 
@@ -410,6 +397,20 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &depthStencilDesc, m_dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 	m_dsvDescHandle = m_dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
+void DX12API::createViewportAndScissorRect(Win32Window* window) {
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f;
+	m_viewport.Width = (float)window->getWindowWidth();
+	m_viewport.Height = (float)window->getWindowHeight();
+	m_viewport.MinDepth = 0.0f;
+	m_viewport.MaxDepth = 1.0f;
+
+	m_scissorRect.left = (long)0;
+	m_scissorRect.right = (long)window->getWindowWidth();
+	m_scissorRect.top = (long)0;
+	m_scissorRect.bottom = (long)window->getWindowHeight();
 }
 
 void DX12API::nextFrame() {

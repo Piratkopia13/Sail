@@ -132,6 +132,7 @@ private:
 	void createGlobalRootSignature();
 	void createShaderResources();
 	void createDepthStencilResources(Win32Window* window);
+	void createViewportAndScissorRect(Win32Window* window);
 
 	void nextFrame();
 
