@@ -35,7 +35,7 @@ void ProjectileSystem::update(float dt) {
 			// Check if a decal should be created
 			if (glm::length(e->getComponent<MovementComponent>()->oldVelocity) > 0.7f) {
 				// TODO: Replace with some "layer-id" check rather than doing a string check
-				if (collision.entity->getName().substr(0U, 4U) == "Map_") {
+				if (collision.entity->getName().substr(0U, 4U) == "Map_" || collision.entity->getName().substr(0U, 7U) == "Clutter") {
 					// Calculate rotation matrix used when placing a decal at the intersection
 					//glm::mat4 rotMat = glm::rotate(glm::identity<glm::mat4>(), Utils::fastrand() * 3.14f, glm::vec3(0.0f, 0.0f, 1.0f));
 

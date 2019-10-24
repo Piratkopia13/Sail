@@ -519,6 +519,7 @@ bool GameState::update(float dt, float alpha) {
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
+	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -576,6 +577,7 @@ bool GameState::renderImgui(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
+	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();
