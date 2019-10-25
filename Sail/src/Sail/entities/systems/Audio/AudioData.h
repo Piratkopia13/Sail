@@ -1,5 +1,5 @@
-#ifndef AUDIO_DATA_H
-#define AUDIO_DATA_H
+#ifndef AUDIODATA_H
+#define AUDIODATA_H
 
 #include <string>
 #include "glm/glm.hpp"
@@ -54,12 +54,15 @@ namespace Audio {
 }
 
 class AllAudioData {
-private:
-	static Audio::SoundInfo_General m_sounds[Audio::SoundType::COUNT]{};
-	static std::vector<Audio::SoundInfo_Unique> m_soundsUnique[Audio::SoundType::COUNT]{};
-
 public:
+	AllAudioData() { init(); };
+	~AllAudioData() {};
 	void init();
 
-}
+	Audio::SoundInfo_General m_sounds[Audio::SoundType::COUNT];
+	std::vector<Audio::SoundInfo_Unique> m_soundsUnique[Audio::SoundType::COUNT];
+};
+
+static AllAudioData audioData;
+
 #endif

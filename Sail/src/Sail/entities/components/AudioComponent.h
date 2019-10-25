@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Sail/entities/components/Component.h"
+#include "../Sail/src/Sail/entities/systems/Audio/AudioData.h"
 #include <string>
 #include <stack>
 
@@ -10,14 +11,13 @@ public:
 	AudioComponent();
 	virtual ~AudioComponent();
 
-	//Audio::SoundInfo_General m_sounds[Audio::SoundType::COUNT]{};
-	//std::vector<Audio::SoundInfo_Unique> m_soundsUnique[Audio::SoundType::COUNT]{};
+	Audio::SoundInfo_General m_sounds[Audio::SoundType::COUNT];
 
 	// An 'easy-mode' helper function for starting/stopping a streamed sound
 	void streamSoundRequest_HELPERFUNC(std::string filename, bool startTrue_stopFalse, float volume, bool isPositionalAudio, bool isLooping);
 	// A helpful function that simplifies the process of defining a new sound
-	void defineSoundGeneral(Audio::SoundType type, Audio::SoundInfo_General info);
-	void defineSoundUnique(Audio::SoundType type, Audio::SoundInfo_Unique info);
+	//void defineSoundGeneral(Audio::SoundType type, Audio::SoundInfo_General info);
+	//void defineSoundUnique(Audio::SoundType type, Audio::SoundInfo_Unique info);
 
 	// VARIABLE DEFINITIONS/CLARIFICATIONS
 		// • string = filename
