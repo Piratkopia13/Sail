@@ -68,6 +68,8 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	ECS::Instance()->createSystem<ModelSubmitSystem>();
 	ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+	ECS::Instance()->createSystem<GUISubmitSystem>();
+
 
 
 	// Initialize imgui
