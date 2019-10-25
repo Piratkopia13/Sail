@@ -627,6 +627,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
+	// Update keyboard input
+	m_componentSystems.gameInputSystem->fixedUpdate();
+
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
 	// Update entities with info from the network and from ourself
@@ -674,7 +677,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
 
-	// Updates the camera
+	// Updates mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 
 

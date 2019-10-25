@@ -42,5 +42,6 @@ private:
 	std::string m_cpuCount;
 	std::string m_ftCount;
 	std::string m_fixedUpdateCount;
+	std::string m_potentialFixedUpdateRate;
 
 };

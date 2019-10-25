@@ -99,12 +99,7 @@ int Application::startGameLoop() {
 	float secCounter = 0.0f;
 	float elapsedTime = 0.0f;
 	UINT frameCounter = 0;
-
-
-#ifdef DEVELOPMENT
 	float fixedUpdateStartTime = 0.0f;
-	float fixedUpdateExecutionTime = 1.0f;
-#endif
 
 	// Render loop, each iteration of it results in one rendered frame
 	while (msg.message != WM_QUIT) {
@@ -131,13 +126,9 @@ int Application::startGameLoop() {
 			m_delta = newTime - currentTime;
 			currentTime = newTime;
 
-			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
-			// when the update is really slow for whatever reason.
-			m_delta = std::min(m_delta, 4 * TIMESTEP);
 
 			// Update fps counter
 			secCounter += m_delta;
-			accumulator += m_delta;
 			frameCounter++;
 			if (secCounter >= 1.0) {
 				m_fps = frameCounter;
@@ -148,12 +139,10 @@ int Application::startGameLoop() {
 			// Update mouse deltas
 			Input::GetInstance()->beginFrame();
 
-			//UPDATES AUDIO
-			//Application::getAudioManager()->updateAudio();
-
 			// Quit on alt-f4
-			if (Input::IsKeyPressed(KeyBinds::alt) && Input::IsKeyPressed(KeyBinds::f4))
+			if (Input::IsKeyPressed(KeyBinds::alt) && Input::IsKeyPressed(KeyBinds::f4)) {
 				PostQuitMessage(0);
+			}
 
 #ifdef _DEBUG
 			/*if (Input::WasKeyJustPressed(SAIL_KEY_ESCAPE)) {
@@ -166,18 +155,21 @@ int Application::startGameLoop() {
 			// NOTE: player movement is processed in update() except for mouse movement which is processed here
 			processInput(m_delta);
 
+
+			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
+			// when the update is really slow for whatever reason.
+			// Allows fixed update to run twice in a row before rendering a frame so the game
+			// will slow down if (2*FPS < TICKRATE)
+			accumulator += std::min(m_delta, 2 * TIMESTEP);
+
+
 			// Run the update if enough time has passed since the last update
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
 
-#ifdef DEVELOPMENT
 				fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
-#endif
 				fixedUpdate(TIMESTEP);
-
-#ifdef DEVELOPMENT
-				fixedUpdateExecutionTime = m_timer.getTimeSince<float>(fixedUpdateStartTime);
-#endif
+				m_fixedUpdateDelta = m_timer.getTimeSince<float>(startTime) - fixedUpdateStartTime;
 			}
 
 
@@ -258,5 +250,9 @@ const UINT Application::getFPS() const {
 }
 float Application::getDelta() const {
 	return m_delta;
+}
+
+float Application::getFixedUpdateDelta() const {
+	return m_fixedUpdateDelta;
 }
 
