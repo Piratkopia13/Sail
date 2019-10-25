@@ -11,6 +11,7 @@ GuiShader::GuiShader()
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
 	static_cast<DX12ShaderPipeline*>(shaderPipeline)->enableDepthStencil(false);
+	static_cast<DX12ShaderPipeline*>(shaderPipeline)->enableAlphaBlending(true);
 
 	// Finish the shader creation
 	finish();

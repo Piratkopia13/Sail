@@ -22,7 +22,7 @@ PSIn VSMain(VSIn input) {
 }
 
 float4 PSMain(PSIn input) : SV_Target0 {
-	return float4(1.f, 1.f, 1.f, 1.f);
+	return float4(1.f, 1.f, 1.f, 0.5f);
 	//return sys_texAlbedo.Sample(PSss, float2(input.texCoords.x, input.texCoords.y));
 }
 

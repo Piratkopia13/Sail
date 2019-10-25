@@ -30,6 +30,7 @@ public:
 
 	void setNumRenderTargets(unsigned int numRenderTargets);
 	void enableDepthStencil(bool enable);
+	void enableAlphaBlending(bool enable);
 
 private:
 	void createGraphicsPipelineState();
@@ -46,4 +47,5 @@ private:
 	wComPtr<ID3D12PipelineState> m_pipelineState;
 	unsigned int m_numRenderTargets;
 	bool m_enableDepth;
+	bool m_enableBlending;
 };
