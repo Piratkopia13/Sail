@@ -21,6 +21,7 @@ Profiler::~Profiler() {
 	delete m_vramUsageHistory;
 	delete m_cpuHistory;
 	delete m_frameTimesHistory;
+	delete m_fixedUpdateHistory;
 }
 
 void Profiler::init() {
@@ -44,6 +45,7 @@ void Profiler::init() {
 	m_vramUsageHistory = SAIL_NEW float[100];
 	m_cpuHistory = SAIL_NEW float[100];
 	m_frameTimesHistory = SAIL_NEW float[100];
+	m_fixedUpdateHistory = SAIL_NEW float[100];
 
 	for (int i = 0; i < 100; i++) {
 		m_virtRAMHistory[i] = 0.f;
@@ -51,6 +53,7 @@ void Profiler::init() {
 		m_vramUsageHistory[i] = 0.f;
 		m_cpuHistory[i] = 0.f;
 		m_frameTimesHistory[i] = 0.f;
+		m_fixedUpdateHistory[i] = 0.f;
 	}
 }
 
@@ -123,6 +126,9 @@ void Profiler::renderWindow() {
 			header = "Frame time (" + m_ftCount + " seconds)";
 			ImGui::Text(header.c_str());
 
+			header = "FixedUpdate time (" + m_fixedUpdateCount + " s, " + (1.0f/m_fixedUpdateCount) + "potential Hz)";
+			ImGui::Text(header.c_str());
+
 			header = "Virtual RAM (" + m_virtCount + " MB)";
 			ImGui::Text(header.c_str());
 
@@ -142,6 +148,10 @@ void Profiler::renderWindow() {
 				header = "\n\n\n" + m_ftCount + "(s)";
 				ImGui::PlotLines(header.c_str(), m_frameTimesHistory, 100, 0, "", 0.f, 0.015f, ImVec2(0, 100));
 			}
+			if (ImGui::CollapsingHeader("FixedUpdate Times Graph")) {
+				header = "\n\n\n" + m_fixedUpdateCount + "(s)";
+				ImGui::PlotLines(header.c_str(), m_fixedUpdateHistory, 100, 0, "", 0.f, 0.015f, ImVec2(0, 100));
+			}
 			if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
 				header = "\n\n\n" + m_virtCount + "(MB)";
 				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
@@ -160,6 +170,12 @@ void Profiler::renderWindow() {
 			ImGui::EndChild();
 
 			float dt = Application::getInstance()->getDelta();
+
+#ifdef DEVELOPMENT
+			// TODO
+			float updateTime = Application::getInstance()->getUpdateTIme();
+#endif
+
 			m_profilerTimer += dt;
 			//Updating graphs and current usage
 			if (m_profilerTimer > 0.2f) {

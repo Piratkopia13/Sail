@@ -100,6 +100,12 @@ int Application::startGameLoop() {
 	float elapsedTime = 0.0f;
 	UINT frameCounter = 0;
 
+
+#ifdef DEVELOPMENT
+	float fixedUpdateStartTime = 0.0f;
+	float fixedUpdateExecutionTime = 1.0f;
+#endif
+
 	// Render loop, each iteration of it results in one rendered frame
 	while (msg.message != WM_QUIT) {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
@@ -163,7 +169,15 @@ int Application::startGameLoop() {
 			// Run the update if enough time has passed since the last update
 			while (accumulator >= TIMESTEP) {
 				accumulator -= TIMESTEP;
+
+#ifdef DEVELOPMENT
+				fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
+#endif
 				fixedUpdate(TIMESTEP);
+
+#ifdef DEVELOPMENT
+				fixedUpdateExecutionTime = m_timer.getTimeSince<float>(fixedUpdateStartTime);
+#endif
 			}
 
 
