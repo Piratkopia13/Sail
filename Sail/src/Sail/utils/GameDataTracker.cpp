@@ -23,6 +23,11 @@ GameDataTracker& GameDataTracker::getInstance() {
 }
 
 void GameDataTracker::init() {
+	m_loggedData.bfID = NWrapperSingleton::getInstance().getMyPlayerID();
+	m_loggedData.dwID = NWrapperSingleton::getInstance().getMyPlayerID();
+	m_loggedData.jmID = NWrapperSingleton::getInstance().getMyPlayerID();
+
+
 	m_nPlayersCurrentSession = 0;
 	for (auto player : m_network->getPlayers()) {
 		m_hostPlayerTracker[player.id].nKills = 0;
@@ -41,11 +46,7 @@ void GameDataTracker::resetData() {
 }
 
 void GameDataTracker::logWeaponFired() {
-	m_loggedData.bulletsFired.QuadPart += 1;
-}
-
-void GameDataTracker::logEnemyHit() {
-	m_loggedData.bulletsHit.QuadPart += 1;
+	m_loggedData.bulletsFired += 1;
 }
 
 void GameDataTracker::logEnemyKilled(Netcode::PlayerID playerID) {
@@ -53,7 +54,7 @@ void GameDataTracker::logEnemyKilled(Netcode::PlayerID playerID) {
 }
 
 void GameDataTracker::logJump() {
-	m_loggedData.jumpsMade.QuadPart += 1;
+	m_loggedData.jumpsMade += 1;
 }
 
 void GameDataTracker::logDistanceWalked(glm::vec3 vector) {
@@ -70,7 +71,7 @@ void GameDataTracker::logPlacement(Netcode::PlayerID playerID) {
 	m_hostPlayerTracker[playerID].placement = m_placement;
 }
 
-const InduvidualStats& GameDataTracker::getStatistics() {
+InduvidualStats& GameDataTracker::getStatistics() {
 	return m_loggedData;
 }
 
@@ -87,13 +88,24 @@ void GameDataTracker::setStatsForPlayer(Netcode::PlayerID id, int nKills, int pl
 	m_hostPlayerTracker[id].placement = placement;
 }
 
+void GameDataTracker::setStatsForOtherData(Netcode::PlayerID bfID, int bf, Netcode::PlayerID dwID, float dw, Netcode::PlayerID jmID, int jm) {
+	m_loggedData.bfID = bfID;
+	m_loggedData.bulletsFired = bf;
+	m_loggedData.dwID = dwID;
+	m_loggedData.distanceWalked = dw;
+	m_loggedData.jmID = jmID;
+	m_loggedData.jumpsMade = jm;
+}
+
 int GameDataTracker::getPlayerCount() {
 	return m_nPlayersCurrentSession;
 }
 
 void GameDataTracker::renderImgui() {
-	ImGui::Begin("Game Statistics", NULL);
 
+	ImGui::Begin("Game Statistics", NULL);
+	ImGui::SetWindowPos({ 18,12 });
+	ImGui::SetWindowSize({ 307,600 });
 	struct mapLayout {
 		std::string name;
 		int nKills;
@@ -116,20 +128,38 @@ void GameDataTracker::renderImgui() {
 		ImGui::Text(playerStats.c_str());
 	}
 
-	ImGui::Text("\n Random stats------");
-
-	ImGui::Text("Bullets Fired:");
-	ImGui::Text(std::to_string(m_loggedData.bulletsFired.QuadPart).c_str());
-	ImGui::Text("Bullets Hit:");
-	ImGui::Text(std::to_string(m_loggedData.bulletsHit.QuadPart).c_str());
-	ImGui::Text("Bullets Hit Percentage:");
-	ImGui::Text(std::to_string(m_loggedData.bulletsHitPercentage.QuadPart).c_str());
-	ImGui::Text("Distance Walked:");
-	ImGui::Text(std::to_string(m_loggedData.distanceWalked).c_str());
-	ImGui::Text("JumpsMade:");
-	ImGui::Text(std::to_string(m_loggedData.jumpsMade.QuadPart).c_str());
-
-		
+	ImGui::Text("\n Misc stats------");
 	
+	std::string bdString = "Most bullets fires by " + 
+		m_network->getPlayer(m_loggedData.bfID)->name + ": " + std::to_string(m_loggedData.bulletsFired);
+	ImGui::Text(bdString.c_str());
+
+	bdString = "Longest distance walked by " +
+		m_network->getPlayer(m_loggedData.dwID)->name + ": " + std::to_string((int)m_loggedData.distanceWalked) + "m";
+	ImGui::Text(bdString.c_str());
+
+	bdString = "Most jumps made by " +
+		m_network->getPlayer(m_loggedData.jmID)->name + ": " + std::to_string(m_loggedData.jumpsMade);
+	ImGui::Text(bdString.c_str());
+	
+	ImGui::End();
+
+
+
+	ImGui::Begin("WINNER", NULL);
+	ImGui::SetWindowFontScale(5.0f);
+	ImGui::SetWindowPos({331,12});
+	ImGui::SetWindowSize({ 404,292 });
+	ImGui::Text(tempPlacementMap[1].name.c_str());
+	ImGui::End();
+
+	ImGui::Begin("Personal Statistics", NULL);
+	ImGui::SetWindowPos({ 331,310 });
+	ImGui::SetWindowSize({ 307,293 });
+
+
+
+
+
 	ImGui::End();
 }

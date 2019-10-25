@@ -217,7 +217,12 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::MATCH_ENDED:
 			{
-				matchEnded();
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PREPARE_ENDSCREEN,
+					SAIL_NEW Netcode::MessagePrepareEndScreen(),
+					false
+				);
+
 			}
 			break;
 			case Netcode::MessageType::CANDLE_HELD_STATE:
@@ -256,6 +261,10 @@ void NetworkReceiverSystem::update() {
 				int nKills;
 				int placement;
 
+				int bulletsFired, jumpsMade;
+				float distanceWalked;
+				Netcode::PlayerID bfID, dwID, jmID;
+
 				// Get all per player data from the Host
 				for (int k = 0; k < nrOfPlayers; k++) {
 					ar(pID);
@@ -265,9 +274,53 @@ void NetworkReceiverSystem::update() {
 				}
 
 				// Get all specific data from the Host
+				(ar)(bulletsFired);
+				(ar)(bfID);
 
+				(ar)(distanceWalked);
+				(ar)(dwID);
+
+				(ar)(jumpsMade);
+				(ar)(jmID);
+
+				GameDataTracker::getInstance().setStatsForOtherData(
+					bfID, bulletsFired, dwID, distanceWalked, jmID, jumpsMade);
+
+				endMatch();
 			}
 			break;
+			case Netcode::MessageType::PREPARE_ENDSCREEN:
+			{
+				GameDataTracker* dgtp = &GameDataTracker::getInstance();
+				// create temporary variables to hold data when reading netmessage
+				int bulletsFired, jumpsMade;
+				float distanceWalked;
+				// Get the data
+				(ar)(bulletsFired);
+				(ar)(distanceWalked);
+				(ar)(jumpsMade);
+
+				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
+
+				//// Process the data
+				//if (bulletsFired > dgtp->getStatistics().bulletsFired) {
+				//	dgtp->getStatistics().bulletsFired = bulletsFired;
+				//	dgtp->getStatistics().bfID = senderID;
+				//}
+				//if (distanceWalked > dgtp->getStatistics().distanceWalked) {
+				//	dgtp->getStatistics().distanceWalked = distanceWalked;
+				//	dgtp->getStatistics().dwID = senderID;
+				//}
+				//if (jumpsMade > dgtp->getStatistics().jumpsMade) {
+				//	dgtp->getStatistics().jumpsMade = jumpsMade;
+				//	dgtp->getStatistics().jmID = senderID;
+				//}
+
+				//// Send data back in Netcode::MessageType::ENDGAME_STATS
+				//endMatch(); // Starts the end game timer. Runs only for the host
+			}
+			break;
+
 			default:
 				break;
 			}
@@ -276,6 +329,11 @@ void NetworkReceiverSystem::update() {
 
 		m_incomingDataBuffer.pop();
 	}
+
+	// End game timer 
+	endMatchAfterTimer();
+
+
 }
 
 /*
@@ -490,11 +548,6 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 	Logger::Warning("setCandleHeldState called but no matching entity found");
 }
 
-
-void NetworkReceiverSystem::matchEnded() {
-	m_gameStatePtr->requestStackPop();
-	m_gameStatePtr->requestStackPush(States::EndGame);
-}
 
 void NetworkReceiverSystem::backToLobby() {
 	m_gameStatePtr->requestStackPop();

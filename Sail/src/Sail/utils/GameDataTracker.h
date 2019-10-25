@@ -4,15 +4,17 @@
 #include <map>
 #include "Sail/netcode/NetcodeTypes.h"
 
-typedef long double LARGE_FLOAT;
 class NWrapperSingleton;
 
 struct InduvidualStats {
-	LARGE_INTEGER bulletsFired;
-	LARGE_INTEGER bulletsHit;
-	LARGE_INTEGER bulletsHitPercentage;
-	LARGE_FLOAT distanceWalked;
-	LARGE_INTEGER jumpsMade;
+	int bulletsFired;
+	float distanceWalked;
+	int jumpsMade;
+
+	// IDs for the host to fill for the endscreen
+	Netcode::PlayerID bfID;
+	Netcode::PlayerID dwID;
+	Netcode::PlayerID jmID;
 };
 
 struct HostStatsPerPlayer {
@@ -28,7 +30,6 @@ public:
 
 	// Implemented in...
 	void logWeaponFired();						// ...ehfy::update()
-	void logEnemyHit();							// Nowhere atm
 	void logEnemyKilled(Netcode::PlayerID playerID);// CandleSystem::update
 	void logJump();								// ...GameInputSystem::update()
 	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
@@ -37,7 +38,7 @@ public:
 
 	void init();								// Gamestate::Gamestate()
 	void resetData();							// EndGameState::onReturnToLobby() / renderImGui()
-	const InduvidualStats& getStatistics();			// Nowhere atm
+	InduvidualStats& getStatistics();		// NetworkSenderSystem::writeEventToArchive()
 
 	const std::vector<std::string>& getPlayerDeaths();
 
@@ -45,7 +46,8 @@ public:
 
 	// Used in end game when recieving player data stats
 	void setStatsForPlayer(Netcode::PlayerID id, int nKills, int placement); // NetworkRecieverSystem::Update()
-
+	void setStatsForOtherData(Netcode::PlayerID bfID, int bf,
+		Netcode::PlayerID dwID, float dw, Netcode::PlayerID jmID, int jm);
 	// nr of player from the start of the match
 	int getPlayerCount();	// Nowhere atm
 

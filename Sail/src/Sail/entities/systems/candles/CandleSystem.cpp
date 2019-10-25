@@ -89,12 +89,7 @@ void CandleSystem::update(float dt) {
 								Netcode::MessageType::MATCH_ENDED,
 								nullptr
 							);
-							// Send relevant stats to all clients
-							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-								Netcode::MessageType::ENDGAME_STATS,
-								nullptr,
-								false
-							);
+							
 						}
 					}
 				}

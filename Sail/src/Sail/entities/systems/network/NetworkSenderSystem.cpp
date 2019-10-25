@@ -332,7 +332,25 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		}
 
 		// Send all specific data
+		(ar)(dgtp->getStatistics().bulletsFired);
+		(ar)(dgtp->getStatistics().bfID);
 
+		(ar)(dgtp->getStatistics().distanceWalked);
+		(ar)(dgtp->getStatistics().dwID);
+
+		(ar)(dgtp->getStatistics().jumpsMade);
+		(ar)(dgtp->getStatistics().jmID);
+
+
+	}
+	break;
+	case Netcode::MessageType::PREPARE_ENDSCREEN:
+	{
+		// Send all specific data to Host
+		(ar)(GameDataTracker::getInstance().getStatistics().bulletsFired);
+		(ar)(GameDataTracker::getInstance().getStatistics().distanceWalked);
+		(ar)(GameDataTracker::getInstance().getStatistics().jumpsMade);
+		
 	}
 	break;
 

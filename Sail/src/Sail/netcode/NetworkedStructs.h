@@ -55,6 +55,7 @@ namespace Netcode {
 		PLAYER_DIED,
 		PLAYER_DISCONNECT,
 		MATCH_ENDED,
+		PREPARE_ENDSCREEN,			// Clients send relevant data for the endgame screen
 		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
 		SEND_ALL_BACK_TO_LOBBY,
@@ -174,6 +175,16 @@ namespace Netcode {
 		MessageEndGameStats() {}
 		~MessageEndGameStats() {}
 	};
+
+	class MessagePrepareEndScreen : public MessageData {
+	public:
+		MessagePrepareEndScreen() {}
+		~MessagePrepareEndScreen() {}
+
+	private:
+
+	};
+
 
 }
 
