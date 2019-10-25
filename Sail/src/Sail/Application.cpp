@@ -9,6 +9,12 @@
 #include "entities/ECS.h"
 #include "entities/systems/Systems.h"
 
+
+
+// If this is defined then fixed update will run every frame which speeds up/slows down
+// the game depending on how fast the program can run
+//#define PERFORMANCE_SPEED_TEST
+
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
@@ -163,23 +169,26 @@ int Application::startGameLoop() {
 
 
 			// Run the update if enough time has passed since the last update
+#ifndef PERFORMANCE_SPEED_TEST
 			while (accumulator >= TIMESTEP) {
+#endif
 				accumulator -= TIMESTEP;
 
 				fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
 				fixedUpdate(TIMESTEP);
 				m_fixedUpdateDelta = m_timer.getTimeSince<float>(startTime) - fixedUpdateStartTime;
+#ifndef PERFORMANCE_SPEED_TEST
 			}
-
-
 			// alpha value used for the interpolation
 			float alpha = accumulator / TIMESTEP;
+#else
+			float alpha = 1.0f; // disable interpolation
+#endif
 
 			update(m_delta, alpha);
 
 			// Render
 			render(m_delta, alpha);
-			//render(m_delta, 1.0f); // disable interpolation
 
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
