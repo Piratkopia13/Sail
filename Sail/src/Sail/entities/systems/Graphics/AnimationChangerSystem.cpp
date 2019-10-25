@@ -24,21 +24,20 @@ void AnimationChangerSystem::update(float dt) {
 		if (animationC && moveC) {
 
 			if (glm::length(moveC->velocity) < 0.1f) {
-				animationC->setAnimation(1);
-				//animationC->animationTime = 0.0f;
+				animationC->setAnimation(IDLE);
 			}
 			else {
 				if (moveC->relVel.z > 0.1f) {
-					animationC->setAnimation(5);
+					animationC->setAnimation(RIGHT);
 				}
 				else if (moveC->relVel.z < -0.1f) {
-					animationC->setAnimation(4);
+					animationC->setAnimation(LEFT);
 				}
 				if (moveC->relVel.x > 0.1f) {
-					animationC->setAnimation(2);
+					animationC->setAnimation(FORWARD);
 				} 
 				else if (moveC->relVel.x < -0.1f) {
-					animationC->setAnimation(3);
+					animationC->setAnimation(BACKWARD);
 				}
 				
 

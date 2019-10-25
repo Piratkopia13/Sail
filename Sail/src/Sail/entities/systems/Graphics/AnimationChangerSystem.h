@@ -8,4 +8,19 @@ public:
 	~AnimationChangerSystem();
 
 	void update(float dt);
+
+		enum MovementIndex {
+		DEFAULT,
+		IDLE,
+		FORWARD,
+		BACKWARD,
+		LEFT,
+		RIGHT
+
+
+
+		};
+
+
+
 };
