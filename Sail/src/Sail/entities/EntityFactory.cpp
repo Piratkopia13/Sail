@@ -28,17 +28,16 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec
 
 	//creates light with model and pointlight
 	auto candle = ECS::Instance()->createEntity(name.c_str());
-	candle->addComponent<CandleComponent>();
 	candle->addComponent<ModelComponent>(candleModel);
 	candle->addComponent<TransformComponent>(lightPos);
 	candle->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	candle->addComponent<CullingComponent>();
-	PointLight pl;
-	pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
-	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-	pl.setAttenuation(0.f, 0.f, 0.2f);
-	pl.setIndex(lightIndex);
-	candle->addComponent<LightComponent>(pl);
+	//PointLight pl;
+	//pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
+	//pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
+	//pl.setAttenuation(0.f, 0.f, 0.2f);
+	//pl.setIndex(lightIndex);
+	//candle->addComponent<LightComponent>(pl);
 
 	return candle;
 }
@@ -61,6 +60,17 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
+		if (c->getName() == "MyPlayerCandle") {
+			c->addComponent<CandleComponent>();
+			PointLight pl;
+			pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
+			pl.setPosition(glm::vec3(0, 0 + .37f, 0));
+			pl.setAttenuation(0.f, 0.f, 0.2f);
+			pl.setIndex(lightIndex);
+			c->addComponent<LightComponent>(pl);
+
+
+		}
 		CandleComponent* cc = c->getComponent<CandleComponent>();
 		GunComponent* gc = c->getComponent<GunComponent>();
 		if (cc) {
@@ -91,10 +101,12 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	// Create the player
 
 	for (Entity::SPtr& c : otherPlayer->getChildEntities()) {
+
 		CandleComponent* cc = c->getComponent<CandleComponent>();
 		GunComponent* gc = c->getComponent<GunComponent>();
 		if (cc) {
 			c->addComponent<CollidableComponent>();
+			c->addComponent<CandleComponent>();
 			cc->setOwner(Netcode::getComponentOwner(netComponentID));
 		}
 		if (gc) {

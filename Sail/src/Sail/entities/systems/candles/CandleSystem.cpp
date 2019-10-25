@@ -70,6 +70,7 @@ void CandleSystem::update(float dt) {
 					candle->setIsAlive(false);
 					LivingCandles--;
 
+					Logger::Log("Candles: " + std::to_string(LivingCandles));
 					//Only let the host sent PLAYER_DIED message
 					if (NWrapperSingleton::getInstance().isHost()) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
