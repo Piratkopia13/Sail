@@ -5,6 +5,7 @@
 
 class GameState;
 class NetworkSenderSystem;
+class GameDataTracker;
 
 class NetworkReceiverSystem : public BaseComponentSystem {
 public:
@@ -25,6 +26,7 @@ protected:
 
 	GameState* m_gameStatePtr;
 	NetworkSenderSystem* m_netSendSysPtr;
+	GameDataTracker* m_gameDataTracker;
 
 	// FIFO container of serialized data-strings to decode
 	std::queue<std::string> m_incomingDataBuffer;
@@ -39,11 +41,10 @@ private:
 	void setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime);
 	void playerJumped(Netcode::ComponentID id);
 	void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId);
-	void projectileSpawned(glm::vec3& pos, glm::vec3 vel);
+	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID ownerID);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
-	void setCandleHeldState(Netcode::ComponentID id, bool b, const glm::vec3& pos = glm::vec3(0, 0, 0));
-	//void processData(Netcode::MessageType dataType, Netcode::EntityType* entityType, cereal::PortableBinaryInputArchive* ar);
+	void setCandleHeldState(Netcode::ComponentID id, bool isHeld, const glm::vec3& pos = glm::vec3(0, 0, 0));
 
 	void matchEnded();
 	void backToLobby();

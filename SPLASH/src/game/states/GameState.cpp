@@ -14,9 +14,6 @@
 #include <iomanip>
 #include "Sail/graphics/geometry/factory/QuadModel.h"
 
-// Uncomment to use forward rendering
-//#define DISABLE_RT
-
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -92,13 +89,8 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-#ifdef DISABLE_RT
-	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
-	m_app->getRenderWrapper()->changeRenderer(1);
-	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
-#else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-#endif
+
 	m_app->getResourceManager().setDefaultShader(shader);
 	std::string playerModelName = "Doc.fbx";
 
@@ -139,7 +131,7 @@ GameState::GameState(StateStack& stack)
 		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 	}
 
-	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
+	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
@@ -174,6 +166,11 @@ GameState::GameState(StateStack& stack)
 	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
+
+	// Host fill its game tracker per player with player data.
+	if (NWrapperSingleton::getInstance().isHost()) {
+		GameDataTracker::getInstance().init();
+	}	
 }
 
 GameState::~GameState() {
@@ -185,6 +182,18 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
+#ifndef DEVELOPMENT
+	// Capture mouse
+	Input::HideCursor(true);
+#endif
+
+	// Pause game
+	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+		requestStackPush(States::InGameMenu);
+	}
+
+
+#ifdef DEVELOPMENT
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
@@ -264,17 +273,12 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-	
+
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 		m_app->getResourceManager().reloadShader<GuiShader>();
-	}
-
-	// Pause game
-	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
-		requestStackPush(States::InGameMenu);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
@@ -306,7 +310,7 @@ bool GameState::processInput(float dt) {
 			m_player->addComponent<SpectatorComponent>();
 			m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
 			m_player->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
-		}	
+		}
 	}
 
 #ifdef _DEBUG
@@ -314,6 +318,7 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
 		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
+#endif
 #endif
 
 	return true;
@@ -428,8 +433,6 @@ void GameState::initConsole() {
 			Netcode::MessageType::MATCH_ENDED,
 			nullptr
 		);
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
 		console.removeAllCommandsWithIdentifier("GameState");
 
 		return std::string("Match ended.");
@@ -512,48 +515,22 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
-	// Here we will receive when a player disconnected.
-	// In the case of the host, deal with it based on who dc'd.
-	// In the case of the client, deal with it based on who dc'd.
+	if (m_isSingleplayer) {
+		return true;
+	}
 
-	if (!m_isSingleplayer) {
-		// 'I' Am a host
-		if (NWrapperSingleton::getInstance().isHost()) {
-			
-			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
-			for (auto& e : receiverEntities)
-			{
-				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID())
-				{
-					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-						Netcode::MessageType::PLAYER_DISCONNECT,
-						SAIL_NEW Netcode::MessagePlayerDisconnect{
-							event.getPlayerID()
-						}
-					);
+	for (auto& e : m_componentSystems.networkReceiverSystem->getEntities()) {
+		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.getPlayerID()) {
+			// Upon finding who disconnected...
+			// Log it (Temporary until killfeed is implemented)
+			logSomeoneDisconnected(event.getPlayerID());
 
-					// This will remove the entity 
-					e->removeDeleteAllChildren();
-					e->queueDestruction();
-
-					// Log it (Temporary until killfeed is implemented)
-					logSomeoneDisconnected(event.getPlayerID());
-
-					// No loop break. If other entities has the same player id they should all be removed
-				}
-			}
-		}
-		// 'I' Am a client
-		else {
-		
-			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
-			for (auto& e : receiverEntities) {
-
-				// Upon finding who disconnected...
-				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID()) {
-					// Log it (Temporary until killfeed is implemented)
-					logSomeoneDisconnected(event.getPlayerID());
-				}
+			// If I am host notify all other players
+			if (NWrapperSingleton::getInstance().isHost()) {
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PLAYER_DISCONNECT,
+					SAIL_NEW Netcode::MessagePlayerDisconnect{ event.getPlayerID() }
+				);
 			}
 		}
 	}
@@ -574,6 +551,7 @@ bool GameState::update(float dt, float alpha) {
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
+	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -627,11 +605,17 @@ bool GameState::render(float dt, float alpha) {
 }
 
 bool GameState::renderImgui(float dt) {
-	// The ImGui window is rendered when activated on F10
+
+	return false;
+}
+
+bool GameState::renderImguiDebug(float dt) {
+	// The ImGui windows are rendered when activated on F10
 	m_profiler.renderWindow();
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
+	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();
@@ -1077,16 +1061,16 @@ void GameState::populateScene(Model* characterModel, Model* lightModel, Model* b
 		e->addComponent<CollisionComponent>();
 		e->addComponent<GunComponent>(projectileModel, bbModel);
 
-		/* Audio */
-		e->addComponent<AudioComponent>();
-		Audio::SoundInfo sound{};
-		sound.fileName = "../Audio/guitar.wav";
-		sound.soundEffectLength = 104.0f;
-		sound.volume = 1.0f;
-		sound.playOnce = false;
-		sound.positionalOffset = { 0.f, 1.2f, 0.f };
-		sound.isPlaying = true; // Start playing the sound immediately
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
+		///* Audio */
+		//e->addComponent<AudioComponent>();
+		//Audio::SoundInfo sound{};
+		//sound.fileName = "../Audio/guitar.wav";
+		//sound.soundEffectLength = 104.0f;
+		//sound.volume = 1.0f;
+		//sound.playOnce = false;
+		//sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		//sound.isPlaying = true; // Start playing the sound immediately
+		//e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
 
 		// Add candle
 		/*if (i != 12) {

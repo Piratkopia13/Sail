@@ -27,12 +27,13 @@ private:
 
 private:
 	DX12API* m_context;
-	DX12API::Command m_command;
 	DXRBase m_dxr;
+	DX12API::Command m_commandDirect;
+	DX12API::Command m_commandCompute;
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 
+	// Metaballs
 	std::vector<DXRBase::Metaball> m_metaballpositions;
-
 	// Decals
 	DXRShaderCommon::DecalData m_decals[MAX_DECALS];
 	size_t m_currNumDecals;
