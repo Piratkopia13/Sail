@@ -165,10 +165,10 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
-#ifndef DEVELOPMENT
-	// Capture mouse
-	Input::HideCursor(true);
-#endif
+//#ifndef DEVELOPMENT
+//	Capture mouse
+//	Input::HideCursor(true);		Shreks multiple applications on the same computer
+//#endif
 
 	// Pause game
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
