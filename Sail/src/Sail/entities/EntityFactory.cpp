@@ -241,7 +241,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	movement->velocity = velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
-	CollisionComponent* collision = e->addComponent<CollisionComponent>(true);
+	CollisionComponent* collision = e->addComponent<CollisionComponent>();
 	collision->drag = 2.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
 	collision->bounciness = 0.1f;
