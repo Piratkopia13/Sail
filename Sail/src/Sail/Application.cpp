@@ -152,15 +152,14 @@ int Application::startGameLoop() {
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(m_delta));
 #endif
 			// Process state specific input
-			// NOTE: player movement is processed in update() except for mouse movement which is processed here
 			processInput(m_delta);
 
 
 			// Limit the amount of updates that can happen between frames to prevent the game from completely freezing
 			// when the update is really slow for whatever reason.
 			// Allows fixed update to run twice in a row before rendering a frame so the game
-			// will slow down if (2*FPS < TICKRATE)
-			accumulator += std::min(m_delta, 2 * TIMESTEP);
+			// will slow down if (3*FPS < TICKRATE)
+			accumulator += std::min(m_delta, 3.01f * TIMESTEP);
 
 
 			// Run the update if enough time has passed since the last update
