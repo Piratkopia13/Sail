@@ -126,7 +126,9 @@ void Profiler::renderWindow() {
 			header = "Frame time (" + m_ftCount + " s)";
 			ImGui::Text(header.c_str());
 
-			header = "FixedUpdate (" + m_fixedUpdateCount + " ms, " + m_potentialFixedUpdateRate + " potential Hz)";
+			// "Potential" Hz in this case means what the update rate would be if the program consisted of
+			// only the fixedUpdate() function running in a loop
+			header = "FixedUpdate (" + m_fixedUpdateCount + " ms, " + m_potentialFixedUpdateRate + " \"potential\" Hz)";
 			ImGui::Text(header.c_str());
 
 			header = "Virtual RAM (" + m_virtCount + " MB)";
