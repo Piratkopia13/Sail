@@ -149,6 +149,11 @@ GameState::GameState(StateStack& stack)
 	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
+
+	// Host fill its game tracker per player with player data.
+	if (NWrapperSingleton::getInstance().isHost()) {
+		GameDataTracker::getInstance().init();
+	}	
 }
 
 GameState::~GameState() {
@@ -160,6 +165,18 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
+#ifndef DEVELOPMENT
+	// Capture mouse
+	Input::HideCursor(true);
+#endif
+
+	// Pause game
+	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+		requestStackPush(States::InGameMenu);
+	}
+
+
+#ifdef DEVELOPMENT
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
@@ -239,16 +256,11 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-	
+
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
-	}
-
-	// Pause game
-	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
-		requestStackPush(States::InGameMenu);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
@@ -280,7 +292,7 @@ bool GameState::processInput(float dt) {
 			m_player->addComponent<SpectatorComponent>();
 			m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
 			m_player->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
-		}	
+		}
 	}
 
 #ifdef _DEBUG
@@ -288,6 +300,7 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
 		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
+#endif
 #endif
 
 	return true;

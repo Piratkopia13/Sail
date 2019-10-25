@@ -235,30 +235,33 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
 	glm::i32vec3 ind = floor(floatInd);
 	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
-	
-	uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
-	uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
-	uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
-	uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
 
-	switch (index) {
-	case 0:
-		m_waterDeltas[i] = Utils::packQuarterFloat(0, up1, up2, up3);
-		break;
-	case 1:
-		m_waterDeltas[i] = Utils::packQuarterFloat(up0, 0, up2, up3);
-		break;
-	case 2:
-		m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, 0, up3);
-		break;
-	case 3:
-		m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, up2, 0);
-		break;
+	// Ignore water points that are outside the map
+	if (i >= 0 && i <= WATER_ARR_SIZE - 1) {
+		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
+		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
+		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
+		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+
+		switch (index) {
+		case 0:
+			m_waterDeltas[i] = Utils::packQuarterFloat(0, up1, up2, up3);
+			break;
+		case 1:
+			m_waterDeltas[i] = Utils::packQuarterFloat(up0, 0, up2, up3);
+			break;
+		case 2:
+			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, 0, up3);
+			break;
+		case 3:
+			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, up2, 0);
+			break;
+		}
+
+		m_waterDataCPU[i] = m_waterDeltas[i];
+
+		m_waterChanged = true;
 	}
-
-	m_waterDataCPU[i] = m_waterDeltas[i];
-
-	m_waterChanged = true;
 }
 
 void DXRBase::updateWaterData() {
@@ -306,15 +309,11 @@ void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
 
 	assert(m_gbufferInputTextures); // Input textures not set!
-
-	for (int i = 0; i < DX12GBufferRenderer::NUM_GBUFFERS; i++) {
-		m_gbufferInputTextures[i]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	}
 	
 	unsigned int frameIndex = m_context->getSwapIndex();
 
-	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	// Copy output texture srv to beginning of heap
+	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	D3D12_CPU_DESCRIPTOR_HANDLE outputTexHandle;
 	outputTexHandle.ptr = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_heapIncr * frameIndex;
 	m_context->getDevice()->CopyDescriptorsSimple(1, outputTexHandle, outputTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

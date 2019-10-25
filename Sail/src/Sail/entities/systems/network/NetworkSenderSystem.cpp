@@ -12,6 +12,7 @@
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
 #include "../src/Network/NWrapperSingleton.h"
+#include "Sail/utils/GameDataTracker.h"
 
 #include <vector>
 
@@ -221,9 +222,9 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 		// When the remote entity has been created we want to update translation and rotation of that entity
 		auto networkComp = e->getComponent<NetworkSenderComponent>();
-		networkComp->removeDataType(Netcode::MessageType::CREATE_NETWORKED_ENTITY);
-		networkComp->addDataType(Netcode::MessageType::MODIFY_TRANSFORM);
-		networkComp->addDataType(Netcode::MessageType::ROTATION_TRANSFORM);
+		networkComp->removeMessageType(Netcode::MessageType::CREATE_NETWORKED_ENTITY);
+		networkComp->addMessageType(Netcode::MessageType::MODIFY_TRANSFORM);
+		networkComp->addMessageType(Netcode::MessageType::ROTATION_TRANSFORM);
 	}
 	break;
 	case Netcode::MessageType::MODIFY_TRANSFORM:
@@ -314,6 +315,24 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->candleOwnerID);
 		ar(data->isHeld);
 		ArchiveHelpers::archiveVec3(ar, data->candlePos);
+	}
+	break;
+	case Netcode::MessageType::ENDGAME_STATS:
+	{
+		GameDataTracker* dgtp = &GameDataTracker::getInstance();
+		std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
+		// Send player count to clients for them to loop following data
+		(ar)(tmpPlayerMap.size());
+
+		// Send all per player data. Match this on the reciever end
+		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
+			(ar)(player->first);
+			(ar)(player->second.nKills);
+			(ar)(player->second.placement);
+		}
+
+		// Send all specific data
+
 	}
 	break;
 
