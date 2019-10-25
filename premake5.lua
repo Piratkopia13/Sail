@@ -20,6 +20,8 @@ IncludeDir["ImGui"] = "libraries/imgui"
 IncludeDir["MiniMM"] = "libraries/MemoryManager"
 IncludeDir["Assimp"] = "libraries/assimp/include"
 
+buildcfg = "release"
+
 group "Libraries"
 include "libraries/glfw"
 include "libraries/imgui"
@@ -73,6 +75,7 @@ project "SPLASH"
 	filter "configurations:Debug"
 		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
+		buildCfg = "debug"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
@@ -89,12 +92,12 @@ project "SPLASH"
 	-- Copy dlls to executable path
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{buildCfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
 			"{COPY} \"../libraries/assimp/lib/x64/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{buildCfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
 			"{COPY} \"../libraries/assimp/lib/x86/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 
@@ -161,25 +164,6 @@ project "Sail"
 			"%{prj.name}/src/API/Windows/**"
 		}
 
-	filter { "action:vs2017 or vs2019", "platforms:*64" }
-		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
-			"libraries/assimp/lib/x64"
-		}
-	filter { "action:vs2017 or vs2019", "platforms:*86" }
-		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
-			"libraries/assimp/lib/x86"
-		}
-
-	filter "system:windows"
-		systemversion "latest"
-
-		defines {
-			"FBXSDK_SHARED",
-			"GLFW_INCLUDE_NONE"
-		}
-
 	filter "configurations:Debug"
 		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
@@ -195,6 +179,25 @@ project "Sail"
 	filter "configurations:Dev-Release"
 		defines { "NDEBUG", "DEVELOPMENT" }
 		optimize "On"
+
+	filter { "action:vs2017 or vs2019", "platforms:*64" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x64/%{buildCfg}",
+			"libraries/assimp/lib/x64"
+		}
+	filter { "action:vs2017 or vs2019", "platforms:*86" }
+		libdirs {
+			"libraries/FBX_SDK/lib/vs2017/x86/%{buildCfg}",
+			"libraries/assimp/lib/x86"
+		}
+
+	filter "system:windows"
+		systemversion "latest"
+
+		defines {
+			"FBXSDK_SHARED",
+			"GLFW_INCLUDE_NONE"
+		}
 
 -----------------------------------
 -------------  Physics ------------
