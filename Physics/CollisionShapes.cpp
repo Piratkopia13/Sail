@@ -62,8 +62,8 @@ bool CollisionAABB::isTrueCollision(BoundingBox* boundingBox) {
 }
 
 glm::vec3 CollisionAABB::getIntersectionPosition(BoundingBox* boundingBox) {
-	// Calculate the plane that the triangle is on
-	glm::vec3 planePositionToWorldOrigo = glm::vec3(0.0f) - m_position + m_halfSize * m_intersectionAxis;
+	// Calculate the plane of bounding box
+	glm::vec3 planePositionToWorldOrigo = glm::vec3(0.0f) - (m_position + m_halfSize * m_intersectionAxis);
 	float distance = -glm::dot(planePositionToWorldOrigo, m_intersectionAxis);
 	return Intersection::PointProjectedOnPlane(boundingBox->getPosition(), m_intersectionAxis, distance);
 }

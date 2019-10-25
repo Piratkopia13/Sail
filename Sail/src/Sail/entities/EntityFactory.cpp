@@ -139,7 +139,7 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(pos);
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-	e->addComponent<CollidableComponent>();
+	e->addComponent<CollidableComponent>(true);
 	e->addComponent<MovementComponent>();
 	e->addComponent<SpeedLimitComponent>();
 	e->addComponent<CollisionComponent>();

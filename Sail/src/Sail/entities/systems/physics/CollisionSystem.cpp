@@ -63,7 +63,7 @@ void CollisionSystem::update(float dt) {
 
 		movement->updateableDt = updateableDt;
 	}
-	Logger::Log(std::to_string(counter));
+	//Logger::Log(std::to_string(counter));
 }
 
 const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
@@ -242,7 +242,7 @@ void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& bounding
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
 
-	const int split = 21;
+	const int split = 5;
 
 	const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
 	const glm::vec3 distancePerStep = (distance / (float)split) * normalizedVel;
