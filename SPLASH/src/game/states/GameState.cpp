@@ -12,6 +12,7 @@
 #include "Network/NWrapperSingleton.h"
 #include <sstream>
 #include <iomanip>
+#include "Sail/graphics/geometry/factory/QuadModel.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -24,6 +25,8 @@ GameState::GameState(StateStack& stack)
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
+
+
 
 	//----Octree creation----
 	//Wireframe shader
@@ -101,6 +104,20 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
+#ifdef DEVELOPMENT
+	/* GUI testing */
+	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
+	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
+	ModelFactory::QuadModel::Constraints cons;
+	cons.origin = Mesh::vec3(-0.99f, -0.99f);
+	cons.halfSize = Mesh::vec2(0.01f, 0.01f);
+	auto GUIModel = ModelFactory::QuadModel::Create(guiShader, cons);
+	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
+	m_app->getResourceManager().addModel("screenSpaceQuad", GUIModel);
+	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad"));
+	/* /GUI testing */
+#endif
 
 	// Level Creation
 
@@ -261,6 +278,7 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
+		m_app->getResourceManager().reloadShader<GuiShader>();
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
@@ -357,6 +375,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
 	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
+	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
 
 	// Create system for player input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -579,6 +598,7 @@ bool GameState::render(float dt, float alpha) {
 	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
+	m_componentSystems.guiSubmitSystem->submitAll();
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return true;
