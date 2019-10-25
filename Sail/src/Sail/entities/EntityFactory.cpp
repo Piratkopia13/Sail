@@ -32,7 +32,6 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec
 	candle->addComponent<ModelComponent>(candleModel);
 	candle->addComponent<TransformComponent>(lightPos);
 	candle->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	//candle->addComponent<CollidableComponent>();
 	candle->addComponent<CullingComponent>();
 	PointLight pl;
 	pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
@@ -56,15 +55,16 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
+	myPlayer->removeComponent<CollidableComponent>();
 	myPlayer->addComponent<CollisionComponent>();
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 
-	myPlayer->removeComponent<CollidableComponent>();
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
 		CandleComponent* cc = c->getComponent<CandleComponent>();
 		GunComponent* gc = c->getComponent<GunComponent>();
 		if (cc) {
+			c->addComponent<CollidableComponent>();
 			cc->setOwner(playerID);
 		}
 		if (gc) {
@@ -94,6 +94,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 		CandleComponent* cc = c->getComponent<CandleComponent>();
 		GunComponent* gc = c->getComponent<GunComponent>();
 		if (cc) {
+			c->addComponent<CollidableComponent>();
 			cc->setOwner(Netcode::getComponentOwner(netComponentID));
 		}
 		if (gc) {
@@ -161,8 +162,6 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = glm::identity<glm::mat4>();
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.57f, 1.03f, 0.05f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
-	//ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.47f, 1.03f, 0.75f));
-	//ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(0, 0, 0.0f)));
 	
 	// Attach the something to the player's right hand
 	ac->rightHandEntity = nullptr;
