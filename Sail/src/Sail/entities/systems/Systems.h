@@ -33,3 +33,5 @@
 #include "render/RealTimeModelSubmitSystem.h"
 #include "render/ImGui/RenderImGuiSystem.h"
 #include "Graphics/AnimationChangerSystem.h"
+#include "render/ImGui/RenderImGuiSystem.h"
+#include "render/GUISubmitSystem.h"
