@@ -153,8 +153,7 @@ GameState::GameState(StateStack& stack)
 	// Host fill its game tracker per player with player data.
 	if (NWrapperSingleton::getInstance().isHost()) {
 		GameDataTracker::getInstance().init();
-	}
-	
+	}	
 }
 
 GameState::~GameState() {
@@ -165,6 +164,11 @@ GameState::~GameState() {
 // Process input for the state
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
+
+#ifndef DEVELOPMENT
+	// Capture mouse
+	Input::HideCursor(true);
+#endif
 
 	// Pause game
 	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
