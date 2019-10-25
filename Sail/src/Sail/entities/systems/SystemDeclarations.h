@@ -33,6 +33,7 @@ class RenderImGuiSystem;
 class SpeedLimitSystem;
 class UpdateBoundingBoxSystem;
 class NetworkReceiverSystem;
+class AnimationChangerSystem;
 
 struct Systems {
 	AiSystem* aiSystem = nullptr;
@@ -65,4 +66,5 @@ struct Systems {
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+	AnimationChangerSystem* animationChangerSystem = nullptr;
 };

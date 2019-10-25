@@ -11,7 +11,7 @@ public:
 		viewMatrix = glm::mat4(1.0f); // Identity matrix
 
 		m_pos = glm::vec3(0.f, 0.f, 0.f);
-		m_direction = glm::vec3(0.f, 0.f, -1.f);
+		m_direction = glm::vec3(1.f, 0.f, 0.f);
 		m_up = glm::vec3(0.f, 1.f, 0.f);
 
 		m_updateVPMatrix = true;

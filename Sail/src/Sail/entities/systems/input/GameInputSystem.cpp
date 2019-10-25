@@ -254,9 +254,9 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 
 		glm::vec3 forwards(
-			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
+			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw + 90)),
 			std::sin(glm::radians(m_pitch)),
-			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
+			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw + 90))
 		);
 		forwards = glm::normalize(forwards);
 

@@ -324,7 +324,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
 			glm::vec3 rot = rotation;
 			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
-			rot.y += 3.14f * 0.5f;
+			//rot.y += 3.14f * 0.5f;
 			//}
 			e->getComponent<TransformComponent>()->setRotations(rot);
 
