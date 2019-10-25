@@ -4,6 +4,7 @@
 #include "Sail/Application.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/graphics/camera/Camera.h"
+#include "Sail/entities/components/MovementComponent.h"
 
 PlayerInfoWindow::PlayerInfoWindow(bool showWindow) {}
 
@@ -23,6 +24,18 @@ void PlayerInfoWindow::renderWindow() {
 		ImGui::Text(header.c_str());
 
 		header = "Dir: " + Utils::toStr(m_cam->getDirection());
+		ImGui::Text(header.c_str());
+
+		header = "Vel: " + Utils::toStr(m_player->getComponent<MovementComponent>()->velocity);
+		ImGui::Text(header.c_str());
+
+		header = "Forward: " + Utils::toStr(m_player->getComponent<MovementComponent>()->forwardVel);
+		ImGui::Text(header.c_str());
+
+		header = "Right: " + Utils::toStr(m_player->getComponent<MovementComponent>()->rightVel);
+		ImGui::Text(header.c_str());
+
+		header = "relative Vel: " + Utils::toStr(m_player->getComponent<MovementComponent>()->relVel);
 		ImGui::Text(header.c_str());
 	}
 	ImGui::End();

@@ -87,12 +87,14 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			// Else do normal movement
-		} else {
+		} 
+		else {
 			auto collision = e->getComponent<CollisionComponent>();
 			auto movement = e->getComponent<MovementComponent>();
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
 			auto audioComp = e->getComponent<AudioComponent>();
 
+			//movement->forwardVel = glm::vec3(playerMovement.rightMovement, playerMovement.upMovement, playerMovement.forwardMovement);
 
 			// Get player movement inputs
 			Movement playerMovement = getPlayerMovementInput(e);
@@ -161,10 +163,17 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 			forward.y = 0.f;
 			forward = glm::normalize(forward);
-
 			// Calculate right vector for player
 			glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 			right = glm::normalize(right);
+
+
+			// calculate forward vel and sidevel
+			movement->forwardVel = forward * glm::dot(movement->velocity, forward);
+			movement->rightVel = right * glm::dot(movement->velocity, right);
+
+			movement->relVel.x = glm::dot(movement->velocity, forward);
+			movement->relVel.z = glm::dot(movement->velocity, right);
 
 			// Prevent division by zero
 			if ( playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f ) {
@@ -191,6 +200,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				movement->accelerationToAdd =
 					glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
 					* acceleration;
+
+
+
 			} else {
 
 				// AUDIO TESTING (turn OFF looping running sound)

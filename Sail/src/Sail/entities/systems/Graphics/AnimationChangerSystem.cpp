@@ -23,15 +23,24 @@ void AnimationChangerSystem::update(float dt) {
 		MovementComponent* moveC = e->getComponent<MovementComponent>();
 		if (animationC && moveC) {
 
-				Logger::Log("vel: " + std::to_string(moveC->velocity.length()));
-			if (moveC->velocity.length() > 0.5f ) {
+			if (glm::length(moveC->velocity) < 0.1f) {
 				animationC->setAnimation(1);
 				//animationC->animationTime = 0.0f;
 			}
 			else {
-				animationC->setAnimation(2);
-				//animationC->animationTime = 0.0f;
-
+				if (moveC->relVel.z > 0.1f) {
+					animationC->setAnimation(5);
+				}
+				else if (moveC->relVel.z < -0.1f) {
+					animationC->setAnimation(4);
+				}
+				if (moveC->relVel.x > 0.1f) {
+					animationC->setAnimation(2);
+				} 
+				else if (moveC->relVel.x < -0.1f) {
+					animationC->setAnimation(3);
+				}
+				
 
 
 			}
