@@ -12,7 +12,7 @@
 #include "Network/NWrapperSingleton.h"
 #include <sstream>
 #include <iomanip>
-#include "Sail/graphics/geometry/factory/QuadModel.h"
+#include "Sail/graphics/geometry/factory/FontModel.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -108,14 +108,25 @@ GameState::GameState(StateStack& stack)
 	/* GUI testing */
 	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
 	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
-	ModelFactory::QuadModel::Constraints cons;
-	cons.origin = Mesh::vec3(-0.99f, -0.99f);
-	cons.halfSize = Mesh::vec2(0.01f, 0.01f);
-	auto GUIModel = ModelFactory::QuadModel::Create(guiShader, cons);
-	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("fonts/minecraft-font-character-map.tga");
+	ModelFactory::FontModel::Constraints cons1;
+	cons1.character = 'a';
+	cons1.origin = Mesh::vec3(-0.5f, 0.0f);
+	cons1.halfSize = Mesh::vec2(0.25f, 0.25f);
+	ModelFactory::FontModel::Constraints cons2;
+	cons2.character = 'b';
+	cons2.origin = Mesh::vec3(.5f, 0.0f);
+	cons2.halfSize = Mesh::vec2(0.25f, 0.25f);
+
+	auto GUIModel = ModelFactory::FontModel::Create(guiShader, cons1);
+	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("fonts/minecraft-font-character-map.tga");
 	m_app->getResourceManager().addModel("screenSpaceQuad", GUIModel);
 	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad"));
+	auto GUIEntity2 = ECS::Instance()->createEntity("guiEntity");
+	auto GUIModel2 = ModelFactory::FontModel::Create(guiShader, cons2);
+	GUIModel2->getMesh(0)->getMaterial()->setAlbedoTexture("fonts/minecraft-font-character-map.tga");
+	m_app->getResourceManager().addModel("screenSpaceQuad2", GUIModel2);
+	GUIEntity2->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad2"));
 	/* /GUI testing */
 #endif
 
