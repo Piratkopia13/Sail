@@ -364,7 +364,5 @@ void AllAudioData::init() {
 		AllAudioData::m_soundsUnique[Audio::DEATH_OTHER].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
-
-}
-
 #pragma endregion
+}

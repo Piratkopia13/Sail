@@ -15,9 +15,6 @@ public:
 
 	// An 'easy-mode' helper function for starting/stopping a streamed sound
 	void streamSoundRequest_HELPERFUNC(std::string filename, bool startTrue_stopFalse, float volume, bool isPositionalAudio, bool isLooping);
-	// A helpful function that simplifies the process of defining a new sound
-	//void defineSoundGeneral(Audio::SoundType type, Audio::SoundInfo_General info);
-	//void defineSoundUnique(Audio::SoundType type, Audio::SoundInfo_Unique info);
 
 	// VARIABLE DEFINITIONS/CLARIFICATIONS
 		// • string = filename

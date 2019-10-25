@@ -227,7 +227,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 	}
 }
 
-
 void AudioSystem::stop() {
 	m_audioEngine->stopAllStreams();
 }
