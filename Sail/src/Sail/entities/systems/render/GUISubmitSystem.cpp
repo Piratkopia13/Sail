@@ -8,18 +8,13 @@ GUISubmitSystem::GUISubmitSystem() {
 	registerComponent<GUIComponent>(true, false, false);
 }
 
-GUISubmitSystem::~GUISubmitSystem() {
-
-}
+GUISubmitSystem::~GUISubmitSystem() {}
 
 void GUISubmitSystem::submitAll() {
 	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getScreenSpaceRenderer();
 	for (auto& e : entities) {
 		Renderer::RenderFlag flags = Renderer::MESH_STATIC;
-		if (e->hasComponent<ModelComponent>()) {
-			Model* model = e->getComponent<ModelComponent>()->getModel();
-			renderer->submit(model, e->getComponent<TransformComponent>()->getMatrix(), flags);
-		}
-
+		Model* model = e->getComponent<GUIComponent>()->getModel();
+		renderer->submit(model, glm::identity<glm::mat4>(), flags);
 	}
 }

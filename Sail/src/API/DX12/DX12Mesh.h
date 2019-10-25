@@ -5,7 +5,7 @@
 
 class DX12Mesh : public Mesh {
 public:
-	DX12Mesh(Data& buildData, Shader* shader, bool usePBR = true);
+	DX12Mesh(Data& buildData, Shader* shader);
 	virtual ~DX12Mesh();
 
 	/*[Depricated]*/

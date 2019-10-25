@@ -17,6 +17,7 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
 	: ShaderPipeline(filename) 
 	, m_numRenderTargets(1)
+	, m_enableDepth(true)
 {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
@@ -261,6 +262,10 @@ void DX12ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) {
 	m_numRenderTargets = numRenderTargets;
 }
 
+void DX12ShaderPipeline::enableDepthStencil(bool enable) {
+	m_enableDepth = enable;
+}
+
 void DX12ShaderPipeline::compile() {
 	ShaderPipeline::compile();
 }
@@ -341,7 +346,7 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 
 	// Specify depth stencil state descriptor.
 	D3D12_DEPTH_STENCIL_DESC dsDesc{};
-	dsDesc.DepthEnable = TRUE;
+	dsDesc.DepthEnable = m_enableDepth;
 	dsDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 	dsDesc.StencilEnable = FALSE;

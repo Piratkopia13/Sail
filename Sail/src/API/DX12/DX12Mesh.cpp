@@ -11,12 +11,10 @@ Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 	return SAIL_NEW DX12Mesh(buildData, shader);
 }
 
-DX12Mesh::DX12Mesh(Data& buildData, Shader* shader, bool usePBR)
+DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 	: Mesh(buildData, shader) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
-	if (usePBR) {
-		material = std::make_shared<PBRMaterial>(shader);
-	}
+	material = std::make_shared<PBRMaterial>(shader);
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), buildData));
 	// Create index buffer if indices are set

@@ -10,6 +10,7 @@ GuiShader::GuiShader()
 	shaderPipeline->getInputLayout().pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
+	static_cast<DX12ShaderPipeline*>(shaderPipeline)->enableDepthStencil(false);
 
 	// Finish the shader creation
 	finish();

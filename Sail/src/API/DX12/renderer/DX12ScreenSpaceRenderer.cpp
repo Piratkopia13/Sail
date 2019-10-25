@@ -6,6 +6,7 @@
 #include "API/DX12/DX12Mesh.h"
 #include "Sail/graphics/geometry/PBRMaterial.h"
 #include "Sail/graphics/shader/Shader.h"
+#include "API/DX12/DX12VertexBuffer.h"
 
 DX12ScreenSpaceRenderer::DX12ScreenSpaceRenderer() {
 	Application* app = Application::getInstance();
@@ -20,8 +21,6 @@ DX12ScreenSpaceRenderer::DX12ScreenSpaceRenderer() {
 }
 
 DX12ScreenSpaceRenderer::~DX12ScreenSpaceRenderer() {}
-
-void DX12ScreenSpaceRenderer::begin(Camera* camera) {}
 
 void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	assert(!output); // Render to texture is currently not implemented for DX12!
@@ -42,15 +41,15 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 	// TODO: optimize!
 	int meshIndex = 0;
 	for (auto& renderCommand : commandQueue) {
-		for (int i = 0; i < 3; i++) {
-			if (renderCommand.type != RENDER_COMMAND_TYPE_MODEL) {
-				continue;
-			}
-			auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
-			if (tex && !tex->hasBeenInitialized()) {
-				tex->initBuffers(cmdList.Get(), meshIndex);
-				meshIndex++;
-			}
+		auto& vbuffer = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
+		vbuffer.init(cmdList.Get());
+		if (renderCommand.type != RENDER_COMMAND_TYPE_MODEL) {
+			continue;
+		}
+		auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(0));
+		if (tex && !tex->hasBeenInitialized()) {
+			tex->initBuffers(cmdList.Get(), meshIndex);
+			meshIndex++;
 		}
 	}
 

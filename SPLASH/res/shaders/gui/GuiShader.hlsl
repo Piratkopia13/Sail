@@ -15,13 +15,14 @@ SamplerState PSss 					: register(s0);
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
-	output.position = float4(input.position.xy, 0.f, 0.f);
+	output.position = float4(input.position.xy, 0.f, 1.f);
 	output.texCoords = input.texCoords;
 
 	return output;
 }
 
 float4 PSMain(PSIn input) : SV_Target0 {
-	return float4(1.f, 1.f, 1.f, 1.f);//sys_texAlbedo.SampleLevel(PSss, float2(input.texCoords.x, input.texCoords.y), 0);
+	return float4(1.f, 1.f, 1.f, 1.f);
+	//return sys_texAlbedo.Sample(PSss, float2(input.texCoords.x, input.texCoords.y));
 }
 

@@ -11,5 +11,4 @@ public:
 	void submitAll();
 
 private:
-	Model* m_testModel = nullptr;
 };
