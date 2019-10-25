@@ -649,12 +649,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
-	if (!m_isSingleplayer) {
-		// Update entities with info from the network
-		m_componentSystems.networkReceiverSystem->update();
-		// Send out your entity info to the rest of the players
-		m_componentSystems.networkSenderSystem->update();
-	}
+	// Update entities with info from the network and from ourself
+	// DON'T MOVE, should happen at the start of each tick
+	m_componentSystems.networkReceiverSystem->update();
 	
 	m_componentSystems.movementSystem->update(dt);
 	m_componentSystems.speedLimitSystem->update();
@@ -680,6 +677,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
 	}
+
+	// Send out your entity info to the rest of the players
+	// DON'T MOVE, should happen at the end of each tick
+	m_componentSystems.networkSenderSystem->update();
 
 	// Will probably need to be called last
 	m_componentSystems.entityAdderSystem->update();
