@@ -18,6 +18,18 @@ namespace ModelFactory {
 
 		static Model* Create(Shader* shader, const FontModel::Constraints& constraints) {
 
+			int indexX = 0;
+			int indexY = 0;
+			if (constraints.character > 64 && constraints.character < 91) {
+				int index = static_cast<int>(constraints.character) - 65;
+				indexX = index % 9;
+				indexY = index / 9;
+			} else {
+				// Always print a space if the character isn't found
+				indexX = 9;
+				indexY = 3;
+			}
+
 			Mesh::vec2 halfSizes(constraints.halfSize);
 			Mesh::vec3 origin = constraints.origin;
 
@@ -33,17 +45,6 @@ namespace ModelFactory {
 			ULONG* indices = SAIL_NEW ULONG[numIndices]{
 				0, 1, 2, 2, 1, 3
 			};
-
-			int indexX = 0;
-			int indexY = 0;
-			if (constraints.character > 64 && constraints.character < 91) {
-				int index = static_cast<int>(constraints.character) - 65;
-				indexX = index % 9;
-				indexY = index / 9;
-			} else if (constraints.character == ' ') {
-				indexX = 9;
-				indexY = 3;
-			}
 
 			Mesh::vec2* texCoords = SAIL_NEW Mesh::vec2[numVerts]{
 				Mesh::vec2((indexX * 0.1111f), (indexY * 0.1111f) + 0.1111f),
