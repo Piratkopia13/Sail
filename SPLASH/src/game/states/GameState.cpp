@@ -12,7 +12,6 @@
 #include "Network/NWrapperSingleton.h"
 #include <sstream>
 #include <iomanip>
-#include "Sail/graphics/geometry/factory/StringModel.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -77,6 +76,9 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 
+	// Font sprite map texture
+	Application::getInstance()->getResourceManager().loadTexture("fonts/minecraft-font-character-map.tga");
+
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
@@ -107,37 +109,9 @@ GameState::GameState(StateStack& stack)
 #ifdef DEVELOPMENT
 	/* GUI testing */
 	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
-	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
-	Application::getInstance()->getResourceManager().loadTexture("fonts/minecraft-font-character-map.tga");
-	/*ModelFactory::FontModel::Constraints cons1;
-	cons1.character = 'A';
-	cons1.origin = Mesh::vec3(-0.5f, 0.0f);
-	cons1.halfSize = Mesh::vec2(0.25f, 0.25f);
-	ModelFactory::FontModel::Constraints cons2;
-	cons2.character = 'Z';
-	cons2.origin = Mesh::vec3(.5f, 0.0f);
-	cons2.halfSize = Mesh::vec2(0.25f, 0.25f);
 
-	auto GUIModel = ModelFactory::FontModel::Create(guiShader, cons1);
-	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("fonts/minecraft-font-character-map.tga");
-	m_app->getResourceManager().addModel("screenSpaceQuad", GUIModel);
-	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad"));
-	auto GUIEntity2 = ECS::Instance()->createEntity("guiEntity");
-	auto GUIModel2 = ModelFactory::FontModel::Create(guiShader, cons2);
-	GUIModel2->getMesh(0)->getMaterial()->setAlbedoTexture("fonts/minecraft-font-character-map.tga");
-	m_app->getResourceManager().addModel("screenSpaceQuad2", GUIModel2);
-	GUIEntity2->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad2"));*/
-
-	ModelFactory::StringModel::Constraints textConst;
-	textConst.size = Mesh::vec2(0.8f, 0.2f);
-	textConst.text = "TEST";
-	auto GUIModel = ModelFactory::StringModel::Create(guiShader, textConst);
-	m_app->getResourceManager().addModel("screenSpaceText", GUIModel);
-	for (int i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
-		GUIModel->getMesh(i)->getMaterial()->setAlbedoTexture("fonts/minecraft-font-character-map.tga");
-	}
-	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceText"));
-
+	EntityFactory::CreateScreenSpaceText("HI", glm::vec2(0.2f, 0.1f), glm::vec2(0.4f, 0.2f), guiShader);
+	EntityFactory::CreateScreenSpaceText("HELLO THERE", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f), guiShader);
 	/* /GUI testing */
 #endif
 

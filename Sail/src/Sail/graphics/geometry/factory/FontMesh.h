@@ -24,7 +24,7 @@ namespace MeshFactory {
 				indexY = index / 9;
 			} else {
 				// Always print a space if the character isn't found
-				indexX = 9;
+				indexX = 8;
 				indexY = 3;
 			}
 
