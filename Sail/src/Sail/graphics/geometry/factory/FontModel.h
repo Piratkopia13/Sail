@@ -34,15 +34,15 @@ namespace ModelFactory {
 				0, 1, 2, 2, 1, 3
 			};
 
-			int indexX = 1;
-			int indexY = 1;
-			if (constraints.character == 'a') {
-				indexX = 0;
-				indexY = 0;
-			}
-			if (constraints.character == 'b') {
-				indexX = 1;
-				indexY = 0;
+			int indexX = 0;
+			int indexY = 0;
+			if (constraints.character > 64 && constraints.character < 91) {
+				int index = static_cast<int>(constraints.character) - 65;
+				indexX = index % 9;
+				indexY = index / 9;
+			} else if (constraints.character == ' ') {
+				indexX = 9;
+				indexY = 3;
 			}
 
 			Mesh::vec2* texCoords = SAIL_NEW Mesh::vec2[numVerts]{

@@ -110,11 +110,11 @@ GameState::GameState(StateStack& stack)
 	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
 	Application::getInstance()->getResourceManager().loadTexture("fonts/minecraft-font-character-map.tga");
 	ModelFactory::FontModel::Constraints cons1;
-	cons1.character = 'a';
+	cons1.character = 'A';
 	cons1.origin = Mesh::vec3(-0.5f, 0.0f);
 	cons1.halfSize = Mesh::vec2(0.25f, 0.25f);
 	ModelFactory::FontModel::Constraints cons2;
-	cons2.character = 'b';
+	cons2.character = 'Z';
 	cons2.origin = Mesh::vec3(.5f, 0.0f);
 	cons2.halfSize = Mesh::vec2(0.25f, 0.25f);
 
