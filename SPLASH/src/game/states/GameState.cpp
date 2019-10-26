@@ -12,7 +12,7 @@
 #include "Network/NWrapperSingleton.h"
 #include <sstream>
 #include <iomanip>
-#include "Sail/graphics/geometry/factory/FontModel.h"
+#include "Sail/graphics/geometry/factory/StringModel.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -109,7 +109,7 @@ GameState::GameState(StateStack& stack)
 	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
 	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
 	Application::getInstance()->getResourceManager().loadTexture("fonts/minecraft-font-character-map.tga");
-	ModelFactory::FontModel::Constraints cons1;
+	/*ModelFactory::FontModel::Constraints cons1;
 	cons1.character = 'A';
 	cons1.origin = Mesh::vec3(-0.5f, 0.0f);
 	cons1.halfSize = Mesh::vec2(0.25f, 0.25f);
@@ -126,7 +126,18 @@ GameState::GameState(StateStack& stack)
 	auto GUIModel2 = ModelFactory::FontModel::Create(guiShader, cons2);
 	GUIModel2->getMesh(0)->getMaterial()->setAlbedoTexture("fonts/minecraft-font-character-map.tga");
 	m_app->getResourceManager().addModel("screenSpaceQuad2", GUIModel2);
-	GUIEntity2->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad2"));
+	GUIEntity2->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad2"));*/
+
+	ModelFactory::StringModel::Constraints textConst;
+	textConst.size = Mesh::vec2(0.8f, 0.2f);
+	textConst.text = "ABCDE";
+	auto GUIModel = ModelFactory::StringModel::Create(guiShader, textConst);
+	m_app->getResourceManager().addModel("screenSpaceText", GUIModel);
+	for (int i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
+		GUIModel->getMesh(i)->getMaterial()->setAlbedoTexture("fonts/minecraft-font-character-map.tga");
+	}
+	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceText"));
+
 	/* /GUI testing */
 #endif
 

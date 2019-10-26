@@ -17,14 +17,13 @@ PSIn VSMain(VSIn input) {
 
 	output.position = float4(input.position.xy, 0.f, 1.f);
 	output.texCoords = input.texCoords;
-	//111 x
-	//128 y
 
 	return output;
 }
 
 float4 PSMain(PSIn input) : SV_Target0 {
 	//return float4(1.f, 0.f, 0.f, 0.5f);
-	return sys_texAlbedo.Sample(PSss, float2(input.texCoords.x, input.texCoords.y));
+	float4 color = sys_texAlbedo.Sample(PSss, float2(input.texCoords.x, input.texCoords.y));
+	return color;
 }
 

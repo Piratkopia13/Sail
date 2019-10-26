@@ -1,22 +1,20 @@
 #pragma once
 
-#pragma once
-
 #include <memory>
-#include "../Model.h"
+#include "Sail/api/Mesh.h"
 
-namespace ModelFactory {
+namespace MeshFactory {
 
-	class FontModel {
+	class FontMesh {
 	public:
 		struct Constraints {
 			Mesh::vec3 origin;
 			Mesh::vec2 halfSize;
 			char character;
 		};
-	public:
 
-		static Model* Create(Shader* shader, const FontModel::Constraints& constraints) {
+	public:
+		static std::unique_ptr<Mesh> Create(Shader* shader, const FontMesh::Constraints& constraints) {
 
 			int indexX = 0;
 			int indexY = 0;
@@ -60,7 +58,7 @@ namespace ModelFactory {
 			data.indices = indices;
 			data.texCoords = texCoords;
 
-			return SAIL_NEW Model(data, shader);
+			return std::unique_ptr<Mesh>(Mesh::Create(data, shader));
 
 		}
 
