@@ -23,7 +23,8 @@ PSIn VSMain(VSIn input) {
 
 float4 PSMain(PSIn input) : SV_Target0 {
 	//return float4(1.f, 0.f, 0.f, 0.5f);
-	float4 color = sys_texAlbedo.Sample(PSss, float2(input.texCoords.x, input.texCoords.y));
+	float4 color = sys_texAlbedo.SampleLevel(PSss, float2(input.texCoords.x, input.texCoords.y), 0);
+	//color.a = 1.f;
 	return color;
 }
 

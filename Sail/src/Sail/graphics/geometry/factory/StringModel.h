@@ -27,7 +27,7 @@ namespace ModelFactory {
 			Model* stringModel = SAIL_NEW Model;
 			MeshFactory::FontMesh::Constraints charConst;
 			charConst.halfSize = charHalfSize;
-			float offsetX = -constraints.size.vec.x / 2.f - charHalfSize.vec.x;
+			float offsetX = -constraints.size.vec.x / 2.f + charHalfSize.vec.x;
 			for (int i = 0; i < constraints.text.size(); i++) {
 				charConst.origin = Mesh::vec3(constraints.origin.vec.x + offsetX, constraints.origin.vec.y, 0.f);
 				charConst.character = constraints.text[i];

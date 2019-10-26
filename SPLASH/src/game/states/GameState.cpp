@@ -130,7 +130,7 @@ GameState::GameState(StateStack& stack)
 
 	ModelFactory::StringModel::Constraints textConst;
 	textConst.size = Mesh::vec2(0.8f, 0.2f);
-	textConst.text = "ABCDE";
+	textConst.text = "TEST";
 	auto GUIModel = ModelFactory::StringModel::Create(guiShader, textConst);
 	m_app->getResourceManager().addModel("screenSpaceText", GUIModel);
 	for (int i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
