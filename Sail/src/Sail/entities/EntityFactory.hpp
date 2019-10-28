@@ -23,4 +23,6 @@ namespace EntityFactory {
 		bool hasLocalOwner = false, Netcode::ComponentID ownersNetId = 0,
 		float lifetime = 4, float randomSpreed = 0.15f
 	);
+
+	Entity::SPtr CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size, Shader* shader);
 }
