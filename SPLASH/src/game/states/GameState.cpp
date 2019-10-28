@@ -11,6 +11,7 @@
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GUISettings.h"
+#include "Sail/graphics/geometry/factory/QuadModel.h"
 #include <sstream>
 #include <iomanip>
 
@@ -114,6 +115,17 @@ GameState::GameState(StateStack& stack)
 	EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f), guiShader);
 	/* /GUI testing */
 #endif
+
+	// Crosshair
+	auto CrosshairEntity = ECS::Instance()->createEntity("crosshairEntity");
+	ModelFactory::QuadModel::Constraints crosshairConst;
+	crosshairConst.halfSize = Mesh::vec2(0.005f, 0.00888f);
+	auto crosshairModel = ModelFactory::QuadModel::Create(guiShader, crosshairConst);
+	m_app->getResourceManager().loadTexture("crosshair.tga");
+	crosshairModel->getMesh(0)->getMaterial()->setAlbedoTexture("crosshair.tga");
+	m_app->getResourceManager().addModel("CrosshairModel", crosshairModel);
+	CrosshairEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("CrosshairModel"));
+
 
 	// Level Creation
 
@@ -601,6 +613,10 @@ bool GameState::render(float dt, float alpha) {
 }
 
 bool GameState::renderImgui(float dt) {
+	m_killFeedWindow.renderWindow();
+	if (m_wasDropped) {
+		m_wasDroppedWindow.renderWindow();
+	}
 
 	return false;
 }
@@ -611,11 +627,7 @@ bool GameState::renderImguiDebug(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
-	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
-	if (m_wasDropped) {
-		m_wasDroppedWindow.renderWindow();
-	}
 
 	return false;
 }
