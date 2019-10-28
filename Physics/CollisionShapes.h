@@ -10,7 +10,6 @@ public:
 	virtual bool isTrueCollision(BoundingBox* boundingBox) = 0;
 	virtual glm::vec3 getIntersectionPosition(BoundingBox* boundingBox) = 0;
 	virtual bool getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth) = 0;
-	virtual bool getNormalDepth(BoundingBox* boundingBox, float* depth) = 0;
 
 	int keeperTracker = 1;
 };
@@ -24,7 +23,6 @@ public:
 	bool isTrueCollision(BoundingBox* boundingBox);
 	glm::vec3 getIntersectionPosition(BoundingBox* boundingBox);
 	bool getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth);
-	bool getNormalDepth(BoundingBox* boundingBox, float* depth);
 
 private:
 	glm::vec3 m_positions[3];
@@ -39,7 +37,6 @@ public:
 	bool isTrueCollision(BoundingBox* boundingBox);
 	glm::vec3 getIntersectionPosition(BoundingBox* boundingBox);
 	bool getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth);
-	bool getNormalDepth(BoundingBox* boundingBox, float* depth);
 
 private:
 	glm::vec3 m_position;

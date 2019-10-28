@@ -38,13 +38,6 @@ bool CollisionTriangle::getIntersectionDepthAndAxis(BoundingBox* boundingBox, gl
 	return false;
 }
 
-bool CollisionTriangle::getNormalDepth(BoundingBox* boundingBox, float* depth) {
-	if (Intersection::AabbWithTriangle(boundingBox->getPosition(), boundingBox->getHalfSize(), m_positions[0], m_positions[1], m_positions[2], nullptr, nullptr, depth)) {
-		return true;
-	}
-	return false;
-}
-
 
 
 CollisionAABB::CollisionAABB(const glm::vec3& position, const glm::vec3& halfSize, const glm::vec3& collisionAxis) {
@@ -74,13 +67,6 @@ glm::vec3 CollisionAABB::getIntersectionPosition(BoundingBox* boundingBox) {
 
 bool CollisionAABB::getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth) {
 	if (Intersection::AabbWithAabb(boundingBox->getPosition(), boundingBox->getHalfSize(), m_position, m_halfSize, axis, depth)) {
-		return true;
-	}
-	return false;
-}
-
-bool CollisionAABB::getNormalDepth(BoundingBox* boundingBox, float* depth) {
-	if (Intersection::AabbWithAabb(boundingBox->getPosition(), boundingBox->getHalfSize(), m_position, m_halfSize, nullptr, depth)) {
 		return true;
 	}
 	return false;
