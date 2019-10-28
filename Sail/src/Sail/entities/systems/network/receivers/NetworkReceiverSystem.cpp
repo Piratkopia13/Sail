@@ -430,6 +430,12 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			//If it wasn't me that died, completely remove the player entity from game.
 			e->queueDestruction();
 		}
+
+		// Play sound
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH_ME].isPlaying = true;
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH_ME].playOnce = true;
+	
+
 		return;
 	}
 	Logger::Warning("playerDied called but no matching entity found");
