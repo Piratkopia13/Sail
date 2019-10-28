@@ -63,7 +63,7 @@ void CollisionSystem::update(float dt) {
 
 		movement->updateableDt = updateableDt;
 	}
-	Logger::Log(std::to_string(counter));
+	//Logger::Log(std::to_string(counter));
 }
 
 const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
@@ -98,29 +98,28 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 		glm::vec3 sumVec(0.0f);
 		std::vector<Octree::CollisionInfo> trueCollisions;
 
-		//Get the combined normals and detect "true" collisions
+		//Get the actual intersection axises
 		for (size_t i = 0; i < collisionCount; i++) {
 			Octree::CollisionInfo& collisionInfo_i = collisions[i];
 
 			glm::vec3 intersectionAxis;
 			float intersectionDepth;
 
-			collisionInfo_i.shape->getIntersectionDepthAndAxis(boundingBox, &intersectionAxis, &intersectionDepth);
+			if (collisionInfo_i.shape->getIntersectionDepthAndAxis(boundingBox, &intersectionAxis, &intersectionDepth)) {
+				collisionInfo_i.normal = intersectionAxis;
 
-			collisionInfo_i.normal = intersectionAxis;
+				sumVec += collisionInfo_i.normal;
 
-			sumVec += collisionInfo_i.normal;
+				collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
 
-			collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
+				//Add collision to current collisions for collisionComponent
+				collision->collisions.push_back(collisionInfo_i);
 
-			//Add collision to current collisions for collisionComponent
-			collision->collisions.push_back(collisionInfo_i);
+				//Add collision to true collisions
+				trueCollisions.push_back(collisionInfo_i);
 
-			//Add collision to true collisions
-			trueCollisions.push_back(collisionInfo_i);
-
-			collisionFound = true;
-
+				collisionFound = true;
+			}
 		}
 
 		//Loop through true collisions and handle them
