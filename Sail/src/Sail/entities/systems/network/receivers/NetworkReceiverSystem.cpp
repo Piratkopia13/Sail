@@ -266,6 +266,30 @@ void NetworkReceiverSystem::update() {
 				backToLobby();
 			}
 			break;
+			case Netcode::MessageType::RUNNING_METAL_START:
+			{
+				Netcode::PlayerID playerID;
+				ar(playerID);
+
+				runningMetalStart(playerID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_TILE_START:
+			{
+				Netcode::PlayerID playerID;
+				ar(playerID);
+
+				runningTileStart(playerID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_STOP_ALL:
+			{
+				Netcode::PlayerID playerID;
+				ar(playerID);
+
+				runningStopAll(playerID);
+			}
+			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
 				Netcode::PlayerID playerID;
@@ -625,4 +649,42 @@ void NetworkReceiverSystem::matchEnded() {
 void NetworkReceiverSystem::backToLobby() {
 	m_gameStatePtr->requestStackPop();
 	m_gameStatePtr->requestStackPush(States::JoinLobby);
+}
+
+void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].playOnce = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+
+			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].playOnce = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+
+			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::runningStopAll(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+
+			break;
+		}
+	}
 }

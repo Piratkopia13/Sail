@@ -62,6 +62,9 @@ namespace Netcode {
 		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
 		SEND_ALL_BACK_TO_LOBBY,
+		RUNNING_METAL_START,
+		RUNNING_TILE_START,
+		RUNNING_STOP_ALL,
 		EMPTY = 69
 	};
 
@@ -185,5 +188,24 @@ namespace Netcode {
 		~MessageEndGameStats() {}
 	};
 
-}
+	class MessageRunningMetalStart : public MessageData {
+	public:
+		MessageRunningMetalStart(Netcode::ComponentID id) : playerID(id) {}
+		~MessageRunningMetalStart() {}
+		PlayerID playerID;
+	};
 
+	class MessageRunningTileStart : public MessageData {
+	public:
+		MessageRunningTileStart(Netcode::ComponentID id) : playerID(id) {}
+		~MessageRunningTileStart() {}
+		PlayerID playerID;
+	};
+
+	class MessageRunningStopAll : public MessageData {
+	public:
+		MessageRunningStopAll(Netcode::ComponentID id) : playerID(id) {}
+		~MessageRunningStopAll() {}
+		PlayerID playerID;
+	};
+}

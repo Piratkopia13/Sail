@@ -350,6 +350,24 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 	}
 	break;
+	case Netcode::MessageType::RUNNING_METAL_START:
+	{
+		Netcode::MessageRunningMetalStart* data = static_cast<Netcode::MessageRunningMetalStart*>(event->data);
+		ar(data->playerID); // Send
+	}
+	break;
+	case Netcode::MessageType::RUNNING_TILE_START:
+	{
+		Netcode::MessageRunningTileStart* data = static_cast<Netcode::MessageRunningTileStart*>(event->data);
+		ar(data->playerID); // Send
+	}
+	break;
+	case Netcode::MessageType::RUNNING_STOP_ALL:
+	{
+		Netcode::MessageRunningStopAll* data = static_cast<Netcode::MessageRunningStopAll*>(event->data);
+		ar(data->playerID); // Send
+	}
+	break;
 	case Netcode::MessageType::CANDLE_HELD_STATE:
 	{
 		Netcode::MessageCandleHeldState* data = static_cast<Netcode::MessageCandleHeldState*>(event->data);
