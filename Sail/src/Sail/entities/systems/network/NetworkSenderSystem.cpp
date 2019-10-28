@@ -276,6 +276,13 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->playerWhoJumped);
 	}
 	break;
+	case Netcode::MessageType::PLAYER_LANDED:
+	{
+		Netcode::MessagePlayerLanded* data = static_cast<Netcode::MessagePlayerLanded*>(event->data);
+
+		ar(data->playerWhoLanded);
+	}
+	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
 		Netcode::MessageWaterHitPlayer* data = static_cast<Netcode::MessageWaterHitPlayer*>(event->data);

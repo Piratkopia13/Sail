@@ -40,6 +40,7 @@ private:
 	void setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation);
 	void setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime);
 	void playerJumped(Netcode::ComponentID id);
+	void playerLanded(Netcode::ComponentID id);
 	void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId);
 	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID ownerID);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
