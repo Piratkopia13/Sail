@@ -46,10 +46,6 @@ namespace MeshFactory {
 			};
 
 			Mesh::vec2* texCoords = SAIL_NEW Mesh::vec2[numVerts]{
-				/*Mesh::vec2(0.f, 1.f),
-				Mesh::vec2(0.f, 0.f),
-				Mesh::vec2(1.f, 1.f),
-				Mesh::vec2(1.f, 0.f)*/
 				Mesh::vec2((indexX * GUIText::charSize.x), (indexY * GUIText::charSize.y) + GUIText::charSize.y),
 				Mesh::vec2((indexX * GUIText::charSize.x), (indexY * GUIText::charSize.y)),
 				Mesh::vec2((indexX * GUIText::charSize.x) + GUIText::charSize.x, (indexY * GUIText::charSize.y) + GUIText::charSize.y),
