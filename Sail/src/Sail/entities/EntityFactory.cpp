@@ -96,7 +96,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	otherPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<OnlineOwnerComponent>(netComponentID);
 	otherPlayer->addComponent<ModelComponent>(characterModel);
-	otherPlayer->addComponent<CollidableComponent>();
+	otherPlayer->addComponent<CollidableComponent>(true);
 
 	AnimationComponent* ac = otherPlayer->addComponent<AnimationComponent>(stack);
 	ac->currentAnimation = stack->getAnimation(3);
@@ -150,7 +150,7 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->addComponent<CollidableComponent>(true);
 	e->addComponent<MovementComponent>();
 	e->addComponent<SpeedLimitComponent>();
-	e->addComponent<CollisionComponent>();
+	e->addComponent<CollisionComponent>(true);
 	e->addComponent<AiComponent>();
 	e->addComponent<CullingComponent>();
 
