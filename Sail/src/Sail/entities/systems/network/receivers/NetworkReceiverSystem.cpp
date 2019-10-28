@@ -19,6 +19,7 @@
 #include "Sail/utils/GameDataTracker.h"
 
 
+
 // The host will now automatically forward all incoming messages to other players so
 // no need to use any host-specific logic in this system.
 #define BANNED(func) sorry_##func##_is_a_banned_function
@@ -295,6 +296,13 @@ void NetworkReceiverSystem::update() {
 
 				// Get all specific data from the Host
 
+			}
+			break;
+			case Netcode::MessageType::IGNITE_CANDLE:
+			{
+				Netcode::ComponentID candleOwnerID;
+				ar(candleOwnerID);
+				igniteCandle(candleOwnerID);
 			}
 			break;
 			default:
@@ -627,4 +635,25 @@ void NetworkReceiverSystem::matchEnded() {
 void NetworkReceiverSystem::backToLobby() {
 	m_gameStatePtr->requestStackPop();
 	m_gameStatePtr->requestStackPush(States::JoinLobby);
+}
+
+void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id != candleOwnerID) {
+			continue;
+		}
+		for (int i = 0; i < e->getChildEntities().size(); i++) {
+			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
+				auto candleComp = candleE->getComponent<CandleComponent>();
+				candleComp->setHealth(MAX_HEALTH);
+				candleComp->incrementRespawns();
+				candleComp->resetDownTime();
+				candleComp->setIsLit(true);
+				
+			}
+
+		}
+	}
+
+
 }
