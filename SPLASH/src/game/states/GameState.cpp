@@ -117,14 +117,7 @@ GameState::GameState(StateStack& stack)
 #endif
 
 	// Crosshair
-	auto CrosshairEntity = ECS::Instance()->createEntity("crosshairEntity");
-	ModelFactory::QuadModel::Constraints crosshairConst;
-	crosshairConst.halfSize = Mesh::vec2(0.005f, 0.00888f);
-	auto crosshairModel = ModelFactory::QuadModel::Create(guiShader, crosshairConst);
-	m_app->getResourceManager().loadTexture("crosshair.tga");
-	crosshairModel->getMesh(0)->getMaterial()->setAlbedoTexture("crosshair.tga");
-	m_app->getResourceManager().addModel("CrosshairModel", crosshairModel);
-	CrosshairEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("CrosshairModel"));
+	EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f), guiShader);
 
 
 	// Level Creation

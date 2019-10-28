@@ -12,6 +12,7 @@
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/graphics/geometry/factory/StringModel.h"
+#include "Sail/graphics/geometry/factory/QuadModel.h"
 #include "Sail/entities/components/GUIComponent.h"
 
 Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec3& lightPos, size_t lightIndex) {
@@ -267,4 +268,20 @@ Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::
 	num++;
 
 	return GUIEntity;
+}
+
+Entity::SPtr EntityFactory::CreateGUIEntity(const std::string& name, const std::string& texture, glm::vec2 origin, glm::vec2 size, Shader* shader) {
+	auto ent = ECS::Instance()->createEntity(name);
+	ModelFactory::QuadModel::Constraints entConst;
+	entConst.origin = Mesh::vec3(origin.x, origin.y, 0.f);
+	entConst.halfSize = Mesh::vec2(size.x, size.y);
+	auto entModel = ModelFactory::QuadModel::Create(shader, entConst);
+	if (!Application::getInstance()->getResourceManager().hasTexture(texture)) {
+		Application::getInstance()->getResourceManager().loadTexture(texture);
+	}
+	entModel->getMesh(0)->getMaterial()->setAlbedoTexture(texture);
+	Application::getInstance()->getResourceManager().addModel(name + "Model", entModel);
+	ent->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(name + "Model"));
+
+	return ent;
 }
