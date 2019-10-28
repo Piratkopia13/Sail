@@ -11,6 +11,7 @@ namespace EntityFactory {
 	Entity::SPtr CreateCandle(const std::string& name, const glm::vec3& lightPos, size_t lightIndex);
 	
 	
+	void AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_t& lightIndex, const Netcode::PlayerID& playerID);
 	Entity::SPtr CreateMyPlayer(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation);
 	void CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::ComponentID netComponentID, size_t lightIndex, glm::vec3 spawnLocation);
 	

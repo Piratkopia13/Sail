@@ -27,17 +27,18 @@ void AnimationChangerSystem::update(float dt) {
 				animationC->setAnimation(IDLE);
 			}
 			else {
-				if (moveC->relVel.z > 0.1f) {
-					animationC->setAnimation(RIGHT);
-				}
-				else if (moveC->relVel.z < -0.1f) {
-					animationC->setAnimation(LEFT);
-				}
-				if (moveC->relVel.x > 0.1f) {
-					animationC->setAnimation(FORWARD);
-				} 
-				else if (moveC->relVel.x < -0.1f) {
-					animationC->setAnimation(BACKWARD);
+				if (fabsf(moveC->relVel.x) > fabsf(moveC->relVel.z)) {
+					if (moveC->relVel.x > 0.1f) {
+						animationC->setAnimation(FORWARD);
+					} else if (moveC->relVel.x < -0.1f) {
+						animationC->setAnimation(BACKWARD);
+					}
+				} else {
+					if (moveC->relVel.z > 0.1f) {
+						animationC->setAnimation(RIGHT);
+					} else if (moveC->relVel.z < -0.1f) {
+						animationC->setAnimation(LEFT);
+					}
 				}
 			}
 		}
