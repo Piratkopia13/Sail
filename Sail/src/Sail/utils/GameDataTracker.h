@@ -10,6 +10,12 @@ struct InduvidualStats {
 	int bulletsFired;
 	float distanceWalked;
 	int jumpsMade;
+};
+
+struct GlobalTopStats {
+	int bulletsFired;
+	float distanceWalked;
+	int jumpsMade;
 
 	// IDs for the host to fill for the endscreen
 	Netcode::PlayerID bfID;
@@ -38,7 +44,10 @@ public:
 
 	void init();								// Gamestate::Gamestate()
 	void resetData();							// EndGameState::onReturnToLobby() / renderImGui()
-	InduvidualStats& getStatistics();		// NetworkSenderSystem::writeEventToArchive()
+	// Filled with data at endgame to present to endscreen
+	GlobalTopStats& getStatisticsGlobal();		// NetworkSenderSystem::writeEventToArchive()
+	// Used to track the local player
+	InduvidualStats& getStatisticsLocal();
 
 	const std::vector<std::string>& getPlayerDeaths();
 
@@ -59,6 +68,7 @@ private:
 	NWrapperSingleton* m_network;
 
 	InduvidualStats m_loggedData;
+	GlobalTopStats m_loggedDataGlobal;
 	
 	// Map of each player in current game containing data such as kills and deaths
 	std::map<Netcode::PlayerID, HostStatsPerPlayer> m_hostPlayerTracker;

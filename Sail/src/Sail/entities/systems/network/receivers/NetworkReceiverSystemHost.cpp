@@ -43,24 +43,29 @@ void NetworkReceiverSystemHost::endMatchAfterTimer() {
 
 		m_gameStatePtr->requestStackPop();
 		m_gameStatePtr->requestStackPush(States::EndGame);
+
+		// Reset clock for next session
+		m_startEndGameTimer = false;
+		endGameClock = 0;
 	}
 }
 
 void NetworkReceiverSystemHost::prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) {
-	GameDataTracker* dgtp = &GameDataTracker::getInstance();
+
+	GlobalTopStats* gts = &GameDataTracker::getInstance().getStatisticsGlobal();
 
 	// Process the data
-	if (bf > dgtp->getStatistics().bulletsFired) {
-		dgtp->getStatistics().bulletsFired = bf;
-		dgtp->getStatistics().bfID = id;
+	if (bf > gts->bulletsFired) {
+		gts->bulletsFired = bf;
+		gts->bfID = id;
 	}
-	if (dw > dgtp->getStatistics().distanceWalked) {
-		dgtp->getStatistics().distanceWalked = dw;
-		dgtp->getStatistics().dwID = id;
+	if (dw > gts->distanceWalked) {
+		gts->distanceWalked = dw;
+		gts->dwID = id;
 	}
-	if (jm > dgtp->getStatistics().jumpsMade) {
-		dgtp->getStatistics().jumpsMade = jm;
-		dgtp->getStatistics().jmID = id;
+	if (jm > gts->jumpsMade) {
+		gts->jumpsMade = jm;
+		gts->jmID = id;
 	}
 
 	// Send data back in Netcode::MessageType::ENDGAME_STATS

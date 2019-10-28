@@ -302,22 +302,6 @@ void NetworkReceiverSystem::update() {
 
 				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
 
-				//// Process the data
-				//if (bulletsFired > dgtp->getStatistics().bulletsFired) {
-				//	dgtp->getStatistics().bulletsFired = bulletsFired;
-				//	dgtp->getStatistics().bfID = senderID;
-				//}
-				//if (distanceWalked > dgtp->getStatistics().distanceWalked) {
-				//	dgtp->getStatistics().distanceWalked = distanceWalked;
-				//	dgtp->getStatistics().dwID = senderID;
-				//}
-				//if (jumpsMade > dgtp->getStatistics().jumpsMade) {
-				//	dgtp->getStatistics().jumpsMade = jumpsMade;
-				//	dgtp->getStatistics().jmID = senderID;
-				//}
-
-				//// Send data back in Netcode::MessageType::ENDGAME_STATS
-				//endMatch(); // Starts the end game timer. Runs only for the host
 			}
 			break;
 
