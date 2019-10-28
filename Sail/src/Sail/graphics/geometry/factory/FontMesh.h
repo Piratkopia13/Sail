@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "Sail/api/Mesh.h"
+#include "Sail/utils/GUISettings.h"
 
 namespace MeshFactory {
 
@@ -20,12 +21,12 @@ namespace MeshFactory {
 			int indexY = 0;
 			if (constraints.character > 64 && constraints.character < 91) {
 				int index = static_cast<int>(constraints.character) - 65;
-				indexX = index % 9;
-				indexY = index / 9;
+				indexX = index % GUIText::numX;
+				indexY = index / GUIText::numX;
 			} else {
 				// Always print a space if the character isn't found
-				indexX = 8;
-				indexY = 3;
+				indexX = GUIText::spacePosX;
+				indexY = GUIText::spacePosY;
 			}
 
 			Mesh::vec2 halfSizes(constraints.halfSize);
@@ -49,10 +50,10 @@ namespace MeshFactory {
 				Mesh::vec2(0.f, 0.f),
 				Mesh::vec2(1.f, 1.f),
 				Mesh::vec2(1.f, 0.f)*/
-				Mesh::vec2((indexX * 0.1111f), (indexY * 0.1111f) + 0.1111f),
-				Mesh::vec2((indexX * 0.1111f), (indexY * 0.1111f)),
-				Mesh::vec2((indexX * 0.1111f) + 0.1111f, (indexY * 0.1111f) + 0.1111f),
-				Mesh::vec2((indexX * 0.1111f) + 0.1111f, (indexY * 0.1111f))
+				Mesh::vec2((indexX * GUIText::charSize.x), (indexY * GUIText::charSize.y) + GUIText::charSize.y),
+				Mesh::vec2((indexX * GUIText::charSize.x), (indexY * GUIText::charSize.y)),
+				Mesh::vec2((indexX * GUIText::charSize.x) + GUIText::charSize.x, (indexY * GUIText::charSize.y) + GUIText::charSize.y),
+				Mesh::vec2((indexX * GUIText::charSize.x) + GUIText::charSize.x, (indexY * GUIText::charSize.y))
 			};
 
 			Mesh::Data data;

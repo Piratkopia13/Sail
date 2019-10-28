@@ -261,7 +261,7 @@ Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::
 	std::string modelName = "TextModel " + std::to_string(num);
 	Application::getInstance()->getResourceManager().addModel(modelName, GUIModel);
 	for (int i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
-		GUIModel->getMesh(i)->getMaterial()->setAlbedoTexture("fonts/minecraft-font-character-map.tga");
+		GUIModel->getMesh(i)->getMaterial()->setAlbedoTexture(GUIText::fontTexture);
 	}
 	GUIEntity->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(modelName));
 	num++;

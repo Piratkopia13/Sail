@@ -10,6 +10,7 @@
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
+#include "Sail/utils/GUISettings.h"
 #include <sstream>
 #include <iomanip>
 
@@ -77,7 +78,7 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 
 	// Font sprite map texture
-	Application::getInstance()->getResourceManager().loadTexture("fonts/minecraft-font-character-map.tga");
+	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -110,7 +111,7 @@ GameState::GameState(StateStack& stack)
 	/* GUI testing */
 	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
 
-	EntityFactory::CreateScreenSpaceText("HI", glm::vec2(0.2f, 0.1f), glm::vec2(0.4f, 0.2f), guiShader);
+	EntityFactory::CreateScreenSpaceText("HI", glm::vec2(0.0f, 0.0f), glm::vec2(0.4f, 0.2f), guiShader);
 	EntityFactory::CreateScreenSpaceText("HELLO THERE", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f), guiShader);
 	/* /GUI testing */
 #endif
