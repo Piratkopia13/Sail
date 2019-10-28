@@ -10,9 +10,9 @@
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
+#include "Sail/utils/GUISettings.h"
 #include <sstream>
 #include <iomanip>
-#include "Sail/graphics/geometry/factory/QuadModel.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -73,9 +73,13 @@ GameState::GameState(StateStack& stack)
 	m_app->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
+
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
+
+	// Font sprite map texture
+	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -104,18 +108,12 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
+
 #ifdef DEVELOPMENT
 	/* GUI testing */
 	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
-	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
-	ModelFactory::QuadModel::Constraints cons;
-	cons.origin = Mesh::vec3(-0.99f, -0.99f);
-	cons.halfSize = Mesh::vec2(0.01f, 0.01f);
-	auto GUIModel = ModelFactory::QuadModel::Create(guiShader, cons);
-	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
-	m_app->getResourceManager().addModel("screenSpaceQuad", GUIModel);
-	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad"));
+
+	EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f), guiShader);
 	/* /GUI testing */
 #endif
 
@@ -183,8 +181,8 @@ GameState::~GameState() {
 bool GameState::processInput(float dt) {
 
 #ifndef DEVELOPMENT
-	// Capture mouse
-	Input::HideCursor(true);
+	//Capture mouse
+	Input::HideCursor(true);		//Shreks multiple applications on the same computer
 #endif
 
 	// Pause game

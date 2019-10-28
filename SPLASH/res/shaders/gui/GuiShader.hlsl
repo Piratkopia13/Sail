@@ -10,7 +10,7 @@ struct PSIn {
 };
 
 Texture2D<float4> sys_texAlbedo 	: register(t0);
-SamplerState PSss 					: register(s0);
+SamplerState PSss 					: register(s1);
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
@@ -22,7 +22,9 @@ PSIn VSMain(VSIn input) {
 }
 
 float4 PSMain(PSIn input) : SV_Target0 {
-	return float4(1.f, 1.f, 1.f, 0.5f);
-	//return sys_texAlbedo.Sample(PSss, float2(input.texCoords.x, input.texCoords.y));
+	//return float4(1.f, 0.f, 0.f, 0.5f);
+	float4 color = sys_texAlbedo.SampleLevel(PSss, float2(input.texCoords.x, input.texCoords.y), 0);
+	//color.a = 1.f;
+	return color;
 }
 
