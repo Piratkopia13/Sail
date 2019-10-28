@@ -29,7 +29,6 @@ private:
 	static const int MAX_RECORD_THREADS = 1;
 	static const int MIN_COMMANDS_PER_THREAD = 20;
 
-
 	DX12API* m_context;
 	DX12RenderableTexture* m_gbufferTextures[NUM_GBUFFERS];
 	DX12API::Command m_command[MAX_RECORD_THREADS];

@@ -1,16 +1,24 @@
 #pragma once
 
 #include <string>
+#include <map>
+#include "Sail/netcode/NetcodeTypes.h"
 
 typedef long double LARGE_FLOAT;
+class NWrapperSingleton;
 
-struct statistics {
+struct InduvidualStats {
 	LARGE_INTEGER bulletsFired;
 	LARGE_INTEGER bulletsHit;
 	LARGE_INTEGER bulletsHitPercentage;
-	LARGE_INTEGER enemiesKilled;
 	LARGE_FLOAT distanceWalked;
 	LARGE_INTEGER jumpsMade;
+};
+
+struct HostStatsPerPlayer {
+	int nKills = 0;
+	int nDeaths = 0;
+	int placement = 0;
 };
 
 class GameDataTracker {
@@ -21,24 +29,40 @@ public:
 	// Implemented in...
 	void logWeaponFired();						// ...ehfy::update()
 	void logEnemyHit();							// Nowhere atm
-	void logEnemyKilled();						// Nowhere atm
+	void logEnemyKilled(Netcode::PlayerID playerID);// CandleSystem::update
 	void logJump();								// ...GameInputSystem::update()
 	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
 	void logPlayerDeath(const std::string& killer, const std::string& killed, const std::string& deathType); // used to log when a player is killed
+	void logPlacement(Netcode::PlayerID playerID);
 
-	// Implemented in...
-	void resetData();							// Nowhere atm
-	const statistics& getStatistics();			// Nowhere atm
+	void init();								// Gamestate::Gamestate()
+	void resetData();							// EndGameState::onReturnToLobby() / renderImGui()
+	const InduvidualStats& getStatistics();			// Nowhere atm
 
 	const std::vector<std::string>& getPlayerDeaths();
+
+	const std::map<Netcode::PlayerID, HostStatsPerPlayer> getPlayerDataMap(); // NetworkSenderSystem
+
+	// Used in end game when recieving player data stats
+	void setStatsForPlayer(Netcode::PlayerID id, int nKills, int placement); // NetworkRecieverSystem::Update()
+
+	// nr of player from the start of the match
+	int getPlayerCount();	// Nowhere atm
 
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()
 
 private:
 	//
-	statistics m_loggedData;
+	NWrapperSingleton* m_network;
+
+	InduvidualStats m_loggedData;
 	
+	// Map of each player in current game containing data such as kills and deaths
+	std::map<Netcode::PlayerID, HostStatsPerPlayer> m_hostPlayerTracker;
+	int m_placement; // add 1 after ever time a player is placed to give next player a placement
+	int m_nPlayersCurrentSession;
+
 	std::vector<std::string> m_playerDeaths;
 
 	// -+-+-+-+-+- Singleton requirements below -+-+-+-+-+-

@@ -4,6 +4,7 @@
 
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Sail/entities/components/NetworkSenderComponent.h"
 
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/entities/Entity.h"
@@ -11,6 +12,7 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "Sail/Application.h"
+#include "Sail/utils/GameDataTracker.h"
 
 #include "../../Physics/Octree.h"
 #include "Sail/Application.h"
@@ -24,6 +26,7 @@ CandleSystem::CandleSystem() : BaseComponentSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<LightComponent>(true, true, true);
+	registerComponent<NetworkSenderComponent>(false, true, false);
 }
 
 CandleSystem::~CandleSystem() {
@@ -56,7 +59,12 @@ void CandleSystem::update(float dt) {
 			if (candle->getHealth() <= 0.f) {
 				candle->setIsLit(false);
 				candle->setCarried(true);
-				
+
+				// Add kill score to host player tracker
+				if (NWrapperSingleton::getInstance().isHost()) {
+					GameDataTracker::getInstance().logEnemyKilled(candle->getWasHitByNetID());
+				}
+
 				// Did this candle's owner die?
 				if (candle->getNumRespawns() == m_maxNumRespawns) {
 					candle->setIsAlive(false);
@@ -69,14 +77,23 @@ void CandleSystem::update(float dt) {
 							SAIL_NEW Netcode::MessagePlayerDied{
 								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
 								candle->getWasHitByNetID()
-							}, true
+							}
 						);
+
+						// Save the placement for the player who lost
+						GameDataTracker::getInstance().logPlacement(Netcode::getComponentOwner(
+							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id));
 
 						if (LivingCandles <= 1) { // Match IS over
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::MATCH_ENDED,
+								nullptr
+							);
+							// Send relevant stats to all clients
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::ENDGAME_STATS,
 								nullptr,
-								true
+								false
 							);
 						}
 					}
@@ -93,6 +110,19 @@ void CandleSystem::update(float dt) {
 
 			if (candle->isCarried() != candle->getWasCarriedLastUpdate()) {
 				putDownCandle(e);
+
+				// Inform other players that we've put down our candle
+				if (e->getParent()->getComponent<LocalOwnerComponent>()) {
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::CANDLE_HELD_STATE,
+						SAIL_NEW Netcode::MessageCandleHeldState{
+							e->getParent()->getComponent<NetworkSenderComponent>()->m_id,
+							candle->isCarried(),
+							e->getComponent<TransformComponent>()->getTranslation()
+						},
+						false // We've already put down our own candle so no need to do it again
+					);
+				}
 			}
 
 			if (candle->getInvincibleTimer() > 0.f) {
@@ -112,11 +142,12 @@ void CandleSystem::update(float dt) {
 	}
 }
 
+// TODO: Rewrite
 void CandleSystem::putDownCandle(Entity* e) {
 	auto candleComp = e->getComponent<CandleComponent>();
-
 	auto candleTransComp = e->getComponent<TransformComponent>();
 	auto parentTransComp = e->getParent()->getComponent<TransformComponent>();
+
 	/* TODO: Raycast and see if the hit location is ground within x units */
 	if (!candleComp->isCarried()) {
 		if (candleComp->getIsLit()) {
@@ -176,23 +207,13 @@ void CandleSystem::putDownCandle(Entity* e) {
 			candleComp->setCarried(true);
 		}
 	} else {
+		// Pick up the candle
 		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit()) {
 			candleTransComp->setTranslation(glm::vec3(0.f, 2.0f, 0.f));
 			candleTransComp->setParent(parentTransComp);
 		} else {
 			candleComp->setCarried(false);
 		}
-	}
-
-	if (e->getParent()->getComponent<LocalOwnerComponent>()) {
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::CANDLE_HELD_STATE,
-			SAIL_NEW Netcode::MessageCandleHeldState{
-				e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
-				candleComp->isCarried(),
-				e->getComponent<TransformComponent>()->getTranslation()
-			}
-		);
 	}
 }
 
