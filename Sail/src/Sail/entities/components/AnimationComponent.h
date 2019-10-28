@@ -72,7 +72,17 @@ public:
 	
 	Entity* rightHandEntity;
 	Entity* leftHandEntity;
-
+	void setAnimation(const unsigned int index) {
+		animationIndex = index;
+		if (animationIndex > m_stack->getAnimationCount()) {
+			animationIndex = 0;
+		}
+		currentAnimation = m_stack->getAnimation(animationIndex);
+	};
+	void setAnimation(const std::string& name) {
+		animationIndex = m_stack->getAnimationIndex(name);
+		currentAnimation = m_stack->getAnimation(animationIndex);
+	}
 
 	class Transition {
 	public:
