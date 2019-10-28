@@ -35,8 +35,7 @@ void DX12ImGuiHandler::init() {
 	// Set up a GPU visible srv descriptor heap
 	m_descHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, true);
 
-	m_context->initCommand(m_command);
-	m_command.list->SetName(L"imgui command list");
+	m_context->initCommand(m_command, D3D12_COMMAND_LIST_TYPE_DIRECT, L"imgui command list");
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -81,7 +80,7 @@ void DX12ImGuiHandler::begin() {
 
 void DX12ImGuiHandler::end() {
 
-	auto& allocator = m_command.allocators[m_context->getSwapIndex()];
+	auto& allocator = m_command.allocators[m_context->getFrameIndex()];
 	auto& cmdList = m_command.list;
 
 	// Reset allocators and lists for this frame
