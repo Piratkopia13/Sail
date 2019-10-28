@@ -19,6 +19,7 @@
 #include "Sail/utils/GameDataTracker.h"
 
 
+
 // The host will now automatically forward all incoming messages to other players so
 // no need to use any host-specific logic in this system.
 #define BANNED(func) sorry_##func##_is_a_banned_function
@@ -338,6 +339,13 @@ void NetworkReceiverSystem::update() {
 			}
 			break;
 
+			case Netcode::MessageType::IGNITE_CANDLE:
+			{
+				Netcode::ComponentID candleOwnerID;
+				ar(candleOwnerID);
+				igniteCandle(candleOwnerID);
+			}
+			break;
 			default:
 				break;
 			}
@@ -491,6 +499,20 @@ void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Net
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
+
+	Entity* self = nullptr;
+	
+	// If we are the shooter than we find our entity
+	if (m_playerID == playerIdOfShooter) {
+		for (auto& e : entities) {
+			if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == m_playerID) {
+				
+				self = e;
+				break;
+			}
+		}
+	}
+
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != networkIdOfKilled) {
 			continue;
@@ -507,6 +529,13 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 
 		//This should remove the candle entity from game
 		e->removeDeleteAllChildren();
+
+		// (self == nullptr) == true <--> We are the shooter
+		if (self != nullptr) {
+			// If it is me who landed the KILLING BLOW
+			self->getComponent<AudioComponent>()->m_sounds[Audio::KILLING_BLOW].playOnce = true;
+			self->getComponent<AudioComponent>()->m_sounds[Audio::KILLING_BLOW].isPlaying = true;
+		}
 
 		// Check if the extinguished candle is owned by the player
 		if (Netcode::getComponentOwner(networkIdOfKilled) == m_playerID) {
@@ -647,4 +676,25 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 void NetworkReceiverSystem::backToLobby() {
 	m_gameStatePtr->requestStackPop();
 	m_gameStatePtr->requestStackPush(States::JoinLobby);
+}
+
+void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id != candleOwnerID) {
+			continue;
+		}
+		for (int i = 0; i < e->getChildEntities().size(); i++) {
+			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
+				auto candleComp = candleE->getComponent<CandleComponent>();
+				candleComp->setHealth(MAX_HEALTH);
+				candleComp->incrementRespawns();
+				candleComp->resetDownTime();
+				candleComp->setIsLit(true);
+				
+			}
+
+		}
+	}
+
+
 }
