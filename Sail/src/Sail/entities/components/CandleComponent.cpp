@@ -19,6 +19,7 @@ void CandleComponent::hitWithWater(float damage, Netcode::PlayerID shooterID) {
 
 			if (m_health <= 0.0f) {
 				setWasHitByNetID(shooterID);
+				setIsLit(false);
 			}
 		}
 	}
@@ -41,25 +42,7 @@ bool* CandleComponent::getPtrToIsLit() {
 }
 
 void CandleComponent::setIsAlive(bool alive) {
-	if ( !m_isAlive && alive ) {
-		m_activate = true;
-		m_isAlive = alive;
-	}
 	m_isAlive = alive;
-}
-
-bool CandleComponent::getDoActivate() const {
-	return m_activate;
-}
-
-void CandleComponent::resetDoActivate() {
-	m_activate = false;
-}
-
-void CandleComponent::activate() {
-	if ( !m_activate && m_isAlive && !m_isLit ) {
-		m_activate = true;
-	}
 }
 
 void CandleComponent::addToDownTime(float time) {
