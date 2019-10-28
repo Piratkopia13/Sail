@@ -348,7 +348,6 @@ void DX12API::createGlobalRootSignature() {
 	ThrowIfFailed(m_device->CreateRootSignature(0, sBlob->GetBufferPointer(), sBlob->GetBufferSize(), IID_PPV_ARGS(&m_globalRootSignature)));
 }
 
-
 void DX12API::createShaderResources() {
 	// TODO: maybe dont hardcode numdescriptors?
 	// Create one big gpu descriptor heap for all cbvs, srvs and uavs used on the graphics queue
@@ -808,8 +807,8 @@ void DX12API::toggleFullscreen() {
 			fullscreenWindowRect.top,
 			fullscreenWindowRect.right,
 			fullscreenWindowRect.bottom,
-			SWP_FRAMECHANGED | SWP_NOACTIVATE);
-
+			SWP_FRAMECHANGED | SWP_NOACTIVATE
+		);
 
 		ShowWindow(hWnd, SW_MAXIMIZE);
 	}

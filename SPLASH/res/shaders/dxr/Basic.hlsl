@@ -144,6 +144,8 @@ void rayGen() {
 		}
 	}
 
+	lOutput[launchIndex] = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0);
+
 #else
 	// Fully RT
 
