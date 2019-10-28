@@ -10,9 +10,9 @@
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
+#include "Sail/utils/GUISettings.h"
 #include <sstream>
 #include <iomanip>
-#include "Sail/graphics/geometry/factory/QuadModel.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -73,9 +73,13 @@ GameState::GameState(StateStack& stack)
 	m_app->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
+
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
+
+	// Font sprite map texture
+	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -104,18 +108,12 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
+
 #ifdef DEVELOPMENT
 	/* GUI testing */
 	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
-	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
-	ModelFactory::QuadModel::Constraints cons;
-	cons.origin = Mesh::vec3(-0.99f, -0.99f);
-	cons.halfSize = Mesh::vec2(0.01f, 0.01f);
-	auto GUIModel = ModelFactory::QuadModel::Create(guiShader, cons);
-	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
-	m_app->getResourceManager().addModel("screenSpaceQuad", GUIModel);
-	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad"));
+
+	EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f), guiShader);
 	/* /GUI testing */
 #endif
 
@@ -223,7 +221,7 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+		if (tempInfo.closestHitIndex != -1) {
 			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
@@ -231,7 +229,7 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(KeyBinds::spray)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHitIndex != -1) {
+		if (tempInfo.closestHit >= 0.0f) {
 			// size (the size you want) = 0.3
 			// halfSize = (1 / 0.3) * 0.5 = 1.667
 			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));
@@ -793,7 +791,7 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	auto e = ECS::Instance()->createEntity("new cube");
-	e->addComponent<ModelComponent>(tmpCubeModel);
+	//e->addComponent<ModelComponent>(tmpCubeModel);
 
 	e->addComponent<TransformComponent>(position);
 

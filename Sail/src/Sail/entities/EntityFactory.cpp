@@ -11,6 +11,8 @@
 #include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
+#include "Sail/graphics/geometry/factory/StringModel.h"
+#include "Sail/entities/components/GUIComponent.h"
 
 Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
@@ -58,7 +60,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
 
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	myPlayer->addComponent<CollisionComponent>();
+	myPlayer->addComponent<CollisionComponent>(true);
 	myPlayer->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 
 
@@ -96,7 +98,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	otherPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<OnlineOwnerComponent>(netComponentID);
 	otherPlayer->addComponent<ModelComponent>(characterModel);
-	otherPlayer->addComponent<CollidableComponent>();
+	otherPlayer->addComponent<CollidableComponent>(true);
 
 	AnimationComponent* ac = otherPlayer->addComponent<AnimationComponent>(stack);
 	ac->currentAnimation = stack->getAnimation(3);
@@ -147,10 +149,10 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(pos);
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-	e->addComponent<CollidableComponent>();
+	e->addComponent<CollidableComponent>(true);
 	e->addComponent<MovementComponent>();
 	e->addComponent<SpeedLimitComponent>();
-	e->addComponent<CollisionComponent>();
+	e->addComponent<CollisionComponent>(true);
 	e->addComponent<AiComponent>();
 	e->addComponent<CullingComponent>();
 
@@ -245,4 +247,24 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	collision->padding = 0.2f;
 
 	return e;
+}
+
+Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size, Shader* shader) {
+	static int num = 0;
+
+	auto GUIEntity = ECS::Instance()->createEntity("TextEntity:" + text);
+	ModelFactory::StringModel::Constraints textConst;
+	textConst.origin = Mesh::vec3(origin.x, origin.y, 0.f);
+	textConst.size = Mesh::vec2(size.x, size.y);
+	textConst.text = text;
+	auto GUIModel = ModelFactory::StringModel::Create(shader, textConst);
+	std::string modelName = "TextModel " + std::to_string(num);
+	Application::getInstance()->getResourceManager().addModel(modelName, GUIModel);
+	for (int i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
+		GUIModel->getMesh(i)->getMaterial()->setAlbedoTexture(GUIText::fontTexture);
+	}
+	GUIEntity->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(modelName));
+	num++;
+
+	return GUIEntity;
 }

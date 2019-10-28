@@ -7,13 +7,13 @@
 
 class Intersection {
 public:
-	static bool AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2);
-	static bool AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2, glm::vec3* intersectionAxis, float* intersectionDepth);
-	static bool AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
-	static bool AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth, float* depthAlongNormal);
-	static bool AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, const float distance);
-	static bool AabbWithSphere(BoundingBox& aabb, const Sphere& sphere);
-	static bool AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl);
+	static bool AabbWithAabb(const glm::vec3& a1Pos, const glm::vec3& a1Size, const glm::vec3& a2Pos, const glm::vec3& a2Size);
+	static bool AabbWithAabb(const glm::vec3& a1Pos, const glm::vec3& a1Size, const glm::vec3& a2Pos, const glm::vec3& a2Size, glm::vec3* intersectionAxis, float* intersectionDepth);
+	static bool AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
+	static bool AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth);
+	static bool AabbWithPlane(const glm::vec3* aCorners, const glm::vec3& normal, const float distance);
+	static bool AabbWithSphere(const glm::vec3* aCorners, const Sphere& sphere);
+	static bool AabbWithVerticalCylinder(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3* aCorners, const VerticalCylinder& cyl);
 
 	static bool TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[3]);
 	static bool TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphere);
@@ -25,22 +25,20 @@ public:
 
 	static bool LineSegmentWithVerticalCylinder(const glm::vec3& start, const glm::vec3& end, const VerticalCylinder& cyl);
 
-	static float RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb);
+	static float RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3& aPos, const glm::vec3& aSize, glm::vec3* intersectionAxis = nullptr);
 	static float RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
 	static float RayWithPlane(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& normal, const float distance);
-	static float RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb, float padding);
+	static float RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3& aPos, const glm::vec3& aSize, float padding, glm::vec3* intersectionAxis = nullptr);
 	static float RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, float padding);
 
-	static bool FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& normal, const float distance);
-	static bool FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb);
+	static bool FrustumPlaneWithAabb(const glm::vec3& normal, const float distance, const glm::vec3* aCorners);
+	static bool FrustumWithAabb(const Frustum& frustum, const glm::vec3* aCorners);
 
 	static glm::vec3 PointProjectedOnPlane(const glm::vec3& point, const glm::vec3& planeNormal, const float distance);
 private:
 	//Private constructor so an instance can't be created
 	Intersection() {};
 	~Intersection() {};
-
-	static BoundingBox sPaddedReserved; //Used in RayWithPaddedAabb to avoid having to create a new bounding box every time
 
 	static bool TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]);
 	static void Barycentric(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, float& outU, float& outV, float& outW);
