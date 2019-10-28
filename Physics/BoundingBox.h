@@ -1,5 +1,4 @@
 #pragma once
-#include "PhysicsPCH.h"
 
 class BoundingBox {
 private:
