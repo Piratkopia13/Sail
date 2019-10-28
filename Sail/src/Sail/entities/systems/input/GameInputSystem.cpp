@@ -130,6 +130,10 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 						SAIL_NEW Netcode::MessagePlayerLanded{ e->getComponent<NetworkSenderComponent>()->m_id }
 					);
 				}
+				else if (m_fallTimer > 0.0f) {
+
+					m_onGroundTimer = m_onGroundThreshold;
+				}
 				m_fallTimer = 0.0f;
 
 				if (m_onGroundTimer >= m_onGroundThreshold) {
