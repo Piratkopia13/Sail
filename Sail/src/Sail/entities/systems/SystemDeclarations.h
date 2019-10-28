@@ -3,8 +3,8 @@
 // Ordered by name
 
 class AiSystem;
-class AnimationInitSystem;
 class AnimationSystem;
+class AnimationChangerSystem;
 class AudioSystem;
 class BeginEndFrameSystem;
 class BoundingboxSubmitSystem;
@@ -34,12 +34,11 @@ class RenderImGuiSystem;
 class SpeedLimitSystem;
 class UpdateBoundingBoxSystem;
 class NetworkReceiverSystem;
-class AnimationChangerSystem;
 
 struct Systems {
 	AiSystem* aiSystem = nullptr;
-	AnimationInitSystem* animationInitSystem = nullptr;
 	AnimationSystem* animationSystem = nullptr;
+	AnimationChangerSystem* animationChangerSystem = nullptr;
 	AudioSystem* audioSystem = nullptr;
 	BeginEndFrameSystem* beginEndFrameSystem = nullptr;
 	BoundingboxSubmitSystem* boundingboxSubmitSystem = nullptr;
@@ -68,5 +67,4 @@ struct Systems {
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
-	AnimationChangerSystem* animationChangerSystem = nullptr;
 };

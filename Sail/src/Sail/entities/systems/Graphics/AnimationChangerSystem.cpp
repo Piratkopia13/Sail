@@ -39,23 +39,10 @@ void AnimationChangerSystem::update(float dt) {
 				else if (moveC->relVel.x < -0.1f) {
 					animationC->setAnimation(BACKWARD);
 				}
-				
-
-
 			}
-
-
-
-
-
 		}
 		else {
 			int i = 0;
 		}
-
-
 	}
-
-
-
 }

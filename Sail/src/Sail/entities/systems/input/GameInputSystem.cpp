@@ -176,11 +176,10 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 
 			// calculate forward vel and sidevel
-			movement->forwardVel = forward * glm::dot(movement->velocity, forward);
-			movement->rightVel = right * glm::dot(movement->velocity, right);
 
 			movement->relVel.x = glm::dot(movement->velocity, forward);
 			movement->relVel.z = glm::dot(movement->velocity, right);
+			movement->relVel.y = glm::dot(movement->velocity, glm::vec3(0.f, 1.f, 0.f));
 
 			// Prevent division by zero
 			if ( playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f ) {

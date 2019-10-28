@@ -29,12 +29,6 @@ void PlayerInfoWindow::renderWindow() {
 		header = "Vel: " + Utils::toStr(m_player->getComponent<MovementComponent>()->velocity);
 		ImGui::Text(header.c_str());
 
-		header = "Forward: " + Utils::toStr(m_player->getComponent<MovementComponent>()->forwardVel);
-		ImGui::Text(header.c_str());
-
-		header = "Right: " + Utils::toStr(m_player->getComponent<MovementComponent>()->rightVel);
-		ImGui::Text(header.c_str());
-
 		header = "relative Vel: " + Utils::toStr(m_player->getComponent<MovementComponent>()->relVel);
 		ImGui::Text(header.c_str());
 	}

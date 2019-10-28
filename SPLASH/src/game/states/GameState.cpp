@@ -99,7 +99,7 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	m_componentSystems.animationInitSystem->loadAnimations();
+	m_componentSystems.animationSystem->initDebugAnimations();
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
@@ -133,7 +133,6 @@ GameState::GameState(StateStack& stack)
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
-	m_componentSystems.animationInitSystem->initAnimations();
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
@@ -335,7 +334,6 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 
 	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
-	m_componentSystems.animationInitSystem = ECS::Instance()->createSystem<AnimationInitSystem>();
 	m_componentSystems.animationChangerSystem = ECS::Instance()->createSystem<AnimationChangerSystem>();
 
 	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();

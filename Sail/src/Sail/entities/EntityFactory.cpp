@@ -32,12 +32,6 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec
 	candle->addComponent<TransformComponent>(lightPos);
 	candle->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	candle->addComponent<CullingComponent>();
-	//PointLight pl;
-	//pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
-	//pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-	//pl.setAttenuation(0.f, 0.f, 0.2f);
-	//pl.setIndex(lightIndex);
-	//candle->addComponent<LightComponent>(pl);
 
 	return candle;
 }
