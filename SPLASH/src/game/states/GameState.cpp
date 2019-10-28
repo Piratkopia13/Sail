@@ -75,9 +75,13 @@ GameState::GameState(StateStack& stack)
 	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_MRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_NM.tga");
 
 	// Font sprite map texture
 	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);

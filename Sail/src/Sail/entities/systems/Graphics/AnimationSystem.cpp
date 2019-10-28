@@ -354,7 +354,7 @@ const std::vector<Entity*>& AnimationSystem::getEntities() const {
 void AnimationSystem::initDebugAnimations() {
 	Application* app = Application::getInstance();
 	auto* shader = &app->getResourceManager().getShaderSet<GBufferOutShader>();
-	std::string name = "DocTorch.fbx";
+	std::string name = "Doc.fbx";
 
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
 	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
