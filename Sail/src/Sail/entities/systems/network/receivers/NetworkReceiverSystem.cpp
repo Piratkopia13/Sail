@@ -409,6 +409,20 @@ void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Net
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
+
+	Entity* self = nullptr;
+	
+	// If we are the shooter than we find our entity
+	if (m_playerID == playerIdOfShooter) {
+		for (auto& e : entities) {
+			if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == m_playerID) {
+				
+				self = e;
+				break;
+			}
+		}
+	}
+
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != networkIdOfKilled) {
 			continue;
@@ -425,6 +439,13 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 
 		//This should remove the candle entity from game
 		e->removeDeleteAllChildren();
+
+		// (self == nullptr) == true <--> We are the shooter
+		if (self != nullptr) {
+			// If it is me who landed the KILLING BLOW
+			self->getComponent<AudioComponent>()->m_sounds[Audio::KILLING_BLOW].playOnce = true;
+			self->getComponent<AudioComponent>()->m_sounds[Audio::KILLING_BLOW].isPlaying = true;
+		}
 
 		// Check if the extinguished candle is owned by the player
 		if (Netcode::getComponentOwner(networkIdOfKilled) == m_playerID) {
