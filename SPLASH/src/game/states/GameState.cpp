@@ -73,6 +73,7 @@ GameState::GameState(StateStack& stack)
 	m_app->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
 	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
+
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
@@ -103,6 +104,7 @@ GameState::GameState(StateStack& stack)
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+
 
 #ifdef DEVELOPMENT
 	/* GUI testing */
