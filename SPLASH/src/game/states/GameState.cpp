@@ -223,7 +223,7 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.info[tempInfo.closestHitIndex].entity) {
+		if (tempInfo.closestHitIndex != -1) {
 			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
@@ -231,7 +231,7 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(KeyBinds::spray)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHitIndex != -1) {
+		if (tempInfo.closestHit >= 0.0f) {
 			// size (the size you want) = 0.3
 			// halfSize = (1 / 0.3) * 0.5 = 1.667
 			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));
@@ -793,7 +793,7 @@ const std::string GameState::createCube(const glm::vec3& position) {
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	auto e = ECS::Instance()->createEntity("new cube");
-	e->addComponent<ModelComponent>(tmpCubeModel);
+	//e->addComponent<ModelComponent>(tmpCubeModel);
 
 	e->addComponent<TransformComponent>(position);
 
