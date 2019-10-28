@@ -58,7 +58,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
 
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	myPlayer->addComponent<CollisionComponent>();
+	myPlayer->addComponent<CollisionComponent>(true);
 	myPlayer->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 
 
@@ -96,7 +96,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	otherPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<OnlineOwnerComponent>(netComponentID);
 	otherPlayer->addComponent<ModelComponent>(characterModel);
-	otherPlayer->addComponent<CollidableComponent>();
+	otherPlayer->addComponent<CollidableComponent>(true);
 
 	AnimationComponent* ac = otherPlayer->addComponent<AnimationComponent>(stack);
 	ac->currentAnimation = stack->getAnimation(3);
@@ -147,10 +147,10 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->addComponent<ModelComponent>(characterModel);
 	e->addComponent<TransformComponent>(pos);
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-	e->addComponent<CollidableComponent>();
+	e->addComponent<CollidableComponent>(true);
 	e->addComponent<MovementComponent>();
 	e->addComponent<SpeedLimitComponent>();
-	e->addComponent<CollisionComponent>();
+	e->addComponent<CollisionComponent>(true);
 	e->addComponent<AiComponent>();
 	e->addComponent<CullingComponent>();
 
