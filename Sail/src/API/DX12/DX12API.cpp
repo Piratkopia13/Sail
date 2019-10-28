@@ -445,7 +445,6 @@ void DX12API::nextFrame() {
 		getMainGPUDescriptorHeap()->setIndex(0);
 		getComputeGPUDescriptorHeap()->setIndex(0);
 	}
-
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {
@@ -582,15 +581,12 @@ void DX12API::clear(ID3D12GraphicsCommandList4* cmdList, const glm::vec4& color)
 }
 
 void DX12API::present(bool vsync) {
-
 	//Present the frame.
 	DXGI_PRESENT_PARAMETERS pp = { };
 	m_swapChain->Present1((UINT)vsync, (vsync || !m_windowedMode || !m_tearingSupport) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
 
-	//OutputDebugString(L"\n\nNEXT FRAME:\n");
 	//waitForGPU();
 	nextFrame();
-
 }
 
 unsigned int DX12API::getMemoryUsage() const {
@@ -825,17 +821,8 @@ void DX12API::waitForGPU() {
 	// Waits for the GPU to finish all current tasks in all queues
 
 	// Schedule signals and wait for them
-	if (m_directCommandQueue->waitOnCPU(m_directCommandQueue->signal(), m_eventHandle)) {
-		// OutputDebugString(L"CPU waited for direct queue\n");
-	} else {
-		// OutputDebugString(L"CPU DID NOT wait for direct queue\n");
-	}
-	if (m_computeCommandQueue->waitOnCPU(m_computeCommandQueue->signal(), m_eventHandle)) {
-		// OutputDebugString(L"CPU waited for compute queue\n");
-	} else {
-		// OutputDebugString(L"CPU DID NOT wait for compute queue\n");
-	}
-	
+	m_directCommandQueue->waitOnCPU(m_directCommandQueue->signal(), m_eventHandle);
+	m_computeCommandQueue->waitOnCPU(m_computeCommandQueue->signal(), m_eventHandle);
 }
 
 UINT64 DX12API::CommandQueue::sFenceValue = 0;
