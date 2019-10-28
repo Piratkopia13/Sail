@@ -17,6 +17,8 @@ public:
 	GameInputSystem();
 	~GameInputSystem();
 
+	void fixedUpdate();
+
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
 	void clean();
@@ -47,6 +49,8 @@ private:
 	float m_onGroundTimer = 0.0f;
 	float m_onGroundThreshold = 0.3f;
 	float m_isPlayingRunningSound = false;
+	float m_fallTimer = 0.0f;
+	float m_fallThreshold = 0.56f;
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;

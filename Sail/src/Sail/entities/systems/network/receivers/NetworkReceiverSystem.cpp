@@ -158,7 +158,30 @@ void NetworkReceiverSystem::update() {
 					ar(animationTime);		//
 					setEntityAnimation(id, animationStack, animationTime);
 				}
-				/* Case Animation Data, int, float */
+				break;
+				case Netcode::MessageType::SHOOT_START:
+				{
+					ArchiveHelpers::loadVec3(ar, gunPosition);
+					ArchiveHelpers::loadVec3(ar, gunVelocity);
+
+					shootStart(gunPosition, gunVelocity, id);
+				}
+				break;
+				case Netcode::MessageType::SHOOT_LOOP:
+				{
+					ArchiveHelpers::loadVec3(ar, gunPosition);
+					ArchiveHelpers::loadVec3(ar, gunVelocity);
+
+					shootLoop(gunPosition, gunVelocity, id);
+				}
+				break;
+				case Netcode::MessageType::SHOOT_END:
+				{
+					ArchiveHelpers::loadVec3(ar, gunPosition);
+					ArchiveHelpers::loadVec3(ar, gunVelocity);
+
+					shootEnd(gunPosition, gunVelocity, id);
+				}
 				break;
 				default:
 					break;
@@ -185,6 +208,12 @@ void NetworkReceiverSystem::update() {
 			{
 				ar(componentID);
 				playerJumped(componentID);
+			}
+			break;
+			case Netcode::MessageType::PLAYER_LANDED:
+			{
+				ar(componentID);
+				playerLanded(componentID);
 			}
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
@@ -401,6 +430,19 @@ void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 	Logger::Warning("playerJumped called but no matching entity found");
 }
 
+void NetworkReceiverSystem::playerLanded(Netcode::ComponentID id) {
+
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].playOnce = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].isPlaying = true;
+
+			return;
+		}
+	}
+	Logger::Warning("playerLanded called but no matching entity found");
+}
+
 void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) {
 	for (auto& e : entities) {
 		//Look for the entity that OWNS the candle (player entity)
@@ -414,6 +456,19 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 				// Damage the candle
 				// Save the Shooter of the Candle if its lethal
 				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+
+				// Play relevant sound
+				if (e->hasComponent<LocalOwnerComponent>()) {
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].isPlaying = true;
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].playOnce = true;
+				}
+				else {
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
+				}
+
+				
+
 				// Check in Candle System What happens next
 				return;
 			}
@@ -532,6 +587,56 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 	Logger::Warning("setCandleHeldState called but no matching entity found");
 }
 
+void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+	// Spawn projectile
+	projectileSpawned(gunPos, gunVel, id);
+
+	// Find out who sent it and make them play the sound (locally)
+	for (auto& e : entities) {
+		// If we've found who sent the message
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
+		}
+	}
+}
+
+void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+	// Spawn projectile
+	projectileSpawned(gunPos, gunVel, id);
+
+	// Find out who sent it and make them play the sound (locally)
+	for (auto& e : entities) {
+		// If we've found who sent the message
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			// Stop Start
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
+
+			// Play Loop
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
+		}
+	}
+}
+
+void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+	// Spawn projectile
+	projectileSpawned(gunPos, gunVel, id);
+
+	// Find out who sent it and make them play the sound (locally)
+	for (auto& e : entities) {
+		// If we've found who sent the message
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			// Stop 
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
+
+			// Start the end sound
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
+		}
+	}
+}
 
 void NetworkReceiverSystem::backToLobby() {
 	m_gameStatePtr->requestStackPop();

@@ -40,11 +40,16 @@ private:
 	void setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation);
 	void setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime);
 	void playerJumped(Netcode::ComponentID id);
+	void playerLanded(Netcode::ComponentID id);
 	void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId);
 	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID ownerID);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld, const glm::vec3& pos = glm::vec3(0, 0, 0));
+
+	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
+	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
+	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 
 	virtual void endMatch() = 0;			// Start end timer for host
 	virtual void endMatchAfterTimer() = 0;	// Made for the host to quit the game after a set time

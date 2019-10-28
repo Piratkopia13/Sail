@@ -72,10 +72,10 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 
 		bool blocked = false;
 		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(pos);
-		std::vector < Octree::CollisionInfo> vec;
+		std::vector<Octree::CollisionInfo> vec;
 		m_octree->getCollisions(e.get(), &vec);
 
-		for ( Octree::CollisionInfo& info : vec ) {
+		for (Octree::CollisionInfo& info : vec ) {
 			int j = ( info.entity->getName().compare("Map_") );
 			if ( j >= 0 ) {
 				//Not walkable
