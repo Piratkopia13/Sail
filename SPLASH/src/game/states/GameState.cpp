@@ -109,17 +109,15 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-
 #ifdef DEVELOPMENT
 	/* GUI testing */
-	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
 
-	EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f), guiShader);
+	EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f));
 	/* /GUI testing */
 #endif
 
 	// Crosshair
-	EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f), guiShader);
+	EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
 
 
 	// Level Creation

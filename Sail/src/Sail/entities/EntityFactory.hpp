@@ -24,7 +24,7 @@ namespace EntityFactory {
 		float lifetime = 4, float randomSpreed = 0.15f
 	);
 
-	Entity::SPtr CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size, Shader* shader);
+	Entity::SPtr CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size);
 
-	Entity::SPtr CreateGUIEntity(const std::string& name, const std::string& texture, glm::vec2 origin, glm::vec2 size, Shader* shader);
+	Entity::SPtr CreateGUIEntity(const std::string& name, const std::string& texture, glm::vec2 origin, glm::vec2 size);
 }
