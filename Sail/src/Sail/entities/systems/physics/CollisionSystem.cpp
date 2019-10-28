@@ -25,7 +25,6 @@ void CollisionSystem::provideOctree(Octree* octree) {
 }
 
 void CollisionSystem::update(float dt) {
-	int counter = 0;
 	for (auto& e : entities) {
 		auto movement = e->getComponent<MovementComponent>();
 		auto collision = e->getComponent<CollisionComponent>();
