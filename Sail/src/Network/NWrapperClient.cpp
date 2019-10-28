@@ -65,8 +65,9 @@ void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
 	// Clients never have others connecting to them.
 }
 
-void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id) {
-	// Host disconnected, lobby is shut down, go back to main menu.
+void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id_) {
+	// My connection to host was lost :(
+	
 	m_app->dispatchEvent(NetworkDroppedEvent());
 }
 

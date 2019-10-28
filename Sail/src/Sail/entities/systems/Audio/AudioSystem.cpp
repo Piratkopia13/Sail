@@ -3,6 +3,7 @@
 #include "AudioSystem.h"
 
 #include "..//Sail/src/API/Audio/AudioEngine.h"
+#include "../Sail/src/Sail/entities/systems/Audio/AudioData.h"
 #include "..//Sail/src/Sail/Application.h"
 #include "..//Sail/src/Sail/entities/components/AudioComponent.h"
 #include "..//Sail/src/Sail/entities/components/TransformComponent.h"
@@ -24,11 +25,59 @@ AudioSystem::~AudioSystem() {
 	delete m_audioEngine;
 }
 
-// TODO: move to constructor?
+// TO DO: move to constructor?
 void AudioSystem::initialize() {
-	m_audioEngine->loadSound("../Audio/footsteps_1.wav");
+#pragma region FOOTSTEPS
+	m_audioEngine->loadSound("../Audio/footsteps_metal_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_metal_2.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_metal_3.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_metal_4.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_tile_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_tile_2.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_tile_3.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_tile_4.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_metal_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_metal_2.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_metal_3.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_metal_4.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_tile_1.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_tile_2.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_tile_3.wav");
+	m_audioEngine->loadSound("../Audio/footsteps_water_tile_4.wav");
+#pragma endregion
+#pragma region JUMPING
 	m_audioEngine->loadSound("../Audio/jump.wav");
+	m_audioEngine->loadSound("../Audio/landing_ground.wav");
+#pragma endregion
+#pragma region WATERGUN
+	m_audioEngine->loadSound("../Audio/watergun_start.wav");
+	m_audioEngine->loadSound("../Audio/watergun_loop.wav");
+	m_audioEngine->loadSound("../Audio/watergun_end.wav");
+	m_audioEngine->loadSound("../Audio/watergun_reload.wav");
+#pragma endregion
+#pragma region IMPACTS
+	m_audioEngine->loadSound("../Audio/water_impact_enemy_candle.wav");
+	m_audioEngine->loadSound("../Audio/water_impact_my_candle.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_1.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_2.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_3.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_4.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_5.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_6.wav");
+	m_audioEngine->loadSound("../Audio/water_drip_7.wav");
+#pragma endregion
+#pragma region DEATHS
+	m_audioEngine->loadSound("../Audio/death_enemy.wav");
+	m_audioEngine->loadSound("../Audio/death_me_1.wav");
+	m_audioEngine->loadSound("../Audio/death_me_2.wav");
+	m_audioEngine->loadSound("../Audio/death_me_3.wav");
+	m_audioEngine->loadSound("../Audio/death_me_4.wav");
+	m_audioEngine->loadSound("../Audio/death_me_5.wav");
+	m_audioEngine->loadSound("../Audio/death_me_6.wav");
+#pragma endregion
+#pragma region MISCELLANEOUS
 	m_audioEngine->loadSound("../Audio/guitar.wav");
+#pragma endregion
 }
 
 void AudioSystem::update(Camera& cam, float dt, float alpha) {
@@ -37,45 +86,72 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 		// - - - S O U N D S ---------------------------------------------------------------------------
 		{
+			int randomSoundIndex = 0;
+			int soundPoolSize = 0;
+			Audio::SoundInfo_General* soundGeneral;
+			Audio::SoundInfo_Unique* soundUnique;
+
 			for (int i = 0; i < Audio::SoundType::COUNT; i++) {
-				Audio::SoundInfo& sound = audioC->m_sounds[i]; // To make the code easier to read
+				soundGeneral = &audioC->m_sounds[i];
 
-				if (sound.isPlaying) {
-					// Initialize the sound if that hasn't been done already
-					if (!sound.isInitialized) {
-						sound.soundID = m_audioEngine->initializeSound(sound.fileName, sound.volume);
-						sound.isInitialized = true;
-						sound.soundEffectTimer = 0.0f;
-					}
+				soundPoolSize = audioData.m_soundsUnique[i].size();
+				if (soundPoolSize > 0) {
 
-					// Start playing the sound if it's not already playing
-					if (sound.soundEffectTimer == 0.0f) {
-						m_audioEngine->startSpecificSound(sound.soundID);
-					}
+					if (soundGeneral->isPlaying) {
 
-					// Update the sound with the current positions if it's playing
-					if (sound.soundEffectTimer <= sound.soundEffectLength) {
-						m_audioEngine->updateSoundWithCurrentPosition(
-							sound.soundID, cam, *e->getComponent<TransformComponent>(),
-							sound.positionalOffset, alpha);
+						// Starts a new sound from relevant pool of sounds IF NOT ALREADY PLAYING
+						if (!soundGeneral->hasStartedPlaying) {
 
-						sound.soundEffectTimer += dt;
-					}
-					else {
-						sound.soundEffectTimer = 0.0f; // Reset the sound effect to its beginning
-						m_audioEngine->stopSpecificSound(sound.soundID);
+							if (soundPoolSize > 1) {
+								randomSoundIndex = rand() % soundPoolSize;
+								if (randomSoundIndex == soundGeneral->prevRandomNum) {
+									randomSoundIndex++;
+									randomSoundIndex = (randomSoundIndex % soundPoolSize);
+								}
+								soundGeneral->prevRandomNum = randomSoundIndex;
+							}
+							else {
+								randomSoundIndex = 0;
+							}
 
-						// If the sound isn't looping then make it stop
-						if (sound.playOnce == true) {
-							sound.isPlaying = false;
-							sound.isInitialized = false;
+							// To make the code easier to read
+							soundUnique = &audioData.m_soundsUnique[i].at(randomSoundIndex);
+
+							soundGeneral->soundID = m_audioEngine->initializeSound(soundUnique->fileName, soundUnique->volume);
+							soundGeneral->hasStartedPlaying = true;
+							soundGeneral->durationElapsed = 0.0f;
+							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
 						}
+
+						// Start playing the sound if it's not already playing
+						if (soundGeneral->durationElapsed == 0.0f) {
+							m_audioEngine->startSpecificSound(soundGeneral->soundID);
+						}
+
+						// Update the sound with the current positions if it's playing
+						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
+							m_audioEngine->updateSoundWithCurrentPosition(
+								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
+								soundGeneral->positionalOffset, alpha);
+
+							soundGeneral->durationElapsed += dt;
+						}
+						else {
+							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
+							m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+							soundGeneral->hasStartedPlaying = false;
+
+							// If the sound isn't looping then make it stop
+							if (soundGeneral->playOnce == true) {
+								soundGeneral->isPlaying = false;
+							}
+						}
+						// If the sound should no longer be playing stop it and reset its timer
 					}
-					// If the sound should no longer be playing stop it and reset its timer
-				}
-				else if (sound.soundEffectTimer != 0.0f) {
-					m_audioEngine->stopSpecificSound(sound.soundID);
-					sound.soundEffectTimer = 0.0f;
+					else if (soundGeneral->durationElapsed != 0.0f) {
+						m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+						soundGeneral->durationElapsed = 0.0f;
+					}
 				}
 			}
 		}
@@ -83,36 +159,26 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 		// - - - S T R E A M I N G  --------------------------------------------------------------------
 		{
 			// Playing STREAMED sounds
-			std::list<std::pair<std::string, bool>>::iterator i;
-			std::list<std::pair<std::string, bool>>::iterator toBeDeleted;
-			std::list<std::pair<std::string, int>>::iterator j;
-			std::list<std::pair<std::string, int>>::iterator streamToBeDeleted;
-			std::list<std::pair<std::string, std::pair<float, bool>>>::iterator volIsLoopingHolder;
-			std::list<std::pair<std::string, int>>::iterator k;
+			std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator i;
+			std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator toBeDeleted;
+			std::list<std::pair<std::string, std::pair<int, bool>>>::iterator j;
+			std::list<std::pair<std::string, std::pair<int, bool>>>::iterator k;
+			std::list<std::pair<std::string, std::pair<int, bool>>>::iterator streamToBeDeleted;
+
 			std::string filename = "";
 			float volume = 1.0f;
-			bool isLooping = true;
+			bool isPositionalAudio;
+			bool isLooping;
 			int streamIndex = 0;
 
 			for (i = audioC->m_streamingRequests.begin(); i != audioC->m_streamingRequests.end();) {
 
-				if (i->second == true) {
+				if (i->second.startTRUE_stopFALSE == true) {
 					// Fetch found stream-request's filename
 					filename = i->first;
-					// Find corresponding 'isLooping' info
-					volIsLoopingHolder = audioC->m_Vol_isLooping_Requests.begin();
-					while (volIsLoopingHolder != audioC->m_Vol_isLooping_Requests.end()) {
-
-						if (volIsLoopingHolder->first == filename) {
-							// Store 'volume' and 'isLooping' info
-							volume = volIsLoopingHolder->second.first;
-							isLooping = volIsLoopingHolder->second.second;
-							break;
-						}
-					}
-
-					// Erase origin-data of 'isLooping' info
-					audioC->m_Vol_isLooping_Requests.erase(volIsLoopingHolder);
+					volume = i->second.volume;
+					isPositionalAudio = i->second.isPositionalAudio;
+					isLooping = i->second.isLooping;
 
 					toBeDeleted = i;
 					i++;
@@ -125,11 +191,11 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 					else {
 
 						Application::getInstance()->pushJobToThreadPool(
-							[this, filename, streamIndex, volume, isLooping](int id) {
-								return m_audioEngine->streamSound(filename, streamIndex, volume, isLooping);
+							[this, filename, streamIndex, volume, isPositionalAudio, isLooping](int id) {
+								return m_audioEngine->streamSound(filename, streamIndex, volume, isPositionalAudio, isLooping);
 							});
 
-						audioC->m_currentlyStreaming.emplace_back(filename, streamIndex);
+						audioC->m_currentlyStreaming.emplace_back(filename, std::pair(streamIndex, isPositionalAudio));
 						audioC->m_streamingRequests.erase(toBeDeleted);
 					}
 				}
@@ -147,9 +213,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 						if (streamToBeDeleted->first == filename) {
 
 							bool expectedValue = false;
-							while (!m_audioEngine->m_streamLocks[streamToBeDeleted->second].compare_exchange_strong(expectedValue, true));
+							while (!m_audioEngine->m_streamLocks[streamToBeDeleted->second.first].compare_exchange_strong(expectedValue, true));
 
-							m_audioEngine->stopSpecificStream(streamToBeDeleted->second);
+							m_audioEngine->stopSpecificStream(streamToBeDeleted->second.first);
 							audioC->m_currentlyStreaming.erase(streamToBeDeleted);
 
 							break;
@@ -160,16 +226,18 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			}
 
 			for (k = audioC->m_currentlyStreaming.begin(); k != audioC->m_currentlyStreaming.end();) {
+				
+				if (k->second.second) {
+					m_audioEngine->updateStreamWithCurrentPosition(
+						k->second.first, cam, *e->getComponent<TransformComponent>(),
+						glm::vec3{ 0.0f, 0.0f, 0.0f }, alpha);
+				}
 
-				m_audioEngine->updateStreamWithCurrentPosition(
-					k->second, cam, *e->getComponent<TransformComponent>(),
-					glm::vec3{ 0.0f, 0.0f, 0.0f }, alpha);
 				k++;
 			}
 		}
 	}
 }
-
 
 void AudioSystem::stop() {
 	m_audioEngine->stopAllStreams();

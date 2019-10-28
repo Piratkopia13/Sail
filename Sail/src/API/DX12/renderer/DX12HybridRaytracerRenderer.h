@@ -15,6 +15,7 @@ public:
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, const glm::vec3& vel, RenderFlag flags);
 
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
+	virtual void submitWaterPoint(const glm::vec3& pos) override;
 	virtual void setLightSetup(LightSetup* lightSetup) override;
 	virtual void end() override;
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;

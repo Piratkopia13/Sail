@@ -5,6 +5,7 @@
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "Sail/KeyBinds.h"
+#include "Sail/entities/components/MapComponent.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
@@ -13,8 +14,10 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 {
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
-	m_context->initCommand(m_command);
-	m_command.list->SetName(L"Raytracing Renderer main command list");
+	m_context->initCommand(m_commandDirect, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	m_commandDirect.list->SetName(L"Raytracing Renderer main command list");
+	m_context->initCommand(m_commandCompute, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	m_commandCompute.list->SetName(L"Raytracing Renderer main command list");
 
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
@@ -25,22 +28,30 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
-
+	
 }
 
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	auto frameIndex = m_context->getSwapIndex();
 
 	// There is one allocator per swap buffer
-	auto& allocator = m_command.allocators[m_context->getFrameIndex()];
-	auto& cmdList = m_command.list;
+	auto& allocatorCompute = m_commandCompute.allocators[m_context->getFrameIndex()];
+	auto& allocatorDirect = m_commandDirect.allocators[m_context->getFrameIndex()];
+	auto& cmdListCompute = m_commandCompute.list;
+	auto& cmdListDirect = m_commandDirect.list;
 
 	// Reset allocators and lists for this frame
-	allocator->Reset();
-	cmdList->Reset(allocator.Get(), nullptr);
+	allocatorCompute->Reset();
+	allocatorDirect->Reset();
+	cmdListCompute->Reset(allocatorCompute.Get(), nullptr);
+	cmdListDirect->Reset(allocatorDirect.Get(), nullptr);
+
+	// Wait for the G-Buffer pass to finish execution on the direct queue
+	auto fenceVal = m_context->getDirectQueue()->signal();
+	m_context->getComputeQueue()->wait(fenceVal);
 
 	// Clear output texture
-	m_outputTexture.get()->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdList.Get());
+	//m_outputTexture.get()->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdListDirect.Get());
 
 	std::sort(m_metaballs.begin(), m_metaballs.end(),
 		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
@@ -79,14 +90,24 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 
+	// Decrease water radius over time
+	/*for (auto& r : m_waterData) {
+		if (r > 0.f) {
+			r -= Application::getInstance()->getDelta() * 0.01f;
+		}
+	}*/
+
 	if (camera && lightSetup) {
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs);
+		static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
+		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, mapSize, mapStart);
+
 	}
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
-	m_dxr.updateAccelerationStructures(commandQueue, cmdList.Get());
-	m_dxr.dispatch(m_outputTexture.get(), cmdList.Get());
-
+	m_dxr.updateWaterData();
+	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get());
+	m_dxr.dispatch(m_outputTexture.get(), cmdListCompute.Get());
 	// AS has now been updated this frame, reset flag
 	for (auto& renderCommand : commandQueue) {
 		renderCommand.hasUpdatedSinceLastRender[frameIndex] = false;
@@ -97,24 +118,33 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	RenderableTexture* renderOutput = m_outputTexture.get();
 	if (postProcessPipeline) {
 		// Run post processing
-		RenderableTexture* ppOutput = postProcessPipeline->run(m_outputTexture.get(), cmdList.Get());
+		RenderableTexture* ppOutput = postProcessPipeline->run(m_outputTexture.get(), cmdListCompute.Get());
 		if (ppOutput) {
 			renderOutput = ppOutput;
 		}
 	}
 	DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(renderOutput);
+	dxRenderOutput->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_COMMON);
+
+	// Execute compute command list
+	cmdListCompute->Close();
+	m_context->executeCommandLists({ cmdListCompute.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	// Place a signal to syncronize copying the raytracing output to the backbuffer when it is available
+	fenceVal = m_context->getComputeQueue()->signal();
+
 	// Copy post processing output to back buffer
-	dxRenderOutput->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+	dxRenderOutput->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
 	auto* renderTarget = m_context->getCurrentRenderTargetResource();
-	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
-	cmdList->CopyResource(renderTarget, dxRenderOutput->getResource());
+	DX12Utils::SetResourceTransitionBarrier(cmdListDirect.Get(), renderTarget, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
+	cmdListDirect->CopyResource(renderTarget, dxRenderOutput->getResource());
 	// Lastly - transition back buffer to present
-	DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
+	DX12Utils::SetResourceTransitionBarrier(cmdListDirect.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
 
-
-	// Execute command list
-	cmdList->Close();
-	m_context->executeCommandLists({ cmdList.Get() });
+	// Wait for compute to finish
+	m_context->getDirectQueue()->wait(fenceVal);
+	// Execute direct command list
+	cmdListDirect->Close();
+	m_context->executeCommandLists({ cmdListDirect.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
 void DX12RaytracingRenderer::begin(Camera* camera) {
@@ -161,6 +191,10 @@ void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& 
 	decalData.halfSize = halfSize;
 	m_decals[m_currNumDecals % MAX_DECALS] = decalData;
 	m_currNumDecals++;
+}
+
+void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {
+	m_dxr.addWaterAtWorldPosition(pos);
 }
 
 void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {

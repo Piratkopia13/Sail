@@ -17,6 +17,8 @@ public:
 	GameInputSystem();
 	~GameInputSystem();
 
+	void fixedUpdate();
+
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
 	void clean();
@@ -43,11 +45,11 @@ private:
 	float m_projectileSpawnCounter = 0.f;
 	float m_lookSensitivityMouse = 0.1f;
 
-	float onGroundTimer = 0.0f;
-	float onGroundThreshold = 0.3f;
-	float isPlayingRunningSound = false;
+	// Sound-related Variables
+	float m_onGroundTimer = 0.0f;
+	float m_onGroundThreshold = 0.3f;
+	float m_isPlayingRunningSound = false;
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
-
 };

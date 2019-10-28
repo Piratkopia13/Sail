@@ -8,12 +8,11 @@
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
 #include <sstream>
 #include <iomanip>
-
-// Uncomment to use forward rendering
-//#define DISABLE_RT
+#include "Sail/graphics/geometry/factory/QuadModel.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -26,6 +25,8 @@ GameState::GameState(StateStack& stack)
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
+
+
 
 	//----Octree creation----
 	//Wireframe shader
@@ -88,14 +89,11 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-#ifdef DISABLE_RT
-	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
-	m_app->getRenderWrapper()->changeRenderer(1);
-	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
-#else
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-#endif
+
 	m_app->getResourceManager().setDefaultShader(shader);
+	std::string playerModelName = "Doc.fbx";
+
 
 	// Create/load models
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
@@ -106,15 +104,20 @@ GameState::GameState(StateStack& stack)
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-	Model* characterModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
-
-	Model* aiModel = &m_app->getResourceManager().getModel("Character.fbx", shader);
-	aiModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	aiModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	aiModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
+#ifdef DEVELOPMENT
+	/* GUI testing */
+	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
+	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
+	ModelFactory::QuadModel::Constraints cons;
+	cons.origin = Mesh::vec3(-0.99f, -0.99f);
+	cons.halfSize = Mesh::vec2(0.01f, 0.01f);
+	auto GUIModel = ModelFactory::QuadModel::Create(guiShader, cons);
+	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
+	m_app->getResourceManager().addModel("screenSpaceQuad", GUIModel);
+	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad"));
+	/* /GUI testing */
+#endif
 
 	// Level Creation
 
@@ -128,9 +131,7 @@ GameState::GameState(StateStack& stack)
 		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 	}
 
-	m_player = EntityFactory::CreatePlayer(boundingBoxModel, cubeModel, lightModel, playerID, m_currLightIndex++, spawnLocation).get();
-	m_componentSystems.networkReceiverSystem->initPlayer(m_player);
-	m_componentSystems.networkSenderSystem->initPlayerEntity(m_player);
+	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
 	m_componentSystems.animationInitSystem->initAnimations();
 
@@ -138,7 +139,7 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
 
 	// Bots creation
-	createBots(boundingBoxModel, characterModel, cubeModel, lightModel);
+	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
@@ -159,12 +160,17 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
 #endif
 
-	m_gameMusic = ECS::Instance()->createEntity("LobbyAudio").get();
-	m_gameMusic->addComponent<AudioComponent>();
-	m_gameMusic->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_gameMusic->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, 1.0f, true);
+	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
+	m_ambiance->addComponent<AudioComponent>();
+	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
+	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
+
+	// Host fill its game tracker per player with player data.
+	if (NWrapperSingleton::getInstance().isHost()) {
+		GameDataTracker::getInstance().init();
+	}	
 }
 
 GameState::~GameState() {
@@ -176,6 +182,18 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
+#ifndef DEVELOPMENT
+	// Capture mouse
+	Input::HideCursor(true);
+#endif
+
+	// Pause game
+	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+		requestStackPush(States::InGameMenu);
+	}
+
+
+#ifdef DEVELOPMENT
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
@@ -255,26 +273,12 @@ bool GameState::processInput(float dt) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
-	
+
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
-	}
-
-	// Pause game
-	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
-		if (m_paused) {
-			Input::HideCursor(true);
-			m_paused = false;
-			requestStackPop();
-		} else if (!m_paused && m_isSingleplayer) {
-			Input::HideCursor(false);
-			m_paused = true;
-			requestStackPush(States::Pause);
-
-		}
-
+		m_app->getResourceManager().reloadShader<GuiShader>();
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
@@ -306,7 +310,7 @@ bool GameState::processInput(float dt) {
 			m_player->addComponent<SpectatorComponent>();
 			m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
 			m_player->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
-		}	
+		}
 	}
 
 #ifdef _DEBUG
@@ -314,6 +318,7 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
 		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
+#endif
 #endif
 
 	return true;
@@ -350,7 +355,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 
 	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-	m_componentSystems.candleSystem->init(this);
+	m_componentSystems.candleSystem->init(this, m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -370,6 +375,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
 	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
+	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
 
 	// Create system for player input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -377,17 +383,16 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
-	m_componentSystems.networkSenderSystem->initWithPlayerID(playerID);
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	// Create Network Reciever System depending on host or client.
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
-	}
-	else {
+	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -428,8 +433,6 @@ void GameState::initConsole() {
 			Netcode::MessageType::MATCH_ENDED,
 			nullptr
 		);
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
 		console.removeAllCommandsWithIdentifier("GameState");
 
 		return std::string("Match ended.");
@@ -466,18 +469,19 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
 	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
 	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
+	EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDropped));
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 
 	return true;
 }
-
+	
 bool GameState::onResize(WindowResizeEvent& event) {
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
 
 bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
-	m_componentSystems.networkReceiverSystem->pushDataToBuffer(event.getSerializedData());
+	m_componentSystems.networkReceiverSystem->handleIncomingData(event.getSerializedData());
 	return true;
 }
 
@@ -511,43 +515,43 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
-	// This function is called from NWrapperHost::playerDisconnected()
-	// Then the host sends PLAYER_DISCONNECT over the network
-	// Each client recieves it in NetworkReceiverSystem::handleEvent()
-	// and removes their local copy of the player there
-	// Host local copy is destroyed here
-	
-	if (!m_isSingleplayer) {
-		if (NWrapperSingleton::getInstance().isHost()) {	// Should always be true
-			
-			auto& receiverEntities = m_componentSystems.networkReceiverSystem->getEntities();
-			for (auto& e : receiverEntities)
-			{
-				if (e->getComponent<NetworkReceiverComponent>()->m_id >> 18 == event.getPlayerID())
-				{
-					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-						Netcode::MessageType::PLAYER_DISCONNECT,
-						SAIL_NEW Netcode::MessageDataPlayerDisconnect{
-							event.getPlayerID()
-						}
-					);
+	if (m_isSingleplayer) {
+		return true;
+	}
 
-					// This will remove the entity 
-					e->removeDeleteAllChildren();
-					e->queueDestruction();
+	for (auto& e : m_componentSystems.networkReceiverSystem->getEntities()) {
+		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.getPlayerID()) {
+			// Upon finding who disconnected...
+			// Log it (Temporary until killfeed is implemented)
+			logSomeoneDisconnected(event.getPlayerID());
 
-					// No loop break. If other entities has the same player id they should all be removed
-				}
+			// If I am host notify all other players
+			if (NWrapperSingleton::getInstance().isHost()) {
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PLAYER_DISCONNECT,
+					SAIL_NEW Netcode::MessagePlayerDisconnect{ event.getPlayerID() }
+				);
 			}
 		}
 	}
 	return true;
 }
 
+bool GameState::onPlayerDropped(NetworkDroppedEvent& event) {
+	// I was dropped!
+	// Saddest of bois.
+
+	Logger::Warning("CONNECTION TO HOST HAS BEEN LOST");
+	m_wasDropped = true;	// Activates a renderImgui window
+
+	return false;
+}
+
 bool GameState::update(float dt, float alpha) {
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
+	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -594,18 +598,28 @@ bool GameState::render(float dt, float alpha) {
 	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
+	m_componentSystems.guiSubmitSystem->submitAll();
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
 	return true;
 }
 
 bool GameState::renderImgui(float dt) {
-	// The ImGui window is rendered when activated on F10
+
+	return false;
+}
+
+bool GameState::renderImguiDebug(float dt) {
+	// The ImGui windows are rendered when activated on F10
 	m_profiler.renderWindow();
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
+	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
+	if (m_wasDropped) {
+		m_wasDroppedWindow.renderWindow();
+	}
 
 	return false;
 }
@@ -633,14 +647,14 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
+	// Update keyboard input
+	m_componentSystems.gameInputSystem->fixedUpdate();
+
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
-	if (!m_isSingleplayer) {
-		// Update entities with info from the network
-		m_componentSystems.networkReceiverSystem->update();
-		// Send out your entity info to the rest of the players
-		m_componentSystems.networkSenderSystem->update();
-	}
+	// Update entities with info from the network and from ourself
+	// DON'T MOVE, should happen at the start of each tick
+	m_componentSystems.networkReceiverSystem->update();
 	
 	m_componentSystems.movementSystem->update(dt);
 	m_componentSystems.speedLimitSystem->update();
@@ -667,6 +681,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 		fut.get();
 	}
 
+	// Send out your entity info to the rest of the players
+	// DON'T MOVE, should happen at the end of each tick
+	m_componentSystems.networkSenderSystem->update();
+
 	// Will probably need to be called last
 	m_componentSystems.entityAdderSystem->update();
 	m_componentSystems.entityRemovalSystem->update();
@@ -679,7 +697,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
 
-	// Updates the camera
+	// Updates mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 
 
@@ -754,6 +772,16 @@ const std::string GameState::toggleProfiler() {
 	return "Toggling profiler";
 }
 
+void GameState::logSomeoneDisconnected(unsigned char id) {
+	// Construct log message
+	std::string logMessage = "'";
+	logMessage += NWrapperSingleton::getInstance().getPlayer(id)->name;
+	logMessage += "' has disconnected from the game.";
+
+	// Log it
+	Logger::Log(logMessage);
+}
+
 const std::string GameState::createCube(const glm::vec3& position) {
 
 	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
@@ -824,7 +852,7 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e = EntityFactory::CreateStaticMapObject("Map_Ramp6", rampModel, boundingBoxModel, glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
 }
 
-void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel) {
+void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel) {
 	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	if (botCount < 0) {
@@ -834,7 +862,7 @@ void GameState::createBots(Model* boundingBoxModel, Model* characterModel, Model
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateBot(boundingBoxModel, characterModel, spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 		}
 		else {
 			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
@@ -1006,6 +1034,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
+	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
 }
 
 #ifdef _PERFORMANCE_TEST
@@ -1016,7 +1045,7 @@ void GameState::populateScene(Model* characterModel, Model* lightModel, Model* b
 		float spawnOffsetZ = 13.f + float(i) * 1.3f;
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		std::string name = "DocGunRun4.fbx";
+		std::string name = "DocTorch.fbx";
 		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
 		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
 		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
@@ -1036,16 +1065,16 @@ void GameState::populateScene(Model* characterModel, Model* lightModel, Model* b
 		e->addComponent<CollisionComponent>();
 		e->addComponent<GunComponent>(projectileModel, bbModel);
 
-		/* Audio */
-		e->addComponent<AudioComponent>();
-		Audio::SoundInfo sound{};
-		sound.fileName = "../Audio/guitar.wav";
-		sound.soundEffectLength = 104.0f;
-		sound.volume = 1.0f;
-		sound.playOnce = false;
-		sound.positionalOffset = { 0.f, 1.2f, 0.f };
-		sound.isPlaying = true; // Start playing the sound immediately
-		e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
+		///* Audio */
+		//e->addComponent<AudioComponent>();
+		//Audio::SoundInfo sound{};
+		//sound.fileName = "../Audio/guitar.wav";
+		//sound.soundEffectLength = 104.0f;
+		//sound.volume = 1.0f;
+		//sound.playOnce = false;
+		//sound.positionalOffset = { 0.f, 1.2f, 0.f };
+		//sound.isPlaying = true; // Start playing the sound immediately
+		//e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
 
 		// Add candle
 		/*if (i != 12) {

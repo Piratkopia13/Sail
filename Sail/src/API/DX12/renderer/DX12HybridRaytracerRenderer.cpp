@@ -3,7 +3,7 @@
 #include "DX12GBufferRenderer.h"
 #include "DX12RaytracingRenderer.h"
 
-DX12HybridRaytracerRenderer::DX12HybridRaytracerRenderer() { 
+DX12HybridRaytracerRenderer::DX12HybridRaytracerRenderer() {
 	m_rendererGbuffer = std::make_unique<DX12GBufferRenderer>();
 	m_rendererRaytrace = std::make_unique<DX12RaytracingRenderer>(m_rendererGbuffer->getGBufferOutputs());
 }
@@ -35,6 +35,10 @@ void DX12HybridRaytracerRenderer::submitMetaball(RenderCommandType type, Materia
 
 void DX12HybridRaytracerRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
 	m_rendererRaytrace->submitDecal(pos, rot, halfSize);
+}
+
+void DX12HybridRaytracerRenderer::submitWaterPoint(const glm::vec3& pos) {
+	m_rendererRaytrace->submitWaterPoint(pos);
 }
 
 void DX12HybridRaytracerRenderer::setLightSetup(LightSetup* lightSetup) {
