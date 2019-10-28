@@ -210,6 +210,12 @@ void NetworkReceiverSystem::update() {
 				playerJumped(componentID);
 			}
 			break;
+			case Netcode::MessageType::PLAYER_LANDED:
+			{
+				ar(componentID);
+				playerLanded(componentID);
+			}
+			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
 			{
 				Netcode::ComponentID playerwhoWasHit;
@@ -380,6 +386,19 @@ void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 		}
 	}
 	Logger::Warning("playerJumped called but no matching entity found");
+}
+
+void NetworkReceiverSystem::playerLanded(Netcode::ComponentID id) {
+
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].playOnce = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].isPlaying = true;
+
+			return;
+		}
+	}
+	Logger::Warning("playerLanded called but no matching entity found");
 }
 
 void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) {

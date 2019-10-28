@@ -53,6 +53,7 @@ namespace Netcode {
 		SHOOT_LOOP,
 		SHOOT_END,
 		PLAYER_JUMPED,
+		PLAYER_LANDED,
 		WATER_HIT_PLAYER,
 		SET_CANDLE_HEALTH,
 		PLAYER_DIED,
@@ -140,12 +141,18 @@ namespace Netcode {
 		Netcode::ComponentID playerWhoWasHitID;
 	};
 
-
 	class MessagePlayerJumped : public MessageData {
 	public:
 		MessagePlayerJumped(Netcode::ComponentID id) : playerWhoJumped(id) {}
 		~MessagePlayerJumped() {}
 		Netcode::ComponentID playerWhoJumped;
+	};
+
+	class MessagePlayerLanded : public MessageData {
+	public:
+		MessagePlayerLanded(Netcode::ComponentID id) : playerWhoLanded(id) {}
+		~MessagePlayerLanded() {}
+		Netcode::ComponentID playerWhoLanded;
 	};
 
 	class MessagePlayerDied : public MessageData {
