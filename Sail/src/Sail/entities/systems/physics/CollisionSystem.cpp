@@ -83,7 +83,7 @@ const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
 }
 
 const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float dt) {
-	bool returnValue = false;
+	bool collisionFound = false;
 
 	MovementComponent* movement = e->getComponent<MovementComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
@@ -97,13 +97,50 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 		std::vector<int> groundIndices;
 		glm::vec3 sumVec(0.0f);
 		std::vector<Octree::CollisionInfo> trueCollisions;
+		std::unordered_map<Entity*, std::pair<int, float>> collisionPerEntity;
 
 		//Get the combined normals and detect "true" collisions
 		for (size_t i = 0; i < collisionCount; i++) {
 			Octree::CollisionInfo& collisionInfo_i = collisions[i];
 
-			//Find true collisions
-			if (collisionInfo_i.shape->isTrueCollision(boundingBox)) {
+			glm::vec3 intersectionAxis;
+			float intersectionDepth;
+
+			if (collisionInfo_i.shape->getIntersectionDepthAndAxis(boundingBox, &intersectionAxis, &intersectionDepth)) {
+				float dotProduct = glm::abs(glm::dot(intersectionAxis, collisionInfo_i.normal));
+
+				//Find true collisions
+				if (dotProduct > 0.98f) {
+					sumVec += collisionInfo_i.normal;
+
+					collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
+
+					//Add collision to current collisions for collisionComponent
+					collision->collisions.push_back(collisionInfo_i);
+
+					//Add collision to true collisions
+					trueCollisions.push_back(collisionInfo_i);
+
+					collisionFound = true;
+				}
+
+				if (collisionPerEntity.find(collisionInfo_i.entity) == collisionPerEntity.end()) {
+					//Initialize
+					collisionPerEntity[collisionInfo_i.entity].second = -1.0f;
+				}
+
+				if (dotProduct >= collisionPerEntity[collisionInfo_i.entity].second) { //Save biggest dot product val and index for this entity
+					collisionPerEntity[collisionInfo_i.entity].second = dotProduct;
+					collisionPerEntity[collisionInfo_i.entity].first = i;
+				}
+			}
+		}
+
+		for (auto& it : collisionPerEntity) {
+			if (it.second.second < 0.98f) {
+				//Keep collision with the biggest dot product to the normal
+
+				Octree::CollisionInfo& collisionInfo_i = collisions[it.second.first];
 
 				sumVec += collisionInfo_i.normal;
 
@@ -115,7 +152,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 				//Add collision to true collisions
 				trueCollisions.push_back(collisionInfo_i);
 
-				returnValue = true;
+				collisionFound = true;
 			}
 		}
 
@@ -181,7 +218,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 		//------------
 	}
 
-	return returnValue;
+	return collisionFound;
 }
 
 const bool CollisionSystem::rayCastCheck(Entity* e, const BoundingBox& boundingBox, float& dt) const {
@@ -243,7 +280,7 @@ void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& bounding
 
 	const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
 	const glm::vec3 distancePerStep = (distance / (float)split) * normalizedVel;
-	
+
 	for (int i = 0; i < split; i++) {
 		boundingBox.setPosition(boundingBox.getPosition() + distancePerStep);
 		transform->translate(distancePerStep);
@@ -264,14 +301,11 @@ void CollisionSystem::surfaceFromCollision(Entity* e, std::vector<Octree::Collis
 	const size_t count = collisions.size();
 	for (size_t i = 0; i < count; i++) {
 		const Octree::CollisionInfo& collisionInfo_i = collisions[i];
-		glm::vec3 intersectionAxis;
-		float intersectionDepth;
+		float normalDepth;
 
-		if (collisionInfo_i.shape->getIntersectionDepthAndAxis(bb->getBoundingBox(), &intersectionAxis, &intersectionDepth)) {
-			if (glm::abs(glm::dot(intersectionAxis, collisionInfo_i.normal)) > 0.98f) { //True collision
-				bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * intersectionDepth);
-				distance += collisionInfo_i.normal * intersectionDepth;
-			}
+		if (collisionInfo_i.shape->getNormalDepth(bb->getBoundingBox(), &normalDepth)) {
+			bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
+			distance += collisionInfo_i.normal * normalDepth;
 		}
 	}
 	transform->translate(distance);

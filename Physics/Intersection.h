@@ -10,7 +10,7 @@ public:
 	static bool AabbWithAabb(const glm::vec3& a1Pos, const glm::vec3& a1Size, const glm::vec3& a2Pos, const glm::vec3& a2Size);
 	static bool AabbWithAabb(const glm::vec3& a1Pos, const glm::vec3& a1Size, const glm::vec3& a2Pos, const glm::vec3& a2Size, glm::vec3* intersectionAxis, float* intersectionDepth);
 	static bool AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
-	static bool AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth);
+	static bool AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth, float* normalDepth = nullptr);
 	static bool AabbWithPlane(const glm::vec3* aCorners, const glm::vec3& normal, const float distance);
 	static bool AabbWithSphere(const glm::vec3* aCorners, const Sphere& sphere);
 	static bool AabbWithVerticalCylinder(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3* aCorners, const VerticalCylinder& cyl);

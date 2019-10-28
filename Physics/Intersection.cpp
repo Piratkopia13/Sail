@@ -85,11 +85,10 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSiz
 	return true;
 }
 
-bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth) {
+bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSize, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth, float* nDepth) {
 	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
-
-	float depth = INFINITY;
 	float normalDepth = INFINITY;
+	float depth = INFINITY;
 	glm::vec3 axis;
 
 	//Calculate normal for triangle
@@ -137,6 +136,10 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSiz
 						depth = tempDepth;
 						axis = a;
 					}
+
+					if (tempDepth < normalDepth && glm::abs(glm::dot(a, triNormal)) > 0.95f) {
+						normalDepth = tempDepth;
+					}
 				}
 			}
 		}
@@ -154,6 +157,10 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSiz
 				depth = tempDepth;
 				axis = a;
 			}
+
+			if (tempDepth < normalDepth && glm::abs(glm::dot(a, triNormal)) > 0.95f) {
+				normalDepth = tempDepth;
+			}
 		}
 
 	}
@@ -169,6 +176,10 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSiz
 
 	if (intersectionDepth) {
 		*intersectionDepth = depth;
+	}
+
+	if (nDepth) {
+		*nDepth = normalDepth;
 	}
 
 	return true;
