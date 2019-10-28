@@ -53,6 +53,7 @@ private:
 
 	virtual void endMatch() = 0;			// Start end timer for host
 	virtual void endMatchAfterTimer() = 0;	// Made for the host to quit the game after a set time
+	virtual void mergeHostsStats() = 0;		// Host adds its data to global statistics before waiting for clients
 	virtual void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) = 0;
 	void backToLobby();
 

@@ -15,6 +15,7 @@ public:
 	void endMatch() override;
 	void endMatchAfterTimer() override;
 	void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) override;
+	void mergeHostsStats();
 
 private:
 

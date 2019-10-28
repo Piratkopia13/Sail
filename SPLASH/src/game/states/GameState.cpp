@@ -169,9 +169,9 @@ GameState::GameState(StateStack& stack)
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 
 	// Host fill its game tracker per player with player data.
-	if (NWrapperSingleton::getInstance().isHost()) {
-		GameDataTracker::getInstance().init();
-	}	
+	// Reset data trackers
+	GameDataTracker::getInstance().init();
+
 }
 
 GameState::~GameState() {

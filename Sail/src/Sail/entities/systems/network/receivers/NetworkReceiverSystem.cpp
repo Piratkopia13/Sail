@@ -252,6 +252,10 @@ void NetworkReceiverSystem::update() {
 					false
 				);
 
+				GameDataTracker::getInstance().turnOffLocalDataTracking();
+
+				mergeHostsStats();
+
 			}
 			break;
 			case Netcode::MessageType::CANDLE_HELD_STATE:

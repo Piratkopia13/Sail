@@ -72,3 +72,22 @@ void NetworkReceiverSystemHost::prepareEndScreen(int bf, float dw, int jm, Netco
 	endMatch(); // Starts the end game timer. Runs only for the host
 
 }
+
+void NetworkReceiverSystemHost::mergeHostsStats() {
+
+	GameDataTracker* gdt = &GameDataTracker::getInstance();
+	Netcode::PlayerID id = NWrapperSingleton::getInstance().getMyPlayerID();
+
+	if (gdt->getStatisticsLocal().bulletsFired > gdt->getStatisticsGlobal().bulletsFired) {
+		gdt->getStatisticsGlobal().bulletsFired = gdt->getStatisticsLocal().bulletsFired;
+		gdt->getStatisticsGlobal().bfID = id;
+	}
+	if (gdt->getStatisticsLocal().distanceWalked > gdt->getStatisticsGlobal().distanceWalked) {
+		gdt->getStatisticsGlobal().distanceWalked = gdt->getStatisticsLocal().distanceWalked;
+		gdt->getStatisticsGlobal().dwID = id;
+	}
+	if (gdt->getStatisticsLocal().jumpsMade > gdt->getStatisticsGlobal().jumpsMade) {
+		gdt->getStatisticsGlobal().jumpsMade = gdt->getStatisticsLocal().jumpsMade;
+		gdt->getStatisticsGlobal().jmID = id;
+	}
+}

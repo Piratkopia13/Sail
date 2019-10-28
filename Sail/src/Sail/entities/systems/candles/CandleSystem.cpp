@@ -87,7 +87,8 @@ void CandleSystem::update(float dt) {
 						if (LivingCandles <= 1) { // Match IS over
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::MATCH_ENDED,
-								nullptr
+								nullptr,
+								true
 							);
 							
 						}

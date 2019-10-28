@@ -59,6 +59,7 @@ public:
 		Netcode::PlayerID dwID, float dw, Netcode::PlayerID jmID, int jm);
 	// nr of player from the start of the match
 	int getPlayerCount();	// Nowhere atm
+	void turnOffLocalDataTracking();
 
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()
@@ -69,7 +70,8 @@ private:
 
 	InduvidualStats m_loggedData;
 	GlobalTopStats m_loggedDataGlobal;
-	
+	bool m_trackLocalStats;				// toggle InduvidualStats tracking
+
 	// Map of each player in current game containing data such as kills and deaths
 	std::map<Netcode::PlayerID, HostStatsPerPlayer> m_hostPlayerTracker;
 	int m_placement; // add 1 after ever time a player is placed to give next player a placement

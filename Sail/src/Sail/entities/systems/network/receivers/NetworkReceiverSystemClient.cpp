@@ -11,7 +11,9 @@ NetworkReceiverSystemClient::NetworkReceiverSystemClient() {
 NetworkReceiverSystemClient::~NetworkReceiverSystemClient() {
 
 }
-
+
+void NetworkReceiverSystemClient::mergeHostsStats() {
+}
 void NetworkReceiverSystemClient::handleIncomingData(std::string data) {
 	pushDataToBuffer(data);
 }
