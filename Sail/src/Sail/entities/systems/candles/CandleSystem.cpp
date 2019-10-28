@@ -39,16 +39,6 @@ void CandleSystem::setPlayerEntityID(int entityID, Entity* entityPtr) {
 
 }
 
-// turn on the light of a specified candle if it doesn't have one already
-void CandleSystem::lightCandle(const std::string& name) {
-	for (auto e : entities) {
-		if (e->getName() == name) {
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(1.0f, 0.7f, 0.4f));
-			break;
-		}
-	}
-}
-
 // should be updated after collision detection has been done
 void CandleSystem::update(float dt) {
 	int LivingCandles = entities.size();
@@ -57,18 +47,19 @@ void CandleSystem::update(float dt) {
 		if (auto candle = e->getComponent<CandleComponent>(); candle->getIsAlive()) {
 			//If a candle is out of health.
 			if (candle->getHealth() <= 0.f) {
-				candle->setIsLit(false);
 				candle->setCarried(true);
 
-				// Add kill score to host player tracker
-				if (NWrapperSingleton::getInstance().isHost()) {
-					GameDataTracker::getInstance().logEnemyKilled(candle->getWasHitByNetID());
-				}
+
 
 				// Did this candle's owner die?
 				if (candle->getNumRespawns() == m_maxNumRespawns) {
 					candle->setIsAlive(false);
 					LivingCandles--;
+
+					// Add kill score to host player tracker
+					if (NWrapperSingleton::getInstance().isHost()) {
+						GameDataTracker::getInstance().logEnemyKilled(candle->getWasHitByNetID());
+					}
 
 					//Only let the host sent PLAYER_DIED message
 					if (NWrapperSingleton::getInstance().isHost()) {
@@ -98,15 +89,21 @@ void CandleSystem::update(float dt) {
 						}
 					}
 				}
-			} else if ((candle->getDoActivate() || candle->getDownTime() >= m_candleForceRespawnTimer) && !candle->getIsLit()) {
-				candle->setIsLit(true);
-				candle->setHealth(MAX_HEALTH);
-				candle->incrementRespawns();
-				candle->resetDownTime();
-				candle->resetDoActivate();
-			} else if (!candle->getIsLit()) {
-				candle->addToDownTime(dt);
-			}
+				else if ((candle->getDownTime() >= m_candleForceRespawnTimer || candle->getIsLit())) {
+					if (NWrapperSingleton::getInstance().isHost()) {
+						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+							Netcode::MessageType::IGNITE_CANDLE,
+							SAIL_NEW Netcode::MessageIgniteCandle{
+								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
+							},
+							true
+						);
+					}
+				}
+				else {
+					candle->addToDownTime(dt);
+				}
+			} 
 
 			if (candle->isCarried() != candle->getWasCarriedLastUpdate()) {
 				putDownCandle(e);
@@ -209,7 +206,6 @@ void CandleSystem::putDownCandle(Entity* e) {
 	} else {
 		// Pick up the candle
 		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit()) {
-			candleTransComp->setTranslation(glm::vec3(0.f, 2.0f, 0.f));
 			candleTransComp->setParent(parentTransComp);
 		} else {
 			candleComp->setCarried(false);

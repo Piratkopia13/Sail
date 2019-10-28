@@ -58,6 +58,7 @@ namespace Netcode {
 		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
 		SEND_ALL_BACK_TO_LOBBY,
+		IGNITE_CANDLE,
 		EMPTY = 69
 	};
 
@@ -173,6 +174,13 @@ namespace Netcode {
 	public:
 		MessageEndGameStats() {}
 		~MessageEndGameStats() {}
+	};
+
+	class MessageIgniteCandle : public MessageData {
+	public:
+		MessageIgniteCandle(Netcode::ComponentID id) : candleOwnerID(id) {}
+		~MessageIgniteCandle() {}
+		Netcode::ComponentID candleOwnerID;
 	};
 
 }

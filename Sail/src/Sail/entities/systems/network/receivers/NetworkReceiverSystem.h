@@ -45,6 +45,7 @@ private:
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld, const glm::vec3& pos = glm::vec3(0, 0, 0));
+	void igniteCandle(Netcode::ComponentID candleOwnerID);
 
 	void matchEnded();
 	void backToLobby();
