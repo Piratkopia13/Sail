@@ -31,20 +31,40 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec
 
 	//creates light with model and pointlight
 	auto candle = ECS::Instance()->createEntity(name.c_str());
-	candle->addComponent<CandleComponent>();
 	candle->addComponent<ModelComponent>(candleModel);
 	candle->addComponent<TransformComponent>(lightPos);
 	candle->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	candle->addComponent<CollidableComponent>();
 	candle->addComponent<CullingComponent>();
-	PointLight pl;
-	pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
-	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-	pl.setAttenuation(0.f, 0.f, 0.2f);
-	pl.setIndex(lightIndex);
-	candle->addComponent<LightComponent>(pl);
 
 	return candle;
+}
+
+
+void EntityFactory::AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_t& lightIndex, const Netcode::PlayerID& playerID) {
+
+	for (Entity::SPtr& c : player->getChildEntities()) {
+		if (c->getName() == player->getName() + "Candle") {
+			c->addComponent<CandleComponent>();
+			PointLight pl;
+			pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
+			pl.setPosition(glm::vec3(0, 0 + .37f, 0));
+			pl.setAttenuation(0.f, 0.f, 0.2f);
+			pl.setIndex(lightIndex);
+			c->addComponent<LightComponent>(pl);
+
+
+		}
+		CandleComponent* cc = c->getComponent<CandleComponent>();
+		GunComponent* gc = c->getComponent<GunComponent>();
+		if (cc) {
+			c->addComponent<CollidableComponent>();
+			c->addComponent<CandleComponent>();
+			cc->setOwner(playerID);
+		}
+		if (gc) {
+			//TODO: ADD GUN STUFF?
+		}
+	}
 }
 
 Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
@@ -59,30 +79,35 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
-
+	myPlayer->removeComponent<CollidableComponent>();
+	myPlayer->addComponent<CollisionComponent>();
+	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	myPlayer->addComponent<CollisionComponent>(true);
-	myPlayer->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 
-
-	// Create candle for the player
-	auto candle = CreateCandle("PlayerCandle", glm::vec3(0.f, 2.f, 0.f), lightIndex);
-	candle->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	candle->getComponent<CandleComponent>()->setOwner(playerID);
-	myPlayer->addChildEntity(candle);
-
-	myPlayer->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
-
-	myPlayer->addComponent<GunComponent>();
+	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 
 	return myPlayer;
 }
 
-
 // otherPlayer is an entity that doesn't have any components added to it yet.
 // Needed so that NetworkReceiverSystem can add the entity to itself before 
 void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::ComponentID netComponentID, size_t lightIndex, glm::vec3 spawnLocation) {
+	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation);
 	// Other players have a character model and animations
+
+	otherPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
+	otherPlayer->addComponent<OnlineOwnerComponent>(netComponentID);
+
+
+
+	// Create the player
+	AddWeaponAndCandleToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(netComponentID));
+
+}
+
+// Creates a player enitty without a candle and without a model
+void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation) {
+	
 	std::string modelName = "DocTorch.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
@@ -91,37 +116,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
 	characterModel->setIsAnimated(true);
 	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
-
-
-	// Create the player
-	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation);
-
-	otherPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
-	otherPlayer->addComponent<OnlineOwnerComponent>(netComponentID);
-	otherPlayer->addComponent<ModelComponent>(characterModel);
-	otherPlayer->addComponent<CollidableComponent>(true);
-
-	AnimationComponent* ac = otherPlayer->addComponent<AnimationComponent>(stack);
-	ac->currentAnimation = stack->getAnimation(3);
-
-
-	// Create the player's candle
-	auto candle = CreateCandle("OtherPlayerCandle", glm::vec3(0.f, 2.f, 0.f), lightIndex);
-	candle->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	candle->getComponent<CandleComponent>()->setOwner(Netcode::getComponentOwner(netComponentID));
-	candle->addComponent<OnlineOwnerComponent>(netComponentID);
-	otherPlayer->addChildEntity(candle);
-
-
-	// Attach the candle to the player's left hand
-	ac->leftHandEntity = candle.get();
-	ac->leftHandPosition = glm::identity<glm::mat4>();
-	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.57f, 1.03f, 0.05f));
-	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
-}
-
-// Creates a player enitty without a candle and without a model
-void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation) {
+	
 	// All players have a bounding box
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
 	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
@@ -132,14 +127,49 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 	playerEntity->addComponent<TransformComponent>(spawnLocation);
 	playerEntity->addComponent<CullingComponent>();
+	playerEntity->addComponent<ModelComponent>(characterModel);
+	playerEntity->addComponent<CollidableComponent>();
+
+	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
+
 
 	// Give playerEntity a bounding box
 	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	playerEntity->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f)); // Needed?
+	playerEntity->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.4f, .9f, 0.4f)); // Needed?
 
 	// Adding audio component and adding all sounds attached to the playerEntity entity
 	playerEntity->addComponent<AudioComponent>();
+
+	playerEntity->addComponent<GunComponent>();
+	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
+
+	// Create the player's candle
+
+
+
+
+
+
+	AnimationComponent* ac = playerEntity->addComponent<AnimationComponent>(stack);
+	ac->currentAnimation = stack->getAnimation(1);
+
+	auto candle = CreateCandle(playerEntity->getName()+"Candle", glm::vec3(0.f, 0.f, 0.f), lightIndex);
+	candle->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
+	playerEntity->addChildEntity(candle);
 	
+	
+	// Attach the candle to the player's left hand
+	ac->leftHandEntity = candle.get();
+	ac->leftHandPosition = glm::identity<glm::mat4>();
+	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.57f, 1.03f, 0.05f));
+	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
+	
+	// Attach the something to the player's right hand
+	ac->rightHandEntity = nullptr;
+	ac->rightHandPosition = glm::identity<glm::mat4>();
+	ac->rightHandPosition = glm::translate(ac->rightHandPosition, glm::vec3(0.57f, 1.03f, 0.05f));
+	ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
+
 }
 
 

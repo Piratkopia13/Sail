@@ -70,6 +70,7 @@ void CandleSystem::update(float dt) {
 					candle->setIsAlive(false);
 					LivingCandles--;
 
+					Logger::Log("Candles: " + std::to_string(LivingCandles));
 					//Only let the host sent PLAYER_DIED message
 					if (NWrapperSingleton::getInstance().isHost()) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -131,7 +132,7 @@ void CandleSystem::update(float dt) {
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
 
 			candle->setWasCarriedLastUpdate(candle->isCarried());
-			glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
+			glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrix() * glm::vec4(0, 0.37f, 0, 1);
 			e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 		}
 	}
