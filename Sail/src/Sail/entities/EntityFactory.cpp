@@ -11,6 +11,9 @@
 #include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
+#include "Sail/graphics/geometry/factory/StringModel.h"
+#include "Sail/graphics/geometry/factory/QuadModel.h"
+#include "Sail/entities/components/GUIComponent.h"
 
 Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
@@ -136,6 +139,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 	// Adding audio component and adding all sounds attached to the playerEntity entity
 	playerEntity->addComponent<AudioComponent>();
+	
 }
 
 
@@ -245,4 +249,40 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	collision->padding = 0.2f;
 
 	return e;
+}
+
+Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size) {
+	static int num = 0;
+
+	auto GUIEntity = ECS::Instance()->createEntity("TextEntity:" + text);
+	ModelFactory::StringModel::Constraints textConst;
+	textConst.origin = Mesh::vec3(origin.x, origin.y, 0.f);
+	textConst.size = Mesh::vec2(size.x, size.y);
+	textConst.text = text;
+	auto GUIModel = ModelFactory::StringModel::Create(&Application::getInstance()->getResourceManager().getShaderSet<GuiShader>(), textConst);
+	std::string modelName = "TextModel " + std::to_string(num);
+	Application::getInstance()->getResourceManager().addModel(modelName, GUIModel);
+	for (int i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
+		GUIModel->getMesh(i)->getMaterial()->setAlbedoTexture(GUIText::fontTexture);
+	}
+	GUIEntity->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(modelName));
+	num++;
+
+	return GUIEntity;
+}
+
+Entity::SPtr EntityFactory::CreateGUIEntity(const std::string& name, const std::string& texture, glm::vec2 origin, glm::vec2 size) {
+	auto ent = ECS::Instance()->createEntity(name);
+	ModelFactory::QuadModel::Constraints entConst;
+	entConst.origin = Mesh::vec3(origin.x, origin.y, 0.f);
+	entConst.halfSize = Mesh::vec2(size.x, size.y);
+	auto entModel = ModelFactory::QuadModel::Create(&Application::getInstance()->getResourceManager().getShaderSet<GuiShader>(), entConst);
+	if (!Application::getInstance()->getResourceManager().hasTexture(texture)) {
+		Application::getInstance()->getResourceManager().loadTexture(texture);
+	}
+	entModel->getMesh(0)->getMaterial()->setAlbedoTexture(texture);
+	Application::getInstance()->getResourceManager().addModel(name + "Model", entModel);
+	ent->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(name + "Model"));
+
+	return ent;
 }
