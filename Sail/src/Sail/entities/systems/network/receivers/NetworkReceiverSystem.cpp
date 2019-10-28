@@ -100,7 +100,7 @@ void NetworkReceiverSystem::update() {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
-	int animationStack;
+	int animationIndex;
 	float animationTime;
 
 	// Process all messages in the buffer
@@ -154,9 +154,9 @@ void NetworkReceiverSystem::update() {
 				break;
 				case Netcode::MessageType::ANIMATION: 
 				{
-					ar(animationStack);		// Read
+					ar(animationIndex);		// Read
 					ar(animationTime);		//
-					setEntityAnimation(id, animationStack, animationTime);
+					setEntityAnimation(id, animationIndex, animationTime);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_START:
@@ -399,7 +399,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
 			glm::vec3 rot = rotation;
 			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
-			rot.y += 3.14f * 0.5f;
+			//rot.y += 3.14f * 0.5f;
 			//}
 			e->getComponent<TransformComponent>()->setRotations(rot);
 
@@ -409,11 +409,11 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 	Logger::Warning("setEntityRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime) {
+void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationIndex, float animationTime) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			auto animation = e->getComponent<AnimationComponent>();
-			animation->currentAnimation = animation->getAnimationStack()->getAnimation(animationStack);
+			animation->setAnimation(animationIndex);
 			animation->animationTime = animationTime;
 			return;
 		}
@@ -515,7 +515,9 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
 			e->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 			e->removeComponent<GunComponent>();
-
+			e->removeComponent<AnimationComponent>();
+			e->removeComponent<ModelComponent>();
+			
 			e->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
 
 			auto transform = e->getComponent<TransformComponent>();

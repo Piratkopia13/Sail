@@ -24,7 +24,7 @@ void ModelSubmitSystem::submitAll(const float alpha) {
 
 		Renderer::RenderFlag flags = (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC;
 		
-		if (!culling || (culling && culling->isVisible)) {
+		if ((!culling || (culling && culling->isVisible)) && model->renderToGBuffer) {
 			flags |= Renderer::IS_VISIBLE_ON_SCREEN;
 		}
 		renderer->submit(model->getModel(), transform->getRenderMatrix(alpha), flags);
