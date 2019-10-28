@@ -372,6 +372,19 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 				// Damage the candle
 				// Save the Shooter of the Candle if its lethal
 				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+
+				// Play relevant sound
+				if (e->hasComponent<LocalOwnerComponent>()) {
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].isPlaying = true;
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].playOnce = true;
+				}
+				else {
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
+					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
+				}
+
+				
+
 				// Check in Candle System What happens next
 				return;
 			}
