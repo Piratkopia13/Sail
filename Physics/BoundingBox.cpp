@@ -39,10 +39,18 @@ const glm::vec3& BoundingBox::getHalfSize() const {
 	return m_halfSize;
 }
 
-const glm::vec3* BoundingBox::getCorners() {
+void BoundingBox::prepareCorners() {
 	if (m_cornersNeedUpdate) {
 		updateCorners();
 	}
+}
+
+const glm::vec3* BoundingBox::getCornersWithUpdate() {
+	prepareCorners();
+	return m_corners;
+}
+
+const glm::vec3* BoundingBox::getCornersWithoutUpdate() const {
 	return m_corners;
 }
 

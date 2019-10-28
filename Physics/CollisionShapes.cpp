@@ -12,7 +12,7 @@ CollisionTriangle::CollisionTriangle(const glm::vec3& pos0, const glm::vec3& pos
 	m_normal = normal;
 }
 
-bool CollisionTriangle::isTrueCollision(BoundingBox* boundingBox) {
+bool CollisionTriangle::isTrueCollision(const BoundingBox* boundingBox) {
 	glm::vec3 intersectionAxis;
 	float intersectionDepth;
 
@@ -24,7 +24,7 @@ bool CollisionTriangle::isTrueCollision(BoundingBox* boundingBox) {
 	return false;
 }
 
-glm::vec3 CollisionTriangle::getIntersectionPosition(BoundingBox* boundingBox) {
+glm::vec3 CollisionTriangle::getIntersectionPosition(const BoundingBox* boundingBox) {
 	// Calculate the plane that the triangle is on
 	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - m_positions[0];
 	float distance = -glm::dot(triangleToWorldOrigo, m_normal);
@@ -49,7 +49,7 @@ CollisionAABB::CollisionAABB(const glm::vec3& position, const glm::vec3& halfSiz
 	m_intersectionAxis = intersectionAxis;
 }
 
-bool CollisionAABB::isTrueCollision(BoundingBox* boundingBox) {
+bool CollisionAABB::isTrueCollision(const BoundingBox* boundingBox) {
 	glm::vec3 intersectionAxis;
 	float intersectionDepth;
 
@@ -61,7 +61,7 @@ bool CollisionAABB::isTrueCollision(BoundingBox* boundingBox) {
 	return false;
 }
 
-glm::vec3 CollisionAABB::getIntersectionPosition(BoundingBox* boundingBox) {
+glm::vec3 CollisionAABB::getIntersectionPosition(const BoundingBox* boundingBox) {
 	// Calculate the plane of bounding box
 	glm::vec3 planePositionToWorldOrigo = glm::vec3(0.0f) - (m_position + m_halfSize * m_intersectionAxis);
 	float distance = -glm::dot(planePositionToWorldOrigo, m_intersectionAxis);

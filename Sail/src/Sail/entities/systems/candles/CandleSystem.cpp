@@ -136,7 +136,7 @@ void CandleSystem::update(float dt) {
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
 
 			candle->setWasCarriedLastUpdate(candle->isCarried());
-			glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrix()[3]) + glm::vec3(0, 0.5f, 0);
+			glm::vec3 flamePos = glm::vec3(e->getComponent<TransformComponent>()->getMatrixWithUpdate()[3]) + glm::vec3(0, 0.5f, 0);
 			e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 		}
 	}
@@ -154,7 +154,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 			// Get the yaw-angle of the player to get a direction vector
 			float yaw = -candleTransComp->getParent()->getRotations().y;
 			glm::vec3 dir = glm::normalize(glm::vec3(cos(yaw), 0.f, sin(yaw)));
-			auto parentPos = parentTransComp->getMatrix()[3];
+			auto parentPos = parentTransComp->getMatrixWithUpdate()[3];
 
 			glm::vec3 candleTryPosition = glm::vec3(parentPos.x + dir.x, parentPos.y, parentPos.z + dir.z);
 

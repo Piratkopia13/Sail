@@ -300,7 +300,7 @@ bool GameState::processInput(float dt) {
 		// Get position and rotation to look at middle of the map from above
 		{
 			auto parTrans = m_player->getComponent<TransformComponent>();
-			auto pos = glm::vec3(parTrans->getMatrix()[3]);
+			auto pos = glm::vec3(parTrans->getMatrixWithUpdate()[3]);
 			pos.y = 20.f;
 			parTrans->setTranslation(pos);
 			MapComponent temp;
