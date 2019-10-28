@@ -6,7 +6,7 @@ class Model;
 
 class GunComponent : public Component<GunComponent> {
 public:
-	GunComponent() {};
+	GunComponent();
 	~GunComponent() {};
 
 	void setFiring(glm::vec3 pos, glm::vec3 dir);
@@ -14,17 +14,17 @@ public:
 	glm::vec3 position;
 	glm::vec3 direction;
 
-	float projectileSpawnTimer = 0.f;
-	float gunOverloadTimer = 0.f;
-	float m_projectileSpawnCooldown = 0.0005f;
-	float m_gunOverloadCooldown = .0f;
+	float projectileSpawnTimer;
+	float gunOverloadTimer;
+	float m_projectileSpawnCooldown;
+	float m_gunOverloadCooldown;
 
-	float projectileSpeed = 10.f;
+	float projectileSpeed;
 
-	float gunOverloadvalue = 0.f;
-	float gunOverloadThreshold = .5f;
+	float gunOverloadvalue;
+	float gunOverloadThreshold;
 
-	bool firing = false;
+	bool firing;
 
 private:
 

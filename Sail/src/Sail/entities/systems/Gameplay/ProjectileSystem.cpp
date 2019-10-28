@@ -60,7 +60,7 @@ void ProjectileSystem::update(float dt) {
 				}
 			}
 
-			if (Utils::rnd() < 0.2) {
+			if (Utils::rnd() < 0.5) {
 				e->queueDestruction();
 			}
 		}

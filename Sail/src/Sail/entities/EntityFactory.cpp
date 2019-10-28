@@ -216,9 +216,13 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
 
-	randPos.r = Utils::rnd() * randomSpread;
-	randPos.g = Utils::rnd() * randomSpread;
-	randPos.b = Utils::rnd() * randomSpread;
+	randomSpread = 0.05;
+
+	randPos.r = Utils::rnd() * randomSpread * 2 - randomSpread;
+	randPos.g = Utils::rnd() * randomSpread * 2 - randomSpread;
+	randPos.b = Utils::rnd() * randomSpread * 2 - randomSpread;
+
+	randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 2.0f;
 
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));

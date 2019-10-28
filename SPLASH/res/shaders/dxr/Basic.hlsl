@@ -258,7 +258,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	payload.closestTvalue = RayTCurrent();
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(attribs.normal.xyz, 0.f)));
-	float refractIndex = 0.3; // 1.333f;
+	float refractIndex = 1.333f;
 	RayPayload reflect_payload = payload;
 	RayPayload refract_payload = payload;
 	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
@@ -269,26 +269,33 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
 	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
+	if (payload.recursionDepth == 1) {
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
 
-	//diffuseColor = nextBounce.color;
+	} else {
+		reflect_payload.color = float4(0.0f, 0.0f, 0.1f,1.0f);
+		refract_payload.color = float4(0.0f, 0.0f, 0.f,1.0f);
+	}
+
 	float4 reflect_color = reflect_payload.color;
-	reflect_color.r *= 0.5;
-	reflect_color.g *= 0.5;
-	reflect_color.b += 0.1;
-	// saturate(reflect_color);
+	//reflect_color.r *= 0.8;
+	//reflect_color.g *= 0.8;
+	//reflect_color.b += 0.2;
+	reflect_color.b += 0.05f;
+	reflect_color =  saturate(reflect_color);
 
 	float4 refract_color = refract_payload.color;
-	refract_color.r *= 0.9;
-	refract_color.g *= 0.9;
-	refract_color.b += 0.05;
-	// saturate(refract_color);
+	//refract_color.r *= 0.8;
+	//refract_color.g *= 0.8;
+	//refract_color.b *= 0.2;
+	refract_color.b += 0.05f;
+	refract_color = saturate(refract_color);
 
 	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
-	float refconst = 1 - abs(dot(normalize(hitToCam), normalInWorldSpace));
+	float refconst = pow(abs(dot(normalize(hitToCam), normalInWorldSpace)), 2);
 
-	float4 finaldiffusecolor = saturate((reflect_color * 0.2f + refract_color) / 1.5f);
+	float4 finaldiffusecolor = saturate((refract_color * refconst + reflect_color * (1- refconst)));
 	finaldiffusecolor.a = 1;
 	
 	/////////////////////////
@@ -325,7 +332,7 @@ bool solveQuadratic(in float a, in float b, in float c, inout float x0, inout fl
 	return true;
 }
 
-bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out float t, out float4 normal) {
+bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out float tmin, out float tmax, out float4 normal) {
 	float t0, t1; // solutions for t if the ray intersects 
 
 	// analytic solution
@@ -350,8 +357,9 @@ bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out floa
 		}
 	}
 
-	t = t0;
-	normal = float4(normalize((ray.Origin + t * normalize(ray.Direction)) - center), 0);
+	tmin = t0;
+	tmax = t1;
+	normal = float4(normalize((ray.Origin + tmin * normalize(ray.Direction)) - center), 0);
 
 	return true;
 }
@@ -361,14 +369,6 @@ bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out floa
 // mbRadius - largest possible area of metaball contribution - AKA its bounding sphere.
 float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float3 velosity, in float ballradius) {
 	
-	//float3 a = normalize(position - ballpos);
-	//float3 b = normalize(velosity);
-	//
-	//float f = abs(1- dot(a,b));
-	//sqrt(f);
-	//f += 1.0f;
-	//f = clamp(f, 0, 10.0f);
-
 	float distance = length(position - ballpos) / ballradius;
 	////float3 rel = (ballpos - position) / ballradius;
 
@@ -412,7 +412,7 @@ float CalculateMetaballsPotential(in uint index, in float3 position) {
 	uint nballs = CB_SceneData.nMetaballs;
 
 	int mid = index;
-	int nWeights = 200;
+	int nWeights = 30;
 
 	int start = mid - nWeights;
 	int end = mid + nWeights;
@@ -422,9 +422,8 @@ float CalculateMetaballsPotential(in uint index, in float3 position) {
 	if (end > nballs) 
 		end = nballs;
 
-	float rad = 0.12;
 	for (int i = start; i < end - 1; i++) {
-		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], metaballsVelosity[i], rad);
+		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], float4(0,0,0,0), METABALL_RADIUS);
 	}
 
 	return sumFieldPotential;
@@ -442,6 +441,58 @@ float3 CalculateMetaballsNormal(in uint index, in float3 position) {
 		CalculateMetaballsPotential(index, position + float3(0, 0, e))));
 }
 
+struct Ballhit {
+	float tmin;
+	float tmax;
+	int index;
+};
+
+bool Step(in Ballhit hit, in RayDesc rayWorld){
+		
+	float tmin = hit.tmin, tmax = hit.tmax;
+	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
+	unsigned int MAX_SMALL_STEPS = 32;//If a large step hit a metaball, use small steps to adjust go backwards
+
+	ProceduralPrimitiveAttributes attr;
+	float t = tmin;
+	float minTStep = (tmax - tmin) / (MAX_LARGE_STEPS / 1.0f);
+	unsigned int iStep = 0;
+
+	float3 currPos = rayWorld.Origin + t * rayWorld.Direction;
+	while (iStep++ < MAX_LARGE_STEPS) {
+		float sumFieldPotential = CalculateMetaballsPotential(hit.index, currPos); // Sum of all metaball field potentials.
+
+		const float Threshold = 0.90f;
+
+		if (sumFieldPotential >= Threshold) {
+			float restep_step = minTStep / 2;
+			int restep_step_dir = -1;
+
+			for (int i = 0; i < MAX_SMALL_STEPS; i++) {
+				t += restep_step * restep_step_dir;
+				currPos = rayWorld.Origin + t * rayWorld.Direction;
+				float sumFieldPotential_recomp = CalculateMetaballsPotential(hit.index, currPos); // Sum of all metaball field potentials.
+				if (sumFieldPotential_recomp >= Threshold) {
+					restep_step *= 0.5;
+					restep_step_dir = -1;
+				} else {
+					restep_step *= 0.8;
+					restep_step_dir = 1;
+				}
+			}
+
+			attr.normal = float4(CalculateMetaballsNormal(hit.index, currPos), 0);
+			ReportHit(t, 0, attr);
+			return true;
+		}
+
+		t += minTStep;
+		currPos = rayWorld.Origin + t * rayWorld.Direction;
+	}
+
+	return false;
+}
+
 [shader("intersection")]
 void IntersectionShader() {
 	float startT = 1000;
@@ -452,81 +503,42 @@ void IntersectionShader() {
 	rayWorld.TMax = 1000000;
 	rayWorld.TMin = 0.00001;
 
-	//RayDesc rayLocal;
-	//rayLocal.Origin = ObjectRayOrigin();
-	//rayLocal.Direction = ObjectRayDirection();
-	//rayLocal.TMax = 1000000;
-	//rayLocal.TMin = 0.00001;
-
-	ProceduralPrimitiveAttributes attr;
-
 	float4 dummy;
-	float val;
+	float min;
+	float max;
 	uint nballs = CB_SceneData.nMetaballs;
-	uint index = 1000;
-	for (int i = 0; i < nballs; i++) {
-		if (intersectSphere(rayWorld, metaballs[i], 0.1, val, dummy)) {
-			if (val < startT) {
-				startT = val;
-				//rayWorld.Origin += startT * rayWorld.Direction;
-				index = i;
-			}
+
+	const uint MAX_HITS = 2;
+	Ballhit hits[MAX_HITS];
+	int nHits = 0;
+
+	for (uint i = 0; i < nballs; i++) {
+		if (intersectSphere(rayWorld, metaballs[i], METABALL_RADIUS, min, max, dummy)) {
+			hits[nHits].tmin = min;
+			hits[nHits].tmax = max + 1;
+			hits[nHits].index = i;
+			nHits++;
+			break;
 		}
 	}
 
-	if (index == 1000)
+	for (uint i = 0; i < nballs && nHits < MAX_HITS; i++) {
+		uint i2 = nballs - i - 1;
+		if (intersectSphere(rayWorld, metaballs[i2], METABALL_RADIUS, min, max, dummy)) {
+			hits[nHits].tmin = min;
+			hits[nHits].tmax = max + 1;
+			hits[nHits].index = i2;
+			nHits++;
+			break;
+		}
+	}
+
+	if (nHits == 0)
 		return;
-	//index = 0;
-	//ReportHit(startT, 0, attr);
 
-	//return;
-	////////////////////////////////
-	/*find a point on the ray that are close to the metaballs and start stepping from there instead of using the rays origin as starting point.*/
-	//if (length(ObjectRayOrigin()) > 0.2) {//TODO: CHANGE THIS
-	//	if (intersectSphere(rayLocal, float3(0, 0, 0), 0.2, val, dummy)) {
-	//		startT = val;
-	//		rayWorld.Origin += startT * rayWorld.Direction;
-	//	}
-	//}
-	////////////////////////////////
-
-	float tmin = startT, tmax = startT + 3;
-	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
-	unsigned int MAX_SMALL_STEPS = 32;//If a large step hit a metaball, use small steps to adjust go backwards
-
-	float t = tmin;
-	float minTStep = (tmax - tmin) / (MAX_LARGE_STEPS / 1.0f);
-	unsigned int iStep = 0;
-
-	float3 currPos = rayWorld.Origin + t * rayWorld.Direction;
-	while (iStep++ < MAX_LARGE_STEPS) {
-		float sumFieldPotential = CalculateMetaballsPotential(index, currPos); // Sum of all metaball field potentials.
-
-		const float Threshold = 0.95f;
-
-		if (sumFieldPotential >= Threshold) {
-			float restep_step = minTStep / 2;
-			int restep_step_dir = -1;
-
-			for (int i = 0; i < MAX_SMALL_STEPS; i++) {
-				t += restep_step * restep_step_dir;
-				currPos = rayWorld.Origin + t * rayWorld.Direction;
-				float sumFieldPotential_recomp = CalculateMetaballsPotential(index, currPos); // Sum of all metaball field potentials.
-				if (sumFieldPotential_recomp >= Threshold) {
-					restep_step *= 0.5;
-					restep_step_dir = -1;
-				} else {
-					restep_step *= 0.8;
-					restep_step_dir = 1;
-				}
-			}
-
-			attr.normal = float4(CalculateMetaballsNormal(index, currPos), 0);
-			ReportHit(t, 0, attr);
+	for (int curHit = 0; curHit < nHits; curHit++) {
+		if (Step(hits[curHit], rayWorld)) {
 			return;
 		}
-
-		t += minTStep;
-		currPos = rayWorld.Origin + t * rayWorld.Direction;
 	}
 }

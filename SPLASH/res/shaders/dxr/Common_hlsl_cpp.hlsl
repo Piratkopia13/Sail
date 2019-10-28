@@ -29,7 +29,8 @@ namespace DXRShaderCommon {
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
-#define MAX_NUM_METABALLS 1000
+#define MAX_NUM_METABALLS 500
+#define METABALL_RADIUS 0.08f
 #define MAX_DECALS 100
 
 #define WATER_GRID_X 296 / 4

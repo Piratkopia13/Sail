@@ -20,6 +20,8 @@ public:
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
 	virtual void submitWaterPoint(const glm::vec3& pos) override;
 
+	virtual void updateMetaballAABB();
+
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 private:
@@ -33,6 +35,8 @@ private:
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 
 	std::vector<DXRBase::Metaball> m_metaballs;
+	//std::vector<D3D12_RAYTRACING_AABB> m_metaball_aabb;
+	D3D12_RAYTRACING_AABB m_next_metaball_aabb;
 
 	// Decals
 	DXRShaderCommon::DecalData m_decals[MAX_DECALS];

@@ -668,7 +668,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
+	runSystem(dt, m_componentSystems.gunSystem);
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
@@ -699,7 +699,6 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 
 	// Updates mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
-
 
 	// There is an imgui debug toggle to override lights
 	if (!m_lightDebugWindow.isManualOverrideOn()) {

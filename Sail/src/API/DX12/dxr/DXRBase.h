@@ -32,7 +32,7 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const glm::vec3& mapSize, const glm::vec3& mapStart);
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();
@@ -87,7 +87,7 @@ private:
 	void createEmptyLocalRootSignature();
 
 	void initMetaballBuffers();
-	void updateMetaballpositions(const std::vector<Metaball>& metaballs);
+	void updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb);
 
 	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
 
@@ -156,8 +156,7 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
 	// Metaball Stuff
-	D3D12_RAYTRACING_AABB m_aabb_desc = { -10.0f, -0.2f, -10.0f, 10.0f, 10.0f, 10.0f };
-	ID3D12Resource1* m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
+	std::vector<ID3D12Resource1*> m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
 
 	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
