@@ -125,25 +125,38 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 			if (collision->onGround) {
 
-				m_isPlayingRunningSound = true;
-
-				if (m_onGroundTimer > m_onGroundThreshold) {
+				if (m_fallTimer > m_fallThreshold) {
+					// Send event to play the sound for the landing (will be sent to ourself too)
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_LANDED,
+						SAIL_NEW Netcode::MessagePlayerLanded{ e->getComponent<NetworkSenderComponent>()->m_id }
+					);
+				}
+				else if (m_fallTimer > 0.0f) {
 
 					m_onGroundTimer = m_onGroundThreshold;
+				}
+				m_fallTimer = 0.0f;
+
+				if (m_onGroundTimer >= m_onGroundThreshold) {
+					m_isPlayingRunningSound = true;
+					m_onGroundTimer = m_onGroundThreshold;
+
 				} else {
 
 					m_onGroundTimer += dt;
 				}
 			}
-
+			// NOTE: Jumping sets m_onGroundTimer to -1.0f to stop running sound right away.
+			//		 Needed for when running normally to avoid 'stuttering' effect from playing
+			//		 the sound multiple times within a short time span.
 			else if (!collision->onGround) {
-
 				if (m_onGroundTimer < 0.0f) {
 
 					m_onGroundTimer = 0.0f;
 					m_isPlayingRunningSound = false;
 				} else {
-
+					m_fallTimer += dt;
 					m_onGroundTimer -= dt;
 				}
 			}
@@ -164,7 +177,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					);
 				}
 				m_wasSpacePressed = true;
-			} else {
+			} else if (m_wasSpacePressed){
 				m_wasSpacePressed = false;
 			}
 
@@ -223,16 +236,21 @@ void GameInputSystem::processMouseInput(const float& dt) {
 	// Toggle cursor capture on right click
 	for (auto e : entities) {
 
-#ifdef DEVELOPMENT
+//#ifdef DEVELOPMENT
 		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
-#endif
+//#endif
 
 		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+		}
+		else {
+			if (e->hasComponent<GunComponent>()) {
+				e->getComponent<GunComponent>()->firing = false;
+			}
 		}
 
 		auto trans = e->getComponent<TransformComponent>();
