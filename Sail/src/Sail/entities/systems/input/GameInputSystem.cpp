@@ -101,8 +101,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
 			auto audioComp = e->getComponent<AudioComponent>();
 
-			//movement->forwardVel = glm::vec3(playerMovement.rightMovement, playerMovement.upMovement, playerMovement.forwardMovement);
-
 			// Get player movement inputs
 			Movement playerMovement = getPlayerMovementInput(e);
 
