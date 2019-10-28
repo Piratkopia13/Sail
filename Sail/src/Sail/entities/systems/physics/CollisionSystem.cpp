@@ -220,7 +220,6 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		//Collision update
 		if (handleCollisions(e, intersectionInfo.info, 0.0f)) {
 			surfaceFromCollision(e, intersectionInfo.info);
-			rayCastUpdate(e, boundingBox, dt);
 		}
 		else {
 			//Move back 
@@ -230,10 +229,8 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 
 			//Step forward to find collision
 			stepToFindMissedCollision(e, boundingBox, intersectionInfo.info, collision->padding * 2.0f);
-
-			//Keep updating
-			rayCastUpdate(e, boundingBox, dt);
 		}
+		rayCastUpdate(e, boundingBox, dt);
 	}
 }
 
