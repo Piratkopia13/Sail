@@ -112,12 +112,12 @@ GameState::GameState(StateStack& stack)
 #ifdef DEVELOPMENT
 	/* GUI testing */
 
-	EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f));
+	//EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f));
 	/* /GUI testing */
 #endif
 
 	// Crosshair
-	EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
+	//EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
 
 
 	// Level Creation
