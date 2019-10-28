@@ -44,7 +44,9 @@ void AttackingState::update(float dt, Entity* entity) {
 		auto fireDir = enemyPos - gunPos;
 		fireDir = glm::normalize(fireDir);
 
-		float hitDist = Intersection::RayWithAabb(gunPos, fireDir, *aiComp->entityTarget->getComponent<BoundingBoxComponent>()->getBoundingBox());
+		const BoundingBox* tempBoundingBox = aiComp->entityTarget->getComponent<BoundingBoxComponent>()->getBoundingBox();
+
+		float hitDist = Intersection::RayWithAabb(gunPos, fireDir, tempBoundingBox->getPosition(), tempBoundingBox->getHalfSize());
 
 		bool canSeeTarget = glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 0.3f;
 		// Stop if the target is within 5 meters and if the target is visible
