@@ -99,6 +99,8 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSiz
 	glm::vec3 newV2 = v2 - aPos;
 	glm::vec3 newV3 = v3 - aPos;
 
+	glm::vec3 triMiddle = (v1 + v2 + v3) / 3.0f;
+
 	//Don't intersect with triangles faceing away from the boundingBox
 	if (glm::dot(newV1, triNormal) > 0.0f) {
 		return false;
@@ -171,6 +173,10 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSiz
 
 	//Return intersection axis and depth if not nullptr
 	if (intersectionAxis) {
+		if (glm::dot(aPos - triMiddle, axis) < 0.0f) {
+			axis = -axis;
+		}
+
 		*intersectionAxis = axis;
 	}
 

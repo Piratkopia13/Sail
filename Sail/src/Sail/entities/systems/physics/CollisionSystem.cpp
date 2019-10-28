@@ -63,7 +63,7 @@ void CollisionSystem::update(float dt) {
 
 		movement->updateableDt = updateableDt;
 	}
-	//Logger::Log(std::to_string(counter));
+	Logger::Log(std::to_string(counter));
 }
 
 const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
@@ -97,7 +97,6 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 		std::vector<int> groundIndices;
 		glm::vec3 sumVec(0.0f);
 		std::vector<Octree::CollisionInfo> trueCollisions;
-		std::unordered_map<Entity*, std::pair<int, float>> collisionPerEntity;
 
 		//Get the combined normals and detect "true" collisions
 		for (size_t i = 0; i < collisionCount; i++) {
@@ -106,54 +105,22 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 			glm::vec3 intersectionAxis;
 			float intersectionDepth;
 
-			if (collisionInfo_i.shape->getIntersectionDepthAndAxis(boundingBox, &intersectionAxis, &intersectionDepth)) {
-				float dotProduct = glm::abs(glm::dot(intersectionAxis, collisionInfo_i.normal));
+			collisionInfo_i.shape->getIntersectionDepthAndAxis(boundingBox, &intersectionAxis, &intersectionDepth);
 
-				//Find true collisions
-				if (dotProduct > 0.98f) {
-					sumVec += collisionInfo_i.normal;
+			collisionInfo_i.normal = intersectionAxis;
 
-					collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
+			sumVec += collisionInfo_i.normal;
 
-					//Add collision to current collisions for collisionComponent
-					collision->collisions.push_back(collisionInfo_i);
+			collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
 
-					//Add collision to true collisions
-					trueCollisions.push_back(collisionInfo_i);
+			//Add collision to current collisions for collisionComponent
+			collision->collisions.push_back(collisionInfo_i);
 
-					collisionFound = true;
-				}
+			//Add collision to true collisions
+			trueCollisions.push_back(collisionInfo_i);
 
-				if (collisionPerEntity.find(collisionInfo_i.entity) == collisionPerEntity.end()) {
-					//Initialize
-					collisionPerEntity[collisionInfo_i.entity].second = -1.0f;
-				}
+			collisionFound = true;
 
-				if (dotProduct >= collisionPerEntity[collisionInfo_i.entity].second) { //Save biggest dot product val and index for this entity
-					collisionPerEntity[collisionInfo_i.entity].second = dotProduct;
-					collisionPerEntity[collisionInfo_i.entity].first = i;
-				}
-			}
-		}
-
-		for (auto& it : collisionPerEntity) {
-			if (it.second.second < 0.98f) {
-				//Keep collision with the biggest dot product to the normal
-
-				Octree::CollisionInfo& collisionInfo_i = collisions[it.second.first];
-
-				sumVec += collisionInfo_i.normal;
-
-				collisionInfo_i.intersectionPosition = collisionInfo_i.shape->getIntersectionPosition(boundingBox);
-
-				//Add collision to current collisions for collisionComponent
-				collision->collisions.push_back(collisionInfo_i);
-
-				//Add collision to true collisions
-				trueCollisions.push_back(collisionInfo_i);
-
-				collisionFound = true;
-			}
 		}
 
 		//Loop through true collisions and handle them
@@ -301,11 +268,12 @@ void CollisionSystem::surfaceFromCollision(Entity* e, std::vector<Octree::Collis
 	const size_t count = collisions.size();
 	for (size_t i = 0; i < count; i++) {
 		const Octree::CollisionInfo& collisionInfo_i = collisions[i];
-		float normalDepth;
+		float depth;
+		glm::vec3 axis;
 
-		if (collisionInfo_i.shape->getNormalDepth(bb->getBoundingBox(), &normalDepth)) {
-			bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + collisionInfo_i.normal * normalDepth);
-			distance += collisionInfo_i.normal * normalDepth;
+		if (collisionInfo_i.shape->getIntersectionDepthAndAxis(bb->getBoundingBox(), &axis, &depth)) {
+			bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
+			distance += axis * depth;
 		}
 	}
 	transform->translate(distance);
