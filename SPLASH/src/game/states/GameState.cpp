@@ -111,8 +111,7 @@ GameState::GameState(StateStack& stack)
 	/* GUI testing */
 	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
 
-	EntityFactory::CreateScreenSpaceText("HI", glm::vec2(0.0f, 0.0f), glm::vec2(0.4f, 0.2f), guiShader);
-	EntityFactory::CreateScreenSpaceText("HELLO THERE", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f), guiShader);
+	EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f), guiShader);
 	/* /GUI testing */
 #endif
 
