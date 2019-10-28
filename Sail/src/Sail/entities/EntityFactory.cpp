@@ -35,9 +35,9 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec
 	candle->addComponent<CollidableComponent>();
 	candle->addComponent<CullingComponent>();
 	PointLight pl;
-	pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
+	pl.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-	pl.setAttenuation(0.f, 0.f, 0.2f);
+	pl.setAttenuation(0.f, 0.f, 0.25f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
 
