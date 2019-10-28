@@ -12,6 +12,7 @@
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/graphics/geometry/factory/StringModel.h"
+#include "Sail/graphics/geometry/factory/QuadModel.h"
 #include "Sail/entities/components/GUIComponent.h"
 
 Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec3& lightPos, size_t lightIndex) {
@@ -280,7 +281,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size, Shader* shader) {
+Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size) {
 	static int num = 0;
 
 	auto GUIEntity = ECS::Instance()->createEntity("TextEntity:" + text);
@@ -288,7 +289,7 @@ Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::
 	textConst.origin = Mesh::vec3(origin.x, origin.y, 0.f);
 	textConst.size = Mesh::vec2(size.x, size.y);
 	textConst.text = text;
-	auto GUIModel = ModelFactory::StringModel::Create(shader, textConst);
+	auto GUIModel = ModelFactory::StringModel::Create(&Application::getInstance()->getResourceManager().getShaderSet<GuiShader>(), textConst);
 	std::string modelName = "TextModel " + std::to_string(num);
 	Application::getInstance()->getResourceManager().addModel(modelName, GUIModel);
 	for (int i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
@@ -298,4 +299,20 @@ Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::
 	num++;
 
 	return GUIEntity;
+}
+
+Entity::SPtr EntityFactory::CreateGUIEntity(const std::string& name, const std::string& texture, glm::vec2 origin, glm::vec2 size) {
+	auto ent = ECS::Instance()->createEntity(name);
+	ModelFactory::QuadModel::Constraints entConst;
+	entConst.origin = Mesh::vec3(origin.x, origin.y, 0.f);
+	entConst.halfSize = Mesh::vec2(size.x, size.y);
+	auto entModel = ModelFactory::QuadModel::Create(&Application::getInstance()->getResourceManager().getShaderSet<GuiShader>(), entConst);
+	if (!Application::getInstance()->getResourceManager().hasTexture(texture)) {
+		Application::getInstance()->getResourceManager().loadTexture(texture);
+	}
+	entModel->getMesh(0)->getMaterial()->setAlbedoTexture(texture);
+	Application::getInstance()->getResourceManager().addModel(name + "Model", entModel);
+	ent->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(name + "Model"));
+
+	return ent;
 }
