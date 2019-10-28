@@ -124,6 +124,25 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aPos, const glm::vec3& aSiz
 		f[2] = glm::normalize(newV1 - newV3);
 
 		for (int i = 0; i < 3; i++) {
+			glm::vec3 a = e[i];
+			glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
+			float r = aSize.x * glm::abs(a.x) + aSize.y * glm::abs(a.y) + aSize.z * glm::abs(a.z);
+			if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
+				return false;
+			}
+			else {
+				//Save depth along axis
+				float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
+				if (tempDepth < depth) {
+					depth = tempDepth;
+					axis = a;
+				}
+
+				if (tempDepth < normalDepth && glm::abs(glm::dot(a, triNormal)) > 0.95f) {
+					normalDepth = tempDepth;
+				}
+			}
+
 			for (int j = 0; j < 3; j++) {
 				glm::vec3 a = glm::normalize(glm::cross(e[i], f[j]));
 				glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
