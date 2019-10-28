@@ -158,6 +158,7 @@ void NetworkReceiverSystem::update() {
 					ar(animationTime);		//
 					setEntityAnimation(id, animationStack, animationTime);
 				}
+				break;
 				case Netcode::MessageType::SHOOT_START:
 				{
 					ArchiveHelpers::loadVec3(ar, gunPosition);

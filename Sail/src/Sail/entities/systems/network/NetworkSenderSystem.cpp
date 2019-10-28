@@ -250,6 +250,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	//	(*ar)(a->getAnimationStack());					// Animation Stack
 	//	(*ar)(a->animationTime);						// Animation Time
 	}
+	break;
 	case Netcode::MessageType::SHOOT_START:
 	{
 		// Only do this once
