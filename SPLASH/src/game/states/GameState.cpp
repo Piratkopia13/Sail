@@ -186,8 +186,8 @@ GameState::~GameState() {
 bool GameState::processInput(float dt) {
 
 #ifndef DEVELOPMENT
-	// Capture mouse
-	Input::HideCursor(true);
+	//Capture mouse
+	Input::HideCursor(true);		//Shreks multiple applications on the same computer
 #endif
 
 	// Pause game
