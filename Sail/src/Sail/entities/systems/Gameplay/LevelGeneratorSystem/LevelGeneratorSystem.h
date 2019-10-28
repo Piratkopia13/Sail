@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..//BaseComponentSystem.h"
+#include "Sail/entities/systems/BaseComponentSystem.h"
 
 class Scene;
 class Model;

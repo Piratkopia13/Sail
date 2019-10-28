@@ -2,7 +2,7 @@
 // Ordered by directory name, then file name
 
 #include "Audio/AudioSystem.h"
-#include "candles/CandleSystem.h"
+#include "Gameplay/candles/CandleSystem.h"
 #include "entityManagement/EntityAdderSystem.h"
 #include "entityManagement/EntityRemovalSystem.h"
 #include "Gameplay/ai/AiSystem.h"
@@ -11,8 +11,8 @@
 #include "Graphics/AnimationInitSystem.h"
 #include "Graphics/AnimationSystem.h"
 #include "input/GameInputSystem.h"
-#include "LevelGeneratorSystem/LevelGeneratorSystem.h"
-#include "lifetime/LifeTimeSystem.h"
+#include "Gameplay/LevelGeneratorSystem/LevelGeneratorSystem.h"
+#include "Gameplay/lifetime/LifeTimeSystem.h"
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"
 #include "network/receivers/NetworkReceiverSystem.h"
