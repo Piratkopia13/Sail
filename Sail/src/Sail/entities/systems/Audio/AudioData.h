@@ -20,8 +20,8 @@ namespace Audio {
 		WATER_IMPACT_MY_CANDLE,
 		JUMP,
 		LANDING_GROUND,
-		DEATH_ME,
-		DEATH_OTHER,
+		DEATH,
+		KILLING_BLOW,
 		COUNT // Keep at the bottom so that COUNT == nr of sound types
 	};
 

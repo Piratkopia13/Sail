@@ -371,7 +371,12 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 	}
 	break;
-
+	case Netcode::MessageType::IGNITE_CANDLE:
+	{
+		Netcode::MessageIgniteCandle* data = static_cast<Netcode::MessageIgniteCandle*>(event->data);
+		ar(data->candleOwnerID);
+	}
+	break;
 	default:
 		break;
 	}

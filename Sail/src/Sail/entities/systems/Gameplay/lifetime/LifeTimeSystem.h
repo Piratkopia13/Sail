@@ -1,5 +1,5 @@
 #pragma once
-#include "..//BaseComponentSystem.h"
+#include "../../BaseComponentSystem.h"
 
 class LifeTimeSystem : public BaseComponentSystem {
 public:

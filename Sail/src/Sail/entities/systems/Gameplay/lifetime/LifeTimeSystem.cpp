@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "LifeTimeSystem.h"
-#include "..//..//components/LifeTimeComponent.h"
-#include "..//..//Entity.h"
+#include "Sail/entities/components/LifeTimeComponent.h"
+#include "Sail/entities/Entity.h"
 
 LifeTimeSystem::LifeTimeSystem() {
 	// TODO: System owner should check if this is correct
