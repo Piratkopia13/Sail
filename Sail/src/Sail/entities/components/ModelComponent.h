@@ -5,7 +5,8 @@ class Model;
 class ModelComponent : public Component<ModelComponent> {
 public:
 	ModelComponent(Model* model = nullptr)
-		: m_model(model)
+		: m_model(model),
+		renderToGBuffer(true)
 	{ }
 	~ModelComponent() { }
 
@@ -17,6 +18,7 @@ public:
 		return m_model;
 	}
 
+	bool renderToGBuffer;
 private:
 	Model* m_model;
 };

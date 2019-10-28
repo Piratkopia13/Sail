@@ -101,7 +101,7 @@ void NetworkReceiverSystem::update() {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
-	int animationStack;
+	int animationIndex;
 	float animationTime;
 
 	// Process all messages in the buffer
@@ -155,9 +155,9 @@ void NetworkReceiverSystem::update() {
 				break;
 				case Netcode::MessageType::ANIMATION: 
 				{
-					ar(animationStack);		// Read
+					ar(animationIndex);		// Read
 					ar(animationTime);		//
-					setEntityAnimation(id, animationStack, animationTime);
+					setEntityAnimation(id, animationIndex, animationTime);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_START:
@@ -361,7 +361,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
 			glm::vec3 rot = rotation;
 			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
-			rot.y += 3.14f * 0.5f;
+			//rot.y += 3.14f * 0.5f;
 			//}
 			e->getComponent<TransformComponent>()->setRotations(rot);
 
@@ -371,11 +371,11 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 	Logger::Warning("setEntityRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime) {
+void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationIndex, float animationTime) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			auto animation = e->getComponent<AnimationComponent>();
-			animation->currentAnimation = animation->getAnimationStack()->getAnimation(animationStack);
+			animation->setAnimation(animationIndex);
 			animation->animationTime = animationTime;
 			return;
 		}
@@ -453,6 +453,20 @@ void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Net
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
+
+	Entity* self = nullptr;
+	
+	// If we are the shooter than we find our entity
+	if (m_playerID == playerIdOfShooter) {
+		for (auto& e : entities) {
+			if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == m_playerID) {
+				
+				self = e;
+				break;
+			}
+		}
+	}
+
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != networkIdOfKilled) {
 			continue;
@@ -470,6 +484,13 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 		//This should remove the candle entity from game
 		e->removeDeleteAllChildren();
 
+		// (self == nullptr) == true <--> We are the shooter
+		if (self != nullptr) {
+			// If it is me who landed the KILLING BLOW
+			self->getComponent<AudioComponent>()->m_sounds[Audio::KILLING_BLOW].playOnce = true;
+			self->getComponent<AudioComponent>()->m_sounds[Audio::KILLING_BLOW].isPlaying = true;
+		}
+
 		// Check if the extinguished candle is owned by the player
 		if (Netcode::getComponentOwner(networkIdOfKilled) == m_playerID) {
 			//If it is me that died, become spectator.
@@ -477,7 +498,9 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
 			e->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 			e->removeComponent<GunComponent>();
-
+			e->removeComponent<AnimationComponent>();
+			e->removeComponent<ModelComponent>();
+			
 			e->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
 
 			auto transform = e->getComponent<TransformComponent>();
