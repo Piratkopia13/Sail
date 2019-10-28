@@ -32,12 +32,6 @@ void CollisionSystem::update(float dt) {
 		auto boundingBox = e->getComponent<BoundingBoxComponent>();
 		auto csc = e->getComponent<CollisionSpheresComponent>();
 
-		if (e->getName() == "projectile") {
-			if (boundingBox->getBoundingBox()->getPosition().y < -20.0f || boundingBox->getBoundingBox()->getPosition().y > 20.0f) {
-				counter++;
-			}
-		}
-
 		collision->collisions.clear();
 
 		if (collision->padding < 0.0f) {
@@ -63,7 +57,6 @@ void CollisionSystem::update(float dt) {
 
 		movement->updateableDt = updateableDt;
 	}
-	//Logger::Log(std::to_string(counter));
 }
 
 const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
