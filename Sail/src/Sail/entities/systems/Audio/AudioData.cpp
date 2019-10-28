@@ -302,8 +302,8 @@ void AllAudioData::init() {
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/landing_ground.wav";
-		soundUniqueInfo.soundEffectLength = 0.602f;
-		soundUniqueInfo.volume = 0.4f;
+		soundUniqueInfo.soundEffectLength = 0.45f;
+		soundUniqueInfo.volume = 0.8f;
 		AllAudioData::m_soundsUnique[Audio::LANDING_GROUND].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
