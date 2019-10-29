@@ -4,6 +4,7 @@
 class Camera;
 class CameraController;
 class GameDataTracker;
+class MapComponent;
 
 struct Movement {
 	float speedModifier = 1.f;
@@ -26,6 +27,8 @@ public:
 	void updateCameraPosition(float alpha);
 	CameraController* getCamera() const;
 
+	MapComponent* m_mapPointer = nullptr;
+
 private:
 	void processKeyboardInput(const float& dt);
 	void processMouseInput(const float& dt);
@@ -35,7 +38,6 @@ private:
 	
 	CameraController* m_cam = nullptr;
 	GameDataTracker* m_gameDataTracker = nullptr;
-
 
 	// --------- Earlier used variables below this line ---------
 	float m_runSpeed = 2.0;
@@ -51,6 +53,11 @@ private:
 	float m_isPlayingRunningSound = false;
 	float m_fallTimer = 0.0f;
 	float m_fallThreshold = 0.56f;
+
+	// TEMP BOOLS
+	bool tempMetal = false;
+	bool tempTile = false;
+	bool tempStopAll = false;
 
 	// #netcodeNote not thread safe, might cause issues
 	float m_yaw, m_pitch, m_roll;
