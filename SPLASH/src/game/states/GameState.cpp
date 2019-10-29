@@ -10,9 +10,10 @@
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "Network/NWrapperSingleton.h"
+#include "Sail/utils/GUISettings.h"
+#include "Sail/graphics/geometry/factory/QuadModel.h"
 #include <sstream>
 #include <iomanip>
-#include "Sail/graphics/geometry/factory/QuadModel.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -78,6 +79,9 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 
+	// Font sprite map texture
+	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);
+
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
@@ -100,26 +104,21 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	m_componentSystems.animationInitSystem->loadAnimations();
+	m_componentSystems.animationSystem->initDebugAnimations();
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
-
 #ifdef DEVELOPMENT
 	/* GUI testing */
-	auto* guiShader = &m_app->getResourceManager().getShaderSet<GuiShader>();
-	auto GUIEntity = ECS::Instance()->createEntity("guiEntity");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/rustedIron/albedo.tga");
-	ModelFactory::QuadModel::Constraints cons;
-	cons.origin = Mesh::vec3(-0.99f, -0.99f);
-	cons.halfSize = Mesh::vec2(0.01f, 0.01f);
-	auto GUIModel = ModelFactory::QuadModel::Create(guiShader, cons);
-	GUIModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/rustedIron/albedo.tga");
-	m_app->getResourceManager().addModel("screenSpaceQuad", GUIModel);
-	GUIEntity->addComponent<GUIComponent>(&m_app->getResourceManager().getModel("screenSpaceQuad"));
+
+	//EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f));
 	/* /GUI testing */
 #endif
+
+	// Crosshair
+	//EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
+
 
 	// Level Creation
 
@@ -135,7 +134,6 @@ GameState::GameState(StateStack& stack)
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
-	m_componentSystems.animationInitSystem->initAnimations();
 
 	// Inform CandleSystem of the player
 	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
@@ -185,8 +183,8 @@ GameState::~GameState() {
 bool GameState::processInput(float dt) {
 
 #ifndef DEVELOPMENT
-	// Capture mouse
-	Input::HideCursor(true);
+	//Capture mouse
+	Input::HideCursor(true);		//Shreks multiple applications on the same computer
 #endif
 
 	// Pause game
@@ -337,7 +335,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 
 	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
-	m_componentSystems.animationInitSystem = ECS::Instance()->createSystem<AnimationInitSystem>();
+	m_componentSystems.animationChangerSystem = ECS::Instance()->createSystem<AnimationChangerSystem>();
 
 	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 
@@ -607,6 +605,10 @@ bool GameState::render(float dt, float alpha) {
 }
 
 bool GameState::renderImgui(float dt) {
+	m_killFeedWindow.renderWindow();
+	if (m_wasDropped) {
+		m_wasDroppedWindow.renderWindow();
+	}
 
 	return false;
 }
@@ -617,11 +619,7 @@ bool GameState::renderImguiDebug(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
-	m_killFeedWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
-	if (m_wasDropped) {
-		m_wasDroppedWindow.renderWindow();
-	}
 
 	return false;
 }
@@ -672,6 +670,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
 	runSystem(dt, m_componentSystems.projectileSystem);
+	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.candleSystem);

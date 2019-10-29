@@ -302,66 +302,66 @@ void AllAudioData::init() {
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/landing_ground.wav";
-		soundUniqueInfo.soundEffectLength = 0.602f;
-		soundUniqueInfo.volume = 0.4f;
+		soundUniqueInfo.soundEffectLength = 0.45f;
+		soundUniqueInfo.volume = 0.8f;
 		AllAudioData::m_soundsUnique[Audio::LANDING_GROUND].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Death, Me	     //   FIN_1.0
+	//			  Death	         //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+//
-	soundGeneralInfo = &AllAudioData::m_sounds[Audio::DEATH_ME];
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::DEATH];
 	soundGeneralInfo->playOnce = true;
 	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
 	//-----------------------------------------------------------------------------
 	{
 		//	• Sample #1
-		soundUniqueInfo.fileName = "../Audio/death_me_1.wav";
+		soundUniqueInfo.fileName = "../Audio/death_1.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
 		soundUniqueInfo.volume = 1.0f;
-		AllAudioData::m_soundsUnique[Audio::DEATH_ME].push_back(soundUniqueInfo);
+		AllAudioData::m_soundsUnique[Audio::DEATH].push_back(soundUniqueInfo);
 		//	• Sample #2
-		soundUniqueInfo.fileName = "../Audio/death_me_2.wav";
+		soundUniqueInfo.fileName = "../Audio/death_2.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
 		soundUniqueInfo.volume = 1.0f;
-		AllAudioData::m_soundsUnique[Audio::DEATH_ME].push_back(soundUniqueInfo);
+		AllAudioData::m_soundsUnique[Audio::DEATH].push_back(soundUniqueInfo);
 		//	• Sample #3
-		soundUniqueInfo.fileName = "../Audio/death_me_3.wav";
+		soundUniqueInfo.fileName = "../Audio/death_3.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
 		soundUniqueInfo.volume = 1.0f;
-		AllAudioData::m_soundsUnique[Audio::DEATH_ME].push_back(soundUniqueInfo);
+		AllAudioData::m_soundsUnique[Audio::DEATH].push_back(soundUniqueInfo);
 		//	• Sample #4
-		soundUniqueInfo.fileName = "../Audio/death_me_4.wav";
+		soundUniqueInfo.fileName = "../Audio/death_4.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
 		soundUniqueInfo.volume = 1.0f;
-		AllAudioData::m_soundsUnique[Audio::DEATH_ME].push_back(soundUniqueInfo);
+		AllAudioData::m_soundsUnique[Audio::DEATH].push_back(soundUniqueInfo);
 		//	• Sample #5
-		soundUniqueInfo.fileName = "../Audio/death_me_5.wav";
+		soundUniqueInfo.fileName = "../Audio/death_5.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
 		soundUniqueInfo.volume = 1.0f;
-		AllAudioData::m_soundsUnique[Audio::DEATH_ME].push_back(soundUniqueInfo);
+		AllAudioData::m_soundsUnique[Audio::DEATH].push_back(soundUniqueInfo);
 		//	• Sample #6
-		soundUniqueInfo.fileName = "../Audio/death_me_6.wav";
+		soundUniqueInfo.fileName = "../Audio/death_6.wav";
 		soundUniqueInfo.soundEffectLength = 4.013f;
 		soundUniqueInfo.volume = 1.0f;
-		AllAudioData::m_soundsUnique[Audio::DEATH_ME].push_back(soundUniqueInfo);
+		AllAudioData::m_soundsUnique[Audio::DEATH].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		   Death, Other	     //   FIN_1.0
+	//		  Killing Blow       //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+//
-	soundGeneralInfo = &AllAudioData::m_sounds[Audio::DEATH_OTHER];
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::KILLING_BLOW];
 	soundGeneralInfo->playOnce = true;
-	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
+	soundGeneralInfo->positionalOffset = { 0.0f, 1.0f, 0.0f };
 	//-----------------------------------------------------------------------------
 	{
 		//	• Sample #1
-		soundUniqueInfo.fileName = "../Audio/death_enemy.wav";
+		soundUniqueInfo.fileName = "../Audio/killing_blow.wav";
 		soundUniqueInfo.soundEffectLength = 3.578f;
-		soundUniqueInfo.volume = 1.0f;
-		AllAudioData::m_soundsUnique[Audio::DEATH_OTHER].push_back(soundUniqueInfo);
+		soundUniqueInfo.volume = 0.5f;
+		AllAudioData::m_soundsUnique[Audio::KILLING_BLOW].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 #pragma endregion

@@ -67,13 +67,13 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("../Audio/water_drip_7.wav");
 #pragma endregion
 #pragma region DEATHS
-	m_audioEngine->loadSound("../Audio/death_enemy.wav");
-	m_audioEngine->loadSound("../Audio/death_me_1.wav");
-	m_audioEngine->loadSound("../Audio/death_me_2.wav");
-	m_audioEngine->loadSound("../Audio/death_me_3.wav");
-	m_audioEngine->loadSound("../Audio/death_me_4.wav");
-	m_audioEngine->loadSound("../Audio/death_me_5.wav");
-	m_audioEngine->loadSound("../Audio/death_me_6.wav");
+	m_audioEngine->loadSound("../Audio/killing_blow.wav");
+	m_audioEngine->loadSound("../Audio/death_1.wav");
+	m_audioEngine->loadSound("../Audio/death_2.wav");
+	m_audioEngine->loadSound("../Audio/death_3.wav");
+	m_audioEngine->loadSound("../Audio/death_4.wav");
+	m_audioEngine->loadSound("../Audio/death_5.wav");
+	m_audioEngine->loadSound("../Audio/death_6.wav");
 #pragma endregion
 #pragma region MISCELLANEOUS
 	m_audioEngine->loadSound("../Audio/guitar.wav");

@@ -23,6 +23,7 @@ public:
 
 	const std::vector<Entity*>& getEntities() const;
 
+	void initDebugAnimations();
 
 private:
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;

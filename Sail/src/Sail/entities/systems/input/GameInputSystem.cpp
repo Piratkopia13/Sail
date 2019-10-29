@@ -94,12 +94,12 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			// Else do normal movement
-		} else {
+		} 
+		else {
 			auto collision = e->getComponent<CollisionComponent>();
 			auto movement = e->getComponent<MovementComponent>();
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
 			auto audioComp = e->getComponent<AudioComponent>();
-
 
 			// Get player movement inputs
 			Movement playerMovement = getPlayerMovementInput(e);
@@ -116,32 +116,45 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 					if ( child->hasComponent<CandleComponent>() ) {
 
-						child->getComponent<CandleComponent>()->activate();
+						child->getComponent<CandleComponent>()->setIsLit(true);
 					}
 				}
 			}
 
 			if (collision->onGround) {
 
-				m_isPlayingRunningSound = true;
-
-				if (m_onGroundTimer > m_onGroundThreshold) {
+				if (m_fallTimer > m_fallThreshold) {
+					// Send event to play the sound for the landing (will be sent to ourself too)
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_LANDED,
+						SAIL_NEW Netcode::MessagePlayerLanded{ e->getComponent<NetworkSenderComponent>()->m_id }
+					);
+				}
+				else if (m_fallTimer > 0.0f) {
 
 					m_onGroundTimer = m_onGroundThreshold;
+				}
+				m_fallTimer = 0.0f;
+
+				if (m_onGroundTimer >= m_onGroundThreshold) {
+					m_isPlayingRunningSound = true;
+					m_onGroundTimer = m_onGroundThreshold;
+
 				} else {
 
 					m_onGroundTimer += dt;
 				}
 			}
-
+			// NOTE: Jumping sets m_onGroundTimer to -1.0f to stop running sound right away.
+			//		 Needed for when running normally to avoid 'stuttering' effect from playing
+			//		 the sound multiple times within a short time span.
 			else if (!collision->onGround) {
-
 				if (m_onGroundTimer < 0.0f) {
 
 					m_onGroundTimer = 0.0f;
 					m_isPlayingRunningSound = false;
 				} else {
-
+					m_fallTimer += dt;
 					m_onGroundTimer -= dt;
 				}
 			}
@@ -162,16 +175,22 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					);
 				}
 				m_wasSpacePressed = true;
-			} else {
+			} else if (m_wasSpacePressed){
 				m_wasSpacePressed = false;
 			}
 
 			forward.y = 0.f;
 			forward = glm::normalize(forward);
-
 			// Calculate right vector for player
 			glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 			right = glm::normalize(right);
+
+
+			// calculate forward vel and sidevel
+
+			movement->relVel.x = glm::dot(movement->velocity, forward);
+			movement->relVel.z = glm::dot(movement->velocity, right);
+			movement->relVel.y = glm::dot(movement->velocity, glm::vec3(0.f, 1.f, 0.f));
 
 			// Prevent division by zero
 			if ( playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f ) {
@@ -198,6 +217,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				movement->accelerationToAdd =
 					glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
 					* acceleration;
+
+
+
 			} else {
 
 				// AUDIO TESTING (turn OFF looping running sound)
@@ -212,16 +234,21 @@ void GameInputSystem::processMouseInput(const float& dt) {
 	// Toggle cursor capture on right click
 	for (auto e : entities) {
 
-#ifdef DEVELOPMENT
+//#ifdef DEVELOPMENT
 		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
-#endif
+//#endif
 
 		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+		}
+		else {
+			if (e->hasComponent<GunComponent>()) {
+				e->getComponent<GunComponent>()->firing = false;
+			}
 		}
 
 		auto trans = e->getComponent<TransformComponent>();
@@ -263,9 +290,9 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 
 		glm::vec3 forwards(
-			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
+			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw + 90)),
 			std::sin(glm::radians(m_pitch)),
-			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
+			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw + 90))
 		);
 		forwards = glm::normalize(forwards);
 

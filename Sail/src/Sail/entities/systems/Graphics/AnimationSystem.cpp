@@ -15,6 +15,14 @@
 #include <glm/gtx/compatibility.hpp>
 
 
+
+//TODO: REMOVE ------------
+
+#include "Sail/entities/EntityFactory.hpp"
+#include "Sail/graphics/shader/material/WireframeShader.h"
+#include "Sail/graphics/shader/dxr/GBufferOutShader.h"
+// --------------------------
+
 AnimationSystem::AnimationSystem() 
 	: BaseComponentSystem()
 	, m_interpolate(true) 
@@ -341,6 +349,31 @@ void AnimationSystem::updateMeshCPU() {
 
 const std::vector<Entity*>& AnimationSystem::getEntities() const {
 	return entities;
+}
+
+void AnimationSystem::initDebugAnimations() {
+	Application* app = Application::getInstance();
+	auto* shader = &app->getResourceManager().getShaderSet<GBufferOutShader>();
+	std::string name = "DocTorch.fbx";
+
+	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
+	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+	//Wireframe bounding box model
+	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+
+
+	AnimationStack* stack = &app->getResourceManager().getAnimationStack(name);
+	unsigned int animationCount = stack->getAnimationCount();
+	for (unsigned int i = 0; i < animationCount; i++) {
+		auto animationEntity2 = ECS::Instance()->createEntity("Doc" + std::to_string(i));
+		EntityFactory::CreateGenericPlayer(animationEntity2, i, glm::vec3(-2.0f + i * 1.2f, 0, -2));
+
+		AnimationComponent* ac = animationEntity2->getComponent<AnimationComponent>();
+		ac->setAnimation(i);
+	}
 }
 
 void AnimationSystem::addTime(AnimationComponent* e, const float time) {

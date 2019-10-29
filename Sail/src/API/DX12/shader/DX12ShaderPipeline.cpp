@@ -347,7 +347,15 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 			D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
 			D3D12_BLEND_ZERO, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
 			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
-		};
+		};    
+		defaultRTdesc.BlendEnable = TRUE;
+		defaultRTdesc.SrcBlend = D3D12_BLEND_ONE;
+		defaultRTdesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		defaultRTdesc.BlendOp = D3D12_BLEND_OP_ADD;
+		defaultRTdesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		defaultRTdesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+		defaultRTdesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		defaultRTdesc.RenderTargetWriteMask = 0x0f;
 	} else {
 		defaultRTdesc = {
 			false, false,
@@ -356,8 +364,9 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
 		};
 	}
-	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
 		gpsd.BlendState.RenderTarget[i] = defaultRTdesc;
+	}
 
 	// Specify depth stencil state descriptor.
 	D3D12_DEPTH_STENCIL_DESC dsDesc{};
