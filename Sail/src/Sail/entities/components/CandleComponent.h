@@ -5,8 +5,10 @@
 
 class Entity;
 
-// TODO: Remove as many functions as possible
+#define MAX_HEALTH 20.f
 
+
+// TODO: Remove as many functions as possible
 // This component will eventually contain the health etc of the candles
 class CandleComponent : public Component<CandleComponent> {
 public:
@@ -19,9 +21,6 @@ public:
 	bool getIsAlive() const;
 	bool* getPtrToIsLit();
 	void setIsAlive(bool alive);
-	bool getDoActivate() const;
-	void activate();
-	void resetDoActivate();
 	void addToDownTime(float time);
 	void resetDownTime();
 	bool isCarried() const;
@@ -54,14 +53,13 @@ private:
 	bool m_wasHitByWater = false;
 	float m_damageTakenLastHit = 0;
 	bool m_isAlive = true;
-	bool m_activate = false;
 	bool m_carried = true;
 	bool m_wasCarriedLastUpdate = true;
 	Netcode::PlayerID wasHitByPlayerID = 0;
 
-	float m_invincibleTimer = -2.f;
+	float m_invincibleTimer;
 	// TODO: Replace using game settings when that is implemented
-	float m_health = 20.f;
+	float m_health = MAX_HEALTH;
 
 	/* Should probably be removed later */
 	float m_downTime = 0.f;

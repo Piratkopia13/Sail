@@ -241,14 +241,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	break;
 	case Netcode::MessageType::ANIMATION:
 	{
-		// CURRENTLY IS:
-		ar(0);		// AnimationStack
-		ar(0.0f);	// AnimationTime
-
-		// SHOULD BE:
-	//	AnimationComponent* a = e->getComponent<AnimationComponent>();
-	//	(*ar)(a->getAnimationStack());					// Animation Stack
-	//	(*ar)(a->animationTime);						// Animation Time
+		ar(e->getComponent<AnimationComponent>()->animationIndex);
+		ar(e->getComponent<AnimationComponent>()->animationTime);
 	}
 	break;
 	case Netcode::MessageType::SHOOT_START:
@@ -377,7 +371,12 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 	}
 	break;
-
+	case Netcode::MessageType::IGNITE_CANDLE:
+	{
+		Netcode::MessageIgniteCandle* data = static_cast<Netcode::MessageIgniteCandle*>(event->data);
+		ar(data->candleOwnerID);
+	}
+	break;
 	default:
 		break;
 	}

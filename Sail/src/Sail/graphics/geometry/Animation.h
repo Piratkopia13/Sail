@@ -105,6 +105,8 @@ public:
 
 	Animation* getAnimation(const std::string& name);
 	Animation* getAnimation(const unsigned int index);
+	const unsigned int getAnimationIndex(const std::string& name);
+	const std::string getAnimationName(const unsigned int);
 	const unsigned int getAnimationCount();
 
 	const glm::mat4* getTransform(const std::string& name, const float time);
@@ -123,6 +125,7 @@ private:
 	VertConnection* m_connections;
 	
 	std::map<unsigned int, std::string> m_names;
+	std::map<std::string, unsigned int> m_indexes;
 	std::map<std::string, Animation*> m_stack;
 	std::vector<AnimationStack::Bone> m_bones;
 
