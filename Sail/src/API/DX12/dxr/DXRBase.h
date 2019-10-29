@@ -22,7 +22,6 @@ public:
 
 	struct Metaball {
 		glm::vec3 pos;
-		glm::vec3 vel;
 		float distToCamera;
 	};
 
@@ -134,7 +133,6 @@ private:
 	std::vector<MeshHandles> m_rtMeshHandles[2];
 	// Metaballs
 	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
-	std::vector<ID3D12Resource1*> m_metaballVelosity_srv;
 	UINT m_metaballsToRender;
 	// Decals
 	UINT m_decalsToRender;

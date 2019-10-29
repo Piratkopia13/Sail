@@ -7,7 +7,6 @@
 MetaballSubmitSystem::MetaballSubmitSystem() {
 	registerComponent<MetaballComponent>(true, false, false);	// Data is not read, but the component is required for this system anyway
 	registerComponent<TransformComponent>(true, true, false);
-	registerComponent<MovementComponent>(true, true, false);
 	registerComponent<CullingComponent>(false, true, false);
 }
 
@@ -20,13 +19,12 @@ void MetaballSubmitSystem::submitAll(const float alpha) {
 	for (auto& e : entities) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		CullingComponent* culling = e->getComponent<CullingComponent>();
-		MovementComponent* movement= e->getComponent<MovementComponent>();
 
 		Renderer::RenderFlag flags = Renderer::MESH_STATIC;
 		if (!culling || (culling && culling->isVisible)) {
 			flags |= Renderer::IS_VISIBLE_ON_SCREEN;
 		}
 
-		renderer->submitMetaball(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getInterpolatedTranslation(alpha), movement->velocity, flags);
+		renderer->submitMetaball(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getInterpolatedTranslation(alpha), flags);
 	}
 }

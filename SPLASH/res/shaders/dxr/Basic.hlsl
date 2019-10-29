@@ -21,7 +21,6 @@ ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0);
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
-StructuredBuffer<float3> metaballsVelosity : register(t1, space3);
 
 StructuredBuffer<uint> waterData : register(t6, space0);
 
@@ -367,7 +366,7 @@ bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out floa
 // Calculate a magnitude of an influence from a Metaball charge.
 // Return metaball potential range: <0,1>
 // mbRadius - largest possible area of metaball contribution - AKA its bounding sphere.
-float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float3 velosity, in float ballradius) {
+float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float ballradius) {
 	
 	float distance = length(position - ballpos) / ballradius;
 	////float3 rel = (ballpos - position) / ballradius;
@@ -423,7 +422,7 @@ float CalculateMetaballsPotential(in uint index, in float3 position) {
 		end = nballs;
 
 	for (int i = start; i < end - 1; i++) {
-		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], float4(0,0,0,0), METABALL_RADIUS);
+		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], METABALL_RADIUS);
 	}
 
 	return sumFieldPotential;

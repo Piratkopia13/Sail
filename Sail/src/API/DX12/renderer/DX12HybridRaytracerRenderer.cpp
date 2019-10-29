@@ -26,11 +26,11 @@ void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatri
 	}
 }
 
-void DX12HybridRaytracerRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, const glm::vec3& vel, RenderFlag flags) {
+void DX12HybridRaytracerRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {
 	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
-		m_rendererGbuffer->submitMetaball(type, material, pos, vel, flags);
+		m_rendererGbuffer->submitMetaball(type, material, pos, flags);
 	}
-	m_rendererRaytrace->submitMetaball(type, material, pos, vel, flags);
+	m_rendererRaytrace->submitMetaball(type, material, pos, flags);
 }
 
 void DX12HybridRaytracerRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {

@@ -22,10 +22,6 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 
 	m_currNumDecals = 0;
 	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);
-
-	//for (int i = 0; i++; i < DX12API::NUM_GPU_BUFFERS) {
-	//	m_metaball_aabb.push_back(D3D12_RAYTRACING_AABB{ -1.0f,-1.0f,-1.0f,1.0f,1.0f,1.0f });
-	//}
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
@@ -200,13 +196,12 @@ void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, Re
 	commandQueue.push_back(cmd);
 }
 
-void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, const glm::vec3& vel, RenderFlag flags) {
+void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {
 	assert(type != RenderCommandType::RENDER_COMMAND_TYPE_MODEL);
 
 	if (type == RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL) {
 		DXRBase::Metaball ball;
 		ball.pos = pos;
-		ball.vel = vel;
 		ball.distToCamera = glm::length(ball.pos - camera->getPosition());
 
 		m_metaballs.emplace_back(ball);

@@ -85,10 +85,6 @@ DXRBase::~DXRBase() {
 		resource->Release();
 	}
 
-	for (auto& resource : m_metaballVelosity_srv) {
-		resource->Release();
-	}
-
 	for (auto& resource : m_aabb_desc_resource) {
 		resource->Release();
 	}
@@ -322,29 +318,6 @@ void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, co
 	int offsetInc = sizeof(metaballs[0].pos);
 	for (size_t i = 0; i < m_metaballsToRender; i++) {;
 		memcpy(static_cast<char*>(pMappedData) + offset, &metaballs[i].pos, offsetInc);
-		offset += offsetInc;
-	}
-	res->Unmap(0, nullptr);
-	
-	//Velosity
-	res = m_metaballVelosity_srv[m_context->getSwapIndex()];
-
-	hr = res->Map(0, nullptr, &pMappedData);
-	if (FAILED(hr)) {
-		_com_error err(hr);
-		std::cout << err.ErrorMessage() << std::endl;
-
-		hr = m_context->getDevice()->GetDeviceRemovedReason();
-		_com_error err2(hr);
-		std::cout << err2.ErrorMessage() << std::endl;
-
-		return;
-	}
-
-	offset = 0;
-	offsetInc = sizeof(metaballs[0].vel);
-	for (size_t i = 0; i < m_metaballsToRender; i++) {
-		memcpy(static_cast<char*>(pMappedData) + offset, &metaballs[i].vel, offsetInc);
 		offset += offsetInc;
 	}
 	res->Unmap(0, nullptr);
@@ -881,10 +854,8 @@ void DXRBase::updateShaderTables() {
 					else if (parameterName == "MetaballPositions") {
 						D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballPositions_srv[frameIndex]->GetGPUVirtualAddress();
 						tableBuilder.addDescriptor(metaballHandle, blasIndex * 2);
-					} else if (parameterName == "MetaballVelosity") {
-						D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballVelosity_srv[frameIndex]->GetGPUVirtualAddress();
-						tableBuilder.addDescriptor(metaballHandle, blasIndex * 2);
-					} else if (parameterName == "sys_brdfLUT") {
+					}
+					else if (parameterName == "sys_brdfLUT") {
 						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
 						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
@@ -983,7 +954,6 @@ void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup_metaball = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal2");
 	m_localSignatureHitGroup_metaball->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureHitGroup_metaball->addSRV("MetaballPositions", 1, 2);
-	m_localSignatureHitGroup_metaball->addSRV("MetaballVelosity", 1, 3);
 	m_localSignatureHitGroup_metaball->addCBV("MeshCBuffer", 1, 0);
 	m_localSignatureHitGroup_metaball->addStaticSampler();
 	m_localSignatureHitGroup_metaball->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
@@ -1002,12 +972,6 @@ void DXRBase::initMetaballBuffers() {
 	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
 		m_metaballPositions_srv.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), MAX_NUM_METABALLS * sizeof(glm::vec3), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 		m_metaballPositions_srv.back()->SetName(L"Metaball Positions");
-	}
-
-	m_metaballVelosity_srv.reserve(DX12API::NUM_SWAP_BUFFERS);
-	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
-		m_metaballVelosity_srv.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), MAX_NUM_METABALLS * sizeof(glm::vec3), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
-		m_metaballPositions_srv.back()->SetName(L"Metaball Velosity");
 	}
 }
 
