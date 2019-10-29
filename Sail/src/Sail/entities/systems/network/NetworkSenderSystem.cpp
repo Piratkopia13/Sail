@@ -16,8 +16,10 @@
 
 #include <vector>
 
+#ifdef DEVELOPMENT
 #include <fstream>
 static std::ofstream out("Sender.txt");
+#endif
 
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 	registerComponent<NetworkSenderComponent>(true, true, true);
@@ -101,9 +103,9 @@ void NetworkSenderSystem::update() {
 		// Per type of data
 		for (auto& messageType : nsc->m_dataTypes) {
 			sendToOthers(messageType);          // Current MessageType
-
+#ifdef DEVELOPMENT
 			out << "SenderComp: " << Netcode::MessageNames[(int)(messageType) - 1] << "\n";
-
+#endif
 			writeMessageToArchive(messageType, e, sendToOthers); // Add to archive depending on the message
 		}
 	}
@@ -114,8 +116,9 @@ void NetworkSenderSystem::update() {
 
 	while (!m_eventQueue.empty()) {
 		NetworkSenderEvent* pE = m_eventQueue.front();
+#ifdef DEVELOPMENT
 		out << "Event: " << Netcode::MessageNames[(int)(pE->type)-1] << "\n";
-
+#endif
 		writeEventToArchive(pE, sendToOthers);
 		if (pE->alsoSendToSelf) {
 			writeEventToArchive(pE, sendToSelf);
