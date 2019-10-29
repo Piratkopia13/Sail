@@ -130,7 +130,7 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 				}
 				if (newGround) {
 					//Save collision for friction calculation
-					groundIndices.push_back(i);
+					groundIndices.push_back((int)i);
 				}
 			}
 

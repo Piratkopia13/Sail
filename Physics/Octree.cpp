@@ -322,7 +322,7 @@ void Octree::getIntersectionData(const glm::vec3& rayStart, const glm::vec3& ray
 
 		if (intersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
 			outIntersectionData->closestHit = intersectionDistance;
-			outIntersectionData->closestHitIndex = outIntersectionData->info.size();
+			outIntersectionData->closestHitIndex = (int)outIntersectionData->info.size();
 		}
 
 		outIntersectionData->info.emplace_back();
@@ -386,7 +386,7 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 						//Save closest hit
 						if (entityIntersectionDistance <= outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f) {
 							outIntersectionData->closestHit = entityIntersectionDistance;
-							outIntersectionData->closestHitIndex = outIntersectionData->info.size();
+							outIntersectionData->closestHitIndex = (int)outIntersectionData->info.size();
 						}
 
 						outIntersectionData->info.emplace_back();
