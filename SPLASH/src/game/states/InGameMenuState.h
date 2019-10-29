@@ -21,8 +21,11 @@ public:
 	// Sends events to the state
 	bool onEvent(Event& event) { return true; }
 
-private:
-	InGameMenuWindow m_inGameMenuWindow;
+	static bool IsOpen();
 
+private:
+	static bool sIsOpen;
+
+	InGameMenuWindow m_inGameMenuWindow;
 	bool m_isSinglePlayer;
 };
