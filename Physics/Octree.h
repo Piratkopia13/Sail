@@ -13,7 +13,7 @@ class Octree {
 public:
 	class CollisionInfo {
 	public:
-		CollisionInfo() : normal(glm::vec3(0.0f)), intersectionPosition(glm::vec3(0.0f)), shape(nullptr), entity(nullptr) {};
+		CollisionInfo() : intersectionAxis(glm::vec3(0.0f)), intersectionPosition(glm::vec3(0.0f)), shape(nullptr), entity(nullptr) {};
 		~CollisionInfo() {
 			if (shape != nullptr) {
 				shape->keeperTracker--;
@@ -25,14 +25,14 @@ public:
 
 
 		CollisionInfo(const CollisionInfo& other) {
-			this->normal = other.normal;
+			this->intersectionAxis = other.intersectionAxis;
 			this->intersectionPosition = other.intersectionPosition;
 			other.shape->keeperTracker++;
 			this->shape = other.shape;
 			this->entity = other.entity;
 		}
 		CollisionInfo& operator=(const CollisionInfo& other) {
-			this->normal = other.normal;
+			this->intersectionAxis = other.intersectionAxis;
 			this->intersectionPosition = other.intersectionPosition;
 			other.shape->keeperTracker++;
 			this->shape = other.shape;
@@ -40,7 +40,7 @@ public:
 			return *this;
 		}
 
-		glm::vec3 normal;
+		glm::vec3 intersectionAxis;
 		glm::vec3 intersectionPosition;
 		CollisionShape* shape;
 		Entity* entity;

@@ -59,9 +59,13 @@ namespace Netcode {
 		PLAYER_DIED,
 		PLAYER_DISCONNECT,
 		MATCH_ENDED,
+		PREPARE_ENDSCREEN,			// Clients send relevant data for the endgame screen
 		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
 		SEND_ALL_BACK_TO_LOBBY,
+		RUNNING_METAL_START,
+		RUNNING_TILE_START,
+		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
 		EMPTY = 69
 	};
@@ -186,6 +190,36 @@ namespace Netcode {
 		~MessageEndGameStats() {}
 	};
 
+	class MessagePrepareEndScreen : public MessageData {
+	public:
+		MessagePrepareEndScreen() {}
+		~MessagePrepareEndScreen() {}
+
+	private:
+
+	};
+
+
+	class MessageRunningMetalStart : public MessageData {
+	public:
+		MessageRunningMetalStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningMetalStart() {}
+		Netcode::ComponentID runningPlayer;
+	};
+
+	class MessageRunningTileStart : public MessageData {
+	public:
+		MessageRunningTileStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningTileStart() {}
+		Netcode::ComponentID runningPlayer;
+	};
+
+	class MessageRunningStopSound : public MessageData {
+	public:
+		MessageRunningStopSound(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningStopSound() {}
+		Netcode::ComponentID runningPlayer;
+	};
 	class MessageIgniteCandle : public MessageData {
 	public:
 		MessageIgniteCandle(Netcode::ComponentID id) : candleOwnerID(id) {}
@@ -194,4 +228,3 @@ namespace Netcode {
 	};
 
 }
-
