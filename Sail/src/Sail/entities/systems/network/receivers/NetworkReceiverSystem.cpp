@@ -269,39 +269,25 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::RUNNING_METAL_START:
 			{
-				//Netcode::PlayerID playerID;
-				//ar(playerID);
 				ar(componentID);
-
 				runningMetalStart(componentID);
 			}
 			break;
 			case Netcode::MessageType::RUNNING_TILE_START:
 			{
-				//Netcode::PlayerID playerID;
-				//ar(playerID);
 				ar(componentID);
-
 				runningTileStart(componentID);
 			}
 			break;
 			case Netcode::MessageType::RUNNING_STOP_SOUND:
 			{
-				//Netcode::PlayerID playerID;
-				//ar(playerID);
-
 				ar(componentID);
-
 				runningStopSound(componentID);
 			}
 			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				//Netcode::PlayerID playerID;
-				//ar(playerID);
-
 				ar(componentID);
-
 				playerDisconnect(componentID);
 			}
 			break;
@@ -462,8 +448,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
 				}
-
-				
 
 				// Check in Candle System What happens next
 				return;

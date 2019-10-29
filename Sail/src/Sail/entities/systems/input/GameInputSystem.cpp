@@ -203,6 +203,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					acceleration = acceleration * 0.5f;
 					// AUDIO TESTING (turn OFF looping running sound)
 					if (!m_isPlayingRunningSound) {
+						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
 						if (!tempStopAll) {
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_STOP_SOUND,
@@ -220,6 +221,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					// CORRIDOR
 					if (m_mapPointer->getAreaType(e->getComponent<TransformComponent>()->getTranslation().x, e->getComponent<TransformComponent>()->getTranslation().z) == 0) {
 						
+						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
 						if (!tempMetal) {
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_METAL_START,
@@ -233,8 +235,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					}
 					// ROOM
 					else /*(AreaType > 0)*/ {
+						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
 						if (!tempTile) {
-
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_TILE_START,
 								SAIL_NEW Netcode::MessageRunningTileStart{ e->getComponent<NetworkSenderComponent>()->m_id }
@@ -259,6 +261,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			} else {
 
 				// AUDIO TESTING (turn OFF looping running sound)
+				// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
 				if (!tempStopAll) {
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::RUNNING_STOP_SOUND,
