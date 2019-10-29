@@ -56,7 +56,7 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
-	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, -0.86f)));
+	m_cam.setDirection(glm::normalize(glm::vec3(0.83f, -0.11f, 0.55f)));
 #endif
 
 	// Initialize the component systems
@@ -144,9 +144,18 @@ GameState::GameState(StateStack& stack)
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
+
+	//float spawnOffsetX = 43.f + float(i) * 2.f;
+	//float spawnOffsetZ = 52.f + float(i) * 1.3f;
+
+	//auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
+
+	//EntityFactory::CreatePerformancePlayer(e, i, glm::vec3(spawnOffsetX, -0.9f, spawnOffsetZ));
+
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(52.f, 1.f, 70.f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
+	//m_player->getComponent<TransformComponent>()->setRotations(glm::vec3(-3.0f, 0.0f, 0.0f));
 #endif
 
 

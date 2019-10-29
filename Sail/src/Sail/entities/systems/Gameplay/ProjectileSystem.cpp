@@ -46,6 +46,8 @@ void ProjectileSystem::update(float dt) {
 				}
 			}
 
+
+#ifndef _PERFORMANCE_TEST
 			//If projectile collided with a candle
 			if (collision.entity->hasComponent<CandleComponent>()) {
 				//If local player owned the projectile
@@ -59,6 +61,7 @@ void ProjectileSystem::update(float dt) {
 					);
 				}
 			}
+#endif
 		}
 
 		projComp->timeSinceLastDecal += dt;
