@@ -241,14 +241,43 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	break;
 	case Netcode::MessageType::ANIMATION:
 	{
-		// CURRENTLY IS:
-		ar(0);		// AnimationStack
-		ar(0.0f);	// AnimationTime
+		ar(e->getComponent<AnimationComponent>()->animationIndex);
+		ar(e->getComponent<AnimationComponent>()->animationTime);
+	}
+	break;
+	case Netcode::MessageType::SHOOT_START:
+	{
+		// Only do this once
+		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::SHOOT_START);
 
-		// SHOULD BE:
-	//	AnimationComponent* a = e->getComponent<AnimationComponent>();
-	//	(*ar)(a->getAnimationStack());					// Animation Stack
-	//	(*ar)(a->animationTime);						// Animation Time
+		// Send data to others
+		GunComponent* g = e->getComponent<GunComponent>();
+		ArchiveHelpers::archiveVec3(ar, g->position);
+		ArchiveHelpers::archiveVec3(ar, g->direction * g->projectileSpeed); // Velocity
+
+		// Transition into loop
+		e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::SHOOT_LOOP);
+	}
+	break;
+	case Netcode::MessageType::SHOOT_LOOP:
+	{
+		// Send data to others
+		GunComponent* g = e->getComponent<GunComponent>();
+		ArchiveHelpers::archiveVec3(ar, g->position);
+		ArchiveHelpers::archiveVec3(ar, g->direction * g->projectileSpeed); // Velocity
+	}
+	break;
+	case Netcode::MessageType::SHOOT_END:
+	{
+		// Only do this once
+		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::SHOOT_END);
+		// Stop looping
+		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::SHOOT_LOOP);
+
+		// Send data to others
+		GunComponent* g = e->getComponent<GunComponent>();
+		ArchiveHelpers::archiveVec3(ar, g->position);
+		ArchiveHelpers::archiveVec3(ar, g->direction * g->projectileSpeed); // Velocity
 	}
 	break;
 	default:
@@ -274,6 +303,13 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		Netcode::MessagePlayerJumped* data = static_cast<Netcode::MessagePlayerJumped*>(event->data);
 
 		ar(data->playerWhoJumped);
+	}
+	break;
+	case Netcode::MessageType::PLAYER_LANDED:
+	{
+		Netcode::MessagePlayerLanded* data = static_cast<Netcode::MessagePlayerLanded*>(event->data);
+
+		ar(data->playerWhoLanded);
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
@@ -335,7 +371,12 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 	}
 	break;
-
+	case Netcode::MessageType::IGNITE_CANDLE:
+	{
+		Netcode::MessageIgniteCandle* data = static_cast<Netcode::MessageIgniteCandle*>(event->data);
+		ar(data->candleOwnerID);
+	}
+	break;
 	default:
 		break;
 	}
