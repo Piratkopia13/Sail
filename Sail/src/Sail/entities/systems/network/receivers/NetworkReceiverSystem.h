@@ -55,5 +55,9 @@ private:
 	void matchEnded();
 	void backToLobby();
 
+	void runningMetalStart(Netcode::ComponentID id);
+	void runningTileStart(Netcode::ComponentID id);
+	void runningStopSound(Netcode::ComponentID id);
+
 	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
 };

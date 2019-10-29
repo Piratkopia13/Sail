@@ -1065,10 +1065,13 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
+
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
+
+	m_componentSystems.gameInputSystem->m_mapPointer = map->getComponent<MapComponent>();
 }
 
 #ifdef _PERFORMANCE_TEST
