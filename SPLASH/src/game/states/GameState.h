@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
 #include "../events/NetworkDroppedEvent.h"
@@ -96,7 +97,7 @@ private:
 
 
 #ifdef _PERFORMANCE_TEST
-	void populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
+	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
 
 	std::vector<Entity::SPtr> m_performanceEntities;
 #endif

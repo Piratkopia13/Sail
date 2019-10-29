@@ -20,7 +20,7 @@ public:
 
 	const std::vector<Entity*>& getEntities() const;
 
-	void update();
+	void update(float dt);
 protected:
 
 
@@ -52,8 +52,15 @@ private:
 	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 
-	void matchEnded();
+	virtual void endMatch() = 0;			// Start end timer for host
+	virtual void endMatchAfterTimer(float dt) = 0;	// Made for the host to quit the game after a set time
+	virtual void mergeHostsStats() = 0;		// Host adds its data to global statistics before waiting for clients
+	virtual void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) = 0;
 	void backToLobby();
+
+	void runningMetalStart(Netcode::ComponentID id);
+	void runningTileStart(Netcode::ComponentID id);
+	void runningStopSound(Netcode::ComponentID id);
 
 	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
 };

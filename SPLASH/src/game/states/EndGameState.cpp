@@ -22,6 +22,7 @@ bool EndGameState::processInput(float dt) {
 
 bool EndGameState::update(float dt, float alpha) {
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+
 	return true;
 }
 bool EndGameState::fixedUpdate(float dt) {
@@ -42,6 +43,8 @@ bool EndGameState::render(float dt, float alpha) {
 bool EndGameState::renderImgui(float dt) {
 
 	if (ImGui::Begin("Game Over")) {
+		ImGui::SetWindowPos({ 750,12 });
+		ImGui::SetWindowSize({ 102,100 });
 		if (NWrapperSingleton::getInstance().isHost()) {
 			if (ImGui::Button("Lobby")) {
 				onReturnToLobby(NetworkBackToLobby{});
