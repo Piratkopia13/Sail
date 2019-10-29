@@ -685,10 +685,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Send out your entity info to the rest of the players
 	// DON'T MOVE, should happen at the end of each tick
 	m_componentSystems.networkSenderSystem->update();
-
-	// Will probably need to be called last
-	m_componentSystems.entityAdderSystem->update();
-	m_componentSystems.entityRemovalSystem->update();
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 }
 
@@ -716,6 +712,10 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.animationSystem->updatePerFrame();
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
+
+	// Will probably need to be called last
+	m_componentSystems.entityAdderSystem->update();
+	m_componentSystems.entityRemovalSystem->update();
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
