@@ -40,7 +40,7 @@ void GunSystem::update(float dt) {
 				// SHOOT
 				if (gun->projectileSpawnTimer <= 0.f) {
 //<<<<<<< HEAD
-					for (int i = 0; i < 8; i++) {
+					for (int i = 0; i < 2; i++) {
 						gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 						// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(

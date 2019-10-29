@@ -4,7 +4,7 @@
 GunComponent::GunComponent() {
 	 projectileSpawnTimer = 0.f;
 	 gunOverloadTimer = 0.f;
-	 m_projectileSpawnCooldown = 0.005f;
+	 m_projectileSpawnCooldown = 0.015f;
 	 m_gunOverloadCooldown = .00f;
 
 	 projectileSpeed = 10.f;

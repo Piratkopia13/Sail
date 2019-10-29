@@ -69,6 +69,38 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		cmd.transform = glm::identity<glm::mat4>();
 		cmd.transform = glm::transpose(cmd.transform);
 		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), true);
+
+		//Calculate the needed size of m_next_metaball_aabb.
+		glm::vec3& pos = m_metaballs.front().pos;
+		m_next_metaball_aabb.MaxX = pos.x + METABALL_RADIUS;
+		m_next_metaball_aabb.MaxY = pos.y + METABALL_RADIUS;
+		m_next_metaball_aabb.MaxZ = pos.z + METABALL_RADIUS;
+		m_next_metaball_aabb.MinX = pos.x - METABALL_RADIUS;
+		m_next_metaball_aabb.MinY = pos.y - METABALL_RADIUS;
+		m_next_metaball_aabb.MinZ = pos.z - METABALL_RADIUS;
+		for (size_t i = 1; i < m_metaballs.size() && i < MAX_NUM_METABALLS; i++) {
+			glm::vec3& pos = m_metaballs[i].pos;
+
+			if (m_next_metaball_aabb.MaxX < pos.x + METABALL_RADIUS) {
+				m_next_metaball_aabb.MaxX = pos.x + METABALL_RADIUS;
+			}
+			if (m_next_metaball_aabb.MaxY < pos.y + METABALL_RADIUS) {
+				m_next_metaball_aabb.MaxY = pos.y + METABALL_RADIUS;
+			}
+			if (m_next_metaball_aabb.MaxZ < pos.z + METABALL_RADIUS) {
+				m_next_metaball_aabb.MaxZ = pos.z + METABALL_RADIUS;
+			}
+
+			if (m_next_metaball_aabb.MinX > pos.x - METABALL_RADIUS) {
+				m_next_metaball_aabb.MinX = pos.x - METABALL_RADIUS;
+			}
+			if (m_next_metaball_aabb.MinY > pos.y - METABALL_RADIUS) {
+				m_next_metaball_aabb.MinY = pos.y - METABALL_RADIUS;
+			}
+			if (m_next_metaball_aabb.MinZ > pos.z - METABALL_RADIUS) {
+				m_next_metaball_aabb.MinZ = pos.z - METABALL_RADIUS;
+			}
+		}
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
@@ -176,36 +208,6 @@ void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* ma
 		ball.pos = pos;
 		ball.vel = vel;
 		ball.distToCamera = glm::length(ball.pos - camera->getPosition());
-
-		//Calculate the needed size of m_next_metaball_aabb.
-		if (m_metaballs.empty()) {
-			m_next_metaball_aabb.MaxX =  pos.x + METABALL_RADIUS;
-			m_next_metaball_aabb.MaxY =	 pos.y + METABALL_RADIUS;
-			m_next_metaball_aabb.MaxZ =  pos.z + METABALL_RADIUS;
-			m_next_metaball_aabb.MinX =  pos.x - METABALL_RADIUS;
-			m_next_metaball_aabb.MinY =  pos.y - METABALL_RADIUS;
-			m_next_metaball_aabb.MinZ =  pos.z - METABALL_RADIUS;
-		} else {
-			if (m_next_metaball_aabb.MaxX < pos.x + METABALL_RADIUS) {
-				m_next_metaball_aabb.MaxX = pos.x + METABALL_RADIUS;
-			}
-			if (m_next_metaball_aabb.MaxY < pos.y + METABALL_RADIUS) { 
-				m_next_metaball_aabb.MaxY = pos.y + METABALL_RADIUS;
-			}
-			if (m_next_metaball_aabb.MaxZ < pos.z + METABALL_RADIUS) {
-				m_next_metaball_aabb.MaxZ = pos.z + METABALL_RADIUS;
-			}
-
-			if (m_next_metaball_aabb.MinX > pos.x - METABALL_RADIUS) {
-				m_next_metaball_aabb.MinX = pos.x - METABALL_RADIUS;
-			}
-			if (m_next_metaball_aabb.MinY > pos.y - METABALL_RADIUS) {
-				m_next_metaball_aabb.MinY = pos.y - METABALL_RADIUS;
-			}
-			if (m_next_metaball_aabb.MinZ > pos.z - METABALL_RADIUS) {
-				m_next_metaball_aabb.MinZ = pos.z - METABALL_RADIUS;
-			}
-		}
 
 		m_metaballs.emplace_back(ball);
 	}
