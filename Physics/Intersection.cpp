@@ -611,17 +611,24 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 	if (glm::dot(triPos1 - rayStart, triangleNormal) < 0.0f) {
 		//Only check if triangle is facing ray start
 		if (padding != 0.0f) {
-			glm::vec3 middle = (triPos1 + triPos2 + triPos3) / 3.0f;
+			glm::vec3 oldV[3];
+			oldV[0] = triPos1;
+			oldV[1] = triPos2;
+			oldV[2] = triPos3;
 
-			glm::vec3 toRay = (rayStart + rayDir * glm::dot(middle - rayStart, rayDir)) - middle;
-			float distance = padding *0.7f;
+			glm::vec3 newV[3];
 
-			//Add padding
-			glm::vec3 newV1 = triPos1 + glm::normalize(toRay) * distance -rayDir * distance;
-			glm::vec3 newV2 = triPos2 + glm::normalize(toRay) * distance -rayDir * distance;
-			glm::vec3 newV3 = triPos3 + glm::normalize(toRay) * distance -rayDir * distance;
+			for (int i = 0; i < 3; i++) {
+				float towardsRayStartDistance = glm::max(glm::dot(oldV[i] - rayStart, rayDir), 0.0f);
+				newV[i] = oldV[i] - rayDir * (glm::min(padding * 0.7f, towardsRayStartDistance));
 
-			returnValue = RayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
+				glm::vec3 toRay = (rayStart + rayDir * glm::dot(newV[i] - rayStart, rayDir)) - newV[i];
+				float toRayDistance = glm::min(padding * 0.7f, glm::length(toRay));
+
+				newV[i] += glm::normalize(toRay) * toRayDistance;
+			}
+
+			returnValue = RayWithTriangle(rayStart, rayDir, newV[0], newV[1], newV[2]);
 		}
 		else {
 			returnValue = RayWithTriangle(rayStart, rayDir, triPos1, triPos2, triPos3);

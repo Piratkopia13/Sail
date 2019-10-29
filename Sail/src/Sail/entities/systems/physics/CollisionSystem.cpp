@@ -25,11 +25,17 @@ void CollisionSystem::provideOctree(Octree* octree) {
 }
 
 void CollisionSystem::update(float dt) {
+	int counter = 0;
+
 	for (auto& e : entities) {
 		auto movement = e->getComponent<MovementComponent>();
 		auto collision = e->getComponent<CollisionComponent>();
 		auto boundingBox = e->getComponent<BoundingBoxComponent>();
 		auto csc = e->getComponent<CollisionSpheresComponent>();
+
+		if (e->getName() == "projectile" && (boundingBox->getBoundingBox()->getPosition().y < -20.0f || boundingBox->getBoundingBox()->getPosition().y > 40.0f)) {
+			counter++;
+		}
 
 		collision->collisions.clear();
 
@@ -56,6 +62,8 @@ void CollisionSystem::update(float dt) {
 
 		movement->updateableDt = updateableDt;
 	}
+
+	//Logger::Log(std::to_string(counter));
 }
 
 const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
@@ -202,9 +210,16 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 	Octree::RayIntersectionInfo intersectionInfo;
 	m_octree->getRayIntersection(boundingBox.getPosition(), glm::normalize(movement->velocity), &intersectionInfo, e, collision->padding, collision->doSimpleCollisions);
 
-	if (intersectionInfo.closestHit <= velocityAmp && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
+	Octree::RayIntersectionInfo unpaddedIntersectionInfo;
+	m_octree->getRayIntersection(boundingBox.getPosition(), glm::normalize(movement->velocity), &unpaddedIntersectionInfo, e, 0.0f, collision->doSimpleCollisions);
+
+	//float closestHit = glm::min(unpaddedIntersectionInfo.closestHit, intersectionInfo.closestHit) - collision->padding * 0.01f;
+
+	float closestHit = intersectionInfo.closestHit - collision->padding * 0.01f;
+
+	if (closestHit <= velocityAmp && closestHit >= -collision->padding * 0.01f) { //Found upcoming collision
 		//Calculate new dt
-		float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
+		float newDt = ((closestHit) / velocityAmp) * dt;
 
 		//Move untill first overlap
 		boundingBox.setPosition(boundingBox.getPosition() + movement->velocity * newDt);
@@ -215,15 +230,20 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		//Collision update
 		if (handleCollisions(e, intersectionInfo.info, 0.0f)) {
 			surfaceFromCollision(e, intersectionInfo.info);
+			Logger::Log("Hit " + std::to_string(unpaddedIntersectionInfo.closestHit - intersectionInfo.closestHit));
 		}
 		else {
+			Logger::Log("Missed " + std::to_string(unpaddedIntersectionInfo.closestHit - intersectionInfo.closestHit));
+
+			/*
 			//Move back 
 			const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
-			boundingBox.setPosition(boundingBox.getPosition() - normalizedVel * collision->padding * 0.5f);
-			transform->translate(-normalizedVel * collision->padding * 0.5f);
+			boundingBox.setPosition(boundingBox.getPosition() - normalizedVel * collision->padding);
+			transform->translate(-normalizedVel * collision->padding);
 
 			//Step forward to find collision
 			stepToFindMissedCollision(e, boundingBox, intersectionInfo.info, collision->padding * 2.0f);
+			*/
 		}
 		rayCastUpdate(e, boundingBox, dt);
 	}
@@ -240,13 +260,12 @@ void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& bounding
 	const glm::vec3 distancePerStep = (distance / (float)split) * normalizedVel;
 
 	for (int i = 0; i < split; i++) {
-		boundingBox.setPosition(boundingBox.getPosition() + distancePerStep);
-		transform->translate(distancePerStep);
-
 		if (handleCollisions(e, collisions, 0.0f)) {
 			surfaceFromCollision(e, collisions);
 			i = split;
 		}
+		boundingBox.setPosition(boundingBox.getPosition() + distancePerStep);
+		transform->translate(distancePerStep);
 	}
 }
 
@@ -263,8 +282,8 @@ void CollisionSystem::surfaceFromCollision(Entity* e, std::vector<Octree::Collis
 		glm::vec3 axis;
 
 		if (collisionInfo_i.shape->getIntersectionDepthAndAxis(bb->getBoundingBox(), &axis, &depth)) {
-			bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * depth);
-			distance += axis * depth;
+			bb->getBoundingBox()->setPosition(bb->getBoundingBox()->getPosition() + axis * (depth - 0.0001f));
+			distance += axis * (depth - 0.0001f);
 		}
 	}
 	transform->translate(distance);
