@@ -68,7 +68,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
+	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_DXR_SHADER)) {
 		m_dxr.reloadShaders();
 	}
 

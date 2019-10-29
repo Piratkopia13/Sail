@@ -106,12 +106,12 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			Movement playerMovement = getPlayerMovementInput(e);
 
 			// Player puts down candle
-			if ( Input::WasKeyJustPressed(KeyBinds::putDownCandle) ) {
+			if ( Input::WasKeyJustPressed(KeyBinds::TOGGLE_CANDLE_HELDT) ) {
 
 				putDownCandle(e);
 			}
 
-			if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
+			if ( Input::WasKeyJustPressed(KeyBinds::LIGHT_CANDLE) ) {
 
 				for ( auto child : e->getChildEntities() ) {
 
@@ -282,7 +282,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 	for (auto e : entities) {
 
 //#ifdef DEVELOPMENT
-		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
+		if (Input::WasMouseButtonJustPressed(KeyBinds::DISABLE_CURSOR)) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
 //#endif
@@ -292,7 +292,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		//	glm::vec3 gunPosition = e->getComponent<TransformComponent>()->getTranslation();
 		//	e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 		//}
-		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT)) {
 			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
 			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
@@ -371,14 +371,14 @@ void GameInputSystem::putDownCandle(Entity* e) {
 Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	Movement playerMovement;
 
-	if ( Input::IsKeyPressed(KeyBinds::sprint) ) { playerMovement.speedModifier = m_runSpeed; }
+	if ( Input::IsKeyPressed(KeyBinds::SPRINT) ) { playerMovement.speedModifier = m_runSpeed; }
 
-	if ( Input::IsKeyPressed(KeyBinds::moveForward) ) { playerMovement.forwardMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveBackward) ) { playerMovement.forwardMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveLeft) ) { playerMovement.rightMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveRight) ) { playerMovement.rightMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveUp) ) { playerMovement.upMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveDown) ) { playerMovement.upMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_FORWARD) ) { playerMovement.forwardMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD) ) { playerMovement.forwardMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_LEFT) ) { playerMovement.rightMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_RIGHT) ) { playerMovement.rightMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_UP) ) { playerMovement.upMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_DOWN) ) { playerMovement.upMovement -= 1.0f; }
 
 	return playerMovement;
 }

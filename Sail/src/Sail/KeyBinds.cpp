@@ -5,40 +5,41 @@
 
 // Defines the variables
 namespace KeyBinds {
-	// GameState + Player controls
-	int addLight;
-	int toggleBoundingBoxes;
-	int testRayIntersection;
-	int testFrustumCulling;
-	int toggleAIFollowing;
-	int setDirectionalLight;
-	int toggleConsole;
-	int toggleConsoleUS;
-	int reloadShader;
-	int removeOldestLight;
-	int sprint;
-	int moveForward;
-	int moveBackward;
-	int moveRight;
-	int moveLeft;
-	int moveUp;
-	int moveDown;
-	int lightCandle1;
-	int lightCandle2;
-	int putDownCandle;
-	int disableCursor;
-	int shoot;
-	int showInGameMenu;
-	int toggleSphere;
-	int toggleSun;
-	int lightCandle;
-	int spray;
 
-	
+	// Player controls
+	int MOVE_FORWARD;
+	int MOVE_BACKWARD;
+	int MOVE_RIGHT;
+	int MOVE_LEFT;
+	int MOVE_UP;
+	int MOVE_DOWN;
+	int SPRINT;
+	int SHOOT;
+	int SPRAY;
+	int LIGHT_CANDLE;
+	int SHOW_IN_GAME_MENU;
+
+	// GameState
+	int ADD_LIGHT;
+	int TOGGLE_BOUNDINGBOXES;
+	int TEST_RAYINTERSECTION;
+	int TEST_FRUSTUMCULLING;
+	int TOGGLE_AI_FOLLOWING;
+	int SET_DIRECTIONAL_LIGHT;
+	int TOGGLE_CONSOLE;
+	int TOGGLE_CONSOLE_US;
+	int RELOAD_SHADER;
+	int REMOVE_OLDEST_LIGHT;
+	int LIGHT_CANDLE_1;
+	int LIGHT_CANDLE_2;
+	int TOGGLE_CANDLE_HELDT;
+	int DISABLE_CURSOR;
+	int TOGGLE_SPHERE;
+	int TOGGLE_SUN;
 
 	// Application
-	int alt;
-	int f4;
+	int ALT_KEY;
+	int F4_KEY;
 
 	// Audio
 	int _0;
@@ -48,51 +49,54 @@ namespace KeyBinds {
 	int _9;
 
 	// StateStack
-	int toggleImGui;
+	int TOGGLE_IMGUI;
 
 	// LobbyState
-	int sendMessage;
+	int SEND_MESSAGE;
 
 	// DX12RaytracingRenderer
-	int reloadDXRShader;
+	int RELOAD_DXR_SHADER;
 
 	// Debugging
-	int spectatorDebugging;
+	int SPECTATOR_DEBUG;
 }
 
 void KeyBinds::init() {
+	
+	// Player controls
+	MOVE_FORWARD      = SAIL_KEY_W;
+	MOVE_BACKWARD     = SAIL_KEY_S;
+	MOVE_RIGHT        = SAIL_KEY_D;
+	MOVE_LEFT         = SAIL_KEY_A;
+	MOVE_UP           = SAIL_KEY_SPACE;
+	MOVE_DOWN         = SAIL_KEY_CONTROL;
+	SPRINT            = SAIL_KEY_SHIFT;
+	SHOOT             = SAIL_MOUSE_LEFT_BUTTON;
+	SPRAY             = SAIL_KEY_L;
+	LIGHT_CANDLE      = SAIL_KEY_J;
+	SHOW_IN_GAME_MENU = SAIL_KEY_ESCAPE;
+
 	// GameState
-	addLight = SAIL_KEY_E;
-	toggleBoundingBoxes = SAIL_KEY_B;
-	testRayIntersection = SAIL_KEY_O;
-	testFrustumCulling = SAIL_KEY_N;
-	toggleAIFollowing = SAIL_KEY_H;
-	setDirectionalLight = SAIL_KEY_G;
-	toggleConsole = SAIL_KEY_OEM_5;
-	toggleConsoleUS = SAIL_KEY_OEM_3;
-	reloadShader = SAIL_KEY_R;
-	removeOldestLight = SAIL_KEY_X;
-	sprint = SAIL_KEY_SHIFT;
-	moveForward = SAIL_KEY_W;
-	moveBackward = SAIL_KEY_S;
-	moveRight = SAIL_KEY_D;
-	moveLeft = SAIL_KEY_A;
-	moveUp = SAIL_KEY_SPACE;
-	moveDown = SAIL_KEY_CONTROL;
-	lightCandle1 = SAIL_KEY_Z;
-	lightCandle2 = SAIL_KEY_V;
-	putDownCandle = SAIL_KEY_F;
-	disableCursor = SAIL_MOUSE_RIGHT_BUTTON;
-	shoot = SAIL_MOUSE_LEFT_BUTTON;
-	showInGameMenu = SAIL_KEY_ESCAPE;
-	toggleSphere = SAIL_KEY_C;
-	toggleSun = SAIL_KEY_P;
-	lightCandle = SAIL_KEY_J;
-	spray = SAIL_KEY_L;
+	ADD_LIGHT             = SAIL_KEY_E;
+	TOGGLE_BOUNDINGBOXES  = SAIL_KEY_B;
+	TEST_RAYINTERSECTION  = SAIL_KEY_O;
+	TEST_FRUSTUMCULLING   = SAIL_KEY_N;
+	TOGGLE_AI_FOLLOWING   = SAIL_KEY_H;
+	SET_DIRECTIONAL_LIGHT = SAIL_KEY_G;
+	TOGGLE_CONSOLE        = SAIL_KEY_OEM_5;
+	TOGGLE_CONSOLE_US     = SAIL_KEY_OEM_3;
+	RELOAD_SHADER         = SAIL_KEY_R;
+	REMOVE_OLDEST_LIGHT   = SAIL_KEY_X;
+	LIGHT_CANDLE_1        = SAIL_KEY_Z;
+	LIGHT_CANDLE_2        = SAIL_KEY_V;
+	TOGGLE_CANDLE_HELDT   = SAIL_KEY_F;
+	DISABLE_CURSOR        = SAIL_MOUSE_RIGHT_BUTTON;
+	TOGGLE_SPHERE         = SAIL_KEY_C;
+	TOGGLE_SUN            = SAIL_KEY_P;
 
 	// Application
-	alt = SAIL_KEY_MENU;		// Did not know what to call these binds
-	f4 = SAIL_KEY_F4;
+	ALT_KEY = SAIL_KEY_MENU;		// Did not know what to call these binds
+	F4_KEY  = SAIL_KEY_F4;
 
 	// Audio
 	_0 = SAIL_KEY_0;		// Did not know what to call these binds
@@ -102,14 +106,14 @@ void KeyBinds::init() {
 	_9 = SAIL_KEY_9;
 
 	// StateStack
-	toggleImGui = SAIL_KEY_F10;
+	TOGGLE_IMGUI = SAIL_KEY_F10;
 
 	// LobbyState
-	sendMessage = SAIL_KEY_RETURN;
+	SEND_MESSAGE = SAIL_KEY_RETURN;
 
 	// DX12RaytracingRenderer
-	reloadDXRShader = SAIL_KEY_F5;
+	RELOAD_DXR_SHADER = SAIL_KEY_F5;
 
 	// Debugging
-	spectatorDebugging = SAIL_KEY_M;
+	SPECTATOR_DEBUG = SAIL_KEY_M;
 }

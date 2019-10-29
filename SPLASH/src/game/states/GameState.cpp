@@ -197,7 +197,7 @@ bool GameState::processInput(float dt) {
 #endif
 
 	// Pause game
-	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
 		requestStackPush(States::InGameMenu);
 	}
 
@@ -212,7 +212,7 @@ bool GameState::processInput(float dt) {
 #endif
 
 	// Enable bright light and move camera to above procedural generated level
-	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_SUN)) {
 		m_lightDebugWindow.setManualOverride(!m_lightDebugWindow.isManualOverrideOn());
 		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
@@ -224,12 +224,12 @@ bool GameState::processInput(float dt) {
 	}
 
 	// Show boudning boxes
-	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
 		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
-	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
+	if (Input::IsKeyPressed(KeyBinds::TEST_RAYINTERSECTION)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.closestHitIndex != -1) {
@@ -237,7 +237,7 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::spray)) {
+	if (Input::WasKeyJustPressed(KeyBinds::SPRAY)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.closestHit >= 0.0f) {
@@ -248,14 +248,14 @@ bool GameState::processInput(float dt) {
 	}
 
 	//Test frustum culling
-	if (Input::IsKeyPressed(KeyBinds::testFrustumCulling)) {
+	if (Input::IsKeyPressed(KeyBinds::TEST_FRUSTUMCULLING)) {
 		int nrOfDraws = m_octree->frustumCulledDraw(m_cam);
 		Logger::Log("Number of draws " + std::to_string(nrOfDraws));
 	}
 
 	// TODO: Move this to a system
 	// Toggle ai following the player
-	if (Input::WasKeyJustPressed(KeyBinds::toggleAIFollowing)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_AI_FOLLOWING)) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
 		for (int i = 0; i < entities.size(); i++) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
@@ -278,19 +278,19 @@ bool GameState::processInput(float dt) {
 	}
 
 	// Set directional light if using forward rendering
-	if (Input::IsKeyPressed(KeyBinds::setDirectionalLight)) {
+	if (Input::IsKeyPressed(KeyBinds::SET_DIRECTIONAL_LIGHT)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
 
 	// Reload shaders
-	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
+	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 		m_app->getResourceManager().reloadShader<GuiShader>();
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_SPHERE)) {
 		static bool attach = false;
 		attach = !attach;
 		if (attach) {
@@ -304,7 +304,7 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::spectatorDebugging)) {
+	if (Input::WasKeyJustPressed(KeyBinds::SPECTATOR_DEBUG)) {
 		// Get position and rotation to look at middle of the map from above
 		{
 			auto parTrans = m_player->getComponent<TransformComponent>();
