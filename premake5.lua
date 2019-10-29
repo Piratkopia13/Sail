@@ -82,7 +82,7 @@ project "SPLASH"
 		optimize "On"
 
 	filter "configurations:PerformanceTest"
-		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
 		optimize "On"
 
 	filter "configurations:Dev-Release"
@@ -173,7 +173,7 @@ project "Sail"
 		optimize "On"
 
 	filter "configurations:PerformanceTest"
-		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
 		optimize "On"
 
 	filter "configurations:Dev-Release"
@@ -242,7 +242,7 @@ project "Physics"
 		optimize "On"
 
 	filter "configurations:PerformanceTest"
-		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
 		optimize "On"
 		
 	filter "configurations:Dev-Release"
