@@ -50,8 +50,6 @@ void CandleSystem::update(float dt) {
 			if (candle->getHealth() <= 0.f) {
 				candle->setCarried(true);
 
-
-
 				// Did this candle's owner die?
 				if (candle->getNumRespawns() == m_maxNumRespawns) {
 					candle->setIsAlive(false);
@@ -74,14 +72,10 @@ void CandleSystem::update(float dt) {
 						if (LivingCandles <= 1) { // Match IS over
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::MATCH_ENDED,
-								nullptr
-							);
-							// Send relevant stats to all clients
-							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-								Netcode::MessageType::ENDGAME_STATS,
 								nullptr,
-								false
+								true
 							);
+							
 						}
 					}
 				}
