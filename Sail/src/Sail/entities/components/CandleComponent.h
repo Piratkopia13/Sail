@@ -5,6 +5,7 @@
 
 class Entity;
 
+// TODO: Replace with game settings
 #define MAX_HEALTH 20.f
 
 

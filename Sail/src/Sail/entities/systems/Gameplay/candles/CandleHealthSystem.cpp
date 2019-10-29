@@ -51,12 +51,10 @@ void CandleHealthSystem::update(float dt) {
 						);
 					}
 				} else {
-					candle->health = MAX_HEALTH;
+					candle->health = 0.f;
+					candle->invincibleTimer = 0.f;
 					candle->respawns++;
 				}
-
-				candle->health = 0.f;
-				candle->invincibleTimer = 0.f;
 			}
 
 			// Reset candle's damage taken

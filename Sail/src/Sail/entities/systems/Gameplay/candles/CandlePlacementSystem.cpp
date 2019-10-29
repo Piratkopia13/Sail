@@ -42,6 +42,11 @@ void CandlePlacementSystem::update(float dt) {
 				);
 			}
 		}
+
+		candle->wasCarriedLastUpdate = candle->isCarried;
+		static const float candleHeight = 0.37f;
+		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrix() * glm::vec4(0, candleHeight, 0, 1);
+		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
 }
 
