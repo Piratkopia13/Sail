@@ -176,9 +176,9 @@ GameState::GameState(StateStack& stack)
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 
 	// Host fill its game tracker per player with player data.
-	if (NWrapperSingleton::getInstance().isHost()) {
-		GameDataTracker::getInstance().init();
-	}	
+	// Reset data trackers
+	GameDataTracker::getInstance().init();
+
 }
 
 GameState::~GameState() {
@@ -685,7 +685,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	
 	// Update entities with info from the network and from ourself
 	// DON'T MOVE, should happen at the start of each tick
-	m_componentSystems.networkReceiverSystem->update();
+	m_componentSystems.networkReceiverSystem->update(dt);
 	
 	m_componentSystems.movementSystem->update(dt);
 	m_componentSystems.speedLimitSystem->update();
