@@ -199,7 +199,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				// Calculate total movement
 				float acceleration = 70.0f - ( glm::length(movement->velocity) / speedLimit->maxSpeed ) * 20.0f;
 				if ( !collision->onGround ) {
-					std::cout << "NOT ON GROUND!\n";
 					acceleration = acceleration * 0.5f;
 					// AUDIO TESTING (turn OFF looping running sound)
 					if (!m_isPlayingRunningSound) {
