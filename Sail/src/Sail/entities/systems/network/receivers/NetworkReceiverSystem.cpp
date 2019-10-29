@@ -282,12 +282,12 @@ void NetworkReceiverSystem::update() {
 				runningTileStart(playerID);
 			}
 			break;
-			case Netcode::MessageType::RUNNING_STOP_ALL:
+			case Netcode::MessageType::RUNNING_STOP_SOUND:
 			{
 				Netcode::PlayerID playerID;
 				ar(playerID);
 
-				runningStopAll(playerID);
+				runningStopSound(playerID);
 			}
 			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
@@ -653,7 +653,7 @@ void NetworkReceiverSystem::backToLobby() {
 
 void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id && e->hasComponent<LocalOwnerComponent>()) {
 
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = true;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].playOnce = false;
@@ -677,7 +677,7 @@ void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
 	}
 }
 
-void NetworkReceiverSystem::runningStopAll(Netcode::ComponentID id) {
+void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 

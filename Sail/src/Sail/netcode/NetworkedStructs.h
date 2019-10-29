@@ -64,7 +64,7 @@ namespace Netcode {
 		SEND_ALL_BACK_TO_LOBBY,
 		RUNNING_METAL_START,
 		RUNNING_TILE_START,
-		RUNNING_STOP_ALL,
+		RUNNING_STOP_SOUND,
 		EMPTY = 69
 	};
 
@@ -202,10 +202,10 @@ namespace Netcode {
 		PlayerID playerID;
 	};
 
-	class MessageRunningStopAll : public MessageData {
+	class MessageRunningStopSound : public MessageData {
 	public:
-		MessageRunningStopAll(Netcode::ComponentID id) : playerID(id) {}
-		~MessageRunningStopAll() {}
+		MessageRunningStopSound(Netcode::ComponentID id) : playerID(id) {}
+		~MessageRunningStopSound() {}
 		PlayerID playerID;
 	};
 }

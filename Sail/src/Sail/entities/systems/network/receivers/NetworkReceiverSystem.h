@@ -56,7 +56,7 @@ private:
 
 	void runningMetalStart(Netcode::ComponentID id);
 	void runningTileStart(Netcode::ComponentID id);
-	void runningStopAll(Netcode::ComponentID id);
+	void runningStopSound(Netcode::ComponentID id);
 
 	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
 };

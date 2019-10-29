@@ -362,9 +362,9 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->playerID); // Send
 	}
 	break;
-	case Netcode::MessageType::RUNNING_STOP_ALL:
+	case Netcode::MessageType::RUNNING_STOP_SOUND:
 	{
-		Netcode::MessageRunningStopAll* data = static_cast<Netcode::MessageRunningStopAll*>(event->data);
+		Netcode::MessageRunningStopSound* data = static_cast<Netcode::MessageRunningStopSound*>(event->data);
 		ar(data->playerID); // Send
 	}
 	break;

@@ -199,8 +199,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					if (!m_isPlayingRunningSound) {
 						if (!tempStopAll) {
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-								Netcode::MessageType::RUNNING_STOP_ALL,
-								SAIL_NEW Netcode::MessageRunningStopAll{ e->getComponent<NetworkSenderComponent>()->m_id }
+								Netcode::MessageType::RUNNING_STOP_SOUND,
+								SAIL_NEW Netcode::MessageRunningStopSound{ e->getComponent<NetworkSenderComponent>()->m_id }
 							);
 
 							tempStopAll = true;
@@ -252,8 +252,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				// AUDIO TESTING (turn OFF looping running sound)
 				if (!tempStopAll) {
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-						Netcode::MessageType::RUNNING_STOP_ALL,
-						SAIL_NEW Netcode::MessageRunningStopAll{ e->getComponent<NetworkSenderComponent>()->m_id }
+						Netcode::MessageType::RUNNING_STOP_SOUND,
+						SAIL_NEW Netcode::MessageRunningStopSound{ e->getComponent<NetworkSenderComponent>()->m_id }
 					);
 
 					tempStopAll = true;
