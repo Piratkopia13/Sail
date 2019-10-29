@@ -35,7 +35,7 @@ void MovementPostCollisionSystem::update(float dt) {
 		glm::vec3 translation = (movement->oldVelocity + movement->velocity) * (0.5f * movement->updateableDt);
 		if (translation != glm::vec3(0.0f)) {
 			transform->translate(translation);
-			if (e->getName() == "player") {
+			if (e->getName() == "MyPlayer") {
 				GameDataTracker::getInstance().logDistanceWalked(translation);
 			}
 		}
