@@ -17,6 +17,7 @@
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
 #include "Sail/utils/GameDataTracker.h"
+#include "../SPLASH/src/game/events/GameOverEvent.h"
 
 
 
@@ -256,7 +257,8 @@ void NetworkReceiverSystem::update(float dt) {
 				GameDataTracker::getInstance().turnOffLocalDataTracking();
 
 				mergeHostsStats();
-
+				// Dispatch game over event
+				Application::getInstance()->dispatchEvent(GameOverEvent());
 			}
 			break;
 			case Netcode::MessageType::CANDLE_HELD_STATE:
@@ -351,7 +353,6 @@ void NetworkReceiverSystem::update(float dt) {
 				(ar)(jumpsMade);
 
 				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
-
 			}
 			break;
 

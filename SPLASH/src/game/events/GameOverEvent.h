@@ -4,7 +4,7 @@
 class GameOverEvent : public Event {
 public:
 	GameOverEvent()
-		: Event(Event::NETWORK_WELCOME) {}
+		: Event(Event::GAME_OVER) {}
 	~GameOverEvent() { }
 
 	static Type GetStaticType() {
