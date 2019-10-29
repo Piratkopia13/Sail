@@ -634,7 +634,7 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 }
 
 void NetworkReceiverSystem::matchEnded() {
-	m_gameStatePtr->requestStackPop();
+	m_gameStatePtr->requestStackClear();
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
