@@ -240,8 +240,14 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		}
 //#endif
 
-		if (e->hasComponent<GunComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
-			glm::vec3 gunPosition = e->getComponent<TransformComponent>()->getTranslation();
+		// keep, for next task
+		//if (!e->hasComponent<GunComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
+		//	glm::vec3 gunPosition = e->getComponent<TransformComponent>()->getTranslation();
+		//	e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+		//}
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
+			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
+			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
 			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 		}
 		else {

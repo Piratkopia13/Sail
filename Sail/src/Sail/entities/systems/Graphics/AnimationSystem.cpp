@@ -45,6 +45,21 @@ AnimationSystem::AnimationSystem()
 AnimationSystem::~AnimationSystem() {
 }
 
+void AnimationSystem::updateHands(const glm::vec3& lPos, const glm::vec3& rPos, const glm::vec3& lRot, const glm::vec3& rRot) {
+	for (auto& e : entities) {
+		AnimationComponent* ac = e->getComponent<AnimationComponent>();
+		if (ac) {
+			ac->leftHandPosition = glm::identity<glm::mat4>();
+			ac->leftHandPosition = glm::translate(ac->leftHandPosition, lPos);
+			ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(lRot));
+
+			ac->rightHandPosition = glm::identity<glm::mat4>();
+			ac->rightHandPosition = glm::translate(ac->rightHandPosition, rPos);
+			ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(rRot));
+		}
+	}
+}
+
 void AnimationSystem::update(float dt) {
 	updateTransforms(dt);
 	updateMeshCPU();

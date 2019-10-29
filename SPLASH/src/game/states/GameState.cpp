@@ -614,6 +614,33 @@ bool GameState::renderImgui(float dt) {
 		m_wasDroppedWindow.renderWindow();
 	}
 
+	// KEEP UNTILL FINISHED WITH HANDPOSITIONS
+	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
+	//static glm::vec3 rPos(-0.57f, 1.03f, 0.05f);
+	//static glm::vec3 lRot(1.178f, -0.462f, 0.600f);
+	//static glm::vec3 rRot(3.14f * 0.5f, -3.14f * 0.17f, 0.0f);
+	//if (ImGui::Begin("HandLocation")) {
+	//	ImGui::SliderFloat("##lposx", &lPos.x, -1.5f, 1.5f);
+	//	ImGui::SliderFloat("##lposy", &lPos.y, -1.5f, 1.5f);
+	//	ImGui::SliderFloat("##lposz", &lPos.z, -1.5f, 1.5f);
+	//	ImGui::Spacing();
+	//	ImGui::SliderFloat("##rPosx", &rPos.x, -1.5f, 1.5f);
+	//	ImGui::SliderFloat("##rPosy", &rPos.y, -1.5f, 1.5f);
+	//	ImGui::SliderFloat("##rPosz", &rPos.z, -1.5f, 1.5f);
+	//	ImGui::Spacing();
+	//	ImGui::Spacing();
+	//	ImGui::SliderFloat("##lRotx", &lRot.x, -3.14f, 3.14f);
+	//	ImGui::SliderFloat("##lRoty", &lRot.y, -3.14f, 3.14f);
+	//	ImGui::SliderFloat("##lRotz", &lRot.z, -3.14f, 3.14f);
+	//	ImGui::Spacing();
+	//	ImGui::SliderFloat("##rRotx", &rRot.x, -3.14f, 3.14f);
+	//	ImGui::SliderFloat("##rRoty", &rRot.y, -3.14f, 3.14f);
+	//	ImGui::SliderFloat("##rRotz", &rRot.z, -3.14f, 3.14f);
+	//}
+	//ImGui::End();
+	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
+
+
 	return false;
 }
 

@@ -59,7 +59,7 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<ModelComponent>(candleModel);
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
-	gun->addComponent<GunComponent>();
+	//gun->addComponent<GunComponent>();
 	return gun;
 }
 
@@ -79,7 +79,6 @@ void EntityFactory::AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_
 
 		}
 		CandleComponent* cc = c->getComponent<CandleComponent>();
-		GunComponent* gc = c->getComponent<GunComponent>();
 		if (cc) {
 			c->addComponent<CollidableComponent>();
 			c->addComponent<CandleComponent>();
@@ -157,7 +156,6 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<CullingComponent>();
 	playerEntity->addComponent<ModelComponent>(characterModel);
 	playerEntity->addComponent<CollidableComponent>();
-
 	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 
 
@@ -168,7 +166,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	// Adding audio component and adding all sounds attached to the playerEntity entity
 	playerEntity->addComponent<AudioComponent>();
 
-	//playerEntity->addComponent<GunComponent>();
+	playerEntity->addComponent<GunComponent>();
 	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
 
 
@@ -184,20 +182,20 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	
 
 	auto gun = CreateWaterGun(playerEntity->getName() + "WaterGun");
-	//gun->addComponent<RealTimeComponent>(); // Player gun will have its position updated each frame
+	gun->addComponent<RealTimeComponent>(); // Player gun will have its position updated each frame
 	playerEntity->addChildEntity(gun);
 
 	// Attach the candle to the player's left hand
 	ac->leftHandEntity = gun.get();
 	ac->leftHandPosition = glm::identity<glm::mat4>();
-	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.57f, 1.03f, 0.05f));
-	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
+	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
+	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
 	
 	// Attach the something to the player's right hand
 	ac->rightHandEntity = candle.get();
 	ac->rightHandPosition = glm::identity<glm::mat4>();
-	ac->rightHandPosition = glm::translate(ac->rightHandPosition, glm::vec3(-0.57f, 1.03f, 0.05f));
-	ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(3.14f * 0.5f, -3.14f * 0.17f, 0.0f)));
+	ac->rightHandPosition = glm::translate(ac->rightHandPosition, glm::vec3(-0.57f, 1.015f, 0.452f));
+	ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(1.455f, 0.208f, 0.000f)));
 
 }
 
