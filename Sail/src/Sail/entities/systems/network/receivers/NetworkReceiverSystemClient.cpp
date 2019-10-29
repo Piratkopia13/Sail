@@ -20,8 +20,7 @@ void NetworkReceiverSystemClient::handleIncomingData(std::string data) {
 }
 
 void NetworkReceiverSystemClient::endMatch() {
-
-	m_gameStatePtr->requestStackPop();
+	m_gameStatePtr->requestStackClear();
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
