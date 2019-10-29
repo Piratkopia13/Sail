@@ -276,12 +276,28 @@ void NetworkReceiverSystem::update(float dt) {
 				backToLobby();
 			}
 			break;
+			case Netcode::MessageType::RUNNING_METAL_START:
+			{
+				ar(componentID);
+				runningMetalStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_TILE_START:
+			{
+				ar(componentID);
+				runningTileStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_STOP_SOUND:
+			{
+				ar(componentID);
+				runningStopSound(componentID);
+			}
+			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				Netcode::PlayerID playerID;
-
-				ar(playerID);
-				playerDisconnect(playerID);
+				ar(componentID);
+				playerDisconnect(componentID);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -478,8 +494,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
 				}
-
-				
 
 				// Check in Candle System What happens next
 				return;
@@ -682,6 +696,44 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 void NetworkReceiverSystem::backToLobby() {
 	m_gameStatePtr->requestStackPop();
 	m_gameStatePtr->requestStackPush(States::JoinLobby);
+}
+
+void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].playOnce = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+
+			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].playOnce = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+
+			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+
+			break;
+		}
+	}
 }
 
 void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {

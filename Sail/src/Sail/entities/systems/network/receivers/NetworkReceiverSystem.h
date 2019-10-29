@@ -58,5 +58,9 @@ private:
 	virtual void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) = 0;
 	void backToLobby();
 
+	void runningMetalStart(Netcode::ComponentID id);
+	void runningTileStart(Netcode::ComponentID id);
+	void runningStopSound(Netcode::ComponentID id);
+
 	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
 };

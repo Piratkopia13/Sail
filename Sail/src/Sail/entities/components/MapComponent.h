@@ -19,7 +19,7 @@ struct Clutter {
 	int size;
 };
 
-enum AreaType {ROOM, CORRIDOR};
+enum AreaType {CORRIDOR, ROOM};
 
 class MapComponent : public Component<MapComponent> {
 public:
@@ -66,12 +66,15 @@ public:
 
 	}
 
-	AreaType getAreaType(float posX, float posY) {
+	const int getAreaType(float posX, float posY) {
 
 		AreaType returnValue;
 
-		posX /= (xsize * tileSize);
-		posY /= (ysize * tileSize);
+		posX += (0.5 * tileSize);
+		posY += (0.5 * tileSize);
+		posX /= tileSize;
+		posY /= tileSize;
+
 		int roomValue = tileArr[static_cast<int>(posX)][static_cast<int>(posY)][1];
 
 		if (roomValue == 0) {
@@ -81,7 +84,7 @@ public:
 			returnValue = AreaType::ROOM;
 		}
 
-		return returnValue;
+		return static_cast<int>(returnValue);
 	}
 
 #ifdef _PERFORMANCE_TEST
