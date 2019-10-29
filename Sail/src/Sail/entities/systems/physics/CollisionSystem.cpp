@@ -27,63 +27,18 @@ void CollisionSystem::provideOctree(Octree* octree) {
 }
 
 
-//#define OLD_COLLISION_SYSTEM
-
-// Multi-threading this system did not make much of an improvement to the performance
-// For better performance double buffering bounding boxes would likely be required.
 void CollisionSystem::update(float dt) {
+	constexpr size_t NR_OF_JOBS = 16;
+	constexpr size_t lastJob = NR_OF_JOBS - 1;
+	const size_t entitiesPerJob = entities.size() / NR_OF_JOBS;
+	std::future<bool> jobs[NR_OF_JOBS];
+
+
 	// prepare matrixes and bounding boxes
 	for (auto e : entities) {
 		e->getComponent<TransformComponent>()->prepareMatrix();
 		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->prepareCorners();
 	}
-
-
-#ifdef OLD_COLLISION_SYSTEM
-	
-	int counter = 0;
-	for (auto& e : entities) {
-		auto movement = e->getComponent<MovementComponent>();
-		auto collision = e->getComponent<CollisionComponent>();
-		auto boundingBox = e->getComponent<BoundingBoxComponent>();
-		auto csc = e->getComponent<CollisionSpheresComponent>();
-
-		collision->collisions.clear();
-
-		if (collision->padding < 0.0f) {
-			collision->padding = glm::length(boundingBox->getBoundingBox()->getHalfSize());
-		}
-
-		float updateableDt = dt;
-
-		if (m_octree) {
-			if (!csc) {
-				//Not implemented for spheres yet
-				collisionUpdate(e, updateableDt);
-
-				surfaceFromCollision(e, collision->collisions);
-
-				if (rayCastCheck(e, *boundingBox->getBoundingBox(), updateableDt)) {
-					//Object is moving fast, ray cast for collisions
-					rayCastUpdate(e, *boundingBox->getBoundingBox(), updateableDt);
-					movement->oldVelocity = movement->velocity;
-				}
-			}
-		}
-
-		movement->updateableDt = updateableDt;
-	}
-	//Logger::Log(std::to_string(counter));
-	
-
-#else
-
-	constexpr size_t NR_OF_JOBS = 16;
-	constexpr size_t lastJob = NR_OF_JOBS - 1;
-	const size_t entitiesPerJob = entities.size() / NR_OF_JOBS;
-
-	std::future<bool> jobs[NR_OF_JOBS];
-
 
 	// ======================== Collision Update ======================================
 	
@@ -98,9 +53,7 @@ void CollisionSystem::update(float dt) {
 	});
 
 	// Wait for jobs to finish executing
-	for (size_t i = 0; i < NR_OF_JOBS; ++i) {
-		jobs[i].get();
-	}
+	for (size_t i = 0; i < NR_OF_JOBS; ++i) { jobs[i].get(); }
 
 
 	// ======================== Surface from collisions ======================================
@@ -116,13 +69,12 @@ void CollisionSystem::update(float dt) {
 	});
 
 	// Wait for jobs to finish executing
-	for (size_t i = 0; i < NR_OF_JOBS; ++i) {
-		jobs[i].get();
-	}
+	for (size_t i = 0; i < NR_OF_JOBS; ++i) { jobs[i].get(); }
 
 
 	// ======================== Ray cast collisions ======================================
-	// Technically not thread safe but we presume that fast travelling objects (basically water) will not collide with other fast travelling objects
+	// Technically not thread safe but we presume that fast travelling objects (basically water) 
+	// will not collide with other fast travelling objects
 
 	// Start executing jobs
 	for (size_t i = 0; i < NR_OF_JOBS - 1; ++i) {
@@ -135,12 +87,7 @@ void CollisionSystem::update(float dt) {
 	});
 
 	// Wait for jobs to finish executing
-	for (size_t i = 0; i < NR_OF_JOBS; ++i) {
-		jobs[i].get();
-	}
-
-#endif
-
+	for (size_t i = 0; i < NR_OF_JOBS; ++i) { jobs[i].get(); }
 }
 
 
