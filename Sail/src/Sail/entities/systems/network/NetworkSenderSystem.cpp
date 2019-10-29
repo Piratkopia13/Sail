@@ -385,8 +385,27 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 			(ar)(player->second.placement);
 		}
 
-		// Send all specific data
+		// Send all specific data. The host has processed data from all clients and will 
+		// now return it to their endscreens.
+		(ar)(dgtp->getStatisticsGlobal().bulletsFired);
+		(ar)(dgtp->getStatisticsGlobal().bulletsFiredID);
 
+		(ar)(dgtp->getStatisticsGlobal().distanceWalked);
+		(ar)(dgtp->getStatisticsGlobal().distanceWalkedID);
+
+		(ar)(dgtp->getStatisticsGlobal().jumpsMade);
+		(ar)(dgtp->getStatisticsGlobal().jumpsMadeID);
+
+
+	}
+	break;
+	case Netcode::MessageType::PREPARE_ENDSCREEN:
+	{
+		// Send all specific data to Host
+		(ar)(GameDataTracker::getInstance().getStatisticsLocal().bulletsFired);
+		(ar)(GameDataTracker::getInstance().getStatisticsLocal().distanceWalked);
+		(ar)(GameDataTracker::getInstance().getStatisticsLocal().jumpsMade);
+		
 	}
 	break;
 	case Netcode::MessageType::IGNITE_CANDLE:

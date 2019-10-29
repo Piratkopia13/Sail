@@ -9,6 +9,8 @@
 #include "Sail/graphics/geometry/Transform.h"
 #include "Sail/KeyBinds.h"
 #include "WaveBankReader.h"
+#include "Sail/entities/components/AudioComponent.h"
+
 
 #include <exception>
 #include <fstream>
@@ -21,6 +23,8 @@
 #include <utility>
 #include <windows.h>
 #include <wrl/client.h>
+
+#include <thread>
 
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfplat.lib")
@@ -147,7 +151,7 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 	return indexValue;
 }
 
-void AudioEngine::streamSound(const std::string& filename, int streamIndex, float volume, bool isPositionalAudio, bool loop) {
+void AudioEngine::streamSound(const std::string& filename, int streamIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC) {
 	bool expectedValue = false;
 	while (!m_streamLocks[streamIndex].compare_exchange_strong(expectedValue, true));
 
@@ -155,7 +159,7 @@ void AudioEngine::streamSound(const std::string& filename, int streamIndex, floa
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		m_streamLocks[streamIndex].store(false);
 	} else {
-		this->streamSoundInternal(filename, streamIndex, volume, isPositionalAudio, loop);
+		this->streamSoundInternal(filename, streamIndex, volume, isPositionalAudio, loop, pAudioC);
 	}
 
 	return;
@@ -410,7 +414,7 @@ HRESULT AudioEngine::initXAudio2() {
 }
 
 
-void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop) {
+void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC) {
 
 	if (!m_isRunning) {
 		return;
@@ -690,6 +694,9 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 	m_isFinished[myIndex] = true;
 	m_streamLocks[myIndex].store(false);
+
+	// Clean up audio component as well
+	pAudioC->m_currentlyStreaming.clear();
 }
 
 //--------------------------------------------------------------------------------------

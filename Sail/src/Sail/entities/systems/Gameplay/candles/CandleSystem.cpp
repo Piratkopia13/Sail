@@ -77,14 +77,10 @@ void CandleSystem::update(float dt) {
 					if (LivingCandles <= 1) { // Match IS over
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::MATCH_ENDED,
-							nullptr
-						);
-						// Send relevant stats to all clients
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::ENDGAME_STATS,
 							nullptr,
-							false
+							true
 						);
+
 					}
 				}
 			} else if ((candle->getDownTime() >= m_candleForceRespawnTimer || candle->getIsLit())) {

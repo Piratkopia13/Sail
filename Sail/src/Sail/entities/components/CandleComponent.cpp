@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "CandleComponent.h"
+#include "Sail/utils/GameDataTracker.h"
 
 CandleComponent::CandleComponent() {
 
@@ -18,6 +19,7 @@ void CandleComponent::hitWithWater(float damage, Netcode::PlayerID shooterID) {
 			m_wasHitByWater = true;
 
 			if (m_health <= 0.0f) {
+				GameDataTracker::getInstance().logEnemyKilled(shooterID);
 				setWasHitByNetID(shooterID);
 				setIsLit(false);
 			}
