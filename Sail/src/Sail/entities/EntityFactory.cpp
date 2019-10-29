@@ -115,6 +115,9 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
 	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation);
 	playerEnt->addComponent<NetworkSenderComponent>(Netcode::MessageType::ANIMATION, Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100));
+
+	// Create the player
+	AddWeaponAndCandleToPlayer(playerEnt, lightIndex, 0);
 }
 
 // Creates a player enitty without a candle and without a model

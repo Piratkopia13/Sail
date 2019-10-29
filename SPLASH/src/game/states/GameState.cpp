@@ -1052,45 +1052,6 @@ void GameState::populateScene(Model* lightModel, Model* bbModel, Model* projecti
 
 		EntityFactory::CreatePerformancePlayer(e, i, glm::vec3(spawnOffsetX, -0.9f, spawnOffsetZ));
 
-		/*
-		std::string name = "DocTorch.fbx";
-		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
-		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-		characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
-		characterModel->setIsAnimated(true);
-
-		e->addComponent<ModelComponent>(characterModel);
-		auto animStack = &m_app->getResourceManager().getAnimationStack(name);
-		auto animComp = e->addComponent<AnimationComponent>(animStack);
-		animComp->currentAnimation = animStack->getAnimation(1);
-		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
-		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-		e->addComponent<CollidableComponent>();
-		e->addComponent<MovementComponent>();
-		e->addComponent<SpeedLimitComponent>();
-		e->addComponent<CollisionComponent>();
-		e->addComponent<GunComponent>();*/
-
-		///* Audio */
-		//e->addComponent<AudioComponent>();
-		//Audio::SoundInfo sound{};
-		//sound.fileName = "../Audio/guitar.wav";
-		//sound.soundEffectLength = 104.0f;
-		//sound.volume = 1.0f;
-		//sound.playOnce = false;
-		//sound.positionalOffset = { 0.f, 1.2f, 0.f };
-		//sound.isPlaying = true; // Start playing the sound immediately
-		//e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
-
-		// Add candle
-		/*if (i != 12) {
-			auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
-			candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
-			e->addChildEntity(candleEntity);
-		}*/
-
 		m_performanceEntities.push_back(e);
 	}
 }
