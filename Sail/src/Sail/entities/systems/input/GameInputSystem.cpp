@@ -240,22 +240,11 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		}
 //#endif
 
-		// keep, for next task
 		//if (!e->hasComponent<GunComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
 		//	glm::vec3 gunPosition = e->getComponent<TransformComponent>()->getTranslation();
 		//	e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 		//}
-		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
-			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
-			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
-		}
-		else {
-			if (e->hasComponent<GunComponent>()) {
-				e->getComponent<GunComponent>()->firing = false;
-			}
-		}
-
+		
 		auto trans = e->getComponent<TransformComponent>();
 		auto rots = trans->getRotations();
 		m_pitch = (rots.z != 0.f) ? glm::degrees(-rots.z) : m_pitch;
@@ -285,6 +274,42 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		}
 
 		trans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
+
+		GunComponent* gc = e->getComponent<GunComponent>();
+		TransformComponent* ptc = e->getComponent<TransformComponent>();
+		if (gc) {
+			for (auto childE : e->getChildEntities()) {
+				if (childE->getName().find("WaterGun") != std::string::npos) {
+					TransformComponent* tc = childE->getComponent<TransformComponent>();
+					tc->setRotations(glm::radians(-m_pitch),0, 0);
+				}
+			}
+		}
+
+
+
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
+			GunComponent* gc = e->getComponent<GunComponent>();
+			TransformComponent* ptc = e->getComponent<TransformComponent>();
+			if (gc) {
+				for (auto childE : e->getChildEntities()) {
+					if (childE->getName().find("WaterGun") != std::string::npos) {
+						TransformComponent* tc = childE->getComponent<TransformComponent>();
+						glm::vec3 gunPosition = glm::vec3(tc->getMatrix()[3]) + m_cam->getCameraDirection() * 0.33f;
+						e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+					}
+				}
+			}
+		}
+		else {
+
+			GunComponent* gc = e->getComponent<GunComponent>();
+			if (gc) {
+				gc->firing = false;
+			}
+
+		}
+
 	}
 }
 

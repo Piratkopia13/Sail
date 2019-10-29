@@ -59,7 +59,6 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<ModelComponent>(candleModel);
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
-	//gun->addComponent<GunComponent>();
 	return gun;
 }
 
