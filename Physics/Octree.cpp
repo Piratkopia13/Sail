@@ -305,8 +305,6 @@ void Octree::getCollisionsRec(Entity* entity, const BoundingBox* entityBoundingB
 			Intersection::AabbWithAabb(entityBoundingBox->getPosition(), entityBoundingBox->getHalfSize(), otherBoundingBox->getPosition(), otherBoundingBox->getHalfSize(), &intersectionAxis, &intersectionDepth);
 
 			outCollisionData->emplace_back();
-
-			outCollisionData->back().normal = intersectionAxis;
 			outCollisionData->back().shape = SAIL_NEW CollisionAABB(otherBoundingBox->getPosition(), otherBoundingBox->getHalfSize(), intersectionAxis);
 			outCollisionData->back().entity = currentNode->entities[i];
 		}

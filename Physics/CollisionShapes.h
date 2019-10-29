@@ -8,7 +8,7 @@ public:
 	virtual ~CollisionShape() {};
 
 	virtual glm::vec3 getIntersectionPosition(const BoundingBox* boundingBox) = 0;
-	virtual bool getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth) = 0;
+	virtual bool getIntersectionDepthAndAxis(const BoundingBox* boundingBox, glm::vec3* axis, float* depth) = 0;
 
 	int keeperTracker = 1;
 };
@@ -20,7 +20,7 @@ public:
 	~CollisionTriangle() {};
 
 	glm::vec3 getIntersectionPosition(const BoundingBox* boundingBox);
-	bool getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth);
+	bool getIntersectionDepthAndAxis(const BoundingBox* boundingBox, glm::vec3* axis, float* depth);
 
 private:
 	glm::vec3 m_positions[3];
@@ -33,7 +33,7 @@ public:
 	~CollisionAABB() {};
 
 	glm::vec3 getIntersectionPosition(const BoundingBox* boundingBox);
-	bool getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth);
+	bool getIntersectionDepthAndAxis(const BoundingBox* boundingBox, glm::vec3* axis, float* depth);
 
 private:
 	glm::vec3 m_position;
