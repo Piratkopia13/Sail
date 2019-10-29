@@ -27,7 +27,7 @@ void CollisionSystem::provideOctree(Octree* octree) {
 }
 
 
-//#define OLD_COLLISION_SYSTEM
+#define OLD_COLLISION_SYSTEM
 
 // Multi-threading this system did not make much of an improvement to the performance
 // For better performance double buffering bounding boxes would likely be required.

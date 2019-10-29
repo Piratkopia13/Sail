@@ -574,7 +574,7 @@ bool GameState::fixedUpdate(float dt) {
 #ifdef _PERFORMANCE_TEST
 	/* here we shoot the guns */
 	for (auto e : m_performanceEntities) {
-		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrix()[3]);
+		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrixWithUpdate()[3]);
 		auto ePos = e->getComponent<TransformComponent>()->getTranslation();
 		ePos.y = ePos.y + 5.f;
 		auto dir = ePos - pos;
