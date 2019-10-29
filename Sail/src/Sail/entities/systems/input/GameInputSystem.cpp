@@ -116,7 +116,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 					if ( child->hasComponent<CandleComponent>() ) {
 
-						child->getComponent<CandleComponent>()->activate();
+						child->getComponent<CandleComponent>()->setIsLit(true);
 					}
 				}
 			}
