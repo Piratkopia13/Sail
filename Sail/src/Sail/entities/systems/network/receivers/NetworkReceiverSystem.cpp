@@ -18,7 +18,8 @@
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
 #include "Sail/utils/GameDataTracker.h"
 
-
+#include <fstream>
+static std::ofstream out("Reciver.txt");
 
 // The host will now automatically forward all incoming messages to other players so
 // no need to use any host-specific logic in this system.
@@ -130,6 +131,7 @@ void NetworkReceiverSystem::update(float dt) {
 			// Read per data type
 			for (size_t j = 0; j < nrOfMessagesInComponent; j++) {
 				ar(messageType);
+				out << "ReciverComp: " << Netcode::MessageNames[(int)(messageType)-1] << "\n";
 
 				// Read and process the data
 				// TODO: Rename some of the enums/functions
@@ -203,6 +205,7 @@ void NetworkReceiverSystem::update(float dt) {
 		for (size_t i = 0; i < nrOfEvents; i++) {
 			// Handle-Single-Frame events
 			ar(eventType);
+			out << "Event: " << Netcode::MessageNames[(int)(eventType) - 1] << "\n";
 
 			switch (eventType) {
 			case Netcode::MessageType::PLAYER_JUMPED:

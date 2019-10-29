@@ -16,6 +16,9 @@
 
 #include <vector>
 
+#include <fstream>
+static std::ofstream out("Sender.txt");
+
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 	registerComponent<NetworkSenderComponent>(true, true, true);
 	registerComponent<TransformComponent>(false, true, false);
@@ -71,7 +74,6 @@ void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem
 
 */
 void NetworkSenderSystem::update() {
-
 	// Binary data that will be sent over the network
 	std::ostringstream osToOthers(std::ios::binary);
 	Netcode::OutArchive sendToOthers(osToOthers);
@@ -100,6 +102,8 @@ void NetworkSenderSystem::update() {
 		for (auto& messageType : nsc->m_dataTypes) {
 			sendToOthers(messageType);          // Current MessageType
 
+			out << "SenderComp: " << Netcode::MessageNames[(int)(messageType) - 1] << "\n";
+
 			writeMessageToArchive(messageType, e, sendToOthers); // Add to archive depending on the message
 		}
 	}
@@ -110,6 +114,8 @@ void NetworkSenderSystem::update() {
 
 	while (!m_eventQueue.empty()) {
 		NetworkSenderEvent* pE = m_eventQueue.front();
+		out << "Event: " << Netcode::MessageNames[(int)(pE->type)-1] << "\n";
+
 		writeEventToArchive(pE, sendToOthers);
 		if (pE->alsoSendToSelf) {
 			writeEventToArchive(pE, sendToSelf);
