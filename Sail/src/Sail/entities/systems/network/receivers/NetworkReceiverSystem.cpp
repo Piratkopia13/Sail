@@ -19,6 +19,7 @@
 #include "Sail/utils/GameDataTracker.h"
 
 
+
 // The host will now automatically forward all incoming messages to other players so
 // no need to use any host-specific logic in this system.
 #define BANNED(func) sorry_##func##_is_a_banned_function
@@ -100,7 +101,7 @@ void NetworkReceiverSystem::update() {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
-	int animationStack;
+	int animationIndex;
 	float animationTime;
 
 	// Process all messages in the buffer
@@ -154,9 +155,9 @@ void NetworkReceiverSystem::update() {
 				break;
 				case Netcode::MessageType::ANIMATION: 
 				{
-					ar(animationStack);		// Read
+					ar(animationIndex);		// Read
 					ar(animationTime);		//
-					setEntityAnimation(id, animationStack, animationTime);
+					setEntityAnimation(id, animationIndex, animationTime);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_START:
@@ -268,34 +269,40 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::RUNNING_METAL_START:
 			{
-				Netcode::PlayerID playerID;
-				ar(playerID);
+				//Netcode::PlayerID playerID;
+				//ar(playerID);
+				ar(componentID);
 
-				runningMetalStart(playerID);
+				runningMetalStart(componentID);
 			}
 			break;
 			case Netcode::MessageType::RUNNING_TILE_START:
 			{
-				Netcode::PlayerID playerID;
-				ar(playerID);
+				//Netcode::PlayerID playerID;
+				//ar(playerID);
+				ar(componentID);
 
-				runningTileStart(playerID);
+				runningTileStart(componentID);
 			}
 			break;
 			case Netcode::MessageType::RUNNING_STOP_SOUND:
 			{
-				Netcode::PlayerID playerID;
-				ar(playerID);
+				//Netcode::PlayerID playerID;
+				//ar(playerID);
 
-				runningStopSound(playerID);
+				ar(componentID);
+
+				runningStopSound(componentID);
 			}
 			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				Netcode::PlayerID playerID;
+				//Netcode::PlayerID playerID;
+				//ar(playerID);
 
-				ar(playerID);
-				playerDisconnect(playerID);
+				ar(componentID);
+
+				playerDisconnect(componentID);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -319,6 +326,13 @@ void NetworkReceiverSystem::update() {
 
 				// Get all specific data from the Host
 
+			}
+			break;
+			case Netcode::MessageType::IGNITE_CANDLE:
+			{
+				Netcode::ComponentID candleOwnerID;
+				ar(candleOwnerID);
+				igniteCandle(candleOwnerID);
 			}
 			break;
 			default:
@@ -377,7 +391,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
 			glm::vec3 rot = rotation;
 			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
-			rot.y += 3.14f * 0.5f;
+			//rot.y += 3.14f * 0.5f;
 			//}
 			e->getComponent<TransformComponent>()->setRotations(rot);
 
@@ -387,11 +401,11 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 	Logger::Warning("setEntityRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationStack, float animationTime) {
+void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationIndex, float animationTime) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			auto animation = e->getComponent<AnimationComponent>();
-			animation->currentAnimation = animation->getAnimationStack()->getAnimation(animationStack);
+			animation->setAnimation(animationIndex);
 			animation->animationTime = animationTime;
 			return;
 		}
@@ -514,7 +528,9 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
 			e->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 			e->removeComponent<GunComponent>();
-
+			e->removeComponent<AnimationComponent>();
+			e->removeComponent<ModelComponent>();
+			
 			e->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
 
 			auto transform = e->getComponent<TransformComponent>();
@@ -653,7 +669,7 @@ void NetworkReceiverSystem::backToLobby() {
 
 void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id && e->hasComponent<LocalOwnerComponent>()) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = true;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].playOnce = false;
@@ -687,4 +703,25 @@ void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 			break;
 		}
 	}
+}
+
+void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id != candleOwnerID) {
+			continue;
+		}
+		for (int i = 0; i < e->getChildEntities().size(); i++) {
+			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
+				auto candleComp = candleE->getComponent<CandleComponent>();
+				candleComp->setHealth(MAX_HEALTH);
+				candleComp->incrementRespawns();
+				candleComp->resetDownTime();
+				candleComp->setIsLit(true);
+				
+			}
+
+		}
+	}
+
+
 }

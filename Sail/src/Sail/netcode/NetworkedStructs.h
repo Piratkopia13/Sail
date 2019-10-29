@@ -65,6 +65,7 @@ namespace Netcode {
 		RUNNING_METAL_START,
 		RUNNING_TILE_START,
 		RUNNING_STOP_SOUND,
+		IGNITE_CANDLE,
 		EMPTY = 69
 	};
 
@@ -190,22 +191,29 @@ namespace Netcode {
 
 	class MessageRunningMetalStart : public MessageData {
 	public:
-		MessageRunningMetalStart(Netcode::ComponentID id) : playerID(id) {}
+		MessageRunningMetalStart(Netcode::ComponentID id) : runningPlayer(id) {}
 		~MessageRunningMetalStart() {}
-		PlayerID playerID;
+		Netcode::ComponentID runningPlayer;
 	};
 
 	class MessageRunningTileStart : public MessageData {
 	public:
-		MessageRunningTileStart(Netcode::ComponentID id) : playerID(id) {}
+		MessageRunningTileStart(Netcode::ComponentID id) : runningPlayer(id) {}
 		~MessageRunningTileStart() {}
-		PlayerID playerID;
+		Netcode::ComponentID runningPlayer;
 	};
 
 	class MessageRunningStopSound : public MessageData {
 	public:
-		MessageRunningStopSound(Netcode::ComponentID id) : playerID(id) {}
+		MessageRunningStopSound(Netcode::ComponentID id) : runningPlayer(id) {}
 		~MessageRunningStopSound() {}
-		PlayerID playerID;
+		Netcode::ComponentID runningPlayer;
 	};
+	class MessageIgniteCandle : public MessageData {
+	public:
+		MessageIgniteCandle(Netcode::ComponentID id) : candleOwnerID(id) {}
+		~MessageIgniteCandle() {}
+		Netcode::ComponentID candleOwnerID;
+	};
+
 }

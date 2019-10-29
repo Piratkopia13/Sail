@@ -95,12 +95,12 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			// Else do normal movement
-		} else {
+		} 
+		else {
 			auto collision = e->getComponent<CollisionComponent>();
 			auto movement = e->getComponent<MovementComponent>();
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
 			auto audioComp = e->getComponent<AudioComponent>();
-
 
 			// Get player movement inputs
 			Movement playerMovement = getPlayerMovementInput(e);
@@ -117,7 +117,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 					if ( child->hasComponent<CandleComponent>() ) {
 
-						child->getComponent<CandleComponent>()->activate();
+						child->getComponent<CandleComponent>()->setIsLit(true);
 					}
 				}
 			}
@@ -182,10 +182,16 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 			forward.y = 0.f;
 			forward = glm::normalize(forward);
-
 			// Calculate right vector for player
 			glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 			right = glm::normalize(right);
+
+
+			// calculate forward vel and sidevel
+
+			movement->relVel.x = glm::dot(movement->velocity, forward);
+			movement->relVel.z = glm::dot(movement->velocity, right);
+			movement->relVel.y = glm::dot(movement->velocity, glm::vec3(0.f, 1.f, 0.f));
 
 			// Prevent division by zero
 			if ( playerMovement.forwardMovement != 0.0f || playerMovement.rightMovement != 0.0f ) {
@@ -247,6 +253,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				movement->accelerationToAdd =
 					glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
 					* acceleration;
+
+
+
 			} else {
 
 				// AUDIO TESTING (turn OFF looping running sound)
@@ -326,9 +335,9 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 
 		glm::vec3 forwards(
-			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw)),
+			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw + 90)),
 			std::sin(glm::radians(m_pitch)),
-			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw))
+			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw + 90))
 		);
 		forwards = glm::normalize(forwards);
 

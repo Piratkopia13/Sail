@@ -241,14 +241,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	break;
 	case Netcode::MessageType::ANIMATION:
 	{
-		// CURRENTLY IS:
-		ar(0);		// AnimationStack
-		ar(0.0f);	// AnimationTime
-
-		// SHOULD BE:
-	//	AnimationComponent* a = e->getComponent<AnimationComponent>();
-	//	(*ar)(a->getAnimationStack());					// Animation Stack
-	//	(*ar)(a->animationTime);						// Animation Time
+		ar(e->getComponent<AnimationComponent>()->animationIndex);
+		ar(e->getComponent<AnimationComponent>()->animationTime);
 	}
 	break;
 	case Netcode::MessageType::SHOOT_START:
@@ -353,19 +347,19 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	case Netcode::MessageType::RUNNING_METAL_START:
 	{
 		Netcode::MessageRunningMetalStart* data = static_cast<Netcode::MessageRunningMetalStart*>(event->data);
-		ar(data->playerID); // Send
+		ar(data->runningPlayer); // Send
 	}
 	break;
 	case Netcode::MessageType::RUNNING_TILE_START:
 	{
 		Netcode::MessageRunningTileStart* data = static_cast<Netcode::MessageRunningTileStart*>(event->data);
-		ar(data->playerID); // Send
+		ar(data->runningPlayer); // Send
 	}
 	break;
 	case Netcode::MessageType::RUNNING_STOP_SOUND:
 	{
 		Netcode::MessageRunningStopSound* data = static_cast<Netcode::MessageRunningStopSound*>(event->data);
-		ar(data->playerID); // Send
+		ar(data->runningPlayer); // Send
 	}
 	break;
 	case Netcode::MessageType::CANDLE_HELD_STATE:
@@ -395,7 +389,12 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 	}
 	break;
-
+	case Netcode::MessageType::IGNITE_CANDLE:
+	{
+		Netcode::MessageIgniteCandle* data = static_cast<Netcode::MessageIgniteCandle*>(event->data);
+		ar(data->candleOwnerID);
+	}
+	break;
 	default:
 		break;
 	}
