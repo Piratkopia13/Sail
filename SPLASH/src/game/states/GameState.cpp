@@ -14,12 +14,14 @@
 #include "Sail/graphics/geometry/factory/QuadModel.h"
 #include <sstream>
 #include <iomanip>
+#include "InGameMenuState.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_profiler(true)
-	, m_showcaseProcGen(false) {
+	, m_showcaseProcGen(false) 
+{
 	
 	initConsole();
 
@@ -178,6 +180,7 @@ GameState::GameState(StateStack& stack)
 }
 
 GameState::~GameState() {
+	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
 	delete m_octree;
 }
@@ -192,7 +195,7 @@ bool GameState::processInput(float dt) {
 #endif
 
 	// Pause game
-	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
 		requestStackPush(States::InGameMenu);
 	}
 
@@ -405,30 +408,34 @@ void GameState::initSystems(const unsigned char playerID) {
 void GameState::initConsole() {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
+		bool stateChanged = false;
+		std::string returnMsg = "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
 		if (param == "menu") {
 			requestStackPop();
 			requestStackPush(States::MainMenu);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to menu requested";
+			stateChanged = true;
+			returnMsg = "State change to menu requested";
 		}
 		else if (param == "pbr") {
 			requestStackPop();
 			requestStackPush(States::PBRTest);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to pbr requested";
+			stateChanged = true;
+			returnMsg = "State change to pbr requested";
 		}
 		else if (param == "perftest") {
 			requestStackPop();
 			requestStackPush(States::PerformanceTest);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to PerformanceTest requested";
+			stateChanged = true;
+			returnMsg = "State change to PerformanceTest requested";
 		}
-		else {
-			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+
+		if (stateChanged) {
+			// Reset the network
+			// Needs to be done to allow new games to be started
+			NWrapperSingleton::getInstance().resetNetwork();
+			NWrapperSingleton::getInstance().resetWrapper();
 		}
+		return returnMsg.c_str();
 
 	}, "GameState");
 	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
@@ -437,7 +444,6 @@ void GameState::initConsole() {
 			Netcode::MessageType::MATCH_ENDED,
 			nullptr
 		);
-		console.removeAllCommandsWithIdentifier("GameState");
 
 		return std::string("Match ended.");
 		}, "GameState");
@@ -505,7 +511,6 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 	} else {
 		this->requestStackPop();
 		this->requestStackPush(States::EndGame);
-		m_poppedThisFrame = true;
 	}
 
 	// Set bot target to null when player is dead
@@ -653,13 +658,6 @@ bool GameState::renderImguiDebug(float dt) {
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 
 	return false;
-}
-
-bool GameState::prepareStateChange() {
-	if (m_poppedThisFrame) {
-		// Do NOT reset network because we're NOT going to main menu
-	}
-	return true;
 }
 
 void GameState::shutDownGameState() {

@@ -4,11 +4,18 @@
 #include "Sail/Application.h"
 #include "Network/NWrapperSingleton.h"
 
-InGameMenuState::InGameMenuState(StateStack& stack) : State(stack) {
+bool InGameMenuState::sIsOpen = false;
+
+InGameMenuState::InGameMenuState(StateStack& stack) 
+	: State(stack) 
+{
+	sIsOpen = true;
 	m_isSinglePlayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 }
 
-InGameMenuState::~InGameMenuState(){}
+InGameMenuState::~InGameMenuState(){
+	sIsOpen = false;
+}
 
 bool InGameMenuState::processInput(float dt) {
 #ifndef DEVELOPMENT
@@ -49,4 +56,8 @@ bool InGameMenuState::renderImgui(float dt) {
 	}
 
 	return false;
+}
+
+bool InGameMenuState::IsOpen() {
+	return sIsOpen;
 }
