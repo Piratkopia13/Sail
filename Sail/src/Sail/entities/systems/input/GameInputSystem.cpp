@@ -15,6 +15,11 @@
 
 #include "Sail/TimeSettings.h"
 
+
+// Candle can only be picked up and put down once every 0.2 seconds
+constexpr float CANDLE_TIMER = 0.2f;
+
+
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<LocalOwnerComponent>(true, true, false);
 	registerComponent<MovementComponent>(true, true, true);
@@ -38,14 +43,8 @@ GameInputSystem::~GameInputSystem() {
 	clean();
 }
 
-
-// Keyboard input is checked every tick
-void GameInputSystem::fixedUpdate() {
-	this->processKeyboardInput(TIMESTEP);
-}
-
-// Mouse input is checked every frame
 void GameInputSystem::update(float dt, float alpha) {
+	this->processKeyboardInput(dt);
 	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
@@ -69,6 +68,8 @@ void GameInputSystem::stop() {
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
+	m_candleToggleTimer += dt;
+
 	for ( auto e : entities ) {
 		// Get player movement inputs
 		Movement playerMovement = getPlayerMovementInput(e);
@@ -95,8 +96,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			// Else do normal movement
-		} 
-		else {
+		} else {
 			auto collision = e->getComponent<CollisionComponent>();
 			auto movement = e->getComponent<MovementComponent>();
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
@@ -106,17 +106,16 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			Movement playerMovement = getPlayerMovementInput(e);
 
 			// Player puts down candle
-			if ( Input::WasKeyJustPressed(KeyBinds::TOGGLE_CANDLE_HELD) ) {
-
-				putDownCandle(e);
+			if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_CANDLE_HELD) ) {
+				if (m_candleToggleTimer > CANDLE_TIMER) {
+					putDownCandle(e);
+					m_candleToggleTimer = 0.0f;
+				}
 			}
 
 			if ( Input::WasKeyJustPressed(KeyBinds::LIGHT_CANDLE) ) {
-
 				for ( auto child : e->getChildEntities() ) {
-
 					if ( child->hasComponent<CandleComponent>() ) {
-
 						child->getComponent<CandleComponent>()->setIsLit(true);
 					}
 				}
