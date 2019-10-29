@@ -359,7 +359,7 @@ void AllAudioData::init() {
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "../Audio/killing_blow.wav";
-		soundUniqueInfo.soundEffectLength = 3.578f;
+		soundUniqueInfo.soundEffectLength = 0.488f;
 		soundUniqueInfo.volume = 0.5f;
 		AllAudioData::m_soundsUnique[Audio::KILLING_BLOW].push_back(soundUniqueInfo);
 	}

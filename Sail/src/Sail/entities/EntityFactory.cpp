@@ -132,6 +132,14 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 
 }
 
+void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
+	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation);
+	playerEnt->addComponent<NetworkSenderComponent>(Netcode::MessageType::ANIMATION, Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100));
+
+	// Create the player
+	AddWeaponAndCandleToPlayer(playerEnt, lightIndex, 0);
+}
+
 // Creates a player enitty without a candle and without a model
 void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation) {
 	
@@ -300,10 +308,10 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 	CollisionComponent* collision = e->addComponent<CollisionComponent>();
-	collision->drag = 2.0f;
+	collision->drag = 15.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
-	collision->bounciness = 0.1f;
-	collision->padding = 0.2f;
+	collision->bounciness = 0.0f;
+	collision->padding = 0.15f;
 
 	return e;
 }
