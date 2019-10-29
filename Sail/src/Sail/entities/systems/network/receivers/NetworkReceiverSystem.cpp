@@ -437,6 +437,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 			if (child->hasComponent<CandleComponent>()) {
 				// Damage the candle
 				// Save the Shooter of the Candle if its lethal
+				// TODO: Replace 10.0f with game settings damage
 				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
 
 				// Play relevant sound
@@ -572,8 +573,8 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 				auto candleTransComp = candleE->getComponent<TransformComponent>();
 
 
-				candleComp->setCarried(isHeld);
-				candleComp->setWasCarriedLastUpdate(isHeld);
+				candleComp->isCarried = isHeld;
+				candleComp->wasCarriedLastUpdate = isHeld;
 				if (!isHeld) {
 					candleTransComp->removeParent();
 					candleTransComp->setStartTranslation(pos);
@@ -703,15 +704,11 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 		for (int i = 0; i < e->getChildEntities().size(); i++) {
 			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
 				auto candleComp = candleE->getComponent<CandleComponent>();
-				candleComp->setHealth(MAX_HEALTH);
-				candleComp->incrementRespawns();
-				candleComp->resetDownTime();
-				candleComp->setIsLit(true);
-				
+				candleComp->health = MAX_HEALTH;
+				candleComp->respawns++;
+				candleComp->downTime = 0.f;
+				candleComp->isLit = true;				
 			}
-
 		}
 	}
-
-
 }

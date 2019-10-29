@@ -45,16 +45,16 @@ void CandleSystem::update(float dt) {
 	int LivingCandles = entities.size();
 
 	for (auto e : entities) {
-		if (auto candle = e->getComponent<CandleComponent>(); candle->getIsAlive()) {
+		if (auto candle = e->getComponent<CandleComponent>(); candle->isAlive) {
 			//If a candle is out of health.
-			if (candle->getHealth() <= 0.f) {
-				candle->setCarried(true);
+			if (candle->health <= 0.f) {
+				candle->isCarried = true;
 
 
 
 				// Did this candle's owner die?
-				if (candle->getNumRespawns() == m_maxNumRespawns) {
-					candle->setIsAlive(false);
+				if (candle->respawns == m_maxNumRespawns) {
+					candle->isAlive = false;
 					LivingCandles--;
 
 					//Only let the host sent PLAYER_DIED message
@@ -63,7 +63,7 @@ void CandleSystem::update(float dt) {
 							Netcode::MessageType::PLAYER_DIED,
 							SAIL_NEW Netcode::MessagePlayerDied{
 								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
-								candle->getWasHitByNetID()
+								candle->wasHitByPlayerID
 							}
 						);
 
@@ -85,7 +85,7 @@ void CandleSystem::update(float dt) {
 						}
 					}
 				}
-				else if ((candle->getDownTime() >= m_candleForceRespawnTimer || candle->getIsLit())) {
+				else if ((candle->downTime >= m_candleForceRespawnTimer || candle->isLit)) {
 					if (NWrapperSingleton::getInstance().isHost()) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::IGNITE_CANDLE,
@@ -97,11 +97,11 @@ void CandleSystem::update(float dt) {
 					}
 				}
 				else {
-					candle->addToDownTime(dt);
+					candle->downTime += dt;
 				}
 			} 
 
-			if (candle->isCarried() != candle->getWasCarriedLastUpdate()) {
+			if (candle->isCarried != candle->wasCarriedLastUpdate) {
 				putDownCandle(e);
 
 				// Inform other players that we've put down our candle
@@ -110,7 +110,7 @@ void CandleSystem::update(float dt) {
 						Netcode::MessageType::CANDLE_HELD_STATE,
 						SAIL_NEW Netcode::MessageCandleHeldState{
 							e->getParent()->getComponent<NetworkSenderComponent>()->m_id,
-							candle->isCarried(),
+							candle->isCarried,
 							e->getComponent<TransformComponent>()->getTranslation()
 						},
 						false // We've already put down our own candle so no need to do it again
@@ -118,17 +118,16 @@ void CandleSystem::update(float dt) {
 				}
 			}
 
-			if (candle->getInvincibleTimer() > 0.f) {
-				candle->decrementInvincibleTimer(dt);
+			if (candle->invincibleTimer > 0.f) {
+				candle->invincibleTimer -= dt;
 			}
 
 			// COLOR/INTENSITY
-			float cHealth = candle->getHealth();
-			cHealth = (cHealth < 0.f) ? 0.f : cHealth;
+			float cHealth = std::fmaxf(candle->health, 0.f);
 			float tempHealthRatio = (cHealth / MAX_HEALTH);
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
 
-			candle->setWasCarriedLastUpdate(candle->isCarried());
+			candle->wasCarriedLastUpdate = candle->isCarried;
 			glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrix() * glm::vec4(0, 0.37f, 0, 1);
 			e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 		}
@@ -142,8 +141,8 @@ void CandleSystem::putDownCandle(Entity* e) {
 	auto parentTransComp = e->getParent()->getComponent<TransformComponent>();
 
 	/* TODO: Raycast and see if the hit location is ground within x units */
-	if (!candleComp->isCarried()) {
-		if (candleComp->getIsLit()) {
+	if (!candleComp->isCarried) {
+		if (candleComp->isLit) {
 			glm::vec3 parentPos = parentTransComp->getTranslation();
 			glm::vec3 dir = candleTransComp->getParent()->getForward();
 			dir.y = 0.0f;
@@ -197,18 +196,18 @@ void CandleSystem::putDownCandle(Entity* e) {
 
 				ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 			} else {
-				candleComp->setCarried(true);
+				candleComp->isCarried = true;
 			}
 		} else {
-			candleComp->setCarried(true);
+			candleComp->isCarried = true;
 		}
 	} else {
 		// Pick up the candle
-		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit()) {
+		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->isLit) {
 			candleTransComp->setParent(parentTransComp);
 			e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = e;
 		} else {
-			candleComp->setCarried(false);
+			candleComp->isCarried = false;
 		}
 	}
 }

@@ -82,7 +82,7 @@ void EntityFactory::AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_
 		if (cc) {
 			c->addComponent<CollidableComponent>();
 			c->addComponent<CandleComponent>();
-			cc->setOwner(playerID);
+			cc->playerEntityID = playerID;
 		}
 	}
 }
@@ -243,7 +243,7 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	// TODO: unnecessary to create new transitions for each FSM if they're all identical
 	//Attack State
 	FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
-	attackToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), false);
+	attackToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
 	FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
 	attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
 	
@@ -251,11 +251,11 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
 	searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
 	FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
-	searchToFleeing->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), false);
+	searchToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
 	
 	// Fleeing State
 	FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
-	fleeingToSearch->addBoolCheck(aiCandleEntity->getComponent<CandleComponent>()->getPtrToIsLit(), true);
+	fleeingToSearch->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, true);
 	
 	fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
 	fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);

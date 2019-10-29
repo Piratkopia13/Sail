@@ -117,7 +117,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 					if ( child->hasComponent<CandleComponent>() ) {
 
-						child->getComponent<CandleComponent>()->setIsLit(true);
+						child->getComponent<CandleComponent>()->isLit = true;
 					}
 				}
 			}
@@ -362,7 +362,7 @@ void GameInputSystem::putDownCandle(Entity* e) {
 		auto candleE = e->getChildEntities()[i];
 		if ( candleE->hasComponent<CandleComponent>() ) {
 			auto candleComp = candleE->getComponent<CandleComponent>();
-			candleComp->setCarried(!candleComp->isCarried());
+			candleComp->isCarried = !candleComp->isCarried;
 			return;
 		}
 	}

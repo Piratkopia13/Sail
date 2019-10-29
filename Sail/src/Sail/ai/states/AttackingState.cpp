@@ -22,7 +22,7 @@ void AttackingState::update(float dt, Entity* entity) {
 
 	for ( auto& e : entity->getChildEntities() ) {
 		auto candle = e->getComponent<CandleComponent>();
-		if ( candle && !candle->getIsAlive() ) {
+		if ( candle && !candle->isAlive ) {
 			return;
 		}
 	}
@@ -82,7 +82,7 @@ float* AttackingState::getDistToHost() {
 void AttackingState::entityTargetFunc(AiComponent* aiComp, TransformComponent* transComp, GunComponent* gunComp, const glm::vec3& fireDir, const glm::vec3& gunPos, const float hitDist) {
 
 	// If the target is within 7 units and if there is nothing between the target and the ai and don't shoot unless the candle is lit up
-	if ( hitDist < 7.f && aiComp->entityTarget->getComponent<CandleComponent>()->getIsAlive() ) {
+	if ( hitDist < 7.f && aiComp->entityTarget->getComponent<CandleComponent>()->isAlive ) {
 		gunComp->setFiring(gunPos + fireDir, fireDir);
 
 		float yaw = 0.f;		

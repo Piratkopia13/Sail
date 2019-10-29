@@ -1,31 +1,4 @@
-#include "pch.h"
-#include "CandleComponent.h"
-
-CandleComponent::CandleComponent() {
-
-}
-
-CandleComponent::~CandleComponent() {
-
-}
-
-void CandleComponent::hitWithWater(float damage, Netcode::PlayerID shooterID) {
-	if (getInvincibleTimer() <= 0.f) {
-		if (m_health > 0.0f) {
-			setInvincibleTimer(0.4f);
-			decrementHealth(damage);
-			m_damageTakenLastHit = damage;
-			m_wasHitByWater = true;
-
-			if (m_health <= 0.0f) {
-				setWasHitByNetID(shooterID);
-				setIsLit(false);
-			}
-		}
-	}
-}
-
-void CandleComponent::resetHitByWater() {
+/*void CandleComponent::resetHitByWater() {
 	m_wasHitByWater = false;
 }
 
@@ -131,4 +104,4 @@ bool CandleComponent::getWasCarriedLastUpdate() const {
 
 void CandleComponent::setCarried(bool b) {
 	m_carried = b;
-}
+}*/
