@@ -13,7 +13,7 @@
 
 // If this is defined then fixed update will run every frame which speeds up/slows down
 // the game depending on how fast the program can run
-#define PERFORMANCE_SPEED_TEST
+//#define PERFORMANCE_SPEED_TEST
 
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;

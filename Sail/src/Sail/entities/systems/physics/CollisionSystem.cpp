@@ -84,7 +84,7 @@ void CollisionSystem::update(float dt) {
 
 #else
 
-	constexpr size_t NR_OF_JOBS = 10;
+	constexpr size_t NR_OF_JOBS = 16;
 	constexpr size_t lastJob = NR_OF_JOBS - 1;
 	const size_t entitiesPerJob = entities.size() / NR_OF_JOBS;
 
@@ -150,9 +150,7 @@ void CollisionSystem::update(float dt) {
 }
 
 
-// TODO: make threadsafe
 //#define UPDATE_PART_COUNT_PROJECTILES
-
 bool CollisionSystem::collisionUpdatePart(float dt, size_t start, size_t end) {
 
 #ifdef UPDATE_PART_COUNT_PROJECTILES

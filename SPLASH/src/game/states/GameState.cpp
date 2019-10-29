@@ -679,14 +679,26 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
-	runSystem(dt, m_componentSystems.projectileSystem);
-	runSystem(dt, m_componentSystems.animationChangerSystem);
-	runSystem(dt, m_componentSystems.animationSystem);
-	runSystem(dt, m_componentSystems.aiSystem);
-	runSystem(dt, m_componentSystems.candleSystem);
-	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
-	runSystem(dt, m_componentSystems.lifeTimeSystem);
+	//runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
+	//runSystem(dt, m_componentSystems.projectileSystem);
+	//runSystem(dt, m_componentSystems.animationChangerSystem);
+	//runSystem(dt, m_componentSystems.animationSystem);
+	//runSystem(dt, m_componentSystems.aiSystem);
+	//runSystem(dt, m_componentSystems.candleSystem);
+	//runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
+	//runSystem(dt, m_componentSystems.lifeTimeSystem);
+
+
+
+	m_componentSystems.gunSystem->update(dt);
+	m_componentSystems.projectileSystem->update(dt);
+	m_componentSystems.animationChangerSystem->update(dt);
+	m_componentSystems.animationSystem->update(dt);
+	m_componentSystems.aiSystem->update(dt);
+	m_componentSystems.candleSystem->update(dt);
+	m_componentSystems.updateBoundingBoxSystem->update(dt);
+	m_componentSystems.lifeTimeSystem->update(dt);
+
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
