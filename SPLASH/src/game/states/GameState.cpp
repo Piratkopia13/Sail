@@ -148,18 +148,9 @@ GameState::GameState(StateStack& stack)
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
-
-	//float spawnOffsetX = 43.f + float(i) * 2.f;
-	//float spawnOffsetZ = 52.f + float(i) * 1.3f;
-
-	//auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
-
-	//EntityFactory::CreatePerformancePlayer(e, i, glm::vec3(spawnOffsetX, -0.9f, spawnOffsetZ));
-
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
-	//m_player->getComponent<TransformComponent>()->setRotations(glm::vec3(-3.0f, 0.0f, 0.0f));
 #endif
 
 
@@ -710,25 +701,14 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	//runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
-	//runSystem(dt, m_componentSystems.projectileSystem);
-	//runSystem(dt, m_componentSystems.animationChangerSystem);
-	//runSystem(dt, m_componentSystems.animationSystem);
-	//runSystem(dt, m_componentSystems.aiSystem);
-	//runSystem(dt, m_componentSystems.candleSystem);
-	//runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
-	//runSystem(dt, m_componentSystems.lifeTimeSystem);
-
-
-
-	m_componentSystems.gunSystem->update(dt);
-	m_componentSystems.projectileSystem->update(dt);
-	m_componentSystems.animationChangerSystem->update(dt);
-	m_componentSystems.animationSystem->update(dt);
-	m_componentSystems.aiSystem->update(dt);
-	m_componentSystems.candleSystem->update(dt);
-	m_componentSystems.updateBoundingBoxSystem->update(dt);
-	m_componentSystems.lifeTimeSystem->update(dt);
+	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
+	runSystem(dt, m_componentSystems.projectileSystem);
+	runSystem(dt, m_componentSystems.animationChangerSystem);
+	runSystem(dt, m_componentSystems.animationSystem);
+	runSystem(dt, m_componentSystems.aiSystem);
+	runSystem(dt, m_componentSystems.candleSystem);
+	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
+	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
 
 	// Wait for all the systems to finish before starting the removal system
