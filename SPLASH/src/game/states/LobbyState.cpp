@@ -204,7 +204,7 @@ void LobbyState::renderStartButton() {
 
 void LobbyState::renderQuitButton() {
 	ImGui::Begin("Return");
-	if (ImGui::Button("Leave lobby")) {
+	if (ImGui::Button("Quit to Main Menu")) {
 	
 		// Set temp window pos
 		ImGui::SetWindowPos({ 424,641 });
@@ -231,14 +231,16 @@ void LobbyState::renderSettings() {
 	settingsFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 	settingsFlags |= ImGuiWindowFlags_NoSavedSettings;
 
-	ImGui::SetNextWindowPos(ImVec2(
+
+	// Uncomment when we actually have game settings
+	/*ImGui::SetNextWindowPos(ImVec2(
 		m_screenWidth - m_outerPadding - 330,
 		m_outerPadding
 	));
 	ImGui::Begin("Settings", NULL, settingsFlags);
-	ImGui::InputInt("BotCountInput: ", m_settingBotCount, 1, 1);
+	//ImGui::InputInt("BotCountInput: ", m_settingBotCount, 1, 1);
 
-	ImGui::End();
+	ImGui::End();*/
 }
 
 void LobbyState::renderChat() {

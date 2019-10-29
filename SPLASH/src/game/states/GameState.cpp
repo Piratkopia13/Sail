@@ -56,7 +56,7 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
-	m_cam.setDirection(glm::normalize(glm::vec3(-0.715708f, 0.0819399f, 0.693576f)));
+	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, -0.86f)));
 #endif
 
 	// Initialize the component systems
@@ -108,7 +108,9 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
+#ifndef _PERFORMANCE_TEST
 	m_componentSystems.animationSystem->initDebugAnimations();
+#endif
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
@@ -146,9 +148,9 @@ GameState::GameState(StateStack& stack)
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
-	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
+	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 
-	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(120.83f, 1.7028f, 114.2561f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(52.f, 1.f, 70.f));
 #endif
 
 
@@ -1070,54 +1072,16 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 }
 
 #ifdef _PERFORMANCE_TEST
-void GameState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
+void GameState::populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
 	/* 13 characters that are constantly shooting their guns */
 	for (int i = 0; i < 13; i++) {
-		float spawnOffsetX = -19.f + float(i) * 2.f;
-		float spawnOffsetZ = 13.f + float(i) * 1.3f;
+		Logger::Log("Adding performance test player.");
+		float spawnOffsetX = 43.f + float(i) * 2.f;
+		float spawnOffsetZ = 52.f + float(i) * 1.3f;
+
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		std::string name = "DocTorch.fbx";
-		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
-		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-		characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
-		characterModel->setIsAnimated(true);
-
-		e->addComponent<ModelComponent>(characterModel);
-		auto animStack = &m_app->getResourceManager().getAnimationStack(name);
-		auto animComp = e->addComponent<AnimationComponent>(animStack);
-		animComp->currentAnimation = animStack->getAnimation(1);
-		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
-		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-		e->addComponent<CollidableComponent>();
-		e->addComponent<MovementComponent>();
-		e->addComponent<SpeedLimitComponent>();
-		e->addComponent<CollisionComponent>();
-		e->addComponent<GunComponent>(projectileModel, bbModel);
-
-		///* Audio */
-		//e->addComponent<AudioComponent>();
-		//Audio::SoundInfo sound{};
-		//sound.fileName = "../Audio/guitar.wav";
-		//sound.soundEffectLength = 104.0f;
-		//sound.volume = 1.0f;
-		//sound.playOnce = false;
-		//sound.positionalOffset = { 0.f, 1.2f, 0.f };
-		//sound.isPlaying = true; // Start playing the sound immediately
-		//e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
-
-		// Add candle
-		/*if (i != 12) {
-			auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
-			candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
-			e->addChildEntity(candleEntity);
-		}*/
-
-		/* Movement */
-		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<SpeedLimitComponent>()->maxSpeed = 6.f;
+		EntityFactory::CreatePerformancePlayer(e, i, glm::vec3(spawnOffsetX, -0.9f, spawnOffsetZ));
 
 		m_performanceEntities.push_back(e);
 	}
