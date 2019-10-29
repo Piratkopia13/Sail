@@ -28,7 +28,6 @@ CandleSystem::CandleSystem() : BaseComponentSystem() {
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<LightComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
-	//registerComponent<AnimationComponent>(true, true, true);
 }
 
 CandleSystem::~CandleSystem() {
