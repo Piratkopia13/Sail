@@ -41,7 +41,7 @@ void NetworkReceiverSystemHost::endMatchAfterTimer(float dt) {
 			false
 		);
 
-		m_gameStatePtr->requestStackPop();
+		m_gameStatePtr->requestStackClear();
 		m_gameStatePtr->requestStackPush(States::EndGame);
 
 		// Reset clock for next session
