@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
 #include "../events/NetworkDroppedEvent.h"

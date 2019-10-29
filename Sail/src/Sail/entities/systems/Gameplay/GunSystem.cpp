@@ -62,18 +62,14 @@ void GunSystem::update(float dt) {
 			// Gun stopped firing
 			if (gun->firingContinuously) {
 				// Set gun state to END
-#ifndef _PERFORMANCE_TEST
 				setGunStateEND(e, gun);
-#endif
 			}
 
 			gun->firingContinuously = false;
 		}
 
-#ifndef _PERFORMANCE_TEST
 		// Play shooting sounds based on the GunState
 		playShootingSounds(e);
-#endif
 
 		gun->gunOverloadTimer -= dt;
 		gun->projectileSpawnTimer -= dt;
@@ -90,7 +86,7 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	// ( Same logic for the sounds being played later on in this update function ) 
 	EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed, true);
 
-#ifndef _PERFORMANCE_TEST
+//#ifndef _PERFORMANCE_TEST
 	// If this is the first shot in this "burst" of projectiles...
 	if (!gun->firingContinuously) {
 		setGunStateSTART(e, gun);
@@ -98,7 +94,7 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	else {
 		setGunStateLOOP(e, gun);
 	}
-#endif
+//#endif
 
 	gun->firingContinuously = true;
 	m_gameDataTracker->logWeaponFired();
@@ -108,9 +104,7 @@ void GunSystem::overloadGun(Entity* e, GunComponent* gun) {
 	gun->gunOverloadTimer = gun->m_gunOverloadCooldown;
 	gun->gunOverloadvalue = 0;
 
-#ifndef _PERFORMANCE_TEST
 	setGunStateEND(e, gun);
-#endif
 
 	gun->firingContinuously = false;
 }

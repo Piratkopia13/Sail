@@ -1050,7 +1050,7 @@ void GameState::populateScene(Model* lightModel, Model* bbModel, Model* projecti
 
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		EntityFactory::CreateGenericPlayer(e, i, glm::vec3(spawnOffsetX, -0.9f, spawnOffsetZ));
+		EntityFactory::CreatePerformancePlayer(e, i, glm::vec3(spawnOffsetX, -0.9f, spawnOffsetZ));
 
 		/*
 		std::string name = "DocTorch.fbx";
