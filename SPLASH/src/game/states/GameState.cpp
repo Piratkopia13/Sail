@@ -616,9 +616,9 @@ bool GameState::renderImgui(float dt) {
 
 	// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
-	//static glm::vec3 rPos(-0.57f, 1.03f, 0.05f);
+	//static glm::vec3 rPos(-0.596f, 1.026f, 0.055f);
 	//static glm::vec3 lRot(1.178f, -0.462f, 0.600f);
-	//static glm::vec3 rRot(3.14f * 0.5f, -3.14f * 0.17f, 0.0f);
+	//static glm::vec3 rRot(1.178f, 0.646f, -0.300f);
 	//if (ImGui::Begin("HandLocation")) {
 	//	ImGui::SliderFloat("##lposx", &lPos.x, -1.5f, 1.5f);
 	//	ImGui::SliderFloat("##lposy", &lPos.y, -1.5f, 1.5f);

@@ -194,8 +194,8 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	// Attach the something to the player's right hand
 	ac->rightHandEntity = candle.get();
 	ac->rightHandPosition = glm::identity<glm::mat4>();
-	ac->rightHandPosition = glm::translate(ac->rightHandPosition, glm::vec3(-0.57f, 1.015f, 0.452f));
-	ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(1.455f, 0.208f, 0.000f)));
+	ac->rightHandPosition = glm::translate(ac->rightHandPosition, glm::vec3(-0.596f, 1.026f, 0.055f));
+	ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, 0.646f, -0.300f)));
 
 }
 
