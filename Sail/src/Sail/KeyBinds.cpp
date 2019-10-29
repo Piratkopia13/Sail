@@ -32,7 +32,7 @@ namespace KeyBinds {
 	int REMOVE_OLDEST_LIGHT;
 	int LIGHT_CANDLE_1;
 	int LIGHT_CANDLE_2;
-	int TOGGLE_CANDLE_HELDT;
+	int TOGGLE_CANDLE_HELD;
 	int DISABLE_CURSOR;
 	int TOGGLE_SPHERE;
 	int TOGGLE_SUN;
@@ -64,17 +64,18 @@ namespace KeyBinds {
 void KeyBinds::init() {
 	
 	// Player controls
-	MOVE_FORWARD      = SAIL_KEY_W;
-	MOVE_BACKWARD     = SAIL_KEY_S;
-	MOVE_RIGHT        = SAIL_KEY_D;
-	MOVE_LEFT         = SAIL_KEY_A;
-	MOVE_UP           = SAIL_KEY_SPACE;
-	MOVE_DOWN         = SAIL_KEY_CONTROL;
-	SPRINT            = SAIL_KEY_SHIFT;
-	SHOOT             = SAIL_MOUSE_LEFT_BUTTON;
-	SPRAY             = SAIL_KEY_L;
-	LIGHT_CANDLE      = SAIL_KEY_J;
-	SHOW_IN_GAME_MENU = SAIL_KEY_ESCAPE;
+	MOVE_FORWARD       = SAIL_KEY_W;
+	MOVE_BACKWARD      = SAIL_KEY_S;
+	MOVE_RIGHT         = SAIL_KEY_D;
+	MOVE_LEFT          = SAIL_KEY_A;
+	MOVE_UP            = SAIL_KEY_SPACE;
+	MOVE_DOWN          = SAIL_KEY_CONTROL;
+	SPRINT             = SAIL_KEY_SHIFT;
+	SHOOT              = SAIL_MOUSE_LEFT_BUTTON;
+	TOGGLE_CANDLE_HELD = SAIL_KEY_F;
+	SPRAY              = SAIL_KEY_L;
+	LIGHT_CANDLE       = SAIL_KEY_J;
+	SHOW_IN_GAME_MENU  = SAIL_KEY_ESCAPE;
 
 	// GameState
 	ADD_LIGHT             = SAIL_KEY_E;
@@ -89,7 +90,6 @@ void KeyBinds::init() {
 	REMOVE_OLDEST_LIGHT   = SAIL_KEY_X;
 	LIGHT_CANDLE_1        = SAIL_KEY_Z;
 	LIGHT_CANDLE_2        = SAIL_KEY_V;
-	TOGGLE_CANDLE_HELDT   = SAIL_KEY_F;
 	DISABLE_CURSOR        = SAIL_MOUSE_RIGHT_BUTTON;
 	TOGGLE_SPHERE         = SAIL_KEY_C;
 	TOGGLE_SUN            = SAIL_KEY_P;

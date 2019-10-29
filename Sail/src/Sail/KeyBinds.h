@@ -13,6 +13,7 @@ namespace KeyBinds {
 	extern int MOVE_DOWN;
 	extern int SPRINT;
 	extern int SHOOT;
+	extern int TOGGLE_CANDLE_HELD;
 	extern int SPRAY;
 	extern int LIGHT_CANDLE;
 	extern int SHOW_IN_GAME_MENU;
@@ -30,7 +31,6 @@ namespace KeyBinds {
 	extern int REMOVE_OLDEST_LIGHT;
 	extern int LIGHT_CANDLE_1;
 	extern int LIGHT_CANDLE_2;
-	extern int TOGGLE_CANDLE_HELDT;
 	extern int DISABLE_CURSOR;
 	extern int TOGGLE_SPHERE;	// Collision
 	extern int TOGGLE_SUN;
