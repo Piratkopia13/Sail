@@ -3,6 +3,7 @@
 #include "CandleSystem.h"
 
 #include "Sail/entities/components/Components.h"
+#include "Sail/entities/components/AnimationComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
 
@@ -27,6 +28,7 @@ CandleSystem::CandleSystem() : BaseComponentSystem() {
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<LightComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
+	//registerComponent<AnimationComponent>(true, true, true);
 }
 
 CandleSystem::~CandleSystem() {
@@ -134,7 +136,7 @@ void CandleSystem::update(float dt) {
 	}
 }
 
-// TODO: Rewrite
+
 void CandleSystem::putDownCandle(Entity* e) {
 	auto candleComp = e->getComponent<CandleComponent>();
 	auto candleTransComp = e->getComponent<TransformComponent>();
@@ -143,12 +145,11 @@ void CandleSystem::putDownCandle(Entity* e) {
 	/* TODO: Raycast and see if the hit location is ground within x units */
 	if (!candleComp->isCarried()) {
 		if (candleComp->getIsLit()) {
-			// Get the yaw-angle of the player to get a direction vector
-			float yaw = -candleTransComp->getParent()->getRotations().y;
-			glm::vec3 dir = glm::normalize(glm::vec3(cos(yaw), 0.f, sin(yaw)));
-			auto parentPos = parentTransComp->getMatrix()[3];
-
-			glm::vec3 candleTryPosition = glm::vec3(parentPos.x + dir.x, parentPos.y, parentPos.z + dir.z);
+			glm::vec3 parentPos = parentTransComp->getTranslation();
+			glm::vec3 dir = candleTransComp->getParent()->getForward();
+			dir.y = 0.0f;
+			dir = glm::normalize(dir)/2.0f;
+			glm::vec3 candleTryPosition = glm::vec3(parentPos.x - dir.x, parentPos.y, parentPos.z - dir.z);
 
 			bool blocked = false;
 			glm::vec3 down(0.f, -1.f, 0.f);
@@ -191,6 +192,10 @@ void CandleSystem::putDownCandle(Entity* e) {
 			if (!blocked) {
 				candleTransComp->removeParent();
 				candleTransComp->setTranslation(candleTryPosition);
+
+				candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
+				e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = nullptr;
+
 				ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 			} else {
 				candleComp->setCarried(true);
@@ -202,6 +207,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 		// Pick up the candle
 		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit()) {
 			candleTransComp->setParent(parentTransComp);
+			e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = e;
 		} else {
 			candleComp->setCarried(false);
 		}
