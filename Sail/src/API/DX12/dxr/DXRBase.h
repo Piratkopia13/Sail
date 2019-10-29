@@ -37,6 +37,7 @@ public:
 	void updateWaterData();
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
+	void resetWater();
 	void reloadShaders();
 
 	virtual bool onEvent(Event& event) override;
