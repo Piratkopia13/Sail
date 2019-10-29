@@ -50,9 +50,6 @@ void CandleSystem::update(float dt) {
 			if (candle->getHealth() <= 0.f) {
 				candle->setCarried(true);
 
-				GameDataTracker::getInstance().logEnemyKilled(
-					(Netcode::PlayerID)candle->getWasHitByNetID());
-
 				// Did this candle's owner die?
 				if (candle->getNumRespawns() == m_maxNumRespawns) {
 					candle->setIsAlive(false);

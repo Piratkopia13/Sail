@@ -148,7 +148,7 @@ void GameDataTracker::renderImgui() {
 	for (int i = 1; i < (int)tempPlacementMap.size() + 1; i++) {
 		std::string name = tempPlacementMap[i].name;
 		std::string playerStats = name + " placed: " + std::to_string(i)
-			+ " Kills: " + std::to_string(tempPlacementMap[i].nKills);
+			+ " Candles extinguished: " + std::to_string(tempPlacementMap[i].nKills);
 
 		ImGui::Text(playerStats.c_str());
 	}
