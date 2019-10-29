@@ -88,7 +88,7 @@ const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
 	--------------------------------------------------
 
 */
-void NetworkReceiverSystem::update() {
+void NetworkReceiverSystem::update(float dt) {
 	std::scoped_lock lock(m_bufferLock); // Don't push more data to the buffer whilst this function is running
 
 	size_t nrOfSenderComponents = 0;
@@ -247,7 +247,16 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::MATCH_ENDED:
 			{
-				matchEnded();
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PREPARE_ENDSCREEN,
+					SAIL_NEW Netcode::MessagePrepareEndScreen(),
+					false
+				);
+
+				GameDataTracker::getInstance().turnOffLocalDataTracking();
+
+				mergeHostsStats();
+
 			}
 			break;
 			case Netcode::MessageType::CANDLE_HELD_STATE:
@@ -302,6 +311,10 @@ void NetworkReceiverSystem::update() {
 				int nKills;
 				int placement;
 
+				int bulletsFired, jumpsMade;
+				float distanceWalked;
+				Netcode::PlayerID bulletsFiredID, distanceWalkedID, jumpsMadeID;
+
 				// Get all per player data from the Host
 				for (int k = 0; k < nrOfPlayers; k++) {
 					ar(pID);
@@ -311,9 +324,37 @@ void NetworkReceiverSystem::update() {
 				}
 
 				// Get all specific data from the Host
+				(ar)(bulletsFired);
+				(ar)(bulletsFiredID);
+
+				(ar)(distanceWalked);
+				(ar)(distanceWalkedID);
+
+				(ar)(jumpsMade);
+				(ar)(jumpsMadeID);
+
+				GameDataTracker::getInstance().setStatsForOtherData(
+					bulletsFiredID, bulletsFired, distanceWalkedID, distanceWalked, jumpsMadeID, jumpsMade);
+
+				endMatch();
+			}
+			break;
+			case Netcode::MessageType::PREPARE_ENDSCREEN:
+			{
+				GameDataTracker* dgtp = &GameDataTracker::getInstance();
+				// create temporary variables to hold data when reading netmessage
+				int bulletsFired, jumpsMade;
+				float distanceWalked;
+				// Get the data
+				(ar)(bulletsFired);
+				(ar)(distanceWalked);
+				(ar)(jumpsMade);
+
+				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
 
 			}
 			break;
+
 			case Netcode::MessageType::IGNITE_CANDLE:
 			{
 				Netcode::ComponentID candleOwnerID;
@@ -329,6 +370,11 @@ void NetworkReceiverSystem::update() {
 
 		m_incomingDataBuffer.pop();
 	}
+
+	// End game timer 
+	endMatchAfterTimer(dt);
+
+
 }
 
 /*
@@ -639,11 +685,6 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
 		}
 	}
-}
-
-void NetworkReceiverSystem::matchEnded() {
-	m_gameStatePtr->requestStackClear();
-	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
 void NetworkReceiverSystem::backToLobby() {
