@@ -518,8 +518,8 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 		}
 
 		// Play sound
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH_ME].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH_ME].playOnce = true;
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH].isPlaying = true;
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH].playOnce = true;
 	
 
 		return;
