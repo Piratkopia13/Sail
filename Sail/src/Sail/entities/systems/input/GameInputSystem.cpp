@@ -239,11 +239,6 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
 //#endif
-
-		//if (!e->hasComponent<GunComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
-		//	glm::vec3 gunPosition = e->getComponent<TransformComponent>()->getTranslation();
-		//	e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
-		//}
 		
 		auto trans = e->getComponent<TransformComponent>();
 		auto rots = trans->getRotations();
@@ -285,8 +280,6 @@ void GameInputSystem::processMouseInput(const float& dt) {
 				}
 			}
 		}
-
-
 
 		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
 			GunComponent* gc = e->getComponent<GunComponent>();

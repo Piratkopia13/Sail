@@ -106,6 +106,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
+			//leave this for now
 			//c->addComponent<GunComponent>();
 		}
 	}
