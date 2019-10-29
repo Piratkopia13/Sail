@@ -88,7 +88,7 @@ const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
 	--------------------------------------------------
 
 */
-void NetworkReceiverSystem::update() {
+void NetworkReceiverSystem::update(float dt) {
 	std::scoped_lock lock(m_bufferLock); // Don't push more data to the buffer whilst this function is running
 
 	size_t nrOfSenderComponents = 0;
@@ -297,7 +297,7 @@ void NetworkReceiverSystem::update() {
 
 				int bulletsFired, jumpsMade;
 				float distanceWalked;
-				Netcode::PlayerID bfID, dwID, jmID;
+				Netcode::PlayerID bulletsFiredID, distanceWalkedID, jumpsMadeID;
 
 				// Get all per player data from the Host
 				for (int k = 0; k < nrOfPlayers; k++) {
@@ -309,16 +309,16 @@ void NetworkReceiverSystem::update() {
 
 				// Get all specific data from the Host
 				(ar)(bulletsFired);
-				(ar)(bfID);
+				(ar)(bulletsFiredID);
 
 				(ar)(distanceWalked);
-				(ar)(dwID);
+				(ar)(distanceWalkedID);
 
 				(ar)(jumpsMade);
-				(ar)(jmID);
+				(ar)(jumpsMadeID);
 
 				GameDataTracker::getInstance().setStatsForOtherData(
-					bfID, bulletsFired, dwID, distanceWalked, jmID, jumpsMade);
+					bulletsFiredID, bulletsFired, distanceWalkedID, distanceWalked, jumpsMadeID, jumpsMade);
 
 				endMatch();
 			}
@@ -356,7 +356,7 @@ void NetworkReceiverSystem::update() {
 	}
 
 	// End game timer 
-	endMatchAfterTimer();
+	endMatchAfterTimer(dt);
 
 
 }

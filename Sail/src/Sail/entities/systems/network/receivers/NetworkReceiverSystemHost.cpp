@@ -28,13 +28,13 @@ void NetworkReceiverSystemHost::endMatch() {
 	m_startEndGameTimer = true;
 }
 
-void NetworkReceiverSystemHost::endMatchAfterTimer() {
+void NetworkReceiverSystemHost::endMatchAfterTimer(float dt) {
 
 	static float endGameClock;
 	if (m_startEndGameTimer) {
-		endGameClock++;
+		endGameClock += dt;
 	}
-	if (endGameClock > 100.0f) {
+	if (endGameClock > 2.0f) {
 		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::ENDGAME_STATS,
 			nullptr,
@@ -57,15 +57,15 @@ void NetworkReceiverSystemHost::prepareEndScreen(int bf, float dw, int jm, Netco
 	// Process the data
 	if (bf > gts->bulletsFired) {
 		gts->bulletsFired = bf;
-		gts->bfID = id;
+		gts->bulletsFiredID = id;
 	}
 	if (dw > gts->distanceWalked) {
 		gts->distanceWalked = dw;
-		gts->dwID = id;
+		gts->distanceWalkedID = id;
 	}
 	if (jm > gts->jumpsMade) {
 		gts->jumpsMade = jm;
-		gts->jmID = id;
+		gts->jumpsMadeID = id;
 	}
 
 	// Send data back in Netcode::MessageType::ENDGAME_STATS
@@ -80,14 +80,14 @@ void NetworkReceiverSystemHost::mergeHostsStats() {
 
 	if (gdt->getStatisticsLocal().bulletsFired > gdt->getStatisticsGlobal().bulletsFired) {
 		gdt->getStatisticsGlobal().bulletsFired = gdt->getStatisticsLocal().bulletsFired;
-		gdt->getStatisticsGlobal().bfID = id;
+		gdt->getStatisticsGlobal().bulletsFiredID = id;
 	}
 	if (gdt->getStatisticsLocal().distanceWalked > gdt->getStatisticsGlobal().distanceWalked) {
 		gdt->getStatisticsGlobal().distanceWalked = gdt->getStatisticsLocal().distanceWalked;
-		gdt->getStatisticsGlobal().dwID = id;
+		gdt->getStatisticsGlobal().distanceWalkedID = id;
 	}
 	if (gdt->getStatisticsLocal().jumpsMade > gdt->getStatisticsGlobal().jumpsMade) {
 		gdt->getStatisticsGlobal().jumpsMade = gdt->getStatisticsLocal().jumpsMade;
-		gdt->getStatisticsGlobal().jmID = id;
+		gdt->getStatisticsGlobal().jumpsMadeID = id;
 	}
 }

@@ -30,9 +30,9 @@ void GameDataTracker::init() {
 	m_loggedData = { 0 };
 	m_loggedDataGlobal = { 0 };
 
-	m_loggedDataGlobal.bfID = NWrapperSingleton::getInstance().getMyPlayerID();
-	m_loggedDataGlobal.dwID = NWrapperSingleton::getInstance().getMyPlayerID();
-	m_loggedDataGlobal.jmID = NWrapperSingleton::getInstance().getMyPlayerID();
+	m_loggedDataGlobal.bulletsFiredID = NWrapperSingleton::getInstance().getMyPlayerID();
+	m_loggedDataGlobal.distanceWalkedID = NWrapperSingleton::getInstance().getMyPlayerID();
+	m_loggedDataGlobal.jumpsMadeID = NWrapperSingleton::getInstance().getMyPlayerID();
 
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_nPlayersCurrentSession = 0;
@@ -110,11 +110,11 @@ void GameDataTracker::setStatsForPlayer(Netcode::PlayerID id, int nKills, int pl
 }
 
 void GameDataTracker::setStatsForOtherData(Netcode::PlayerID bfID, int bf, Netcode::PlayerID dwID, float dw, Netcode::PlayerID jmID, int jm) {
-	m_loggedDataGlobal.bfID = bfID;
+	m_loggedDataGlobal.bulletsFiredID = bfID;
 	m_loggedDataGlobal.bulletsFired = bf;
-	m_loggedDataGlobal.dwID = dwID;
+	m_loggedDataGlobal.distanceWalkedID = dwID;
 	m_loggedDataGlobal.distanceWalked = dw;
-	m_loggedDataGlobal.jmID = jmID;
+	m_loggedDataGlobal.jumpsMadeID = jmID;
 	m_loggedDataGlobal.jumpsMade = jm;
 }
 
@@ -156,15 +156,15 @@ void GameDataTracker::renderImgui() {
 	ImGui::Text("\n Misc stats------");
 	
 	std::string bdString = "Most bullets fires by " + 
-		m_network->getPlayer(m_loggedDataGlobal.bfID)->name + ": " + std::to_string(m_loggedDataGlobal.bulletsFired);
+		m_network->getPlayer(m_loggedDataGlobal.bulletsFiredID)->name + ": " + std::to_string(m_loggedDataGlobal.bulletsFired);
 	ImGui::Text(bdString.c_str());
 
 	bdString = "Longest distance walked by " +
-		m_network->getPlayer(m_loggedDataGlobal.dwID)->name + ": " + std::to_string((int)m_loggedDataGlobal.distanceWalked) + "m";
+		m_network->getPlayer(m_loggedDataGlobal.distanceWalkedID)->name + ": " + std::to_string((int)m_loggedDataGlobal.distanceWalked) + "m";
 	ImGui::Text(bdString.c_str());
 
 	bdString = "Most jumps made by " +
-		m_network->getPlayer(m_loggedDataGlobal.jmID)->name + ": " + std::to_string(m_loggedDataGlobal.jumpsMade);
+		m_network->getPlayer(m_loggedDataGlobal.jumpsMadeID)->name + ": " + std::to_string(m_loggedDataGlobal.jumpsMade);
 	ImGui::Text(bdString.c_str());
 	
 	ImGui::End();

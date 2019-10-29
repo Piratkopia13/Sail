@@ -15,7 +15,7 @@ public:
 	void handleIncomingData(std::string data) override;
 
 	void endMatch() override;
-	void endMatchAfterTimer() override;
+	void endMatchAfterTimer(float dt) override;
 	void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id);
 	void mergeHostsStats();
 

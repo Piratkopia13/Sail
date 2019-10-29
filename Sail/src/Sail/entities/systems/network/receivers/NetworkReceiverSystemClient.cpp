@@ -11,7 +11,8 @@ NetworkReceiverSystemClient::NetworkReceiverSystemClient() {
 NetworkReceiverSystemClient::~NetworkReceiverSystemClient() {
 
 }
-
+
+
 void NetworkReceiverSystemClient::mergeHostsStats() {
 }
 void NetworkReceiverSystemClient::handleIncomingData(std::string data) {
@@ -24,7 +25,7 @@ void NetworkReceiverSystemClient::endMatch() {
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
-void NetworkReceiverSystemClient::endMatchAfterTimer() {
+void NetworkReceiverSystemClient::endMatchAfterTimer(float dt) {
 }
 
 void NetworkReceiverSystemClient::prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) {

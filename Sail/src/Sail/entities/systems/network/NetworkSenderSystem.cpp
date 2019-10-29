@@ -370,13 +370,13 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		// Send all specific data. The host has processed data from all clients and will 
 		// now return it to their endscreens.
 		(ar)(dgtp->getStatisticsGlobal().bulletsFired);
-		(ar)(dgtp->getStatisticsGlobal().bfID);
+		(ar)(dgtp->getStatisticsGlobal().bulletsFiredID);
 
 		(ar)(dgtp->getStatisticsGlobal().distanceWalked);
-		(ar)(dgtp->getStatisticsGlobal().dwID);
+		(ar)(dgtp->getStatisticsGlobal().distanceWalkedID);
 
 		(ar)(dgtp->getStatisticsGlobal().jumpsMade);
-		(ar)(dgtp->getStatisticsGlobal().jmID);
+		(ar)(dgtp->getStatisticsGlobal().jumpsMadeID);
 
 
 	}

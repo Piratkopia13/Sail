@@ -654,7 +654,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	
 	// Update entities with info from the network and from ourself
 	// DON'T MOVE, should happen at the start of each tick
-	m_componentSystems.networkReceiverSystem->update();
+	m_componentSystems.networkReceiverSystem->update(dt);
 	
 	m_componentSystems.movementSystem->update(dt);
 	m_componentSystems.speedLimitSystem->update();

@@ -18,9 +18,9 @@ struct GlobalTopStats {
 	int jumpsMade;
 
 	// IDs for the host to fill for the endscreen
-	Netcode::PlayerID bfID;
-	Netcode::PlayerID dwID;
-	Netcode::PlayerID jmID;
+	Netcode::PlayerID bulletsFiredID;
+	Netcode::PlayerID distanceWalkedID;
+	Netcode::PlayerID jumpsMadeID;
 };
 
 struct HostStatsPerPlayer {
