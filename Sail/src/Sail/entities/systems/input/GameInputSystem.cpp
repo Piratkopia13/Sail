@@ -11,6 +11,7 @@
 #include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/components/AudioComponent.h"
 #include "../src/Network/NWrapperSingleton.h"
+#include "Sail/entities/components/MapComponent.h"
 
 #include "Sail/TimeSettings.h"
 
@@ -198,17 +199,53 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				// Calculate total movement
 				float acceleration = 70.0f - ( glm::length(movement->velocity) / speedLimit->maxSpeed ) * 20.0f;
 				if ( !collision->onGround ) {
-
 					acceleration = acceleration * 0.5f;
 					// AUDIO TESTING (turn OFF looping running sound)
 					if (!m_isPlayingRunningSound) {
-						audioComp->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
+						if (!tempStopAll) {
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::RUNNING_STOP_SOUND,
+								SAIL_NEW Netcode::MessageRunningStopSound{ e->getComponent<NetworkSenderComponent>()->m_id }
+							);
+
+							tempStopAll = true;
+							tempMetal = false;
+							tempTile = false;
+						}
 					}
 				}
 				// AUDIO TESTING (playing a looping running sound)
 				else if ( m_runSoundTimer > m_onGroundThreshold) {
+					// CORRIDOR
+					if (m_mapPointer->getAreaType(e->getComponent<TransformComponent>()->getTranslation().x, e->getComponent<TransformComponent>()->getTranslation().z) == 0) {
+						
+						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
+						if (!tempMetal) {
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::RUNNING_METAL_START,
+								SAIL_NEW Netcode::MessageRunningMetalStart{ e->getComponent<NetworkSenderComponent>()->m_id }
+							);
 
-					audioComp->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = true;
+							tempStopAll = false;
+							tempMetal = true;
+							tempTile = false;
+						}
+					}
+					// ROOM
+					else /*(AreaType > 0)*/ {
+						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
+						if (!tempTile) {
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::RUNNING_TILE_START,
+								SAIL_NEW Netcode::MessageRunningTileStart{ e->getComponent<NetworkSenderComponent>()->m_id }
+							);
+
+							tempStopAll = false;
+							tempMetal = false;
+							tempTile = true;
+						}
+					}
 				} else {
 
 					m_runSoundTimer += dt;
@@ -223,7 +260,17 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			} else {
 
 				// AUDIO TESTING (turn OFF looping running sound)
-				audioComp->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+				// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
+				if (!tempStopAll) {
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::RUNNING_STOP_SOUND,
+						SAIL_NEW Netcode::MessageRunningStopSound{ e->getComponent<NetworkSenderComponent>()->m_id }
+					);
+
+					tempStopAll = true;
+					tempMetal = false;
+					tempTile = false;
+				}
 				m_runSoundTimer = 0.0f;
 			}
 		}
