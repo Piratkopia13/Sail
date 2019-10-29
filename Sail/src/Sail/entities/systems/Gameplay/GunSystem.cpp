@@ -70,7 +70,6 @@ void GunSystem::update(float dt) {
 		}
 		// Gun is not firing.
 		else {
-
 			// Reduce the overload value
 			if (gun->gunOverloadvalue > 0) {
 				gun->gunOverloadvalue -= dt;
