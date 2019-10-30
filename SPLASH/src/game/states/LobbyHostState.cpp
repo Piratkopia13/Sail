@@ -8,6 +8,9 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 	// Reserved for host, all other will get 1,2,3,...,n
 	NWrapperSingleton::getInstance().setPlayerID(HOST_ID); 
 	NWrapperSingleton::getInstance().startUDP();
+	
+	//NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
+	//wrapper->setLobbyName(NWrapperSingleton::getInstance().getMyPlayer().name.c_str());
 }
 
 LobbyHostState::~LobbyHostState() {
