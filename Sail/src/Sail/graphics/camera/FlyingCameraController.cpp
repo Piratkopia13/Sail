@@ -32,7 +32,7 @@ void FlyingCameraController::update(float dt) {
 	float lookSensitivityController = 90.0f * 0.016f;
 
 	// Increase speed if shift or right trigger is pressed
-	if (Input::IsKeyPressed(KeyBinds::sprint))
+	if (Input::IsKeyPressed(KeyBinds::SPRINT))
 		movementSpeed *= 5.f;
 
 	//
@@ -43,9 +43,9 @@ void FlyingCameraController::update(float dt) {
 	//setCameraPosition(getCameraPosition() + getCameraDirection() * gpState.thumbSticks.leftY * movementSpeed);
 
 	// Keyboard
-	if (Input::IsKeyPressed(KeyBinds::moveForward))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_FORWARD))
 		setCameraPosition(getCameraPosition() + getCameraDirection() * movementSpeed);
-	if (Input::IsKeyPressed(KeyBinds::moveBackward))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD))
 		setCameraPosition(getCameraPosition() - getCameraDirection() * movementSpeed);
 
 	//
@@ -58,9 +58,9 @@ void FlyingCameraController::update(float dt) {
 	//setCameraPosition(getCameraPosition() - right * gpState.thumbSticks.leftX * movementSpeed);
 
 	// Keyboard
-	if (Input::IsKeyPressed(KeyBinds::moveRight))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_RIGHT))
 		setCameraPosition(getCameraPosition() + right * movementSpeed);
-	if (Input::IsKeyPressed(KeyBinds::moveLeft))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_LEFT))
 		setCameraPosition(getCameraPosition() - right * movementSpeed);
 
 	//
@@ -72,9 +72,9 @@ void FlyingCameraController::update(float dt) {
 	//setCameraPosition(getCameraPosition() + glm::vec3::Down * gpState.buttons.x * movementSpeed);
 
 	// Keyboard
-	if (Input::IsKeyPressed(KeyBinds::moveUp))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_UP))
 		setCameraPosition(getCameraPosition() + glm::vec3(0.f, 1.f, 0.f) * movementSpeed);
-	if (Input::IsKeyPressed(KeyBinds::moveDown))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN))
 		setCameraPosition(getCameraPosition() + glm::vec3(0.f, -1.f, 0.f) * movementSpeed);
 
 	//

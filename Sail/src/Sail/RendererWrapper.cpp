@@ -57,16 +57,12 @@ PostProcessPipeline* RendererWrapper::getPostProcessPipeline() {
 }
 
 bool RendererWrapper::onEvent(Event& event) {
-
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&RendererWrapper::onResize));
-
-	return true;
-}
-
-bool RendererWrapper::onResize(Event& event) {
-
-	m_rendererRaster->onEvent(event);
-	m_rendererRaytrace->onEvent(event);
+	if (m_rendererRaster) {
+		m_rendererRaster->onEvent(event);
+	}
+	if (m_rendererRaytrace) {
+		m_rendererRaytrace->onEvent(event);
+	}
 
 	return true;
 }

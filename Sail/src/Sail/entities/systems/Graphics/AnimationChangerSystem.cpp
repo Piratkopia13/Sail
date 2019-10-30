@@ -22,18 +22,46 @@ void AnimationChangerSystem::update(float dt) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		MovementComponent* moveC = e->getComponent<MovementComponent>();
 		if (animationC && moveC) {
-
-			if (glm::length(moveC->velocity) < 0.1f) {
+			
+			if (animationC->animationIndex == IDLEJUMP && animationC->animationTime < 0.1f) {
 				animationC->setAnimation(IDLE);
 			}
+
+			if (glm::length(moveC->velocity) < 0.1f && animationC->animationIndex != IDLEJUMP) {
+				animationC->setAnimation(IDLE);
+			} 
+			else if (moveC->relVel.y > 0.1f && fabsf(moveC->relVel.x) < 0.1f && fabsf(moveC->relVel.z) < 0.1f) {
+				if (animationC->animationIndex != IDLEJUMP) {
+					animationC->setAnimation(IDLEJUMP);
+					animationC->animationTime = 0.310f;
+				}
+				
+			}
 			else {
-				if (fabsf(moveC->relVel.x) > fabsf(moveC->relVel.z)) {
+
+				if (animationC->animationIndex == FORWARDJUMP) {
+					if (animationC->animationTime < 0.1f) {
+						animationC->setAnimation(IDLE);
+					}
+					else {
+						continue;
+					}
+				}
+
+				
+				if (moveC->relVel.y > 0.1f && (fabsf(moveC->relVel.x) > 0.1f || fabsf(moveC->relVel.z) > 0.1f)) {
+					animationC->setAnimation(FORWARDJUMP);
+					animationC->animationTime = 0.5f;
+				}
+				else if (fabsf(moveC->relVel.x) > fabsf(moveC->relVel.z)) {
 					if (moveC->relVel.x > 0.1f) {
 						animationC->setAnimation(FORWARD);
-					} else if (moveC->relVel.x < -0.1f) {
+					} 
+					else if (moveC->relVel.x < -0.1f) {
 						animationC->setAnimation(BACKWARD);
 					}
-				} else {
+				} 
+				else {
 					if (moveC->relVel.z > 0.1f) {
 						animationC->setAnimation(RIGHT);
 					} else if (moveC->relVel.z < -0.1f) {

@@ -15,6 +15,11 @@
 
 #include "Sail/TimeSettings.h"
 
+
+// Candle can only be picked up and put down once every 0.2 seconds
+constexpr float CANDLE_TIMER = 0.2f;
+
+
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<LocalOwnerComponent>(true, true, false);
 	registerComponent<MovementComponent>(true, true, true);
@@ -38,14 +43,8 @@ GameInputSystem::~GameInputSystem() {
 	clean();
 }
 
-
-// Keyboard input is checked every tick
-void GameInputSystem::fixedUpdate() {
-	this->processKeyboardInput(TIMESTEP);
-}
-
-// Mouse input is checked every frame
 void GameInputSystem::update(float dt, float alpha) {
+	this->processKeyboardInput(dt);
 	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
@@ -69,6 +68,8 @@ void GameInputSystem::stop() {
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
+	m_candleToggleTimer += dt;
+
 	for ( auto e : entities ) {
 		// Get player movement inputs
 		Movement playerMovement = getPlayerMovementInput(e);
@@ -95,8 +96,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			// Else do normal movement
-		} 
-		else {
+		} else {
 			auto collision = e->getComponent<CollisionComponent>();
 			auto movement = e->getComponent<MovementComponent>();
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
@@ -106,17 +106,16 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			Movement playerMovement = getPlayerMovementInput(e);
 
 			// Player puts down candle
-			if ( Input::WasKeyJustPressed(KeyBinds::putDownCandle) ) {
-
-				putDownCandle(e);
+			if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_CANDLE_HELD) ) {
+				if (m_candleToggleTimer > CANDLE_TIMER) {
+					putDownCandle(e);
+					m_candleToggleTimer = 0.0f;
+				}
 			}
 
-			if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
-
+			if ( Input::WasKeyJustPressed(KeyBinds::LIGHT_CANDLE) ) {
 				for ( auto child : e->getChildEntities() ) {
-
 					if ( child->hasComponent<CandleComponent>() ) {
-
 						child->getComponent<CandleComponent>()->setIsLit(true);
 					}
 				}
@@ -282,27 +281,11 @@ void GameInputSystem::processMouseInput(const float& dt) {
 	for (auto e : entities) {
 
 //#ifdef DEVELOPMENT
-		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
+		if (Input::WasMouseButtonJustPressed(KeyBinds::DISABLE_CURSOR)) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
 //#endif
-
-		// keep, for next task
-		//if (!e->hasComponent<GunComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
-		//	glm::vec3 gunPosition = e->getComponent<TransformComponent>()->getTranslation();
-		//	e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
-		//}
-		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
-			glm::vec3 camRight = glm::cross(m_cam->getCameraUp(), m_cam->getCameraDirection());
-			glm::vec3 gunPosition = m_cam->getCameraPosition() + (m_cam->getCameraDirection() + camRight - m_cam->getCameraUp());
-			e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
-		}
-		else {
-			if (e->hasComponent<GunComponent>()) {
-				e->getComponent<GunComponent>()->firing = false;
-			}
-		}
-
+		
 		auto trans = e->getComponent<TransformComponent>();
 		auto rots = trans->getRotations();
 		m_pitch = (rots.z != 0.f) ? glm::degrees(-rots.z) : m_pitch;
@@ -332,6 +315,40 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		}
 
 		trans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
+
+		GunComponent* gc = e->getComponent<GunComponent>();
+		TransformComponent* ptc = e->getComponent<TransformComponent>();
+		if (gc) {
+			for (auto childE : e->getChildEntities()) {
+				if (childE->getName().find("WaterGun") != std::string::npos) {
+					TransformComponent* tc = childE->getComponent<TransformComponent>();
+					tc->setRotations(glm::radians(-m_pitch),0, 0);
+				}
+			}
+		}
+
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT)) {
+			GunComponent* gc = e->getComponent<GunComponent>();
+			TransformComponent* ptc = e->getComponent<TransformComponent>();
+			if (gc) {
+				for (auto childE : e->getChildEntities()) {
+					if (childE->getName().find("WaterGun") != std::string::npos) {
+						TransformComponent* tc = childE->getComponent<TransformComponent>();
+						glm::vec3 gunPosition = glm::vec3(tc->getMatrixWithUpdate()[3]) + m_cam->getCameraDirection() * 0.33f;
+						e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+					}
+				}
+			}
+		}
+		else {
+
+			GunComponent* gc = e->getComponent<GunComponent>();
+			if (gc) {
+				gc->firing = false;
+			}
+
+		}
+
 	}
 }
 
@@ -347,6 +364,8 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw + 90))
 		);
 		forwards = glm::normalize(forwards);
+
+		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 
 		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 1.8f, 0.f)));
 		m_cam->setCameraDirection(forwards);
@@ -371,14 +390,14 @@ void GameInputSystem::putDownCandle(Entity* e) {
 Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	Movement playerMovement;
 
-	if ( Input::IsKeyPressed(KeyBinds::sprint) ) { playerMovement.speedModifier = m_runSpeed; }
+	if ( Input::IsKeyPressed(KeyBinds::SPRINT) ) { playerMovement.speedModifier = m_runSpeed; }
 
-	if ( Input::IsKeyPressed(KeyBinds::moveForward) ) { playerMovement.forwardMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveBackward) ) { playerMovement.forwardMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveLeft) ) { playerMovement.rightMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveRight) ) { playerMovement.rightMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveUp) ) { playerMovement.upMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveDown) ) { playerMovement.upMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_FORWARD) ) { playerMovement.forwardMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD) ) { playerMovement.forwardMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_LEFT) ) { playerMovement.rightMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_RIGHT) ) { playerMovement.rightMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_UP) ) { playerMovement.upMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_DOWN) ) { playerMovement.upMovement -= 1.0f; }
 
 	return playerMovement;
 }
