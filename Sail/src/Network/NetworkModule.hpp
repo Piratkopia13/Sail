@@ -132,6 +132,10 @@ public:
 		This function does not have a great documentation.
 	*/
 	void stopUDP();
+	/*
+		This function does have a great documentation.
+	*/
+	void startUDP();
 
 private:
 

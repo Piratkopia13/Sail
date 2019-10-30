@@ -575,6 +575,12 @@ void Network::stopUDP() {
 	}
 }
 
+void Network::startUDP() {
+	if (m_hostFlags & HostFlags::ENABLE_LAN_SEARCH_VISIBILITY) {
+		startUDPSocket(m_udp_localbroadcastport);
+	}
+}
+
 void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
 	// delete previous message if there is one

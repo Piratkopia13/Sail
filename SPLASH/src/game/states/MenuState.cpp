@@ -80,6 +80,7 @@ bool MenuState::renderImgui(float dt) {
 			if (m_network->host()) {
 				// Update server description after host added himself to the player list.
 				NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+
 				NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
 				wrapper->setLobbyName(NWrapperSingleton::getInstance().getMyPlayer().name.c_str());
 

@@ -75,6 +75,10 @@ void NWrapperSingleton::stopUDP() {
 	m_network->stopUDP();
 }
 
+void NWrapperSingleton::startUDP(){
+	m_network->startUDP();
+}
+
 void NWrapperSingleton::resetPlayerList()
 {
 	m_players.clear();
