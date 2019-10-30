@@ -39,6 +39,18 @@ void GunSystem::update(float dt) {
 
 				// SHOOT
 				if (gun->projectileSpawnTimer <= 0.f) {
+					for (int i = 0; i < 2; i++) {
+						// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
+						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+							Netcode::MessageType::SPAWN_PROJECTILE,
+							SAIL_NEW Netcode::MessageSpawnProjectile{
+								gun->position,
+								gun->direction * gun->projectileSpeed,
+								e->getComponent<NetworkSenderComponent>()->m_id
+							}
+						);
+					}
+					m_gameDataTracker->logWeaponFired();
 					fireGun(e, gun);
 				}
 				// DO NOT SHOOT (Cooldown between shots)
@@ -80,12 +92,6 @@ void GunSystem::update(float dt) {
 void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
-	// Stays here, not in receiver since this is neither per-frame or per-event.
-	// it is an event with a duration, something which needs its own definition and space
-	// if we decided to implement more of the same type. Until then it should be here.
-	// ( Same logic for the sounds being played later on in this update function ) 
-	EntityFactory::CreateProjectile(gun->position, gun->direction * gun->projectileSpeed, true);
-
 	// If this is the first shot in this "burst" of projectiles...
 	if (!gun->firingContinuously) {
 		setGunStateSTART(e, gun);
@@ -95,7 +101,6 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	}
 
 	gun->firingContinuously = true;
-	m_gameDataTracker->logWeaponFired();
 }
 
 void GunSystem::overloadGun(Entity* e, GunComponent* gun) {

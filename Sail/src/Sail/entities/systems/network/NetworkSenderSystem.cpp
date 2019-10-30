@@ -16,6 +16,12 @@
 
 #include <vector>
 
+//#define _LOG_TO_FILE
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+#include <fstream>
+static std::ofstream out("LogFiles/NetworkSenderSystem.cpp.log");
+#endif
+
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 	registerComponent<NetworkSenderComponent>(true, true, true);
 	registerComponent<TransformComponent>(false, true, false);
@@ -71,7 +77,6 @@ void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem
 
 */
 void NetworkSenderSystem::update() {
-
 	// Binary data that will be sent over the network
 	std::ostringstream osToOthers(std::ios::binary);
 	Netcode::OutArchive sendToOthers(osToOthers);
@@ -99,7 +104,9 @@ void NetworkSenderSystem::update() {
 		// Per type of data
 		for (auto& messageType : nsc->m_dataTypes) {
 			sendToOthers(messageType);          // Current MessageType
-
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+			out << "SenderComp: " << Netcode::MessageNames[(int)(messageType) - 1] << "\n";
+#endif
 			writeMessageToArchive(messageType, e, sendToOthers); // Add to archive depending on the message
 		}
 	}
@@ -110,6 +117,9 @@ void NetworkSenderSystem::update() {
 
 	while (!m_eventQueue.empty()) {
 		NetworkSenderEvent* pE = m_eventQueue.front();
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+		out << "Event: " << Netcode::MessageNames[(int)(pE->type)-1] << "\n";
+#endif
 		writeEventToArchive(pE, sendToOthers);
 		if (pE->alsoSendToSelf) {
 			writeEventToArchive(pE, sendToSelf);

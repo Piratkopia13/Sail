@@ -20,7 +20,6 @@ public:
 	Renderer* getScreenSpaceRenderer();
 	PostProcessPipeline* getPostProcessPipeline();
 	bool onEvent(Event& event);
-	bool onResize(Event& event);
 
 private:
 	void setLightSetup(LightSetup* lights);
