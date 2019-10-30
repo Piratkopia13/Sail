@@ -516,6 +516,12 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			//If it wasn't me that died, completely remove the player entity from game.
 			e->queueDestruction();
 		}
+
+		// Play sound
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH].isPlaying = true;
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH].playOnce = true;
+	
+
 		return;
 	}
 	Logger::Warning("playerDied called but no matching entity found");
@@ -628,7 +634,7 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 }
 
 void NetworkReceiverSystem::matchEnded() {
-	m_gameStatePtr->requestStackPop();
+	m_gameStatePtr->requestStackClear();
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
