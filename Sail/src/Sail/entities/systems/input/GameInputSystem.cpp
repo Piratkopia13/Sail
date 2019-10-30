@@ -43,8 +43,12 @@ GameInputSystem::~GameInputSystem() {
 	clean();
 }
 
-void GameInputSystem::update(float dt, float alpha) {
+void GameInputSystem::fixedUpdate(float dt) {
 	this->processKeyboardInput(dt);
+}
+
+void GameInputSystem::update(float dt, float alpha) {
+	//this->processKeyboardInput(dt);
 	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
@@ -335,6 +339,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 					if (childE->getName().find("WaterGun") != std::string::npos) {
 						TransformComponent* tc = childE->getComponent<TransformComponent>();
 						glm::vec3 gunPosition = glm::vec3(tc->getMatrixWithUpdate()[3]) + m_cam->getCameraDirection() * 0.33f;
+
 						e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 					}
 				}
