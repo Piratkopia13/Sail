@@ -12,10 +12,9 @@
 
 #include <iterator>
 
-#include <mmeapi.h>	// Used to determine if there are outputDevices for sound
-
-#include <windows.h>
-#include <mmsystem.h>
+#include <mmeapi.h>		// Used to determine if there are outputDevices for sound
+#include <windows.h>	//
+#include <mmsystem.h>	//
 
 AudioSystem::AudioSystem() : BaseComponentSystem() {
 	registerComponent<AudioComponent>(true, true, true);
@@ -89,7 +88,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 	if (waveOutGetNumDevs() == 0) {
 		hasOutputDevices = false;
 	}
-	if (!hasOutputDevices) {	// Only run audiosystem if there are outputdevices on the computer
+	if (!hasOutputDevices) {	// Only run audiosystem if there are outputdevices on the computer.
 		return;
 	}
 	for (auto e : entities) {
