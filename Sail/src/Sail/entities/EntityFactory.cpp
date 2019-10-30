@@ -102,7 +102,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<CollisionComponent>();
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	myPlayer->addComponent<GunComponent>();
 
 	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
@@ -110,9 +109,12 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 			//leave this for now
 			//c->addComponent<GunComponent>();
 		}
+
+		// Add a localOwnerComponent to our candle so that we can differentiate it from other candles
+		if (c->hasComponent<CandleComponent>()) {
+			c->addComponent<LocalOwnerComponent>(netComponentID);
+		}
 	}
-
-
 
 	return myPlayer;
 }
@@ -136,8 +138,6 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
 	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation);
 	playerEnt->addComponent<NetworkSenderComponent>(Netcode::MessageType::ANIMATION, Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100));
-	playerEnt->addComponent<GunComponent>();
-	playerEnt->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, 0.0, 0.0f);
 
 	// Create the player
 	AddWeaponAndCandleToPlayer(playerEnt, lightIndex, 0);
@@ -172,11 +172,12 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 	// Give playerEntity a bounding box
 	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
-	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	playerEntity->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.4f, .9f, 0.4f)); // Needed?
 
 	// Adding audio component and adding all sounds attached to the playerEntity entity
 	playerEntity->addComponent<AudioComponent>();
+
+	playerEntity->addComponent<GunComponent>();
 	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
 
 
