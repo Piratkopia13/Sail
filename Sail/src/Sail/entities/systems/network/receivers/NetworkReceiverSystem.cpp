@@ -651,9 +651,6 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 }
 
 void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
-	// Spawn projectile
-	//projectileSpawned(gunPos, gunVel, id);
-
 	// Find out who sent it and make them play the sound (locally)
 	for (auto& e : entities) {
 		// If we've found who sent the message
