@@ -32,56 +32,56 @@ AudioSystem::~AudioSystem() {
 // TO DO: move to constructor?
 void AudioSystem::initialize() {
 #pragma region FOOTSTEPS
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_metal_1.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_metal_2.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_metal_3.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_metal_4.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_tile_1.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_tile_2.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_tile_3.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_tile_4.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_water_metal_1.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_water_metal_2.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_water_metal_3.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_water_metal_4.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_water_tile_1.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_water_tile_2.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_water_tile_3.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/footsteps/footsteps_water_tile_4.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_metal_1.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_metal_2.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_metal_3.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_metal_4.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_tile_1.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_tile_2.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_tile_3.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_tile_4.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_water_metal_1.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_water_metal_2.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_water_metal_3.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_water_metal_4.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_water_tile_1.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_water_tile_2.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_water_tile_3.wav");
+	m_audioEngine->loadSound("footsteps/footsteps_water_tile_4.wav");
 #pragma endregion
 #pragma region JUMPING
-	m_audioEngine->loadSound("../SPLASH/res/sounds/jumping/jump.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/jumping/landing_ground.wav");
+	m_audioEngine->loadSound("jumping/jump.wav");
+	m_audioEngine->loadSound("jumping/landing_ground.wav");
 #pragma endregion
 #pragma region WATERGUN
-	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_start.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_loop.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_end.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_reload.wav");
+	m_audioEngine->loadSound("watergun/watergun_start.wav");
+	m_audioEngine->loadSound("watergun/watergun_loop.wav");
+	m_audioEngine->loadSound("watergun/watergun_end.wav");
+	m_audioEngine->loadSound("watergun/watergun_reload.wav");
 #pragma endregion
 #pragma region IMPACTS
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_impact_enemy_candle.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_impact_my_candle.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_drip_1.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_drip_2.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_drip_3.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_drip_4.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_drip_5.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_drip_6.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_drip_7.wav");
+	m_audioEngine->loadSound("impacts/water_impact_enemy_candle.wav");
+	m_audioEngine->loadSound("impacts/water_impact_my_candle.wav");
+	m_audioEngine->loadSound("impacts/water_drip_1.wav");
+	m_audioEngine->loadSound("impacts/water_drip_2.wav");
+	m_audioEngine->loadSound("impacts/water_drip_3.wav");
+	m_audioEngine->loadSound("impacts/water_drip_4.wav");
+	m_audioEngine->loadSound("impacts/water_drip_5.wav");
+	m_audioEngine->loadSound("impacts/water_drip_6.wav");
+	m_audioEngine->loadSound("impacts/water_drip_7.wav");
 #pragma endregion
 #pragma region DEATHS
-	m_audioEngine->loadSound("../SPLASH/res/sounds/death/killing_blow.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/death/death_1.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/death/death_2.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/death/death_3.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/death/death_4.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/death/death_5.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/death/death_6.wav");
+	m_audioEngine->loadSound("death/killing_blow.wav");
+	m_audioEngine->loadSound("death/death_1.wav");
+	m_audioEngine->loadSound("death/death_2.wav");
+	m_audioEngine->loadSound("death/death_3.wav");
+	m_audioEngine->loadSound("death/death_4.wav");
+	m_audioEngine->loadSound("death/death_5.wav");
+	m_audioEngine->loadSound("death/death_6.wav");
 #pragma endregion
 #pragma region MISCELLANEOUS
-	m_audioEngine->loadSound("../SPLASH/res/sounds/miscellaneous/re_ignition_candle.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/miscellaneous/guitar.wav");
+	m_audioEngine->loadSound("miscellaneous/re_ignition_candle.wav");
+	m_audioEngine->loadSound("miscellaneous/guitar.wav");
 #pragma endregion
 }
 
@@ -277,7 +277,7 @@ void AudioSystem::hotFixAmbiance(Entity* e, AudioComponent* audioC) {
 		// If it's not playing anything...
 		if (audioC->m_currentlyStreaming.size() == 0) {
 			// ... start playing ambiance again.
-			audioC->streamSoundRequest_HELPERFUNC("../SPLASH/res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+			audioC->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
 		}
 	}
 }

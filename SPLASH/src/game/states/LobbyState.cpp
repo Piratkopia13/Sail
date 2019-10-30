@@ -38,7 +38,7 @@ LobbyState::LobbyState(StateStack& stack)
 	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
-	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../SPLASH/res/sounds/LobbyMusic.xwb", true, true);
+	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
 }
 
 
