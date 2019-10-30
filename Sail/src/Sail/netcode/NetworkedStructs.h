@@ -67,7 +67,34 @@ namespace Netcode {
 		RUNNING_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
-		EMPTY = 69
+		EMPTY
+	}; 
+	
+	static const std::string MessageNames[] = {
+		"CREATE_NETWORKED_ENTITY",
+		"MODIFY_TRANSFORM,		",
+		"SPAWN_PROJECTILE,		",
+		"ROTATION_TRANSFORM,	",
+		"ANIMATION,				",
+		"SHOOT_START,			",
+		"SHOOT_LOOP,			",
+		"SHOOT_END,				",
+		"PLAYER_JUMPED,			",
+		"PLAYER_LANDED,			",
+		"WATER_HIT_PLAYER,		",
+		"SET_CANDLE_HEALTH,		",
+		"PLAYER_DIED,			",
+		"PLAYER_DISCONNECT,		",
+		"MATCH_ENDED,			",
+		"PREPARE_ENDSCREEN,		",	// Clients send relevant data for the endgame screen
+		"ENDGAME_STATS,			",
+		"CANDLE_HELD_STATE,		",
+		"SEND_ALL_BACK_TO_LOBBY,",
+		"RUNNING_METAL_START,	",
+		"RUNNING_TILE_START,	",
+		"RUNNING_STOP_SOUND,	",
+		"IGNITE_CANDLE,			",
+		"EMPTY					",
 	};
 
 	/*

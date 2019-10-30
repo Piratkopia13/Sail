@@ -14,6 +14,9 @@ ipch/
 *.cachefile
 *.VC.db
 
+# SPLASH Files
+**/LogFiles/*
+
 # Visual Studio profiler
 *.psess
 *.vsp
