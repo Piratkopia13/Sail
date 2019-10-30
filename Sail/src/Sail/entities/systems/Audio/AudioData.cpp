@@ -186,7 +186,7 @@ void AllAudioData::init() {
 	//		   Watergun, Reload		 //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo = &AllAudioData::m_sounds[Audio::RELOAD];
-	soundGeneralInfo->playOnce = false;
+	soundGeneralInfo->playOnce = true;
 	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
 	//-----------------------------------------------------------------------------
 	{
@@ -273,6 +273,22 @@ void AllAudioData::init() {
 		soundUniqueInfo.soundEffectLength = 1.364f;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::WATER_IMPACT_MY_CANDLE].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Re-ignition Candle			     //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::RE_IGNITE_CANDLE];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "../Audio/re_ignite_candle.wav";
+		soundUniqueInfo.soundEffectLength = 4.129f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::RE_IGNITE_CANDLE].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 

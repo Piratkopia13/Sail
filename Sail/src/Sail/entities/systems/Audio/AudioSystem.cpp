@@ -58,6 +58,7 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_loop.wav");
 	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_end.wav");
 	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_reload.wav");
+	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/re_ignition_candle.wav");
 #pragma endregion
 #pragma region IMPACTS
 	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_impact_enemy_candle.wav");
