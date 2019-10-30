@@ -22,6 +22,8 @@ MenuState::MenuState(StateStack& stack)
 	m_network = &NWrapperSingleton::getInstance();
 	m_app = Application::getInstance();
 
+	std::string name = loadPlayerName("res/data/localplayer.settings");
+	m_network->setPlayerName(name.c_str());
 	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
@@ -30,6 +32,9 @@ MenuState::MenuState(StateStack& stack)
 MenuState::~MenuState() {
 	delete[] this->inputIP;
 	delete[] m_ipBuffer;
+	
+	Utils::writeFileTrunc("res/data/localplayer.settings", NWrapperSingleton::getInstance().getMyPlayerName());
+
 }
 
 bool MenuState::processInput(float dt) {
@@ -56,11 +61,21 @@ bool MenuState::render(float dt, float alpha) {
 
 bool MenuState::renderImgui(float dt) {
 	
+	ImGui::ShowDemoWindow();
+
+
+	static char buf[101] = "";
 	// Host
 	if(ImGui::Begin("Main Menu")) {
 		ImGui::Text("Name:");
 		ImGui::SameLine();
-		ImGui::InputText("##name", &NWrapperSingleton::getInstance().getMyPlayerName().front(), MAX_NAME_LENGTH);
+		std::string name = &NWrapperSingleton::getInstance().getMyPlayerName().front();
+		
+		strncpy_s(buf, name.c_str(), name.size());
+		ImGui::InputText("##name", buf, MAX_NAME_LENGTH);
+		name = buf;
+		NWrapperSingleton::getInstance().setPlayerName(name.c_str());
+		
 		ImGui::Separator();
 		if (ImGui::Button("Single Player")) {
 			if (m_network->host()) {
@@ -127,6 +142,16 @@ bool MenuState::onEvent(Event& event) {
 	EventHandler::dispatch<NetworkLanHostFoundEvent>(event, SAIL_BIND_EVENT(&MenuState::onLanHostFound));
 
 	return false;
+}
+
+const std::string MenuState::loadPlayerName(const std::string& file) {
+	std::string name = Utils::readFile(file);
+	if (name == "") {
+		name = "Hans";
+		Utils::writeFileTrunc("res/data/localplayer.settings", name);
+		Logger::Log("Found no player file, created: " + std::string("'res/data/localplayer.settings'"));
+	}
+	return name;
 }
 
 bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {

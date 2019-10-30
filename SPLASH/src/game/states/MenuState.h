@@ -30,6 +30,11 @@ public:
 	bool onEvent(Event& event);
 
 private:
+	const std::string loadPlayerName(const std::string& file);
+
+
+
+private:
 	Input* m_input = nullptr;
 	// NetworkWrapper | NWrapperSingleton | NWrapperHost
 	NWrapperSingleton* m_network = nullptr;
