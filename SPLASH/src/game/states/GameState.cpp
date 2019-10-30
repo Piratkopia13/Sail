@@ -58,7 +58,7 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
-	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, -0.86f)));
+	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, 0.85f)));
 #endif
 
 	// Initialize the component systems
@@ -110,8 +110,12 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
+#ifdef DEVELOPMENT
 #ifndef _PERFORMANCE_TEST
+#ifndef _DEBUG
 	m_componentSystems.animationSystem->initDebugAnimations();
+#endif
+#endif
 #endif
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
@@ -152,7 +156,7 @@ GameState::GameState(StateStack& stack)
 #ifdef _PERFORMANCE_TEST
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(52.f, 1.f, 70.f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #endif
 
 
@@ -308,7 +312,7 @@ bool GameState::processInput(float dt) {
 		// Get position and rotation to look at middle of the map from above
 		{
 			auto parTrans = m_player->getComponent<TransformComponent>();
-			auto pos = glm::vec3(parTrans->getMatrix()[3]);
+			auto pos = glm::vec3(parTrans->getMatrixWithUpdate()[3]);
 			pos.y = 20.f;
 			parTrans->setTranslation(pos);
 			MapComponent temp;
@@ -583,7 +587,7 @@ bool GameState::fixedUpdate(float dt) {
 #ifdef _PERFORMANCE_TEST
 	/* here we shoot the guns */
 	for (auto e : m_performanceEntities) {
-		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrix()[3]);
+		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrixWithUpdate()[3]);
 		auto ePos = e->getComponent<TransformComponent>()->getTranslation();
 		ePos.y = ePos.y + 5.f;
 		auto dir = ePos - pos;
@@ -704,6 +708,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.candleSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
+
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {

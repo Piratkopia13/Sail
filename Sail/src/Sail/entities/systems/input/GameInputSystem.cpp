@@ -334,7 +334,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 				for (auto childE : e->getChildEntities()) {
 					if (childE->getName().find("WaterGun") != std::string::npos) {
 						TransformComponent* tc = childE->getComponent<TransformComponent>();
-						glm::vec3 gunPosition = glm::vec3(tc->getMatrix()[3]) + m_cam->getCameraDirection() * 0.33f;
+						glm::vec3 gunPosition = glm::vec3(tc->getMatrixWithUpdate()[3]) + m_cam->getCameraDirection() * 0.33f;
 						e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
 					}
 				}

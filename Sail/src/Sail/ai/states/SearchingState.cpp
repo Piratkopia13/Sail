@@ -18,7 +18,7 @@ SearchingState::~SearchingState() {
 void SearchingState::update(float dt, Entity* entity) {
 	
 	auto aiComp = entity->getComponent<AiComponent>();
-	auto aiPos = entity->getComponent<TransformComponent>()->getMatrix()[3];
+	auto aiPos = entity->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
 
 	static float clock = 0;
 	clock += dt;
@@ -30,7 +30,7 @@ void SearchingState::update(float dt, Entity* entity) {
 		clock = 0;
 	}
 	if (aiComp->entityTarget != nullptr) {
-		auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
+		auto enemyPos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
 		m_distToHost = glm::distance2(enemyPos, aiPos);
 		
 

@@ -126,7 +126,7 @@ void CandleSystem::update(float dt) {
 		e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
 
 		candle->setWasCarriedLastUpdate(candle->isCarried());
-		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrix() * glm::vec4(0, 0.37f, 0, 1);
+		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrixWithUpdate() * glm::vec4(0, 0.37f, 0, 1);
 		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
 }
@@ -142,7 +142,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 			glm::vec3 parentPos = parentTransComp->getTranslation();
 			glm::vec3 dir = candleTransComp->getParent()->getForward();
 			dir.y = 0.0f;
-			dir = glm::normalize(dir)/2.0f;
+			dir = glm::normalize(dir)*0.5f;
 			glm::vec3 candleTryPosition = glm::vec3(parentPos.x - dir.x, parentPos.y, parentPos.z - dir.z);
 
 			bool blocked = false;
