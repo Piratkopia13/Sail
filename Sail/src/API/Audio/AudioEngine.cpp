@@ -695,8 +695,13 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 	m_isFinished[myIndex] = true;
 	m_streamLocks[myIndex].store(false);
 
+		// Commented-out because it causes a crash during death of other player
 	// Clean up audio component as well
-	pAudioC->m_currentlyStreaming.clear();
+	//if (pAudioC != nullptr) {
+	//	if (pAudioC->m_currentlyStreaming.size() == 1) {
+	//		pAudioC->m_currentlyStreaming.clear();
+	//	}
+	//}
 }
 
 //--------------------------------------------------------------------------------------

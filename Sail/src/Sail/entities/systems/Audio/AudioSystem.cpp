@@ -12,6 +12,10 @@
 
 #include <iterator>
 
+#include <mmeapi.h>		// Used to determine if there are outputDevices for sound
+#include <windows.h>	//
+#include <mmsystem.h>	//
+
 AudioSystem::AudioSystem() : BaseComponentSystem() {
 	registerComponent<AudioComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
@@ -81,6 +85,12 @@ void AudioSystem::initialize() {
 }
 
 void AudioSystem::update(Camera& cam, float dt, float alpha) {
+	if (waveOutGetNumDevs() == 0) {
+		m_hasOutputDevices = false;
+	}
+	if (!m_hasOutputDevices) {	// Only run audiosystem if there are outputdevices on the computer
+		return;
+	}
 	for (auto e : entities) {
 		auto audioC = e->getComponent<AudioComponent>();
 
@@ -178,7 +188,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			}
 
 			// Hot fix for lab ambiance not playing after pause.
-			hotFixAmbiance(e, audioC);
+			//hotFixAmbiance(e, audioC);	// Commented-out because it causes a crash during death of other player
 
 			// Per currently streaming sound
 			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
