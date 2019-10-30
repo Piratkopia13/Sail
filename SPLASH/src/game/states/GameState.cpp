@@ -704,6 +704,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
+	m_componentSystems.gameInputSystem->fixedUpdate(dt);
+
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
 	// Update entities with info from the network and from ourself
@@ -722,13 +724,13 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	runSystem(dt, m_componentSystems.gunSystem);
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.candleSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
+	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
 
