@@ -44,7 +44,7 @@ void CandlePlacementSystem::update(float dt) {
 
 		candle->wasCarriedLastUpdate = candle->isCarried;
 		static const float candleHeight = 0.37f;
-		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrix() * glm::vec4(0, candleHeight, 0, 1);
+		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrixWithUpdate() * glm::vec4(0, candleHeight, 0, 1);
 		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
 }
@@ -54,12 +54,13 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 	auto candleTransComp = e->getComponent<TransformComponent>();
 	auto parentTransComp = e->getParent()->getComponent<TransformComponent>();
 
+	/* TODO: Raycast and see if the hit location is ground within x units */
 	if (!candleComp->isCarried) {
 		if (candleComp->isLit) {
-			glm::vec3 parentPos = parentTransComp->getMatrix()[3];
+			glm::vec3 parentPos = parentTransComp->getTranslation();
 			glm::vec3 dir = candleTransComp->getParent()->getForward();
 			dir.y = 0.0f;
-			dir = glm::normalize(dir) / 2.0f;
+			dir = glm::normalize(dir) * 0.5f;
 			glm::vec3 candleTryPosition = glm::vec3(parentPos.x - dir.x, parentPos.y, parentPos.z - dir.z);
 
 			bool blocked = false;
@@ -71,7 +72,7 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 				// Shoot a ray straight down 1 meter ahead of the player to check for floor
 				m_octree->getRayIntersection(glm::vec3(candleTryPosition.x, candleTryPosition.y + heightOffsetFromPlayerFeet, candleTryPosition.z), down, &tempInfo, nullptr, 0.01f);
 				if (tempInfo.closestHitIndex != -1) {
-					float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].intersectionAxis, -down);
+					float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].shape->getNormal(), -down);
 					// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
 					bool isFloor = (floorCheckVal < 0.1f) ? true : false;
 					if (!isFloor) {
@@ -103,9 +104,8 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 			if (!blocked) {
 				candleTransComp->removeParent();
 				candleTransComp->setTranslation(candleTryPosition);
-
 				candleTransComp->setRotations(glm::vec3{0.f,0.f,0.f});
-				e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = nullptr;
+				e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
 
 				ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 			} else {
@@ -118,7 +118,7 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 		// Pick up the candle
 		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->isLit) {
 			candleTransComp->setParent(parentTransComp);
-			e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = e;
+			e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = e;
 		} else {
 			candleComp->isCarried = false;
 		}
