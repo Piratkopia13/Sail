@@ -71,6 +71,10 @@ void NWrapperSingleton::checkFoundPackages() {
 	m_network->checkForPackages(*this);
 }
 
+void NWrapperSingleton::stopUDP() {
+	m_network->stopUDP();
+}
+
 void NWrapperSingleton::resetPlayerList()
 {
 	m_players.clear();

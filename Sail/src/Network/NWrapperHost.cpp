@@ -12,7 +12,6 @@
 
 bool NWrapperHost::host(int port) {
 	bool result = m_network->host(port);
-	setLobbyName(NWrapperSingleton::getInstance().getMyPlayer().name);
 	return result;
 }
 

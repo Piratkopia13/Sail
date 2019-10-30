@@ -319,6 +319,7 @@ bool Network::searchHostsOnLan()
 
 bool Network::startUDPSocket(unsigned short port)
 {
+	m_shutdownUDP = false;
 	ULONG bAllow = 1;
 
 	/*===UDP BROADCASTER===*/
@@ -395,7 +396,7 @@ void Network::listenForUDP()
 	sockaddr_in client = { 0 };
 	int clientSize = sizeof(sockaddr_in);
 
-	while (!m_shutdown)
+	while (!m_shutdown && !m_shutdownUDP)
 	{
 		memset(&udpdata, 0, sizeof(udpdata));
 		int bytesRec = recvfrom(m_udp_directMessage_socket, (char*)& udpdata, sizeof(udpdata), 0, (sockaddr*)& client, &clientSize);
@@ -537,20 +538,7 @@ void Network::shutdown()
 		}
 	}
 
-	if (m_udp_broadcast_socket) {
-		closesocket(m_udp_broadcast_socket);
-		m_udp_broadcast_socket = 0;
-	}
-	if (m_udp_directMessage_socket) {
-		closesocket(m_udp_directMessage_socket);
-		m_udp_directMessage_socket = 0;
-	}
-
-	if (m_UDPListener) {
-		m_UDPListener->join();
-		delete 	m_UDPListener;
-		m_UDPListener = nullptr;
-	}
+	stopUDP();
 
 	m_connections.clear();
 	m_initializedStatus = INITIALIZED_STATUS::INITIALIZED;
@@ -568,10 +556,29 @@ ULONG Network::ip_string_to_ip_int(char* ip)
 	return result;
 }
 
+void Network::stopUDP() {
+	m_shutdownUDP = true;
+
+	if (m_udp_broadcast_socket) {
+		closesocket(m_udp_broadcast_socket);
+		m_udp_broadcast_socket = 0;
+	}
+	if (m_udp_directMessage_socket) {
+		closesocket(m_udp_directMessage_socket);
+		m_udp_directMessage_socket = 0;
+	}
+
+	if (m_UDPListener) {
+		m_UDPListener->join();
+		delete 	m_UDPListener;
+		m_UDPListener = nullptr;
+	}
+}
+
 void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
 	// delete previous message if there is one
-	if (m_awaitingMessages[m_pend].Message.rawMsg != nullptr) {
+	if (m_awaitingEvents[m_pend].eventType != NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND && m_awaitingMessages[m_pend].Message.rawMsg != nullptr) {
 		delete[] m_awaitingMessages[m_pend].Message.rawMsg;
 		m_awaitingMessages[m_pend].Message.rawMsg = nullptr;
 	}

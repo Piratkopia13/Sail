@@ -7,10 +7,6 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack) {
 	// Reserved for host, all other will get 1,2,3,...,n
 	NWrapperSingleton::getInstance().setPlayerID(HOST_ID); 
-
-	if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
-		NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
-	}
 }
 
 LobbyHostState::~LobbyHostState() {
@@ -65,6 +61,7 @@ bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
 	// Remove player from player list.
 	unsigned char id = event.getPlayerID();
 	NWrapperSingleton::getInstance().playerLeft(id);
+
 	
 	return false;
 }

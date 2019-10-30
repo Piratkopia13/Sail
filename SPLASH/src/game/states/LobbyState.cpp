@@ -193,8 +193,10 @@ void LobbyState::renderStartButton() {
 
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
+			NWrapperSingleton::getInstance().stopUDP();
 			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
 			m_network->sendMsgAllClients("t");
+
 			this->requestStackPop();
 			this->requestStackPush(States::Game);
 		}

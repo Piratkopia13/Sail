@@ -128,6 +128,11 @@ public:
 	*/
 	static ULONG ip_string_to_ip_int(char* ip);
 
+	/*
+		This function does not have a great documentation.
+	*/
+	void stopUDP();
+
 private:
 
 	enum UDP_DATA_PACKAGE_TYPE : char
@@ -158,6 +163,7 @@ private:
 	static_assert(sizeof(UDP_DATA) == MAX_PACKAGE_SIZE, "sizeof(UDP_DATA) is not what you expect! Check your struct man.");
 
 	bool m_shutdown = false;
+	bool m_shutdownUDP = false;
 	char m_serverMetaDesc[HOST_META_DESC_SIZE];
 
 	//TCP CONNECTION
