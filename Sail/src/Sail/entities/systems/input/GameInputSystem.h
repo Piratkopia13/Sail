@@ -53,7 +53,7 @@ private:
 	float m_onGroundThreshold = 0.3f;
 	float m_isPlayingRunningSound = false;
 	float m_fallTimer = 0.0f;
-	float m_fallThreshold = 0.56f;
+	float m_fallThreshold = 0.6f;
 
 	// TEMP BOOLS
 	bool tempMetal = false;
