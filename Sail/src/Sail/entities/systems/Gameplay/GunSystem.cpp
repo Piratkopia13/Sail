@@ -7,6 +7,8 @@
 
 #include "Sail/entities/components/GunComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
+
 #include "Sail/utils/GameDataTracker.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/netcode/NetworkedStructs.h"
@@ -18,7 +20,9 @@
 GunSystem::GunSystem() : BaseComponentSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<GunComponent>(true, true, true);
+	registerComponent<MovementComponent>(true, true, false);
 	registerComponent<NetworkSenderComponent>(false, true, true);
+
 	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
@@ -45,7 +49,7 @@ void GunSystem::update(float dt) {
 							Netcode::MessageType::SPAWN_PROJECTILE,
 							SAIL_NEW Netcode::MessageSpawnProjectile{
 								gun->position,
-								gun->direction * gun->projectileSpeed,
+								gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity,
 								e->getComponent<NetworkSenderComponent>()->m_id
 							}
 						);
