@@ -3,6 +3,7 @@
 #include "Sail/api/Input.h"
 #include "Sail/Application.h"
 #include "Network/NWrapperSingleton.h"
+#include "../events/GameOverEvent.h"
 
 bool InGameMenuState::sIsOpen = false;
 
@@ -26,6 +27,8 @@ bool InGameMenuState::processInput(float dt) {
 		// Reset the network
 		NWrapperSingleton::getInstance().resetNetwork();
 		NWrapperSingleton::getInstance().resetWrapper();
+		// Dispatch game over event
+		Application::getInstance()->dispatchEvent(GameOverEvent());
 
 		this->requestStackPop();
 		this->requestStackPop();

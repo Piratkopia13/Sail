@@ -59,6 +59,10 @@ void ProjectileSystem::update(float dt) {
 					);
 				}
 			}
+
+			if (Utils::rnd() < 0.5) {
+				e->queueDestruction();
+			}
 		}
 
 		projComp->timeSinceLastDecal += dt;

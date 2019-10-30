@@ -187,9 +187,9 @@ void AnimationSystem::updateTransforms(const float dt) {
 			
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
 			
-			animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
+			//KEEP THIS DO NOT REMOVE FUCK YOU
+			//animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
 			animationC->leftHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
-
 		}
 
 		if (animationC->rightHandEntity) {

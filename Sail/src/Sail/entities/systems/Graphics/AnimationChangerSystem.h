@@ -15,6 +15,8 @@ public:
 	FORWARD,
 	BACKWARD,
 	LEFT,
-	RIGHT
+	RIGHT,
+	IDLEJUMP,
+	FORWARDJUMP
 	};
 };
