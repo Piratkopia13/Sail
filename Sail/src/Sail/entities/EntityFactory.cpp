@@ -109,9 +109,12 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 			//leave this for now
 			//c->addComponent<GunComponent>();
 		}
+
+		// Add a localOwnerComponent to our candle so that we can differentiate it from other candles
+		if (c->hasComponent<CandleComponent>()) {
+			c->addComponent<LocalOwnerComponent>(netComponentID);
+		}
 	}
-
-
 
 	return myPlayer;
 }

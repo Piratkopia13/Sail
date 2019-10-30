@@ -56,6 +56,7 @@ private:
 
 	struct FoundLobby {
 		std::string ip;
+		std::string description;
 		double duration = 20;
 		void resetDuration() { duration = 20; }
 	};

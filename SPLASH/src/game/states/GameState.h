@@ -71,6 +71,7 @@ private:
 	PlayerInfoWindow m_playerInfoWindow;
 	WasDroppedWindow m_wasDroppedWindow;
 	KillFeedWindow m_killFeedWindow;
+	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 
 	size_t m_currLightIndex;
 

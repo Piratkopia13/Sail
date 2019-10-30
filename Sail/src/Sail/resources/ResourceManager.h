@@ -32,6 +32,8 @@ public:
 	bool hasAudioData(const std::string& filename);
 
 	static const std::string SAIL_DEFAULT_MODEL_LOCATION;
+	static const std::string SAIL_DEFAULT_SOUND_LOCATION;
+
 	
 
 	// TextureData

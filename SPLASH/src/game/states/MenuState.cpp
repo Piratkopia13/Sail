@@ -47,9 +47,9 @@ bool MenuState::update(float dt, float alpha) {
 	udpCounter -= m_frameTick;
 	if (udpCounter < 0) {
 		NWrapperSingleton::getInstance().searchForLobbies();
-		NWrapperSingleton::getInstance().checkFoundPackages(); // Make timer.
 		udpCounter = udpChill;
 	}
+	NWrapperSingleton::getInstance().checkFoundPackages();
 	
 	removeDeadLobbies();
 	return false;
@@ -85,15 +85,22 @@ bool MenuState::renderImgui(float dt) {
 				if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
 					NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 				}
+
 				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
-			this->requestStackPop();
-			this->requestStackPush(States::Game);
+				this->requestStackPop();
+				this->requestStackPush(States::Game);
 			}
 		}
 		ImGui::SameLine(200);
 		if (ImGui::Button("Host Game")) {
 			if (m_network->host()) {
+				// Update server description after host added himself to the player list.
+				NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+
+				NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
+				wrapper->setLobbyName(NWrapperSingleton::getInstance().getMyPlayer().name.c_str());
+
 				this->requestStackPop();
 				this->requestStackPush(States::HostLobby);
 			}
@@ -122,7 +129,8 @@ bool MenuState::renderImgui(float dt) {
 	// Per hosted game
 	for (auto& lobby : m_foundLobbies) {
 		// List as a button
-		if (ImGui::Button(lobby.ip.c_str())) {
+
+		if (ImGui::Button((lobby.description != "") ? lobby.description.c_str() : lobby.ip.c_str())) {
 			char* tempIp = SAIL_NEW char[m_ipBufferSize];
 			tempIp = std::strcpy(tempIp, lobby.ip.c_str());
 
@@ -266,13 +274,14 @@ bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
 	for (auto& lobby : m_foundLobbies) {
 		if (lobby.ip == ip_as_string) {
 			alreadyExists = true;
+			lobby.description = event.getDesc();
 			lobby.resetDuration();
 		}
 	}
 	// If not...
 	if (alreadyExists == false) {
 		// ...log it.
-		m_foundLobbies.push_back(FoundLobby{ ip_as_string });
+		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.getDesc() });
 	}
 
 	return false;
