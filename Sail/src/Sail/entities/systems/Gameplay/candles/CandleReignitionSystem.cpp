@@ -18,10 +18,7 @@ void CandleReignitionSystem::update(float dt) {
 	for (auto& e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
 		if (!candle->isLit) {
-			candle->downTime += dt;
-
 			if (candle->downTime >= m_candleForceRespawnTimer) {
-				candle->downTime = 0.f;
 				if (NWrapperSingleton::getInstance().isHost()) {
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::IGNITE_CANDLE,
@@ -32,6 +29,8 @@ void CandleReignitionSystem::update(float dt) {
 					);
 				}
 			}
+
+			candle->downTime += dt;
 		}
 	}
 }

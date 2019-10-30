@@ -22,16 +22,21 @@ void CandleHealthSystem::update(float dt) {
 		if (candle->isLit) {
 			// Decrease invincibility time
 			candle->invincibleTimer -= dt;
-			candle->invincibleTimer = candle->invincibleTimer < 0.f ? 0.f : candle->invincibleTimer;
 
 			// If candle is alive
 			if (candle->health > 0.f) {
 				if (candle->damageTakenLastHit != 0.f && candle->invincibleTimer <= 0.f) {
 					candle->health -= candle->damageTakenLastHit;
-				} else {
-					continue;
+					// TODO: Replace 0.4f with game settings
+					candle->invincibleTimer = 0.4f;
 				}
 			} else {
+				candle->health = 0.f;
+				candle->invincibleTimer = 0.f;
+				candle->isLit = false;
+				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+
+				// No respawns left - die!
 				if (candle->respawns == m_maxNumRespawns) {
 					livingCandles--;
 
@@ -50,10 +55,6 @@ void CandleHealthSystem::update(float dt) {
 							Netcode::getComponentOwner(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id)
 						);
 					}
-				} else {
-					candle->health = 0.f;
-					candle->invincibleTimer = 0.f;
-					candle->respawns++;
 				}
 			}
 
@@ -68,16 +69,18 @@ void CandleHealthSystem::update(float dt) {
 	}
 
 	// Only one living candle left and number of players in the game is greater than one
-	if (livingCandles < 2 && entities.size() > 1) {
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::MATCH_ENDED,
-			nullptr
-		);
-		// Send relevant stats to all clients
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::ENDGAME_STATS,
-			nullptr,
-			false
-		);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		if (livingCandles < 2 && entities.size() > 1) {
+			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				Netcode::MessageType::MATCH_ENDED,
+				nullptr
+			);
+			// Send relevant stats to all clients
+			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				Netcode::MessageType::ENDGAME_STATS,
+				nullptr,
+				false
+			);
+		}
 	}
 }
