@@ -169,82 +169,32 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 		// - - - S T R E A M I N G  --------------------------------------------------------------------
 		{
-			// Playing STREAMED sounds
-			std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator i;
-			std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator toBeDeleted;
-			std::list<std::pair<std::string, std::pair<int, bool>>>::iterator j;
-			std::list<std::pair<std::string, std::pair<int, bool>>>::iterator k;
-			std::list<std::pair<std::string, std::pair<int, bool>>>::iterator streamToBeDeleted;
+			m_filename = "";
+			m_volume = 1.0f;
+			m_streamIndex = 0;
 
-			std::string filename = "";
-			float volume = 1.0f;
-			bool isPositionalAudio;
-			bool isLooping;
-			int streamIndex = 0;
+			// Deal with requests
+			for (m_i = audioC->m_streamingRequests.begin(); m_i != audioC->m_streamingRequests.end();) {
 
-			for (i = audioC->m_streamingRequests.begin(); i != audioC->m_streamingRequests.end();) {
-
-				if (i->second.startTRUE_stopFALSE == true) {
-					// Fetch found stream-request's filename
-					filename = i->first;
-					volume = i->second.volume;
-					isPositionalAudio = i->second.isPositionalAudio;
-					isLooping = i->second.isLooping;
-
-					toBeDeleted = i;
-					i++;
-
-					streamIndex = m_audioEngine->getAvailableStreamIndex();
-
-					if (streamIndex == -1) {
-						Logger::Error("Too many sounds already streaming; failed to stream another one!");
-					}
-					else {
-
-						Application::getInstance()->pushJobToThreadPool(
-							[this, filename, streamIndex, volume, isPositionalAudio, isLooping](int id) {
-							return m_audioEngine->streamSound(filename, streamIndex, volume, isPositionalAudio, isLooping);
-						});
-
-						audioC->m_currentlyStreaming.emplace_back(filename, std::pair(streamIndex, isPositionalAudio));
-						audioC->m_streamingRequests.erase(toBeDeleted);
-					}
+				// If the request wants to start
+				if (m_i->second.startTRUE_stopFALSE == true) {
+					// Start playing stream
+					startPlayingRequestedStream(e, audioC);
 				}
-				else/*if (i.second == false)*/ {
-
-					filename = i->first;
-					toBeDeleted = i;
-					i++;
-
-					for (j = audioC->m_currentlyStreaming.begin(); j != audioC->m_currentlyStreaming.end();) {
-
-						streamToBeDeleted = j;
-						j++;
-
-						if (streamToBeDeleted->first == filename) {
-
-							bool expectedValue = false;
-							while (!m_audioEngine->m_streamLocks[streamToBeDeleted->second.first].compare_exchange_strong(expectedValue, true));
-
-							m_audioEngine->stopSpecificStream(streamToBeDeleted->second.first);
-							audioC->m_currentlyStreaming.erase(streamToBeDeleted);
-
-							break;
-						}
-					}
-					audioC->m_streamingRequests.erase(toBeDeleted);
+				// If the request wants to stop
+				else {
+					// Stop playing stream
+					stopPlayingRequestedStream(e, audioC);
 				}
 			}
 
-			for (k = audioC->m_currentlyStreaming.begin(); k != audioC->m_currentlyStreaming.end();) {
+			// Hot fix for lab ambiance not playing after pause.
+			hotFixAmbiance(e, audioC);
 
-				if (k->second.second) {
-					m_audioEngine->updateStreamWithCurrentPosition(
-						k->second.first, cam, *e->getComponent<TransformComponent>(),
-						glm::vec3{ 0.0f, 0.0f, 0.0f }, alpha);
-				}
-
-				k++;
+			// Per currently streaming sound
+			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
+				// Update its position in the world
+				updateStreamPosition(e, cam, alpha);
 			}
 		}
 	}
@@ -252,6 +202,84 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 void AudioSystem::stop() {
 	m_audioEngine->stopAllStreams();
+}
+
+void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
+	// Fetch found stream-request's filename
+	m_filename = m_i->first;
+	m_volume = m_i->second.volume;
+	m_isPositionalAudio = m_i->second.isPositionalAudio;
+	m_isLooping = m_i->second.isLooping;
+
+	m_toBeDeleted = m_i;
+	m_i++;
+
+	m_streamIndex = m_audioEngine->getAvailableStreamIndex();
+
+	std::string filename = m_filename;
+	float volume = m_volume;
+	bool isPositionalAudio = m_isPositionalAudio;
+	bool isLooping = m_isLooping;
+	int streamIndex = m_streamIndex;
+
+	if (m_streamIndex == -1) {
+		Logger::Error("Too many sounds already streaming; failed to stream another one!");
+	}
+	else {
+
+
+		Application::getInstance()->pushJobToThreadPool(
+			[this, filename, streamIndex, volume, isPositionalAudio, isLooping, audioC](int id) {
+			return m_audioEngine->streamSound(m_filename, m_streamIndex, m_volume, m_isPositionalAudio, m_isLooping, audioC);
+		});
+
+		audioC->m_currentlyStreaming.emplace_back(m_filename, std::pair(m_streamIndex, m_isPositionalAudio));
+		audioC->m_streamingRequests.erase(m_toBeDeleted);
+	}
+}
+
+void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
+	m_filename = m_i->first;
+	m_toBeDeleted = m_i;
+	m_i++;
+
+	for (m_j = audioC->m_currentlyStreaming.begin(); m_j != audioC->m_currentlyStreaming.end();) {
+
+		m_streamToBeDeleted = m_j;
+		m_j++;
+
+		if (m_streamToBeDeleted->first == m_filename) {
+
+			bool expectedValue = false;
+			while (!m_audioEngine->m_streamLocks[m_streamToBeDeleted->second.first].compare_exchange_strong(expectedValue, true));
+
+			m_audioEngine->stopSpecificStream(m_streamToBeDeleted->second.first);
+			audioC->m_currentlyStreaming.erase(m_streamToBeDeleted);
+
+			break;
+		}
+	}
+	audioC->m_streamingRequests.erase(m_toBeDeleted);
+}
+
+void AudioSystem::updateStreamPosition(Entity* e, Camera& cam, float alpha) {
+	if (m_k->second.second) {
+		m_audioEngine->updateStreamWithCurrentPosition(
+			m_k->second.first, cam, *e->getComponent<TransformComponent>(),
+			glm::vec3{ 0.0f, 0.0f, 0.0f }, alpha);
+	}
+
+	m_k++;
+}
+
+void AudioSystem::hotFixAmbiance(Entity* e, AudioComponent* audioC) {
+	if (e->getName() == "LabAmbiance") {
+		// If it's not playing anything...
+		if (audioC->m_currentlyStreaming.size() == 0) {
+			// ... start playing ambiance again.
+			audioC->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
+		}
+	}
 }
 
 AudioEngine* AudioSystem::getAudioEngine() {
