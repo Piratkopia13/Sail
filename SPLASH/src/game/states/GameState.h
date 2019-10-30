@@ -26,9 +26,6 @@ public:
 	virtual bool renderImgui(float dt) override;
 	// Renders imgui used for debugging
 	virtual bool renderImguiDebug(float dt) override;
-	// If the state is about to change clean it up
-	virtual bool prepareStateChange() override;
-
 
 private:
 	void initSystems(const unsigned char playerID);
@@ -75,7 +72,6 @@ private:
 	WasDroppedWindow m_wasDroppedWindow;
 	KillFeedWindow m_killFeedWindow;
 
-
 	size_t m_currLightIndex;
 
 	bool m_paused = false;
@@ -90,11 +86,7 @@ private:
 	std::vector<std::future<BaseComponentSystem*>> m_runningSystemJobs;
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
-	bool m_poppedThisFrame = false;
-
-	//
 	bool m_wasDropped = false;
-
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
