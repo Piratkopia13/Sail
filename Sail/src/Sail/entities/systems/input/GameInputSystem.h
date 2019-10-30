@@ -18,8 +18,6 @@ public:
 	GameInputSystem();
 	~GameInputSystem();
 
-	void fixedUpdate();
-
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
 	void clean();
@@ -38,6 +36,9 @@ private:
 	
 	CameraController* m_cam = nullptr;
 	GameDataTracker* m_gameDataTracker = nullptr;
+
+
+	float m_candleToggleTimer = 0.0f;
 
 	// --------- Earlier used variables below this line ---------
 	float m_runSpeed = 2.0;
