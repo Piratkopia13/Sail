@@ -87,7 +87,7 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
         // Blend the decal properties with the material properties
         RayPayload decalPayload;
         decalPayload.color = 0.f;
-        decalPayload.recursionDepth = 0;
+        decalPayload.recursionDepth = 1;
 
         // Normal mapping, needs tangents and bitangents!
         // wNorm.y = 1.0f - wNorm.y;

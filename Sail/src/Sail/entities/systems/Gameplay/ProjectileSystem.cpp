@@ -46,7 +46,7 @@ void ProjectileSystem::update(float dt) {
 				}
 			}
 
-
+// To prevent a crash when shooting bot candles in the performance test
 #ifndef _PERFORMANCE_TEST
 			//If projectile collided with a candle
 			if (collision.entity->hasComponent<CandleComponent>()) {
@@ -62,6 +62,10 @@ void ProjectileSystem::update(float dt) {
 				}
 			}
 #endif
+
+			if (Utils::rnd() < 0.5) {
+				e->queueDestruction();
+			}
 		}
 
 		projComp->timeSinceLastDecal += dt;
