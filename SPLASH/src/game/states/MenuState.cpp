@@ -63,6 +63,7 @@ bool MenuState::render(float dt, float alpha) {
 
 bool MenuState::renderImgui(float dt) {
 	
+	//Keep
 	ImGui::ShowDemoWindow();
 
 
@@ -77,49 +78,72 @@ bool MenuState::renderImgui(float dt) {
 		ImGui::InputText("##name", buf, MAX_NAME_LENGTH);
 		name = buf;
 		NWrapperSingleton::getInstance().setPlayerName(name.c_str());
-		
-		ImGui::Separator();
-		if (ImGui::Button("Single Player")) {
-			if (m_network->host()) {
-				NWrapperSingleton::getInstance().setPlayerID(HOST_ID);
-				if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
-					NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
-				}
-
-				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
-
-				this->requestStackPop();
-				this->requestStackPush(States::Game);
-			}
-		}
-		ImGui::SameLine(200);
-		if (ImGui::Button("Host Game")) {
-			if (m_network->host()) {
-				// Update server description after host added himself to the player list.
-				NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
-
-				NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
-				wrapper->setLobbyName(NWrapperSingleton::getInstance().getMyPlayer().name.c_str());
-
-				this->requestStackPop();
-				this->requestStackPush(States::HostLobby);
-			}
-		}
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Spacing();
 		ImGui::Spacing();
 		ImGui::Separator();
-		ImGui::Text("IP:");
-		ImGui::SameLine();
-		ImGui::InputText("##IP:", inputIP, 100);
-		if (ImGui::Button("Join Local Game")) {
-			if (m_network->connectToIP(inputIP)) {
-				// Wait until welcome-package is received,
-				// Save the package info,
-				// Pop and push into JoinLobbyState.
-				this->requestStackPop();
-				this->requestStackPush(States::JoinLobby);
+		if (ImGui::CollapsingHeader("SinglePlayer", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::Spacing();
+			ImGui::Spacing();
+			if (ImGui::Button("Start Solo Game")) {
+				if (m_network->host()) {
+					NWrapperSingleton::getInstance().setPlayerID(HOST_ID);
+					if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
+						NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+					}
+
+					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
+
+					this->requestStackPop();
+					this->requestStackPush(States::Game);
+				}
+			}
+			ImGui::Spacing();
+			ImGui::Spacing();
+			ImGui::Spacing();
+			ImGui::Spacing();
+			ImGui::Spacing();
+			ImGui::Spacing();
+		}
+	
+		if (ImGui::CollapsingHeader("MultiPlayer", ImGuiTreeNodeFlags_DefaultOpen)) {
+			static std::string lobbyName = "";
+			ImGui::Text("Lobby name:");
+			ImGui::SameLine();
+			strncpy_s(buf, lobbyName.c_str(), lobbyName.size());
+			ImGui::InputText("##lobbyName:", buf, 40);
+			lobbyName = buf;
+			if (ImGui::Button("Host Game")) {
+				if (m_network->host()) {
+					// Update server description after host added himself to the player list.
+					NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+					NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
+					if (lobbyName == "") {
+						lobbyName = NWrapperSingleton::getInstance().getMyPlayer().name + "'s lobby";
+					}
+					wrapper->setLobbyName(lobbyName.c_str());
+
+					this->requestStackPop();
+					this->requestStackPush(States::HostLobby);
+				}
+			}
+			ImGui::Separator();
+			ImGui::Text("IP:");
+			ImGui::SameLine();
+			ImGui::InputText("##IP:", inputIP, 100);
+			if (ImGui::Button("Join Local Game")) {
+				if (m_network->connectToIP(inputIP)) {
+					// Wait until welcome-package is received,
+					// Save the package info,
+					// Pop and push into JoinLobbyState.
+					this->requestStackPop();
+					this->requestStackPush(States::JoinLobby);
+				}
 			}
 		}
-
 	}
 	ImGui::End();
 
@@ -127,6 +151,7 @@ bool MenuState::renderImgui(float dt) {
 	// Display open lobbies
 	if (ImGui::Begin("Hosted Lobbies on LAN", NULL)) {
 		
+		// DISPLAY LOBBIES
 		static int selected = -1;
 		if (ImGui::BeginChild("Lobbies", ImVec2(0,-ImGui::GetFrameHeightWithSpacing()))) {
 			// Per hosted game
@@ -134,15 +159,18 @@ bool MenuState::renderImgui(float dt) {
 			ImGui::Separator();
 			ImGui::Text("Lobby"); ImGui::NextColumn();
 			ImGui::Text("Players"); ImGui::NextColumn();
-			//ImGui::Text(""); ImGui::NextColumn();
 			ImGui::Separator();
 
 			int index = 0;
+			if (selected > m_foundLobbies.size()) {
+				selected = -1;
+			}
 			for (auto& lobby : m_foundLobbies) {
 				// List as a button
 				std::string fullText = lobby.description;
 				std::string lobbyName = "";
 				std::string playerCount = "N/A";
+				// GET LOBBY NAME AND PLAYERCOUNT AS SEPARATE STRINGS
 				if (fullText == "") {
 					lobbyName = lobby.ip;
 				}
@@ -170,16 +198,13 @@ bool MenuState::renderImgui(float dt) {
 					}
 				}
 				ImGui::NextColumn();
-				
-				//ImGui::Text(lobbyName.c_str()); ImGui::NextColumn();
 				ImGui::Text(playerCount.c_str()); ImGui::NextColumn();
-
-
 				index++;
 			}
-			
 		}
 		ImGui::EndChild();
+
+		// DISPLAY JOIN BUTTON
 		ImGui::NewLine();
 		ImGui::SameLine(ImGui::GetWindowWidth() - 50);
 		if (ImGui::Button("Join") && selected != -1) {
@@ -198,18 +223,17 @@ bool MenuState::renderImgui(float dt) {
 	
 
 
-
-
 	if (ImGui::Begin("Loading Info")) {
 		//maxCount being hardcoded for now
-		std::string progress = "Models (" + std::to_string(m_app->getResourceManager().numberOfModels()) + "/"+"14"+")";
+		std::string progress = "Models:";
 		ImGui::Text(progress.c_str());
+		ImGui::SameLine();
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/14.0f, ImVec2(0.0f, 0.0f));
 
-		progress = "Textures (" + std::to_string(m_app->getResourceManager().numberOfTextures()) + "/" + "44" + ")";
+		progress = "Textures:";
 		ImGui::Text(progress.c_str());
-
-
-
+		ImGui::SameLine();
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfTextures()/44.0f, ImVec2(0.0f, 0.0f));
 	}
 	ImGui::End();
 	return false;
