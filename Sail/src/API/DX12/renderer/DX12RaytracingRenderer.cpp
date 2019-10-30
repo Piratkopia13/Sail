@@ -68,33 +68,33 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 		//Calculate the needed size of m_next_metaball_aabb.
 		glm::vec3& pos = m_metaballs.front().pos;
-		m_next_metaball_aabb.MaxX = pos.x + METABALL_RADIUS;
-		m_next_metaball_aabb.MaxY = pos.y + METABALL_RADIUS;
-		m_next_metaball_aabb.MaxZ = pos.z + METABALL_RADIUS;
-		m_next_metaball_aabb.MinX = pos.x - METABALL_RADIUS;
-		m_next_metaball_aabb.MinY = pos.y - METABALL_RADIUS;
-		m_next_metaball_aabb.MinZ = pos.z - METABALL_RADIUS;
+		m_nextMetaballAabb.MaxX = pos.x + METABALL_RADIUS;
+		m_nextMetaballAabb.MaxY = pos.y + METABALL_RADIUS;
+		m_nextMetaballAabb.MaxZ = pos.z + METABALL_RADIUS;
+		m_nextMetaballAabb.MinX = pos.x - METABALL_RADIUS;
+		m_nextMetaballAabb.MinY = pos.y - METABALL_RADIUS;
+		m_nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
 		for (size_t i = 1; i < m_metaballs.size() && i < MAX_NUM_METABALLS; i++) {
 			glm::vec3& pos = m_metaballs[i].pos;
 
-			if (m_next_metaball_aabb.MaxX < pos.x + METABALL_RADIUS) {
-				m_next_metaball_aabb.MaxX = pos.x + METABALL_RADIUS;
+			if (m_nextMetaballAabb.MaxX < pos.x + METABALL_RADIUS) {
+				m_nextMetaballAabb.MaxX = pos.x + METABALL_RADIUS;
 			}
-			if (m_next_metaball_aabb.MaxY < pos.y + METABALL_RADIUS) {
-				m_next_metaball_aabb.MaxY = pos.y + METABALL_RADIUS;
+			if (m_nextMetaballAabb.MaxY < pos.y + METABALL_RADIUS) {
+				m_nextMetaballAabb.MaxY = pos.y + METABALL_RADIUS;
 			}
-			if (m_next_metaball_aabb.MaxZ < pos.z + METABALL_RADIUS) {
-				m_next_metaball_aabb.MaxZ = pos.z + METABALL_RADIUS;
+			if (m_nextMetaballAabb.MaxZ < pos.z + METABALL_RADIUS) {
+				m_nextMetaballAabb.MaxZ = pos.z + METABALL_RADIUS;
 			}
 
-			if (m_next_metaball_aabb.MinX > pos.x - METABALL_RADIUS) {
-				m_next_metaball_aabb.MinX = pos.x - METABALL_RADIUS;
+			if (m_nextMetaballAabb.MinX > pos.x - METABALL_RADIUS) {
+				m_nextMetaballAabb.MinX = pos.x - METABALL_RADIUS;
 			}
-			if (m_next_metaball_aabb.MinY > pos.y - METABALL_RADIUS) {
-				m_next_metaball_aabb.MinY = pos.y - METABALL_RADIUS;
+			if (m_nextMetaballAabb.MinY > pos.y - METABALL_RADIUS) {
+				m_nextMetaballAabb.MinY = pos.y - METABALL_RADIUS;
 			}
-			if (m_next_metaball_aabb.MinZ > pos.z - METABALL_RADIUS) {
-				m_next_metaball_aabb.MinZ = pos.z - METABALL_RADIUS;
+			if (m_nextMetaballAabb.MinZ > pos.z - METABALL_RADIUS) {
+				m_nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
 			}
 		}
 	}
@@ -125,7 +125,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	if (camera && lightSetup) {
 		static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
 		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_next_metaball_aabb, mapSize, mapStart);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart);
 
 	}
 
