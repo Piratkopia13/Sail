@@ -371,8 +371,8 @@ void CollisionSystem::surfaceFromCollision(Entity* e, std::vector<Octree::Collis
 		glm::vec3 axis;
 
 		if (collisionInfo_i.shape->getIntersectionDepthAndAxis(bb, &axis, &depth)) {
-			bb->setPosition(bb->getPosition() + axis * depth);
-			distance += axis * depth;
+			bb->setPosition(bb->getPosition() + axis * (depth - 0.0001f));
+			distance += axis * (depth - 0.0001f);
 		}
 	}
 	transform->translate(distance);
