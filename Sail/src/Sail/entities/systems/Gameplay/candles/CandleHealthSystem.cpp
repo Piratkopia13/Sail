@@ -30,6 +30,7 @@ void CandleHealthSystem::update(float dt) {
 					// TODO: Replace 0.4f with game settings
 					candle->invincibleTimer = 0.4f;
 				}
+			// Candle has been extinguished
 			} else {
 				candle->health = 0.f;
 				candle->invincibleTimer = 0.f;
