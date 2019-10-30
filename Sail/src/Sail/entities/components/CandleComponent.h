@@ -17,19 +17,6 @@ public:
 	virtual ~CandleComponent() {}
 
 	void hitWithWater(float damage, Netcode::PlayerID shooterID) {
-		/*if (invincibleTimer <= 0.f) {
-			if (health > 0.0f) {
-				invincibleTimer = 0.4f;
-				health -= damage;
-				damageTakenLastHit = damage;
-				wasHitByWater = true;
-
-				if (health <= 0.0f) {
-					wasHitByPlayerID = shooterID;
-					isLit = false;
-				}
-			}
-		}*/
 		damageTakenLastHit = damage;
 		wasHitByPlayerID = shooterID;
 	}
