@@ -3,6 +3,7 @@
 #include "../components/Component.h"
 
 #include <bitset>
+#include <unordered_set>
 
 class Entity;
 
@@ -72,7 +73,10 @@ protected:
 
 protected:
 	std::vector<Entity*> entities;
+	std::unordered_set<int> entities_set;
+
 	std::vector<Entity*> entitiesQueuedToAdd;
+	std::unordered_set<int> entitiesQueuedToAdd_set;
 
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> requiredComponentTypes;
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> readBits;

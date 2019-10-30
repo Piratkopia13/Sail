@@ -3,6 +3,12 @@
 #include <random>
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
+//#define _LOG_TO_FILE
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+#include <fstream>
+static std::ofstream out("LogFiles/NetworkModule.cpp.log");
+#endif
+
 Network::Network() {}
 
 Network::~Network() {
@@ -60,6 +66,11 @@ void Network::checkForPackages(NetworkEventHandler& handler)
 	while (morePackages)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex_packages);
+
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+		out << "nPackages: " << std::to_string(std::abs(m_pend - m_pstart)) << "\n";
+#endif
+
 		if (m_pstart == m_pend) {
 			morePackages = false;
 			break;

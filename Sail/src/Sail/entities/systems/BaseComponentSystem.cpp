@@ -5,32 +5,30 @@
 bool BaseComponentSystem::addEntity(Entity* entity) {
 	
 	// Check if the entity is in the system
-	for (auto e : entities) {
-		if (e->getID() == entity->getID()) {
-			return false;
-		}
+
+	int id = entity->getID();
+	if (entities_set.count(id)) {
+		return false;
 	}
 
 	// Check if the entity is about to be in the system
-	for (auto e : entitiesQueuedToAdd) {
-		if (e->getID() == entity->getID()) {
-			return false;
-		}
+	if (entitiesQueuedToAdd_set.count(id)) {
+		return false;
 	}
 
 	// Queue the adding of the entity 
 	entitiesQueuedToAdd.push_back(entity);
+	entitiesQueuedToAdd_set.insert(id);
 
 	return true;
 }
 
 void BaseComponentSystem::removeEntity(Entity* entity) {
-	for (auto e : entities) {
-		if (e->getID() == entity->getID()) {
-			entities.erase(std::remove(entities.begin(), entities.end(), e), entities.end());
-			return;
-		}
-	}
+	entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
+	entitiesQueuedToAdd.erase(std::remove(entitiesQueuedToAdd.begin(), entitiesQueuedToAdd.end(), entity), entitiesQueuedToAdd.end());
+
+	entitiesQueuedToAdd_set.erase(entity->getID());
+	entities_set.erase(entity->getID());
 }
 
 const std::bitset<MAX_NUM_COMPONENTS_TYPES>& BaseComponentSystem::getRequiredComponentTypes() const {
@@ -47,7 +45,10 @@ const std::bitset<MAX_NUM_COMPONENTS_TYPES>& BaseComponentSystem::getWriteBitMas
 
 void BaseComponentSystem::clearEntities() {
 	entities.clear();
+	entities_set.clear();
+
 	entitiesQueuedToAdd.clear();
+	entitiesQueuedToAdd_set.clear();
 }
 
 size_t BaseComponentSystem::getNumEntities() {
@@ -55,6 +56,11 @@ size_t BaseComponentSystem::getNumEntities() {
 }
 
 void BaseComponentSystem::addQueuedEntities() {
+	for (Entity* e : entitiesQueuedToAdd) {
+		entities_set.insert(e->getID());
+	}
+
 	entities.insert(entities.end(), entitiesQueuedToAdd.begin(), entitiesQueuedToAdd.end());
 	entitiesQueuedToAdd.clear();
+	entitiesQueuedToAdd_set.clear();
 }

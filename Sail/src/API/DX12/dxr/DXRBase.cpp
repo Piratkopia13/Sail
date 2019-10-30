@@ -42,12 +42,11 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	createRaytracingPSO();
 	createInitialShaderResources();
 
-	m_aabb_desc_resource = DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(m_aabb_desc), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
-	m_aabb_desc_resource->SetName(L"AABB Data");
-	void* pMappedData;
-	m_aabb_desc_resource->Map(0, nullptr, &pMappedData);
-	memcpy(pMappedData, &m_aabb_desc, sizeof(m_aabb_desc));
-	m_aabb_desc_resource->Unmap(0, nullptr);
+	m_aabb_desc_resource.reserve(DX12API::NUM_SWAP_BUFFERS);
+	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
+		m_aabb_desc_resource.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_AABB), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
+		m_aabb_desc_resource.back()->SetName(L"Metaball AABB");
+	}
 
 	m_decalsToRender = 0;
 
@@ -86,7 +85,9 @@ DXRBase::~DXRBase() {
 		resource->Release();
 	}
 
-	m_aabb_desc_resource->Release();
+	for (auto& resource : m_aabb_desc_resource) {
+		resource->Release();
+	}
 }
 
 void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
@@ -114,11 +115,17 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 			Mesh* mesh = nullptr;
 			if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
 				mesh = renderCommand.model.mesh;
+			} else {
+				int i = 1;
 			}
 
 			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
 			// If mesh does not have a BLAS
 			if (searchResult == m_bottomBuffers[frameIndex].end()) {
+				if (mesh == nullptr) {
+					int i = 0;
+				}
+
 				createBLAS(renderCommand, flagFastTrace, cmdList);
 			} else {
 				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
@@ -196,9 +203,9 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const glm::vec3& mapSize, const glm::vec3& mapStart) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
-	updateMetaballpositions(metaballs);
+	updateMetaballpositions(metaballs, m_next_metaball_aabb);
 
 	DXRShaderCommon::SceneCBuffer newData = {};
 	newData.viewToWorld = glm::inverse(cam.getViewMatrix());
@@ -278,13 +285,23 @@ void DXRBase::updateWaterData() {
 	m_waterChanged = false;
 }
 
-void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs) {
+void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb) {
 	if (m_metaballsToRender == 0) {
 		return;
 	}
-
 	void* pMappedData;
-	ID3D12Resource1* res = m_metaballPositions_srv[m_context->getSwapIndex()];
+	ID3D12Resource1* res;
+
+	//UPDATE AABB
+	res = m_aabb_desc_resource[m_context->getSwapIndex()];
+
+	res->Map(0, nullptr, &pMappedData);
+	memcpy(pMappedData, &m_next_metaball_aabb, sizeof(D3D12_RAYTRACING_AABB));
+	res->Unmap(0, nullptr);
+
+	//UPDATE METABALLS
+
+	res = m_metaballPositions_srv[m_context->getSwapIndex()];
 
  	HRESULT hr =  res->Map(0, nullptr, &pMappedData);
 	if (FAILED(hr)) {
@@ -500,7 +517,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 		geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
 		geomDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
 		geomDesc.AABBs.AABBCount = 1;
-		geomDesc.AABBs.AABBs.StartAddress = m_aabb_desc_resource->GetGPUVirtualAddress();
+		geomDesc.AABBs.AABBs.StartAddress = m_aabb_desc_resource[m_context->getSwapIndex()]->GetGPUVirtualAddress();
 		geomDesc.AABBs.AABBs.StrideInBytes = 0;
 	}
 
@@ -837,7 +854,8 @@ void DXRBase::updateShaderTables() {
 					else if (parameterName == "MetaballPositions") {
 						D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballPositions_srv[frameIndex]->GetGPUVirtualAddress();
 						tableBuilder.addDescriptor(metaballHandle, blasIndex * 2);
-					} else if (parameterName == "sys_brdfLUT") {
+					}
+					else if (parameterName == "sys_brdfLUT") {
 						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
 						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
@@ -953,6 +971,7 @@ void DXRBase::initMetaballBuffers() {
 	m_metaballPositions_srv.reserve(DX12API::NUM_SWAP_BUFFERS);
 	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
 		m_metaballPositions_srv.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), MAX_NUM_METABALLS * sizeof(glm::vec3), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
+		m_metaballPositions_srv.back()->SetName(L"Metaball Positions");
 	}
 }
 
