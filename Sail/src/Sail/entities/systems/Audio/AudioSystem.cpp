@@ -188,7 +188,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			}
 
 			// Hot fix for lab ambiance not playing after pause.
-			hotFixAmbiance(e, audioC);
+			//hotFixAmbiance(e, audioC);	// Commented-out because it causes a crash during death of other player
 
 			// Per currently streaming sound
 			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
