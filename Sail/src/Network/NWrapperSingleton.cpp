@@ -185,10 +185,11 @@ void NWrapperSingleton::resetNetwork() {
 
 void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
 	if (nEvent.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
-		NetworkLanHostFoundEvent event(
+		NetworkLanHostFoundEvent event0(
 			nEvent.data->HostFoundOnLanData.ip_full,
-			nEvent.data->HostFoundOnLanData.hostPort
+			nEvent.data->HostFoundOnLanData.hostPort,
+			nEvent.data->HostFoundOnLanData.description
 		);
-		Application::getInstance()->dispatchEvent(event);
+		Application::getInstance()->dispatchEvent(event0);
 	}
 }

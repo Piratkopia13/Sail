@@ -56,7 +56,7 @@ bool LobbyHostState::onRecievedText(NetworkChatEvent& event) {
 
 bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add player to player list
-	//this->playerJoined(event.getPlayer());
+	NWrapperSingleton::getInstance().playerJoined(event.getPlayer());
 
 	return true;
 }
@@ -91,12 +91,14 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	message.erase(0, id_string.size() + 2);	// Removes ?ID: ___
 	message.erase(message.size() - 1);		// Removes ___ :
 
-	// Add player
-	NWrapperSingleton::getInstance().playerJoined(Player{
-			id_int,
-			message	// Which at this point is only the name
-	});
+	
 
+	// Add player
+	//NWrapperSingleton::getInstance().playerJoined(Player{
+	//		id_int,
+	//		message	// Which at this point is only the name
+	//});
+	NWrapperSingleton::getInstance().getPlayer(id_int)->name = message;
 
 	printf("Got name: \"%s\" from %i\n", message.c_str(), id_int);
 

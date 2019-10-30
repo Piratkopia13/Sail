@@ -105,7 +105,8 @@ bool MenuState::renderImgui(float dt) {
 	// Per hosted game
 	for (auto& lobby : m_foundLobbies) {
 		// List as a button
-		if (ImGui::Button(lobby.ip.c_str())) {
+
+		if (ImGui::Button((lobby.description != "") ? lobby.description.c_str() : lobby.ip.c_str())) {
 			char* tempIp = SAIL_NEW char[m_ipBufferSize];
 			tempIp = std::strcpy(tempIp, lobby.ip.c_str());
 
@@ -151,7 +152,7 @@ bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
 	// If not...
 	if (alreadyExists == false) {
 		// ...log it.
-		m_foundLobbies.push_back(FoundLobby{ ip_as_string });
+		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.getDesc() });
 	}
 
 	return false;

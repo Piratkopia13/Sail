@@ -292,7 +292,7 @@ bool Network::send(const char* message, size_t size, Connection* conn)
 	return true;
 }
 
-void Network::setServerMetaDescription(char* desc, int descSize)
+void Network::setServerMetaDescription(const char* desc, int descSize)
 {
 	memset(m_serverMetaDesc, 0, HOST_META_DESC_SIZE);
 	memcpy(m_serverMetaDesc, desc, descSize);
@@ -419,7 +419,6 @@ void Network::listenForUDP()
 					// Attatch hostPort and ip, then an irrelevant message as UDP only cares about ip and hostport atm.
 					data.HostFoundOnLanData.hostPort = udpdata.package.packageData.hostdata.port;
 					data.HostFoundOnLanData.ip_full = client.sin_addr.S_un.S_addr;
-					
 
 					nEvent.data = &data;
 

@@ -89,7 +89,7 @@ public:
 
 		The server meta description can not be greater than 58 Bytes long.
 	*/
-	void setServerMetaDescription(char* desc, int descSize);
+	void setServerMetaDescription(const char* desc, int descSize);
 	/*
 		This function will broadcast a UDP message on the LAN requesting all hosts(if any) to identify themself.
 		The NetworkEvent HOST_ON_LAN_FOUND will trigger for each host on the network that responded.

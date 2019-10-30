@@ -11,7 +11,9 @@
 #include "../../SPLASH/src/game/states/LobbyState.h"
 
 bool NWrapperHost::host(int port) {
-	return m_network->host(port);
+	bool result = m_network->host(port);
+	setLobbyName(NWrapperSingleton::getInstance().getMyPlayer().name);
+	return result;
 }
 
 bool NWrapperHost::connectToIP(char*) {
@@ -19,11 +21,21 @@ bool NWrapperHost::connectToIP(char*) {
 	return false;
 }
 
+void NWrapperHost::setLobbyName(std::string name) {
+	m_lobbyName = name;
+	updateServerDescription();
+}
+
 void NWrapperHost::sendChatMsg(std::string msg) {
 	msg = std::string("mHost: ") + msg;
 	m_network->send(msg.c_str(), msg.length() + 1, -1);
 	msg.erase(0, 1);
 	msg = msg + std::string("\n");
+}
+
+void NWrapperHost::updateServerDescription() {
+	m_serverDescription = m_lobbyName + " (" + std::to_string(NWrapperSingleton::getInstance().getPlayers().size()) + "/12)";
+	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID id) {
@@ -43,7 +55,9 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID id) {
 
 	m_network->send(msgRequest, sizeof(msgRequest), id);
 
-	Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ newId, "" }));
+	Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ newId, "NoName" }));
+
+	updateServerDescription();
 }
 
 void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID id) {
@@ -57,6 +71,8 @@ void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID id) {
 
 	// Send id to menu / game state
 	Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(convertedId));
+
+	updateServerDescription();
 }
 
 void NWrapperHost::playerReconnected(TCP_CONNECTION_ID id) {
