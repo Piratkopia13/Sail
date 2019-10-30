@@ -577,7 +577,7 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
 			pos.y = 20.f;
 			transform->setStartTranslation(pos);
-			MapComponent temp;
+			MapComponent temp(5);
 			auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
 			auto dir = glm::normalize(middleOfLevel - pos);
 			auto rots = Utils::getRotations(dir);

@@ -315,7 +315,7 @@ bool GameState::processInput(float dt) {
 			auto pos = glm::vec3(parTrans->getMatrixWithUpdate()[3]);
 			pos.y = 20.f;
 			parTrans->setTranslation(pos);
-			MapComponent temp;
+			MapComponent temp(5);
 			auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
 			auto dir = glm::normalize(middleOfLevel - pos);
 			auto rots = Utils::getRotations(dir);
@@ -1087,7 +1087,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
-	map->addComponent<MapComponent>();
+	map->addComponent<MapComponent>(5);
 
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
