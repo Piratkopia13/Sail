@@ -20,7 +20,6 @@ PBRTestState::PBRTestState(StateStack& stack)
 		if (param == "menu") {
 			requestStackPop();
 			requestStackPush(States::MainMenu);
-			console.removeAllCommandsWithIdentifier("PBRTestState");
 			return "State change to menu requested";
 		} else {
 			return "Invalid state. Available states are \"menu\"";
@@ -163,6 +162,8 @@ PBRTestState::PBRTestState(StateStack& stack)
 }
 
 PBRTestState::~PBRTestState() {
+	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("PBRTestState");
+
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
