@@ -110,8 +110,12 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
+#ifdef DEVELOPMENT
 #ifndef _PERFORMANCE_TEST
+#ifndef _DEBUG
 	m_componentSystems.animationSystem->initDebugAnimations();
+#endif
+#endif
 #endif
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
