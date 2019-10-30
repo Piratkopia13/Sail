@@ -415,7 +415,7 @@ void GameState::initConsole() {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
 		bool stateChanged = false;
-		std::string returnMsg = "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+		std::string returnMsg = "Invalid state. Available states are \"menu\" and \"pbr\"";
 		if (param == "menu") {
 			requestStackPop();
 			requestStackPush(States::MainMenu);
@@ -427,12 +427,6 @@ void GameState::initConsole() {
 			requestStackPush(States::PBRTest);
 			stateChanged = true;
 			returnMsg = "State change to pbr requested";
-		}
-		else if (param == "perftest") {
-			requestStackPop();
-			requestStackPush(States::PerformanceTest);
-			stateChanged = true;
-			returnMsg = "State change to PerformanceTest requested";
 		}
 
 		if (stateChanged) {
