@@ -125,14 +125,66 @@ bool MenuState::renderImgui(float dt) {
 
 
 	// Display open lobbies
-	ImGui::Begin("Hosted Lobbies on LAN", NULL);
-	// Per hosted game
-	for (auto& lobby : m_foundLobbies) {
-		// List as a button
+	if (ImGui::Begin("Hosted Lobbies on LAN", NULL)) {
+		
+		static int selected = -1;
+		if (ImGui::BeginChild("Lobbies", ImVec2(0,-ImGui::GetFrameHeightWithSpacing()))) {
+			// Per hosted game
+			ImGui::Columns(2, "testColumns", true);
+			ImGui::Separator();
+			ImGui::Text("Lobby"); ImGui::NextColumn();
+			ImGui::Text("Players"); ImGui::NextColumn();
+			//ImGui::Text(""); ImGui::NextColumn();
+			ImGui::Separator();
 
-		if (ImGui::Button((lobby.description != "") ? lobby.description.c_str() : lobby.ip.c_str())) {
+			int index = 0;
+			for (auto& lobby : m_foundLobbies) {
+				// List as a button
+				std::string fullText = lobby.description;
+				std::string lobbyName = "";
+				std::string playerCount = "N/A";
+				if (fullText == "") {
+					lobbyName = lobby.ip;
+				}
+				else {
+					int p0 = fullText.find_last_of("(");
+					int p1 = fullText.find_last_of(")");
+					lobbyName = fullText.substr(0, p0 - 1);
+					playerCount = fullText.substr(p0 + 1, p1 - p0 - 1);
+				}
+
+
+				if (ImGui::Selectable(lobbyName.c_str(), selected == index, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
+					
+					selected = (index == selected ? -1 : index);
+					if (ImGui::IsMouseDoubleClicked(0)) {
+						char* tempIp = SAIL_NEW char[m_ipBufferSize];
+						tempIp = std::strcpy(tempIp, lobby.ip.c_str());
+
+						// If pressed then join
+						if (m_network->connectToIP(tempIp)) {
+							this->requestStackPop();
+							this->requestStackPush(States::JoinLobby);
+							delete[] tempIp;
+						}
+					}
+				}
+				ImGui::NextColumn();
+				
+				//ImGui::Text(lobbyName.c_str()); ImGui::NextColumn();
+				ImGui::Text(playerCount.c_str()); ImGui::NextColumn();
+
+
+				index++;
+			}
+			
+		}
+		ImGui::EndChild();
+		ImGui::NewLine();
+		ImGui::SameLine(ImGui::GetWindowWidth() - 50);
+		if (ImGui::Button("Join") && selected != -1) {
 			char* tempIp = SAIL_NEW char[m_ipBufferSize];
-			tempIp = std::strcpy(tempIp, lobby.ip.c_str());
+			tempIp = std::strcpy(tempIp, m_foundLobbies[selected].ip.c_str());
 
 			// If pressed then join
 			if (m_network->connectToIP(tempIp)) {
@@ -143,7 +195,7 @@ bool MenuState::renderImgui(float dt) {
 		}
 	}
 	ImGui::End();
-
+	
 
 
 
