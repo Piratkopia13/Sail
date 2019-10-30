@@ -48,6 +48,9 @@ bool EndGameState::renderImgui(float dt) {
 		if (NWrapperSingleton::getInstance().isHost()) {
 			if (ImGui::Button("Lobby")) {
 				onReturnToLobby(NetworkBackToLobby{});
+
+				ImGui::End();
+				return true;
 			}
 		}
 		if (ImGui::Button("Main menu")) {
@@ -56,9 +59,15 @@ bool EndGameState::renderImgui(float dt) {
 			GameDataTracker::getInstance().resetData();
 			this->requestStackPop();
 			this->requestStackPush(States::MainMenu);
+
+			ImGui::End();
+			return true;
 		}
 		if (ImGui::Button("Quit")) {
 			PostQuitMessage(0);
+
+			ImGui::End();
+			return true;
 		}
 
 	}
