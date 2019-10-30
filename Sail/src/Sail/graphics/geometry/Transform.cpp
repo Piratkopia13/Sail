@@ -261,13 +261,13 @@ void Transform::prepareMatrix() {
 	}
 }
 
-glm::mat4 Transform::getMatrixWithUpdate() {
+const glm::mat4& Transform::getMatrixWithUpdate() {
 	prepareMatrix();
 	return m_transformMatrix;
 }
 
 
-glm::mat4 Transform::getMatrixWithoutUpdate() const {
+const glm::mat4& Transform::getMatrixWithoutUpdate() const {
 	return m_transformMatrix;
 }
 

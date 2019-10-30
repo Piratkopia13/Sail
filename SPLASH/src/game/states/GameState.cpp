@@ -58,7 +58,7 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
-	m_cam.setDirection(glm::normalize(glm::vec3(0.83f, -0.11f, 0.55f)));
+	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, 0.85f)));
 #endif
 
 	// Initialize the component systems

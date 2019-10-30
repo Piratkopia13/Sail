@@ -85,9 +85,9 @@ public:
 	// Matrix used by collision etc.
 	void prepareMatrix();
 
-	glm::mat4 getMatrixWithUpdate();
+	const glm::mat4& getMatrixWithUpdate();
 
-	glm::mat4 getMatrixWithoutUpdate() const;
+	const glm::mat4& getMatrixWithoutUpdate() const;
 
 	// Matrix used to render
 	glm::mat4 getRenderMatrix(float alpha = 1.0f);

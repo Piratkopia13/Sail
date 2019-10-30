@@ -29,7 +29,7 @@ void CollisionSystem::provideOctree(Octree* octree) {
 
 void CollisionSystem::update(float dt) {
 	constexpr size_t NR_OF_JOBS = 16;
-	constexpr size_t lastJob = NR_OF_JOBS - 1;
+	constexpr size_t LAST_JOB = NR_OF_JOBS - 1;
 	const size_t entitiesPerJob = entities.size() / NR_OF_JOBS;
 	std::future<bool> jobs[NR_OF_JOBS];
 
@@ -48,8 +48,8 @@ void CollisionSystem::update(float dt) {
 			return collisionUpdatePart(dt, i * entitiesPerJob, i * entitiesPerJob + entitiesPerJob);
 		});
 	}
-	jobs[lastJob] = Application::getInstance()->pushJobToThreadPool([=](int id) {
-		return collisionUpdatePart(dt, lastJob * entitiesPerJob, entities.size());
+	jobs[LAST_JOB] = Application::getInstance()->pushJobToThreadPool([=](int id) {
+		return collisionUpdatePart(dt, LAST_JOB * entitiesPerJob, entities.size());
 	});
 
 	// Wait for jobs to finish executing
@@ -64,8 +64,8 @@ void CollisionSystem::update(float dt) {
 			return surfaceFromCollisionPart(dt, i * entitiesPerJob, i * entitiesPerJob + entitiesPerJob);
 		});
 	}
-	jobs[lastJob] = Application::getInstance()->pushJobToThreadPool([=](int id) {
-		return surfaceFromCollisionPart(dt, lastJob * entitiesPerJob, entities.size());
+	jobs[LAST_JOB] = Application::getInstance()->pushJobToThreadPool([=](int id) {
+		return surfaceFromCollisionPart(dt, LAST_JOB * entitiesPerJob, entities.size());
 	});
 
 	// Wait for jobs to finish executing
@@ -82,8 +82,8 @@ void CollisionSystem::update(float dt) {
 			return rayCastCollisionPart(dt, i * entitiesPerJob, i * entitiesPerJob + entitiesPerJob);
 		});
 	}
-	jobs[lastJob] = Application::getInstance()->pushJobToThreadPool([=](int id) {
-		return rayCastCollisionPart(dt, lastJob * entitiesPerJob, entities.size());
+	jobs[LAST_JOB] = Application::getInstance()->pushJobToThreadPool([=](int id) {
+		return rayCastCollisionPart(dt, LAST_JOB * entitiesPerJob, entities.size());
 	});
 
 	// Wait for jobs to finish executing

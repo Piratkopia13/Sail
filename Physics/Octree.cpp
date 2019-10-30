@@ -339,6 +339,7 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 	float nodeIntersectionDistance = Intersection::RayWithPaddedAabb(rayStart, rayDir, nodeBoundingBox->getPosition(), nodeBoundingBox->getHalfSize(), padding);
 
 	// Early exit if ray doesn't intersect with the current node closer than the closest hit
+	// Note: commented out code is a possible future optimization
 	if (nodeIntersectionDistance < 0.0f) {// && (nodeIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { 
 		return;
 	}
@@ -354,6 +355,7 @@ void Octree::getRayIntersectionRec(const glm::vec3& rayStart, const glm::vec3& r
 		float entityIntersectionDistance = Intersection::RayWithPaddedAabb(rayStart, rayDir, collidableBoundingBox->getPosition(), collidableBoundingBox->getHalfSize(), padding, &intersectionAxis);
 
 		// Continue if ray doesn't intersect the entity bounding box closer than the closest hit
+		// Note: commented out code is a possible future optimization
 		if (entityIntersectionDistance < 0.0f) {// && (entityIntersectionDistance < outIntersectionData->closestHit || outIntersectionData->closestHit < 0.0f)) { 
 			continue;
 		}
