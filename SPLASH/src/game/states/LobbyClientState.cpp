@@ -8,11 +8,18 @@
 #include "Network/NWrapperSingleton.h"
 
 LobbyClientState::LobbyClientState(StateStack& stack)
-	: LobbyState(stack)
+	: LobbyState(stack),
+	m_wasDropped(false)
 {
 }
 
 LobbyClientState::~LobbyClientState() {
+	if (m_wasDropped) {
+		NWrapperSingleton::getInstance().resetNetwork();
+		NWrapperSingleton::getInstance().resetWrapper();
+	}
+
+
 }
 
 bool LobbyClientState::onEvent(Event& event) {
@@ -110,8 +117,8 @@ bool LobbyClientState::onDropped(NetworkDroppedEvent& event) {
 	this->requestStackPush(States::MainMenu);
 
 	// Reset network so that user can choose host/client again.
-	NWrapperSingleton::getInstance().resetNetwork();
-	NWrapperSingleton::getInstance().resetWrapper();
+	m_wasDropped = true;
+
 
 	return false;
 }
