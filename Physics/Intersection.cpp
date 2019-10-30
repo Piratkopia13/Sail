@@ -618,14 +618,28 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 
 			glm::vec3 newV[3];
 
+			glm::vec3 normalPadding = triangleNormal * padding;
+
+			glm::vec3 middle = ((oldV[0] + oldV[1] + oldV[2]) / 3.0f) + normalPadding;
+
 			for (int i = 0; i < 3; i++) {
-				float towardsRayStartDistance = glm::max(glm::dot(oldV[i] - rayStart, rayDir), 0.0f);
-				newV[i] = oldV[i] - rayDir * (glm::min(padding * 0.7f, towardsRayStartDistance));
+				newV[i] = oldV[i] + normalPadding;
 
-				glm::vec3 toRay = (rayStart + rayDir * glm::dot(newV[i] - rayStart, rayDir)) - newV[i];
-				float toRayDistance = glm::min(padding * 0.7f, glm::length(toRay));
+				float oldRayDist = glm::dot(rayDir, oldV[i] - rayStart);
+				float newRayDist = glm::dot(rayDir, newV[i] - rayStart);
 
-				newV[i] += glm::normalize(toRay) * toRayDistance;
+				glm::vec3 oldProjectionOnRayDir = rayStart + rayDir * oldRayDist;
+				glm::vec3 newProjectionOnRayDir = rayStart + rayDir * newRayDist;
+				float oldNormalDot = glm::dot(oldProjectionOnRayDir - oldV[i], triangleNormal);
+				float newNormalDot = glm::dot(newProjectionOnRayDir - newV[i], triangleNormal);
+
+				if ((std::signbit(oldNormalDot) != std::signbit(newNormalDot) && glm::dot(middle - newV[i], rayDir) > 0.0f) || std::signbit(oldRayDist) != std::signbit(newRayDist)) {
+					glm::vec3 toRayStart = rayStart - oldV[i];
+					float length = glm::min(glm::length(toRayStart), padding) - 0.001f;
+
+					newV[i] = oldV[i] + glm::normalize(toRayStart) * length;
+					//newV[i] = oldV[i];
+				}
 			}
 
 			returnValue = RayWithTriangle(rayStart, rayDir, newV[0], newV[1], newV[2]);
