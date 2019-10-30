@@ -16,9 +16,10 @@
 
 #include <vector>
 
-#ifdef DEVELOPMENT
+//#define _LOG_TO_FILE
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 #include <fstream>
-static std::ofstream out("Sender.txt");
+static std::ofstream out("LogFiles/NetworkSenderSystem.cpp.log");
 #endif
 
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
@@ -103,7 +104,7 @@ void NetworkSenderSystem::update() {
 		// Per type of data
 		for (auto& messageType : nsc->m_dataTypes) {
 			sendToOthers(messageType);          // Current MessageType
-#ifdef DEVELOPMENT
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "SenderComp: " << Netcode::MessageNames[(int)(messageType) - 1] << "\n";
 #endif
 			writeMessageToArchive(messageType, e, sendToOthers); // Add to archive depending on the message
@@ -116,7 +117,7 @@ void NetworkSenderSystem::update() {
 
 	while (!m_eventQueue.empty()) {
 		NetworkSenderEvent* pE = m_eventQueue.front();
-#ifdef DEVELOPMENT
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 		out << "Event: " << Netcode::MessageNames[(int)(pE->type)-1] << "\n";
 #endif
 		writeEventToArchive(pE, sendToOthers);

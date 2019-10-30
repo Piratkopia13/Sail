@@ -18,9 +18,10 @@
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
 #include "Sail/utils/GameDataTracker.h"
 
-#ifdef DEVELOPMENT
+//#define _LOG_TO_FILE
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 #include <fstream>
-static std::ofstream out("Reciver.txt");
+static std::ofstream out("LogFiles/NetworkReceiverSystem.cpp.log");
 #endif
 
 // The host will now automatically forward all incoming messages to other players so
@@ -133,7 +134,7 @@ void NetworkReceiverSystem::update(float dt) {
 			// Read per data type
 			for (size_t j = 0; j < nrOfMessagesInComponent; j++) {
 				ar(messageType);
-#ifdef DEVELOPMENT
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 				out << "ReciverComp: " << Netcode::MessageNames[(int)(messageType)-1] << "\n";
 #endif
 				// Read and process the data
@@ -208,7 +209,7 @@ void NetworkReceiverSystem::update(float dt) {
 		for (size_t i = 0; i < nrOfEvents; i++) {
 			// Handle-Single-Frame events
 			ar(eventType);
-#ifdef DEVELOPMENT
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "Event: " << Netcode::MessageNames[(int)(eventType) - 1] << "\n";
 #endif
 			switch (eventType) {
