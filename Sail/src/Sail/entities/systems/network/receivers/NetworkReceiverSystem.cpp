@@ -748,16 +748,13 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 			continue;
 		}
 
-		Logger::Log("ignited entity " + std::to_string(e->getID()));
-
-
 		for (int i = 0; i < e->getChildEntities().size(); i++) {
 			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
 				auto candleComp = candleE->getComponent<CandleComponent>();
 				candleComp->health = MAX_HEALTH;
 				candleComp->respawns++;
 				candleComp->downTime = 0.f;
-				candleComp->isLit = true;				
+				candleComp->isLit = true;
 			}
 		}
 	}

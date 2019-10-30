@@ -16,7 +16,6 @@ CandleHealthSystem::~CandleHealthSystem() {}
 void CandleHealthSystem::update(float dt) {
 	// The number of living candles, representing living players
 	int livingCandles = entities.size();
-
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
 
@@ -63,14 +62,14 @@ void CandleHealthSystem::update(float dt) {
 				}
 			}
 
-			// Reset candle's damage taken
-			candle->damageTakenLastHit = 0.f;
-
 			// COLOR/INTENSITY
 			float cHealth = std::fmaxf(candle->health, 0.f);
 			float tempHealthRatio = (cHealth / MAX_HEALTH);
 			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
 		}
+
+		// Reset candle's damage taken
+		candle->damageTakenLastHit = 0.f;
 	}
 
 	// Only one living candle left and number of players in the game is greater than one
