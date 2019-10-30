@@ -695,7 +695,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 	m_isFinished[myIndex] = true;
 	m_streamLocks[myIndex].store(false);
 
-		// Commented-out because it causes a crash during death of other player
+		// Commented-out because it causes a crash during end-game state
 	// Clean up audio component as well
 	//if (pAudioC != nullptr) {
 	//	if (pAudioC->m_currentlyStreaming.size() == 1) {
