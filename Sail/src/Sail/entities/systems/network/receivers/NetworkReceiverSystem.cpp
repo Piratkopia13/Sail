@@ -202,6 +202,7 @@ void NetworkReceiverSystem::update(float dt) {
 		size_t nrOfEvents;
 		Netcode::MessageType eventType;
 		Netcode::ComponentID componentID;
+		Netcode::PlayerID playerID;
 
 
 		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
@@ -306,8 +307,8 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				ar(componentID);
-				playerDisconnect(componentID);
+				ar(playerID);
+				playerDisconnect(playerID);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -633,7 +634,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 					candleTransComp->removeParent();
 					candleTransComp->setStartTranslation(pos);
 					candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
-					e->getComponent<AnimationComponent>()->leftHandEntity = nullptr;
+					e->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
 
 
 					// Might be needed
@@ -642,7 +643,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 					candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
 					candleTransComp->setParent(e->getComponent<TransformComponent>());
 
-					e->getComponent<AnimationComponent>()->leftHandEntity = candleE.get();
+					e->getComponent<AnimationComponent>()->rightHandEntity = candleE.get();
 				}
 				return;
 			}

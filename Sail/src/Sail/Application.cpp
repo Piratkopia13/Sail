@@ -148,7 +148,7 @@ int Application::startGameLoop() {
 			Input::GetInstance()->beginFrame();
 
 			// Quit on alt-f4
-			if (Input::IsKeyPressed(KeyBinds::alt) && Input::IsKeyPressed(KeyBinds::f4)) {
+			if (Input::IsKeyPressed(KeyBinds::ALT_KEY) && Input::IsKeyPressed(KeyBinds::F4_KEY)) {
 				PostQuitMessage(0);
 			}
 

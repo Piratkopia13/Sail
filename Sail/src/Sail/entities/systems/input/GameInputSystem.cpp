@@ -15,6 +15,11 @@
 
 #include "Sail/TimeSettings.h"
 
+
+// Candle can only be picked up and put down once every 0.2 seconds
+constexpr float CANDLE_TIMER = 0.2f;
+
+
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<LocalOwnerComponent>(true, true, false);
 	registerComponent<MovementComponent>(true, true, true);
@@ -38,14 +43,8 @@ GameInputSystem::~GameInputSystem() {
 	clean();
 }
 
-
-// Keyboard input is checked every tick
-void GameInputSystem::fixedUpdate() {
-	this->processKeyboardInput(TIMESTEP);
-}
-
-// Mouse input is checked every frame
 void GameInputSystem::update(float dt, float alpha) {
+	this->processKeyboardInput(dt);
 	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
@@ -69,6 +68,8 @@ void GameInputSystem::stop() {
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
+	m_candleToggleTimer += dt;
+
 	for ( auto e : entities ) {
 		// Get player movement inputs
 		Movement playerMovement = getPlayerMovementInput(e);
@@ -95,8 +96,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			// Else do normal movement
-		} 
-		else {
+		} else {
 			auto collision = e->getComponent<CollisionComponent>();
 			auto movement = e->getComponent<MovementComponent>();
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
@@ -106,17 +106,16 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			Movement playerMovement = getPlayerMovementInput(e);
 
 			// Player puts down candle
-			if ( Input::WasKeyJustPressed(KeyBinds::putDownCandle) ) {
-
-				putDownCandle(e);
+			if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_CANDLE_HELD) ) {
+				if (m_candleToggleTimer > CANDLE_TIMER) {
+					putDownCandle(e);
+					m_candleToggleTimer = 0.0f;
+				}
 			}
 
-			if ( Input::WasKeyJustPressed(KeyBinds::lightCandle) ) {
-
+			if ( Input::WasKeyJustPressed(KeyBinds::LIGHT_CANDLE) ) {
 				for ( auto child : e->getChildEntities() ) {
-
 					if ( child->hasComponent<CandleComponent>() ) {
-
 						child->getComponent<CandleComponent>()->setIsLit(true);
 					}
 				}
@@ -282,7 +281,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 	for (auto e : entities) {
 
 //#ifdef DEVELOPMENT
-		if (Input::WasMouseButtonJustPressed(KeyBinds::disableCursor)) {
+		if (Input::WasMouseButtonJustPressed(KeyBinds::DISABLE_CURSOR)) {
 			Input::HideCursor(!Input::IsCursorHidden());
 		}
 //#endif
@@ -328,7 +327,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			}
 		}
 
-		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT)) {
 			GunComponent* gc = e->getComponent<GunComponent>();
 			TransformComponent* ptc = e->getComponent<TransformComponent>();
 			if (gc) {
@@ -391,14 +390,14 @@ void GameInputSystem::putDownCandle(Entity* e) {
 Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	Movement playerMovement;
 
-	if ( Input::IsKeyPressed(KeyBinds::sprint) ) { playerMovement.speedModifier = m_runSpeed; }
+	if ( Input::IsKeyPressed(KeyBinds::SPRINT) ) { playerMovement.speedModifier = m_runSpeed; }
 
-	if ( Input::IsKeyPressed(KeyBinds::moveForward) ) { playerMovement.forwardMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveBackward) ) { playerMovement.forwardMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveLeft) ) { playerMovement.rightMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveRight) ) { playerMovement.rightMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveUp) ) { playerMovement.upMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::moveDown) ) { playerMovement.upMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_FORWARD) ) { playerMovement.forwardMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD) ) { playerMovement.forwardMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_LEFT) ) { playerMovement.rightMovement -= 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_RIGHT) ) { playerMovement.rightMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_UP) ) { playerMovement.upMovement += 1.0f; }
+	if ( Input::IsKeyPressed(KeyBinds::MOVE_DOWN) ) { playerMovement.upMovement -= 1.0f; }
 
 	return playerMovement;
 }

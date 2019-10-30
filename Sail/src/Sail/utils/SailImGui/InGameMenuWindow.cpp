@@ -23,7 +23,7 @@ void InGameMenuWindow::renderWindow() {
 	ImGui::SetWindowPos(pos);
 	ImGui::SetWindowSize(size);
 
-	if (ImGui::Button("Close menu") || (!m_openedThisFrame && ImGui::IsKeyPressed(KeyBinds::showInGameMenu))) {
+	if (ImGui::Button("Close menu") || (!m_openedThisFrame && ImGui::IsKeyPressed(KeyBinds::SHOW_IN_GAME_MENU))) {
 		m_exitInGameMenu = true;
 		Input::HideCursor(true);
 	}

@@ -45,90 +45,91 @@ void CandleSystem::update(float dt) {
 	int LivingCandles = entities.size();
 
 	for (auto e : entities) {
-		if (auto candle = e->getComponent<CandleComponent>(); candle->getIsAlive()) {
-			//If a candle is out of health.
-			if (candle->getHealth() <= 0.f) {
-				candle->setCarried(true);
+		auto candle = e->getComponent<CandleComponent>();
 
-				// Did this candle's owner die?
-				if (candle->getNumRespawns() == m_maxNumRespawns) {
-					candle->setIsAlive(false);
-					LivingCandles--;
+		if (!candle->getIsAlive()) {
+			continue;
+		}
 
-					//Only let the host sent PLAYER_DIED message
-					if (NWrapperSingleton::getInstance().isHost()) {
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::PLAYER_DIED,
-							SAIL_NEW Netcode::MessagePlayerDied{
-								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
-								candle->getWasHitByNetID()
-							}
-						);
+		//If a candle is out of health.
+		if (candle->getHealth() <= 0.f) {
+			candle->setCarried(true);
 
-						// Save the placement for the player who lost
-						GameDataTracker::getInstance().logPlacement(Netcode::getComponentOwner(
-							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id));
+			// Did this candle's owner die?
+			if (candle->getNumRespawns() == m_maxNumRespawns) {
+				candle->setIsAlive(false);
+				LivingCandles--;
 
-						if (LivingCandles <= 1) { // Match IS over
-							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-								Netcode::MessageType::MATCH_ENDED,
-								nullptr,
-								true
-							);
-							
+				//Only let the host sent PLAYER_DIED message
+				if (NWrapperSingleton::getInstance().isHost()) {
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_DIED,
+						SAIL_NEW Netcode::MessagePlayerDied{
+							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
+							candle->getWasHitByNetID()
 						}
-					}
-				}
-				else if ((candle->getDownTime() >= m_candleForceRespawnTimer || candle->getIsLit())) {
-					if (NWrapperSingleton::getInstance().isHost()) {
+					);
+
+					// Save the placement for the player who lost
+					GameDataTracker::getInstance().logPlacement(Netcode::getComponentOwner(
+						e->getParent()->getComponent<NetworkReceiverComponent>()->m_id));
+
+					if (LivingCandles <= 1) { // Match IS over
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::IGNITE_CANDLE,
-							SAIL_NEW Netcode::MessageIgniteCandle{
-								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
-							},
+							Netcode::MessageType::MATCH_ENDED,
+							nullptr,
 							true
 						);
+
 					}
 				}
-				else {
-					candle->addToDownTime(dt);
-				}
-			} 
-
-			if (candle->isCarried() != candle->getWasCarriedLastUpdate()) {
-				putDownCandle(e);
-
-				// Inform other players that we've put down our candle
-				if (e->getParent()->getComponent<LocalOwnerComponent>()) {
+			} else if ((candle->getDownTime() >= m_candleForceRespawnTimer || candle->getIsLit())) {
+				if (NWrapperSingleton::getInstance().isHost()) {
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-						Netcode::MessageType::CANDLE_HELD_STATE,
-						SAIL_NEW Netcode::MessageCandleHeldState{
-							e->getParent()->getComponent<NetworkSenderComponent>()->m_id,
-							candle->isCarried(),
-							e->getComponent<TransformComponent>()->getTranslation()
+						Netcode::MessageType::IGNITE_CANDLE,
+						SAIL_NEW Netcode::MessageIgniteCandle{
+							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
 						},
-						false // We've already put down our own candle so no need to do it again
-					);
+						true
+						);
 				}
+			} else {
+				candle->addToDownTime(dt);
 			}
-
-			if (candle->getInvincibleTimer() > 0.f) {
-				candle->decrementInvincibleTimer(dt);
-			}
-
-			// COLOR/INTENSITY
-			float cHealth = candle->getHealth();
-			cHealth = (cHealth < 0.f) ? 0.f : cHealth;
-			float tempHealthRatio = (cHealth / MAX_HEALTH);
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
-
-			candle->setWasCarriedLastUpdate(candle->isCarried());
-			glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrix() * glm::vec4(0, 0.37f, 0, 1);
-			e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 		}
+
+		if (candle->isCarried() != candle->getWasCarriedLastUpdate()) {
+			putDownCandle(e);
+
+			// Inform other players that we've put down our candle
+			if (e->getParent()->getComponent<LocalOwnerComponent>()) {
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::CANDLE_HELD_STATE,
+					SAIL_NEW Netcode::MessageCandleHeldState{
+						e->getParent()->getComponent<NetworkSenderComponent>()->m_id,
+						candle->isCarried(),
+						e->getComponent<TransformComponent>()->getTranslation()
+					},
+					false // We've already put down our own candle so no need to do it again
+				);
+			}
+		}
+
+		if (candle->getInvincibleTimer() > 0.f) {
+			candle->decrementInvincibleTimer(dt);
+		}
+
+		// COLOR/INTENSITY
+		float cHealth = candle->getHealth();
+		cHealth = (cHealth < 0.f) ? 0.f : cHealth;
+		float tempHealthRatio = (cHealth / MAX_HEALTH);
+		e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
+
+		candle->setWasCarriedLastUpdate(candle->isCarried());
+		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrix() * glm::vec4(0, 0.37f, 0, 1);
+		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
 }
-
 
 void CandleSystem::putDownCandle(Entity* e) {
 	auto candleComp = e->getComponent<CandleComponent>();
@@ -153,7 +154,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 				// Shoot a ray straight down 1 meter ahead of the player to check for floor
 				m_octree->getRayIntersection(glm::vec3(candleTryPosition.x, candleTryPosition.y + heightOffsetFromPlayerFeet, candleTryPosition.z), down, &tempInfo, nullptr, 0.01f);
 				if (tempInfo.closestHitIndex != -1) {
-					float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].intersectionAxis, -down);
+					float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].shape->getNormal(), -down);
 					// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
 					bool isFloor = (floorCheckVal < 0.1f) ? true : false;
 					if (!isFloor) {
@@ -185,9 +186,8 @@ void CandleSystem::putDownCandle(Entity* e) {
 			if (!blocked) {
 				candleTransComp->removeParent();
 				candleTransComp->setTranslation(candleTryPosition);
-
 				candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
-				e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = nullptr;
+				e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
 
 				ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 			} else {
@@ -200,7 +200,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 		// Pick up the candle
 		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit()) {
 			candleTransComp->setParent(parentTransComp);
-			e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = e;
+			e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = e;
 		} else {
 			candleComp->setCarried(false);
 		}
