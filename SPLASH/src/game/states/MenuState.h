@@ -40,7 +40,7 @@ private:
 	NWrapperSingleton* m_network = nullptr;
 	Application* m_app = nullptr;
 	// For ImGui Input
-	char* inputIP = nullptr;
+	std::string inputIP;
 	std::future<bool> m_modelThread;
 
 	// Other lobbies

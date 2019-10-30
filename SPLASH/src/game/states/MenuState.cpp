@@ -16,7 +16,8 @@
 
 
 MenuState::MenuState(StateStack& stack) 
-	: State(stack)
+	: State(stack),
+	inputIP("")
 {
 	m_input = Input::GetInstance();
 	m_network = &NWrapperSingleton::getInstance();
@@ -24,7 +25,6 @@ MenuState::MenuState(StateStack& stack)
 
 	std::string name = loadPlayerName("res/data/localplayer.settings");
 	m_network->setPlayerName(name.c_str());
-	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 
@@ -32,7 +32,6 @@ MenuState::MenuState(StateStack& stack)
 }
 
 MenuState::~MenuState() {
-	delete[] this->inputIP;
 	delete[] m_ipBuffer;
 	
 	Utils::writeFileTrunc("res/data/localplayer.settings", NWrapperSingleton::getInstance().getMyPlayerName());
@@ -64,7 +63,7 @@ bool MenuState::render(float dt, float alpha) {
 bool MenuState::renderImgui(float dt) {
 	
 	//Keep
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 
 
 	static char buf[101] = "";
@@ -111,11 +110,10 @@ bool MenuState::renderImgui(float dt) {
 	
 		if (ImGui::CollapsingHeader("MultiPlayer", ImGuiTreeNodeFlags_DefaultOpen)) {
 			static std::string lobbyName = "";
-			ImGui::Text("Lobby name:");
-			ImGui::SameLine();
 			strncpy_s(buf, lobbyName.c_str(), lobbyName.size());
-			ImGui::InputText("##lobbyName:", buf, 40);
+			ImGui::InputTextWithHint("##lobbyName:", std::string(name+"'s lobby").c_str() , buf, 40);
 			lobbyName = buf;
+			ImGui::SameLine();
 			if (ImGui::Button("Host Game")) {
 				if (m_network->host()) {
 					// Update server description after host added himself to the player list.
@@ -131,17 +129,27 @@ bool MenuState::renderImgui(float dt) {
 				}
 			}
 			ImGui::Separator();
-			ImGui::Text("IP:");
+			strncpy_s(buf, inputIP.c_str(), inputIP.size());
+			ImGui::InputTextWithHint("##IP:","127.0.0.1:54000", buf, 100);
+			inputIP = buf;
 			ImGui::SameLine();
-			ImGui::InputText("##IP:", inputIP, 100);
-			if (ImGui::Button("Join Local Game")) {
-				if (m_network->connectToIP(inputIP)) {
+			if (ImGui::Button("Join")) {
+				if (inputIP == "") {
+					inputIP = "127.0.0.1:54000";
+				}
+				if (m_network->connectToIP(&inputIP.front())) {
 					// Wait until welcome-package is received,
 					// Save the package info,
 					// Pop and push into JoinLobbyState.
 					this->requestStackPop();
 					this->requestStackPush(States::JoinLobby);
 				}
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				
+				ImGui::Text("Leave empty to join local game");
+				ImGui::EndTooltip();
 			}
 		}
 	}
@@ -207,6 +215,9 @@ bool MenuState::renderImgui(float dt) {
 		// DISPLAY JOIN BUTTON
 		ImGui::NewLine();
 		ImGui::SameLine(ImGui::GetWindowWidth() - 50);
+		if (selected == -1) {
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.3f);
+		}
 		if (ImGui::Button("Join") && selected != -1) {
 			char* tempIp = SAIL_NEW char[m_ipBufferSize];
 			tempIp = std::strcpy(tempIp, m_foundLobbies[selected].ip.c_str());
@@ -217,6 +228,9 @@ bool MenuState::renderImgui(float dt) {
 				this->requestStackPush(States::JoinLobby);
 				delete[] tempIp;
 			}
+		}
+		if (selected == -1) {
+			ImGui::PopStyleVar();
 		}
 	}
 	ImGui::End();
