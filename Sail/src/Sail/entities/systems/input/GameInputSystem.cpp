@@ -94,7 +94,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				transComp->translate(moveDir * dt * playerMovement.speedModifier * 10.f);
 			}
 
-			// Else do normal movement
+			// Else do normal movement.
 		} 
 		else {
 			auto collision = e->getComponent<CollisionComponent>();
