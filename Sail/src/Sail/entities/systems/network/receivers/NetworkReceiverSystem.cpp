@@ -195,6 +195,7 @@ void NetworkReceiverSystem::update(float dt) {
 		size_t nrOfEvents;
 		Netcode::MessageType eventType;
 		Netcode::ComponentID componentID;
+		Netcode::PlayerID playerID;
 
 
 		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
@@ -296,8 +297,8 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				ar(componentID);
-				playerDisconnect(componentID);
+				ar(playerID);
+				playerDisconnect(playerID);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
