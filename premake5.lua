@@ -146,7 +146,8 @@ project "Sail"
 		"GLFW",
 		"ImGui",
 		"MemoryManager",
-		"assimp-vc140-mt"
+		"assimp-vc140-mt",
+		"WinMMx"
 	}
 
 	flags { "MultiProcessorCompile" }
@@ -183,12 +184,14 @@ project "Sail"
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
 			"libraries/FBX_SDK/lib/vs2017/x64/%{buildCfg}",
-			"libraries/assimp/lib/x64"
+			"libraries/assimp/lib/x64",
+			"libraries/WinMM/x64"
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
 			"libraries/FBX_SDK/lib/vs2017/x86/%{buildCfg}",
-			"libraries/assimp/lib/x86"
+			"libraries/assimp/lib/x86",
+			"libraries/WinMM/x86"
 		}
 
 	filter "system:windows"

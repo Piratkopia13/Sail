@@ -250,7 +250,7 @@ glm::vec3& Transform::getForward() {
 }
 
 
-glm::mat4 Transform::getMatrix() {
+void Transform::prepareMatrix() {
 	if (m_matNeedsUpdate) {
 		updateLocalMatrix();
 		m_matNeedsUpdate = false;
@@ -259,14 +259,22 @@ glm::mat4 Transform::getMatrix() {
 		updateMatrix();
 		m_parentUpdated = false;
 	}
+}
 
+const glm::mat4& Transform::getMatrixWithUpdate() {
+	prepareMatrix();
+	return m_transformMatrix;
+}
+
+
+const glm::mat4& Transform::getMatrixWithoutUpdate() const {
 	return m_transformMatrix;
 }
 
 glm::mat4 Transform::getRenderMatrix(float alpha) {
 	// If data hasn't changed use the CPU side transformMatrix
 	if (!m_hasChanged && !m_parentRenderUpdated) {
-		m_renderMatrix = getMatrix();
+		m_renderMatrix = getMatrixWithUpdate();
 	} else {
 		// if the data has changed between updates then the matrix will be interpolated every frame
 		updateLocalRenderMatrix(alpha);
@@ -308,7 +316,7 @@ void Transform::updateLocalMatrix() {
 
 void Transform::updateMatrix() {
 	if (m_parent) {
-		m_transformMatrix = m_parent->getMatrix() * m_localTransformMatrix;
+		m_transformMatrix = m_parent->getMatrixWithUpdate() * m_localTransformMatrix;
 	} else {
 		m_transformMatrix = m_localTransformMatrix;
 	}
@@ -326,6 +334,11 @@ void Transform::treeNeedsUpdating() {
 }
 
 void Transform::addChild(Transform* transform) {
+	for (Transform* t : m_children) {
+		if (t == transform) {
+			return;
+		}
+	}
 	m_children.push_back(transform);
 }
 

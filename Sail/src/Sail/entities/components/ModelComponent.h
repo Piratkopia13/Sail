@@ -14,7 +14,7 @@ public:
 		m_model = model;
 	}
 
-	Model* getModel() {
+	Model* getModel() const {
 		return m_model;
 	}
 

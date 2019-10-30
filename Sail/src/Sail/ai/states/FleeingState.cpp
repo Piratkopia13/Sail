@@ -12,7 +12,7 @@ FleeingState::~FleeingState() {}
 
 void FleeingState::update(float dt, Entity* entity) {
 	auto aiComp = entity->getComponent<AiComponent>();
-	auto aiPos = entity->getComponent<TransformComponent>()->getMatrix()[3];
+	auto aiPos = entity->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
 	int bestNodeIndex = findBestNode(aiPos, aiComp->entityTarget);
 
 	if ( bestNodeIndex != -1 && aiComp->timeTakenOnPath > 2.f) {
@@ -44,7 +44,7 @@ int FleeingState::findBestNode(const glm::vec3& aiPos, Entity* enemy) {
 		if ( !node.blocked ) {
 			float enemyDist = 0.f;
 			if ( enemy != nullptr ) {
-				enemyDist = glm::distance2(glm::vec3(enemy->getComponent<TransformComponent>()->getMatrix()[3]), node.position);
+				enemyDist = glm::distance2(glm::vec3(enemy->getComponent<TransformComponent>()->getMatrixWithUpdate()[3]), node.position);
 			}
 			float aiDist = glm::distance2(aiPos, node.position) / 8.f;
 			float testDist = enemyDist - aiDist;
