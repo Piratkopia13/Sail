@@ -49,8 +49,8 @@ void GunSystem::update(float dt) {
 								e->getComponent<NetworkSenderComponent>()->m_id
 							}
 						);
-						m_gameDataTracker->logWeaponFired();
 					}
+					m_gameDataTracker->logWeaponFired();
 					fireGun(e, gun);
 				}
 				// DO NOT SHOOT (Cooldown between shots)
