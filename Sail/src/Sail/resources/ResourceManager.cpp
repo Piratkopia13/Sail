@@ -199,6 +199,15 @@ bool ResourceManager::hasAnimationStack(const std::string& fileName) {
 	return false;
 }
 
+const unsigned int ResourceManager::numberOfModels() const {
+	return m_models.size();
+}
+
+const unsigned int ResourceManager::numberOfTextures() const {
+	return m_textures.size();
+}
+
+
 const std::string ResourceManager::getSuitableName(const std::string& name) {
 	unsigned int iterator = 1;
 	while (iterator < 1000) {

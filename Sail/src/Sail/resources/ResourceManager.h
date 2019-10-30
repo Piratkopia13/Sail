@@ -90,6 +90,9 @@ public:
 		Logger::Log("Reloaded shader " + name);
 	}
 
+
+	const unsigned int numberOfModels() const;
+	const unsigned int numberOfTextures() const;
 	// SoundManager
 	//SoundManager* getSoundManager();
 

@@ -912,57 +912,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		ResourceManager& manager = Application::getInstance()->getResourceManager();
 		manager.loadTexture(tileTex);
 
-		manager.loadTexture("pbr/Tiles/RoomWallMRAO.tga");
-		manager.loadTexture("pbr/Tiles/RoomWallNM.tga");
-		manager.loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
-
-		manager.loadTexture("pbr/Tiles/RD_MRAo.tga");
-		manager.loadTexture("pbr/Tiles/RD_NM.tga");
-		manager.loadTexture("pbr/Tiles/RD_Albedo.tga");
-
-		manager.loadTexture("pbr/Tiles/CD_MRAo.tga");
-		manager.loadTexture("pbr/Tiles/CD_NM.tga");
-		manager.loadTexture("pbr/Tiles/CD_Albedo.tga");
-
-		manager.loadTexture("pbr/Tiles/CW_MRAo.tga");
-		manager.loadTexture("pbr/Tiles/CW_NM.tga");
-		manager.loadTexture("pbr/Tiles/CW_Albedo.tga");
-
-		manager.loadTexture("pbr/Tiles/F_MRAo.tga");
-		manager.loadTexture("pbr/Tiles/F_NM.tga");
-		manager.loadTexture("pbr/Tiles/F_Albedo.tga");
-
-		manager.loadTexture("pbr/Tiles/CF_MRAo.tga");
-		manager.loadTexture("pbr/Tiles/CF_NM.tga");
-		manager.loadTexture("pbr/Tiles/CF_Albedo.tga");
-
-		manager.loadTexture("pbr/Tiles/CC_MRAo.tga");
-		manager.loadTexture("pbr/Tiles/CC_NM.tga");
-		manager.loadTexture("pbr/Tiles/CC_Albedo.tga");
-
-		manager.loadTexture("pbr/Tiles/RC_MRAo.tga");
-		manager.loadTexture("pbr/Tiles/RC_NM.tga");
-		manager.loadTexture("pbr/Tiles/RC_Albedo.tga");
-
-		manager.loadTexture("pbr/Tiles/Corner_MRAo.tga");
-		manager.loadTexture("pbr/Tiles/Corner_NM.tga");
-		manager.loadTexture("pbr/Tiles/Corner_Albedo.tga");
-
-		manager.loadTexture("pbr/metal/metalnessRoughnessAO.tga");
-		manager.loadTexture("pbr/metal/normal.tga");
-		manager.loadTexture("pbr/metal/albedo.tga");
-
-		manager.loadTexture("pbr/Clutter/LO_MRAO.tga");
-		manager.loadTexture("pbr/Clutter/LO_NM.tga");
-		manager.loadTexture("pbr/Clutter/LO_Albedo.tga");
-
-		manager.loadTexture("pbr/Clutter/MO_MRAO.tga");
-		manager.loadTexture("pbr/Clutter/MO_NM.tga");
-		manager.loadTexture("pbr/Clutter/MO_Albedo.tga");
-
-		manager.loadTexture("pbr/Clutter/SO_MRAO.tga");
-		manager.loadTexture("pbr/Clutter/SO_NM.tga");
-		manager.loadTexture("pbr/Clutter/SO_Albedo.tga");
+		
 
 	}
 

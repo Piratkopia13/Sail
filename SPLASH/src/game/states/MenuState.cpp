@@ -27,6 +27,8 @@ MenuState::MenuState(StateStack& stack)
 	this->inputIP = SAIL_NEW char[100]{ "127.0.0.1:54000" };
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
+
+	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
 MenuState::~MenuState() {
@@ -34,7 +36,7 @@ MenuState::~MenuState() {
 	delete[] m_ipBuffer;
 	
 	Utils::writeFileTrunc("res/data/localplayer.settings", NWrapperSingleton::getInstance().getMyPlayerName());
-
+	m_modelThread.get();
 }
 
 bool MenuState::processInput(float dt) {
@@ -135,6 +137,21 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::End();
 
 
+
+
+
+	if (ImGui::Begin("Loading Info")) {
+		//maxCount being hardcoded for now
+		std::string progress = "Models (" + std::to_string(m_app->getResourceManager().numberOfModels()) + "/"+"14"+")";
+		ImGui::Text(progress.c_str());
+
+		progress = "Textures (" + std::to_string(m_app->getResourceManager().numberOfTextures()) + "/" + "44" + ")";
+		ImGui::Text(progress.c_str());
+
+
+
+	}
+	ImGui::End();
 	return false;
 }
 
@@ -152,6 +169,85 @@ const std::string MenuState::loadPlayerName(const std::string& file) {
 		Logger::Log("Found no player file, created: " + std::string("'res/data/localplayer.settings'"));
 	}
 	return name;
+}
+
+bool MenuState::loadModels(Application* app) {
+	ResourceManager* rm = &app->getResourceManager();
+
+
+	rm->setDefaultShader(&app->getResourceManager().getShaderSet<GBufferOutShader>());
+	rm->loadModel("Doc.fbx");
+	rm->loadModel("candleExported.fbx");
+	rm->loadModel("Tiles/tileFlat.fbx");
+	rm->loadModel("Tiles/RoomWall.fbx");
+	rm->loadModel("Tiles/tileDoor.fbx");
+	rm->loadModel("Tiles/RoomDoor.fbx");
+	rm->loadModel("Tiles/CorridorDoor.fbx");
+	rm->loadModel("Tiles/CorridorWall.fbx");
+	rm->loadModel("Tiles/RoomCeiling.fbx");
+	rm->loadModel("Tiles/CorridorFloor.fbx");
+	rm->loadModel("Tiles/RoomFloor.fbx");
+	rm->loadModel("Tiles/CorridorCeiling.fbx");
+	rm->loadModel("Tiles/CorridorCorner.fbx");
+	rm->loadModel("Tiles/RoomCorner.fbx");
+	rm->loadModel("Tiles/SmallObject.fbx");
+	rm->loadModel("Tiles/MediumObject.fbx");
+	rm->loadModel("Tiles/LargeObject.fbx");
+
+	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
+	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
+	rm->loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
+
+	rm->loadTexture("pbr/Tiles/RD_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/RD_NM.tga");
+	rm->loadTexture("pbr/Tiles/RD_Albedo.tga");
+
+	rm->loadTexture("pbr/Tiles/CD_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/CD_NM.tga");
+	rm->loadTexture("pbr/Tiles/CD_Albedo.tga");
+
+	rm->loadTexture("pbr/Tiles/CW_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/CW_NM.tga");
+	rm->loadTexture("pbr/Tiles/CW_Albedo.tga");
+
+	rm->loadTexture("pbr/Tiles/F_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/F_NM.tga");
+	rm->loadTexture("pbr/Tiles/F_Albedo.tga");
+
+	rm->loadTexture("pbr/Tiles/CF_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/CF_NM.tga");
+	rm->loadTexture("pbr/Tiles/CF_Albedo.tga");
+
+	rm->loadTexture("pbr/Tiles/CC_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/CC_NM.tga");
+	rm->loadTexture("pbr/Tiles/CC_Albedo.tga");
+
+	rm->loadTexture("pbr/Tiles/RC_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/RC_NM.tga");
+	rm->loadTexture("pbr/Tiles/RC_Albedo.tga");
+
+	rm->loadTexture("pbr/Tiles/Corner_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/Corner_NM.tga");
+	rm->loadTexture("pbr/Tiles/Corner_Albedo.tga");
+
+	rm->loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+	rm->loadTexture("pbr/metal/normal.tga");
+	rm->loadTexture("pbr/metal/albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/LO_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/LO_NM.tga");
+	rm->loadTexture("pbr/Clutter/LO_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/MO_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/MO_NM.tga");
+	rm->loadTexture("pbr/Clutter/MO_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/SO_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/SO_NM.tga");
+	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
+
+
+	return false;
 }
 
 bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {

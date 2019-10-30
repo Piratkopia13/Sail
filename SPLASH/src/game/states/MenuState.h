@@ -31,7 +31,7 @@ public:
 
 private:
 	const std::string loadPlayerName(const std::string& file);
-
+	bool loadModels(Application* app);
 
 
 private:
@@ -41,6 +41,7 @@ private:
 	Application* m_app = nullptr;
 	// For ImGui Input
 	char* inputIP = nullptr;
+	std::future<bool> m_modelThread;
 
 	// Other lobbies
 	bool onLanHostFound(NetworkLanHostFoundEvent& event);
