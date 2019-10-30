@@ -59,7 +59,6 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<ModelComponent>(candleModel);
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
-	//gun->addComponent<GunComponent>();
 	return gun;
 }
 
@@ -107,11 +106,15 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
+			//leave this for now
 			//c->addComponent<GunComponent>();
 		}
+
+		// Add a localOwnerComponent to our candle so that we can differentiate it from other candles
+		if (c->hasComponent<CandleComponent>()) {
+			c->addComponent<LocalOwnerComponent>(netComponentID);
+		}
 	}
-
-
 
 	return myPlayer;
 }

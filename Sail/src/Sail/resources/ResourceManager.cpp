@@ -7,6 +7,7 @@
 #include "Sail/api/Mesh.h"
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
+const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 
 ResourceManager::ResourceManager() {
 	//m_soundManager = std::make_unique<SoundManager>();
@@ -33,8 +34,9 @@ bool ResourceManager::setDefaultShader(Shader* shader) {
 }
 
 void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {
+	
 	if (!this->hasAudioData(filename)) {
-		m_audioDataAll.insert({ filename, std::make_unique<AudioData>(filename, xAudio2) });
+		m_audioDataAll.insert({ filename, std::make_unique<AudioData>(SAIL_DEFAULT_SOUND_LOCATION + filename, xAudio2) });
 	} 
 }
 

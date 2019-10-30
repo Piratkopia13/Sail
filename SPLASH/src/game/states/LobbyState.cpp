@@ -38,7 +38,7 @@ LobbyState::LobbyState(StateStack& stack)
 	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
-	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, true);
+	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
 }
 
 
@@ -57,13 +57,12 @@ bool LobbyState::processInput(float dt) {
 }
 
 bool LobbyState::inputToChatLog(MSG& msg) {
-	int sendMessageKeyCode = KeyBinds::sendMessage;
-	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != sendMessageKeyCode) {
+	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != KeyBinds::SEND_MESSAGE) {
 		// Add whichever button that was inputted to the current message
 		// --- OBS : doesn't account for capslock, etc.
 		m_currentmessage[m_currentmessageIndex++] = (char)msg.wParam;
 	}
-	if (msg.wParam == sendMessageKeyCode && m_chatFocus == false) {
+	if (msg.wParam == KeyBinds::SEND_MESSAGE && m_chatFocus == false) {
 		return true;
 	}
 	return false;

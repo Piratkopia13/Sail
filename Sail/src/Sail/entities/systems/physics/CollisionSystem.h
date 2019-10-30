@@ -12,6 +12,10 @@ public:
 	void update(float dt);
 
 private:
+	bool collisionUpdatePart(float dt, size_t start, size_t end);
+	bool surfaceFromCollisionPart(float dt, size_t start, size_t end);
+	bool rayCastCollisionPart(float dt, size_t start, size_t end);
+	
 	const bool rayCastCheck(Entity* e, const BoundingBox& boundingBox, float& dt) const;
 	void rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& dt);
 	void stepToFindMissedCollision(Entity* e, BoundingBox& boundingBox, std::vector<Octree::CollisionInfo>& collisions, float distance);
