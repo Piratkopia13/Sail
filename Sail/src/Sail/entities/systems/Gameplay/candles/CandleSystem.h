@@ -33,8 +33,7 @@ private:
 	// TODO: Replace using game settings when that is implemented
 	float m_candleForceRespawnTimer = 2.0f;
 	// TODO: Replace using game settings when that is implemented
-	//int m_maxNumRespawns = 2;
-	int m_maxNumRespawns = 1;  // TODO: REMOVE
+	int m_maxNumRespawns = 2;
 	// TO DO: Move or something
 	int m_livingCandles = 0;
 
