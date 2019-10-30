@@ -49,6 +49,7 @@ bool EndGameState::renderImgui(float dt) {
 			if (ImGui::Button("Lobby")) {
 				onReturnToLobby(NetworkBackToLobby{});
 			}
+			return;
 		}
 		if (ImGui::Button("Main menu")) {
 			NWrapperSingleton::getInstance().resetNetwork();
@@ -56,9 +57,11 @@ bool EndGameState::renderImgui(float dt) {
 			GameDataTracker::getInstance().resetData();
 			this->requestStackPop();
 			this->requestStackPush(States::MainMenu);
+			return;
 		}
 		if (ImGui::Button("Quit")) {
 			PostQuitMessage(0);
+			return;
 		}
 
 	}
