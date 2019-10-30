@@ -2,7 +2,9 @@
 // Ordered by directory name, then file name
 
 #include "Audio/AudioSystem.h"
-#include "Gameplay/candles/CandleSystem.h"
+#include "Gameplay/candles/CandleHealthSystem.h"
+#include "Gameplay/candles/CandlePlacementSystem.h"
+#include "Gameplay/candles/CandleReignitionSystem.h"
 #include "entityManagement/EntityAdderSystem.h"
 #include "entityManagement/EntityRemovalSystem.h"
 #include "Gameplay/ai/AiSystem.h"

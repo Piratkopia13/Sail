@@ -140,10 +140,6 @@ GameState::GameState(StateStack& stack)
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
-
-	// Inform CandleSystem of the player
-	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
-
 	// Bots creation
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
@@ -360,8 +356,10 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 
-	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-	m_componentSystems.candleSystem->init(this, m_octree);
+	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
+	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
+	m_componentSystems.candlePlacementSystem = ECS::Instance()->createSystem<CandlePlacementSystem>();
+	m_componentSystems.candlePlacementSystem->setOctree(m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -706,7 +704,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
-	runSystem(dt, m_componentSystems.candleSystem);
+	runSystem(dt, m_componentSystems.candleHealthSystem);
+	runSystem(dt, m_componentSystems.candlePlacementSystem);
+	runSystem(dt, m_componentSystems.candleReignitionSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 

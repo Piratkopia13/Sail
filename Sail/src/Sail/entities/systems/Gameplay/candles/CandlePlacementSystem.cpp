@@ -13,7 +13,7 @@ CandlePlacementSystem::CandlePlacementSystem() {
 	// TODO: System owner should check if this is correct
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, true);
-	registerComponent<NetworkReceiverComponent>(false, true, false);
+	registerComponent<NetworkSenderComponent>(false, true, false);
 }
 
 CandlePlacementSystem::~CandlePlacementSystem() {}
@@ -25,7 +25,6 @@ void CandlePlacementSystem::setOctree(Octree* octree) {
 void CandlePlacementSystem::update(float dt) {
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
-
 		if (candle->isCarried != candle->wasCarriedLastUpdate) {
 			putDownCandle(e);
 
@@ -57,7 +56,7 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 
 	if (!candleComp->isCarried) {
 		if (candleComp->isLit) {
-			glm::vec3 parentPos = parentTransComp->getTranslation();
+			glm::vec3 parentPos = parentTransComp->getMatrix()[3];
 			glm::vec3 dir = candleTransComp->getParent()->getForward();
 			dir.y = 0.0f;
 			dir = glm::normalize(dir) / 2.0f;

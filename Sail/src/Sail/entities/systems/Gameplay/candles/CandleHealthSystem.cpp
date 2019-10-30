@@ -6,7 +6,7 @@
 
 CandleHealthSystem::CandleHealthSystem() {
 	registerComponent<CandleComponent>(true, true, true);
-	registerComponent<NetworkReceiverComponent>(false, true, false);
+	registerComponent<NetworkSenderComponent>(false, true, false);
 	registerComponent<LightComponent>(true, true, true);
 }
 
@@ -67,7 +67,8 @@ void CandleHealthSystem::update(float dt) {
 		}
 	}
 
-	if (livingCandles < 2) { // Match IS over
+	// Only one living candle left and number of players in the game is greater than one
+	if (livingCandles < 2 && entities.size() > 1) {
 		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::MATCH_ENDED,
 			nullptr
