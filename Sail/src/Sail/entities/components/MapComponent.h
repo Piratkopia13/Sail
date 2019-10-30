@@ -23,7 +23,7 @@ enum AreaType {CORRIDOR, ROOM};
 
 class MapComponent : public Component<MapComponent> {
 public:
-	MapComponent() {
+	MapComponent(int hostSeed) : seed(hostSeed) {
 		for (int i = 0; i < xsize; i++) {
 			for (int j = 0; j < ysize; j++) {
 				tileArr[i][j][0] = 0;
@@ -114,7 +114,7 @@ public:
 	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
 	int doorModifier = 15;//percentage to spawn a door
 	int clutterModifier = 85;//percentage to add clutter
-	int seed = 5;//seed for generation
+	int seed;//seed for generation
 #endif
 	int totalArea = xsize * ysize;
 	int numberOfRooms = 1;
