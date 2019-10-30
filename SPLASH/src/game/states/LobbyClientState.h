@@ -21,6 +21,8 @@ public:
 	bool onEvent(Event& event);
 
 private:
+
+	bool m_wasDropped;
 	bool onMyTextInput(TextInputEvent& event);
 	bool onRecievedText(NetworkChatEvent& event);
 	bool onPlayerJoined(NetworkJoinedEvent& event);
