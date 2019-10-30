@@ -32,6 +32,8 @@ private:
 	bool m_isLooping;
 	int m_streamIndex = 0;
 
+	bool m_hasOutputDevices = true;
+
 
 	AudioEngine* m_audioEngine;
 	int m_currStreamIndex = 0;
