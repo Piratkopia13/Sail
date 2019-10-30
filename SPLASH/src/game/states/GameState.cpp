@@ -14,12 +14,14 @@
 #include "Sail/graphics/geometry/factory/QuadModel.h"
 #include <sstream>
 #include <iomanip>
+#include "InGameMenuState.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_profiler(true)
-	, m_showcaseProcGen(false) {
+	, m_showcaseProcGen(false) 
+{
 	
 	initConsole();
 
@@ -56,7 +58,7 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
-	m_cam.setDirection(glm::normalize(glm::vec3(-0.715708f, 0.0819399f, 0.693576f)));
+	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, -0.86f)));
 #endif
 
 	// Initialize the component systems
@@ -75,9 +77,13 @@ GameState::GameState(StateStack& stack)
 	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
 
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_MRAO.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_NM.tga");
 
 	// Font sprite map texture
 	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);
@@ -104,7 +110,9 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
+#ifndef _PERFORMANCE_TEST
 	m_componentSystems.animationSystem->initDebugAnimations();
+#endif
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
@@ -142,9 +150,9 @@ GameState::GameState(StateStack& stack)
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
-	populateScene(characterModel, lightModel, boundingBoxModel, boundingBoxModel, shader);
+	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 
-	m_player->getComponent<TransformComponent>()->setTranslation(glm::vec3(120.83f, 1.7028f, 114.2561f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(52.f, 1.f, 70.f));
 #endif
 
 
@@ -168,12 +176,13 @@ GameState::GameState(StateStack& stack)
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 
 	// Host fill its game tracker per player with player data.
-	if (NWrapperSingleton::getInstance().isHost()) {
-		GameDataTracker::getInstance().init();
-	}	
+	// Reset data trackers
+	GameDataTracker::getInstance().init();
+
 }
 
 GameState::~GameState() {
+	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
 	delete m_octree;
 }
@@ -188,7 +197,7 @@ bool GameState::processInput(float dt) {
 #endif
 
 	// Pause game
-	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
 		requestStackPush(States::InGameMenu);
 	}
 
@@ -401,30 +410,34 @@ void GameState::initSystems(const unsigned char playerID) {
 void GameState::initConsole() {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
+		bool stateChanged = false;
+		std::string returnMsg = "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
 		if (param == "menu") {
 			requestStackPop();
 			requestStackPush(States::MainMenu);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to menu requested";
+			stateChanged = true;
+			returnMsg = "State change to menu requested";
 		}
 		else if (param == "pbr") {
 			requestStackPop();
 			requestStackPush(States::PBRTest);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to pbr requested";
+			stateChanged = true;
+			returnMsg = "State change to pbr requested";
 		}
 		else if (param == "perftest") {
 			requestStackPop();
 			requestStackPush(States::PerformanceTest);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to PerformanceTest requested";
+			stateChanged = true;
+			returnMsg = "State change to PerformanceTest requested";
 		}
-		else {
-			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+
+		if (stateChanged) {
+			// Reset the network
+			// Needs to be done to allow new games to be started
+			NWrapperSingleton::getInstance().resetNetwork();
+			NWrapperSingleton::getInstance().resetWrapper();
 		}
+		return returnMsg.c_str();
 
 	}, "GameState");
 	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
@@ -433,7 +446,6 @@ void GameState::initConsole() {
 			Netcode::MessageType::MATCH_ENDED,
 			nullptr
 		);
-		console.removeAllCommandsWithIdentifier("GameState");
 
 		return std::string("Match ended.");
 		}, "GameState");
@@ -501,7 +513,6 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 	} else {
 		this->requestStackPop();
 		this->requestStackPush(States::EndGame);
-		m_poppedThisFrame = true;
 	}
 
 	// Set bot target to null when player is dead
@@ -610,6 +621,33 @@ bool GameState::renderImgui(float dt) {
 		m_wasDroppedWindow.renderWindow();
 	}
 
+	// KEEP UNTILL FINISHED WITH HANDPOSITIONS
+	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
+	//static glm::vec3 rPos(-0.596f, 1.026f, 0.055f);
+	//static glm::vec3 lRot(1.178f, -0.462f, 0.600f);
+	//static glm::vec3 rRot(1.178f, 0.646f, -0.300f);
+	//if (ImGui::Begin("HandLocation")) {
+	//	ImGui::SliderFloat("##lposx", &lPos.x, -1.5f, 1.5f);
+	//	ImGui::SliderFloat("##lposy", &lPos.y, -1.5f, 1.5f);
+	//	ImGui::SliderFloat("##lposz", &lPos.z, -1.5f, 1.5f);
+	//	ImGui::Spacing();
+	//	ImGui::SliderFloat("##rPosx", &rPos.x, -1.5f, 1.5f);
+	//	ImGui::SliderFloat("##rPosy", &rPos.y, -1.5f, 1.5f);
+	//	ImGui::SliderFloat("##rPosz", &rPos.z, -1.5f, 1.5f);
+	//	ImGui::Spacing();
+	//	ImGui::Spacing();
+	//	ImGui::SliderFloat("##lRotx", &lRot.x, -3.14f, 3.14f);
+	//	ImGui::SliderFloat("##lRoty", &lRot.y, -3.14f, 3.14f);
+	//	ImGui::SliderFloat("##lRotz", &lRot.z, -3.14f, 3.14f);
+	//	ImGui::Spacing();
+	//	ImGui::SliderFloat("##rRotx", &rRot.x, -3.14f, 3.14f);
+	//	ImGui::SliderFloat("##rRoty", &rRot.y, -3.14f, 3.14f);
+	//	ImGui::SliderFloat("##rRotz", &rRot.z, -3.14f, 3.14f);
+	//}
+	//ImGui::End();
+	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
+
+
 	return false;
 }
 
@@ -622,13 +660,6 @@ bool GameState::renderImguiDebug(float dt) {
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 
 	return false;
-}
-
-bool GameState::prepareStateChange() {
-	if (m_poppedThisFrame) {
-		// Do NOT reset network because we're NOT going to main menu
-	}
-	return true;
 }
 
 void GameState::shutDownGameState() {
@@ -654,7 +685,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	
 	// Update entities with info from the network and from ourself
 	// DON'T MOVE, should happen at the start of each tick
-	m_componentSystems.networkReceiverSystem->update();
+	m_componentSystems.networkReceiverSystem->update(dt);
 	
 	m_componentSystems.movementSystem->update(dt);
 	m_componentSystems.speedLimitSystem->update();
@@ -685,10 +716,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Send out your entity info to the rest of the players
 	// DON'T MOVE, should happen at the end of each tick
 	m_componentSystems.networkSenderSystem->update();
-
-	// Will probably need to be called last
-	m_componentSystems.entityAdderSystem->update();
-	m_componentSystems.entityRemovalSystem->update();
 	m_componentSystems.octreeAddRemoverSystem->update(dt);
 }
 
@@ -716,6 +743,10 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.animationSystem->updatePerFrame();
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
+
+	// Will probably need to be called last
+	m_componentSystems.entityAdderSystem->update();
+	m_componentSystems.entityRemovalSystem->update();
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
@@ -1032,61 +1063,26 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
 	map->addComponent<MapComponent>();
+
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
+
+	m_componentSystems.gameInputSystem->m_mapPointer = map->getComponent<MapComponent>();
 }
 
 #ifdef _PERFORMANCE_TEST
-void GameState::populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
+void GameState::populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
 	/* 13 characters that are constantly shooting their guns */
 	for (int i = 0; i < 13; i++) {
-		float spawnOffsetX = -19.f + float(i) * 2.f;
-		float spawnOffsetZ = 13.f + float(i) * 1.3f;
+		Logger::Log("Adding performance test player.");
+		float spawnOffsetX = 43.f + float(i) * 2.f;
+		float spawnOffsetZ = 52.f + float(i) * 1.3f;
+
 		auto e = ECS::Instance()->createEntity("Performance Test Entity " + std::to_string(i));
 
-		std::string name = "DocTorch.fbx";
-		Model* characterModel = &m_app->getResourceManager().getModelCopy(name, shader);
-		characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-		characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-		characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
-		characterModel->setIsAnimated(true);
-
-		e->addComponent<ModelComponent>(characterModel);
-		auto animStack = &m_app->getResourceManager().getAnimationStack(name);
-		auto animComp = e->addComponent<AnimationComponent>(animStack);
-		animComp->currentAnimation = animStack->getAnimation(1);
-		animComp->animationTime = float(i) / animComp->currentAnimation->getMaxAnimationTime();
-		e->addComponent<TransformComponent>(glm::vec3(105.543f + spawnOffsetX, 0.f, 99.5343f + spawnOffsetZ), glm::vec3(0.f, 0.f, 0.f));
-		e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-		e->addComponent<CollidableComponent>();
-		e->addComponent<MovementComponent>();
-		e->addComponent<SpeedLimitComponent>();
-		e->addComponent<CollisionComponent>();
-		e->addComponent<GunComponent>(projectileModel, bbModel);
-
-		///* Audio */
-		//e->addComponent<AudioComponent>();
-		//Audio::SoundInfo sound{};
-		//sound.fileName = "../Audio/guitar.wav";
-		//sound.soundEffectLength = 104.0f;
-		//sound.volume = 1.0f;
-		//sound.playOnce = false;
-		//sound.positionalOffset = { 0.f, 1.2f, 0.f };
-		//sound.isPlaying = true; // Start playing the sound immediately
-		//e->getComponent<AudioComponent>()->defineSound(Audio::SoundType::AMBIENT, sound);
-
-		// Add candle
-		/*if (i != 12) {
-			auto candleEntity = createCandleEntity("Candle Entity " + std::to_string(i), lightModel, bbModel, glm::vec3(0.f, 10.f, 0.f));
-			candleEntity->getComponent<CandleComponent>()->setOwner(e->getID());
-			e->addChildEntity(candleEntity);
-		}*/
-
-		/* Movement */
-		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-		e->getComponent<SpeedLimitComponent>()->maxSpeed = 6.f;
+		EntityFactory::CreatePerformancePlayer(e, i, glm::vec3(spawnOffsetX, -0.9f, spawnOffsetZ));
 
 		m_performanceEntities.push_back(e);
 	}

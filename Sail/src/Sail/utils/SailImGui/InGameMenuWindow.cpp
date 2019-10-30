@@ -1,12 +1,14 @@
 #include "pch.h"
 #include "InGameMenuWindow.h"
 #include "Sail/Application.h"
+#include "Sail/KeyBinds.h"
 
 InGameMenuWindow::InGameMenuWindow(bool showWindow)
 	: m_popGameState(false)
 	, m_exitInGameMenu(false)
 	, m_showOptions(false)
 {
+	m_openedThisFrame = true;
 	Input::HideCursor(false);
 }
 
@@ -21,17 +23,18 @@ void InGameMenuWindow::renderWindow() {
 	ImGui::SetWindowPos(pos);
 	ImGui::SetWindowSize(size);
 
-	if (ImGui::Button("Close menu")) {
+	if (ImGui::Button("Close menu") || (!m_openedThisFrame && ImGui::IsKeyPressed(KeyBinds::showInGameMenu))) {
 		m_exitInGameMenu = true;
 		Input::HideCursor(true);
 	}
 	if (ImGui::Button("Options")) {
 		m_showOptions = true;
 	}
-	if (ImGui::Button("Exit to main menu")) {
+	if (ImGui::Button("Exit to main menu")) {	
 		m_popGameState = true;
 	}
 	ImGui::End();
+	m_openedThisFrame = false;
 }
 
 bool InGameMenuWindow::popGameState() {

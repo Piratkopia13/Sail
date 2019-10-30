@@ -3,6 +3,7 @@
 #include "CandleSystem.h"
 
 #include "Sail/entities/components/Components.h"
+#include "Sail/entities/components/AnimationComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
 
@@ -49,8 +50,6 @@ void CandleSystem::update(float dt) {
 			if (candle->getHealth() <= 0.f) {
 				candle->setCarried(true);
 
-
-
 				// Did this candle's owner die?
 				if (candle->getNumRespawns() == m_maxNumRespawns) {
 					candle->setIsAlive(false);
@@ -73,14 +72,10 @@ void CandleSystem::update(float dt) {
 						if (LivingCandles <= 1) { // Match IS over
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::MATCH_ENDED,
-								nullptr
-							);
-							// Send relevant stats to all clients
-							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-								Netcode::MessageType::ENDGAME_STATS,
 								nullptr,
-								false
+								true
 							);
+							
 						}
 					}
 				}
@@ -134,7 +129,7 @@ void CandleSystem::update(float dt) {
 	}
 }
 
-// TODO: Rewrite
+
 void CandleSystem::putDownCandle(Entity* e) {
 	auto candleComp = e->getComponent<CandleComponent>();
 	auto candleTransComp = e->getComponent<TransformComponent>();
@@ -143,12 +138,11 @@ void CandleSystem::putDownCandle(Entity* e) {
 	/* TODO: Raycast and see if the hit location is ground within x units */
 	if (!candleComp->isCarried()) {
 		if (candleComp->getIsLit()) {
-			// Get the yaw-angle of the player to get a direction vector
-			float yaw = -candleTransComp->getParent()->getRotations().y;
-			glm::vec3 dir = glm::normalize(glm::vec3(cos(yaw), 0.f, sin(yaw)));
-			auto parentPos = parentTransComp->getMatrix()[3];
-
-			glm::vec3 candleTryPosition = glm::vec3(parentPos.x + dir.x, parentPos.y, parentPos.z + dir.z);
+			glm::vec3 parentPos = parentTransComp->getTranslation();
+			glm::vec3 dir = candleTransComp->getParent()->getForward();
+			dir.y = 0.0f;
+			dir = glm::normalize(dir)/2.0f;
+			glm::vec3 candleTryPosition = glm::vec3(parentPos.x - dir.x, parentPos.y, parentPos.z - dir.z);
 
 			bool blocked = false;
 			glm::vec3 down(0.f, -1.f, 0.f);
@@ -159,7 +153,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 				// Shoot a ray straight down 1 meter ahead of the player to check for floor
 				m_octree->getRayIntersection(glm::vec3(candleTryPosition.x, candleTryPosition.y + heightOffsetFromPlayerFeet, candleTryPosition.z), down, &tempInfo, nullptr, 0.01f);
 				if (tempInfo.closestHitIndex != -1) {
-					float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].normal, -down);
+					float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].intersectionAxis, -down);
 					// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
 					bool isFloor = (floorCheckVal < 0.1f) ? true : false;
 					if (!isFloor) {
@@ -191,6 +185,10 @@ void CandleSystem::putDownCandle(Entity* e) {
 			if (!blocked) {
 				candleTransComp->removeParent();
 				candleTransComp->setTranslation(candleTryPosition);
+
+				candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
+				e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = nullptr;
+
 				ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 			} else {
 				candleComp->setCarried(true);
@@ -202,6 +200,7 @@ void CandleSystem::putDownCandle(Entity* e) {
 		// Pick up the candle
 		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->getIsLit()) {
 			candleTransComp->setParent(parentTransComp);
+			e->getParent()->getComponent<AnimationComponent>()->leftHandEntity = e;
 		} else {
 			candleComp->setCarried(false);
 		}

@@ -48,7 +48,7 @@ void Win32Input::hideCursorImpl(bool hide) {
 	if (hide)
 		while (ShowCursor(false) >= 0);
 	else
-		ShowCursor(true);
+		while (ShowCursor(true) < 0);
 }
 
 bool Win32Input::isCursorHiddenImpl() {

@@ -35,8 +35,6 @@ private:
 	void writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar);
 	void writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar);
 	
-
-
 private:
 	Netcode::PlayerID m_playerID;
 	std::queue<NetworkSenderEvent*> m_eventQueue;

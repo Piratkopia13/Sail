@@ -88,7 +88,7 @@ const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
 	--------------------------------------------------
 
 */
-void NetworkReceiverSystem::update() {
+void NetworkReceiverSystem::update(float dt) {
 	std::scoped_lock lock(m_bufferLock); // Don't push more data to the buffer whilst this function is running
 
 	size_t nrOfSenderComponents = 0;
@@ -247,7 +247,16 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::MATCH_ENDED:
 			{
-				matchEnded();
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PREPARE_ENDSCREEN,
+					SAIL_NEW Netcode::MessagePrepareEndScreen(),
+					false
+				);
+
+				GameDataTracker::getInstance().turnOffLocalDataTracking();
+
+				mergeHostsStats();
+
 			}
 			break;
 			case Netcode::MessageType::CANDLE_HELD_STATE:
@@ -267,12 +276,28 @@ void NetworkReceiverSystem::update() {
 				backToLobby();
 			}
 			break;
+			case Netcode::MessageType::RUNNING_METAL_START:
+			{
+				ar(componentID);
+				runningMetalStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_TILE_START:
+			{
+				ar(componentID);
+				runningTileStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_STOP_SOUND:
+			{
+				ar(componentID);
+				runningStopSound(componentID);
+			}
+			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				Netcode::PlayerID playerID;
-
-				ar(playerID);
-				playerDisconnect(playerID);
+				ar(componentID);
+				playerDisconnect(componentID);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -286,6 +311,10 @@ void NetworkReceiverSystem::update() {
 				int nKills;
 				int placement;
 
+				int bulletsFired, jumpsMade;
+				float distanceWalked;
+				Netcode::PlayerID bulletsFiredID, distanceWalkedID, jumpsMadeID;
+
 				// Get all per player data from the Host
 				for (int k = 0; k < nrOfPlayers; k++) {
 					ar(pID);
@@ -295,9 +324,37 @@ void NetworkReceiverSystem::update() {
 				}
 
 				// Get all specific data from the Host
+				(ar)(bulletsFired);
+				(ar)(bulletsFiredID);
+
+				(ar)(distanceWalked);
+				(ar)(distanceWalkedID);
+
+				(ar)(jumpsMade);
+				(ar)(jumpsMadeID);
+
+				GameDataTracker::getInstance().setStatsForOtherData(
+					bulletsFiredID, bulletsFired, distanceWalkedID, distanceWalked, jumpsMadeID, jumpsMade);
+
+				endMatch();
+			}
+			break;
+			case Netcode::MessageType::PREPARE_ENDSCREEN:
+			{
+				GameDataTracker* dgtp = &GameDataTracker::getInstance();
+				// create temporary variables to hold data when reading netmessage
+				int bulletsFired, jumpsMade;
+				float distanceWalked;
+				// Get the data
+				(ar)(bulletsFired);
+				(ar)(distanceWalked);
+				(ar)(jumpsMade);
+
+				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
 
 			}
 			break;
+
 			case Netcode::MessageType::IGNITE_CANDLE:
 			{
 				Netcode::ComponentID candleOwnerID;
@@ -313,6 +370,11 @@ void NetworkReceiverSystem::update() {
 
 		m_incomingDataBuffer.pop();
 	}
+
+	// End game timer 
+	endMatchAfterTimer(dt);
+
+
 }
 
 /*
@@ -433,8 +495,6 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
 				}
 
-				
-
 				// Check in Candle System What happens next
 				return;
 			}
@@ -516,6 +576,12 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			//If it wasn't me that died, completely remove the player entity from game.
 			e->queueDestruction();
 		}
+
+		// Play sound
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH].isPlaying = true;
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH].playOnce = true;
+	
+
 		return;
 	}
 	Logger::Warning("playerDied called but no matching entity found");
@@ -627,14 +693,47 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 	}
 }
 
-void NetworkReceiverSystem::matchEnded() {
-	m_gameStatePtr->requestStackPop();
-	m_gameStatePtr->requestStackPush(States::EndGame);
-}
-
 void NetworkReceiverSystem::backToLobby() {
 	m_gameStatePtr->requestStackPop();
 	m_gameStatePtr->requestStackPush(States::JoinLobby);
+}
+
+void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].playOnce = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+
+			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].playOnce = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+
+			break;
+		}
+	}
+}
+
+void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+
+			break;
+		}
+	}
 }
 
 void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {

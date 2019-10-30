@@ -12,18 +12,6 @@ CollisionTriangle::CollisionTriangle(const glm::vec3& pos0, const glm::vec3& pos
 	m_normal = normal;
 }
 
-bool CollisionTriangle::isTrueCollision(BoundingBox* boundingBox) {
-	glm::vec3 intersectionAxis;
-	float intersectionDepth;
-
-	if (Intersection::AabbWithTriangle(boundingBox->getPosition(), boundingBox->getHalfSize(), m_positions[0], m_positions[1], m_positions[2], &intersectionAxis, &intersectionDepth)) {
-		if (glm::abs(glm::dot(intersectionAxis, m_normal)) > 0.98f) { //The smallest intersection is along the normal
-			return true;
-		}
-	}
-	return false;
-}
-
 glm::vec3 CollisionTriangle::getIntersectionPosition(BoundingBox* boundingBox) {
 	// Calculate the plane that the triangle is on
 	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - m_positions[0];
@@ -40,32 +28,17 @@ bool CollisionTriangle::getIntersectionDepthAndAxis(BoundingBox* boundingBox, gl
 
 
 
-
-
-
-CollisionAABB::CollisionAABB(const glm::vec3& position, const glm::vec3& halfSize, const glm::vec3& intersectionAxis) {
+CollisionAABB::CollisionAABB(const glm::vec3& position, const glm::vec3& halfSize, const glm::vec3& collisionAxis) {
 	m_position = position;
 	m_halfSize = halfSize;
-	m_intersectionAxis = intersectionAxis;
-}
-
-bool CollisionAABB::isTrueCollision(BoundingBox* boundingBox) {
-	glm::vec3 intersectionAxis;
-	float intersectionDepth;
-
-	if (Intersection::AabbWithAabb(boundingBox->getPosition(), boundingBox->getHalfSize(), m_position, m_halfSize, &intersectionAxis, &intersectionDepth)) {
-		if (glm::abs(glm::dot(intersectionAxis, m_intersectionAxis)) > 0.98f) { //The smallest intersection is along the expected axis
-			return true;
-		}
-	}
-	return false;
+	m_collisionAxis = collisionAxis;
 }
 
 glm::vec3 CollisionAABB::getIntersectionPosition(BoundingBox* boundingBox) {
 	// Calculate the plane of bounding box
-	glm::vec3 planePositionToWorldOrigo = glm::vec3(0.0f) - (m_position + m_halfSize * m_intersectionAxis);
-	float distance = -glm::dot(planePositionToWorldOrigo, m_intersectionAxis);
-	return Intersection::PointProjectedOnPlane(boundingBox->getPosition(), m_intersectionAxis, distance);
+	glm::vec3 planePositionToWorldOrigo = glm::vec3(0.0f) - (m_position + m_halfSize * m_collisionAxis);
+	float distance = -glm::dot(planePositionToWorldOrigo, m_collisionAxis);
+	return Intersection::PointProjectedOnPlane(boundingBox->getPosition(), m_collisionAxis, distance);
 }
 
 bool CollisionAABB::getIntersectionDepthAndAxis(BoundingBox* boundingBox, glm::vec3* axis, float* depth) {
