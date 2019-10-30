@@ -8,6 +8,7 @@
 #include "Sail/graphics/light/LightSetup.h"
 #include "../renderer/DX12GBufferRenderer.h"
 #include "Sail/entities/components/MapComponent.h"
+#include "../SPLASH/src/game/events/GameOverEvent.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 	: m_shaderFilename(shaderFilename)
@@ -266,7 +267,6 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 		}
 
 		m_waterDataCPU[i] = m_waterDeltas[i];
-
 		m_waterChanged = true;
 	}
 }
@@ -376,6 +376,14 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	cmdList->DispatchRays(&raytraceDesc);
 }
 
+void DXRBase::resetWater() {
+	// TODO: make faster by updates the whole buffer at once
+	for (unsigned int i = 0; i < WATER_ARR_SIZE; i++) {
+		m_waterDataCPU[i] = m_waterDeltas[i] = UINT_MAX;
+	}
+	m_waterChanged = true;
+}
+
 void DXRBase::reloadShaders() {
 	m_context->waitForGPU();
 	// Recompile hlsl
@@ -389,7 +397,13 @@ bool DXRBase::onEvent(Event& event) {
 		return true;
 	};
 
+	auto onGameOver = [&](GameOverEvent& event) {
+		resetWater();
+		return true;
+	};
+
 	EventHandler::dispatch<WindowResizeEvent>(event, onResize);
+	EventHandler::dispatch<GameOverEvent>(event, onGameOver);
 	return true;
 }
 
