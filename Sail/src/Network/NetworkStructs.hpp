@@ -23,7 +23,7 @@ enum class NETWORK_EVENT_TYPE {
 union NetworkEventData {
 	struct {
 		size_t sizeOfMsg;
-		char* rawMsg;
+		char* rawMsg = nullptr;
 	} Message;
 
 	struct

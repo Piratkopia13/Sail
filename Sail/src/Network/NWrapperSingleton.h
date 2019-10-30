@@ -36,6 +36,8 @@ public:
 	NWrapper* getNetworkWrapper();
 	void searchForLobbies();
 	void checkFoundPackages();
+	void stopUDP();
+	void startUDP();
 
 	void resetPlayerList();
 	bool playerJoined(Player& player);

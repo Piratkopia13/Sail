@@ -39,7 +39,7 @@ LobbyState::LobbyState(StateStack& stack)
 	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
-	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, true);
+	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
 }
 
 
@@ -193,6 +193,7 @@ void LobbyState::renderStartButton() {
 
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
+			NWrapperSingleton::getInstance().stopUDP();
 			char seed = (char)(Utils::rnd() * 255);
 			NWrapperSingleton::getInstance().setSeed(seed);
 			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));

@@ -175,7 +175,7 @@ GameState::GameState(StateStack& stack)
 	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
 	m_ambiance->addComponent<AudioComponent>();
 	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
+	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 
@@ -417,7 +417,7 @@ void GameState::initConsole() {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
 		bool stateChanged = false;
-		std::string returnMsg = "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
+		std::string returnMsg = "Invalid state. Available states are \"menu\" and \"pbr\"";
 		if (param == "menu") {
 			requestStackPop();
 			requestStackPush(States::MainMenu);
@@ -429,12 +429,6 @@ void GameState::initConsole() {
 			requestStackPush(States::PBRTest);
 			stateChanged = true;
 			returnMsg = "State change to pbr requested";
-		}
-		else if (param == "perftest") {
-			requestStackPop();
-			requestStackPush(States::PerformanceTest);
-			stateChanged = true;
-			returnMsg = "State change to PerformanceTest requested";
 		}
 
 		if (stateChanged) {
