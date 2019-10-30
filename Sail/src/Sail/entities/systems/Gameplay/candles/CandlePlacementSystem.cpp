@@ -77,11 +77,13 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 					bool isFloor = (floorCheckVal < 0.1f) ? true : false;
 					if (!isFloor) {
 						blocked = true;
-					} else {
+					}
+					else {
 						// Update the height of the candle position
 						candleTryPosition.y = candleTryPosition.y + (heightOffsetFromPlayerFeet - tempInfo.closestHit);
 					}
-				} else {
+				}
+				else {
 					blocked = true;
 				}
 			}
@@ -104,22 +106,26 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 			if (!blocked) {
 				candleTransComp->removeParent();
 				candleTransComp->setTranslation(candleTryPosition);
-				candleTransComp->setRotations(glm::vec3{0.f,0.f,0.f});
+				candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
 				e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
 
 				ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
-			} else {
+			}
+			else {
 				candleComp->isCarried = true;
 			}
-		} else {
+		}
+		else {
 			candleComp->isCarried = true;
 		}
-	} else {
+	}
+	else {
 		// Pick up the candle
 		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->isLit) {
 			candleTransComp->setParent(parentTransComp);
 			e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = e;
-		} else {
+		}
+		else {
 			candleComp->isCarried = false;
 		}
 	}

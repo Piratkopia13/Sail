@@ -8,6 +8,7 @@ CandleHealthSystem::CandleHealthSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
 	registerComponent<LightComponent>(true, true, true);
+	registerComponent<AudioComponent>(false, true, true);
 }
 
 CandleHealthSystem::~CandleHealthSystem() {}
@@ -56,6 +57,9 @@ void CandleHealthSystem::update(float dt) {
 							Netcode::getComponentOwner(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id)
 						);
 					}
+				} else {
+					auto playerEntity = e->getParent();
+					playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
 				}
 			}
 

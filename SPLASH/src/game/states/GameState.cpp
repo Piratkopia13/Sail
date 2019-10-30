@@ -659,7 +659,10 @@ bool GameState::renderImguiDebug(float dt) {
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInECS(ECS::Instance()->getNumEntities());
 
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("ProjectileSystem", m_componentSystems.projectileSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleSystem", m_componentSystems.candleSystem->getNumEntities());
+	//m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleSystem", m_componentSystems.candleSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleHealthSystem", m_componentSystems.candleHealthSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandlePlacementSystem", m_componentSystems.candlePlacementSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleReignitionSystem", m_componentSystems.candleReignitionSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AnimationSystem", m_componentSystems.animationSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AnimationChangerSystem", m_componentSystems.animationChangerSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkReceiverSystem", m_componentSystems.networkReceiverSystem->getNumEntities());
