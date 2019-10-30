@@ -327,7 +327,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			}
 		}
 
-		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::shoot)) {
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT)) {
 			GunComponent* gc = e->getComponent<GunComponent>();
 			TransformComponent* ptc = e->getComponent<TransformComponent>();
 			if (gc) {
