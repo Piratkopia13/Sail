@@ -12,6 +12,7 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/components/AudioComponent.h"
+#include "Sail/utils/Utils.h"
 
 #include <string>
 #include <list>
@@ -192,8 +193,10 @@ void LobbyState::renderStartButton() {
 
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
+			char seed = (char)(Utils::rnd() * 255);
+			NWrapperSingleton::getInstance().setSeed(seed);
 			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
-			m_network->sendMsgAllClients("t");
+			m_network->sendMsgAllClients({ std::string("t") + seed });
 			this->requestStackPop();
 			this->requestStackPush(States::Game);
 		}

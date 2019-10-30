@@ -48,6 +48,8 @@ public:
 	void setPlayerID(const Netcode::PlayerID ID);
 	std::string& getMyPlayerName();
 	Netcode::PlayerID getMyPlayerID();
+	unsigned getSeed() const;
+	void setSeed(char seed);
 
 	// Specifically for One-Time-Events during the gamestate
 	void setNSS(NetworkSenderSystem* NSS);
@@ -65,6 +67,7 @@ private:
 
 	unsigned int m_playerCount;
 	unsigned int m_playerLimit;
+	unsigned int m_seed;
 
 	Player m_me;
 	std::list<Player> m_players;
