@@ -285,7 +285,7 @@ void AllAudioData::init() {
 	//-----------------------------------------------------------------------------
 	{
 		//	• Sample #1
-		soundUniqueInfo.fileName = "../Audio/re_ignite_candle.wav";
+		soundUniqueInfo.fileName = "../SPLASH/res/sounds/miscellaneous/re_ignition_candle.wav";
 		soundUniqueInfo.soundEffectLength = 4.129f;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RE_IGNITE_CANDLE].push_back(soundUniqueInfo);

@@ -58,7 +58,6 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_loop.wav");
 	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_end.wav");
 	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/watergun_reload.wav");
-	m_audioEngine->loadSound("../SPLASH/res/sounds/watergun/re_ignition_candle.wav");
 #pragma endregion
 #pragma region IMPACTS
 	m_audioEngine->loadSound("../SPLASH/res/sounds/impacts/water_impact_enemy_candle.wav");
@@ -81,6 +80,7 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("../SPLASH/res/sounds/death/death_6.wav");
 #pragma endregion
 #pragma region MISCELLANEOUS
+	m_audioEngine->loadSound("../SPLASH/res/sounds/miscellaneous/re_ignition_candle.wav");
 	m_audioEngine->loadSound("../SPLASH/res/sounds/miscellaneous/guitar.wav");
 #pragma endregion
 }
