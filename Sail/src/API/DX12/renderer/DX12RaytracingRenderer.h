@@ -35,7 +35,6 @@ private:
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 
 	std::vector<DXRBase::Metaball> m_metaballs;
-	//std::vector<D3D12_RAYTRACING_AABB> m_metaball_aabb;
 	D3D12_RAYTRACING_AABB m_next_metaball_aabb;
 
 	// Decals
