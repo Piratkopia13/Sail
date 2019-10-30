@@ -205,7 +205,7 @@ bool GameState::processInput(float dt) {
 #ifdef DEVELOPMENT
 #ifdef _DEBUG
 	// Add point light at camera pos
-	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
+	if (Input::WasKeyJustPressed(KeyBinds::ADD_LIGHT)) {
 		m_componentSystems.lightListSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
@@ -324,7 +324,7 @@ bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
-	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
+	if (Input::WasKeyJustPressed(KeyBinds::REMOVE_OLDEST_LIGHT)) {
 		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
 #endif
