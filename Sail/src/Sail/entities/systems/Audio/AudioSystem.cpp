@@ -87,9 +87,9 @@ void AudioSystem::initialize() {
 
 void AudioSystem::update(Camera& cam, float dt, float alpha) {
 	if (waveOutGetNumDevs() == 0) {
-		hasOutputDevices = false;
+		m_hasOutputDevices = false;
 	}
-	if (!hasOutputDevices) {	// Only run audiosystem if there are outputdevices on the computer
+	if (!m_hasOutputDevices) {	// Only run audiosystem if there are outputdevices on the computer
 		return;
 	}
 	for (auto e : entities) {
