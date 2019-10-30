@@ -16,6 +16,12 @@
 
 #include <vector>
 
+//#define _LOG_TO_FILE
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+#include <fstream>
+static std::ofstream out("LogFiles/NetworkSenderSystem.cpp.log");
+#endif
+
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 	registerComponent<NetworkSenderComponent>(true, true, true);
 	registerComponent<TransformComponent>(false, true, false);
@@ -71,7 +77,6 @@ void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem
 
 */
 void NetworkSenderSystem::update() {
-
 	// Binary data that will be sent over the network
 	std::ostringstream osToOthers(std::ios::binary);
 	Netcode::OutArchive sendToOthers(osToOthers);
@@ -99,7 +104,9 @@ void NetworkSenderSystem::update() {
 		// Per type of data
 		for (auto& messageType : nsc->m_dataTypes) {
 			sendToOthers(messageType);          // Current MessageType
-
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+			out << "SenderComp: " << Netcode::MessageNames[(int)(messageType) - 1] << "\n";
+#endif
 			writeMessageToArchive(messageType, e, sendToOthers); // Add to archive depending on the message
 		}
 	}
@@ -110,6 +117,9 @@ void NetworkSenderSystem::update() {
 
 	while (!m_eventQueue.empty()) {
 		NetworkSenderEvent* pE = m_eventQueue.front();
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+		out << "Event: " << Netcode::MessageNames[(int)(pE->type)-1] << "\n";
+#endif
 		writeEventToArchive(pE, sendToOthers);
 		if (pE->alsoSendToSelf) {
 			writeEventToArchive(pE, sendToSelf);
@@ -385,8 +395,27 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 			(ar)(player->second.placement);
 		}
 
-		// Send all specific data
+		// Send all specific data. The host has processed data from all clients and will 
+		// now return it to their endscreens.
+		(ar)(dgtp->getStatisticsGlobal().bulletsFired);
+		(ar)(dgtp->getStatisticsGlobal().bulletsFiredID);
 
+		(ar)(dgtp->getStatisticsGlobal().distanceWalked);
+		(ar)(dgtp->getStatisticsGlobal().distanceWalkedID);
+
+		(ar)(dgtp->getStatisticsGlobal().jumpsMade);
+		(ar)(dgtp->getStatisticsGlobal().jumpsMadeID);
+
+
+	}
+	break;
+	case Netcode::MessageType::PREPARE_ENDSCREEN:
+	{
+		// Send all specific data to Host
+		(ar)(GameDataTracker::getInstance().getStatisticsLocal().bulletsFired);
+		(ar)(GameDataTracker::getInstance().getStatisticsLocal().distanceWalked);
+		(ar)(GameDataTracker::getInstance().getStatisticsLocal().jumpsMade);
+		
 	}
 	break;
 	case Netcode::MessageType::IGNITE_CANDLE:

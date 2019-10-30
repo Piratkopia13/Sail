@@ -1,4 +1,10 @@
 #pragma once
 
-const float TICKRATE = 50.0f;
+#ifdef _DEBUG
+const float TICKRATE = 32.0f;
+#else
+const float TICKRATE = 64.0f;
+#endif
+
+
 const float TIMESTEP = 1.0f / TICKRATE;

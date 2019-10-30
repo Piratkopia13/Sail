@@ -59,7 +59,6 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<ModelComponent>(candleModel);
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
-	//gun->addComponent<GunComponent>();
 	return gun;
 }
 
@@ -107,6 +106,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
+			//leave this for now
 			//c->addComponent<GunComponent>();
 		}
 	}
@@ -285,9 +285,13 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
 
-	randPos.r = Utils::rnd() * randomSpread;
-	randPos.g = Utils::rnd() * randomSpread;
-	randPos.b = Utils::rnd() * randomSpread;
+	randomSpread = 0.05;
+
+	randPos.r = Utils::rnd() * randomSpread * 2 - randomSpread;
+	randPos.g = Utils::rnd() * randomSpread * 2 - randomSpread;
+	randPos.b = Utils::rnd() * randomSpread * 2 - randomSpread;
+
+	randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
 
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));

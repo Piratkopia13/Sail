@@ -17,8 +17,13 @@
 // Creation of mid-air bullets from here.
 #include "Sail/entities/systems/Gameplay/GunSystem.h"
 #include "Sail/utils/GameDataTracker.h"
+#include "../SPLASH/src/game/events/GameOverEvent.h"
 
-
+//#define _LOG_TO_FILE
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+#include <fstream>
+static std::ofstream out("LogFiles/NetworkReceiverSystem.cpp.log");
+#endif
 
 // The host will now automatically forward all incoming messages to other players so
 // no need to use any host-specific logic in this system.
@@ -88,7 +93,7 @@ const std::vector<Entity*>& NetworkReceiverSystem::getEntities() const {
 	--------------------------------------------------
 
 */
-void NetworkReceiverSystem::update() {
+void NetworkReceiverSystem::update(float dt) {
 	std::scoped_lock lock(m_bufferLock); // Don't push more data to the buffer whilst this function is running
 
 	size_t nrOfSenderComponents = 0;
@@ -130,7 +135,9 @@ void NetworkReceiverSystem::update() {
 			// Read per data type
 			for (size_t j = 0; j < nrOfMessagesInComponent; j++) {
 				ar(messageType);
-
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+				out << "ReciverComp: " << Netcode::MessageNames[(int)(messageType)-1] << "\n";
+#endif
 				// Read and process the data
 				// TODO: Rename some of the enums/functions
 				switch (messageType) {
@@ -195,6 +202,7 @@ void NetworkReceiverSystem::update() {
 		size_t nrOfEvents;
 		Netcode::MessageType eventType;
 		Netcode::ComponentID componentID;
+		Netcode::PlayerID playerID;
 
 
 		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
@@ -203,7 +211,9 @@ void NetworkReceiverSystem::update() {
 		for (size_t i = 0; i < nrOfEvents; i++) {
 			// Handle-Single-Frame events
 			ar(eventType);
-
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+			out << "Event: " << Netcode::MessageNames[(int)(eventType) - 1] << "\n";
+#endif
 			switch (eventType) {
 			case Netcode::MessageType::PLAYER_JUMPED:
 			{
@@ -247,7 +257,17 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::MATCH_ENDED:
 			{
-				matchEnded();
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PREPARE_ENDSCREEN,
+					SAIL_NEW Netcode::MessagePrepareEndScreen(),
+					false
+				);
+
+				GameDataTracker::getInstance().turnOffLocalDataTracking();
+
+				mergeHostsStats();
+				// Dispatch game over event
+				Application::getInstance()->dispatchEvent(GameOverEvent());
 			}
 			break;
 			case Netcode::MessageType::CANDLE_HELD_STATE:
@@ -287,8 +307,8 @@ void NetworkReceiverSystem::update() {
 			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				ar(componentID);
-				playerDisconnect(componentID);
+				ar(playerID);
+				playerDisconnect(playerID);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -302,6 +322,10 @@ void NetworkReceiverSystem::update() {
 				int nKills;
 				int placement;
 
+				int bulletsFired, jumpsMade;
+				float distanceWalked;
+				Netcode::PlayerID bulletsFiredID, distanceWalkedID, jumpsMadeID;
+
 				// Get all per player data from the Host
 				for (int k = 0; k < nrOfPlayers; k++) {
 					ar(pID);
@@ -311,9 +335,36 @@ void NetworkReceiverSystem::update() {
 				}
 
 				// Get all specific data from the Host
+				(ar)(bulletsFired);
+				(ar)(bulletsFiredID);
 
+				(ar)(distanceWalked);
+				(ar)(distanceWalkedID);
+
+				(ar)(jumpsMade);
+				(ar)(jumpsMadeID);
+
+				GameDataTracker::getInstance().setStatsForOtherData(
+					bulletsFiredID, bulletsFired, distanceWalkedID, distanceWalked, jumpsMadeID, jumpsMade);
+
+				endMatch();
 			}
 			break;
+			case Netcode::MessageType::PREPARE_ENDSCREEN:
+			{
+				GameDataTracker* dgtp = &GameDataTracker::getInstance();
+				// create temporary variables to hold data when reading netmessage
+				int bulletsFired, jumpsMade;
+				float distanceWalked;
+				// Get the data
+				(ar)(bulletsFired);
+				(ar)(distanceWalked);
+				(ar)(jumpsMade);
+
+				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
+			}
+			break;
+
 			case Netcode::MessageType::IGNITE_CANDLE:
 			{
 				Netcode::ComponentID candleOwnerID;
@@ -329,6 +380,11 @@ void NetworkReceiverSystem::update() {
 
 		m_incomingDataBuffer.pop();
 	}
+
+	// End game timer 
+	endMatchAfterTimer(dt);
+
+
 }
 
 /*
@@ -580,7 +636,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 					candleTransComp->removeParent();
 					candleTransComp->setStartTranslation(pos);
 					candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
-					e->getComponent<AnimationComponent>()->leftHandEntity = nullptr;
+					e->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
 
 
 					// Might be needed
@@ -589,7 +645,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 					candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
 					candleTransComp->setParent(e->getComponent<TransformComponent>());
 
-					e->getComponent<AnimationComponent>()->leftHandEntity = candleE.get();
+					e->getComponent<AnimationComponent>()->rightHandEntity = candleE.get();
 				}
 				return;
 			}
@@ -599,9 +655,6 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 }
 
 void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
-	// Spawn projectile
-	projectileSpawned(gunPos, gunVel, id);
-
 	// Find out who sent it and make them play the sound (locally)
 	for (auto& e : entities) {
 		// If we've found who sent the message
@@ -613,9 +666,6 @@ void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Net
 }
 
 void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
-	// Spawn projectile
-	projectileSpawned(gunPos, gunVel, id);
-
 	// Find out who sent it and make them play the sound (locally)
 	for (auto& e : entities) {
 		// If we've found who sent the message
@@ -632,9 +682,6 @@ void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netc
 }
 
 void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
-	// Spawn projectile
-	projectileSpawned(gunPos, gunVel, id);
-
 	// Find out who sent it and make them play the sound (locally)
 	for (auto& e : entities) {
 		// If we've found who sent the message
@@ -647,11 +694,6 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
 		}
 	}
-}
-
-void NetworkReceiverSystem::matchEnded() {
-	m_gameStatePtr->requestStackClear();
-	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
 void NetworkReceiverSystem::backToLobby() {
