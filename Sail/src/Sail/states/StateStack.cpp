@@ -24,7 +24,7 @@ State::Ptr StateStack::createState(States::ID stateID) {
 void StateStack::processInput(float dt) {
 
 	// Toggle imgui rendering on key
-	if (Input::WasKeyJustPressed(KeyBinds::toggleImGui))
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_IMGUI))
 		m_renderImguiDebug = !m_renderImguiDebug;
 
 	// Ignore game mouse input when imgui uses the mouse
