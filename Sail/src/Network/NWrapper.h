@@ -19,7 +19,7 @@ struct Player {
 	Netcode::PlayerID id;
 	std::string name;
 
-	Player(Netcode::PlayerID setID = 255, std::string setName = "Hans")
+	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans")
 		: name(setName), id(setID)
 	{
 		name.reserve(MAX_NAME_LENGTH);

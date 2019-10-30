@@ -110,3 +110,8 @@ void ECS::removeEntityFromSystems(Entity* entity) {
 		}
 	}
 }
+
+
+size_t ECS::getNumEntities() {
+	return m_entities.size();
+}

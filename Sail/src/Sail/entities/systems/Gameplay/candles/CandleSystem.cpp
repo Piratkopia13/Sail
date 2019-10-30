@@ -55,6 +55,10 @@ void CandleSystem::update(float dt) {
 		if (candle->getHealth() <= 0.f) {
 			candle->setCarried(true);
 
+			if (candle->getNumRespawns() != m_maxNumRespawns) {
+				auto playerEntity = e->getParent();
+				playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
+			}
 			// Did this candle's owner die?
 			if (candle->getNumRespawns() == m_maxNumRespawns) {
 				candle->setIsAlive(false);
