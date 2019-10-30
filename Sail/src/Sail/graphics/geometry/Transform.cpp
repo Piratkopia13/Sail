@@ -334,6 +334,11 @@ void Transform::treeNeedsUpdating() {
 }
 
 void Transform::addChild(Transform* transform) {
+	for (Transform* t : m_children) {
+		if (t == transform) {
+			return;
+		}
+	}
 	m_children.push_back(transform);
 }
 

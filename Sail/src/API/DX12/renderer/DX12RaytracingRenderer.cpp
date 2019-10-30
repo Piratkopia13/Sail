@@ -99,7 +99,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::reloadDXRShader)) {
+	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_DXR_SHADER)) {
 		m_dxr.reloadShaders();
 	}
 
