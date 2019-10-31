@@ -12,7 +12,7 @@ namespace ShaderComponent {
 		DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot = 0);
 		~DX12StructuredBuffer();
 
-		virtual void updateData(const void* newData, unsigned int numElements, int meshIndex = 0, unsigned int offset = 0) override;
+		virtual void updateData(const void* newData, unsigned int numElements, int meshIndex = 0, unsigned int offset = 0, int frameIndex = -1) override;
 		virtual void bind(void* cmdList) const override;
 		void bind_new(void* cmdList, int meshIndex) const;
 

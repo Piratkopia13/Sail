@@ -15,6 +15,8 @@ public:
 	bool showOptions();
 
 private:
+	bool m_openedThisFrame;
+
 	bool m_popGameState;
 	bool m_exitInGameMenu;
 	bool m_showOptions;

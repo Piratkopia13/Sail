@@ -14,12 +14,14 @@
 #include "Sail/graphics/geometry/factory/QuadModel.h"
 #include <sstream>
 #include <iomanip>
+#include "InGameMenuState.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_profiler(true)
-	, m_showcaseProcGen(false) {
+	, m_showcaseProcGen(false) 
+{
 	
 	initConsole();
 
@@ -56,7 +58,7 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	// TODO: Should be used but initial yaw and pitch isn't calculated from the cams direction vector in GameInputSystem
-	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, -0.86f)));
+	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, 0.85f)));
 #endif
 
 	// Initialize the component systems
@@ -108,8 +110,12 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
+#ifdef DEVELOPMENT
 #ifndef _PERFORMANCE_TEST
+#ifndef _DEBUG
 	m_componentSystems.animationSystem->initDebugAnimations();
+#endif
+#endif
 #endif
 
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
@@ -150,7 +156,7 @@ GameState::GameState(StateStack& stack)
 #ifdef _PERFORMANCE_TEST
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 
-	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(52.f, 1.f, 70.f));
+	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #endif
 
 
@@ -169,7 +175,7 @@ GameState::GameState(StateStack& stack)
 	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
 	m_ambiance->addComponent<AudioComponent>();
 	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/ambiance_lab.xwb", true, 1.0f, false, true);
+	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 
@@ -180,6 +186,7 @@ GameState::GameState(StateStack& stack)
 }
 
 GameState::~GameState() {
+	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
 	delete m_octree;
 }
@@ -194,7 +201,7 @@ bool GameState::processInput(float dt) {
 #endif
 
 	// Pause game
-	if (Input::WasKeyJustPressed(KeyBinds::showInGameMenu)) {
+	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
 		requestStackPush(States::InGameMenu);
 	}
 
@@ -202,14 +209,14 @@ bool GameState::processInput(float dt) {
 #ifdef DEVELOPMENT
 #ifdef _DEBUG
 	// Add point light at camera pos
-	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
+	if (Input::WasKeyJustPressed(KeyBinds::ADD_LIGHT)) {
 		m_componentSystems.lightListSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
 #endif
 
 	// Enable bright light and move camera to above procedural generated level
-	if (Input::WasKeyJustPressed(KeyBinds::toggleSun)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_SUN)) {
 		m_lightDebugWindow.setManualOverride(!m_lightDebugWindow.isManualOverrideOn());
 		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
@@ -221,12 +228,12 @@ bool GameState::processInput(float dt) {
 	}
 
 	// Show boudning boxes
-	if (Input::WasKeyJustPressed(KeyBinds::toggleBoundingBoxes)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
 		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
 	}
 
 	//Test ray intersection
-	if (Input::IsKeyPressed(KeyBinds::testRayIntersection)) {
+	if (Input::IsKeyPressed(KeyBinds::TEST_RAYINTERSECTION)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.closestHitIndex != -1) {
@@ -234,7 +241,7 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::spray)) {
+	if (Input::WasKeyJustPressed(KeyBinds::SPRAY)) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.closestHit >= 0.0f) {
@@ -245,14 +252,14 @@ bool GameState::processInput(float dt) {
 	}
 
 	//Test frustum culling
-	if (Input::IsKeyPressed(KeyBinds::testFrustumCulling)) {
+	if (Input::IsKeyPressed(KeyBinds::TEST_FRUSTUMCULLING)) {
 		int nrOfDraws = m_octree->frustumCulledDraw(m_cam);
 		Logger::Log("Number of draws " + std::to_string(nrOfDraws));
 	}
 
 	// TODO: Move this to a system
 	// Toggle ai following the player
-	if (Input::WasKeyJustPressed(KeyBinds::toggleAIFollowing)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_AI_FOLLOWING)) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
 		for (int i = 0; i < entities.size(); i++) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
@@ -275,19 +282,19 @@ bool GameState::processInput(float dt) {
 	}
 
 	// Set directional light if using forward rendering
-	if (Input::IsKeyPressed(KeyBinds::setDirectionalLight)) {
+	if (Input::IsKeyPressed(KeyBinds::SET_DIRECTIONAL_LIGHT)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
 
 	// Reload shaders
-	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
+	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 		m_app->getResourceManager().reloadShader<GuiShader>();
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::toggleSphere)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_SPHERE)) {
 		static bool attach = false;
 		attach = !attach;
 		if (attach) {
@@ -301,11 +308,11 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::spectatorDebugging)) {
+	if (Input::WasKeyJustPressed(KeyBinds::SPECTATOR_DEBUG)) {
 		// Get position and rotation to look at middle of the map from above
 		{
 			auto parTrans = m_player->getComponent<TransformComponent>();
-			auto pos = glm::vec3(parTrans->getMatrix()[3]);
+			auto pos = glm::vec3(parTrans->getMatrixWithUpdate()[3]);
 			pos.y = 20.f;
 			parTrans->setTranslation(pos);
 			MapComponent temp;
@@ -321,7 +328,7 @@ bool GameState::processInput(float dt) {
 
 #ifdef _DEBUG
 	// Removes first added pointlight in arena
-	if (Input::WasKeyJustPressed(KeyBinds::removeOldestLight)) {
+	if (Input::WasKeyJustPressed(KeyBinds::REMOVE_OLDEST_LIGHT)) {
 		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
 #endif
@@ -407,30 +414,28 @@ void GameState::initSystems(const unsigned char playerID) {
 void GameState::initConsole() {
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
+		bool stateChanged = false;
+		std::string returnMsg = "Invalid state. Available states are \"menu\" and \"pbr\"";
 		if (param == "menu") {
 			requestStackPop();
 			requestStackPush(States::MainMenu);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to menu requested";
+			stateChanged = true;
+			returnMsg = "State change to menu requested";
 		}
 		else if (param == "pbr") {
 			requestStackPop();
 			requestStackPush(States::PBRTest);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to pbr requested";
+			stateChanged = true;
+			returnMsg = "State change to pbr requested";
 		}
-		else if (param == "perftest") {
-			requestStackPop();
-			requestStackPush(States::PerformanceTest);
-			m_poppedThisFrame = true;
-			console.removeAllCommandsWithIdentifier("GameState");
-			return "State change to PerformanceTest requested";
+
+		if (stateChanged) {
+			// Reset the network
+			// Needs to be done to allow new games to be started
+			NWrapperSingleton::getInstance().resetNetwork();
+			NWrapperSingleton::getInstance().resetWrapper();
 		}
-		else {
-			return "Invalid state. Available states are \"menu\", \"perftest\" and \"pbr\"";
-		}
+		return returnMsg.c_str();
 
 	}, "GameState");
 	console.addCommand("profiler", [&]() { return toggleProfiler(); }, "GameState");
@@ -439,7 +444,6 @@ void GameState::initConsole() {
 			Netcode::MessageType::MATCH_ENDED,
 			nullptr
 		);
-		console.removeAllCommandsWithIdentifier("GameState");
 
 		return std::string("Match ended.");
 		}, "GameState");
@@ -507,7 +511,6 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 	} else {
 		this->requestStackPop();
 		this->requestStackPush(States::EndGame);
-		m_poppedThisFrame = true;
 	}
 
 	// Set bot target to null when player is dead
@@ -578,7 +581,7 @@ bool GameState::fixedUpdate(float dt) {
 #ifdef _PERFORMANCE_TEST
 	/* here we shoot the guns */
 	for (auto e : m_performanceEntities) {
-		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrix()[3]);
+		auto pos = glm::vec3(m_player->getComponent<TransformComponent>()->getMatrixWithUpdate()[3]);
 		auto ePos = e->getComponent<TransformComponent>()->getTranslation();
 		ePos.y = ePos.y + 5.f;
 		auto dir = ePos - pos;
@@ -653,15 +656,30 @@ bool GameState::renderImguiDebug(float dt) {
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
 	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
+	
+	
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInECS(ECS::Instance()->getNumEntities());
+
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("ProjectileSystem", m_componentSystems.projectileSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleSystem", m_componentSystems.candleSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AnimationSystem", m_componentSystems.animationSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AnimationChangerSystem", m_componentSystems.animationChangerSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkReceiverSystem", m_componentSystems.networkReceiverSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkSenderSystem", m_componentSystems.networkSenderSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("ModelSubmitSystem", m_componentSystems.modelSubmitSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("RealTimeModelSubmitSystem", m_componentSystems.realTimeModelSubmitSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AudioSystem", m_componentSystems.audioSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CollisionSystem", m_componentSystems.collisionSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("OctreeAddRemoverSystem", m_componentSystems.octreeAddRemoverSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AiSystem", m_componentSystems.aiSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("LightSystem", m_componentSystems.lightSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("LightListSystem", m_componentSystems.lightListSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("GunSystem", m_componentSystems.gunSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("GameInputSystem", m_componentSystems.gameInputSystem->getNumEntities());
+
+	m_ecsSystemInfoImGuiWindow.renderWindow();
 
 	return false;
-}
-
-bool GameState::prepareStateChange() {
-	if (m_poppedThisFrame) {
-		// Do NOT reset network because we're NOT going to main menu
-	}
-	return true;
 }
 
 void GameState::shutDownGameState() {
@@ -680,8 +698,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystemJobs.clear();
 	m_runningSystems.clear();
 
-	// Update keyboard input
-	m_componentSystems.gameInputSystem->fixedUpdate();
+	m_componentSystems.gameInputSystem->fixedUpdate(dt);
 
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
@@ -701,14 +718,15 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	runSystem(dt, m_componentSystems.gunSystem); // TODO: Order?
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.candleSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
+	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
+
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
@@ -727,9 +745,8 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
 
-	// Updates mouse input and the camera
+	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
-
 
 	// There is an imgui debug toggle to override lights
 	if (!m_lightDebugWindow.isManualOverrideOn()) {

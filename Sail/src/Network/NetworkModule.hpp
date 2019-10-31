@@ -89,7 +89,7 @@ public:
 
 		The server meta description can not be greater than 58 Bytes long.
 	*/
-	void setServerMetaDescription(char* desc, int descSize);
+	void setServerMetaDescription(const char* desc, int descSize);
 	/*
 		This function will broadcast a UDP message on the LAN requesting all hosts(if any) to identify themself.
 		The NetworkEvent HOST_ON_LAN_FOUND will trigger for each host on the network that responded.
@@ -128,6 +128,15 @@ public:
 	*/
 	static ULONG ip_string_to_ip_int(char* ip);
 
+	/*
+		This function does not have a great documentation.
+	*/
+	void stopUDP();
+	/*
+		This function does have a great documentation.
+	*/
+	void startUDP();
+
 private:
 
 	enum UDP_DATA_PACKAGE_TYPE : char
@@ -158,6 +167,7 @@ private:
 	static_assert(sizeof(UDP_DATA) == MAX_PACKAGE_SIZE, "sizeof(UDP_DATA) is not what you expect! Check your struct man.");
 
 	bool m_shutdown = false;
+	bool m_shutdownUDP = false;
 	char m_serverMetaDesc[HOST_META_DESC_SIZE];
 
 	//TCP CONNECTION

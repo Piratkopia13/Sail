@@ -150,8 +150,8 @@ const std::vector<std::string>& ConsoleCommands::getCommandLog() {
 }
 
 void ConsoleCommands::renderWindow() {
-	if (Input::WasKeyJustPressed(KeyBinds::toggleConsole) || ImGui::IsKeyPressed(KeyBinds::toggleConsole) ||
-		Input::WasKeyJustPressed(KeyBinds::toggleConsoleUS) || ImGui::IsKeyPressed(KeyBinds::toggleConsoleUS)) {
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_CONSOLE) || ImGui::IsKeyPressed(KeyBinds::TOGGLE_CONSOLE) ||
+		Input::WasKeyJustPressed(KeyBinds::TOGGLE_CONSOLE_US) || ImGui::IsKeyPressed(KeyBinds::TOGGLE_CONSOLE_US)) {
 		// Toggle console
 		toggleWindow();
 	}

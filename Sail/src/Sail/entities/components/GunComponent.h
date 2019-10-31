@@ -13,7 +13,7 @@ enum GunState {
 
 class GunComponent : public Component<GunComponent> {
 public:
-	GunComponent() {};
+	GunComponent();
 	~GunComponent() {};
 
 	void setFiring(glm::vec3 pos, glm::vec3 dir);
@@ -21,23 +21,23 @@ public:
 	glm::vec3 position;
 	glm::vec3 direction;
 
-	float projectileSpawnTimer = 0.f;
-	float gunOverloadTimer = 0.f;
-	float m_projectileSpawnCooldown = 0.02f;
-	float m_gunOverloadCooldown = .5f;
+	float projectileSpawnTimer;
+	float gunOverloadTimer;
+	float m_projectileSpawnCooldown;
+	float m_gunOverloadCooldown;
 
+	float projectileSpeed;
 
-	float projectileSpeed = 15.f;
+	float gunOverloadvalue;
+	float gunOverloadThreshold;
 
-	float gunOverloadvalue = 0.f;
-	float gunOverloadThreshold = .5f;
-
-	bool firing = false;
+	bool firing;
 
 	// Used to manage sound in gunsystem.
 	bool firingContinuously = false;
 	GunState state = GunState::STANDBY;
 
 private:
+
 	float m_projectileSpawnLimit = .3f;
 };

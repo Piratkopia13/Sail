@@ -18,8 +18,7 @@ public:
 	GameInputSystem();
 	~GameInputSystem();
 
-	void fixedUpdate();
-
+	void fixedUpdate(float dt);
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
 	void clean();
@@ -39,6 +38,9 @@ private:
 	CameraController* m_cam = nullptr;
 	GameDataTracker* m_gameDataTracker = nullptr;
 
+
+	float m_candleToggleTimer = 0.0f;
+
 	// --------- Earlier used variables below this line ---------
 	float m_runSpeed = 2.0;
 	float m_movementSpeed = 20.f;
@@ -52,7 +54,7 @@ private:
 	float m_onGroundThreshold = 0.3f;
 	float m_isPlayingRunningSound = false;
 	float m_fallTimer = 0.0f;
-	float m_fallThreshold = 0.56f;
+	float m_fallThreshold = 0.6f;
 
 	// TEMP BOOLS
 	bool tempMetal = false;

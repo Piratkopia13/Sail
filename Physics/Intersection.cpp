@@ -88,7 +88,7 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& a
 bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& aabbHalfSize, const glm::vec3& triPos1, const glm::vec3& triPos2, const glm::vec3& triPos3, glm::vec3* intersectionAxis, float* intersectionDepth) {
 	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
 	float depth = INFINITY;
-	glm::vec3 axis;
+	glm::vec3 tempIntersectionAxis;
 
 	//Calculate normal for triangle
 	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(triPos1 - triPos2), glm::vec3(triPos1 - triPos3)));
@@ -120,25 +120,27 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& a
 		f[1] = glm::normalize(newV3 - newV2);
 		f[2] = glm::normalize(newV1 - newV3);
 
-		for (int i = 0; i < 3; i++) {
-			glm::vec3 a = e[i];
+		glm::vec3 testAxis;
 
-			if (!SATTest(a, newV1, newV2, newV3, aabbHalfSize, &axis, &depth)) {
+		for (int i = 0; i < 3; i++) {
+			testAxis = e[i];
+
+			if (!SATTest(testAxis, newV1, newV2, newV3, aabbHalfSize, &tempIntersectionAxis, &depth)) {
 				return false;
 			}
 
 			for (int j = 0; j < 3; j++) {
-				glm::vec3 a = glm::normalize(glm::cross(e[i], f[j]));
+				testAxis = glm::normalize(glm::cross(e[i], f[j]));
 
-				if (!SATTest(a, newV1, newV2, newV3, aabbHalfSize, &axis, &depth)) {
+				if (!SATTest(testAxis, newV1, newV2, newV3, aabbHalfSize, &tempIntersectionAxis, &depth)) {
 					return false;
 				}
 			}
 		}
 
-		glm::vec3 a = triNormal;
+		testAxis = triNormal;
 
-		if (!SATTest(a, newV1, newV2, newV3, aabbHalfSize, &axis, &depth)) {
+		if (!SATTest(testAxis, newV1, newV2, newV3, aabbHalfSize, &tempIntersectionAxis, &depth)) {
 			return false;
 		}
 
@@ -152,11 +154,11 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& a
 	if (intersectionAxis) {
 		glm::vec3 triMiddle = (triPos1 + triPos2 + triPos3) / 3.0f;
 
-		if (glm::dot(aabbPos - triMiddle, axis) < 0.0f) {
-			axis = -axis;
+		if (glm::dot(aabbPos - triMiddle, tempIntersectionAxis) < 0.0f) {
+			tempIntersectionAxis = -tempIntersectionAxis;
 		}
 
-		*intersectionAxis = axis;
+		*intersectionAxis = tempIntersectionAxis;
 	}
 
 	if (intersectionDepth) {
