@@ -312,9 +312,12 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 	Octree::RayIntersectionInfo intersectionInfo;
 	m_octree->getRayIntersection(boundingBox.getPosition(), glm::normalize(movement->velocity), &intersectionInfo, e, collision->padding, collision->doSimpleCollisions);
 
-	if (intersectionInfo.closestHit <= velocityAmp && intersectionInfo.closestHit >= 0.0f) { //Found upcoming collision
+	float closestHit = intersectionInfo.closestHit + 0.01f; //Force the projectile to move forward atleast a little bit to avoid getting stuck in endless loops
+
+	if (closestHit <= velocityAmp && closestHit >= 0.0f) { //Found upcoming collision
+
 		//Calculate new dt
-		float newDt = ((intersectionInfo.closestHit) / velocityAmp) * dt;
+		float newDt = ((closestHit) / velocityAmp) * dt;
 
 		//Move untill first overlap
 		boundingBox.setPosition(boundingBox.getPosition() + movement->velocity * newDt);
@@ -325,15 +328,8 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		//Collision update
 		if (handleCollisions(e, intersectionInfo.info, 0.0f)) {
 			surfaceFromCollision(e, intersectionInfo.info);
-		} else {
-			//Move back 
-			const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
-			boundingBox.setPosition(boundingBox.getPosition() - normalizedVel * collision->padding * 0.5f);
-			transform->translate(-normalizedVel * collision->padding * 0.5f);
-
-			//Step forward to find collision
-			stepToFindMissedCollision(e, boundingBox, intersectionInfo.info, collision->padding * 2.0f);
 		}
+
 		rayCastUpdate(e, boundingBox, dt);
 	}
 }
