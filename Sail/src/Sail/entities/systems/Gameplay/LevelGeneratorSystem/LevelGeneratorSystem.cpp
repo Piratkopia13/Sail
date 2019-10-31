@@ -1292,7 +1292,7 @@ void LevelGeneratorSystem::addSpawnPoints() {
 				roomsLeftEdge = map->tileArr[0][y][1];
 			}
 			if (map->tileArr[map->xsize-1][y][1] > 0 && map->tileArr[map->xsize - 1][y][1] != roomsRightEdge && map->tileArr[map->xsize - 1][y][1] != roomBottomRight && map->tileArr[map->xsize - 1][y][1] != roomTopRight) {
-				availableSpawnPoints.push_back(glm::vec3((map->xsize * map->tileSize), 0.f, (y * map->tileSize)));
+				availableSpawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, (y * map->tileSize)));
 				roomsRightEdge = map->tileArr[map->xsize - 1][y][1];
 			}
 		}

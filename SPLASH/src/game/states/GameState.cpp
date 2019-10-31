@@ -29,7 +29,7 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
-
+	
 
 	//----Octree creation----
 	//Wireframe shader
@@ -315,8 +315,10 @@ bool GameState::processInput(float dt) {
 			auto pos = glm::vec3(parTrans->getMatrixWithUpdate()[3]);
 			pos.y = 20.f;
 			parTrans->setTranslation(pos);
-			MapComponent temp;
-			auto middleOfLevel = glm::vec3(temp.tileSize * temp.xsize / 2.f, 0.f, temp.tileSize * temp.ysize / 2.f);
+			
+
+			
+			auto middleOfLevel = glm::vec3(MapComponent::tileSize * MapComponent::xsize / 2.f, 0.f, MapComponent::tileSize * MapComponent::ysize / 2.f);
 			auto dir = glm::normalize(middleOfLevel - pos);
 			auto rots = Utils::getRotations(dir);
 			parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
@@ -1081,8 +1083,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
-	map->addComponent<MapComponent>();
-
+	map->addComponent<MapComponent>(NWrapperSingleton::getInstance().getSeed());
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
