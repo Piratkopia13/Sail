@@ -162,6 +162,8 @@ void NetworkSenderSystem::update() {
 }
 
 void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
+	std::lock_guard(m_eventMutex);
+
 	m_eventQueue.push(type);
 
 	// if the event will be sent to ourself then increment the size counter
