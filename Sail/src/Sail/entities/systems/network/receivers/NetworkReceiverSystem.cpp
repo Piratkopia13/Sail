@@ -192,6 +192,7 @@ void NetworkReceiverSystem::update(float dt) {
 				}
 				break;
 				default:
+					Logger::Error("INVALID NETWORK MESSAGE RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 					break;
 				}
 			}
@@ -373,6 +374,7 @@ void NetworkReceiverSystem::update(float dt) {
 			}
 			break;
 			default:
+				Logger::Error("INVALID NETWORK EVENT RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;
 			}
 
