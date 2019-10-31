@@ -194,14 +194,10 @@ bool MenuState::renderImgui(float dt) {
 					
 					selected = (index == selected ? -1 : index);
 					if (ImGui::IsMouseDoubleClicked(0)) {
-						char* tempIp = SAIL_NEW char[m_ipBufferSize];
-						tempIp = std::strcpy(tempIp, lobby.ip.c_str());
-
 						// If pressed then join
-						if (m_network->connectToIP(tempIp)) {
+						if (m_network->connectToIP(&lobby.ip.front())) {
 							this->requestStackPop();
 							this->requestStackPush(States::JoinLobby);
-							delete[] tempIp;
 						}
 					}
 				}
@@ -219,14 +215,10 @@ bool MenuState::renderImgui(float dt) {
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.3f);
 		}
 		if (ImGui::Button("Join") && selected != -1) {
-			char* tempIp = SAIL_NEW char[m_ipBufferSize];
-			tempIp = std::strcpy(tempIp, m_foundLobbies[selected].ip.c_str());
-
 			// If pressed then join
-			if (m_network->connectToIP(tempIp)) {
+			if (m_network->connectToIP(&m_foundLobbies[selected].ip.front())) {
 				this->requestStackPop();
 				this->requestStackPush(States::JoinLobby);
-				delete[] tempIp;
 			}
 		}
 		if (selected == -1) {
