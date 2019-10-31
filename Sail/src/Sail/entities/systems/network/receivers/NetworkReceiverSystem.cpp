@@ -106,7 +106,7 @@ void NetworkReceiverSystem::update(float dt) {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
-	int animationIndex;
+	unsigned int animationIndex;
 	float animationTime;
 
 	// Process all messages in the buffer
@@ -335,14 +335,14 @@ void NetworkReceiverSystem::update(float dt) {
 				}
 
 				// Get all specific data from the Host
-				(ar)(bulletsFired);
-				(ar)(bulletsFiredID);
+				ar(bulletsFired);
+				ar(bulletsFiredID);
 
-				(ar)(distanceWalked);
-				(ar)(distanceWalkedID);
+				ar(distanceWalked);
+				ar(distanceWalkedID);
 
-				(ar)(jumpsMade);
-				(ar)(jumpsMadeID);
+				ar(jumpsMade);
+				ar(jumpsMadeID);
 
 				GameDataTracker::getInstance().setStatsForOtherData(
 					bulletsFiredID, bulletsFired, distanceWalkedID, distanceWalked, jumpsMadeID, jumpsMade);
@@ -357,9 +357,9 @@ void NetworkReceiverSystem::update(float dt) {
 				int bulletsFired, jumpsMade;
 				float distanceWalked;
 				// Get the data
-				(ar)(bulletsFired);
-				(ar)(distanceWalked);
-				(ar)(jumpsMade);
+				ar(bulletsFired);
+				ar(distanceWalked);
+				ar(jumpsMade);
 
 				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
 			}
@@ -443,7 +443,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 	Logger::Warning("setEntityRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationIndex, float animationTime) {
+void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			auto animation = e->getComponent<AnimationComponent>();
