@@ -298,7 +298,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
-	//e->addComponent<LifeTimeComponent>(lifetime);
+	e->addComponent<LifeTimeComponent>(lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
 	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
 	e->addComponent<TransformComponent>(pos + randPos);
@@ -311,13 +311,13 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();
-	movement->velocity = velocity * 1000.0f;
-	movement->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
+	movement->velocity = velocity;
+	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 	CollisionComponent* collision = e->addComponent<CollisionComponent>();
-	collision->drag = 0.0f;
+	collision->drag = 15.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
-	collision->bounciness = 1.0f;
+	collision->bounciness = 0.0f;
 	collision->padding = 0.15f;
 
 	return e;

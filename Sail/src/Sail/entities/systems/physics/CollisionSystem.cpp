@@ -90,28 +90,13 @@ void CollisionSystem::update(float dt) {
 	for (size_t i = 0; i < NR_OF_JOBS; ++i) { jobs[i].get(); }
 }
 
-
-//#define UPDATE_PART_COUNT_PROJECTILES
 bool CollisionSystem::collisionUpdatePart(float dt, size_t start, size_t end) {
-
-#ifdef UPDATE_PART_COUNT_PROJECTILES
-	int counter = 0;
-#endif // UPDATE_PART_COUNT_PROJECTILES
-	
 	for (size_t i = start; i < end; ++i) {
 		Entity* e = entities[i];
 
 		CollisionComponent*   collision   = e->getComponent<CollisionComponent>();
 		BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 		const CollisionSpheresComponent* csc   = e->getComponent<CollisionSpheresComponent>();
-
-#ifdef UPDATE_PART_COUNT_PROJECTILES
-		if (e->getName() == "projectile") {
-			if (boundingBox->getBoundingBox()->getPosition().y < -20.0f || boundingBox->getBoundingBox()->getPosition().y > 20.0f) {
-				counter++;
-			}
-		}
-#endif
 
 		collision->collisions.clear();
 
@@ -123,9 +108,6 @@ bool CollisionSystem::collisionUpdatePart(float dt, size_t start, size_t end) {
 			collisionUpdate(e, dt);
 		}
 	}
-#ifdef UPDATE_PART_COUNT_PROJECTILES
-	Logger::Log(std::to_string(counter));
-#endif
 
 	return true;
 }
@@ -331,27 +313,6 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 		}
 
 		rayCastUpdate(e, boundingBox, dt);
-	}
-}
-
-void CollisionSystem::stepToFindMissedCollision(Entity* e, BoundingBox& boundingBox, std::vector<Octree::CollisionInfo>& collisions, float distance) {
-	MovementComponent* movement = e->getComponent<MovementComponent>();
-	TransformComponent* transform = e->getComponent<TransformComponent>();
-	CollisionComponent* collision = e->getComponent<CollisionComponent>();
-
-	const int split = 5;
-
-	const glm::vec3 normalizedVel = glm::normalize(movement->velocity);
-	const glm::vec3 distancePerStep = (distance / (float)split) * normalizedVel;
-
-	for (int i = 0; i < split; i++) {
-		boundingBox.setPosition(boundingBox.getPosition() + distancePerStep);
-		transform->translate(distancePerStep);
-
-		if (handleCollisions(e, collisions, 0.0f)) {
-			surfaceFromCollision(e, collisions);
-			i = split;
-		}
 	}
 }
 
