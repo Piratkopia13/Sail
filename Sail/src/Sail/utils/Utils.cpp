@@ -9,6 +9,22 @@ std::string Utils::readFile(const std::string& filepath) {
 	return str;
 }
 
+bool Utils::writeFileTrunc(const std::string& filepath, const std::string& content) {
+	std::ofstream myfile;
+	myfile.open(filepath, std::ofstream::trunc);
+	myfile << content;
+	myfile.close();
+
+	return false;
+}
+bool Utils::writeFileAppend(const std::string& filepath, const std::string& content) {
+	std::ofstream myfile;
+	myfile.open(filepath, std::ofstream::app);
+	myfile << content;
+	myfile.close();
+
+	return false;
+}
 std::wstring Utils::toWStr(const glm::vec3& vec) {
 	std::wstringstream ss;
 	ss << "[X: " << vec.x << ", Y: " << vec.y << ", Z: " << vec.z << "]";

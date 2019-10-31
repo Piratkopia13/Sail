@@ -85,6 +85,8 @@ public:
 
 namespace Utils {
 	std::string readFile(const std::string& filepath);
+	bool writeFileTrunc(const std::string& filepath, const std::string& content);
+	bool writeFileAppend(const std::string& filepath, const std::string& content);
 	std::wstring toWStr(const glm::vec3& vec);
 	std::string toStr(const glm::vec3& vec);
 	std::string toStr(const glm::vec2& vec);

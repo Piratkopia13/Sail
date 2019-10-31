@@ -211,7 +211,7 @@ void LobbyState::renderQuitButton() {
 	
 		// Set temp window pos
 		ImGui::SetWindowPos({ 424,641 });
-		ImGui::SetWindowSize({ 117,63 });
+		ImGui::SetWindowSize({ 137,63 });
 
 		// Reset the network
 		NWrapperSingleton::getInstance().resetNetwork();
