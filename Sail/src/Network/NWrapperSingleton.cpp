@@ -21,10 +21,12 @@ NWrapperSingleton& NWrapperSingleton::getInstance() {
 }
 NWrapperSingleton::NWrapperSingleton() {
 	m_network = SAIL_NEW Network;
+
 	m_network->initialize();
 
 	m_playerLimit = 12;
 	m_playerCount = 0;
+
 }
 
 bool NWrapperSingleton::host(int port) {
@@ -145,6 +147,14 @@ std::string& NWrapperSingleton::getMyPlayerName() {
 
 Netcode::PlayerID NWrapperSingleton::getMyPlayerID() {
 	return m_me.id;
+}
+
+unsigned int NWrapperSingleton::getSeed() const {
+	return m_seed;
+}
+
+void NWrapperSingleton::setSeed(char seed) {
+	m_seed = static_cast<unsigned int>(seed);
 }
 
 void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
