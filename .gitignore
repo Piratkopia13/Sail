@@ -16,6 +16,7 @@ ipch/
 
 # SPLASH Files
 **/LogFiles/*
+*.settings
 
 # Visual Studio profiler
 *.psess
