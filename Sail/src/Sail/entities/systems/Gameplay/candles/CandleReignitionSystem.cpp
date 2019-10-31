@@ -18,7 +18,7 @@ void CandleReignitionSystem::update(float dt) {
 	for (auto& e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
 		if (!candle->isLit) {
-			if (candle->downTime >= m_candleForceRespawnTimer || candle->userActivation) {
+			if (candle->downTime >= m_candleForceRespawnTimer || candle->userReignition) {
 				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 					Netcode::MessageType::IGNITE_CANDLE,
 					SAIL_NEW Netcode::MessageIgniteCandle{

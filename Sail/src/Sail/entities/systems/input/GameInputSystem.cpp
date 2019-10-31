@@ -122,7 +122,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					if ( child->hasComponent<CandleComponent>() ) {
 						auto candle = child->getComponent<CandleComponent>();
 						if (!candle->isLit) {
-							candle->userActivation = true;
+							candle->userReignition = true;
 						}
 					}
 				}

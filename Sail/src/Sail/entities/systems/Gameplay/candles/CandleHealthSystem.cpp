@@ -61,12 +61,12 @@ void CandleHealthSystem::update(float dt) {
 					playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
 				}
 			}
-
-			// COLOR/INTENSITY
-			float cHealth = std::fmaxf(candle->health, 0.f);
-			float tempHealthRatio = (cHealth / MAX_HEALTH);
-			e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
 		}
+
+		// COLOR/INTENSITY
+		float cHealth = std::fmaxf(candle->health, 0.f);
+		float tempHealthRatio = (cHealth / MAX_HEALTH);
+		e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
 
 		// Reset candle's damage taken
 		candle->damageTakenLastHit = 0.f;
@@ -78,12 +78,6 @@ void CandleHealthSystem::update(float dt) {
 			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 				Netcode::MessageType::MATCH_ENDED,
 				nullptr
-			);
-			// Send relevant stats to all clients
-			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-				Netcode::MessageType::ENDGAME_STATS,
-				nullptr,
-				false
 			);
 		}
 	}

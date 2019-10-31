@@ -757,7 +757,7 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 					candleComp->respawns++;
 					candleComp->downTime = 0.f;
 					candleComp->isLit = true;
-					candleComp->userActivation = false;
+					candleComp->userReignition = false;
 					candleComp->invincibleTimer = 1.5f;
 				}
 			}
