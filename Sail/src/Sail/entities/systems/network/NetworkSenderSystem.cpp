@@ -162,7 +162,7 @@ void NetworkSenderSystem::update() {
 }
 
 void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
-	std::lock_guard(m_eventMutex);
+	std::lock_guard<std::mutex> lock(m_eventMutex);
 
 	m_eventQueue.push(type);
 
