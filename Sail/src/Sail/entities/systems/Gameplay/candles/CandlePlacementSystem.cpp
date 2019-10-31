@@ -27,19 +27,9 @@ void CandlePlacementSystem::update(float dt) {
 		auto candle = e->getComponent<CandleComponent>();
 		if (candle->isCarried != candle->wasCarriedLastUpdate) {
 			putDownCandle(e);
-
-			// Inform other players that we've put down our candle
-			if (e->getParent()->getComponent<LocalOwnerComponent>()) {
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::CANDLE_HELD_STATE,
-					SAIL_NEW Netcode::MessageCandleHeldState{
-						e->getParent()->getComponent<NetworkSenderComponent>()->m_id,
-						candle->isCarried,
-						e->getComponent<TransformComponent>()->getTranslation()
-					},
-					false // We've already put down our own candle so no need to do it again
-				);
-			}
+		} else if (!candle->isLit && !candle->isCarried) {
+			candle->isCarried = true;
+			putDownCandle(e);
 		}
 
 		candle->wasCarriedLastUpdate = candle->isCarried;
@@ -127,6 +117,22 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 		}
 		else {
 			candleComp->isCarried = false;
+		}
+	}
+
+	// Only send the message if we actually did something to the candle
+	if (candleComp->isCarried != candleComp->wasCarriedLastUpdate) {
+		// Inform other players that we've put down our candle
+		if (e->getParent()->getComponent<LocalOwnerComponent>()) {
+			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				Netcode::MessageType::CANDLE_HELD_STATE,
+				SAIL_NEW Netcode::MessageCandleHeldState{
+					e->getParent()->getComponent<NetworkSenderComponent>()->m_id,
+					candleComp->isCarried,
+					e->getComponent<TransformComponent>()->getTranslation()
+				},
+				false // We've already put down our own candle so no need to do it again
+			);
 		}
 	}
 }

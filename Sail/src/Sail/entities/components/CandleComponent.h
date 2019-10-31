@@ -30,6 +30,7 @@ public:
 	bool isCarried = true;
 	bool wasCarriedLastUpdate = true;
 	bool isLit = true;
+	bool userActivation = false;
 
 	/* Should probably be removed later */
 	float downTime = 0.f;

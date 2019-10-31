@@ -751,10 +751,14 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 		for (int i = 0; i < e->getChildEntities().size(); i++) {
 			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
 				auto candleComp = candleE->getComponent<CandleComponent>();
-				candleComp->health = MAX_HEALTH;
-				candleComp->respawns++;
-				candleComp->downTime = 0.f;
-				candleComp->isLit = true;
+				if (!candleComp->isLit) {
+					candleComp->health = MAX_HEALTH;
+					candleComp->respawns++;
+					candleComp->downTime = 0.f;
+					candleComp->isLit = true;
+					candleComp->userActivation = false;
+					candleComp->invincibleTimer = 1.5f;
+				}
 			}
 		}
 	}

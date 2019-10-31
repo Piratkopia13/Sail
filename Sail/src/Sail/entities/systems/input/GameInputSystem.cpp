@@ -120,7 +120,10 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			if ( Input::WasKeyJustPressed(KeyBinds::LIGHT_CANDLE) ) {
 				for ( auto child : e->getChildEntities() ) {
 					if ( child->hasComponent<CandleComponent>() ) {
-						child->getComponent<CandleComponent>()->isLit = true;
+						auto candle = child->getComponent<CandleComponent>();
+						if (!candle->isLit) {
+							candle->userActivation = true;
+						}
 					}
 				}
 			}
