@@ -54,7 +54,11 @@ void BaseComponentSystem::clearEntities() {
 size_t BaseComponentSystem::getNumEntities() {
 	return entities.size();
 }
-
+#ifdef DEVELOPMENT
+const std::vector<Entity*>& BaseComponentSystem::getEntities() const{
+	return entities;
+}
+#endif
 void BaseComponentSystem::addQueuedEntities() {
 	for (Entity* e : entitiesQueuedToAdd) {
 		entities_set.insert(e->getID());
