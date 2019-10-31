@@ -145,13 +145,26 @@ void GameDataTracker::renderImgui() {
 		tempPlacementMap[player.second.placement].nKills = player.second.nKills;
 	}
 
-	for (int i = 1; i < (int)tempPlacementMap.size() + 1; i++) {
-		std::string name = tempPlacementMap[i].name;
-		std::string playerStats = name + " placed: " + std::to_string(i)
-			+ " Candles extinguished: " + std::to_string(tempPlacementMap[i].nKills);
+	if(ImGui::BeginChild("RESULTS",ImVec2(0, 300))) {
+		ImGui::Columns(3, "PlacementColumns", true);
+		ImGui::Separator();
+		ImGui::Text("Placement"); ImGui::NextColumn();
+		ImGui::Text("Player"); ImGui::NextColumn();
+		ImGui::Text("Kills"); ImGui::NextColumn();
+		ImGui::Separator();
 
-		ImGui::Text(playerStats.c_str());
+
+		for (int i = 1; i < (int)tempPlacementMap.size() + 1; i++) {
+
+			ImGui::Text(std::to_string(i).c_str()); ImGui::NextColumn();
+			ImGui::Text(tempPlacementMap[i].name.c_str()); ImGui::NextColumn();
+			ImGui::Text(std::to_string(tempPlacementMap[i].nKills).c_str()); ImGui::NextColumn();
+		}
+
 	}
+	ImGui::EndChild();
+
+	
 
 	ImGui::Text("\n Misc stats------");
 	
