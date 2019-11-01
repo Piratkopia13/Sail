@@ -14,6 +14,7 @@
 #include "../src/Network/NWrapperSingleton.h"
 #include "Sail/utils/GameDataTracker.h"
 
+#include <string>
 #include <vector>
 
 //#define _LOG_TO_FILE
@@ -293,6 +294,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	}
 	break;
 	default:
+		Logger::Error("TRIED TO SEND INVALID NETWORK MESSAGE (" + std::to_string((int)messageType));
 		break;
 	}
 }
