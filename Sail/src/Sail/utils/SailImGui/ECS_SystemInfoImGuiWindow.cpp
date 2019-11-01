@@ -67,9 +67,10 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 					}
 				}
 				ImGui::Separator();
-				TransformComponent* tc = selectedEntity->getComponent<TransformComponent>();
-				if (tc) {
-					if (ImGui::CollapsingHeader(std::string("TransformComponent").c_str())) {
+				if (TransformComponent * tc = selectedEntity->getComponent<TransformComponent>()) {
+					std::type_index ti = typeid(TransformComponent);
+					std::string name(ti.name());
+					if (ImGui::CollapsingHeader(std::string(name.substr(name.find(" ")+1, std::string::npos)).c_str())) {
 						ImGui::Text("Position"); ImGui::SameLine();
 						glm::vec3 pos = tc->getTranslation();
 						if (ImGui::DragFloat3("##allPos", &pos.x, 0.1f)) {
@@ -86,6 +87,7 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 							tc->setScale(scale);
 						}
 					}
+					
 				}
 				if (AnimationComponent* ac = selectedEntity->getComponent<AnimationComponent>()) {
 					if (ImGui::CollapsingHeader(std::string("AnimationComponent").c_str())) {
@@ -98,7 +100,7 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 				}
 				if (SpeedLimitComponent * spc = selectedEntity->getComponent<SpeedLimitComponent>()) {
 					if (ImGui::CollapsingHeader(std::string("SpeedLimitComponent").c_str())) {
-						ImGui::Text("speed"); ImGui::SameLine();
+						ImGui::Text("Speed"); ImGui::SameLine();
 						float speed = spc->maxSpeed;
 						if (ImGui::DragFloat("##aIndex", &speed, 0.1f)) {
 							spc->maxSpeed = speed;
@@ -107,10 +109,19 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 				}
 				if (GunComponent* gc = selectedEntity->getComponent<GunComponent>()) {
 					if (ImGui::CollapsingHeader(std::string("GunComponent").c_str())) {
-						ImGui::Text("speed"); ImGui::SameLine();
+						ImGui::Text("Speed"); ImGui::SameLine();
 						float bulletSpeed = gc->projectileSpeed;
 						if (ImGui::DragFloat("##aspeeed", &bulletSpeed, 0.1f)) {
 							gc->projectileSpeed = bulletSpeed;
+						}
+					}
+				}
+				if (CandleComponent * cc = selectedEntity->getComponent<CandleComponent>()) {
+					if (ImGui::CollapsingHeader(std::string("CandleComponent").c_str())) {
+						ImGui::Text("Health"); ImGui::SameLine();
+						float value0 = cc->getHealth();
+						if (ImGui::DragFloat("##healthCandle", &value0, 0.1f)) {
+							cc->setHealth(value0);
 						}
 					}
 				}
