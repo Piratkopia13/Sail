@@ -176,6 +176,15 @@ void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType ty
 	NSS->queueEvent(e);
 }
 
+
+size_t NWrapperSingleton::averagePacketSizeSinceLastCheck() {
+	size_t average = 0;
+	if (m_network) {
+		average = m_network->averagePacketSizeSinceLastCheck();
+	}
+	return average;
+}
+
 void NWrapperSingleton::initialize(bool asHost) {
 	if (m_isInitialized == false) {
 		m_isInitialized = true;

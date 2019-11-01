@@ -60,7 +60,11 @@ public:
 
 	// Specifically for One-Time-Events during the gamestate
 	void setNSS(NetworkSenderSystem* NSS);
-	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = true); // Messages sent to self will be dealt with in NetworkReceiverSystem
+
+	// Messages sent to self will be dealt with in NetworkReceiverSystem
+	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = true);
+
+	size_t averagePacketSizeSinceLastCheck();
 private:
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;

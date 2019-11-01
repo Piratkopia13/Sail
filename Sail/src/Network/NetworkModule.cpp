@@ -203,6 +203,9 @@ bool Network::join(const char* IP_adress, unsigned short hostport)
 
 bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverID)
 {
+	m_nrOfPacketsSentSinceLast++;
+	m_sizeOfPacketsSentSinceLast += size;
+
 	if (size > 1000) {
 		Logger::Log("Packet size: " + std::to_string(size));
 	}
@@ -584,6 +587,16 @@ void Network::stopUDP() {
 
 void Network::startUDP() {
 	startUDPSocket(m_udp_localbroadcastport);
+}
+
+size_t Network::averagePacketSizeSinceLastCheck() {
+	size_t averageSize = 0;
+	if (m_nrOfPacketsSentSinceLast > 0) {
+		averageSize = m_sizeOfPacketsSentSinceLast / m_nrOfPacketsSentSinceLast;
+		m_sizeOfPacketsSentSinceLast = 0;
+		m_nrOfPacketsSentSinceLast = 0;
+	}
+	return averageSize;
 }
 
 void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
