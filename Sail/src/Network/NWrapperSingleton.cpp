@@ -163,7 +163,7 @@ void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
 
 void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* data, bool alsoSendToSelf) {
 	if (type < Netcode::MessageType::CREATE_NETWORKED_ENTITY || type < Netcode::MessageType::COUNT) {
-		Logger::Error("TRIED TO QUEUE AN INVALID EVENT: (" + std::to_string((int)type->type) + ")");
+		Logger::Error("TRIED TO QUEUE AN INVALID EVENT: (" + std::to_string((int)type) + ")");
 	}
 
 	// Cleaning is handled by the NSS later on.
