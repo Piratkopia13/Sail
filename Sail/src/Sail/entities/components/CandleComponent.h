@@ -49,6 +49,7 @@ public:
 	
 	Entity* m_ptrToOwner = nullptr;
 
+	bool m_wasHitByMeThisTick = false;
 private:
 	bool m_wasHitByWater = false;
 	float m_damageTakenLastHit = 0;

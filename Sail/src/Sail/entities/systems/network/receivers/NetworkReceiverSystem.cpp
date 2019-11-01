@@ -201,7 +201,9 @@ void NetworkReceiverSystem::update(float dt) {
 
 		// Receive 'one-time' events
 		size_t nrOfEvents;
-		Netcode::MessageType eventType;
+		Netcode::MessageType eventType = Netcode::MessageType::EMPTY;
+		Netcode::MessageType lastEventType = Netcode::MessageType::EMPTY;
+
 #ifdef DEVELOPMENT
 		Netcode::MessageType REDUNDANTTYPE;
 #endif
@@ -211,8 +213,14 @@ void NetworkReceiverSystem::update(float dt) {
 
 		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
 		ar(nrOfEvents);
+		if (nrOfEvents > 3) {
+			Logger::Log("nrOfEvents: " + std::to_string(nrOfEvents));
+		}
+
 		// Read and process data from SenderComponents (i.e. stuff that is continuously updated such as positions)
 		for (size_t i = 0; i < nrOfEvents; i++) {
+			lastEventType = eventType;
+
 			// Handle-Single-Frame events
 			ar(eventType);
 #ifdef DEVELOPMENT

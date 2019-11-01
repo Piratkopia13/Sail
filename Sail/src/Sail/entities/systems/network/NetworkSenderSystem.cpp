@@ -16,7 +16,7 @@
 
 #include <vector>
 
-//#define _LOG_TO_FILE
+#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 #include <fstream>
 static std::ofstream out("LogFiles/NetworkSenderSystem.cpp.log");

@@ -2,6 +2,8 @@
 #include "NetworkModule.hpp"
 #include <random>
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
+#include "Sail/utils/Utils.h"
+
 
 //#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
@@ -201,6 +203,11 @@ bool Network::join(const char* IP_adress, unsigned short hostport)
 
 bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverID)
 {
+	if (size > 1000) {
+		Logger::Log("Packet size: " + std::to_string(size));
+	}
+
+
 	if (receiverID == -1 && m_initializedStatus == INITIALIZED_STATUS::IS_SERVER) {
 		int success = 0;
 		Connection* conn = nullptr;

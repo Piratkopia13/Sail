@@ -47,6 +47,8 @@ void CandleSystem::update(float dt) {
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
 
+		candle->m_wasHitByMeThisTick = false;
+
 		if (!candle->getIsAlive()) {
 			continue;
 		}
