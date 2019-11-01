@@ -50,6 +50,22 @@ public:
 		wComPtr<ID3D12GraphicsCommandList4> list;
 	};
 
+	class CommandQueue {
+	public:
+		CommandQueue(DX12API* context, D3D12_COMMAND_LIST_TYPE type, LPCWSTR name = L"Unnamed Command Queue");
+		UINT64 signal();
+		void wait(UINT64 fenceValue) const;
+		bool waitOnCPU(UINT64 fenceValue, HANDLE eventHandle) const;
+		ID3D12CommandQueue* get() const;
+		UINT64 getCurrentFenceValue() const;
+		void reset();
+	private:
+		DX12API* m_context;
+		wComPtr<ID3D12CommandQueue> m_commandQueue;
+		static UINT64 sFenceValue;
+		static wComPtr<ID3D12Fence1> sFence;
+	};
+
 public:
 	DX12API();
 	~DX12API();
@@ -94,19 +110,16 @@ public:
 	IDXGISwapChain4* const getSwapChain() const;
 	const D3D12_VIEWPORT* getViewport() const;
 	const D3D12_RECT* getScissorRect() const;
+	CommandQueue* getComputeQueue() const;
+	CommandQueue* getDirectQueue() const;
 
 #ifdef _DEBUG
 	void beginPIXCapture() const;
 	void endPIXCapture() const;
 #endif
 
-	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT);
-
-	// TODO: generalize this method to be used for all compute related tasks
-	void executeCommandListsComputeAnimation(std::initializer_list<ID3D12CommandList*> cmdLists) const;
-	void waitForComputeAnimation();
-
-	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
+	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT, LPCWSTR name = L"Unnamed Commmand list or allocator object");
+	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT) const;
 	void executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
@@ -116,11 +129,12 @@ public:
 private:
 	void createDevice();
 	void createCmdInterfacesAndSwapChain(Win32Window* window);
-	void createFenceAndEventHandle();
+	void createEventHandle();
 	void createRenderTargets();
 	void createGlobalRootSignature();
 	void createShaderResources();
 	void createDepthStencilResources(Win32Window* window);
+	void createViewportAndScissorRect(Win32Window* window);
 
 	void nextFrame();
 
@@ -149,8 +163,10 @@ private:
 	IDXGIAdapter3* m_adapter3;
 
 	// Queues
-	wComPtr<ID3D12CommandQueue> m_directCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_computeCommandQueueAnimations;
+	std::unique_ptr<CommandQueue> m_directCommandQueue;
+	std::unique_ptr<CommandQueue> m_computeCommandQueue;
+	UINT64 m_directQueueFenceValues[2];
+	UINT64 m_computeQueueFenceValues[2];
 
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapGraphics;
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeapCompute;
@@ -160,14 +176,6 @@ private:
 	std::vector<wComPtr<ID3D12Resource1>> m_renderTargets;
 	wComPtr<ID3D12RootSignature> m_globalRootSignature;
 	std::map<std::string, UINT> m_globalRootSignatureRegisters;
-
-	// Fences
-	// TODO: check which ones are needed
-	std::vector<UINT64> m_fenceValues;
-	wComPtr<ID3D12Fence1> m_fence;
-
-	std::vector<UINT64> m_computeQueueAnimaitonFenceValues;
-	wComPtr<ID3D12Fence1> m_computeQueueAnimaitonFence;
 
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;

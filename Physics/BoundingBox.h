@@ -1,5 +1,4 @@
 #pragma once
-#include "PhysicsPCH.h"
 
 class BoundingBox {
 private:
@@ -24,7 +23,11 @@ public:
 	const glm::vec3& getPosition() const;
 	const glm::vec3& getHalfSize() const;
 
-	const glm::vec3* getCorners();
+
+	void prepareCorners();
+	const glm::vec3* getCornersWithUpdate();
+	const glm::vec3* getCornersWithoutUpdate() const;
+
 
 	void setPosition(const glm::vec3& position);
 	void setHalfSize(const glm::vec3& size);

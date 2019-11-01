@@ -1,6 +1,8 @@
 #pragma once
 #include "Sail.h"
 
+#include "Sail/utils/SailImGui/InGameMenuWindow.h"
+
 class InGameMenuState : public State {
 public:
 	explicit InGameMenuState(StateStack& stack);
@@ -18,6 +20,12 @@ public:
 	bool renderImgui(float dt);
 	// Sends events to the state
 	bool onEvent(Event& event) { return true; }
-private:
 
+	static bool IsOpen();
+
+private:
+	static bool sIsOpen;
+
+	InGameMenuWindow m_inGameMenuWindow;
+	bool m_isSinglePlayer;
 };

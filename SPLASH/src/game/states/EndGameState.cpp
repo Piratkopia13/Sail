@@ -22,6 +22,7 @@ bool EndGameState::processInput(float dt) {
 
 bool EndGameState::update(float dt, float alpha) {
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+
 	return true;
 }
 bool EndGameState::fixedUpdate(float dt) {
@@ -42,51 +43,35 @@ bool EndGameState::render(float dt, float alpha) {
 bool EndGameState::renderImgui(float dt) {
 
 	if (ImGui::Begin("Game Over")) {
+		ImGui::SetWindowPos({ 750,12 });
+		ImGui::SetWindowSize({ 102,100 });
 		if (NWrapperSingleton::getInstance().isHost()) {
 			if (ImGui::Button("Lobby")) {
 				onReturnToLobby(NetworkBackToLobby{});
+
+				ImGui::End();
+				return true;
 			}
 		}
 		if (ImGui::Button("Main menu")) {
 			NWrapperSingleton::getInstance().resetNetwork();
 			NWrapperSingleton::getInstance().resetWrapper();
+			GameDataTracker::getInstance().resetData();
 			this->requestStackPop();
 			this->requestStackPush(States::MainMenu);
+
+			ImGui::End();
+			return true;
 		}
 		if (ImGui::Button("Quit")) {
 			PostQuitMessage(0);
+
+			ImGui::End();
+			return true;
 		}
 
 	}
 	ImGui::End();
-
-
-
-	/*ImGui::Begin("Game over");
-	ImGui::SetWindowPos({500,500});
-	ImGui::End();
-
-	ImGui::Begin("Return");
-	ImGui::SetWindowPos({ 500,550 });
-	if (NWrapperSingleton::getInstance().isHost()) {
-		if (ImGui::Button("Lobby")) {
-			onReturnToLobby(NetworkBackToLobby{});
-		}
-	}
-	if (ImGui::Button("Main menu")) {
-		NWrapperSingleton::getInstance().resetNetwork();
-		NWrapperSingleton::getInstance().resetWrapper();
-		this->requestStackPop();
-		this->requestStackPush(States::MainMenu);
-	}
-	ImGui::End();
-
-	ImGui::Begin("Quit");
-	ImGui::SetWindowPos({ 500,600 });
-	if (ImGui::Button("Quit Button")) {
-		PostQuitMessage(0);
-	}
-	ImGui::End();*/
 
 	GameDataTracker::getInstance().renderImgui();
 
@@ -112,7 +97,7 @@ bool EndGameState::onReturnToLobby(NetworkBackToLobby& event) {
 		this->requestStackPop();
 		this->requestStackPush(States::JoinLobby);
 	}
-
+	GameDataTracker::getInstance().resetData();
 	
 	return true;
 }

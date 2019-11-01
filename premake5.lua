@@ -1,6 +1,6 @@
 -- premake5.lua
 workspace "Sail"
-	configurations { "Debug", "Release", "PerformanceTest" }
+	configurations { "Debug", "PerformanceTest", "Dev-Release", "Release"  }
 	startproject "SPLASH"
 	platforms { "DX12 x64", "DX12 x86" }
 
@@ -19,6 +19,8 @@ IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["ImGui"] = "libraries/imgui"
 IncludeDir["MiniMM"] = "libraries/MemoryManager"
 IncludeDir["Assimp"] = "libraries/assimp/include"
+
+buildcfg = "release"
 
 group "Libraries"
 include "libraries/glfw"
@@ -71,26 +73,31 @@ project "SPLASH"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
+		buildCfg = "debug"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
 		optimize "On"
 
 	filter "configurations:PerformanceTest"
-		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
+		optimize "On"
+
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
 		optimize "On"
 
 	-- Copy dlls to executable path
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{buildCfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
 			"{COPY} \"../libraries/assimp/lib/x64/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{buildCfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
 			"{COPY} \"../libraries/assimp/lib/x86/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 
@@ -139,7 +146,8 @@ project "Sail"
 		"GLFW",
 		"ImGui",
 		"MemoryManager",
-		"assimp-vc140-mt"
+		"assimp-vc140-mt",
+		"WinMMx"
 	}
 
 	flags { "MultiProcessorCompile" }
@@ -157,15 +165,33 @@ project "Sail"
 			"%{prj.name}/src/API/Windows/**"
 		}
 
+	filter "configurations:Debug"
+		defines { "DEBUG", "DEVELOPMENT" }
+		symbols "On"
+
+	filter "configurations:Release"
+		defines { "NDEBUG" }
+		optimize "On"
+
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
+		optimize "On"
+
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
+		optimize "On"
+
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
-			"libraries/assimp/lib/x64"
+			"libraries/FBX_SDK/lib/vs2017/x64/%{buildCfg}",
+			"libraries/assimp/lib/x64",
+			"libraries/WinMM/x64"
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
-			"libraries/assimp/lib/x86"
+			"libraries/FBX_SDK/lib/vs2017/x86/%{buildCfg}",
+			"libraries/assimp/lib/x86",
+			"libraries/WinMM/x86"
 		}
 
 	filter "system:windows"
@@ -175,18 +201,6 @@ project "Sail"
 			"FBXSDK_SHARED",
 			"GLFW_INCLUDE_NONE"
 		}
-
-	filter "configurations:Debug"
-		defines { "DEBUG" }
-		symbols "On"
-
-	filter "configurations:Release"
-		defines { "NDEBUG" }
-		optimize "On"
-
-	filter "configurations:PerformanceTest"
-		defines { "NDEBUG", "_PERFORMANCE_TEST" }
-		optimize "On"
 
 -----------------------------------
 -------------  Physics ------------
@@ -223,7 +237,7 @@ project "Physics"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
 
 	filter "configurations:Release"
@@ -231,5 +245,9 @@ project "Physics"
 		optimize "On"
 
 	filter "configurations:PerformanceTest"
-		defines { "NDEBUG", "_PERFORMANCE_TEST" }
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
+		optimize "On"
+		
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
 		optimize "On"

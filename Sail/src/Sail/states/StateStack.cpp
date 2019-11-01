@@ -5,7 +5,7 @@
 #include "imgui.h"
 
 StateStack::StateStack()
-	: m_renderImgui(true)
+	: m_renderImguiDebug(true)
 {
 }
 
@@ -24,8 +24,8 @@ State::Ptr StateStack::createState(States::ID stateID) {
 void StateStack::processInput(float dt) {
 
 	// Toggle imgui rendering on key
-	if (Input::WasKeyJustPressed(KeyBinds::toggleImGui))
-		m_renderImgui = !m_renderImgui;
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_IMGUI))
+		m_renderImguiDebug = !m_renderImguiDebug;
 
 	// Ignore game mouse input when imgui uses the mouse
 	Input::SetMouseInput(!ImGui::GetIO().WantCaptureMouse || Input::IsCursorHidden());
@@ -91,15 +91,20 @@ void StateStack::render(float dt, float alpha) {
 		state->render(dt, alpha);
 	}
 
-	if (m_renderImgui) {
-		Application::getInstance()->getImGuiHandler()->begin();
-		for (auto& state : m_stack) {
-			state->renderImgui(dt);
-		}
-		// Render console
-		Application::getInstance()->getConsole().renderWindow();
-		Application::getInstance()->getImGuiHandler()->end();
+	Application::getInstance()->getImGuiHandler()->begin();
+	for (auto& state : m_stack) {
+		state->renderImgui(dt);
 	}
+#ifdef DEVELOPMENT
+	if (m_renderImguiDebug) {
+		for (auto& state : m_stack) {
+			state->renderImguiDebug(dt);
+		}
+	}
+#endif
+	// Render console
+	Application::getInstance()->getConsole().renderWindow();
+	Application::getInstance()->getImGuiHandler()->end();
 
 	Application::getInstance()->getAPI()->present(false);
 }

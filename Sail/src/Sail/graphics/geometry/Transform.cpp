@@ -31,7 +31,7 @@ Transform::Transform(const glm::vec3& translation, const glm::vec3& rotation, co
 	m_matNeedsUpdate = true;
 	m_parentUpdated = parent;
 	m_parentRenderUpdated = parent;
-	m_hasChanged |= 2;
+	m_hasChanged = 2;
 
 	if (m_parent)
 		m_parent->addChild(this);
@@ -57,6 +57,9 @@ void Transform::removeParent() {
 		m_parent->removeChild(this);
 		m_parent = nullptr;
 	}
+	m_matNeedsUpdate = true;
+	m_hasChanged = 3; // TODO: test
+	treeNeedsUpdating();
 }
 
 // NOTE: Has to be done at the beginning of each update
@@ -127,7 +130,7 @@ void Transform::rotate(const float x, const float y, const float z) {
 	m_data.m_current.m_rotation += glm::vec3(x, y, z);
 	clampRotation();
 	m_data.m_current.m_rotationQuat = glm::quat(m_data.m_current.m_rotation);
-	m_matNeedsUpdate |= 2; // TODO: Check this
+	m_matNeedsUpdate = true; // TODO: Check this
 	treeNeedsUpdating();
 }
 
@@ -212,7 +215,7 @@ void Transform::setScale(const glm::vec3& scale) {
 }
 
 void Transform::setForward(const glm::vec3& forward) {
-	m_data.m_current.m_forward = glm::vec3(forward.x, forward.y, -forward.z);
+	m_data.m_current.m_forward = glm::vec3(forward.x, forward.y, forward.z);
 	m_data.m_current.m_rotationQuat = glm::rotation(glm::vec3(0.f, 0.f, -1.f), m_data.m_current.m_forward);
 	m_matNeedsUpdate = true;
 	m_hasChanged |= 2;
@@ -241,8 +244,13 @@ const glm::quat Transform::getInterpolatedRotation(float alpha) const {
 	return (alpha * m_data.m_current.m_rotationQuat) + ((1.0f - alpha) * m_data.m_previous.m_rotationQuat);
 }
 
+glm::vec3& Transform::getForward() {
+	updateForward();
+	return m_data.m_current.m_forward;
+}
 
-glm::mat4 Transform::getMatrix() {
+
+void Transform::prepareMatrix() {
 	if (m_matNeedsUpdate) {
 		updateLocalMatrix();
 		m_matNeedsUpdate = false;
@@ -251,14 +259,22 @@ glm::mat4 Transform::getMatrix() {
 		updateMatrix();
 		m_parentUpdated = false;
 	}
+}
 
+const glm::mat4& Transform::getMatrixWithUpdate() {
+	prepareMatrix();
+	return m_transformMatrix;
+}
+
+
+const glm::mat4& Transform::getMatrixWithoutUpdate() const {
 	return m_transformMatrix;
 }
 
 glm::mat4 Transform::getRenderMatrix(float alpha) {
 	// If data hasn't changed use the CPU side transformMatrix
 	if (!m_hasChanged && !m_parentRenderUpdated) {
-		m_renderMatrix = getMatrix();
+		m_renderMatrix = getMatrixWithUpdate();
 	} else {
 		// if the data has changed between updates then the matrix will be interpolated every frame
 		updateLocalRenderMatrix(alpha);
@@ -290,13 +306,17 @@ void Transform::updateRenderMatrix(float alpha) {
 	}
 }
 
+void Transform::updateForward() {
+	m_data.m_current.m_forward = m_data.m_current.m_rotationQuat * glm::vec3(0.f, 0.f, -1.f);
+}
+
 void Transform::updateLocalMatrix() {
 	createTransformMatrix(m_localTransformMatrix, m_data.m_current.m_translation, m_data.m_current.m_rotationQuat, m_data.m_current.m_scale);
 }
 
 void Transform::updateMatrix() {
 	if (m_parent) {
-		m_transformMatrix = m_parent->getMatrix() * m_localTransformMatrix;
+		m_transformMatrix = m_parent->getMatrixWithUpdate() * m_localTransformMatrix;
 	} else {
 		m_transformMatrix = m_localTransformMatrix;
 	}
@@ -314,6 +334,11 @@ void Transform::treeNeedsUpdating() {
 }
 
 void Transform::addChild(Transform* transform) {
+	for (Transform* t : m_children) {
+		if (t == transform) {
+			return;
+		}
+	}
 	m_children.push_back(transform);
 }
 

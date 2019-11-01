@@ -14,6 +14,7 @@ RendererWrapper::~RendererWrapper() {
 void RendererWrapper::initialize() {
 	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::HYBRID));
+	m_rendererScreenSpace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::SCREEN_SPACE));
 	m_currentRenderer = m_rendererRaytrace.get();
 
 	m_postProcessPipeline = std::make_shared<PostProcessPipeline>();
@@ -56,16 +57,12 @@ PostProcessPipeline* RendererWrapper::getPostProcessPipeline() {
 }
 
 bool RendererWrapper::onEvent(Event& event) {
-
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&RendererWrapper::onResize));
-
-	return true;
-}
-
-bool RendererWrapper::onResize(Event& event) {
-
-	m_rendererRaster->onEvent(event);
-	m_rendererRaytrace->onEvent(event);
+	if (m_rendererRaster) {
+		m_rendererRaster->onEvent(event);
+	}
+	if (m_rendererRaytrace) {
+		m_rendererRaytrace->onEvent(event);
+	}
 
 	return true;
 }
@@ -75,3 +72,6 @@ void RendererWrapper::setLightSetup(LightSetup* lights) {
 }
 
 
+Renderer* RendererWrapper::getScreenSpaceRenderer() {
+	return m_rendererScreenSpace.get();
+}

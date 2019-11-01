@@ -30,12 +30,18 @@ public:
 	bool onEvent(Event& event);
 
 private:
+	const std::string loadPlayerName(const std::string& file);
+	bool loadModels(Application* app);
+
+
+private:
 	Input* m_input = nullptr;
 	// NetworkWrapper | NWrapperSingleton | NWrapperHost
 	NWrapperSingleton* m_network = nullptr;
 	Application* m_app = nullptr;
 	// For ImGui Input
-	char* inputIP = nullptr;
+	std::string inputIP;
+	std::future<bool> m_modelThread;
 
 	// Other lobbies
 	bool onLanHostFound(NetworkLanHostFoundEvent& event);
@@ -50,6 +56,7 @@ private:
 
 	struct FoundLobby {
 		std::string ip;
+		std::string description;
 		double duration = 20;
 		void resetDuration() { duration = 20; }
 	};

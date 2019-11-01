@@ -7,6 +7,7 @@
 #include "Sail/api/Mesh.h"
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
+const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 
 ResourceManager::ResourceManager() {
 	//m_soundManager = std::make_unique<SoundManager>();
@@ -33,8 +34,9 @@ bool ResourceManager::setDefaultShader(Shader* shader) {
 }
 
 void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {
+	
 	if (!this->hasAudioData(filename)) {
-		m_audioDataAll.insert({ filename, std::make_unique<AudioData>(filename, xAudio2) });
+		m_audioDataAll.insert({ filename, std::make_unique<AudioData>(SAIL_DEFAULT_SOUND_LOCATION + filename, xAudio2) });
 	} 
 }
 
@@ -91,6 +93,17 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 //
 // Model
 //
+
+// Used to add a model created from the application
+void ResourceManager::addModel(const std::string& modelName, Model* model) {
+	if (m_models.find(modelName) != m_models.end()) {
+		Logger::Error("The model name is already in use");
+		return;
+	}
+	Logger::Log("Added model: " + modelName);
+	model->setName(modelName);
+	m_models.insert({modelName, std::unique_ptr<Model>(model)});
+}
 
 void ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
 	// Insert the new model
@@ -187,6 +200,15 @@ AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) 
 bool ResourceManager::hasAnimationStack(const std::string& fileName) {
 	return false;
 }
+
+const unsigned int ResourceManager::numberOfModels() const {
+	return m_models.size();
+}
+
+const unsigned int ResourceManager::numberOfTextures() const {
+	return m_textures.size();
+}
+
 
 const std::string ResourceManager::getSuitableName(const std::string& name) {
 	unsigned int iterator = 1;

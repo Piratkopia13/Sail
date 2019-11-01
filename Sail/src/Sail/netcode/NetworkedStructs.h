@@ -1,14 +1,32 @@
 #pragma once
 #include "ArchiveHelperFunctions.h"
+#include "NetcodeTypes.h"
+
+#include <atomic>
 
 namespace Netcode {
-	typedef unsigned __int32 NetworkObjectID;
-	
 	// Global counter
-	extern NetworkObjectID gNetworkIDCounter;
-	
-	static NetworkObjectID createNetworkID()    { return ++gNetworkIDCounter; }
-	static NetworkObjectID nrOfNetworkObjects() { return gNetworkIDCounter; }
+	extern std::atomic<ComponentID> gNetworkIDCounter;
+	static ComponentID createNetworkID()    { return ++gNetworkIDCounter; }
+	static ComponentID nrOfNetworkObjects() { return gNetworkIDCounter; }
+
+
+	// Used to signify NetworkMessages sent Internally
+	static constexpr PlayerID MESSAGE_FROM_SELF_ID = 255;
+
+	// ComponentID has 32 bits and the first 8 are the PlayerID of the owner which
+	// can be extracted by shifting the ComponentID 18 bits to the right.
+	static constexpr ComponentID SHIFT_AMOUNT = 18;
+
+
+	// Generates a unique ID for a NetworkSenderComponent based on the player's PlayerID
+	static ComponentID generateUniqueComponentID(PlayerID ownerID) {
+		return (createNetworkID() | (static_cast<ComponentID>(ownerID) << SHIFT_AMOUNT));
+	}
+	// Extract the PlayerID of the owner of a NetworkComponent from the component's ID
+	static constexpr PlayerID getComponentOwner(ComponentID componentID) {
+		return static_cast<PlayerID>(componentID >> SHIFT_AMOUNT);
+	}
 
 
 	/*
@@ -18,26 +36,65 @@ namespace Netcode {
 
 
 	// Pre-defined entity types so that other players know which entity to create
-	enum EntityType : __int32 {
+	enum class EntityType : __int32 {
 		PLAYER_ENTITY = 1,
 		MECHA_ENTITY = 2,
 	};
 
+	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
-	enum MessageType : __int32 {
+	enum class MessageType : __int32 {
 		CREATE_NETWORKED_ENTITY = 1,
 		MODIFY_TRANSFORM,
 		SPAWN_PROJECTILE,
 		ROTATION_TRANSFORM,
+		ANIMATION,
+		SHOOT_START,
+		SHOOT_LOOP,
+		SHOOT_END,
 		PLAYER_JUMPED,
+		PLAYER_LANDED,
 		WATER_HIT_PLAYER,
 		SET_CANDLE_HEALTH,
 		PLAYER_DIED,
 		PLAYER_DISCONNECT,
 		MATCH_ENDED,
+		PREPARE_ENDSCREEN,			// Clients send relevant data for the endgame screen
+		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
 		SEND_ALL_BACK_TO_LOBBY,
-		EMPTY = 69
+		RUNNING_METAL_START,
+		RUNNING_TILE_START,
+		RUNNING_STOP_SOUND,
+		IGNITE_CANDLE,
+		EMPTY
+	}; 
+	
+	static const std::string MessageNames[] = {
+		"CREATE_NETWORKED_ENTITY",
+		"MODIFY_TRANSFORM,		",
+		"SPAWN_PROJECTILE,		",
+		"ROTATION_TRANSFORM,	",
+		"ANIMATION,				",
+		"SHOOT_START,			",
+		"SHOOT_LOOP,			",
+		"SHOOT_END,				",
+		"PLAYER_JUMPED,			",
+		"PLAYER_LANDED,			",
+		"WATER_HIT_PLAYER,		",
+		"SET_CANDLE_HEALTH,		",
+		"PLAYER_DIED,			",
+		"PLAYER_DISCONNECT,		",
+		"MATCH_ENDED,			",
+		"PREPARE_ENDSCREEN,		",	// Clients send relevant data for the endgame screen
+		"ENDGAME_STATS,			",
+		"CANDLE_HELD_STATE,		",
+		"SEND_ALL_BACK_TO_LOBBY,",
+		"RUNNING_METAL_START,	",
+		"RUNNING_TILE_START,	",
+		"RUNNING_STOP_SOUND,	",
+		"IGNITE_CANDLE,			",
+		"EMPTY					",
 	};
 
 	/*
@@ -94,48 +151,107 @@ namespace Netcode {
 		virtual ~MessageData() {}
 	};
 
-	class MessageDataProjectile : public MessageData {
+	class MessageSpawnProjectile : public MessageData {
 	public:
-		MessageDataProjectile(glm::vec3 translation_, glm::vec3 velocity_)
-			: translation(translation_), velocity(velocity_)
+		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, Netcode::ComponentID ownerComponentID)
+			: translation(translation_), velocity(velocity_), ownerPlayerComponentID(ownerComponentID)
 		{}
-		virtual ~MessageDataProjectile() {}
+		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
+		Netcode::ComponentID ownerPlayerComponentID;
 	};
 
-	class MessageDataWaterHitPlayer : public MessageData {
+	class MessageWaterHitPlayer : public MessageData {
 	public:
-		MessageDataWaterHitPlayer(Netcode::NetworkObjectID id)
-			: playerWhoWasHitID(id)
+		MessageWaterHitPlayer(Netcode::ComponentID whoWasHit)
+			: playerWhoWasHitID(whoWasHit)
 		{}
-		~MessageDataWaterHitPlayer() {}
+		~MessageWaterHitPlayer() {}
 
-		Netcode::NetworkObjectID playerWhoWasHitID;
+		Netcode::ComponentID playerWhoWasHitID;
 	};
 
-	class MessageDataPlayerDied : public MessageData {
+	class MessagePlayerJumped : public MessageData {
 	public:
-		MessageDataPlayerDied(Netcode::NetworkObjectID id) : playerWhoDied(id){}
-				~MessageDataPlayerDied() {}
-				Netcode::NetworkObjectID playerWhoDied;
-		};
+		MessagePlayerJumped(Netcode::ComponentID id) : playerWhoJumped(id) {}
+		~MessagePlayerJumped() {}
+		Netcode::ComponentID playerWhoJumped;
+	};
 
-	class MessageDataCandleHeldState : public MessageData {
+	class MessagePlayerLanded : public MessageData {
 	public:
-		MessageDataCandleHeldState(Netcode::NetworkObjectID id, bool b, glm::vec3 pos) : candleOwnerID(id), isHeld(b), candlePos(pos) {}
-		~MessageDataCandleHeldState() {}
-		Netcode::NetworkObjectID candleOwnerID;
+		MessagePlayerLanded(Netcode::ComponentID id) : playerWhoLanded(id) {}
+		~MessagePlayerLanded() {}
+		Netcode::ComponentID playerWhoLanded;
+	};
+
+	class MessagePlayerDied : public MessageData {
+	public:
+		MessagePlayerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID) : playerWhoDied(id), playerWhoFired(shooterID) {}
+		~MessagePlayerDied() {}
+		Netcode::ComponentID playerWhoDied;
+		Netcode::PlayerID playerWhoFired;
+	};
+
+	class MessageCandleHeldState : public MessageData {
+	public:
+		MessageCandleHeldState(Netcode::ComponentID id, bool held, glm::vec3 pos) : candleOwnerID(id), isHeld(held), candlePos(pos) {}
+		~MessageCandleHeldState() {}
+		Netcode::ComponentID candleOwnerID;
 		bool isHeld;
 		glm::vec3 candlePos;
 	};
 
-	class MessageDataPlayerDisconnect : public MessageData {
+	class MessagePlayerDisconnect : public MessageData {
 	public:
-		MessageDataPlayerDisconnect(unsigned char id) : playerID(id) {}
-		~MessageDataPlayerDisconnect() {}
-		unsigned char playerID;
+		MessagePlayerDisconnect(PlayerID id) : playerID(id) {}
+		~MessagePlayerDisconnect() {}
+		PlayerID playerID;
 	};
-}
 
+	class MessageEndGameStats : public MessageData {
+	public:
+		MessageEndGameStats() {}
+		~MessageEndGameStats() {}
+	};
+
+	class MessagePrepareEndScreen : public MessageData {
+	public:
+		MessagePrepareEndScreen() {}
+		~MessagePrepareEndScreen() {}
+
+	private:
+
+	};
+
+
+	class MessageRunningMetalStart : public MessageData {
+	public:
+		MessageRunningMetalStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningMetalStart() {}
+		Netcode::ComponentID runningPlayer;
+	};
+
+	class MessageRunningTileStart : public MessageData {
+	public:
+		MessageRunningTileStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningTileStart() {}
+		Netcode::ComponentID runningPlayer;
+	};
+
+	class MessageRunningStopSound : public MessageData {
+	public:
+		MessageRunningStopSound(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningStopSound() {}
+		Netcode::ComponentID runningPlayer;
+	};
+	class MessageIgniteCandle : public MessageData {
+	public:
+		MessageIgniteCandle(Netcode::ComponentID id) : candleOwnerID(id) {}
+		~MessageIgniteCandle() {}
+		Netcode::ComponentID candleOwnerID;
+	};
+
+}

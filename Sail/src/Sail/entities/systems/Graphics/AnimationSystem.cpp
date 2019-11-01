@@ -3,6 +3,7 @@
 #include "Sail/entities/Entity.h"
 #include "Sail/entities/components/AnimationComponent.h"
 #include "Sail/entities/components/ModelComponent.h"
+#include "Sail/entities/components/TransformComponent.h"
 #include "Sail/graphics/geometry/Model.h"
 #include "sail/api/VertexBuffer.h"
 #include "API/DX12/DX12API.h"
@@ -14,6 +15,14 @@
 #include <glm/gtx/compatibility.hpp>
 
 
+
+//TODO: REMOVE ------------
+
+#include "Sail/entities/EntityFactory.hpp"
+#include "Sail/graphics/shader/material/WireframeShader.h"
+#include "Sail/graphics/shader/dxr/GBufferOutShader.h"
+// --------------------------
+
 AnimationSystem::AnimationSystem() 
 	: BaseComponentSystem()
 	, m_interpolate(true) 
@@ -21,6 +30,7 @@ AnimationSystem::AnimationSystem()
 	// TODO: System owner should check if this is correct
 	registerComponent<AnimationComponent>(true, true, true);
 	registerComponent<ModelComponent>(true, true, true);
+	registerComponent<TransformComponent>(false, true, true);
 
 	m_updateShader = &Application::getInstance()->getResourceManager().getShaderSet<AnimationUpdateComputeShader>();
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
@@ -33,6 +43,21 @@ AnimationSystem::AnimationSystem()
 }
 
 AnimationSystem::~AnimationSystem() {
+}
+
+void AnimationSystem::updateHands(const glm::vec3& lPos, const glm::vec3& rPos, const glm::vec3& lRot, const glm::vec3& rRot) {
+	for (auto& e : entities) {
+		AnimationComponent* ac = e->getComponent<AnimationComponent>();
+		if (ac) {
+			ac->leftHandPosition = glm::identity<glm::mat4>();
+			ac->leftHandPosition = glm::translate(ac->leftHandPosition, lPos);
+			ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(lRot));
+
+			ac->rightHandPosition = glm::identity<glm::mat4>();
+			ac->rightHandPosition = glm::translate(ac->rightHandPosition, rPos);
+			ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(rRot));
+		}
+	}
 }
 
 void AnimationSystem::update(float dt) {
@@ -152,6 +177,36 @@ void AnimationSystem::updateTransforms(const float dt) {
 			animationC->currentTransition->transpiredTime += dt * animationC->animationSpeed;
 		}
 		animationC->hasUpdated = true;
+
+		if (animationC->leftHandEntity) {
+
+			glm::mat4 res = animationC->transforms[10] * animationC->leftHandPosition;
+			
+			glm::vec3 pos, scale;
+			glm::quat rot;
+			
+			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
+			
+			//KEEP THIS DO NOT REMOVE FUCK YOU
+			//animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
+			animationC->leftHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
+		}
+
+		if (animationC->rightHandEntity) {
+		
+			glm::mat4 res = animationC->transforms[22] * animationC->rightHandPosition;
+		
+			glm::vec3 pos, scale;
+			glm::quat rot;
+		
+			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
+		
+			animationC->rightHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
+			animationC->rightHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
+		
+		}
+
+
 	}
 }
 
@@ -309,6 +364,31 @@ void AnimationSystem::updateMeshCPU() {
 
 const std::vector<Entity*>& AnimationSystem::getEntities() const {
 	return entities;
+}
+
+void AnimationSystem::initDebugAnimations() {
+	Application* app = Application::getInstance();
+	auto* shader = &app->getResourceManager().getShaderSet<GBufferOutShader>();
+	std::string name = "Doc.fbx";
+
+	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
+	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+	//Wireframe bounding box model
+	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+
+
+	AnimationStack* stack = &app->getResourceManager().getAnimationStack(name);
+	unsigned int animationCount = stack->getAnimationCount();
+	for (unsigned int i = 0; i < animationCount; i++) {
+		auto animationEntity2 = ECS::Instance()->createEntity("Doc" + std::to_string(i));
+		EntityFactory::CreateGenericPlayer(animationEntity2, i, glm::vec3(-2.0f + i * 1.2f, 0, -2));
+
+		AnimationComponent* ac = animationEntity2->getComponent<AnimationComponent>();
+		ac->setAnimation(i);
+	}
 }
 
 void AnimationSystem::addTime(AnimationComponent* e, const float time) {

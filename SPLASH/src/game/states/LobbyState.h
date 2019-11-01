@@ -73,6 +73,7 @@ private:
 	unsigned int m_textHeight;
 	void renderPlayerList();
 	void renderStartButton();
+	void renderQuitButton();
 	void renderSettings();		// Currently empty
 	void renderChat();
 };

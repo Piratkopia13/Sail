@@ -12,6 +12,7 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/components/AudioComponent.h"
+#include "Sail/utils/Utils.h"
 
 #include <string>
 #include <list>
@@ -38,7 +39,7 @@ LobbyState::LobbyState(StateStack& stack)
 	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
-	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("../Audio/LobbyMusic.xwb", true, true);
+	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
 }
 
 
@@ -57,13 +58,12 @@ bool LobbyState::processInput(float dt) {
 }
 
 bool LobbyState::inputToChatLog(MSG& msg) {
-	int sendMessageKeyCode = KeyBinds::sendMessage;
-	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != sendMessageKeyCode) {
+	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != KeyBinds::SEND_MESSAGE) {
 		// Add whichever button that was inputted to the current message
 		// --- OBS : doesn't account for capslock, etc.
 		m_currentmessage[m_currentmessageIndex++] = (char)msg.wParam;
 	}
-	if (msg.wParam == sendMessageKeyCode && m_chatFocus == false) {
+	if (msg.wParam == KeyBinds::SEND_MESSAGE && m_chatFocus == false) {
 		return true;
 	}
 	return false;
@@ -98,6 +98,9 @@ bool LobbyState::renderImgui(float dt) {
 
 	// ------- START BUTTON ------- 
 	renderStartButton();
+
+	// ------- Return BUTTON ------- 
+	renderQuitButton();
 
 	return false;
 }
@@ -190,13 +193,35 @@ void LobbyState::renderStartButton() {
 
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
+			NWrapperSingleton::getInstance().stopUDP();
+			char seed = (char)(Utils::rnd() * 255);
+			NWrapperSingleton::getInstance().setSeed(seed);
 			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
-			m_network->sendMsgAllClients("t");
+			m_network->sendMsgAllClients({ std::string("t") + seed });
 			this->requestStackPop();
 			this->requestStackPush(States::Game);
 		}
 		ImGui::End();
 	}
+}
+
+void LobbyState::renderQuitButton() {
+	ImGui::Begin("Return");
+	if (ImGui::Button("Quit to Main Menu")) {
+	
+		// Set temp window pos
+		ImGui::SetWindowPos({ 424,641 });
+		ImGui::SetWindowSize({ 137,63 });
+
+		// Reset the network
+		NWrapperSingleton::getInstance().resetNetwork();
+		NWrapperSingleton::getInstance().resetWrapper();
+
+		// Schedule new state change
+		this->requestStackPop();
+		this->requestStackPush(States::MainMenu);
+	}
+	ImGui::End();
 }
 
 void LobbyState::renderSettings() {
@@ -209,14 +234,16 @@ void LobbyState::renderSettings() {
 	settingsFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 	settingsFlags |= ImGuiWindowFlags_NoSavedSettings;
 
-	ImGui::SetNextWindowPos(ImVec2(
+
+	// Uncomment when we actually have game settings
+	/*ImGui::SetNextWindowPos(ImVec2(
 		m_screenWidth - m_outerPadding - 330,
 		m_outerPadding
 	));
 	ImGui::Begin("Settings", NULL, settingsFlags);
-	ImGui::InputInt("BotCountInput: ", m_settingBotCount, 1, 1);
+	//ImGui::InputInt("BotCountInput: ", m_settingBotCount, 1, 1);
 
-	ImGui::End();
+	ImGui::End();*/
 }
 
 void LobbyState::renderChat() {

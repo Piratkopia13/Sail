@@ -16,6 +16,7 @@
 #include "LifeTimeComponent.h"
 #include "LightComponent.h"
 #include "LightListComponent.h"
+#include "LocalOwnerComponent.h"
 #include "MapComponent.h"
 #include "MetaballComponent.h"
 #include "ModelComponent.h"
@@ -30,3 +31,5 @@
 //#include "TextComponent.h"
 #include "TransformComponent.h"
 #include "VerticalCylinderComponent.h"
+
+#include "GUIComponent.h"

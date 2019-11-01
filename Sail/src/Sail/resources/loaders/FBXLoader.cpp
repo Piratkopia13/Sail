@@ -30,7 +30,6 @@ static void FBXtoGLM(glm::mat4& newMat, const FbxAMatrix& mat) {
 	newMat[3][1] = (float)mat[3][1];
 	newMat[3][2] = (float)mat[3][2];
 	newMat[3][3] = (float)mat[3][3];
-	//newMat = glm::transpose(newMat);
 }
 static void FBXtoGLM(glm::vec3& newVec, const FbxVector4& vec) {
 	newVec.x = (float)vec[0];
@@ -43,8 +42,6 @@ FBXLoader::FBXLoader() {
 	
 }
 FBXLoader::~FBXLoader() {
-	//if (m_scene)
-	//	m_scene->Destroy();
 
 
 	
@@ -73,10 +70,9 @@ bool FBXLoader::importScene(const std::string& filePath, Shader* shader) {
 		//here would getMaterial for model be
 	}
 
-	AnimationStack* stack = importAnimationStack(filePath);
-	if (stack) {
+	m_sceneData[filePath].stack = importAnimationStack(filePath);
+	if (m_sceneData[filePath].stack) {
 		m_sceneData[filePath].hasAnimation = true;
-		m_sceneData[filePath].stack = stack;
 	}
 
 	return true;
@@ -234,10 +230,12 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			else if (norms) {
 				if (leNormal->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int normIndex = 0;
-					if (leNormal->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (leNormal->GetReferenceMode() == FbxLayerElement::eDirect) {
 						normIndex = vertexIndex;
-					if (leNormal->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+					}
+					if (leNormal->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
 						normIndex = leNormal->GetIndexArray().GetAt(vertexIndex);
+					}
 
 					FbxVector4 norm = leNormal->GetDirectArray().GetAt(normIndex);
 					FBXtoGLM(vertNormal[0].vec, norm);
@@ -269,10 +267,12 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			else if (tangs) {
 				if (geTang->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int tangIndex = 0;
-					if (geTang->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (geTang->GetReferenceMode() == FbxLayerElement::eDirect) {
 						tangIndex = vertexIndex;
-					if (geTang->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+					}
+					if (geTang->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
 						tangIndex = geTang->GetIndexArray().GetAt(vertexIndex);
+					}
 
 					FbxVector4 tangent = geTang->GetDirectArray().GetAt(tangIndex);
 					FBXtoGLM(vertTangent[0].vec, tangent);
@@ -310,11 +310,12 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			else if (bitangs) {
 				if (geBN->GetMappingMode() == FbxLayerElement::eByPolygonVertex) {
 					int biNormIndex = 0;
-					if (geBN->GetReferenceMode() == FbxLayerElement::eDirect)
+					if (geBN->GetReferenceMode() == FbxLayerElement::eDirect) {
 						biNormIndex = vertexIndex;
-					if (geBN->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+					}
+					if (geBN->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
 						biNormIndex = geBN->GetIndexArray().GetAt(vertexIndex);
-
+					}
 
 					FbxVector4 biNorm = geBN->GetDirectArray().GetAt(biNormIndex);
 					FBXtoGLM(vertBitangent[0].vec, biNorm);
@@ -441,22 +442,16 @@ FbxVector2 FBXLoader::getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMe
 
 #pragma region animationLoading
 AnimationStack* FBXLoader::importAnimationStack(const std::string& filePath) {
-
 	const FbxScene* scene = m_scenes[filePath];
 	assert(scene);
 
 	FbxNode* root = scene->GetRootNode();
-
 	
 	AnimationStack* stack = SAIL_NEW AnimationStack();
-	fetchSkeleton(root, filePath);
+	m_sceneData[filePath].stack = stack;
+	fetchSkeleton(root, filePath, stack);
 	fetchAnimations(root, stack, filePath);
-
-
-
 	return stack;
-
-
 }
 void FBXLoader::fetchAnimations(FbxNode* node, AnimationStack* stack, const std::string& name) {
 	FbxScene* scene = node->GetScene();
@@ -535,7 +530,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 					FBXtoGLM(globalBindposeInverse, globalBindposeInverseMatrix);
 
-					m_sceneData[name].bones[limbIndexes[clusterIndex]].globalBindposeInverse = globalBindposeInverse;
+					stack->getBone(limbIndexes[clusterIndex]).globalBindposeInverse = globalBindposeInverse;
 
 					unsigned int indexCount = cluster->GetControlPointIndicesCount();
 					int* CPIndices = cluster->GetControlPointIndices();
@@ -559,11 +554,11 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 				stack->checkWeights();
 
 
-				FbxTime::EMode fps = FbxTime::eFrames24;
+				FbxTime::EMode fps = FbxTime::eFrames30;
 
 				Animation* defaultAnimation = SAIL_NEW Animation("Default");
 				for (unsigned int frameIndex = 0; frameIndex < 3; frameIndex++) {
-					Animation::Frame* frame = SAIL_NEW Animation::Frame((unsigned int)m_sceneData[name].bones.size());
+					Animation::Frame* frame = SAIL_NEW Animation::Frame(stack->boneCount());
 					glm::mat4 matrix = glm::identity<glm::mat4>();
 					FbxTime currTime;
 					for (unsigned int boneIndex = 0; boneIndex < clusterCount; boneIndex++) {
@@ -596,10 +591,17 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					float firstFrameTime = 0.0f;
 
 					//TODO: find way to import FPS from file.
+					bool firstFrame = true;
+					unsigned int offset = 0;
 					for (FbxLongLong frameIndex = start.GetFrameCount(fps); frameIndex <= end.GetFrameCount(fps); frameIndex++) {
-						Animation::Frame* frame = SAIL_NEW Animation::Frame((unsigned int)m_sceneData[name].bones.size());
+						Animation::Frame* frame = SAIL_NEW Animation::Frame(stack->boneCount());
 						FbxTime currTime;
 						currTime.SetFrame(frameIndex, fps);
+						if (firstFrame) {
+							offset = frameIndex;
+							firstFrame = false;
+						}
+
 						if (firstFrameTime == 0.0f) {
 							firstFrameTime = float(currTime.GetSecondDouble());
 						}
@@ -612,10 +614,10 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 
 							FBXtoGLM(matrix, currentTransformOffset.Inverse() * cluster->GetLink()->EvaluateGlobalTransform(currTime));
 
-							frame->setTransform(limbIndexes[clusterIndex],  matrix * m_sceneData[name].bones[limbIndexes[clusterIndex]].globalBindposeInverse);
+							frame->setTransform(limbIndexes[clusterIndex],  matrix * stack->getBone(limbIndexes[clusterIndex]).globalBindposeInverse);
 						}
 						float time = float(currTime.GetSecondDouble()) - firstFrameTime;
-						animation->addFrame(frameIndex, time, frame);
+						animation->addFrame(frameIndex - offset, time, frame);
 					}
 					
 					stack->addAnimation(animationName, animation);
@@ -655,6 +657,8 @@ AnimationStack* FBXLoader::fetchAnimationStack(const std::string& filePath, Shad
 }
 #pragma endregion
 
+
+
 void FBXLoader::addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, const unsigned long& currentIndex, const Mesh::vec3& position, const Mesh::vec3& normal, const Mesh::vec3& tangent, const Mesh::vec3& bitangent, const Mesh::vec2& uv) {
 	for (unsigned int vert = 0; vert < uniqueVertices; vert++) {
 		if (buildData.positions[vert] == position && buildData.normals[vert] == normal && buildData.texCoords[vert] == uv) {
@@ -671,38 +675,40 @@ void FBXLoader::addVertex(Mesh::Data& buildData, unsigned int& uniqueVertices, c
 	buildData.indices[currentIndex] = uniqueVertices;
 	uniqueVertices += 1;
 }
-void FBXLoader::fetchSkeleton(FbxNode* node, const std::string& filename) {
+void FBXLoader::fetchSkeleton(FbxNode* node, const std::string& filename, AnimationStack* stack) {
 
 
 	for (int childIndex = 0; childIndex < node->GetChildCount(); ++childIndex) {
 		FbxNode* currNode = node->GetChild(childIndex);
-		fetchSkeletonRecursive(currNode, filename, 0, 0, -1);
+		fetchSkeletonRecursive(currNode, filename, 0, 0, -1, stack);
 	}
 
 }
-void FBXLoader::fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex) {
+void FBXLoader::fetchSkeletonRecursive(FbxNode* inNode, const std::string& filename, int inDepth, int myIndex, int inParentIndex, AnimationStack* stack) {
 
 	if (inNode->GetNodeAttribute() && inNode->GetNodeAttribute()->GetAttributeType() && inNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eSkeleton) {
-		FBXLoader::SceneData::Bone limb;
+		AnimationStack::Bone limb;
 		limb.parentIndex = inParentIndex;
 		limb.uniqueID = inNode->GetUniqueID();
+		limb.name = inNode->GetName();
 
-		if (m_sceneData[filename].bones.size() > 0) {
-			m_sceneData[filename].bones[limb.parentIndex].childIndexes.push_back(int(m_sceneData[filename].bones.size()));
+		if (stack->boneCount() > 0) {
+			stack->getBone(limb.parentIndex).childIndexes.emplace_back(stack->boneCount());
 		}
-		m_sceneData[filename].bones.push_back(limb);
+		stack->addBone(limb);
 
 	}
 	for (int i = 0; i < inNode->GetChildCount(); i++) {
-		fetchSkeletonRecursive(inNode->GetChild(i), filename, inDepth + 1, unsigned int(m_sceneData[filename].bones.size()), myIndex);
+		fetchSkeletonRecursive(inNode->GetChild(i), filename, inDepth + 1, stack->boneCount(), myIndex, stack);
 	}
 
 
 }
 int FBXLoader::getBoneIndex(unsigned int uniqueID, const std::string& name) {
-	auto& ref = m_sceneData[name].bones;
-	for (unsigned int i = 0; i < ref.size(); i++) {
-		if (ref[i].uniqueID == uniqueID) {
+	AnimationStack* stack = m_sceneData[name].stack;
+	unsigned int size = stack->boneCount();
+	for (unsigned int i = 0; i < size; i++) {
+		if (stack->getBone(i).uniqueID == uniqueID) {
 			return i;
 		}
 	}
@@ -744,7 +750,7 @@ std::string FBXLoader::PrintAttribute(FbxNodeAttribute* pAttribute) {
 	std::string typeName = GetAttributeTypeName(pAttribute->GetAttributeType());
 	std::string attrName = pAttribute->GetName();
 
-	return typeName + " " + attrName;
+	return "("+typeName + " " + attrName+")";
 }
 void FBXLoader::printNodeTree(FbxNode * node, const std::string& indent) {
 	std::string name = node->GetName();
@@ -756,7 +762,7 @@ void FBXLoader::printNodeTree(FbxNode * node, const std::string& indent) {
 	
 	Logger::Log(indent + name + ":" + attributes);
 	for (int i = 0; i < node->GetChildCount(); i++) {
-		printNodeTree(node->GetChild(i), indent + " ");
+		printNodeTree(node->GetChild(i), indent + "|");
 	}
 }
 void FBXLoader::printAnimationStack(const FbxNode* node) {

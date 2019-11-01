@@ -72,7 +72,22 @@ public:
 		unsigned int transform[SAIL_BONES_PER_VERTEX];
 		float weight[SAIL_BONES_PER_VERTEX];
 	};
+	class Bone {
+	public:
+		enum BodyPart {
+			LOWER,
+			UPPER
+		};
 
+		Bone() { name = ""; parentIndex = -1; uniqueID = 0; globalBindposeInverse = glm::identity<glm::mat4>(); part = BodyPart::LOWER; };
+		~Bone() {};
+		unsigned int uniqueID;
+		std::string name;
+		int parentIndex;
+		BodyPart part;
+		std::vector<unsigned int> childIndexes;
+		glm::mat4 globalBindposeInverse;
+	};
 	AnimationStack();
 	AnimationStack(const unsigned int vertCount);
 	~AnimationStack();
@@ -82,8 +97,16 @@ public:
 	void addAnimation(const std::string& animationName, Animation* animation);
 	void setConnectionData(const unsigned int vertexIndex, const unsigned int boneIndex, float weight);
 
+	void addBone(AnimationStack::Bone& bone);
+	const unsigned int boneCount();
+	Bone& getBone(const unsigned int index);
+
+
+
 	Animation* getAnimation(const std::string& name);
 	Animation* getAnimation(const unsigned int index);
+	const unsigned int getAnimationIndex(const std::string& name);
+	const std::string getAnimationName(const unsigned int);
 	const unsigned int getAnimationCount();
 
 	const glm::mat4* getTransform(const std::string& name, const float time);
@@ -102,7 +125,9 @@ private:
 	VertConnection* m_connections;
 	
 	std::map<unsigned int, std::string> m_names;
+	std::map<std::string, unsigned int> m_indexes;
 	std::map<std::string, Animation*> m_stack;
+	std::vector<AnimationStack::Bone> m_bones;
 
 };
 

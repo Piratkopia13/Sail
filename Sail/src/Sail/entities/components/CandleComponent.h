@@ -1,23 +1,26 @@
 #pragma once
 #include "Component.h"
 
+#include "Sail/netcode/NetcodeTypes.h"
+
 class Entity;
 
+#define MAX_HEALTH 20.f
+
+
+// TODO: Remove as many functions as possible
 // This component will eventually contain the health etc of the candles
 class CandleComponent : public Component<CandleComponent> {
 public:
 	CandleComponent();
 	virtual ~CandleComponent();
 
-	void hitWithWater(float damage);
+	void hitWithWater(float damage, Netcode::PlayerID shooterID);
 	void resetHitByWater();
 	bool wasHitByWater() const;
 	bool getIsAlive() const;
 	bool* getPtrToIsLit();
 	void setIsAlive(bool alive);
-	bool getDoActivate() const;
-	void activate();
-	void resetDoActivate();
 	void addToDownTime(float time);
 	void resetDownTime();
 	bool isCarried() const;
@@ -29,8 +32,8 @@ public:
 	void setIsLit(const bool isLit);
 	int getNumRespawns() const;
 	void incrementRespawns();
-	void setOwner(int playerEntityID);
-	int getOwner() const;
+	void setOwner(Netcode::PlayerID playerEntityID);
+	Netcode::PlayerID getOwner() const;
 	int getDamageTakenLastHit() const;
 	float getInvincibleTimer() const;
 	void decrementInvincibleTimer(const float dt);
@@ -38,8 +41,8 @@ public:
 	float getHealth() const;
 	void setHealth(const float health);
 	void decrementHealth(const float health);
-	void setWasHitByNetID(unsigned __int32 netIdOfPlayerWhoHitThisCandle);
-	unsigned __int32 getWasHitByNetID();
+	void setWasHitByNetID(Netcode::PlayerID netIdOfPlayerWhoHitThisCandle);
+	unsigned char getWasHitByNetID();
 
 	bool hitByLocalPlayer = false;
 
@@ -50,14 +53,13 @@ private:
 	bool m_wasHitByWater = false;
 	float m_damageTakenLastHit = 0;
 	bool m_isAlive = true;
-	bool m_activate = false;
 	bool m_carried = true;
 	bool m_wasCarriedLastUpdate = true;
-	unsigned __int32 wasHitByNetID = 0;
+	Netcode::PlayerID wasHitByPlayerID = 0;
 
-	float m_invincibleTimer = -2.f;
+	float m_invincibleTimer;
 	// TODO: Replace using game settings when that is implemented
-	float m_health = 20.f;
+	float m_health = MAX_HEALTH;
 
 	/* Should probably be removed later */
 	float m_downTime = 0.f;
@@ -65,5 +67,5 @@ private:
 	bool m_isLit = true;
 	int m_respawns = 0;
 
-	int m_playerEntityID = -1;
+	Netcode::PlayerID m_playerEntityID;
 };

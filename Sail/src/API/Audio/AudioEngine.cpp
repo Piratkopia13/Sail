@@ -9,6 +9,8 @@
 #include "Sail/graphics/geometry/Transform.h"
 #include "Sail/KeyBinds.h"
 #include "WaveBankReader.h"
+#include "Sail/entities/components/AudioComponent.h"
+
 
 #include <exception>
 #include <fstream>
@@ -21,6 +23,8 @@
 #include <utility>
 #include <windows.h>
 #include <wrl/client.h>
+
+#include <thread>
 
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfplat.lib")
@@ -147,7 +151,7 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 	return indexValue;
 }
 
-void AudioEngine::streamSound(const std::string& filename, int streamIndex, float volume, bool loop) {
+void AudioEngine::streamSound(const std::string& filename, int streamIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC) {
 	bool expectedValue = false;
 	while (!m_streamLocks[streamIndex].compare_exchange_strong(expectedValue, true));
 
@@ -155,7 +159,7 @@ void AudioEngine::streamSound(const std::string& filename, int streamIndex, floa
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		m_streamLocks[streamIndex].store(false);
 	} else {
-		this->streamSoundInternal(filename, streamIndex, volume, loop);
+		this->streamSoundInternal(filename, streamIndex, volume, isPositionalAudio, loop, pAudioC);
 	}
 
 	return;
@@ -167,8 +171,8 @@ void AudioEngine::updateSoundWithCurrentPosition(int index, Camera& cam, const T
 
 	glm::vec3 soundPos = transform.getInterpolatedTranslation(alpha);
 
-	// If the sound has an offset position from the entity's transform then rotate the offset with the transform's rotation and add it to the position
-	//if (m_sound[index].positionOffset != glm::vec3(0, 0, 0)) {
+	// If the sound has an offset position from the entity's transform then
+	// rotate the offset with the transform's rotation and add it to the position.
 	if (positionOffset != glm::vec3(0, 0, 0)) {
 		soundPos += glm::rotate(transform.getInterpolatedRotation(alpha), positionOffset);
 	}
@@ -410,7 +414,7 @@ HRESULT AudioEngine::initXAudio2() {
 }
 
 
-void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, float volume, bool loop) {
+void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC) {
 
 	if (!m_isRunning) {
 		return;
@@ -470,18 +474,21 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			}
 
 			Microsoft::WRL::ComPtr<IXAPO> xapo;
+
 			// Passing in nullptr as the first arg for HrtfApoInit initializes the APO with defaults of
 			// omnidirectional sound with natural distance decay behavior.
 			// CreateHrtfApo will fail with E_NOTIMPL on unsupported platforms.
-			HRESULT hr = CreateHrtfApo(nullptr, &xapo);
+			if (isPositionalAudio) {
+				HRESULT hr = CreateHrtfApo(nullptr, &xapo);
 
-			if (SUCCEEDED(hr)) {
-				hr = xapo.As(&m_stream[myIndex].hrtfParams);
-			}
+				if (SUCCEEDED(hr)) {
+					hr = xapo.As(&m_stream[myIndex].hrtfParams);
+				}
 
-			// Set the default environment.
-			if (SUCCEEDED(hr)) {
-				hr = m_stream[myIndex].hrtfParams->SetEnvironment(m_stream[myIndex].environment);
+				// Set the default environment.
+				if (SUCCEEDED(hr)) {
+					hr = m_stream[myIndex].hrtfParams->SetEnvironment(m_stream[myIndex].environment);
+				}
 			}
 
 			// creating a 'sourceVoice' for WAV file-type
@@ -506,7 +513,8 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			// Create a submix voice that will host the xAPO.
 			// This submix voice will be destroyed when XAudio2 instance is destroyed.
 			IXAudio2SubmixVoice* submixVoice = nullptr;
-			if (SUCCEEDED(hr)) {
+
+			if (isPositionalAudio && SUCCEEDED(hr)) {
 				XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
 				fxDesc.InitialState = TRUE;
 				fxDesc.OutputChannels = 2;          // Stereo output
@@ -530,7 +538,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			// Route the source voice to the submix voice.
 			// The complete graph pipeline looks like this -
 			// Source Voice -> Submix Voice (HRTF xAPO) -> Mastering Voice
-			if (SUCCEEDED(hr)) {
+			if (isPositionalAudio && SUCCEEDED(hr)) {
 				XAUDIO2_VOICE_SENDS sends = {};
 				XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
 				sendDesc.pOutputVoice = submixVoice;
@@ -686,6 +694,14 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 	m_isFinished[myIndex] = true;
 	m_streamLocks[myIndex].store(false);
+
+		// Commented-out because it causes a crash during death of other player
+	// Clean up audio component as well
+	//if (pAudioC != nullptr) {
+	//	if (pAudioC->m_currentlyStreaming.size() == 1) {
+	//		pAudioC->m_currentlyStreaming.clear();
+	//	}
+	//}
 }
 
 //--------------------------------------------------------------------------------------
