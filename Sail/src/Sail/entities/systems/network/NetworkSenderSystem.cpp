@@ -162,6 +162,8 @@ void NetworkSenderSystem::update() {
 }
 
 void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
+	std::lock_guard<std::mutex> lock(m_queueMutex);
+
 	m_eventQueue.push(type);
 
 #ifdef DEVELOPMENT
@@ -305,6 +307,9 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar) {
 	ar(event->type); // Send the event-type
+#ifdef DEVELOPMENT
+	ar(event->REDUNDANT_TYPE);
+#endif
 
 	switch (event->type) {
 	case Netcode::MessageType::SPAWN_PROJECTILE:

@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include "NWrapperHost.h"
 #include "NWrapperClient.h"
 
@@ -7,11 +8,15 @@ class NetworkSenderSystem;
 
 struct NetworkSenderEvent {
 	Netcode::MessageType type;
+
+#ifdef DEVELOPMENT
+	Netcode::MessageType REDUNDANT_TYPE; // Used to help 
+#endif
 	Netcode::MessageData* data = nullptr;  
 
 	// All events will by default be handled by NetworkReceiverSystem for
 	// both the people receiving the event and the person sending it.
-	bool alsoSendToSelf = false; // TODO: set to true once #U421 is done
+	bool alsoSendToSelf = true;
 
 	virtual ~NetworkSenderEvent() {
 		if (data) {

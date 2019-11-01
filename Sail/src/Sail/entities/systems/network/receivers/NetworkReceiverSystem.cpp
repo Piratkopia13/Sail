@@ -202,6 +202,9 @@ void NetworkReceiverSystem::update(float dt) {
 		// Receive 'one-time' events
 		size_t nrOfEvents;
 		Netcode::MessageType eventType;
+#ifdef DEVELOPMENT
+		Netcode::MessageType REDUNDANTTYPE;
+#endif
 		Netcode::ComponentID componentID;
 		Netcode::PlayerID playerID;
 
@@ -212,6 +215,14 @@ void NetworkReceiverSystem::update(float dt) {
 		for (size_t i = 0; i < nrOfEvents; i++) {
 			// Handle-Single-Frame events
 			ar(eventType);
+#ifdef DEVELOPMENT
+			ar(REDUNDANTTYPE);
+			if (eventType != REDUNDANTTYPE) {
+				Logger::Error("CORRUPTED NETWORK EVENT RECEIVED\n");
+				m_incomingDataBuffer.pop();
+				return;
+			}
+#endif
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "Event: " << Netcode::MessageNames[(int)(eventType) - 1] << "\n";
 #endif
