@@ -164,6 +164,14 @@ void NetworkSenderSystem::update() {
 void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 	m_eventQueue.push(type);
 
+#ifdef DEVELOPMENT
+	// Don't send broken events to others or to yourself
+	if (type->type < Netcode::MessageType::CREATE_NETWORKED_ENTITY || type->type >= Netcode::MessageType::EMPTY) {
+		Logger::Error("Attempted to send invalid message\n");
+		return;
+	}
+#endif
+
 	// if the event will be sent to ourself then increment the size counter
 	if (type->alsoSendToSelf) {
 		m_nrOfEventsToSendToSelf++;
