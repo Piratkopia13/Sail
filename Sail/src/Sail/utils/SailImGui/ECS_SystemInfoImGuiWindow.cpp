@@ -35,7 +35,7 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 
 				if (ImGui::CollapsingHeader(std::string(name.substr(name.find(" "), std::string::npos) + ": " + std::to_string(val->getEntities().size())).c_str())) {
 					for (const auto& e : val->getEntities()) {
-						if (ImGui::Selectable(e->getName().c_str(), selectedEntity == e)) {
+						if (ImGui::Selectable(std::string(e->getName()+"("+ std::to_string(e->getID())+")").c_str(), selectedEntity == e)) {
 							selectedEntity = (selectedEntity == e ? nullptr : e);
 							
 						}
@@ -70,20 +70,47 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 				TransformComponent* tc = selectedEntity->getComponent<TransformComponent>();
 				if (tc) {
 					if (ImGui::CollapsingHeader(std::string("TransformComponent").c_str())) {
-						ImGui::Text("Position");
+						ImGui::Text("Position"); ImGui::SameLine();
 						glm::vec3 pos = tc->getTranslation();
-						bool changed = false; //?
-						if (ImGui::DragFloat("##posx", &pos.x, 0.1f)) {
-							changed = true;
-						}
-						if (ImGui::DragFloat("##posy", &pos.y, 0.1f)) {
-							changed = true;
-						}
-						if (ImGui::DragFloat("##posz", &pos.z, 0.1f)) {
-							changed = true;
-						}
-						if (changed) {
+						if (ImGui::DragFloat3("##allPos", &pos.x, 0.1f)) {
 							tc->setTranslation(pos);
+						}
+						ImGui::Text("Rotation"); ImGui::SameLine();
+						glm::vec3 rot = tc->getRotations();
+						if (ImGui::DragFloat3("##allRot", &rot.x, 0.1f)) {
+							tc->setRotations(rot);
+						}
+						ImGui::Text("Scale   "); ImGui::SameLine();
+						glm::vec3 scale = tc->getScale();
+						if (ImGui::DragFloat3("##allScale", &scale.x, 0.1f)) {
+							tc->setScale(scale);
+						}
+					}
+				}
+				if (AnimationComponent* ac = selectedEntity->getComponent<AnimationComponent>()) {
+					if (ImGui::CollapsingHeader(std::string("AnimationComponent").c_str())) {
+						ImGui::Text("Index"); ImGui::SameLine();
+						int index = ac->animationIndex;
+						if (ImGui::DragInt("##aIndex", &index, 0.1f,0,ac->getAnimationStack()->getAnimationCount()-1)) {
+							ac->setAnimation(index);
+						}
+					}
+				}
+				if (SpeedLimitComponent * spc = selectedEntity->getComponent<SpeedLimitComponent>()) {
+					if (ImGui::CollapsingHeader(std::string("SpeedLimitComponent").c_str())) {
+						ImGui::Text("speed"); ImGui::SameLine();
+						float speed = spc->maxSpeed;
+						if (ImGui::DragFloat("##aIndex", &speed, 0.1f)) {
+							spc->maxSpeed = speed;
+						}
+					}
+				}
+				if (GunComponent* gc = selectedEntity->getComponent<GunComponent>()) {
+					if (ImGui::CollapsingHeader(std::string("GunComponent").c_str())) {
+						ImGui::Text("speed"); ImGui::SameLine();
+						float bulletSpeed = gc->projectileSpeed;
+						if (ImGui::DragFloat("##aspeeed", &bulletSpeed, 0.1f)) {
+							gc->projectileSpeed = bulletSpeed;
 						}
 					}
 				}
