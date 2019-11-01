@@ -43,6 +43,10 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     float3 F0 = 0.04f;
     F0        = lerp(F0, albedo, metalness);
 
+    // Initialize a random seed
+    // TODO: move this somewhere else and pass it in as a param
+	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, 0 );
+
     // Reflectance equation
     float3 Lo = 0.0f;
     for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
@@ -54,9 +58,22 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 		}
 
         float3 L = normalize(p.position - worldPosition);
+        float lightRadius = 0.08f;
+        // Calculate a vector perpendicular to L
+        float3 perpL = cross(L, float3(0.f, 1.0f, 0.f));
+        // Handle case where L = up -> perpL should then be (1,0,0)
+        if (all(perpL == 0.0f)) {
+            perpL.x = 1.0;
+        }
+        // Use perpL to get a vector from worldPosition to the edge of the light sphere
+        float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
+        // Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
+        float coneAngle = acos(dot(L, toLightEdge)) * 2.0f;
+        // inout uint randSeed, float3 direction, float coneAngle
+        L = Utils::getConeSample(randSeed, L, coneAngle);
+
         float3 H = normalize(V + L);
         float distance = length(p.position - worldPosition);
-    
         // Dont do any shading if in shadow or light is black
         if (Utils::rayHitAnything(worldPosition, L, distance)) {
             continue;
