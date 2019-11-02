@@ -69,13 +69,18 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
         // Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
         float coneAngle = acos(dot(L, toLightEdge)) * 2.0f;
-        // inout uint randSeed, float3 direction, float coneAngle
-        L = Utils::getConeSample(randSeed, L, coneAngle);
-
         float3 H = normalize(V + L);
         float distance = length(p.position - worldPosition);
+
+        float shadowAmount = 0.f;
+        uint numSamples = 1;
+        for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
+            L = Utils::getConeSample(randSeed, L, coneAngle);
+            shadowAmount += (float)Utils::rayHitAnything(worldPosition, L, distance);
+        }
+        shadowAmount = 1.f - shadowAmount / numSamples;
         // Dont do any shading if in shadow or light is black
-        if (Utils::rayHitAnything(worldPosition, L, distance)) {
+        if (shadowAmount == 0.f) {
             continue;
         }
 
@@ -102,7 +107,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
         // Calculate the light's outgoing reflectance value
         float NdotL = max(dot(N, L), 0.0f);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL * shadowAmount;
     }
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT

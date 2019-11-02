@@ -323,17 +323,21 @@ void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, co
 	res->Unmap(0, nullptr);
 }
 
-void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputShadowTexture, DX12RenderableTexture* historyTexture, ID3D12GraphicsCommandList4* cmdList) {
 
 	assert(m_gbufferInputTextures); // Input textures not set!
 	
 	unsigned int frameIndex = m_context->getSwapIndex();
 
-	// Copy output texture srv to beginning of heap
+	// Copy output texture uav to beginning of heap
 	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
-	D3D12_CPU_DESCRIPTOR_HANDLE outputTexHandle;
-	outputTexHandle.ptr = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_heapIncr * frameIndex;
-	m_context->getDevice()->CopyDescriptorsSimple(1, outputTexHandle, outputTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_context->getDevice()->CopyDescriptorsSimple(1, m_rtOutputTextureUavCPUHandles[frameIndex], outputTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	// Copy output shadow texture uav
+	m_context->getDevice()->CopyDescriptorsSimple(1, m_rtOutputShadowTextureUavCPUHandles[frameIndex], outputShadowTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	if (historyTexture) { // Doesnt exist first frame
+		// Copy history input texture srv
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_rtInputHistoryTextureUavCPUHandles[frameIndex], historyTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
 
 	//Set constant buffer descriptor heap
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_rtDescriptorHeap.Get() };
@@ -605,15 +609,41 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-		// The first two slots in the heap will be used for the output UAV
+		// The first 6 slots in the heap will be used for the output UAVs and history input SRV
+		// Default color UAV output
 		m_rtOutputTextureUavGPUHandles[0] = gpuHandle;
+		m_rtOutputTextureUavCPUHandles[0] = cpuHandle;
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 		m_usedDescriptors++;
 		m_rtOutputTextureUavGPUHandles[1] = gpuHandle;
+		m_rtOutputTextureUavCPUHandles[1] = cpuHandle;
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 		m_usedDescriptors++;
+		// Shadow UAV output
+		m_rtOutputShadowTextureUavGPUHandles[0] = gpuHandle;
+		m_rtOutputShadowTextureUavCPUHandles[0] = cpuHandle;
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+		m_usedDescriptors++;
+		m_rtOutputShadowTextureUavGPUHandles[1] = gpuHandle;
+		m_rtOutputShadowTextureUavCPUHandles[1] = cpuHandle;
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+		m_usedDescriptors++;
+		// History SRV input
+		m_rtInputHistoryTextureUavGPUHandles[0] = gpuHandle;
+		m_rtInputHistoryTextureUavCPUHandles[0] = cpuHandle;
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+		m_usedDescriptors++;
+		m_rtInputHistoryTextureUavGPUHandles[1] = gpuHandle;
+		m_rtInputHistoryTextureUavCPUHandles[1] = cpuHandle;
+		cpuHandle.ptr += m_heapIncr;
+		gpuHandle.ptr += m_heapIncr;
+		m_usedDescriptors++;
+		
 
 		// Next slot is used for the brdfLUT
 		m_rtBrdfLUTGPUHandle = gpuHandle;
@@ -823,6 +853,8 @@ void DXRBase::updateShaderTables() {
 		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get(), 64U);
 		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputShadowTextureUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtInputHistoryTextureUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
@@ -945,6 +977,8 @@ void DXRBase::createDXRGlobalRootSignature() {
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
+	m_localSignatureRayGen->addDescriptorTable("OutputShadowUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1);
+	m_localSignatureRayGen->addDescriptorTable("InputHistorySRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 20);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10 + DX12GBufferRenderer::NUM_GBUFFERS + 1, 0U, 3U);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);

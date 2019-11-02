@@ -13,6 +13,8 @@ Texture2D<float4> decal_texNormal 					: register(t15);
 Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t16);
 
 RWTexture2D<float4> lOutput : register(u0);
+RWTexture2D<float4> lOutputShadows : register(u1);
+Texture2D<float4> lInputHistory : register(t20);
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);

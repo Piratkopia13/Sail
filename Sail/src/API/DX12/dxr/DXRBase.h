@@ -35,7 +35,7 @@ public:
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();
-	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
+	void dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputShadowTexture, DX12RenderableTexture* historyTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void resetWater();
 	void reloadShaders();
@@ -124,7 +124,14 @@ private:
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle[2];
+
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavCPUHandles[2];
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputShadowTextureUavCPUHandles[2];
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtInputHistoryTextureUavCPUHandles[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputShadowTextureUavGPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtInputHistoryTextureUavGPUHandles[2];
+
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtBrdfLUTGPUHandle;
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_decalTexGPUHandles;

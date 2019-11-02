@@ -280,9 +280,6 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadModel("Tiles/CorridorCeiling.fbx");
 	rm->loadModel("Tiles/CorridorCorner.fbx");
 	rm->loadModel("Tiles/RoomCorner.fbx");
-	rm->loadModel("Tiles/SmallObject.fbx");
-	rm->loadModel("Tiles/MediumObject.fbx");
-	rm->loadModel("Tiles/LargeObject.fbx");
 
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
