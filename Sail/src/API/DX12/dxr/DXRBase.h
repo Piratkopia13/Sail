@@ -13,13 +13,6 @@
 
 class DXRBase : public IEventListener {
 public:
-	// TODO: somehow allow this to change from different DXRBase instances
-	struct RayPayload {
-		glm::vec4 color;
-		UINT recursionDepth;
-		int hit;
-	};
-
 	struct Metaball {
 		glm::vec3 pos;
 		float distToCamera;

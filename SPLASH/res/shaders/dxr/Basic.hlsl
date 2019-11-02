@@ -97,6 +97,7 @@ void rayGen() {
 	RayPayload payload;
 	payload.recursionDepth = 1;
 	payload.closestTvalue = 0;
+	payload.shadowColor = 0.f;
 	payload.color = float4(0,0,0,0);
 	if (worldNormal.x == -1 && worldNormal.y == -1) {
 		// Bounding boxes dont need shading
@@ -124,6 +125,7 @@ void rayGen() {
 	RayPayload payload_metaball;
 	payload_metaball.recursionDepth = 0;
 	payload_metaball.closestTvalue = 0;
+	payload_metaball.shadowColor = 0.f;
 	payload_metaball.color = float4(0, 0, 0, 0);
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payload_metaball);
@@ -131,6 +133,8 @@ void rayGen() {
 
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payload_metaball.closestTvalue);
 
+	lOutputShadows[launchIndex] = payload.shadowColor;
+	lOutputShadows[launchIndex].a = 1.f;
 	if (metaballDepth <= linearDepth) {
 		lOutput[launchIndex] = payload_metaball.color;	
 	} else {
@@ -165,6 +169,7 @@ void rayGen() {
 	RayPayload payload;
 	payload.recursionDepth = 0;
 	payload.closestTvalue = 0;
+	payload.shadowColor = 0.f;
 
 	payload.color = float4(0, 0, 0, 0);
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);

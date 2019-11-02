@@ -1,3 +1,5 @@
+#define RENDER_SHADOWS_SEPARATELY
+
 float3 fresnelSchlick(float cosTheta, float3 F0) {
     return F0 + (1.0f - F0) * pow(1.0f - cosTheta, 5.0f);
 } 
@@ -57,10 +59,10 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 			continue;
 		}
 
-        float3 L = normalize(p.position - worldPosition);
+        float3 toLight = normalize(p.position - worldPosition);
         float lightRadius = 0.08f;
         // Calculate a vector perpendicular to L
-        float3 perpL = cross(L, float3(0.f, 1.0f, 0.f));
+        float3 perpL = cross(toLight, float3(0.f, 1.0f, 0.f));
         // Handle case where L = up -> perpL should then be (1,0,0)
         if (all(perpL == 0.0f)) {
             perpL.x = 1.0;
@@ -68,21 +70,25 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         // Use perpL to get a vector from worldPosition to the edge of the light sphere
         float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
         // Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
-        float coneAngle = acos(dot(L, toLightEdge)) * 2.0f;
-        float3 H = normalize(V + L);
+        float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
+        float3 H = normalize(V + toLight);
         float distance = length(p.position - worldPosition);
 
         float shadowAmount = 0.f;
         uint numSamples = 1;
         for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
-            L = Utils::getConeSample(randSeed, L, coneAngle);
+            float3 L = Utils::getConeSample(randSeed, toLight, coneAngle);
             shadowAmount += (float)Utils::rayHitAnything(worldPosition, L, distance);
         }
-        shadowAmount = 1.f - shadowAmount / numSamples;
+#ifdef RENDER_SHADOWS_SEPARATELY
+        payload.shadowColor += shadowAmount / numSamples;
+#else
+        shadowAmount = 1.0f - shadowAmount / numSamples;
         // Dont do any shading if in shadow or light is black
         if (shadowAmount == 0.f) {
             continue;
         }
+#endif
 
         float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
         float3 radiance   = p.color * attenuation;
@@ -90,11 +96,11 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         float3 F  = fresnelSchlick(max(dot(H, V), 0.0f), F0);
 
         float NDF = DistributionGGX(N, H, roughness);
-        float G   = GeometrySmith(N, V, L, roughness);
+        float G   = GeometrySmith(N, V, toLight, roughness);
 
         // Calculate the Cook-Torrance BDRF
         float3 numerator    = NDF * G * F;
-        float  denominator  = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+        float  denominator  = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, toLight), 0.0f);
         float3 specular     = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
         specular *= attenuation;
 
@@ -106,8 +112,12 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         kD *= 1.0f - metalness;
 
         // Calculate the light's outgoing reflectance value
-        float NdotL = max(dot(N, L), 0.0f);
+        float NdotL = max(dot(N, toLight), 0.0f);
+#ifdef RENDER_SHADOWS_SEPARATELY
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+#else
         Lo += (kD * albedo / PI + specular) * radiance * NdotL * shadowAmount;
+#endif
     }
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT

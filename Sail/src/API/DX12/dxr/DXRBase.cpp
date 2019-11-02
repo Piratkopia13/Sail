@@ -957,7 +957,7 @@ void DXRBase::createRaytracingPSO() {
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowMissName });
 	psoBuilder.addSignatureToShaders({ m_shadowMissName }, m_localSignatureEmpty->get());
 
-	psoBuilder.setMaxPayloadSize(sizeof(RayPayload));
+	psoBuilder.setMaxPayloadSize(sizeof(DXRShaderCommon::RayPayload));
 	psoBuilder.setMaxAttributeSize(sizeof(float) * 4);
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);
 	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());
