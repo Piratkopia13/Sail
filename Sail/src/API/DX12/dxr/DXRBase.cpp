@@ -660,21 +660,22 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		gpuHandle.ptr += m_heapIncr;
 		m_usedDescriptors++;
 
-		// Next (4 * numSwapBuffers) slots are used for input gbuffers
+		// Next (5 * numSwapBuffers) slots are used for input gbuffers
 		for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++) {
 			m_gbufferStartGPUHandles[i] = gpuHandle;
-			D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[4];
+			D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[5];
 			srcDescriptors[0] = m_gbufferInputTextures[0]->getSrvCDH(i);
 			srcDescriptors[1] = m_gbufferInputTextures[1]->getSrvCDH(i);
 			srcDescriptors[2] = m_gbufferInputTextures[2]->getSrvCDH(i);
-			srcDescriptors[3] = m_gbufferInputTextures[0]->getDepthSrvCDH(i);
+			srcDescriptors[3] = m_gbufferInputTextures[3]->getSrvCDH(i);
+			srcDescriptors[4] = m_gbufferInputTextures[0]->getDepthSrvCDH(i);
 
-			UINT dstRangeSizes[] = { 4 };
-			UINT srcRangeSizes[] = { 1, 1, 1, 1 };
-			m_context->getDevice()->CopyDescriptors(1, &cpuHandle, dstRangeSizes, 4, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			cpuHandle.ptr += m_heapIncr * 4;
-			gpuHandle.ptr += m_heapIncr * 4;
-			m_usedDescriptors+=4;
+			UINT dstRangeSizes[] = { 5 };
+			UINT srcRangeSizes[] = { 1, 1, 1, 1, 1 };
+			m_context->getDevice()->CopyDescriptors(1, &cpuHandle, dstRangeSizes, 5, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			cpuHandle.ptr += m_heapIncr * 5;
+			gpuHandle.ptr += m_heapIncr * 5;
+			m_usedDescriptors+=5;
 		}
 
 		// Initialize decal SRVs
@@ -982,9 +983,9 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 	m_localSignatureRayGen->addDescriptorTable("OutputShadowUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1);
-	m_localSignatureRayGen->addDescriptorTable("InputHistorySRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 20);
+	m_localSignatureRayGen->addDescriptorTable("inputHistorySRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 20);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
-	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10 + DX12GBufferRenderer::NUM_GBUFFERS + 1, 0U, 3U);
+	m_localSignatureRayGen->addDescriptorTable("decalTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 17, 0U, 3U);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
 	m_localSignatureRayGen->addStaticSampler();

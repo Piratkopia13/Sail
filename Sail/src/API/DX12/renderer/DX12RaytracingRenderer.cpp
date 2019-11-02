@@ -174,7 +174,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_outputShadowTexture->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	m_lastFrameShadowTexture->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-	// Wait for compute to finish
+	// Wait for compute to finish before executing the direct queue
 	m_context->getDirectQueue()->wait(fenceVal);
 	// Execute direct command list
 	cmdListDirect->Close();

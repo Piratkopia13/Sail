@@ -35,6 +35,8 @@ DX12GBufferRenderer::DX12GBufferRenderer() {
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
 		m_gbufferTextures[i] = static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i), (i == 0)));
 	}
+	m_lastFrameScreenPosTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+
 }
 
 DX12GBufferRenderer::~DX12GBufferRenderer() {
@@ -196,8 +198,13 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		shaderPipeline->trySetCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
 		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
 		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
+		
+		// Bind last frame screen position texture, used to calculate motion vectors
+		shaderPipeline->setTexture2D("sys_texLastScreenPositions", m_lastFrameScreenPosTexture.get(), cmdList.Get());
+		/*m_lastFrameScreenPosTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);*/
 
-		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
+		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex, -1); // Last parameter (srvOffset) set to -1 since we bind a custom texture to t0
 	}
 
 	// Lastly - transition back buffer to present
@@ -205,10 +212,16 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	if (threadID == nThreads - 1) {
 
 		// Transition output textures for use in raytracing
-		for (int i = 0; i < NUM_GBUFFERS; i++) {
+		for (int i = 0; i < NUM_GBUFFERS - 1; i++) {
 			// TODO: transition in batch
 			m_gbufferTextures[i]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
+
+		// Copy screen position output to be used as input next frame
+		m_gbufferTextures[NUM_GBUFFERS - 1]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+		m_lastFrameScreenPosTexture->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
+		cmdList->CopyResource(m_lastFrameScreenPosTexture->getResource(), m_gbufferTextures[NUM_GBUFFERS - 1]->getResource());
+
 
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));

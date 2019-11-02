@@ -10,7 +10,7 @@ public:
 
 	/*[Depricated]*/
 	virtual void draw(const Renderer& renderer, void* cmdList) override;
-	virtual void draw_new(const Renderer& renderer, void* cmdList, int meshIndex);
+	virtual void draw_new(const Renderer& renderer, void* cmdList, int meshIndex, int srvOffset = 0);
 	virtual void bindMaterial(void* cmdList, int meshIndex);
 	unsigned int getSRVIndex();
 private:

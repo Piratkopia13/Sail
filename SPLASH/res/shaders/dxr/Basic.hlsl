@@ -3,14 +3,18 @@
 
 RaytracingAccelerationStructure gRtScene 			: register(t0);
 Texture2D<float4> sys_brdfLUT 						: register(t5);
+
+// Gbuffer inputs
 Texture2D<float4> sys_inTex_normals 				: register(t10);
 Texture2D<float4> sys_inTex_albedo 					: register(t11);
 Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12);
-Texture2D<float>  sys_inTex_depth 					: register(t13);
+Texture2D<float4> sys_inTex_motionVectors		: register(t13);
+Texture2D<float>  sys_inTex_depth 					: register(t14);
+
 // Decal textures
-Texture2D<float4> decal_texAlbedo 					: register(t14);
-Texture2D<float4> decal_texNormal 					: register(t15);
-Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t16);
+Texture2D<float4> decal_texAlbedo 					: register(t17);
+Texture2D<float4> decal_texNormal 					: register(t18);
+Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19);
 
 RWTexture2D<float4> lOutput : register(u0);
 RWTexture2D<float4> lOutputShadows : register(u1);
@@ -135,14 +139,21 @@ void rayGen() {
 
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.2f; // Temporal fade, trading temporal stability for lag
+	// Reproject screenTexCoord to where it was last frame
+	float2 motionVector = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg * 2.f - 1.f;
 	float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
+	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord - (motionVector * 2.f - 1.f), 0).r;
 	// float cLast = 0.0f;
 	lOutputShadows[launchIndex] = alpha * (1.0f - payload.shadowColor) + (1.0f - alpha) * cLast;
 	// lOutputShadows[launchIndex] = 1.0f - payload.shadowColor;
 	lOutputShadows[launchIndex].a = 1.f;
 
 // DEBUG
-	lOutput[launchIndex] = lOutputShadows[launchIndex];
+	lOutput[launchIndex].rg = motionVector;
+	lOutput[launchIndex].b = 0.f;
+	// lOutput[launchIndex].rgb = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rgb;
+	lOutput[launchIndex].a = 1.0;
+	// lOutput[launchIndex] = lOutputShadows[launchIndex];
 	return;
 
 	if (metaballDepth <= linearDepth) {
