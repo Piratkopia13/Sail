@@ -163,4 +163,7 @@ private:
 	unsigned int m_waterDataCPU[WATER_ARR_SIZE];
 	bool m_waterChanged;
 
+	// Temporal accumulation stuff
+	unsigned int m_frameCount;
+
 };

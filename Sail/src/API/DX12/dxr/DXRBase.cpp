@@ -14,7 +14,9 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	: m_shaderFilename(shaderFilename)
 	, m_gbufferInputTextures(inputs)
 	, m_brdfLUTPath("pbr/brdfLUT.tga")
-	, m_waterChanged(false) {
+	, m_waterChanged(false)
+	, m_frameCount(0)
+{
 	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
 	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
 	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
@@ -220,6 +222,7 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.nDecals = m_decalsToRender;
 	newData.mapSize = mapSize;
 	newData.mapStart = mapStart;
+	newData.frameCount = m_frameCount++;
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
@@ -328,6 +331,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTextu
 	assert(m_gbufferInputTextures); // Input textures not set!
 	
 	unsigned int frameIndex = m_context->getSwapIndex();
+	unsigned int lastFrameIndex = 1 - frameIndex;
 
 	// Copy output texture uav to beginning of heap
 	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -336,7 +340,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTextu
 	m_context->getDevice()->CopyDescriptorsSimple(1, m_rtOutputShadowTextureUavCPUHandles[frameIndex], outputShadowTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	if (historyTexture) { // Doesnt exist first frame
 		// Copy history input texture srv
-		m_context->getDevice()->CopyDescriptorsSimple(1, m_rtInputHistoryTextureUavCPUHandles[frameIndex], historyTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_rtInputHistoryTextureUavCPUHandles[frameIndex], historyTexture->getUavCDH(lastFrameIndex), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	//Set constant buffer descriptor heap

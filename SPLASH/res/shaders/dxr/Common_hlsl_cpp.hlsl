@@ -92,6 +92,9 @@ struct SceneCBuffer {
 	float3 mapSize;
 	float padding3;
 	float3 mapStart;
+
+	// Random seed stuff
+	uint frameCount;
 };
 
 // Properties set once per BLAS/Mesh

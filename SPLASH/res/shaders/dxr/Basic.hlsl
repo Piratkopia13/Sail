@@ -133,8 +133,18 @@ void rayGen() {
 
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payload_metaball.closestTvalue);
 
-	lOutputShadows[launchIndex] = payload.shadowColor;
+	// Temporal filtering via an exponential moving average
+	float alpha = 0.2f; // Temporal fade, trading temporal stability for lag
+	float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
+	// float cLast = 0.0f;
+	lOutputShadows[launchIndex] = alpha * (1.0f - payload.shadowColor) + (1.0f - alpha) * cLast;
+	// lOutputShadows[launchIndex] = 1.0f - payload.shadowColor;
 	lOutputShadows[launchIndex].a = 1.f;
+
+// DEBUG
+	lOutput[launchIndex] = lOutputShadows[launchIndex];
+	return;
+
 	if (metaballDepth <= linearDepth) {
 		lOutput[launchIndex] = payload_metaball.color;	
 	} else {
