@@ -26,7 +26,7 @@ public:
 	std::list<std::pair<std::string, std::pair<int, bool>>> m_currentlyStreaming;
 
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		ImGui::Text("Streams");
 		ImGui::Indent(10.0f);
 		for (const auto& sound : m_currentlyStreaming) {

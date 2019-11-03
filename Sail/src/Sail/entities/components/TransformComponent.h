@@ -22,7 +22,7 @@ public:
 	virtual ~TransformComponent() {}
 
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		ImGui::Text("Position"); ImGui::SameLine();
 		glm::vec3 pos = getTranslation();
 		if (ImGui::DragFloat3("##allPos", &pos.x, 0.1f)) {

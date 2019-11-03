@@ -18,7 +18,7 @@ public:
 		return m_pointLight;
 	}
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		glm::vec col = m_pointLight.getColor();
 		if (ImGui::DragFloat3("##COLOR", &col.x, 0.1f)) {

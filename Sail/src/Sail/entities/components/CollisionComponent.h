@@ -16,7 +16,7 @@ public:
 	std::vector<Octree::CollisionInfo> collisions; //Contains the info for current collisions
 
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		ImGui::DragFloat("##drag", &drag); ImGui::NextColumn();
 		ImGui::Text("drag"); ImGui::NextColumn();
@@ -37,7 +37,12 @@ public:
 		ImGui::Separator();
 
 		for (auto& c : collisions) {
-			ImGui::Text(std::string(c.entity->getName()+"("+std::to_string(c.entity->getID())+")").c_str());
+			//ImGui::Text(std::string(c.entity->getName()+"("+std::to_string(c.entity->getID())+")").c_str());
+			if (ImGui::Selectable(std::string(c.entity->getName() + "(" + std::to_string(c.entity->getID()) + ")").c_str(), (*selected) == c.entity)) {
+				Logger::Log("Tried to switch");
+				*selected = c.entity;
+				return;
+			}
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
 				ImGui::Text(std::string("axis:    " + Utils::toStr(c.intersectionAxis)).c_str());

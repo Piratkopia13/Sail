@@ -4,6 +4,7 @@
 #include <typeindex>
 #include "../libraries/imgui/imgui.h"
 
+class Entity;
 #define MAX_NUM_COMPONENTS_TYPES 128
 
 
@@ -53,7 +54,7 @@ public:
 		return global_componentID;
 	}
 #ifdef DEVELOPMENT
-	virtual void imguiRender();
+	virtual void imguiRender(Entity** selected);
 	const std::string getName() {
 		return typeid(*this).name();
 	}

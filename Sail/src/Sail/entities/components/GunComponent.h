@@ -37,7 +37,7 @@ public:
 	bool firingContinuously = false;
 	GunState state = GunState::STANDBY;
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		if (ImGui::DragFloat("##aspeeed", &projectileSpeed, 0.1f)) {
 		}ImGui::NextColumn();

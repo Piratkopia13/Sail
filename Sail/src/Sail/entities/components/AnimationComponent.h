@@ -107,7 +107,7 @@ public:
 
 	AnimationStack* getAnimationStack() { return m_stack; };
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		AnimationComponent* animationC = this;
 		ImGui::Text("Animation: %s", animationC->currentAnimation->getName().c_str());
 		ImGui::Checkbox("Update on GPU", &animationC->computeUpdate);

@@ -9,7 +9,7 @@ public:
 	bool isVisible = true;
 
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		ImGui::Checkbox("##isVisible", &isVisible); ImGui::NextColumn();
 		ImGui::Text("isVisible"); 

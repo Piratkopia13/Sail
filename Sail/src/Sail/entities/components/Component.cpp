@@ -1,9 +1,10 @@
 #include "pch.h"
 #include "Component.h"
+#include "Sail/entities/Entity.h"
 
 ComponentTypeID global_componentID = 0;
 #ifdef DEVELOPMENT
-void BaseComponent::imguiRender() {
+void BaseComponent::imguiRender(Entity** selected) {
 	ImGui::Text("Nothing here yet...");
 	ImGui::Text("Create");
 	ImGui::Separator();

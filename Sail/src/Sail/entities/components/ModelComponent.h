@@ -20,7 +20,7 @@ public:
 
 	bool renderToGBuffer;
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		ImGui::Checkbox("##VEL", &renderToGBuffer); ImGui::NextColumn();
 		ImGui::Text(std::string("renderToGBuffer").c_str());

@@ -58,6 +58,8 @@ size_t BaseComponentSystem::getNumEntities() {
 const std::vector<Entity*>& BaseComponentSystem::getEntities() const{
 	return entities;
 }
+void BaseComponentSystem::imguiPrint(Entity** selectedEntity) {
+}
 #endif
 void BaseComponentSystem::addQueuedEntities() {
 	for (Entity* e : entitiesQueuedToAdd) {

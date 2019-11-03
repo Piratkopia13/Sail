@@ -9,7 +9,7 @@ public:
 
 	bool allowSimpleCollision; //Flag to let things collide with the entity's bounding box instead of mesh
 #ifdef DEVELOPMENT
-	void imguiRender() {
+	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		ImGui::Text("allowSimpleCollision"); ImGui::NextColumn();
 		ImGui::Checkbox("##allowSimpleCollision", &allowSimpleCollision);
