@@ -26,6 +26,15 @@ void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatri
 	}
 }
 
+void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, const glm::mat4& modelMatrixLastFrame, RenderFlag flags) {
+	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
+		m_rendererGbuffer->submit(mesh, modelMatrix, modelMatrixLastFrame, flags);
+	}
+	if (!(flags & RenderFlag::HIDE_IN_DXR)) {
+		m_rendererRaytrace->submit(mesh, modelMatrix, flags);
+	}
+}
+
 void DX12HybridRaytracerRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {
 	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
 		m_rendererGbuffer->submitMetaball(type, material, pos, flags);

@@ -10,7 +10,8 @@ struct VSIn {
 
 struct PSIn {
     float4 position : SV_Position;
-    float4 screenPosition : SCREENPOS;
+    float4 clipPos : POS0;
+    float4 clipPosLastFrame : POS1;
     float3 normal : NORMAL0;
     float2 texCoords : TEXCOORD0;
     float3x3 tbn : TBN;
@@ -20,6 +21,7 @@ cbuffer VSSystemCBuffer : register(b0) {
     matrix sys_mWorld;
     matrix sys_mView;
     matrix sys_mProj;
+    matrix sys_mWVPLastFrame;
 }
 
 cbuffer PSSystemCBuffer : register(b1) {
@@ -33,11 +35,11 @@ PSIn VSMain(VSIn input) {
 
 	output.texCoords = input.texCoords;
 	input.position.w = 1.f;
+	// Convert position into clip space
 	output.position = mul(wv, input.position);
-	// Convert position into projection space
     output.position = mul(sys_mProj, output.position);
-    output.screenPosition = output.position;
-    // output.position.xyz /= output.position.w;
+    output.clipPos = output.position;
+    output.clipPosLastFrame = mul(sys_mWVPLastFrame, input.position);
     
 	// Convert normal into world space and normalize
 	output.normal = mul((float3x3) sys_mWorld, input.normal);
@@ -56,10 +58,9 @@ PSIn VSMain(VSIn input) {
 // TODO: check if it is worth the extra VRAM to write diffuse and specular gbuffers instead of sampling them in the raytracing shaders
 //       The advantage is that mip map level can be calculated automatically here
 //      
-Texture2D sys_texLastScreenPositions    : register(t0);
-Texture2D sys_texAlbedo                 : register(t1);
-Texture2D sys_texNormal                 : register(t2);
-Texture2D sys_texMetalnessRoughnessAO   : register(t3);
+Texture2D sys_texAlbedo                 : register(t0);
+Texture2D sys_texNormal                 : register(t1);
+Texture2D sys_texMetalnessRoughnessAO   : register(t2);
 SamplerState PSss;
 
 struct GBuffers {
@@ -67,7 +68,6 @@ struct GBuffers {
 	float4 albedo               : SV_Target1;
 	float4 metalnessRoughnessAO : SV_Target2;
     float4 motionVector         : SV_Target3;
-    float4 screenSpacePosition  : SV_Target4;
 };
 
 GBuffers PSMain(PSIn input) {
@@ -88,13 +88,13 @@ GBuffers PSMain(PSIn input) {
 	if (sys_material_pbr.hasMetalnessRoughnessAOTexture)
 		gbuffers.metalnessRoughnessAO *= sys_texMetalnessRoughnessAO.Sample(PSss, input.texCoords);
 
-    float2 screenPos = input.screenPosition.xy / input.screenPosition.w * 0.5f + 0.5f;
-    screenPos.y = 1.f - screenPos.y; // Flip y cuz directX
-    float2 position = input.screenPosition.xy * 0.5f + 0.5f;
-    float2 positionLastFrame = sys_texLastScreenPositions.Sample(PSss, screenPos).xy;
-    // gbuffers.motionVector = float4(position, 0.0f, 1.0f);
+    // float2 screenPos = input.clipPos.xy / input.clipPos.w * 0.5f + 0.5f;
+    // screenPos.y = 1.f - screenPos.y; // Flip y cuz directX
+    // float2 positionLastFrame = sys_texLastScreenPositions.Sample(PSss, screenPos).xy;
+    float2 position = input.clipPos.xy / input.clipPos.w * 0.5f + 0.5f;
+    float2 positionLastFrame = input.clipPosLastFrame.xy / input.clipPosLastFrame.w * 0.5f + 0.5f;
+    // gbuffers.motionVector = float4(position * 0.5f + 0.5f, 0.0f, 1.0f);
     gbuffers.motionVector = float4( (position - positionLastFrame) * 0.5f + 0.5f, 0.f, 1.0f);
-    gbuffers.screenSpacePosition = float4(position, 0.f, 1.0f);
 
     return gbuffers;
 }

@@ -39,7 +39,8 @@ public:
 
 	struct RenderCommand {
 		RenderCommandType type;
-		glm::mat4 transform; // TODO: find out why having a const ptr here doesnt work
+		glm::mat4 transform;
+		glm::mat4 transformLastFrame;
 		RenderFlag flags = MESH_STATIC;
 		std::vector<bool> hasUpdatedSinceLastRender;
 
@@ -59,6 +60,7 @@ public:
 
 	virtual void begin(Camera* camera);
 	virtual void submit(Model* model, const glm::mat4& modelMatrix, RenderFlag flags);
+	virtual void submit(Model* model, const glm::mat4& modelMatrix, const glm::mat4& modelMatrixLastFrame, RenderFlag flags);
 
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {};
 
@@ -67,6 +69,7 @@ public:
 	virtual void end() { };
 
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags);
+	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, const glm::mat4& modelMatrixLastFrame, RenderFlag flags);
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) = 0;
 	virtual bool onEvent(Event& event) override { return true; };

@@ -678,6 +678,7 @@ bool GameState::renderImguiDebug(float dt) {
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("LightListSystem", m_componentSystems.lightListSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("GunSystem", m_componentSystems.gunSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("GameInputSystem", m_componentSystems.gameInputSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("GameInputSystem", m_componentSystems.gameInputSystem->getNumEntities());
 
 	m_ecsSystemInfoImGuiWindow.renderWindow();
 
@@ -702,7 +703,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	m_componentSystems.gameInputSystem->fixedUpdate(dt);
 
-	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	m_componentSystems.prepareUpdateSystem->fixedUpdate(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
 	// Update entities with info from the network and from ourself
 	// DON'T MOVE, should happen at the start of each tick
@@ -746,6 +747,9 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 
 	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+
+	m_cam.newFrame(); // Has to run before the camera update
+	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);

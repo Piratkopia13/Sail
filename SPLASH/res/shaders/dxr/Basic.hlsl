@@ -36,6 +36,7 @@ Texture2D<float4> sys_texNormal : register(t3);
 Texture2D<float4> sys_texMetalnessRoughnessAO : register(t4);
 
 SamplerState ss : register(s0);
+SamplerState motionSS : register(s1);
 
 #include "Utils.hlsl"
 #include "Shading.hlsl"
@@ -140,20 +141,28 @@ void rayGen() {
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.2f; // Temporal fade, trading temporal stability for lag
 	// Reproject screenTexCoord to where it was last frame
-	float2 motionVector = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg * 2.f - 1.f;
-	float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
-	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord - (motionVector * 2.f - 1.f), 0).r;
+	float2 motionVector = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg;
+	motionVector.y = 1.f - motionVector.y;
+	motionVector = motionVector * 2.f - 1.0f;
+	
+	// This fixes snowfall, not sure why. Precision issue?
+	motionVector.x += 0.004f;
+	motionVector.y -= 0.004f;
+
+	float2 reprojectedTexCoord = screenTexCoord - motionVector;
+	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
+	float cLast = lInputHistory.SampleLevel(motionSS, reprojectedTexCoord, 0).r;
 	// float cLast = 0.0f;
 	lOutputShadows[launchIndex] = alpha * (1.0f - payload.shadowColor) + (1.0f - alpha) * cLast;
 	// lOutputShadows[launchIndex] = 1.0f - payload.shadowColor;
 	lOutputShadows[launchIndex].a = 1.f;
 
 // DEBUG
-	lOutput[launchIndex].rg = motionVector;
-	lOutput[launchIndex].b = 0.f;
-	// lOutput[launchIndex].rgb = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rgb;
-	lOutput[launchIndex].a = 1.0;
-	// lOutput[launchIndex] = lOutputShadows[launchIndex];
+	// lOutput[launchIndex].rg = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg * 2.f - 1.f;
+	// lOutput[launchIndex].rg *= 20.f;
+	// lOutput[launchIndex].b = 0.f;
+	// lOutput[launchIndex].a = 1.0;
+	lOutput[launchIndex] = lOutputShadows[launchIndex];
 	return;
 
 	if (metaballDepth <= linearDepth) {

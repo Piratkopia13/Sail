@@ -21,6 +21,6 @@ void RealTimeModelSubmitSystem::submitAll(const float alpha) {
 		ModelComponent* model = e->getComponent<ModelComponent>();
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 
-		renderer->submit(model->getModel(), transform->getMatrixWithUpdate(), (model->getModel()->isAnimated() ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC));
+		renderer->submit(model->getModel(), transform->getMatrixWithUpdate(), transform->getRenderMatrixLastFrame(), (model->getModel()->isAnimated() ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC));
 	}
 }
