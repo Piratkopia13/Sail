@@ -24,4 +24,17 @@ public:
 		// • string = filename
 		// • int = ID of playing streaming; needed for STOPPING the streamed sound
 	std::list<std::pair<std::string, std::pair<int, bool>>> m_currentlyStreaming;
+
+#ifdef DEVELOPMENT
+	void imguiRender() {
+		ImGui::Text("Streams");
+		ImGui::Indent(10.0f);
+		for (const auto& sound : m_currentlyStreaming) {
+			ImGui::Text(std::string(sound.first + "(" +std::to_string(sound.second.first)+":"+ std::to_string(sound.second.second) + ")").c_str());
+		}
+		ImGui::Unindent(10.0f);
+	}
+#endif
+
+
 };

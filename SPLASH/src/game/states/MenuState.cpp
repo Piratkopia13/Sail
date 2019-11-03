@@ -65,7 +65,6 @@ bool MenuState::renderImgui(float dt) {
 	//Keep
 	//ImGui::ShowDemoWindow();
 
-
 	static char buf[101] = "";
 	// Host
 	if(ImGui::Begin("Main Menu")) {
@@ -280,9 +279,9 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadModel("Tiles/CorridorCeiling.fbx");
 	rm->loadModel("Tiles/CorridorCorner.fbx");
 	rm->loadModel("Tiles/RoomCorner.fbx");
-	rm->loadModel("Tiles/SmallObject.fbx");
-	rm->loadModel("Tiles/MediumObject.fbx");
-	rm->loadModel("Tiles/LargeObject.fbx");
+	rm->loadModel("Clutter/SmallObject.fbx");
+	rm->loadModel("Clutter/MediumObject.fbx");
+	rm->loadModel("Clutter/LargeObject.fbx");
 
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");

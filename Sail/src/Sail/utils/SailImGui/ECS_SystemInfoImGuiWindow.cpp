@@ -26,18 +26,20 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 		return;
 	}
 	const ECS::SystemMap* systemMap = &ecs->getSystems();
-
+	static float windowWeight = 1.0f;
+	
 	if (ImGui::Begin("ECS System Entities")) {
+
 		static Entity* selectedEntity = nullptr;
-		if(ImGui::BeginChild("SYSTEMS", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), false)) {
+		if(ImGui::BeginChild("SYSTEMS", ImVec2(260, 0), false)) {
 			for (auto const& [key, val] : *systemMap) {
 				std::string name(key.name());
 
 				if (ImGui::CollapsingHeader(std::string(name.substr(name.find(" "), std::string::npos) + ": " + std::to_string(val->getEntities().size())).c_str())) {
 					for (const auto& e : val->getEntities()) {
 						if (ImGui::Selectable(std::string(e->getName()+"("+ std::to_string(e->getID())+")").c_str(), selectedEntity == e)) {
-							selectedEntity = (selectedEntity == e ? nullptr : e);
 							
+							selectedEntity = (selectedEntity == e ? nullptr : e);
 						}
 					}
 				}
@@ -45,7 +47,7 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 		}
 		ImGui::EndChild();
 		ImGui::SameLine();
-		if (ImGui::BeginChild("ENTITY", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), false)) {
+		if (ImGui::BeginChild("ENTITY", ImVec2(0, 0), false)) {
 			if (selectedEntity) {
 				ImGui::Text(std::string("Name: " + selectedEntity->getName()).c_str());
 				ImGui::Text(std::string("ID: " + std::to_string(selectedEntity->getID())).c_str());
@@ -67,6 +69,23 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 					}
 				}
 				ImGui::Separator();
+				const BaseComponent::Ptr* components = selectedEntity->getComponents();
+				for (unsigned int index = 0; index < BaseComponent::nrOfComponentTypes(); index++) {
+					if (BaseComponent* ptr = components[index].get()) {
+						std::string name(ptr->getName());
+						
+						if (ImGui::CollapsingHeader(std::string(name.substr(name.find(" ") + 1, std::string::npos)).c_str())) {
+							ImGui::BeginGroup();
+							ImGui::Indent(16.0f);
+							ptr->imguiRender();
+							ImGui::Unindent(16.0f);
+							ImGui::EndGroup();
+						}
+					}
+				}
+				
+				
+				/*
 				if (TransformComponent * tc = selectedEntity->getComponent<TransformComponent>()) {
 					std::type_index ti = typeid(TransformComponent);
 					std::string name(ti.name());
@@ -89,24 +108,6 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 					}
 					
 				}
-				if (AnimationComponent* ac = selectedEntity->getComponent<AnimationComponent>()) {
-					if (ImGui::CollapsingHeader(std::string("AnimationComponent").c_str())) {
-						ImGui::Text("Index"); ImGui::SameLine();
-						int index = ac->animationIndex;
-						if (ImGui::DragInt("##aIndex", &index, 0.1f,0,ac->getAnimationStack()->getAnimationCount()-1)) {
-							ac->setAnimation(index);
-						}
-					}
-				}
-				if (SpeedLimitComponent * spc = selectedEntity->getComponent<SpeedLimitComponent>()) {
-					if (ImGui::CollapsingHeader(std::string("SpeedLimitComponent").c_str())) {
-						ImGui::Text("Speed"); ImGui::SameLine();
-						float speed = spc->maxSpeed;
-						if (ImGui::DragFloat("##aIndex", &speed, 0.1f)) {
-							spc->maxSpeed = speed;
-						}
-					}
-				}
 				if (GunComponent* gc = selectedEntity->getComponent<GunComponent>()) {
 					if (ImGui::CollapsingHeader(std::string("GunComponent").c_str())) {
 						ImGui::Text("Speed"); ImGui::SameLine();
@@ -128,7 +129,7 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 				ImGui::Text("More to come..");
 				//for (unsigned int i = 0; i < BaseComponent::nrOfComponentTypes(); i++) {
 				//}
-
+				*/
 
 
 
