@@ -19,9 +19,8 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_context = app->getAPI<DX12API>();
 
 	for (size_t i = 0; i < MAX_RECORD_THREADS; i++) {
-		m_context->initCommand(m_command[i]);
 		std::wstring name = L"Forward Renderer main command list for render thread: " + std::to_wstring(i);
-		m_command[i].list->SetName(name.c_str());
+		m_context->initCommand(m_command[i], D3D12_COMMAND_LIST_TYPE_DIRECT, name.c_str());
 	}
 
 
@@ -38,7 +37,7 @@ DX12ForwardRenderer::~DX12ForwardRenderer() {
 void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
-	auto frameIndex = m_context->getSwapIndex();
+	auto frameIndex = m_context->getFrameIndex();
 	int count = static_cast<int>(commandQueue.size());
 
 #ifdef MULTI_THREADED_COMMAND_RECORDING
@@ -59,7 +58,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	for (int i = 0; i < mainThreadIndex; i++) {
 		fut[i] = Application::getInstance()->pushJobToThreadPool(
 			[this, postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse](int id) {
-				return this->recordCommands(postProcessPipeline, i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
+				return this->recordCommands(postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse);
 			});
 		start += commandsPerThread;
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
@@ -67,7 +66,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	}
 
-	recordCommands(postProcessPipeline, mainThreadIndex, frameIndex, start, commandsPerThread, count, nThreadsToUse);
+	recordCommands(postProcessPipeline, mainThreadIndex, frameIndex, start, commandsPerThread + 1 /* +1 to account for rounding */, count, nThreadsToUse);
 	ID3D12CommandList* commandlists[MAX_RECORD_THREADS];
 	commandlists[mainThreadIndex] = m_command[mainThreadIndex].list.Get();
 

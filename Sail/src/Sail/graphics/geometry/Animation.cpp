@@ -232,6 +232,7 @@ void AnimationStack::reSizeConnections(const unsigned int vertCount) {
 void AnimationStack::addAnimation(const std::string& animationName, Animation* animation) {
 	if (m_stack.find(animationName) == m_stack.end()) {
 		m_names[(unsigned int)m_stack.size()] = animationName;
+		m_indexes[animationName] = (unsigned int)m_stack.size();
 		m_stack[animationName] = animation;
 	}
 	else {
@@ -258,6 +259,15 @@ void AnimationStack::setConnectionData(const unsigned int vertexIndex, const uns
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
 }
 
+void AnimationStack::addBone(AnimationStack::Bone& bone) {
+	m_bones.push_back(bone);
+}
+const unsigned int AnimationStack::boneCount() {
+	return m_bones.size();
+}
+AnimationStack::Bone& AnimationStack::getBone(const unsigned int index) {
+	return m_bones[index];
+}
 
 Animation* AnimationStack::getAnimation(const std::string& name) {
 	if (m_stack.find(name) == m_stack.end()) {
@@ -274,6 +284,23 @@ Animation* AnimationStack::getAnimation(const unsigned int index) {
 	return m_stack[m_names[index]];
 }
 
+
+const unsigned int AnimationStack::getAnimationIndex(const std::string& name) {
+	if (m_indexes.find(name) == m_indexes.end()) {
+		return 0;
+	}
+	else {
+		return m_indexes[name];
+	}
+}
+const std::string AnimationStack::getAnimationName(const unsigned int index) {
+	if (m_names.find(index) == m_names.end()) {
+		return "";
+	}
+	else {
+		return m_names[index];
+	}
+}
 const unsigned int AnimationStack::getAnimationCount() {
 	return (unsigned int)m_stack.size();
 }

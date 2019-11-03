@@ -120,7 +120,7 @@ void DX12RenderableTexture::createTextures() {
 
 		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, { 0.01f, 0.01f, 0.01f, 1.0f } };
 
-		state[i] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		state[i] = D3D12_RESOURCE_STATE_COMMON;
 		// A texture rarely updates its data, if at all, so it is stored in a default heap
 		ThrowIfFailed(context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &textureDesc, state[i], &clearValue, IID_PPV_ARGS(&textureDefaultBuffers[i])));
 		textureDefaultBuffers[i]->SetName(L"Renderable texture default buffer");

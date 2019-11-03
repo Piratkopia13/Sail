@@ -5,6 +5,7 @@
 #include "../DX12Utils.h"
 #include "Sail/api/Renderer.h"
 #include "../shader/DX12ConstantBuffer.h"
+#include "../shader/DX12StructuredBuffer.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
 
 // Include defines shared with dxr shaders
@@ -30,10 +31,13 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs);
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
+	void addWaterAtWorldPosition(const glm::vec3& position);
+	void updateWaterData();
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
+	void resetWater();
 	void reloadShaders();
 
 	virtual bool onEvent(Event& event) override;
@@ -83,7 +87,7 @@ private:
 	void createEmptyLocalRootSignature();
 
 	void initMetaballBuffers();
-	void updateMetaballpositions(const std::vector<Metaball>& metaballs);
+	void updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb);
 
 	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
 
@@ -118,16 +122,16 @@ private:
 	std::string m_decalTexPaths[3];
 
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandles[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtBrdfLUTGPUHandle;
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_decalTexGPUHandles;
 	UINT m_heapIncr;
+	UINT m_usedDescriptors;
 
-
-	std::vector<MeshHandles> m_rtMeshHandles;
+	std::vector<MeshHandles> m_rtMeshHandles[2];
 	// Metaballs
 	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
 	UINT m_metaballsToRender;
@@ -151,7 +155,12 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
 	// Metaball Stuff
-	D3D12_RAYTRACING_AABB m_aabb_desc = { -0.2f, -0.2f, -0.2f, 0.2f, 0.2f, 0.2f };
-	ID3D12Resource1* m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
+	std::vector<ID3D12Resource1*> m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
+
+	// Water voxel grid stuff
+	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
+	std::unordered_map<unsigned int, unsigned int> m_waterDeltas; // Changed water voxels over the last 2 frames
+	unsigned int m_waterDataCPU[WATER_ARR_SIZE];
+	bool m_waterChanged;
 
 };

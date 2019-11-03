@@ -20,7 +20,6 @@ PBRTestState::PBRTestState(StateStack& stack)
 		if (param == "menu") {
 			requestStackPop();
 			requestStackPush(States::MainMenu);
-			console.removeAllCommandsWithIdentifier("PBRTestState");
 			return "State change to menu requested";
 		} else {
 			return "Invalid state. Available states are \"menu\"";
@@ -163,6 +162,8 @@ PBRTestState::PBRTestState(StateStack& stack)
 }
 
 PBRTestState::~PBRTestState() {
+	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("PBRTestState");
+
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
 
@@ -178,7 +179,7 @@ bool PBRTestState::processInput(float dt) {
 
 //#ifdef _DEBUG
 	// Add point light at camera pos
-	if (Input::WasKeyJustPressed(KeyBinds::addLight)) {
+	if (Input::WasKeyJustPressed(KeyBinds::ADD_LIGHT)) {
 		PointLight pl;
 		pl.setPosition(m_cam.getPosition());
 		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
@@ -187,13 +188,13 @@ bool PBRTestState::processInput(float dt) {
 
 //#endif
 
-	if (Input::IsKeyPressed(KeyBinds::setDirectionalLight)) {
+	if (Input::IsKeyPressed(KeyBinds::SET_DIRECTIONAL_LIGHT)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
 	}
 
 	// Reload shaders
-	if (Input::WasKeyJustPressed(KeyBinds::reloadShader)) {
+	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 	}
 

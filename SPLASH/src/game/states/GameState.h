@@ -1,5 +1,8 @@
 #pragma once
+
 #include "Sail.h"
+#include "../events/NetworkDisconnectEvent.h"
+#include "../events/NetworkDroppedEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
 class NetworkSerializedPackageEvent;
@@ -21,9 +24,8 @@ public:
 	virtual bool render(float dt, float alpha = 1.0f) override;
 	// Renders imgui
 	virtual bool renderImgui(float dt) override;
-	// If the state is about to change clean it up
-	virtual bool prepareStateChange() override;
-
+	// Renders imgui used for debugging
+	virtual bool renderImguiDebug(float dt) override;
 
 private:
 	void initSystems(const unsigned char playerID);
@@ -31,9 +33,9 @@ private:
 
 	bool onResize(WindowResizeEvent& event);
 	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
-
-	//bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool renderImGuiAnimationSettings(float dt);
+	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
+	bool onPlayerDropped(NetworkDroppedEvent& event);
+	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 
 	void shutDownGameState();
 
@@ -42,6 +44,14 @@ private:
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
+	void createTestLevel(Shader* shader, Model* boundingBoxModel);
+	void createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel);
+	void createLevel(Shader* shader, Model* boundingBoxModel);
+	const std::string createCube(const glm::vec3& position);
+	const std::string teleportToMap();
+	const std::string toggleProfiler();
+
+	void logSomeoneDisconnected(unsigned char id);
 
 private:
 	Application* m_app;
@@ -51,20 +61,17 @@ private:
 	// TODO: Only used for AI, should be removed once AI can target player in a better way.
 	Entity* m_player;
 
-	void createTestLevel(Shader* shader, Model* boundingBoxModel);
-	void createBots(Model* boundingBoxModel, Model* characterModel, Model* projectileModel, Model* lightModel);
-	void createLevel(Shader* shader, Model* boundingBoxModel);
-	const std::string createCube(const glm::vec3& position);
-	const std::string teleportToMap();
-	const std::string toggleProfiler();
-
+	Entity* m_gameMusic = nullptr;
+	Entity* m_ambiance = nullptr;
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;
 	RenderSettingsWindow m_renderSettingsWindow;
 	LightDebugWindow m_lightDebugWindow;
 	PlayerInfoWindow m_playerInfoWindow;
-
+	WasDroppedWindow m_wasDroppedWindow;
+	KillFeedWindow m_killFeedWindow;
+	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 
 	size_t m_currLightIndex;
 
@@ -80,12 +87,10 @@ private:
 	std::vector<std::future<BaseComponentSystem*>> m_runningSystemJobs;
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
-	bool m_poppedThisFrame = false;
-
-
+	bool m_wasDropped = false;
 
 #ifdef _PERFORMANCE_TEST
-	void populateScene(Model* characterModel, Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
+	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
 
 	std::vector<Entity::SPtr> m_performanceEntities;
 #endif

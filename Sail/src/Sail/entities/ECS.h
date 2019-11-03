@@ -133,6 +133,8 @@ public:
 	*/
 	void addAllQueuedEntities();
 
+	size_t getNumEntities();
+
 private:
 	typedef std::unordered_map<std::type_index, std::unique_ptr<BaseComponentSystem>> SystemMap;
 

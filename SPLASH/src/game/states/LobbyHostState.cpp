@@ -7,8 +7,10 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack) {
 	// Reserved for host, all other will get 1,2,3,...,n
 	NWrapperSingleton::getInstance().setPlayerID(HOST_ID); 
-
-	NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
+	NWrapperSingleton::getInstance().startUDP();
+	
+	//NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
+	//wrapper->setLobbyName(NWrapperSingleton::getInstance().getMyPlayer().name.c_str());
 }
 
 LobbyHostState::~LobbyHostState() {
@@ -54,15 +56,16 @@ bool LobbyHostState::onRecievedText(NetworkChatEvent& event) {
 
 bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
 	// Add player to player list
-	//this->playerJoined(event.getPlayer());
+	NWrapperSingleton::getInstance().playerJoined(event.getPlayer());
 
 	return true;
 }
 
 bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
-	// Remove player from player list
+	// Remove player from player list.
 	unsigned char id = event.getPlayerID();
 	NWrapperSingleton::getInstance().playerLeft(id);
+
 	
 	return false;
 }
@@ -89,12 +92,14 @@ bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
 	message.erase(0, id_string.size() + 2);	// Removes ?ID: ___
 	message.erase(message.size() - 1);		// Removes ___ :
 
-	// Add player
-	NWrapperSingleton::getInstance().playerJoined(Player{
-			id_int,
-			message	// Which at this point is only the name
-	});
+	
 
+	// Add player
+	//NWrapperSingleton::getInstance().playerJoined(Player{
+	//		id_int,
+	//		message	// Which at this point is only the name
+	//});
+	NWrapperSingleton::getInstance().getPlayer(id_int)->name = message;
 
 	printf("Got name: \"%s\" from %i\n", message.c_str(), id_int);
 

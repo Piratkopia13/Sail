@@ -18,6 +18,7 @@ public:
 		NETWORK_BACK_TO_LOBBY,
 		NETWORK_SERIALIZED_DATA_RECIEVED,
 		PLAYER_CANDLE_DEATH,
+		GAME_OVER
 	};
 public:
 	Event(Type type);

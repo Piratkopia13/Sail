@@ -4,48 +4,58 @@
 #include "Intersection.h"
 #include "Sail/graphics/camera/Camera.h"
 
-BoundingBox Intersection::sPaddedReserved;
-
-bool Intersection::AabbWithAabb(const BoundingBox& aabb1, const BoundingBox& aabb2) {
-
-	glm::vec3 center1 = aabb1.getPosition();
-	glm::vec3 center2 = aabb2.getPosition();
-	glm::vec3 halfWidth1 = aabb1.getHalfSize();
-	glm::vec3 halfWidth2 = aabb2.getHalfSize();
-
-	if (glm::abs(center1.x - center2.x) > (halfWidth1.x + halfWidth2.x)) {
+bool Intersection::AabbWithAabb(const glm::vec3& aabb1Pos, const glm::vec3& aabb1HalfSize, const glm::vec3& aabb2Pos, const glm::vec3& aabb2HalfSize) {
+	if (glm::abs(aabb1Pos.x - aabb2Pos.x) > (aabb1HalfSize.x + aabb2HalfSize.x)) {
 		return false;
 	}
-	if (glm::abs(center1.y - center2.y) > (halfWidth1.y + halfWidth2.y)) {
+	if (glm::abs(aabb1Pos.y - aabb2Pos.y) > (aabb1HalfSize.y + aabb2HalfSize.y)) {
 		return false;
 	}
-	if (glm::abs(center1.z - center2.z) > (halfWidth1.z + halfWidth2.z)) {
+	if (glm::abs(aabb1Pos.z - aabb2Pos.z) > (aabb1HalfSize.z + aabb2HalfSize.z)) {
 		return false;
 	}
 	return true;
 }
-bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
 
-	glm::vec3 center = aabb.getPosition();
+bool Intersection::AabbWithAabb(const glm::vec3& aabb1Pos, const glm::vec3& aabb1HalfSize, const glm::vec3& aabb2Pos, const glm::vec3& aabb2HalfSize, glm::vec3* intersectionAxis, float* intersectionDepth) {
+	*intersectionDepth = INFINITY;
+
+	float tempDepth;
+	for (int i = 0; i < 3; i++) {
+		tempDepth = (aabb1HalfSize[i] + aabb2HalfSize[i]) - glm::abs(aabb1Pos[i] - aabb2Pos[i]);
+		if (tempDepth < 0.0f) {
+			return false;
+		}
+		else if (tempDepth < *intersectionDepth) {
+			*intersectionDepth = tempDepth;
+			*intersectionAxis = glm::vec3(0.0f);
+			(*intersectionAxis)[i] = aabb1Pos[i] - aabb2Pos[i];
+			(*intersectionAxis)[i] /= abs((*intersectionAxis)[i]); //Normalize
+		}
+	}
+	return true;
+}
+
+bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& aabbHalfSize, const glm::vec3& triPos1, const glm::vec3& triPos2, const glm::vec3& triPos3) {
 	//Calculate normal for triangle
-	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2)));
+	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(triPos1 - triPos2), glm::vec3(triPos1 - triPos3)));
 
 	// Calculate triangle points relative to the AABB
-	glm::vec3 newV0 = v0 - center;
-	glm::vec3 newV1 = v1 - center;
-	glm::vec3 newV2 = v2 - center;
+	glm::vec3 newV1 = triPos1 - aabbPos;
+	glm::vec3 newV2 = triPos2 - aabbPos;
+	glm::vec3 newV3 = triPos3 - aabbPos;
 
 	//Don't intersect with triangles faceing away from the boundingBox
-	if (glm::dot(newV0, triNormal) > 0.0f) {
+	if (glm::dot(newV1, triNormal) > 0.0f) {
 		return false;
 	}
 
 	// Calculate the plane that the triangle is on
-	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - v0;
+	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - triPos1;
 	float distance = -glm::dot(triangleToWorldOrigo, triNormal);
 
 	// Early exit: Check if a sphere around aabb intersects triangle plane
-	if (SphereWithPlane({ aabb.getPosition(), glm::length(aabb.getHalfSize()) }, triNormal, distance)) {
+	if (SphereWithPlane({ aabbPos, glm::length(aabbHalfSize) }, triNormal, distance)) {
 		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
@@ -53,16 +63,15 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 		e[2] = glm::vec3(0.f, 0.f, 1.f);
 
 		glm::vec3 f[3];
-		f[0] = newV1 - newV0;
-		f[1] = newV2 - newV1;
-		f[2] = newV0 - newV2;
+		f[0] = newV2 - newV1;
+		f[1] = newV3 - newV2;
+		f[2] = newV1 - newV3;
 
-		glm::vec3 aabbSize = aabb.getHalfSize();
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
 				glm::vec3 a = glm::cross(e[i], f[j]);
-				glm::vec3 p = glm::vec3(glm::dot(a, newV0), glm::dot(a, newV1), glm::dot(a, newV2));
-				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
+				glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
+				float r = aabbHalfSize.x * glm::abs(a.x) + aabbHalfSize.y * glm::abs(a.y) + aabbHalfSize.z * glm::abs(a.z);
 				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
 					return false;
 				}
@@ -75,21 +84,19 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v0
 
 	return true;
 }
-bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, glm::vec3* intersectionAxis, float* intersectionDepth, float* depthAlongNormal) {
+
+bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& aabbHalfSize, const glm::vec3& triPos1, const glm::vec3& triPos2, const glm::vec3& triPos3, glm::vec3* intersectionAxis, float* intersectionDepth) {
 	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
-
 	float depth = INFINITY;
-	float normalDepth = INFINITY;
-	glm::vec3 axis;
+	glm::vec3 tempIntersectionAxis;
 
-	glm::vec3 center = aabb.getPosition();
 	//Calculate normal for triangle
-	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+	glm::vec3 triNormal = glm::normalize(glm::cross(glm::vec3(triPos1 - triPos2), glm::vec3(triPos1 - triPos3)));
 
 	// Calculate triangle points relative to the AABB
-	glm::vec3 newV1 = v1 - center;
-	glm::vec3 newV2 = v2 - center;
-	glm::vec3 newV3 = v3 - center;
+	glm::vec3 newV1 = triPos1 - aabbPos;
+	glm::vec3 newV2 = triPos2 - aabbPos;
+	glm::vec3 newV3 = triPos3 - aabbPos;
 
 	//Don't intersect with triangles faceing away from the boundingBox
 	if (glm::dot(newV1, triNormal) > 0.0f) {
@@ -97,15 +104,15 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1
 	}
 
 	// Calculate the plane that the triangle is on
-	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - v1;
+	glm::vec3 triangleToWorldOrigo = glm::vec3(0.0f) - triPos1;
 	float distance = -glm::dot(triangleToWorldOrigo, triNormal);
 
 	// Early exit: Check if a sphere around aabb intersects triangle plane
-	if (SphereWithPlane({ aabb.getPosition(), glm::length(aabb.getHalfSize()) }, triNormal, distance)) {
+	if (SphereWithPlane({ aabbPos, glm::length(aabbHalfSize) }, triNormal, distance)) {
 		// Testing AABB with triangle using separating axis theorem(SAT)
 		glm::vec3 e[3];
 		e[0] = glm::vec3(1.f, 0.f, 0.f);
-		e[1] = glm::vec3(0.f, 1.f, 0.f); 
+		e[1] = glm::vec3(0.f, 1.f, 0.f);
 		e[2] = glm::vec3(0.f, 0.f, 1.f);
 
 		glm::vec3 f[3];
@@ -113,51 +120,28 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1
 		f[1] = glm::normalize(newV3 - newV2);
 		f[2] = glm::normalize(newV1 - newV3);
 
-		glm::vec3 aabbSize = aabb.getHalfSize();
+		glm::vec3 testAxis;
+
 		for (int i = 0; i < 3; i++) {
+			testAxis = e[i];
+
+			if (!SATTest(testAxis, newV1, newV2, newV3, aabbHalfSize, &tempIntersectionAxis, &depth)) {
+				return false;
+			}
+
 			for (int j = 0; j < 3; j++) {
-				glm::vec3 a = glm::normalize(glm::cross(e[i], f[j]));
-				glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
-				float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-				if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
+				testAxis = glm::normalize(glm::cross(e[i], f[j]));
+
+				if (!SATTest(testAxis, newV1, newV2, newV3, aabbHalfSize, &tempIntersectionAxis, &depth)) {
 					return false;
 				}
-				else {
-					//Save depth along axis
-					float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
-					if (tempDepth < depth) {
-						depth = tempDepth;
-						axis = a;
-					}
-
-					if (glm::abs(glm::dot(a, triNormal)) > 0.98f) {
-						if (tempDepth < normalDepth) {
-							normalDepth = tempDepth;
-						}
-					}
-				}
 			}
 		}
 
-		glm::vec3 a = triNormal;
-		glm::vec3 p = glm::vec3(glm::dot(a, newV1), glm::dot(a, newV2), glm::dot(a, newV3));
-		float r = aabbSize.x * glm::abs(a.x) + aabbSize.y * glm::abs(a.y) + aabbSize.z * glm::abs(a.z);
-		if (glm::min(p.x, glm::min(p.y, p.z)) > r || glm::max(p.x, glm::max(p.y, p.z)) < -r) {
+		testAxis = triNormal;
+
+		if (!SATTest(testAxis, newV1, newV2, newV3, aabbHalfSize, &tempIntersectionAxis, &depth)) {
 			return false;
-		}
-		else {
-			//Save depth along axis
-			float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
-			if (tempDepth < depth) {
-				depth = tempDepth;
-				axis = a;
-			}
-
-			if (glm::abs(glm::dot(a, triNormal)) > 0.98f) {
-				if (tempDepth < normalDepth) {
-					normalDepth = tempDepth;
-				}
-			}
 		}
 
 	}
@@ -168,31 +152,32 @@ bool Intersection::AabbWithTriangle(const BoundingBox& aabb, const glm::vec3& v1
 
 	//Return intersection axis and depth if not nullptr
 	if (intersectionAxis) {
-		*intersectionAxis = axis;
+		glm::vec3 triMiddle = (triPos1 + triPos2 + triPos3) / 3.0f;
+
+		if (glm::dot(aabbPos - triMiddle, tempIntersectionAxis) < 0.0f) {
+			tempIntersectionAxis = -tempIntersectionAxis;
+		}
+
+		*intersectionAxis = tempIntersectionAxis;
 	}
 
 	if (intersectionDepth) {
 		*intersectionDepth = depth;
 	}
 
-	if (depthAlongNormal) {
-		*depthAlongNormal = normalDepth;
-	}
-
 	return true;
 }
-bool Intersection::AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, const float distance) {
-	const glm::vec3* corners = aabb.getCorners();
 
+bool Intersection::AabbWithPlane(const glm::vec3* aabbCorners, const glm::vec3& planeNormal, const float planeDistance) {
 	const float distFromPlaneAlongNormal[] = {
-		glm::dot(corners[0], normal) - distance,
-		glm::dot(corners[1], normal) - distance,
-		glm::dot(corners[2], normal) - distance,
-		glm::dot(corners[3], normal) - distance,
-		glm::dot(corners[4], normal) - distance,
-		glm::dot(corners[5], normal) - distance,
-		glm::dot(corners[6], normal) - distance,
-		glm::dot(corners[7], normal) - distance
+		glm::dot(aabbCorners[0], planeNormal) - planeDistance,
+		glm::dot(aabbCorners[1], planeNormal) - planeDistance,
+		glm::dot(aabbCorners[2], planeNormal) - planeDistance,
+		glm::dot(aabbCorners[3], planeNormal) - planeDistance,
+		glm::dot(aabbCorners[4], planeNormal) - planeDistance,
+		glm::dot(aabbCorners[5], planeNormal) - planeDistance,
+		glm::dot(aabbCorners[6], planeNormal) - planeDistance,
+		glm::dot(aabbCorners[7], planeNormal) - planeDistance
 	};
 
 	// Find smallest and biggest distance (opposing corners)
@@ -205,13 +190,12 @@ bool Intersection::AabbWithPlane(BoundingBox& aabb, const glm::vec3& normal, con
 	// True if they are on opposite sides of the plane
 	return minDist * maxDist < 0.0f;
 }
-bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
-	const glm::vec3* corners = aabb.getCorners();
 
+bool Intersection::AabbWithSphere(const glm::vec3* aabbCorners, const Sphere& sphere) {
 	// Find the point on the aabb closest to the sphere
-	float closestOnAabbX = std::fminf(std::fmaxf(sphere.position.x, corners[0].x), corners[1].x);
-	float closestOnAabbY = std::fminf(std::fmaxf(sphere.position.y, corners[2].y), corners[0].y);	// corners[0] > corners[2]
-	float closestOnAabbZ = std::fminf(std::fmaxf(sphere.position.z, corners[0].z), corners[4].z);
+	float closestOnAabbX = std::fminf(std::fmaxf(sphere.position.x, aabbCorners[0].x), aabbCorners[1].x);
+	float closestOnAabbY = std::fminf(std::fmaxf(sphere.position.y, aabbCorners[2].y), aabbCorners[0].y);	// corners[0] > corners[2]
+	float closestOnAabbZ = std::fminf(std::fmaxf(sphere.position.z, aabbCorners[0].z), aabbCorners[4].z);
 
 	// Distance from cylinder to closest point on rectangle
 	float distX = closestOnAabbX - sphere.position.x;
@@ -222,11 +206,10 @@ bool Intersection::AabbWithSphere(BoundingBox& aabb, const Sphere& sphere) {
 	// True if the distance is smaller than the radius
 	return (distSquared < sphere.radius * sphere.radius);
 }
-bool Intersection::AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCylinder& cyl) {
-	const glm::vec3* corners = aabb.getCorners();
 
-	float yPosDifference = aabb.getPosition().y - cyl.position.y;
-	float halfHeightSum = aabb.getHalfSize().y + cyl.halfHeight;
+bool Intersection::AabbWithVerticalCylinder(const glm::vec3& aabbPos, const glm::vec3& aabbHalfSize, const glm::vec3* aabbCorners, const VerticalCylinder& cyl) {
+	float yPosDifference = aabbPos.y - cyl.position.y;
+	float halfHeightSum = aabbHalfSize.y + cyl.halfHeight;
 
 	// Check if the objects are too far from each other along the y-axis
 	if (halfHeightSum < std::fabsf(yPosDifference)) {
@@ -236,8 +219,8 @@ bool Intersection::AabbWithVerticalCylinder(BoundingBox& aabb, const VerticalCyl
 	// Only 2D calculations below
 
 	// Find the point on the aabb closest to the cylinder
-	float closestOnAabbX = std::fminf(std::fmaxf(cyl.position.x, corners[0].x), corners[1].x);
-	float closestOnAabbZ = std::fminf(std::fmaxf(cyl.position.z, corners[0].z), corners[4].z);
+	float closestOnAabbX = std::fminf(std::fmaxf(cyl.position.x, aabbCorners[0].x), aabbCorners[1].x);
+	float closestOnAabbZ = std::fminf(std::fmaxf(cyl.position.z, aabbCorners[0].z), aabbCorners[4].z);
 
 	// Distance from cylinder to closest point on rectangle
 	float distX = closestOnAabbX - cyl.position.x;
@@ -273,6 +256,7 @@ bool Intersection::TriangleWithTriangle(const glm::vec3 U[3], const glm::vec3 V[
 	}
 	return false;
 }
+
 bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphere) {
 	// Calculations found at http://realtimecollisiondetection.net/blog/?p=103
 	// NOTE: in the comments of the article above, it is mentioned that this test is fast,
@@ -337,6 +321,7 @@ bool Intersection::TriangleWithSphere(const glm::vec3 tri[3], const Sphere& sphe
 
 	return true;
 }
+
 bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const VerticalCylinder& cyl) {
 	if (PointWithVerticalCylinder(tri[0], cyl)) {
 		return true;
@@ -368,10 +353,10 @@ bool Intersection::TriangleWithVerticalCylinder(const glm::vec3 tri[3], const Ve
 	return false;
 }
 
-bool Intersection::SphereWithPlane(const Sphere& sphere, const glm::vec3& normal, const float distance) {
-	const glm::vec3 pointOnPlane = normal * distance;
+bool Intersection::SphereWithPlane(const Sphere& sphere, const glm::vec3& planeNormal, const float planeDistance) {
+	const glm::vec3 pointOnPlane = planeNormal * planeDistance;
 	const glm::vec3 centerToPlane = pointOnPlane - sphere.position;
-	const float shortestDistanceToPlane = glm::dot(centerToPlane, normal);
+	const float shortestDistanceToPlane = glm::dot(centerToPlane, planeNormal);
 	return (std::fabsf(shortestDistanceToPlane) < sphere.radius);
 }
 
@@ -503,15 +488,18 @@ bool Intersection::LineSegmentWithVerticalCylinder(const glm::vec3& start, const
 	return isColliding;
 }
 
-float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb) {
+float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3& aabbPos, const glm::vec3& aabbHalfSize, glm::vec3* intersectionAxis) {
 	float returnValue = -1.0f;
 	glm::vec3 normalizedRay = glm::normalize(rayVec);
 	bool noHit = false; //Boolean for early exits from the for-loop
 	float tMin = -std::numeric_limits<float>::infinity(); //tMin initialized at negative infinity
 	float tMax = std::numeric_limits<float>::infinity(); //tMax initialized at positive infinity
-	glm::vec3 p = aabb.getPosition() - rayStart; //Vector to center off AABB
+	glm::vec3 minAxis(0.0f);
+	glm::vec3 p = aabbPos - rayStart; //Vector to center off AABB
 	for (int i = 0; i < 3; i++) {
-		float tempH = aabb.getHalfSize()[i]; //Temporary variable to store the current half axis
+		float tempH = aabbHalfSize[i]; //Temporary variable to store the current half axis
+		glm::vec3 tempAxis(0.0f);
+		tempAxis[i] = tempH;
 
 		float e = p[i];
 		float f = normalizedRay[i];
@@ -525,9 +513,11 @@ float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 				float tempT = t2;
 				t2 = t1;
 				t1 = tempT;
+				tempAxis = -tempAxis;
 			}
 			if (t1 > tMin) {//Replaces tMin if t1 is bigger
 				tMin = t1;
+				minAxis = tempAxis;
 			}
 			if (t2 < tMax) {//Replaces tMax if t2 is smaller
 				tMax = t2;
@@ -553,14 +543,20 @@ float Intersection::RayWithAabb(const glm::vec3& rayStart, const glm::vec3& rayV
 			returnValue = 0.0f; //Ray started in AABB, instant hit. Distance is 0
 		}
 	}
+
+	if (intersectionAxis) {
+		*intersectionAxis = glm::normalize(minAxis);
+	}
+
 	return returnValue;
 }
-float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
-	const glm::vec3 edge1 = v2 - v1;
-	const glm::vec3 edge2 = v3 - v1;
+
+float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& triPos1, const glm::vec3& triPos2, const glm::vec3& triPos3) {
+	const glm::vec3 edge1 = triPos2 - triPos1;
+	const glm::vec3 edge2 = triPos3 - triPos1;
 	const glm::vec3 planeNormal = glm::normalize(glm::cross(edge1, edge2));
 
-	const float originToPlaneDistance = glm::dot(v1, planeNormal);
+	const float originToPlaneDistance = glm::dot(triPos1, planeNormal);
 	const float rayToPlaneDistance = RayWithPlane(rayStart, rayDir, planeNormal, originToPlaneDistance);
 
 	if (rayToPlaneDistance == -1.0f) {
@@ -570,7 +566,7 @@ float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& 
 	// Determine barycentric coordinates u, v, w
 	float u, v, w;
 	const glm::vec3 p = rayStart + rayDir * rayToPlaneDistance;
-	Barycentric(p, v1, v2, v3, u, v, w);
+	Barycentric(p, triPos1, triPos2, triPos3, u, v, w);
 
 	// Check if point on triangle plane is within triangle
 	if (OnTriangle(u, v, w)) {
@@ -578,76 +574,78 @@ float Intersection::RayWithTriangle(const glm::vec3& rayStart, const glm::vec3& 
 	}
 	return -1.0f;
 }
-float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& normal, const float distance) {
-	const float dirDotNormal = glm::dot(rayDir, normal);
+
+float Intersection::RayWithPlane(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& planeNormal, const float planeDistance) {
+	const float dirDotNormal = glm::dot(rayDir, planeNormal);
 
 	bool isParallelWithPlane = std::fabsf(dirDotNormal) < 0.001f;
 	if (isParallelWithPlane) {
 		return -1.0f;
 	}
 
-	const glm::vec3 pointOnPlane = normal * distance;
+	const glm::vec3 pointOnPlane = planeNormal * planeDistance;
 	const glm::vec3 startToPlane = pointOnPlane - rayStart;
-	const float shortestDistanceToPlane = glm::dot(startToPlane, normal);
+	const float shortestDistanceToPlane = glm::dot(startToPlane, planeNormal);
 	const float distanceToPlane = shortestDistanceToPlane / dirDotNormal;
 
 	return distanceToPlane;
 }
-float Intersection::RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const BoundingBox& aabb, float padding) {
+
+float Intersection::RayWithPaddedAabb(const glm::vec3& rayStart, const glm::vec3& rayVec, const glm::vec3& aabbPos, const glm::vec3& aabbHalfSize, float padding, glm::vec3* intersectionAxis) {
 	float returnValue = -1.0f;
 
 	if (padding != 0.0f) {
 		//Add padding
-		sPaddedReserved.setPosition(aabb.getPosition());
-		sPaddedReserved.setHalfSize(aabb.getHalfSize() + glm::vec3(padding));
-
-		returnValue = RayWithAabb(rayStart, rayVec, sPaddedReserved);
+		returnValue = RayWithAabb(rayStart, rayVec, aabbPos, aabbHalfSize + glm::vec3(padding), intersectionAxis);
 	}
 	else {
-		returnValue = RayWithAabb(rayStart, rayVec, aabb);
+		returnValue = RayWithAabb(rayStart, rayVec, aabbPos, aabbHalfSize, intersectionAxis);
 	}
 
 	return returnValue;
 }
-float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, float padding) {
+
+float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::vec3& rayDir, const glm::vec3& triPos1, const glm::vec3& triPos2, const glm::vec3& triPos3, float padding) {
 	float returnValue = -1.0f;
 
-	glm::vec3 triangleNormal = glm::normalize(glm::cross(glm::vec3(v1 - v2), glm::vec3(v1 - v3)));
+	glm::vec3 triangleNormal = glm::normalize(glm::cross(glm::vec3(triPos1 - triPos2), glm::vec3(triPos1 - triPos3)));
 
-	glm::vec3 middle = (v1 + v2 + v3) / 3.0f;
-
-	if (glm::dot(middle - rayStart, triangleNormal) < 0.0f) {
+	if (glm::dot(triPos1 - rayStart, triangleNormal) < 0.0f) {
 		//Only check if triangle is facing ray start
 		if (padding != 0.0f) {
+			glm::vec3 middle = (triPos1 + triPos2 + triPos3) / 3.0f;
+
+			glm::vec3 toRay = (rayStart + rayDir * glm::dot(middle - rayStart, rayDir)) - middle;
+			float distance = padding *0.7f;
+
 			//Add padding
-			glm::vec3 newV1 = v1 + (glm::normalize(v1 - middle) * 20.0f + triangleNormal) * padding;
-			glm::vec3 newV2 = v2 + (glm::normalize(v2 - middle) * 20.0f + triangleNormal) * padding;
-			glm::vec3 newV3 = v3 + (glm::normalize(v3 - middle) * 20.0f + triangleNormal) * padding;
+			glm::vec3 newV1 = triPos1 + glm::normalize(toRay) * distance -rayDir * distance;
+			glm::vec3 newV2 = triPos2 + glm::normalize(toRay) * distance -rayDir * distance;
+			glm::vec3 newV3 = triPos3 + glm::normalize(toRay) * distance -rayDir * distance;
 
 			returnValue = RayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
 		}
 		else {
-			returnValue = RayWithTriangle(rayStart, rayDir, v1, v2, v3);
+			returnValue = RayWithTriangle(rayStart, rayDir, triPos1, triPos2, triPos3);
 		}
 	}
 
 	return returnValue;
 }
 
-bool Intersection::FrustumPlaneWithAabb(BoundingBox& aabb, const glm::vec3& normal, const float distance) {
-	const glm::vec3* corners = aabb.getCorners();
-
+bool Intersection::FrustumPlaneWithAabb(const glm::vec3& planeNormal, const float planeDistance, const glm::vec3* aabbCorners) {
 	// Find point on positive side of plane
 	for (short i = 0; i < 8; i++) {
-		if ((glm::dot(corners[i], normal) + distance) < 0.0f) {
+		if ((glm::dot(aabbCorners[i], planeNormal) + planeDistance) < 0.0f) {
 			return true;
 		}
 	}
 	return false;
 }
-bool Intersection::FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb) {
+
+bool Intersection::FrustumWithAabb(const Frustum& frustum, const glm::vec3* aabbCorners) {
 	for (int i = 0; i < 6; i++) {
-		if (!FrustumPlaneWithAabb(aabb, glm::vec3(frustum.planes[i].x, frustum.planes[i].y, frustum.planes[i].z), frustum.planes[i].w)) {
+		if (!FrustumPlaneWithAabb(glm::vec3(frustum.planes[i].x, frustum.planes[i].y, frustum.planes[i].z), frustum.planes[i].w, aabbCorners)) {
 			//Aabb is on the wrong side of a plane - it is outside the frustum.
 			return false;
 		}
@@ -655,11 +653,11 @@ bool Intersection::FrustumWithAabb(const Frustum& frustum, BoundingBox& aabb) {
 	return true;
 }
 
-glm::vec3 Intersection::PointProjectedOnPlane(const glm::vec3& point, const glm::vec3& normal, const float distance) {
-	const glm::vec3 pointOnPlane = normal * distance;
-	const glm::vec3 planeToCenter = point - pointOnPlane;
-	const float shortestDistanceToPlane = glm::dot(planeToCenter, normal);
-	return point - normal * shortestDistanceToPlane;
+glm::vec3 Intersection::PointProjectedOnPlane(const glm::vec3& point, const glm::vec3& planeNormal, const float planeDistance) {
+	const glm::vec3 pointOnPlane = planeNormal * planeDistance;
+	const glm::vec3 planeToPoint = point - pointOnPlane;
+	const float shortestDistanceToPlane = glm::dot(planeToPoint, planeNormal);
+	return point - planeNormal * shortestDistanceToPlane;
 }
 
 bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::vec3 V[3], glm::vec3 outSegment[2]) {
@@ -754,6 +752,7 @@ bool Intersection::TriangleWithTriangleSupport(const glm::vec3 U[3], const glm::
 	// do not call this an intersection.
 	return false;
 }
+
 void Intersection::Barycentric(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, float& u, float& v, float& w) {
 	const glm::vec3 v0 = b - a;
 	const glm::vec3 v1 = c - a;
@@ -771,6 +770,26 @@ void Intersection::Barycentric(const glm::vec3& p, const glm::vec3& a, const glm
 	v = (d00 * d21 - d01 * d20) * divDenom;
 	w = 1.0f - u - v;
 }
+
 bool Intersection::OnTriangle(const float u, const float v, const float w) {
 	return ((0.0f <= v && v <= 1.0f) && (0.0f <= w && w <= 1.0f) && (0.0f <= u && u <= 1.0f));
+}
+
+bool Intersection::SATTest(const glm::vec3& testAxis, const glm::vec3& triPos1, const glm::vec3& triPos2, const glm::vec3& triPos3, const glm::vec3& aabbSize, glm::vec3* intersectionAxis, float* depth) {
+	glm::vec3 p = glm::vec3(glm::dot(testAxis, triPos1), glm::dot(testAxis, triPos2), glm::dot(testAxis, triPos3));
+	float r = aabbSize.x * glm::abs(testAxis.x) + aabbSize.y * glm::abs(testAxis.y) + aabbSize.z * glm::abs(testAxis.z);
+
+	float tempDepth = glm::min(r - glm::min(p.x, glm::min(p.y, p.z)), glm::max(p.x, glm::max(p.y, p.z)) + r);
+
+	if (tempDepth < 0.0f) {
+		return false;
+	}
+	else {
+		//Save depth along axis if lower than previous
+		if (tempDepth < *depth) {
+			*depth = tempDepth;
+			*intersectionAxis = testAxis;
+		}
+	}
+	return true;
 }

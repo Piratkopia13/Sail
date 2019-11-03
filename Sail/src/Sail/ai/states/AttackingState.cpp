@@ -28,15 +28,15 @@ void AttackingState::update(float dt, Entity* entity) {
 	}
 
 	if ( aiComp->entityTarget != nullptr ) {
-		aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
+		aiComp->posTarget = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
 
-		m_distToHost = glm::distance2(aiComp->posTarget, glm::vec3(transComp->getMatrix()[3]));
+		m_distToHost = glm::distance2(aiComp->posTarget, glm::vec3(transComp->getMatrixWithUpdate()[3]));
 
 		// Approx AI gun pos
 		auto gunPos = transComp->getTranslation() + glm::vec3(0.f, 0.9f, 0.f);
 
 		// Candle pos
-		const glm::vec3& candlePos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrix()[3];
+		const glm::vec3& candlePos = aiComp->entityTarget->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
 
 		// Aim slightly higher to account for gravity (removed temporarily)
 		const glm::vec3& enemyPos = candlePos;// +glm::vec3(0, 0.3f, 0);
@@ -44,11 +44,13 @@ void AttackingState::update(float dt, Entity* entity) {
 		auto fireDir = enemyPos - gunPos;
 		fireDir = glm::normalize(fireDir);
 
-		float hitDist = Intersection::RayWithAabb(gunPos, fireDir, *aiComp->entityTarget->getComponent<BoundingBoxComponent>()->getBoundingBox());
+		const BoundingBox* tempBoundingBox = aiComp->entityTarget->getComponent<BoundingBoxComponent>()->getBoundingBox();
+
+		float hitDist = Intersection::RayWithAabb(gunPos, fireDir, tempBoundingBox->getPosition(), tempBoundingBox->getHalfSize());
 
 		bool canSeeTarget = glm::abs(hitDist - glm::distance(enemyPos, gunPos)) < 0.3f;
 		// Stop if the target is within 5 meters and if the target is visible
-		if ( glm::distance(glm::vec3(transComp->getMatrix()[3]), aiComp->posTarget) > 5.f || !canSeeTarget ) {
+		if ( glm::distance(glm::vec3(transComp->getMatrixWithUpdate()[3]), aiComp->posTarget) > 5.f || !canSeeTarget ) {
 			if ( !aiComp->doWalk ) {
 				aiComp->updatePath = true;
 			}

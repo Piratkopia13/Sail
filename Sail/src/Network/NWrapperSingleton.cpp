@@ -21,10 +21,12 @@ NWrapperSingleton& NWrapperSingleton::getInstance() {
 }
 NWrapperSingleton::NWrapperSingleton() {
 	m_network = SAIL_NEW Network;
+
 	m_network->initialize();
 
 	m_playerLimit = 12;
 	m_playerCount = 0;
+
 }
 
 bool NWrapperSingleton::host(int port) {
@@ -71,6 +73,14 @@ void NWrapperSingleton::checkFoundPackages() {
 	m_network->checkForPackages(*this);
 }
 
+void NWrapperSingleton::stopUDP() {
+	m_network->stopUDP();
+}
+
+void NWrapperSingleton::startUDP(){
+	m_network->startUDP();
+}
+
 void NWrapperSingleton::resetPlayerList()
 {
 	m_players.clear();
@@ -82,12 +92,11 @@ bool NWrapperSingleton::playerJoined(Player& player) {
 	if (m_playerCount < m_playerLimit) {
 		m_players.push_back(player);
 		m_playerCount++;
-		return true;
 	}
 	return false;
 }
 
-bool NWrapperSingleton::playerLeft(unsigned char& id) {
+bool NWrapperSingleton::playerLeft(Netcode::PlayerID& id) {
 	// Linear search to get target 'player' struct, then erase that from the list
 	Player* toBeRemoved = nullptr;
 	int pos = 0;
@@ -106,7 +115,7 @@ Player& NWrapperSingleton::getMyPlayer() {
 	return m_me;
 }
 
-Player* NWrapperSingleton::getPlayer(unsigned char& id) {
+Player* NWrapperSingleton::getPlayer(Netcode::PlayerID& id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {
@@ -128,7 +137,7 @@ void NWrapperSingleton::setPlayerName(const char* name) {
 	m_me.name = name;
 }
 
-void NWrapperSingleton::setPlayerID(const unsigned char ID) {
+void NWrapperSingleton::setPlayerID(const Netcode::PlayerID ID) {
 	m_me.id = ID;
 }
 
@@ -136,26 +145,33 @@ std::string& NWrapperSingleton::getMyPlayerName() {
 	return m_me.name;
 }
 
-unsigned char NWrapperSingleton::getMyPlayerID() {
+Netcode::PlayerID NWrapperSingleton::getMyPlayerID() {
 	return m_me.id;
+}
+
+unsigned int NWrapperSingleton::getSeed() const {
+	return m_seed;
+}
+
+void NWrapperSingleton::setSeed(char seed) {
+	m_seed = static_cast<unsigned int>(seed);
 }
 
 void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
 	NSS = NSS_;
 }
 
-void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Entity* pRelevantEntity/*Netcode::MessageData* data*/) {
+void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* data, bool alsoSendToSelf) {
 	// Cleaning is handled by the NSS later on.
 	NetworkSenderEvent* e = SAIL_NEW NetworkSenderEvent;
 	e->type = type;
-	
-	// OLD
-	e->pRelevantEntity = pRelevantEntity;
-	// NEW
-//	e->data = data; 
-	
-	
+	e->data = data;
+	e->alsoSendToSelf = alsoSendToSelf;
+
 	NSS->queueEvent(e);
+
+	// TODO: forward event to receiverSystem as serialized data
+
 }
 
 void NWrapperSingleton::initialize(bool asHost) {
@@ -187,10 +203,11 @@ void NWrapperSingleton::resetNetwork() {
 
 void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
 	if (nEvent.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
-		NetworkLanHostFoundEvent event(
+		NetworkLanHostFoundEvent event0(
 			nEvent.data->HostFoundOnLanData.ip_full,
-			nEvent.data->HostFoundOnLanData.hostPort
+			nEvent.data->HostFoundOnLanData.hostPort,
+			nEvent.data->HostFoundOnLanData.description
 		);
-		Application::getInstance()->dispatchEvent(event);
+		Application::getInstance()->dispatchEvent(event0);
 	}
 }

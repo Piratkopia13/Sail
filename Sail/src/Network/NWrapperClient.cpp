@@ -65,8 +65,9 @@ void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
 	// Clients never have others connecting to them.
 }
 
-void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id) {
-	// Host disconnected, lobby is shut down, go back to main menu.
+void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id_) {
+	// My connection to host was lost :(
+	
 	m_app->dispatchEvent(NetworkDroppedEvent());
 }
 
@@ -132,10 +133,12 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		break;
 
 	case 't':
-
+	{
+		char seed = nEvent.data->Message.rawMsg[1];
+		NWrapperSingleton::getInstance().setSeed(seed);
 		Application::getInstance()->dispatchEvent(NetworkStartGameEvent());
-		break;
-
+	}
+	break;
 	case 'w':
 		// The host has sent us a welcome-package with a list of the players in the game...
 		// Parse the welcome-package into a list of players

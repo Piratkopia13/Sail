@@ -22,11 +22,10 @@ DX12GBufferRenderer::DX12GBufferRenderer() {
 	m_context = app->getAPI<DX12API>();
 
 	for (size_t i = 0; i < MAX_RECORD_THREADS; i++) {
-		m_context->initCommand(m_command[i]);
-		std::wstring name = L"Forward Renderer main command list for render thread: " + std::to_wstring(i);
-		m_command[i].list->SetName(name.c_str());
+		std::wstring name = L"GBuffer renderer DIRECT command list or allocator for render thread: " + std::to_wstring(i);
+		m_context->initCommand(m_command[i], D3D12_COMMAND_LIST_TYPE_DIRECT, name.c_str());
 	}
-	m_context->initCommand(m_computeCommand, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	m_context->initCommand(m_computeCommand, D3D12_COMMAND_LIST_TYPE_COMPUTE, L"GBuffer renderer COMPUTE command list or allocator");
 	m_computeCommand.list->SetName(L"Animation compute command list");
 
 
@@ -47,7 +46,7 @@ DX12GBufferRenderer::~DX12GBufferRenderer() {
 void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
-	auto frameIndex = m_context->getSwapIndex();
+	auto frameIndex = m_context->getFrameIndex();
 	int count = static_cast<int>(commandQueue.size());
 
 	// Run animation updates on the gpu first
@@ -60,8 +59,9 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 		animationSystem->updateMeshGPU(m_computeCommand.list.Get());
 
 		m_computeCommand.list->Close();
-		m_context->executeCommandListsComputeAnimation({ m_computeCommand.list.Get() });
-		m_context->waitForComputeAnimation();
+		m_context->executeCommandLists({ m_computeCommand.list.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+		// Force direct queue to wait until the compute queue has finished animations
+		m_context->getDirectQueue()->wait(m_context->getComputeQueue()->signal());
 	}
 
 
@@ -84,7 +84,7 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	for (int i = 0; i < mainThreadIndex; i++) {
 		fut[i] = Application::getInstance()->pushJobToThreadPool(
 			[this, postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse](int id) {
-			return this->recordCommands(postProcessPipeline, i, frameIndex, start, (i < nThreadsToUse - 1) ? commandsPerThread : commandsPerThread + 1, count, nThreadsToUse);
+			return this->recordCommands(postProcessPipeline, i, frameIndex, start, commandsPerThread, count, nThreadsToUse);
 		});
 		start += commandsPerThread;
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
@@ -92,7 +92,7 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	}
 
-	recordCommands(postProcessPipeline, mainThreadIndex, frameIndex, start, commandsPerThread, count, nThreadsToUse);
+	recordCommands(postProcessPipeline, mainThreadIndex, frameIndex, start, commandsPerThread + 1 /* +1 to account for rounding */, count, nThreadsToUse);
 	ID3D12CommandList* commandlists[MAX_RECORD_THREADS];
 	commandlists[mainThreadIndex] = m_command[mainThreadIndex].list.Get();
 
@@ -204,14 +204,11 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 	if (threadID == nThreads - 1) {
 
-		//// TODO: remove when this pass is used together with RT
-		//// Copy gbuffer output to back buffer
-		//m_gbufferTextures[0]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-		//auto* renderTarget = m_context->getCurrentRenderTargetResource();
-		//DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
-		//cmdList->CopyResource(renderTarget, m_gbufferTextures[0]->getResource());
-		//// Lastly - transition back buffer to present
-		//DX12Utils::SetResourceTransitionBarrier(cmdList.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
+		// Transition output textures for use in raytracing
+		for (int i = 0; i < NUM_GBUFFERS; i++) {
+			// TODO: transition in batch
+			m_gbufferTextures[i]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		}
 
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));

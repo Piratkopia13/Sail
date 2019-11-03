@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "CandleComponent.h"
+#include "Sail/utils/GameDataTracker.h"
 
 CandleComponent::CandleComponent() {
 
@@ -9,9 +10,21 @@ CandleComponent::~CandleComponent() {
 
 }
 
-void CandleComponent::hitWithWater(float damage) {
-	m_damageTakenLastHit = damage;
-	m_wasHitByWater = true;
+void CandleComponent::hitWithWater(float damage, Netcode::PlayerID shooterID) {
+	if (getInvincibleTimer() <= 0.f) {
+		if (m_health > 0.0f) {
+			setInvincibleTimer(0.4f);
+			decrementHealth(damage);
+			m_damageTakenLastHit = damage;
+			m_wasHitByWater = true;
+
+			if (m_health <= 0.0f) {
+				GameDataTracker::getInstance().logEnemyKilled(shooterID);
+				setWasHitByNetID(shooterID);
+				setIsLit(false);
+			}
+		}
+	}
 }
 
 void CandleComponent::resetHitByWater() {
@@ -31,25 +44,7 @@ bool* CandleComponent::getPtrToIsLit() {
 }
 
 void CandleComponent::setIsAlive(bool alive) {
-	if ( !m_isAlive && alive ) {
-		m_activate = true;
-		m_isAlive = alive;
-	}
 	m_isAlive = alive;
-}
-
-bool CandleComponent::getDoActivate() const {
-	return m_activate;
-}
-
-void CandleComponent::resetDoActivate() {
-	m_activate = false;
-}
-
-void CandleComponent::activate() {
-	if ( !m_activate && m_isAlive && !m_isLit ) {
-		m_activate = true;
-	}
 }
 
 void CandleComponent::addToDownTime(float time) {
@@ -80,11 +75,11 @@ void CandleComponent::incrementRespawns() {
 	m_respawns++;
 }
 
-void CandleComponent::setOwner(int playerEntityID) {
+void CandleComponent::setOwner(Netcode::PlayerID playerEntityID) {
 	m_playerEntityID = playerEntityID;
 }
 
-int CandleComponent::getOwner() const {
+Netcode::PlayerID CandleComponent::getOwner() const {
 	return m_playerEntityID;
 }
 
@@ -116,12 +111,12 @@ void CandleComponent::decrementHealth(const float health) {
 	m_health -= health;
 }
 
-void CandleComponent::setWasHitByNetID(unsigned __int32 netIdOfPlayerWhoHitThisCandle) {
-	wasHitByNetID = netIdOfPlayerWhoHitThisCandle;
+void CandleComponent::setWasHitByNetID(Netcode::PlayerID netIdOfPlayerWhoHitThisCandle) {
+	wasHitByPlayerID = netIdOfPlayerWhoHitThisCandle;
 }
 
-unsigned __int32 CandleComponent::getWasHitByNetID() {
-	return wasHitByNetID;
+unsigned char CandleComponent::getWasHitByNetID() {
+	return wasHitByPlayerID;
 }
 
 bool CandleComponent::isCarried() const {

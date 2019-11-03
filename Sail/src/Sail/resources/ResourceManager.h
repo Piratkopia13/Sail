@@ -32,6 +32,8 @@ public:
 	bool hasAudioData(const std::string& filename);
 
 	static const std::string SAIL_DEFAULT_MODEL_LOCATION;
+	static const std::string SAIL_DEFAULT_SOUND_LOCATION;
+
 	
 
 	// TextureData
@@ -45,6 +47,7 @@ public:
 	bool hasTexture(const std::string& filename);
 
 	// Models
+	void addModel(const std::string& modelName, Model* model);
 	void loadModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModelCopy(const std::string& filename, Shader* shader = nullptr);
@@ -89,6 +92,9 @@ public:
 		Logger::Log("Reloaded shader " + name);
 	}
 
+
+	const unsigned int numberOfModels() const;
+	const unsigned int numberOfTextures() const;
 	// SoundManager
 	//SoundManager* getSoundManager();
 

@@ -3,8 +3,8 @@
 // Ordered by name
 
 class AiSystem;
-class AnimationInitSystem;
 class AnimationSystem;
+class AnimationChangerSystem;
 class AudioSystem;
 class BeginEndFrameSystem;
 class BoundingboxSubmitSystem;
@@ -14,6 +14,7 @@ class EndFrameSystem;
 class EntityAdderSystem;
 class EntityRemovalSystem;
 class GameInputSystem;
+class GUISubmitSystem;
 class GunSystem;
 class LevelGeneratorSystem;
 class LifeTimeSystem;
@@ -33,10 +34,12 @@ class RenderImGuiSystem;
 class SpeedLimitSystem;
 class UpdateBoundingBoxSystem;
 
+class NetworkReceiverSystem;
+
 struct Systems {
 	AiSystem* aiSystem = nullptr;
-	AnimationInitSystem* animationInitSystem = nullptr;
 	AnimationSystem* animationSystem = nullptr;
+	AnimationChangerSystem* animationChangerSystem = nullptr;
 	AudioSystem* audioSystem = nullptr;
 	BeginEndFrameSystem* beginEndFrameSystem = nullptr;
 	BoundingboxSubmitSystem* boundingboxSubmitSystem = nullptr;
@@ -46,6 +49,7 @@ struct Systems {
 	EntityAdderSystem* entityAdderSystem = nullptr;
 	EntityRemovalSystem* entityRemovalSystem = nullptr;
 	GameInputSystem* gameInputSystem = nullptr;
+	GUISubmitSystem* guiSubmitSystem = nullptr;
 	GunSystem* gunSystem = nullptr;
 	LevelGeneratorSystem* levelGeneratorSystem = nullptr;
 	LifeTimeSystem* lifeTimeSystem = nullptr;

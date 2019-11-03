@@ -17,9 +17,12 @@ RWTexture2D<float4> lOutput : register(u0);
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
 ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0);
+
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
+
+StructuredBuffer<uint> waterData : register(t6, space0);
 
 // Texture2DArray<float4> textures : register(t2, space0);
 Texture2D<float4> sys_texAlbedo : register(t2);
@@ -94,7 +97,7 @@ void rayGen() {
 	payload.closestTvalue = 0;
 	payload.color = float4(0,0,0,0);
 	if (worldNormal.x == -1 && worldNormal.y == -1) {
-		//Bounding boxes dont need shadeing
+		// Bounding boxes dont need shading
 		lOutput[launchIndex] = float4(albedoColor, 1.0f);
 		return;
 	} else {
@@ -124,19 +127,7 @@ void rayGen() {
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payload_metaball);
 	//===========MetaBalls RT END===========
 
-
-	//lOutput[launchIndex] = (payload_metaball.color);
-	//return;
-	//return;
-	float t;
-	//linearDepth /= CB_SceneData.farZ;
-	t = min(linearDepth, payload_metaball.closestTvalue) / 10.0f;
-	//t = payload_metaball.closestTvalue / 3;// / CB_SceneData.farZ;
-
-
-	float metaballDepth = payload_metaball.closestTvalue - CB_SceneData.nearZ * 4;// (payload_metaball.closestTvalue - CB_SceneData.nearZ * 4)* projectionA;
-
-	
+	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payload_metaball.closestTvalue);
 
 	if (metaballDepth <= linearDepth) {
 		lOutput[launchIndex] = payload_metaball.color;	
@@ -227,13 +218,13 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 
 	float2 texCoords = Utils::barrypolation(barycentrics, vertex1.texCoords, vertex2.texCoords, vertex3.texCoords);
 	float3 normalInLocalSpace = Utils::barrypolation(barycentrics, vertex1.normal, vertex2.normal, vertex3.normal);
-	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), normalInLocalSpace));
+	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(normalInLocalSpace, 0.f)));
 
 	float3 tangentInLocalSpace = Utils::barrypolation(barycentrics, vertex1.tangent, vertex2.tangent, vertex3.tangent);
-	float3 tangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), tangentInLocalSpace));
+	float3 tangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(tangentInLocalSpace, 0.f)));
 
 	float3 bitangentInLocalSpace = Utils::barrypolation(barycentrics, vertex1.bitangent, vertex2.bitangent, vertex3.bitangent);
-	float3 bitangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), bitangentInLocalSpace));
+	float3 bitangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(bitangentInLocalSpace, 0.f)));
 
 	// Create TBN matrix to go from tangent space to world space
 	float3x3 tbn = float3x3(
@@ -246,7 +237,6 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
         normalSample.y = 1.0f - normalSample.y;
         normalInWorldSpace = mul(normalize(normalSample * 2.f - 1.f), tbn);
 	}
-
 
 	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
 	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
@@ -266,8 +256,8 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	payload.recursionDepth++;
 	payload.closestTvalue = RayTCurrent();
 
-	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), attribs.normal.xyz));
-	float refractIndex = 0.3; // 1.333f;
+	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(attribs.normal.xyz, 0.f)));
+	float refractIndex = 1.333f;
 	RayPayload reflect_payload = payload;
 	RayPayload refract_payload = payload;
 	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
@@ -278,26 +268,33 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
 	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
+	if (payload.recursionDepth == 1) {
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
 
-	//diffuseColor = nextBounce.color;
+	} else {
+		reflect_payload.color = float4(0.0f, 0.0f, 0.1f,1.0f);
+		refract_payload.color = float4(0.0f, 0.0f, 0.f,1.0f);
+	}
+
 	float4 reflect_color = reflect_payload.color;
-	reflect_color.r *= 0.5;
-	reflect_color.g *= 0.5;
-	reflect_color.b += 0.1;
-	saturate(reflect_color);
+	//reflect_color.r *= 0.8;
+	//reflect_color.g *= 0.8;
+	//reflect_color.b += 0.2;
+	reflect_color.b += 0.05f;
+	reflect_color =  saturate(reflect_color);
 
 	float4 refract_color = refract_payload.color;
-	refract_color.r *= 0.9;
-	refract_color.g *= 0.9;
-	refract_color.b += 0.05;
-	saturate(refract_color);
+	//refract_color.r *= 0.8;
+	//refract_color.g *= 0.8;
+	//refract_color.b *= 0.2;
+	refract_color.b += 0.05f;
+	refract_color = saturate(refract_color);
 
 	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
-	float refconst = 1 - abs(dot(normalize(hitToCam), normalInWorldSpace));
+	float refconst = pow(abs(dot(normalize(hitToCam), normalInWorldSpace)), 2);
 
-	float4 finaldiffusecolor = saturate((reflect_color * 0.2f + refract_color) / 1.5f);
+	float4 finaldiffusecolor = saturate((refract_color * refconst + reflect_color * (1- refconst)));
 	finaldiffusecolor.a = 1;
 	
 	/////////////////////////
@@ -334,7 +331,7 @@ bool solveQuadratic(in float a, in float b, in float c, inout float x0, inout fl
 	return true;
 }
 
-bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out float t, out float4 normal) {
+bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out float tmin, out float tmax, out float4 normal) {
 	float t0, t1; // solutions for t if the ray intersects 
 
 	// analytic solution
@@ -359,8 +356,9 @@ bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out floa
 		}
 	}
 
-	t = t0;
-	normal = float4(normalize((ray.Origin + t * normalize(ray.Direction)) - center), 0);
+	tmin = t0;
+	tmax = t1;
+	normal = float4(normalize((ray.Origin + tmin * normalize(ray.Direction)) - center), 0);
 
 	return true;
 }
@@ -369,8 +367,8 @@ bool intersectSphere(in RayDesc ray, in float3 center, in float radius, out floa
 // Return metaball potential range: <0,1>
 // mbRadius - largest possible area of metaball contribution - AKA its bounding sphere.
 float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float ballradius) {
+	
 	float distance = length(position - ballpos) / ballradius;
-
 	////float3 rel = (ballpos - position) / ballradius;
 
 	if (distance <= 1) {
@@ -380,6 +378,7 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 		/*===OK Quality===*/
 
 		float t = (1 - distance * distance);
+
 		return t * t;
 
 
@@ -406,83 +405,63 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 }
 
 // Calculate field potential from all active metaballs.
-float CalculateMetaballsPotential(in float3 position) {
+float CalculateMetaballsPotential(in uint index, in float3 position) {
 	//return 1;
 	float sumFieldPotential = 0;
 	uint nballs = CB_SceneData.nMetaballs;
 
-	int mid = InstanceID();
-	int nWeights = 6;
+	int mid = index;
+	int nWeights = 30;
 
 	int start = mid - nWeights;
 	int end = mid + nWeights;
 
 	if (start < 0)
 		start = 0;
-	if (end > nballs)
+	if (end > nballs) 
 		end = nballs;
 
-	for (int i = start; i < end; i++) {
-		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], 0.15f);
+	for (int i = start; i < end - 1; i++) {
+		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], METABALL_RADIUS);
 	}
+
 	return sumFieldPotential;
 }
 
 // Calculate a normal via central differences.
-float3 CalculateMetaballsNormal(in float3 position) {
+float3 CalculateMetaballsNormal(in uint index, in float3 position) {
 	float e = 0.5773 * 0.00001;
 	return normalize(float3(
-		CalculateMetaballsPotential(position + float3(-e, 0, 0)) -
-		CalculateMetaballsPotential(position + float3(e, 0, 0)),
-		CalculateMetaballsPotential(position + float3(0, -e, 0)) -
-		CalculateMetaballsPotential(position + float3(0, e, 0)),
-		CalculateMetaballsPotential(position + float3(0, 0, -e)) -
-		CalculateMetaballsPotential(position + float3(0, 0, e))));
+		CalculateMetaballsPotential(index, position + float3(-e, 0, 0)) -
+		CalculateMetaballsPotential(index, position + float3(e, 0, 0)),
+		CalculateMetaballsPotential(index, position + float3(0, -e, 0)) -
+		CalculateMetaballsPotential(index, position + float3(0, e, 0)),
+		CalculateMetaballsPotential(index, position + float3(0, 0, -e)) -
+		CalculateMetaballsPotential(index, position + float3(0, 0, e))));
 }
 
-[shader("intersection")]
-void IntersectionShader() {
-	float startT = 0;
+struct Ballhit {
+	float tmin;
+	float tmax;
+	int index;
+};
 
-	RayDesc rayWorld;
-	rayWorld.Origin = WorldRayOrigin();
-	rayWorld.Direction = WorldRayDirection();
-	rayWorld.TMax = 1000000;
-	rayWorld.TMin = 0.00001;
-
-	RayDesc rayLocal;
-	rayLocal.Origin = ObjectRayOrigin();
-	rayLocal.Direction = ObjectRayDirection();
-	rayLocal.TMax = 1000000;
-	rayLocal.TMin = 0.00001;
-
-	ProceduralPrimitiveAttributes attr;
-
-	////////////////////////////////
-	/*find a point on the ray that are close to the metaballs and start stepping from there instead of using the rays origin as starting point.*/
-	float4 dummy;
-	float val;
-	if (length(ObjectRayOrigin()) > 0.2) {//TODO: CHANGE THIS
-		if (intersectSphere(rayLocal, float3(0, 0, 0), 0.2, val, dummy)) {
-			startT = val;
-			rayWorld.Origin += startT * rayWorld.Direction;
-		}
-	}
-	////////////////////////////////
-
-	float tmin = 0, tmax = 1;
-	unsigned int MAX_LARGE_STEPS = 16;//If these steps dont hit any metaball no hit is reported.
+bool Step(in Ballhit hit, in RayDesc rayWorld){
+		
+	float tmin = hit.tmin, tmax = hit.tmax;
+	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
 	unsigned int MAX_SMALL_STEPS = 32;//If a large step hit a metaball, use small steps to adjust go backwards
 
+	ProceduralPrimitiveAttributes attr;
 	float t = tmin;
 	float minTStep = (tmax - tmin) / (MAX_LARGE_STEPS / 1.0f);
 	unsigned int iStep = 0;
 
 	float3 currPos = rayWorld.Origin + t * rayWorld.Direction;
 	while (iStep++ < MAX_LARGE_STEPS) {
-		float sumFieldPotential = CalculateMetaballsPotential(currPos); // Sum of all metaball field potentials.
+		float sumFieldPotential = CalculateMetaballsPotential(hit.index, currPos); // Sum of all metaball field potentials.
 
-		const float Threshold = 0.95f;
+		const float Threshold = 0.90f;
 
 		if (sumFieldPotential >= Threshold) {
 			float restep_step = minTStep / 2;
@@ -491,7 +470,7 @@ void IntersectionShader() {
 			for (int i = 0; i < MAX_SMALL_STEPS; i++) {
 				t += restep_step * restep_step_dir;
 				currPos = rayWorld.Origin + t * rayWorld.Direction;
-				float sumFieldPotential_recomp = CalculateMetaballsPotential(currPos); // Sum of all metaball field potentials.
+				float sumFieldPotential_recomp = CalculateMetaballsPotential(hit.index, currPos); // Sum of all metaball field potentials.
 				if (sumFieldPotential_recomp >= Threshold) {
 					restep_step *= 0.5;
 					restep_step_dir = -1;
@@ -501,12 +480,64 @@ void IntersectionShader() {
 				}
 			}
 
-			attr.normal = float4(CalculateMetaballsNormal(currPos), 0);
-			ReportHit(t + startT, 0, attr);
-			return;
+			attr.normal = float4(CalculateMetaballsNormal(hit.index, currPos), 0);
+			ReportHit(t, 0, attr);
+			return true;
 		}
 
 		t += minTStep;
 		currPos = rayWorld.Origin + t * rayWorld.Direction;
+	}
+
+	return false;
+}
+
+[shader("intersection")]
+void IntersectionShader() {
+	float startT = 1000;
+
+	RayDesc rayWorld;
+	rayWorld.Origin = WorldRayOrigin();
+	rayWorld.Direction = WorldRayDirection();
+	rayWorld.TMax = 1000000;
+	rayWorld.TMin = 0.00001;
+
+	float4 dummy;
+	float min;
+	float max;
+	uint nballs = CB_SceneData.nMetaballs;
+
+	const uint MAX_HITS = 2;
+	Ballhit hits[MAX_HITS];
+	int nHits = 0;
+
+	for (uint i = 0; i < nballs; i++) {
+		if (intersectSphere(rayWorld, metaballs[i], METABALL_RADIUS, min, max, dummy)) {
+			hits[nHits].tmin = min;
+			hits[nHits].tmax = max + 1;
+			hits[nHits].index = i;
+			nHits++;
+			break;
+		}
+	}
+
+	for (uint i = 0; i < nballs && nHits < MAX_HITS; i++) {
+		uint i2 = nballs - i - 1;
+		if (intersectSphere(rayWorld, metaballs[i2], METABALL_RADIUS, min, max, dummy)) {
+			hits[nHits].tmin = min;
+			hits[nHits].tmax = max + 1;
+			hits[nHits].index = i2;
+			nHits++;
+			break;
+		}
+	}
+
+	if (nHits == 0)
+		return;
+
+	for (int curHit = 0; curHit < nHits; curHit++) {
+		if (Step(hits[curHit], rayWorld)) {
+			return;
+		}
 	}
 }

@@ -15,6 +15,7 @@
 
 class Camera;
 class Transform;
+class AudioComponent;
 
 enum AudioType { MUSIC };
 
@@ -57,9 +58,11 @@ public:
 
 	void loadSound(const std::string& filename);
 	int initializeSound(const std::string& filename, float volume = 1.0f);
-	void streamSound(const std::string& filename, int streamIndex, bool loop = true);
+	void streamSound(const std::string& filename, int streamIndex, float volume, bool isPositionalAudio, bool loop = true, AudioComponent* pAudioC = nullptr);
 
 	void updateSoundWithCurrentPosition(int index, Camera& cam, const Transform& transform, 
+		const glm::vec3& positionOffset, float alpha);
+	void updateStreamWithCurrentPosition(int index, Camera& cam, const Transform& transform,
 		const glm::vec3& positionOffset, float alpha);
 
 	void startSpecificSound(int index, float volume = 1.0f);
@@ -72,11 +75,14 @@ public:
 	float getStreamVolume(int index);
 	int getSoundIndex();
 	int getAvailableStreamIndex();
+	soundStruct* getSound(int index);
+	soundStruct* getStream(int index);
 
 	void setSoundVolume(int index, float value = VOL_HALF);
 	void setStreamVolume(int index, float value = VOL_HALF);
 
 	std::atomic<bool> m_streamLocks[STREAMED_SOUNDS_COUNT];
+
 
 private: 
 	bool m_isRunning = true;
@@ -102,11 +108,11 @@ private:
 	bool m_isFinished[STREAMED_SOUNDS_COUNT];
 	OVERLAPPED m_overlapped[STREAMED_SOUNDS_COUNT];
 
-	// PRIVATE FUNCTION
+	// PRIVATE FUNCTIONS
 	//-----------------
 	HRESULT initXAudio2();
 
-	void streamSoundInternal(const std::string& filename, int myIndex, bool loop);
+	void streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC = nullptr);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
 
 	bool checkSoundIndex(int index);

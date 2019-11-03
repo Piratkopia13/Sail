@@ -27,7 +27,7 @@ void BoundingboxSubmitSystem::submitAll() {
 				if (!culling || (culling && culling->isVisible)) {
 					flags |= Renderer::IS_VISIBLE_ON_SCREEN;
 				}
-				renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrix(), flags);
+				renderer->submit(wireframeModel, boundingBox->getTransform()->getMatrixWithUpdate(), flags);
 			}
 		}
 	}

@@ -3,6 +3,12 @@
 #include <random>
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
 
+//#define _LOG_TO_FILE
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+#include <fstream>
+static std::ofstream out("LogFiles/NetworkModule.cpp.log");
+#endif
+
 Network::Network() {}
 
 Network::~Network() {
@@ -60,6 +66,11 @@ void Network::checkForPackages(NetworkEventHandler& handler)
 	while (morePackages)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex_packages);
+
+#if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
+		out << "nPackages: " << std::to_string(std::abs(m_pend - m_pstart)) << "\n";
+#endif
+
 		if (m_pstart == m_pend) {
 			morePackages = false;
 			break;
@@ -281,7 +292,7 @@ bool Network::send(const char* message, size_t size, Connection* conn)
 	return true;
 }
 
-void Network::setServerMetaDescription(char* desc, int descSize)
+void Network::setServerMetaDescription(const char* desc, int descSize)
 {
 	memset(m_serverMetaDesc, 0, HOST_META_DESC_SIZE);
 	memcpy(m_serverMetaDesc, desc, descSize);
@@ -308,6 +319,7 @@ bool Network::searchHostsOnLan()
 
 bool Network::startUDPSocket(unsigned short port)
 {
+	m_shutdownUDP = false;
 	ULONG bAllow = 1;
 
 	/*===UDP BROADCASTER===*/
@@ -384,7 +396,7 @@ void Network::listenForUDP()
 	sockaddr_in client = { 0 };
 	int clientSize = sizeof(sockaddr_in);
 
-	while (!m_shutdown)
+	while (!m_shutdown && !m_shutdownUDP)
 	{
 		memset(&udpdata, 0, sizeof(udpdata));
 		int bytesRec = recvfrom(m_udp_directMessage_socket, (char*)& udpdata, sizeof(udpdata), 0, (sockaddr*)& client, &clientSize);
@@ -408,7 +420,6 @@ void Network::listenForUDP()
 					// Attatch hostPort and ip, then an irrelevant message as UDP only cares about ip and hostport atm.
 					data.HostFoundOnLanData.hostPort = udpdata.package.packageData.hostdata.port;
 					data.HostFoundOnLanData.ip_full = client.sin_addr.S_un.S_addr;
-					
 
 					nEvent.data = &data;
 
@@ -527,20 +538,7 @@ void Network::shutdown()
 		}
 	}
 
-	if (m_udp_broadcast_socket) {
-		closesocket(m_udp_broadcast_socket);
-		m_udp_broadcast_socket = 0;
-	}
-	if (m_udp_directMessage_socket) {
-		closesocket(m_udp_directMessage_socket);
-		m_udp_directMessage_socket = 0;
-	}
-
-	if (m_UDPListener) {
-		m_UDPListener->join();
-		delete 	m_UDPListener;
-		m_UDPListener = nullptr;
-	}
+	stopUDP();
 
 	m_connections.clear();
 	m_initializedStatus = INITIALIZED_STATUS::INITIALIZED;
@@ -558,10 +556,33 @@ ULONG Network::ip_string_to_ip_int(char* ip)
 	return result;
 }
 
+void Network::stopUDP() {
+	m_shutdownUDP = true;
+
+	if (m_udp_broadcast_socket) {
+		closesocket(m_udp_broadcast_socket);
+		m_udp_broadcast_socket = 0;
+	}
+	if (m_udp_directMessage_socket) {
+		closesocket(m_udp_directMessage_socket);
+		m_udp_directMessage_socket = 0;
+	}
+
+	if (m_UDPListener) {
+		m_UDPListener->join();
+		delete 	m_UDPListener;
+		m_UDPListener = nullptr;
+	}
+}
+
+void Network::startUDP() {
+	startUDPSocket(m_udp_localbroadcastport);
+}
+
 void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
 	// delete previous message if there is one
-	if (m_awaitingMessages[m_pend].Message.rawMsg != nullptr) {
+	if (m_awaitingEvents[m_pend].eventType != NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND && m_awaitingMessages[m_pend].Message.rawMsg != nullptr) {
 		delete[] m_awaitingMessages[m_pend].Message.rawMsg;
 		m_awaitingMessages[m_pend].Message.rawMsg = nullptr;
 	}

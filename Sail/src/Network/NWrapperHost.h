@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NWrapper.h"
+#include <string>
 
 class NWrapperHost : public NWrapper {
 public:
@@ -9,13 +10,19 @@ public:
 
 	bool host(int port = 54000);
 	bool connectToIP(char* = "127.0.0.1:54000");
+	void setLobbyName(std::string name);
+	void updateServerDescription();
 
 private:
 	std::map<TCP_CONNECTION_ID, unsigned char> m_connectionsMap;
 	unsigned char m_IdDistribution = 0;
+	std::string m_lobbyName = "";
+	std::string m_serverDescription = "";
 
 	void sendChatMsg(std::string msg);
 
+
+	 
 	void playerJoined(TCP_CONNECTION_ID id);
 	void playerDisconnected(TCP_CONNECTION_ID id);
 	void playerReconnected(TCP_CONNECTION_ID id);

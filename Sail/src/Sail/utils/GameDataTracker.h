@@ -1,14 +1,32 @@
 #pragma once
 
-typedef long double LARGE_FLOAT;
+#include <string>
+#include <map>
+#include "Sail/netcode/NetcodeTypes.h"
 
-struct statistics {
-	LARGE_INTEGER bulletsFired;
-	LARGE_INTEGER bulletsHit;
-	LARGE_INTEGER bulletsHitPercentage;
-	LARGE_INTEGER enemiesKilled;
-	LARGE_FLOAT distanceWalked;
-	LARGE_INTEGER jumpsMade;
+class NWrapperSingleton;
+
+struct InduvidualStats {
+	int bulletsFired;
+	float distanceWalked;
+	int jumpsMade;
+};
+
+struct GlobalTopStats {
+	int bulletsFired;
+	float distanceWalked;
+	int jumpsMade;
+
+	// IDs for the host to fill for the endscreen
+	Netcode::PlayerID bulletsFiredID;
+	Netcode::PlayerID distanceWalkedID;
+	Netcode::PlayerID jumpsMadeID;
+};
+
+struct HostStatsPerPlayer {
+	int nKills = 0;
+	int nDeaths = 0;
+	int placement = 0;
 };
 
 class GameDataTracker {
@@ -18,22 +36,48 @@ public:
 
 	// Implemented in...
 	void logWeaponFired();						// ...ehfy::update()
-	void logEnemyHit();							// Nowhere atm
-	void logEnemyKilled();						// Nowhere atm
+	void logEnemyKilled(Netcode::PlayerID playerID);// CandleSystem::update
 	void logJump();								// ...GameInputSystem::update()
 	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
+	void logPlayerDeath(const std::string& killer, const std::string& killed, const std::string& deathType); // used to log when a player is killed
+	void logPlacement(Netcode::PlayerID playerID);// CandleSystem::update
 
-	// Implemented in...
-	void resetData();							// Nowhere atm
-	const statistics& getStatistics();			// Nowhere atm
+	void init();								// Gamestate::Gamestate()
+	void resetData();							// EndGameState::onReturnToLobby() / renderImGui()
+	// Filled with data at endgame to present to endscreen
+	GlobalTopStats& getStatisticsGlobal();		// NetworkSenderSystem::writeEventToArchive()
+	// Used to track the local player
+	InduvidualStats& getStatisticsLocal();
+
+	const std::vector<std::string>& getPlayerDeaths();
+
+	const std::map<Netcode::PlayerID, HostStatsPerPlayer> getPlayerDataMap(); // NetworkSenderSystem
+
+	// Used in end game when recieving player data stats
+	void setStatsForPlayer(Netcode::PlayerID id, int nKills, int placement); // NetworkRecieverSystem::Update()
+	void setStatsForOtherData(Netcode::PlayerID bfID, int bf,
+		Netcode::PlayerID dwID, float dw, Netcode::PlayerID jmID, int jm);
+	// nr of player from the start of the match
+	int getPlayerCount();	// Nowhere atm
+	void turnOffLocalDataTracking();
 
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()
 
 private:
 	//
-	statistics m_loggedData;
-	
+	NWrapperSingleton* m_network;
+
+	InduvidualStats m_loggedData;
+	GlobalTopStats m_loggedDataGlobal;
+	bool m_trackLocalStats;				// toggle InduvidualStats tracking
+
+	// Map of each player in current game containing data such as kills and deaths
+	std::map<Netcode::PlayerID, HostStatsPerPlayer> m_hostPlayerTracker;
+	int m_placement; // add 1 after ever time a player is placed to give next player a placement
+	int m_nPlayersCurrentSession;
+
+	std::vector<std::string> m_playerDeaths;
 
 	// -+-+-+-+-+- Singleton requirements below -+-+-+-+-+-
 public:

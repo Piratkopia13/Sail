@@ -8,6 +8,7 @@ struct Player;
 class NWrapper;
 class TextInputEvent;
 class NetworkJoinedEvent;
+class AudioComponent;
 
 struct Message {
 	std::string sender;
@@ -53,6 +54,9 @@ protected:
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
 
+	// LobbyAudio
+	Entity* m_lobbyAudio = nullptr;
+
 	// Back-end variables
 	unsigned int m_currentmessageIndex;
 	unsigned int m_messageSizeLimit;
@@ -69,6 +73,7 @@ private:
 	unsigned int m_textHeight;
 	void renderPlayerList();
 	void renderStartButton();
+	void renderQuitButton();
 	void renderSettings();		// Currently empty
 	void renderChat();
 };
