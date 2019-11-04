@@ -18,13 +18,13 @@ public:
 #ifdef DEVELOPMENT
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
-		ImGui::DragFloat("##drag", &drag); ImGui::NextColumn();
+		ImGui::DragFloat("##drag", &drag, 0.1f); ImGui::NextColumn();
 		ImGui::Text("drag"); ImGui::NextColumn();
 
-		ImGui::DragFloat("##bounciness", &bounciness); ImGui::NextColumn();
+		ImGui::DragFloat("##bounciness", &bounciness, 0.1f); ImGui::NextColumn();
 		ImGui::Text("bounciness"); ImGui::NextColumn();
 
-		ImGui::DragFloat("##padding", &padding); ImGui::NextColumn();
+		ImGui::DragFloat("##padding", &padding, 0.1f); ImGui::NextColumn();
 		ImGui::Text("padding"); ImGui::NextColumn();
 
 		ImGui::Checkbox("##onGround", &onGround); ImGui::NextColumn();
