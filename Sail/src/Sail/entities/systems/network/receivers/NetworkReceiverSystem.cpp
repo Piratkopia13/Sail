@@ -106,7 +106,7 @@ void NetworkReceiverSystem::update(float dt) {
 	glm::vec3 rotation;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
-	int animationIndex;
+	unsigned int animationIndex;
 	float animationTime;
 
 	// Process all messages in the buffer
@@ -192,6 +192,7 @@ void NetworkReceiverSystem::update(float dt) {
 				}
 				break;
 				default:
+					Logger::Error("INVALID NETWORK ESSAGE RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 					break;
 				}
 			}
@@ -335,14 +336,14 @@ void NetworkReceiverSystem::update(float dt) {
 				}
 
 				// Get all specific data from the Host
-				(ar)(bulletsFired);
-				(ar)(bulletsFiredID);
+				ar(bulletsFired);
+				ar(bulletsFiredID);
 
-				(ar)(distanceWalked);
-				(ar)(distanceWalkedID);
+				ar(distanceWalked);
+				ar(distanceWalkedID);
 
-				(ar)(jumpsMade);
-				(ar)(jumpsMadeID);
+				ar(jumpsMade);
+				ar(jumpsMadeID);
 
 				GameDataTracker::getInstance().setStatsForOtherData(
 					bulletsFiredID, bulletsFired, distanceWalkedID, distanceWalked, jumpsMadeID, jumpsMade);
@@ -357,9 +358,9 @@ void NetworkReceiverSystem::update(float dt) {
 				int bulletsFired, jumpsMade;
 				float distanceWalked;
 				// Get the data
-				(ar)(bulletsFired);
-				(ar)(distanceWalked);
-				(ar)(jumpsMade);
+				ar(bulletsFired);
+				ar(distanceWalked);
+				ar(jumpsMade);
 
 				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
 			}
@@ -373,6 +374,7 @@ void NetworkReceiverSystem::update(float dt) {
 			}
 			break;
 			default:
+				Logger::Error("INVALID NETWORK EVENT RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;
 			}
 
@@ -399,7 +401,10 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 	}
 
 	auto e = ECS::Instance()->createEntity("networkedEntity");
-	entities.push_back(e.get());
+	instantAddEntity(e.get());
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ._.
+	//entities.push_back(e.get());
+	//entities_set.insert(e->getID());
 
 	// create the new entity
 	switch (entityType) {
@@ -443,7 +448,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 	Logger::Warning("setEntityRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, int animationIndex, float animationTime) {
+void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			auto animation = e->getComponent<AnimationComponent>();
@@ -493,16 +498,18 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 			if (child->hasComponent<CandleComponent>()) {
 				// Damage the candle
 				// Save the Shooter of the Candle if its lethal
+				// TODO: Replace 10.0f with game settings damage
 				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
 
 				// Play relevant sound
-				if (e->hasComponent<LocalOwnerComponent>()) {
-					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].isPlaying = true;
-					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].playOnce = true;
-				}
-				else {
-					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
-					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
+				if (child->getComponent<CandleComponent>()->isLit) {
+					if (e->hasComponent<LocalOwnerComponent>()) {
+						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].isPlaying = true;
+						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].playOnce = true;
+					} else {
+						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
+						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
+					}
 				}
 
 				// Check in Candle System What happens next
@@ -627,8 +634,8 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 				auto candleTransComp = candleE->getComponent<TransformComponent>();
 
 
-				candleComp->setCarried(isHeld);
-				candleComp->setWasCarriedLastUpdate(isHeld);
+				candleComp->isCarried = isHeld;
+				candleComp->wasCarriedLastUpdate = isHeld;
 				if (!isHeld) {
 					candleTransComp->removeParent();
 					candleTransComp->setStartTranslation(pos);
@@ -741,18 +748,19 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != candleOwnerID) {
 			continue;
 		}
+
 		for (int i = 0; i < e->getChildEntities().size(); i++) {
 			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
 				auto candleComp = candleE->getComponent<CandleComponent>();
-				candleComp->setHealth(MAX_HEALTH);
-				candleComp->incrementRespawns();
-				candleComp->resetDownTime();
-				candleComp->setIsLit(true);
-				
+				if (!candleComp->isLit) {
+					candleComp->health = MAX_HEALTH;
+					candleComp->respawns++;
+					candleComp->downTime = 0.f;
+					candleComp->isLit = true;
+					candleComp->userReignition = false;
+					candleComp->invincibleTimer = 1.5f;
+				}
 			}
-
 		}
 	}
-
-
 }

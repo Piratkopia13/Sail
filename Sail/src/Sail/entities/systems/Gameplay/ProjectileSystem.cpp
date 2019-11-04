@@ -51,7 +51,8 @@ void ProjectileSystem::update(float dt) {
 			//If projectile collided with a candle
 			if (collision.entity->hasComponent<CandleComponent>()) {
 				// If that candle isn't our own
-				if (!(collision.entity->hasComponent<LocalOwnerComponent>() && collision.entity->getComponent<CandleComponent>()->isCarried())) {
+				collision.entity->getComponent<CandleComponent>();
+				if (!(collision.entity->hasComponent<LocalOwnerComponent>() && collision.entity->getComponent<CandleComponent>()->isCarried)) {
 					//If local player owned the projectile
 					if (e->hasComponent<LocalOwnerComponent>()) {
 						//Inform the host about the hit.( in case you are host this will broadcast to everyone else)
