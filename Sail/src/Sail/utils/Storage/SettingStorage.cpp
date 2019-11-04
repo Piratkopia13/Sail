@@ -20,7 +20,8 @@ bool SettingStorage::loadFromFile(const std::string& filename) {
 	std::string file = Utils::readFile(filename);
 	std::string currentArea = "";
 	while (file != "") {
-		unsigned int newline = file.find("\n");
+		int newline = file.find("\n");
+		
 		std::string line = file.substr(0, newline);
 		file = file.substr(newline+1, std::string::npos);
 
@@ -31,7 +32,7 @@ bool SettingStorage::loadFromFile(const std::string& filename) {
 		else if(line != ""){
 			int divider = line.find(":");
 			std::string name = line.substr(0, divider);
-			std::string temp = line.substr(divider, std::string::npos);
+			std::string temp = line.substr(divider+1, std::string::npos);
 			float selection = std::stof(temp);
 
 			if (predeterminedSettings[currentArea].find(name) == predeterminedSettings[currentArea].end()) {
@@ -40,6 +41,9 @@ bool SettingStorage::loadFromFile(const std::string& filename) {
 			if (dynamicSettings[currentArea].find(name) == dynamicSettings[currentArea].end()) {
 				dynamicSettings[currentArea][name] = selection;
 			}
+		}
+		if (newline == std::string::npos) {
+			break;
 		}
 	}
 
