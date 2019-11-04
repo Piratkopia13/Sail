@@ -44,12 +44,8 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree, Shader* shader) {
 void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	m_octree = octree;
 
-	// To be able to get the map dimensions and such
-	// TODO: should probably be replaced with some form of settings singleton
-	MapComponent mapComp;
-
-	float realXMax = mapComp.xsize * mapComp.tileSize;
-	float realZMax = mapComp.ysize * mapComp.tileSize;
+	float realXMax = MapComponent::xsize * MapComponent::tileSize;
+	float realZMax = MapComponent::ysize * MapComponent::tileSize;
 	float realSize = realZMax * realXMax;
 	float nodeSize = 0.5f;
 	float nodePadding = nodeSize;
@@ -61,8 +57,8 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	int currZ = 0;
 
 	// Currently needed cause map doesn't start creation from (0,0)
-	float startOffsetX = -mapComp.tileSize / 2.f;
-	float startOffsetZ = -mapComp.tileSize / 2.f;
+	float startOffsetX = -MapComponent::tileSize / 2.f;
+	float startOffsetZ = -MapComponent::tileSize / 2.f;
 	float startOffsetY = 0.f;
 	//bool* walkable = SAIL_NEW bool[size];
 
@@ -101,7 +97,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		glm::vec3 down(0.f, -1.f, 0.f);
 		m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + collisionBoxHalfHeight, nodePos.z), down, &tempInfo, nullptr, 0.01f);
 		if (tempInfo.closestHitIndex != -1) {
-			float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].normal, -down);
+			float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].shape->getNormal(), -down);
 			// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
 			bool isFloor = (floorCheckVal < 0.1f) ? true : false;
 			if (!isFloor) {
