@@ -1516,7 +1516,7 @@ void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterMod
 				sc->light.setDirection(glm::vec3(1, 0, 0));
 				sc->light.setAngle(0.5);
 
-				//mc->rotation.y = 4;			
+				mc->rotation.y = 4;			
 			}
 			map->matched.push(room);
 		}
