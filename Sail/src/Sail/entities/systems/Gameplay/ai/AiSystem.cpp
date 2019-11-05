@@ -122,7 +122,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		m_octree->getCollisions(e.get(), &vec);
 
 		for (Octree::CollisionInfo& info : vec) {
-			int j = (info.entity->getName().compare("Map_"));
+			int j = (info.entity->getName().compare("Map_") || info.entity->getName().compare("Clu"));
 			if (j >= 0) {
 				//Not walkable
 
