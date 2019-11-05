@@ -25,8 +25,6 @@ public:
 	virtual bool renderImgui(float dt) override;
 	// Renders imgui used for debugging
 	virtual bool renderImguiDebug(float dt) override;
-	// Called when entering game state
-	virtual void onEntry() override;
 
 private:
 	void initSystems(const unsigned char playerID);

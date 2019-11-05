@@ -177,6 +177,8 @@ GameState::GameState(StateStack& stack)
 	// Reset data trackers
 	GameDataTracker::getInstance().init();
 
+	// Clear all water on the level
+	EventDispatcher::Instance().emit(ResetWaterEvent());
 }
 
 GameState::~GameState() {
@@ -686,10 +688,6 @@ bool GameState::renderImguiDebug(float dt) {
 	m_ecsSystemInfoImGuiWindow.renderWindow();
 
 	return false;
-}
-
-void GameState::onEntry() {
-	EventDispatcher::Instance().emit(ResetWaterEvent());
 }
 
 void GameState::shutDownGameState() {
