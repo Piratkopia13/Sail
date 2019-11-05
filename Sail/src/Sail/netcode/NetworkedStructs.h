@@ -67,7 +67,8 @@ namespace Netcode {
 		RUNNING_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
-		EMPTY
+		EMPTY,
+		COUNT
 	}; 
 	
 	static const std::string MessageNames[] = {
