@@ -69,7 +69,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
 	ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	ECS::Instance()->createSystem<ModelSubmitSystem>();
-	ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 	ECS::Instance()->createSystem<GUISubmitSystem>();
 
 
@@ -177,11 +176,11 @@ int Application::startGameLoop() {
 			while (accumulator >= TIMESTEP) {
 #endif
 
-			accumulator -= TIMESTEP;
+				accumulator -= TIMESTEP;
 
-			fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
-			fixedUpdate(TIMESTEP);
-			m_fixedUpdateDelta = m_timer.getTimeSince<float>(startTime) - fixedUpdateStartTime;
+				fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
+				fixedUpdate(TIMESTEP);
+				m_fixedUpdateDelta = m_timer.getTimeSince<float>(startTime) - fixedUpdateStartTime;
 
 
 #ifndef PERFORMANCE_SPEED_TEST

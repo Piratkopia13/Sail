@@ -32,6 +32,7 @@ public:
 private:
 	const std::string loadPlayerName(const std::string& file);
 	bool loadModels(Application* app);
+	bool loadTextures(Application* app);
 
 
 private:

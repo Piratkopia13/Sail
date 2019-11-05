@@ -127,7 +127,7 @@ bool LobbyClientState::onStartGame(NetworkStartGameEvent& event) {
 	// Queue changes to the stack while maintaining the connection
 
 	m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
-	this->requestStackPop();
+	this->requestStackClear();
 	this->requestStackPush(States::Game);
 
 	return true;

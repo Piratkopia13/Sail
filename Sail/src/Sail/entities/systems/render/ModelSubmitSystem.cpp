@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ModelSubmitSystem.h"
 #include "..//..//components/ModelComponent.h"
+#include "..//..//components/RealTimeComponent.h"
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/CullingComponent.h"
 #include "..//..//..//Application.h"
@@ -27,6 +28,11 @@ void ModelSubmitSystem::submitAll(const float alpha) {
 		if ((!culling || (culling && culling->isVisible)) && model->renderToGBuffer) {
 			flags |= Renderer::IS_VISIBLE_ON_SCREEN;
 		}
-		renderer->submit(model->getModel(), transform->getRenderMatrix(alpha), flags);
+
+		renderer->submit(
+			model->getModel(), 
+			e->hasComponent<RealTimeComponent>() ? transform->getMatrixWithUpdate() : transform->getRenderMatrix(alpha), 
+			flags
+		);
 	}
 }

@@ -34,6 +34,7 @@ namespace KeyBinds {
 	extern int DISABLE_CURSOR;
 	extern int TOGGLE_SPHERE;	// Collision
 	extern int TOGGLE_SUN;
+	extern int TOGGLE_ROOM_LIGHTS;
 
 	// Application
 	extern int ALT_KEY;

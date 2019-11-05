@@ -110,14 +110,6 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-#ifdef DEVELOPMENT
-#ifndef _PERFORMANCE_TEST
-#ifndef _DEBUG
-	m_componentSystems.animationSystem->initDebugAnimations();
-#endif
-#endif
-#endif
-
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
@@ -178,7 +170,6 @@ GameState::GameState(StateStack& stack)
 	// Host fill its game tracker per player with player data.
 	// Reset data trackers
 	GameDataTracker::getInstance().init();
-
 }
 
 GameState::~GameState() {
@@ -201,6 +192,9 @@ bool GameState::processInput(float dt) {
 		requestStackPush(States::InGameMenu);
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
+		m_componentSystems.spotLightSystem->toggleONOFF();
+	}
 
 #ifdef DEVELOPMENT
 #ifdef _DEBUG
@@ -364,6 +358,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
+	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
 
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
@@ -379,14 +374,13 @@ void GameState::initSystems(const unsigned char playerID) {
 	// Create system which checks projectile collisions
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelSystem>();
 
 	// Create systems for rendering
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
 	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
-	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
 	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
 
@@ -604,7 +598,6 @@ bool GameState::render(float dt, float alpha) {
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
-	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
 	m_componentSystems.guiSubmitSystem->submitAll();
@@ -669,7 +662,6 @@ bool GameState::renderImguiDebug(float dt) {
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkReceiverSystem", m_componentSystems.networkReceiverSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkSenderSystem", m_componentSystems.networkSenderSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("ModelSubmitSystem", m_componentSystems.modelSubmitSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("RealTimeModelSubmitSystem", m_componentSystems.realTimeModelSubmitSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AudioSystem", m_componentSystems.audioSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CollisionSystem", m_componentSystems.collisionSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("OctreeAddRemoverSystem", m_componentSystems.octreeAddRemoverSystem->getNumEntities());
@@ -757,6 +749,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
+		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha);
 	}
 
 	if (m_showcaseProcGen) {
@@ -1030,7 +1023,11 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
-	auto* mc = map->addComponent<MapComponent>(NWrapperSingleton::getInstance().getSeed());
+#ifdef _PERFORMANCE_TEST
+	map->addComponent<MapComponent>(2);
+#else
+	map->addComponent<MapComponent>(NWrapperSingleton::getInstance().getSeed());
+#endif
 	ECS::Instance()->addAllQueuedEntities();
 
 	SettingStorage& settings = m_app->getSettings();

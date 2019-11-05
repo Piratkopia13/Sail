@@ -198,7 +198,7 @@ void LobbyState::renderStartButton() {
 			NWrapperSingleton::getInstance().setSeed(seed);
 			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
 			m_network->sendMsgAllClients({ std::string("t") + seed });
-			this->requestStackPop();
+			this->requestStackClear();
 			this->requestStackPush(States::Game);
 		}
 		ImGui::End();
