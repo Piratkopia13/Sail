@@ -146,10 +146,6 @@ GameState::GameState(StateStack& stack)
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
-
-	// Inform CandleSystem of the player
-	m_componentSystems.candleSystem->setPlayerEntityID(m_player->getID(), m_player);
-
 	// Bots creation
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
@@ -369,8 +365,10 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 
-	m_componentSystems.candleSystem = ECS::Instance()->createSystem<CandleSystem>();
-	m_componentSystems.candleSystem->init(this, m_octree);
+	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
+	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
+	m_componentSystems.candlePlacementSystem = ECS::Instance()->createSystem<CandlePlacementSystem>();
+	m_componentSystems.candlePlacementSystem->setOctree(m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -662,7 +660,10 @@ bool GameState::renderImguiDebug(float dt) {
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInECS(ECS::Instance()->getNumEntities());
 
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("ProjectileSystem", m_componentSystems.projectileSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleSystem", m_componentSystems.candleSystem->getNumEntities());
+	//m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleSystem", m_componentSystems.candleSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleHealthSystem", m_componentSystems.candleHealthSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandlePlacementSystem", m_componentSystems.candlePlacementSystem->getNumEntities());
+	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleReignitionSystem", m_componentSystems.candleReignitionSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AnimationSystem", m_componentSystems.animationSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AnimationChangerSystem", m_componentSystems.animationChangerSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkReceiverSystem", m_componentSystems.networkReceiverSystem->getNumEntities());
@@ -712,7 +713,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.collisionSystem->update(dt);
 	m_componentSystems.movementPostCollisionSystem->update(dt);
 
-
 	// This can probably be used once the respective system developers 
 	//	have checked their respective systems for proper component registration
 	//runSystem(dt, m_componentSystems.physicSystem); // Needs to be updated before boundingboxes etc.
@@ -723,7 +723,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
-	runSystem(dt, m_componentSystems.candleSystem);
+	runSystem(dt, m_componentSystems.candleHealthSystem);
+	runSystem(dt, m_componentSystems.candlePlacementSystem);
+	runSystem(dt, m_componentSystems.candleReignitionSystem);
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
@@ -930,23 +932,14 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	{
 		ResourceManager& manager = Application::getInstance()->getResourceManager();
 		manager.loadTexture(tileTex);
-
-		
-
 	}
 
 	//Load tileset for world
 	{
-		Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
-		tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-
 		Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
 		roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
 		roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
 		roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
-
-		Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
-		tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
 		Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
 		roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RD_MRAo.tga");
@@ -1010,6 +1003,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cLO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/LO_NM.tga");
 		cLO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/LO_Albedo.tga");
 
+		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
+		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Saftblandare_MRAO.tga");
+		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Saftblandare_NM.tga");
+		saftblandare->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Saftblandare_Albedo.tga");
 
 		tileModels.resize(TileModel::NUMBOFMODELS);
 		tileModels[TileModel::ROOM_FLOOR] = roomFloor;
@@ -1028,6 +1025,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
 		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
 		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
+		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
 	}
 
 	// Create the level generator system and put it into the datatype.

@@ -37,7 +37,6 @@ public:
 		ImGui::Separator();
 
 		for (auto& c : collisions) {
-			//ImGui::Text(std::string(c.entity->getName()+"("+std::to_string(c.entity->getID())+")").c_str());
 			if (ImGui::Selectable(std::string(c.entity->getName() + "(" + std::to_string(c.entity->getID()) + ")").c_str(), (*selected) == c.entity)) {
 				Logger::Log("Tried to switch");
 				*selected = c.entity;
