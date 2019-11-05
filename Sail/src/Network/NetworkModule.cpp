@@ -670,18 +670,18 @@ void Network::waitForNewConnections()
 	}
 }
 
-void Network::listen(const Connection* conn)
+void Network::listen(Connection* conn)
 {
 	NetworkEvent nEvent;
 	nEvent.clientID = conn->id;
 	nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED;
 	addNetworkEvent(nEvent, 0);
 
-	bool connectionIsClosed = false;
+	//bool connectionIsClosed = false;
 	char incomingPackageSize[MSG_SIZE_STR_LEN];
 	int bytesToReceive = 0;
 
-	while (!connectionIsClosed && !m_shutdown) {
+	while (conn->isConnected && !m_shutdown) {
 		ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
 
 		// Find out how large the incoming packet is
@@ -709,7 +709,7 @@ void Network::listen(const Connection* conn)
 #else
 		case SOCKET_ERROR:
 #endif // DEBUG_NETWORK
-			connectionIsClosed = true;
+			conn->isConnected = false;
 			nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_CLOSED;
 			addNetworkEvent(nEvent, 0);
 			break;
