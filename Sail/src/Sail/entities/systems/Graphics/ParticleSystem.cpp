@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "ParticleSystem.h"
-#include "Sail/entities/components/ParticleComponent.h"
+#include "Sail/entities/components/Components.h"
 #include "Sail/entities/Entity.h"
 
 ParticleSystem::ParticleSystem() {
-	registerComponent<ParticleComponent>(true, true, true);
+	registerComponent<ParticleEmitterComponent>(true, true, true);
 }
 
 ParticleSystem::~ParticleSystem() {
@@ -20,15 +20,15 @@ void ParticleSystem::spawnParticles(int numberOfParticles) {
 
 void ParticleSystem::update(float dt) {
 	for (auto& e : entities) {
-		ParticleComponent* particleComp = e->getComponent<ParticleComponent>();
+		ParticleEmitterComponent* particleEmitterComp = e->getComponent<ParticleEmitterComponent>();
 
-		if (particleComp->spawnTimer >= particleComp->spawnRate) {
+		if (particleEmitterComp->spawnTimer >= particleEmitterComp->spawnRate) {
 			//Spawn the correct number of particles
-			int particlesToSpawn = (int) glm::floor(particleComp->spawnTimer / glm::max(particleComp->spawnRate, 0.00001f));
+			int particlesToSpawn = (int) glm::floor(particleEmitterComp->spawnTimer / glm::max(particleEmitterComp->spawnRate, 0.00001f));
 			spawnParticles(particlesToSpawn);
 			//Decrease timer
-			particleComp->spawnTimer -= particleComp->spawnRate * particlesToSpawn;
+			particleEmitterComp->spawnTimer -= particleEmitterComp->spawnRate * particlesToSpawn;
 		}
-		particleComp->spawnTimer += dt;
+		particleEmitterComp->spawnTimer += dt;
 	}
 }

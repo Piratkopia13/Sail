@@ -1,12 +1,13 @@
 #pragma once
 
-#include "pch.h"
 #include "Component.h"
 
-class ParticleComponent : public Component<ParticleComponent> {
+#include <glm/glm.hpp>
+
+class ParticleEmitterComponent : public Component<ParticleEmitterComponent> {
 public:
-	ParticleComponent();
-	~ParticleComponent();
+	ParticleEmitterComponent();
+	~ParticleEmitterComponent();
 
 	glm::vec3 position;
 	glm::vec3 spread;
