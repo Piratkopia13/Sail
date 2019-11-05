@@ -239,25 +239,61 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
 	{
 		TransformComponent* t = e->getComponent<TransformComponent>();
-		ArchiveHelpers::archiveVec3(ar, t->getTranslation()); // Send translation
+		ArchiveHelpers::saveVec3(ar, t->getTranslation()); // Send translation
 
 		// When the remote entity has been created we want to update translation and rotation of that entity
 		auto networkComp = e->getComponent<NetworkSenderComponent>();
+
+		// Stop sending Create messages after the first one
 		networkComp->removeMessageType(Netcode::MessageType::CREATE_NETWORKED_ENTITY);
-		networkComp->addMessageType(Netcode::MessageType::MODIFY_TRANSFORM);
-		networkComp->addMessageType(Netcode::MessageType::ROTATION_TRANSFORM);
+
+		switch (networkComp->m_entityType) {
+		case Netcode::EntityType::PLAYER_ENTITY:
+		{
+			networkComp->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+			networkComp->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
+
+		}
+		break;
+		case Netcode::EntityType::CANDLE_ENTITY:
+		{
+			networkComp->addMessageType(Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT);
+		}
+		break;
+		default:
+			Logger::Error("INVALID EntityType in writeMessageToArchive::CREATE_NETWORKED_ENTITY");
+			break;
+		}
 	}
 	break;
-	case Netcode::MessageType::MODIFY_TRANSFORM:
+	case Netcode::MessageType::CHANGE_LOCAL_POSITION:
 	{
 		TransformComponent* t = e->getComponent<TransformComponent>();
-		ArchiveHelpers::archiveVec3(ar, t->getTranslation()); // Send translation
+		ArchiveHelpers::saveVec3(ar, t->getTranslation());
 	}
 	break;
-	case Netcode::MessageType::ROTATION_TRANSFORM:
+	case Netcode::MessageType::CHANGE_LOCAL_ROTATION:
 	{
 		TransformComponent* t = e->getComponent<TransformComponent>();
-		ArchiveHelpers::archiveVec3(ar, t->getRotations());	// Send rotation
+		ArchiveHelpers::saveVec3(ar, t->getRotations());
+	}
+	break;
+
+	case Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT:
+	{
+		glm::vec3 scale;
+		glm::quat rotation;
+		glm::vec3 translation;
+		glm::vec3 skew;
+		glm::vec4 perspective;
+
+		TransformComponent* t = e->getComponent<TransformComponent>();
+		//ArchiveHelpers::saveMat4(ar, t->getMatrixWithUpdate());
+
+		glm::decompose(t->getMatrixWithUpdate(), scale, rotation, translation, skew, perspective);
+
+		ArchiveHelpers::saveVec3(ar, translation);
+		ArchiveHelpers::saveQuat(ar, rotation);
 	}
 	break;
 	case Netcode::MessageType::ANIMATION:
@@ -273,8 +309,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ArchiveHelpers::saveVec3(ar, g->position);
+		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 
 		// Transition into loop
 		e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::SHOOT_LOOP);
@@ -284,8 +320,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	{
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ArchiveHelpers::saveVec3(ar, g->position);
+		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 	}
 	break;
 	case Netcode::MessageType::SHOOT_END:
@@ -297,8 +333,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ArchiveHelpers::saveVec3(ar, g->position);
+		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 	}
 	break;
 	default:
@@ -318,8 +354,8 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	{
 		Netcode::MessageSpawnProjectile* data = static_cast<Netcode::MessageSpawnProjectile*>(event->data);
 
-		ArchiveHelpers::archiveVec3(ar, data->translation);
-		ArchiveHelpers::archiveVec3(ar, data->velocity);
+		ArchiveHelpers::saveVec3(ar, data->translation);
+		ArchiveHelpers::saveVec3(ar, data->velocity);
 		ar(data->ownerPlayerComponentID);
 	}
 	break;
@@ -393,7 +429,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 		ar(data->candleOwnerID);
 		ar(data->isHeld);
-		ArchiveHelpers::archiveVec3(ar, data->candlePos);
+		ArchiveHelpers::saveVec3(ar, data->candlePos);
 	}
 	break;
 	case Netcode::MessageType::ENDGAME_STATS:

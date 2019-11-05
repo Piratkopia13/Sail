@@ -41,16 +41,17 @@ namespace Netcode {
 		CANDLE_ENTITY,
 		GUN_ENTITY,
 		PROJECTILE_ENTITY,
-		MECHA_ENTITY // RIP Mecha Jörgen (2019-2019)
+		MECHA_ENTITY // RIP Mecha-Jörgen (2019-2019)
 	};
 
 	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
 	enum class MessageType : __int8 {
 		CREATE_NETWORKED_ENTITY = 1,
-		MODIFY_TRANSFORM,
+		CHANGE_LOCAL_POSITION,
+		CHANGE_LOCAL_ROTATION,
+		CHANGE_ABSOLUTE_POS_AND_ROT,
 		SPAWN_PROJECTILE,
-		ROTATION_TRANSFORM,
 		ANIMATION,
 		SHOOT_START,
 		SHOOT_LOOP,
@@ -75,30 +76,31 @@ namespace Netcode {
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_ENTITY",
-		"MODIFY_TRANSFORM,		",
-		"SPAWN_PROJECTILE,		",
-		"ROTATION_TRANSFORM,	",
-		"ANIMATION,				",
-		"SHOOT_START,			",
-		"SHOOT_LOOP,			",
-		"SHOOT_END,				",
-		"PLAYER_JUMPED,			",
-		"PLAYER_LANDED,			",
-		"WATER_HIT_PLAYER,		",
-		"SET_CANDLE_HEALTH,		",
-		"PLAYER_DIED,			",
-		"PLAYER_DISCONNECT,		",
-		"MATCH_ENDED,			",
-		"PREPARE_ENDSCREEN,		",	// Clients send relevant data for the endgame screen
-		"ENDGAME_STATS,			",
-		"CANDLE_HELD_STATE,		",
-		"SEND_ALL_BACK_TO_LOBBY,",
-		"RUNNING_METAL_START,	",
-		"RUNNING_TILE_START,	",
-		"RUNNING_STOP_SOUND,	",
-		"IGNITE_CANDLE,			",
-		"EMPTY					",
+		"CREATE_NETWORKED_ENTITY	",
+		"CHANGE_LOCAL_POSITION,		",
+		"CHANGE_LOCAL_ROTATION,		",
+		"CHANGE_TRANSFORM_MATRIX,	",
+		"SPAWN_PROJECTILE,			",
+		"ANIMATION,					",
+		"SHOOT_START,				",
+		"SHOOT_LOOP,				",
+		"SHOOT_END,					",
+		"PLAYER_JUMPED,				",
+		"PLAYER_LANDED,				",
+		"WATER_HIT_PLAYER,			",
+		"SET_CANDLE_HEALTH,			",
+		"PLAYER_DIED,				",
+		"PLAYER_DISCONNECT,			",
+		"MATCH_ENDED,				",
+		"PREPARE_ENDSCREEN,			",	// Clients send relevant data for the endgame screen
+		"ENDGAME_STATS,				",
+		"CANDLE_HELD_STATE,			",
+		"SEND_ALL_BACK_TO_LOBBY,	",
+		"RUNNING_METAL_START,		",
+		"RUNNING_TILE_START,		",
+		"RUNNING_STOP_SOUND,		",
+		"IGNITE_CANDLE,				",
+		"EMPTY						",
 	};
 
 	/*

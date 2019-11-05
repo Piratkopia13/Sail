@@ -104,6 +104,7 @@ void NetworkReceiverSystem::update(float dt) {
 	size_t nrOfMessagesInComponent = 0;
 	glm::vec3 translation;
 	glm::vec3 rotation;
+	glm::quat rotationQuat;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
 	unsigned int animationIndex;
@@ -147,17 +148,26 @@ void NetworkReceiverSystem::update(float dt) {
 					createEntity(id, entityType, translation);
 				}
 				break;
-				case Netcode::MessageType::MODIFY_TRANSFORM:
+				case Netcode::MessageType::CHANGE_LOCAL_POSITION:
 				{
 					ArchiveHelpers::loadVec3(ar, translation); // Read translation
-					setEntityTranslation(id, translation);
+					setEntityLocalPosition(id, translation);
 
 				}
 				break;
-				case Netcode::MessageType::ROTATION_TRANSFORM:
+				case Netcode::MessageType::CHANGE_LOCAL_ROTATION:
 				{
 					ArchiveHelpers::loadVec3(ar, rotation);	// Read rotation
-					setEntityRotation(id, rotation);
+					setEntityLocalRotation(id, rotation);
+				}
+				break;
+				case Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT:
+				{
+					ArchiveHelpers::loadVec3(ar, translation);
+					ArchiveHelpers::loadQuat(ar, rotationQuat);
+					//setEntityTransformMatrix(id, transformMatrix);
+					setEntityLocalPosition(id, translation);
+					setEntityLocalRotation(id, rotationQuat);
 				}
 				break;
 				case Netcode::MessageType::ANIMATION: 
@@ -425,6 +435,11 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 		EntityFactory::CreateOtherPlayer(e, id, 999, translation);
 	}
 	break;
+	case Netcode::EntityType::CANDLE_ENTITY:
+	{
+		EntityFactory::CreateOtherPlayersCandle(e, id, translation);
+	}
+	break;
 	default:
 		Logger::Error("createEntity called but no matching entity type found");
 		break;
@@ -432,7 +447,7 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
-void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const glm::vec3& translation) {
+void NetworkReceiverSystem::setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			e->getComponent<TransformComponent>()->setTranslation(translation);
@@ -442,22 +457,34 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const 
 	Logger::Warning("setEntityTranslation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
+void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
-			//TODO: REMOVE
-			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
-			glm::vec3 rot = rotation;
-			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
-			//rot.y += 3.14f * 0.5f;
-			//}
-			e->getComponent<TransformComponent>()->setRotations(rot);
-
+			e->getComponent<TransformComponent>()->setRotations(rotation);
 			return;
 		}
 	}
 	Logger::Warning("setEntityRotation called but no matching entity found");
+}
+
+void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<TransformComponent>()->setRotations(rotation);
+			return;
+		}
+	}
+	Logger::Warning("setEntityRotation called but no matching entity found");
+}
+
+void NetworkReceiverSystem::setEntityTransformMatrix(Netcode::ComponentID id, const glm::mat4& mat) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<TransformComponent>()->setTransformMatrix(mat);
+			return;
+		}
+	}
+	Logger::Warning("setEntityTranslation called but no matching entity found");
 }
 
 void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime) {

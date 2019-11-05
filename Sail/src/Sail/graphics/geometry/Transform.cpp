@@ -193,6 +193,16 @@ void Transform::setRotations(const float x, const float y, const float z) {
 	treeNeedsUpdating();
 }
 
+void Transform::setRotations(const glm::quat& rotations) {
+	m_data.m_current.m_rotationQuat = rotations;
+	m_data.m_current.m_rotation = glm::eulerAngles(rotations);
+	clampRotation();
+	m_matNeedsUpdate = true;
+	m_hasChanged |= 2;
+	treeNeedsUpdating();
+}
+
+
 void Transform::setScale(const float scale) {
 	m_data.m_current.m_scale = glm::vec3(scale, scale, scale	);
 	m_matNeedsUpdate = true;
@@ -221,14 +231,25 @@ void Transform::setForward(const glm::vec3& forward) {
 	m_hasChanged |= 2;
 }
 
+// Manually set the transform matrix
+// NOTE: this does not update the position and rotation vectors
+void Transform::setTransformMatrix(const glm::mat4& mat) {
+	m_localTransformMatrix = mat;
+	m_transformMatrix = mat;
+	m_hasChanged = 0;
+	m_matNeedsUpdate = false;
+}
+
 
 Transform* Transform::getParent() const {
 	return m_parent;
 }
 
+// Returns the local translation
 const glm::vec3& Transform::getTranslation() const {
 	return m_data.m_current.m_translation;
 }
+
 const glm::vec3& Transform::getRotations() const {
 	return m_data.m_current.m_rotation;
 }
