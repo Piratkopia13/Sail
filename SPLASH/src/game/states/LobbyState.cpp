@@ -250,9 +250,18 @@ void LobbyState::renderSettings() {
 		ImGui::Text("Value"); ImGui::NextColumn();
 		ImGui::Separator();
 
+		SettingStorage::DynamicSetting* mapSizeX = &m_app->getSettings().gameSettingsDynamic["map"]["sizeX"];
+		SettingStorage::DynamicSetting* mapSizeY = &m_app->getSettings().gameSettingsDynamic["map"]["sizeY"];
+
+		static int size[] = { 0,0 };
+		size[0] = (int)mapSizeX->value;
+		size[1] = (int)mapSizeY->value;
 		ImGui::Text("MapSize"); ImGui::NextColumn();
-		static unsigned int mapSize[2] = {5, 5};
-		ImGui::SliderInt2("##ASDASD", (int*)mapSize, 1, 12); ImGui::NextColumn();
+		if (ImGui::SliderInt2("##MapSizeXY", size, (int)mapSizeX->minVal, (int)mapSizeX->maxVal)){
+			mapSizeX->value = size[0];
+			mapSizeY->value = size[1];
+		}
+		ImGui::NextColumn();
 
 		static int seed = 0;
 		ImGui::Text("Seed"); ImGui::NextColumn();
@@ -262,10 +271,12 @@ void LobbyState::renderSettings() {
 			}
 		}
 		ImGui::NextColumn();
-
-		static float clutter = 0.85f;
 		ImGui::Text("Clutter"); ImGui::NextColumn();
-		if (ImGui::SliderFloat("##Clutter", &clutter, 0.0f, 1.0f)) {
+		if (ImGui::SliderFloat("##Clutter", 
+			&m_app->getSettings().gameSettingsDynamic["map"]["clutter"].value,
+			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].minVal,
+			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].maxVal
+		)) {
 			
 		}
 		ImGui::NextColumn();

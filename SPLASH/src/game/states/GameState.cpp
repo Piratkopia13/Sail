@@ -1030,8 +1030,14 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
-	map->addComponent<MapComponent>(NWrapperSingleton::getInstance().getSeed());
+	auto* mc = map->addComponent<MapComponent>(NWrapperSingleton::getInstance().getSeed());
 	ECS::Instance()->addAllQueuedEntities();
+
+	SettingStorage& settings = m_app->getSettings();
+	mc->clutterModifier = settings.gameSettingsDynamic["map"]["clutter"].value * 100;
+	//mc->xsize = settings.gameSettingsDynamic["map"]["sizeX"].value;
+	//mc->ysize = settings.gameSettingsDynamic["map"]["sizeY"].value;
+
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);

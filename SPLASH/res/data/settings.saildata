@@ -1,12 +1,13 @@
 #graphics
-fullscreen:0
 bloom:1
+fullscreen:1
 shadows:2
 
-#sound
-global:1
-music:1
-effects:1
-voices:1
 #misc
-potato:0
+
+#sound
+effects:1.000000
+global:1.000000
+music:1.000000
+voices:1.000000
+

@@ -250,6 +250,10 @@ ConsoleCommands& Application::getConsole() {
 	return *m_consoleCommands;
 }
 
+SettingStorage& Application::getSettings() {
+	return m_settingStorage;
+}
+
 MemoryManager& Application::getMemoryManager() {
 	return m_memoryManager;
 }

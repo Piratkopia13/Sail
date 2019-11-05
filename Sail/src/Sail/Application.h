@@ -83,6 +83,7 @@ public:
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
 	ConsoleCommands& getConsole();
+	SettingStorage& getSettings();
 
 	MemoryManager& getMemoryManager();
 	RendererWrapper* getRenderWrapper();
