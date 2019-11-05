@@ -34,7 +34,8 @@ int Entity::getECSIndex() const {
 
 Entity::Entity(const std::string& name) 
 	: m_componentTypes(0x0),
-	m_name(name)
+	m_name(name),
+	m_parent(nullptr)
 {
 	m_id = s_id++;
 	m_ECSIndex = -1;
@@ -49,7 +50,11 @@ Entity::~Entity() {
 bool Entity::hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const {
 	return (m_componentTypes & componentTypes) == componentTypes;
 }
-
+#ifdef DEVELOPMENT
+const BaseComponent::Ptr* Entity::getComponents() const {
+	return m_components;
+}
+#endif
 Entity* Entity::getParent() {
 	return m_parent;
 }

@@ -115,3 +115,8 @@ void ECS::removeEntityFromSystems(Entity* entity) {
 size_t ECS::getNumEntities() {
 	return m_entities.size();
 }
+#ifdef DEVELOPMENT
+const ECS::SystemMap& ECS::getSystems() const {
+	return m_systems;
+}
+#endif
