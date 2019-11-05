@@ -119,9 +119,9 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 				if (CandleComponent * cc = selectedEntity->getComponent<CandleComponent>()) {
 					if (ImGui::CollapsingHeader(std::string("CandleComponent").c_str())) {
 						ImGui::Text("Health"); ImGui::SameLine();
-						float value0 = cc->getHealth();
+						float value0 = cc->health;
 						if (ImGui::DragFloat("##healthCandle", &value0, 0.1f)) {
-							cc->setHealth(value0);
+							cc->health = value0;
 						}
 					}
 				}

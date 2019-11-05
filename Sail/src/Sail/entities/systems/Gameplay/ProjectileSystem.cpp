@@ -54,8 +54,8 @@ void ProjectileSystem::update(float dt) {
 				CandleComponent* cc = collision.entity->getComponent<CandleComponent>();
 				
 				// If that candle isn't our own
-				if (!(collision.entity->hasComponent<LocalOwnerComponent>() && cc->isCarried()) && !cc->m_wasHitByMeThisTick) {
-					cc->m_wasHitByMeThisTick = true;
+				if (!(collision.entity->hasComponent<LocalOwnerComponent>() && cc->isCarried) && !cc->wasHitByMeThisTick) {
+					cc->wasHitByMeThisTick = true;
 #ifdef DEVELOPMENT
 					if (!collision.entity->getParent() || !collision.entity->getParent()->hasComponent<NetworkReceiverComponent>()) {
 						Logger::Error("Projectile hit player who doesn't have a NetworkReceiverComponent\n");
