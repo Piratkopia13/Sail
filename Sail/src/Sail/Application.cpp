@@ -18,7 +18,9 @@
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
-Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
+Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) : 
+	m_settingStorage("res/data/settings.saildata")
+	{
 	// Set up instance if not set
 	if (s_instance) {
 		Logger::Error("Only one application can exist!");
@@ -28,7 +30,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Set up console
 	m_consoleCommands = std::make_unique<ConsoleCommands>(false);
-
+	
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
 	unsigned int poolSize = std::max<unsigned int>(4, (10 * std::thread::hardware_concurrency()));
