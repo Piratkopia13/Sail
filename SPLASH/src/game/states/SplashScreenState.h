@@ -6,7 +6,7 @@
 #include <string>
 #include <list>
 #include <ctime>
-class SplashScreenState : public State, public EventHandler {
+class SplashScreenState : public State {
 public:
 	typedef std::unique_ptr<State> Ptr;
 
