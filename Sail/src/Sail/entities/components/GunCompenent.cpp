@@ -7,7 +7,13 @@ GunComponent::GunComponent() {
 	 m_projectileSpawnCooldown = 0.015f;
 	 m_gunOverloadCooldown = .00f;
 
+	 // OLD
 	 projectileSpeed = 10.f;
+	 // NEW
+	 baseProjectileSpeed = projectileSpeed;
+	 finalProjectileSpeed = baseProjectileSpeed * 0.5f;
+	 projectileSpeedRange = finalProjectileSpeed - baseProjectileSpeed;
+
 
 	 gunOverloadvalue = 0.f;
 	 gunOverloadThreshold = 1.0f;

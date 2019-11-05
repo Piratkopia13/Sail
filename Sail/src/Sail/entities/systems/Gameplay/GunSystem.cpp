@@ -43,8 +43,12 @@ void GunSystem::update(float dt) {
 
 				// SHOOT
 				if (gun->projectileSpawnTimer <= 0.f) {
+
+					// Determine projectileSpeed based on how long the gun has been firing continuously
+					alterProjectileSpeed(gun);
+
+					// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
 					for (int i = 0; i < 2; i++) {
-						// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::SPAWN_PROJECTILE,
 							SAIL_NEW Netcode::MessageSpawnProjectile{
@@ -55,6 +59,7 @@ void GunSystem::update(float dt) {
 						);
 					}
 					m_gameDataTracker->logWeaponFired();
+					Logger::Log("overload: " + std::to_string(gun->gunOverloadvalue));
 					fireGun(e, gun);
 				}
 				// DO NOT SHOOT (Cooldown between shots)
@@ -92,6 +97,11 @@ void GunSystem::update(float dt) {
 	}
 }
 
+
+void GunSystem::alterProjectileSpeed(GunComponent* gun) {
+	gun->projectileSpeed = gun->baseProjectileSpeed + gun->projectileSpeedRange * gun->gunOverloadvalue;
+	Logger::Log("Velocity: " + std::to_string(gun->gunOverloadvalue));
+}
 
 void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;

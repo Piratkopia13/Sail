@@ -26,7 +26,6 @@ NWrapperSingleton::NWrapperSingleton() {
 
 	m_playerLimit = 12;
 	m_playerCount = 0;
-
 }
 
 bool NWrapperSingleton::host(int port) {
