@@ -379,7 +379,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	// Create system which checks projectile collisions
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelSystem>();
 
 	// Create systems for rendering
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();

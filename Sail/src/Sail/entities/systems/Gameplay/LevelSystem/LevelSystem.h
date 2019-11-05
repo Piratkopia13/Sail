@@ -36,10 +36,10 @@ enum Direction {
 	LEFT = 8
 };
 
-class LevelGeneratorSystem final: public BaseComponentSystem {
+class LevelSystem final: public BaseComponentSystem {
 public:
-	LevelGeneratorSystem();
-	~LevelGeneratorSystem();
+	LevelSystem();
+	~LevelSystem();
 
 	void generateMap();
 	void createWorld(const std::vector<Model*>& tileModels, Model* bb);

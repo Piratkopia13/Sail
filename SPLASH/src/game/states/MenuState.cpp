@@ -28,14 +28,14 @@ MenuState::MenuState(StateStack& stack)
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 
-	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
+	//m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
 MenuState::~MenuState() {
 	delete[] m_ipBuffer;
 	
 	Utils::writeFileTrunc("res/data/localplayer.settings", NWrapperSingleton::getInstance().getMyPlayerName());
-	m_modelThread.get();
+	//m_modelThread.get();
 }
 
 bool MenuState::processInput(float dt) {
@@ -271,9 +271,6 @@ bool MenuState::loadModels(Application* app) {
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
 
 	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Doc.fbx"); }));
-	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("candleExported.fbx"); }));
-	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileFlat.fbx"); }));
-	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomWall.fbx"); }));
 	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("candleExported.fbx"); }));
 	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileFlat.fbx"); }));
 	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomWall.fbx"); }));

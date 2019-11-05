@@ -1,11 +1,11 @@
 #include "pch.h"
-#include "LevelGeneratorSystem.h"
+#include "LevelSystem.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/components/MapComponent.h"
 #include <random>
 
-LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
+LevelSystem::LevelSystem():BaseComponentSystem() {
 	registerComponent<MapComponent>(true,true,true);
 	registerComponent<ModelComponent>(false, false, true);
 	registerComponent<TransformComponent>(false, true, true);
@@ -13,11 +13,11 @@ LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
 	registerComponent<CollidableComponent>(false, false, true);
 }
 
-LevelGeneratorSystem::~LevelGeneratorSystem() {
+LevelSystem::~LevelSystem() {
 }
 
 //generates all necessary data for the world
-void LevelGeneratorSystem::generateMap() {
+void LevelSystem::generateMap() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		srand(map->seed);
@@ -76,7 +76,7 @@ void LevelGeneratorSystem::generateMap() {
 	}
 }
 
-void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) {
+void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) {
 	
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
@@ -100,7 +100,7 @@ void LevelGeneratorSystem::createWorld(const std::vector<Model*>& tileModels, Mo
 }
 
 //chooses a random tile from all possible tiles that fit
-int LevelGeneratorSystem::randomizeTileId(std::vector<int>* tiles) {
+int LevelSystem::randomizeTileId(std::vector<int>* tiles) {
 	if (tiles->size() > 0) {
 		//srand(seed);
 		return tiles->operator[](rand() % tiles->size());
@@ -111,7 +111,7 @@ int LevelGeneratorSystem::randomizeTileId(std::vector<int>* tiles) {
 }
 
 //finds a matching tile in a labyrinth implementation
-void LevelGeneratorSystem::findPossibleTiles(std::vector<int>* mapPointer, int posx, int posy) {
+void LevelSystem::findPossibleTiles(std::vector<int>* mapPointer, int posx, int posy) {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		
@@ -205,7 +205,7 @@ void LevelGeneratorSystem::findPossibleTiles(std::vector<int>* mapPointer, int p
 }
 
 //splits chunks to make hallways and blocks
-void LevelGeneratorSystem::splitChunk() {
+void LevelSystem::splitChunk() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		bool ns = true;
@@ -283,7 +283,7 @@ void LevelGeneratorSystem::splitChunk() {
 }
 
 //splits blocks to make rooms
-void LevelGeneratorSystem::splitBlock() {
+void LevelSystem::splitBlock() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 
@@ -311,7 +311,7 @@ void LevelGeneratorSystem::splitBlock() {
 }
 
 //traverses every tile and matches it to the "areas" next to it, to see if there should be a wall.
-void LevelGeneratorSystem::matchRoom() {
+void LevelSystem::matchRoom() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		int tiles[4];
@@ -366,7 +366,7 @@ void LevelGeneratorSystem::matchRoom() {
 
 //checks the borders of a rect to see if it borders a corridor.
 //Returns an int which holds all directions in which to find a corridor
-int LevelGeneratorSystem::checkBorder(Rect rekt) {
+int LevelSystem::checkBorder(Rect rekt) {
 	bool top = false; 
 	bool bottom = false;
 	bool left = false;
@@ -421,7 +421,7 @@ int LevelGeneratorSystem::checkBorder(Rect rekt) {
 
 //Splits a block in a direction while making sure both new blocks are next to a corridor.
 //If they're not, it tries to split the block the other way. If that also fails, the block is added to the rooms.
-bool LevelGeneratorSystem::splitDirection(bool ns) {
+bool LevelSystem::splitDirection(bool ns) {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		Rect rekt, a, b;
@@ -629,7 +629,7 @@ bool LevelGeneratorSystem::splitDirection(bool ns) {
 	return false;
 }
 
-void LevelGeneratorSystem::addDoors() {
+void LevelSystem::addDoors() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		
@@ -800,7 +800,7 @@ void LevelGeneratorSystem::addDoors() {
 	}
 }
 
-bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
+bool LevelSystem::hasDoor(Direction dir, int doors) {
 	if (dir == Direction::UP && doors % 2 == Direction::UP) {
 		return true;
 	}
@@ -816,7 +816,7 @@ bool LevelGeneratorSystem::hasDoor(Direction dir, int doors) {
 	return false;
 }
 
-void LevelGeneratorSystem::addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize,float tileHeight, int tileOffset, int i, int j, Model* bb) {
+void LevelSystem::addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize,float tileHeight, int tileOffset, int i, int j, Model* bb) {
 	if (dir == Direction::RIGHT) {
 		if (hasDoor(Direction::RIGHT, doors)) {
 			if (typeID == 0) {
@@ -905,7 +905,7 @@ void LevelGeneratorSystem::addMapModel(Direction dir, int typeID, int doors, con
 }
 
 
-void LevelGeneratorSystem::addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize,float tileHeight, float tileOffset, int i, int j, Model* bb) {
+void LevelSystem::addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize,float tileHeight, float tileOffset, int i, int j, Model* bb) {
 
 	addMapModel(Direction::NONE, typeId, doors, tileModels, tileSize,tileHeight, tileOffset, i, j, bb);
 	switch (tileId)
@@ -1249,7 +1249,7 @@ void LevelGeneratorSystem::addTile(int tileId, int typeId, int doors,const std::
 	}
 }
 
-void LevelGeneratorSystem::addSpawnPoints() {
+void LevelSystem::addSpawnPoints() {
 	for (auto& e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 
@@ -1310,7 +1310,7 @@ void LevelGeneratorSystem::addSpawnPoints() {
 	}
 }
 
-glm::vec3 LevelGeneratorSystem::getSpawnPoint() {
+glm::vec3 LevelSystem::getSpawnPoint() {
 	// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
 	glm::vec3 spawnLocation = glm::vec3(-1000.f);
 	for (auto& e : entities) {
@@ -1329,7 +1329,7 @@ glm::vec3 LevelGeneratorSystem::getSpawnPoint() {
 	return spawnLocation;
 }
 
-void LevelGeneratorSystem::generateClutter() {
+void LevelSystem::generateClutter() {
 	for (auto e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 
@@ -1484,7 +1484,7 @@ void LevelGeneratorSystem::generateClutter() {
 	}
 }
 
-void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterModels, Model* bb) {
+void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Model* bb) {
 	for (auto e : entities) {
 		MapComponent* map = e->getComponent<MapComponent>();
 		while (map->largeClutter.size() > 0) {
