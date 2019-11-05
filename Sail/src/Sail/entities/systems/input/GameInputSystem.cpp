@@ -331,9 +331,9 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			}
 		}
 
-		//if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT)) {
-		//	GunComponent* gc = e->getComponent<GunComponent>();
-		//	TransformComponent* ptc = e->getComponent<TransformComponent>();
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT)) {
+			GunComponent* gc = e->getComponent<GunComponent>();
+			TransformComponent* ptc = e->getComponent<TransformComponent>();
 			if (gc) {
 				for (auto childE : e->getChildEntities()) {
 					if (childE->getName().find("WaterGun") != std::string::npos) {
