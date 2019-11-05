@@ -147,10 +147,14 @@ void StateStack::applyPendingChanges() {
 		switch (change.action) {
 		case Push:
 			m_stack.push_back(createState(change.stateID));
+			m_stack.back()->onEntry();
 			break;
 
 		case Pop:
 			m_stack.pop_back();
+			if (m_stack.size() > 0) {
+				m_stack.back()->onEntry();
+			}
 			break;
 
 		case Clear:

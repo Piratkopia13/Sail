@@ -688,9 +688,8 @@ bool GameState::renderImguiDebug(float dt) {
 	return false;
 }
 
-bool GameState::prepareStateChange() {
+void GameState::onEntry() {
 	EventDispatcher::Instance().emit(ResetWaterEvent());
-	return true;
 }
 
 void GameState::shutDownGameState() {

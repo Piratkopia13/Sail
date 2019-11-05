@@ -33,6 +33,8 @@ class State : public EventReceiver {
 		virtual bool onEvent(const Event& event) override { return true; }
 		// Called at the end of the frame to reset the state before it changes
 		virtual bool prepareStateChange() { return true; }
+		// Called when pushing or popping a state
+		virtual void onEntry() {}
 //	protected:
 		// Request the push of a new state to the stack next update
 		void requestStackPush(States::ID stateID);
