@@ -21,6 +21,14 @@ public:
 	const std::vector<Entity*>& getEntities() const;
 
 	void update(float dt);
+
+#ifdef DEVELOPMENT
+	void imguiPrint(Entity** selectedEntity = nullptr) {
+
+		ImGui::Text(std::string("ID: " + std::to_string((int)m_playerID)).c_str());
+	}
+#endif
+
 protected:
 
 
@@ -38,7 +46,7 @@ private:
 	void createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation);
 	void setEntityTranslation(Netcode::ComponentID id, const glm::vec3& translation);
 	void setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation);
-	void setEntityAnimation(Netcode::ComponentID id, int animationIndex, float animationTime);
+	void setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime);
 	void playerJumped(Netcode::ComponentID id);
 	void playerLanded(Netcode::ComponentID id);
 	void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId);

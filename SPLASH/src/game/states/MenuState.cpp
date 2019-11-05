@@ -65,7 +65,6 @@ bool MenuState::renderImgui(float dt) {
 	//Keep
 	//ImGui::ShowDemoWindow();
 
-
 	static char buf[101] = "";
 	// Host
 	if(ImGui::Begin("Main Menu")) {
@@ -93,7 +92,7 @@ bool MenuState::renderImgui(float dt) {
 					if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
 						NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 					}
-
+					NWrapperSingleton::getInstance().stopUDP();
 					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
 					this->requestStackPop();
@@ -117,6 +116,7 @@ bool MenuState::renderImgui(float dt) {
 			if (ImGui::Button("Host Game")) {
 				if (m_network->host()) {
 					// Update server description after host added himself to the player list.
+					NWrapperSingleton::getInstance().getMyPlayer().id = HOST_ID;
 					NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 					NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
 					if (lobbyName == "") {
@@ -170,7 +170,7 @@ bool MenuState::renderImgui(float dt) {
 			ImGui::Separator();
 
 			int index = 0;
-			if (selected > m_foundLobbies.size()) {
+			if (selected >= m_foundLobbies.size()) {
 				selected = -1;
 			}
 			for (auto& lobby : m_foundLobbies) {
@@ -283,9 +283,9 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadModel("Tiles/CorridorCeiling.fbx");
 	rm->loadModel("Tiles/CorridorCorner.fbx");
 	rm->loadModel("Tiles/RoomCorner.fbx");
-	rm->loadModel("Tiles/SmallObject.fbx");
-	rm->loadModel("Tiles/MediumObject.fbx");
-	rm->loadModel("Tiles/LargeObject.fbx");
+	rm->loadModel("Clutter/SmallObject.fbx");
+	rm->loadModel("Clutter/MediumObject.fbx");
+	rm->loadModel("Clutter/LargeObject.fbx");
 
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");

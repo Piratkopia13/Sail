@@ -6,5 +6,4 @@ public:
 	RenderImGuiSystem();
 	~RenderImGuiSystem();
 
-	void renderImGuiAnimationSettings();
 };
