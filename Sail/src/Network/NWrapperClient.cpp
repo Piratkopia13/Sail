@@ -90,6 +90,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	unsigned char id_question;
 	Message processedMessage;
 	std::string dataString;
+	bool isSpectator = false;
 
 	switch (nEvent.data->Message.rawMsg[0]) {
 	case 'm':
@@ -134,9 +135,13 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 
 	case 't':
 	{
-		char seed = nEvent.data->Message.rawMsg[1];
+		if (nEvent.data->Message.rawMsg[1] == 's') {
+			isSpectator = true;
+		}
+	
+		char seed = nEvent.data->Message.rawMsg[2];
 		NWrapperSingleton::getInstance().setSeed(seed);
-		Application::getInstance()->dispatchEvent(NetworkStartGameEvent());
+		Application::getInstance()->dispatchEvent(NetworkStartGameEvent(isSpectator));
 	}
 	break;
 	case 'w':

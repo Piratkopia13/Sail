@@ -143,6 +143,31 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 	AddWeaponAndCandleToPlayer(playerEnt, lightIndex, 0);
 }
 
+Entity::SPtr EntityFactory::CreateMySpectator(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
+	auto mySpectator = EntityFactory::CreateMyPlayer(playerID, lightIndex, spawnLocation);
+
+	mySpectator->addComponent<SpectatorComponent>();
+	mySpectator->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
+	mySpectator->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
+	mySpectator->removeComponent<GunComponent>();
+	mySpectator->removeComponent<AnimationComponent>();
+	mySpectator->removeComponent<ModelComponent>();
+	mySpectator->removeComponent<CandleComponent>();
+
+	mySpectator->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
+
+	auto transform = mySpectator->getComponent<TransformComponent>();
+	auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
+	pos.y = 20.f;
+	transform->setStartTranslation(pos);
+	auto middleOfLevel = glm::vec3(MapComponent::tileSize * MapComponent::xsize / 2.f, 0.f, MapComponent::tileSize * MapComponent::ysize / 2.f);
+	auto dir = glm::normalize(middleOfLevel - pos);
+	auto rots = Utils::getRotations(dir);
+	transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+
+	return mySpectator;
+}
+
 // Creates a player enitty without a candle and without a model
 void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation) {
 	

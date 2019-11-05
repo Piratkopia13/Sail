@@ -9,9 +9,10 @@ struct MenuToLobbyData {
 
 struct LobbyToGameData {
 	int botCount = 0;
+	bool enterAsSpectator = false;
 
 	LobbyToGameData() {}
-	LobbyToGameData(int nrOfBots) : botCount(nrOfBots) {}
+	LobbyToGameData(int nrOfBots, bool spectator) : botCount(nrOfBots), enterAsSpectator(spectator) {}
 };
 
 class StateStorage {

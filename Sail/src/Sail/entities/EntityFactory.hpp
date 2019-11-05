@@ -16,6 +16,7 @@ namespace EntityFactory {
 	void CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::ComponentID netComponentID, size_t lightIndex, glm::vec3 spawnLocation);
 	void CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation);
 	
+	Entity::SPtr CreateMySpectator(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation);
 	void CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation);
 	
 	Entity::SPtr CreateBot(Model* boundingBoxModel, Model* characterModel, const glm::vec3& pos, Model* lightModel, size_t lightIndex, NodeSystem* ns);

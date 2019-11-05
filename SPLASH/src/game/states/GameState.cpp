@@ -9,6 +9,8 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
+#include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
+#include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GUISettings.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
@@ -138,13 +140,29 @@ GameState::GameState(StateStack& stack)
 
 	// Player creation
 
-	int id = static_cast<int>(playerID);
-	glm::vec3 spawnLocation = glm::vec3(0.f);
-	for (int i = -1; i < id; i++) {
-		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
-	}
+	if (m_app->getStateStorage().getLobbyToGameData()->enterAsSpectator) {
+		//m_player = EntityFactory::CreateMySpectator(playerID).get();
+		int id = static_cast<int>(playerID);
+		glm::vec3 spawnLocation = glm::vec3(0.f);
+		for (int i = -1; i < id; i++) {
+			spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		}
 
-	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
+		m_player = EntityFactory::CreateMySpectator(playerID, m_currLightIndex++, spawnLocation).get();
+
+	}
+	else {
+		int id = static_cast<int>(playerID);
+		glm::vec3 spawnLocation = glm::vec3(0.f);
+		for (int i = -1; i < id; i++) {
+			spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		}
+
+		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
+	}
+	
+
+	
 
 	// Bots creation
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
@@ -226,6 +244,12 @@ bool GameState::processInput(float dt) {
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
 		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
+		
+		/*std::string h;
+		for (auto a : NWrapperSingleton::getInstance().getPlayers()) {
+			h += a.name;
+		}
+		Logger::Log(h);*/
 	}
 
 	//Test ray intersection
@@ -481,6 +505,8 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
 	EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDropped));
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
+	EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerJoined));
+	EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&GameState::onNameRequest));
 
 	return true;
 }
@@ -521,6 +547,75 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 	}
 
 	return true;
+}
+
+bool GameState::onPlayerJoined(NetworkJoinedEvent& event) {
+	NWrapperSingleton* network = &NWrapperSingleton::getInstance();
+	network->playerJoined(event.getPlayer());
+
+	if (network->isHost()) {
+		char seed = (char)network->getSeed();
+		// t for start the game, p for start as a player. s would be spectator
+		network->getNetworkWrapper()->sendMsgAllClients({ std::string("ts") + seed });
+	}
+
+	return true;
+}
+
+bool GameState::onNameRequest(NetworkNameEvent& event) {
+	NWrapperSingleton* network = &NWrapperSingleton::getInstance();
+	if (network->isHost()) {
+		// Parse the message | ?12:DANIEL
+		std::string message = event.getRepliedName();
+		std::string id_string = "";
+		unsigned char id_int = 0;
+
+		// Get ID...
+		for (int i = 1; i < 64; i++) {
+			// ... as a string
+			if (message[i] != ':') {
+				id_string += message[i];
+			}
+			else {
+				break;
+			}
+		}
+		// ... as a number
+		id_int = std::stoi(id_string);
+
+		message.erase(0, id_string.size() + 2);	// Removes ?ID: ___
+		message.erase(message.size() - 1);		// Removes ___ :
+
+
+
+		// Add player
+		//NWrapperSingleton::getInstance().playerJoined(Player{
+		//		id_int,
+		//		message	// Which at this point is only the name
+		//});
+		NWrapperSingleton::getInstance().getPlayer(id_int)->name = message;
+
+		printf("Got name: \"%s\" from %i\n", message.c_str(), id_int);
+
+		// Send a welcome package to all players, letting them know who's joined the party
+		std::string welcomePackage = "w";
+
+		printf("Sending out welcome package...\n");
+		for (auto currentPlayer : NWrapperSingleton::getInstance().getPlayers()) {
+			welcomePackage.append(std::to_string(currentPlayer.id));
+			welcomePackage.append(":");
+			welcomePackage.append(currentPlayer.name);
+			welcomePackage.append(":");
+			printf("\t");
+			printf(currentPlayer.name.c_str());
+			printf("\n");
+		}
+		network->getNetworkWrapper()->sendMsgAllClients(welcomePackage);
+		printf("Done sending welcome package\n");
+		return true;
+	}
+
+	return false;
 }
 
 bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {

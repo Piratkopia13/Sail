@@ -196,8 +196,9 @@ void LobbyState::renderStartButton() {
 			NWrapperSingleton::getInstance().stopUDP();
 			char seed = (char)(Utils::rnd() * 255);
 			NWrapperSingleton::getInstance().setSeed(seed);
-			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
-			m_network->sendMsgAllClients({ std::string("t") + seed });
+			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, false));
+			// t for start the game, p for start as a player. s would be spectator
+			m_network->sendMsgAllClients({ std::string("tp") + seed });
 			this->requestStackPop();
 			this->requestStackPush(States::Game);
 		}

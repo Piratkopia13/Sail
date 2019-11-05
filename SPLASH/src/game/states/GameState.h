@@ -6,6 +6,8 @@
 #include "Sail/entities/systems/SystemDeclarations.h"
 
 class NetworkSerializedPackageEvent;
+class NetworkJoinedEvent;
+class NetworkNameEvent;
 
 class GameState : public State {
 public:
@@ -36,6 +38,8 @@ private:
 	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
 	bool onPlayerDropped(NetworkDroppedEvent& event);
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
+	bool onPlayerJoined(NetworkJoinedEvent& event);
+	bool onNameRequest(NetworkNameEvent& event);
 
 	void shutDownGameState();
 
