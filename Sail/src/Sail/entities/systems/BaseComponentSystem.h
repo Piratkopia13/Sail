@@ -26,6 +26,8 @@ public:
 	*/
 	virtual bool addEntity(Entity* entity);
 
+	virtual bool instantAddEntity(Entity* entity);
+
 	/*
 		Removes an entity from the system
 	*/
