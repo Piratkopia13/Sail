@@ -93,7 +93,7 @@ bool MenuState::renderImgui(float dt) {
 					if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
 						NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 					}
-
+					NWrapperSingleton::getInstance().stopUDP();
 					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
 					this->requestStackPop();
