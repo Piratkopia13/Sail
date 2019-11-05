@@ -4,6 +4,7 @@
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/Entity.h"
 #include "Sail/Application.h"
+#include "API/DX12/DX12VertexBuffer.h"
 
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 
@@ -57,7 +58,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 	if (!output.outputVB) {
 		Mesh::Data data;
 		data.resizeVertices(1000);
-		output.outputVB = DX12VertexBuffer::Create(*m_inputLayout, data);
+		output.outputVB = static_cast<DX12VertexBuffer*>(DX12VertexBuffer::Create(*m_inputLayout, data));
 	}
 	
 }
