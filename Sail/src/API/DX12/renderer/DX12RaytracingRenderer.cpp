@@ -18,12 +18,17 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
-	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
-	m_outputShadowTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
-	m_lastFrameShadowTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+
+	// Initialize raytracing output textures
+	// m_outputTextures contains all reflection bounce information
+	// gbuffer textures contains first "bounce" information
+	m_outputTextures.albedoShadow = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_outputTextures.metalnessRoughnessAO = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_outputTextures.normal = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_outputTextures.lastFrameShadowTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "LastFrameShadowTexture", Texture::R8G8)));
 
 	m_currNumDecals = 0;
-	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);
+	memset(m_decals, 0, sizeof DXRShaderCommon::DecalData * MAX_DECALS);
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
@@ -117,15 +122,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 
-	// Decrease water radius over time
-	/*for (auto& r : m_waterData) {
-		if (r > 0.f) {
-			r -= Application::getInstance()->getDelta() * 0.01f;
-		}
-	}*/
-
 	if (camera && lightSetup) {
-		static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
+		static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * static_cast<float>(MapComponent::tileSize);
 		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
 		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart);
 
@@ -134,7 +132,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
 	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get());
-	m_dxr.dispatch(m_outputTexture.get(), m_outputShadowTexture.get(), m_lastFrameShadowTexture.get(), cmdListCompute.Get());
+	m_dxr.dispatch(m_outputTextures, cmdListCompute.Get());
 	// AS has now been updated this frame, reset flag
 	for (auto& renderCommand : commandQueue) {
 		renderCommand.hasUpdatedSinceLastRender[frameIndex] = false;
@@ -146,10 +144,10 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
 
-	RenderableTexture* renderOutput = m_outputTexture.get();
+	RenderableTexture* renderOutput = shadedOutput.get();
 	if (postProcessPipeline) {
 		// Run post processing
-		RenderableTexture* ppOutput = postProcessPipeline->run(m_outputTexture.get(), cmdListCompute.Get());
+		RenderableTexture* ppOutput = postProcessPipeline->run(shadedOutput.get(), cmdListCompute.Get());
 		if (ppOutput) {
 			renderOutput = ppOutput;
 		}
@@ -194,7 +192,7 @@ RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandLis
 	cmdList->SetComputeRootSignature(m_context->getGlobalRootSignature());
 	m_context->getComputeGPUDescriptorHeap()->bind(cmdList);
 	
-	m_outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	m_outputTextures.albedoShadow->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
 	auto& blurShaderHorizontal = app->getResourceManager().getShaderSet<BilateralBlurHorizontal>();
 	auto& blurShaderVertical = app->getResourceManager().getShaderSet<BilateralBlurVertical>();

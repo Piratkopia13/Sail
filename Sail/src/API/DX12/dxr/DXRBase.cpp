@@ -326,7 +326,7 @@ void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, co
 	res->Unmap(0, nullptr);
 }
 
-void DXRBase::dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputShadowTexture, DX12RenderableTexture* historyTexture, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* historyTexture, ID3D12GraphicsCommandList4* cmdList) {
 
 	assert(m_gbufferInputTextures); // Input textures not set!
 	

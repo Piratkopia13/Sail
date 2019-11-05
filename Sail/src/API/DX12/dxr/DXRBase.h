@@ -7,6 +7,7 @@
 #include "../shader/DX12ConstantBuffer.h"
 #include "../shader/DX12StructuredBuffer.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
+#include "API/DX12/renderer/DX12RaytracingRenderer.h"
 
 // Include defines shared with dxr shaders
 #include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
@@ -16,6 +17,12 @@ public:
 	struct Metaball {
 		glm::vec3 pos;
 		float distToCamera;
+	};
+	struct BounceOutput {
+		std::unique_ptr<DX12RenderableTexture> albedoShadow; // RGBA where A is shadows
+		std::unique_ptr<DX12RenderableTexture> normal; // RGB
+		std::unique_ptr<DX12RenderableTexture> metalnessRoughnessAO; // RGB
+		std::unique_ptr<DX12RenderableTexture> lastFrameShadowTexture; // RG - first and second bounce shadows
 	};
 
 	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
@@ -28,7 +35,7 @@ public:
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();
-	void dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputShadowTexture, DX12RenderableTexture* historyTexture, ID3D12GraphicsCommandList4* cmdList);
+	void dispatch(BounceOutput& output, ID3D12GraphicsCommandList4* cmdList);
 
 	void resetWater();
 	void reloadShaders();

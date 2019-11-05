@@ -24,6 +24,11 @@ public:
 		ANISOTROPIC
 		// TODO: add more filters if needed
 	};
+	enum FORMAT {
+		R8,
+		R8G8,
+		R8G8B8A8
+	};
 public:
 	static Texture* Create(const std::string& filename);
 	virtual ~Texture() {}
