@@ -6,7 +6,6 @@
 #include "Sail/utils/GameDataTracker.h"
 
 CandleReignitionSystem::CandleReignitionSystem() {
-	// TODO: System owner should check if this is correct
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<LightComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
