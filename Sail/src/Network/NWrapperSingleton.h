@@ -10,7 +10,7 @@ struct NetworkSenderEvent {
 	Netcode::MessageType type;
 
 #ifdef DEVELOPMENT
-	Netcode::MessageType REDUNDANT_TYPE; // Used to help 
+	Netcode::MessageType REDUNDANT_TYPE; // Used to help find corrupted events that just have nonsense data
 #endif
 	Netcode::MessageData* data = nullptr;  
 
