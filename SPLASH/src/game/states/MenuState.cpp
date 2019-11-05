@@ -266,24 +266,42 @@ bool MenuState::loadModels(Application* app) {
 
 
 	rm->setDefaultShader(&app->getResourceManager().getShaderSet<GBufferOutShader>());
-	rm->loadModel("Doc.fbx");
-	rm->loadModel("candleExported.fbx");
-	rm->loadModel("Tiles/tileFlat.fbx");
-	rm->loadModel("Tiles/RoomWall.fbx");
-	rm->loadModel("Tiles/tileDoor.fbx");
-	rm->loadModel("Tiles/RoomDoor.fbx");
-	rm->loadModel("Tiles/CorridorDoor.fbx");
-	rm->loadModel("Tiles/CorridorWall.fbx");
-	rm->loadModel("Tiles/RoomCeiling.fbx");
-	rm->loadModel("Tiles/CorridorFloor.fbx");
-	rm->loadModel("Tiles/RoomFloor.fbx");
-	rm->loadModel("Tiles/CorridorCeiling.fbx");
-	rm->loadModel("Tiles/CorridorCorner.fbx");
-	rm->loadModel("Tiles/RoomCorner.fbx");
-	rm->loadModel("Clutter/SmallObject.fbx");
-	rm->loadModel("Clutter/MediumObject.fbx");
-	rm->loadModel("Clutter/LargeObject.fbx");
 
+	std::vector <std::future<bool>> modelThreads;
+	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
+
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Doc.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("candleExported.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileFlat.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomWall.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("candleExported.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileFlat.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomWall.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileDoor.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomDoor.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorDoor.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorWall.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomCeiling.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorFloor.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomFloor.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorCeiling.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorCorner.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomCorner.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/SmallObject.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/MediumObject.fbx"); }));
+	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/LargeObject.fbx"); }));
+	
+	
+	
+	for (auto& modelThread: modelThreads) {
+		modelThread.get();
+	}
+	textureThread.get();
+	return true;
+}
+
+bool MenuState::loadTextures(Application* app) {
+	ResourceManager* rm = &app->getResourceManager();
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
@@ -335,8 +353,6 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadTexture("pbr/Clutter/SO_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/SO_NM.tga");
 	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
-
-
 	return false;
 }
 
