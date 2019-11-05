@@ -10,7 +10,7 @@
 class NetworkLanHostFoundEvent;
 
 
-class MenuState : public State, public EventReceiver {
+class MenuState final : public State {
 public:
 	typedef std::unique_ptr<State> Ptr;
 

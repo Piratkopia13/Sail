@@ -5,7 +5,7 @@
 
 class Model;
 
-class PostProcessStage : public ShaderPipeline, public EventReceiver {
+class PostProcessStage final : public ShaderPipeline, public EventReceiver {
 public:
 	PostProcessStage(const std::string& filename, UINT width, UINT height);
 	virtual ~PostProcessStage();

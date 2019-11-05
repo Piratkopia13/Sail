@@ -2,6 +2,7 @@
 #include "PostProcessPipeline.h"
 #include "Sail/graphics/shader/postprocess/RedTintShader.h"
 #include "Sail/graphics/shader/postprocess/GaussianBlurHorizontal.h"
+#include "Sail/events/EventDispatcher.h"
 
 PostProcessPipeline::PostProcessPipeline() {
 
@@ -10,6 +11,7 @@ PostProcessPipeline::PostProcessPipeline() {
 	add<GaussianBlurHorizontal>(1.0f);
 	//add<RedTintShader>(0.5f);
 
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 bool PostProcessPipeline::onResize(const WindowResizeEvent& event) {
@@ -18,6 +20,7 @@ bool PostProcessPipeline::onResize(const WindowResizeEvent& event) {
 }
 
 PostProcessPipeline::~PostProcessPipeline() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void PostProcessPipeline::clear() {

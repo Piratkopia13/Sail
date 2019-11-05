@@ -10,10 +10,9 @@
 #include "../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
+#include "../SPLASH/src/game/events/NetworkStartGameEvent.h"
 
-class NetworkStartGameEvent;
-
-class LobbyClientState : public LobbyState {
+class LobbyClientState final : public LobbyState {
 public:
 	LobbyClientState(StateStack& stack);
 	~LobbyClientState();

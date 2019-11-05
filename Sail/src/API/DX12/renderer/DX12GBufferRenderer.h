@@ -9,7 +9,7 @@ class PostProcessPipeline;
 #define MULTI_THREADED_COMMAND_RECORDING
 //#define DEBUG_MULTI_THREADED_COMMAND_RECORDING
 
-class DX12GBufferRenderer : public Renderer {
+class DX12GBufferRenderer final : public Renderer {
 public:
 	static const int NUM_GBUFFERS = 3;
 

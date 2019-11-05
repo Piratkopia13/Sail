@@ -3,7 +3,7 @@
 #include "Sail.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
-class PBRTestState : public State {
+class PBRTestState final : public State {
 public:
 	PBRTestState(StateStack& stack);
 	~PBRTestState();

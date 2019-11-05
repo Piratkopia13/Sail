@@ -3,11 +3,10 @@
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
 #include "../events/NetworkDroppedEvent.h"
+#include "../events/NetworkSerializedPackageEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
-class NetworkSerializedPackageEvent;
-
-class GameState : public State {
+class GameState final : public State {
 public:
 	GameState(StateStack& stack);
 	~GameState();

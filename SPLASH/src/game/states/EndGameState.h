@@ -3,7 +3,7 @@
 #include "Sail/states/State.h"
 #include "../SPLASH/src/game/events/NetworkBackToLobby.h"
 
-class EndGameState : public State {
+class EndGameState final : public State {
 public:
 	explicit EndGameState(StateStack& stack);
 	~EndGameState();
@@ -25,7 +25,4 @@ private:
 
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
-
-
-
 };

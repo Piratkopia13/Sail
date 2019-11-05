@@ -16,8 +16,11 @@
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
+#include "Sail/events/EventDispatcher.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 
@@ -41,6 +44,7 @@ DX12GBufferRenderer::~DX12GBufferRenderer() {
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
 		delete m_gbufferTextures[i];
 	}
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {

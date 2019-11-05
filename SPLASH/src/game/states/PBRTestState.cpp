@@ -4,6 +4,8 @@
 #include "Sail/entities/systems/Systems.h"
 #include "Sail/TimeSettings.h"
 
+#include "Sail/events/EventDispatcher.h"
+
 #include <sstream>
 #include <iomanip>
 
@@ -15,6 +17,10 @@ PBRTestState::PBRTestState(StateStack& stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_camController(&m_cam)
 	, m_profiler(true) {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
+
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
 		if (param == "menu") {
@@ -171,6 +177,8 @@ PBRTestState::~PBRTestState() {
 	ECS::Instance()->destroyAllEntities();
 
 	delete m_octree;
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 // Process input for the state

@@ -7,9 +7,9 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
-#include "../events/NetworkWelcomeEvent.h"
+#include "../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 
-class LobbyHostState : public LobbyState {
+class LobbyHostState final : public LobbyState {
 public:
 	LobbyHostState(StateStack& stack);
 	~LobbyHostState();

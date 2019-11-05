@@ -7,13 +7,15 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "Network/NWrapperSingleton.h"
 #include "../libraries/imgui/imgui.h"
+#include "Sail/events/EventDispatcher.h"
 
 EndGameState::EndGameState(StateStack& stack) : State(stack) {
-
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_BACK_TO_LOBBY, this);
 }
 
 EndGameState::~EndGameState() {
 	ECS::Instance()->stopAllSystems();
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_BACK_TO_LOBBY, this);
 }
 
 bool EndGameState::processInput(float dt) {

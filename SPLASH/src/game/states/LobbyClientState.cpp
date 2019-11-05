@@ -1,16 +1,22 @@
 #include "LobbyClientState.h"
 
-#include "../SPLASH/src/game/events/TextInputEvent.h"
-#include "../SPLASH/src/game/events/NetworkNameEvent.h"
-#include "../SPLASH/src/game/events/NetworkStartGameEvent.h"
+#include "Sail/events/EventDispatcher.h"
 #include "Network/NWrapper.h"
 #include "Network/NWrapperClient.h"
 #include "Network/NWrapperSingleton.h"
 
 LobbyClientState::LobbyClientState(StateStack& stack)
 	: LobbyState(stack),
-	m_wasDropped(false)
-{
+	m_wasDropped(false) {
+
+	EventDispatcher::Instance().subscribe(Event::Type::TEXTINPUT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_WELCOME, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_NAME, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_START_GAME, this);
 }
 
 LobbyClientState::~LobbyClientState() {
@@ -19,7 +25,14 @@ LobbyClientState::~LobbyClientState() {
 		NWrapperSingleton::getInstance().resetWrapper();
 	}
 
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTINPUT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_WELCOME, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_NAME, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_START_GAME, this);
 }
 
 bool LobbyClientState::onEvent(const Event& event) {

@@ -13,8 +13,12 @@
 #include "../resources/DX12Texture.h"
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
+#include "Sail/events/EventDispatcher.h"
 
 DX12ForwardRenderer::DX12ForwardRenderer() {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 
@@ -31,7 +35,7 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 }
 
 DX12ForwardRenderer::~DX12ForwardRenderer() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {

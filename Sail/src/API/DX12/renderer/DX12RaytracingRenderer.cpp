@@ -6,11 +6,15 @@
 #include "API/DX12/DX12VertexBuffer.h"
 #include "Sail/KeyBinds.h"
 #include "Sail/entities/components/MapComponent.h"
+#include "Sail/events/EventDispatcher.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
 DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	: m_dxr("Basic", inputs) {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 	m_context->initCommand(m_commandDirect, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Raytracing Renderer DIRECT command list or allocator");
@@ -25,7 +29,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {

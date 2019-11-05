@@ -9,12 +9,17 @@
 #include "../renderer/DX12GBufferRenderer.h"
 #include "Sail/entities/components/MapComponent.h"
 #include "../SPLASH/src/game/events/GameOverEvent.h"
+#include "Sail/events/EventDispatcher.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 	: m_shaderFilename(shaderFilename)
 	, m_gbufferInputTextures(inputs)
 	, m_brdfLUTPath("pbr/brdfLUT.tga")
 	, m_waterChanged(false) {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().subscribe(Event::Type::GAME_OVER, this);
+
 	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
 	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
 	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
@@ -89,6 +94,9 @@ DXRBase::~DXRBase() {
 	for (auto& resource : m_aabb_desc_resource) {
 		resource->Release();
 	}
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::GAME_OVER, this);
 }
 
 void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {

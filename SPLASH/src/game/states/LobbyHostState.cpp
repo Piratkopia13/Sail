@@ -1,7 +1,7 @@
 #include "LobbyHostState.h"
-#include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "Network/NWrapper.h"
 #include "Network/NWrapperHost.h"
+#include "Sail/events/EventDispatcher.h"
 
 LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack) {
@@ -11,9 +11,20 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 	
 	//NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
 	//wrapper->setLobbyName(NWrapperSingleton::getInstance().getMyPlayer().name.c_str());
+
+	EventDispatcher::Instance().subscribe(Event::Type::TEXTINPUT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_NAME, this);
 }
 
 LobbyHostState::~LobbyHostState() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTINPUT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_NAME, this);
 }
 
 bool LobbyHostState::onEvent(const Event& event) {

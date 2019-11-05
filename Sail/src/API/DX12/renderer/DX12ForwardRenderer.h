@@ -9,7 +9,7 @@ class PostProcessPipeline;
 #define MULTI_THREADED_COMMAND_RECORDING
 //#define DEBUG_MULTI_THREADED_COMMAND_RECORDING
 
-class DX12ForwardRenderer : public Renderer {
+class DX12ForwardRenderer final : public Renderer {
 public:
 	DX12ForwardRenderer();
 	~DX12ForwardRenderer();

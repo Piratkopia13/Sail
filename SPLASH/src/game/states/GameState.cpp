@@ -7,8 +7,7 @@
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
-#include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
-#include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
+#include "Sail/events/EventDispatcher.h"
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GUISettings.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
@@ -22,7 +21,13 @@ GameState::GameState(StateStack& stack)
 	, m_profiler(true)
 	, m_showcaseProcGen(false) 
 {
-	
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
+
+
 	initConsole();
 
 	// Get the Application instance
@@ -185,6 +190,12 @@ GameState::~GameState() {
 	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
 	delete m_octree;
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
 }
 
 // Process input for the state

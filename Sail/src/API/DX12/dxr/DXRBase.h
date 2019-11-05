@@ -11,7 +11,7 @@
 // Include defines shared with dxr shaders
 #include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
 
-class DXRBase : public EventReceiver {
+class DXRBase final : public EventReceiver {
 public:
 	// TODO: somehow allow this to change from different DXRBase instances
 	struct RayPayload {

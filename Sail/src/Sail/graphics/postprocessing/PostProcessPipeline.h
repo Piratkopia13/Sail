@@ -4,7 +4,7 @@
 #include "Sail/api/RenderableTexture.h"
 #include "Sail/api/ComputeShaderDispatcher.h"
 
-class PostProcessPipeline : public EventReceiver {
+class PostProcessPipeline final : public EventReceiver {
 public:
 	class PostProcessInput : public Shader::ComputeShaderInput {
 	public:

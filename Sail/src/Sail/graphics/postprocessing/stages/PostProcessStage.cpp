@@ -1,15 +1,16 @@
 #include "pch.h"
 #include "PostProcessStage.h"
+#include "Sail/events/EventDispatcher.h"
 
 PostProcessStage::PostProcessStage(const std::string& filename, UINT width, UINT height)
 	: ShaderPipeline(filename)
 	, Width(width)
-	, Height(height)
-{
+	, Height(height) {
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 PostProcessStage::~PostProcessStage() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void PostProcessStage::run(RenderableTexture& inputTexture) {

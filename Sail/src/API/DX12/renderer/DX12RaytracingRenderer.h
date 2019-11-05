@@ -6,7 +6,7 @@
 #include "../DXR/DXRBase.h"
 #include "../resources/DX12RenderableTexture.h"
 
-class DX12RaytracingRenderer : public Renderer {
+class DX12RaytracingRenderer final : public Renderer {
 public:
 	DX12RaytracingRenderer(DX12RenderableTexture** inputs);
 	~DX12RaytracingRenderer();

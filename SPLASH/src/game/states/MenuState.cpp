@@ -1,4 +1,3 @@
-
 #include "Sail/../../Sail/src/Network/NetworkModule.hpp"
 #include "MenuState.h"
 
@@ -8,17 +7,15 @@
 #include "Network/NWrapperSingleton.h"
 #include "Network/NWrapper.h"
 
+#include "Sail/events/EventDispatcher.h"
 #include "Sail/../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
 
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include <string>
 
-
-
 MenuState::MenuState(StateStack& stack) 
 	: State(stack),
-	inputIP("")
-{
+	inputIP("") {
 	m_input = Input::GetInstance();
 	m_network = &NWrapperSingleton::getInstance();
 	m_app = Application::getInstance();
@@ -29,6 +26,8 @@ MenuState::MenuState(StateStack& stack)
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
+	
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
 
 MenuState::~MenuState() {
@@ -36,6 +35,8 @@ MenuState::~MenuState() {
 	
 	Utils::writeFileTrunc("res/data/localplayer.settings", NWrapperSingleton::getInstance().getMyPlayerName());
 	m_modelThread.get();
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
 
 bool MenuState::processInput(float dt) {

@@ -4,6 +4,7 @@
 #include "sail/Application.h"
 #include "Win32Window.h"
 #include "Sail/events/WindowFocusChangedEvent.h"
+#include "Sail/events/EventDispatcher.h"
 
 Input* Input::m_Instance = SAIL_NEW Win32Input();
 
@@ -16,9 +17,12 @@ Win32Input::Win32Input()
 	, m_cursorHidden(false)
 	, m_stopInput(false)
 {
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_FOCUS_CHANGED, this);
 }
 
-Win32Input::~Win32Input() {}
+Win32Input::~Win32Input() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_FOCUS_CHANGED, this);
+}
 
 bool Win32Input::isKeyPressedImpl(int keycode) {
 	return m_keys[keycode];

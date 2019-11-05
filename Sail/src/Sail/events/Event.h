@@ -23,7 +23,7 @@ struct Event {
 	};
 
 	Event(const Type& _type) : type(_type) {}
-	~Event();
+	virtual ~Event() = default;
 
 	const Type type;
 };

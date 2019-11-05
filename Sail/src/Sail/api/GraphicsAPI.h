@@ -2,6 +2,7 @@
 #include "../utils/Utils.h"
 #include "Sail/events/EventReceiver.h"
 #include "Sail/events/WindowResizeEvent.h"
+#include "Sail/events/EventDispatcher.h"
 
 class Window;
 
@@ -25,8 +26,12 @@ public:
 
 public:
 	static GraphicsAPI* Create();
-	GraphicsAPI() { };
-	virtual ~GraphicsAPI() { };
+	GraphicsAPI() { 
+		EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+	}
+	virtual ~GraphicsAPI() {
+		EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
+	}
 
 	virtual bool init(Window* window) = 0;
 	virtual void clear(const glm::vec4& color) = 0;

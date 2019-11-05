@@ -5,7 +5,7 @@
 #include "../../Sail/KeyCodes.h"
 
 
-class Win32Input : public Input {
+class Win32Input final : public Input {
 public:
 	Win32Input();
 	~Win32Input();
