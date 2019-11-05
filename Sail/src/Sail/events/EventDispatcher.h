@@ -7,21 +7,19 @@
 // | This event dispatcher should never be declared manually, since it's a singleton                                     |
 // | Preferably, include and use it only in .cpp-files                                                                   |
 // -----------------------------------------------------------------------------------------------------------------------
-// | When creating an event, the event type needs to be set and the value reference "needs" to be cast to a void pointer |
-// | When emitting an event, create and send a new event in one go                                                       |
+// | When emitting an event, create and send it event in one go                                                          |
 // -----------------------------------------------------------------------------------------------------------------------
-// | I.e. EventDispatcher::Get()->Emit(Event(EventType::CREATED_ENTITY, (void*)&playerPos));                             |
+// | I.e. EventDispatcher::Instance()->Emit(CreatedPositionEvent(playerPos));                                            |
 // =========================================================================================================================================
-// | The class receiving events needs to inherit from EventReceiver and override void onEvent(const Event& e)                         |
-// | In onEvent(const Event& e), the event type needs to be checked, preferably with a switch statement                               |
-// | If the type matches with one of the cases, the value of the event needs to be statically cast to that data type before it can be used |
+// | The class receiving events needs to inherit from EventReceiver and override void onEvent(const Event& e)                              |
+// | In onEvent(const Event& e), the event type needs to be checked, preferably with a switch statement                                    |
+// | If the type matches with one of the cases, the value of the event needs to be managed as needed. A call to a function is recommended  |
 // -----------------------------------------------------------------------------------------------------------------------------------------
 // | I.e.                                                                                                                                  |
-// | void onEvent(const Event& e) {                                                                                                   |
+// | void onEvent(const Event& event) {                                                                                                    |
 // |     switch(e.type) {                                                                                                                  |
 // |     case CREATED_POSITION:                                                                                                            |
-// |         Vector3* pos = static_cast<Vector3*>(e.value);                                                                                |
-// |         // Use pos here                                                                                                               |
+// |         onCreatedPosition((const CreatedPositionEvent&)event);  // Use pos in this function here                                      |
 // |         break;                                                                                                                        |
 // |     }                                                                                                                                 |
 // | }                                                                                                                                     |
@@ -30,12 +28,12 @@
 // | Receivers can be subscribed to an event without having a case for it, or vice versa, but preferrably not              |
 // | One receiver can be subscribed to multiple event types, but will only become a subscriber once per type               |
 // -------------------------------------------------------------------------------------------------------------------------
-// | A receiver can either subscribe itself, or have another class do it. The same applies with unsubscribing              |
+// | A receiver can either subscribe itself (this), or have another class do it. The same applies with unsubscribing       |
 // -------------------------------------------------------------------------------------------------------------------------
-// | I.e. EventDispatcher::Get()->Subscribe(EventType::CREATED_POSITION, &positionManager);                                |
+// | I.e. EventDispatcher::Get()->Subscribe(Event::Type::CREATED_POSITION, &positionManager);                              |
 // =========================================================================================================================
 // | It is recommended, but not always necessary, for a class to unsubscribe itself from all events when it's destroyed |
-// | Otherwise the dispatcher might attempt to call onEvent() on a destroyed object                                |
+// | Otherwise the dispatcher might attempt to call onEvent() on a destroyed object                                     |
 // ======================================================================================================================
 
 class EventReceiver;
