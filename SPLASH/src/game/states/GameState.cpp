@@ -170,20 +170,6 @@ GameState::GameState(StateStack& stack)
 	// Host fill its game tracker per player with player data.
 	// Reset data trackers
 	GameDataTracker::getInstance().init();
-
-	auto e = ECS::Instance()->createEntity("Hazard");
-	TransformComponent* tc = e->addComponent<TransformComponent>();
-	MovementComponent* mc = e->addComponent<MovementComponent>();
-	SpotlightComponent* sc = e->addComponent<SpotlightComponent>();
-	sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
-	sc->light.setPosition(glm::vec3(0, 0, 0));
-	sc->light.setAttenuation(1.f, 0.01f, 0.01f);
-	sc->light.setDirection(glm::vec3(1, 0, 0));
-	sc->light.setAngle(0.5);
-
-	mc->rotation.y = 4;
-
-	tc->setStartTranslation(glm::vec3(7, 3.85, 0));
 }
 
 GameState::~GameState() {
