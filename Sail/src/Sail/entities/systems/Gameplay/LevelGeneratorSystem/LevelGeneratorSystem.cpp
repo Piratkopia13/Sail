@@ -1502,5 +1502,13 @@ void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterMod
 			map->smallClutter.pop();
 			EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
 		}
+		for (int i = 0; i < map->numberOfRooms; i++) {
+			Rect room = map->matched.front();
+			map->matched.pop();
+			if (room.sizex * room.sizey > 1) {
+				EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*map->tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*map->tileSize),glm::vec3(0.f),glm::vec3(1.f,map->tileHeight,1.f));
+			}
+			map->matched.push(room);
+		}
 	}
 }
