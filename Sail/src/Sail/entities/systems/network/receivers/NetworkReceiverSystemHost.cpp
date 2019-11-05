@@ -6,7 +6,6 @@
 #include "Sail/utils/GameDataTracker.h"
 
 #include "../SPLASH/src/game/states/GameState.h"
-#include "../SPLASH/src/game/events/ResetWaterEvent.h"
 
 NetworkReceiverSystemHost::NetworkReceiverSystemHost() {
 
@@ -48,8 +47,6 @@ void NetworkReceiverSystemHost::endMatchAfterTimer(float dt) {
 		// Reset clock for next session
 		m_startEndGameTimer = false;
 		endGameClock = 0;
-
-		EventDispatcher::Instance().emit(ResetWaterEvent());
 	}
 }
 

@@ -26,6 +26,8 @@ public:
 	// Renders imgui used for debugging
 	virtual bool renderImguiDebug(float dt) override;
 
+	virtual bool prepareStateChange() override;
+
 private:
 	void initSystems(const unsigned char playerID);
 	void initConsole();

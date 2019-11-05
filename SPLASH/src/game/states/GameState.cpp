@@ -14,6 +14,7 @@
 #include <sstream>
 #include <iomanip>
 #include "InGameMenuState.h"
+#include "../SPLASH/src/game/events/ResetWaterEvent.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -685,6 +686,11 @@ bool GameState::renderImguiDebug(float dt) {
 	m_ecsSystemInfoImGuiWindow.renderWindow();
 
 	return false;
+}
+
+bool GameState::prepareStateChange() {
+	EventDispatcher::Instance().emit(ResetWaterEvent());
+	return true;
 }
 
 void GameState::shutDownGameState() {
