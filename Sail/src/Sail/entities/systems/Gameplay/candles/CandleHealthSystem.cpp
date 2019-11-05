@@ -19,6 +19,8 @@ void CandleHealthSystem::update(float dt) {
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
 
+		candle->wasHitByMeThisTick = false;
+
 		if (candle->isLit) {
 			// Decrease invincibility time
 			candle->invincibleTimer -= dt;
