@@ -1,26 +1,15 @@
 #pragma once
-
 #include "Event.h"
 
-class WindowResizeEvent : public Event {
-public:
-	WindowResizeEvent(unsigned int width, unsigned int height, bool isMinimized = false)
-		: Event(Event::WINDOW_RESIZE)
-		, m_width(width)
-		, m_height(height)
-		, m_isMinimized(isMinimized)
-	{ }
-	~WindowResizeEvent() { };
-
-	inline unsigned int getWidth() const { return m_width; }
-	inline unsigned int getHeight() const { return m_height; }
-	inline bool isMinimized() const { return m_isMinimized; };
-
-	static Type GetStaticType() {
-		return Event::WINDOW_RESIZE;
-	}
-private:
-	unsigned int m_width, m_height;
-	bool m_isMinimized;
-
+struct WindowResizeEvent : public Event {
+	WindowResizeEvent(const unsigned int _width, const unsigned int _height, const bool _isMinimized = false)
+		: Event(Event::Type::WINDOW_RESIZE)
+		, width(_width)
+		, height(_height)
+		, isMinimized(_isMinimized) { }
+	~WindowResizeEvent() = default;
+	
+	const unsigned int width;
+	const unsigned int height;
+	const bool isMinimized;
 };

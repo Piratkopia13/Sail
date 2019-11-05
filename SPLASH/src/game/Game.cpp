@@ -41,11 +41,6 @@ void Game::registerStates() {
 	m_stateStack.registerState<PBRTestState>(States::PBRTest);
 }
 
-void Game::dispatchEvent(Event& event) {
-	Application::dispatchEvent(event);
-	m_stateStack.onEvent(event);
-}
-
 void Game::applyPendingStateChanges() {
 	m_stateStack.prepareStateChange();
 	this->m_stateStack.applyPendingChanges();
