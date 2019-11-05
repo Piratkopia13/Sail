@@ -29,5 +29,5 @@ public:
 private:
 	Shader::ComputeSettings m_settings;
 	Output m_output;
-
+	Input m_input;
 };

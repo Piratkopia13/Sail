@@ -1,5 +1,6 @@
 #include "ParticleComputeShader.h"
 
+
 const Shader::ComputeSettings* ParticleComputeShader::getComputeSettings() const {
 	return &m_settings;
 }

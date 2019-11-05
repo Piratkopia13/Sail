@@ -49,10 +49,16 @@ void ParticleSystem::update(float dt) {
 void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 	m_dispatcher->begin(cmdList);
 
+	auto* settings = m_particleShader->getComputeSettings();
+
 	ParticleComputeShader::Input input;
+
+	//Input = vad?
+
 	ParticleComputeShader::Output output;
 	
-	auto* settings = m_particleShader->getComputeSettings();
+	
+	output = static_cast<ParticleComputeShader::Output&>(m_dispatcher->dispatch(*m_particleShader, input, 0, cmdList));
 
 	// Initialize output vertex buffer if it has not been done already
 	if (!output.outputVB) {
