@@ -170,7 +170,6 @@ GameState::GameState(StateStack& stack)
 	// Host fill its game tracker per player with player data.
 	// Reset data trackers
 	GameDataTracker::getInstance().init();
-
 }
 
 GameState::~GameState() {
@@ -193,6 +192,9 @@ bool GameState::processInput(float dt) {
 		requestStackPush(States::InGameMenu);
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
+		m_componentSystems.spotLightSystem->toggleONOFF();
+	}
 
 #ifdef DEVELOPMENT
 #ifdef _DEBUG
@@ -356,6 +358,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
+	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
 
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
@@ -749,6 +752,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
+		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha);
 	}
 
 	if (m_showcaseProcGen) {
@@ -1022,7 +1026,11 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// Create the level generator system and put it into the datatype.
 	auto map = ECS::Instance()->createEntity("Map");
+#ifdef _PERFORMANCE_TEST
+	map->addComponent<MapComponent>(2);
+#else
 	map->addComponent<MapComponent>(NWrapperSingleton::getInstance().getSeed());
+#endif
 	ECS::Instance()->addAllQueuedEntities();
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);

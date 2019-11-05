@@ -97,7 +97,7 @@ public:
 	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
 	int doorModifier = 15;//percentage to spawn a door
 	int clutterModifier = 85;//percentage to add clutter
-	int seed = 2;//seed for generation
+	int seed;//seed for generation
 #else
 #ifdef _DEBUG
 	const static int xsize = 7;

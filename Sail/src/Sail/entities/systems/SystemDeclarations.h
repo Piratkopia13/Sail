@@ -35,8 +35,7 @@ class RenderImGuiSystem;
 class SpeedLimitSystem;
 class SprinklerSystem;
 class UpdateBoundingBoxSystem;
-
-class NetworkReceiverSystem;
+class SpotLightSystem;
 
 struct Systems {
 	AiSystem* aiSystem = nullptr;
@@ -70,6 +69,7 @@ struct Systems {
 	ProjectileSystem* projectileSystem = nullptr;
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
+	SpotLightSystem* spotLightSystem = nullptr;
 	SprinklerSystem* sprinklerSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 };

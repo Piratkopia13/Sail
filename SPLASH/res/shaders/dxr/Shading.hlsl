@@ -14,6 +14,8 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 	float ka = 1.0f;
 	float ks = 1.0f;
 
+
+	//PointLights
 	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
 		PointLightInput p = CB_SceneData.pointLights[i];
 
@@ -45,6 +47,45 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 
 		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor * p.color * attenuation;
 	}
+
+	//Spotlights
+	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+		SpotlightInput s = CB_SceneData.spotLights[i];
+
+		// Ignore point light if color is black
+		if (all(s.color == 0.0f) || s.angle == 0.0f) {
+			continue;
+		}
+
+		float3 hitToLight = s.position - worldPosition;
+		float distanceToLight = length(hitToLight);
+		float angle = dot(hitToLight, s.angle);
+
+		if (angle <= s.angle) {
+			continue;
+		}
+
+		// Dont do any shading if in shadow or light is black
+		if (Utils::rayHitAnything(worldPosition, normalize(hitToLight), distanceToLight)) {
+			continue;
+		}
+
+		float3 hitToCam = CB_SceneData.cameraPosition - worldPosition;
+
+		float diffuseCoefficient = saturate(dot(worldNormal, hitToLight));
+
+		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
+		if (diffuseCoefficient > 0.f) {
+			float3 r = reflect(-hitToLight, worldNormal);
+			r = normalize(r);
+			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
+		}
+
+		float attenuation = 1.f / (s.attConstant + s.attLinear * distanceToLight + s.attQuadratic * pow(distanceToLight, 2.f));
+
+		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor * s.color * attenuation;
+	}
+
 
 	float3 ambient = diffuseColor * ka * ambientCoefficient;
 
