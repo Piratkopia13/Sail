@@ -7,4 +7,9 @@ public:
 	~SpeedLimitComponent() {}
 
 	float maxSpeed;
+	void imguiRender(Entity** selected) {
+		ImGui::Text("Speed"); ImGui::SameLine();
+		if (ImGui::DragFloat("##aIndex", &maxSpeed, 0.1f)) {
+		}
+	}
 };

@@ -65,7 +65,6 @@ bool MenuState::renderImgui(float dt) {
 	//Keep
 	//ImGui::ShowDemoWindow();
 
-
 	static char buf[101] = "";
 	// Host
 	if(ImGui::Begin("Main Menu")) {
