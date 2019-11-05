@@ -136,6 +136,7 @@ void ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 Model& ResourceManager::getModel(const std::string& filename, Shader* shader, const ImporterType type) {
 	auto pos = m_models.find(filename);
 	if (pos == m_models.end()) {
+		Logger::Warning("Tried to get model (" + filename + ") but it was not previously loaded.");
 		// Model was not yet loaded, load it and return
 		Shader* shaderToUse = shader ? shader : m_defaultShader;
 		loadModel(filename, shaderToUse, type);

@@ -120,7 +120,10 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			if ( Input::WasKeyJustPressed(KeyBinds::LIGHT_CANDLE) ) {
 				for ( auto child : e->getChildEntities() ) {
 					if ( child->hasComponent<CandleComponent>() ) {
-						child->getComponent<CandleComponent>()->setIsLit(true);
+						auto candle = child->getComponent<CandleComponent>();
+						if (!candle->isLit) {
+							candle->userReignition = true;
+						}
 					}
 				}
 			}
@@ -383,7 +386,7 @@ void GameInputSystem::putDownCandle(Entity* e) {
 		auto candleE = e->getChildEntities()[i];
 		if ( candleE->hasComponent<CandleComponent>() ) {
 			auto candleComp = candleE->getComponent<CandleComponent>();
-			candleComp->setCarried(!candleComp->isCarried());
+			candleComp->isCarried = !candleComp->isCarried;
 			return;
 		}
 	}

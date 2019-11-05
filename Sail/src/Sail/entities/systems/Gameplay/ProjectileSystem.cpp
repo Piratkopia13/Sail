@@ -47,6 +47,7 @@ void ProjectileSystem::update(float dt) {
 			}
 
 // To prevent a crash when shooting bot candles in the performance test
+// TODO: can probably be removed now
 #ifndef _PERFORMANCE_TEST
 			//If projectile collided with a candle and the local player owned the projectile
 			if (collision.entity->hasComponent<CandleComponent>() && e->hasComponent<LocalOwnerComponent>()) {

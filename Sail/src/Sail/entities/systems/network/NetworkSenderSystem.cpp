@@ -14,9 +14,10 @@
 #include "../src/Network/NWrapperSingleton.h"
 #include "Sail/utils/GameDataTracker.h"
 
+#include <string>
 #include <vector>
 
-#define _LOG_TO_FILE
+//#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 #include <fstream>
 static std::ofstream out("LogFiles/NetworkSenderSystem.cpp.log");
@@ -273,7 +274,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
 		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->direction * g->projectileSpeed); // Velocity
+		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 
 		// Transition into loop
 		e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::SHOOT_LOOP);
@@ -284,7 +285,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
 		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->direction * g->projectileSpeed); // Velocity
+		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 	}
 	break;
 	case Netcode::MessageType::SHOOT_END:
@@ -297,10 +298,11 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
 		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->direction * g->projectileSpeed); // Velocity
+		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 	}
 	break;
 	default:
+		Logger::Error("TRIED TO SEND INVALID NETWORK MESSAGE (" + std::to_string((int)messageType));
 		break;
 	}
 }
@@ -399,25 +401,25 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		GameDataTracker* dgtp = &GameDataTracker::getInstance();
 		std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
 		// Send player count to clients for them to loop following data
-		(ar)(tmpPlayerMap.size());
+		ar(tmpPlayerMap.size());
 
 		// Send all per player data. Match this on the reciever end
 		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
-			(ar)(player->first);
-			(ar)(player->second.nKills);
-			(ar)(player->second.placement);
+			ar(player->first);
+			ar(player->second.nKills);
+			ar(player->second.placement);
 		}
 
 		// Send all specific data. The host has processed data from all clients and will 
 		// now return it to their endscreens.
-		(ar)(dgtp->getStatisticsGlobal().bulletsFired);
-		(ar)(dgtp->getStatisticsGlobal().bulletsFiredID);
+		ar(dgtp->getStatisticsGlobal().bulletsFired);
+		ar(dgtp->getStatisticsGlobal().bulletsFiredID);
 
-		(ar)(dgtp->getStatisticsGlobal().distanceWalked);
-		(ar)(dgtp->getStatisticsGlobal().distanceWalkedID);
+		ar(dgtp->getStatisticsGlobal().distanceWalked);
+		ar(dgtp->getStatisticsGlobal().distanceWalkedID);
 
-		(ar)(dgtp->getStatisticsGlobal().jumpsMade);
-		(ar)(dgtp->getStatisticsGlobal().jumpsMadeID);
+		ar(dgtp->getStatisticsGlobal().jumpsMade);
+		ar(dgtp->getStatisticsGlobal().jumpsMadeID);
 
 
 	}
@@ -425,9 +427,9 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	case Netcode::MessageType::PREPARE_ENDSCREEN:
 	{
 		// Send all specific data to Host
-		(ar)(GameDataTracker::getInstance().getStatisticsLocal().bulletsFired);
-		(ar)(GameDataTracker::getInstance().getStatisticsLocal().distanceWalked);
-		(ar)(GameDataTracker::getInstance().getStatisticsLocal().jumpsMade);
+		ar(GameDataTracker::getInstance().getStatisticsLocal().bulletsFired);
+		ar(GameDataTracker::getInstance().getStatisticsLocal().distanceWalked);
+		ar(GameDataTracker::getInstance().getStatisticsLocal().jumpsMade);
 		
 	}
 	break;
