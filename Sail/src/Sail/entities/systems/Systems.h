@@ -17,6 +17,7 @@
 #include "Gameplay/lifetime/LifeTimeSystem.h"
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"
+#include "light/SpotLightSystem.h"
 
 #include "network/receivers/NetworkReceiverSystem.h"
 #include "network/receivers/NetworkReceiverSystemClient.h"

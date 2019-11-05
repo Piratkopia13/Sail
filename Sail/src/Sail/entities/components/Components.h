@@ -15,6 +15,7 @@
 #include "GunComponent.h"
 #include "LifeTimeComponent.h"
 #include "LightComponent.h"
+#include "SpotlightComponent.h"
 #include "LightListComponent.h"
 #include "LocalOwnerComponent.h"
 #include "MapComponent.h"
