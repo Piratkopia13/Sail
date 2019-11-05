@@ -232,6 +232,10 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
+
+	auto& slData = lights.getSpotLightsData();
+	memcpy(newData.spotLights, slData.sLights, sizeof(slData));
+
 	m_sceneCB->updateData(&newData, sizeof(newData));
 }
 

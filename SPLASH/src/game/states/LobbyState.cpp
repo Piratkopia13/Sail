@@ -239,14 +239,43 @@ void LobbyState::renderSettings() {
 
 
 	// Uncomment when we actually have game settings
-	/*ImGui::SetNextWindowPos(ImVec2(
+	ImGui::SetNextWindowPos(ImVec2(
 		m_screenWidth - m_outerPadding - 330,
 		m_outerPadding
 	));
-	ImGui::Begin("Settings", NULL, settingsFlags);
-	//ImGui::InputInt("BotCountInput: ", m_settingBotCount, 1, 1);
 
-	ImGui::End();*/
+	ImGui::SetNextWindowSize(ImVec2(300,300));
+	if (ImGui::Begin("Settings", NULL, settingsFlags)) {
+		ImGui::Text("Map Settings (not doing anything yet..)");
+		ImGui::Separator();
+		ImGui::Columns(2);
+		ImGui::Text("Setting"); ImGui::NextColumn();
+		ImGui::Text("Value"); ImGui::NextColumn();
+		ImGui::Separator();
+
+		ImGui::Text("MapSize"); ImGui::NextColumn();
+		static unsigned int mapSize[2] = {5, 5};
+		ImGui::SliderInt2("##ASDASD", (int*)mapSize, 1, 12); ImGui::NextColumn();
+
+		static int seed = 0;
+		ImGui::Text("Seed"); ImGui::NextColumn();
+		if (ImGui::InputInt("##SEED", &seed)) {
+			if (seed < 0) {
+				seed = 0;
+			}
+		}
+		ImGui::NextColumn();
+
+		static float clutter = 0.85f;
+		ImGui::Text("Clutter"); ImGui::NextColumn();
+		if (ImGui::SliderFloat("##Clutter", &clutter, 0.0f, 1.0f)) {
+			
+		}
+		ImGui::NextColumn();
+
+		ImGui::Columns(1);
+	}
+	ImGui::End();
 }
 
 void LobbyState::renderChat() {
