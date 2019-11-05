@@ -13,6 +13,7 @@
 #include "../DX12Mesh.h"
 #include "../DX12Utils.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
+#include "Sail/entities/systems/Graphics/ParticleSystem.h"
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
@@ -64,6 +65,20 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 		m_context->getDirectQueue()->wait(m_context->getComputeQueue()->signal());
 	}
 
+	// Run particle system on the gpu
+	auto* particleSystem = ECS::Instance()->getSystem<ParticleSystem>();
+	if (particleSystem) {
+		m_computeCommand.allocators[frameIndex]->Reset();
+		m_computeCommand.list->Reset(m_computeCommand.allocators[frameIndex].Get(), nullptr);
+
+		// Update particles on compute shader
+		particleSystem->updateOnGPU(m_computeCommand.list.Get());
+
+		m_computeCommand.list->Close();
+		m_context->executeCommandLists({ m_computeCommand.list.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+		// This should be able to run parallell to animation updates
+		m_context->getDirectQueue()->wait(m_context->getComputeQueue()->signal());
+	}
 
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 
