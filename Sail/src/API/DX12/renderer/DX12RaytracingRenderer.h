@@ -1,10 +1,13 @@
 #pragma once
 
-#include "Sail/api/Renderer.h"
 #include <glm/glm.hpp>
+#include "Sail/api/Renderer.h"
 #include "../DX12API.h"
 #include "../DXR/DXRBase.h"
 #include "../resources/DX12RenderableTexture.h"
+#include "Sail/graphics/shader/postprocess/BilateralBlurHorizontal.h"
+#include "Sail/graphics/shader/postprocess/BilateralBlurVertical.h"
+#include "API/DX12/DX12ComputeShaderDispatcher.h"
 
 class DX12RaytracingRenderer : public Renderer {
 public:
@@ -25,6 +28,8 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 private:
+	RenderableTexture* runDenoising(ID3D12GraphicsCommandList4* cmdList);
+	RenderableTexture* runShading(ID3D12GraphicsCommandList4* cmdList);
 	bool onResize(WindowResizeEvent& event);
 
 private:
@@ -35,6 +40,8 @@ private:
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 	std::unique_ptr<DX12RenderableTexture> m_outputShadowTexture;
 	std::unique_ptr<DX12RenderableTexture> m_lastFrameShadowTexture;
+
+	DX12ComputeShaderDispatcher m_computeShaderDispatcher;
 
 	std::vector<DXRBase::Metaball> m_metaballs;
 	D3D12_RAYTRACING_AABB m_nextMetaballAabb;

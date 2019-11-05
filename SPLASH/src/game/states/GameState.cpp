@@ -15,6 +15,9 @@
 #include <sstream>
 #include <iomanip>
 #include "InGameMenuState.h"
+#include "API/DX12/DX12API.h"
+#include "Sail/graphics/shader/postprocess/BilateralBlurHorizontal.h"
+#include "Sail/graphics/shader/postprocess/BilateralBlurVertical.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -289,6 +292,9 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
+		m_app->getAPI<DX12API>()->waitForGPU();
+		m_app->getResourceManager().reloadShader<BilateralBlurHorizontal>();
+		m_app->getResourceManager().reloadShader<BilateralBlurVertical>();
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 		m_app->getResourceManager().reloadShader<GuiShader>();

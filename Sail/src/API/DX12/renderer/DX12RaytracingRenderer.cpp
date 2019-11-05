@@ -140,6 +140,10 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		renderCommand.hasUpdatedSinceLastRender[frameIndex] = false;
 	}
 
+	auto filteredShadows = runDenoising(cmdListCompute.Get());
+
+	//auto shadedOutput = runShading(cmdListCompute.Get());
+
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
 
 	RenderableTexture* renderOutput = m_outputTexture.get();
@@ -150,8 +154,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 			renderOutput = ppOutput;
 		}
 	}
-	DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(renderOutput);
-	dxRenderOutput->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_COMMON);
+	//DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(renderOutput);
+	DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(filteredShadows);
+	
 
 	// Execute compute command list
 	cmdListCompute->Close();
@@ -179,6 +184,59 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	// Execute direct command list
 	cmdListDirect->Close();
 	m_context->executeCommandLists({ cmdListDirect.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+}
+
+RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandList4* cmdList) {
+	Application* app = Application::getInstance();
+	const auto windowWidth = app->getWindow()->getWindowWidth();
+	const auto windowHeight = app->getWindow()->getWindowHeight();
+
+	cmdList->SetComputeRootSignature(m_context->getGlobalRootSignature());
+	m_context->getComputeGPUDescriptorHeap()->bind(cmdList);
+	
+	m_outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+	auto& blurShaderHorizontal = app->getResourceManager().getShaderSet<BilateralBlurHorizontal>();
+	auto& blurShaderVertical = app->getResourceManager().getShaderSet<BilateralBlurVertical>();
+
+	// Horizontal pass
+	PostProcessPipeline::PostProcessInput input;
+	auto* settings = blurShaderHorizontal.getComputeSettings();
+	input.inputRenderableTexture = m_outputShadowTexture.get();
+	input.outputWidth = static_cast<unsigned int>(windowWidth);
+	input.outputHeight = static_cast<unsigned int>(windowHeight);
+	input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
+	input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
+	auto output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderHorizontal, input, 0, cmdList));
+
+	// Vertical pass
+	settings = blurShaderVertical.getComputeSettings();
+	input.inputRenderableTexture = output.outputTexture;
+	input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
+	input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
+	output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderVertical, input, 1, cmdList));
+
+	return output.outputTexture;
+}
+
+RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4* cmdList) {
+
+	Application* app = Application::getInstance();
+	const auto windowWidth = app->getWindow()->getWindowWidth();
+	const auto windowHeight = app->getWindow()->getWindowHeight();
+
+	//auto& blurShaderHorizontal = app->getResourceManager().getShaderSet<BilateralBlurHorizontal>();
+
+	//// Use all the outputs and perform PBR shading with shadows and niceness
+	//PostProcessPipeline::PostProcessInput input;
+	//auto* settings = blurShaderHorizontal.getComputeSettings();
+	//input.inputRenderableTexture = m_outputShadowTexture.get();
+	//input.outputWidth = static_cast<unsigned int>(windowWidth);
+	//input.outputHeight = static_cast<unsigned int>(windowHeight);
+	//input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
+	//input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
+	//auto output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderHorizontal, input, 0, cmdList));
+	return nullptr;
 }
 
 void DX12RaytracingRenderer::begin(Camera* camera) {

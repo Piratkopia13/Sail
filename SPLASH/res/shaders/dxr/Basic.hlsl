@@ -150,6 +150,7 @@ void rayGen() {
 	motionVector.y -= 0.004f;
 
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
+	// float2 reprojectedTexCoord = screenTexCoord;
 	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
 	float cLast = lInputHistory.SampleLevel(motionSS, reprojectedTexCoord, 0).r;
 	// float cLast = 0.0f;
@@ -162,23 +163,24 @@ void rayGen() {
 	// lOutput[launchIndex].rg *= 20.f;
 	// lOutput[launchIndex].b = 0.f;
 	// lOutput[launchIndex].a = 1.0;
-	lOutput[launchIndex] = lOutputShadows[launchIndex];
-	return;
+	// lOutput[launchIndex] = lOutputShadows[launchIndex];
+	// return;
 
 	if (metaballDepth <= linearDepth) {
-		lOutput[launchIndex] = payload_metaball.color;	
+		lOutput[launchIndex] = payload_metaball.color * lOutputShadows[launchIndex];
 	} else {
-		lOutput[launchIndex] = payload.color;
+		lOutput[launchIndex] = payload.color * lOutputShadows[launchIndex];
 
-		float4 totDecalColour = 0.0f;
-		for (uint i = 0; i < CB_SceneData.nDecals; i++) {
-			totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
-			if (!all(totDecalColour == 0.0f)) {
-				lOutput[launchIndex] = totDecalColour;
-				break;
-			}
-		}
+		// float4 totDecalColour = 0.0f;
+		// for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+		// 	totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+		// 	if (!all(totDecalColour == 0.0f)) {
+		// 		lOutput[launchIndex] = totDecalColour;
+		// 		break;
+		// 	}
+		// }
 	}
+
 
 #else
 	// Fully RT
