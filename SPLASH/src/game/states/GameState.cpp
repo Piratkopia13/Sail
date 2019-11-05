@@ -400,6 +400,8 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+
+	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
 }
 
 void GameState::initConsole() {
@@ -712,6 +714,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
+	runSystem(dt, m_componentSystems.sprinklerSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
 	runSystem(dt, m_componentSystems.candlePlacementSystem);
 	runSystem(dt, m_componentSystems.candleReignitionSystem);

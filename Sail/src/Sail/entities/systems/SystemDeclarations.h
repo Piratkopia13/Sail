@@ -33,6 +33,7 @@ class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
 class SpeedLimitSystem;
+class SprinklerSystem;
 class UpdateBoundingBoxSystem;
 
 class NetworkReceiverSystem;
@@ -69,5 +70,6 @@ struct Systems {
 	ProjectileSystem* projectileSystem = nullptr;
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
+	SprinklerSystem* sprinklerSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 };
