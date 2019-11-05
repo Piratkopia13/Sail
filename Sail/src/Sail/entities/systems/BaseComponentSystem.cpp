@@ -23,6 +23,25 @@ bool BaseComponentSystem::addEntity(Entity* entity) {
 	return true;
 }
 
+// Please, never use me
+bool BaseComponentSystem::instantAddEntity(Entity* entity) {
+	// Check if the entity is in the system
+	int id = entity->getID();
+	if (entities_set.count(id)) {
+		return false;
+	}
+
+	// Check if the entity is about to be in the system
+	if (entitiesQueuedToAdd_set.count(id)) {
+		return false;
+	}
+
+	entities.push_back(entity);
+	entities_set.insert(entity->getID());
+
+	return true;
+}
+
 void BaseComponentSystem::removeEntity(Entity* entity) {
 	entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
 	entitiesQueuedToAdd.erase(std::remove(entitiesQueuedToAdd.begin(), entitiesQueuedToAdd.end(), entity), entitiesQueuedToAdd.end());
