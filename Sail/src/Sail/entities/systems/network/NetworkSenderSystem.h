@@ -65,5 +65,5 @@ private:
 	std::queue<std::string> m_HOSTONLY_dataToForward;
 	std::mutex m_forwardBufferLock;
 
-	std::mutex m_eventMutex;
+	std::mutex m_queueMutex;
 };

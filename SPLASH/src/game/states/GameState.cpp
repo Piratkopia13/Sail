@@ -115,14 +115,6 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-#ifdef DEVELOPMENT
-#ifndef _PERFORMANCE_TEST
-#ifndef _DEBUG
-	m_componentSystems.animationSystem->initDebugAnimations();
-#endif
-#endif
-#endif
-
 	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
@@ -397,7 +389,6 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
 	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
-	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
 	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
 
@@ -618,7 +609,6 @@ bool GameState::render(float dt, float alpha) {
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
-	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
 	m_componentSystems.guiSubmitSystem->submitAll();
@@ -683,7 +673,6 @@ bool GameState::renderImguiDebug(float dt) {
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkReceiverSystem", m_componentSystems.networkReceiverSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkSenderSystem", m_componentSystems.networkSenderSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("ModelSubmitSystem", m_componentSystems.modelSubmitSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("RealTimeModelSubmitSystem", m_componentSystems.realTimeModelSubmitSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AudioSystem", m_componentSystems.audioSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CollisionSystem", m_componentSystems.collisionSystem->getNumEntities());
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("OctreeAddRemoverSystem", m_componentSystems.octreeAddRemoverSystem->getNumEntities());
@@ -946,23 +935,14 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	{
 		ResourceManager& manager = Application::getInstance()->getResourceManager();
 		manager.loadTexture(tileTex);
-
-		
-
 	}
 
 	//Load tileset for world
 	{
-		Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
-		tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-
 		Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
 		roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
 		roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
 		roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
-
-		Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
-		tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
 		Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
 		roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RD_MRAo.tga");
@@ -1026,6 +1006,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cLO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/LO_NM.tga");
 		cLO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/LO_Albedo.tga");
 
+		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
+		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Saftblandare_MRAO.tga");
+		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Saftblandare_NM.tga");
+		saftblandare->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Saftblandare_Albedo.tga");
 
 		tileModels.resize(TileModel::NUMBOFMODELS);
 		tileModels[TileModel::ROOM_FLOOR] = roomFloor;
@@ -1044,6 +1028,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
 		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
 		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
+		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
 	}
 
 	// Create the level generator system and put it into the datatype.

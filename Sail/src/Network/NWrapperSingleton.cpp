@@ -170,13 +170,24 @@ void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType ty
 	// Cleaning is handled by the NSS later on.
 	NetworkSenderEvent* e = SAIL_NEW NetworkSenderEvent;
 	e->type = type;
+
+#ifdef DEVELOPMENT
+	e->REDUNDANT_TYPE = type;
+#endif
+
 	e->data = data;
 	e->alsoSendToSelf = alsoSendToSelf;
 
 	NSS->queueEvent(e);
+}
 
-	// TODO: forward event to receiverSystem as serialized data
 
+size_t NWrapperSingleton::averagePacketSizeSinceLastCheck() {
+	size_t average = 0;
+	if (m_network) {
+		average = m_network->averagePacketSizeSinceLastCheck();
+	}
+	return average;
 }
 
 void NWrapperSingleton::initialize(bool asHost) {

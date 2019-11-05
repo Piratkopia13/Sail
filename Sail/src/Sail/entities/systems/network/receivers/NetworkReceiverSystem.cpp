@@ -194,7 +194,7 @@ void NetworkReceiverSystem::update(float dt) {
 				}
 				break;
 				default:
-					Logger::Error("INVALID NETWORK ESSAGE RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
+					Logger::Error("INVALID NETWORK MESSAGE RECEIVED FROM " + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 					break;
 				}
 			}
@@ -203,17 +203,33 @@ void NetworkReceiverSystem::update(float dt) {
 
 		// Receive 'one-time' events
 		size_t nrOfEvents;
-		Netcode::MessageType eventType;
+		Netcode::MessageType eventType = Netcode::MessageType::EMPTY;
+		Netcode::MessageType lastEventType = Netcode::MessageType::EMPTY;
+
+#ifdef DEVELOPMENT
+		Netcode::MessageType REDUNDANTTYPE;
+#endif
 		Netcode::ComponentID componentID;
 		Netcode::PlayerID playerID;
 
 
 		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
 		ar(nrOfEvents);
+
 		// Read and process data from SenderComponents (i.e. stuff that is continuously updated such as positions)
 		for (size_t i = 0; i < nrOfEvents; i++) {
+
 			// Handle-Single-Frame events
 			ar(eventType);
+#ifdef DEVELOPMENT
+			ar(REDUNDANTTYPE);
+			if (eventType != REDUNDANTTYPE) {
+				Logger::Error("CORRUPTED NETWORK EVENT RECEIVED\n");
+				Logger::Warning("Make sure that all players are in either a DEVELOPER branch or the Release branch\n");
+				m_incomingDataBuffer.pop();
+				return;
+			}
+#endif
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "Event: " << Netcode::MessageNames[(int)(eventType) - 1] << "\n";
 #endif
@@ -316,7 +332,7 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
 			{
-				// Recieve player count
+				// Receive player count
 				size_t nrOfPlayers;
 				ar(nrOfPlayers);
 
@@ -387,8 +403,6 @@ void NetworkReceiverSystem::update(float dt) {
 
 	// End game timer 
 	endMatchAfterTimer(dt);
-
-
 }
 
 /*
@@ -414,6 +428,7 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 	}
 	break;
 	default:
+		Logger::Error("createEntity called but no matching entity type found");
 		break;
 	}
 }
@@ -664,8 +679,10 @@ void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Net
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
+			return;
 		}
 	}
+	Logger::Warning("shootStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
@@ -680,8 +697,10 @@ void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netc
 			// Play Loop
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
+			return;
 		}
 	}
+	Logger::Warning("shootLoop called but no matching entity found");
 }
 
 void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
@@ -695,8 +714,10 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 			// Start the end sound
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
+			return;
 		}
 	}
+	Logger::Warning("shootEnd called but no matching entity found");
 }
 
 void NetworkReceiverSystem::backToLobby() {
@@ -712,9 +733,10 @@ void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].playOnce = false;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
 
-			break;
+			return;
 		}
 	}
+	Logger::Warning("runningMetalStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
@@ -725,9 +747,10 @@ void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].playOnce = false;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
 
-			break;
+			return;
 		}
 	}
+	Logger::Warning("runningTileStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
@@ -737,9 +760,10 @@ void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
 
-			break;
+			return;
 		}
 	}
+	Logger::Warning("runningStopSound called but no matching entity found");
 }
 
 void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
@@ -759,7 +783,9 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 					candleComp->userReignition = false;
 					candleComp->invincibleTimer = 1.5f;
 				}
+				return;
 			}
 		}
 	}
+	Logger::Warning("igniteCandle called but no matching entity found");
 }

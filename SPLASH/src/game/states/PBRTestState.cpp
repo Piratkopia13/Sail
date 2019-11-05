@@ -70,7 +70,6 @@ PBRTestState::PBRTestState(StateStack& stack)
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
 	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
-	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 
 	// Create entity adder system
 	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
@@ -265,7 +264,6 @@ bool PBRTestState::render(float dt, float alpha) {
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
-	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
 
