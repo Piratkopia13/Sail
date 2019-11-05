@@ -23,8 +23,10 @@ void ParticleSystem::update(float dt) {
 		ParticleComponent* particleComp = e->getComponent<ParticleComponent>();
 
 		if (particleComp->spawnTimer >= particleComp->spawnRate) {
+			//Spawn the correct number of particles
 			int particlesToSpawn = (int) glm::floor(particleComp->spawnTimer / glm::max(particleComp->spawnRate, 0.00001f));
 			spawnParticles(particlesToSpawn);
+			//Decrease timer
 			particleComp->spawnTimer -= particleComp->spawnRate * particlesToSpawn;
 		}
 		particleComp->spawnTimer += dt;
