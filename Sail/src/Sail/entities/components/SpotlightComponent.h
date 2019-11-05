@@ -1,7 +1,6 @@
 #pragma once
 #include "Component.h"
 #include "../../graphics/light/PointLight.h"
-//#include "../systems/light/SpotLightSystem.h"
 
 class SpotLightSystem;
 
