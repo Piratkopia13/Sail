@@ -10,4 +10,5 @@ public:
 	~SpotLightSystem();
 
 	void updateLights(LightSetup* lightSetup, float alpha);
+	void toggleONOFF();
 };

@@ -192,6 +192,9 @@ bool GameState::processInput(float dt) {
 		requestStackPush(States::InGameMenu);
 	}
 
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
+		m_componentSystems.spotLightSystem->toggleONOFF();
+	}
 
 #ifdef DEVELOPMENT
 #ifdef _DEBUG

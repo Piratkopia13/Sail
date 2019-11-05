@@ -3,6 +3,7 @@
 
 #include "Sail/entities/components/SpotlightComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/graphics/light/LightSetup.h"
 
@@ -22,6 +23,11 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha) {
 	lightSetup->getSLs().clear();
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
+
+		if (!sc->isOn) {
+			continue;
+		}
+
 		TransformComponent* t = e->getComponent<TransformComponent>();
 
 		sc->light_entityRotated = sc->light;
@@ -30,5 +36,22 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha) {
 		sc->light_entityRotated.setPosition(sc->light.getPosition() + t->getInterpolatedTranslation(alpha));
 		
 		lightSetup->addSpotLight(sc->light_entityRotated);
+	}
+}
+
+void SpotLightSystem::toggleONOFF() {
+	for (auto e : entities) {
+		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
+		sc->isOn = !sc->isOn;
+
+		MovementComponent* mc = e->getComponent<MovementComponent>();
+		
+		if (mc) {
+			if (sc->isOn) {
+				mc->rotation.y += 4;
+			} else {
+				mc->rotation.y -= 4;
+			}
+		}
 	}
 }

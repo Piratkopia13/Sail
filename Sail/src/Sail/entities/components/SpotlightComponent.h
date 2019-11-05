@@ -10,6 +10,7 @@ public:
 	SpotlightComponent(){}
 	~SpotlightComponent() {}
 
+	bool isOn;
 	SpotLight light; // Describes the light source when not rotated or moved
 private:
 	SpotLight light_entityRotated; //This one will be updated with entity transformations and submited to the renderer
