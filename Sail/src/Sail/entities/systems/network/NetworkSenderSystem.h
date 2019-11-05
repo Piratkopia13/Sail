@@ -31,6 +31,14 @@ public:
 	const std::vector<Entity*>& getEntities() const;
 
 	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
+
+#ifdef DEVELOPMENT
+	void imguiPrint(Entity** selectedEntity = nullptr) {
+		
+		ImGui::Text(std::string("ID: " + std::to_string((int)m_playerID)).c_str());
+	}
+#endif
+
 private:
 	void writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar);
 	void writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar);
