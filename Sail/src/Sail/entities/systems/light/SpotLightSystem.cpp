@@ -8,7 +8,6 @@
 #include "Sail/graphics/light/LightSetup.h"
 
 SpotLightSystem::SpotLightSystem() : BaseComponentSystem() {
-	// TODO: System owner should check if this is correct
 	registerComponent<SpotlightComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
 }
