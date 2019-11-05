@@ -344,16 +344,13 @@ void GameInputSystem::processMouseInput(const float& dt) {
 					}
 				}
 			}
-		//}
-		//else {
+		} else {
 
-		//	GunComponent* gc = e->getComponent<GunComponent>();
-		//	if (gc) {
-		//		gc->firing = false;
-		//	}
-
-		//}
-
+			GunComponent* gc = e->getComponent<GunComponent>();
+			if (gc) {
+				gc->firing = false;
+			}
+		}
 	}
 }
 
