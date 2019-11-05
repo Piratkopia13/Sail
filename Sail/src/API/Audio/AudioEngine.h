@@ -5,7 +5,7 @@
 #include <hrtfapoapi.h>
 #include <wrl/client.h>
 
-#define SOUND_COUNT 236
+#define SOUND_COUNT 50
 #define STREAMED_SOUNDS_COUNT 20
 #define STREAMING_BUFFER_SIZE 32768
 #define MAX_BUFFER_COUNT 3
@@ -92,6 +92,11 @@ private:
 
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
+	IXAudio2SubmixVoice* m_masterSubmixVoice = nullptr;
+	IXAudio2SubmixVoice* m_streamingSubmixVoice = nullptr;
+
+	Microsoft::WRL::ComPtr<IXAPO> m_xapo;
+
 	DWORD m_destinationChannelCount;
 	// Represents each loaded sound in the form of an 'object'
 	soundStruct m_sound[SOUND_COUNT];

@@ -52,10 +52,58 @@ AudioEngine::AudioEngine() {
 #pragma endregion
 
 	this->initialize();
+
+	XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
+	XAUDIO2_EFFECT_CHAIN fxChain{};
+	XAUDIO2_VOICE_SENDS sends = {};
+	XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+
+	// Passing in nullptr as the first arg for HrtfApoInit initializes the APO with defaults of
+	// omnidirectional sound with natural distance decay behavior.
+	// CreateHrtfApo will fail with E_NOTIMPL on unsupported platforms.
+	hr = CreateHrtfApo(nullptr, &m_xapo);
+
+	if (SUCCEEDED(hr)) {
+		fxDesc.InitialState = TRUE;
+		fxDesc.OutputChannels = 2;          // Stereo output
+		fxDesc.pEffect = m_xapo.Get();        // HRTF xAPO set as the effect.
+
+		fxChain.EffectCount = 1;
+		fxChain.pEffectDescriptors = &fxDesc;
+
+		sendDesc.pOutputVoice = m_masterVoice;
+		sends.SendCount = 1;
+		sends.pSends = &sendDesc;
+
+		// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
+		hr = m_xAudio2->CreateSubmixVoice(&m_masterSubmixVoice, 1, 48000, 0, 0, &sends, &fxChain);
+	}
+
+	m_masterSubmixVoice->SetVolume(1.0f);
+
+	// Create a submix voice that will host the xAPO.
+	// This submix voice will be destroyed when XAudio2 instance is destroyed.
+	if (SUCCEEDED(hr)) {
+		fxDesc.InitialState = TRUE;
+		fxDesc.OutputChannels = 2;          // Stereo output
+		fxDesc.pEffect = m_xapo.Get();        // HRTF xAPO set as the effect.
+
+		fxChain.EffectCount = 1;
+		fxChain.pEffectDescriptors = &fxDesc;
+
+		sendDesc.pOutputVoice = m_masterVoice;
+		sends.SendCount = 1;
+		sends.pSends = &sendDesc;
+
+		// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
+		hr = m_xAudio2->CreateSubmixVoice(&m_streamingSubmixVoice, 1, 48000, 0, 0, &sends, &fxChain);
+		m_streamingSubmixVoice->SetVolume(1.0f);
+	}
 }
 
 AudioEngine::~AudioEngine() {
 	m_isRunning = false;
+	m_xapo.ReleaseAndGetAddressOf();
 }
 
 void AudioEngine::loadSound(const std::string& filename) {
@@ -80,6 +128,7 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 	m_sound[indexValue].filename = filename;
 	if (m_sound[indexValue].sourceVoice != nullptr) {
 		m_sound[indexValue].sourceVoice->Stop();
+		m_sound[indexValue].sourceVoice->FlushSourceBuffers();
 		m_sound[indexValue].sourceVoice->DestroyVoice();
 	}
 
@@ -102,7 +151,10 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 	//HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
 	if (SUCCEEDED(hr)) {
 		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+		m_sound[indexValue].sourceVoice->SetVolume(volume);
 	}
+
+
 
 	// THIS IS THE OTHER VERSION FOR ADPC
 			// ... for ADPC-WAV compressed file-type
@@ -115,7 +167,10 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 
 	// Create a submix voice that will host the xAPO.
 	// This submix voice will be destroyed when XAudio2 instance is destroyed.
-	IXAudio2SubmixVoice* submixVoice = nullptr;
+	/*if (m_masterSubmixVoice != nullptr) {
+		m_masterSubmixVoice->DestroyVoice();
+	}*/
+
 	if (SUCCEEDED(hr)) {
 		XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
 		fxDesc.InitialState = TRUE;
@@ -126,15 +181,16 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 		fxChain.EffectCount = 1;
 		fxChain.pEffectDescriptors = &fxDesc;
 
-		XAUDIO2_VOICE_SENDS sends = {};
-		XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-		sendDesc.pOutputVoice = m_masterVoice;
-		sends.SendCount = 1;
-		sends.pSends = &sendDesc;
+		//XAUDIO2_VOICE_SENDS sends = {};
+		//XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+		//sendDesc.pOutputVoice = m_masterVoice;
+		//sends.SendCount = 1;
+		//sends.pSends = &sendDesc;
 
-		// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
-		hr = m_xAudio2->CreateSubmixVoice(&submixVoice, 1, 48000, 0, 0, &sends, &fxChain);
-		submixVoice->SetVolume(volume);
+		//// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
+		//hr = m_xAudio2->CreateSubmixVoice(&m_masterSubmixVoice, 1, 48000, 0, 0, &sends, &fxChain);
+		m_masterSubmixVoice->SetEffectChain(&fxChain);
+		m_masterSubmixVoice->SetVolume(volume);
 	}
 
 	// Route the source voice to the submix voice.
@@ -143,11 +199,12 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 	if (SUCCEEDED(hr)) {
 		XAUDIO2_VOICE_SENDS sends = {};
 		XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-		sendDesc.pOutputVoice = submixVoice;
+		sendDesc.pOutputVoice = m_masterSubmixVoice;
 		sends.SendCount = 1;
 		sends.pSends = &sendDesc;
 		hr = m_sound[indexValue].sourceVoice->SetOutputVoices(&sends);
 	}
+
 	return indexValue;
 }
 
@@ -275,6 +332,7 @@ void AudioEngine::startSpecificSound(int index, float volume) {
 
 	if (SUCCEEDED(hr)) {
 		hr = m_sound[index].sourceVoice->Start(0);
+		m_sound[index].sourceVoice->SetVolume(volume);
 	}
 }
 
@@ -510,38 +568,13 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 				Logger::Error("Failed to create the actual 'SourceVoice' for a sound file!");
 			}
 
-			// Create a submix voice that will host the xAPO.
-			// This submix voice will be destroyed when XAudio2 instance is destroyed.
-			IXAudio2SubmixVoice* submixVoice = nullptr;
-
-			if (isPositionalAudio && SUCCEEDED(hr)) {
-				XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
-				fxDesc.InitialState = TRUE;
-				fxDesc.OutputChannels = 2;          // Stereo output
-				fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
-
-				XAUDIO2_EFFECT_CHAIN fxChain{};
-				fxChain.EffectCount = 1;
-				fxChain.pEffectDescriptors = &fxDesc;
-
-				XAUDIO2_VOICE_SENDS sends = {};
-				XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-				sendDesc.pOutputVoice = m_masterVoice;
-				sends.SendCount = 1;
-				sends.pSends = &sendDesc;
-
-				// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
-				hr = m_xAudio2->CreateSubmixVoice(&submixVoice, 1, 48000, 0, 0, &sends, &fxChain);
-				submixVoice->SetVolume(volume);
-			}
-
 			// Route the source voice to the submix voice.
 			// The complete graph pipeline looks like this -
 			// Source Voice -> Submix Voice (HRTF xAPO) -> Mastering Voice
 			if (isPositionalAudio && SUCCEEDED(hr)) {
 				XAUDIO2_VOICE_SENDS sends = {};
 				XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-				sendDesc.pOutputVoice = submixVoice;
+				sendDesc.pOutputVoice = m_streamingSubmixVoice;
 				sends.SendCount = 1;
 				sends.pSends = &sendDesc;
 				hr = m_stream[myIndex].sourceVoice->SetOutputVoices(&sends);
