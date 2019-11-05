@@ -402,9 +402,6 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 
 	auto e = ECS::Instance()->createEntity("networkedEntity");
 	instantAddEntity(e.get());
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ._.
-	//entities.push_back(e.get());
-	//entities_set.insert(e->getID());
 
 	// create the new entity
 	switch (entityType) {
