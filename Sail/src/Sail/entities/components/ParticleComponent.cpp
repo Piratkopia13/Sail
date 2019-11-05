@@ -6,6 +6,7 @@ ParticleComponent::ParticleComponent() {
 	velocity = glm::vec3(0.0f);
 	acceleration = glm::vec3(0.0f);
 	spawnRate = 0.1f;
+	spawnTimer = 0.0f;
 }
 
 ParticleComponent::~ParticleComponent() {

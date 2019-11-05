@@ -13,4 +13,5 @@ public:
 	glm::vec3 velocity;
 	glm::vec3 acceleration;
 	float spawnRate;
+	float spawnTimer;
 };
