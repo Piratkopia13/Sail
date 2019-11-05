@@ -30,6 +30,9 @@ public:
 	template<typename ComponentType>
 	bool hasComponent() const;
 	bool hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const;
+#ifdef DEVELOPMENT
+	const BaseComponent::Ptr* getComponents() const;
+#endif
 
 	Entity* getParent();
 

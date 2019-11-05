@@ -53,7 +53,10 @@ public:
 	virtual void stop() {}
 	virtual void clearEntities();
 	virtual size_t getNumEntities();
-
+#ifdef DEVELOPMENT
+	const std::vector<Entity*>& getEntities() const;
+	virtual void imguiPrint(Entity** selectedEntity = nullptr);
+#endif
 	// Do not call this, it is called internally by EntityAdderSystem
 	void addQueuedEntities();
 
@@ -74,6 +77,10 @@ protected:
 	void registerComponent(bool required, bool read, bool write);
 
 protected:
+#ifdef DEVELOPMENT
+	std::string systemName;
+#endif
+
 	std::vector<Entity*> entities;
 	std::unordered_set<int> entities_set;
 

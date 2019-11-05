@@ -223,6 +223,6 @@ private:
 
 		Host connection requests is handled in WaitForNewConnections()
 	*/
-	void listen(const Connection* conn);//Rename this function
+	void listen(Connection* conn);//Rename this function
 };
 

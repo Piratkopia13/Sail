@@ -655,7 +655,6 @@ bool GameState::renderImguiDebug(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
-	m_componentSystems.renderImGuiSystem->renderImGuiAnimationSettings();
 	
 	
 	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInECS(ECS::Instance()->getNumEntities());
@@ -933,23 +932,14 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	{
 		ResourceManager& manager = Application::getInstance()->getResourceManager();
 		manager.loadTexture(tileTex);
-
-		
-
 	}
 
 	//Load tileset for world
 	{
-		Model* tileFlat = &m_app->getResourceManager().getModel("Tiles/tileFlat.fbx", shader);
-		tileFlat->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
-
 		Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
 		roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RoomWallMRAO.tga");
 		roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RoomWallNM.tga");
 		roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RoomWallAlbedo.tga");
-
-		Model* tileDoor = &m_app->getResourceManager().getModel("Tiles/tileDoor.fbx", shader);
-		tileDoor->getMesh(0)->getMaterial()->setAlbedoTexture(tileTex);
 
 		Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
 		roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RD_MRAo.tga");
@@ -1013,6 +1003,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cLO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/LO_NM.tga");
 		cLO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/LO_Albedo.tga");
 
+		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
+		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Saftblandare_MRAO.tga");
+		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Saftblandare_NM.tga");
+		saftblandare->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Saftblandare_Albedo.tga");
 
 		tileModels.resize(TileModel::NUMBOFMODELS);
 		tileModels[TileModel::ROOM_FLOOR] = roomFloor;
@@ -1031,6 +1025,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
 		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
 		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
+		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
 	}
 
 	// Create the level generator system and put it into the datatype.
