@@ -10,7 +10,7 @@
 class NetworkLanHostFoundEvent;
 
 
-class MenuState : public State, public EventHandler{
+class MenuState : public State, public EventReceiver {
 public:
 	typedef std::unique_ptr<State> Ptr;
 
@@ -27,7 +27,7 @@ public:
 	// Renders imgui
 	bool renderImgui(float dt);
 	// Sends events to the state
-	bool onEvent(Event& event);
+	bool onEvent(const Event& event) override;
 
 private:
 	const std::string loadPlayerName(const std::string& file);
@@ -44,7 +44,7 @@ private:
 	std::future<bool> m_modelThread;
 
 	// Other lobbies
-	bool onLanHostFound(NetworkLanHostFoundEvent& event);
+	bool onLanHostFound(const NetworkLanHostFoundEvent& event);
 	//void sortFoundLobbies();
 	void removeDeadLobbies();		// Only works with sorted lobbies
 	const int m_ipBufferSize = 64;

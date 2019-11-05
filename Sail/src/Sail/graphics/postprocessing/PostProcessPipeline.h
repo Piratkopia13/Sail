@@ -4,7 +4,7 @@
 #include "Sail/api/RenderableTexture.h"
 #include "Sail/api/ComputeShaderDispatcher.h"
 
-class PostProcessPipeline : public IEventListener {
+class PostProcessPipeline : public EventReceiver {
 public:
 	class PostProcessInput : public Shader::ComputeShaderInput {
 	public:
@@ -36,10 +36,10 @@ public:
 	RenderableTexture* run(Texture* baseTexture, void* cmdList = nullptr);
 	RenderableTexture* run(RenderableTexture* baseTexture, void* cmdList = nullptr);
 
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
-	bool onResize(WindowResizeEvent& event);
+	bool onResize(const WindowResizeEvent& event);
 	RenderableTexture* runInternal(PostProcessInput& input, void* cmdList);
 
 private:

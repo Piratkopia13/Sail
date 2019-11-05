@@ -78,14 +78,16 @@ bool EndGameState::renderImgui(float dt) {
 	return true;
 }
 
-bool EndGameState::onEvent(Event& event) {
-
-	EventHandler::dispatch<NetworkBackToLobby>(event, SAIL_BIND_EVENT(&EndGameState::onReturnToLobby));
+bool EndGameState::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::NETWORK_BACK_TO_LOBBY: onReturnToLobby((const NetworkBackToLobby&)event); break;
+	default: break;
+	}
 
 	return true;
 }
 
-bool EndGameState::onReturnToLobby(NetworkBackToLobby& event) {
+bool EndGameState::onReturnToLobby(const NetworkBackToLobby& event) {
 	// If host, propagate to other clients
 	if (NWrapperSingleton::getInstance().isHost()) {
 		// Send it all clients

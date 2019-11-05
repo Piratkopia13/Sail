@@ -177,8 +177,11 @@ void DX12RaytracingRenderer::begin(Camera* camera) {
 	m_metaballs.clear();
 }
 
-bool DX12RaytracingRenderer::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12RaytracingRenderer::onResize));
+bool DX12RaytracingRenderer::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 
 	// Pass along events
 	m_dxr.onEvent(event);
@@ -229,7 +232,7 @@ void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
 	m_dxr.setGBufferInputs(inputs);
 }
 
-bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {
-	m_outputTexture->resize(event.getWidth(), event.getHeight());
+bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {
+	m_outputTexture->resize(event.width, event.height);
 	return true;
 }

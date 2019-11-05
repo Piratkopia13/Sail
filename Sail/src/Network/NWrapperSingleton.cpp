@@ -5,6 +5,7 @@
 #include "Sail.h"
 #include "../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
+#include "Sail/events/EventDispatcher.h"
 
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
@@ -81,16 +82,16 @@ void NWrapperSingleton::startUDP(){
 	m_network->startUDP();
 }
 
-void NWrapperSingleton::resetPlayerList()
-{
+void NWrapperSingleton::resetPlayerList() {
 	m_players.clear();
 	m_playerCount = 0;
 }
 
-bool NWrapperSingleton::playerJoined(Player& player) {
-	player.name = player.name.c_str(); // This will fix currupt string size.
+bool NWrapperSingleton::playerJoined(const Player& player) {
+	Player newPlayer(player.id, player.name.c_str());	// This will fix currupt string size.
+	
 	if (m_playerCount < m_playerLimit) {
-		m_players.push_back(player);
+		m_players.push_back(newPlayer);
 		m_playerCount++;
 	}
 	return false;
@@ -208,6 +209,7 @@ void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
 			nEvent.data->HostFoundOnLanData.hostPort,
 			nEvent.data->HostFoundOnLanData.description
 		);
-		Application::getInstance()->dispatchEvent(event0);
+		
+		EventDispatcher::Instance().emit(event0);
 	}
 }

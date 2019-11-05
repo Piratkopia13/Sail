@@ -16,23 +16,25 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 LobbyHostState::~LobbyHostState() {
 }
 
-bool LobbyHostState::onEvent(Event& event)
-{
-	EventHandler::dispatch<TextInputEvent>(event, SAIL_BIND_EVENT(&LobbyHostState::onMyTextInput));
-	EventHandler::dispatch<NetworkChatEvent>(event, SAIL_BIND_EVENT(&LobbyHostState::onRecievedText));
-	EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&LobbyHostState::onPlayerJoined));
-	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&LobbyHostState::onPlayerDisconnected));
-	EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&LobbyHostState::onNameRequest));
+bool LobbyHostState::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::TEXTINPUT:			onMyTextInput((const TextInputEvent&)event); break;
+	case Event::Type::NETWORK_CHAT:			onRecievedText((const NetworkChatEvent&)event); break;
+	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
+	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
+	case Event::Type::NETWORK_NAME:			onNameRequest((const NetworkNameEvent&)event); break;
+	default: break;
+	}
 
 	return false;
 }
 
-bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
+bool LobbyHostState::onMyTextInput(const TextInputEvent& event) {
 	// Add to current message, If 'enter' ...
-	if (this->inputToChatLog(event.getMSG())) {
+	if (this->inputToChatLog(event.msg)) {
 		// ... Add current message to chat log
 		Message temp{ std::to_string(NWrapperSingleton::getInstance().getMyPlayer().id), m_currentmessage };
-		this->addTextToChat(&temp);
+		this->addTextToChat(temp);
 
 		// ... Append my ID to it.
 		std::string mesgWithId = "";
@@ -47,32 +49,32 @@ bool LobbyHostState::onMyTextInput(TextInputEvent& event) {
 	return true;
 }
 
-bool LobbyHostState::onRecievedText(NetworkChatEvent& event) {
+bool LobbyHostState::onRecievedText(const NetworkChatEvent& event) {
 	// Add received text to chat log
-	this->addTextToChat(&event.getMessage());
+	this->addTextToChat(event.chatMessage);
 
 	return false;
 }
 
-bool LobbyHostState::onPlayerJoined(NetworkJoinedEvent& event) {
+bool LobbyHostState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	// Add player to player list
-	NWrapperSingleton::getInstance().playerJoined(event.getPlayer());
+	NWrapperSingleton::getInstance().playerJoined(event.player);
 
 	return true;
 }
 
-bool LobbyHostState::onPlayerDisconnected(NetworkDisconnectEvent& event) {
+bool LobbyHostState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
 	// Remove player from player list.
-	unsigned char id = event.getPlayerID();
+	unsigned char id = event.player_id;
 	NWrapperSingleton::getInstance().playerLeft(id);
 
 	
 	return false;
 }
 
-bool LobbyHostState::onNameRequest(NetworkNameEvent& event) {
+bool LobbyHostState::onNameRequest(const NetworkNameEvent& event) {
 	// Parse the message | ?12:DANIEL
-	std::string message = event.getRepliedName(); 
+	std::string message = event.repliedName;
 	std::string id_string = "";
 	unsigned char id_int = 0;
 

@@ -245,8 +245,11 @@ bool MenuState::renderImgui(float dt) {
 	return false;
 }
 
-bool MenuState::onEvent(Event& event) {
-	EventHandler::dispatch<NetworkLanHostFoundEvent>(event, SAIL_BIND_EVENT(&MenuState::onLanHostFound));
+bool MenuState::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
+	default: break;
+	}
 
 	return false;
 }
@@ -340,14 +343,14 @@ bool MenuState::loadModels(Application* app) {
 	return false;
 }
 
-bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
+bool MenuState::onLanHostFound(const NetworkLanHostFoundEvent& event) {
 	// Get IP (as int) then convert into char*
-	ULONG ip_as_int = event.getIp();
+	ULONG ip_as_int = event.ip;
 	Network::ip_int_to_ip_string(ip_as_int, m_ipBuffer, m_ipBufferSize);
 	std::string ip_as_string(m_ipBuffer);
 
 	// Get Port as well
-	USHORT hostPort = event.getHostPort();
+	USHORT hostPort = event.hostPort;
 	ip_as_string += ":";
 	ip_as_string.append(std::to_string(hostPort));
 
@@ -356,14 +359,14 @@ bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
 	for (auto& lobby : m_foundLobbies) {
 		if (lobby.ip == ip_as_string) {
 			alreadyExists = true;
-			lobby.description = event.getDesc();
+			lobby.description = event.desc;
 			lobby.resetDuration();
 		}
 	}
 	// If not...
 	if (alreadyExists == false) {
 		// ...log it.
-		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.getDesc() });
+		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.desc });
 	}
 
 	return false;

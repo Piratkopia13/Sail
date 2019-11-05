@@ -18,10 +18,10 @@ public:
 	// Renders imgui
 	bool renderImgui(float dt) override;
 	// Sends events to the state
-	bool onEvent(Event& event) override;
+	bool onEvent(const Event& event) override;
 
 private:
-	bool onReturnToLobby(NetworkBackToLobby& event);
+	bool onReturnToLobby(const NetworkBackToLobby& event);
 
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);

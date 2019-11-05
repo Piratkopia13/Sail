@@ -8,6 +8,7 @@
 #include "TimeSettings.h"
 #include "entities/ECS.h"
 #include "entities/systems/Systems.h"
+#include "events/EventDispatcher.h"
 
 
 
@@ -116,7 +117,7 @@ int Application::startGameLoop() {
 			DispatchMessage(&msg);
 
 			if (msg.message == WM_KEYDOWN) {
-				dispatchEvent(TextInputEvent(msg));
+				EventDispatcher::Instance().emit(TextInputEvent(msg));
 			}
 		
 		} else {
@@ -126,7 +127,7 @@ int Application::startGameLoop() {
 				UINT newHeight = m_window->getWindowHeight();
 				bool isMinimized = m_window->isMinimized();
 				// Send resize event
-				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
+				EventDispatcher::Instance().emit(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
 
 			// Get delta time from last frame
@@ -221,14 +222,6 @@ Application* Application::getInstance() {
 	if (!s_instance)
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
 	return s_instance;
-}
-
-void Application::dispatchEvent(Event& event) {
-	m_api->onEvent(event);
-	Input::GetInstance()->onEvent(event);
-
-	m_rendererWrapper.onEvent(event);
-	
 }
 
 GraphicsAPI* const Application::getAPI() {

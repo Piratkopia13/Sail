@@ -14,7 +14,7 @@ public:
 	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
 	virtual void begin(Camera* camera) override;
 
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) override;
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
@@ -25,7 +25,7 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 private:
-	bool onResize(WindowResizeEvent& event);
+	bool onResize(const WindowResizeEvent& event);
 
 private:
 	DX12API* m_context;

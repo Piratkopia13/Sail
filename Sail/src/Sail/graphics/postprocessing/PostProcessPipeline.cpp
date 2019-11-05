@@ -12,7 +12,7 @@ PostProcessPipeline::PostProcessPipeline() {
 
 }
 
-bool PostProcessPipeline::onResize(WindowResizeEvent& event) {
+bool PostProcessPipeline::onResize(const WindowResizeEvent& event) {
 
 	return false;
 }
@@ -59,8 +59,11 @@ RenderableTexture* PostProcessPipeline::runInternal(PostProcessInput& input, voi
 	return output.outputTexture;
 }
 
-bool PostProcessPipeline::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&PostProcessPipeline::onResize));
+bool PostProcessPipeline::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 
 	return true;
 }

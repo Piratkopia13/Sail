@@ -11,7 +11,7 @@
 // Include defines shared with dxr shaders
 #include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
 
-class DXRBase : public IEventListener {
+class DXRBase : public EventReceiver {
 public:
 	// TODO: somehow allow this to change from different DXRBase instances
 	struct RayPayload {
@@ -40,7 +40,7 @@ public:
 	void resetWater();
 	void reloadShaders();
 
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
 	struct AccelerationStructureBuffers {

@@ -18,17 +18,17 @@ public:
 	LobbyClientState(StateStack& stack);
 	~LobbyClientState();
 
-	bool onEvent(Event& event);
+	bool onEvent(const Event& event) override;
 
 private:
 
 	bool m_wasDropped;
-	bool onMyTextInput(TextInputEvent& event);
-	bool onRecievedText(NetworkChatEvent& event);
-	bool onPlayerJoined(NetworkJoinedEvent& event);
-	bool onPlayerDisconnected(NetworkDisconnectEvent& event);
-	bool onPlayerWelcomed(NetworkWelcomeEvent& event);
-	bool onNameRequest(NetworkNameEvent& event);
-	bool onDropped(NetworkDroppedEvent& event);
-	bool onStartGame(NetworkStartGameEvent& event);
+	bool onMyTextInput(const TextInputEvent& event);
+	bool onRecievedText(const NetworkChatEvent& event);
+	bool onPlayerJoined(const NetworkJoinedEvent& event);
+	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
+	bool onPlayerWelcomed(const NetworkWelcomeEvent& event);
+	bool onNameRequest(const NetworkNameEvent& event);
+	bool onDropped(const NetworkDroppedEvent& event);
+	bool onStartGame(const NetworkStartGameEvent& event);
 };

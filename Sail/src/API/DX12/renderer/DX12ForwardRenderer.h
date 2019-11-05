@@ -15,10 +15,10 @@ public:
 	~DX12ForwardRenderer();
 
 	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
-	bool onResize(WindowResizeEvent& event);
+	bool onResize(const WindowResizeEvent& event);
 
 private:
 	static const int MAX_RECORD_THREADS = 4;

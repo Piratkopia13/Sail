@@ -13,7 +13,7 @@ public:
 	void registerRawDevices(HWND hwnd);
 	void processMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
 	bool m_cursorHidden;

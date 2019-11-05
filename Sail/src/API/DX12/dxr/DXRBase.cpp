@@ -390,20 +390,23 @@ void DXRBase::reloadShaders() {
 	createRaytracingPSO();
 }
 
-bool DXRBase::onEvent(Event& event) {
-	auto onResize = [&](WindowResizeEvent& event) {
+bool DXRBase::onEvent(const Event& event) {
+	auto onResize = [&](const WindowResizeEvent& event) {
 		// Window changed size, resize output UAV
 		createInitialShaderResources(true);
 		return true;
 	};
 
-	auto onGameOver = [&](GameOverEvent& event) {
+	auto onGameOver = [&](const GameOverEvent& event) {
 		resetWater();
 		return true;
 	};
 
-	EventHandler::dispatch<WindowResizeEvent>(event, onResize);
-	EventHandler::dispatch<GameOverEvent>(event, onGameOver);
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	case Event::Type::GAME_OVER: onGameOver((const GameOverEvent&)event); break;
+	default: break;
+	}
 	return true;
 }
 

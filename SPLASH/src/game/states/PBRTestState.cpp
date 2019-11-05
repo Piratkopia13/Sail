@@ -204,14 +204,17 @@ bool PBRTestState::processInput(float dt) {
 }
 
 
-bool PBRTestState::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&PBRTestState::onResize));
+bool PBRTestState::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 
 	return true;
 }
 
-bool PBRTestState::onResize(WindowResizeEvent& event) {
-	m_cam.resize(event.getWidth(), event.getHeight());
+bool PBRTestState::onResize(const WindowResizeEvent& event) {
+	m_cam.resize(event.width, event.height);
 	return true;
 }
 
