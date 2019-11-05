@@ -10,7 +10,6 @@
 #include "glm/gtx/vector_angle.hpp"
 
 CandlePlacementSystem::CandlePlacementSystem() {
-	// TODO: System owner should check if this is correct
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
