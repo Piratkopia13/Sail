@@ -350,6 +350,14 @@ bool MenuState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Clutter/SO_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/SO_NM.tga");
 	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/Saftblandare_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");
+	rm->loadTexture("pbr/Clutter/Saftblandare_Albedo.tga");
+
+
+
+
 	return false;
 }
 

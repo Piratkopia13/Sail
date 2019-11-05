@@ -31,12 +31,10 @@ class NetworkSenderSystem;
 class OctreeAddRemoverSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
-class RealTimeModelSubmitSystem;
 class RenderImGuiSystem;
 class SpeedLimitSystem;
 class UpdateBoundingBoxSystem;
-
-class NetworkReceiverSystem;
+class SpotLightSystem;
 
 struct Systems {
 	AiSystem* aiSystem = nullptr;
@@ -68,8 +66,8 @@ struct Systems {
 	OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 	PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 	ProjectileSystem* projectileSystem = nullptr;
-	RealTimeModelSubmitSystem* realTimeModelSubmitSystem = nullptr;
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
+	SpotLightSystem* spotLightSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 };
