@@ -48,7 +48,6 @@ void GameInputSystem::fixedUpdate(float dt) {
 }
 
 void GameInputSystem::update(float dt, float alpha) {
-	//this->processKeyboardInput(dt);
 	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
@@ -347,16 +346,13 @@ void GameInputSystem::processMouseInput(const float& dt) {
 					}
 				}
 			}
-		}
-		else {
+		} else {
 
 			GunComponent* gc = e->getComponent<GunComponent>();
 			if (gc) {
 				gc->firing = false;
 			}
-
 		}
-
 	}
 }
 
