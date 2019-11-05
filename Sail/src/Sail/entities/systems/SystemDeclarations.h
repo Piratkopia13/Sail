@@ -31,7 +31,6 @@ class NetworkSenderSystem;
 class OctreeAddRemoverSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
-class RealTimeModelSubmitSystem;
 class RenderImGuiSystem;
 class SpeedLimitSystem;
 class UpdateBoundingBoxSystem;
@@ -68,7 +67,6 @@ struct Systems {
 	OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
 	PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 	ProjectileSystem* projectileSystem = nullptr;
-	RealTimeModelSubmitSystem* realTimeModelSubmitSystem = nullptr;
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
