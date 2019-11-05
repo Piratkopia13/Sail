@@ -91,6 +91,9 @@ private:
 
 	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
 
+	std::pair<int, int> getWaterIndices(const int x, const int y, const int z);
+	std::pair<int, int> getWaterIndices(const glm::vec3& position);
+
 private:
 	DX12API* m_context;
 

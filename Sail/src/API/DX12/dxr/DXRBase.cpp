@@ -235,43 +235,73 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 }
 
 void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
-	static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
-	static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
-	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
-
-	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
-	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
-	glm::i32vec3 ind = floor(floatInd);
-	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
+	auto [arrIndex, quarterIndex] = getWaterIndices(position);
 
 	// Ignore water points that are outside the map
-	if (i >= 0 && i <= WATER_ARR_SIZE - 1) {
-		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
-		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
-		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
-		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
+		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
+		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
+		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
+		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
 
-		switch (index) {
+		switch (quarterIndex) {
 		case 0:
-			m_waterDeltas[i] = Utils::packQuarterFloat(0, up1, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(0, up1, up2, up3);
 			break;
 		case 1:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, 0, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, 0, up2, up3);
 			break;
 		case 2:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, 0, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, 0, up3);
 			break;
 		case 3:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, up2, 0);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, 0);
 			break;
 		}
 
-		m_waterDataCPU[i] = m_waterDeltas[i];
+		m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
 		m_waterChanged = true;
 	}
 }
 
 void DXRBase::updateWaterData() {
+	for (int z = 0; z < WATER_GRID_Z; z++) {
+		for (int x = 0; x < WATER_GRID_X * 4; x++) {
+			for (int y = 1; y < WATER_GRID_Y; y++) {
+				auto [arrIndex, quarterIndex] = getWaterIndices(x, y, z);
+				uint8_t vals[8];
+				vals[0] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
+				vals[1] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
+				vals[2] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
+				vals[3] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
+
+				if (vals[0] < 255U || vals[1] < 255U || vals[2] < 255U || vals[3] < 255U) {
+					auto [arrIndexBelow, thing] = getWaterIndices(x, y - 1, z);
+
+					// Below
+					vals[4] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], 0);
+					vals[5] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], 1);
+					vals[6] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], 2);
+					vals[7] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], 3);
+					uint8_t deltaVal = 0;
+
+					deltaVal = (uint8_t)(5.f * ((float)(255U - vals[quarterIndex]) / 255.f));
+					deltaVal = std::max(deltaVal, (uint8_t)1U);
+					if (255U - deltaVal < vals[quarterIndex]) {
+						deltaVal = 255U - vals[quarterIndex];
+					}
+					vals[quarterIndex] += deltaVal;
+					vals[quarterIndex + 4] = (vals[quarterIndex + 4] >= deltaVal ? vals[quarterIndex + 4] - deltaVal : 0U);
+
+					m_waterDeltas[arrIndex] = Utils::packQuarterFloat(vals[0], vals[1], vals[2], vals[3]);
+					m_waterDeltas[arrIndexBelow] = Utils::packQuarterFloat(vals[4], vals[5], vals[6], vals[7]);
+					m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
+					m_waterDataCPU[arrIndexBelow] = m_waterDeltas[arrIndexBelow];
+				}
+			}
+		}
+	}
+
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
 		unsigned int& data = pair.second;
@@ -1007,6 +1037,29 @@ void DXRBase::initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCR
 	cpuHandle->ptr += m_heapIncr * 3;
 	gpuHandle->ptr += m_heapIncr * 3;
 	m_usedDescriptors += 3;
+}
+
+std::pair<int, int> DXRBase::getWaterIndices(const int x, const int y, const int z) {	
+	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
+
+	int quarterIndex = x % 4;
+	glm::i32vec3 ind = glm::i32vec3(x / 4, y, z);
+	int arrIndex = Utils::to1D(ind, arrSize.x, arrSize.y);
+
+	return std::pair<int, int>(arrIndex, quarterIndex);
+}
+
+std::pair<int, int> DXRBase::getWaterIndices(const glm::vec3& position) {
+	static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
+	static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
+	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
+
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
+	int quarterIndex = (int)glm::floor(floatInd.x * 4.f) % 4;
+	glm::i32vec3 ind = glm::floor(floatInd);
+	int arrIndex = Utils::to1D(ind, (int)arrSize.x, (int)arrSize.y);
+
+	return std::pair<int, int>(arrIndex, quarterIndex);
 }
 
 void DXRBase::createEmptyLocalRootSignature() {
