@@ -65,7 +65,6 @@ bool MenuState::renderImgui(float dt) {
 	//Keep
 	//ImGui::ShowDemoWindow();
 
-
 	static char buf[101] = "";
 	// Host
 	if(ImGui::Begin("Main Menu")) {
@@ -93,7 +92,7 @@ bool MenuState::renderImgui(float dt) {
 					if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
 						NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 					}
-
+					NWrapperSingleton::getInstance().stopUDP();
 					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
 					this->requestStackPop();
@@ -336,6 +335,12 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadTexture("pbr/Clutter/SO_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/SO_NM.tga");
 	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/Saftblandare_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");
+	rm->loadTexture("pbr/Clutter/Saftblandare_Albedo.tga");
+
+
 
 
 	return false;
