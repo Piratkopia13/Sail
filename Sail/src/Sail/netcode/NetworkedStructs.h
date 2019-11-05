@@ -36,14 +36,17 @@ namespace Netcode {
 
 
 	// Pre-defined entity types so that other players know which entity to create
-	enum class EntityType : __int32 {
+	enum class EntityType : __int8 {
 		PLAYER_ENTITY = 1,
-		MECHA_ENTITY = 2,
+		CANDLE_ENTITY,
+		GUN_ENTITY,
+		PROJECTILE_ENTITY,
+		MECHA_ENTITY // RIP Mecha Jörgen (2019-2019)
 	};
 
 	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
-	enum class MessageType : __int32 {
+	enum class MessageType : __int8 {
 		CREATE_NETWORKED_ENTITY = 1,
 		MODIFY_TRANSFORM,
 		SPAWN_PROJECTILE,
