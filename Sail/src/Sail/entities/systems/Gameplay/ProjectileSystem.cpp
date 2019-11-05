@@ -46,9 +46,6 @@ void ProjectileSystem::update(float dt) {
 				}
 			}
 
-// To prevent a crash when shooting bot candles in the performance test
-// TODO: can probably be removed now
-#ifndef _PERFORMANCE_TEST
 			//If projectile collided with a candle and the local player owned the projectile
 			if (collision.entity->hasComponent<CandleComponent>() && e->hasComponent<LocalOwnerComponent>()) {
 				CandleComponent* cc = collision.entity->getComponent<CandleComponent>();
@@ -58,7 +55,7 @@ void ProjectileSystem::update(float dt) {
 					cc->wasHitByMeThisTick = true;
 #ifdef DEVELOPMENT
 					if (!collision.entity->getParent() || !collision.entity->getParent()->hasComponent<NetworkReceiverComponent>()) {
-						Logger::Error("Projectile hit player who doesn't have a NetworkReceiverComponent\n");
+						Logger::Warning("Projectile hit player who doesn't have a NetworkReceiverComponent\n");
 						break;
 					}
 #endif
@@ -71,7 +68,6 @@ void ProjectileSystem::update(float dt) {
 					);
 				}
 			}
-#endif
 
 			if (Utils::rnd() < 0.5) {
 				e->queueDestruction();
