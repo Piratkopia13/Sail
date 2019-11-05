@@ -18,6 +18,7 @@ struct Event {
 		NETWORK_SERIALIZED_DATA_RECIEVED,
 		PLAYER_CANDLE_DEATH,
 		GAME_OVER,
+		RESET_WATER,
 
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};

@@ -8,7 +8,8 @@
 #include "Sail/graphics/light/LightSetup.h"
 #include "../renderer/DX12GBufferRenderer.h"
 #include "Sail/entities/components/MapComponent.h"
-#include "../SPLASH/src/game/events/GameOverEvent.h"
+#include "../SPLASH/src/game/events/ResetWaterEvent.h"
+
 #include "Sail/events/EventDispatcher.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
@@ -18,7 +19,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	, m_waterChanged(false) {
 
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
-	EventDispatcher::Instance().subscribe(Event::Type::GAME_OVER, this);
+	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
 
 	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
 	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
@@ -96,7 +97,7 @@ DXRBase::~DXRBase() {
 	}
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::GAME_OVER, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::RESET_WATER, this);
 }
 
 void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
@@ -405,14 +406,14 @@ bool DXRBase::onEvent(const Event& event) {
 		return true;
 	};
 
-	auto onGameOver = [&](const GameOverEvent& event) {
+	auto onResetWater = [&](const ResetWaterEvent& event) {
 		resetWater();
 		return true;
 	};
 
 	switch (event.type) {
 	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
-	case Event::Type::GAME_OVER: onGameOver((const GameOverEvent&)event); break;
+	case Event::Type::RESET_WATER: onResetWater((const ResetWaterEvent&)event); break;
 	default: break;
 	}
 	return true;
