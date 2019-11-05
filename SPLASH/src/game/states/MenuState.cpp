@@ -95,7 +95,7 @@ bool MenuState::renderImgui(float dt) {
 					NWrapperSingleton::getInstance().stopUDP();
 					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
-					this->requestStackPop();
+					this->requestStackClear();
 					this->requestStackPush(States::Game);
 				}
 			}
