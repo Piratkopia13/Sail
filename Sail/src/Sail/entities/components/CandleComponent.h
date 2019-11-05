@@ -6,7 +6,7 @@
 class Entity;
 
 // TODO: Replace with game settings
-#define MAX_HEALTH 20.f
+constexpr float MAX_HEALTH = 20.f;
 
 
 // TODO: Remove as many functions as possible
@@ -25,6 +25,7 @@ public:
 	Entity* ptrToOwner = nullptr;
 
 	bool hitByLocalPlayer = false;
+	bool wasHitByMeThisTick = false;
 	bool wasHitByWater = false;
 	bool isAlive = true;
 	bool isCarried = true;

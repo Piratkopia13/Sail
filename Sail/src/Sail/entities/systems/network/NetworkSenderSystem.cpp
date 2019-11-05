@@ -163,9 +163,17 @@ void NetworkSenderSystem::update() {
 }
 
 void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
-	std::lock_guard<std::mutex> lock(m_eventMutex);
+	std::lock_guard<std::mutex> lock(m_queueMutex);
 
 	m_eventQueue.push(type);
+
+#ifdef DEVELOPMENT
+	// Don't send broken events to others or to yourself
+	if (type->type < Netcode::MessageType::CREATE_NETWORKED_ENTITY || type->type >= Netcode::MessageType::EMPTY) {
+		Logger::Error("Attempted to send invalid message\n");
+		return;
+	}
+#endif
 
 	// if the event will be sent to ourself then increment the size counter
 	if (type->alsoSendToSelf) {
@@ -301,6 +309,9 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar) {
 	ar(event->type); // Send the event-type
+#ifdef DEVELOPMENT
+	ar(event->REDUNDANT_TYPE);
+#endif
 
 	switch (event->type) {
 	case Netcode::MessageType::SPAWN_PROJECTILE:

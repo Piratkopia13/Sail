@@ -24,6 +24,7 @@
 #include "NetworkReceiverComponent.h"
 #include "NetworkSenderComponent.h"
 #include "OnlineOwnerComponent.h"
+#include "ParticleEmitterComponent.h"
 #include "ProjectileComponent.h"
 #include "RealTimeComponent.h"
 #include "SpectatorComponent.h"
