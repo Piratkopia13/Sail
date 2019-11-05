@@ -112,6 +112,10 @@ private:
 	//-----------------
 	HRESULT initXAudio2();
 
+	//
+	HRESULT LowPassFilterTest();
+	bool doOnce = true;
+
 	void streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC = nullptr);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
 

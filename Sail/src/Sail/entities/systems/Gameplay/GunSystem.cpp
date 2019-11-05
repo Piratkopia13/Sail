@@ -99,8 +99,8 @@ void GunSystem::update(float dt) {
 
 
 void GunSystem::alterProjectileSpeed(GunComponent* gun) {
-	gun->projectileSpeed = gun->baseProjectileSpeed + gun->projectileSpeedRange * gun->gunOverloadvalue;
-	Logger::Log("Velocity: " + std::to_string(gun->gunOverloadvalue));
+	gun->projectileSpeed = gun->baseProjectileSpeed + (gun->projectileSpeedRange * (gun->gunOverloadvalue/gun->gunOverloadThreshold));
+	Logger::Log("Velocity: " + std::to_string(gun->projectileSpeed));
 }
 
 void GunSystem::fireGun(Entity* e, GunComponent* gun) {

@@ -24,12 +24,18 @@
 #include <windows.h>
 #include <wrl/client.h>
 
+
 #include <thread>
 
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid")
 #pragma comment(lib, "hrtfapo.lib")
+//#include <xaudio2.h>
+//#include <x3daudio.h>
+
+#include <xaudio2fx.h>
+#pragma comment(lib,"xaudio2.lib")
 
 
 AudioEngine::AudioEngine() {
@@ -122,6 +128,10 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 		fxDesc.OutputChannels = 2;          // Stereo output
 		fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
 
+		/*
+		Possibly append the "reverb" effect in the effect chain here
+		
+		*/
 		XAUDIO2_EFFECT_CHAIN fxChain{};
 		fxChain.EffectCount = 1;
 		fxChain.pEffectDescriptors = &fxDesc;
@@ -136,6 +146,32 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 		hr = m_xAudio2->CreateSubmixVoice(&submixVoice, 1, 48000, 0, 0, &sends, &fxChain);
 		submixVoice->SetVolume(volume);
 	}
+
+
+	/* ----------------------------------- */
+	/* ----------------------------------- */
+	//
+	//			Create Reverb Effect
+	//
+	IUnknown* ppApo = nullptr;
+	UINT32 rFlags = 0;
+	if (FAILED(XAudio2CreateReverb(&ppApo, rFlags))) {
+		Logger::Error("Failed creation of reverb APO.");
+		assert(false);
+	}
+	/* ----------------------------------- */
+	//
+	//			Create an Effect
+	//
+	XAUDIO2_EFFECT_DESCRIPTOR effectDesc[] = { {ppApo, TRUE, 1} };
+	XAUDIO2_EFFECT_CHAIN effectChain = { 1, effectDesc };
+	IXAudio2SubmixVoice* pSubmixVoice = nullptr;
+	if (FAILED(m_xAudio2->CreateSubmixVoice(&pSubmixVoice, 1, 48000, 0, 0, nullptr, &effectChain))) {
+		Logger::Error("Failed creation of submix voice");
+		assert(false);
+	}
+	/* ----------------------------------- */
+	/* ----------------------------------- */
 
 	// Route the source voice to the submix voice.
 	// The complete graph pipeline looks like this -
@@ -276,6 +312,14 @@ void AudioEngine::startSpecificSound(int index, float volume) {
 	if (SUCCEEDED(hr)) {
 		hr = m_sound[index].sourceVoice->Start(0);
 	}
+
+
+	if (doOnce) {
+		doOnce = false;
+		int index = 0;
+
+		startSpecificSound(index);
+	}
 }
 
 void AudioEngine::stopSpecificSound(int index) {
@@ -409,8 +453,99 @@ HRESULT AudioEngine::initXAudio2() {
 	// Mastering voice will be automatically destroyed when XAudio2 instance is destroyed.
 	if (SUCCEEDED(hr)) {
 		hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice, 2, 48000);
-	}
+	}	
+
+	hr = LowPassFilterTest();
+
 	return hr;
+}
+
+HRESULT AudioEngine::LowPassFilterTest() {
+	XAUDIO2FX_REVERB_I3DL2_PARAMETERS g_presetReverbParams[30] =
+	{
+		XAUDIO2FX_I3DL2_PRESET_FOREST,
+		XAUDIO2FX_I3DL2_PRESET_DEFAULT,
+		XAUDIO2FX_I3DL2_PRESET_GENERIC,
+		XAUDIO2FX_I3DL2_PRESET_PADDEDCELL,
+		XAUDIO2FX_I3DL2_PRESET_ROOM,
+		XAUDIO2FX_I3DL2_PRESET_BATHROOM,
+		XAUDIO2FX_I3DL2_PRESET_LIVINGROOM,
+		XAUDIO2FX_I3DL2_PRESET_STONEROOM,
+		XAUDIO2FX_I3DL2_PRESET_AUDITORIUM,
+		XAUDIO2FX_I3DL2_PRESET_CONCERTHALL,
+		XAUDIO2FX_I3DL2_PRESET_CAVE,
+		XAUDIO2FX_I3DL2_PRESET_ARENA,
+		XAUDIO2FX_I3DL2_PRESET_HANGAR,
+		XAUDIO2FX_I3DL2_PRESET_CARPETEDHALLWAY,
+		XAUDIO2FX_I3DL2_PRESET_HALLWAY,
+		XAUDIO2FX_I3DL2_PRESET_STONECORRIDOR,
+		XAUDIO2FX_I3DL2_PRESET_ALLEY,
+		XAUDIO2FX_I3DL2_PRESET_CITY,
+		XAUDIO2FX_I3DL2_PRESET_MOUNTAINS,
+		XAUDIO2FX_I3DL2_PRESET_QUARRY,
+		XAUDIO2FX_I3DL2_PRESET_PLAIN,
+		XAUDIO2FX_I3DL2_PRESET_PARKINGLOT,
+		XAUDIO2FX_I3DL2_PRESET_SEWERPIPE,
+		XAUDIO2FX_I3DL2_PRESET_UNDERWATER,
+		XAUDIO2FX_I3DL2_PRESET_SMALLROOM,
+		XAUDIO2FX_I3DL2_PRESET_MEDIUMROOM,
+		XAUDIO2FX_I3DL2_PRESET_LARGEROOM,
+		XAUDIO2FX_I3DL2_PRESET_MEDIUMHALL,
+		XAUDIO2FX_I3DL2_PRESET_LARGEHALL,
+		XAUDIO2FX_I3DL2_PRESET_PLATE,
+	};
+
+	/* https://docs.microsoft.com/en-us/windows/win32/api/xaudio2fx/nf-xaudio2fx-xaudio2createreverb
+	REQUIREMENTS.
+	- Input audio data must be FLOAT32.
+	- Framerate must be within XAUDIO2FX_REVERB_MIN_FRAMERATE (20,000 Hz) and XAUDIO2FX_REVERB_MAX_FRAMERATE (48,000 Hz).
+	- The input and output channels must be one of the following combinations.
+	- Mono input and mono output
+	- Mono input and 5.1 output
+	- Stereo input and stereo output
+	- Stereo input and 5.1 output
+
+	"The reverb APO maintains internal state information between processing samples.
+	You can only use an instance of the APO with one source of audio data at a time.
+	Multiple voices that require reverb effects would each need to create a separate
+	reverb effect with XAudio2CreateReverb."
+	*/
+
+	/* ----------------------------------- */
+	//
+	//			Create Reverb Effect
+	//
+	IUnknown* ppApo = nullptr;
+	UINT32 rFlags = 0;
+	if (FAILED(XAudio2CreateReverb(&ppApo, rFlags))) {
+		Logger::Error("Failed creation of reverb APO.");
+		assert(false);
+	}
+
+	/* ----------------------------------- */
+	//
+	//			Create an Effect
+	//
+	XAUDIO2_EFFECT_DESCRIPTOR effectDesc[] = { {ppApo, TRUE, 1} };
+	XAUDIO2_EFFECT_CHAIN effectChain = { 1, effectDesc };
+	IXAudio2SubmixVoice* pSubmixVoice = nullptr;
+	if (FAILED(m_xAudio2->CreateSubmixVoice(&pSubmixVoice, 1, 48000, 0, 0, nullptr, &effectChain))) {
+		Logger::Error("Failed creation of submix voice");
+		assert(false);
+	}
+
+	/* ----------------------------------- */
+	//
+	//			Set Default FX Params
+	//
+	XAUDIO2FX_REVERB_PARAMETERS reverbParamsAsNative;
+	ReverbConvertI3DL2ToNative(g_presetReverbParams, &reverbParamsAsNative);
+	if (FAILED(pSubmixVoice->SetEffectParameters(0, &reverbParamsAsNative, sizeof(reverbParamsAsNative)))) {
+		Logger::Error("Failed conversion of reverb-parameters to native");
+			assert(false);
+	}
+
+	return S_OK;
 }
 
 
