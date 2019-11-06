@@ -16,13 +16,10 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	m_input = Input::GetInstance();
 	m_app = Application::getInstance();
 
-
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
 SplashScreenState::~SplashScreenState() {
-
-
 	m_modelThread.get();
 }
 
@@ -36,21 +33,14 @@ bool SplashScreenState::update(float dt, float alpha) {
 }
 
 bool SplashScreenState::render(float dt, float alpha) {
-	//m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	//ECS::Instance()->getSystem<BeginEndFrameSystem>()->renderNothing();
 	return false;
 }
 
-
-
-
 bool SplashScreenState::renderImgui(float dt) {
-
 	return false;
 }
 
 bool SplashScreenState::onEvent(Event& event) {
-
 	return false;
 }
 
@@ -84,6 +74,8 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("boundingBox.fbx");
 	rm->loadModel("cubeWidth1.fbx");
 
+
+	//LEAVE THIS FOR A MULTITHREADED FUTURE
 //#else
 //
 //	std::vector <std::future<bool>> modelThreads;

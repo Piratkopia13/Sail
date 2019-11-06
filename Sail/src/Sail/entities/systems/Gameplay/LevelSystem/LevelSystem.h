@@ -84,14 +84,6 @@ public:
 	float tileHeight = 0.8f;
 	int tileOffset = 0;
 
-
-
-
-
-
-
-
-
 	std::vector<glm::vec3> spawnPoints;
 private:
 	std::queue<Rect> chunks;

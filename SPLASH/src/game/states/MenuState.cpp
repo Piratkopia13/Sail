@@ -94,6 +94,15 @@ bool MenuState::renderImgui(float dt) {
 					NWrapperSingleton::getInstance().stopUDP();
 					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
+					auto& map = m_app->getSettings().gameSettingsDynamic["map"];
+
+#ifdef _PERFORMANCE_TEST
+					map["sizeX"].value = 20;
+					map["sizeY"].value = 20;
+					map["seed"].value = 2.0f;
+#endif
+
+
 					this->requestStackClear();
 					this->requestStackPush(States::Game);
 				}

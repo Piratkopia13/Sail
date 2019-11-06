@@ -14,6 +14,10 @@ LevelSystem::LevelSystem():BaseComponentSystem() {
 	xsize = 1;
 	ysize = 1;
 	tileSize = 7;
+	
+
+
+
 
 }
 
