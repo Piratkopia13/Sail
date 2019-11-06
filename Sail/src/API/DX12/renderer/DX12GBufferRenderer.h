@@ -9,7 +9,7 @@ class PostProcessPipeline;
 #define MULTI_THREADED_COMMAND_RECORDING
 //#define DEBUG_MULTI_THREADED_COMMAND_RECORDING
 
-class DX12GBufferRenderer : public Renderer {
+class DX12GBufferRenderer final : public Renderer {
 public:
 	static const int NUM_GBUFFERS = 3;
 
@@ -18,12 +18,12 @@ public:
 	~DX12GBufferRenderer();
 
 	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 	DX12RenderableTexture** getGBufferOutputs() const;
 
 private:
-	bool onResize(WindowResizeEvent& event);
+	bool onResize(const WindowResizeEvent& event);
 
 private:
 	static const int MAX_RECORD_THREADS = 1;

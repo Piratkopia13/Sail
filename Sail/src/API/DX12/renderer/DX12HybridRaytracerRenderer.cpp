@@ -56,7 +56,7 @@ void DX12HybridRaytracerRenderer::present(PostProcessPipeline* postProcessPipeli
 	m_rendererRaytrace->present(postProcessPipeline, output);
 }
 
-bool DX12HybridRaytracerRenderer::onEvent(Event& event) {
+bool DX12HybridRaytracerRenderer::onEvent(const Event& event) {
 	m_rendererGbuffer->onEvent(event);
 	m_rendererRaytrace->onEvent(event);
 	return true;

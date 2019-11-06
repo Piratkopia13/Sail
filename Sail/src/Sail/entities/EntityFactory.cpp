@@ -102,17 +102,20 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<CollisionComponent>();
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	myPlayer->addComponent<RealTimeComponent>();
 
 	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
 			//leave this for now
 			//c->addComponent<GunComponent>();
+			c->addComponent<RealTimeComponent>(); // The player's gun is updated each frame
 		}
 
 		// Add a localOwnerComponent to our candle so that we can differentiate it from other candles
 		if (c->hasComponent<CandleComponent>()) {
 			c->addComponent<LocalOwnerComponent>(netComponentID);
+			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
 		}
 	}
 
@@ -188,12 +191,9 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 	// Create the player's candle
 	auto candle = CreateCandle(playerEntity->getName()+"Candle", glm::vec3(0.f, 0.f, 0.f), lightIndex);
-	candle->addComponent<RealTimeComponent>(); // Player candle will have its position updated each frame
-	playerEntity->addChildEntity(candle);
-	
+	playerEntity->addChildEntity(candle);	
 
 	auto gun = CreateWaterGun(playerEntity->getName() + "WaterGun");
-	gun->addComponent<RealTimeComponent>(); // Player gun will have its position updated each frame
 	playerEntity->addChildEntity(gun);
 
 	// Attach the candle to the player's left hand
@@ -304,8 +304,7 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	e->addComponent<TransformComponent>(pos + randPos);
 	if (hasLocalOwner == true) {
 		e->addComponent<LocalOwnerComponent>(ownersNetId);
-	}
-	else {
+	} else {
 		e->addComponent<OnlineOwnerComponent>(ownersNetId);
 	}
 	

@@ -21,6 +21,8 @@ public:
 
 	void setCulling(bool activated, Camera* camera);
 
+
+
 private:
 	Octree* m_octree;
 	bool m_doCulling;

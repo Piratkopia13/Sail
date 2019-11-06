@@ -9,7 +9,7 @@ public:
 	~DX12ScreenSpaceRenderer();
 
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
 	DX12API* m_context;

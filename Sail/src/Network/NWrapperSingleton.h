@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include "NWrapperHost.h"
 #include "NWrapperClient.h"
 
@@ -7,11 +8,15 @@ class NetworkSenderSystem;
 
 struct NetworkSenderEvent {
 	Netcode::MessageType type;
+
+#ifdef DEVELOPMENT
+	Netcode::MessageType REDUNDANT_TYPE; // Used to help find corrupted events that just have nonsense data
+#endif
 	Netcode::MessageData* data = nullptr;  
 
 	// All events will by default be handled by NetworkReceiverSystem for
 	// both the people receiving the event and the person sending it.
-	bool alsoSendToSelf = false; // TODO: set to true once #U421 is done
+	bool alsoSendToSelf = true;
 
 	virtual ~NetworkSenderEvent() {
 		if (data) {
@@ -40,7 +45,7 @@ public:
 	void startUDP();
 
 	void resetPlayerList();
-	bool playerJoined(Player& player);
+	bool playerJoined(const Player& player);
 	bool playerLeft(Netcode::PlayerID& id);
 
 	Player& getMyPlayer();
@@ -55,7 +60,11 @@ public:
 
 	// Specifically for One-Time-Events during the gamestate
 	void setNSS(NetworkSenderSystem* NSS);
-	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = true); // Messages sent to self will be dealt with in NetworkReceiverSystem
+
+	// Messages sent to self will be dealt with in NetworkReceiverSystem
+	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = true);
+
+	size_t averagePacketSizeSinceLastCheck();
 private:
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;
