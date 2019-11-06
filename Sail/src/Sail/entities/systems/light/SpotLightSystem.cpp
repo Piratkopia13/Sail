@@ -17,24 +17,40 @@ SpotLightSystem::~SpotLightSystem() {
 }
 
 //check and update all lights for all entities
-void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha) {
+void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt) {
 	int id = 0;
 	lightSetup->getSLs().clear();
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
+		MovementComponent* mc = e->getComponent<MovementComponent>();
 
+		mc->rotation.y = 0.f;
+
+		// Update active lights
 		if (!sc->isOn) {
 			continue;
 		}
+		// If the spotlight is a hazard light, it will turn off after some time.
+		// Will look in to this in next task.
+		//if (sc->roomID > 0) {
+		//	sc->activeTimer += dt;
+		//	if (sc->activeTimer > sc->activeLimit) {
+		//		sc->isOn = false;
+		//		continue;
+		//	}
+		//}
+
+		mc->rotation.y = 4.f;
 
 		TransformComponent* t = e->getComponent<TransformComponent>();
 
-		sc->light_entityRotated = sc->light;
-		sc->light_entityRotated.setIndex(id++);
-		sc->light_entityRotated.setDirection(glm::rotate(t->getInterpolatedRotation(alpha), sc->light.getDirection()));
-		sc->light_entityRotated.setPosition(sc->light.getPosition() + t->getInterpolatedTranslation(alpha));
+
+		sc->m_lightEntityRotated = sc->light;
+		sc->m_lightEntityRotated.setIndex(id++);
+		sc->m_lightEntityRotated.setDirection(glm::rotate(t->getInterpolatedRotation(alpha), sc->light.getDirection()));
+		sc->m_lightEntityRotated.setPosition(sc->light.getPosition() + t->getInterpolatedTranslation(alpha));
 		
-		lightSetup->addSpotLight(sc->light_entityRotated);
+		lightSetup->addSpotLight(sc->m_lightEntityRotated);
 	}
 }
 
@@ -42,15 +58,15 @@ void SpotLightSystem::toggleONOFF() {
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
 		sc->isOn = !sc->isOn;
+	}
+}
 
-		MovementComponent* mc = e->getComponent<MovementComponent>();
-		
-		if (mc) {
-			if (sc->isOn) {
-				mc->rotation.y += 4;
-			} else {
-				mc->rotation.y -= 4;
-			}
+void SpotLightSystem::enableHazardLights(std::vector<int> activeRooms) {
+	for (auto e : entities) {
+		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
+		std::vector<int>::iterator it = std::find(activeRooms.begin(), activeRooms.end(), sc->roomID);
+		if (it != activeRooms.end()) {
+			sc->isOn = true;
 		}
 	}
 }

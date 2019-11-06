@@ -11,6 +11,8 @@ LevelGeneratorSystem::LevelGeneratorSystem():BaseComponentSystem() {
 	registerComponent<TransformComponent>(false, true, true);
 	registerComponent<BoundingBoxComponent>(false, false, true);
 	registerComponent<CollidableComponent>(false, false, true);
+	registerComponent<MovementComponent>(false, false, true);
+	registerComponent<SpotlightComponent>(false, false, true);
 }
 
 LevelGeneratorSystem::~LevelGeneratorSystem() {
@@ -1515,7 +1517,13 @@ void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterMod
 				sc->light.setAttenuation(1.f, 0.01f, 0.01f);
 				sc->light.setDirection(glm::vec3(1, 0, 0));
 				sc->light.setAngle(0.5);
+				sc->roomID = map->getRoomID(room.posx, room.posy);
+				sc->activeTimer = 0.f;
 				sc->isOn = false;
+#ifdef _PERFORMANCE_TEST
+				sc->isOn = true;
+#endif
+
 			}
 			map->matched.push(room);
 		}

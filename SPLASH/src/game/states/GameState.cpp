@@ -143,8 +143,8 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
-
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
+
 #endif
 
 
@@ -192,9 +192,6 @@ bool GameState::processInput(float dt) {
 		requestStackPush(States::InGameMenu);
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
-		m_componentSystems.spotLightSystem->toggleONOFF();
-	}
 
 #ifdef DEVELOPMENT
 #ifdef _DEBUG
@@ -203,7 +200,13 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.lightListSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
 
+
 #endif
+
+
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
+		m_componentSystems.spotLightSystem->toggleONOFF();
+	}
 
 	// Enable bright light and move camera to above procedural generated level
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_SUN)) {
@@ -359,6 +362,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
+
 
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
@@ -725,7 +729,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
-
+	m_componentSystems.spotLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
@@ -752,7 +756,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
-		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha);
+		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha, dt);
 	}
 
 	if (m_showcaseProcGen) {

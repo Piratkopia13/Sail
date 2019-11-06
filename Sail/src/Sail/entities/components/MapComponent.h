@@ -75,7 +75,7 @@ public:
 		posY /= static_cast<float>(tileSize);
 
 
-		int roomValue = tileArr[static_cast<int>(posX)][static_cast<int>(posY)][1];;
+		int roomValue = getRoomID(static_cast<int>(posX), static_cast<int>(posY));
 
 		if (roomValue == 0) {
 			returnValue = AreaType::CORRIDOR;
@@ -85,6 +85,10 @@ public:
 		}
 
 		return static_cast<int>(returnValue);
+	}
+	
+	const int getRoomID(int posX, int posY) {
+		return tileArr[posX][posY][1];
 	}
 
 #ifdef _PERFORMANCE_TEST
