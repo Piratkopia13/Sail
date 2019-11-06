@@ -306,7 +306,12 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velocity, bool hasLocalOwner, Netcode::ComponentID ownersNetId, float lifetime, float randomSpread) {
+// TODO: add sender/receiver with manually set componentID
+Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velocity, 
+	bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
+	Netcode::ComponentID netCompId,
+	float lifetime, float randomSpread) 
+{
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
 
@@ -324,10 +329,13 @@ Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::ve
 	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
 	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
 	e->addComponent<TransformComponent>(pos + randPos);
+	
 	if (hasLocalOwner == true) {
 		e->addComponent<LocalOwnerComponent>(ownersNetId);
+		e->addComponent<NetworkSenderComponent>(Netcode::EntityType::PROJECTILE_ENTITY, netCompId);
 	} else {
 		e->addComponent<OnlineOwnerComponent>(ownersNetId);
+		e->addComponent<NetworkReceiverComponent>(netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 	}
 	
 

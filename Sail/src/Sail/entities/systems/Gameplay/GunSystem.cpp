@@ -43,6 +43,8 @@ void GunSystem::update(float dt) {
 
 				// SHOOT
 				if (gun->projectileSpawnTimer <= 0.f) {
+					Netcode::PlayerID myPlayerID = Netcode::getComponentOwner(e->getComponent<NetworkSenderComponent>()->m_id);
+
 					for (int i = 0; i < 2; i++) {
 						// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -50,6 +52,7 @@ void GunSystem::update(float dt) {
 							SAIL_NEW Netcode::MessageSpawnProjectile{
 								gun->position,
 								gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity,
+								Netcode::generateUniqueComponentID(myPlayerID), // Generate unique ComponentID here for our own projectiles
 								e->getComponent<NetworkSenderComponent>()->m_id
 							}
 						);

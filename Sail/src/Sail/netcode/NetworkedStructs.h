@@ -172,13 +172,15 @@ namespace Netcode {
 
 	class MessageSpawnProjectile : public MessageData {
 	public:
-		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, Netcode::ComponentID ownerComponentID)
-			: translation(translation_), velocity(velocity_), ownerPlayerComponentID(ownerComponentID)
+		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, 
+			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID)
+			: translation(translation_), velocity(velocity_), projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID)
 		{}
 		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
+		Netcode::ComponentID projectileComponentID;
 		Netcode::ComponentID ownerPlayerComponentID;
 	};
 

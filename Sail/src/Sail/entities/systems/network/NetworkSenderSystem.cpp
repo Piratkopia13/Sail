@@ -92,12 +92,27 @@ void NetworkSenderSystem::update() {
 	sendToOthers(m_playerID);
 	sendToSelf(Netcode::MESSAGE_FROM_SELF_ID);
 
+
+	// See how many SenderComponents have information to send
+	size_t nonEmptySenderComponents = 0;
+	for (auto e : entities) {
+		if (!e->getComponent<NetworkSenderComponent>()->m_dataTypes.empty()) {
+			nonEmptySenderComponents++;
+		}
+	}
+
 	// Write nrOfEntities
-	sendToOthers(entities.size());
+	sendToOthers(nonEmptySenderComponents);
 	sendToSelf(size_t{0}); // SenderComponent messages should not be sent to ourself
 
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
+		
+		// If a SenderComponent doesn't have any active messages don't send any of its information
+		if (nsc->m_dataTypes.empty()) {
+			continue;
+		}
+
 		sendToOthers(nsc->m_id);                // ComponentID    
 		sendToOthers(nsc->m_entityType);        // Entity type
 		sendToOthers(nsc->m_dataTypes.size());  // NrOfMessages
@@ -446,7 +461,9 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 		ArchiveHelpers::saveVec3(ar, data->translation);
 		ArchiveHelpers::saveVec3(ar, data->velocity);
+		ar(data->projectileComponentID);
 		ar(data->ownerPlayerComponentID);
+
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:

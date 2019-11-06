@@ -31,6 +31,7 @@ namespace EntityFactory {
 	Entity::SPtr CreateProjectile(
 		const glm::vec3& pos, const glm::vec3& velosity,
 		bool hasLocalOwner = false, Netcode::ComponentID ownersNetId = 0,
+		Netcode::ComponentID netCompId = 99999,
 		float lifetime = 4, float randomSpreed = 0.15f
 	);
 
