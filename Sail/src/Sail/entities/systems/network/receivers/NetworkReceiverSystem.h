@@ -47,7 +47,6 @@ private:
 	void setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation);
-	void setEntityTransformMatrix(Netcode::ComponentID id, const glm::mat4& mat);
 	void setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime);
 	void playerJumped(Netcode::ComponentID id);
 	void playerLanded(Netcode::ComponentID id);

@@ -475,16 +475,6 @@ void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, cons
 	Logger::Warning("setEntityRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityTransformMatrix(Netcode::ComponentID id, const glm::mat4& mat) {
-	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->getComponent<TransformComponent>()->setTransformMatrix(mat);
-			return;
-		}
-	}
-	Logger::Warning("setEntityTranslation called but no matching entity found");
-}
-
 void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {

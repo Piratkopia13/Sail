@@ -72,8 +72,6 @@ public:
 	/* Forward should always be a normalized vector */
 	void setForward(const glm::vec3& forward);
 
-	void setTransformMatrix(const glm::mat4& mat);
-
 	Transform* getParent() const;
 
 	const glm::vec3& getTranslation() const;

@@ -231,16 +231,6 @@ void Transform::setForward(const glm::vec3& forward) {
 	m_hasChanged |= 2;
 }
 
-// Manually set the transform matrix
-// NOTE: this does not update the position and rotation vectors
-void Transform::setTransformMatrix(const glm::mat4& mat) {
-	m_localTransformMatrix = mat;
-	m_transformMatrix = mat;
-	m_hasChanged = 0;
-	m_matNeedsUpdate = false;
-}
-
-
 Transform* Transform::getParent() const {
 	return m_parent;
 }

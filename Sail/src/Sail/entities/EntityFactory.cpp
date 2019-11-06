@@ -60,25 +60,11 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 }
 
 
-void EntityFactory::AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_t& lightIndex, const Netcode::PlayerID& playerID) {
-
+void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size_t& lightIndex, const Netcode::PlayerID& playerID) {
 	for (Entity* c : player->getChildEntities()) {
 		if (c->getName() == player->getName() + "Candle") {
-			c->addComponent<CandleComponent>();
-			PointLight pl;
-			pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
-			pl.setPosition(glm::vec3(0, 0 + .37f, 0));
-			pl.setAttenuation(0.f, 0.f, 0.2f);
-			pl.setIndex(lightIndex);
-			c->addComponent<LightComponent>(pl);
-
-
-		}
-		CandleComponent* cc = c->getComponent<CandleComponent>();
-		if (cc) {
+			c->addComponent<CandleComponent>()->playerEntityID = playerID;
 			c->addComponent<CollidableComponent>();
-			c->addComponent<CandleComponent>();
-			cc->playerEntityID = playerID;
 		}
 	}
 }
@@ -104,7 +90,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
-	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
+	AddCandleComponentsToPlayer(myPlayer, lightIndex, playerID);
 
 
 	Netcode::ComponentID candleNetID;
@@ -151,7 +137,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	otherPlayer->addComponent<OnlineOwnerComponent>(playerCompID);
 
 	// Create the player
-	AddWeaponAndCandleToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(playerCompID));
+	AddCandleComponentsToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(playerCompID));
 
 	for (Entity* c : otherPlayer->getChildEntities()) {
 		if (c->getName() == otherPlayer->getName() + "Candle") {
@@ -180,7 +166,7 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 	playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION);
 
 	// Create the player
-	AddWeaponAndCandleToPlayer(playerEnt, lightIndex, 0);
+	AddCandleComponentsToPlayer(playerEnt, lightIndex, 0);
 }
 
 // Creates a player enitty without a candle and without a model
