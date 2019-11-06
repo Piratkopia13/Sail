@@ -157,12 +157,12 @@ namespace Netcode {
 		virtual ~MessageData() {}
 	};
 
-	class CreatePlayer : public MessageData {
+	class MessageCreatePlayer : public MessageData {
 	public:
-		CreatePlayer(Netcode::ComponentID playerNetID, Netcode::ComponentID candleNetID, glm::vec3 pos)
+		MessageCreatePlayer(Netcode::ComponentID playerNetID, Netcode::ComponentID candleNetID, glm::vec3 pos)
 			: playerCompID(playerNetID), candleCompID(candleNetID), position(pos) {
 		}
-		virtual ~CreatePlayer() {}
+		virtual ~MessageCreatePlayer() {}
 
 		Netcode::ComponentID playerCompID;
 		Netcode::ComponentID candleCompID;

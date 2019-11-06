@@ -332,7 +332,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	break;
 	case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
 	{
-		Netcode::CreatePlayer* data = static_cast<Netcode::CreatePlayer*>(event->data);
+		Netcode::MessageCreatePlayer* data = static_cast<Netcode::MessageCreatePlayer*>(event->data);
 
 		ar(data->playerCompID);
 		ar(data->candleCompID);

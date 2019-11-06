@@ -116,7 +116,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	// Tell other players to create my character
 	NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 		Netcode::MessageType::CREATE_NETWORKED_PLAYER,
-		SAIL_NEW Netcode::CreatePlayer{
+		SAIL_NEW Netcode::MessageCreatePlayer{
 			netComponentID,
 			candleNetID,
 			myPlayer->getComponent<TransformComponent>()->getCurrentTransformState().m_translation,
