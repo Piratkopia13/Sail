@@ -11,8 +11,8 @@ public:
 
 	bool isOn;
 	int roomID;
-	float activeTimer;
-	float activeLimit = 5.f;
+	//float activeTimer;
+	//float activeLimit = 5.f;
 	SpotLight light; // Describes the light source when not rotated or moved
 
 #ifdef DEVELOPMENT
@@ -90,7 +90,6 @@ public:
 #endif
 private:
 	SpotLight m_lightEntityRotated; //This one will be updated with entity transformations and submited to the renderer
-	bool wasOn = false;
 
 	friend class SpotLightSystem;
 	

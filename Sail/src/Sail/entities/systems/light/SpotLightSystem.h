@@ -9,7 +9,6 @@ public:
 	SpotLightSystem();
 	~SpotLightSystem();
 
-	//void stop() override;
 	void updateLights(LightSetup* lightSetup, float alpha, float dt);
 	void toggleONOFF();
 	void enableHazardLights(std::vector<int> activeRooms);

@@ -1517,7 +1517,6 @@ void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterMod
 			sc->light.setDirection(glm::vec3(1, 0, 0));
 			sc->light.setAngle(0.5);
 			sc->roomID = map->getRoomID(room.posx, room.posy);
-			sc->activeTimer = 0.f;
 			sc->isOn = false;
 #ifdef _PERFORMANCE_TEST
 			sc->isOn = true;

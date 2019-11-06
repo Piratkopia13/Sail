@@ -15,10 +15,12 @@ public:
 private:
 	bool m_activateSprinklers = false;
 	float m_endGameTimer = 0.f;
-	float m_endGameStartLimit = 60.f;
 #ifdef _DEBUG
 	float m_endGameStartLimit = 15.f;
+#else
+	float m_endGameStartLimit = 60.f;
 #endif
+
 	float m_endGameTimeIncrement = m_endGameStartLimit / 3.0f;
 	float m_sprinklerDelayTime = 10.f;
 	int m_endGameMapIncrement = 0;

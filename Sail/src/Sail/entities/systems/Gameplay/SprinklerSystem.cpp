@@ -29,7 +29,6 @@ void SprinklerSystem::stop() {
 
 void SprinklerSystem::update(float dt) {
 	for (auto& e : entities) {
-		Logger::Log(std::to_string(m_activeRooms.size()));
 		MapComponent* map = e->getComponent<MapComponent>();
 		m_endGameTimer += dt;
 		// End game is reached, sprinklers starting
