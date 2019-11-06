@@ -443,14 +443,7 @@ void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
-			//TODO: REMOVE
-			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
-			glm::vec3 rot = rotation;
-			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
-			//rot.y += 3.14f * 0.5f;
-			//}
-			e->getComponent<TransformComponent>()->setRotations(rot);
-
+			e->getComponent<TransformComponent>()->setRotations(rotation);
 			return;
 		}
 	}
@@ -473,8 +466,9 @@ void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 	// How do i trigger a jump from here?
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
-			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+			Audio::SoundInfo_General& jumpSound = e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP];
+			jumpSound.playOnce = true;
+			jumpSound.isPlaying = true;
 
 			return;
 		}
@@ -483,11 +477,11 @@ void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 }
 
 void NetworkReceiverSystem::playerLanded(Netcode::ComponentID id) {
-
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].playOnce = true;
-			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].isPlaying = true;
+			Audio::SoundInfo_General& landingSound = e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND];
+			landingSound.playOnce = true;
+			landingSound.isPlaying = true;
 
 			return;
 		}
@@ -501,30 +495,8 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
 		}
-		//Look for the entity that IS the candle (candle entity)
-		std::vector<Entity::SPtr> childEntities = e->getChildEntities();
-		for (auto& child : childEntities) {
-			if (child->hasComponent<CandleComponent>()) {
-				// Damage the candle
-				// Save the Shooter of the Candle if its lethal
-				// TODO: Replace 10.0f with game settings damage
-				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
-
-				// Play relevant sound
-				if (child->getComponent<CandleComponent>()->isLit) {
-					if (e->hasComponent<LocalOwnerComponent>()) {
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].isPlaying = true;
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].playOnce = true;
-					} else {
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
-					}
-				}
-
-				// Check in Candle System What happens next
-				return;
-			}
-		}
+		
+		EventDispatcher::Instance().emit(WaterHitPlayerEvent(e, senderId));
 	}
 	Logger::Warning("waterHitPlayer called but no matching entity found");
 }

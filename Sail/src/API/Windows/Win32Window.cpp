@@ -2,7 +2,7 @@
 #include "Win32Window.h"
 #include "Sail/Application.h"
 #include "Sail/events/EventDispatcher.h"
-#include "Sail/events/WindowFocusChangedEvent.h"
+#include "Sail/events/types/WindowFocusChangedEvent.h"
 #include "imgui.h"
 #include "Win32Input.h"
 #include <dxgi.h>

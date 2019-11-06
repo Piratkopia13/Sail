@@ -4,14 +4,21 @@
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GameDataTracker.h"
 
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/WaterHitPlayerEvent.h"
+
 CandleHealthSystem::CandleHealthSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
 	registerComponent<LightComponent>(true, true, true);
 	registerComponent<AudioComponent>(false, true, true);
+
+	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
 }
 
-CandleHealthSystem::~CandleHealthSystem() {}
+CandleHealthSystem::~CandleHealthSystem() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
+}
 
 void CandleHealthSystem::update(float dt) {
 	// The number of living candles, representing living players
@@ -83,4 +90,28 @@ void CandleHealthSystem::update(float dt) {
 			);
 		}
 	}
+}
+
+bool CandleHealthSystem::onEvent(const Event& event) {
+	auto onWaterHitPlayer = [&](const WaterHitPlayerEvent& e) {
+		// Find candle entity
+		std::vector<Entity::SPtr>& childEntities = e.hitPlayer->getChildEntities();
+		
+		for (auto& child : childEntities) {
+			if (child->hasComponent<CandleComponent>()) {
+				// Damage the candle
+				// TODO: Replace 10.0f with game settings damage
+				child->getComponent<CandleComponent>()->hitWithWater(10.0f, e.senderID);
+
+				break;
+			}
+		}
+	};
+
+	switch (event.type) {
+	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
+	default: break;
+	}
+
+	return true;
 }

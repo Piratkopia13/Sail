@@ -7,8 +7,12 @@
 #include "..//Sail/src/Sail/Application.h"
 #include "..//Sail/src/Sail/entities/components/AudioComponent.h"
 #include "..//Sail/src/Sail/entities/components/TransformComponent.h"
+#include "..//Sail/src/Sail/entities/components/CandleComponent.h"
+#include "..//Sail/src/Sail/entities/components/LocalOwnerComponent.h"
 #include "..//Sail/src/Sail/graphics/camera/Camera.h"
 #include "..//..//Entity.h"
+
+#include "Sail/events/Events.h"
 
 #include <iterator>
 
@@ -21,12 +25,17 @@ AudioSystem::AudioSystem() : BaseComponentSystem() {
 	registerComponent<TransformComponent>(true, true, false);
 
 	m_audioEngine = SAIL_NEW AudioEngine();
+
+	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
+
 	initialize();
 }
 
 AudioSystem::~AudioSystem() {
 	m_audioEngine->stopAllSounds();
 	delete m_audioEngine;
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
 }
 
 // TO DO: move to constructor?
@@ -284,4 +293,38 @@ void AudioSystem::hotFixAmbiance(Entity* e, AudioComponent* audioC) {
 
 AudioEngine* AudioSystem::getAudioEngine() {
 	return m_audioEngine;
+}
+
+bool AudioSystem::onEvent(const Event& event) {
+
+	auto onWaterHitPlayer = [&](const WaterHitPlayerEvent& e) {
+		// Find candle entity
+		std::vector<Entity::SPtr>& childEntities = e.hitPlayer->getChildEntities();
+		for (auto& child : childEntities) {
+			if (child->hasComponent<CandleComponent>()) {
+
+				// Play relevant sound
+				if (child->getComponent<CandleComponent>()->isLit) {
+					AudioComponent* audio = e.hitPlayer->getComponent<AudioComponent>();
+
+					const auto soundIndex = e.hitPlayer->hasComponent<LocalOwnerComponent>()
+						? Audio::SoundType::WATER_IMPACT_MY_CANDLE 
+						: Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE;
+
+					Audio::SoundInfo_General& hitCandleSound = audio->m_sounds[soundIndex];
+					hitCandleSound.isPlaying = true;
+					hitCandleSound.playOnce = true;
+				}
+
+				return;
+			}
+		}
+	};
+
+	switch (event.type) {
+	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
+	default: break;
+	}
+
+	return true;
 }

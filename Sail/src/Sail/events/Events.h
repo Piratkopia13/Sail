@@ -1,8 +1,7 @@
 #pragma once
-//#include "IEventDispatcher.h"
-//#include "IEventListener.h"
-//#include "EventHandler.h"
+#include "EventDispatcher.h"
 
-#include "WindowResizeEvent.h"
-#include "WindowFocusChangedEvent.h"
-#include "PlayerCandleDeathEvent.h"
+#include "types/WindowResizeEvent.h"
+#include "types/WindowFocusChangedEvent.h"
+#include "types/PlayerCandleDeathEvent.h"
+#include "types/WaterHitPlayerEvent.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include "Event.h"
+#include "../Event.h"
 
 struct PlayerCandleDeathEvent : public Event {
 	PlayerCandleDeathEvent() : Event(Event::Type::PLAYER_CANDLE_DEATH) { }
