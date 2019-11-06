@@ -79,6 +79,11 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/MediumObject.fbx"); 
 	rm->loadModel("Clutter/LargeObject.fbx");
 
+	rm->loadModel("Clutter/Saftblandare.fbx");
+	rm->loadModel("WaterPistol.fbx");
+	rm->loadModel("boundingBox.fbx");
+	rm->loadModel("cubeWidth1.fbx");
+
 //#else
 //
 //	std::vector <std::future<bool>> modelThreads;
