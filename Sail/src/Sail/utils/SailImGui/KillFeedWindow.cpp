@@ -4,13 +4,21 @@
 #include "Sail/Application.h"
 #include "Sail/utils/GameDataTracker.h"
 
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/PlayerDiedEvent.h"
+#include "Sail/netcode/NetworkedStructs.h"
+#include "Sail/../Network/NWrapperSingleton.h"
+
 KillFeedWindow::KillFeedWindow(bool showWindow)
 	: m_gameDataTracker(GameDataTracker::getInstance())
 	, m_maxTimeShowed(6.f)
-	, m_doRender(false)
-{}
+	, m_doRender(false) {
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
+}
 
-KillFeedWindow::~KillFeedWindow() {}
+KillFeedWindow::~KillFeedWindow() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
+}
 
 void KillFeedWindow::renderWindow() {
 	if (m_doRender) {
@@ -57,4 +65,23 @@ void KillFeedWindow::updateTiming(float dt) {
 			m_doRender = true;
 		}
 	}
+}
+
+bool KillFeedWindow::onEvent(const Event& event) {
+	auto onPlayerDied = [&](const PlayerDiedEvent& e) {
+		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(e.netIDofKilled);
+		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
+		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+		std::string deathType = "sprayed down";
+		Logger::Log(ShooterPlayer + " " + deathType + " " + deadPlayer);
+
+		m_gameDataTracker.logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
+	};
+
+	switch (event.type) {
+	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
+	default: break;
+	}
+
+	return true;
 }

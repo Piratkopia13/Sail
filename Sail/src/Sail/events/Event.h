@@ -16,10 +16,12 @@ struct Event {
 		NETWORK_START_GAME,
 		NETWORK_BACK_TO_LOBBY,
 		NETWORK_SERIALIZED_DATA_RECIEVED,
-		PLAYER_CANDLE_DEATH,
 		GAME_OVER,
 		RESET_WATER,
 		WATER_HIT_PLAYER,
+		PLAYER_DEATH,
+		IGNITE_CANDLE,
+		HOLDING_CANDLE_TOGGLE,
 
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};

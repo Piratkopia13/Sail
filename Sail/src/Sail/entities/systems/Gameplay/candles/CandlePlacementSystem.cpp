@@ -9,13 +9,20 @@
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 #include "glm/gtx/vector_angle.hpp"
 
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/HoldingCandleToggleEvent.h"
+
 CandlePlacementSystem::CandlePlacementSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
+
+	EventDispatcher::Instance().subscribe(Event::Type::HOLDING_CANDLE_TOGGLE, this);
 }
 
-CandlePlacementSystem::~CandlePlacementSystem() {}
+CandlePlacementSystem::~CandlePlacementSystem() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::HOLDING_CANDLE_TOGGLE, this);
+}
 
 void CandlePlacementSystem::setOctree(Octree* octree) {
 	m_octree = octree;
@@ -134,4 +141,35 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 			);
 		}
 	}
+}
+
+bool CandlePlacementSystem::onEvent(const Event& event) {
+	auto onHoldingCandleToggle = [](const HoldingCandleToggleEvent& e) {
+		auto candleComp = e.candle->getComponent<CandleComponent>();
+		auto candleTransComp = e.candle->getComponent<TransformComponent>();
+
+		candleComp->isCarried = e.isHeld;
+		candleComp->wasCarriedLastUpdate = e.isHeld;
+		if (e.isHeld) {
+			candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
+			candleTransComp->setParent(e.owner->getComponent<TransformComponent>());
+
+			e.owner->getComponent<AnimationComponent>()->rightHandEntity = e.candle;
+		} else {
+			candleTransComp->removeParent();
+			candleTransComp->setStartTranslation(e.pos);
+			candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
+			e.owner->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
+
+			// Might be needed
+			ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+		}
+	};
+
+	switch (event.type) {
+	case Event::Type::HOLDING_CANDLE_TOGGLE: onHoldingCandleToggle((const HoldingCandleToggleEvent&)event); break;
+	default: break;
+	}
+
+	return true;
 }

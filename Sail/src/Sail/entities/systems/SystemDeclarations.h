@@ -29,6 +29,7 @@ class MovementSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
 class OctreeAddRemoverSystem;
+class PlayerSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
@@ -64,6 +65,7 @@ struct Systems {
 	NetworkReceiverSystem* networkReceiverSystem = nullptr;
 	NetworkSenderSystem* networkSenderSystem = nullptr;
 	OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
+	PlayerSystem* playerSystem = nullptr;
 	PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 	ProjectileSystem* projectileSystem = nullptr;
 	RenderImGuiSystem* renderImGuiSystem = nullptr;

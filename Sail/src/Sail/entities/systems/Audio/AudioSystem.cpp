@@ -3,14 +3,15 @@
 #include "AudioSystem.h"
 
 #include "..//Sail/src/API/Audio/AudioEngine.h"
-#include "../Sail/src/Sail/entities/systems/Audio/AudioData.h"
-#include "..//Sail/src/Sail/Application.h"
-#include "..//Sail/src/Sail/entities/components/AudioComponent.h"
-#include "..//Sail/src/Sail/entities/components/TransformComponent.h"
-#include "..//Sail/src/Sail/entities/components/CandleComponent.h"
-#include "..//Sail/src/Sail/entities/components/LocalOwnerComponent.h"
-#include "..//Sail/src/Sail/graphics/camera/Camera.h"
-#include "..//..//Entity.h"
+#include "Sail/Application.h"
+#include "Sail/entities/systems/Audio/AudioData.h"
+#include "Sail/entities/components/AudioComponent.h"
+#include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/CandleComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Sail/entities/Entity.h"
+#include "Sail/graphics/camera/Camera.h"
+#include "Sail/../Network/NWrapperSingleton.h"
 
 #include "Sail/events/Events.h"
 
@@ -27,6 +28,7 @@ AudioSystem::AudioSystem() : BaseComponentSystem() {
 	m_audioEngine = SAIL_NEW AudioEngine();
 
 	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 
 	initialize();
 }
@@ -36,6 +38,7 @@ AudioSystem::~AudioSystem() {
 	delete m_audioEngine;
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
 }
 
 // TO DO: move to constructor?
@@ -296,33 +299,37 @@ AudioEngine* AudioSystem::getAudioEngine() {
 }
 
 bool AudioSystem::onEvent(const Event& event) {
+	auto onWaterHitPlayer = [](const WaterHitPlayerEvent& e) {
+		// Play relevant sound if candle is 
+		if (e.hitCandle->getComponent<CandleComponent>()->isLit) {
+			// Check if my candle or other candle
+			const auto soundIndex = (e.hitPlayer->hasComponent<LocalOwnerComponent>()
+				? Audio::SoundType::WATER_IMPACT_MY_CANDLE 
+				: Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE);
 
-	auto onWaterHitPlayer = [&](const WaterHitPlayerEvent& e) {
-		// Find candle entity
-		std::vector<Entity::SPtr>& childEntities = e.hitPlayer->getChildEntities();
-		for (auto& child : childEntities) {
-			if (child->hasComponent<CandleComponent>()) {
-
-				// Play relevant sound
-				if (child->getComponent<CandleComponent>()->isLit) {
-					AudioComponent* audio = e.hitPlayer->getComponent<AudioComponent>();
-
-					const auto soundIndex = e.hitPlayer->hasComponent<LocalOwnerComponent>()
-						? Audio::SoundType::WATER_IMPACT_MY_CANDLE 
-						: Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE;
-
-					Audio::SoundInfo_General& hitCandleSound = audio->m_sounds[soundIndex];
-					hitCandleSound.isPlaying = true;
-					hitCandleSound.playOnce = true;
-				}
-
-				return;
-			}
+			auto& hitCandleSound = e.hitPlayer->getComponent<AudioComponent>()->m_sounds[soundIndex];
+			hitCandleSound.isPlaying = true;
+			hitCandleSound.playOnce = true;
 		}
+	};
+
+	auto onPlayerDied = [](const PlayerDiedEvent& e) {
+		// Play kill sound if the player was the one who shot
+		if (e.shooterID == NWrapperSingleton::getInstance().getMyPlayerID()) {
+			auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
+			killSound.isPlaying = true;
+			killSound.playOnce = true;
+		}
+
+		// Play death sound
+		auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
+		deathSound.isPlaying = true;
+		deathSound.playOnce = true;
 	};
 
 	switch (event.type) {
 	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
+	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
 	default: break;
 	}
 

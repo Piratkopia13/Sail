@@ -93,19 +93,10 @@ void CandleHealthSystem::update(float dt) {
 }
 
 bool CandleHealthSystem::onEvent(const Event& event) {
-	auto onWaterHitPlayer = [&](const WaterHitPlayerEvent& e) {
-		// Find candle entity
-		std::vector<Entity::SPtr>& childEntities = e.hitPlayer->getChildEntities();
-		
-		for (auto& child : childEntities) {
-			if (child->hasComponent<CandleComponent>()) {
-				// Damage the candle
-				// TODO: Replace 10.0f with game settings damage
-				child->getComponent<CandleComponent>()->hitWithWater(10.0f, e.senderID);
-
-				break;
-			}
-		}
+	auto onWaterHitPlayer = [](const WaterHitPlayerEvent& e) {
+		// Damage the candle
+		// TODO: Replace 10.0f with game settings damage
+		e.hitCandle->getComponent<CandleComponent>()->hitWithWater(10.0f, e.senderID);
 	};
 
 	switch (event.type) {

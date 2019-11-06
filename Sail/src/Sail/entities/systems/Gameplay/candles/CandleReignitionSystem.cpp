@@ -5,13 +5,20 @@
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GameDataTracker.h"
 
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/IgniteCandleEvent.h"
+
 CandleReignitionSystem::CandleReignitionSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<LightComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
+
+	EventDispatcher::Instance().subscribe(Event::Type::IGNITE_CANDLE, this);
 }
 
-CandleReignitionSystem::~CandleReignitionSystem() {}
+CandleReignitionSystem::~CandleReignitionSystem() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::IGNITE_CANDLE, this);
+}
 
 void CandleReignitionSystem::update(float dt) {
 	for (auto& e : entities) {
@@ -24,10 +31,31 @@ void CandleReignitionSystem::update(float dt) {
 						e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
 					},
 					true
-					);
+				);
 			}
 
 			candle->downTime += dt;
 		}
 	}
+}
+
+bool CandleReignitionSystem::onEvent(const Event& event) {
+	auto onIgniteCandle = [](const IgniteCandleEvent& e) {
+		auto candleComp = e.candle->getComponent<CandleComponent>();
+		if (!candleComp->isLit) {
+			candleComp->health = MAX_HEALTH;
+			candleComp->respawns++;
+			candleComp->downTime = 0.f;
+			candleComp->isLit = true;
+			candleComp->userReignition = false;
+			candleComp->invincibleTimer = 1.5f;
+		}
+	};
+
+	switch (event.type) {
+	case Event::Type::IGNITE_CANDLE: onIgniteCandle((const IgniteCandleEvent&)event); break;
+	default: break;
+	}
+
+	return true;
 }

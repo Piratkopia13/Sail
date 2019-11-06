@@ -1,15 +1,16 @@
 #pragma once
-#include "../Event.h"
+#include "Sail/events/Event.h"
+#include "Sail/netcode/NetcodeTypes.h"
 
 class Entity;
 
 struct WaterHitPlayerEvent : public Event {
-	WaterHitPlayerEvent(Entity* player, Entity* candle, unsigned char _senderID)
+	WaterHitPlayerEvent(Entity* player, Entity* candle, Netcode::PlayerID _senderID)
 		: Event(Event::Type::WATER_HIT_PLAYER)
 		, hitPlayer(player)
-		, hitPlayer(candle)
+		, hitCandle(candle)
 		, senderID(_senderID) {}
 	Entity* hitPlayer;
 	Entity* hitCandle;
-	const unsigned char senderID;
+	const Netcode::PlayerID senderID;
 };
