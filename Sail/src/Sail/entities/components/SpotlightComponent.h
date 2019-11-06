@@ -11,8 +11,6 @@ public:
 
 	bool isOn;
 	int roomID;
-	//float activeTimer;
-	//float activeLimit = 5.f;
 	SpotLight light; // Describes the light source when not rotated or moved
 
 #ifdef DEVELOPMENT
