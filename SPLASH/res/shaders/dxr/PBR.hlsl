@@ -64,7 +64,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 			float3 H = normalize(V + L);
 			float distance = length(p.position - worldPosition);
 
-			// Dont do any shading if in shadow or light is black
+			// Dont do any shading if in shadow
 			if (Utils::rayHitAnything(worldPosition, L, distance)) {
 				continue;
 			}
@@ -113,7 +113,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 				continue;
 			}
 
-			// Dont do any shading if in shadow or light is black
+			// Dont do any shading if in shadow
 			if (Utils::rayHitAnything(worldPosition, L, distance)) {
 				continue;
 			}
