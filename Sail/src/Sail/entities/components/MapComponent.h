@@ -122,6 +122,9 @@ public:
 	int totalArea = xsize * ysize;
 	int numberOfRooms = 1;
 	const static int tileSize = 7;
+	const static int mapSizeX = tileSize * xsize;
+	const static int mapSizeY = 5; // Ugly fix for water, is actually 4
+	const static int mapSizeZ = tileSize * ysize;
 	float tileHeight = 0.8f;
 	int tileOffset = 0;
 	std::vector<glm::vec3> spawnPoints;

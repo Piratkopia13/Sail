@@ -123,8 +123,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}*/
 
 	if (camera && lightSetup) {
-		static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
-		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
+		static auto mapSize = glm::vec3(MapComponent::mapSizeX, MapComponent::mapSizeY, MapComponent::mapSizeZ);
+		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f, 0.f, MapComponent::tileSize / 2.0f);
 		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart);
 
 	}
