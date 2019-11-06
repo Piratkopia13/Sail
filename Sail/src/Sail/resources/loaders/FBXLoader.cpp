@@ -112,9 +112,9 @@ FbxScene* FBXLoader::makeScene(std::string filePath, std::string sceneName) {
 	}
 	FbxScene* lScene = FbxScene::Create(s_manager, sceneName.c_str());
 	static int counter = 0;
-	Logger::Log("Trying to import scene : " + std::to_string(counter));
+	//Logger::Log("Trying to import scene "+ sceneName +" : " + std::to_string(counter));
 	importer->Import(lScene);
-	Logger::Log("imported scene : " + std::to_string(counter++));
+	//Logger::Log("imported scene : " + std::to_string(counter++));
 	importer->Destroy();
 
 	return lScene;
