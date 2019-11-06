@@ -52,7 +52,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 		float3 radiance = albedo * attenuation;
 		Lo += (1 * albedo) * radiance;
 	}
-	else//Place else here?
+	//Place else here?
 	{
 
 		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {

@@ -65,7 +65,7 @@ void rayGen() {
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
 	// float3 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb;	
 	float4 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgba;
-	bool isEmissive = (albedoColor.a < 1.0f && albedoColor.a > 0.0f);
+	bool isEmissive = (albedoColor.a < 0.7f && albedoColor.a > 0.3f);
 	albedoColor = pow(albedoColor, 2.2f);
 	float3 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0).rgb;
 	float metalness = metalnessRoughnessAO.r;
