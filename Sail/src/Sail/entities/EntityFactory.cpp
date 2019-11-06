@@ -280,7 +280,6 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
-
 	return e;
 }
 

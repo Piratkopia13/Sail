@@ -345,6 +345,7 @@ bool GameState::processInput(float dt) {
 }
 
 void GameState::initSystems(const unsigned char playerID) {
+	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
 	
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
@@ -739,7 +740,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
-
+	runSystem(dt, m_componentSystems.teamColorSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {

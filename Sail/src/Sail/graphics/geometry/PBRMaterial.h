@@ -31,6 +31,7 @@ public:
 	void setRoughnessScale(float roughness);
 	void setAOScale(float ao);
 	void setColor(const glm::vec4& color);
+	void setTeamColor(const glm::vec4& color);
 
 	void setAlbedoTexture(const std::string& filename);
 	void setNormalTexture(const std::string& filename);
