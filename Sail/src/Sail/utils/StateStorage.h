@@ -18,7 +18,7 @@ struct LobbyToGameData {
 class StateStorage {
 public:
 	StateStorage() {
-		// Initialize private data to 0
+		// Initialize private data to 0 //
 		m_menuLobbyData.name = "";
 	}
 	~StateStorage() { }
