@@ -57,7 +57,7 @@ bool LobbyState::processInput(float dt) {
 	return false;
 }
 
-bool LobbyState::inputToChatLog(MSG& msg) {
+bool LobbyState::inputToChatLog(const MSG& msg) {
 	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != KeyBinds::SEND_MESSAGE) {
 		// Add whichever button that was inputted to the current message
 		// --- OBS : doesn't account for capslock, etc.
@@ -105,8 +105,8 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-void LobbyState::addTextToChat(Message* message) {
-	this->addMessageToChat(*message);
+void LobbyState::addTextToChat(const Message& message) {
+	this->addMessageToChat(message);
 }
 
 void LobbyState::resetCurrentMessage() {
@@ -129,16 +129,19 @@ std::string LobbyState::fetchMessage()
 	return message;
 }
 
-void LobbyState::addMessageToChat(Message& message) {
+void LobbyState::addMessageToChat(const Message& message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
 	unsigned char id = stoi(message.sender);
 	Player* playa = NWrapperSingleton::getInstance().getPlayer(id);
 	std::string msg = playa->name + ": ";
-	message.content.insert(0, msg);
+	
+	// Work around const
+	Message newMessage = message;
+	newMessage.content.insert(0, msg);
 
 	// Add message to chatlog
-	m_messages.push_back(message);
+	m_messages.push_back(newMessage);
 
 	// New messages replace old
 	if (m_messages.size() > m_messageLimit) {
@@ -236,14 +239,43 @@ void LobbyState::renderSettings() {
 
 
 	// Uncomment when we actually have game settings
-	/*ImGui::SetNextWindowPos(ImVec2(
+	ImGui::SetNextWindowPos(ImVec2(
 		m_screenWidth - m_outerPadding - 330,
 		m_outerPadding
 	));
-	ImGui::Begin("Settings", NULL, settingsFlags);
-	//ImGui::InputInt("BotCountInput: ", m_settingBotCount, 1, 1);
 
-	ImGui::End();*/
+	ImGui::SetNextWindowSize(ImVec2(300,300));
+	if (ImGui::Begin("Settings", NULL, settingsFlags)) {
+		ImGui::Text("Map Settings (not doing anything yet..)");
+		ImGui::Separator();
+		ImGui::Columns(2);
+		ImGui::Text("Setting"); ImGui::NextColumn();
+		ImGui::Text("Value"); ImGui::NextColumn();
+		ImGui::Separator();
+
+		ImGui::Text("MapSize"); ImGui::NextColumn();
+		static unsigned int mapSize[2] = {5, 5};
+		ImGui::SliderInt2("##ASDASD", (int*)mapSize, 1, 12); ImGui::NextColumn();
+
+		static int seed = 0;
+		ImGui::Text("Seed"); ImGui::NextColumn();
+		if (ImGui::InputInt("##SEED", &seed)) {
+			if (seed < 0) {
+				seed = 0;
+			}
+		}
+		ImGui::NextColumn();
+
+		static float clutter = 0.85f;
+		ImGui::Text("Clutter"); ImGui::NextColumn();
+		if (ImGui::SliderFloat("##Clutter", &clutter, 0.0f, 1.0f)) {
+			
+		}
+		ImGui::NextColumn();
+
+		ImGui::Columns(1);
+	}
+	ImGui::End();
 }
 
 void LobbyState::renderChat() {

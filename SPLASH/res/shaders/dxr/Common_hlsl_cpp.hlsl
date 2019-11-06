@@ -72,6 +72,18 @@ struct PointLightInput {
 	float2 padding2;
 };
 
+struct SpotlightInput {
+	float3 color;
+	float attConstant;
+	float3 position;
+	float attLinear;
+	float3 direction;
+	float attQuadratic;
+
+	float angle;
+	float padding1, padding2, padding3;
+};
+
 // Properties set once for the scene
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
@@ -86,6 +98,7 @@ struct SceneCBuffer {
 	float farZ;
 	float padding2;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
+    SpotlightInput spotLights[NUM_POINT_LIGHTS];
 
 	// Water voxel data
 	float3 mapSize;

@@ -19,6 +19,8 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/GameOverEvent.h"
 
+#include "Sail/events/EventDispatcher.h"
+
 //#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 #include <fstream>
@@ -239,6 +241,7 @@ void NetworkReceiverSystem::update(float dt) {
 
 			// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 			switch (eventType) {
+			
 			case Netcode::MessageType::CANDLE_HELD_STATE:
 			{
 				bool isCarried;
@@ -319,7 +322,7 @@ void NetworkReceiverSystem::update(float dt) {
 
 				mergeHostsStats();
 				// Dispatch game over event
-				Application::getInstance()->dispatchEvent(GameOverEvent());
+				EventDispatcher::Instance().emit(GameOverEvent());
 			}
 			break;
 			case Netcode::MessageType::PLAYER_DIED:

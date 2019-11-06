@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Sail/events/IEventListener.h"
+#include "Sail/events/EventReceiver.h"
 
 class Renderer;
 class LightSetup;
 class PostProcessPipeline;
 
-class RendererWrapper : public IEventListener {
+class RendererWrapper : public EventReceiver {
 public:
 	RendererWrapper();
 	virtual ~RendererWrapper();
@@ -19,7 +19,7 @@ public:
 	Renderer* getCurrentRenderer();
 	Renderer* getScreenSpaceRenderer();
 	PostProcessPipeline* getPostProcessPipeline();
-	bool onEvent(Event& event);
+	bool onEvent(const Event& event) override;
 
 private:
 	void setLightSetup(LightSetup* lights);

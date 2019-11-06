@@ -1506,7 +1506,16 @@ void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterMod
 			Rect room = map->matched.front();
 			map->matched.pop();
 			if (room.sizex * room.sizey > 1) {
-				EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*map->tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*map->tileSize),glm::vec3(0.f),glm::vec3(1.f,map->tileHeight,1.f));
+				auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*map->tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*map->tileSize),glm::vec3(0.f),glm::vec3(1.f,map->tileHeight,1.f));
+
+				MovementComponent* mc = e2->addComponent<MovementComponent>();
+				SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
+				sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
+				sc->light.setPosition(glm::vec3(0, map->tileHeight * 5 - 0.05, 0));
+				sc->light.setAttenuation(1.f, 0.01f, 0.01f);
+				sc->light.setDirection(glm::vec3(1, 0, 0));
+				sc->light.setAngle(0.5);
+				sc->isOn = false;
 			}
 			map->matched.push(room);
 		}
