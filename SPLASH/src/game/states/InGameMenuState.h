@@ -3,7 +3,7 @@
 
 #include "Sail/utils/SailImGui/InGameMenuWindow.h"
 
-class InGameMenuState : public State {
+class InGameMenuState final : public State {
 public:
 	explicit InGameMenuState(StateStack& stack);
 	~InGameMenuState();

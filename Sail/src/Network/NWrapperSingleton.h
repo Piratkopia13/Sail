@@ -45,7 +45,7 @@ public:
 	void startUDP();
 
 	void resetPlayerList();
-	bool playerJoined(Player& player);
+	bool playerJoined(const Player& player);
 	bool playerLeft(Netcode::PlayerID& id);
 
 	Player& getMyPlayer();

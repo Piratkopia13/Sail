@@ -1,15 +1,16 @@
 #include "pch.h"
 #include "PostProcessStage.h"
+#include "Sail/events/EventDispatcher.h"
 
 PostProcessStage::PostProcessStage(const std::string& filename, UINT width, UINT height)
 	: ShaderPipeline(filename)
 	, Width(width)
-	, Height(height)
-{
+	, Height(height) {
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 PostProcessStage::~PostProcessStage() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void PostProcessStage::run(RenderableTexture& inputTexture) {
@@ -22,11 +23,11 @@ RenderableTexture& PostProcessStage::getOutput() {
 	return *OutputTexture;
 }
 
-bool PostProcessStage::onResize(WindowResizeEvent& event) {
+bool PostProcessStage::onResize(const WindowResizeEvent& event) {
 
 	// TODO: fix this. should be set to width*resScale instead of full width - same with height
-	unsigned int width = event.getWidth();
-	unsigned int height = event.getHeight();
+	unsigned int width = event.width;
+	unsigned int height = event.height;
 
 	OutputTexture->resize(width, height);
 	Width = width;
@@ -35,7 +36,10 @@ bool PostProcessStage::onResize(WindowResizeEvent& event) {
 	return false;
 }
 
-bool PostProcessStage::onEvent(Event & event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&PostProcessStage::onResize));
+bool PostProcessStage::onEvent(const Event & event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 	return true;
 }

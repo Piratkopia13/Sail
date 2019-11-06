@@ -16,7 +16,6 @@ public:
 	virtual void update(float dt, float alpha) override;
 	virtual void fixedUpdate(float dt) override;
 	virtual void render(float dt, float alpha) override;
-	virtual void dispatchEvent(Event& event) override;
 	virtual void applyPendingStateChanges() override;
 
 private:

@@ -56,7 +56,7 @@ PostProcessPipeline* RendererWrapper::getPostProcessPipeline() {
 	return m_postProcessPipeline.get();
 }
 
-bool RendererWrapper::onEvent(Event& event) {
+bool RendererWrapper::onEvent(const Event& event) {
 	if (m_rendererRaster) {
 		m_rendererRaster->onEvent(event);
 	}

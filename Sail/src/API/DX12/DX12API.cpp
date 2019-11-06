@@ -733,11 +733,11 @@ void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 }
 
-bool DX12API::onResize(WindowResizeEvent& event) {
-	if (event.isMinimized()) {
+bool DX12API::onResize(const WindowResizeEvent& event) {
+	if (event.isMinimized) {
 		Logger::Log("minimized!");
 	}
-	resizeBuffers(event.getWidth(), event.getHeight());
+	resizeBuffers(event.width, event.height);
 	Logger::Log("dx12 resize ran");
 	return true;
 }
