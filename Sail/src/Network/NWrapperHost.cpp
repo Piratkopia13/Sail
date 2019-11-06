@@ -2,6 +2,8 @@
 #include "NWrapperHost.h"
 #include "Network/NetworkModule.hpp"
 
+#include "Sail/events/EventDispatcher.h"
+
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
@@ -54,7 +56,7 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID id) {
 
 	m_network->send(msgRequest, sizeof(msgRequest), id);
 
-	Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ newId, "NoName" }));
+	EventDispatcher::Instance().emit(NetworkJoinedEvent(Player{ newId, "NoName" }));
 
 	updateServerDescription();
 }
@@ -69,7 +71,7 @@ void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID id) {
 	m_network->send(compressedMessage, sizeof(compressedMessage), -1);
 
 	// Send id to menu / game state
-	Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(convertedId));
+	EventDispatcher::Instance().emit(NetworkDisconnectEvent(convertedId));
 
 	updateServerDescription();
 }
@@ -104,7 +106,7 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		processedMessage = processChatMessage((std::string)nEvent.data->Message.rawMsg);
 
 		// Dispatch to lobby
-		Application::getInstance()->dispatchEvent(NetworkChatEvent(processedMessage));
+		EventDispatcher::Instance().emit(NetworkChatEvent(processedMessage));
 
 		break;
 
@@ -120,7 +122,7 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		// The host has received an answer to a name request...
 
 		// TODO: move "Parse the ID and name from the message" from Host::onNameRequest to here
-		Application::getInstance()->dispatchEvent(NetworkNameEvent{ nEvent.data->Message.rawMsg });
+		EventDispatcher::Instance().emit(NetworkNameEvent{ nEvent.data->Message.rawMsg });
 
 		break;
 
@@ -132,13 +134,11 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		dataString.erase(0, 1); // remove the s
 
 		// Send the serialized stringData as an event to the networkSystem which parses it.
-		Application::getInstance()->dispatchEvent(NetworkSerializedPackageEvent(dataString));
+		EventDispatcher::Instance().emit(NetworkSerializedPackageEvent(dataString));
 		break;
 	default:
 		break;
 	}
-
-	
 }
 
 

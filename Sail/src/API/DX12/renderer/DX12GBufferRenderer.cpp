@@ -16,8 +16,11 @@
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
+#include "Sail/events/EventDispatcher.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 
@@ -41,6 +44,7 @@ DX12GBufferRenderer::~DX12GBufferRenderer() {
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
 		delete m_gbufferTextures[i];
 	}
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
@@ -243,8 +247,11 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 }
 
-bool DX12GBufferRenderer::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12GBufferRenderer::onResize));
+bool DX12GBufferRenderer::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 	return true;
 }
 
@@ -252,9 +259,9 @@ DX12RenderableTexture** DX12GBufferRenderer::getGBufferOutputs() const {
 	return (DX12RenderableTexture**)m_gbufferTextures;
 }
 
-bool DX12GBufferRenderer::onResize(WindowResizeEvent& event) {
+bool DX12GBufferRenderer::onResize(const WindowResizeEvent& event) {
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
-		m_gbufferTextures[i]->resize(event.getWidth(), event.getHeight());
+		m_gbufferTextures[i]->resize(event.width, event.height);
 	}
 	return true;
 }
