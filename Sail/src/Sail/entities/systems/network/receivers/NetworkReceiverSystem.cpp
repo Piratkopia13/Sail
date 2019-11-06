@@ -301,11 +301,6 @@ void NetworkReceiverSystem::update(float dt) {
 				setCandleHeldState(componentID, isCarried, candlepos);
 			}
 			break;
-			case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
-			{
-				backToLobby();
-			}
-			break;
 			case Netcode::MessageType::RUNNING_METAL_START:
 			{
 				ar(componentID);
@@ -720,10 +715,10 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 	Logger::Warning("shootEnd called but no matching entity found");
 }
 
-void NetworkReceiverSystem::backToLobby() {
-	m_gameStatePtr->requestStackPop();
-	m_gameStatePtr->requestStackPush(States::JoinLobby);
-}
+//void NetworkReceiverSystem::backToLobby() {
+//	m_gameStatePtr->requestStackPop();
+//	m_gameStatePtr->requestStackPush(States::JoinLobby);
+//}
 
 void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 	for (auto& e : entities) {

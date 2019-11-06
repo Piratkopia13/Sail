@@ -207,7 +207,7 @@ void NetworkSenderSystem::stop() {
 
 	while (!m_eventQueue.empty()) {
 		NetworkSenderEvent* pE = m_eventQueue.front();		// Fetch
-		if ((pE->type == Netcode::MessageType::MATCH_ENDED || pE->type == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) && ended == false) {
+		if ((pE->type == Netcode::MessageType::MATCH_ENDED) && ended == false) {
 			ended = true;
 			sendToOthers(size_t{1}); // Write nrOfEvents
 			writeEventToArchive(pE, sendToOthers);
@@ -229,7 +229,7 @@ void NetworkSenderSystem::stop() {
 }
 
 void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e) {
-	entities.push_back(e);
+	instantAddEntity(e);
 }
 
 void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar) {
@@ -360,11 +360,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	}
 	break;
 	case Netcode::MessageType::MATCH_ENDED:
-	{
-
-	}
-	break;
-	case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
 	{
 
 	}
