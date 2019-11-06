@@ -6,11 +6,15 @@
 #include "API/DX12/DX12VertexBuffer.h"
 #include "Sail/KeyBinds.h"
 #include "Sail/entities/components/MapComponent.h"
+#include "Sail/events/EventDispatcher.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
 DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	: m_dxr("Basic", inputs) {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 	m_context->initCommand(m_commandDirect, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Raytracing Renderer DIRECT command list or allocator");
@@ -25,7 +29,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
@@ -177,8 +181,11 @@ void DX12RaytracingRenderer::begin(Camera* camera) {
 	m_metaballs.clear();
 }
 
-bool DX12RaytracingRenderer::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12RaytracingRenderer::onResize));
+bool DX12RaytracingRenderer::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 
 	// Pass along events
 	m_dxr.onEvent(event);
@@ -229,7 +236,7 @@ void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
 	m_dxr.setGBufferInputs(inputs);
 }
 
-bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {
-	m_outputTexture->resize(event.getWidth(), event.getHeight());
+bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {
+	m_outputTexture->resize(event.width, event.height);
 	return true;
 }

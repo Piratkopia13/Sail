@@ -13,8 +13,12 @@
 #include "../resources/DX12Texture.h"
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
+#include "Sail/events/EventDispatcher.h"
 
 DX12ForwardRenderer::DX12ForwardRenderer() {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 
@@ -31,7 +35,7 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 }
 
 DX12ForwardRenderer::~DX12ForwardRenderer() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
@@ -243,12 +247,15 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 }
 
-bool DX12ForwardRenderer::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12ForwardRenderer::onResize));
+bool DX12ForwardRenderer::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 	return true;
 }
 
-bool DX12ForwardRenderer::onResize(WindowResizeEvent& event) {
-	m_outputTexture->resize(event.getWidth(), event.getHeight());
+bool DX12ForwardRenderer::onResize(const WindowResizeEvent& event) {
+	m_outputTexture->resize(event.width, event.height);
 	return true;
 }

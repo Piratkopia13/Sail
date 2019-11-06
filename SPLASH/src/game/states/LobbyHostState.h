@@ -7,20 +7,20 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
-#include "../events/NetworkWelcomeEvent.h"
+#include "../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 
-class LobbyHostState : public LobbyState {
+class LobbyHostState final : public LobbyState {
 public:
 	LobbyHostState(StateStack& stack);
 	~LobbyHostState();
 
-	bool onEvent(Event& event);
+	bool onEvent(const Event& event) override;
 
 private:
-	bool onMyTextInput(TextInputEvent& event);
-	bool onRecievedText(NetworkChatEvent& event);
-	bool onPlayerJoined(NetworkJoinedEvent& event);
-	bool onPlayerDisconnected(NetworkDisconnectEvent& event);
-	bool onNameRequest(NetworkNameEvent& event);
+	bool onMyTextInput(const TextInputEvent& event);
+	bool onRecievedText(const NetworkChatEvent& event);
+	bool onPlayerJoined(const NetworkJoinedEvent& event);
+	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
+	bool onNameRequest(const NetworkNameEvent& event);
 
 };
