@@ -140,23 +140,9 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	AddCandleComponentsToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(playerCompID));
 
 	for (Entity* c : otherPlayer->getChildEntities()) {
-		if (c->getName() == otherPlayer->getName() + "Candle") {
-			c->addComponent<CandleComponent>();
-			PointLight pl;
-			pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
-			pl.setPosition(glm::vec3(0, 0 + .37f, 0));
-			pl.setAttenuation(0.f, 0.f, 0.2f);
-			pl.setIndex(lightIndex);
-			c->addComponent<LightComponent>(pl);
-
+		if (c->hasComponent<CandleComponent>()) {
 			c->addComponent<NetworkReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<OnlineOwnerComponent>(playerCompID); // or should this be candleCompID?
-		}
-		CandleComponent* cc = c->getComponent<CandleComponent>();
-		if (cc) {
-			c->addComponent<CollidableComponent>();
-			c->addComponent<CandleComponent>();
-			cc->playerEntityID = playerCompID;
 		}
 	}
 }
