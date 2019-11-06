@@ -128,8 +128,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 							// To make the code easier to read
 							soundUnique = &audioData.m_soundsUnique[soundTypeIndex].at(randomSoundIndex);
 
-							soundGeneral->soundID = m_audioEngine->initializeSound(soundUnique->fileName, soundUnique->volume);
-							std::cout << "Initialized song< " << soundUnique->fileName << "> @ soundID<" << soundGeneral->soundID << ">\n";
+							soundGeneral->soundID = m_audioEngine->beginSound(soundUnique->fileName, soundUnique->volume);
 							soundGeneral->hasStartedPlaying = true;
 							soundGeneral->durationElapsed = 0.0f;
 							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
