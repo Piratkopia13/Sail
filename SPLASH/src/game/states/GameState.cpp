@@ -218,11 +218,6 @@ bool GameState::processInput(float dt) {
 
 #endif
 
-
-	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
-		m_componentSystems.spotLightSystem->toggleONOFF();
-	}
-
 	// Enable bright light and move camera to above procedural generated level
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_SUN)) {
 		m_lightDebugWindow.setManualOverride(!m_lightDebugWindow.isManualOverrideOn());

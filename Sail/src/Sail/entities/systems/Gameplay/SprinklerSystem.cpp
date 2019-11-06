@@ -15,51 +15,64 @@ SprinklerSystem::~SprinklerSystem() {
 
 }
 
+void SprinklerSystem::stop() {
+	m_activateSprinklers = false;
+	m_endGameTimer = 0.f;
+	m_endGameMapIncrement = 0;
+	m_xMinIncrement = 0;
+	m_xMaxIncrement = 0;
+	m_yMinIncrement = 0;
+	m_yMaxIncrement = 0;
+	m_mapSide = 0;
+	m_activeRooms.clear();
+}
+
 void SprinklerSystem::update(float dt) {
 	for (auto& e : entities) {
+		Logger::Log(std::to_string(m_activeRooms.size()));
 		MapComponent* map = e->getComponent<MapComponent>();
-		endGameTimer += dt;
+		m_endGameTimer += dt;
 		// End game is reached, sprinklers starting
-		if (endGameTimer > endGameStartLimit) {
+		if (m_endGameTimer > m_endGameStartLimit) {
 
-			if (activateSprinklers) {
-				// Pick a random side of the map, and activates all rooms on that side
-				int mapSide = static_cast<int>(Utils::rnd() * 3.f + 1.f);
-				Logger::Log("Side: " + std::to_string(mapSide));
-				switch (mapSide) {
+			if (m_activateSprinklers) {
+				// Rotate between sides to activate
+				m_mapSide++;
+				m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
+				switch (m_mapSide) {
 				case 1:
-					for (int x = 0 + xMinIncrement; x < MapComponent::xsize - xMaxIncrement; x++) {
-						addToActiveRooms(map->tileArr[x][yMinIncrement][1]);
+					for (int x = 0 + m_xMinIncrement; x < MapComponent::xsize - m_xMaxIncrement; x++) {
+						addToActiveRooms(map->tileArr[x][m_yMinIncrement][1]);
 					}
-					yMinIncrement++;
+					m_yMinIncrement++;
 					break;
 				case 2:
-					for (int x = 0 + xMinIncrement; x < MapComponent::xsize - xMaxIncrement; x++) {
-						addToActiveRooms(map->tileArr[x][MapComponent::ysize - 1 - yMaxIncrement][1]);
+					for (int x = 0 + m_xMinIncrement; x < MapComponent::xsize - m_xMaxIncrement; x++) {
+						addToActiveRooms(map->tileArr[x][MapComponent::ysize - 1 - m_yMaxIncrement][1]);
 					}
-					yMaxIncrement++;
+					m_yMaxIncrement++;
 					break;
 				case 3:
-					for (int y = 0 + yMinIncrement; y < MapComponent::ysize - yMaxIncrement; y++) {
-						addToActiveRooms(map->tileArr[xMinIncrement][y][1]);
+					for (int y = 0 + m_yMinIncrement; y < MapComponent::ysize - m_yMaxIncrement; y++) {
+						addToActiveRooms(map->tileArr[m_xMinIncrement][y][1]);
 					}
-					xMinIncrement++;
+					m_xMinIncrement++;
 					break;
 				case 4:
-					for (int y = 0 + yMinIncrement; y < MapComponent::ysize - yMaxIncrement; y++) {
-						addToActiveRooms(map->tileArr[MapComponent::xsize - 1 - xMaxIncrement][y][1]);
+					for (int y = 0 + m_yMinIncrement; y < MapComponent::ysize - m_yMaxIncrement; y++) {
+						addToActiveRooms(map->tileArr[MapComponent::xsize - 1 - m_xMaxIncrement][y][1]);
 					}
-					xMaxIncrement++;
+					m_xMaxIncrement++;
 					break;
 				default:
 					break;
 				}
-				activateSprinklers = false;
-				endGameMapIncrement++;
+				m_activateSprinklers = false;
+				m_endGameMapIncrement++;
 			}
 			// New time increment reached, add new rooms
-			else if (((endGameTimer - endGameStartLimit) / endGameTimeIncrement) > static_cast<float>(endGameMapIncrement)) {
-				activateSprinklers = true;
+			else if (((m_endGameTimer - m_endGameStartLimit) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
+				m_activateSprinklers = true;
 			}
 
 
@@ -71,14 +84,14 @@ void SprinklerSystem::update(float dt) {
 
 std::vector<int> SprinklerSystem::getActiveRooms() const
 {
-	return activeRooms;
+	return m_activeRooms;
 }
 
 void SprinklerSystem::addToActiveRooms(int room) {
 	if (room != 0) {
-		std::vector<int>::iterator it = std::find(activeRooms.begin(), activeRooms.end(), room);
-		if (it == activeRooms.end()) {
-			activeRooms.push_back(room);
+		std::vector<int>::iterator it = std::find(m_activeRooms.begin(), m_activeRooms.end(), room);
+		if (it == m_activeRooms.end()) {
+			m_activeRooms.push_back(room);
 		}
 	}
 }

@@ -46,7 +46,7 @@ public:
 		ImGui::NextColumn();
 		ImGui::Text(std::string("Relative Direction").c_str()); ImGui::NextColumn();
 
-		glm::vec abs_dir = light_entityRotated.getDirection();
+		glm::vec abs_dir = m_lightEntityRotated.getDirection();
 		if (ImGui::DragFloat3("##ABSDIRECTION", &abs_dir.x, 0.1f)) {
 			light.setDirection(abs_dir);
 		}

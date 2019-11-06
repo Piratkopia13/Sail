@@ -13,8 +13,8 @@ SpotLightSystem::SpotLightSystem() : BaseComponentSystem() {
 }
 
 SpotLightSystem::~SpotLightSystem() {
-
 }
+
 
 //check and update all lights for all entities
 void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt) {
