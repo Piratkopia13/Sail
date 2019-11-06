@@ -245,10 +245,12 @@ void NetworkReceiverSystem::update(float dt) {
 			switch (eventType) {
 			case Netcode::MessageType::ATTACH_TO_LEFT_HAND:
 			{
-				Netcode::MessageAttachToLeftHand* data = static_cast<Netcode::MessageAttachToLeftHand*>(event->data);
+				Netcode::ComponentID entityID;
+				Netcode::ComponentID parentID;
 
-				ar(data->entityID);
-				ar(data->parentID);
+				ar(entityID);
+				ar(parentID);
+
 			}
 			break;
 			case Netcode::MessageType::CANDLE_HELD_STATE:
@@ -377,12 +379,12 @@ void NetworkReceiverSystem::update(float dt) {
 				ar(componentID);
 				runningTileStart(componentID);
 			}
+			break;
 			case Netcode::MessageType::RUNNING_STOP_SOUND:
 			{
 				ar(componentID);
 				runningStopSound(componentID);
 			}
-			break;
 			break;
 			case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
 			{
@@ -419,6 +421,37 @@ void NetworkReceiverSystem::update(float dt) {
 
 	// End game timer 
 	endMatchAfterTimer(dt);
+}
+
+
+
+void NetworkReceiverSystem::attachEntityToLeftHand(Netcode::ComponentID entityID, Netcode::ComponentID parentID) {
+	// Find the entity that should be attached and the entity that it should be attached to
+	
+	bool childFound = false;
+	bool parentFound = false;
+	Entity* parent = nullptr;
+	Entity* child = nullptr;
+	for (auto e : entities) {
+		if (!childFound && e->getComponent<NetworkReceiverComponent>()->ID == entityID) {
+			child = e;
+			childFound = true;
+		}
+
+		if (!parentFound && e->getComponent<NetworkReceiverComponent>()->ID == parentID) {
+			parent = e;
+			parentFound = true;
+		}
+
+		if (childFound && parentFound) {
+			// call attach
+			parent->addChildEntity(child); // This might not work
+			parent->getComponent<AnimationComponent>()->rightHandEntity = child;
+
+			return;
+		}
+	}
+	Logger::Error("attachEntityToLeftHand called but no matching entity to attach was found");
 }
 
 /*
@@ -540,7 +573,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 			continue;
 		}
 		//Look for the entity that IS the candle (candle entity)
-		std::vector<Entity::SPtr> childEntities = e->getChildEntities();
+		std::vector<Entity*> childEntities = e->getChildEntities();
 		for (auto& child : childEntities) {
 			if (child->hasComponent<CandleComponent>()) {
 				// Damage the candle
@@ -696,7 +729,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 					candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
 					candleTransComp->setParent(e->getComponent<TransformComponent>());
 
-					e->getComponent<AnimationComponent>()->rightHandEntity = candleE.get();
+					e->getComponent<AnimationComponent>()->rightHandEntity = candleE;
 				}
 				return;
 			}

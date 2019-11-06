@@ -68,7 +68,7 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 
 void EntityFactory::AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_t& lightIndex, const Netcode::PlayerID& playerID) {
 
-	for (Entity::SPtr& c : player->getChildEntities()) {
+	for (Entity* c : player->getChildEntities()) {
 		if (c->getName() == player->getName() + "Candle") {
 			c->addComponent<CandleComponent>();
 			PointLight pl;
@@ -114,7 +114,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	CreateCandle(candle, glm::vec3(0.f, 0.f, 0.f), lightIndex);
 	candle->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, Netcode::EntityType::CANDLE_ENTITY, playerID);
 
-	myPlayer->addChildEntity(candle);
+	myPlayer->addChildEntity(candle.get());
 
 	// Attach the something to the player's right hand
 	ac->rightHandEntity = candle.get();
@@ -123,7 +123,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, 0.646f, -0.300f)));
 
 	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
-	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
+	for (Entity* c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
 			//leave this for now
 			//c->addComponent<GunComponent>();
@@ -220,7 +220,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	//ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, 0.646f, -0.300f)));
 
 	auto gun = CreateWaterGun(playerEntity->getName() + "WaterGun");
-	playerEntity->addChildEntity(gun);
+	playerEntity->addChildEntity(gun.get());
 
 	// Attach the candle to the player's left hand
 	ac->leftHandEntity = gun.get();
@@ -257,7 +257,7 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	auto aiCandleEntity = ECS::Instance()->createEntity("AiCandle");
 	EntityFactory::CreateCandle(aiCandleEntity, glm::vec3(0.f, 2.f, 0.f), lightIndex);
 
-	e->addChildEntity(aiCandleEntity);
+	e->addChildEntity(aiCandleEntity.get());
 	auto fsmComp = e->addComponent<FSMComponent>();
 
 	// =========Create states and transitions===========

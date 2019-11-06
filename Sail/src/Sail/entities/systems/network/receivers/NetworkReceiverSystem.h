@@ -43,6 +43,7 @@ protected:
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
 	Netcode::PlayerID m_playerID;
 private:
+	void attachEntityToLeftHand(Netcode::ComponentID entityID, Netcode::ComponentID parentID);
 	void createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation);
 	void setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation);
