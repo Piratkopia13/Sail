@@ -14,11 +14,18 @@ LevelSystem::LevelSystem():BaseComponentSystem() {
 	xsize = 1;
 	ysize = 1;
 	tileSize = 7;
-	
+	hallwayThreshold = 0.3f;
+	minSplitSize = 5;
+	minRoomSize = 1;
+	roomMaxSize = 36;
+	roomSplitStop = 25;
+	doorModifier = 15;
+	clutterModifier = 85;
+	seed = 0;
 
-
-
-
+	numberOfRooms = 1;
+	tileHeight = 0.8f;
+	tileOffset = 0;
 }
 
 LevelSystem::~LevelSystem() {
@@ -28,17 +35,15 @@ LevelSystem::~LevelSystem() {
 //generates all necessary data for the world
 void LevelSystem::generateMap() {
 
-
+	totalArea = xsize * ysize;
 	tileArr = SAIL_NEW int** [xsize]();
 	for (int i = 0; i < xsize; i++) {
 		tileArr[i] = SAIL_NEW int* [ysize]();
 		for (int j = 0; j < ysize; j++) {
 			tileArr[i][j] = SAIL_NEW int[3]();
 			tileArr[i][j][1] = -1;
-			
 		}
 	}
-
 
 	srand(seed);
 	std::vector<int> avaliableTiles;
@@ -97,23 +102,14 @@ void LevelSystem::generateMap() {
 }
 
 void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) {
-	
-
-
-
-
-	int worldWidth = xsize;
-	int worldDepth = ysize;
-
 	//traverse all positions to find which tile should be there
-	for (int i = 0; i < worldWidth; i++) {
-		for (int j = 0; j < worldDepth; j++) {
+	for (int i = 0; i < xsize; i++) {
+		for (int j = 0; j < ysize; j++) {
 			int tileId = tileArr[i][j][0];
 			int typeId = tileArr[i][j][1];
 			int doors = tileArr[i][j][2];
 			if (tileId<16 && tileId>-1) {
 				addTile(tileId, typeId, doors, tileModels, tileSize,tileHeight, tileOffset, i, j, bb);
-
 			}
 		}
 	}
