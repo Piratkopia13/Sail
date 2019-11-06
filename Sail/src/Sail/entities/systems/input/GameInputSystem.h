@@ -48,6 +48,8 @@ private:
 	bool m_wasSpacePressed = false;
 	float m_projectileSpawnCounter = 0.f;
 	float m_lookSensitivityMouse = 0.1f;
+	glm::vec3 m_playerPosHolder = { 0, 0 ,0 };
+	bool m_isOnWaterHolder = false;
 
 	// Sound-related Variables
 	float m_onGroundTimer = 0.0f;
@@ -59,6 +61,8 @@ private:
 	// TEMP BOOLS
 	bool tempMetal = false;
 	bool tempTile = false;
+	bool tempWaterMetal = false;
+	bool tempWaterTile = false;
 	bool tempStopAll = false;
 
 	// #netcodeNote not thread safe, might cause issues

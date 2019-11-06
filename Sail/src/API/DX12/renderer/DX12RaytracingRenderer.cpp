@@ -230,6 +230,11 @@ void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {
 	m_dxr.addWaterAtWorldPosition(pos);
 }
 
+bool DX12RaytracingRenderer::checkIfOnWater(const glm::vec3& pos) {
+
+	return m_dxr.checkWaterAtWorldPosition(pos);
+}
+
 void DX12RaytracingRenderer::updateMetaballAABB() {
 	
 }

@@ -104,6 +104,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			auto movement = e->getComponent<MovementComponent>();
 			auto speedLimit = e->getComponent<SpeedLimitComponent>();
 			auto audioComp = e->getComponent<AudioComponent>();
+			auto transformComp = e->getComponent<TransformComponent>()->getTranslation();
+
+			// Calculate water-related checks
+			m_playerPosHolder = { transformComp.x, transformComp.y, transformComp.z };
+			m_isOnWaterHolder = Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->checkIfOnWater(m_playerPosHolder);
 
 			// Get player movement inputs
 			Movement playerMovement = getPlayerMovementInput(e);
@@ -215,8 +220,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 							);
 
 							tempStopAll = true;
+
 							tempMetal = false;
+							tempWaterMetal = false;
 							tempTile = false;
+							tempWaterTile = false;
 						}
 					}
 				}
@@ -225,22 +233,55 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					// CORRIDOR
 					if (m_mapPointer->getAreaType(e->getComponent<TransformComponent>()->getTranslation().x, e->getComponent<TransformComponent>()->getTranslation().z) == 0) {
 						
+						if (m_isOnWaterHolder && !tempWaterMetal) {
+
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::RUNNING_WATER_METAL_START,
+								SAIL_NEW Netcode::MessageRunningMetalStart{ e->getComponent<NetworkSenderComponent>()->m_id }
+							);
+
+							tempWaterMetal = true;
+
+							tempStopAll = false;
+							tempMetal = false;
+							tempTile = false;
+							tempWaterTile = false;
+						}
+
 						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
-						if (!tempMetal) {
+						else/* if (!tempMetal)*/ {
+
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_METAL_START,
 								SAIL_NEW Netcode::MessageRunningMetalStart{ e->getComponent<NetworkSenderComponent>()->m_id }
 							);
 
-							tempStopAll = false;
 							tempMetal = true;
+
+							tempStopAll = false;
+							tempWaterMetal = false;
 							tempTile = false;
+							tempWaterTile = false;
 						}
 					}
 					// ROOM
 					else /*(AreaType > 0)*/ {
 						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
-						if (!tempTile) {
+						if (m_isOnWaterHolder && !tempWaterTile) {
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::RUNNING_WATER_TILE_START,
+								SAIL_NEW Netcode::MessageRunningTileStart{ e->getComponent<NetworkSenderComponent>()->m_id }
+							);
+
+							tempStopAll = false;
+							tempMetal = false;
+							tempWaterMetal = false;
+							tempTile = false;
+
+							tempWaterTile = true;
+						}
+
+						else/* if (!tempTile)*/ {
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_TILE_START,
 								SAIL_NEW Netcode::MessageRunningTileStart{ e->getComponent<NetworkSenderComponent>()->m_id }
@@ -248,6 +289,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 							tempStopAll = false;
 							tempMetal = false;
+							tempWaterMetal = false;
+							tempWaterTile = false;
+
 							tempTile = true;
 						}
 					}
@@ -273,8 +317,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					);
 
 					tempStopAll = true;
+
 					tempMetal = false;
+					tempWaterMetal = false;
 					tempTile = false;
+					tempWaterTile = false;
 				}
 				m_runSoundTimer = 0.0f;
 			}

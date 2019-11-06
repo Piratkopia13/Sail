@@ -317,6 +317,17 @@ void NetworkReceiverSystem::update(float dt) {
 				ar(componentID);
 				runningTileStart(componentID);
 			}
+			case Netcode::MessageType::RUNNING_WATER_METAL_START:
+			{
+				ar(componentID);
+				runningWaterMetalStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_WATER_TILE_START:
+			{
+				ar(componentID);
+				runningWaterTileStart(componentID);
+			}
 			break;
 			case Netcode::MessageType::RUNNING_STOP_SOUND:
 			{
@@ -732,7 +743,10 @@ void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = true;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].playOnce = false;
+
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
 
 			return;
 		}
@@ -746,7 +760,44 @@ void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
 
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = true;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].playOnce = false;
+
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
+
+			return;
+		}
+	}
+	Logger::Warning("runningTileStart called but no matching entity found");
+}
+
+void NetworkReceiverSystem::runningWaterMetalStart(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].playOnce = false;
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
+
+			return;
+		}
+	}
+	Logger::Warning("runningTileStart called but no matching entity found");
+}
+
+void NetworkReceiverSystem::runningWaterTileStart(Netcode::ComponentID id) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = true;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].playOnce = false;
+
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
 
 			return;
 		}

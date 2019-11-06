@@ -131,8 +131,6 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	otherPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<OnlineOwnerComponent>(netComponentID);
 
-
-
 	// Create the player
 	AddWeaponAndCandleToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(netComponentID));
 

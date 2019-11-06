@@ -253,9 +253,13 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f);
 	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
 
+	// Convert position to index, stored as floats
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
+	// Convert triple-number index to a single index value
 	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 ind = floor(floatInd);
+	// Convert to final 1-D index
 	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
 
 	// Ignore water points that are outside the map
@@ -283,6 +287,57 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 		m_waterDataCPU[i] = m_waterDeltas[i];
 		m_waterChanged = true;
 	}
+}
+
+bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
+	bool returnValue = false;
+
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 1.0f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f);
+	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
+
+	// Convert position to index, stored as floats
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
+	// Convert triple-number index to a single index value
+	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	// Convert triple-number (float) to triple-number (int)
+	glm::i32vec3 ind = floor(floatInd);
+	// Convert to final 1-D index
+	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
+
+	// Ignore water points that are outside the map
+	if (i >= 0 && i <= WATER_ARR_SIZE - 1) {
+		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
+		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
+		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
+		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+
+		switch (index) {
+		case 0:
+			if (up0 == 0) {
+				returnValue = true;
+				break;
+			}
+		case 1:
+			if (up1 == 0) {
+				returnValue = true;
+				break;
+			}
+		case 2:
+			if (up2 == 0) {
+				returnValue = true;
+				break;
+			}
+		case 3:
+			if (up3 == 0) {
+				returnValue = true;
+				break;
+			}
+		}
+	}
+
+	return returnValue;
 }
 
 void DXRBase::updateWaterData() {
