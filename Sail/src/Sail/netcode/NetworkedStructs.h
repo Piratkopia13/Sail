@@ -159,13 +159,14 @@ namespace Netcode {
 
 	class MessageCreatePlayer : public MessageData {
 	public:
-		MessageCreatePlayer(Netcode::ComponentID playerNetID, Netcode::ComponentID candleNetID, glm::vec3 pos)
-			: playerCompID(playerNetID), candleCompID(candleNetID), position(pos) {
+		MessageCreatePlayer(Netcode::ComponentID playerNetID, Netcode::ComponentID candleNetID, Netcode::ComponentID gunNetID, glm::vec3 pos)
+			: playerCompID(playerNetID), candleCompID(candleNetID), gunCompID(gunNetID), position(pos) {
 		}
 		virtual ~MessageCreatePlayer() {}
 
 		Netcode::ComponentID playerCompID;
 		Netcode::ComponentID candleCompID;
+		Netcode::ComponentID gunCompID;
 		glm::vec3 position;
 	};
 

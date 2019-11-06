@@ -256,12 +256,14 @@ void NetworkReceiverSystem::update(float dt) {
 			{
 				Netcode::ComponentID playerCompID;
 				Netcode::ComponentID candleCompID;
+				Netcode::ComponentID gunCompID;
 
-				ar(playerCompID); // read what kind of entity it is
-				ar(candleCompID);         // Read what Netcode::ComponentID the entity should have
-				ArchiveHelpers::loadVec3(ar, translation); // Read translation
+				ar(playerCompID); // Read what Netcode::ComponentID the player entity should have
+				ar(candleCompID); // Read what Netcode::ComponentID the candle entity should have
+				ar(gunCompID);    // Read what Netcode::ComponentID the gun entity should have
+				ArchiveHelpers::loadVec3(ar, translation); // Read the player's position
 				
-				createPlayerEntity(playerCompID, candleCompID, translation);
+				createPlayerEntity(playerCompID, candleCompID, gunCompID, translation);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -425,7 +427,7 @@ void NetworkReceiverSystem::update(float dt) {
 /*
   Creates a new entity of the specified entity type and with a NetworkReceiverComponent attached to it
 */
-void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, const glm::vec3& translation) {
+void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation) {
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == playerCompID) {
@@ -440,7 +442,7 @@ void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID
 	Logger::Log("Created player with id: " + std::to_string(playerCompID));
 
 	// lightIndex set to 999, can probably be removed since it no longer seems to be used
-	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, 999, translation);
+	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, gunCompID, 999, translation);
 
 }
 

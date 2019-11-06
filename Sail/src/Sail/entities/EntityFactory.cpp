@@ -94,17 +94,19 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 
 
 	Netcode::ComponentID candleNetID;
+	Netcode::ComponentID gunNetID;
+
 	for (Entity* c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
+			gunNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, playerID)->m_id;
 			//leave this for now
-			//c->addComponent<GunComponent>();
+			//c->addComponent<GunComponent>();]
 			c->addComponent<RealTimeComponent>(); // The player's gun is updated each frame
 		}
 
 		// Add a localOwnerComponent to our candle so that we can differentiate it from other candles
 		if (c->hasComponent<CandleComponent>()) {
-			c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, playerID);
-			candleNetID = c->getComponent<NetworkSenderComponent>()->m_id;
+			candleNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, playerID)->m_id;
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
 		}
@@ -119,6 +121,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 		SAIL_NEW Netcode::MessageCreatePlayer{
 			netComponentID,
 			candleNetID,
+			gunNetID,
 			myPlayer->getComponent<TransformComponent>()->getCurrentTransformState().m_translation,
 		},
 		false
@@ -129,7 +132,12 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 
 // otherPlayer is an entity that doesn't have any components added to it yet.
 // Needed so that NetworkReceiverSystem can add the entity to itself before 
-void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, size_t lightIndex, glm::vec3 spawnLocation) {
+void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, 
+	Netcode::ComponentID playerCompID, 
+	Netcode::ComponentID candleCompID, 
+	Netcode::ComponentID gunCompID, 
+	size_t lightIndex, glm::vec3 spawnLocation) 
+{
 	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation);
 	// Other players have a character model and animations
 
@@ -140,9 +148,14 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::Compone
 	AddCandleComponentsToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(playerCompID));
 
 	for (Entity* c : otherPlayer->getChildEntities()) {
+		if (c->getName() == otherPlayer->getName() + "WaterGun") {
+			c->addComponent<NetworkReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
+			c->addComponent<OnlineOwnerComponent>(playerCompID);
+		}
+
 		if (c->hasComponent<CandleComponent>()) {
 			c->addComponent<NetworkReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
-			c->addComponent<OnlineOwnerComponent>(playerCompID); // or should this be candleCompID?
+			c->addComponent<OnlineOwnerComponent>(playerCompID);
 		}
 	}
 }

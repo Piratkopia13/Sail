@@ -336,6 +336,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 		ar(data->playerCompID);
 		ar(data->candleCompID);
+		ar(data->gunCompID);
 		ArchiveHelpers::saveVec3(ar, data->position);
 	}
 	break;
