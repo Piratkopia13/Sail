@@ -126,7 +126,14 @@ bool LobbyClientState::onDropped(NetworkDroppedEvent& event) {
 bool LobbyClientState::onStartGame(NetworkStartGameEvent& event) {
 	// Queue changes to the stack while maintaining the connection
 
-	m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, event.getEnterAsSpectator()));
+	if (event.getEnterAsSpectator() || m_spectator) {
+		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, true));
+	}
+	else {
+		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, false));
+	}
+
+	
 	this->requestStackPop();
 	this->requestStackPush(States::Game);
 

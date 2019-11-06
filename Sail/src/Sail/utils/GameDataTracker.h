@@ -40,7 +40,7 @@ public:
 	void logJump();								// ...GameInputSystem::update()
 	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
 	void logPlayerDeath(const std::string& killer, const std::string& killed, const std::string& deathType); // used to log when a player is killed
-	void logPlacement(Netcode::PlayerID playerID);// CandleSystem::update
+	void logPlacement(Netcode::PlayerID playerID);// CandleHealthSystem::update
 
 	void init();								// Gamestate::Gamestate()
 	void resetData();							// EndGameState::onReturnToLobby() / renderImGui()
@@ -60,6 +60,7 @@ public:
 	// nr of player from the start of the match
 	int getPlayerCount();	// Nowhere atm
 	void turnOffLocalDataTracking();
+	void randomizePlacement();					// GameState endgame command
 
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()

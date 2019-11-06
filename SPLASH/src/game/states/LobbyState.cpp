@@ -35,6 +35,7 @@ LobbyState::LobbyState(StateStack& stack)
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
+	m_spectator = false;
 
 	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
@@ -101,6 +102,9 @@ bool LobbyState::renderImgui(float dt) {
 
 	// ------- Return BUTTON ------- 
 	renderQuitButton();
+
+	// ------- Spectator toggle box ------- 
+	renderSpectatorButton();
 
 	return false;
 }
@@ -196,7 +200,14 @@ void LobbyState::renderStartButton() {
 			NWrapperSingleton::getInstance().stopUDP();
 			char seed = (char)(Utils::rnd() * 255);
 			NWrapperSingleton::getInstance().setSeed(seed);
-			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, false));
+
+			if (m_spectator) {
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, true));
+			}
+			else {
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, false));
+			}
+
 			// t for start the game, p for start as a player. s would be spectator
 			m_network->sendMsgAllClients({ std::string("tp") + seed });
 			this->requestStackPop();
@@ -302,3 +313,13 @@ void LobbyState::renderChat() {
 	ImGui::EndChild();
 	ImGui::End();
 }
+
+void LobbyState::renderSpectatorButton() {
+	ImGui::Begin("Spectator");
+	ImGui::SetWindowPos({ 1018, 633 });
+	ImGui::SetWindowSize({ 112, 57 });
+	ImGui::Checkbox("", &m_spectator);
+	ImGui::End();
+}
+
+

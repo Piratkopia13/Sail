@@ -8,6 +8,7 @@
 class NetworkSerializedPackageEvent;
 class NetworkJoinedEvent;
 class NetworkNameEvent;
+class NetworkWelcomeEvent;
 
 class GameState : public State {
 public:
@@ -40,6 +41,7 @@ private:
 	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
 	bool onPlayerJoined(NetworkJoinedEvent& event);
 	bool onNameRequest(NetworkNameEvent& event);
+	bool onWelcome(NetworkWelcomeEvent& event);
 
 	void shutDownGameState();
 

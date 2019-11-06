@@ -126,6 +126,14 @@ void GameDataTracker::turnOffLocalDataTracking() {
 	m_trackLocalStats = false;
 }
 
+void GameDataTracker::randomizePlacement() {
+	int tempPlacement = 1;
+	for (auto player : m_network->getPlayers()) {
+		m_hostPlayerTracker[player.id].placement = tempPlacement;
+		tempPlacement++;
+	}
+}
+
 void GameDataTracker::renderImgui() {
 
 	ImGui::Begin("Game Statistics", NULL);
@@ -137,8 +145,8 @@ void GameDataTracker::renderImgui() {
 	};
 	std::map<int, mapLayout> tempPlacementMap;
 
-
-	ImGui::Text("\n Placement------");
+	std::string placementText = "\n Placement " + NWrapperSingleton::getInstance().getMyPlayer().name;
+	ImGui::Text(placementText.c_str());
 	// Sort rankings
 	for (auto player : m_hostPlayerTracker) {
 		tempPlacementMap[player.second.placement].name = m_network->getPlayer((Netcode::PlayerID)player.first)->name;

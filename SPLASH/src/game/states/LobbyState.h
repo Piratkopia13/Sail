@@ -40,7 +40,7 @@ protected:
 	NWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
-
+	bool m_spectator;
 	std::list<Message> m_messages;
 
 	// Front-End Functions
@@ -71,9 +71,11 @@ private:
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;
 	unsigned int m_textHeight;
+	
 	void renderPlayerList();
 	void renderStartButton();
 	void renderQuitButton();
 	void renderSettings();		// Currently empty
 	void renderChat();
+	void renderSpectatorButton();
 };

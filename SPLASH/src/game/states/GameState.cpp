@@ -11,6 +11,7 @@
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
+#include "../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GUISettings.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
@@ -469,6 +470,8 @@ void GameState::initConsole() {
 			nullptr
 		);
 
+		GameDataTracker::getInstance().randomizePlacement();
+
 		return std::string("Match ended.");
 		}, "GameState");
 #ifdef _DEBUG
@@ -507,6 +510,7 @@ bool GameState::onEvent(Event& event) {
 	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
 	EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerJoined));
 	EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&GameState::onNameRequest));
+	EventHandler::dispatch<NetworkWelcomeEvent>(event, SAIL_BIND_EVENT(&GameState::onWelcome));
 
 	return true;
 }
@@ -564,7 +568,7 @@ bool GameState::onPlayerJoined(NetworkJoinedEvent& event) {
 
 bool GameState::onNameRequest(NetworkNameEvent& event) {
 	NWrapperSingleton* network = &NWrapperSingleton::getInstance();
-	if (network->isHost()) {
+	if (network->isHost()) {	// Host
 		// Parse the message | ?12:DANIEL
 		std::string message = event.getRepliedName();
 		std::string id_string = "";
@@ -613,8 +617,47 @@ bool GameState::onNameRequest(NetworkNameEvent& event) {
 		network->getNetworkWrapper()->sendMsgAllClients(welcomePackage);
 		printf("Done sending welcome package\n");
 		return true;
+	} 
+	else {	// Client
+		// Save the ID which the host has blessed us with
+		std::string temp = event.getRepliedName();	// And replace our current HOSTID
+		int newId = std::stoi(temp);					//
+		NWrapperSingleton::getInstance().getMyPlayer().id = newId;
+		NWrapperSingleton::getInstance().playerJoined(Player{ 0, NWrapperSingleton::getInstance().getMyPlayerName().c_str() });
+
+		// Append :NAME onto ?ID --> ?ID:NAME and answer the host
+		std::string message = "?";
+		message += event.getRepliedName();
+		message += ":";
+		message += NWrapperSingleton::getInstance().getMyPlayerName().c_str();
+		message += ":";
+		network->getNetworkWrapper()->sendMsg(message);
 	}
 
+	return false;
+}
+
+bool GameState::onWelcome(NetworkWelcomeEvent& event) {
+	// Update local list of players.
+	std::list<Player>& list = event.getListOfPlayers();
+	if (list.size() >= 2) {
+		// Clean local list of players.
+		NWrapperSingleton::getInstance().resetPlayerList();
+
+		printf("Received welcome package...\n");
+		for (auto currentPlayer : list) {
+			// TODO: Maybe addPlayerFunction?
+			NWrapperSingleton::getInstance().playerJoined(currentPlayer);
+
+
+			//m_players.push_back(currentPlayer);
+			printf("\t");
+			printf(currentPlayer.name.c_str());
+			printf("\t");
+			printf(std::to_string(currentPlayer.id).c_str());
+			printf("\n");
+		}
+	}
 	return false;
 }
 
