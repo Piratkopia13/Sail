@@ -5,6 +5,8 @@
 #include <hrtfapoapi.h>
 #include <wrl/client.h>
 
+#include "Sail/entities/systems/Audio/AudioData.h"
+
 #define SOUND_COUNT 236
 #define STREAMED_SOUNDS_COUNT 20
 #define STREAMING_BUFFER_SIZE 32768
@@ -18,6 +20,10 @@ class Transform;
 class AudioComponent;
 
 enum AudioType { MUSIC };
+
+class XAUDIO2FX_REVERB_PARAMETERS;
+
+#define X3DAUDIO_PI  3.141592654f
 
 struct StreamingVoiceContext : public IXAudio2VoiceCallback {
 	STDMETHOD_(void, OnVoiceProcessingPassStart)(UINT32) override {}
@@ -57,7 +63,7 @@ public:
 	~AudioEngine();
 
 	void loadSound(const std::string& filename);
-	int initializeSound(const std::string& filename, float volume = 1.0f);
+	int initializeSound(const std::string& filename, Audio::EffectType effectType, float freq, float volume = 1.0f);
 	void streamSound(const std::string& filename, int streamIndex, float volume, bool isPositionalAudio, bool loop = true, AudioComponent* pAudioC = nullptr);
 
 	void updateSoundWithCurrentPosition(int index, Camera& cam, const Transform& transform, 
@@ -114,7 +120,13 @@ private:
 
 	//
 	HRESULT LowPassFilterTest();
-	bool doOnce = true;
+	XAUDIO2_EFFECT_DESCRIPTOR createXAPPOEffect(Microsoft::WRL::ComPtr<IXAPO> xapo);
+	XAUDIO2_EFFECT_DESCRIPTOR createLowPassEffect(XAUDIO2FX_REVERB_PARAMETERS reverbParams);
+	XAUDIO2_FILTER_PARAMETERS createLowPassFilter(float cutoffFrequence);
+	XAUDIO2_VOICE_SENDS createLPFilteredVoiceSend();
+
+
+	XAUDIO2_VOICE_SENDS createSendToMaster();
 
 	void streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC = nullptr);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);

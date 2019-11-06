@@ -128,7 +128,12 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 							// To make the code easier to read
 							soundUnique = &audioData.m_soundsUnique[i].at(randomSoundIndex);
 
-							soundGeneral->soundID = m_audioEngine->initializeSound(soundUnique->fileName, soundUnique->volume);
+							soundGeneral->soundID = m_audioEngine->initializeSound(
+								soundUnique->fileName,
+								soundGeneral->effect,
+								soundGeneral->frequency,
+								soundUnique->volume
+							);
 							soundGeneral->hasStartedPlaying = true;
 							soundGeneral->durationElapsed = 0.0f;
 							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;

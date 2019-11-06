@@ -69,7 +69,7 @@ void AudioEngine::loadSound(const std::string& filename) {
 }
 
 // TODO? One submixVoice for sound effects, one for music, etc instead of one for each sound
-int AudioEngine::initializeSound(const std::string& filename, float volume) {
+int AudioEngine::initializeSound(const std::string& filename, Audio::EffectType effectType, float freq, float volume) {
 	if (m_masterVoice == nullptr) {
 		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		return -1;
@@ -106,9 +106,7 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 
 	// creating a 'sourceVoice' for WAV file-type
 	//HRESULT hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-	if (SUCCEEDED(hr)) {
-		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-	}
+
 
 	// THIS IS THE OTHER VERSION FOR ADPC
 			// ... for ADPC-WAV compressed file-type
@@ -122,20 +120,40 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 	// Create a submix voice that will host the xAPO.
 	// This submix voice will be destroyed when XAudio2 instance is destroyed.
 	IXAudio2SubmixVoice* submixVoice = nullptr;
+	XAUDIO2_EFFECT_DESCRIPTOR effectArray[2];
 	if (SUCCEEDED(hr)) {
-		XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
-		fxDesc.InitialState = TRUE;
-		fxDesc.OutputChannels = 2;          // Stereo output
-		fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
 
-		/*
-		Possibly append the "reverb" effect in the effect chain here
-		
-		*/
+		/* ----------------------------- */
+		//
+		//			Create effects
+		//
+		std::vector<XAUDIO2_EFFECT_DESCRIPTOR> effects;
+		effectArray[0] = createXAPPOEffect(xapo);
+		int effectCount = 1;
+
+		if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
+		//	effectArray[effectCount] = createLowPassEffect(reverbParams_);
+		//	effectCount++;
+		}
+		else if (effectType == Audio::EffectType::NONE){
+			// Do nothing
+		}
+		else {
+			Logger::Error("Tried to add an effect which isn't implemented");
+		}
+
+		/* ----------------------------- */
+		//
+		//		Attach effects to chain
+		//
 		XAUDIO2_EFFECT_CHAIN fxChain{};
-		fxChain.EffectCount = 1;
-		fxChain.pEffectDescriptors = &fxDesc;
+		fxChain.EffectCount = effectCount;
+		fxChain.pEffectDescriptors = effectArray;
 
+		/* ----------------------------- */
+		//
+		//		Send it to the master voice
+		//		
 		XAUDIO2_VOICE_SENDS sends = {};
 		XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
 		sendDesc.pOutputVoice = m_masterVoice;
@@ -147,31 +165,36 @@ int AudioEngine::initializeSound(const std::string& filename, float volume) {
 		submixVoice->SetVolume(volume);
 	}
 
+	if (SUCCEEDED(hr)) {
+		// Altered code for appliance of low-pass filters
+		XAUDIO2_SEND_DESCRIPTOR sendDesc;
+		sendDesc.Flags = XAUDIO2_SEND_USEFILTER;
+		sendDesc.pOutputVoice = submixVoice;
 
-	/* ----------------------------------- */
-	/* ----------------------------------- */
-	//
-	//			Create Reverb Effect
-	//
-	IUnknown* ppApo = nullptr;
-	UINT32 rFlags = 0;
-	if (FAILED(XAudio2CreateReverb(&ppApo, rFlags))) {
-		Logger::Error("Failed creation of reverb APO.");
-		assert(false);
+		XAUDIO2_VOICE_SENDS sendList;
+		sendList.SendCount = 1;
+		sendList.pSends = &sendDesc;
+
+		hr = m_xAudio2->CreateSourceVoice(
+			&m_sound[indexValue].sourceVoice,
+			(WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat(),
+			0, 2.0f, nullptr, &sendList
+		);
 	}
-	/* ----------------------------------- */
+
+	/* -------------- */
+	// Code for applying the filter.
+	// - Which voice should it be applied to? Master/Source/Submix?
 	//
-	//			Create an Effect
-	//
-	XAUDIO2_EFFECT_DESCRIPTOR effectDesc[] = { {ppApo, TRUE, 1} };
-	XAUDIO2_EFFECT_CHAIN effectChain = { 1, effectDesc };
-	IXAudio2SubmixVoice* pSubmixVoice = nullptr;
-	if (FAILED(m_xAudio2->CreateSubmixVoice(&pSubmixVoice, 1, 48000, 0, 0, nullptr, &effectChain))) {
-		Logger::Error("Failed creation of submix voice");
-		assert(false);
+	//std::cout << freq << "\n";
+	if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
+		if (FAILED(hr = m_sound[indexValue].sourceVoice->SetOutputFilterParameters(
+			submixVoice,
+			&createLowPassFilter(freq)
+		))) {
+			Logger::Error("Failed to apply a low-pass filter!");
+		}
 	}
-	/* ----------------------------------- */
-	/* ----------------------------------- */
 
 	// Route the source voice to the submix voice.
 	// The complete graph pipeline looks like this -
@@ -311,14 +334,6 @@ void AudioEngine::startSpecificSound(int index, float volume) {
 
 	if (SUCCEEDED(hr)) {
 		hr = m_sound[index].sourceVoice->Start(0);
-	}
-
-
-	if (doOnce) {
-		doOnce = false;
-		int index = 0;
-
-		startSpecificSound(index);
 	}
 }
 
@@ -546,6 +561,92 @@ HRESULT AudioEngine::LowPassFilterTest() {
 	}
 
 	return S_OK;
+}
+
+XAUDIO2_EFFECT_DESCRIPTOR AudioEngine::createXAPPOEffect(Microsoft::WRL::ComPtr<IXAPO> xapo) {
+	XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
+	fxDesc.InitialState = TRUE;
+	fxDesc.OutputChannels = 2;          // Stereo output
+	fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
+
+	return fxDesc;
+}
+
+XAUDIO2_EFFECT_DESCRIPTOR AudioEngine::createLowPassEffect(XAUDIO2FX_REVERB_PARAMETERS reverbParams_) {
+	/* https://docs.microsoft.com/sv-se/windows/win32/api/xaudio2fx/ns-xaudio2fx-xaudio2fx_reverb_parameters */
+	XAUDIO2FX_REVERB_PARAMETERS reverbParams;
+	reverbParams.ReflectionsDelay = XAUDIO2FX_REVERB_DEFAULT_REFLECTIONS_DELAY;
+	reverbParams.ReverbDelay = XAUDIO2FX_REVERB_DEFAULT_REVERB_DELAY;
+	reverbParams.RearDelay = XAUDIO2FX_REVERB_DEFAULT_REAR_DELAY;
+	reverbParams.PositionLeft = XAUDIO2FX_REVERB_DEFAULT_POSITION;
+	reverbParams.PositionRight = XAUDIO2FX_REVERB_DEFAULT_POSITION;
+	reverbParams.PositionMatrixLeft = XAUDIO2FX_REVERB_DEFAULT_POSITION_MATRIX;
+	reverbParams.PositionMatrixRight = XAUDIO2FX_REVERB_DEFAULT_POSITION_MATRIX;
+	reverbParams.EarlyDiffusion = XAUDIO2FX_REVERB_DEFAULT_EARLY_DIFFUSION;
+	reverbParams.LateDiffusion = XAUDIO2FX_REVERB_DEFAULT_LATE_DIFFUSION;
+	reverbParams.LowEQGain = XAUDIO2FX_REVERB_DEFAULT_LOW_EQ_GAIN;
+	reverbParams.LowEQCutoff = XAUDIO2FX_REVERB_DEFAULT_LOW_EQ_CUTOFF;
+	reverbParams.HighEQGain = XAUDIO2FX_REVERB_DEFAULT_HIGH_EQ_GAIN;
+	reverbParams.HighEQCutoff = XAUDIO2FX_REVERB_DEFAULT_HIGH_EQ_CUTOFF;
+	reverbParams.RoomFilterFreq = XAUDIO2FX_REVERB_DEFAULT_ROOM_FILTER_FREQ;
+	reverbParams.RoomFilterMain = XAUDIO2FX_REVERB_DEFAULT_ROOM_FILTER_MAIN;
+	reverbParams.RoomFilterHF = XAUDIO2FX_REVERB_DEFAULT_ROOM_FILTER_HF;
+	reverbParams.ReflectionsGain = XAUDIO2FX_REVERB_DEFAULT_REFLECTIONS_GAIN;
+	reverbParams.ReverbGain = XAUDIO2FX_REVERB_DEFAULT_REVERB_GAIN;
+	reverbParams.DecayTime = XAUDIO2FX_REVERB_DEFAULT_DECAY_TIME;
+	reverbParams.Density = XAUDIO2FX_REVERB_DEFAULT_DENSITY;
+	reverbParams.RoomSize = XAUDIO2FX_REVERB_DEFAULT_ROOM_SIZE;
+	reverbParams.WetDryMix = XAUDIO2FX_REVERB_DEFAULT_WET_DRY_MIX;
+	reverbParams.DisableLateField = true;
+	reverbParams = reverbParams_;
+	std::cout << "Freq: " + std::to_string(reverbParams.RoomFilterFreq) + " | eqCutoff: " + std::to_string(reverbParams.LowEQCutoff) + "\n";
+
+	IUnknown* ppApo = nullptr;
+	UINT32 rFlags = 0;
+	if (FAILED(XAudio2CreateReverb(&ppApo, rFlags))) {
+		Logger::Error("Failed creation of reverb APO.");
+		assert(false);
+	}
+	XAUDIO2_EFFECT_DESCRIPTOR effectDesc = { ppApo, TRUE, 1 };
+
+	return effectDesc;
+}
+
+XAUDIO2_FILTER_PARAMETERS AudioEngine::createLowPassFilter(float cutoffFrequence) {
+	XAUDIO2_MAX_FILTER_FREQUENCY;
+	
+	float sumFrequency = 2.0f * sinf((X3DAUDIO_PI * cutoffFrequence) / /*Samplerate*/48000.0f);
+	std::cout << "Sum Frequency: " << std::to_string(sumFrequency) << "\n";
+
+	XAUDIO2_FILTER_PARAMETERS filterParameters = { 
+		LowPassFilter,
+		sumFrequency,
+		XAUDIO2_MAX_FILTER_ONEOVERQ
+	}; // see XAudio2CutoffFrequencyToRadians() in XAudio2.h for more information on the formula used here
+
+	return filterParameters;
+}
+
+XAUDIO2_VOICE_SENDS AudioEngine::createLPFilteredVoiceSend() {
+	XAUDIO2_SEND_DESCRIPTOR sendDesc;
+	sendDesc.Flags = XAUDIO2_SEND_USEFILTER;
+	sendDesc.pOutputVoice = m_masterVoice;
+
+	XAUDIO2_VOICE_SENDS sendList;
+	sendList.SendCount = 1;
+	sendList.pSends = &sendDesc;
+
+	return sendList;
+}
+
+XAUDIO2_VOICE_SENDS AudioEngine::createSendToMaster() {
+	XAUDIO2_VOICE_SENDS sends = {};
+	XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+	sendDesc.pOutputVoice = m_masterVoice;
+	sends.SendCount = 1;
+	sends.pSends = &sendDesc;
+
+	return sends;
 }
 
 

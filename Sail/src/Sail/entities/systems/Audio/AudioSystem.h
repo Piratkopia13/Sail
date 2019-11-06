@@ -6,6 +6,7 @@
 class AudioComponent;
 class AudioEngine;
 class Camera;
+class XAUDIO2FX_REVERB_PARAMETERS;
 
 class AudioSystem final : public BaseComponentSystem {
 public:
