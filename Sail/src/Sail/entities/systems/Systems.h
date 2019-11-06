@@ -12,6 +12,7 @@
 #include "Gameplay/ProjectileSystem.h"
 #include "Graphics/AnimationSystem.h"
 #include "Graphics/AnimationChangerSystem.h"
+#include "Graphics/ParticleSystem.h"
 #include "input/GameInputSystem.h"
 #include "Gameplay/LevelGeneratorSystem/LevelGeneratorSystem.h"
 #include "Gameplay/lifetime/LifeTimeSystem.h"

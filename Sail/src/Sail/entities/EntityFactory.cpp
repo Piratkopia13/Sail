@@ -104,6 +104,11 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 
+
+	//For testing, add particle emitter to player.
+	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
+	particleEmitterComp->position = { 0.0f, 1.0f, 0.0f };
+
 	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {

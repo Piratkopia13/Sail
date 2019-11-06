@@ -10,11 +10,23 @@ VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, const Mesh::D
 // TODO: Take in usage (Static or Dynamic) and create a default heap for static only
 // TODO: updateData and/or setData
 DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData)
-	: VertexBuffer(inputLayout, modelData)
+	: VertexBuffer(inputLayout, modelData.numVertices)
 {
-	m_context = Application::getInstance()->getAPI<DX12API>();
 	void* vertices = getVertexData(modelData);
 
+	init(vertices);
+}
+
+DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, unsigned int numVertices)
+	: VertexBuffer(inputLayout, numVertices)
+{
+	void* zeroData = malloc(inputLayout.getVertexSize() * numVertices);
+	memset(zeroData, 0, inputLayout.getVertexSize() * numVertices);
+	init(zeroData);
+}
+
+void DX12VertexBuffer::init(void* data) {
+	m_context = Application::getInstance()->getAPI<DX12API>();
 	auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 	m_hasBeenUpdated.resize(numSwapBuffers, false);
@@ -34,7 +46,7 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::D
 		void* pData;
 		D3D12_RANGE readRange{ 0, 0 };
 		ThrowIfFailed(m_uploadVertexBuffers[i]->Map(0, &readRange, &pData));
-		memcpy(pData, vertices, m_byteSize);
+		memcpy(pData, data, m_byteSize);
 		m_uploadVertexBuffers[i]->Unmap(0, nullptr);
 
 		// Create the default buffers that the data will be copied to during init()
@@ -44,7 +56,7 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::D
 		m_defaultVertexBuffers[i]->SetName(L"Vertex buffer default");
 	}
 	// Delete vertices from cpu memory
-	free(vertices);
+	free(data);
 }
 
 DX12VertexBuffer::~DX12VertexBuffer() {
@@ -113,3 +125,4 @@ bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 	m_hasBeenInitialized[frameIndex] = true;
 	return true;
 }
+

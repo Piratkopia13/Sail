@@ -4,6 +4,8 @@
 #include "Sail/api/ComputeShaderDispatcher.h"
 
 class ParticleEmitterComponent;
+class ParticleComputeShader;
+class DX12VertexBuffer;
 
 class ParticleSystem final : public BaseComponentSystem {
 public:
@@ -17,15 +19,37 @@ public:
 
 private:
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
-	std::unique_ptr<InputLayout> m_inputLayout;
-	Shader* m_particleShader;
+	ParticleComputeShader* m_particleShader;
+
+	std::unique_ptr<DX12VertexBuffer> m_outputVertexBuffer;
+	unsigned int m_outputVertexBufferSize;
+
+	std::unique_ptr<Model> m_model;
 
 	int m_numberOfParticles;
+	int m_prevNumberOfParticles;
 
-	struct newParticleInfo {
+	struct NewParticleInfo {
 		int nrOfNewParticles;
 		ParticleEmitterComponent* emitter;
 	};
 
-	std::vector<newParticleInfo> m_newParticles;
+	std::vector<NewParticleInfo> m_newEmitters;
+
+	struct EmitterData {
+		glm::vec3 position;
+		float padding0;
+		glm::vec3 spread;
+		float padding1;
+		glm::vec3 velocity;
+		float padding2;
+		glm::vec3 acceleration;
+		int nrOfParticlesToSpawn;
+	};
+
+	struct ComputeInput {
+		EmitterData emitters[100];
+		unsigned int numEmitters;
+		unsigned int previousNrOfParticles;
+	};
 };

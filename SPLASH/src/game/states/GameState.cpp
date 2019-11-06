@@ -400,6 +400,9 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+
+	//Create particle system
+	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
 }
 
 void GameState::initConsole() {
@@ -718,6 +721,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
+	runSystem(dt, m_componentSystems.particleSystem);
 
 
 	// Wait for all the systems to finish before starting the removal system
