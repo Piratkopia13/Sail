@@ -51,6 +51,7 @@ namespace Netcode {
 		CHANGE_LOCAL_POSITION,
 		CHANGE_LOCAL_ROTATION,
 		CHANGE_ABSOLUTE_POS_AND_ROT,
+		ATTACH_TO_LEFT_HAND,
 		SPAWN_PROJECTILE,
 		ANIMATION,
 		SHOOT_START,
@@ -79,7 +80,8 @@ namespace Netcode {
 		"CREATE_NETWORKED_ENTITY	",
 		"CHANGE_LOCAL_POSITION,		",
 		"CHANGE_LOCAL_ROTATION,		",
-		"CHANGE_TRANSFORM_MATRIX,	",
+		"CHANGE_ABSOLUTE_POS_AND_ROT,",
+		"ATTACH_TO_LEFT_HAND,		",
 		"SPAWN_PROJECTILE,			",
 		"ANIMATION,					",
 		"SHOOT_START,				",
@@ -155,6 +157,17 @@ namespace Netcode {
 	public:
 		MessageData() {}
 		virtual ~MessageData() {}
+	};
+
+	class MessageAttachToLeftHand : public MessageData {
+	public:
+		MessageAttachToLeftHand(Netcode::ComponentID entityNetID, Netcode::ComponentID parentNetID)
+			: entityID(entityNetID), parentID(parentNetID) {
+		}
+		virtual ~MessageAttachToLeftHand() {}
+
+		Netcode::ComponentID entityID;
+		Netcode::ComponentID parentID;
 	};
 
 	class MessageSpawnProjectile : public MessageData {
