@@ -18,6 +18,7 @@ LevelSystem::LevelSystem():BaseComponentSystem() {
 }
 
 LevelSystem::~LevelSystem() {
+	destroyWorld();
 }
 
 //generates all necessary data for the world
@@ -29,6 +30,8 @@ void LevelSystem::generateMap() {
 		tileArr[i] = SAIL_NEW int* [ysize]();
 		for (int j = 0; j < ysize; j++) {
 			tileArr[i][j] = SAIL_NEW int[3]();
+			tileArr[i][j][1] = -1;
+			
 		}
 	}
 
@@ -116,14 +119,47 @@ void LevelSystem::destroyWorld() {
 
 
 
-
-	for (int i = 0; i < xsize; i++) {
-		for (int j = 0; j < ysize; j++) {
-			Memory::SafeDeleteArr(tileArr[i][j]);
+	if (tileArr) {
+		for (int i = 0; i < xsize; i++) {
+			for (int j = 0; j < ysize; j++) {
+				Memory::SafeDeleteArr(tileArr[i][j]);
+			}
+			Memory::SafeDeleteArr(tileArr[i]);
 		}
-		Memory::SafeDeleteArr(tileArr[i]);
+		Memory::SafeDeleteArr(tileArr);
 	}
-	Memory::SafeDeleteArr(tileArr);
+
+
+	while(chunks.size()>0){
+		chunks.pop();
+	}
+	while (blocks.size() > 0) {
+		blocks.pop();
+	}
+
+	while (hallways.size() > 0) {
+		hallways.pop();
+	}
+
+	while (rooms.size() > 0) {
+		rooms.pop();
+	}
+
+	while (matched.size() > 0) {
+		matched.pop();
+	}
+
+	while (largeClutter.size() > 0) {
+		largeClutter.pop();
+	}
+
+	while (mediumClutter.size() > 0) {
+		mediumClutter.pop();
+	}
+
+	while (smallClutter.size() > 0) {
+		smallClutter.pop();
+	}
 }
 
 //chooses a random tile from all possible tiles that fit

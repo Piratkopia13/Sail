@@ -83,7 +83,17 @@ public:
 	int tileSize;
 	float tileHeight = 0.8f;
 	int tileOffset = 0;
+
+
+
+
+
+
+
+
+
 	std::vector<glm::vec3> spawnPoints;
+private:
 	std::queue<Rect> chunks;
 	std::queue<Rect> blocks;
 	std::queue<Rect> hallways;
@@ -92,16 +102,6 @@ public:
 	std::queue<Clutter>largeClutter;
 	std::queue<Clutter>mediumClutter;
 	std::queue<Clutter>smallClutter;
-
-
-
-
-
-
-
-
-
-private:
 	int randomizeTileId(std::vector<int>* tiles);
 	void findPossibleTiles(std::vector<int>* mapPointer,int posx, int posy);
 	void splitChunk();
