@@ -12,6 +12,7 @@ PBRMaterial::PBRMaterial(Shader* shader)
 	m_pbrSettings.metalnessScale = 1.f;
 	m_pbrSettings.roughnessScale = 1.f;
 	m_pbrSettings.aoScale = 1.f;
+	m_pbrSettings.teamColor = glm::vec4(1, 0, 1, 1);
 
 	m_pbrSettings.hasAlbedoTexture = 0;
 	m_pbrSettings.hasNormalTexture = 0;

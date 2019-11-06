@@ -24,6 +24,7 @@ struct LightList {
 
 struct Material {
 	float4 modelColor;
+	float4 teamColor;
 	float metalnessScale;
 	float roughnessScale;
 	float aoScale;

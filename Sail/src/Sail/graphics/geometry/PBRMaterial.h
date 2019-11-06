@@ -11,6 +11,7 @@ public:
 	// Matching shader struct
 	struct PBRSettings {
 		glm::vec4 modelColor;
+		glm::vec4 teamColor;
 		float metalnessScale;
 		float roughnessScale;
 		float aoScale;

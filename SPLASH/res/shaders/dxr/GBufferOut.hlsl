@@ -105,8 +105,14 @@ GBuffers PSMain(PSIn input) {
     }
 
     gbuffers.albedo = sys_material_pbr.modelColor;
-	if (sys_material_pbr.hasAlbedoTexture)
-		gbuffers.albedo *= sys_texAlbedo.Sample(PSss, input.texCoords);
+	if (sys_material_pbr.hasAlbedoTexture) {
+		float4 albedo = sys_texAlbedo.Sample(PSss, input.texCoords);
+		if (albedo.a <= 0.5) {
+			gbuffers.albedo = float4(sys_material_pbr.teamColor.rgb, albedo.a);
+		} else {
+			gbuffers.albedo *= albedo;
+		}
+	}
 
     gbuffers.metalnessRoughnessAO = float4(sys_material_pbr.metalnessScale, sys_material_pbr.roughnessScale, sys_material_pbr.aoScale, 1.0f);
 	if (sys_material_pbr.hasMetalnessRoughnessAOTexture)
