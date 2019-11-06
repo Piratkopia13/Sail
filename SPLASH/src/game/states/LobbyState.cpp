@@ -57,7 +57,7 @@ bool LobbyState::processInput(float dt) {
 	return false;
 }
 
-bool LobbyState::inputToChatLog(MSG& msg) {
+bool LobbyState::inputToChatLog(const MSG& msg) {
 	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != KeyBinds::SEND_MESSAGE) {
 		// Add whichever button that was inputted to the current message
 		// --- OBS : doesn't account for capslock, etc.
@@ -105,8 +105,8 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-void LobbyState::addTextToChat(Message* message) {
-	this->addMessageToChat(*message);
+void LobbyState::addTextToChat(const Message& message) {
+	this->addMessageToChat(message);
 }
 
 void LobbyState::resetCurrentMessage() {
@@ -129,16 +129,19 @@ std::string LobbyState::fetchMessage()
 	return message;
 }
 
-void LobbyState::addMessageToChat(Message& message) {
+void LobbyState::addMessageToChat(const Message& message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
 	unsigned char id = stoi(message.sender);
 	Player* playa = NWrapperSingleton::getInstance().getPlayer(id);
 	std::string msg = playa->name + ": ";
-	message.content.insert(0, msg);
+	
+	// Work around const
+	Message newMessage = message;
+	newMessage.content.insert(0, msg);
 
 	// Add message to chatlog
-	m_messages.push_back(message);
+	m_messages.push_back(newMessage);
 
 	// New messages replace old
 	if (m_messages.size() > m_messageLimit) {

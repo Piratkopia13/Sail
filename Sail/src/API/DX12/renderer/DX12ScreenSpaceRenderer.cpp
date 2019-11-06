@@ -79,6 +79,6 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 	m_context->executeCommandLists({m_command.list.Get()});
 }
 
-bool DX12ScreenSpaceRenderer::onEvent(Event& event) {
+bool DX12ScreenSpaceRenderer::onEvent(const Event& event) {
 	return false;
 }

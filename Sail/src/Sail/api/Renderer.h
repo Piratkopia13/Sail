@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "Sail/events/Events.h"
+#include "Sail/events/EventReceiver.h"
 
 class Mesh;
 class Camera;
@@ -11,7 +11,7 @@ class RenderableTexture;
 class PostProcessPipeline;
 class Material;
 
-class Renderer : public IEventListener {
+class Renderer : public EventReceiver {
 public:
 	enum Type {
 		FORWARD,
@@ -60,7 +60,7 @@ public:
 	virtual void begin(Camera* camera);
 	virtual void submit(Model* model, const glm::mat4& modelMatrix, RenderFlag flags);
 
-	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {};
+	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {}
 
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) { };
 	virtual void submitWaterPoint(const glm::vec3& pos) { };
@@ -69,7 +69,7 @@ public:
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags);
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) = 0;
-	virtual bool onEvent(Event& event) override { return true; };
+	virtual bool onEvent(const Event& event) override { return true; }
 
 protected:
 	std::vector<RenderCommand> commandQueue;
