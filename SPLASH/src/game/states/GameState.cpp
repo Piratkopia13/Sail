@@ -173,6 +173,7 @@ GameState::GameState(StateStack& stack)
 	// Host fill its game tracker per player with player data.
 	// Reset data trackers
 	GameDataTracker::getInstance().init();
+
 }
 
 GameState::~GameState() {
@@ -615,11 +616,11 @@ bool GameState::renderImgui(float dt) {
 		m_wasDroppedWindow.renderWindow();
 	}
 
-	// KEEP UNTILL FINISHED WITH HANDPOSITIONS
+	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
-	//static glm::vec3 rPos(-0.596f, 1.026f, 0.055f);
+	//static glm::vec3 rPos(-0.555f, 1.052f, 0.107f);
 	//static glm::vec3 lRot(1.178f, -0.462f, 0.600f);
-	//static glm::vec3 rRot(1.178f, 0.646f, -0.300f);
+	//static glm::vec3 rRot(1.280f, 0.283f, -0.179f);
 	//if (ImGui::Begin("HandLocation")) {
 	//	ImGui::SliderFloat("##lposx", &lPos.x, -1.5f, 1.5f);
 	//	ImGui::SliderFloat("##lposy", &lPos.y, -1.5f, 1.5f);
