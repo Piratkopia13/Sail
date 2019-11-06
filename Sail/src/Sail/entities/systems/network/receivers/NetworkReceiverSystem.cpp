@@ -153,7 +153,7 @@ void NetworkReceiverSystem::update(float dt) {
 				{
 					ArchiveHelpers::loadVec3(ar, translation);
 					ArchiveHelpers::loadQuat(ar, rotationQuat);
-					//setEntityTransformMatrix(id, transformMatrix);
+
 					setEntityLocalPosition(id, translation);
 					setEntityLocalRotation(id, rotationQuat);
 				}
@@ -169,12 +169,6 @@ void NetworkReceiverSystem::update(float dt) {
 				{
 					ArchiveHelpers::loadVec3(ar, rotation);	// Read rotation
 					setEntityLocalRotation(id, rotation);
-				}
-				break;
-				case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
-				{
-					ArchiveHelpers::loadVec3(ar, translation); // Read translation
-					createEntity(id, entityType, translation);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_START:
@@ -228,7 +222,6 @@ void NetworkReceiverSystem::update(float dt) {
 		for (size_t i = 0; i < nrOfEvents; i++) {
 
 			// Handle-Single-Frame events
-			// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 			ar(eventType);
 #ifdef DEVELOPMENT
 			ar(REDUNDANTTYPE);
@@ -242,27 +235,30 @@ void NetworkReceiverSystem::update(float dt) {
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "Event: " << Netcode::MessageNames[(int)(eventType) - 1] << "\n";
 #endif
+
+
+			// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 			switch (eventType) {
-			case Netcode::MessageType::ATTACH_TO_LEFT_HAND:
-			{
-				Netcode::ComponentID entityID;
-				Netcode::ComponentID parentID;
-
-				ar(entityID);
-				ar(parentID);
-
-			}
-			break;
 			case Netcode::MessageType::CANDLE_HELD_STATE:
 			{
-				glm::vec3 candlepos;
 				bool isCarried;
 
 				ar(componentID);
 				ar(isCarried);
-				ArchiveHelpers::loadVec3(ar, candlepos);
 
-				setCandleHeldState(componentID, isCarried, candlepos);
+				setCandleHeldState(componentID, isCarried);
+			}
+			break;
+			case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
+			{
+				Netcode::ComponentID playerCompID;
+				Netcode::ComponentID candleCompID;
+
+				ar(playerCompID); // read what kind of entity it is
+				ar(candleCompID);         // Read what Netcode::ComponentID the entity should have
+				ArchiveHelpers::loadVec3(ar, translation); // Read translation
+				
+				createPlayerEntity(playerCompID, candleCompID, translation);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -423,44 +419,13 @@ void NetworkReceiverSystem::update(float dt) {
 	endMatchAfterTimer(dt);
 }
 
-
-
-void NetworkReceiverSystem::attachEntityToLeftHand(Netcode::ComponentID entityID, Netcode::ComponentID parentID) {
-	// Find the entity that should be attached and the entity that it should be attached to
-	
-	bool childFound = false;
-	bool parentFound = false;
-	Entity* parent = nullptr;
-	Entity* child = nullptr;
-	for (auto e : entities) {
-		if (!childFound && e->getComponent<NetworkReceiverComponent>()->ID == entityID) {
-			child = e;
-			childFound = true;
-		}
-
-		if (!parentFound && e->getComponent<NetworkReceiverComponent>()->ID == parentID) {
-			parent = e;
-			parentFound = true;
-		}
-
-		if (childFound && parentFound) {
-			// call attach
-			parent->addChildEntity(child); // This might not work
-			parent->getComponent<AnimationComponent>()->rightHandEntity = child;
-
-			return;
-		}
-	}
-	Logger::Error("attachEntityToLeftHand called but no matching entity to attach was found");
-}
-
 /*
   Creates a new entity of the specified entity type and with a NetworkReceiverComponent attached to it
 */
-void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation) {
+void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, const glm::vec3& translation) {
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == playerCompID) {
 			return;
 		}
 	}
@@ -468,23 +433,12 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 	auto e = ECS::Instance()->createEntity("networkedEntity");
 	instantAddEntity(e.get());
 
-	// create the new entity
-	switch (entityType) {
-	case Netcode::EntityType::PLAYER_ENTITY:
-	{
-		// lightIndex set to 999, can probably be removed since it no longer seems to be used
-		EntityFactory::CreateOtherPlayer(e, id, 999, translation);
-	}
-	break;
-	case Netcode::EntityType::CANDLE_ENTITY:
-	{
-		EntityFactory::CreateOtherPlayersCandle(e, id, translation);
-	}
-	break;
-	default:
-		Logger::Error("createEntity called but no matching entity type found");
-		break;
-	}
+
+	Logger::Log("Created player with id: " + std::to_string(playerCompID));
+
+	// lightIndex set to 999, can probably be removed since it no longer seems to be used
+	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, 999, translation);
+
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
@@ -617,7 +571,6 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 	if (m_playerID == playerIdOfShooter) {
 		for (auto& e : entities) {
 			if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == m_playerID) {
-				
 				self = e;
 				break;
 			}
@@ -702,7 +655,8 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
-void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isHeld, const glm::vec3& pos) {
+// TODO: remove pos
+void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isHeld) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -718,10 +672,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 				candleComp->wasCarriedLastUpdate = isHeld;
 				if (!isHeld) {
 					candleTransComp->removeParent();
-					candleTransComp->setStartTranslation(pos);
-					candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
 					e->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
-
 
 					// Might be needed
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);

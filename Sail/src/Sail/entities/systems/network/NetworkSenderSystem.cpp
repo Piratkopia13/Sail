@@ -169,7 +169,7 @@ void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 
 #ifdef DEVELOPMENT
 	// Don't send broken events to others or to yourself
-	if (type->type < Netcode::MessageType::CREATE_NETWORKED_ENTITY || type->type >= Netcode::MessageType::EMPTY) {
+	if (type->type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || type->type >= Netcode::MessageType::EMPTY) {
 		Logger::Error("Attempted to send invalid message\n");
 		return;
 	}
@@ -253,7 +253,6 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		glm::vec4 perspective;
 
 		TransformComponent* t = e->getComponent<TransformComponent>();
-		//ArchiveHelpers::saveMat4(ar, t->getMatrixWithUpdate());
 
 		glm::decompose(t->getMatrixWithUpdate(), scale, rotation, translation, skew, perspective);
 
@@ -271,36 +270,6 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	{
 		TransformComponent* t = e->getComponent<TransformComponent>();
 		ArchiveHelpers::saveVec3(ar, t->getRotations());
-	}
-	break;
-	case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
-	{
-		TransformComponent* t = e->getComponent<TransformComponent>();
-		ArchiveHelpers::saveVec3(ar, t->getTranslation()); // Send translation
-
-		// When the remote entity has been created we want to update translation and rotation of that entity
-		auto networkComp = e->getComponent<NetworkSenderComponent>();
-
-		// Stop sending Create messages after the first one
-		networkComp->removeMessageType(Netcode::MessageType::CREATE_NETWORKED_ENTITY);
-
-		switch (networkComp->m_entityType) {
-		case Netcode::EntityType::PLAYER_ENTITY:
-		{
-			networkComp->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
-			networkComp->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
-
-		}
-		break;
-		case Netcode::EntityType::CANDLE_ENTITY:
-		{
-			networkComp->addMessageType(Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT);
-		}
-		break;
-		default:
-			Logger::Error("INVALID EntityType in writeMessageToArchive::CREATE_NETWORKED_ENTITY");
-			break;
-		}
 	}
 	break;
 	case Netcode::MessageType::SHOOT_START:
@@ -353,21 +322,21 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 	// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 	switch (event->type) {
-	case Netcode::MessageType::ATTACH_TO_LEFT_HAND:
-	{
-		Netcode::MessageAttachToLeftHand* data = static_cast<Netcode::MessageAttachToLeftHand*>(event->data);
-
-		ar(data->entityID);
-		ar(data->parentID);
-	}
-	break;
 	case Netcode::MessageType::CANDLE_HELD_STATE:
 	{
 		Netcode::MessageCandleHeldState* data = static_cast<Netcode::MessageCandleHeldState*>(event->data);
 
 		ar(data->candleOwnerID);
 		ar(data->isHeld);
-		ArchiveHelpers::saveVec3(ar, data->candlePos);
+	}
+	break;
+	case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
+	{
+		Netcode::CreatePlayer* data = static_cast<Netcode::CreatePlayer*>(event->data);
+
+		ar(data->playerCompID);
+		ar(data->candleCompID);
+		ArchiveHelpers::saveVec3(ar, data->position);
 	}
 	break;
 	case Netcode::MessageType::ENDGAME_STATS:

@@ -43,8 +43,7 @@ protected:
 	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
 	Netcode::PlayerID m_playerID;
 private:
-	void attachEntityToLeftHand(Netcode::ComponentID entityID, Netcode::ComponentID parentID);
-	void createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation);
+	void createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, const glm::vec3& translation);
 	void setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation);
@@ -56,7 +55,7 @@ private:
 	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID ownerID);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
-	void setCandleHeldState(Netcode::ComponentID id, bool isHeld, const glm::vec3& pos = glm::vec3(0, 0, 0));
+	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
 	void igniteCandle(Netcode::ComponentID candleOwnerID);
 
 	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);

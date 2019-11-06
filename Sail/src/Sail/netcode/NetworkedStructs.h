@@ -47,11 +47,10 @@ namespace Netcode {
 	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
 	enum class MessageType : __int8 {
-		CREATE_NETWORKED_ENTITY = 1,
+		CREATE_NETWORKED_PLAYER = 1,
 		CHANGE_LOCAL_POSITION,
 		CHANGE_LOCAL_ROTATION,
 		CHANGE_ABSOLUTE_POS_AND_ROT,
-		ATTACH_TO_LEFT_HAND,
 		SPAWN_PROJECTILE,
 		ANIMATION,
 		SHOOT_START,
@@ -77,11 +76,10 @@ namespace Netcode {
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_ENTITY	",
+		"CREATE_NETWORKED_PLAYER	",
 		"CHANGE_LOCAL_POSITION,		",
 		"CHANGE_LOCAL_ROTATION,		",
 		"CHANGE_ABSOLUTE_POS_AND_ROT,",
-		"ATTACH_TO_LEFT_HAND,		",
 		"SPAWN_PROJECTILE,			",
 		"ANIMATION,					",
 		"SHOOT_START,				",
@@ -159,15 +157,16 @@ namespace Netcode {
 		virtual ~MessageData() {}
 	};
 
-	class MessageAttachToLeftHand : public MessageData {
+	class CreatePlayer : public MessageData {
 	public:
-		MessageAttachToLeftHand(Netcode::ComponentID entityNetID, Netcode::ComponentID parentNetID)
-			: entityID(entityNetID), parentID(parentNetID) {
+		CreatePlayer(Netcode::ComponentID playerNetID, Netcode::ComponentID candleNetID, glm::vec3 pos)
+			: playerCompID(playerNetID), candleCompID(candleNetID), position(pos) {
 		}
-		virtual ~MessageAttachToLeftHand() {}
+		virtual ~CreatePlayer() {}
 
-		Netcode::ComponentID entityID;
-		Netcode::ComponentID parentID;
+		Netcode::ComponentID playerCompID;
+		Netcode::ComponentID candleCompID;
+		glm::vec3 position;
 	};
 
 	class MessageSpawnProjectile : public MessageData {

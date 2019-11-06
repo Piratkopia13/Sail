@@ -9,14 +9,12 @@ class Shader;
 
 namespace EntityFactory {
 	void CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos, size_t lightIndex);
-	void CreateOtherPlayersCandle(Entity::SPtr& candle, Netcode::ComponentID netComponentID, const glm::vec3& lightPos);
-
 	
 	Entity::SPtr CreateWaterGun(const std::string& name);
 	
 	void AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_t& lightIndex, const Netcode::PlayerID& playerID);
 	Entity::SPtr CreateMyPlayer(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation);
-	void CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::ComponentID netComponentID, size_t lightIndex, glm::vec3 spawnLocation);
+	void CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, size_t lightIndex, glm::vec3 spawnLocation);
 	void CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation);
 	
 	void CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation);
