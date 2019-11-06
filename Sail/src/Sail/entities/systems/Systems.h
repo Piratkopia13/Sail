@@ -17,6 +17,7 @@
 #include "Gameplay/lifetime/LifeTimeSystem.h"
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"
+#include "light/SpotLightSystem.h"
 
 #include "network/receivers/NetworkReceiverSystem.h"
 #include "network/receivers/NetworkReceiverSystemClient.h"
@@ -33,6 +34,5 @@
 #include "render/BoundingboxSubmitSystem.h"
 #include "render/MetaballSubmitSystem.h"
 #include "render/ModelSubmitSystem.h"
-#include "render/RealTimeModelSubmitSystem.h"
 #include "render/ImGui/RenderImGuiSystem.h"
 #include "render/GUISubmitSystem.h"
