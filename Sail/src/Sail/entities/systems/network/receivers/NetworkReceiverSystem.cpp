@@ -648,7 +648,6 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
-// TODO: remove pos
 void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isHeld) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
