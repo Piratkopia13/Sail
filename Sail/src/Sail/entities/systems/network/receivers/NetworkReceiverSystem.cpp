@@ -5,7 +5,7 @@
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
-#include "Sail/entities/components/MapComponent.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 #include "../SPLASH/src/game/states/GameState.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -598,7 +598,8 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
 			pos.y = 20.f;
 			transform->setStartTranslation(pos);
-			auto middleOfLevel = glm::vec3(MapComponent::tileSize * MapComponent::xsize / 2.f, 0.f, MapComponent::tileSize * MapComponent::ysize / 2.f);
+			auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+			auto middleOfLevel = glm::vec3(mapSettings["tileSize"].value  * mapSettings["sizeX"].value / 2.f, 0.f, mapSettings["tileSize"].value * mapSettings["sizeY"].value / 2.f);
 			auto dir = glm::normalize(middleOfLevel - pos);
 			auto rots = Utils::getRotations(dir);
 			transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));

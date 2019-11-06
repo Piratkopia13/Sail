@@ -4,8 +4,22 @@
 
 class Scene;
 class Model;
-struct Rect;
-struct Clutter;
+
+struct Rect {
+	int posx;
+	int posy;
+	int sizex;
+	int sizey;
+	int doors = 0;
+};
+struct Clutter {
+	float posx;
+	float posy;
+	float height;
+	float rot;
+	int size;
+};
+
 
 enum TileModel {
 	ROOM_FLOOR,
@@ -44,9 +58,48 @@ public:
 
 	void generateMap();
 	void createWorld(const std::vector<Model*>& tileModels, Model* bb);
+	void destroyWorld();
 	void addClutterModel(const std::vector<Model*>& clutterModels, Model* bb);
 
 	glm::vec3 getSpawnPoint();
+
+	void stop();
+	const int getAreaType(float posX, float posY);
+
+	int xsize;
+	int ysize;
+	int*** tileArr; //0 is tileID, 1 is typeID, 2 is door
+	float hallwayThreshold = 0.3f; // percentage of level that can be corridors
+	int minSplitSize = 5; //minimum size for splitting chunks
+	int minRoomSize = 1; //minimum side of a room
+	int roomMaxSize = 36;//maximum area of a room
+	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
+	int doorModifier = 15;//percentage to spawn a door
+	int clutterModifier = 85;//percentage to add clutter
+	int seed;//seed for generation
+
+	int totalArea;
+	int numberOfRooms = 1;
+	int tileSize;
+	float tileHeight = 0.8f;
+	int tileOffset = 0;
+	std::vector<glm::vec3> spawnPoints;
+	std::queue<Rect> chunks;
+	std::queue<Rect> blocks;
+	std::queue<Rect> hallways;
+	std::queue<Rect> rooms;
+	std::queue<Rect> matched;
+	std::queue<Clutter>largeClutter;
+	std::queue<Clutter>mediumClutter;
+	std::queue<Clutter>smallClutter;
+
+
+
+
+
+
+
+
 
 private:
 	int randomizeTileId(std::vector<int>* tiles);

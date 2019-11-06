@@ -141,6 +141,7 @@ void SettingStorage::createGameDefaultMap() {
 	gameSettingsDynamic["map"] = std::map<std::string, DynamicSetting>();
 	gameSettingsDynamic["map"]["sizeX"] =   DynamicSetting(6.0f,	1.0f,	30.0f);
 	gameSettingsDynamic["map"]["sizeY"] =   DynamicSetting(6.0f,	1.0f,	30.0f);
+	gameSettingsDynamic["map"]["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
 	gameSettingsDynamic["map"]["clutter"] = DynamicSetting(0.85f,	0.0f,	5.0f);
 	gameSettingsDynamic["map"]["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
 }

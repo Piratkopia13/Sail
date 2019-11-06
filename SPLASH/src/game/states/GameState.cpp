@@ -322,8 +322,9 @@ bool GameState::processInput(float dt) {
 			parTrans->setTranslation(pos);
 			
 
-			
-			auto middleOfLevel = glm::vec3(MapComponent::tileSize * MapComponent::xsize / 2.f, 0.f, MapComponent::tileSize * MapComponent::ysize / 2.f);
+			auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+
+			auto middleOfLevel = glm::vec3(mapSettings["tileSize"].value * mapSettings["sizeX"].value / 2.f, 0.f, mapSettings["tileSize"].value * mapSettings["sizeY"].value / 2.f);
 			auto dir = glm::normalize(middleOfLevel - pos);
 			auto rots = Utils::getRotations(dir);
 			parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
@@ -1040,25 +1041,25 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	}
 
 	// Create the level generator system and put it into the datatype.
-	auto map = ECS::Instance()->createEntity("Map");
-	MapComponent* mc = nullptr;
+	SettingStorage& settings = m_app->getSettings();
 #ifdef _PERFORMANCE_TEST
-	mc = map->addComponent<MapComponent>(2);
+	m_componentSystems.levelGeneratorSystem->seed = 2;
 #else
-	mc = map->addComponent<MapComponent>(NWrapperSingleton::getInstance().getSeed());
+	m_componentSystems.levelGeneratorSystem->seed = settings.gameSettingsDynamic["map"]["seed"].value;;
+	//m_componentSystems.levelGeneratorSystem->seed = NWrapperSingleton::getInstance().getSeed();
 #endif
 	ECS::Instance()->addAllQueuedEntities();
 
-	SettingStorage& settings = m_app->getSettings();
-	mc->clutterModifier = settings.gameSettingsDynamic["map"]["clutter"].value * 100;
-	//mc->xsize = settings.gameSettingsDynamic["map"]["sizeX"].value;
-	//mc->ysize = settings.gameSettingsDynamic["map"]["sizeY"].value;
+	m_componentSystems.levelGeneratorSystem->clutterModifier = settings.gameSettingsDynamic["map"]["clutter"].value * 100;
+	m_componentSystems.levelGeneratorSystem->xsize = settings.gameSettingsDynamic["map"]["sizeX"].value;
+	m_componentSystems.levelGeneratorSystem->ysize = settings.gameSettingsDynamic["map"]["sizeY"].value;
 
 	m_componentSystems.levelGeneratorSystem->generateMap();
 	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
 	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
 
-	m_componentSystems.gameInputSystem->m_mapPointer = map->getComponent<MapComponent>();
+	m_componentSystems.levelGeneratorSystem->seed = NWrapperSingleton::getInstance().getSeed();
+	m_componentSystems.gameInputSystem->m_mapPointer = m_componentSystems.levelGeneratorSystem;
 }
 
 #ifdef _PERFORMANCE_TEST

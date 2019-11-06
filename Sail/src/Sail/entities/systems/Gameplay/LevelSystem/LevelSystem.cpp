@@ -11,6 +11,10 @@ LevelSystem::LevelSystem():BaseComponentSystem() {
 	registerComponent<TransformComponent>(false, true, true);
 	registerComponent<BoundingBoxComponent>(false, false, true);
 	registerComponent<CollidableComponent>(false, false, true);
+	xsize = 1;
+	ysize = 1;
+	tileSize = 7;
+
 }
 
 LevelSystem::~LevelSystem() {
@@ -18,85 +22,108 @@ LevelSystem::~LevelSystem() {
 
 //generates all necessary data for the world
 void LevelSystem::generateMap() {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		srand(map->seed);
-		std::vector<int> avaliableTiles;
 
-		//create floor to split for map generation
-		Rect floor;
-		floor.posx = 0;
-		floor.posy = 0;
-		floor.sizex = map->xsize;
-		floor.sizey = map->ysize;
-		map->chunks.emplace(floor);
 
-		//create blocks and hallways
-		splitChunk();
-
-		//add hallways to type-layer
-		while (!map->hallways.empty()) {
-			Rect tile;
-			tile = map->hallways.front();
-			map->hallways.pop();
-			for (int i = 0; i < tile.sizex; i++) {
-				for (int j = 0; j < tile.sizey; j++) {
-					map->tileArr[tile.posx + i][tile.posy + j][1] = 0;
-				}
-			}
+	tileArr = SAIL_NEW int** [xsize]();
+	for (int i = 0; i < xsize; i++) {
+		tileArr[i] = SAIL_NEW int* [ysize]();
+		for (int j = 0; j < ysize; j++) {
+			tileArr[i][j] = SAIL_NEW int[3]();
 		}
-
-		//create rooms from blocks
-		splitBlock();
-		//add rooms with individual type to type-layer
-		while (!map->rooms.empty()) {
-			Rect tile;
-			tile = map->rooms.front();
-			map->rooms.pop();
-			for (int i = 0; i < tile.sizex; i++) {
-				for (int j = 0; j < tile.sizey; j++) {
-					map->tileArr[tile.posx + i][tile.posy + j][1] = map->numberOfRooms;
-				}
-			}
-			map->matched.emplace(tile);
-			map->numberOfRooms++;
-		}
-
-		//adds doors to the layout
-		addDoors();
-
-		// Find spawn points
-		addSpawnPoints();
-
-		//creates tilemap for the level
-		matchRoom();
-
-		//fills rooms with stuff
-		generateClutter();
 	}
+
+
+	srand(seed);
+	std::vector<int> avaliableTiles;
+
+	//create floor to split for map generation
+	Rect floor;
+	floor.posx = 0;
+	floor.posy = 0;
+	floor.sizex = xsize;
+	floor.sizey = ysize;
+	chunks.emplace(floor);
+
+	//create blocks and hallways
+	splitChunk();
+
+	//add hallways to type-layer
+	while (!hallways.empty()) {
+		Rect tile;
+		tile = hallways.front();
+		hallways.pop();
+		for (int i = 0; i < tile.sizex; i++) {
+			for (int j = 0; j < tile.sizey; j++) {
+				tileArr[tile.posx + i][tile.posy + j][1] = 0;
+			}
+		}
+	}
+
+	//create rooms from blocks
+	splitBlock();
+	//add rooms with individual type to type-layer
+	while (!rooms.empty()) {
+		Rect tile;
+		tile = rooms.front();
+		rooms.pop();
+		for (int i = 0; i < tile.sizex; i++) {
+			for (int j = 0; j < tile.sizey; j++) {
+				tileArr[tile.posx + i][tile.posy + j][1] = numberOfRooms;
+			}
+		}
+		matched.emplace(tile);
+		numberOfRooms++;
+	}
+
+	//adds doors to the layout
+	addDoors();
+
+	// Find spawn points
+	addSpawnPoints();
+
+	//creates tilemap for the level
+	matchRoom();
+
+	//fills rooms with stuff
+	generateClutter();
+	
 }
 
 void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) {
 	
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
 
-		int worldWidth = map->xsize;
-		int worldDepth = map->ysize;
 
-		//traverse all positions to find which tile should be there
-		for (int i = 0; i < worldWidth; i++) {
-			for (int j = 0; j < worldDepth; j++) {
-				int tileId = map->tileArr[i][j][0];
-				int typeId = map->tileArr[i][j][1];
-				int doors = map->tileArr[i][j][2];
-				if (tileId<16 && tileId>-1) {
-					addTile(tileId, typeId, doors, tileModels, map->tileSize,map->tileHeight, map->tileOffset, i, j, bb);
 
-				}
+
+	int worldWidth = xsize;
+	int worldDepth = ysize;
+
+	//traverse all positions to find which tile should be there
+	for (int i = 0; i < worldWidth; i++) {
+		for (int j = 0; j < worldDepth; j++) {
+			int tileId = tileArr[i][j][0];
+			int typeId = tileArr[i][j][1];
+			int doors = tileArr[i][j][2];
+			if (tileId<16 && tileId>-1) {
+				addTile(tileId, typeId, doors, tileModels, tileSize,tileHeight, tileOffset, i, j, bb);
+
 			}
 		}
 	}
+}
+
+void LevelSystem::destroyWorld() {
+
+
+
+
+	for (int i = 0; i < xsize; i++) {
+		for (int j = 0; j < ysize; j++) {
+			Memory::SafeDeleteArr(tileArr[i][j]);
+		}
+		Memory::SafeDeleteArr(tileArr[i]);
+	}
+	Memory::SafeDeleteArr(tileArr);
 }
 
 //chooses a random tile from all possible tiles that fit
@@ -112,255 +139,245 @@ int LevelSystem::randomizeTileId(std::vector<int>* tiles) {
 
 //finds a matching tile in a labyrinth implementation
 void LevelSystem::findPossibleTiles(std::vector<int>* mapPointer, int posx, int posy) {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		
-		int tiles[4];
-		tiles[0]=map->tileArr[posx][posy + 1][0];
-		tiles[1]= map->tileArr[posx+1][posy][0];
-		tiles[2] = map->tileArr[posx][posy-1][0];
-		tiles[3] = map->tileArr[posx - 1][posy][0];
 
-		int nrOfRules = 0;
-		std::vector<int> temp;
-		int match = 0;
-		for (int i = 0; i < 4; i++) {
-			if (tiles[i] != -1) {
-				nrOfRules++;
-			}
-		}
-		for (int i = 0; i < 16; i++) {
-			if (tiles[0] != -1) {
-				if (((tiles[0] % 8) / 4) == (i % 2)) {
-					temp.emplace_back(i);
-				}
-			}
-			if (tiles[1] != -1) {
-				if ((tiles[1] / 8)==((i % 4) / 2)) {
-					temp.emplace_back(i);
-				}
-			}
-			if (tiles[2] != -1) {
-				if (((i%8)/4)==(tiles[2]%2)) {
-					temp.emplace_back(i);
-				}
-			}
-			if (tiles[3] != -1) {
-				if (((tiles[3]% 4) / 2) == (i/ 8)) {
-					temp.emplace_back(i);
-				}
-			}
-		}
-		for (int i = 0; i < 16; i++) {
-			for (int j = 0; j < temp.size(); j++) {
-				if (i == temp[j]) {
-					match++;
-				}
-			}
-			if (match >= nrOfRules) {
-				mapPointer->emplace_back(i);
-				//less t and cross
-				if (i !=7 &&i!=11&&i!=13&&i!=14&&i!=15) {
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-				}
-				//more flat
-				if (i == 0) {
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-				}
-				//more straight
-				if(i==5||i==10){
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-					mapPointer->emplace_back(i);
-				}
-			}
-			match = 0;
+		
+	int tiles[4];
+	tiles[0]=tileArr[posx][posy + 1][0];
+	tiles[1]= tileArr[posx+1][posy][0];
+	tiles[2] = tileArr[posx][posy-1][0];
+	tiles[3] = tileArr[posx - 1][posy][0];
+
+	int nrOfRules = 0;
+	std::vector<int> temp;
+	int match = 0;
+	for (int i = 0; i < 4; i++) {
+		if (tiles[i] != -1) {
+			nrOfRules++;
 		}
 	}
+	for (int i = 0; i < 16; i++) {
+		if (tiles[0] != -1) {
+			if (((tiles[0] % 8) / 4) == (i % 2)) {
+				temp.emplace_back(i);
+			}
+		}
+		if (tiles[1] != -1) {
+			if ((tiles[1] / 8)==((i % 4) / 2)) {
+				temp.emplace_back(i);
+			}
+		}
+		if (tiles[2] != -1) {
+			if (((i%8)/4)==(tiles[2]%2)) {
+				temp.emplace_back(i);
+			}
+		}
+		if (tiles[3] != -1) {
+			if (((tiles[3]% 4) / 2) == (i/ 8)) {
+				temp.emplace_back(i);
+			}
+		}
+	}
+	for (int i = 0; i < 16; i++) {
+		for (int j = 0; j < temp.size(); j++) {
+			if (i == temp[j]) {
+				match++;
+			}
+		}
+		if (match >= nrOfRules) {
+			mapPointer->emplace_back(i);
+			//less t and cross
+			if (i !=7 &&i!=11&&i!=13&&i!=14&&i!=15) {
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+			}
+			//more flat
+			if (i == 0) {
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+			}
+			//more straight
+			if(i==5||i==10){
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+				mapPointer->emplace_back(i);
+			}
+		}
+		match = 0;
+	}
+	
 }
 
 //splits chunks to make hallways and blocks
 void LevelSystem::splitChunk() {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		bool ns = true;
-		float hallwayArea = 0.f;
-		while (hallwayArea / map->totalArea < map->hallwayThreshold && !map->chunks.empty()) {
-			Rect rekt,a,b,hall;
-			rekt = map->chunks.front();
-			map->chunks.pop();
-			if (ns) {
-				if (rekt.sizex > map->minSplitSize) {
-					int newSize = rand() % (rekt.sizex - map->minSplitSize) + map->minSplitSize/2;
-					a.posx = rekt.posx;
-					a.posy = rekt.posy;
-					a.sizex = newSize;
-					a.sizey = rekt.sizey;
-					map->chunks.emplace(a);
-					b.posy = rekt.posy;
-					b.posx = rekt.posx + newSize + 1;
-					b.sizex = rekt.sizex - 1 - newSize;
-					b.sizey = rekt.sizey;
-					map->chunks.emplace(b);
-					hall.posx = rekt.posx + newSize;
-					hall.posy = rekt.posy;
-					hall.sizex = 1;
-					hall.sizey = rekt.sizey;
-					map->hallways.emplace(hall);
-					hallwayArea += hall.sizex * hall.sizey;
-				}
-				else if(rekt.sizey <= map->minSplitSize){
-					map->blocks.emplace(rekt);
-					ns = !ns;
-				}
-				else {
-					map->chunks.emplace(rekt);
-				}
+
+	bool ns = true;
+	float hallwayArea = 0.f;
+	while (hallwayArea / totalArea < hallwayThreshold && !chunks.empty()) {
+		Rect rekt,a,b,hall;
+		rekt = chunks.front();
+		chunks.pop();
+		if (ns) {
+			if (rekt.sizex > minSplitSize) {
+				int newSize = rand() % (rekt.sizex - minSplitSize) + minSplitSize/2;
+				a.posx = rekt.posx;
+				a.posy = rekt.posy;
+				a.sizex = newSize;
+				a.sizey = rekt.sizey;
+				chunks.emplace(a);
+				b.posy = rekt.posy;
+				b.posx = rekt.posx + newSize + 1;
+				b.sizex = rekt.sizex - 1 - newSize;
+				b.sizey = rekt.sizey;
+				chunks.emplace(b);
+				hall.posx = rekt.posx + newSize;
+				hall.posy = rekt.posy;
+				hall.sizex = 1;
+				hall.sizey = rekt.sizey;
+				hallways.emplace(hall);
+				hallwayArea += hall.sizex * hall.sizey;
+			}
+			else if(rekt.sizey <= minSplitSize){
+				blocks.emplace(rekt);
 				ns = !ns;
 			}
 			else {
-				if (rekt.sizey > map->minSplitSize) {
-					int newSize = rand() % (rekt.sizey - map->minSplitSize) + map->minSplitSize/2;
-					a.posx = rekt.posx;
-					a.posy = rekt.posy;
-					a.sizex = rekt.sizex;
-					a.sizey = newSize;
-					map->chunks.emplace(a);
-					b.posy = rekt.posy + newSize + 1;
-					b.posx = rekt.posx;
-					b.sizex = rekt.sizex;
-					b.sizey = rekt.sizey - 1 - newSize;
-					map->chunks.emplace(b);
-					hall.posx = rekt.posx ;
-					hall.posy = rekt.posy + newSize;
-					hall.sizex = rekt.sizex;
-					hall.sizey =1;
-					map->hallways.emplace(hall);
-					hallwayArea += hall.sizex * hall.sizey;
-				}
-				else if (rekt.sizex <= map->minSplitSize) {
-					map->blocks.emplace(rekt);
-					ns = !ns;
-				}
-				else {
-					map->chunks.emplace(rekt);
-				}
-				ns = !ns;
-
+				chunks.emplace(rekt);
 			}
+			ns = !ns;
 		}
-		while (!map->chunks.empty()) {
-			Rect rekt = map->chunks.front();
-			map->chunks.pop();
-			map->blocks.emplace(rekt);
+		else {
+			if (rekt.sizey > minSplitSize) {
+				int newSize = rand() % (rekt.sizey - minSplitSize) + minSplitSize/2;
+				a.posx = rekt.posx;
+				a.posy = rekt.posy;
+				a.sizex = rekt.sizex;
+				a.sizey = newSize;
+				chunks.emplace(a);
+				b.posy = rekt.posy + newSize + 1;
+				b.posx = rekt.posx;
+				b.sizex = rekt.sizex;
+				b.sizey = rekt.sizey - 1 - newSize;
+				chunks.emplace(b);
+				hall.posx = rekt.posx ;
+				hall.posy = rekt.posy + newSize;
+				hall.sizex = rekt.sizex;
+				hall.sizey =1;
+				hallways.emplace(hall);
+				hallwayArea += hall.sizex * hall.sizey;
+			}
+			else if (rekt.sizex <= minSplitSize) {
+				blocks.emplace(rekt);
+				ns = !ns;
+			}
+			else {
+				chunks.emplace(rekt);
+			}
+			ns = !ns;
+
 		}
+	}
+	while (!chunks.empty()) {
+		Rect rekt = chunks.front();
+		chunks.pop();
+		blocks.emplace(rekt);
 	}
 }
 
 //splits blocks to make rooms
 void LevelSystem::splitBlock() {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
 
-		while (!map->blocks.empty()) {
-			bool isSplit = false,ns=true;
-			Rect rekt = map->blocks.front();
-			if (rand() % 100 > map->roomSplitStop||rekt.sizex*rekt.sizey>map->roomMaxSize) {
-				if (rekt.sizex > rekt.sizey) {
-					ns = true;
-				}
-				else {
-					ns = false;
-				}
-				isSplit = splitDirection(ns);
-				if (isSplit) {
-					map->blocks.pop();
-				}
+	while (!blocks.empty()) {
+		bool isSplit = false,ns=true;
+		Rect rekt = blocks.front();
+		if (rand() % 100 > roomSplitStop||rekt.sizex*rekt.sizey>roomMaxSize) {
+			if (rekt.sizex > rekt.sizey) {
+				ns = true;
 			}
 			else {
-				map->rooms.emplace(rekt);
-				map->blocks.pop();
+				ns = false;
 			}
+			isSplit = splitDirection(ns);
+			if (isSplit) {
+				blocks.pop();
+			}
+		}
+		else {
+			rooms.emplace(rekt);
+			blocks.pop();
 		}
 	}
 }
 
 //traverses every tile and matches it to the "areas" next to it, to see if there should be a wall.
 void LevelSystem::matchRoom() {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		int tiles[4];
-		for (int i = 0; i < map->xsize; i++) {
-			for (int j = 0; j < map->ysize; j++) {
-				//check typeID around current position to find tileID 
-				if (i - 1 < 0) {
-					tiles[0] = -1;
-				}
-				else {
-					tiles[0] = map->tileArr[i - 1][j][1];
-				}
-				if (j + 1 >= map->ysize) {
-					tiles[1] = -1;
-				}
-				else {
-					tiles[1] = map->tileArr[i][j + 1][1];
-				}
-				if (i + 1 >= map->xsize) {
-					tiles[2] = -1;
-				}
-				else {
-					tiles[2] = map->tileArr[i + 1][j][1];
-				}
-				if (j - 1 < 0) {
-					tiles[3] = -1;
-				}
-				else {
-					tiles[3] = map->tileArr[i][j - 1][1];
-				}
-				//match and add value for walls
-				if (tiles[0] != map->tileArr[i][j][1]) {
-					map->tileArr[i][j][0] += 8;
-				}
-				if (tiles[1] != map->tileArr[i][j][1]) {
-					map->tileArr[i][j][0] += 1;
-				}
-				if (tiles[2] != map->tileArr[i][j][1]) {
-					map->tileArr[i][j][0] += 2;
-				}
-				if (tiles[3] != map->tileArr[i][j][1]) {
-					map->tileArr[i][j][0] += 4;
-				}
-				if (map->tileArr[i][j][1] == -1) {
-					map->tileArr[i][j][0] = -1;
-				}
+	int tiles[4];
+	for (int i = 0; i < xsize; i++) {
+		for (int j = 0; j < ysize; j++) {
+			//check typeID around current position to find tileID 
+			if (i - 1 < 0) {
+				tiles[0] = -1;
+			}
+			else {
+				tiles[0] = tileArr[i - 1][j][1];
+			}
+			if (j + 1 >= ysize) {
+				tiles[1] = -1;
+			}
+			else {
+				tiles[1] = tileArr[i][j + 1][1];
+			}
+			if (i + 1 >= xsize) {
+				tiles[2] = -1;
+			}
+			else {
+				tiles[2] = tileArr[i + 1][j][1];
+			}
+			if (j - 1 < 0) {
+				tiles[3] = -1;
+			}
+			else {
+				tiles[3] = tileArr[i][j - 1][1];
+			}
+			//match and add value for walls
+			if (tiles[0] != tileArr[i][j][1]) {
+				tileArr[i][j][0] += 8;
+			}
+			if (tiles[1] != tileArr[i][j][1]) {
+				tileArr[i][j][0] += 1;
+			}
+			if (tiles[2] != tileArr[i][j][1]) {
+				tileArr[i][j][0] += 2;
+			}
+			if (tiles[3] != tileArr[i][j][1]) {
+				tileArr[i][j][0] += 4;
+			}
+			if (tileArr[i][j][1] == -1) {
+				tileArr[i][j][0] = -1;
 			}
 		}
-	
 	}
 }
 
@@ -372,34 +389,31 @@ int LevelSystem::checkBorder(Rect rekt) {
 	bool left = false;
 	bool right = false;
 	int corridor = 0;
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		for (int i = 0; i < rekt.sizex; i++) {
-			if (rekt.posx + i >= 0 && rekt.posx + i < map->xsize) {
-				if (rekt.posy > 0) {
-					if (map->tileArr[rekt.posx + i][rekt.posy - 1][1] == 0) {
-						bottom = true;
-					}
+	for (int i = 0; i < rekt.sizex; i++) {
+		if (rekt.posx + i >= 0 && rekt.posx + i < xsize) {
+			if (rekt.posy > 0) {
+				if (tileArr[rekt.posx + i][rekt.posy - 1][1] == 0) {
+					bottom = true;
 				}
-				if (rekt.posy + rekt.sizey + 1 < map->ysize) {
-					if (map->tileArr[rekt.posx + i][rekt.posy + rekt.sizey ][1] == 0) {
-						top = true;
-					}
+			}
+			if (rekt.posy + rekt.sizey + 1 < ysize) {
+				if (tileArr[rekt.posx + i][rekt.posy + rekt.sizey ][1] == 0) {
+					top = true;
 				}
 			}
 		}
+	}
 
-		for (int i = 0; i < rekt.sizey; i++) {
-			if (rekt.posy + i >= 0 && rekt.posy + i < map->ysize) {
-				if (rekt.posx > 0) {
-					if (map->tileArr[rekt.posx - 1][rekt.posy + i][1] == 0) {
-						left = true;
-					}
+	for (int i = 0; i < rekt.sizey; i++) {
+		if (rekt.posy + i >= 0 && rekt.posy + i < ysize) {
+			if (rekt.posx > 0) {
+				if (tileArr[rekt.posx - 1][rekt.posy + i][1] == 0) {
+					left = true;
 				}
-				if (rekt.posx + rekt.sizex + 1 < map->xsize) {
-					if (map->tileArr[rekt.posx + rekt.sizex][rekt.posy + i][1] == 0) {
-						right = true;
-					}
+			}
+			if (rekt.posx + rekt.sizex + 1 < xsize) {
+				if (tileArr[rekt.posx + rekt.sizex][rekt.posy + i][1] == 0) {
+					right = true;
 				}
 			}
 		}
@@ -422,120 +436,81 @@ int LevelSystem::checkBorder(Rect rekt) {
 //Splits a block in a direction while making sure both new blocks are next to a corridor.
 //If they're not, it tries to split the block the other way. If that also fails, the block is added to the rooms.
 bool LevelSystem::splitDirection(bool ns) {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		Rect rekt, a, b;
-		rekt = map->blocks.front();
-		if (ns) {
-			if (rekt.sizex >= map->minRoomSize * 2) {
-				int newSize = 0;
-				if (rekt.sizex == 2 * map->minRoomSize) {
-					newSize = map->minRoomSize;
-				}
-				else if (rekt.sizex == 2 * map->minRoomSize + 1) {
-					newSize = rand() % 2 + map->minRoomSize;
-				}
-				else {
-					newSize = rand() % (rekt.sizex - 2 * map->minRoomSize) + map->minRoomSize;
-				}
-				a.posx = rekt.posx;
-				a.posy = rekt.posy;
-				a.sizex = newSize;
-				a.sizey = rekt.sizey;
-				b.posx = rekt.posx + newSize;
-				b.posy = rekt.posy;
-				b.sizex = rekt.sizex - newSize;
-				b.sizey = rekt.sizey;
-				if (checkBorder(a)>0 && checkBorder(b)>0) {
-					map->blocks.emplace(a);
-					map->blocks.emplace(b);
-					return true;
-				}
-				else {
-					if (rekt.sizey >= map->minRoomSize * 2) {
-						newSize = 0;
-						if (rekt.sizey == 2 * map->minRoomSize) {
-							newSize = map->minRoomSize;
-						}
-						else if (rekt.sizey == 2 * map->minRoomSize + 1) {
-							newSize = rand() % 2 + map->minRoomSize;
-						}
-						else {
-							newSize = rand() % (rekt.sizey - 2 * map->minRoomSize) + map->minRoomSize;
-						}
-						a.posx = rekt.posx;
-						a.posy = rekt.posy;
-						a.sizex = rekt.sizex;
-						a.sizey = newSize;
-						b.posx = rekt.posx;
-						b.posy = rekt.posy+newSize;
-						b.sizex = rekt.sizex;
-						b.sizey = rekt.sizey - newSize;
-						if (checkBorder(a)>0 && checkBorder(b)>0) {
-							map->blocks.emplace(a);
-							map->blocks.emplace(b);
-							return true;
-						}
-						else {
-							map->rooms.emplace(rekt);
-							return true;
-						}
-					}
-					else {
-						map->rooms.emplace(rekt);
-						return true;
-					}
-				}
-
+	Rect rekt, a, b;
+	rekt = blocks.front();
+	if (ns) {
+		if (rekt.sizex >= minRoomSize * 2) {
+			int newSize = 0;
+			if (rekt.sizex == 2 * minRoomSize) {
+				newSize = minRoomSize;
+			}
+			else if (rekt.sizex == 2 * minRoomSize + 1) {
+				newSize = rand() % 2 + minRoomSize;
 			}
 			else {
-				if (rekt.sizey >= map->minRoomSize * 2) {
-					int newSize = 0;
-					if (rekt.sizey == 2 * map->minRoomSize) {
-						newSize = map->minRoomSize;
+				newSize = rand() % (rekt.sizex - 2 * minRoomSize) + minRoomSize;
+			}
+			a.posx = rekt.posx;
+			a.posy = rekt.posy;
+			a.sizex = newSize;
+			a.sizey = rekt.sizey;
+			b.posx = rekt.posx + newSize;
+			b.posy = rekt.posy;
+			b.sizex = rekt.sizex - newSize;
+			b.sizey = rekt.sizey;
+			if (checkBorder(a)>0 && checkBorder(b)>0) {
+				blocks.emplace(a);
+				blocks.emplace(b);
+				return true;
+			}
+			else {
+				if (rekt.sizey >= minRoomSize * 2) {
+					newSize = 0;
+					if (rekt.sizey == 2 * minRoomSize) {
+						newSize = minRoomSize;
 					}
-					else if (rekt.sizey == 2 * map->minRoomSize + 1) {
-						newSize = rand() % 2 + map->minRoomSize;
+					else if (rekt.sizey == 2 * minRoomSize + 1) {
+						newSize = rand() % 2 + minRoomSize;
 					}
 					else {
-						newSize = rand() % (rekt.sizey - 2 * map->minRoomSize) + map->minRoomSize;
+						newSize = rand() % (rekt.sizey - 2 * minRoomSize) + minRoomSize;
 					}
 					a.posx = rekt.posx;
 					a.posy = rekt.posy;
 					a.sizex = rekt.sizex;
 					a.sizey = newSize;
 					b.posx = rekt.posx;
-					b.posy = rekt.posy + newSize;
+					b.posy = rekt.posy+newSize;
 					b.sizex = rekt.sizex;
 					b.sizey = rekt.sizey - newSize;
 					if (checkBorder(a)>0 && checkBorder(b)>0) {
-						map->blocks.emplace(a);
-						map->blocks.emplace(b);
+						blocks.emplace(a);
+						blocks.emplace(b);
 						return true;
 					}
 					else {
-						map->rooms.emplace(rekt);
+						rooms.emplace(rekt);
 						return true;
 					}
 				}
 				else {
-					map->rooms.emplace(rekt);
+					rooms.emplace(rekt);
 					return true;
 				}
-
 			}
+
 		}
-		if (!ns) {
-			if (rekt.sizey >= map->minRoomSize * 2) {
+		else {
+			if (rekt.sizey >= minRoomSize * 2) {
 				int newSize = 0;
-				if (rekt.sizey == 2*map->minRoomSize) {
-					newSize = map->minRoomSize;
+				if (rekt.sizey == 2 * minRoomSize) {
+					newSize = minRoomSize;
 				}
-				else if (rekt.sizey == 2*map->minRoomSize+1) {
-					newSize = rand() % 2 + map->minRoomSize;
+				else if (rekt.sizey == 2 * minRoomSize + 1) {
+					newSize = rand() % 2 + minRoomSize;
 				}
 				else {
-					newSize = rand() % (rekt.sizey - 2 * map->minRoomSize) + map->minRoomSize;
+					newSize = rand() % (rekt.sizey - 2 * minRoomSize) + minRoomSize;
 				}
 				a.posx = rekt.posx;
 				a.posy = rekt.posy;
@@ -543,61 +518,61 @@ bool LevelSystem::splitDirection(bool ns) {
 				a.sizey = newSize;
 				b.posx = rekt.posx;
 				b.posy = rekt.posy + newSize;
-				b.sizex = rekt.sizex ;
+				b.sizex = rekt.sizex;
 				b.sizey = rekt.sizey - newSize;
 				if (checkBorder(a)>0 && checkBorder(b)>0) {
-					map->blocks.emplace(a);
-					map->blocks.emplace(b);
+					blocks.emplace(a);
+					blocks.emplace(b);
 					return true;
 				}
 				else {
-					if (rekt.sizex >= map->minRoomSize * 2) {
-						newSize = 0;
-						if (rekt.sizex == 2 * map->minRoomSize) {
-							newSize = map->minRoomSize;
-						}
-						else if (rekt.sizex == 2 * map->minRoomSize + 1) {
-							newSize = rand() % 2 + map->minRoomSize;
-						}
-						else {
-							newSize = rand() % (rekt.sizex - 2 * map->minRoomSize) + map->minRoomSize;
-						}
-						a.posx = rekt.posx;
-						a.posy = rekt.posy;
-						a.sizex = newSize;
-						a.sizey = rekt.sizey;
-						b.posx = rekt.posx+newSize;
-						b.posy = rekt.posy;
-						b.sizex = rekt.sizex-newSize;
-						b.sizey = rekt.sizey;
-						if (checkBorder(a)>0 && checkBorder(b)>0) {
-							map->blocks.emplace(a);
-							map->blocks.emplace(b);
-							return true;
-						}
-						else {
-							map->rooms.emplace(rekt);
-							return true;
-						}
-					}
-					else {
-						map->rooms.emplace(rekt);
-						return true;
-					}
+					rooms.emplace(rekt);
+					return true;
 				}
-
 			}
 			else {
-				if (rekt.sizex >= map->minRoomSize * 2) {
-					int newSize = 0;
-					if (rekt.sizex == 2 * map->minRoomSize) {
-						newSize = map->minRoomSize;
+				rooms.emplace(rekt);
+				return true;
+			}
+
+		}
+	}
+	if (!ns) {
+		if (rekt.sizey >= minRoomSize * 2) {
+			int newSize = 0;
+			if (rekt.sizey == 2*minRoomSize) {
+				newSize = minRoomSize;
+			}
+			else if (rekt.sizey == 2*minRoomSize+1) {
+				newSize = rand() % 2 + minRoomSize;
+			}
+			else {
+				newSize = rand() % (rekt.sizey - 2 * minRoomSize) + minRoomSize;
+			}
+			a.posx = rekt.posx;
+			a.posy = rekt.posy;
+			a.sizex = rekt.sizex;
+			a.sizey = newSize;
+			b.posx = rekt.posx;
+			b.posy = rekt.posy + newSize;
+			b.sizex = rekt.sizex ;
+			b.sizey = rekt.sizey - newSize;
+			if (checkBorder(a)>0 && checkBorder(b)>0) {
+				blocks.emplace(a);
+				blocks.emplace(b);
+				return true;
+			}
+			else {
+				if (rekt.sizex >= minRoomSize * 2) {
+					newSize = 0;
+					if (rekt.sizex == 2 * minRoomSize) {
+						newSize = minRoomSize;
 					}
-					else if (rekt.sizex == 2 * map->minRoomSize + 1) {
-						newSize = rand() % 2 + map->minRoomSize;
+					else if (rekt.sizex == 2 * minRoomSize + 1) {
+						newSize = rand() % 2 + minRoomSize;
 					}
 					else {
-						newSize = rand() % (rekt.sizex - 2 * map->minRoomSize) + map->minRoomSize;
+						newSize = rand() % (rekt.sizex - 2 * minRoomSize) + minRoomSize;
 					}
 					a.posx = rekt.posx;
 					a.posy = rekt.posy;
@@ -608,196 +583,230 @@ bool LevelSystem::splitDirection(bool ns) {
 					b.sizex = rekt.sizex-newSize;
 					b.sizey = rekt.sizey;
 					if (checkBorder(a)>0 && checkBorder(b)>0) {
-						map->blocks.emplace(a);
-						map->blocks.emplace(b);
+						blocks.emplace(a);
+						blocks.emplace(b);
 						return true;
 					}
 					else {
-						map->rooms.emplace(rekt);
+						rooms.emplace(rekt);
 						return true;
 					}
 				}
 				else {
-					map->rooms.emplace(rekt);
+					rooms.emplace(rekt);
 					return true;
 				}
-
 			}
 
 		}
+		else {
+			if (rekt.sizex >= minRoomSize * 2) {
+				int newSize = 0;
+				if (rekt.sizex == 2 * minRoomSize) {
+					newSize = minRoomSize;
+				}
+				else if (rekt.sizex == 2 * minRoomSize + 1) {
+					newSize = rand() % 2 + minRoomSize;
+				}
+				else {
+					newSize = rand() % (rekt.sizex - 2 * minRoomSize) + minRoomSize;
+				}
+				a.posx = rekt.posx;
+				a.posy = rekt.posy;
+				a.sizex = newSize;
+				a.sizey = rekt.sizey;
+				b.posx = rekt.posx+newSize;
+				b.posy = rekt.posy;
+				b.sizex = rekt.sizex-newSize;
+				b.sizey = rekt.sizey;
+				if (checkBorder(a)>0 && checkBorder(b)>0) {
+					blocks.emplace(a);
+					blocks.emplace(b);
+					return true;
+				}
+				else {
+					rooms.emplace(rekt);
+					return true;
+				}
+			}
+			else {
+				rooms.emplace(rekt);
+				return true;
+			}
+
+		}
+
 	}
 	return false;
 }
 
 void LevelSystem::addDoors() {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
 		
-		size_t maxSize = map->matched.size();
+	size_t maxSize = matched.size();
 
-		//add one door to each room, which leads to a corridor
-		for (int c = 0; c < maxSize; c++) {
-			Rect currentTile = map->matched.front();
-			std::vector<Rect> possibleDoors;
-			if (currentTile.doors == 0) {
-				for (int i = 0; i < currentTile.sizex; i++) {
-					for (int j = 0; j < currentTile.sizey; j++) {
-						Rect doorTile;
-						doorTile.posx = currentTile.posx + i;
-						doorTile.posy = currentTile.posy + j;
-						doorTile.sizex = 1;
-						doorTile.sizey = 1;
-						doorTile.sizex = checkBorder(doorTile);
-						if (doorTile.sizex > 0) {
-							if (hasDoor(Direction::LEFT, doorTile.sizex)) {
-								doorTile.sizey = Direction::LEFT;
-								possibleDoors.emplace_back(doorTile);
-							}
-							if (hasDoor(Direction::DOWN, doorTile.sizex)) {
-								doorTile.sizey = Direction::DOWN;
-								possibleDoors.emplace_back(doorTile);
-							}
-							if (hasDoor(Direction::RIGHT, doorTile.sizex)) {
-								doorTile.sizey = Direction::RIGHT;
-								possibleDoors.emplace_back(doorTile);
-							}
-							if (hasDoor(Direction::UP, doorTile.sizex)) {
-								doorTile.sizey = Direction::UP;
-								possibleDoors.emplace_back(doorTile);
-							}
+	//add one door to each room, which leads to a corridor
+	for (int c = 0; c < maxSize; c++) {
+		Rect currentTile = matched.front();
+		std::vector<Rect> possibleDoors;
+		if (currentTile.doors == 0) {
+			for (int i = 0; i < currentTile.sizex; i++) {
+				for (int j = 0; j < currentTile.sizey; j++) {
+					Rect doorTile;
+					doorTile.posx = currentTile.posx + i;
+					doorTile.posy = currentTile.posy + j;
+					doorTile.sizex = 1;
+					doorTile.sizey = 1;
+					doorTile.sizex = checkBorder(doorTile);
+					if (doorTile.sizex > 0) {
+						if (hasDoor(Direction::LEFT, doorTile.sizex)) {
+							doorTile.sizey = Direction::LEFT;
+							possibleDoors.emplace_back(doorTile);
+						}
+						if (hasDoor(Direction::DOWN, doorTile.sizex)) {
+							doorTile.sizey = Direction::DOWN;
+							possibleDoors.emplace_back(doorTile);
+						}
+						if (hasDoor(Direction::RIGHT, doorTile.sizex)) {
+							doorTile.sizey = Direction::RIGHT;
+							possibleDoors.emplace_back(doorTile);
+						}
+						if (hasDoor(Direction::UP, doorTile.sizex)) {
+							doorTile.sizey = Direction::UP;
+							possibleDoors.emplace_back(doorTile);
 						}
 					}
 				}
-				// Pick one of the possible doors at random
-				if (possibleDoors.size() > 0) {
-					Rect door = possibleDoors[rand() % possibleDoors.size()];
-					possibleDoors.clear();
-					if (door.sizey == Direction::UP) {
-						map->tileArr[door.posx][door.posy][2] += Direction::UP;
-						map->tileArr[door.posx][door.posy + 1][2] += Direction::DOWN;
-						currentTile.doors += Direction::UP;
-					}
-					else if (door.sizey == Direction::RIGHT) {
-						map->tileArr[door.posx][door.posy][2] += Direction::RIGHT;
-						map->tileArr[door.posx+1][door.posy][2] += Direction::LEFT;
-						currentTile.doors += Direction::RIGHT;
-					}
-					else if (door.sizey == Direction::DOWN) {
-						map->tileArr[door.posx][door.posy][2] += Direction::DOWN;
-						map->tileArr[door.posx][door.posy-1][2] += Direction::UP;
-						currentTile.doors += Direction::DOWN;
-					}
-					else if (door.sizey == Direction::LEFT) {
-						map->tileArr[door.posx][door.posy][2] += Direction::LEFT;
-						map->tileArr[door.posx - 1][door.posy][2] += Direction::RIGHT;
-						currentTile.doors += Direction::LEFT;
-					}
+			}
+			// Pick one of the possible doors at random
+			if (possibleDoors.size() > 0) {
+				Rect door = possibleDoors[rand() % possibleDoors.size()];
+				possibleDoors.clear();
+				if (door.sizey == Direction::UP) {
+					tileArr[door.posx][door.posy][2] += Direction::UP;
+					tileArr[door.posx][door.posy + 1][2] += Direction::DOWN;
+					currentTile.doors += Direction::UP;
+				}
+				else if (door.sizey == Direction::RIGHT) {
+					tileArr[door.posx][door.posy][2] += Direction::RIGHT;
+					tileArr[door.posx+1][door.posy][2] += Direction::LEFT;
+					currentTile.doors += Direction::RIGHT;
+				}
+				else if (door.sizey == Direction::DOWN) {
+					tileArr[door.posx][door.posy][2] += Direction::DOWN;
+					tileArr[door.posx][door.posy-1][2] += Direction::UP;
+					currentTile.doors += Direction::DOWN;
+				}
+				else if (door.sizey == Direction::LEFT) {
+					tileArr[door.posx][door.posy][2] += Direction::LEFT;
+					tileArr[door.posx - 1][door.posy][2] += Direction::RIGHT;
+					currentTile.doors += Direction::LEFT;
 				}
 			}
-			map->matched.pop();
-			map->matched.emplace(currentTile);
 		}
-
-		// Adds a second door to each room
-		for (int c = 0; c < maxSize; c++) {
-			std::vector<Rect> possibleDoors;
-			Rect currentTile = map->matched.front();
-			int doorCounter = 0;
-			bool up = false, right = false, down = false, left = false;
-			// Check each room which walls have doors, and how many
-			for (int i = 0; i < currentTile.sizex; i++) {
-				for (int j = 0; j < currentTile.sizey; j++) {
-					int doors = map->tileArr[currentTile.posx + i][currentTile.posy + j][2];
-					if (hasDoor(Direction::UP, doors)) {
-						up = true;
-						doorCounter++;
-					}
-					if(hasDoor(Direction::RIGHT, doors)){
-						right = true;
-						doorCounter++;
-					}
-					if (hasDoor(Direction::DOWN, doors)) {
-						down = true;
-						doorCounter++;
-					}
-					if (hasDoor(Direction::LEFT, doors)) {
-						left = true;
-						doorCounter++;
-					}
-				}
-			}
-			// If the room does not have atleast 2 doors, we add one more on a wall that does not have a door already
-			if (doorCounter < 2) {
-				if (currentTile.posx - 1 >= 0 && !left) {
-					for (int i = 0; i < currentTile.sizey; i++) {
-						Rect doorTile;
-						doorTile.posx = currentTile.posx;
-						doorTile.posy = currentTile.posy + i;
-						doorTile.sizex = 1;
-						doorTile.sizey = 8;
-						possibleDoors.emplace_back(doorTile);
-					}
-				}
-				if (currentTile.posx + currentTile.sizex + 1 < map->xsize && !right) {
-					for (int i = 0; i < currentTile.sizey; i++) {
-						Rect doorTile;
-						doorTile.posx = currentTile.posx + currentTile.sizex - 1;
-						doorTile.posy = currentTile.posy + i;
-						doorTile.sizex = 1;
-						doorTile.sizey = 2;
-						possibleDoors.emplace_back(doorTile);
-					}
-				}
-				if (currentTile.posy - 1 >= 0 && !down) {
-					for (int i = 0; i < currentTile.sizex; i++) {
-						Rect doorTile;
-						doorTile.posx = currentTile.posx + i;
-						doorTile.posy = currentTile.posy;
-						doorTile.sizex = 1;
-						doorTile.sizey = 4;
-						possibleDoors.emplace_back(doorTile);
-					}
-				}
-				if (currentTile.posy + currentTile.sizey + 1 < map->ysize && !up) {
-					for (int i = 0; i < currentTile.sizex; i++) {
-						Rect doorTile;
-						doorTile.posx = currentTile.posx + i;
-						doorTile.posy = currentTile.posy + currentTile.sizey - 1;
-						doorTile.sizex = 1;
-						doorTile.sizey = 1;
-						possibleDoors.emplace_back(doorTile);
-					}
-				}
-				// Pick one of the possible doors at random
-				if (possibleDoors.size() > 0) {
-					Rect door = possibleDoors[rand() % possibleDoors.size()];
-					possibleDoors.clear();
-					if (door.sizey == Direction::UP) {
-						map->tileArr[door.posx][door.posy][2] += Direction::UP;
-						map->tileArr[door.posx][door.posy + 1][2] += Direction::DOWN;
-						currentTile.doors += Direction::UP;
-					}
-					if (door.sizey == Direction::RIGHT) {
-						map->tileArr[door.posx][door.posy][2] += Direction::RIGHT;
-						map->tileArr[door.posx + 1][door.posy][2] += Direction::LEFT;
-						currentTile.doors += Direction::RIGHT;
-					}
-					if (door.sizey == Direction::DOWN) {
-						map->tileArr[door.posx][door.posy][2] += Direction::DOWN;
-						map->tileArr[door.posx][door.posy - 1][2] += Direction::UP;
-						currentTile.doors += Direction::DOWN;
-					}
-					if (door.sizey == Direction::LEFT) {
-						map->tileArr[door.posx][door.posy][2] += Direction::LEFT;
-						map->tileArr[door.posx - 1][door.posy][2] += Direction::RIGHT;
-						currentTile.doors += Direction::LEFT;
-					}
-				}
-			}
-			map->matched.pop();
-			map->matched.push(currentTile);
-		}
+		matched.pop();
+		matched.emplace(currentTile);
 	}
+
+	// Adds a second door to each room
+	for (int c = 0; c < maxSize; c++) {
+		std::vector<Rect> possibleDoors;
+		Rect currentTile = matched.front();
+		int doorCounter = 0;
+		bool up = false, right = false, down = false, left = false;
+		// Check each room which walls have doors, and how many
+		for (int i = 0; i < currentTile.sizex; i++) {
+			for (int j = 0; j < currentTile.sizey; j++) {
+				int doors = tileArr[currentTile.posx + i][currentTile.posy + j][2];
+				if (hasDoor(Direction::UP, doors)) {
+					up = true;
+					doorCounter++;
+				}
+				if(hasDoor(Direction::RIGHT, doors)){
+					right = true;
+					doorCounter++;
+				}
+				if (hasDoor(Direction::DOWN, doors)) {
+					down = true;
+					doorCounter++;
+				}
+				if (hasDoor(Direction::LEFT, doors)) {
+					left = true;
+					doorCounter++;
+				}
+			}
+		}
+		// If the room does not have atleast 2 doors, we add one more on a wall that does not have a door already
+		if (doorCounter < 2) {
+			if (currentTile.posx - 1 >= 0 && !left) {
+				for (int i = 0; i < currentTile.sizey; i++) {
+					Rect doorTile;
+					doorTile.posx = currentTile.posx;
+					doorTile.posy = currentTile.posy + i;
+					doorTile.sizex = 1;
+					doorTile.sizey = 8;
+					possibleDoors.emplace_back(doorTile);
+				}
+			}
+			if (currentTile.posx + currentTile.sizex + 1 < xsize && !right) {
+				for (int i = 0; i < currentTile.sizey; i++) {
+					Rect doorTile;
+					doorTile.posx = currentTile.posx + currentTile.sizex - 1;
+					doorTile.posy = currentTile.posy + i;
+					doorTile.sizex = 1;
+					doorTile.sizey = 2;
+					possibleDoors.emplace_back(doorTile);
+				}
+			}
+			if (currentTile.posy - 1 >= 0 && !down) {
+				for (int i = 0; i < currentTile.sizex; i++) {
+					Rect doorTile;
+					doorTile.posx = currentTile.posx + i;
+					doorTile.posy = currentTile.posy;
+					doorTile.sizex = 1;
+					doorTile.sizey = 4;
+					possibleDoors.emplace_back(doorTile);
+				}
+			}
+			if (currentTile.posy + currentTile.sizey + 1 < ysize && !up) {
+				for (int i = 0; i < currentTile.sizex; i++) {
+					Rect doorTile;
+					doorTile.posx = currentTile.posx + i;
+					doorTile.posy = currentTile.posy + currentTile.sizey - 1;
+					doorTile.sizex = 1;
+					doorTile.sizey = 1;
+					possibleDoors.emplace_back(doorTile);
+				}
+			}
+			// Pick one of the possible doors at random
+			if (possibleDoors.size() > 0) {
+				Rect door = possibleDoors[rand() % possibleDoors.size()];
+				possibleDoors.clear();
+				if (door.sizey == Direction::UP) {
+					tileArr[door.posx][door.posy][2] += Direction::UP;
+					tileArr[door.posx][door.posy + 1][2] += Direction::DOWN;
+					currentTile.doors += Direction::UP;
+				}
+				if (door.sizey == Direction::RIGHT) {
+					tileArr[door.posx][door.posy][2] += Direction::RIGHT;
+					tileArr[door.posx + 1][door.posy][2] += Direction::LEFT;
+					currentTile.doors += Direction::RIGHT;
+				}
+				if (door.sizey == Direction::DOWN) {
+					tileArr[door.posx][door.posy][2] += Direction::DOWN;
+					tileArr[door.posx][door.posy - 1][2] += Direction::UP;
+					currentTile.doors += Direction::DOWN;
+				}
+				if (door.sizey == Direction::LEFT) {
+					tileArr[door.posx][door.posy][2] += Direction::LEFT;
+					tileArr[door.posx - 1][door.posy][2] += Direction::RIGHT;
+					currentTile.doors += Direction::LEFT;
+				}
+			}
+		}
+		matched.pop();
+		matched.push(currentTile);
+	}
+	
 }
 
 bool LevelSystem::hasDoor(Direction dir, int doors) {
@@ -1250,274 +1259,289 @@ void LevelSystem::addTile(int tileId, int typeId, int doors,const std::vector<Mo
 }
 
 void LevelSystem::addSpawnPoints() {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
+	
+	std::vector<glm::vec3> availableSpawnPoints;
 
-		std::vector<glm::vec3> availableSpawnPoints;
+	// Room IDs
+	int roomBottomLeft = tileArr[0][0][1];
+	int roomTopLeft = tileArr[0][ysize - 1][1];
+	int roomBottomRight = tileArr[xsize - 1][0][1];
+	int roomTopRight = tileArr[xsize - 1][ysize - 1][1];
+	int roomsLeftEdge = 0;
+	int roomsBottomEdge = 0;
+	int roomsRightEdge = 0;
+	int roomsTopEdge = 0;
 
-		// Room IDs
-		int roomBottomLeft = map->tileArr[0][0][1];
-		int roomTopLeft = map->tileArr[0][map->ysize - 1][1];
-		int roomBottomRight = map->tileArr[map->xsize - 1][0][1];
-		int roomTopRight = map->tileArr[map->xsize - 1][map->ysize - 1][1];
-		int roomsLeftEdge = 0;
-		int roomsBottomEdge = 0;
-		int roomsRightEdge = 0;
-		int roomsTopEdge = 0;
+	// Adding all corner spawn location first
+	spawnPoints.push_back(glm::vec3(0.f, 0.f, 0.f));
+	spawnPoints.push_back(glm::vec3(((xsize - 1) * tileSize), 0.f, ((ysize - 1) * tileSize)));
+	spawnPoints.push_back(glm::vec3(0.f, 0.f, ((ysize - 1) * tileSize)));
+	spawnPoints.push_back(glm::vec3(((xsize - 1) * tileSize), 0.f, 0.f));
 
-		// Adding all corner spawn location first
-		map->spawnPoints.push_back(glm::vec3(0.f, 0.f, 0.f));
-		map->spawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
-		map->spawnPoints.push_back(glm::vec3(0.f, 0.f, ((map->ysize - 1) * map->tileSize)));
-		map->spawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, 0.f));
-
-		// Find all available spawn locations, one in each room
-		for (int x = 0; x < map->xsize; x++) {
-			// Get all rooms on the bottom edge of the map
-			if (map->tileArr[x][0][1] > 0 && map->tileArr[x][0][1] != roomsBottomEdge && map->tileArr[x][0][1] != roomBottomLeft && map->tileArr[x][0][1] != roomBottomRight) {
-				availableSpawnPoints.push_back(glm::vec3(x * map->tileSize, 0.f, 0.f));
-				roomsBottomEdge = map->tileArr[x][0][1];
-			}
-			// Get all rooms on the top edge of the map
-			if (map->tileArr[x][map->ysize - 1][1] > 0 && map->tileArr[x][map->ysize - 1][1] != roomsTopEdge && map->tileArr[x][map->ysize - 1][1] != roomTopLeft && map->tileArr[x][map->ysize - 1][1] != roomTopRight) {
-				availableSpawnPoints.push_back(glm::vec3((x * map->tileSize), 0.f, ((map->ysize - 1) * map->tileSize)));
-				roomsTopEdge = map->tileArr[x][map->ysize - 1][1];
-			}
+	// Find all available spawn locations, one in each room
+	for (int x = 0; x < xsize; x++) {
+		// Get all rooms on the bottom edge of the map
+		if (tileArr[x][0][1] > 0 && tileArr[x][0][1] != roomsBottomEdge && tileArr[x][0][1] != roomBottomLeft && tileArr[x][0][1] != roomBottomRight) {
+			availableSpawnPoints.push_back(glm::vec3(x * tileSize, 0.f, 0.f));
+			roomsBottomEdge = tileArr[x][0][1];
 		}
-
-		// Get all rooms for the right and left edge of the map, except for the corner rooms
-		for (int y = 0; y < map->ysize; y++) {
-			if (map->tileArr[0][y][1] > 0 && map->tileArr[0][y][1] != roomsLeftEdge && map->tileArr[0][y][1] != roomBottomLeft && map->tileArr[0][y][1] != roomTopLeft){
-				availableSpawnPoints.push_back(glm::vec3(0.f, 0.f, (y * map->tileSize)));
-				roomsLeftEdge = map->tileArr[0][y][1];
-			}
-			if (map->tileArr[map->xsize-1][y][1] > 0 && map->tileArr[map->xsize - 1][y][1] != roomsRightEdge && map->tileArr[map->xsize - 1][y][1] != roomBottomRight && map->tileArr[map->xsize - 1][y][1] != roomTopRight) {
-				availableSpawnPoints.push_back(glm::vec3(((map->xsize - 1) * map->tileSize), 0.f, (y * map->tileSize)));
-				roomsRightEdge = map->tileArr[map->xsize - 1][y][1];
-			}
+		// Get all rooms on the top edge of the map
+		if (tileArr[x][ysize - 1][1] > 0 && tileArr[x][ysize - 1][1] != roomsTopEdge && tileArr[x][ysize - 1][1] != roomTopLeft && tileArr[x][ysize - 1][1] != roomTopRight) {
+			availableSpawnPoints.push_back(glm::vec3((x * tileSize), 0.f, ((ysize - 1) * tileSize)));
+			roomsTopEdge = tileArr[x][ysize - 1][1];
 		}
+	}
 
-		std::default_random_engine generator;
+	// Get all rooms for the right and left edge of the map, except for the corner rooms
+	for (int y = 0; y < ysize; y++) {
+		if (tileArr[0][y][1] > 0 && tileArr[0][y][1] != roomsLeftEdge && tileArr[0][y][1] != roomBottomLeft && tileArr[0][y][1] != roomTopLeft){
+			availableSpawnPoints.push_back(glm::vec3(0.f, 0.f, (y * tileSize)));
+			roomsLeftEdge = tileArr[0][y][1];
+		}
+		if (tileArr[xsize-1][y][1] > 0 && tileArr[xsize - 1][y][1] != roomsRightEdge && tileArr[xsize - 1][y][1] != roomBottomRight && tileArr[xsize - 1][y][1] != roomTopRight) {
+			availableSpawnPoints.push_back(glm::vec3(((xsize - 1) * tileSize), 0.f, (y * tileSize)));
+			roomsRightEdge = tileArr[xsize - 1][y][1];
+		}
+	}
+
+	std::default_random_engine generator;
 		
-		// Add the rest of the spawn points in a randomized order
-		while(availableSpawnPoints.size() > 0){
-			std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size() - 1);
-			int randomRoom = distribution(generator);
-			map->spawnPoints.push_back(availableSpawnPoints[randomRoom]);
-			availableSpawnPoints.erase(availableSpawnPoints.begin() + randomRoom);
-		}
-
+	// Add the rest of the spawn points in a randomized order
+	while(availableSpawnPoints.size() > 0){
+		std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size() - 1);
+		int randomRoom = distribution(generator);
+		spawnPoints.push_back(availableSpawnPoints[randomRoom]);
+		availableSpawnPoints.erase(availableSpawnPoints.begin() + randomRoom);
 	}
 }
 
 glm::vec3 LevelSystem::getSpawnPoint() {
 	// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
 	glm::vec3 spawnLocation = glm::vec3(-1000.f);
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
 		
-		if (map->spawnPoints.size() > 0) {
-			spawnLocation = map->spawnPoints.front();
-			map->spawnPoints.erase(map->spawnPoints.begin());
-		}
-		else {
-			Logger::Error("No more spawn locations available.");
-		}
-
+	if (spawnPoints.size() > 0) {
+		spawnLocation = spawnPoints.front();
+		spawnPoints.erase(spawnPoints.begin());
+	}
+	else {
+		Logger::Error("No more spawn locations available.");
 	}
 
 	return spawnLocation;
 }
 
+
+const int LevelSystem::getAreaType(float posX, float posY) {
+
+	AreaType returnValue;
+
+	posX += (0.5 * tileSize);
+	posY += (0.5 * tileSize);
+	posX /= tileSize;
+	posY /= tileSize;
+
+	int roomValue = tileArr[static_cast<int>(posX)][static_cast<int>(posY)][1];
+
+	if (roomValue == 0) {
+		returnValue = AreaType::CORRIDOR;
+	}
+	else if (roomValue > 0) {
+		returnValue = AreaType::ROOM;
+	}
+
+	return static_cast<int>(returnValue);
+}
+
+void LevelSystem::stop() {
+	destroyWorld();
+
+
+
+}
+
 void LevelSystem::generateClutter() {
-	for (auto e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
 
-		//adds clutter for each tile in each room if rand() is over threshold value
-		for (int i = 1; i < map->numberOfRooms; i++) {
-			Rect room = map->matched.front();
-			map->matched.pop();
-			for (int x = 0; x < room.sizex; x++) {
-				for (int y = 0; y < room.sizey; y++) {
-					if (map->tileArr[x + room.posx][y + room.posy][2] < 17) {
-						if (rand() % 100 < map->clutterModifier) {
-							float xmax = map->tileSize;
-							float ymax = map->tileSize;
-							float xmin = 0;
-							float ymin = 0;
+	//adds clutter for each tile in each room if rand() is over threshold value
+	for (int i = 1; i < numberOfRooms; i++) {
+		Rect room = matched.front();
+		matched.pop();
+		for (int x = 0; x < room.sizex; x++) {
+			for (int y = 0; y < room.sizey; y++) {
+				if (tileArr[x + room.posx][y + room.posy][2] < 17) {
+					if (rand() % 100 < clutterModifier) {
+						float xmax = tileSize;
+						float ymax = tileSize;
+						float xmin = 0;
+						float ymin = 0;
 
-							//move spawnpoints further from walls
-							int tile = map->tileArr[x + room.posx][y + room.posy][0];
-							if (tile % 2 == 1) {
-								ymax -= 1.5f * map->tileSize / 10.f;
-							}
-							if ((tile % 4) / 2 == 1) {
-								xmax -= 1.5f * map->tileSize / 10.f;
-							}
-							if ((tile % 8) / 4 == 1) {
-								ymin += 1.5f * map->tileSize / 10.f;
-							}
-							if (tile / 8 == 1) {
-								xmin += 1.5f * map->tileSize / 10.f;
-							}
-
-							//move spawnpoints further from doors
-							tile = map->tileArr[x + room.posx][y + room.posy][2];
-							if (tile % 2 == 1) {
-								ymax -= 2.f * map->tileSize / 10.f;
-							}
-							if ((tile % 4) / 2 == 1) {
-								xmax -= 2.f * map->tileSize / 10.f;
-							}
-							if ((tile % 8) / 4 == 1) {
-								ymin += 2.f * map->tileSize / 10.f;
-							}
-							if (tile / 8 == 1) {
-								xmin += 2.f * map->tileSize / 10.f;
-							}
-
-							float clutterPosX = ((rand() % 100) / 100.f) * (xmax - xmin) + xmin + (x + room.posx) * map->tileSize + map->tileOffset - map->tileSize / 2.f;
-							float clutterPosY = ((rand() % 100) / 100.f) * (ymax - ymin) + ymin + (y + room.posy) * map->tileSize + map->tileOffset - map->tileSize / 2.f;
-							int rot = rand() %360;
-							Clutter clutterLarge;
-							clutterLarge.posx = clutterPosX;
-							clutterLarge.posy = clutterPosY;
-							clutterLarge.height = 0;
-							clutterLarge.rot = rot/1.f;
-							clutterLarge.size = 0;
-							map->largeClutter.push(clutterLarge);
+						//move spawnpoints further from walls
+						int tile = tileArr[x + room.posx][y + room.posy][0];
+						if (tile % 2 == 1) {
+							ymax -= 1.5f * tileSize / 10.f;
 						}
+						if ((tile % 4) / 2 == 1) {
+							xmax -= 1.5f * tileSize / 10.f;
+						}
+						if ((tile % 8) / 4 == 1) {
+							ymin += 1.5f * tileSize / 10.f;
+						}
+						if (tile / 8 == 1) {
+							xmin += 1.5f * tileSize / 10.f;
+						}
+
+						//move spawnpoints further from doors
+						tile = tileArr[x + room.posx][y + room.posy][2];
+						if (tile % 2 == 1) {
+							ymax -= 2.f * tileSize / 10.f;
+						}
+						if ((tile % 4) / 2 == 1) {
+							xmax -= 2.f * tileSize / 10.f;
+						}
+						if ((tile % 8) / 4 == 1) {
+							ymin += 2.f * tileSize / 10.f;
+						}
+						if (tile / 8 == 1) {
+							xmin += 2.f * tileSize / 10.f;
+						}
+
+						float clutterPosX = ((rand() % 100) / 100.f) * (xmax - xmin) + xmin + (x + room.posx) * tileSize + tileOffset - tileSize / 2.f;
+						float clutterPosY = ((rand() % 100) / 100.f) * (ymax - ymin) + ymin + (y + room.posy) * tileSize + tileOffset - tileSize / 2.f;
+						int rot = rand() %360;
+						Clutter clutterLarge;
+						clutterLarge.posx = clutterPosX;
+						clutterLarge.posy = clutterPosY;
+						clutterLarge.height = 0;
+						clutterLarge.rot = rot/1.f;
+						clutterLarge.size = 0;
+						largeClutter.push(clutterLarge);
 					}
 				}
 			}
-			map->matched.push(room);
 		}
+		matched.push(room);
+	}
 
-		//adds clutter on top of large objects
-		int amount = map->largeClutter.size();
-		for (int i = 0; i < amount; i++) {
-			Clutter clutterLarge = map->largeClutter.front();
-			map->largeClutter.pop();
-			if (rand() % 100 < map->clutterModifier) {
+	//adds clutter on top of large objects
+	int amount = largeClutter.size();
+	for (int i = 0; i < amount; i++) {
+		Clutter clutterLarge = largeClutter.front();
+		largeClutter.pop();
+		if (rand() % 100 < clutterModifier) {
 
-				//adds either one or two objects that are either medium or small
-				if(rand()%2==0){
-					//add on first half
-					{
-						Clutter clutterToAdd;
-						clutterToAdd.size = 1 + rand() % 2;
-						clutterToAdd.height = 1 + clutterLarge.height;
-						clutterToAdd.rot = (rand() % 360) / 1.f;
-						float angleToRotate = glm::radians(clutterLarge.rot);
-						float clutterPosX = (rand() % 40) / 100.f - 0.7f;
-						float clutterPosY = (rand() % 40) / 100.f - 0.2f;
-						clutterToAdd.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterLarge.posx;
-						clutterToAdd.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterLarge.posy;
-						if (clutterToAdd.size == 1) {
-							map->mediumClutter.push(clutterToAdd);
-						}
-						else {
-							map->smallClutter.push(clutterToAdd);
-						}
-					}
-					//add on second half
-					{
-						Clutter clutterToAdd;
-						clutterToAdd.size = 1 + rand() % 2;
-						clutterToAdd.height = 1 + clutterLarge.height;
-						clutterToAdd.rot = (rand() % 360) / 1.f;
-						float angleToRotate = glm::radians(clutterLarge.rot);
-						float clutterPosX = (rand() % 40) / 100.f + 0.3f;
-						float clutterPosY = (rand() % 40) / 100.f - 0.2f;
-						clutterToAdd.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterLarge.posx;
-						clutterToAdd.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterLarge.posy;
-						if (clutterToAdd.size == 1) {
-							map->mediumClutter.push(clutterToAdd);
-						}
-						else {
-							map->smallClutter.push(clutterToAdd);
-						}
-					}
-
-				}
-				else {
-					float clutterPosX = (rand() % 140) / 100.f - 0.7f;
-					float clutterPosY = (rand() % 40) / 100.f - 0.2f;
+			//adds either one or two objects that are either medium or small
+			if(rand()%2==0){
+				//add on first half
+				{
 					Clutter clutterToAdd;
-					float angleToRotate = glm::radians(clutterLarge.rot);
-					clutterToAdd.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterLarge.posx;
-					clutterToAdd.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterLarge.posy;
 					clutterToAdd.size = 1 + rand() % 2;
 					clutterToAdd.height = 1 + clutterLarge.height;
-					clutterToAdd.rot = (rand() % 360)/1.f;
+					clutterToAdd.rot = (rand() % 360) / 1.f;
+					float angleToRotate = glm::radians(clutterLarge.rot);
+					float clutterPosX = (rand() % 40) / 100.f - 0.7f;
+					float clutterPosY = (rand() % 40) / 100.f - 0.2f;
+					clutterToAdd.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterLarge.posx;
+					clutterToAdd.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterLarge.posy;
 					if (clutterToAdd.size == 1) {
-						map->mediumClutter.push(clutterToAdd);
+						mediumClutter.push(clutterToAdd);
 					}
 					else {
-						map->smallClutter.push(clutterToAdd);
+						smallClutter.push(clutterToAdd);
 					}
 				}
-			}
+				//add on second half
+				{
+					Clutter clutterToAdd;
+					clutterToAdd.size = 1 + rand() % 2;
+					clutterToAdd.height = 1 + clutterLarge.height;
+					clutterToAdd.rot = (rand() % 360) / 1.f;
+					float angleToRotate = glm::radians(clutterLarge.rot);
+					float clutterPosX = (rand() % 40) / 100.f + 0.3f;
+					float clutterPosY = (rand() % 40) / 100.f - 0.2f;
+					clutterToAdd.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterLarge.posx;
+					clutterToAdd.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterLarge.posy;
+					if (clutterToAdd.size == 1) {
+						mediumClutter.push(clutterToAdd);
+					}
+					else {
+						smallClutter.push(clutterToAdd);
+					}
+				}
 
-			map->largeClutter.push(clutterLarge);
+			}
+			else {
+				float clutterPosX = (rand() % 140) / 100.f - 0.7f;
+				float clutterPosY = (rand() % 40) / 100.f - 0.2f;
+				Clutter clutterToAdd;
+				float angleToRotate = glm::radians(clutterLarge.rot);
+				clutterToAdd.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterLarge.posx;
+				clutterToAdd.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterLarge.posy;
+				clutterToAdd.size = 1 + rand() % 2;
+				clutterToAdd.height = 1 + clutterLarge.height;
+				clutterToAdd.rot = (rand() % 360)/1.f;
+				if (clutterToAdd.size == 1) {
+					mediumClutter.push(clutterToAdd);
+				}
+				else {
+					smallClutter.push(clutterToAdd);
+				}
+			}
 		}
 
-		//adds small clutter on top of medium clutter
-		amount = map->mediumClutter.size();
-		for (int i = 0; i < amount; i++) {
-			Clutter clutterMedium = map->mediumClutter.front();
-			map->mediumClutter.pop();
-			if (rand() % 100 < map->clutterModifier) {
-				float clutterPosX = (rand() % 50) / 100.f - 0.25f;
-				float clutterPosY = (rand() % 50) / 100.f - 0.25f;
-				float angleToRotate = glm::radians(clutterMedium.rot);
-				Clutter clutterSmall;
-				clutterSmall.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterMedium.posx;
-				clutterSmall.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterMedium.posy;
-				clutterSmall.size = 2;
-				clutterSmall.height = 0.5f + clutterMedium.height;
-				clutterSmall.rot = (rand() % 360)/1.f;
-				map->smallClutter.push(clutterSmall);
-			}
-			map->mediumClutter.push(clutterMedium);
+		largeClutter.push(clutterLarge);
+	}
+
+	//adds small clutter on top of medium clutter
+	amount = mediumClutter.size();
+	for (int i = 0; i < amount; i++) {
+		Clutter clutterMedium = mediumClutter.front();
+		mediumClutter.pop();
+		if (rand() % 100 < clutterModifier) {
+			float clutterPosX = (rand() % 50) / 100.f - 0.25f;
+			float clutterPosY = (rand() % 50) / 100.f - 0.25f;
+			float angleToRotate = glm::radians(clutterMedium.rot);
+			Clutter clutterSmall;
+			clutterSmall.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterMedium.posx;
+			clutterSmall.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterMedium.posy;
+			clutterSmall.size = 2;
+			clutterSmall.height = 0.5f + clutterMedium.height;
+			clutterSmall.rot = (rand() % 360)/1.f;
+			smallClutter.push(clutterSmall);
 		}
+		mediumClutter.push(clutterMedium);
 	}
 }
 
 void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Model* bb) {
-	for (auto e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		while (map->largeClutter.size() > 0) {
-			Clutter clut = map->largeClutter.front();
-			map->largeClutter.pop();
-			EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::CLUTTER_LO], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
-		}
-		while (map->mediumClutter.size() > 0) {
-			Clutter clut = map->mediumClutter.front();
-			map->mediumClutter.pop();
-			EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::CLUTTER_MO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
-		}
-		while (map->smallClutter.size() > 0) {
-			Clutter clut = map->smallClutter.front();
-			map->smallClutter.pop();
-			EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
-		}
-		for (int i = 0; i < map->numberOfRooms; i++) {
-			Rect room = map->matched.front();
-			map->matched.pop();
-			if (room.sizex * room.sizey > 1) {
-				auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*map->tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*map->tileSize),glm::vec3(0.f),glm::vec3(1.f,map->tileHeight,1.f));
+	while (largeClutter.size() > 0) {
+		Clutter clut = largeClutter.front();
+		largeClutter.pop();
+		EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::CLUTTER_LO], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+	}
+	while (mediumClutter.size() > 0) {
+		Clutter clut = mediumClutter.front();
+		mediumClutter.pop();
+		EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::CLUTTER_MO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+	}
+	while (smallClutter.size() > 0) {
+		Clutter clut = smallClutter.front();
+		smallClutter.pop();
+		EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+	}
+	for (int i = 0; i < numberOfRooms; i++) {
+		Rect room = matched.front();
+		matched.pop();
+		if (room.sizex * room.sizey > 1) {
+			auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*tileSize),glm::vec3(0.f),glm::vec3(1.f,tileHeight,1.f));
 
-				MovementComponent* mc = e2->addComponent<MovementComponent>();
-				SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
-				sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
-				sc->light.setPosition(glm::vec3(0, map->tileHeight * 5 - 0.05, 0));
-				sc->light.setAttenuation(1.f, 0.01f, 0.01f);
-				sc->light.setDirection(glm::vec3(1, 0, 0));
-				sc->light.setAngle(0.5);
-				sc->isOn = false;
-			}
-			map->matched.push(room);
+			MovementComponent* mc = e2->addComponent<MovementComponent>();
+			SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
+			sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
+			sc->light.setPosition(glm::vec3(0, tileHeight * 5 - 0.05, 0));
+			sc->light.setAttenuation(1.f, 0.01f, 0.01f);
+			sc->light.setDirection(glm::vec3(1, 0, 0));
+			sc->light.setAngle(0.5);
+			sc->isOn = false;
 		}
+		matched.push(room);
 	}
 }
