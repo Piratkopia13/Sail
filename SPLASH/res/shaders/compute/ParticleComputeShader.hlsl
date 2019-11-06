@@ -56,10 +56,10 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_Di
 		for (uint j = 0; j < inputBuffer.emitters[i].nrOfParticlesToSpawn; j++) {
 			float3 v0, v1, v2, v3;
 			
-			v0 = inputBuffer.emitters[i].position + float3(-0.1, 0.1, 0.0);
-			v1 = inputBuffer.emitters[i].position + float3(-0.1, -0.1, 0.0);
-			v2 = inputBuffer.emitters[i].position + float3(0.1, 0.1, 0.0);
-			v3 = inputBuffer.emitters[i].position + float3(0.1, -0.1, 0.0);
+			v0 = inputBuffer.emitters[i].position + float3(-0.1 + 0.2 * inputBuffer.numPrevParticles, 0.1, 0.0);
+			v1 = inputBuffer.emitters[i].position + float3(-0.1 + 0.2 * inputBuffer.numPrevParticles, -0.1, 0.0);
+			v2 = inputBuffer.emitters[i].position + float3(0.1 + 0.2 * inputBuffer.numPrevParticles, 0.1, 0.0);
+			v3 = inputBuffer.emitters[i].position + float3(0.1 + 0.2 * inputBuffer.numPrevParticles, -0.1, 0.0);
 			
 			createTriangle(v0, v1, v2, inputBuffer.numPrevParticles * 6 + counter);
 			counter += 3;

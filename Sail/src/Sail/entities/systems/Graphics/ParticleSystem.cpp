@@ -102,6 +102,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 	m_prevNumberOfParticles = m_numberOfParticles;
+	Logger::Log(std::to_string(m_prevNumberOfParticles));
 
 	m_newEmitters.clear();
 }
