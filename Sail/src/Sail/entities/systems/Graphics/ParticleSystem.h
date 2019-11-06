@@ -17,11 +17,13 @@ public:
 	void update(float dt);
 	void updateOnGPU(ID3D12GraphicsCommandList4* cmdList);
 
+	void submitAll() const;
+
 private:
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
 	ParticleComputeShader* m_particleShader;
 
-	std::unique_ptr<DX12VertexBuffer> m_outputVertexBuffer;
+	DX12VertexBuffer* m_outputVertexBuffer;
 	unsigned int m_outputVertexBufferSize;
 
 	std::unique_ptr<Model> m_model;

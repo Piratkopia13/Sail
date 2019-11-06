@@ -16,10 +16,14 @@ ParticleSystem::ParticleSystem() {
 
 	m_particleShader = &Application::getInstance()->getResourceManager().getShaderSet<ParticleComputeShader>();
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
-	auto& inputLayout = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>().getPipeline()->getInputLayout();
+	auto& gbufferShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
+	auto& inputLayout = gbufferShader.getPipeline()->getInputLayout();
 
 	m_outputVertexBufferSize = 10000;
-	m_outputVertexBuffer = std::make_unique<DX12VertexBuffer>(inputLayout, m_outputVertexBufferSize);
+
+	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
+
+	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
 
 	m_numberOfParticles = 0;
 	m_prevNumberOfParticles = 0;
@@ -44,7 +48,7 @@ void ParticleSystem::update(float dt) {
 
 		if (particleEmitterComp->spawnTimer >= particleEmitterComp->spawnRate) {
 			//Spawn the correct number of particles
-			int particlesToSpawn = (int) glm::floor(particleEmitterComp->spawnTimer / glm::max(particleEmitterComp->spawnRate, 0.00001f));
+			int particlesToSpawn = (int)glm::floor(particleEmitterComp->spawnTimer / glm::max(particleEmitterComp->spawnRate, 0.0001f));
 			spawnParticles(particlesToSpawn, particleEmitterComp);
 			//Decrease timer
 			particleEmitterComp->spawnTimer -= particleEmitterComp->spawnRate * particlesToSpawn;
@@ -98,6 +102,19 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 	m_prevNumberOfParticles = m_numberOfParticles;
-	
+
 	m_newEmitters.clear();
+}
+
+void ParticleSystem::submitAll() const {
+	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
+	Renderer::RenderFlag flags = Renderer::MESH_DYNAMIC;
+	flags |= Renderer::IS_VISIBLE_ON_SCREEN;
+
+	renderer->submit(
+		m_model.get(),
+		glm::identity<glm::mat4>(),
+		flags
+	);
+
 }

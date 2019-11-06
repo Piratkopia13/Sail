@@ -11,6 +11,9 @@ Mesh::Mesh(Data& buildData, Shader* shader)
 {
 }
 
+Mesh::Mesh(unsigned int numVertices, Shader* shader) {
+	meshData.numVertices = numVertices;
+}
 
 
 

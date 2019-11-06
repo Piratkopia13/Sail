@@ -7,6 +7,12 @@ VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, const Mesh::D
 	return SAIL_NEW DX12VertexBuffer(inputLayout, modelData);
 }
 
+VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, unsigned int numVertices) {
+	return SAIL_NEW DX12VertexBuffer(inputLayout, numVertices);
+}
+
+
+
 // TODO: Take in usage (Static or Dynamic) and create a default heap for static only
 // TODO: updateData and/or setData
 DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData)

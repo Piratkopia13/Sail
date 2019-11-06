@@ -14,6 +14,7 @@ public:
 public: 
 	Model();
 	Model(Mesh::Data& data, Shader* shader);
+	Model(unsigned int numVertices, Shader* shader);
 	~Model();
 	void setName(const std::string& name);
 	Mesh* addMesh(std::unique_ptr<Mesh> mesh);

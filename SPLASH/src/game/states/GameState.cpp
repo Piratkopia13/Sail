@@ -5,6 +5,7 @@
 #include "Sail/entities/systems/Systems.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
+#include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
@@ -15,6 +16,7 @@
 #include <sstream>
 #include <iomanip>
 #include "InGameMenuState.h"
+#include "API/DX12/DX12API.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -277,7 +279,9 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
+		m_app->getAPI<DX12API>()->waitForGPU();
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
+		m_app->getResourceManager().reloadShader<ParticleComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 		m_app->getResourceManager().reloadShader<GuiShader>();
 	}
@@ -598,6 +602,7 @@ bool GameState::render(float dt, float alpha) {
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
+	m_componentSystems.particleSystem->submitAll();
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
 	m_componentSystems.guiSubmitSystem->submitAll();
