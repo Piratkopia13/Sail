@@ -5,7 +5,7 @@
 
 class Model;
 
-class PostProcessStage : public ShaderPipeline, public IEventListener {
+class PostProcessStage final : public ShaderPipeline, public EventReceiver {
 public:
 	PostProcessStage(const std::string& filename, UINT width, UINT height);
 	virtual ~PostProcessStage();
@@ -13,10 +13,10 @@ public:
 	virtual void run(RenderableTexture& inputTexture);
 	RenderableTexture& getOutput();
 
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 protected:
-	virtual bool onResize(WindowResizeEvent& event);
+	virtual bool onResize(const WindowResizeEvent& event);
 
 protected:
 	RenderableTexture* OutputTexture;

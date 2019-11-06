@@ -32,7 +32,7 @@ public:
 	// Renders imgui
 	bool renderImgui(float dt);
 	// Sends events to the state
-	virtual bool onEvent(Event& event) = 0;
+	virtual bool onEvent(const Event& event) override = 0;
 
 protected:
 	Application* m_app = nullptr;
@@ -44,12 +44,12 @@ protected:
 	std::list<Message> m_messages;
 
 	// Front-End Functions
-	bool inputToChatLog(MSG& msg);
-	void addTextToChat(Message* text);
+	bool inputToChatLog(const MSG& msg);
+	void addTextToChat(const Message& text);
 	void resetCurrentMessage();
 
 	std::string fetchMessage();
-	void addMessageToChat(Message& message);
+	void addMessageToChat(const Message& message);
 
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;

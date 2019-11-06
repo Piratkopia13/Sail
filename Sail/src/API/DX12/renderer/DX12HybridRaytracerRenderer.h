@@ -19,7 +19,7 @@ public:
 	virtual void setLightSetup(LightSetup* lightSetup) override;
 	virtual void end() override;
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
 	std::unique_ptr<DX12GBufferRenderer> m_rendererGbuffer;
