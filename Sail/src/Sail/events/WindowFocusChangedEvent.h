@@ -1,20 +1,11 @@
 #pragma once
-
 #include "Event.h"
 
-class WindowFocusChangedEvent : public Event {
-public:
-	WindowFocusChangedEvent(bool isFocused)
-		: Event(Event::WINDOW_FOCUS_CHANGED)
-		, m_isFocused(isFocused) {}
-	~WindowFocusChangedEvent() {};
+struct WindowFocusChangedEvent : public Event {
+	WindowFocusChangedEvent(const bool _isFocused)
+		: Event(Event::Type::WINDOW_FOCUS_CHANGED)
+		, isFocused(_isFocused) { }
+	~WindowFocusChangedEvent() = default;
 
-	inline bool isFocused() const { return m_isFocused; };
-
-	static Type GetStaticType() {
-		return Event::WINDOW_FOCUS_CHANGED;
-	}
-private:
-	bool m_isFocused;
-
+	const bool isFocused;
 };

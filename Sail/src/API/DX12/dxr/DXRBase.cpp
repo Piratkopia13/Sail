@@ -8,13 +8,19 @@
 #include "Sail/graphics/light/LightSetup.h"
 #include "../renderer/DX12GBufferRenderer.h"
 #include "Sail/entities/components/MapComponent.h"
-#include "../SPLASH/src/game/events/GameOverEvent.h"
+#include "../SPLASH/src/game/events/ResetWaterEvent.h"
+
+#include "Sail/events/EventDispatcher.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 	: m_shaderFilename(shaderFilename)
 	, m_gbufferInputTextures(inputs)
 	, m_brdfLUTPath("pbr/brdfLUT.tga")
 	, m_waterChanged(false) {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
+
 	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
 	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
 	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
@@ -89,6 +95,9 @@ DXRBase::~DXRBase() {
 	for (auto& resource : m_aabb_desc_resource) {
 		resource->Release();
 	}
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::RESET_WATER, this);
 }
 
 void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
@@ -394,20 +403,23 @@ void DXRBase::reloadShaders() {
 	createRaytracingPSO();
 }
 
-bool DXRBase::onEvent(Event& event) {
-	auto onResize = [&](WindowResizeEvent& event) {
+bool DXRBase::onEvent(const Event& event) {
+	auto onResize = [&](const WindowResizeEvent& event) {
 		// Window changed size, resize output UAV
 		createInitialShaderResources(true);
 		return true;
 	};
 
-	auto onGameOver = [&](GameOverEvent& event) {
+	auto onResetWater = [&](const ResetWaterEvent& event) {
 		resetWater();
 		return true;
 	};
 
-	EventHandler::dispatch<WindowResizeEvent>(event, onResize);
-	EventHandler::dispatch<GameOverEvent>(event, onGameOver);
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	case Event::Type::RESET_WATER: onResetWater((const ResetWaterEvent&)event); break;
+	default: break;
+	}
 	return true;
 }
 
