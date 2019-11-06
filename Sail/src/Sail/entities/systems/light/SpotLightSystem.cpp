@@ -23,6 +23,21 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha) {
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
 
+		if (sc->isOn != sc->wasOn) {
+			MovementComponent* mc = e->getComponent<MovementComponent>();
+
+			if (mc) {
+				if (sc->isOn) {
+					mc->rotation.y += 4;
+				} else {
+					mc->rotation.y -= 4;
+				}
+			}
+
+			sc->wasOn = sc->isOn;
+		}
+
+
 		if (!sc->isOn) {
 			continue;
 		}
@@ -42,15 +57,5 @@ void SpotLightSystem::toggleONOFF() {
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
 		sc->isOn = !sc->isOn;
-
-		MovementComponent* mc = e->getComponent<MovementComponent>();
-		
-		if (mc) {
-			if (sc->isOn) {
-				mc->rotation.y += 4;
-			} else {
-				mc->rotation.y -= 4;
-			}
-		}
 	}
 }
