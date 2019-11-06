@@ -48,11 +48,9 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
 	//isEmissive = true;
 	if (isEmissive) {
-		float attenuation = 20.2f;
-		float3 radiance = albedo * attenuation;
-		Lo += (1 * albedo) * radiance;
+		Lo += albedo * 2.2;
 	}
-	//Place else here?
+	else//Place else here?
 	{
 
 		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
