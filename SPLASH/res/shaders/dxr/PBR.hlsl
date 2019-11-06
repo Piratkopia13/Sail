@@ -46,11 +46,10 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     // Reflectance equation
     float3 Lo = 0.0f;
 
-	//isEmissive = true;
 	if (isEmissive) {
 		Lo += albedo * 2.2;
 	}
-	else//Place else here?
+	else
 	{
 
 		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
