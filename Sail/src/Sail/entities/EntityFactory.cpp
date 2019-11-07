@@ -15,12 +15,15 @@
 #include "Sail/graphics/geometry/factory/QuadModel.h"
 #include "Sail/entities/components/GUIComponent.h"
 
-Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec3& lightPos, size_t lightIndex) {
+void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
-	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
-	
+	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("Torch.fbx", shader);
+	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
+	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
+	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
+
+
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
 	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
@@ -30,20 +33,17 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec
 
 
 	//creates light with model and pointlight
-	auto candle = ECS::Instance()->createEntity(name.c_str());
 	candle->addComponent<ModelComponent>(candleModel);
 	candle->addComponent<TransformComponent>(lightPos);
 	candle->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	candle->addComponent<CullingComponent>();
+
 	PointLight pl;
-	pl.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
-	pl.setAttenuation(0.f, 0.f, 0.25f);
+	pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
+	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .5f, lightPos.z));
+	pl.setAttenuation(0.f, 0.f, 0.2f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
-
-
-	return candle;
 }
 
 Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
@@ -63,37 +63,23 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 }
 
 
-void EntityFactory::AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_t& lightIndex, const Netcode::PlayerID& playerID) {
-
-	for (Entity::SPtr& c : player->getChildEntities()) {
+void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size_t& lightIndex, const Netcode::PlayerID& playerID) {
+	for (Entity* c : player->getChildEntities()) {
 		if (c->getName() == player->getName() + "Candle") {
-			c->addComponent<CandleComponent>();
-			PointLight pl;
-			pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
-			pl.setPosition(glm::vec3(0, 0 + .37f, 0));
-			pl.setAttenuation(0.f, 0.f, 0.2f);
-			pl.setIndex(lightIndex);
-			c->addComponent<LightComponent>(pl);
-
-
-		}
-		CandleComponent* cc = c->getComponent<CandleComponent>();
-		if (cc) {
+			c->addComponent<CandleComponent>()->playerEntityID = playerID;
 			c->addComponent<CollidableComponent>();
-			c->addComponent<CandleComponent>();
-			cc->playerEntityID = playerID;
 		}
 	}
 }
 
 Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
 	// Create my player
-
 	auto myPlayer = ECS::Instance()->createEntity("MyPlayer");
 	EntityFactory::CreateGenericPlayer(myPlayer, lightIndex, spawnLocation);
 
-	myPlayer->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, Netcode::EntityType::PLAYER_ENTITY, playerID);
-	myPlayer->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::ANIMATION);
+	auto senderC = myPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerID, Netcode::MessageType::ANIMATION);
+	senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+	senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
 
 	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
@@ -105,51 +91,89 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<RealTimeComponent>();
 
 
+	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
+
+	AddCandleComponentsToPlayer(myPlayer, lightIndex, playerID);
+
+
+	Netcode::ComponentID candleNetID;
+	Netcode::ComponentID gunNetID;
+
 	//For testing, add particle emitter to player.
 	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
 	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
 	particleEmitterComp->spawnRate = 0.001f;
 
-	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
+			gunNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, playerID)->m_id;
 			//leave this for now
-			//c->addComponent<GunComponent>();
+			//c->addComponent<GunComponent>();]
 			c->addComponent<RealTimeComponent>(); // The player's gun is updated each frame
 		}
 
 		// Add a localOwnerComponent to our candle so that we can differentiate it from other candles
 		if (c->hasComponent<CandleComponent>()) {
+			candleNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, playerID)->m_id;
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
 		}
 	}
+
+	// For debugging
+	Logger::Log("My netcompID: " + std::to_string(netComponentID));
+
+	// Tell other players to create my character
+	NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+		Netcode::MessageType::CREATE_NETWORKED_PLAYER,
+		SAIL_NEW Netcode::MessageCreatePlayer{
+			netComponentID,
+			candleNetID,
+			gunNetID,
+			myPlayer->getComponent<TransformComponent>()->getCurrentTransformState().m_translation,
+		},
+		false
+		);
 
 	return myPlayer;
 }
 
 // otherPlayer is an entity that doesn't have any components added to it yet.
 // Needed so that NetworkReceiverSystem can add the entity to itself before 
-void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, Netcode::ComponentID netComponentID, size_t lightIndex, glm::vec3 spawnLocation) {
+void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, 
+	Netcode::ComponentID playerCompID, 
+	Netcode::ComponentID candleCompID, 
+	Netcode::ComponentID gunCompID, 
+	size_t lightIndex, glm::vec3 spawnLocation) 
+{
 	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation);
 	// Other players have a character model and animations
 
-	otherPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
-	otherPlayer->addComponent<OnlineOwnerComponent>(netComponentID);
-
-
+	otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
+	otherPlayer->addComponent<OnlineOwnerComponent>(playerCompID);
 
 	// Create the player
-	AddWeaponAndCandleToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(netComponentID));
+	AddCandleComponentsToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(playerCompID));
 
+	for (Entity* c : otherPlayer->getChildEntities()) {
+		if (c->getName() == otherPlayer->getName() + "WaterGun") {
+			c->addComponent<NetworkReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
+			c->addComponent<OnlineOwnerComponent>(playerCompID);
+		}
+
+		if (c->hasComponent<CandleComponent>()) {
+			c->addComponent<NetworkReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
+			c->addComponent<OnlineOwnerComponent>(playerCompID);
+		}
+	}
 }
 
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
 	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation);
-	playerEnt->addComponent<NetworkSenderComponent>(Netcode::MessageType::ANIMATION, Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100));
+	playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION);
 
 	// Create the player
-	AddWeaponAndCandleToPlayer(playerEnt, lightIndex, 0);
+	AddCandleComponentsToPlayer(playerEnt, lightIndex, 0);
 }
 
 // Creates a player enitty without a candle and without a model
@@ -195,28 +219,26 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 
 
-	// Create the player's candle
-	auto candle = CreateCandle(playerEntity->getName()+"Candle", glm::vec3(0.f, 0.f, 0.f), lightIndex);
-	playerEntity->addChildEntity(candle);	
+	auto candle = ECS::Instance()->createEntity(playerEntity->getName() + "Candle");
+	CreateCandle(candle, glm::vec3(0.f, 0.f, 0.f), lightIndex);
+	playerEntity->addChildEntity(candle.get());
 
-	auto gun = CreateWaterGun(playerEntity->getName() + "WaterGun");
-	playerEntity->addChildEntity(gun);
-
-	// Attach the candle to the player's left hand
-	ac->leftHandEntity = gun.get();
-	ac->leftHandPosition = glm::identity<glm::mat4>();
-	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
-	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
-	
 	// Attach the something to the player's right hand
 	ac->rightHandEntity = candle.get();
 	ac->rightHandPosition = glm::identity<glm::mat4>();
 	ac->rightHandPosition = glm::translate(ac->rightHandPosition, glm::vec3(-0.596f, 1.026f, 0.055f));
 	ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, 0.646f, -0.300f)));
 
+	auto gun = CreateWaterGun(playerEntity->getName() + "WaterGun");
+	playerEntity->addChildEntity(gun.get());
+
+	// Attach the candle to the player's left hand
+	ac->leftHandEntity = gun.get();
+	ac->leftHandPosition = glm::identity<glm::mat4>();
+	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
+	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
+
 }
-
-
 
 
 Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterModel, const glm::vec3& pos, Model* lightModel, size_t lightIndex, NodeSystem* ns) {
@@ -238,9 +260,11 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->getComponent<SpeedLimitComponent>()->maxSpeed = 3.0f;
 
 	e->addComponent<GunComponent>();
-	auto aiCandleEntity = EntityFactory::CreateCandle("AiCandle", glm::vec3(0.f, 2.f, 0.f), lightIndex);
 
-	e->addChildEntity(aiCandleEntity);
+	auto aiCandleEntity = ECS::Instance()->createEntity("AiCandle");
+	EntityFactory::CreateCandle(aiCandleEntity, glm::vec3(0.f, 2.f, 0.f), lightIndex);
+
+	e->addChildEntity(aiCandleEntity.get());
 	auto fsmComp = e->addComponent<FSMComponent>();
 
 	// =========Create states and transitions===========

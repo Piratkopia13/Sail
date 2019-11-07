@@ -64,6 +64,7 @@ public:
 
 	void setRotations(const glm::vec3& rotations);
 	void setRotations(const float x, const float y, const float z);
+	void setRotations(const glm::quat& rotations);
 	void setScale(const float scale);
 	void setScale(const float x, const float y, const float z);
 	void setScale(const glm::vec3& scale);
