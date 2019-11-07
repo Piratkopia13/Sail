@@ -16,7 +16,7 @@ SprinklerSystem::~SprinklerSystem() {
 }
 
 void SprinklerSystem::stop() {
-	m_activateSprinklers = false;
+	m_enableNewSprinklers = false;
 	m_endGameTimer = 0.f;
 	m_endGameMapIncrement = 0;
 	m_xMinIncrement = 0;
@@ -34,8 +34,10 @@ void SprinklerSystem::update(float dt) {
 		// End game is reached, sprinklers starting
 		if (m_endGameTimer > m_endGameStartLimit) {
 
-			if (m_activateSprinklers) {
+			if (m_enableNewSprinklers) {
 				// Rotate between sides to activate
+				m_activeSprinklers.insert(m_activeSprinklers.end(), m_activeRooms.begin(), m_activeRooms.end());
+				m_activeRooms.clear();
 				m_mapSide++;
 				m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
 				switch (m_mapSide) {
@@ -66,13 +68,14 @@ void SprinklerSystem::update(float dt) {
 				default:
 					break;
 				}
-				m_activateSprinklers = false;
+				m_enableNewSprinklers = false;
 				m_endGameMapIncrement++;
 			}
 			// New time increment reached, add new rooms
 			else if (((m_endGameTimer - m_endGameStartLimit) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
-				m_activateSprinklers = true;
+				m_enableNewSprinklers = true;
 			}
+
 
 
 
@@ -86,10 +89,15 @@ std::vector<int> SprinklerSystem::getActiveRooms() const
 	return m_activeRooms;
 }
 
+
+
+
+
 void SprinklerSystem::addToActiveRooms(int room) {
 	if (room != 0) {
-		std::vector<int>::iterator it = std::find(m_activeRooms.begin(), m_activeRooms.end(), room);
-		if (it == m_activeRooms.end()) {
+		std::vector<int>::iterator itRooms = std::find(m_activeRooms.begin(), m_activeRooms.end(), room);
+		std::vector<int>::iterator itSprinklers = std::find(m_activeSprinklers.begin(), m_activeSprinklers.end(), room);
+		if (itRooms == m_activeRooms.end() && itSprinklers == m_activeSprinklers.end()) {
 			m_activeRooms.push_back(room);
 		}
 	}

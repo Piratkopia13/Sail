@@ -13,7 +13,7 @@ public:
 	std::vector<int> getActiveRooms() const;
 
 private:
-	bool m_activateSprinklers = false;
+	bool m_enableNewSprinklers = false;
 	float m_endGameTimer = 0.f;
 #ifdef _DEBUG
 	float m_endGameStartLimit = 15.f;
@@ -30,6 +30,7 @@ private:
 	int m_yMaxIncrement = 0;
 	int m_mapSide = 0;
 	std::vector<int> m_activeRooms;
+	std::vector<int> m_activeSprinklers;
 
 	void addToActiveRooms(int room);
 

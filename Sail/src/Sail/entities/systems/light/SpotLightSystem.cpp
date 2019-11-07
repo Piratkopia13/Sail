@@ -68,5 +68,8 @@ void SpotLightSystem::enableHazardLights(std::vector<int> activeRooms) {
 		if (it != activeRooms.end()) {
 			sc->isOn = true;
 		}
+		else {
+			sc->isOn = false;
+		}
 	}
 }
