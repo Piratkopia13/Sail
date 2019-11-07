@@ -124,16 +124,16 @@ void rayGen() {
 	ray.TMin = 0.00001;
 	ray.TMax = 10000.0;
 
-	RayPayload payload_metaball;
-	payload_metaball.recursionDepth = 0;
-	payload_metaball.closestTvalue = 0;
-	payload_metaball.shadow = 0.f;
-	payload_metaball.albedo = float4(0, 0, 0, 0);
+	RayPayload payloadMetaball;
+	payloadMetaball.recursionDepth = 0;
+	payloadMetaball.closestTvalue = 0;
+	payloadMetaball.shadow = 0.f;
+	payloadMetaball.albedo = float4(0, 0, 0, 0);
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payload_metaball);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
-	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payload_metaball.closestTvalue);
+	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payloadMetaball.closestTvalue);
 
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.2f; // Temporal fade, trading temporal stability for lag
@@ -154,20 +154,18 @@ void rayGen() {
 	lOutputShadows[launchIndex] = alpha * (1.0f - payload.shadow) + (1.0f - alpha) * cLast;
 	// lOutputShadows[launchIndex] = 1.0f - payload.shadow;
 
-	if (metaballDepth <= linearDepth) {
-		lOutputAlbedo[launchIndex] = payload_metaball.albedo;
-	} else {
-		lOutputAlbedo[launchIndex] = float4(payload.albedo.rgb, 1.0f);
-		lOutputNormals[launchIndex] = float4(payload.normal.rgb, 1.0f);
-		lOutputMetalnessRoughnessAO[launchIndex] = float4(payload.metalnessRoughnessAO.rgb, 1.0f);
-		lOutputShadows[launchIndex] = payload.shadow;
-	}
+	RayPayload finalPayload = payload;
+	if (metaballDepth <= linearDepth) { finalPayload = payloadMetaball; };
+
+	lOutputAlbedo[launchIndex] = float4(finalPayload.albedo.rgb, 1.0f);
+	lOutputNormals[launchIndex] = float4(finalPayload.normal.rgb, 1.0f);
+	lOutputMetalnessRoughnessAO[launchIndex] = float4(finalPayload.metalnessRoughnessAO.rgb, 1.0f);
+	lOutputShadows[launchIndex] = finalPayload.shadow;
 
 }
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
-	payload.albedo = float4(1.00f, 1.0f, 1.0f, 1.0f);
 	payload.albedo = float4(0.01f, 0.01f, 0.01f, 1.0f);
 	payload.closestTvalue = 1000;
 }
@@ -175,8 +173,8 @@ void miss(inout RayPayload payload) {
 float3 getAlbedo(MeshData data, float2 texCoords) {
 	float3 color = data.color.rgb;
 	if (data.flags & MESH_HAS_ALBEDO_TEX)
-		// color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb;
-		color *= pow(sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb, 2.2f);
+		// color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb; // Not SRGB
+		color *= pow(sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb, 2.2f); // SRGB
 
 	return color;
 }
@@ -248,24 +246,16 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	payload.closestTvalue = RayTCurrent();
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(attribs.normal.xyz, 0.f)));
-	float refractIndex = 1.333f;
 	RayPayload reflect_payload = payload;
-	RayPayload refract_payload = payload;
 	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
-	float3 refractVector = refract(WorldRayDirection(), attribs.normal.xyz, refractIndex); //Refract index of water is 1.333, so thats what we will use.
 
 	RayDesc reflectRaydesc = Utils::getRayDesc(reflectVector);
-	RayDesc reftractRaydesc = Utils::getRayDesc(refractVector);
 	reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
-	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
 	if (payload.recursionDepth == 1) {
 		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
-
 	} else {
 		reflect_payload.albedo = float4(0.0f, 0.0f, 0.1f,1.0f);
-		refract_payload.albedo = float4(0.0f, 0.0f, 0.f,1.0f);
 	}
 
 	float4 reflect_color = reflect_payload.albedo;
@@ -273,28 +263,18 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	//reflect_color.g *= 0.8;
 	//reflect_color.b += 0.2;
 	reflect_color.b += 0.05f;
-	reflect_color =  saturate(reflect_color);
-
-	float4 refract_color = refract_payload.albedo;
-	//refract_color.r *= 0.8;
-	//refract_color.g *= 0.8;
-	//refract_color.b *= 0.2;
-	refract_color.b += 0.05f;
-	refract_color = saturate(refract_color);
+	reflect_color = saturate(reflect_color);
 
 	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
 	float refconst = pow(abs(dot(normalize(hitToCam), normalInWorldSpace)), 2);
 
-	float4 finaldiffusecolor = saturate((refract_color * refconst + reflect_color * (1- refconst)));
+	float4 finaldiffusecolor = reflect_color;
 	finaldiffusecolor.a = 1;
 	
 	/////////////////////////
-	float3 albedoColor = finaldiffusecolor.xyz;
-	float metalness = 1;
-	float roughness = 1;
-	float ao = 1;
-
-	payload.albedo = phongShade(Utils::HitWorldPosition(), normalInWorldSpace, finaldiffusecolor.xyz);
+	payload.albedo = finaldiffusecolor;
+	payload.normal = normalInWorldSpace;
+	payload.metalnessRoughnessAO = float3(1.f, 1.f, 1.f);
 
 	return;
 }
