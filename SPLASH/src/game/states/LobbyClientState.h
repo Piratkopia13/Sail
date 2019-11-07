@@ -11,6 +11,7 @@
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "../SPLASH/src/game/events/NetworkStartGameEvent.h"
+#include "../SPLASH/src/game/events/SettingsEvent.h"
 
 class LobbyClientState final : public LobbyState {
 public:
@@ -30,4 +31,5 @@ private:
 	bool onNameRequest(const NetworkNameEvent& event);
 	bool onDropped(const NetworkDroppedEvent& event);
 	bool onStartGame(const NetworkStartGameEvent& event);
+	bool onSettingsChanged(const SettingsUpdatedEvent& event);
 };

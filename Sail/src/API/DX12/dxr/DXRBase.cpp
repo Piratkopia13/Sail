@@ -7,7 +7,7 @@
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "../renderer/DX12GBufferRenderer.h"
-#include "Sail/entities/components/MapComponent.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 #include "../SPLASH/src/game/events/ResetWaterEvent.h"
 
 #include "Sail/events/EventDispatcher.h"
@@ -253,8 +253,9 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 }
 
 void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
-	static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
-	static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 1.0f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f);
 	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
 
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;

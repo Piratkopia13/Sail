@@ -79,7 +79,7 @@ void Entity::removeAllComponents() {
 	removeFromSystems();
 }
 
-void Entity::addChildEntity(Entity::SPtr child) {
+void Entity::addChildEntity(Entity* child) {
 	m_children.push_back(child);
 	child->setParent(this);
 
@@ -92,7 +92,7 @@ void Entity::addChildEntity(Entity::SPtr child) {
 	}
 }
 
-void Entity::removeChildEntity(Entity::SPtr toRemove) {
+void Entity::removeChildEntity(Entity* toRemove) {
 	auto child = std::find(m_children.begin(), m_children.end(), toRemove);
 	( *child )->setParent(nullptr);
 	if ( ( *child )->hasComponent<TransformComponent>() ) {
@@ -126,7 +126,7 @@ void Entity::removeDeleteAllChildren() {
 	m_children.clear();
 }
 
-std::vector<Entity::SPtr>& Entity::getChildEntities() {
+std::vector<Entity*>& Entity::getChildEntities() {
 	return m_children;
 }
 

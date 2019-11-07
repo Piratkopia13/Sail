@@ -138,7 +138,9 @@ void ConsoleCommands::setTextField(const std::string text) {
 }
 
 void ConsoleCommands::addLog(const std::string& log, const ImVec4& color) {
+	m_textlogMutex.lock();
 	m_textLog.emplace_back(log, color);
+	m_textlogMutex.unlock();
 	m_scrollToBottom = true;
 }
 

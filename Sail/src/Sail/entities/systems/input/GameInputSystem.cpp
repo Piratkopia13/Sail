@@ -11,7 +11,7 @@
 #include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/components/AudioComponent.h"
 #include "../src/Network/NWrapperSingleton.h"
-#include "Sail/entities/components/MapComponent.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 
 #include "Sail/TimeSettings.h"
 
@@ -30,7 +30,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<CandleComponent>(false, true, true);
 	registerComponent<GunComponent>(false, true, true);
-
+	m_mapPointer = nullptr;
 	// cam variables
 	m_yaw = 160.f;
 	m_pitch = 0.f;
