@@ -92,7 +92,7 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 	return float4(saturate(ambient + shadedColor), 1.0f);
 }
 
-void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.5f) {
+void shade(float3 worldPosition, float3 worldNormal, float3 albedo, bool isEmissive, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.5f) {
 	// Ray direction for first ray when cast from GBuffer must be calculated using camera position
 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
 
@@ -177,7 +177,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 		// ao = 0.5f;
 	}
 #endif
-	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
+	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, isEmissive, metalness, roughness, ao, payload);
 	// payload.color = float4(worldNormal * 0.5f + 0.5f, 1.0f);
 	// payload.color = phongShade(worldPosition, worldNormal, albedo);
 }
