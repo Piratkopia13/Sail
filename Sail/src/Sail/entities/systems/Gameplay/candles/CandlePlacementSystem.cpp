@@ -144,22 +144,45 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 }
 
 bool CandlePlacementSystem::onEvent(const Event& event) {
-	auto onHoldingCandleToggle = [](const HoldingCandleToggleEvent& e) {
-		auto candleComp = e.candle->getComponent<CandleComponent>();
-		auto candleTransComp = e.candle->getComponent<TransformComponent>();
+	auto onHoldingCandleToggle = [&](const HoldingCandleToggleEvent& e) {
+		Entity* player = nullptr;
+		Entity* candle = nullptr;
+
+		// Find the candle whose parent has the correct ID
+		for (auto candleEntity : entities) {
+			auto parentEntity = candleEntity->getParent();
+			if (!parentEntity) {
+				continue;
+			}
+			Netcode::ComponentID netCompID = parentEntity->getComponent<NetworkReceiverComponent>()->m_id;
+			if (netCompID == e.netCompID) {
+				player = parentEntity;
+				candle = candleEntity;
+				break;
+			}
+		}
+
+		// candle exists => player exists (only need to check candle)
+		if (!candle) {
+			Logger::Warning("Holding candle toggled but no matching entity found");
+			return;
+		}
+
+		auto candleComp = candle->getComponent<CandleComponent>();
+		auto candleTransComp = candle->getComponent<TransformComponent>();
 
 		candleComp->isCarried = e.isHeld;
 		candleComp->wasCarriedLastUpdate = e.isHeld;
 		if (e.isHeld) {
 			candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
-			candleTransComp->setParent(e.owner->getComponent<TransformComponent>());
+			candleTransComp->setParent(player->getComponent<TransformComponent>());
 
-			e.owner->getComponent<AnimationComponent>()->rightHandEntity = e.candle;
+			player->getComponent<AnimationComponent>()->rightHandEntity = candle;
 		} else {
 			candleTransComp->removeParent();
 			candleTransComp->setStartTranslation(e.pos);
 			candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
-			e.owner->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
+			player->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
 
 			// Might be needed
 			ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);

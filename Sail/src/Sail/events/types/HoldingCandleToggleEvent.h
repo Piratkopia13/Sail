@@ -1,17 +1,16 @@
 #pragma once
 #include "Sail/events/Event.h"
+#include "Sail/netcode/NetcodeTypes.h"
 #include <glm/vec3.hpp>
 class Entity;
 
 struct HoldingCandleToggleEvent : public Event {
-	HoldingCandleToggleEvent(Entity* _owner, Entity* _candle, const bool _isHeld, const glm::vec3& _pos)
+	HoldingCandleToggleEvent(Netcode::ComponentID _netCompID, const bool _isHeld, const glm::vec3& _pos)
 		: Event(Event::Type::HOLDING_CANDLE_TOGGLE)
-		, owner(_owner)
-		, candle(_candle)
+		, netCompID(_netCompID)
 		, isHeld(_isHeld)
 		, pos(_pos) {}
-	Entity* owner;
-	Entity* candle;
+	const Netcode::ComponentID netCompID;
 	const bool isHeld;
-	glm::vec3 pos;
+	const glm::vec3 pos;
 };

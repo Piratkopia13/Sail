@@ -530,16 +530,7 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
 void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isHeld, const glm::vec3& pos) {
-	if (auto e = findFromNetID(id); e) {
-		auto& children = e->getChildEntities();
-		for (auto child : children) {
-			if (child->hasComponent<CandleComponent>()) {
-				EventDispatcher::Instance().emit(HoldingCandleToggleEvent(e, child.get(), isHeld, pos));
-				return;
-			}
-		}
-	}
-	Logger::Warning("setCandleHeldState called but no matching entity found");
+	EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld, pos));
 }
 
 void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
