@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Sail/entities/systems/BaseComponentSystem.h"
-
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 
 class SprinklerSystem final : public BaseComponentSystem {
 public:
@@ -10,7 +10,7 @@ public:
 
 	void update(float dt) override;
 	void stop() override;
-	std::vector<int> getActiveRooms() const;
+	const std::vector<int>& getActiveRooms() const;
 
 private:
 	bool m_enableNewSprinklers = false;
@@ -21,6 +21,7 @@ private:
 	float m_endGameStartLimit = 60.f;
 #endif
 
+	LevelSystem* m_map;
 	float m_endGameTimeIncrement = m_endGameStartLimit / 3.0f;
 	float m_sprinklerDelayTime = 10.f;
 	int m_endGameMapIncrement = 0;

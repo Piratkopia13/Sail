@@ -2,13 +2,14 @@
 
 #include "SprinklerSystem.h"
 
-#include "Sail/entities/components/MapComponent.h"
 #include "Sail/entities/components/SpotlightComponent.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/utils/Utils.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 
 SprinklerSystem::SprinklerSystem() : BaseComponentSystem() {
 	registerComponent<MapComponent>(true, true, false);
+	m_map = ECS::Instance()->getSystem<LevelSystem>();
 }
 
 SprinklerSystem::~SprinklerSystem() {
@@ -28,70 +29,62 @@ void SprinklerSystem::stop() {
 }
 
 void SprinklerSystem::update(float dt) {
-	for (auto& e : entities) {
-		MapComponent* map = e->getComponent<MapComponent>();
-		m_endGameTimer += dt;
-		// End game is reached, sprinklers starting
-		if (m_endGameTimer > m_endGameStartLimit) {
+	m_endGameTimer += dt;
+	// End game is reached, sprinklers starting
+	if (m_endGameTimer > m_endGameStartLimit) {
 
-			if (m_enableNewSprinklers) {
-				// Rotate between sides to activate
-				m_activeSprinklers.insert(m_activeSprinklers.end(), m_activeRooms.begin(), m_activeRooms.end());
-				m_activeRooms.clear();
-				m_mapSide++;
-				m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
-				switch (m_mapSide) {
-				case 1:
-					for (int x = 0 + m_xMinIncrement; x < MapComponent::xsize - m_xMaxIncrement; x++) {
-						addToActiveRooms(map->tileArr[x][m_yMinIncrement][1]);
-					}
-					m_yMinIncrement++;
-					break;
-				case 2:
-					for (int x = 0 + m_xMinIncrement; x < MapComponent::xsize - m_xMaxIncrement; x++) {
-						addToActiveRooms(map->tileArr[x][MapComponent::ysize - 1 - m_yMaxIncrement][1]);
-					}
-					m_yMaxIncrement++;
-					break;
-				case 3:
-					for (int y = 0 + m_yMinIncrement; y < MapComponent::ysize - m_yMaxIncrement; y++) {
-						addToActiveRooms(map->tileArr[m_xMinIncrement][y][1]);
-					}
-					m_xMinIncrement++;
-					break;
-				case 4:
-					for (int y = 0 + m_yMinIncrement; y < MapComponent::ysize - m_yMaxIncrement; y++) {
-						addToActiveRooms(map->tileArr[MapComponent::xsize - 1 - m_xMaxIncrement][y][1]);
-					}
-					m_xMaxIncrement++;
-					break;
-				default:
-					break;
+		if (m_enableNewSprinklers) {
+			// Add rooms to different vector to enable sprinklers and turn off hazard lights
+			m_activeSprinklers.insert(m_activeSprinklers.end(), m_activeRooms.begin(), m_activeRooms.end());
+			m_activeRooms.clear();
+			// Rotate between sides to activate
+			m_mapSide++;
+			m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
+			switch (m_mapSide) {
+			case 1:
+				for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
+					addToActiveRooms(m_map->getRoomID(x, m_yMinIncrement));
 				}
-				m_enableNewSprinklers = false;
-				m_endGameMapIncrement++;
+				m_yMinIncrement++;
+				break;
+			case 2:
+				for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
+					addToActiveRooms(m_map->getRoomID(x, m_map->ysize - 1 - m_yMaxIncrement));
+				}
+				m_yMaxIncrement++;
+				break;
+			case 3:
+				for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
+					addToActiveRooms(m_map->getRoomID(m_xMinIncrement, y));
+				}
+				m_xMinIncrement++;
+				break;
+			case 4:
+				for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
+					addToActiveRooms(m_map->getRoomID(m_map->xsize - 1 - m_xMaxIncrement, y));
+				}
+				m_xMaxIncrement++;
+				break;
+			default:
+				break;
 			}
-			// New time increment reached, add new rooms
-			else if (((m_endGameTimer - m_endGameStartLimit) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
-				m_enableNewSprinklers = true;
-			}
-
-
-
-
+			m_activateSprinklers = false;
+			m_endGameMapIncrement++;
 		}
+		// New time increment reached, add new rooms
+		else if (((m_endGameTimer - m_endGameStartLimit) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
+			m_activateSprinklers = true;
+		}
+
+
 
 	}
 }
 
-std::vector<int> SprinklerSystem::getActiveRooms() const
+const std::vector<int>& SprinklerSystem::getActiveRooms() const
 {
 	return m_activeRooms;
 }
-
-
-
-
 
 void SprinklerSystem::addToActiveRooms(int room) {
 	if (room != 0) {

@@ -141,7 +141,7 @@ GameState::GameState(StateStack& stack)
 	int id = static_cast<int>(playerID);
 	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
-		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 	}
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
@@ -208,7 +208,6 @@ bool GameState::processInput(float dt) {
 		requestStackPush(States::InGameMenu);
 	}
 
-
 #ifdef DEVELOPMENT
 #ifdef _DEBUG
 	// Add point light at camera pos
@@ -230,6 +229,12 @@ bool GameState::processInput(float dt) {
 			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
 		}
 	}
+
+
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
+		m_componentSystems.spotLightSystem->toggleONOFF();
+	}
+
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
@@ -321,8 +326,9 @@ bool GameState::processInput(float dt) {
 			parTrans->setTranslation(pos);
 			
 
-			
-			auto middleOfLevel = glm::vec3(MapComponent::tileSize * MapComponent::xsize / 2.f, 0.f, MapComponent::tileSize * MapComponent::ysize / 2.f);
+			auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+
+			auto middleOfLevel = glm::vec3(mapSettings["tileSize"].value * mapSettings["sizeX"].value / 2.f, 0.f, mapSettings["tileSize"].value * mapSettings["sizeY"].value / 2.f);
 			auto dir = glm::normalize(middleOfLevel - pos);
 			auto rots = Utils::getRotations(dir);
 			parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
@@ -389,7 +395,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	// Create system which checks projectile collisions
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelGeneratorSystem>();
+	m_componentSystems.levelSystem = ECS::Instance()->createSystem<LevelSystem>();
 
 	// Create systems for rendering
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
@@ -710,12 +716,11 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
-	m_componentSystems.spotLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
-	
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
 	}
+	m_componentSystems.spotLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
 
 	// Send out your entity info to the rest of the players
 	// DON'T MOVE, should happen at the end of each tick
@@ -896,7 +901,7 @@ void GameState::createBots(Model* boundingBoxModel, const std::string& character
 	}
 
 	for (size_t i = 0; i < botCount; i++) {
-		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
 			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 		}
@@ -1011,18 +1016,17 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	}
 
 	// Create the level generator system and put it into the datatype.
-	auto map = ECS::Instance()->createEntity("Map");
-#ifdef _PERFORMANCE_TEST
-	map->addComponent<MapComponent>(2);
-#else
-	map->addComponent<MapComponent>(NWrapperSingleton::getInstance().getSeed());
-#endif
-	ECS::Instance()->addAllQueuedEntities();
-	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
-	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
+	SettingStorage& settings = m_app->getSettings();
 
-	m_componentSystems.gameInputSystem->m_mapPointer = map->getComponent<MapComponent>();
+	m_componentSystems.levelSystem->seed = settings.gameSettingsDynamic["map"]["seed"].value;
+	m_componentSystems.levelSystem->clutterModifier = settings.gameSettingsDynamic["map"]["clutter"].value * 100;
+	m_componentSystems.levelSystem->xsize = settings.gameSettingsDynamic["map"]["sizeX"].value;
+	m_componentSystems.levelSystem->ysize = settings.gameSettingsDynamic["map"]["sizeY"].value;
+
+	m_componentSystems.levelSystem->generateMap();
+	m_componentSystems.levelSystem->createWorld(tileModels, boundingBoxModel);
+	m_componentSystems.levelSystem->addClutterModel(clutterModels, boundingBoxModel);
+	m_componentSystems.gameInputSystem->m_mapPointer = m_componentSystems.levelSystem;
 }
 
 #ifdef _PERFORMANCE_TEST
