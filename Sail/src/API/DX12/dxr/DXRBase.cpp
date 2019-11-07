@@ -60,6 +60,9 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(unsigned int));
 	delete initData;
 
+	m_currWaterZChunk = 0;
+	m_maxWaterZChunk = 5;
+	m_waterZChunkSize = WATER_GRID_Z / m_maxWaterZChunk;
 }
 
 DXRBase::~DXRBase() {
@@ -272,47 +275,61 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 void DXRBase::updateWaterData() {
-	/*for (int z = 0; z < WATER_GRID_Z; z++) {
+	for (int z = m_currWaterZChunk * m_waterZChunkSize; z < (m_currWaterZChunk + 1) * m_waterZChunkSize; z++) {
 		for (int x = 0; x < WATER_GRID_X; x++) {
-			for (int y = WATER_GRID_Y - 1; y > 0; y--) {
+			for (int y = 1; y < WATER_GRID_Y; y++) {
 				glm::i32vec3 ind = glm::i32vec3(x, y, z);
 				auto arrIndex = Utils::to1D(ind, WATER_GRID_X, WATER_GRID_Y);
+				arrIndex = std::min(arrIndex, WATER_ARR_SIZE - 1);
 				ind.y -= 1;
 				auto arrIndexBelow = Utils::to1D(ind, WATER_GRID_X, WATER_GRID_Y);
+				arrIndexBelow = std::min(arrIndexBelow, WATER_ARR_SIZE - 1);
+				auto bitsetArrIndex = Utils::to1D(glm::i32vec3(x * 4, y, z), WATER_GRID_X * 4, WATER_GRID_Y);
+				bitsetArrIndex = std::min(bitsetArrIndex, WATER_ARR_SIZE * 4 - 4);
+
 				bool change = false;
-				uint8_t vals[8];
+				uint32_t vals[8];
 				for (int quarterIndex = 0; quarterIndex < 4; quarterIndex++) {
 					vals[quarterIndex] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], quarterIndex);
+					vals[quarterIndex + 4] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], quarterIndex);
 
-					if (vals[quarterIndex] > (uint8_t)0) {
+					if (vals[quarterIndex] > (uint32_t)100) {
+						m_moveWaterBitSet[bitsetArrIndex + quarterIndex] = 1;
+					}
+
+					if (m_moveWaterBitSet[bitsetArrIndex + quarterIndex] && (vals[quarterIndex] > (uint32_t)0)) {
 						change = true;
-						numChanged++;
 						// Below
-						vals[quarterIndex + 4] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], quarterIndex);
-						uint8_t deltaVal = 0;
+						uint32_t deltaVal = 0;
 
-						deltaVal = (uint8_t)(7.f * ((float)(vals[quarterIndex]) / 255.f) + 1.f);
+						deltaVal = (uint32_t)(7.f * ((float)(vals[quarterIndex]) / 255.f) + 1.f);
 
 						//Logger::Log(std::to_string(vals[quarterIndex]));
-
-						if (vals[quarterIndex] < deltaVal) {
+						if (vals[quarterIndex] <= 20) {
 							deltaVal = vals[quarterIndex];
 						}
-						vals[quarterIndex] -= deltaVal; 
-						vals[quarterIndex + 4] = ((uint8_t)255 - deltaVal > vals[quarterIndex + 4]) ? vals[quarterIndex + 4] + deltaVal : (uint8_t)255;
-
+						int newVal = vals[quarterIndex] - deltaVal;
+						vals[quarterIndex] = (uint32_t)std::max(newVal, 0);
+						vals[quarterIndex + 4] += deltaVal;
+						vals[quarterIndex + 4] = std::min(vals[quarterIndex + 4], (uint32_t)255);
+					} else {
+						m_moveWaterBitSet[bitsetArrIndex + quarterIndex] = 0;
 					}
+
 				}
 				if (change) {
 					m_waterDeltas[arrIndex] = Utils::packQuarterFloat(vals[0], vals[1], vals[2], vals[3]);
 					m_waterDeltas[arrIndexBelow] = Utils::packQuarterFloat(vals[4], vals[5], vals[6], vals[7]);
 					m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
 					m_waterDataCPU[arrIndexBelow] = m_waterDeltas[arrIndexBelow];
-					//m_waterChanged = true;
+					m_waterChanged = true;
 				}
 			}
 		}
-	}*/
+	}
+
+	m_currWaterZChunk = (m_currWaterZChunk + 1) % m_maxWaterZChunk;
+
 
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
@@ -325,6 +342,9 @@ void DXRBase::updateWaterData() {
 		m_waterDeltas.clear();
 	}
 	m_waterChanged = false;
+}
+
+void DXRBase::simulateWater(float dt) {
 }
 
 void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb) {

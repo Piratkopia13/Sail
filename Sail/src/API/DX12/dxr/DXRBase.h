@@ -8,8 +8,11 @@
 #include "../shader/DX12StructuredBuffer.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
 
+#include <bitset>
+
 // Include defines shared with dxr shaders
 #include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
+
 
 class DXRBase : public IEventListener {
 public:
@@ -35,6 +38,7 @@ public:
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();
+	void simulateWater(float dt);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void resetWater();
@@ -161,6 +165,10 @@ private:
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
 	std::unordered_map<unsigned int, unsigned int> m_waterDeltas; // Changed water voxels over the last 2 frames
 	unsigned int m_waterDataCPU[WATER_ARR_SIZE];
+	std::bitset<WATER_ARR_SIZE * 4> m_moveWaterBitSet;
 	bool m_waterChanged;
 
+	int m_currWaterZChunk;
+	int m_maxWaterZChunk;
+	int m_waterZChunkSize;
 };
