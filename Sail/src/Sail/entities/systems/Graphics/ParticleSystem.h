@@ -29,14 +29,14 @@ private:
 	std::unique_ptr<Model> m_model;
 
 	int m_numberOfParticles;
-	int m_prevNumberOfParticles;
 
 	struct NewParticleInfo {
 		int nrOfNewParticles;
 		ParticleEmitterComponent* emitter;
 	};
 
-	std::vector<NewParticleInfo> m_newEmitters;
+	std::vector<NewParticleInfo>* m_newEmitters;
+	int* m_prevNumberOfParticles;
 
 	struct EmitterData {
 		glm::vec3 position;
