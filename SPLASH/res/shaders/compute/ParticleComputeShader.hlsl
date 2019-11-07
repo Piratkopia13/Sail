@@ -68,8 +68,8 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_Di
 			v2 = inputBuffer.emitters[i].position + float3(0.1 + 0.3 * (inputBuffer.numPrevParticles + (counter / 6)), 0.1, 0.0);
 			v3 = inputBuffer.emitters[i].position + float3(0.1 + 0.3 * (inputBuffer.numPrevParticles + (counter / 6)), -0.1, 0.0);
 			
-			CSPhysicsBuffer[inputBuffer.numPrevParticles + floor((counter / 6))].velocity = inputBuffer.emitters[i].velocity;
-			CSPhysicsBuffer[inputBuffer.numPrevParticles + floor((counter / 6))].acceleration = inputBuffer.emitters[i].acceleration;
+			CSPhysicsBuffer[inputBuffer.numPrevParticles + floor(counter / 6)].velocity = inputBuffer.emitters[i].velocity;
+			CSPhysicsBuffer[inputBuffer.numPrevParticles + floor(counter / 6)].acceleration = inputBuffer.emitters[i].acceleration;
 			
 			createTriangle(v0, v1, v2, inputBuffer.numPrevParticles * 6 + counter);
 			counter += 3;
@@ -78,9 +78,11 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_Di
 		}
 	}
 	
-	for (uint i = 0; i < inputBuffer.numPrevParticles * 6 + counter; i++) {
-		float3 oldVelocity = CSPhysicsBuffer[floor(i)].velocity;
-		CSPhysicsBuffer[floor(i / 6)].velocity += CSPhysicsBuffer[floor(i / 6)].acceleration * inputBuffer.frameTime;
-		CSOutputBuffer[i].position += (oldVelocity + CSPhysicsBuffer[floor(i / 6)].velocity) * 0.5 * inputBuffer.frameTime;
+	for (uint i = 0; i < inputBuffer.numPrevParticles + counter / 6; i++) {
+		float3 oldVelocity = CSPhysicsBuffer[i].velocity;
+		CSPhysicsBuffer[i].velocity += CSPhysicsBuffer[i].acceleration * inputBuffer.frameTime;
+		for (uint j = 0 ; j < 6; j++) {
+			CSOutputBuffer[i * 6 + j].position += (oldVelocity + CSPhysicsBuffer[i].velocity) * 0.5 * inputBuffer.frameTime;
+		}
 	}
 }
