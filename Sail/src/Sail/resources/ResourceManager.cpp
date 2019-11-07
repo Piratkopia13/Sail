@@ -105,14 +105,16 @@ void ResourceManager::addModel(const std::string& modelName, Model* model) {
 	m_models.insert({modelName, std::unique_ptr<Model>(model)});
 }
 
-void ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
+bool ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
 	// Insert the new model
 	Shader* shaderToUse = shader ? shader : m_defaultShader;
+
+	m_modelMutex.lock();
 	if (m_models.find(filename) != m_models.end()) {
-		return;
-
+		m_modelMutex.unlock();
+		return false;
 	}
-
+	m_modelMutex.unlock();
 	Model* temp = nullptr;
 	if (type == ResourceManager::ImporterType::SAIL_ASSIMP) {
 		temp = m_assimpLoader->importModel(SAIL_DEFAULT_MODEL_LOCATION + filename, shaderToUse);
@@ -124,13 +126,17 @@ void ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	if (temp) {
 		Logger::Log("Loaded model: " + filename);
 		temp->setName(filename);
+		m_modelMutex.lock();
 		m_models.insert({ filename, std::unique_ptr<Model>(temp) });
+		m_modelMutex.unlock();
+		return true;
 	}
 	else {
 #ifdef _DEBUG
 		Logger::Error("Could not Load model: (" + filename + ")");
 		//assert(temp);
 #endif
+		return false;
 	}
 }
 Model& ResourceManager::getModel(const std::string& filename, Shader* shader, const ImporterType type) {

@@ -6,7 +6,9 @@
 class VertexBuffer {
 public:
 	static VertexBuffer* Create(const InputLayout& inputLayout, const Mesh::Data& modelData);
-	VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData);;
+	static VertexBuffer* Create(const InputLayout& inputLayout, unsigned int numVertices);
+
+	VertexBuffer(const InputLayout& inputLayout, unsigned int numVertices);
 	virtual ~VertexBuffer() {};
 
 	virtual void bind(void* cmdList = nullptr) const = 0;
