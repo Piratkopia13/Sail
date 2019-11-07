@@ -204,10 +204,6 @@ void NetworkSenderSystem::pushDataToBuffer(std::string data) {
 	m_HOSTONLY_dataToForward.push(data);
 }
 
-const std::vector<Entity*>& NetworkSenderSystem::getEntities() const {
-	return entities;
-}
-
 // TODO: Test this to see if it's actually needed or not
 void NetworkSenderSystem::stop() {
 	// Loop through networked entities and serialize their data.
@@ -241,11 +237,6 @@ void NetworkSenderSystem::stop() {
 			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
 		}
 	}
-}
-
-// No longer used, remove?
-void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e) {
-	entities.push_back(e);
 }
 
 void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar) {
