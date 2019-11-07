@@ -1,12 +1,11 @@
 #pragma once
 #include "Sail/events/Event.h"
-
-class Entity;
+#include "Sail/netcode/NetcodeTypes.h"
 
 struct IgniteCandleEvent : public Event {
-	IgniteCandleEvent(Entity* _candle)
+	IgniteCandleEvent(Netcode::ComponentID _netCompID)
 		: Event(Event::Type::IGNITE_CANDLE)
-		, candle(_candle) {}
+		, netCompID(_netCompID) {}
 
-	Entity* candle;
+	const Netcode::ComponentID netCompID;
 };

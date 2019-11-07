@@ -150,15 +150,12 @@ bool CandlePlacementSystem::onEvent(const Event& event) {
 
 		// Find the candle whose parent has the correct ID
 		for (auto candleEntity : entities) {
-			auto parentEntity = candleEntity->getParent();
-			if (!parentEntity) {
-				continue;
-			}
-			Netcode::ComponentID netCompID = parentEntity->getComponent<NetworkReceiverComponent>()->m_id;
-			if (netCompID == e.netCompID) {
-				player = parentEntity;
-				candle = candleEntity;
-				break;
+			if (auto parentEntity = candleEntity->getParent(); parentEntity) {
+				if (parentEntity->getComponent<NetworkReceiverComponent>()->m_id == e.netCompID) {
+					player = parentEntity;
+					candle = candleEntity;
+					break;
+				}
 			}
 		}
 

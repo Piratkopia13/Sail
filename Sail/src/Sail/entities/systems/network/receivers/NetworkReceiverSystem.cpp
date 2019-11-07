@@ -592,16 +592,7 @@ void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 }
 
 void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
-	if (auto e = findFromNetID(candleOwnerID); e) {
-		auto& children = e->getChildEntities();
-		for (auto& child : children) {
-			if (child->hasComponent<CandleComponent>()) {
-				EventDispatcher::Instance().emit(IgniteCandleEvent(child.get()));
-				return;
-			}
-		}
-	}
-	Logger::Warning("igniteCandle called but no matching entity found");
+	EventDispatcher::Instance().emit(IgniteCandleEvent(candleOwnerID));
 }
 
 Entity* NetworkReceiverSystem::findFromNetID(Netcode::ComponentID id) const {

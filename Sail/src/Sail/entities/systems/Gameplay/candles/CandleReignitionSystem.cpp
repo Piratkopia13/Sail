@@ -40,8 +40,26 @@ void CandleReignitionSystem::update(float dt) {
 }
 
 bool CandleReignitionSystem::onEvent(const Event& event) {
-	auto onIgniteCandle = [](const IgniteCandleEvent& e) {
-		auto candleComp = e.candle->getComponent<CandleComponent>();
+	auto onIgniteCandle = [&](const IgniteCandleEvent& e) {
+		Entity* candle = nullptr;
+
+		// Find the candle whose parent has the correct ID
+		for (auto candleEntity : entities) {
+			if (auto parentEntity = candleEntity->getParent(); parentEntity) {
+				if (parentEntity->getComponent<NetworkReceiverComponent>()->m_id == e.netCompID) {
+					candle = candleEntity;
+					break;
+				}
+			}
+		}
+
+		// candle exists => player exists (only need to check candle)
+		if (!candle) {
+			Logger::Warning("igniteCandle called but no matching entity found");
+			return;
+		}
+
+		auto candleComp = candle->getComponent<CandleComponent>();
 		if (!candleComp->isLit) {
 			candleComp->health = MAX_HEALTH;
 			candleComp->respawns++;
