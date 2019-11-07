@@ -614,10 +614,6 @@ void DXRBase::createInitialShaderResources(bool remake) {
 
 		m_heapIncr = m_context->getDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		// Create the UAV. Based on the root signature we created it should be the first entry
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
@@ -644,8 +640,8 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		storeHandle(m_rtOutputShadowsUavCPUHandles, m_rtOutputShadowsUavGPUHandles);
 		// Shadows last frame SRV input
 		storeHandle(m_rtInputShadowsLastFrameUavCPUHandles, m_rtInputShadowsLastFrameUavGPUHandles);
-		
 
+		
 		// Next slot is used for the brdfLUT
 		m_rtBrdfLUTGPUHandle = gpuHandle;
 		if (!Application::getInstance()->getResourceManager().hasTexture(m_brdfLUTPath)) {
@@ -677,16 +673,6 @@ void DXRBase::createInitialShaderResources(bool remake) {
 
 		// Initialize decal SRVs
 		initDecals(&gpuHandle, &cpuHandle);
-
-		//// Ray gen settings CB
-		//m_rayGenCBData.flags = RT_ENABLE_TA | RT_ENABLE_JITTER_AA;
-		//m_rayGenCBData.numAORays = 5;
-		//m_rayGenCBData.AORadius = 0.9f;
-		//m_rayGenCBData.frameCount = 0;
-		//m_rayGenCBData.GISamples = 1;
-		//m_rayGenCBData.GIBounces = 1;
-		//m_rayGenSettingsCB = std::make_unique<DX12ConstantBuffer>("Ray Gen Settings CB", sizeof(RayGenSettings), m_renderer);
-		//m_rayGenSettingsCB->setData(&m_rayGenCBData, 0);
 
 		// Store heap start for views that might update in runtime
 		// Half of the rest of the list is allocated for each swap frame
@@ -854,11 +840,11 @@ void DXRBase::updateShaderTables() {
 		}
 		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get(), 96U);
 		tableBuilder.addShader(m_rayGenName);
-		tableBuilder.addDescriptor(m_rtOutputAlbedoUavCPUHandles[frameIndex].ptr);
-		tableBuilder.addDescriptor(m_rtOutputNormalsUavCPUHandles[frameIndex].ptr);
-		tableBuilder.addDescriptor(m_rtOutputMetalnessRoughnessAoUavCPUHandles[frameIndex].ptr);
-		tableBuilder.addDescriptor(m_rtOutputShadowsUavCPUHandles[frameIndex].ptr);
-		tableBuilder.addDescriptor(m_rtInputShadowsLastFrameUavCPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputAlbedoUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputNormalsUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputMetalnessRoughnessAoUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputShadowsUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtInputShadowsLastFrameUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
