@@ -12,6 +12,7 @@
 #include "Sail/entities/components/AudioComponent.h"
 #include "../src/Network/NWrapperSingleton.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
+#include "../Sail/src/API/DX12/renderer/DX12RaytracingRenderer.h"
 
 #include "Sail/TimeSettings.h"
 
@@ -108,7 +109,15 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 			// Calculate water-related checks
 			m_playerPosHolder = { transformComp.x, transformComp.y, transformComp.z };
-			m_isOnWaterHolder = Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->checkIfOnWater(m_playerPosHolder);
+			m_isOnWaterHolder = static_cast<DX12RaytracingRenderer*>(Application::getInstance()->getRenderWrapper()->getCurrentRenderer())->checkIfOnWater(m_playerPosHolder);
+
+			if (m_isOnWaterHolder) {
+				std::cout << "ON WATER!\n";
+			}
+			else {
+				std::cout << "OFF WATER!\n";
+			}
+			m_isOnWaterHolder = false;
 
 			// Get player movement inputs
 			Movement playerMovement = getPlayerMovementInput(e);
@@ -237,7 +246,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_WATER_METAL_START,
-								SAIL_NEW Netcode::MessageRunningMetalStart{ e->getComponent<NetworkSenderComponent>()->m_id }
+								SAIL_NEW Netcode::MessageRunningWaterMetalStart{ e->getComponent<NetworkSenderComponent>()->m_id }
 							);
 
 							tempWaterMetal = true;
@@ -270,7 +279,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 						if (m_isOnWaterHolder && !tempWaterTile) {
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_WATER_TILE_START,
-								SAIL_NEW Netcode::MessageRunningTileStart{ e->getComponent<NetworkSenderComponent>()->m_id }
+								SAIL_NEW Netcode::MessageRunningWaterTileStart{ e->getComponent<NetworkSenderComponent>()->m_id }
 							);
 
 							tempStopAll = false;

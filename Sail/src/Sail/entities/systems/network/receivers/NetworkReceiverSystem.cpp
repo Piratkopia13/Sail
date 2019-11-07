@@ -317,6 +317,7 @@ void NetworkReceiverSystem::update(float dt) {
 				ar(componentID);
 				runningTileStart(componentID);
 			}
+			break;
 			case Netcode::MessageType::RUNNING_WATER_METAL_START:
 			{
 				ar(componentID);
