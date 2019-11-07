@@ -65,6 +65,7 @@ public:
 
 	void stop();
 	const int getAreaType(float posX, float posY);
+	const int getRoomID(int posX, int posY);
 
 	int xsize;
 	int ysize;
