@@ -81,7 +81,7 @@ void SprinklerSystem::update(float dt) {
 	}
 }
 
-std::vector<int> SprinklerSystem::getActiveRooms() const
+const std::vector<int>& SprinklerSystem::getActiveRooms() const
 {
 	return m_activeRooms;
 }

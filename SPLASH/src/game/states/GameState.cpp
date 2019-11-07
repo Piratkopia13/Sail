@@ -745,11 +745,11 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
-	m_componentSystems.spotLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
 	}
+	m_componentSystems.spotLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
 
 	// Send out your entity info to the rest of the players
 	// DON'T MOVE, should happen at the end of each tick

@@ -10,7 +10,7 @@ public:
 
 	void update(float dt) override;
 	void stop() override;
-	std::vector<int> getActiveRooms() const;
+	const std::vector<int>& getActiveRooms() const;
 
 private:
 	bool m_activateSprinklers = false;
