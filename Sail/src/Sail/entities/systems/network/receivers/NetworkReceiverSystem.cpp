@@ -173,6 +173,11 @@ void NetworkReceiverSystem::update(float dt) {
 					setEntityLocalRotation(id, rotation);
 				}
 				break;
+				case Netcode::MessageType::DESTROY_ENTITY:
+				{
+					destroyEntity(id);
+				}
+				break;
 				case Netcode::MessageType::SHOOT_START:
 				{
 					ArchiveHelpers::loadVec3(ar, gunPosition);
@@ -426,9 +431,7 @@ void NetworkReceiverSystem::update(float dt) {
 	endMatchAfterTimer(dt);
 }
 
-/*
-  Creates a new entity of the specified entity type and with a NetworkReceiverComponent attached to it
-*/
+
 void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation) {
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
@@ -446,6 +449,17 @@ void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID
 	// lightIndex set to 999, can probably be removed since it no longer seems to be used
 	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, gunCompID, 999, translation);
 
+}
+
+void NetworkReceiverSystem::destroyEntity(Netcode::ComponentID entityID) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == entityID) {
+			e->queueDestruction();
+			return;
+		}
+	}
+
+	Logger::Warning("destoryEntity called but no matching entity found");
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities

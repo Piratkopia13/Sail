@@ -278,6 +278,11 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		ArchiveHelpers::saveVec3(ar, t->getRotations());
 	}
 	break;
+	case Netcode::MessageType::DESTROY_ENTITY:
+	{
+		e->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
+	}
+	break;
 	case Netcode::MessageType::SHOOT_START:
 	{
 		// Only do this once

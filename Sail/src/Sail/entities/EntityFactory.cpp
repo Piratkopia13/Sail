@@ -315,22 +315,14 @@ Entity::SPtr EntityFactory::CreateProjectile(
 		float lifetime, float randomSpread) 
 {
 	auto e = ECS::Instance()->createEntity("projectile");
-	glm::vec3 randPos;
-
-	randomSpread = 0.05;
-
-	randPos.r = Utils::rnd() * randomSpread * 2 - randomSpread;
-	randPos.g = Utils::rnd() * randomSpread * 2 - randomSpread;
-	randPos.b = Utils::rnd() * randomSpread * 2 - randomSpread;
-
-	randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
 
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
 	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
-	e->addComponent<TransformComponent>(pos + randPos);
+	//e->addComponent<TransformComponent>(pos + randPos);
+	e->addComponent<TransformComponent>(pos);
 	
 	if (hasLocalOwner == true) {
 		e->addComponent<LocalOwnerComponent>(ownersNetId);

@@ -44,6 +44,7 @@ protected:
 	Netcode::PlayerID m_playerID;
 private:
 	void createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation);
+	void destroyEntity(Netcode::ComponentID entityID);
 	void setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation);
