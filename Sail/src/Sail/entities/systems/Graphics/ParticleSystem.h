@@ -2,6 +2,7 @@
 #include "..//BaseComponentSystem.h"
 #include <d3d12.h>
 #include "Sail/api/ComputeShaderDispatcher.h"
+#include "Sail/utils/Timer.h"
 
 class ParticleEmitterComponent;
 class ParticleComputeShader;
@@ -28,15 +29,25 @@ private:
 
 	std::unique_ptr<Model> m_model;
 
+	Timer m_timer;
+	INT64 m_startTime;
+
+	int m_gpuUpdates;
+
 	int m_numberOfParticles;
 
-	struct NewParticleInfo {
+	struct NewEmitterInfo {
 		int nrOfNewParticles;
 		ParticleEmitterComponent* emitter;
 	};
 
-	std::vector<NewParticleInfo>* m_newEmitters;
-	int* m_prevNumberOfParticles;
+	struct CPUOutput {
+		std::vector<NewEmitterInfo> newEmitters;
+		unsigned int previousNrOfParticles;
+		float lastFrameTime;
+	};
+
+	CPUOutput* m_cpuOutput;
 
 	struct EmitterData {
 		glm::vec3 position;
@@ -52,5 +63,6 @@ private:
 		unsigned int numEmitters;
 		unsigned int previousNrOfParticles;
 		unsigned int maxOutputVertices;
+		float frameTime;
 	};
 };

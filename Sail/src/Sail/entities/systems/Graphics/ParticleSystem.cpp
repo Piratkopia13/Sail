@@ -8,6 +8,7 @@
 #include "API/DX12/resources/DescriptorHeap.h"
 #include "API/DX12/DX12Utils.h"
 #include "API/DX12/DX12API.h"
+#include "Sail/utils/Timer.h"
 
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 #include "Sail/graphics/shader/dxr/GBufferOutShader.h"
@@ -29,25 +30,27 @@ ParticleSystem::ParticleSystem() {
 
 	m_numberOfParticles = 0;
 
-	m_prevNumberOfParticles = SAIL_NEW int[DX12API::NUM_GPU_BUFFERS];
+	m_cpuOutput = SAIL_NEW CPUOutput[DX12API::NUM_GPU_BUFFERS];
 	for (unsigned int i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
-		m_prevNumberOfParticles[i] = 0;
+		m_cpuOutput[i].previousNrOfParticles = 0;
+		m_cpuOutput[i].lastFrameTime = 0;
 	}
 
-	m_newEmitters = SAIL_NEW std::vector<NewParticleInfo>[DX12API::NUM_GPU_BUFFERS];
-
+	m_timer.startTimer();
+	m_startTime = m_timer.getStartTime();
+	m_gpuUpdates = 0;
 }
 
 ParticleSystem::~ParticleSystem() {
-	delete[] m_prevNumberOfParticles;
-	delete[] m_newEmitters;
+	delete[] m_cpuOutput;
 }
 
 void ParticleSystem::spawnParticles(int particlesToSpawn, ParticleEmitterComponent* particleEmitterComp) {
+	//Spawn particles for all swap buffers
 	for (unsigned int i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
-		m_newEmitters[i].emplace_back();
-		m_newEmitters[i].back().nrOfNewParticles = particlesToSpawn;
-		m_newEmitters[i].back().emitter = particleEmitterComp;
+		m_cpuOutput[i].newEmitters.emplace_back();
+		m_cpuOutput[i].newEmitters.back().nrOfNewParticles = particlesToSpawn;
+		m_cpuOutput[i].newEmitters.back().emitter = particleEmitterComp;
 	}
 
 	m_numberOfParticles += particlesToSpawn;
@@ -71,52 +74,63 @@ void ParticleSystem::update(float dt) {
 void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 	auto* context = Application::getInstance()->getAPI<DX12API>();
 
-	m_outputVertexBuffer->init(cmdList);
-
-	m_dispatcher->begin(cmdList);
-
-	auto* settings = m_particleShader->getComputeSettings();
-
-	ComputeInput inputData;
-	inputData.numEmitters = m_newEmitters[context->getSwapIndex()].size();
-	inputData.previousNrOfParticles = m_prevNumberOfParticles[context->getSwapIndex()];
-	inputData.maxOutputVertices = m_outputVertexBufferSize;
-
-	for (unsigned int i = 0; i < m_newEmitters[context->getSwapIndex()].size(); i++) {
-		inputData.emitters[i].position = m_newEmitters[context->getSwapIndex()][i].emitter->position;
-		inputData.emitters[i].velocity = m_newEmitters[context->getSwapIndex()][i].emitter->velocity;
-		inputData.emitters[i].acceleration = m_newEmitters[context->getSwapIndex()][i].emitter->acceleration;
-		inputData.emitters[i].nrOfParticlesToSpawn = m_newEmitters[context->getSwapIndex()][i].nrOfNewParticles;
+	if (m_gpuUpdates < DX12API::NUM_GPU_BUFFERS * 2) {
+		//Initialize timers the first two times the buffers are ran
+		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
+		m_cpuOutput[context->getSwapIndex()].lastFrameTime += elapsedTime;
+		m_gpuUpdates++;
 	}
+	else {
+		m_outputVertexBuffer->init(cmdList);
 
-	m_particleShader->getPipeline()->setCBufferVar("inputBuffer", &inputData, sizeof(ComputeInput));
+		m_dispatcher->begin(cmdList);
 
-	auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
-	cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
+		auto* settings = m_particleShader->getComputeSettings();
 
-	// Create a unordered access view for the animated vertex buffer in the correct place in the heap
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.FirstElement = 0;
-	uavDesc.Buffer.NumElements = m_outputVertexBufferSize;
-	uavDesc.Buffer.StructureByteStride = 4 * 14; // TODO: replace with sizeof(Vertex)
-	context->getDevice()->CreateUnorderedAccessView(m_outputVertexBuffer->getBuffer(), nullptr, &uavDesc, cdh);
-	// Transition to UAV access
-	DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		//----Compute shader input----
+		ComputeInput inputData;
+		inputData.numEmitters = m_cpuOutput[context->getSwapIndex()].newEmitters.size();
+		inputData.previousNrOfParticles = m_cpuOutput[context->getSwapIndex()].previousNrOfParticles;
+		inputData.maxOutputVertices = m_outputVertexBufferSize;
+		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
+		inputData.frameTime = elapsedTime;
+		m_cpuOutput[context->getSwapIndex()].lastFrameTime += elapsedTime;
 
-	m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), 0, cmdList);
+		for (unsigned int i = 0; i < m_cpuOutput[context->getSwapIndex()].newEmitters.size(); i++) {
+			inputData.emitters[i].position = m_cpuOutput[context->getSwapIndex()].newEmitters[i].emitter->position;
+			inputData.emitters[i].velocity = m_cpuOutput[context->getSwapIndex()].newEmitters[i].emitter->velocity;
+			inputData.emitters[i].acceleration = m_cpuOutput[context->getSwapIndex()].newEmitters[i].emitter->acceleration;
+			inputData.emitters[i].nrOfParticlesToSpawn = m_cpuOutput[context->getSwapIndex()].newEmitters[i].nrOfNewParticles;
+		}
 
-	context->getComputeGPUDescriptorHeap()->getAndStepIndex(10);
+		m_particleShader->getPipeline()->setCBufferVar("inputBuffer", &inputData, sizeof(ComputeInput));
+		//----------------------------
 
-	// Transition to Cbuffer usage
-	DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+		auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
 
-	m_prevNumberOfParticles[context->getSwapIndex()] = glm::min(m_numberOfParticles, (int) (m_outputVertexBufferSize / 6));
+		// Create a unordered access view for the animated vertex buffer in the correct place in the heap
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.NumElements = m_outputVertexBufferSize;
+		uavDesc.Buffer.StructureByteStride = 4 * 14; // TODO: replace with sizeof(Vertex)
+		context->getDevice()->CreateUnorderedAccessView(m_outputVertexBuffer->getBuffer(), nullptr, &uavDesc, cdh);
+		// Transition to UAV access
+		DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-	Logger::Log(std::to_string(m_prevNumberOfParticles[context->getSwapIndex()]));
+		m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), 0, cmdList);
 
-	m_newEmitters[context->getSwapIndex()].clear();
+		context->getComputeGPUDescriptorHeap()->getAndStepIndex(10);
+
+		// Transition to Cbuffer usage
+		DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+		// Update nr of particles in this buffer and clear the newEmitters list
+		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_numberOfParticles, (int)(m_outputVertexBufferSize / 6));
+		m_cpuOutput[context->getSwapIndex()].newEmitters.clear();
+	}
 }
 
 void ParticleSystem::submitAll() const {
