@@ -116,7 +116,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 
 	if (sum > 0.8f) {
 #ifdef WATER_DEBUG
-		payload.albedo = float4(1.0f, 0.f, 0.f, 1.0f);
+		payload.color = float4(1.0f, 0.f, 0.f, 1.0f);
 		return;
 #endif
 		float waterOpacity = clamp(sum / 1.f, 0.f, 0.8f);
@@ -136,7 +136,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 		// ao = 0.5f;
 	}
 #endif
-	payload.albedo = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
-	// payload.albedo = float4(worldNormal * 0.5f + 0.5f, 1.0f);
-	// payload.albedo = phongShade(worldPosition, worldNormal, albedo);
+	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
+	// payload.color = float4(worldNormal * 0.5f + 0.5f, 1.0f);
+	// payload.color = phongShade(worldPosition, worldNormal, albedo);
 }

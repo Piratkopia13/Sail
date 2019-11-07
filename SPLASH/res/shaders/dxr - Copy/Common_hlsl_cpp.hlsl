@@ -45,10 +45,8 @@ static const uint MESH_HAS_NORMAL_TEX 					= 	1 << 2;
 static const uint MESH_HAS_METALNESS_ROUGHNESS_AO_TEX	= 	1 << 3;
 
 struct RayPayload {
-	float4 albedo;
-	float3 normal;
-	float3 metalnessRoughnessAO;
-	float2 shadow;
+	float4 color;
+	float shadowColor;
 	uint recursionDepth;
 	float closestTvalue;
 };

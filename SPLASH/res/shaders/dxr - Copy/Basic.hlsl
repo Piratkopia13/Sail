@@ -42,6 +42,8 @@ SamplerState motionSS : register(s1);
 
 #include "Utils.hlsl"
 #include "Shading.hlsl"
+#include "Decals.hlsl"
+
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -63,6 +65,8 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
+#define TRACE_FROM_GBUFFERS
+#ifdef TRACE_FROM_GBUFFERS
 	float2 screenTexCoord = ((float2)launchIndex + 0.5f) / DispatchRaysDimensions().xy;
 
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
@@ -97,19 +101,19 @@ void rayGen() {
 	float3 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition).xyz;
 	// ---------------------------------------------------
 
-	RayDesc ray;
-	ray.Origin = worldPosition;
-	ray.Direction = reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal);
-	ray.TMin = 0.00001;
-	ray.TMax = 10000.0;
-	
 	RayPayload payload;
 	payload.recursionDepth = 1;
 	payload.closestTvalue = 0;
-	payload.shadow = 0.f;
-	payload.albedo = float4(0,0,0,0);
+	payload.shadowColor = 0.f;
+	payload.color = float4(0,0,0,0);
+	if (worldNormal.x == -1 && worldNormal.y == -1) {
+		// Bounding boxes dont need shading
+		lOutputAlbedo[launchIndex] = float4(albedoColor, 1.0f);
+		return;
+	} else {
+		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+	}
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 
 	//===========MetaBalls RT START===========
 	float3 rayDir;
@@ -117,6 +121,7 @@ void rayGen() {
 	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
 	generateCameraRay(launchIndex, origin, rayDir);
 
+	RayDesc ray;
 	ray.Origin = origin;
 	ray.Direction = rayDir;
 	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
@@ -127,8 +132,8 @@ void rayGen() {
 	RayPayload payload_metaball;
 	payload_metaball.recursionDepth = 0;
 	payload_metaball.closestTvalue = 0;
-	payload_metaball.shadow = 0.f;
-	payload_metaball.albedo = float4(0, 0, 0, 0);
+	payload_metaball.shadowColor = 0.f;
+	payload_metaball.color = float4(0, 0, 0, 0);
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payload_metaball);
 	//===========MetaBalls RT END===========
@@ -151,24 +156,65 @@ void rayGen() {
 	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
 	float cLast = lInputShadowsLastFrame.SampleLevel(motionSS, reprojectedTexCoord, 0).r;
 	// float cLast = 0.0f;
-	lOutputShadows[launchIndex] = alpha * (1.0f - payload.shadow) + (1.0f - alpha) * cLast;
-	// lOutputShadows[launchIndex] = 1.0f - payload.shadow;
+	lOutputShadows[launchIndex] = alpha * (1.0f - payload.shadowColor) + (1.0f - alpha) * cLast;
+	// lOutputShadows[launchIndex] = 1.0f - payload.shadowColor;
+
+// DEBUG
+	// lOutputAlbedo[launchIndex].rg = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg * 2.f - 1.f;
+	// lOutputAlbedo[launchIndex].rg *= 20.f;
+	// lOutputAlbedo[launchIndex].b = 0.f;
+	// lOutputAlbedo[launchIndex].a = 1.0;
+	// lOutputAlbedo[launchIndex] = lOutputShadows[launchIndex];
+	// return;
 
 	if (metaballDepth <= linearDepth) {
-		lOutputAlbedo[launchIndex] = payload_metaball.albedo;
+		lOutputAlbedo[launchIndex] = payload_metaball.color * lOutputShadows[launchIndex].x;
 	} else {
-		lOutputAlbedo[launchIndex] = float4(payload.albedo.rgb, 1.0f);
-		lOutputNormals[launchIndex] = float4(payload.normal.rgb, 1.0f);
-		lOutputMetalnessRoughnessAO[launchIndex] = float4(payload.metalnessRoughnessAO.rgb, 1.0f);
-		lOutputShadows[launchIndex] = payload.shadow;
+		lOutputAlbedo[launchIndex] = payload.color * lOutputShadows[launchIndex].x;
+
+		// float4 totDecalColour = 0.0f;
+		// for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+		// 	totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+		// 	if (!all(totDecalColour == 0.0f)) {
+		// 		lOutputAlbedo[launchIndex] = totDecalColour;
+		// 		break;
+		// 	}
+		// }
 	}
 
+
+#else
+	// Fully RT
+
+	float3 rayDir;
+	float3 origin;
+	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
+	generateCameraRay(launchIndex, origin, rayDir);
+
+	RayDesc ray;
+	ray.Origin = origin;
+	ray.Direction = rayDir;
+	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
+	// TMin should be kept small to prevent missing geometry at close contact areas
+	ray.TMin = 0.00001;
+	ray.TMax = 10000.0;
+
+	RayPayload payload;
+	payload.recursionDepth = 0;
+	payload.closestTvalue = 0;
+	payload.shadowColor = 0.f;
+
+	payload.color = float4(0, 0, 0, 0);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+
+	lOutputAlbedo[launchIndex] = payload.color;
+#endif
 }
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
-	payload.albedo = float4(1.00f, 1.0f, 1.0f, 1.0f);
-	payload.albedo = float4(0.01f, 0.01f, 0.01f, 1.0f);
+	payload.color = float4(1.00f, 1.0f, 1.0f, 1.0f);
+	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
 	payload.closestTvalue = 1000;
 }
 
@@ -234,11 +280,14 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 
 	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
 	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
-	
-	payload.albedo.rgb = albedoColor;
-	payload.normal = normalInWorldSpace;
-	payload.metalnessRoughnessAO = metalnessRoughnessAO;
-	payload.shadow = 0.f;
+	float metalness = metalnessRoughnessAO.r;
+	float roughness = metalnessRoughnessAO.g;
+	float ao = metalnessRoughnessAO.b;
+
+	//payload.color = float4(normalInWorldSpace * 0.5f + 0.5f, 1.0f);
+	//return;
+
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
 }
 
 
@@ -264,18 +313,18 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
 
 	} else {
-		reflect_payload.albedo = float4(0.0f, 0.0f, 0.1f,1.0f);
-		refract_payload.albedo = float4(0.0f, 0.0f, 0.f,1.0f);
+		reflect_payload.color = float4(0.0f, 0.0f, 0.1f,1.0f);
+		refract_payload.color = float4(0.0f, 0.0f, 0.f,1.0f);
 	}
 
-	float4 reflect_color = reflect_payload.albedo;
+	float4 reflect_color = reflect_payload.color;
 	//reflect_color.r *= 0.8;
 	//reflect_color.g *= 0.8;
 	//reflect_color.b += 0.2;
 	reflect_color.b += 0.05f;
 	reflect_color =  saturate(reflect_color);
 
-	float4 refract_color = refract_payload.albedo;
+	float4 refract_color = refract_payload.color;
 	//refract_color.r *= 0.8;
 	//refract_color.g *= 0.8;
 	//refract_color.b *= 0.2;
@@ -294,7 +343,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	float roughness = 1;
 	float ao = 1;
 
-	payload.albedo = phongShade(Utils::HitWorldPosition(), normalInWorldSpace, finaldiffusecolor.xyz);
+	payload.color = phongShade(Utils::HitWorldPosition(), normalInWorldSpace, finaldiffusecolor.xyz);
 
 	return;
 }

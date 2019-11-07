@@ -151,7 +151,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         ray.TMin = 0.0001;
         ray.TMax = 1000;
 		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, ray, payload);
-        float3 prefilteredColor = payload.albedo.rgb;
+        float3 prefilteredColor = payload.color.rgb;
         // float3 prefilteredColor = 0.5f;
 
         // return float4(prefilteredColor, 1.0f);
@@ -161,14 +161,14 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
         ambient = (kD * diffuse + specular) * ao; 
 
-        float shadowSpecular = payload.shadow.x * (F * envBRDF.x + envBRDF.y).x;
+        float shadowSpecular = payload.shadowColor * (F * envBRDF.x + envBRDF.y).x;
         recursiveShadowAmount = shadowSpecular * ao;
 	} else {
 		// Reflection ray, return color from only direct light and irradiance
         ambient = irradiance * albedo * ao;
 	}
 
-    payload.shadow.x = shadowAmount + recursiveShadowAmount;
+    payload.shadowColor = shadowAmount + recursiveShadowAmount;
 
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;

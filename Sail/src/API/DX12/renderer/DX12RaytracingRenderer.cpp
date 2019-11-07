@@ -155,7 +155,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 	//DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(renderOutput);
-	DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(filteredShadows);
+	DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(shadedOutput);
 	
 
 	// Execute compute command list
