@@ -129,8 +129,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	if (camera && lightSetup) {
 		static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
 		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart);
-
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart, teamColors);
 	}
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
@@ -192,13 +191,13 @@ bool DX12RaytracingRenderer::onEvent(const Event& event) {
 	return true;
 }
 
-void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, glm::vec3 teamColor) {
+void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID) {
 	RenderCommand cmd;
 	cmd.type = RENDER_COMMAND_TYPE_MODEL;
 	cmd.model.mesh = mesh;
 	cmd.transform = glm::transpose(modelMatrix);
 	cmd.flags = flags;
-	cmd.teamColor = teamColor;
+	cmd.teamColorID = teamColorID;
 	// Resize to match numSwapBuffers (specific to dx12)
 	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	commandQueue.push_back(cmd);
@@ -227,6 +226,10 @@ void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& 
 
 void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {
 	m_dxr.addWaterAtWorldPosition(pos);
+}
+
+void DX12RaytracingRenderer::setTeamColors(const std::vector<glm::vec3>& teamColors) {
+	Renderer::setTeamColors(teamColors);
 }
 
 void DX12RaytracingRenderer::updateMetaballAABB() {

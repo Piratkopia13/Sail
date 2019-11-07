@@ -111,11 +111,14 @@ GBuffers PSMain(PSIn input) {
     gbuffers.albedo = sys_material_pbr.modelColor;
 	if (sys_material_pbr.hasAlbedoTexture) {
 		float4 albedo = sys_texAlbedo.Sample(PSss, input.texCoords);
-		if (albedo.a <= 0.5) {
-			gbuffers.albedo = float4(teamColor.rgb, albedo.a);
+
+		if (albedo.a < 1.0f) {
+			float f = 1 - albedo.a;
+			gbuffers.albedo = float4(gbuffers.albedo.rgb * (1 - f) + teamColor * f, albedo.a);
 		} else {
-			gbuffers.albedo *= albedo;
+			gbuffers.albedo = albedo;
 		}
+
 	}
 
     gbuffers.metalnessRoughnessAO = float4(sys_material_pbr.metalnessScale, sys_material_pbr.roughnessScale, sys_material_pbr.aoScale, 1.0f);

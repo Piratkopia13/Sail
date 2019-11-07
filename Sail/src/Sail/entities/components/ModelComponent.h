@@ -28,7 +28,7 @@ public:
 	}
 #endif
 
-	glm::vec3 teamColor = glm::vec3(1,1,1);
+	int teamColorID;
 
 private:
 	Model* m_model;

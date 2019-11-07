@@ -35,7 +35,11 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
-	
+	std::vector<glm::vec3> m_teamColors;
+	for (int i = 0; i < 12; i++) {
+		m_teamColors.push_back(TeamColorSystem::getTeamColor(i));
+	}
+	m_app->getRenderWrapper()->getCurrentRenderer()->setTeamColors(m_teamColors);
 
 	//----Octree creation----
 	//Wireframe shader

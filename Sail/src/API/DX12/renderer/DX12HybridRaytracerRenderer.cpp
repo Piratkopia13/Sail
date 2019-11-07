@@ -17,12 +17,14 @@ void DX12HybridRaytracerRenderer::begin(Camera* camera) {
 	m_rendererRaytrace->begin(camera);
 }
 
-void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, glm::vec3 teamColor) {
+void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID) {
+	teamColorID = std::clamp(teamColorID, 0, 12);
+
 	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
-		m_rendererGbuffer->submit(mesh, modelMatrix, flags, teamColor);
+		m_rendererGbuffer->submit(mesh, modelMatrix, flags, teamColorID);
 	}
 	if (!(flags & RenderFlag::HIDE_IN_DXR)) {
-		m_rendererRaytrace->submit(mesh, modelMatrix, flags, teamColor);
+		m_rendererRaytrace->submit(mesh, modelMatrix, flags, teamColorID);
 	}
 }
 
@@ -60,4 +62,9 @@ bool DX12HybridRaytracerRenderer::onEvent(const Event& event) {
 	m_rendererGbuffer->onEvent(event);
 	m_rendererRaytrace->onEvent(event);
 	return true;
+}
+
+void DX12HybridRaytracerRenderer::setTeamColors(const std::vector<glm::vec3>& teamColors) {
+	m_rendererGbuffer->setTeamColors(teamColors);
+	m_rendererRaytrace->setTeamColors(teamColors);
 }
