@@ -1490,7 +1490,13 @@ void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterMod
 		while (map->largeClutter.size() > 0) {
 			Clutter clut = map->largeClutter.front();
 			map->largeClutter.pop();
-			EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::CLUTTER_LO], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			if (rand() % 2 == 0) {
+				EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::TABLE], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			}
+			else {
+				EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::BOXES], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+
+			}
 		}
 		while (map->mediumClutter.size() > 0) {
 			Clutter clut = map->mediumClutter.front();

@@ -26,6 +26,8 @@ enum ClutterModel {
 	CLUTTER_MO,
 	CLUTTER_SO,
 	SAFTBLANDARE,
+	TABLE,
+	BOXES,
 	NUMBOFCLUTTER
 };
 

@@ -1014,6 +1014,17 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cLO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/LO_NM.tga");
 		cLO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/LO_Albedo.tga");
 
+		Model* cTable = &m_app->getResourceManager().getModel("Clutter/Table.fbx", shader);
+		cTable->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Table_MRAO.tga");
+		cTable->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Table_NM.tga");
+		cTable->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Table_Albedo.tga");
+
+		Model* cBoxes = &m_app->getResourceManager().getModel("Clutter/Boxes.fbx", shader);
+		cBoxes->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Boxes_MRAO.tga");
+		cBoxes->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Boxes_NM.tga");
+		cBoxes->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Boxes_Albedo.tga");
+
+
 		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
 		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Saftblandare_MRAO.tga");
 		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Saftblandare_NM.tga");
@@ -1037,6 +1048,8 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
 		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
 		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
+		clutterModels[ClutterModel::TABLE] = cTable;
+		clutterModels[ClutterModel::BOXES] = cBoxes;
 	}
 
 	// Create the level generator system and put it into the datatype.

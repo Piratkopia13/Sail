@@ -287,6 +287,8 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadModel("Clutter/SmallObject.fbx");
 	rm->loadModel("Clutter/MediumObject.fbx");
 	rm->loadModel("Clutter/LargeObject.fbx");
+	rm->loadModel("Clutter/Table.fbx");
+	rm->loadModel("Clutter/Boxes.fbx");
 
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
@@ -344,6 +346,13 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");
 	rm->loadTexture("pbr/Clutter/Saftblandare_Albedo.tga");
 
+	rm->loadTexture("pbr/Clutter/Boxes_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Boxes_NM.tga");
+	rm->loadTexture("pbr/Clutter/Boxes_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/Table_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Table_NM.tga");
+	rm->loadTexture("pbr/Clutter/Table_Albedo.tga");
 
 
 
