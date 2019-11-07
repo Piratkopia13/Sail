@@ -48,7 +48,6 @@ void GameInputSystem::fixedUpdate(float dt) {
 }
 
 void GameInputSystem::update(float dt, float alpha) {
-	//this->processKeyboardInput(dt);
 	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
@@ -110,7 +109,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			Movement playerMovement = getPlayerMovementInput(e);
 
 			// Player puts down candle
-			if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_CANDLE_HELD) ) {
+			if (Input::IsKeyPressed(KeyBinds::TOGGLE_CANDLE_HELD) ) {
 				if (m_candleToggleTimer > CANDLE_TIMER) {
 					putDownCandle(e);
 					m_candleToggleTimer = 0.0f;
@@ -347,16 +346,13 @@ void GameInputSystem::processMouseInput(const float& dt) {
 					}
 				}
 			}
-		}
-		else {
+		} else {
 
 			GunComponent* gc = e->getComponent<GunComponent>();
 			if (gc) {
 				gc->firing = false;
 			}
-
 		}
-
 	}
 }
 

@@ -36,6 +36,7 @@ private:
 	float* m_vramUsageHistory;
 	float* m_frameTimesHistory;
 	float* m_fixedUpdateHistory;
+	float* m_averageSentPacketSizeHistory;
 	std::string m_virtCount;
 	std::string m_physCount;
 	std::string m_vramUCount;
@@ -43,5 +44,6 @@ private:
 	std::string m_ftCount;
 	std::string m_fixedUpdateCount;
 	std::string m_potentialFixedUpdateRate;
+	std::string m_averageSentPacketSize;
 
 };

@@ -11,6 +11,8 @@ public:
 
 	void update(float dt) override;
 
+
+
 private:
 	GameDataTracker* m_gameDataTracker = nullptr;
 

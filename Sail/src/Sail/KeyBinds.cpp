@@ -36,6 +36,7 @@ namespace KeyBinds {
 	int DISABLE_CURSOR;
 	int TOGGLE_SPHERE;
 	int TOGGLE_SUN;
+	int TOGGLE_ROOM_LIGHTS;
 
 	// Application
 	int ALT_KEY;
@@ -93,6 +94,7 @@ void KeyBinds::init() {
 	DISABLE_CURSOR        = SAIL_MOUSE_RIGHT_BUTTON;
 	TOGGLE_SPHERE         = SAIL_KEY_C;
 	TOGGLE_SUN            = SAIL_KEY_P;
+	TOGGLE_ROOM_LIGHTS	  = SAIL_KEY_Q;
 
 	// Application
 	ALT_KEY = SAIL_KEY_MENU;		// Did not know what to call these binds
