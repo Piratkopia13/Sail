@@ -22,6 +22,37 @@ SettingStorage::~SettingStorage() {
 
 bool SettingStorage::loadFromFile(const std::string& filename) {
 	std::string file = Utils::readFile(filename);
+	return deSerialize(file, applicationSettingsStatic, applicationSettingsDynamic);
+}
+
+bool SettingStorage::saveToFile(const std::string& filename) {
+	std::string output = serialize(applicationSettingsStatic, applicationSettingsDynamic);
+	Utils::writeFileTrunc(filename, output);
+ 	return true;
+}
+
+std::string SettingStorage::serialize(const std::map<std::string, std::map<std::string, Setting>>& stat, const std::map<std::string, std::map<std::string, DynamicSetting>>& dynamic) {
+	std::string output = "";
+
+	for (auto const& [areaKey, setting] : stat) {
+		output += "#" + areaKey + "\n";
+		for (auto const& [settingKey, option] : setting) {
+			output += settingKey + "=" + std::to_string(option.selected) + "\n";
+		}
+		output += "\n";
+	}
+	for (auto const& [areaKey, setting] : dynamic) {
+		output += "#" + areaKey + "\n";
+		for (auto const& [settingKey, option] : setting) {
+			output += settingKey + "=" + std::to_string(option.value) + "\n";
+		}
+		output += "\n";
+	}
+	return output;
+}
+
+bool SettingStorage::deSerialize(const std::string& content, std::map<std::string, std::map<std::string, Setting>>& stat, std::map<std::string, std::map<std::string, DynamicSetting>>& dynamic) {
+	std::string file = content;
 	std::string currentArea = "";
 	while (file != "") {
 		// get a new line from the buffer
@@ -29,7 +60,7 @@ bool SettingStorage::loadFromFile(const std::string& filename) {
 		std::string line = "";
 		if (newline != std::string::npos) {
 			line = file.substr(0, newline);
-			file = file.substr(newline+1, std::string::npos);
+			file = file.substr(newline + 1, std::string::npos);
 		}
 		else {
 			line = file;
@@ -38,52 +69,31 @@ bool SettingStorage::loadFromFile(const std::string& filename) {
 
 		// Start new section
 		if (line[0] == '#') {
-			
+
 			currentArea = line.substr(1, std::string::npos);
 		}
 		// import new value
-		else if(line != "" && currentArea != ""){
-			if (Reg::Setting.match(line.c_str()) == line.size()) {
-				int divider = line.find(":");
+		else if (line != "" && currentArea != "") {
+			if (Reg::SettingStatic.match(line.c_str()) == line.size() || Reg::SettingDynamic.match(line.c_str()) == line.size()) {
+				int divider = line.find("=");
 				std::string name = line.substr(0, divider);
 				std::string temp = line.substr(divider + 1, std::string::npos);
-				if (applicationSettingsStatic.find(currentArea) != applicationSettingsStatic.end()) {
-					if (applicationSettingsStatic[currentArea].find(name) != applicationSettingsStatic[currentArea].end()) {
+				if (stat.find(currentArea) != stat.end()) {
+					if (stat[currentArea].find(name) != stat[currentArea].end()) {
 						int selection = std::stoi(temp);
-						applicationSettingsStatic[currentArea][name].setSelected((unsigned int)selection);
+						stat[currentArea][name].setSelected((unsigned int)selection);
 					}
 				}
-				if (applicationSettingsDynamic.find(currentArea) != applicationSettingsDynamic.end()) {
-					if (applicationSettingsDynamic[currentArea].find(name) != applicationSettingsDynamic[currentArea].end()) {
+				if (dynamic.find(currentArea) != dynamic.end()) {
+					if (dynamic[currentArea].find(name) != dynamic[currentArea].end()) {
 						float value = std::stof(temp);
-						applicationSettingsDynamic[currentArea][name].value = value;
+						dynamic[currentArea][name].value = value;
 					}
 				}
 			}
 		}
 	}
 	return true;
-}
-
-bool SettingStorage::saveToFile(const std::string& filename) {
-
-	std::string output = "";
-	for (auto const& [areaKey, setting]: applicationSettingsStatic) {
-		output += "#" + areaKey + "\n";
-		for (auto const& [settingKey, option] : setting) {
-			output += settingKey + ":" + std::to_string(option.selected) + "\n";
-		}
-		output += "\n";
-	}
-	for (auto const& [areaKey, setting] : applicationSettingsDynamic) {
-		output += "#" + areaKey + "\n";
-		for (auto const& [settingKey, option] : setting) {
-			output += settingKey + ":" + std::to_string(option.value) + "\n";
-		}
-		output += "\n";
-	}
-	Utils::writeFileTrunc(filename, output);
- 	return true;
 }
 
 SettingStorage::WantedType SettingStorage::matchType(const std::string& value) {
