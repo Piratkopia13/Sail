@@ -372,8 +372,10 @@ void AnimationSystem::initDebugAnimations() {
 	std::string name = "Doc.fbx";
 
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
-	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+	Model* lightModel = &app->getResourceManager().getModel("Torch.fbx", shader);
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
+	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
+	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
 	//Wireframe bounding box model
 	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));

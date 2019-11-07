@@ -36,7 +36,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, bool isEmissive, float metalness, float roughness, float ao, inout RayPayload payload) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
 
@@ -45,97 +45,106 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
     // Reflectance equation
     float3 Lo = 0.0f;
-    for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLightInput p = CB_SceneData.pointLights[i];
 
-        // Ignore point light if color is black
-		if (all(p.color == 0.0f)) {
-			continue;
-		}
-
-        float3 L = normalize(p.position - worldPosition);
-        float3 H = normalize(V + L);
-        float distance = length(p.position - worldPosition);
-    
-        // Dont do any shading if in shadow or light is black
-        if (Utils::rayHitAnything(worldPosition, L, distance)) {
-            continue;
-        }
-
-        float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
-        float3 radiance   = p.color * attenuation;
-
-        float3 F  = fresnelSchlick(max(dot(H, V), 0.0f), F0);
-
-        float NDF = DistributionGGX(N, H, roughness);
-        float G   = GeometrySmith(N, V, L, roughness);
-
-        // Calculate the Cook-Torrance BDRF
-        float3 numerator    = NDF * G * F;
-        float  denominator  = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
-        float3 specular     = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
-        specular *= attenuation;
-
-        // The fresnel value directly corresponds to the specular contribution
-        float3 kS = F;
-        // The rest is the diffuse contribution (energy conserving)
-        float3 kD = 1.0f - kS;
-        // Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
-        kD *= 1.0f - metalness;
-
-        // Calculate the light's outgoing reflectance value
-        float NdotL = max(dot(N, L), 0.0f);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-    }
-
-	//Spotlights
-	for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
-		SpotlightInput p = CB_SceneData.spotLights[i];
-
-		// Ignore point light if color is black
-		if (all(p.color == 0.0f) || p.angle == 0) {
-			continue;
-		}
-
-		float3 L = normalize(p.position - worldPosition);
-		float3 H = normalize(V + L);
-		float distance = length(p.position - worldPosition);
-
-		float angle = dot(L, normalize(p.direction));
-		if(abs(angle) <= p.angle){
-			continue;
-		}
-
-		// Dont do any shading if in shadow or light is black
-		if (Utils::rayHitAnything(worldPosition, L, distance)) {
-			continue;
-		}
-
-		float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
-		float3 radiance = p.color * attenuation;
-
-		float3 F = fresnelSchlick(max(dot(H, V), 0.0f), F0);
-
-		float NDF = DistributionGGX(N, H, roughness);
-		float G = GeometrySmith(N, V, L, roughness);
-
-		// Calculate the Cook-Torrance BDRF
-		float3 numerator = NDF * G * F;
-		float  denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
-		float3 specular = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
-		specular *= attenuation;
-
-		// The fresnel value directly corresponds to the specular contribution
-		float3 kS = F;
-		// The rest is the diffuse contribution (energy conserving)
-		float3 kD = 1.0f - kS;
-		// Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
-		kD *= 1.0f - metalness;
-
-		// Calculate the light's outgoing reflectance value
-		float NdotL = max(dot(N, L), 0.0f);
-		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+	if (isEmissive) {
+		Lo += albedo * 2.2;
 	}
+	else
+	{
+
+		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
+			PointLightInput p = CB_SceneData.pointLights[i];
+
+			// Ignore point light if color is black
+			if (all(p.color == 0.0f)) {
+				continue;
+			}
+
+			float3 L = normalize(p.position - worldPosition);
+			float3 H = normalize(V + L);
+			float distance = length(p.position - worldPosition);
+
+			// Dont do any shading if in shadow
+			if (Utils::rayHitAnything(worldPosition, L, distance)) {
+				continue;
+			}
+
+			float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
+			float3 radiance = p.color * attenuation;
+
+			float3 F = fresnelSchlick(max(dot(H, V), 0.0f), F0);
+
+			float NDF = DistributionGGX(N, H, roughness);
+			float G = GeometrySmith(N, V, L, roughness);
+
+			// Calculate the Cook-Torrance BDRF
+			float3 numerator = NDF * G * F;
+			float  denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+			float3 specular = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
+			specular *= attenuation;
+
+			// The fresnel value directly corresponds to the specular contribution
+			float3 kS = F;
+			// The rest is the diffuse contribution (energy conserving)
+			float3 kD = 1.0f - kS;
+			// Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
+			kD *= 1.0f - metalness;
+
+			// Calculate the light's outgoing reflectance value
+			float NdotL = max(dot(N, L), 0.0f);
+			Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+		}
+
+		//Spotlights
+		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
+			SpotlightInput p = CB_SceneData.spotLights[i];
+
+			// Ignore point light if color is black
+			if (all(p.color == 0.0f) || p.angle == 0) {
+				continue;
+			}
+
+			float3 L = normalize(p.position - worldPosition);
+			float3 H = normalize(V + L);
+			float distance = length(p.position - worldPosition);
+
+			float angle = dot(L, normalize(p.direction));
+			if (abs(angle) <= p.angle) {
+				continue;
+			}
+
+			// Dont do any shading if in shadow
+			if (Utils::rayHitAnything(worldPosition, L, distance)) {
+				continue;
+			}
+
+			float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
+			float3 radiance = p.color * attenuation;
+
+			float3 F = fresnelSchlick(max(dot(H, V), 0.0f), F0);
+
+			float NDF = DistributionGGX(N, H, roughness);
+			float G = GeometrySmith(N, V, L, roughness);
+
+			// Calculate the Cook-Torrance BDRF
+			float3 numerator = NDF * G * F;
+			float  denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+			float3 specular = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
+			specular *= attenuation;
+
+			// The fresnel value directly corresponds to the specular contribution
+			float3 kS = F;
+			// The rest is the diffuse contribution (energy conserving)
+			float3 kD = 1.0f - kS;
+			// Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
+			kD *= 1.0f - metalness;
+
+			// Calculate the light's outgoing reflectance value
+			float NdotL = max(dot(N, L), 0.0f);
+			Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+		}
+	}
+
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
     float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
