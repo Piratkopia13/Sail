@@ -7,6 +7,9 @@
 class ParticleEmitterComponent;
 class ParticleComputeShader;
 class DX12VertexBuffer;
+namespace ShaderComponent {
+	class DX12StructuredBuffer;
+}
 
 class ParticleSystem final : public BaseComponentSystem {
 public:
@@ -26,6 +29,7 @@ private:
 
 	DX12VertexBuffer* m_outputVertexBuffer;
 	unsigned int m_outputVertexBufferSize;
+	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_physicsBuffer;
 
 	std::unique_ptr<Model> m_model;
 

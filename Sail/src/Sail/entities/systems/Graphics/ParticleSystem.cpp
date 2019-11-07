@@ -5,6 +5,7 @@
 #include "Sail/entities/Entity.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/shader/DX12ConstantBuffer.h"
+#include "API/DX12/shader/DX12StructuredBuffer.h"
 #include "API/DX12/resources/DescriptorHeap.h"
 #include "API/DX12/DX12Utils.h"
 #include "API/DX12/DX12API.h"
@@ -27,6 +28,11 @@ ParticleSystem::ParticleSystem() {
 	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
 
 	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
+	
+	void* initData = malloc(m_outputVertexBufferSize * 4);
+	memset(initData, 0, m_outputVertexBufferSize * 4);
+	m_physicsBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, m_outputVertexBufferSize / 6, 6*4);
+	free(initData);
 
 	m_numberOfParticles = 0;
 
@@ -87,7 +93,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		auto* settings = m_particleShader->getComputeSettings();
 
-		//----Compute shader input----
+		//----Compute shader constant buffer----
 		ComputeInput inputData;
 		inputData.numEmitters = m_cpuOutput[context->getSwapIndex()].newEmitters.size();
 		inputData.previousNrOfParticles = m_cpuOutput[context->getSwapIndex()].previousNrOfParticles;
@@ -106,12 +112,11 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		}
 
 		m_particleShader->getPipeline()->setCBufferVar("inputBuffer", &inputData, sizeof(ComputeInput));
-		//----------------------------
+		//--------------------------------------
 
 		auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
 		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
 
-		// Create a unordered access view for the animated vertex buffer in the correct place in the heap
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -122,9 +127,25 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		// Transition to UAV access
 		DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
+		//----Compute shader physics buffer----
+		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize();
+		uavDesc = {};
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.NumElements = m_outputVertexBufferSize / 6;
+		uavDesc.Buffer.StructureByteStride = 6*4; // TODO: replace with sizeof(ParticlePhysics)
+		context->getDevice()->CreateUnorderedAccessView(m_physicsBuffer->getBuffer(), nullptr, &uavDesc, cdh);
+		// Transition to UAV access
+		if (m_gpuUpdates < DX12API::NUM_GPU_BUFFERS * 2 + 2) {
+			DX12Utils::SetResourceTransitionBarrier(cmdList, m_physicsBuffer->getBuffer(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			m_gpuUpdates++;
+		}
+		//-------------------------------------
+
 		m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), 0, cmdList);
 
-		context->getComputeGPUDescriptorHeap()->getAndStepIndex(10);
+		context->getComputeGPUDescriptorHeap()->getAndStepIndex(11);
 
 		// Transition to Cbuffer usage
 		DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
