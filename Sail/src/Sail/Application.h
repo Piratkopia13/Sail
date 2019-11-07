@@ -8,6 +8,7 @@
 
 #include "utils/Timer.h"
 #include "utils/SailImGui/ConsoleCommands.h"
+#include "utils/Storage/SettingStorage.h"
 #include "utils/StateStorage.h"
 #include "resources/ResourceManager.h"
 #include "resources/loaders/AssimpLoader.h"
@@ -80,6 +81,7 @@ public:
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
 	ConsoleCommands& getConsole();
+	SettingStorage& getSettings();
 
 	MemoryManager& getMemoryManager();
 	RendererWrapper* getRenderWrapper();
@@ -101,6 +103,7 @@ private:
 
 	MemoryManager m_memoryManager;
 	StateStorage m_stateStorage;
+	SettingStorage m_settingStorage;
 
 	// Timer
 	Timer m_timer;

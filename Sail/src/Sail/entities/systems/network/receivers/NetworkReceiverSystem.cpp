@@ -5,7 +5,7 @@
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
-#include "Sail/entities/components/MapComponent.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 #include "../SPLASH/src/game/states/GameState.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -106,6 +106,7 @@ void NetworkReceiverSystem::update(float dt) {
 	size_t nrOfMessagesInComponent = 0;
 	glm::vec3 translation;
 	glm::vec3 rotation;
+	glm::quat rotationQuat;
 	glm::vec3 gunPosition;
 	glm::vec3 gunVelocity;
 	unsigned int animationIndex;
@@ -141,32 +142,35 @@ void NetworkReceiverSystem::update(float dt) {
 				out << "ReciverComp: " << Netcode::MessageNames[(int)(messageType)-1] << "\n";
 #endif
 				// Read and process the data
-				// TODO: Rename some of the enums/functions
+				// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 				switch (messageType) {
-				case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
-				{
-					ArchiveHelpers::loadVec3(ar, translation); // Read translation
-					createEntity(id, entityType, translation);
-				}
-				break;
-				case Netcode::MessageType::MODIFY_TRANSFORM:
-				{
-					ArchiveHelpers::loadVec3(ar, translation); // Read translation
-					setEntityTranslation(id, translation);
-
-				}
-				break;
-				case Netcode::MessageType::ROTATION_TRANSFORM:
-				{
-					ArchiveHelpers::loadVec3(ar, rotation);	// Read rotation
-					setEntityRotation(id, rotation);
-				}
-				break;
-				case Netcode::MessageType::ANIMATION: 
+				case Netcode::MessageType::ANIMATION:
 				{
 					ar(animationIndex);		// Read
 					ar(animationTime);		//
 					setEntityAnimation(id, animationIndex, animationTime);
+				}
+				break;
+				case Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT:
+				{
+					ArchiveHelpers::loadVec3(ar, translation);
+					ArchiveHelpers::loadQuat(ar, rotationQuat);
+
+					setEntityLocalPosition(id, translation);
+					setEntityLocalRotation(id, rotationQuat);
+				}
+				break;
+				case Netcode::MessageType::CHANGE_LOCAL_POSITION:
+				{
+					ArchiveHelpers::loadVec3(ar, translation); // Read translation
+					setEntityLocalPosition(id, translation);
+
+				}
+				break;
+				case Netcode::MessageType::CHANGE_LOCAL_ROTATION:
+				{
+					ArchiveHelpers::loadVec3(ar, rotation);	// Read rotation
+					setEntityLocalRotation(id, rotation);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_START:
@@ -233,101 +237,33 @@ void NetworkReceiverSystem::update(float dt) {
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "Event: " << Netcode::MessageNames[(int)(eventType) - 1] << "\n";
 #endif
+
+
+			// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 			switch (eventType) {
-			case Netcode::MessageType::PLAYER_JUMPED:
-			{
-				ar(componentID);
-				playerJumped(componentID);
-			}
-			break;
-			case Netcode::MessageType::PLAYER_LANDED:
-			{
-				ar(componentID);
-				playerLanded(componentID);
-			}
-			break;
-			case Netcode::MessageType::WATER_HIT_PLAYER:
-			{
-				Netcode::ComponentID playerwhoWasHit;
-				ar(playerwhoWasHit);
-				waterHitPlayer(playerwhoWasHit, senderID);
-			}
-			break;
-			case Netcode::MessageType::SPAWN_PROJECTILE:
-			{
-				Netcode::ComponentID projectileOwnerID;
-
-				ArchiveHelpers::loadVec3(ar, gunPosition);
-				ArchiveHelpers::loadVec3(ar, gunVelocity);
-				ar(projectileOwnerID);
-
-				projectileSpawned(gunPosition, gunVelocity, projectileOwnerID);
-			}
-			break;
-			case Netcode::MessageType::PLAYER_DIED:
-			{
-				Netcode::PlayerID playerIdOfShooter;
-				Netcode::ComponentID networkIdOfKilled;
-
-				ar(networkIdOfKilled); // Receive
-				ar(playerIdOfShooter);
-				playerDied(networkIdOfKilled, playerIdOfShooter);
-			}
-			break;
-			case Netcode::MessageType::MATCH_ENDED:
-			{
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::PREPARE_ENDSCREEN,
-					SAIL_NEW Netcode::MessagePrepareEndScreen(),
-					false
-				);
-
-				GameDataTracker::getInstance().turnOffLocalDataTracking();
-
-				mergeHostsStats();
-				// Dispatch game over event
-				EventDispatcher::Instance().emit(GameOverEvent());
-			}
-			break;
+			
 			case Netcode::MessageType::CANDLE_HELD_STATE:
 			{
-				glm::vec3 candlepos;
 				bool isCarried;
 
 				ar(componentID);
 				ar(isCarried);
-				ArchiveHelpers::loadVec3(ar, candlepos);
+
+				setCandleHeldState(componentID, isCarried);
+			}
+			break;
+			case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
+			{
+				Netcode::ComponentID playerCompID;
+				Netcode::ComponentID candleCompID;
+				Netcode::ComponentID gunCompID;
+
+				ar(playerCompID); // Read what Netcode::ComponentID the player entity should have
+				ar(candleCompID); // Read what Netcode::ComponentID the candle entity should have
+				ar(gunCompID);    // Read what Netcode::ComponentID the gun entity should have
+				ArchiveHelpers::loadVec3(ar, translation); // Read the player's position
 				
-				setCandleHeldState(componentID, isCarried, candlepos);
-			}
-			break;
-			case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
-			{
-				backToLobby();
-			}
-			break;
-			case Netcode::MessageType::RUNNING_METAL_START:
-			{
-				ar(componentID);
-				runningMetalStart(componentID);
-			}
-			break;
-			case Netcode::MessageType::RUNNING_TILE_START:
-			{
-				ar(componentID);
-				runningTileStart(componentID);
-			}
-			break;
-			case Netcode::MessageType::RUNNING_STOP_SOUND:
-			{
-				ar(componentID);
-				runningStopSound(componentID);
-			}
-			break;
-			case Netcode::MessageType::PLAYER_DISCONNECT:
-			{
-				ar(playerID);
-				playerDisconnect(playerID);
+				createPlayerEntity(playerCompID, candleCompID, gunCompID, translation);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -369,6 +305,56 @@ void NetworkReceiverSystem::update(float dt) {
 				endMatch();
 			}
 			break;
+			case Netcode::MessageType::IGNITE_CANDLE:
+			{
+				Netcode::ComponentID candleOwnerID;
+				ar(candleOwnerID);
+				igniteCandle(candleOwnerID);
+			}
+			break;
+			case Netcode::MessageType::MATCH_ENDED:
+			{
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::PREPARE_ENDSCREEN,
+					SAIL_NEW Netcode::MessagePrepareEndScreen(),
+					false
+				);
+
+				GameDataTracker::getInstance().turnOffLocalDataTracking();
+
+				mergeHostsStats();
+				// Dispatch game over event
+				EventDispatcher::Instance().emit(GameOverEvent());
+			}
+			break;
+			case Netcode::MessageType::PLAYER_DIED:
+			{
+				Netcode::PlayerID playerIdOfShooter;
+				Netcode::ComponentID networkIdOfKilled;
+
+				ar(networkIdOfKilled); // Receive
+				ar(playerIdOfShooter);
+				playerDied(networkIdOfKilled, playerIdOfShooter);
+			}
+			break;
+			case Netcode::MessageType::PLAYER_DISCONNECT:
+			{
+				ar(playerID);
+				playerDisconnect(playerID);
+			}
+			break;
+			case Netcode::MessageType::PLAYER_JUMPED:
+			{
+				ar(componentID);
+				playerJumped(componentID);
+			}
+			break;
+			case Netcode::MessageType::PLAYER_LANDED:
+			{
+				ar(componentID);
+				playerLanded(componentID);
+			}
+			break;
 			case Netcode::MessageType::PREPARE_ENDSCREEN:
 			{
 				GameDataTracker* dgtp = &GameDataTracker::getInstance();
@@ -383,12 +369,45 @@ void NetworkReceiverSystem::update(float dt) {
 				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
 			}
 			break;
-
-			case Netcode::MessageType::IGNITE_CANDLE:
+			case Netcode::MessageType::RUNNING_METAL_START:
 			{
-				Netcode::ComponentID candleOwnerID;
-				ar(candleOwnerID);
-				igniteCandle(candleOwnerID);
+				ar(componentID);
+				runningMetalStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_TILE_START:
+			{
+				ar(componentID);
+				runningTileStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_STOP_SOUND:
+			{
+				ar(componentID);
+				runningStopSound(componentID);
+			}
+			break;
+			case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
+			{
+				backToLobby();
+			}
+			break;
+			case Netcode::MessageType::SPAWN_PROJECTILE:
+			{
+				Netcode::ComponentID projectileOwnerID;
+
+				ArchiveHelpers::loadVec3(ar, gunPosition);
+				ArchiveHelpers::loadVec3(ar, gunVelocity);
+				ar(projectileOwnerID);
+
+				projectileSpawned(gunPosition, gunVelocity, projectileOwnerID);
+			}
+			break;
+			case Netcode::MessageType::WATER_HIT_PLAYER:
+			{
+				Netcode::ComponentID playerwhoWasHit;
+				ar(playerwhoWasHit);
+				waterHitPlayer(playerwhoWasHit, senderID);
 			}
 			break;
 			default:
@@ -408,10 +427,10 @@ void NetworkReceiverSystem::update(float dt) {
 /*
   Creates a new entity of the specified entity type and with a NetworkReceiverComponent attached to it
 */
-void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::EntityType entityType, const glm::vec3& translation) {
+void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation) {
 	// Early exit if the entity already exists
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == playerCompID) {
 			return;
 		}
 	}
@@ -419,22 +438,16 @@ void NetworkReceiverSystem::createEntity(Netcode::ComponentID id, Netcode::Entit
 	auto e = ECS::Instance()->createEntity("networkedEntity");
 	instantAddEntity(e.get());
 
-	// create the new entity
-	switch (entityType) {
-	case Netcode::EntityType::PLAYER_ENTITY:
-	{
-		// lightIndex set to 999, can probably be removed since it no longer seems to be used
-		EntityFactory::CreateOtherPlayer(e, id, 999, translation);
-	}
-	break;
-	default:
-		Logger::Error("createEntity called but no matching entity type found");
-		break;
-	}
+
+	Logger::Log("Created player with id: " + std::to_string(playerCompID));
+
+	// lightIndex set to 999, can probably be removed since it no longer seems to be used
+	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, gunCompID, 999, translation);
+
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
-void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const glm::vec3& translation) {
+void NetworkReceiverSystem::setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			e->getComponent<TransformComponent>()->setTranslation(translation);
@@ -444,18 +457,20 @@ void NetworkReceiverSystem::setEntityTranslation(Netcode::ComponentID id, const 
 	Logger::Warning("setEntityTranslation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
+void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
-			//TODO: REMOVE
-			//TODO: REMOVE	//TODO: REMOVE THIS WHEN NEW ANIMATIONS ARE PUT IN
-			glm::vec3 rot = rotation;
-			//if (e->getComponent<AnimationComponent>()->currentAnimation != e->getComponent<AnimationComponent>()->getAnimationStack()->getAnimation(0)) {
-			//rot.y += 3.14f * 0.5f;
-			//}
-			e->getComponent<TransformComponent>()->setRotations(rot);
+			e->getComponent<TransformComponent>()->setRotations(rotation);
+			return;
+		}
+	}
+	Logger::Warning("setEntityRotation called but no matching entity found");
+}
 
+void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
+			e->getComponent<TransformComponent>()->setRotations(rotation);
 			return;
 		}
 	}
@@ -507,7 +522,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 			continue;
 		}
 		//Look for the entity that IS the candle (candle entity)
-		std::vector<Entity::SPtr> childEntities = e->getChildEntities();
+		std::vector<Entity*> childEntities = e->getChildEntities();
 		for (auto& child : childEntities) {
 			if (child->hasComponent<CandleComponent>()) {
 				// Damage the candle
@@ -551,7 +566,6 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 	if (m_playerID == playerIdOfShooter) {
 		for (auto& e : entities) {
 			if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == m_playerID) {
-				
 				self = e;
 				break;
 			}
@@ -598,7 +612,8 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
 			pos.y = 20.f;
 			transform->setStartTranslation(pos);
-			auto middleOfLevel = glm::vec3(MapComponent::tileSize * MapComponent::xsize / 2.f, 0.f, MapComponent::tileSize * MapComponent::ysize / 2.f);
+			auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+			auto middleOfLevel = glm::vec3(mapSettings["tileSize"].value  * mapSettings["sizeX"].value / 2.f, 0.f, mapSettings["tileSize"].value * mapSettings["sizeY"].value / 2.f);
 			auto dir = glm::normalize(middleOfLevel - pos);
 			auto rots = Utils::getRotations(dir);
 			transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
@@ -636,7 +651,7 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
-void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isHeld, const glm::vec3& pos) {
+void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isHeld) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
 			continue;
@@ -652,10 +667,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 				candleComp->wasCarriedLastUpdate = isHeld;
 				if (!isHeld) {
 					candleTransComp->removeParent();
-					candleTransComp->setStartTranslation(pos);
-					candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
 					e->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
-
 
 					// Might be needed
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
@@ -663,7 +675,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 					candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
 					candleTransComp->setParent(e->getComponent<TransformComponent>());
 
-					e->getComponent<AnimationComponent>()->rightHandEntity = candleE.get();
+					e->getComponent<AnimationComponent>()->rightHandEntity = candleE;
 				}
 				return;
 			}

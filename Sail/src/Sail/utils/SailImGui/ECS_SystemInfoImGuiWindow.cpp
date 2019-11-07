@@ -69,8 +69,8 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 					}
 				}
 				for (const auto& child : selectedEntity->getChildEntities()) {
-					if (ImGui::Selectable(std::string("Child: " + child->getName()).c_str(), selectedEntity == child.get())) {
-						selectedEntity = child.get();
+					if (ImGui::Selectable(std::string("Child: " + child->getName()).c_str(), selectedEntity == child)) {
+						selectedEntity = child;
 						ImGui::EndChild();
 						ImGui::End();
 						return;
