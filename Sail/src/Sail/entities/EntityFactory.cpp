@@ -84,7 +84,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
-	myPlayer->removeComponent<CollidableComponent>();
 	myPlayer->addComponent<CollisionComponent>();
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
@@ -309,11 +308,11 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	return e;
 }
 
-// TODO: add sender/receiver with manually set componentID
-Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velocity, 
-	bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
-	Netcode::ComponentID netCompId,
-	float lifetime, float randomSpread) 
+Entity::SPtr EntityFactory::CreateProjectile(
+		const glm::vec3& pos, const glm::vec3& velocity, 
+		bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
+		Netcode::ComponentID netCompId,
+		float lifetime, float randomSpread) 
 {
 	auto e = ECS::Instance()->createEntity("projectile");
 	glm::vec3 randPos;
