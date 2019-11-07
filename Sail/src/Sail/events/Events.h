@@ -5,4 +5,3 @@
 
 #include "WindowResizeEvent.h"
 #include "WindowFocusChangedEvent.h"
-#include "PlayerCandleDeathEvent.h"
