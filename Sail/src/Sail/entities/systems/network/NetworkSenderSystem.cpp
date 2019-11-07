@@ -169,7 +169,7 @@ void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 
 #ifdef DEVELOPMENT
 	// Don't send broken events to others or to yourself
-	if (type->type < Netcode::MessageType::CREATE_NETWORKED_ENTITY || type->type >= Netcode::MessageType::EMPTY) {
+	if (type->type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || type->type >= Netcode::MessageType::EMPTY) {
 		Logger::Error("Attempted to send invalid message\n");
 		return;
 	}
@@ -228,42 +228,48 @@ void NetworkSenderSystem::stop() {
 	}
 }
 
+// No longer used, remove?
 void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e) {
 	entities.push_back(e);
 }
 
 void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar) {
 	// Package it depending on the type
+	// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 	switch (messageType) {
 		// Send necessary info to create the networked entity 
-	case Netcode::MessageType::CREATE_NETWORKED_ENTITY:
-	{
-		TransformComponent* t = e->getComponent<TransformComponent>();
-		ArchiveHelpers::archiveVec3(ar, t->getTranslation()); // Send translation
-
-		// When the remote entity has been created we want to update translation and rotation of that entity
-		auto networkComp = e->getComponent<NetworkSenderComponent>();
-		networkComp->removeMessageType(Netcode::MessageType::CREATE_NETWORKED_ENTITY);
-		networkComp->addMessageType(Netcode::MessageType::MODIFY_TRANSFORM);
-		networkComp->addMessageType(Netcode::MessageType::ROTATION_TRANSFORM);
-	}
-	break;
-	case Netcode::MessageType::MODIFY_TRANSFORM:
-	{
-		TransformComponent* t = e->getComponent<TransformComponent>();
-		ArchiveHelpers::archiveVec3(ar, t->getTranslation()); // Send translation
-	}
-	break;
-	case Netcode::MessageType::ROTATION_TRANSFORM:
-	{
-		TransformComponent* t = e->getComponent<TransformComponent>();
-		ArchiveHelpers::archiveVec3(ar, t->getRotations());	// Send rotation
-	}
-	break;
 	case Netcode::MessageType::ANIMATION:
 	{
 		ar(e->getComponent<AnimationComponent>()->animationIndex);
 		ar(e->getComponent<AnimationComponent>()->animationTime);
+	}
+	break; 
+	case Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT:
+	{
+		glm::vec3 scale;
+		glm::quat rotation;
+		glm::vec3 translation;
+		glm::vec3 skew;
+		glm::vec4 perspective;
+
+		TransformComponent* t = e->getComponent<TransformComponent>();
+
+		glm::decompose(t->getMatrixWithUpdate(), scale, rotation, translation, skew, perspective);
+
+		ArchiveHelpers::saveVec3(ar, translation);
+		ArchiveHelpers::saveQuat(ar, rotation);
+	}
+	break;
+	case Netcode::MessageType::CHANGE_LOCAL_POSITION:
+	{
+		TransformComponent* t = e->getComponent<TransformComponent>();
+		ArchiveHelpers::saveVec3(ar, t->getTranslation());
+	}
+	break;
+	case Netcode::MessageType::CHANGE_LOCAL_ROTATION:
+	{
+		TransformComponent* t = e->getComponent<TransformComponent>();
+		ArchiveHelpers::saveVec3(ar, t->getRotations());
 	}
 	break;
 	case Netcode::MessageType::SHOOT_START:
@@ -273,8 +279,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ArchiveHelpers::saveVec3(ar, g->position);
+		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 
 		// Transition into loop
 		e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::SHOOT_LOOP);
@@ -284,8 +290,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	{
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ArchiveHelpers::saveVec3(ar, g->position);
+		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 	}
 	break;
 	case Netcode::MessageType::SHOOT_END:
@@ -297,8 +303,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 		// Send data to others
 		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::archiveVec3(ar, g->position);
-		ArchiveHelpers::archiveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ArchiveHelpers::saveVec3(ar, g->position);
+		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 	}
 	break;
 	default:
@@ -313,35 +319,64 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	ar(event->REDUNDANT_TYPE);
 #endif
 
+
+	// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 	switch (event->type) {
-	case Netcode::MessageType::SPAWN_PROJECTILE:
+	case Netcode::MessageType::CANDLE_HELD_STATE:
 	{
-		Netcode::MessageSpawnProjectile* data = static_cast<Netcode::MessageSpawnProjectile*>(event->data);
+		Netcode::MessageCandleHeldState* data = static_cast<Netcode::MessageCandleHeldState*>(event->data);
 
-		ArchiveHelpers::archiveVec3(ar, data->translation);
-		ArchiveHelpers::archiveVec3(ar, data->velocity);
-		ar(data->ownerPlayerComponentID);
+		ar(data->candleOwnerID);
+		ar(data->isHeld);
 	}
 	break;
-	case Netcode::MessageType::PLAYER_JUMPED:
+	case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
 	{
-		Netcode::MessagePlayerJumped* data = static_cast<Netcode::MessagePlayerJumped*>(event->data);
+		Netcode::MessageCreatePlayer* data = static_cast<Netcode::MessageCreatePlayer*>(event->data);
 
-		ar(data->playerWhoJumped);
+		ar(data->playerCompID);
+		ar(data->candleCompID);
+		ar(data->gunCompID);
+		ArchiveHelpers::saveVec3(ar, data->position);
 	}
 	break;
-	case Netcode::MessageType::PLAYER_LANDED:
+	case Netcode::MessageType::ENDGAME_STATS:
 	{
-		Netcode::MessagePlayerLanded* data = static_cast<Netcode::MessagePlayerLanded*>(event->data);
+		GameDataTracker* dgtp = &GameDataTracker::getInstance();
+		std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
+		// Send player count to clients for them to loop following data
+		ar(tmpPlayerMap.size());
 
-		ar(data->playerWhoLanded);
+		// Send all per player data. Match this on the reciever end
+		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
+			ar(player->first);
+			ar(player->second.nKills);
+			ar(player->second.placement);
+		}
+
+		// Send all specific data. The host has processed data from all clients and will 
+		// now return it to their endscreens.
+		ar(dgtp->getStatisticsGlobal().bulletsFired);
+		ar(dgtp->getStatisticsGlobal().bulletsFiredID);
+
+		ar(dgtp->getStatisticsGlobal().distanceWalked);
+		ar(dgtp->getStatisticsGlobal().distanceWalkedID);
+
+		ar(dgtp->getStatisticsGlobal().jumpsMade);
+		ar(dgtp->getStatisticsGlobal().jumpsMadeID);
+
+
 	}
 	break;
-	case Netcode::MessageType::WATER_HIT_PLAYER:
+	case Netcode::MessageType::IGNITE_CANDLE:
 	{
-		Netcode::MessageWaterHitPlayer* data = static_cast<Netcode::MessageWaterHitPlayer*>(event->data);
+		Netcode::MessageIgniteCandle* data = static_cast<Netcode::MessageIgniteCandle*>(event->data);
+		ar(data->candleOwnerID);
+	}
+	break;
+	case Netcode::MessageType::MATCH_ENDED:
+	{
 
-		ar(data->playerWhoWasHitID);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_DIED:
@@ -359,13 +394,26 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->playerID); // Send
 	}
 	break;
-	case Netcode::MessageType::MATCH_ENDED:
+	case Netcode::MessageType::PLAYER_JUMPED:
 	{
+		Netcode::MessagePlayerJumped* data = static_cast<Netcode::MessagePlayerJumped*>(event->data);
 
+		ar(data->playerWhoJumped);
 	}
 	break;
-	case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
+	case Netcode::MessageType::PLAYER_LANDED:
 	{
+		Netcode::MessagePlayerLanded* data = static_cast<Netcode::MessagePlayerLanded*>(event->data);
+
+		ar(data->playerWhoLanded);
+	}
+	break;
+	case Netcode::MessageType::PREPARE_ENDSCREEN:
+	{
+		// Send all specific data to Host
+		ar(GameDataTracker::getInstance().getStatisticsLocal().bulletsFired);
+		ar(GameDataTracker::getInstance().getStatisticsLocal().distanceWalked);
+		ar(GameDataTracker::getInstance().getStatisticsLocal().jumpsMade);
 
 	}
 	break;
@@ -399,56 +447,25 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->runningPlayer); // Send
 	}
 	break;
-	case Netcode::MessageType::CANDLE_HELD_STATE:
+	case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
 	{
-		Netcode::MessageCandleHeldState* data = static_cast<Netcode::MessageCandleHeldState*>(event->data);
-
-		ar(data->candleOwnerID);
-		ar(data->isHeld);
-		ArchiveHelpers::archiveVec3(ar, data->candlePos);
-	}
-	break;
-	case Netcode::MessageType::ENDGAME_STATS:
-	{
-		GameDataTracker* dgtp = &GameDataTracker::getInstance();
-		std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
-		// Send player count to clients for them to loop following data
-		ar(tmpPlayerMap.size());
-
-		// Send all per player data. Match this on the reciever end
-		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
-			ar(player->first);
-			ar(player->second.nKills);
-			ar(player->second.placement);
-		}
-
-		// Send all specific data. The host has processed data from all clients and will 
-		// now return it to their endscreens.
-		ar(dgtp->getStatisticsGlobal().bulletsFired);
-		ar(dgtp->getStatisticsGlobal().bulletsFiredID);
-
-		ar(dgtp->getStatisticsGlobal().distanceWalked);
-		ar(dgtp->getStatisticsGlobal().distanceWalkedID);
-
-		ar(dgtp->getStatisticsGlobal().jumpsMade);
-		ar(dgtp->getStatisticsGlobal().jumpsMadeID);
-
 
 	}
-	break;
-	case Netcode::MessageType::PREPARE_ENDSCREEN:
+	break; 
+	case Netcode::MessageType::SPAWN_PROJECTILE:
 	{
-		// Send all specific data to Host
-		ar(GameDataTracker::getInstance().getStatisticsLocal().bulletsFired);
-		ar(GameDataTracker::getInstance().getStatisticsLocal().distanceWalked);
-		ar(GameDataTracker::getInstance().getStatisticsLocal().jumpsMade);
-		
+		Netcode::MessageSpawnProjectile* data = static_cast<Netcode::MessageSpawnProjectile*>(event->data);
+
+		ArchiveHelpers::saveVec3(ar, data->translation);
+		ArchiveHelpers::saveVec3(ar, data->velocity);
+		ar(data->ownerPlayerComponentID);
 	}
 	break;
-	case Netcode::MessageType::IGNITE_CANDLE:
+	case Netcode::MessageType::WATER_HIT_PLAYER:
 	{
-		Netcode::MessageIgniteCandle* data = static_cast<Netcode::MessageIgniteCandle*>(event->data);
-		ar(data->candleOwnerID);
+		Netcode::MessageWaterHitPlayer* data = static_cast<Netcode::MessageWaterHitPlayer*>(event->data);
+
+		ar(data->playerWhoWasHitID);
 	}
 	break;
 	default:

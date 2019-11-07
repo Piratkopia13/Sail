@@ -67,6 +67,9 @@ private:
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
+	bool m_settingsChanged;
+	float m_timeSinceLastUpdate;
+
 	unsigned int m_outerPadding;
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;

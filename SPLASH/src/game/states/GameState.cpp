@@ -116,8 +116,11 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+	Model* lightModel = &m_app->getResourceManager().getModel("Torch.fbx", shader);
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
+	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
+	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
+
 
 #ifdef DEVELOPMENT
 	/* GUI testing */
@@ -139,7 +142,7 @@ GameState::GameState(StateStack& stack)
 	int id = static_cast<int>(playerID);
 	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
-		spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 	}
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
@@ -149,8 +152,8 @@ GameState::GameState(StateStack& stack)
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
-
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
+
 #endif
 
 
@@ -207,16 +210,13 @@ bool GameState::processInput(float dt) {
 		requestStackPush(States::InGameMenu);
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
-		m_componentSystems.spotLightSystem->toggleONOFF();
-	}
-
 #ifdef DEVELOPMENT
 #ifdef _DEBUG
 	// Add point light at camera pos
 	if (Input::WasKeyJustPressed(KeyBinds::ADD_LIGHT)) {
 		m_componentSystems.lightListSystem->addPointLightToDebugEntity(&m_lights, &m_cam);
 	}
+
 
 #endif
 
@@ -231,6 +231,12 @@ bool GameState::processInput(float dt) {
 			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
 		}
 	}
+
+
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
+		m_componentSystems.spotLightSystem->toggleONOFF();
+	}
+
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
@@ -272,10 +278,10 @@ bool GameState::processInput(float dt) {
 
 				// Find the candle child entity of player
 				Entity* candle = nullptr;
-				std::vector<Entity::SPtr> children = m_player->getChildEntities();
+				std::vector<Entity*> children = m_player->getChildEntities();
 				for (auto& child : children) {
 					if (child->hasComponent<CandleComponent>()) {
-						candle = child.get();
+						candle = child;
 						break;
 					}
 				}
@@ -376,6 +382,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
 
+
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
 	m_componentSystems.candlePlacementSystem = ECS::Instance()->createSystem<CandlePlacementSystem>();
@@ -390,7 +397,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	// Create system which checks projectile collisions
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
 
-	m_componentSystems.levelGeneratorSystem = ECS::Instance()->createSystem<LevelSystem>();
+	m_componentSystems.levelSystem = ECS::Instance()->createSystem<LevelSystem>();
 
 	// Create systems for rendering
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
@@ -419,6 +426,8 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+
+	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
 }
 
 void GameState::initConsole() {
@@ -631,11 +640,11 @@ bool GameState::renderImgui(float dt) {
 		m_wasDroppedWindow.renderWindow();
 	}
 
-	// KEEP UNTILL FINISHED WITH HANDPOSITIONS
+	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
-	//static glm::vec3 rPos(-0.596f, 1.026f, 0.055f);
+	//static glm::vec3 rPos(-0.555f, 1.052f, 0.107f);
 	//static glm::vec3 lRot(1.178f, -0.462f, 0.600f);
-	//static glm::vec3 rRot(1.178f, 0.646f, -0.300f);
+	//static glm::vec3 rRot(1.280f, 0.283f, -0.179f);
 	//if (ImGui::Begin("HandLocation")) {
 	//	ImGui::SliderFloat("##lposx", &lPos.x, -1.5f, 1.5f);
 	//	ImGui::SliderFloat("##lposy", &lPos.y, -1.5f, 1.5f);
@@ -734,6 +743,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
+	runSystem(dt, m_componentSystems.sprinklerSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
 	runSystem(dt, m_componentSystems.candlePlacementSystem);
 	runSystem(dt, m_componentSystems.candleReignitionSystem);
@@ -741,11 +751,11 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 
-
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
 	}
+	m_componentSystems.spotLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
 
 	// Send out your entity info to the rest of the players
 	// DON'T MOVE, should happen at the end of each tick
@@ -768,7 +778,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		//check and update all lights for all entities
 		m_componentSystems.lightSystem->updateLights(&m_lights);
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
-		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha);
+		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha, dt);
 	}
 
 	if (m_showcaseProcGen) {
@@ -926,7 +936,7 @@ void GameState::createBots(Model* boundingBoxModel, const std::string& character
 	}
 
 	for (size_t i = 0; i < botCount; i++) {
-		glm::vec3 spawnLocation = m_componentSystems.levelGeneratorSystem->getSpawnPoint();
+		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
 			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 		}
@@ -1042,24 +1052,16 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// Create the level generator system and put it into the datatype.
 	SettingStorage& settings = m_app->getSettings();
-#ifdef _PERFORMANCE_TEST
-	m_componentSystems.levelGeneratorSystem->seed = 2;
-#else
-	m_componentSystems.levelGeneratorSystem->seed = settings.gameSettingsDynamic["map"]["seed"].value;;
-	//m_componentSystems.levelGeneratorSystem->seed = NWrapperSingleton::getInstance().getSeed();
-#endif
-	ECS::Instance()->addAllQueuedEntities();
 
-	m_componentSystems.levelGeneratorSystem->clutterModifier = settings.gameSettingsDynamic["map"]["clutter"].value * 100;
-	m_componentSystems.levelGeneratorSystem->xsize = settings.gameSettingsDynamic["map"]["sizeX"].value;
-	m_componentSystems.levelGeneratorSystem->ysize = settings.gameSettingsDynamic["map"]["sizeY"].value;
+	m_componentSystems.levelSystem->seed = settings.gameSettingsDynamic["map"]["seed"].value;
+	m_componentSystems.levelSystem->clutterModifier = settings.gameSettingsDynamic["map"]["clutter"].value * 100;
+	m_componentSystems.levelSystem->xsize = settings.gameSettingsDynamic["map"]["sizeX"].value;
+	m_componentSystems.levelSystem->ysize = settings.gameSettingsDynamic["map"]["sizeY"].value;
 
-	m_componentSystems.levelGeneratorSystem->generateMap();
-	m_componentSystems.levelGeneratorSystem->createWorld(tileModels, boundingBoxModel);
-	m_componentSystems.levelGeneratorSystem->addClutterModel(clutterModels, boundingBoxModel);
-
-	m_componentSystems.levelGeneratorSystem->seed = NWrapperSingleton::getInstance().getSeed();
-	m_componentSystems.gameInputSystem->m_mapPointer = m_componentSystems.levelGeneratorSystem;
+	m_componentSystems.levelSystem->generateMap();
+	m_componentSystems.levelSystem->createWorld(tileModels, boundingBoxModel);
+	m_componentSystems.levelSystem->addClutterModel(clutterModels, boundingBoxModel);
+	m_componentSystems.gameInputSystem->m_mapPointer = m_componentSystems.levelSystem;
 }
 
 #ifdef _PERFORMANCE_TEST

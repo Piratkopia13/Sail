@@ -16,13 +16,10 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	m_input = Input::GetInstance();
 	m_app = Application::getInstance();
 
-
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
 SplashScreenState::~SplashScreenState() {
-
-
 	m_modelThread.get();
 }
 
@@ -36,21 +33,14 @@ bool SplashScreenState::update(float dt, float alpha) {
 }
 
 bool SplashScreenState::render(float dt, float alpha) {
-	//m_app->getAPI()->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
-	//ECS::Instance()->getSystem<BeginEndFrameSystem>()->renderNothing();
 	return false;
 }
 
-
-
-
 bool SplashScreenState::renderImgui(float dt) {
-
 	return false;
 }
 
 bool SplashScreenState::onEvent(Event& event) {
-
 	return false;
 }
 
@@ -62,6 +52,8 @@ bool SplashScreenState::loadModels(Application* app) {
 
 //#ifndef _DEBUG
 	rm->loadModel("Doc.fbx");
+	rm->loadModel("Torch.fbx");
+
 	rm->loadModel("candleExported.fbx");
 	rm->loadModel("Tiles/tileFlat.fbx");
 	rm->loadModel("Tiles/RoomWall.fbx"); 
@@ -77,8 +69,15 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Tiles/RoomCorner.fbx"); 
 	rm->loadModel("Clutter/SmallObject.fbx");
 	rm->loadModel("Clutter/MediumObject.fbx"); 
-	rm->loadModel("Clutter/LargeObject.fbx");
+	rm->loadModel("Clutter/LargeObject.fbx");	
 
+	rm->loadModel("Clutter/Saftblandare.fbx");
+	rm->loadModel("WaterPistol.fbx");
+	rm->loadModel("boundingBox.fbx");
+	rm->loadModel("cubeWidth1.fbx");
+
+
+	//LEAVE THIS FOR A MULTITHREADED FUTURE
 //#else
 //
 //	std::vector <std::future<bool>> modelThreads;
@@ -115,6 +114,13 @@ bool SplashScreenState::loadModels(Application* app) {
 
 bool SplashScreenState::loadTextures(Application* app) {
 	ResourceManager* rm = &app->getResourceManager();
+
+
+	rm->loadTexture("pbr/Torch/Torch_MRAO.tga");
+	rm->loadTexture("pbr/Torch/Torch_NM.tga");
+	rm->loadTexture("pbr/Torch/Torch_Albedo.tga");
+
+
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallAlbedo.tga");

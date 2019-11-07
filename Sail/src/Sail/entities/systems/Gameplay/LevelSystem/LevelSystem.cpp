@@ -14,24 +14,39 @@ LevelSystem::LevelSystem():BaseComponentSystem() {
 	xsize = 1;
 	ysize = 1;
 	tileSize = 7;
+	hallwayThreshold = 0.3f;
+	minSplitSize = 5;
+	minRoomSize = 1;
+	roomMaxSize = 36;
+	roomSplitStop = 25;
+	doorModifier = 15;
+	clutterModifier = 85;
+	seed = 0;
+	tileArr = nullptr;
 
+	numberOfRooms = 1;
+	tileHeight = 0.8f;
+	tileOffset = 0;
 }
 
 LevelSystem::~LevelSystem() {
+	destroyWorld();
 }
 
 //generates all necessary data for the world
 void LevelSystem::generateMap() {
-
-
-	tileArr = SAIL_NEW int** [xsize]();
-	for (int i = 0; i < xsize; i++) {
-		tileArr[i] = SAIL_NEW int* [ysize]();
-		for (int j = 0; j < ysize; j++) {
-			tileArr[i][j] = SAIL_NEW int[3]();
+	numberOfRooms = 1;
+	totalArea = xsize * ysize;
+	if (!tileArr) {
+		tileArr = SAIL_NEW int** [xsize]();
+		for (int i = 0; i < xsize; i++) {
+			tileArr[i] = SAIL_NEW int* [ysize]();
+			for (int j = 0; j < ysize; j++) {
+				tileArr[i][j] = SAIL_NEW int[3]();
+				tileArr[i][j][1] = -1;
+			}
 		}
 	}
-
 
 	srand(seed);
 	std::vector<int> avaliableTiles;
@@ -90,23 +105,14 @@ void LevelSystem::generateMap() {
 }
 
 void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) {
-	
-
-
-
-
-	int worldWidth = xsize;
-	int worldDepth = ysize;
-
 	//traverse all positions to find which tile should be there
-	for (int i = 0; i < worldWidth; i++) {
-		for (int j = 0; j < worldDepth; j++) {
+	for (int i = 0; i < xsize; i++) {
+		for (int j = 0; j < ysize; j++) {
 			int tileId = tileArr[i][j][0];
 			int typeId = tileArr[i][j][1];
 			int doors = tileArr[i][j][2];
 			if (tileId<16 && tileId>-1) {
 				addTile(tileId, typeId, doors, tileModels, tileSize,tileHeight, tileOffset, i, j, bb);
-
 			}
 		}
 	}
@@ -116,14 +122,47 @@ void LevelSystem::destroyWorld() {
 
 
 
-
-	for (int i = 0; i < xsize; i++) {
-		for (int j = 0; j < ysize; j++) {
-			Memory::SafeDeleteArr(tileArr[i][j]);
+	if (tileArr) {
+		for (int i = 0; i < xsize; i++) {
+			for (int j = 0; j < ysize; j++) {
+				Memory::SafeDeleteArr(tileArr[i][j]);
+			}
+			Memory::SafeDeleteArr(tileArr[i]);
 		}
-		Memory::SafeDeleteArr(tileArr[i]);
+		Memory::SafeDeleteArr(tileArr);
 	}
-	Memory::SafeDeleteArr(tileArr);
+
+
+	while(chunks.size()>0){
+		chunks.pop();
+	}
+	while (blocks.size() > 0) {
+		blocks.pop();
+	}
+
+	while (hallways.size() > 0) {
+		hallways.pop();
+	}
+
+	while (rooms.size() > 0) {
+		rooms.pop();
+	}
+
+	while (matched.size() > 0) {
+		matched.pop();
+	}
+
+	while (largeClutter.size() > 0) {
+		largeClutter.pop();
+	}
+
+	while (mediumClutter.size() > 0) {
+		mediumClutter.pop();
+	}
+
+	while (smallClutter.size() > 0) {
+		smallClutter.pop();
+	}
 }
 
 //chooses a random tile from all possible tiles that fit
@@ -1335,12 +1374,12 @@ const int LevelSystem::getAreaType(float posX, float posY) {
 
 	AreaType returnValue;
 
-	posX += (0.5 * tileSize);
-	posY += (0.5 * tileSize);
-	posX /= tileSize;
-	posY /= tileSize;
+	posX += (0.5f * (float)tileSize);
+	posY += (0.5f * (float)tileSize);
+	posX /= (float)tileSize;
+	posY /= (float)tileSize;
 
-	int roomValue = tileArr[static_cast<int>(posX)][static_cast<int>(posY)][1];
+	int roomValue = getRoomID(static_cast<int>(posX), static_cast<int>(posY));
 
 	if (roomValue == 0) {
 		returnValue = AreaType::CORRIDOR;
@@ -1350,6 +1389,10 @@ const int LevelSystem::getAreaType(float posX, float posY) {
 	}
 
 	return static_cast<int>(returnValue);
+}
+
+const int LevelSystem::getRoomID(int posX, int posY) {
+	return tileArr[posX][posY][1];
 }
 
 void LevelSystem::stop() {
@@ -1527,21 +1570,24 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		smallClutter.pop();
 		EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
 	}
-	for (int i = 0; i < numberOfRooms; i++) {
+	for (int i = 1; i < numberOfRooms; i++) {
 		Rect room = matched.front();
 		matched.pop();
-		if (room.sizex * room.sizey > 1) {
-			auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*tileSize),glm::vec3(0.f),glm::vec3(1.f,tileHeight,1.f));
+		auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*tileSize),glm::vec3(0.f),glm::vec3(1.f,tileHeight,1.f));
 
-			MovementComponent* mc = e2->addComponent<MovementComponent>();
-			SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
-			sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
-			sc->light.setPosition(glm::vec3(0, tileHeight * 5 - 0.05, 0));
-			sc->light.setAttenuation(1.f, 0.01f, 0.01f);
-			sc->light.setDirection(glm::vec3(1, 0, 0));
-			sc->light.setAngle(0.5);
-			sc->isOn = false;
-		}
+		MovementComponent* mc = e2->addComponent<MovementComponent>();
+		SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
+		sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
+		sc->light.setPosition(glm::vec3(0, tileHeight * 5 - 0.05, 0));
+		sc->light.setAttenuation(1.f, 0.01f, 0.01f);
+		sc->light.setDirection(glm::vec3(1, 0, 0));
+		sc->light.setAngle(0.5);
+		sc->roomID = getRoomID(room.posx, room.posy);
+		sc->isOn = false;
+#ifdef _PERFORMANCE_TEST
+		sc->isOn = true;
+#endif
+
 		matched.push(room);
 	}
 }

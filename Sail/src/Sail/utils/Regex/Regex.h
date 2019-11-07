@@ -82,7 +82,8 @@ namespace Reg {
 	static Star TextCharacterStar(&TextCharacter);
 	static Seq TextString({ &TextCharacter, &TextCharacterStar });
 
-	static Seq Setting({ &TextCharacterStar, &Colon, &PositiveNumber });
+	static Seq SettingStatic({ &TextCharacterStar, &Equals, &PositiveNumber });
+	static Seq SettingDynamic({ &TextCharacterStar, &Equals, &DecimalNumber });
 	
 
 

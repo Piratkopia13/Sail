@@ -65,25 +65,28 @@ public:
 
 	void stop();
 	const int getAreaType(float posX, float posY);
+	const int getRoomID(int posX, int posY);
 
 	int xsize;
 	int ysize;
 	int*** tileArr; //0 is tileID, 1 is typeID, 2 is door
-	float hallwayThreshold = 0.3f; // percentage of level that can be corridors
-	int minSplitSize = 5; //minimum size for splitting chunks
-	int minRoomSize = 1; //minimum side of a room
-	int roomMaxSize = 36;//maximum area of a room
-	int roomSplitStop = 25;//percentage to stop a room from being split into smaller ones
-	int doorModifier = 15;//percentage to spawn a door
-	int clutterModifier = 85;//percentage to add clutter
+	float hallwayThreshold; // percentage of level that can be corridors
+	int minSplitSize; //minimum size for splitting chunks
+	int minRoomSize; //minimum side of a room
+	int roomMaxSize;//maximum area of a room
+	int roomSplitStop ;//percentage to stop a room from being split into smaller ones
+	int doorModifier;//percentage to spawn a door
+	int clutterModifier;//percentage to add clutter
 	int seed;//seed for generation
-
+	
 	int totalArea;
-	int numberOfRooms = 1;
+	int numberOfRooms;
 	int tileSize;
-	float tileHeight = 0.8f;
-	int tileOffset = 0;
+	float tileHeight;
+	int tileOffset;
+
 	std::vector<glm::vec3> spawnPoints;
+private:
 	std::queue<Rect> chunks;
 	std::queue<Rect> blocks;
 	std::queue<Rect> hallways;
@@ -92,16 +95,6 @@ public:
 	std::queue<Clutter>largeClutter;
 	std::queue<Clutter>mediumClutter;
 	std::queue<Clutter>smallClutter;
-
-
-
-
-
-
-
-
-
-private:
 	int randomizeTileId(std::vector<int>* tiles);
 	void findPossibleTiles(std::vector<int>* mapPointer,int posx, int posy);
 	void splitChunk();

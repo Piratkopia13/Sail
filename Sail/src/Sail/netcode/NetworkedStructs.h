@@ -36,18 +36,22 @@ namespace Netcode {
 
 
 	// Pre-defined entity types so that other players know which entity to create
-	enum class EntityType : __int32 {
+	enum class EntityType : __int8 {
 		PLAYER_ENTITY = 1,
-		MECHA_ENTITY = 2,
+		CANDLE_ENTITY,
+		GUN_ENTITY,
+		PROJECTILE_ENTITY,
+		MECHA_ENTITY // RIP Mecha-Jörgen (2019-2019)
 	};
 
 	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
-	enum class MessageType : __int32 {
-		CREATE_NETWORKED_ENTITY = 1,
-		MODIFY_TRANSFORM,
+	enum class MessageType : __int8 {
+		CREATE_NETWORKED_PLAYER = 1,
+		CHANGE_LOCAL_POSITION,
+		CHANGE_LOCAL_ROTATION,
+		CHANGE_ABSOLUTE_POS_AND_ROT,
 		SPAWN_PROJECTILE,
-		ROTATION_TRANSFORM,
 		ANIMATION,
 		SHOOT_START,
 		SHOOT_LOOP,
@@ -74,30 +78,31 @@ namespace Netcode {
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_ENTITY",
-		"MODIFY_TRANSFORM,		",
-		"SPAWN_PROJECTILE,		",
-		"ROTATION_TRANSFORM,	",
-		"ANIMATION,				",
-		"SHOOT_START,			",
-		"SHOOT_LOOP,			",
-		"SHOOT_END,				",
-		"PLAYER_JUMPED,			",
-		"PLAYER_LANDED,			",
-		"WATER_HIT_PLAYER,		",
-		"SET_CANDLE_HEALTH,		",
-		"PLAYER_DIED,			",
-		"PLAYER_DISCONNECT,		",
-		"MATCH_ENDED,			",
-		"PREPARE_ENDSCREEN,		",	// Clients send relevant data for the endgame screen
-		"ENDGAME_STATS,			",
-		"CANDLE_HELD_STATE,		",
-		"SEND_ALL_BACK_TO_LOBBY,",
-		"RUNNING_METAL_START,	",
-		"RUNNING_TILE_START,	",
-		"RUNNING_STOP_SOUND,	",
-		"IGNITE_CANDLE,			",
-		"EMPTY					",
+		"CREATE_NETWORKED_PLAYER	",
+		"CHANGE_LOCAL_POSITION,		",
+		"CHANGE_LOCAL_ROTATION,		",
+		"CHANGE_ABSOLUTE_POS_AND_ROT,",
+		"SPAWN_PROJECTILE,			",
+		"ANIMATION,					",
+		"SHOOT_START,				",
+		"SHOOT_LOOP,				",
+		"SHOOT_END,					",
+		"PLAYER_JUMPED,				",
+		"PLAYER_LANDED,				",
+		"WATER_HIT_PLAYER,			",
+		"SET_CANDLE_HEALTH,			",
+		"PLAYER_DIED,				",
+		"PLAYER_DISCONNECT,			",
+		"MATCH_ENDED,				",
+		"PREPARE_ENDSCREEN,			",	// Clients send relevant data for the endgame screen
+		"ENDGAME_STATS,				",
+		"CANDLE_HELD_STATE,			",
+		"SEND_ALL_BACK_TO_LOBBY,	",
+		"RUNNING_METAL_START,		",
+		"RUNNING_TILE_START,		",
+		"RUNNING_STOP_SOUND,		",
+		"IGNITE_CANDLE,				",
+		"EMPTY						",
 	};
 
 	/*
@@ -152,6 +157,19 @@ namespace Netcode {
 	public:
 		MessageData() {}
 		virtual ~MessageData() {}
+	};
+
+	class MessageCreatePlayer : public MessageData {
+	public:
+		MessageCreatePlayer(Netcode::ComponentID playerNetID, Netcode::ComponentID candleNetID, Netcode::ComponentID gunNetID, glm::vec3 pos)
+			: playerCompID(playerNetID), candleCompID(candleNetID), gunCompID(gunNetID), position(pos) {
+		}
+		virtual ~MessageCreatePlayer() {}
+
+		Netcode::ComponentID playerCompID;
+		Netcode::ComponentID candleCompID;
+		Netcode::ComponentID gunCompID;
+		glm::vec3 position;
 	};
 
 	class MessageSpawnProjectile : public MessageData {

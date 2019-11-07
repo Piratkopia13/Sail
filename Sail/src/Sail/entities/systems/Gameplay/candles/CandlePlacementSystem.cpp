@@ -32,7 +32,7 @@ void CandlePlacementSystem::update(float dt) {
 		}
 
 		candle->wasCarriedLastUpdate = candle->isCarried;
-		static const float candleHeight = 0.37f;
+		static const float candleHeight = 0.5f;
 		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrixWithUpdate() * glm::vec4(0, candleHeight, 0, 1);
 		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
 	}
@@ -132,6 +132,20 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 				},
 				false // We've already put down our own candle so no need to do it again
 			);
+
+			auto senderC = e->getComponent<NetworkSenderComponent>();
+
+			if (candleComp->isCarried) {
+				// If we're holding the candle it will be attached to our animation so don't send its
+				// position and rotation.
+				senderC->removeMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+				senderC->removeMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
+			} else {
+				// If we're no longer holding the candle then start sending its position and rotation
+				// so that other people will be able to see it when we throw it.
+				senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+				senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
+			}
 		}
 	}
 }
