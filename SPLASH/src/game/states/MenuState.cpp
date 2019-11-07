@@ -290,6 +290,10 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadModel("Torch.fbx");
 	rm->loadModel("Clutter/Table.fbx");
 	rm->loadModel("Clutter/Boxes.fbx");
+	rm->loadModel("Clutter/MediumBox.fbx");
+	rm->loadModel("Clutter/SquareBox.fbx");
+	rm->loadModel("Clutter/Books1.fbx");
+	rm->loadModel("Clutter/Books2.fbx");
 
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
@@ -350,6 +354,7 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadTexture("pbr/Torch/Torch_MRAO.tga");
 	rm->loadTexture("pbr/Torch/Torch_NM.tga");
 	rm->loadTexture("pbr/Torch/Torch_Albedo.tga");
+
 	rm->loadTexture("pbr/Clutter/Boxes_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/Boxes_NM.tga");
 	rm->loadTexture("pbr/Clutter/Boxes_Albedo.tga");
@@ -358,6 +363,18 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadTexture("pbr/Clutter/Table_NM.tga");
 	rm->loadTexture("pbr/Clutter/Table_Albedo.tga");
 
+	rm->loadTexture("pbr/Clutter/Book_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Book_NM.tga");
+	rm->loadTexture("pbr/Clutter/Book1_Albedo.tga");
+	rm->loadTexture("pbr/Clutter/Book2_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/SquareBox_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/SquareBox_NM.tga");
+	rm->loadTexture("pbr/Clutter/SquareBox_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/MediumBox_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/MediumBox_NM.tga");
+	rm->loadTexture("pbr/Clutter/MediumBox_Albedo.tga");
 
 
 	return false;

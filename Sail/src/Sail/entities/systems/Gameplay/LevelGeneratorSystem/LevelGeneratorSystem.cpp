@@ -1468,14 +1468,14 @@ void LevelGeneratorSystem::generateClutter() {
 			Clutter clutterMedium = map->mediumClutter.front();
 			map->mediumClutter.pop();
 			if (rand() % 100 < map->clutterModifier) {
-				float clutterPosX = (rand() % 50) / 100.f - 0.25f;
-				float clutterPosY = (rand() % 50) / 100.f - 0.25f;
+				float clutterPosX = (rand() % 30) / 100.f - 0.15f;
+				float clutterPosY = (rand() % 30) / 100.f - 0.15f;
 				float angleToRotate = glm::radians(clutterMedium.rot);
 				Clutter clutterSmall;
 				clutterSmall.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterMedium.posx;
 				clutterSmall.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterMedium.posy;
 				clutterSmall.size = 2;
-				clutterSmall.height = 0.5f + clutterMedium.height;
+				clutterSmall.height = 0.25f + clutterMedium.height;
 				clutterSmall.rot = (rand() % 360)/1.f;
 				map->smallClutter.push(clutterSmall);
 			}
@@ -1501,12 +1501,22 @@ void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterMod
 		while (map->mediumClutter.size() > 0) {
 			Clutter clut = map->mediumClutter.front();
 			map->mediumClutter.pop();
-			EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::CLUTTER_MO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			int choise = (rand() % 4);
+			switch (choise) {
+				case 0:			EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::MEDIUMBOX], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+					break;
+				case 1:			EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::BOOKS1], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+					break;
+				case 2:			EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::BOOKS2], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+					break;
+				case 3:			EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::SQUAREBOX], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+					break;
+			}
 		}
 		while (map->smallClutter.size() > 0) {
 			Clutter clut = map->smallClutter.front();
 			map->smallClutter.pop();
-			EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(0.1f, 1, 0.1f));
 		}
 		for (int i = 0; i < map->numberOfRooms; i++) {
 			Rect room = map->matched.front();

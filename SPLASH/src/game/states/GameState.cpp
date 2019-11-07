@@ -1027,6 +1027,25 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cBoxes->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Boxes_NM.tga");
 		cBoxes->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Boxes_Albedo.tga");
 
+		Model* cMediumBox = &m_app->getResourceManager().getModel("Clutter/MediumBox.fbx", shader);
+		cMediumBox->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/MediumBox_MRAO.tga");
+		cMediumBox->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/MediumBox_NM.tga");
+		cMediumBox->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/MediumBox_Albedo.tga");
+
+		Model* cSquareBox = &m_app->getResourceManager().getModel("Clutter/SquareBox.fbx", shader);
+		cSquareBox->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/SquareBox_MRAO.tga");
+		cSquareBox->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/SquareBox_NM.tga");
+		cSquareBox->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/SquareBox_Albedo.tga");
+
+		Model* cBooks1 = &m_app->getResourceManager().getModel("Clutter/Books1.fbx", shader);
+		cBooks1->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Book_MRAO.tga");
+		cBooks1->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
+		cBooks1->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Book1_Albedo.tga");
+
+		Model* cBooks2 = &m_app->getResourceManager().getModel("Clutter/Books2.fbx", shader);
+		cBooks2->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Book_MRAO.tga");
+		cBooks2->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
+		cBooks2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Book2_Albedo.tga");
 
 		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
 		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Saftblandare_MRAO.tga");
@@ -1053,6 +1072,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
 		clutterModels[ClutterModel::TABLE] = cTable;
 		clutterModels[ClutterModel::BOXES] = cBoxes;
+		clutterModels[ClutterModel::MEDIUMBOX] = cMediumBox;
+		clutterModels[ClutterModel::BOOKS1] = cBooks1;
+		clutterModels[ClutterModel::BOOKS2] = cBooks2;
+		clutterModels[ClutterModel::SQUAREBOX] = cSquareBox;
 	}
 
 	// Create the level generator system and put it into the datatype.
