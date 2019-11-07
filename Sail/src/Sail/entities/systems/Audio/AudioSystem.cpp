@@ -128,13 +128,12 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 							// To make the code easier to read
 							soundUnique = &audioData.m_soundsUnique[soundTypeIndex].at(randomSoundIndex);
 
-							soundGeneral->soundID = m_audioEngine->initializeSound(
+							soundGeneral->soundID = m_audioEngine->beginSound(
 								soundUnique->fileName,
 								soundGeneral->effect,
 								soundGeneral->frequency,
 								soundUnique->volume
 							);
-							soundGeneral->soundID = m_audioEngine->beginSound(soundUnique->fileName, soundUnique->volume);
 							soundGeneral->hasStartedPlaying = true;
 							soundGeneral->durationElapsed = 0.0f;
 							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
@@ -145,7 +144,12 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
 							m_audioEngine->updateSoundWithCurrentPosition(
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
-								soundGeneral->positionalOffset, alpha);
+								soundGeneral->positionalOffset, alpha
+							);
+
+							if (soundGeneral->effect == Audio::EffectType::PROJECTILE_LOWPASS) {
+								updateProjectileLowPass(soundGeneral);
+							}
 
 							soundGeneral->durationElapsed += dt;
 						}
@@ -270,6 +274,10 @@ void AudioSystem::updateStreamPosition(Entity* e, Camera& cam, float alpha) {
 	}
 
 	m_k++;
+}
+
+void AudioSystem::updateProjectileLowPass(Audio::SoundInfo_General* general) {
+	m_audioEngine->updateProjectileLowPass(general->frequency, general->soundID);
 }
 
 void AudioSystem::hotFixAmbiance(Entity* e, AudioComponent* audioC) {

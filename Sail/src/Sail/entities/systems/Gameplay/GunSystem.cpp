@@ -117,35 +117,8 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 
 	gun->firingContinuously = true;
 
-
-	XAUDIO2FX_REVERB_PARAMETERS reverbParams;
-	float frequency = 13000 - (13000 - 2000) * (gun->gunOverloadvalue / gun->gunOverloadThreshold);
-	std::cout << "Frequency: " << std::to_string(frequency) << "\n";
-	float eqCutoff = 0 + 14 * (gun->gunOverloadvalue / gun->gunOverloadThreshold);
-
-	reverbParams.ReflectionsDelay = XAUDIO2FX_REVERB_DEFAULT_REFLECTIONS_DELAY;
-	reverbParams.ReverbDelay = XAUDIO2FX_REVERB_DEFAULT_REVERB_DELAY;
-	reverbParams.RearDelay = XAUDIO2FX_REVERB_DEFAULT_REAR_DELAY;
-	reverbParams.PositionLeft = XAUDIO2FX_REVERB_DEFAULT_POSITION;
-	reverbParams.PositionRight = XAUDIO2FX_REVERB_DEFAULT_POSITION;
-	reverbParams.PositionMatrixLeft = XAUDIO2FX_REVERB_DEFAULT_POSITION_MATRIX;
-	reverbParams.PositionMatrixRight = XAUDIO2FX_REVERB_DEFAULT_POSITION_MATRIX;
-	reverbParams.EarlyDiffusion = XAUDIO2FX_REVERB_DEFAULT_EARLY_DIFFUSION;
-	reverbParams.LateDiffusion = XAUDIO2FX_REVERB_DEFAULT_LATE_DIFFUSION;
-	reverbParams.LowEQGain = XAUDIO2FX_REVERB_DEFAULT_LOW_EQ_GAIN;
-	reverbParams.LowEQCutoff = eqCutoff;// XAUDIO2FX_REVERB_DEFAULT_LOW_EQ_CUTOFF;
-	reverbParams.HighEQGain = XAUDIO2FX_REVERB_DEFAULT_HIGH_EQ_GAIN;
-	reverbParams.HighEQCutoff = eqCutoff; XAUDIO2FX_REVERB_DEFAULT_HIGH_EQ_CUTOFF;
-	reverbParams.RoomFilterFreq = frequency;//XAUDIO2FX_REVERB_DEFAULT_ROOM_FILTER_FREQ;
-	reverbParams.RoomFilterMain = XAUDIO2FX_REVERB_DEFAULT_ROOM_FILTER_MAIN;
-	reverbParams.RoomFilterHF = XAUDIO2FX_REVERB_DEFAULT_ROOM_FILTER_HF;
-	reverbParams.ReflectionsGain = XAUDIO2FX_REVERB_DEFAULT_REFLECTIONS_GAIN;
-	reverbParams.ReverbGain = XAUDIO2FX_REVERB_DEFAULT_REVERB_GAIN;
-	reverbParams.DecayTime = XAUDIO2FX_REVERB_DEFAULT_DECAY_TIME;
-	reverbParams.Density = XAUDIO2FX_REVERB_DEFAULT_DENSITY;
-	reverbParams.RoomSize = XAUDIO2FX_REVERB_DEFAULT_ROOM_SIZE;
-	reverbParams.WetDryMix = XAUDIO2FX_REVERB_DEFAULT_WET_DRY_MIX;
-	reverbParams.DisableLateField = true;
+	// Update the frequency of the lowpass based on guns current overload percentage
+	float frequency = 9000 - (9000 - 2000) * (gun->gunOverloadvalue / gun->gunOverloadThreshold);
 	if (e->hasComponent<AudioComponent>()) {
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_START].frequency = frequency;
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_LOOP].frequency = frequency;

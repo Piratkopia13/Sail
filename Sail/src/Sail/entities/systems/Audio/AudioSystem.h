@@ -43,6 +43,8 @@ private:
 	void stopPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void updateStreamPosition(Entity* e, Camera& cam, float alpha);
 
+	void updateProjectileLowPass(Audio::SoundInfo_General* general);
+
 	void hotFixAmbiance(Entity* e, AudioComponent* audioC);
 };
 

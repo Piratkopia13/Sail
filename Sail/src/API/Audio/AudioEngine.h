@@ -63,8 +63,7 @@ public:
 	~AudioEngine();
 
 	void loadSound(const std::string& filename);
-	int beginSound(const std::string& filename, float volume = 1.0f);
-	int initializeSound(const std::string& filename, Audio::EffectType effectType, float freq, float volume = 1.0f);
+	int beginSound(const std::string& filename, Audio::EffectType effectType, float frequency, float volume = 1.0f);
 	void streamSound(const std::string& filename, int streamIndex, float volume, bool isPositionalAudio, bool loop = true, AudioComponent* pAudioC = nullptr);
 
 	void updateSoundWithCurrentPosition(int index, Camera& cam, const Transform& transform, 
@@ -90,6 +89,7 @@ public:
 
 	std::atomic<bool> m_streamLocks[STREAMED_SOUNDS_COUNT];
 
+	void updateProjectileLowPass(float frequency, int indexToSource);
 
 private: 
 	bool m_isRunning = true;
@@ -99,6 +99,7 @@ private:
 
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
+	IXAudio2SubmixVoice* m_xAPOSubmixVoice_toMaster = nullptr;
 	IXAudio2SubmixVoice* m_masterSubmixVoice = nullptr;
 	IXAudio2SubmixVoice* m_streamingSubmixVoice = nullptr;
 
@@ -126,15 +127,15 @@ private:
 	HRESULT initSubmixes();
 
 	//
-	HRESULT LowPassFilterTest();
+	int fetchSoundIndex();
+
+	//
+	void sendVoiceTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, bool useFilter);
+	void addLowPassFilterTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, float frequency);
+
+	//
 	XAUDIO2_EFFECT_DESCRIPTOR createXAPPOEffect(Microsoft::WRL::ComPtr<IXAPO> xapo);
-	XAUDIO2_EFFECT_DESCRIPTOR createLowPassEffect(XAUDIO2FX_REVERB_PARAMETERS reverbParams);
 	XAUDIO2_FILTER_PARAMETERS createLowPassFilter(float cutoffFrequence);
-	XAUDIO2_VOICE_SENDS createLPFilteredVoiceSend();
-	void testAlterLPFilter(int indexValue, float frequency);
-
-
-	XAUDIO2_VOICE_SENDS createSendToMaster();
 
 	void streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC = nullptr);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
