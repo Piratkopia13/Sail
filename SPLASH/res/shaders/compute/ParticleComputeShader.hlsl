@@ -29,6 +29,13 @@ struct Vertex { // Size of this type is hardcoded in ShaderPipeline.cpp - change
 
 RWStructuredBuffer<Vertex> CSOutputBuffer: register(u10);
 
+struct ParticlePhysics {
+	float3 velocity;
+	float3 acceleration;
+};
+
+RWStructuredBuffer<ParticlePhysics> CSPhysicsBuffer: register(u11);
+
 void createTriangle(float3 v0, float3 v1, float3 v2, int v0Index) {
 	CSOutputBuffer[v0Index].position = v0;
 	CSOutputBuffer[v0Index].texCoords = 0.f;
@@ -61,6 +68,9 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_Di
 			v2 = inputBuffer.emitters[i].position + float3(0.1 + 0.3 * (inputBuffer.numPrevParticles + (counter / 6)), 0.1, 0.0);
 			v3 = inputBuffer.emitters[i].position + float3(0.1 + 0.3 * (inputBuffer.numPrevParticles + (counter / 6)), -0.1, 0.0);
 			
+			CSPhysicsBuffer[inputBuffer.numPrevParticles + (counter / 6)].velocity = inputBuffer.emitters[i].velocity;
+			CSPhysicsBuffer[inputBuffer.numPrevParticles + (counter / 6)].acceleration = inputBuffer.emitters[i].acceleration;
+			
 			createTriangle(v0, v1, v2, inputBuffer.numPrevParticles * 6 + counter);
 			counter += 3;
 			createTriangle(v2, v1, v3, inputBuffer.numPrevParticles * 6 + counter);
@@ -69,6 +79,8 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_Di
 	}
 	
 	for (uint i = 0; i < inputBuffer.numPrevParticles * 6 + counter; i++) {
-		CSOutputBuffer[i].position.x += 1.0f * inputBuffer.frameTime;
+		float3 oldVelocity = CSPhysicsBuffer[floor(i)].velocity;
+		CSPhysicsBuffer[floor(i)].velocity += CSPhysicsBuffer[floor(i)].acceleration * inputBuffer.frameTime;
+		CSOutputBuffer[i].position += (oldVelocity + CSPhysicsBuffer[floor(i)].velocity) * 0.5 * inputBuffer.frameTime;
 	}
 }
