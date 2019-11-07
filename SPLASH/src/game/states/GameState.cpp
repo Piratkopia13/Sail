@@ -210,7 +210,6 @@ bool GameState::processInput(float dt) {
 		requestStackPush(States::InGameMenu);
 	}
 
-
 #ifdef DEVELOPMENT
 #ifdef _DEBUG
 	// Add point light at camera pos
@@ -232,6 +231,12 @@ bool GameState::processInput(float dt) {
 			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
 		}
 	}
+
+
+	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
+		m_componentSystems.spotLightSystem->toggleONOFF();
+	}
+
 
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
