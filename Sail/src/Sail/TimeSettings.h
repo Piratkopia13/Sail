@@ -4,7 +4,6 @@
 constexpr float TICKRATE = 32.0f;
 #else
 constexpr float TICKRATE = 64.0f;
-//constexpr float TICKRATE = 5.0f;
 #endif
 
 

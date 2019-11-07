@@ -1,27 +1,13 @@
 #pragma once
-
-
-#include "../../../../Sail/src/Sail/events/Event.h"
-#include "../states/LobbyState.h"
 #include <list>
+#include "Sail/events/Event.h"
+#include "../states/LobbyState.h"
 
-class NetworkWelcomeEvent : public Event {
-public:
-	NetworkWelcomeEvent(std::list<Player> players) 
-		: Event(Event::NETWORK_WELCOME) 
-		, playerList(players)
-	{
+struct NetworkWelcomeEvent : public Event {
+	NetworkWelcomeEvent(const std::list<Player>& players) 
+		: Event(Event::Type::NETWORK_WELCOME)
+		, playerList(players) { }
+	~NetworkWelcomeEvent() = default;
 
-	}
-	~NetworkWelcomeEvent() {}
-
-	inline std::list<Player> getListOfPlayers() { return playerList; }
-
-	static Type GetStaticType() {
-		return Event::NETWORK_WELCOME;
-	}
-
-private:
-	std::list<Player> playerList;
-
+	const std::list<Player> playerList;
 };

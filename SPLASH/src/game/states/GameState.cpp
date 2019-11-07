@@ -7,14 +7,14 @@
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
-#include "../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
-#include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
+#include "Sail/events/EventDispatcher.h"
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GUISettings.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
 #include <sstream>
 #include <iomanip>
 #include "InGameMenuState.h"
+#include "../SPLASH/src/game/events/ResetWaterEvent.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -22,7 +22,13 @@ GameState::GameState(StateStack& stack)
 	, m_profiler(true)
 	, m_showcaseProcGen(false) 
 {
-	
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
+
+
 	initConsole();
 
 	// Get the Application instance
@@ -110,8 +116,11 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+	Model* lightModel = &m_app->getResourceManager().getModel("Torch.fbx", shader);
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
+	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
+	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
+
 
 #ifdef DEVELOPMENT
 	/* GUI testing */
@@ -170,12 +179,21 @@ GameState::GameState(StateStack& stack)
 	// Host fill its game tracker per player with player data.
 	// Reset data trackers
 	GameDataTracker::getInstance().init();
+
+	// Clear all water on the level
+	EventDispatcher::Instance().emit(ResetWaterEvent());
 }
 
 GameState::~GameState() {
 	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
 	delete m_octree;
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
 }
 
 // Process input for the state
@@ -257,10 +275,10 @@ bool GameState::processInput(float dt) {
 
 				// Find the candle child entity of player
 				Entity* candle = nullptr;
-				std::vector<Entity::SPtr> children = m_player->getChildEntities();
+				std::vector<Entity*> children = m_player->getChildEntities();
 				for (auto& child : children) {
 					if (child->hasComponent<CandleComponent>()) {
-						candle = child.get();
+						candle = child;
 						break;
 					}
 				}
@@ -469,27 +487,30 @@ void GameState::initConsole() {
 #endif
 }
 
-bool GameState::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
-	EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
-	EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
-	EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDropped));
-	EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
+bool GameState::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE:					onResize((const WindowResizeEvent&)event); break;
+	case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
+	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
+	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
+	case Event::Type::PLAYER_CANDLE_DEATH:				onPlayerCandleDeath((const PlayerCandleDeathEvent&)event); break;
+	default: break;
+	}
 
 	return true;
 }
 	
-bool GameState::onResize(WindowResizeEvent& event) {
-	m_cam.resize(event.getWidth(), event.getHeight());
+bool GameState::onResize(const WindowResizeEvent& event) {
+	m_cam.resize(event.width, event.height);
 	return true;
 }
 
-bool GameState::onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event) {
-	m_componentSystems.networkReceiverSystem->handleIncomingData(event.getSerializedData());
+bool GameState::onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event) {
+	m_componentSystems.networkReceiverSystem->handleIncomingData(event.serializedData);
 	return true;
 }
 
-bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
+bool GameState::onPlayerCandleDeath(const PlayerCandleDeathEvent& event) {
 	if ( !m_isSingleplayer ) {
 		/*NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::PLAYER_DIED,
@@ -517,22 +538,22 @@ bool GameState::onPlayerCandleDeath(PlayerCandleDeathEvent& event) {
 	return true;
 }
 
-bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
+bool GameState::onPlayerDisconnect(const NetworkDisconnectEvent& event) {
 	if (m_isSingleplayer) {
 		return true;
 	}
 
 	for (auto& e : m_componentSystems.networkReceiverSystem->getEntities()) {
-		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.getPlayerID()) {
+		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.player_id) {
 			// Upon finding who disconnected...
 			// Log it (Temporary until killfeed is implemented)
-			logSomeoneDisconnected(event.getPlayerID());
+			logSomeoneDisconnected(event.player_id);
 
 			// If I am host notify all other players
 			if (NWrapperSingleton::getInstance().isHost()) {
 				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 					Netcode::MessageType::PLAYER_DISCONNECT,
-					SAIL_NEW Netcode::MessagePlayerDisconnect{ event.getPlayerID() }
+					SAIL_NEW Netcode::MessagePlayerDisconnect{ event.player_id }
 				);
 			}
 		}
@@ -540,7 +561,7 @@ bool GameState::onPlayerDisconnect(NetworkDisconnectEvent& event) {
 	return true;
 }
 
-bool GameState::onPlayerDropped(NetworkDroppedEvent& event) {
+bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 	// I was dropped!
 	// Saddest of bois.
 
@@ -612,11 +633,11 @@ bool GameState::renderImgui(float dt) {
 		m_wasDroppedWindow.renderWindow();
 	}
 
-	// KEEP UNTILL FINISHED WITH HANDPOSITIONS
+	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
-	//static glm::vec3 rPos(-0.596f, 1.026f, 0.055f);
+	//static glm::vec3 rPos(-0.555f, 1.052f, 0.107f);
 	//static glm::vec3 lRot(1.178f, -0.462f, 0.600f);
-	//static glm::vec3 rRot(1.178f, 0.646f, -0.300f);
+	//static glm::vec3 rRot(1.280f, 0.283f, -0.179f);
 	//if (ImGui::Begin("HandLocation")) {
 	//	ImGui::SliderFloat("##lposx", &lPos.x, -1.5f, 1.5f);
 	//	ImGui::SliderFloat("##lposy", &lPos.y, -1.5f, 1.5f);

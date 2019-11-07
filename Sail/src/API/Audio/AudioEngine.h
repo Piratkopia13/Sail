@@ -7,8 +7,8 @@
 
 #include "Sail/entities/systems/Audio/AudioData.h"
 
-#define SOUND_COUNT 236
-#define STREAMED_SOUNDS_COUNT 20
+#define SOUND_COUNT 50
+#define STREAMED_SOUNDS_COUNT 5
 #define STREAMING_BUFFER_SIZE 32768
 #define MAX_BUFFER_COUNT 3
 #define VOL_HALF 0.5f
@@ -63,6 +63,7 @@ public:
 	~AudioEngine();
 
 	void loadSound(const std::string& filename);
+	int beginSound(const std::string& filename, float volume = 1.0f);
 	int initializeSound(const std::string& filename, Audio::EffectType effectType, float freq, float volume = 1.0f);
 	void streamSound(const std::string& filename, int streamIndex, float volume, bool isPositionalAudio, bool loop = true, AudioComponent* pAudioC = nullptr);
 
@@ -98,6 +99,11 @@ private:
 
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
+	IXAudio2SubmixVoice* m_masterSubmixVoice = nullptr;
+	IXAudio2SubmixVoice* m_streamingSubmixVoice = nullptr;
+
+	Microsoft::WRL::ComPtr<IXAPO> m_xapo;
+
 	DWORD m_destinationChannelCount;
 	// Represents each loaded sound in the form of an 'object'
 	soundStruct m_sound[SOUND_COUNT];
@@ -117,6 +123,7 @@ private:
 	// PRIVATE FUNCTIONS
 	//-----------------
 	HRESULT initXAudio2();
+	HRESULT initSubmixes();
 
 	//
 	HRESULT LowPassFilterTest();

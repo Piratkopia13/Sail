@@ -27,6 +27,7 @@ private:
 	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_j;
 	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_k;
 	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_streamToBeDeleted;
+
 	std::string m_filename = "";
 	float m_volume = 1.0f;
 	bool m_isPositionalAudio;
@@ -34,7 +35,6 @@ private:
 	int m_streamIndex = 0;
 
 	bool m_hasOutputDevices = true;
-
 
 	AudioEngine* m_audioEngine;
 	int m_currStreamIndex = 0;
