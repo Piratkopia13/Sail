@@ -278,43 +278,6 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 void DXRBase::updateWaterData() {
-	for (int z = 0; z < WATER_GRID_Z; z++) {
-		for (int x = 0; x < WATER_GRID_X * 4; x++) {
-			for (int y = 1; y < WATER_GRID_Y; y++) {
-				auto [arrIndex, quarterIndex] = getWaterIndices(x, y, z);
-				uint8_t vals[8];
-				vals[0] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
-				vals[1] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
-				vals[2] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
-				vals[3] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
-
-				if (vals[0] < 255U || vals[1] < 255U || vals[2] < 255U || vals[3] < 255U) {
-					auto [arrIndexBelow, thing] = getWaterIndices(x, y - 1, z);
-
-					// Below
-					vals[4] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], 0);
-					vals[5] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], 1);
-					vals[6] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], 2);
-					vals[7] = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], 3);
-					uint8_t deltaVal = 0;
-
-					deltaVal = (uint8_t)(5.f * ((float)(255U - vals[quarterIndex]) / 255.f));
-					deltaVal = std::max(deltaVal, (uint8_t)1U);
-					if (255U - deltaVal < vals[quarterIndex]) {
-						deltaVal = 255U - vals[quarterIndex];
-					}
-					vals[quarterIndex] += deltaVal;
-					vals[quarterIndex + 4] = (vals[quarterIndex + 4] >= deltaVal ? vals[quarterIndex + 4] - deltaVal : 0U);
-
-					m_waterDeltas[arrIndex] = Utils::packQuarterFloat(vals[0], vals[1], vals[2], vals[3]);
-					m_waterDeltas[arrIndexBelow] = Utils::packQuarterFloat(vals[4], vals[5], vals[6], vals[7]);
-					m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
-					m_waterDataCPU[arrIndexBelow] = m_waterDeltas[arrIndexBelow];
-				}
-			}
-		}
-	}
-
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
 		unsigned int& data = pair.second;
