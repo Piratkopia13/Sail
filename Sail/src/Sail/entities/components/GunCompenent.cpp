@@ -8,10 +8,10 @@ GunComponent::GunComponent() {
 	 m_gunOverloadCooldown = .00f;
 
 	 // OLD
-	 projectileSpeed = 25.f;
+	 projectileSpeed = 20.f;
 	 // NEW
 	 baseProjectileSpeed = projectileSpeed;
-	 finalProjectileSpeed = baseProjectileSpeed / 5.0f;
+	 finalProjectileSpeed = 5.0f;
 	 projectileSpeedRange = finalProjectileSpeed - baseProjectileSpeed;
 
 

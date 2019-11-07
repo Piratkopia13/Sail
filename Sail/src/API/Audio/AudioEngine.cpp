@@ -132,8 +132,8 @@ int AudioEngine::initializeSound(const std::string& filename, Audio::EffectType 
 		int effectCount = 1;
 
 		if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
-		//	effectArray[effectCount] = createLowPassEffect(reverbParams_);
-		//	effectCount++;
+			//effectArray[effectCount] = createLowPassEffect(reverbParams);
+			//effectCount++;
 		}
 		else if (effectType == Audio::EffectType::NONE){
 			// Do nothing
@@ -187,14 +187,6 @@ int AudioEngine::initializeSound(const std::string& filename, Audio::EffectType 
 	// - Which voice should it be applied to? Master/Source/Submix?
 	//
 	//std::cout << freq << "\n";
-	if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
-		if (FAILED(hr = m_sound[indexValue].sourceVoice->SetOutputFilterParameters(
-			submixVoice,
-			&createLowPassFilter(freq)
-		))) {
-			Logger::Error("Failed to apply a low-pass filter!");
-		}
-	}
 
 	// Route the source voice to the submix voice.
 	// The complete graph pipeline looks like this -
@@ -202,12 +194,31 @@ int AudioEngine::initializeSound(const std::string& filename, Audio::EffectType 
 	if (SUCCEEDED(hr)) {
 		XAUDIO2_VOICE_SENDS sends = {};
 		XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+		sendDesc.Flags = XAUDIO2_SEND_USEFILTER;
 		sendDesc.pOutputVoice = submixVoice;
 		sends.SendCount = 1;
 		sends.pSends = &sendDesc;
 		hr = m_sound[indexValue].sourceVoice->SetOutputVoices(&sends);
 	}
+
+	XAUDIO2_FILTER_PARAMETERS lowPassFilter = createLowPassFilter(freq);
+	if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
+		if (FAILED(hr = m_sound[indexValue].sourceVoice->SetOutputFilterParameters(
+			submixVoice,
+			&lowPassFilter
+		))) {
+			Logger::Error("Failed to apply a low-pass filter!");
+		}
+	}
+
+	// Apply changes
+	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
+
 	return indexValue;
+}
+
+void AudioEngine::testAlterLPFilter(int index, float frequency) {
+
 }
 
 void AudioEngine::streamSound(const std::string& filename, int streamIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC) {
@@ -613,10 +624,20 @@ XAUDIO2_EFFECT_DESCRIPTOR AudioEngine::createLowPassEffect(XAUDIO2FX_REVERB_PARA
 }
 
 XAUDIO2_FILTER_PARAMETERS AudioEngine::createLowPassFilter(float cutoffFrequence) {
-	XAUDIO2_MAX_FILTER_FREQUENCY;
-	
 	float sumFrequency = 2.0f * sinf((X3DAUDIO_PI * cutoffFrequence) / /*Samplerate*/48000.0f);
+	//if (sumFrequency < 0.2) {
+	//	sumFrequency = 0.2;1
+	//}
+	if (sumFrequency > XAUDIO2_MAX_FILTER_FREQUENCY) {
+		sumFrequency = XAUDIO2_MAX_FILTER_FREQUENCY;
+	}
+	//sumFrequency = 1 - sumFrequency;
+	//if (sumFrequency < 0.1) {
+	//	sumFrequency = 0.3;
+	//}
+	
 	std::cout << "Sum Frequency: " << std::to_string(sumFrequency) << "\n";
+
 
 	XAUDIO2_FILTER_PARAMETERS filterParameters = { 
 		LowPassFilter,

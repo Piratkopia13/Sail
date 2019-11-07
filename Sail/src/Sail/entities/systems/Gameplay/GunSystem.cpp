@@ -119,7 +119,8 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 
 
 	XAUDIO2FX_REVERB_PARAMETERS reverbParams;
-	float frequency = 20 + 20000 * (gun->gunOverloadvalue / gun->gunOverloadThreshold);
+	float frequency = 13000 - (13000 - 2000) * (gun->gunOverloadvalue / gun->gunOverloadThreshold);
+	std::cout << "Frequency: " << std::to_string(frequency) << "\n";
 	float eqCutoff = 0 + 14 * (gun->gunOverloadvalue / gun->gunOverloadThreshold);
 
 	reverbParams.ReflectionsDelay = XAUDIO2FX_REVERB_DEFAULT_REFLECTIONS_DELAY;
@@ -153,12 +154,18 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 }
 
 void GunSystem::overloadGun(Entity* e, GunComponent* gun) {
-	gun->gunOverloadTimer = gun->m_gunOverloadCooldown;
+	// Don't overload the gun at all if the cooldown is '0'
+	if (gun->m_gunOverloadCooldown == 0.0f) {
+		gun->gunOverloadvalue = gun->gunOverloadThreshold;
+		return;
+	} 
+
 	gun->gunOverloadvalue = 0;
+	gun->gunOverloadTimer = 0;
 
+	// If we have some sort of cooldown, behave statewise as usual
 	setGunStateEND(e, gun);
-
-	gun->firingContinuously = false;
+	gun->firingContinuously = false;	
 }
 
 void GunSystem::setGunStateSTART(Entity* e, GunComponent* gun) {

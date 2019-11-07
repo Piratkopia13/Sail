@@ -124,6 +124,7 @@ private:
 	XAUDIO2_EFFECT_DESCRIPTOR createLowPassEffect(XAUDIO2FX_REVERB_PARAMETERS reverbParams);
 	XAUDIO2_FILTER_PARAMETERS createLowPassFilter(float cutoffFrequence);
 	XAUDIO2_VOICE_SENDS createLPFilteredVoiceSend();
+	void testAlterLPFilter(int indexValue, float frequency);
 
 
 	XAUDIO2_VOICE_SENDS createSendToMaster();
