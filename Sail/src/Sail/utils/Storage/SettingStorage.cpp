@@ -33,7 +33,7 @@ bool SettingStorage::saveToFile(const std::string& filename) {
 
 std::string SettingStorage::serialize(const std::map<std::string, std::map<std::string, Setting>>& stat, const std::map<std::string, std::map<std::string, DynamicSetting>>& dynamic) {
 	std::string output = "";
-
+	//print content of static settings map
 	for (auto const& [areaKey, setting] : stat) {
 		output += "#" + areaKey + "\n";
 		for (auto const& [settingKey, option] : setting) {
@@ -41,6 +41,7 @@ std::string SettingStorage::serialize(const std::map<std::string, std::map<std::
 		}
 		output += "\n";
 	}
+	//print content of dynamic settings map
 	for (auto const& [areaKey, setting] : dynamic) {
 		output += "#" + areaKey + "\n";
 		for (auto const& [settingKey, option] : setting) {
@@ -78,6 +79,7 @@ bool SettingStorage::deSerialize(const std::string& content, std::map<std::strin
 				int divider = line.find("=");
 				std::string name = line.substr(0, divider);
 				std::string temp = line.substr(divider + 1, std::string::npos);
+				// if found in settings change value
 				if (stat.find(currentArea) != stat.end()) {
 					if (stat[currentArea].find(name) != stat[currentArea].end()) {
 						int selection = std::stoi(temp);

@@ -53,7 +53,7 @@ struct Systems {
 	GameInputSystem* gameInputSystem = nullptr;
 	GUISubmitSystem* guiSubmitSystem = nullptr;
 	GunSystem* gunSystem = nullptr;
-	LevelSystem* levelGeneratorSystem = nullptr;
+	LevelSystem* levelSystem = nullptr;
 	LifeTimeSystem* lifeTimeSystem = nullptr;
 	LightSystem* lightSystem = nullptr;
 	LightListSystem* lightListSystem = nullptr;
