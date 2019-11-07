@@ -116,8 +116,11 @@ GameState::GameState(StateStack& stack)
 	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	Model* lightModel = &m_app->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+	Model* lightModel = &m_app->getResourceManager().getModel("Torch.fbx", shader);
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
+	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
+	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
+
 
 #ifdef DEVELOPMENT
 	/* GUI testing */
@@ -272,10 +275,10 @@ bool GameState::processInput(float dt) {
 
 				// Find the candle child entity of player
 				Entity* candle = nullptr;
-				std::vector<Entity::SPtr> children = m_player->getChildEntities();
+				std::vector<Entity*> children = m_player->getChildEntities();
 				for (auto& child : children) {
 					if (child->hasComponent<CandleComponent>()) {
-						candle = child.get();
+						candle = child;
 						break;
 					}
 				}
@@ -631,11 +634,11 @@ bool GameState::renderImgui(float dt) {
 		m_wasDroppedWindow.renderWindow();
 	}
 
-	// KEEP UNTILL FINISHED WITH HANDPOSITIONS
+	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
-	//static glm::vec3 rPos(-0.596f, 1.026f, 0.055f);
+	//static glm::vec3 rPos(-0.555f, 1.052f, 0.107f);
 	//static glm::vec3 lRot(1.178f, -0.462f, 0.600f);
-	//static glm::vec3 rRot(1.178f, 0.646f, -0.300f);
+	//static glm::vec3 rRot(1.280f, 0.283f, -0.179f);
 	//if (ImGui::Begin("HandLocation")) {
 	//	ImGui::SliderFloat("##lposx", &lPos.x, -1.5f, 1.5f);
 	//	ImGui::SliderFloat("##lposy", &lPos.y, -1.5f, 1.5f);
