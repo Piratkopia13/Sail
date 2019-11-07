@@ -34,14 +34,16 @@ LevelSystem::~LevelSystem() {
 
 //generates all necessary data for the world
 void LevelSystem::generateMap() {
-
+	numberOfRooms = 1;
 	totalArea = xsize * ysize;
-	tileArr = SAIL_NEW int** [xsize]();
-	for (int i = 0; i < xsize; i++) {
-		tileArr[i] = SAIL_NEW int* [ysize]();
-		for (int j = 0; j < ysize; j++) {
-			tileArr[i][j] = SAIL_NEW int[3]();
-			tileArr[i][j][1] = -1;
+	if (!tileArr) {
+		tileArr = SAIL_NEW int** [xsize]();
+		for (int i = 0; i < xsize; i++) {
+			tileArr[i] = SAIL_NEW int* [ysize]();
+			for (int j = 0; j < ysize; j++) {
+				tileArr[i][j] = SAIL_NEW int[3]();
+				tileArr[i][j][1] = -1;
+			}
 		}
 	}
 
