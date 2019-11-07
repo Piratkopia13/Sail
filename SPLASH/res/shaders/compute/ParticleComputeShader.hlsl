@@ -1,10 +1,8 @@
 struct Emitter{
 	float3 position;
 	float padding0;
-	float3 spread;
-	float padding1;
 	float3 velocity;
-	float padding2;
+	float padding1;
 	float3 acceleration;
 	int nrOfParticlesToSpawn;
 };
@@ -13,6 +11,7 @@ struct ParticleInput{
 	Emitter emitters[100];
 	uint numEmitters;
 	uint numPrevParticles;
+	uint maxOutputVertices;
 };
 
 cbuffer CSInputBuffer : register(b0) {
@@ -53,13 +52,13 @@ void createTriangle(float3 v0, float3 v1, float3 v2, int v0Index) {
 void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_DispatchThreadID) {
 	int counter = 0;
     for (uint i = 0; i < inputBuffer.numEmitters; i++) {
-		for (uint j = 0; j < inputBuffer.emitters[i].nrOfParticlesToSpawn; j++) {
+		for (uint j = 0; j < min(inputBuffer.emitters[i].nrOfParticlesToSpawn, inputBuffer.maxOutputVertices - (inputBuffer.numPrevParticles * 6 + counter)); j++) {
 			float3 v0, v1, v2, v3;
 			
-			v0 = inputBuffer.emitters[i].position + float3(-0.1 + 0.2 * inputBuffer.numPrevParticles, 0.1, 0.0);
-			v1 = inputBuffer.emitters[i].position + float3(-0.1 + 0.2 * inputBuffer.numPrevParticles, -0.1, 0.0);
-			v2 = inputBuffer.emitters[i].position + float3(0.1 + 0.2 * inputBuffer.numPrevParticles, 0.1, 0.0);
-			v3 = inputBuffer.emitters[i].position + float3(0.1 + 0.2 * inputBuffer.numPrevParticles, -0.1, 0.0);
+			v0 = inputBuffer.emitters[i].position + float3(-0.1 + 0.002 * (inputBuffer.numPrevParticles + (counter / 6)), 0.1, 0.0);
+			v1 = inputBuffer.emitters[i].position + float3(-0.1 + 0.002 * (inputBuffer.numPrevParticles + (counter / 6)), -0.1, 0.0);
+			v2 = inputBuffer.emitters[i].position + float3(0.1 + 0.002 * (inputBuffer.numPrevParticles + (counter / 6)), 0.1, 0.0);
+			v3 = inputBuffer.emitters[i].position + float3(0.1 + 0.002 * (inputBuffer.numPrevParticles + (counter / 6)), -0.1, 0.0);
 			
 			createTriangle(v0, v1, v2, inputBuffer.numPrevParticles * 6 + counter);
 			counter += 3;

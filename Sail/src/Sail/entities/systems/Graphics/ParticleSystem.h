@@ -41,10 +41,8 @@ private:
 	struct EmitterData {
 		glm::vec3 position;
 		float padding0;
-		glm::vec3 spread;
-		float padding1;
 		glm::vec3 velocity;
-		float padding2;
+		float padding1;
 		glm::vec3 acceleration;
 		int nrOfParticlesToSpawn;
 	};
@@ -53,5 +51,6 @@ private:
 		EmitterData emitters[100];
 		unsigned int numEmitters;
 		unsigned int previousNrOfParticles;
+		unsigned int maxOutputVertices;
 	};
 };

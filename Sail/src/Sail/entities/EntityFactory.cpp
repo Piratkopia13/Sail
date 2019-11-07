@@ -108,7 +108,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	//For testing, add particle emitter to player.
 	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
 	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
-	particleEmitterComp->spawnRate = 1.0f;
+	particleEmitterComp->spawnRate = 0.001f;
 
 	AddWeaponAndCandleToPlayer(myPlayer, lightIndex, playerID);
 	for (Entity::SPtr& c : myPlayer->getChildEntities()) {

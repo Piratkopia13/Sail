@@ -19,7 +19,7 @@ ParticleSystem::ParticleSystem() {
 	auto& gbufferShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	auto& inputLayout = gbufferShader.getPipeline()->getInputLayout();
 
-	m_outputVertexBufferSize = 10000;
+	m_outputVertexBufferSize = 9996;
 
 	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
 
@@ -69,10 +69,10 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 	ComputeInput inputData;
 	inputData.numEmitters = m_newEmitters.size();
 	inputData.previousNrOfParticles = m_prevNumberOfParticles;
+	inputData.maxOutputVertices = m_outputVertexBufferSize;
 
 	for (unsigned int i = 0; i < m_newEmitters.size(); i++) {
 		inputData.emitters[i].position = m_newEmitters[i].emitter->position;
-		inputData.emitters[i].spread = m_newEmitters[i].emitter->spread;
 		inputData.emitters[i].velocity = m_newEmitters[i].emitter->velocity;
 		inputData.emitters[i].acceleration = m_newEmitters[i].emitter->acceleration;
 		inputData.emitters[i].nrOfParticlesToSpawn = m_newEmitters[i].nrOfNewParticles;
@@ -101,7 +101,8 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 	// Transition to Cbuffer usage
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
-	m_prevNumberOfParticles = m_numberOfParticles;
+	m_prevNumberOfParticles = glm::min(m_numberOfParticles, (int) (m_outputVertexBufferSize / 6));
+
 	Logger::Log(std::to_string(m_prevNumberOfParticles));
 
 	m_newEmitters.clear();
