@@ -61,3 +61,7 @@ bool DX12HybridRaytracerRenderer::onEvent(const Event& event) {
 	m_rendererRaytrace->onEvent(event);
 	return true;
 }
+
+bool DX12HybridRaytracerRenderer::checkIfOnWater(const glm::vec3& pos) {
+	return m_rendererRaytrace->checkIfOnWater(pos);
+}

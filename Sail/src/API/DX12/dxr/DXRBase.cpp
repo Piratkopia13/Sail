@@ -313,28 +313,7 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
 		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
 
-		switch (index) {
-		case 0:
-			if (up0 == 0) {
-				returnValue = true;
-				break;
-			}
-		case 1:
-			if (up1 == 0) {
-				returnValue = true;
-				break;
-			}
-		case 2:
-			if (up2 == 0) {
-				returnValue = true;
-				break;
-			}
-		case 3:
-			if (up3 == 0) {
-				returnValue = true;
-				break;
-			}
-		}
+		returnValue = up0 != 255 || up1 != 255 || up2 != 255 || up3 != 255;
 	}
 
 	return returnValue;

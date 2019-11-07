@@ -812,6 +812,8 @@ void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
 
 			return;
 		}

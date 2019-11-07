@@ -20,6 +20,7 @@ public:
 	virtual void end() override;
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
 	virtual bool onEvent(const Event& event) override;
+	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
 private:
 	std::unique_ptr<DX12GBufferRenderer> m_rendererGbuffer;

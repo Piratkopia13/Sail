@@ -44,7 +44,6 @@ private:
 	// --------- Earlier used variables below this line ---------
 	float m_runSpeed = 2.0;
 	float m_movementSpeed = 20.f;
-	float m_runSoundTimer = 0.0f;
 	bool m_wasSpacePressed = false;
 	float m_projectileSpawnCounter = 0.f;
 	float m_lookSensitivityMouse = 0.1f;
@@ -57,6 +56,8 @@ private:
 	float m_isPlayingRunningSound = false;
 	float m_fallTimer = 0.0f;
 	float m_fallThreshold = 0.6f;
+	float m_soundSwitchTimer = 0.0f;
+	float m_changeThreshold = 0.358f; /*(0.756f / 2), 0.756 = all footstep sounds containing 2 steps each*/
 
 	// TEMP BOOLS
 	bool tempMetal = false;
