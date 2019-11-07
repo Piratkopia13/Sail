@@ -52,6 +52,8 @@ bool SplashScreenState::loadModels(Application* app) {
 
 //#ifndef _DEBUG
 	rm->loadModel("Doc.fbx");
+	rm->loadModel("Torch.fbx");
+
 	rm->loadModel("candleExported.fbx");
 	rm->loadModel("Tiles/tileFlat.fbx");
 	rm->loadModel("Tiles/RoomWall.fbx"); 
@@ -67,7 +69,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Tiles/RoomCorner.fbx"); 
 	rm->loadModel("Clutter/SmallObject.fbx");
 	rm->loadModel("Clutter/MediumObject.fbx"); 
-	rm->loadModel("Clutter/LargeObject.fbx");
+	rm->loadModel("Clutter/LargeObject.fbx");	
 
 	rm->loadModel("Clutter/Saftblandare.fbx");
 	rm->loadModel("WaterPistol.fbx");
@@ -112,6 +114,13 @@ bool SplashScreenState::loadModels(Application* app) {
 
 bool SplashScreenState::loadTextures(Application* app) {
 	ResourceManager* rm = &app->getResourceManager();
+
+
+	rm->loadTexture("pbr/Torch/Torch_MRAO.tga");
+	rm->loadTexture("pbr/Torch/Torch_NM.tga");
+	rm->loadTexture("pbr/Torch/Torch_Albedo.tga");
+
+
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
