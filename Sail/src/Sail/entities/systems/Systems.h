@@ -14,6 +14,7 @@
 #include "Graphics/AnimationChangerSystem.h"
 #include "input/GameInputSystem.h"
 #include "Gameplay/LevelGeneratorSystem/LevelGeneratorSystem.h"
+#include "Gameplay/SprinklerSystem.h"
 #include "Gameplay/lifetime/LifeTimeSystem.h"
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"

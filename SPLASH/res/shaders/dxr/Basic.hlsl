@@ -63,8 +63,9 @@ void rayGen() {
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	// float3 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb;
-	float3 albedoColor = pow(sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb, 2.2f);
+	float4 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgba;
+	bool isEmissive = (albedoColor.a < 0.7f && albedoColor.a > 0.3f);
+	albedoColor = pow(albedoColor, 2.2f);
 	float3 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0).rgb;
 	float metalness = metalnessRoughnessAO.r;
 	float roughness = metalnessRoughnessAO.g;
@@ -98,10 +99,10 @@ void rayGen() {
 	payload.color = float4(0,0,0,0);
 	if (worldNormal.x == -1 && worldNormal.y == -1) {
 		// Bounding boxes dont need shading
-		lOutput[launchIndex] = float4(albedoColor, 1.0f);
+		lOutput[launchIndex] = float4(albedoColor.rgb, 1.0f);
 		return;
 	} else {
-		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+		shade(worldPosition, worldNormal, albedoColor.rgb, isEmissive, metalness, roughness, ao, payload);
 	}
 
 
@@ -247,7 +248,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	//payload.color = float4(normalInWorldSpace * 0.5f + 0.5f, 1.0f);
 	//return;
 
-	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, false, metalness, roughness, ao, payload, true);
 }
 
 
