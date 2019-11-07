@@ -90,21 +90,19 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 
-
-	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
-
-	AddCandleComponentsToPlayer(myPlayer, lightIndex, playerID);
-
-
-	Netcode::ComponentID candleNetID;
-	Netcode::ComponentID gunNetID;
-
 	//For testing, add particle emitter to player.
 	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
 	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
 	particleEmitterComp->spawnRate = 0.001f;
 
-	for (Entity::SPtr& c : myPlayer->getChildEntities()) {
+	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
+
+	AddCandleComponentsToPlayer(myPlayer, lightIndex, playerID);
+
+	Netcode::ComponentID candleNetID;
+	Netcode::ComponentID gunNetID;
+
+	for (Entity* c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
 			gunNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, playerID)->m_id;
 			//leave this for now
