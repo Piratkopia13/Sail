@@ -201,6 +201,8 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
 		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
 
+		cmdList->SetGraphicsRoot32BitConstants(GlobalRootParam::CBV_TEAM_COLOR, 3, &command->teamColor, 0);
+
 		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
 	}
 

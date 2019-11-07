@@ -11,7 +11,7 @@ public:
 	~DX12HybridRaytracerRenderer();
 
 	virtual void begin(Camera* camera) override;
-	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
+	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, glm::vec3 teamColor = glm::vec3(1, 1, 1)) override;
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags);
 
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;

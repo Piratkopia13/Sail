@@ -27,7 +27,7 @@ public:
 		col.x = c.x;
 		col.y = c.y;
 		col.z = c.z;
-		col.z = c.a;
+		col.w = c.a;
 		ImGui::PushStyleColor(1, col);
 		ImGui::Text((std::string("(") + std::to_string(col.x) + ", " + std::to_string(col.y) + ", " + std::to_string(col.z)).c_str());
 		ImGui::PopStyleColor(1);

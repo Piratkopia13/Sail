@@ -28,6 +28,8 @@ public:
 	}
 #endif
 
+	glm::vec3 teamColor = glm::vec3(1,1,1);
+
 private:
 	Model* m_model;
 };

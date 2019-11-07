@@ -12,7 +12,6 @@ PBRMaterial::PBRMaterial(Shader* shader)
 	m_pbrSettings.metalnessScale = 1.f;
 	m_pbrSettings.roughnessScale = 1.f;
 	m_pbrSettings.aoScale = 1.f;
-	m_pbrSettings.teamColor = glm::vec4(1, 1, 1, 1);
 
 	m_pbrSettings.hasAlbedoTexture = 0;
 	m_pbrSettings.hasNormalTexture = 0;
@@ -54,10 +53,6 @@ void PBRMaterial::setAOScale(float ao) {
 
 void PBRMaterial::setColor(const glm::vec4& color) {
 	m_pbrSettings.modelColor = color;
-}
-
-void PBRMaterial::setTeamColor(const glm::vec4& color) {
-	m_pbrSettings.teamColor = color;
 }
 
 void PBRMaterial::setAlbedoTexture(const std::string& filename) {

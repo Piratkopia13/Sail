@@ -192,12 +192,13 @@ bool DX12RaytracingRenderer::onEvent(const Event& event) {
 	return true;
 }
 
-void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) {
+void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, glm::vec3 teamColor) {
 	RenderCommand cmd;
 	cmd.type = RENDER_COMMAND_TYPE_MODEL;
 	cmd.model.mesh = mesh;
 	cmd.transform = glm::transpose(modelMatrix);
 	cmd.flags = flags;
+	cmd.teamColor = teamColor;
 	// Resize to match numSwapBuffers (specific to dx12)
 	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	commandQueue.push_back(cmd);

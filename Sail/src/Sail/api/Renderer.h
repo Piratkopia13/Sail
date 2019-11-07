@@ -42,6 +42,7 @@ public:
 		glm::mat4 transform; // TODO: find out why having a const ptr here doesnt work
 		RenderFlag flags = MESH_STATIC;
 		std::vector<bool> hasUpdatedSinceLastRender;
+		glm::vec3 teamColor;
 
 		union {
 			struct {
@@ -58,7 +59,7 @@ public:
 	virtual ~Renderer() {}
 
 	virtual void begin(Camera* camera);
-	virtual void submit(Model* model, const glm::mat4& modelMatrix, RenderFlag flags);
+	virtual void submit(Model* model, const glm::mat4& modelMatrix, RenderFlag flags, glm::vec3 teamColor = glm::vec3(1,1,1));
 
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {}
 
@@ -66,7 +67,7 @@ public:
 	virtual void submitWaterPoint(const glm::vec3& pos) { };
 	virtual void end() { };
 
-	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags);
+	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, glm::vec3 teamColor = glm::vec3(1, 1, 1));
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) = 0;
 	virtual bool onEvent(const Event& event) override { return true; }

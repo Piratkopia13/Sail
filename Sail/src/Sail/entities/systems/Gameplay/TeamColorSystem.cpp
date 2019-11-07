@@ -20,11 +20,11 @@ void TeamColorSystem::update(float dt) {
 		ModelComponent* model = e->getComponent<ModelComponent>();
 		TeamComponent* tc = e->getComponent<TeamComponent>();
 
-		model->getModel()->getMesh(0)->getMaterial()->setTeamColor(getTeamColor(tc->team));
+		model->teamColor = getTeamColor(tc->team);
 	}
 }
 
 glm::vec4 TeamColorSystem::getTeamColor(int teamID) {
-	float f = teamID / 12.0f;
-	return glm::vec4(f, 1, f, 1.0f);
+	float f = (teamID / 12.0f) * glm::two_pi<float>();
+	return glm::vec4(abs(cos(f * 2)), abs(1 - cos(f * 1.4)), abs(sin(f * 1.1f)), 1.0f);
 }

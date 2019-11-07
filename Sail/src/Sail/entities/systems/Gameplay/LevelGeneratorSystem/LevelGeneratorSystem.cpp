@@ -833,10 +833,7 @@ void LevelGeneratorSystem::addMapModel(Direction dir, int typeID, int doors, con
 				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::CORRIDOR_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
 			}
 			else {
-				auto e = EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
-			
-				static int t = 0;
-				e->addComponent<TeamComponent>()->team = (t++) % 12;
+				auto e = EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));	
 			}
 		}
 	}

@@ -33,6 +33,10 @@ cbuffer PSSystemCBuffer : register(b1) {
     Material sys_material_pbr;
 }
 
+cbuffer PSSystemCBuffer_2 : register(b1, space1) {
+	float3 teamColor;
+}
+
 GSIn VSMain(VSIn input) {
     GSIn output;
 
@@ -108,7 +112,7 @@ GBuffers PSMain(PSIn input) {
 	if (sys_material_pbr.hasAlbedoTexture) {
 		float4 albedo = sys_texAlbedo.Sample(PSss, input.texCoords);
 		if (albedo.a <= 0.5) {
-			gbuffers.albedo = float4(sys_material_pbr.teamColor.rgb, albedo.a);
+			gbuffers.albedo = float4(teamColor.rgb, albedo.a);
 		} else {
 			gbuffers.albedo *= albedo;
 		}

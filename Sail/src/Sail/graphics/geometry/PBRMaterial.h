@@ -11,7 +11,6 @@ public:
 	// Matching shader struct
 	struct PBRSettings {
 		glm::vec4 modelColor;
-		glm::vec4 teamColor;
 		float metalnessScale;
 		float roughnessScale;
 		float aoScale;
@@ -31,7 +30,6 @@ public:
 	void setRoughnessScale(float roughness);
 	void setAOScale(float ao);
 	void setColor(const glm::vec4& color);
-	void setTeamColor(const glm::vec4& color);
 
 	void setAlbedoTexture(const std::string& filename);
 	void setNormalTexture(const std::string& filename);
