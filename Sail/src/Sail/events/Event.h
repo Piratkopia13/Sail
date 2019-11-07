@@ -22,6 +22,12 @@ struct Event {
 		PLAYER_DEATH,
 		IGNITE_CANDLE,
 		HOLDING_CANDLE_TOGGLE,
+		PLAYER_JUMPED,
+		PLAYER_LANDED,
+		START_SHOOTING,
+		STOP_SHOOTING,
+		CHANGE_WALKING_SOUND,
+		STOP_WALKING,
 
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};

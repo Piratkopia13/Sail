@@ -29,6 +29,12 @@ AudioSystem::AudioSystem() : BaseComponentSystem() {
 
 	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_JUMPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_LANDED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::START_SHOOTING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_SHOOTING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::CHANGE_WALKING_SOUND, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_WALKING, this);
 
 	initialize();
 }
@@ -39,6 +45,12 @@ AudioSystem::~AudioSystem() {
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_JUMPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_LANDED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::START_SHOOTING, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_SHOOTING, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::CHANGE_WALKING_SOUND, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_WALKING, this);
 }
 
 // TO DO: move to constructor?
@@ -293,17 +305,49 @@ AudioEngine* AudioSystem::getAudioEngine() {
 }
 
 bool AudioSystem::onEvent(const Event& event) {
-	auto onWaterHitPlayer = [](const WaterHitPlayerEvent& e) {
-		// Play relevant sound if candle is 
-		if (e.hitCandle->getComponent<CandleComponent>()->isLit) {
+	auto findFromID = [=](const Netcode::ComponentID netCompID) {
+		Entity* source = nullptr;
+		for (auto entity : entities) {
+			if (auto recComp = entity->getComponent<NetworkReceiverComponent>(); recComp) {
+				if (recComp->m_id == netCompID) {
+					source = entity;
+					break;
+				}
+			}
+		}
+		return source;
+	};
+	
+	auto onWaterHitPlayer = [=](const WaterHitPlayerEvent& e) {
+		Entity* player = nullptr;
+		Entity* candle = nullptr;
+
+		// Find the entity with the correct ID
+		if (auto entity = findFromID(e.netCompID); entity) {
+			// Find the candle child of that entity
+			for (auto child : entity->getChildEntities()) {
+				if (child->hasComponent<CandleComponent>()) {
+					player = entity;
+					candle = child;
+					break;
+				}
+			}
+		}
+
+		if (!candle) {
+			Logger::Warning("AudioSystem::onWaterHitPlayer: no matching entity found");
+			return;
+		}
+		
+		// Play relevant sound if candle is hit
+		if (candle->getComponent<CandleComponent>()->isLit) {
 			// Check if my candle or other candle
-			const auto soundIndex = (e.hitPlayer->hasComponent<LocalOwnerComponent>()
+			const auto soundIndex = (player->hasComponent<LocalOwnerComponent>()
 				? Audio::SoundType::WATER_IMPACT_MY_CANDLE 
 				: Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE);
 
-			auto& hitCandleSound = e.hitPlayer->getComponent<AudioComponent>()->m_sounds[soundIndex];
-			hitCandleSound.isPlaying = true;
-			hitCandleSound.playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[soundIndex].isPlaying = true;
+			player->getComponent<AudioComponent>()->m_sounds[soundIndex].playOnce = true;
 		}
 	};
 
@@ -321,9 +365,79 @@ bool AudioSystem::onEvent(const Event& event) {
 		deathSound.playOnce = true;
 	};
 
+	auto onPlayerJumped = [=](const PlayerJumpedEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+		} else {
+			Logger::Warning("AudioSystem : player jumped but no matching entity found");
+		}
+	};
+
+	auto onPlayerLanded = [=](const PlayerLandedEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].isPlaying = true;
+		} else {
+			Logger::Warning("AudioSystem : player landed but no matching entity found");
+		}
+	};
+
+	auto onStartShooting = [=](const StartShootingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
+		} else {
+			Logger::Warning("AudioSystem : started shooting but no matching entity found");
+		}
+	};
+
+	auto onStopShooting = [=](const StopShootingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
+		} else {
+			Logger::Warning("AudioSystem : stopped shooting but no matching entity found");
+		}
+	};
+
+	auto onChangeWalkingSound = [=](const ChangeWalkingSoundEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			// Disable all walking sounds
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
+
+			// Play the correct walking sound
+			player->getComponent<AudioComponent>()->m_sounds[e.soundType].playOnce = false;
+			player->getComponent<AudioComponent>()->m_sounds[e.soundType].isPlaying = true;
+		} else {
+			Logger::Warning("AudioSystem : changed walking sound but no matching entity found");
+		}
+	};
+
+	auto onStopWalking = [=](const StopWalkingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
+		} else {
+			Logger::Warning("AudioSystem : stopped walking but no matching entity found");
+		}
+	};
+
 	switch (event.type) {
 	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
 	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
+	case Event::Type::PLAYER_JUMPED: onPlayerJumped((const PlayerJumpedEvent&)event); break;
+	case Event::Type::PLAYER_LANDED: onPlayerLanded((const PlayerLandedEvent&)event); break;
+	case Event::Type::START_SHOOTING: onStartShooting((const StartShootingEvent&)event); break;
+	case Event::Type::STOP_SHOOTING: onStopShooting((const StopShootingEvent&)event); break;
+	case Event::Type::CHANGE_WALKING_SOUND: onChangeWalkingSound((const ChangeWalkingSoundEvent&)event); break;
+	case Event::Type::STOP_WALKING: onStopWalking((const StopWalkingEvent&)event); break;
 	default: break;
 	}
 

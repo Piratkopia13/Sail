@@ -128,7 +128,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			if (collision->onGround) {
-
 				if (m_fallTimer > m_fallThreshold) {
 					// Send event to play the sound for the landing (will be sent to ourself too)
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(

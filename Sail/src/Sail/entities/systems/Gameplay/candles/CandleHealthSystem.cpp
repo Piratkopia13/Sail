@@ -93,10 +93,30 @@ void CandleHealthSystem::update(float dt) {
 }
 
 bool CandleHealthSystem::onEvent(const Event& event) {
-	auto onWaterHitPlayer = [](const WaterHitPlayerEvent& e) {
+	auto findCandleFromParentID = [=](const Netcode::ComponentID netCompID) {
+		Entity* candle = nullptr;
+		for (auto entity : entities) {
+			if (auto parent = entity->getParent(); parent) {
+				if (parent->getComponent<NetworkReceiverComponent>()->m_id == netCompID) {
+					candle = entity;
+					break;
+				}
+			}
+		}
+		return candle;
+	};
+
+	auto onWaterHitPlayer = [=](const WaterHitPlayerEvent& e) {
+		Entity* candle = findCandleFromParentID(e.netCompID);
+
+		if (!candle) {
+			Logger::Warning("CandleHealthSystem::onWaterHitPlayer: no matching entity found");
+			return;
+		}
+
 		// Damage the candle
 		// TODO: Replace 10.0f with game settings damage
-		e.hitCandle->getComponent<CandleComponent>()->hitWithWater(10.0f, e.senderID);
+		candle->getComponent<CandleComponent>()->hitWithWater(10.0f, e.senderID);
 	};
 
 	switch (event.type) {

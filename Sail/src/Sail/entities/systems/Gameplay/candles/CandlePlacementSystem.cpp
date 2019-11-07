@@ -139,6 +139,20 @@ void CandlePlacementSystem::putDownCandle(Entity* e) {
 				},
 				false // We've already put down our own candle so no need to do it again
 			);
+
+			auto senderC = e->getComponent<NetworkSenderComponent>();
+
+			if (candleComp->isCarried) {
+				// If we're holding the candle it will be attached to our animation so don't send its
+				// position and rotation.
+				senderC->removeMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+				senderC->removeMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
+			} else {
+				// If we're no longer holding the candle then start sending its position and rotation
+				// so that other people will be able to see it when we throw it.
+				senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+				senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
+			}
 		}
 	}
 }
@@ -177,8 +191,6 @@ bool CandlePlacementSystem::onEvent(const Event& event) {
 			player->getComponent<AnimationComponent>()->rightHandEntity = candle;
 		} else {
 			candleTransComp->removeParent();
-			candleTransComp->setStartTranslation(e.pos);
-			candleTransComp->setRotations(glm::vec3{ 0.f,0.f,0.f });
 			player->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
 
 			// Might be needed
