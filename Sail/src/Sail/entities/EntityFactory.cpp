@@ -89,6 +89,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
+	myPlayer->addComponent<SprintingComponent>();
 
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
