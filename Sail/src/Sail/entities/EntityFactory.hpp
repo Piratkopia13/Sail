@@ -31,9 +31,7 @@ namespace EntityFactory {
 	Entity::SPtr CreateProjectile(
 		const glm::vec3& pos, const glm::vec3& velosity,
 		bool hasLocalOwner = false, Netcode::ComponentID ownersNetId = 0,
-		Netcode::ComponentID netCompId = 99999,
-		float lifetime = 4, float randomSpreed = 0.15f
-	);
+		Netcode::ComponentID netCompId = 99999, float lifetime = 4);
 
 	Entity::SPtr CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size);
 

@@ -311,8 +311,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 Entity::SPtr EntityFactory::CreateProjectile(
 		const glm::vec3& pos, const glm::vec3& velocity, 
 		bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
-		Netcode::ComponentID netCompId,
-		float lifetime, float randomSpread) 
+		Netcode::ComponentID netCompId, float lifetime) 
 {
 	auto e = ECS::Instance()->createEntity("projectile");
 
@@ -321,7 +320,6 @@ Entity::SPtr EntityFactory::CreateProjectile(
 	e->addComponent<LifeTimeComponent>(lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
 	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
-	//e->addComponent<TransformComponent>(pos + randPos);
 	e->addComponent<TransformComponent>(pos);
 	
 	if (hasLocalOwner == true) {
