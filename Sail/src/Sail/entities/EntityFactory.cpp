@@ -18,9 +18,12 @@
 Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
-	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
-	
+	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("Torch.fbx", shader);
+	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
+	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
+	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
+
+
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
 	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
@@ -37,7 +40,7 @@ Entity::SPtr EntityFactory::CreateCandle(const std::string& name, const glm::vec
 	candle->addComponent<CullingComponent>();
 	PointLight pl;
 	pl.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .37f, lightPos.z));
+	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .5f, lightPos.z));
 	pl.setAttenuation(0.f, 0.f, 0.25f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
@@ -70,7 +73,7 @@ void EntityFactory::AddWeaponAndCandleToPlayer(Entity::SPtr& player, const size_
 			c->addComponent<CandleComponent>();
 			PointLight pl;
 			pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
-			pl.setPosition(glm::vec3(0, 0 + .37f, 0));
+			pl.setPosition(glm::vec3(0, 0 + .5f, 0));
 			pl.setAttenuation(0.f, 0.f, 0.2f);
 			pl.setIndex(lightIndex);
 			c->addComponent<LightComponent>(pl);
