@@ -3,7 +3,7 @@
 #include "Sail.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
-class PBRTestState : public State {
+class PBRTestState final : public State {
 public:
 	PBRTestState(StateStack& stack);
 	~PBRTestState();
@@ -11,7 +11,7 @@ public:
 	// Process input for the state
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 	// Updates the state - Runs every frame
 	virtual bool update(float dt, float alpha = 1.0f) override;
 	// Updates the state - Runs every tick
@@ -22,7 +22,7 @@ public:
 	virtual bool renderImgui(float dt) override;
 
 private:
-	bool onResize(WindowResizeEvent& event);
+	bool onResize(const WindowResizeEvent& event);
 
 private:
 	Application* m_app;
