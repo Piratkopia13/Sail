@@ -59,6 +59,7 @@ namespace Reg {
 	static CharClass CloseBracket("]");
 	static CharClass OpenCurlyBracket("{");
 	static CharClass CloseCurlyBracket("}");
+	static CharClass Colon(":");
 	static CharClass HexDigit("0123456789abcdefABCDEF");
 	static CharClass Alphanumeric("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	static CharClass TextCharacter("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -70,6 +71,7 @@ namespace Reg {
 
 	static Seq Hex({ &zeroChar, &xChar, &HexDigit, &HexStar});
 	static Seq Number({ &MinusStar, &Digit, &DigitStar });
+	static Seq PositiveNumber({ &Digit, &DigitStar });
 	static Seq DecimalNumber({ &MinusStar, &Digit, &DigitStar, &DotStar, &DigitStar });
 
 	static CharClass Whitespace(" ");
@@ -80,7 +82,8 @@ namespace Reg {
 	static Star TextCharacterStar(&TextCharacter);
 	static Seq TextString({ &TextCharacter, &TextCharacterStar });
 
-
+	static Seq SettingStatic({ &TextCharacterStar, &Equals, &PositiveNumber });
+	static Seq SettingDynamic({ &TextCharacterStar, &Equals, &DecimalNumber });
 	
 
 

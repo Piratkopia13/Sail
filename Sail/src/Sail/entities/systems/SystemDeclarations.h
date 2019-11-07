@@ -18,7 +18,7 @@ class EntityRemovalSystem;
 class GameInputSystem;
 class GUISubmitSystem;
 class GunSystem;
-class LevelGeneratorSystem;
+class LevelSystem;
 class LifeTimeSystem;
 class LightSystem;
 class LightListSystem;
@@ -34,6 +34,7 @@ class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
 class SpeedLimitSystem;
+class SprinklerSystem;
 class UpdateBoundingBoxSystem;
 class SpotLightSystem;
 
@@ -54,7 +55,7 @@ struct Systems {
 	GameInputSystem* gameInputSystem = nullptr;
 	GUISubmitSystem* guiSubmitSystem = nullptr;
 	GunSystem* gunSystem = nullptr;
-	LevelGeneratorSystem* levelGeneratorSystem = nullptr;
+	LevelSystem* levelSystem = nullptr;
 	LifeTimeSystem* lifeTimeSystem = nullptr;
 	LightSystem* lightSystem = nullptr;
 	LightListSystem* lightListSystem = nullptr;
@@ -71,5 +72,6 @@ struct Systems {
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
 	SpotLightSystem* spotLightSystem = nullptr;
+	SprinklerSystem* sprinklerSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 };
