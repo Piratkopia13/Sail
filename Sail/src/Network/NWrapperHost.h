@@ -3,6 +3,8 @@
 #include "NWrapper.h"
 #include <string>
 
+#include "Sail/netcode/NetcodeTypes.h"
+
 class NWrapperHost : public NWrapper {
 public:
 	NWrapperHost(Network* pNetwork) : NWrapper(pNetwork) {}
@@ -13,16 +15,15 @@ public:
 	void setLobbyName(std::string name);
 	void updateServerDescription();
 
+	void sendSerializedDataToClient(std::string data, Netcode::PlayerID playerID) override;
 private:
-	std::map<TCP_CONNECTION_ID, unsigned char> m_connectionsMap;
-	unsigned char m_IdDistribution = 0;
+	std::map<TCP_CONNECTION_ID, Netcode::PlayerID> m_connectionsMap;
+	Netcode::PlayerID m_IdDistribution = 0;
 	std::string m_lobbyName = "";
 	std::string m_serverDescription = "";
 
 	void sendChatMsg(std::string msg);
 
-
-	 
 	void playerJoined(TCP_CONNECTION_ID id);
 	void playerDisconnected(TCP_CONNECTION_ID id);
 	void playerReconnected(TCP_CONNECTION_ID id);

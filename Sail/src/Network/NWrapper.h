@@ -50,6 +50,7 @@ public:
 	virtual void sendChatMsg(std::string msg) = 0;
 	void sendSerializedDataAllClients(std::string data);
 	void sendSerializedDataToHost(std::string data);
+	virtual void sendSerializedDataToClient(std::string data, Netcode::PlayerID playerID) = 0;
 
 protected:
 	Network* m_network = nullptr;
