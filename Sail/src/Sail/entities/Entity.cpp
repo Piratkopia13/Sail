@@ -34,7 +34,8 @@ int Entity::getECSIndex() const {
 
 Entity::Entity(const std::string& name) 
 	: m_componentTypes(0x0),
-	m_name(name)
+	m_name(name),
+	m_parent(nullptr)
 {
 	m_id = s_id++;
 	m_ECSIndex = -1;
@@ -49,7 +50,11 @@ Entity::~Entity() {
 bool Entity::hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const {
 	return (m_componentTypes & componentTypes) == componentTypes;
 }
-
+#ifdef DEVELOPMENT
+const BaseComponent::Ptr* Entity::getComponents() const {
+	return m_components;
+}
+#endif
 Entity* Entity::getParent() {
 	return m_parent;
 }
@@ -74,7 +79,7 @@ void Entity::removeAllComponents() {
 	removeFromSystems();
 }
 
-void Entity::addChildEntity(Entity::SPtr child) {
+void Entity::addChildEntity(Entity* child) {
 	m_children.push_back(child);
 	child->setParent(this);
 
@@ -87,7 +92,7 @@ void Entity::addChildEntity(Entity::SPtr child) {
 	}
 }
 
-void Entity::removeChildEntity(Entity::SPtr toRemove) {
+void Entity::removeChildEntity(Entity* toRemove) {
 	auto child = std::find(m_children.begin(), m_children.end(), toRemove);
 	( *child )->setParent(nullptr);
 	if ( ( *child )->hasComponent<TransformComponent>() ) {
@@ -121,7 +126,7 @@ void Entity::removeDeleteAllChildren() {
 	m_children.clear();
 }
 
-std::vector<Entity::SPtr>& Entity::getChildEntities() {
+std::vector<Entity*>& Entity::getChildEntities() {
 	return m_children;
 }
 

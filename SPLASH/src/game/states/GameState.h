@@ -3,14 +3,13 @@
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
 #include "../events/NetworkDroppedEvent.h"
+#include "../events/NetworkSerializedPackageEvent.h"
+#include "../events/NetworkJoinedEvent.h"
+#include "../events/NetworkNameEvent.h"
+#include "../events/NetworkWelcomeEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
-class NetworkSerializedPackageEvent;
-class NetworkJoinedEvent;
-class NetworkNameEvent;
-class NetworkWelcomeEvent;
-
-class GameState : public State {
+class GameState final : public State {
 public:
 	GameState(StateStack& stack);
 	~GameState();
@@ -18,7 +17,7 @@ public:
 	// Process input for the state ||
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 	// Updates the state - Runs every frame
 	virtual bool update(float dt, float alpha = 1.0f) override;
 	// Updates the state - Runs every tick
@@ -34,14 +33,14 @@ private:
 	void initSystems(const unsigned char playerID);
 	void initConsole();
 
-	bool onResize(WindowResizeEvent& event);
-	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
-	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
-	bool onPlayerDropped(NetworkDroppedEvent& event);
-	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
-	bool onPlayerJoined(NetworkJoinedEvent& event);
-	bool onNameRequest(NetworkNameEvent& event);
-	bool onWelcome(NetworkWelcomeEvent& event);
+	bool onResize(const WindowResizeEvent& event);
+	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
+	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
+	bool onPlayerDropped(const NetworkDroppedEvent& event);
+	bool onPlayerCandleDeath(const PlayerCandleDeathEvent& event);
+	bool onPlayerJoined(const NetworkJoinedEvent& event);
+	bool onNameRequest(const NetworkNameEvent& event);
+	bool onWelcome(const NetworkWelcomeEvent& event);
 
 	void shutDownGameState();
 

@@ -1,4 +1,3 @@
-
 #include "Sail/../../Sail/src/Network/NetworkModule.hpp"
 #include "MenuState.h"
 
@@ -8,17 +7,15 @@
 #include "Network/NWrapperSingleton.h"
 #include "Network/NWrapper.h"
 
+#include "Sail/events/EventDispatcher.h"
 #include "Sail/../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
 
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include <string>
 
-
-
 MenuState::MenuState(StateStack& stack) 
 	: State(stack),
-	inputIP("")
-{
+	inputIP("") {
 	m_input = Input::GetInstance();
 	m_network = &NWrapperSingleton::getInstance();
 	m_app = Application::getInstance();
@@ -29,6 +26,8 @@ MenuState::MenuState(StateStack& stack)
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
+	
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
 
 MenuState::~MenuState() {
@@ -36,6 +35,8 @@ MenuState::~MenuState() {
 	
 	Utils::writeFileTrunc("res/data/localplayer.settings", NWrapperSingleton::getInstance().getMyPlayerName());
 	m_modelThread.get();
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
 
 bool MenuState::processInput(float dt) {
@@ -65,7 +66,6 @@ bool MenuState::renderImgui(float dt) {
 	//Keep
 	//ImGui::ShowDemoWindow();
 
-
 	static char buf[101] = "";
 	// Host
 	if(ImGui::Begin("Main Menu")) {
@@ -93,8 +93,8 @@ bool MenuState::renderImgui(float dt) {
 					if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
 						NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 					}
-
-					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0, false));
+					NWrapperSingleton::getInstance().stopUDP();
+					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0), false);
 
 					this->requestStackPop();
 					this->requestStackPush(States::Game);
@@ -246,8 +246,11 @@ bool MenuState::renderImgui(float dt) {
 	return false;
 }
 
-bool MenuState::onEvent(Event& event) {
-	EventHandler::dispatch<NetworkLanHostFoundEvent>(event, SAIL_BIND_EVENT(&MenuState::onLanHostFound));
+bool MenuState::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
+	default: break;
+	}
 
 	return false;
 }
@@ -284,6 +287,7 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadModel("Clutter/SmallObject.fbx");
 	rm->loadModel("Clutter/MediumObject.fbx");
 	rm->loadModel("Clutter/LargeObject.fbx");
+	rm->loadModel("Torch.fbx");
 
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
@@ -337,18 +341,25 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadTexture("pbr/Clutter/SO_NM.tga");
 	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
 
+	rm->loadTexture("pbr/Clutter/Saftblandare_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");
+	rm->loadTexture("pbr/Clutter/Saftblandare_Albedo.tga");
+
+	rm->loadTexture("pbr/Torch/Torch_MRAO.tga");
+	rm->loadTexture("pbr/Torch/Torch_NM.tga");
+	rm->loadTexture("pbr/Torch/Torch_Albedo.tga");
 
 	return false;
 }
 
-bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
+bool MenuState::onLanHostFound(const NetworkLanHostFoundEvent& event) {
 	// Get IP (as int) then convert into char*
-	ULONG ip_as_int = event.getIp();
+	ULONG ip_as_int = event.ip;
 	Network::ip_int_to_ip_string(ip_as_int, m_ipBuffer, m_ipBufferSize);
 	std::string ip_as_string(m_ipBuffer);
 
 	// Get Port as well
-	USHORT hostPort = event.getHostPort();
+	USHORT hostPort = event.hostPort;
 	ip_as_string += ":";
 	ip_as_string.append(std::to_string(hostPort));
 
@@ -357,14 +368,14 @@ bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
 	for (auto& lobby : m_foundLobbies) {
 		if (lobby.ip == ip_as_string) {
 			alreadyExists = true;
-			lobby.description = event.getDesc();
+			lobby.description = event.desc;
 			lobby.resetDuration();
 		}
 	}
 	// If not...
 	if (alreadyExists == false) {
 		// ...log it.
-		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.getDesc() });
+		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.desc });
 	}
 
 	return false;

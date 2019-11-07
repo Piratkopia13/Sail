@@ -2,6 +2,7 @@
 #include "NWrapperClient.h"
 #include "Network/NetworkModule.hpp"
 
+#include "Sail/events/EventDispatcher.h"
 
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
@@ -68,7 +69,7 @@ void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
 void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id_) {
 	// My connection to host was lost :(
 	
-	m_app->dispatchEvent(NetworkDroppedEvent());
+	EventDispatcher::Instance().emit(NetworkDroppedEvent());
 }
 
 void NWrapperClient::playerReconnected(TCP_CONNECTION_ID id) {
@@ -99,7 +100,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		processedMessage = processChatMessage((std::string)nEvent.data->Message.rawMsg);
 
 		// Dispatch Message to lobby.
-		Application::getInstance()->dispatchEvent(NetworkChatEvent(processedMessage));
+		EventDispatcher::Instance().emit(NetworkChatEvent(processedMessage));
 
 		break;
 
@@ -109,7 +110,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		userID = this->decompressDCMessage(std::string(nEvent.data->Message.rawMsg));
 
 		// Dispatch the ID to lobby
-		Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(userID));
+		EventDispatcher::Instance().emit(NetworkDisconnectEvent(userID));
 		break;
 
 	case 'j':
@@ -121,7 +122,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		userID = reinterpret_cast<int&>(charAsInt);
 
 		// Dispatch ID to lobby where the ID will be used to join the player
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ userID, "who?" }));
+		EventDispatcher::Instance().emit(NetworkJoinedEvent(Player{ userID, "who?" }));
 		break;
 
 	case '?':
@@ -130,7 +131,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		id_question = nEvent.data->Message.rawMsg[1];
 
 		// Dispatch ID to lobby where my chosen name will be replied back.
-		Application::getInstance()->dispatchEvent(NetworkNameEvent(std::to_string(id_question)));
+		EventDispatcher::Instance().emit(NetworkNameEvent(std::to_string(id_question)));
 		break;
 
 	case 't':
@@ -141,7 +142,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	
 		char seed = nEvent.data->Message.rawMsg[2];
 		NWrapperSingleton::getInstance().setSeed(seed);
-		Application::getInstance()->dispatchEvent(NetworkStartGameEvent(isSpectator));
+		EventDispatcher::Instance().emit(NetworkStartGameEvent(isSpectator));
 	}
 	break;
 	case 'w':
@@ -160,7 +161,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 
 		// Dispatch the list up to the lobby.
 		if (playerList.size() > 0) {
-			Application::getInstance()->dispatchEvent(NetworkWelcomeEvent(playerList));
+			EventDispatcher::Instance().emit(NetworkWelcomeEvent(playerList));
 		}
 
 		break;
@@ -169,11 +170,11 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		dataString.erase(0, 1); // remove the s
 
 		// Send the serialized stringData as an event to the networkSystem which parses it.
-		Application::getInstance()->dispatchEvent(NetworkSerializedPackageEvent(dataString));
+		EventDispatcher::Instance().emit(NetworkSerializedPackageEvent(dataString));
 		break;
 
 	case 'z':
-		Application::getInstance()->dispatchEvent(NetworkBackToLobby());
+		EventDispatcher::Instance().emit(NetworkBackToLobby());
 		break;
 
 	default:

@@ -137,6 +137,8 @@ public:
 	*/
 	void startUDP();
 
+
+	size_t averagePacketSizeSinceLastCheck();
 private:
 
 	enum UDP_DATA_PACKAGE_TYPE : char
@@ -202,6 +204,9 @@ private:
 	int m_pend = 0;
 	std::mutex m_mutex_packages;
 
+	size_t m_nrOfPacketsSentSinceLast = 0;
+	size_t m_sizeOfPacketsSentSinceLast = 0;
+private:
 	bool startUDPSocket(unsigned short port);
 	void listenForUDP();
 	bool udpSend(sockaddr* addr, char* msg, int msgSize);
@@ -223,6 +228,6 @@ private:
 
 		Host connection requests is handled in WaitForNewConnections()
 	*/
-	void listen(const Connection* conn);//Rename this function
+	void listen(Connection* conn);//Rename this function
 };
 

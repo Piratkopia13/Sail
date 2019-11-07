@@ -2,6 +2,8 @@
 #include "NetworkModule.hpp"
 #include <random>
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
+#include "Sail/utils/Utils.h"
+
 
 //#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
@@ -201,6 +203,14 @@ bool Network::join(const char* IP_adress, unsigned short hostport)
 
 bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverID)
 {
+	m_nrOfPacketsSentSinceLast++;
+	m_sizeOfPacketsSentSinceLast += size;
+
+	if (size > 1000) {
+		Logger::Log("Packet size: " + std::to_string(size));
+	}
+
+
 	if (receiverID == -1 && m_initializedStatus == INITIALIZED_STATUS::IS_SERVER) {
 		int success = 0;
 		Connection* conn = nullptr;
@@ -579,6 +589,16 @@ void Network::startUDP() {
 	startUDPSocket(m_udp_localbroadcastport);
 }
 
+size_t Network::averagePacketSizeSinceLastCheck() {
+	size_t averageSize = 0;
+	if (m_nrOfPacketsSentSinceLast > 0) {
+		averageSize = m_sizeOfPacketsSentSinceLast / m_nrOfPacketsSentSinceLast;
+		m_sizeOfPacketsSentSinceLast = 0;
+		m_nrOfPacketsSentSinceLast = 0;
+	}
+	return averageSize;
+}
+
 void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
 	// delete previous message if there is one
@@ -650,18 +670,18 @@ void Network::waitForNewConnections()
 	}
 }
 
-void Network::listen(const Connection* conn)
+void Network::listen(Connection* conn)
 {
 	NetworkEvent nEvent;
 	nEvent.clientID = conn->id;
 	nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED;
 	addNetworkEvent(nEvent, 0);
 
-	bool connectionIsClosed = false;
+	//bool connectionIsClosed = false;
 	char incomingPackageSize[MSG_SIZE_STR_LEN];
 	int bytesToReceive = 0;
 
-	while (!connectionIsClosed && !m_shutdown) {
+	while (conn->isConnected && !m_shutdown) {
 		ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
 
 		// Find out how large the incoming packet is
@@ -689,7 +709,7 @@ void Network::listen(const Connection* conn)
 #else
 		case SOCKET_ERROR:
 #endif // DEBUG_NETWORK
-			connectionIsClosed = true;
+			conn->isConnected = false;
 			nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_CLOSED;
 			addNetworkEvent(nEvent, 0);
 			break;

@@ -93,7 +93,7 @@ public:
 	virtual unsigned int getMemoryUsage() const override;
 	virtual unsigned int getMemoryBudget() const override;
 	virtual void toggleFullscreen() override;
-	virtual bool onResize(WindowResizeEvent& event) override;
+	virtual bool onResize(const WindowResizeEvent& event) override;
 
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;

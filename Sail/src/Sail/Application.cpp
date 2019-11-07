@@ -8,6 +8,7 @@
 #include "TimeSettings.h"
 #include "entities/ECS.h"
 #include "entities/systems/Systems.h"
+#include "events/EventDispatcher.h"
 
 
 
@@ -67,7 +68,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
 	ECS::Instance()->createSystem<MetaballSubmitSystem>();
 	ECS::Instance()->createSystem<ModelSubmitSystem>();
-	ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
 	ECS::Instance()->createSystem<GUISubmitSystem>();
 
 
@@ -116,7 +116,7 @@ int Application::startGameLoop() {
 			DispatchMessage(&msg);
 
 			if (msg.message == WM_KEYDOWN) {
-				dispatchEvent(TextInputEvent(msg));
+				EventDispatcher::Instance().emit(TextInputEvent(msg));
 			}
 		
 		} else {
@@ -126,7 +126,7 @@ int Application::startGameLoop() {
 				UINT newHeight = m_window->getWindowHeight();
 				bool isMinimized = m_window->isMinimized();
 				// Send resize event
-				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
+				EventDispatcher::Instance().emit(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
 
 			// Get delta time from last frame
@@ -175,11 +175,11 @@ int Application::startGameLoop() {
 			while (accumulator >= TIMESTEP) {
 #endif
 
-			accumulator -= TIMESTEP;
+				accumulator -= TIMESTEP;
 
-			fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
-			fixedUpdate(TIMESTEP);
-			m_fixedUpdateDelta = m_timer.getTimeSince<float>(startTime) - fixedUpdateStartTime;
+				fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
+				fixedUpdate(TIMESTEP);
+				m_fixedUpdateDelta = m_timer.getTimeSince<float>(startTime) - fixedUpdateStartTime;
 
 
 #ifndef PERFORMANCE_SPEED_TEST
@@ -221,14 +221,6 @@ Application* Application::getInstance() {
 	if (!s_instance)
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
 	return s_instance;
-}
-
-void Application::dispatchEvent(Event& event) {
-	m_api->onEvent(event);
-	Input::GetInstance()->onEvent(event);
-
-	m_rendererWrapper.onEvent(event);
-	
 }
 
 GraphicsAPI* const Application::getAPI() {

@@ -46,26 +46,28 @@ void ProjectileSystem::update(float dt) {
 				}
 			}
 
-// To prevent a crash when shooting bot candles in the performance test
-#ifndef _PERFORMANCE_TEST
-			//If projectile collided with a candle
-			if (collision.entity->hasComponent<CandleComponent>()) {
+			//If projectile collided with a candle and the local player owned the projectile
+			if (collision.entity->hasComponent<CandleComponent>() && e->hasComponent<LocalOwnerComponent>()) {
+				CandleComponent* cc = collision.entity->getComponent<CandleComponent>();
+				
 				// If that candle isn't our own
-				collision.entity->getComponent<CandleComponent>();
-				if (!(collision.entity->hasComponent<LocalOwnerComponent>() && collision.entity->getComponent<CandleComponent>()->isCarried)) {
-					//If local player owned the projectile
-					if (e->hasComponent<LocalOwnerComponent>()) {
-						//Inform the host about the hit.( in case you are host this will broadcast to everyone else)
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::WATER_HIT_PLAYER,
-							SAIL_NEW Netcode::MessageWaterHitPlayer{
-								collision.entity->getParent()->getComponent<NetworkReceiverComponent>()->m_id
-							}
-						);
+				if (!(collision.entity->hasComponent<LocalOwnerComponent>() && cc->isCarried) && !cc->wasHitByMeThisTick) {
+					cc->wasHitByMeThisTick = true;
+#ifdef DEVELOPMENT
+					if (!collision.entity->getParent() || !collision.entity->getParent()->hasComponent<NetworkReceiverComponent>()) {
+						Logger::Warning("Projectile hit player who doesn't have a NetworkReceiverComponent\n");
+						break;
 					}
+#endif
+					//Inform the host about the hit.( in case you are host this will broadcast to everyone else)
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::WATER_HIT_PLAYER,
+						SAIL_NEW Netcode::MessageWaterHitPlayer{
+							collision.entity->getParent()->getComponent<NetworkReceiverComponent>()->m_id
+						}
+					);
 				}
 			}
-#endif
 
 			if (Utils::rnd() < 0.5) {
 				e->queueDestruction();
