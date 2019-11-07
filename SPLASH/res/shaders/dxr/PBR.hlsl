@@ -161,7 +161,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
         ambient = (kD * diffuse + specular) * ao; 
 
-        float shadowSpecular = payload.shadowColor * (F * envBRDF.x + envBRDF.y);
+        float shadowSpecular = payload.shadowColor * (F * envBRDF.x + envBRDF.y).x;
         recursiveShadowAmount = shadowSpecular * ao;
 	} else {
 		// Reflection ray, return color from only direct light and irradiance

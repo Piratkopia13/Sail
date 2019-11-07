@@ -242,7 +242,7 @@ void DXRUtils::ShaderTableBuilder::addDescriptor(UINT64& descriptor, UINT instan
 	auto ptr = static_cast<char*>(m_data[instance]) + m_dataOffsets[instance];
 	*(UINT64*)ptr = descriptor;
 	m_dataOffsets[instance] += sizeof(descriptor);
-	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance && "DXRUtils::ShaderTableBuilder::addDescriptor");
+	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance && "DXRUtils::ShaderTableBuilder::addDescriptor bytesPerInstance is too small!");
 }
 
 void DXRUtils::ShaderTableBuilder::addConstants(UINT numConstants, float* constants, UINT instance) {

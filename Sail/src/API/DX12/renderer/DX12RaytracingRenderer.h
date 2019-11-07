@@ -39,6 +39,7 @@ private:
 	DX12API::Command m_commandCompute;
 
 	DXRBase::BounceOutput m_outputTextures;
+	std::unique_ptr<DX12RenderableTexture> m_shadowsLastFrame;
 
 	DX12ComputeShaderDispatcher m_computeShaderDispatcher;
 

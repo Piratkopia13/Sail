@@ -7,7 +7,6 @@
 #include "../shader/DX12ConstantBuffer.h"
 #include "../shader/DX12StructuredBuffer.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
-#include "API/DX12/renderer/DX12RaytracingRenderer.h"
 
 // Include defines shared with dxr shaders
 #include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
@@ -19,10 +18,10 @@ public:
 		float distToCamera;
 	};
 	struct BounceOutput {
-		std::unique_ptr<DX12RenderableTexture> albedoShadow; // RGBA where A is shadows
+		std::unique_ptr<DX12RenderableTexture> albedo; // RGB
 		std::unique_ptr<DX12RenderableTexture> normal; // RGB
 		std::unique_ptr<DX12RenderableTexture> metalnessRoughnessAO; // RGB
-		std::unique_ptr<DX12RenderableTexture> lastFrameShadowTexture; // RG - first and second bounce shadows
+		std::unique_ptr<DX12RenderableTexture> shadows; // RG - first and second bounce shadows
 	};
 
 	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
@@ -35,7 +34,7 @@ public:
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();
-	void dispatch(BounceOutput& output, ID3D12GraphicsCommandList4* cmdList);
+	void dispatch(BounceOutput& output, DX12RenderableTexture* shadowsLastFrameInput, ID3D12GraphicsCommandList4* cmdList);
 
 	void resetWater();
 	void reloadShaders();
@@ -125,12 +124,18 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle[2];
 
-	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavCPUHandles[2];
-	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputShadowTextureUavCPUHandles[2];
-	D3D12_CPU_DESCRIPTOR_HANDLE m_rtInputHistoryTextureUavCPUHandles[2];
-	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandles[2];
-	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputShadowTextureUavGPUHandles[2];
-	D3D12_GPU_DESCRIPTOR_HANDLE m_rtInputHistoryTextureUavGPUHandles[2];
+	// DXR shader outputs
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputAlbedoUavCPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputAlbedoUavGPUHandles[2];
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputNormalsUavCPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputNormalsUavGPUHandles[2];
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputMetalnessRoughnessAoUavCPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputMetalnessRoughnessAoUavGPUHandles[2];
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputShadowsUavCPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputShadowsUavGPUHandles[2];
+	// DXR shader inputs
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtInputShadowsLastFrameUavCPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtInputShadowsLastFrameUavGPUHandles[2];
 
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtBrdfLUTGPUHandle;
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;

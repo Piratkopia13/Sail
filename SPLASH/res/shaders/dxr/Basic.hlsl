@@ -8,7 +8,7 @@ Texture2D<float4> sys_brdfLUT 						: register(t5);
 Texture2D<float4> sys_inTex_normals 				: register(t10);
 Texture2D<float4> sys_inTex_albedo 					: register(t11);
 Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12);
-Texture2D<float4> sys_inTex_motionVectors		: register(t13);
+Texture2D<float4> sys_inTex_motionVectors			: register(t13);
 Texture2D<float>  sys_inTex_depth 					: register(t14);
 
 // Decal textures
@@ -16,9 +16,11 @@ Texture2D<float4> decal_texAlbedo 					: register(t17);
 Texture2D<float4> decal_texNormal 					: register(t18);
 Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19);
 
-RWTexture2D<float4> lOutput : register(u0);
-RWTexture2D<float4> lOutputShadows : register(u1);
-Texture2D<float4> lInputHistory : register(t20);
+RWTexture2D<float4> lOutputAlbedo		 		: register(u0);		// RGB
+RWTexture2D<float4> lOutputNormals 				: register(u1); 	// XYZ
+RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u2); 	// Metalness/Roughness/AO
+RWTexture2D<float2> lOutputShadows 				: register(u3); 	// Shadows first bounce/shadows second bounce
+Texture2D<float2> 	lInputShadowsLastFrame 		: register(t20); 	// last frame Shadows first bounce/last frame shadows second bounce
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
@@ -106,7 +108,7 @@ void rayGen() {
 	payload.color = float4(0,0,0,0);
 	if (worldNormal.x == -1 && worldNormal.y == -1) {
 		// Bounding boxes dont need shading
-		lOutput[launchIndex] = float4(albedoColor, 1.0f);
+		lOutputAlbedo[launchIndex] = float4(albedoColor, 1.0f);
 		return;
 	} else {
 		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
@@ -152,30 +154,29 @@ void rayGen() {
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 	// float2 reprojectedTexCoord = screenTexCoord;
 	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
-	float cLast = lInputHistory.SampleLevel(motionSS, reprojectedTexCoord, 0).r;
+	float cLast = lInputShadowsLastFrame.SampleLevel(motionSS, reprojectedTexCoord, 0).r;
 	// float cLast = 0.0f;
 	lOutputShadows[launchIndex] = alpha * (1.0f - payload.shadowColor) + (1.0f - alpha) * cLast;
 	// lOutputShadows[launchIndex] = 1.0f - payload.shadowColor;
-	lOutputShadows[launchIndex].a = 1.f;
 
 // DEBUG
-	// lOutput[launchIndex].rg = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg * 2.f - 1.f;
-	// lOutput[launchIndex].rg *= 20.f;
-	// lOutput[launchIndex].b = 0.f;
-	// lOutput[launchIndex].a = 1.0;
-	// lOutput[launchIndex] = lOutputShadows[launchIndex];
+	// lOutputAlbedo[launchIndex].rg = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg * 2.f - 1.f;
+	// lOutputAlbedo[launchIndex].rg *= 20.f;
+	// lOutputAlbedo[launchIndex].b = 0.f;
+	// lOutputAlbedo[launchIndex].a = 1.0;
+	// lOutputAlbedo[launchIndex] = lOutputShadows[launchIndex];
 	// return;
 
 	if (metaballDepth <= linearDepth) {
-		lOutput[launchIndex] = payload_metaball.color * lOutputShadows[launchIndex];
+		lOutputAlbedo[launchIndex] = payload_metaball.color * lOutputShadows[launchIndex].x;
 	} else {
-		lOutput[launchIndex] = payload.color * lOutputShadows[launchIndex];
+		lOutputAlbedo[launchIndex] = payload.color * lOutputShadows[launchIndex].x;
 
 		// float4 totDecalColour = 0.0f;
 		// for (uint i = 0; i < CB_SceneData.nDecals; i++) {
 		// 	totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
 		// 	if (!all(totDecalColour == 0.0f)) {
-		// 		lOutput[launchIndex] = totDecalColour;
+		// 		lOutputAlbedo[launchIndex] = totDecalColour;
 		// 		break;
 		// 	}
 		// }
@@ -206,7 +207,7 @@ void rayGen() {
 	payload.color = float4(0, 0, 0, 0);
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 
-	lOutput[launchIndex] = payload.color;
+	lOutputAlbedo[launchIndex] = payload.color;
 #endif
 }
 
