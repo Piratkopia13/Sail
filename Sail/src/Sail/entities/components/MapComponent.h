@@ -69,13 +69,13 @@ public:
 	const int getAreaType(float posX, float posY) {
 
 		AreaType returnValue;
+		posX += (0.5f * static_cast<float>(tileSize));
+		posY += (0.5f * static_cast<float>(tileSize));
+		posX /= static_cast<float>(tileSize);
+		posY /= static_cast<float>(tileSize);
 
-		posX += (0.5 * tileSize);
-		posY += (0.5 * tileSize);
-		posX /= tileSize;
-		posY /= tileSize;
 
-		int roomValue = tileArr[static_cast<int>(posX)][static_cast<int>(posY)][1];
+		int roomValue = getRoomID(static_cast<int>(posX), static_cast<int>(posY));
 
 		if (roomValue == 0) {
 			returnValue = AreaType::CORRIDOR;
@@ -85,6 +85,10 @@ public:
 		}
 
 		return static_cast<int>(returnValue);
+	}
+	
+	const int getRoomID(int posX, int posY) {
+		return tileArr[posX][posY][1];
 	}
 
 #ifdef _PERFORMANCE_TEST
