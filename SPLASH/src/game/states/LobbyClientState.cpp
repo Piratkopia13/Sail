@@ -142,7 +142,7 @@ bool LobbyClientState::onDropped(const NetworkDroppedEvent& event) {
 bool LobbyClientState::onStartGame(const NetworkStartGameEvent& event) {
 	// Queue changes to the stack while maintaining the connection
 
-	if (event.getEnterAsSpectator() || m_spectator) {
+	if (event.isSpectator || m_spectator) {
 		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, true));
 	}
 	else {

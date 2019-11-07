@@ -518,18 +518,11 @@ bool GameState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
 	case Event::Type::PLAYER_CANDLE_DEATH:				onPlayerCandleDeath((const PlayerCandleDeathEvent&)event); break;
+	case Event::Type::NETWORK_JOINED:					onPlayerJoined((const NetworkJoinedEvent&)event); break;
+	case Event::Type::NETWORK_NAME:						onNameRequest((const NetworkNameEvent&)event); break;
+	case Event::Type::NETWORK_WELCOME:					onWelcome((const NetworkWelcomeEvent&)event); break;
 	default: break;
 	}
-
-	//EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
-	//EventHandler::dispatch<NetworkSerializedPackageEvent>(event, SAIL_BIND_EVENT(&GameState::onNetworkSerializedPackageEvent));
-	//EventHandler::dispatch<NetworkDisconnectEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDisconnect));
-	//EventHandler::dispatch<NetworkDroppedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerDropped));
-	//EventHandler::dispatch<PlayerCandleDeathEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerCandleDeath));
-	//EventHandler::dispatch<NetworkJoinedEvent>(event, SAIL_BIND_EVENT(&GameState::onPlayerJoined));
-	//EventHandler::dispatch<NetworkNameEvent>(event, SAIL_BIND_EVENT(&GameState::onNameRequest));
-	//EventHandler::dispatch<NetworkWelcomeEvent>(event, SAIL_BIND_EVENT(&GameState::onWelcome));
-
 
 	return true;
 }
@@ -572,9 +565,9 @@ bool GameState::onPlayerCandleDeath(const PlayerCandleDeathEvent& event) {
 	return true;
 }
 
-bool GameState::onPlayerJoined(NetworkJoinedEvent& event) {
+bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	NWrapperSingleton* network = &NWrapperSingleton::getInstance();
-	network->playerJoined(event.getPlayer());
+	network->playerJoined(event.player);
 
 	if (network->isHost()) {
 		char seed = (char)network->getSeed();
@@ -585,11 +578,11 @@ bool GameState::onPlayerJoined(NetworkJoinedEvent& event) {
 	return true;
 }
 
-bool GameState::onNameRequest(NetworkNameEvent& event) {
+bool GameState::onNameRequest(const NetworkNameEvent& event) {
 	NWrapperSingleton* network = &NWrapperSingleton::getInstance();
 	if (network->isHost()) {	// Host
 		// Parse the message | ?12:DANIEL
-		std::string message = event.getRepliedName();
+		std::string message = event.repliedName;
 		std::string id_string = "";
 		unsigned char id_int = 0;
 
@@ -639,14 +632,14 @@ bool GameState::onNameRequest(NetworkNameEvent& event) {
 	} 
 	else {	// Client
 		// Save the ID which the host has blessed us with
-		std::string temp = event.getRepliedName();	// And replace our current HOSTID
+		std::string temp = event.repliedName;	// And replace our current HOSTID
 		int newId = std::stoi(temp);					//
 		NWrapperSingleton::getInstance().getMyPlayer().id = newId;
 		NWrapperSingleton::getInstance().playerJoined(Player{ 0, NWrapperSingleton::getInstance().getMyPlayerName().c_str() });
 
 		// Append :NAME onto ?ID --> ?ID:NAME and answer the host
 		std::string message = "?";
-		message += event.getRepliedName();
+		message += event.repliedName;
 		message += ":";
 		message += NWrapperSingleton::getInstance().getMyPlayerName().c_str();
 		message += ":";
@@ -656,9 +649,9 @@ bool GameState::onNameRequest(NetworkNameEvent& event) {
 	return false;
 }
 
-bool GameState::onWelcome(NetworkWelcomeEvent& event) {
+bool GameState::onWelcome(const NetworkWelcomeEvent& event) {
 	// Update local list of players.
-	std::list<Player>& list = event.getListOfPlayers();
+	const std::list<Player>& list = event.playerList;
 	if (list.size() >= 2) {
 		// Clean local list of players.
 		NWrapperSingleton::getInstance().resetPlayerList();

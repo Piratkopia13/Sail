@@ -179,7 +179,7 @@ Entity::SPtr EntityFactory::CreateMySpectator(Netcode::PlayerID playerID, size_t
 	mySpectator->addComponent<SpeedLimitComponent>();
 	mySpectator->addComponent<BoundingBoxComponent>(nullptr);
 	mySpectator->addComponent<AudioComponent>();
-	mySpectator->addComponent<NetworkSenderComponent>(Netcode::MessageType::CREATE_NETWORKED_ENTITY, Netcode::EntityType::PLAYER_ENTITY, playerID);
+	mySpectator->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerID, Netcode::MessageType::CREATE_NETWORKED_PLAYER);
 	mySpectator->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::ANIMATION);
 	Netcode::ComponentID netComponentID = mySpectator->getComponent<NetworkSenderComponent>()->m_id;
 	mySpectator->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
