@@ -48,23 +48,26 @@ private:
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation);
 	void setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime);
+	void setCandleHealth(Netcode::ComponentID candleId, float health);
+	void extinguishCandle(Netcode::ComponentID candleId, Netcode::PlayerID shooterID);
 	void playerJumped(Netcode::ComponentID id);
 	void playerLanded(Netcode::ComponentID id);
-	void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId);
 	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID ownerID);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
-	void igniteCandle(Netcode::ComponentID candleOwnerID);
+	void igniteCandle(Netcode::ComponentID candleID);
 
 	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 
-	virtual void endMatch() = 0;			// Start end timer for host
-	virtual void endMatchAfterTimer(float dt) = 0;	// Made for the host to quit the game after a set time
-	virtual void mergeHostsStats() = 0;		// Host adds its data to global statistics before waiting for clients
+	virtual void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId) = 0;
+	virtual void endMatch() = 0;                   // Start end timer for host
+	virtual void endMatchAfterTimer(float dt) = 0; // Made for the host to quit the game after a set time
+	virtual void mergeHostsStats() = 0;            // Host adds its data to global statistics before waiting for clients
 	virtual void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) = 0;
+
 	void backToLobby();
 
 	void runningMetalStart(Netcode::ComponentID id);

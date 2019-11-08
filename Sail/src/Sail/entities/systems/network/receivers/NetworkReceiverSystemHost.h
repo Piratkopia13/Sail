@@ -20,5 +20,8 @@ public:
 	void mergeHostsStats();
 
 private:
+	void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) override;
+
+
 	bool m_startEndGameTimer = false;
 };

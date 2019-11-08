@@ -114,7 +114,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 	m_prevNumberOfParticles[context->getSwapIndex()] = glm::min(m_numberOfParticles, (int) (m_outputVertexBufferSize / 6));
 
-	Logger::Log(std::to_string(m_prevNumberOfParticles[context->getSwapIndex()]));
+	//Logger::Log(std::to_string(m_prevNumberOfParticles[context->getSwapIndex()]));
 
 	m_newEmitters[context->getSwapIndex()].clear();
 }
