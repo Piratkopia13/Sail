@@ -242,7 +242,7 @@ bool MenuState::renderImgui(float dt) {
 		std::string progress = "Models:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/30.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(30)).c_str());
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/31.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(31)).c_str());
 
 		progress = "Textures:";
 		ImGui::Text(progress.c_str());

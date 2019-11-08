@@ -82,6 +82,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("WaterPistol.fbx");
 	rm->loadModel("boundingBox.fbx");
 	rm->loadModel("cubeWidth1.fbx");
+	rm->loadModel("Clutter/Microscope.fbx");
 
 
 	//LEAVE THIS FOR A MULTITHREADED FUTURE
@@ -210,6 +211,10 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Clutter/Notepad_Albedo.tga");
 	rm->loadTexture("pbr/Clutter/Notepad_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/Notepad_NM.tga");
+
+	rm->loadTexture("pbr/Clutter/Microscope_Albedo.tga");
+	rm->loadTexture("pbr/Clutter/Microscope_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Microscope_NM.tga");
 
 	return false;
 }

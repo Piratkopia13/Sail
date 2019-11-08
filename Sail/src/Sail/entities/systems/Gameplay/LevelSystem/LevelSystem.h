@@ -48,6 +48,7 @@ enum ClutterModel {
 	BOOKS2,
 	SCREEN,
 	NOTEPAD,
+	MICROSCOPE,
 	NUMBOFCLUTTER
 };
 
