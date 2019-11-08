@@ -294,6 +294,7 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadModel("Clutter/SquareBox.fbx");
 	rm->loadModel("Clutter/Books1.fbx");
 	rm->loadModel("Clutter/Books2.fbx");
+	rm->loadModel("Clutter/Screen.fbx");
 
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
@@ -375,6 +376,8 @@ bool MenuState::loadModels(Application* app) {
 	rm->loadTexture("pbr/Clutter/MediumBox_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/MediumBox_NM.tga");
 	rm->loadTexture("pbr/Clutter/MediumBox_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/Screen_Albedo.tga");
 
 
 	return false;

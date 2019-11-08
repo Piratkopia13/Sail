@@ -1047,6 +1047,12 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cBooks2->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
 		cBooks2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Book2_Albedo.tga");
 
+		Model* cScreen = &m_app->getResourceManager().getModel("Clutter/Screen.fbx", shader);
+		//cScreen->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Book_MRAO.tga");
+		//cScreen->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
+		cScreen->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Screen_Albedo.tga");
+
+
 		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
 		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Saftblandare_MRAO.tga");
 		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Saftblandare_NM.tga");
@@ -1068,7 +1074,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels.resize(ClutterModel::NUMBOFCLUTTER);
 		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
 		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
-		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
+		clutterModels[ClutterModel::CLUTTER_SO] = cScreen;
 		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
 		clutterModels[ClutterModel::TABLE] = cTable;
 		clutterModels[ClutterModel::BOXES] = cBoxes;

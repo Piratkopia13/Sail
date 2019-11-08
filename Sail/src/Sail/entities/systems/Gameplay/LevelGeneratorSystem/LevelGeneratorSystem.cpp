@@ -1516,7 +1516,7 @@ void LevelGeneratorSystem::addClutterModel(const std::vector<Model*>& clutterMod
 		while (map->smallClutter.size() > 0) {
 			Clutter clut = map->smallClutter.front();
 			map->smallClutter.pop();
-			EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(0.1f, 1, 0.1f));
+			EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1.f, 1, 1.f));
 		}
 		for (int i = 0; i < map->numberOfRooms; i++) {
 			Rect room = map->matched.front();
