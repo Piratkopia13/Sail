@@ -87,7 +87,7 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 							ImGui::Indent(16.0f);
 							ptr->imguiRender(&selectedEntity);
 							if (selectedEntity != oldSelected) {
-								Logger::Log("switched");
+								SAIL_LOG("switched");
 								ImGui::Unindent(16.0f);
 								ImGui::EndGroup();
 								ImGui::EndChild();

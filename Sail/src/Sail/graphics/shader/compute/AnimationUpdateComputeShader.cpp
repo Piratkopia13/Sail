@@ -6,12 +6,12 @@ const Shader::ComputeSettings* AnimationUpdateComputeShader::getComputeSettings(
 }
 
 std::pair<std::string, void*> AnimationUpdateComputeShader::getComputeInputForIndex(Shader::ComputeShaderInput& input, unsigned int index) {
-	Logger::Error("This shader has no compute inputs");
+	SAIL_LOG_ERROR("This shader has no compute inputs");
 	return { "", nullptr };
 }
 
 RenderableTexture* AnimationUpdateComputeShader::getComputeOutputForIndex(Shader::ComputeShaderOutput& output, unsigned int index) {
-	Logger::Error("This shader has no compute outputs");
+	SAIL_LOG_ERROR("This shader has no compute outputs");
 	return nullptr;
 }
 

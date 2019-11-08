@@ -88,6 +88,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
+	myPlayer->addComponent<SprintingComponent>();
 
 	//For testing, add particle emitter to player.
 	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
@@ -104,6 +105,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	for (Entity* c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
 			gunNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, playerID)->m_id;
+			c->addComponent<NetworkReceiverComponent>(gunNetID, Netcode::EntityType::GUN_ENTITY);
 			//leave this for now
 			//c->addComponent<GunComponent>();]
 			c->addComponent<RealTimeComponent>(); // The player's gun is updated each frame
@@ -112,13 +114,14 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 		// Add a localOwnerComponent to our candle so that we can differentiate it from other candles
 		if (c->hasComponent<CandleComponent>()) {
 			candleNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, playerID)->m_id;
+			c->addComponent<NetworkReceiverComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
 		}
 	}
 
 	// For debugging
-	Logger::Log("My netcompID: " + std::to_string(netComponentID));
+	SAIL_LOG("My netcompID: " + std::to_string(netComponentID));
 
 	// Tell other players to create my character
 	NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -307,6 +310,12 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
+
+	//===REMOVE THIS. THIS IS ONLY TO DEMONSTRATE TEAM COLORS. TEAM COLORS SHOULD NOT BE ON ALL MAP OBJECTS===
+	SAIL_LOG_WARNING("Dont Forget to remove TeamComponent from StaticMapObjects @EntityFactory when the walls no longer need it to demonstrate the feature!");
+	static int t = 0;
+	e->addComponent<TeamComponent>()->team = (t++) % 12;
+	//=====================
 
 	return e;
 }

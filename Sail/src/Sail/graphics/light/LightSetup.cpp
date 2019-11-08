@@ -12,14 +12,14 @@ LightSetup::~LightSetup() {}
 void LightSetup::addPointLight(const PointLight& pl) {
 	m_pls.push_back(pl);
 	if (pl.getIndex() < 0) {
-		Logger::Warning("Pointlight Index Less than 0. Index: " + std::to_string(pl.getIndex()));
+		SAIL_LOG_WARNING("Pointlight Index Less than 0. Index: " + std::to_string(pl.getIndex()));
 		m_pls.back().setIndex(m_pls.size() + 12);
 	}
 }
 void LightSetup::addSpotLight(const SpotLight& pl) {
 	m_sls.push_back(pl);
 	if (pl.getIndex() < 0) {
-		Logger::Warning("Spotlight Index Less than 0. Index: " + std::to_string(pl.getIndex()));
+		SAIL_LOG_WARNING("Spotlight Index Less than 0. Index: " + std::to_string(pl.getIndex()));
 		m_sls.back().setIndex(m_sls.size() + 12);
 	}
 }

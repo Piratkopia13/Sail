@@ -146,9 +146,9 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		// TODO: fix
 		m_context->prepareToRender(cmdList.Get());
 		m_context->clear(cmdList.Get());
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Prep to render, and record. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Prep to render, and record. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 	} else if (threadID < nThreads - 1) {
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Recording Only. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Recording Only. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 	}
 #else
 	if (threadID == 0) {
@@ -207,6 +207,8 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
 		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
 
+		cmdList->SetGraphicsRoot32BitConstants(GlobalRootParam::CBV_TEAM_COLOR, 3, &teamColors[command->teamColorID], 0);
+
 		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
 	}
 
@@ -221,7 +223,7 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		}
 
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	}
 #else
