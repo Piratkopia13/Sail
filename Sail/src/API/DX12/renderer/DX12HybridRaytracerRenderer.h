@@ -11,7 +11,7 @@ public:
 	~DX12HybridRaytracerRenderer();
 
 	virtual void begin(Camera* camera) override;
-	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
+	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID) override;
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags);
 
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
@@ -20,6 +20,7 @@ public:
 	virtual void end() override;
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
 	virtual bool onEvent(const Event& event) override;
+	virtual void setTeamColors(const std::vector<glm::vec3>& teamColors) override;
 	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
 private:

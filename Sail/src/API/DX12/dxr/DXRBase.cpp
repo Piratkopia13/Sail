@@ -116,7 +116,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 	// Clear old instance lists
 	for (auto& it : m_bottomBuffers[frameIndex]) {
-		it.second.instanceTransforms.clear();
+		it.second.instanceList.clear();
 	}
 
 	// Iterate all static meshes
@@ -139,7 +139,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 				createBLAS(renderCommand, flagFastTrace, cmdList);
 			} else {
 				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-					Logger::Warning("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
+					SAIL_LOG_WARNING("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
 					// Destroy old blas
 					searchResult->second.blas.release();
 					m_bottomBuffers[frameIndex].erase(searchResult);
@@ -147,7 +147,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flagFastTrace, cmdList);
 				} else {
 					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+					searchResult->second.instanceList.emplace_back(PerInstance{(glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID });
 				}
 			}
 
@@ -179,7 +179,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
 				}
 				// Add transform to instance list
-				searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+				searchResult->second.instanceList.emplace_back(PerInstance{ (glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID });
 			}
 
 			totalNumInstances++;
@@ -213,7 +213,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs, m_next_metaball_aabb);
 
@@ -229,6 +229,11 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.nDecals = m_decalsToRender;
 	newData.mapSize = mapSize;
 	newData.mapStart = mapStart;
+
+	int nTeams = teamColors.size();
+	for (int i = 0; i < nTeams && i < NUM_TEAM_COLORS; i++) {
+		newData.teamColors[i] = glm::vec4(teamColors[i], 1.0f);
+	}
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
@@ -256,35 +261,35 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	// Convert position to index, stored as floats
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
 	// Convert triple-number index to a single index value
-	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	int quarterIndex = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
 	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 ind = floor(floatInd);
 	// Convert to final 1-D index
-	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
+	int arrIndex = Utils::to1D(ind, arrSize.x, arrSize.y);
 
 	// Ignore water points that are outside the map
-	if (i >= 0 && i <= WATER_ARR_SIZE - 1) {
-		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
-		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
-		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
-		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
+		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
+		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
+		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
+		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
 
-		switch (index) {
+		switch (quarterIndex) {
 		case 0:
-			m_waterDeltas[i] = Utils::packQuarterFloat(0, up1, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(0, up1, up2, up3);
 			break;
 		case 1:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, 0, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, 0, up2, up3);
 			break;
 		case 2:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, 0, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, 0, up3);
 			break;
 		case 3:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, up2, 0);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, 0);
 			break;
 		}
 
-		m_waterDataCPU[i] = m_waterDeltas[i];
+		m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
 		m_waterChanged = true;
 	}
 }
@@ -299,19 +304,17 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 
 	// Convert position to index, stored as floats
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
-	// Convert triple-number index to a single index value
-	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
 	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 ind = floor(floatInd);
 	// Convert to final 1-D index
-	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
+	int arrIndex = Utils::to1D(ind, arrSize.x, arrSize.y);
 
 	// Ignore water points that are outside the map
-	if (i >= 0 && i <= WATER_ARR_SIZE - 1) {
-		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
-		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
-		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
-		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
+		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
+		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
+		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
+		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
 
 		returnValue = up0 != 255 || up1 != 255 || up2 != 255 || up3 != 255;
 	}
@@ -499,19 +502,24 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 	unsigned int instanceID_metaballs = 0;
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
-		for (auto& transform : instanceList.instanceTransforms) {
+		for (auto& instance : instanceList.instanceList) {
 			if (it.first == nullptr) {
 				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
 				pInstanceDesc->InstanceMask = 0x01;
 			} else {
-				pInstanceDesc->InstanceID = blasIndex;
+#ifdef DEVELOPMENT
+				if (blasIndex >= 1 << 10) {
+					SAIL_LOG_WARNING("BlasIndex is to high and will interfere with team color index.");
+				}
+#endif
+				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
 				pInstanceDesc->InstanceMask = 0xFF &~ 0x01;
 			}
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
-			memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
+			memcpy(pInstanceDesc->Transform, &instance.transform, sizeof(pInstanceDesc->Transform));
 
 			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
 
@@ -548,7 +556,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
 
 	InstanceList instance;
-	instance.instanceTransforms.emplace_back(renderCommand.transform);
+	instance.instanceList.emplace_back(PerInstance{ renderCommand.transform , (char)renderCommand.teamColorID});
 	AccelerationStructureBuffers& bottomBuffer = instance.blas;
 	if (performInplaceUpdate) {
 		bottomBuffer = *sourceBufferForUpdate;
@@ -923,7 +931,7 @@ void DXRBase::updateShaderTables() {
 					else if (parameterName == "sys_brdfLUT") {
 						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
-						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
 					}
 					});
 			} else {
@@ -945,7 +953,7 @@ void DXRBase::updateShaderTables() {
 					} else if (parameterName == "sys_brdfLUT") {
 						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
-						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
 					}
 
 					});
