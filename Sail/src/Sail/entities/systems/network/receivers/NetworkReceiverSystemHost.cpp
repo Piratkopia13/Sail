@@ -123,5 +123,5 @@ void NetworkReceiverSystemHost::waterHitPlayer(Netcode::ComponentID id, Netcode:
 			}
 		}
 	}
-	Logger::Warning("waterHitPlayer called but no matching entity found");
+	SAIL_LOG_WARNING("waterHitPlayer called but no matching entity found");
 }
