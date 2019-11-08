@@ -196,6 +196,12 @@ void NetworkReceiverSystem::update(float dt) {
 
 					shootEnd(gunPosition, gunVelocity, id);
 				}
+				case Netcode::MessageType::UPDATE_INSANITY:
+				{
+					float insanity;
+					ar(insanity);
+					EventDispatcher::Instance().emit(UpdateInsanityEvent(id, insanity));
+				}
 				break;
 				default:
 					SAIL_LOG_ERROR("INVALID NETWORK MESSAGE RECEIVED FROM " + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");

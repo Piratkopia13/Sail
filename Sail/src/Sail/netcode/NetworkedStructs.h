@@ -77,31 +77,33 @@ namespace Netcode {
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_PLAYER	",
-		"CHANGE_LOCAL_POSITION,		",
-		"CHANGE_LOCAL_ROTATION,		",
-		"CHANGE_ABSOLUTE_POS_AND_ROT,",
-		"SPAWN_PROJECTILE,			",
-		"ANIMATION,					",
-		"SHOOT_START,				",
-		"SHOOT_LOOP,				",
-		"SHOOT_END,					",
-		"PLAYER_JUMPED,				",
-		"PLAYER_LANDED,				",
-		"WATER_HIT_PLAYER,			",
-		"SET_CANDLE_HEALTH,			",
-		"PLAYER_DIED,				",
-		"PLAYER_DISCONNECT,			",
-		"MATCH_ENDED,				",
-		"PREPARE_ENDSCREEN,			",	// Clients send relevant data for the endgame screen
-		"ENDGAME_STATS,				",
-		"CANDLE_HELD_STATE,			",
-		"SEND_ALL_BACK_TO_LOBBY,	",
-		"RUNNING_METAL_START,		",
-		"RUNNING_TILE_START,		",
-		"RUNNING_STOP_SOUND,		",
-		"IGNITE_CANDLE,				",
-		"EMPTY						",
+		"CREATE_NETWORKED_PLAYER		  "
+		"CHANGE_LOCAL_POSITION,			  "
+		"CHANGE_LOCAL_ROTATION,			  "
+		"CHANGE_ABSOLUTE_POS_AND_ROT,	  "
+		"SPAWN_PROJECTILE,				  "
+		"ANIMATION,						  "
+		"SHOOT_START,					  "
+		"SHOOT_LOOP,					  "
+		"SHOOT_END,						  "
+		"PLAYER_JUMPED,					  "
+		"PLAYER_LANDED,					  "
+		"WATER_HIT_PLAYER,				  "
+		"SET_CANDLE_HEALTH,				  "
+		"PLAYER_DIED,					  "
+		"PLAYER_DISCONNECT,				  "
+		"MATCH_ENDED,					  "
+		"PREPARE_ENDSCREEN,				  "
+		"ENDGAME_STATS,					  "
+		"CANDLE_HELD_STATE,				  "
+		"SEND_ALL_BACK_TO_LOBBY,		  "
+		"RUNNING_METAL_START,			  "
+		"RUNNING_TILE_START,			  "
+		"RUNNING_STOP_SOUND,			  "
+		"IGNITE_CANDLE,					  "
+		"UPDATE_INSANITY,				  "
+		"EMPTY,							  "
+		"COUNT							  "
 	};
 
 	/*

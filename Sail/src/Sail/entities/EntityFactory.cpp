@@ -167,9 +167,9 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 		}
 	}
 
-	//if (NWrapperSingleton::getInstance().isHost()) {
-	//	otherPlayer->addComponent<NetworkSenderComponent>(playerCompID)->addMessageType(Netcode::MessageType::UPDATE_INSANITY);
-	//}
+	if (NWrapperSingleton::getInstance().isHost()) {
+		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID, Netcode::MessageType::UPDATE_INSANITY);
+	}
 }
 
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {

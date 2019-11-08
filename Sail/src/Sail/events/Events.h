@@ -6,3 +6,4 @@
 #include "WindowResizeEvent.h"
 #include "WindowFocusChangedEvent.h"
 #include "PlayerCandleDeathEvent.h"
+#include "UpdateInsanityEvent.h"
