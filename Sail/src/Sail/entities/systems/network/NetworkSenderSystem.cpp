@@ -171,7 +171,7 @@ void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 #ifdef DEVELOPMENT
 	// Don't send broken events to others or to yourself
 	if (type->type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || type->type >= Netcode::MessageType::EMPTY) {
-		Logger::Error("Attempted to send invalid message\n");
+		SAIL_LOG_ERROR("Attempted to send invalid message\n");
 		return;
 	}
 #endif
@@ -317,7 +317,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	}
 	break;
 	default:
-		Logger::Error("TRIED TO SEND INVALID NETWORK MESSAGE (" + std::to_string((int)messageType));
+		SAIL_LOG_ERROR("TRIED TO SEND INVALID NETWORK MESSAGE (" + std::to_string((int)messageType));
 		break;
 	}
 }

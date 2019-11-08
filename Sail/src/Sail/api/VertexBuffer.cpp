@@ -7,7 +7,7 @@ VertexBuffer::VertexBuffer(const InputLayout& inputLayout, unsigned int numVerti
 {
 	m_stride = inputLayout.getVertexSize();
 	if (m_stride == 0) {
-		Logger::Error("Input layout not set up properly in shader");
+		SAIL_LOG_ERROR("Input layout not set up properly in shader");
 		__debugbreak();
 	}
 	m_byteSize = numVertices * m_stride;

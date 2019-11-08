@@ -23,6 +23,8 @@
 
 #include "input/GameInputSystem.h"
 
+#include "input/SprintingSystem.h"
+
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"
 #include "light/SpotLightSystem.h"
