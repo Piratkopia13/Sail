@@ -24,7 +24,9 @@ ParticleSystem::ParticleSystem() {
 	m_outputVertexBufferSize = 9996;
 	//m_outputVertexBufferSize = 36;
 
+	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
 	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
+	m_model->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/WaterGun/Watergun_Albedo.tga");
 
 	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
 

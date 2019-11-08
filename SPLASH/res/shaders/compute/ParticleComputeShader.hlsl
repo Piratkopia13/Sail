@@ -92,11 +92,10 @@ void updatePhysics(int particleIndex, float dt) {
 void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_DispatchThreadID) {
 	int counter = 0; // New particle counter
     for (uint i = 0; i < inputBuffer.numEmitters; i++) {
-		int particleBufferSizeLeft = floor(inputBuffer.maxOutputVertices / 6) - (inputBuffer.numPrevParticles + counter);
+		int particleBufferSizeLeft = (inputBuffer.maxOutputVertices / 6) - (inputBuffer.numPrevParticles + counter);
 		int particlesToSpawn = inputBuffer.emitters[i].nrOfParticlesToSpawn;
 		if (inputBuffer.emitters[i].nrOfParticlesToSpawn > particleBufferSizeLeft) {
 			particlesToSpawn = particleBufferSizeLeft;
-			i = inputBuffer.numEmitters; // Break after this emitter because there is no more space for particles in the buffers
 		}
 		for (uint j = 0; j < particlesToSpawn; j++) {
 			float3 v0, v1, v2, v3;
@@ -115,6 +114,10 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_Di
 			updatePhysics(inputBuffer.numPrevParticles + counter, inputBuffer.emitters[i].spawnTime);
 			
 			counter++;
+		}
+		
+		if (particlesToSpawn == particleBufferSizeLeft) {
+			i = inputBuffer.numEmitters; // Break because there is no more space for particles in the buffers
 		}
 	}
 	
