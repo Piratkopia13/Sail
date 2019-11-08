@@ -120,7 +120,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	}
 
 	// For debugging
-	Logger::Log("My netcompID: " + std::to_string(netComponentID));
+	SAIL_LOG("My netcompID: " + std::to_string(netComponentID));
 
 	// Tell other players to create my character
 	NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(

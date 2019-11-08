@@ -39,7 +39,7 @@ void DX12ShaderPipeline::bind(void* cmdList) {
 
 void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 	if (!m_pipelineState)
-		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
+		SAIL_LOG_ERROR("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
 	for (auto& it : parsedData.cBuffers) {
@@ -243,7 +243,7 @@ void DX12ShaderPipeline::checkBufferSizes(unsigned int nMeshes) {
 void DX12ShaderPipeline::setCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {
 	bool success = trySetCBufferVar_new(name, data, size, meshIndex);
 	if (!success)
-		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+		SAIL_LOG_WARNING("Tried to set CBuffer variable that did not exist (" + name + ")");
 }
 
 bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {

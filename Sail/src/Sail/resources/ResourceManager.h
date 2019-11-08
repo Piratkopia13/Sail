@@ -83,13 +83,13 @@ public:
 		std::string name = typeid(T).name();
 		auto it = m_shaderSets.find(name);
 		if (it == m_shaderSets.end()) {
-			Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
+			SAIL_LOG("Cannot reload shader " + name + " since it is not loaded in the first place.");
 			return;
 		}
 		T* shader = dynamic_cast<T*>(it->second);
 		shader->~T();
 		shader = new (shader) T();
-		Logger::Log("Reloaded shader " + name);
+		SAIL_LOG("Reloaded shader " + name);
 	}
 
 

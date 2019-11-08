@@ -17,7 +17,7 @@ namespace ModelFactory {
 	public:
 		static Model* Create(Shader* shader, const StringModel::Constraints& constraints) {
 			if (constraints.text.size() == 0) {
-				Logger::Log("StringModel::Create : Tried to create a string model without any characters");
+				SAIL_LOG("StringModel::Create : Tried to create a string model without any characters");
 				return nullptr;
 			}
 
