@@ -12,9 +12,11 @@ public:
 	void update(float dt) override;
 	void stop() override;
 	const std::vector<int>& getActiveRooms() const;
+	void enableSprinklers();
 
 private:
-	bool m_enableNewSprinklers = false;
+	bool m_enableNewSprinklers = true;
+	bool m_enableSprinklers = false;
 	float m_endGameTimer = 0.f;
 #ifdef _DEBUG
 	float m_endGameStartLimit = 15.f;

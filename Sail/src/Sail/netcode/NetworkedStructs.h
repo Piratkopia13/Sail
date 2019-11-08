@@ -75,6 +75,7 @@ namespace Netcode {
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
 		HIT_BY_SPRINKLER,
+		ENABLE_SPRINKLERS,
 		EMPTY,
 		COUNT
 	}; 
@@ -105,6 +106,7 @@ namespace Netcode {
 		"RUNNING_STOP_SOUND,		",
 		"IGNITE_CANDLE,				",
 		"HIT_BY_SPRINKLER,			",
+		"ENABLE_SPRINKLERS,			",
 		"EMPTY						",
 	};
 
@@ -282,6 +284,11 @@ namespace Netcode {
 		MessageHitBySprinkler(Netcode::ComponentID id) : candleOwnerID(id) {}
 		~MessageHitBySprinkler() {}
 		Netcode::ComponentID candleOwnerID;
+	};
+	class MessageEnableSprinklers : public MessageData {
+	public:
+		MessageEnableSprinklers() {}
+		~MessageEnableSprinklers() {}
 	};
 
 }

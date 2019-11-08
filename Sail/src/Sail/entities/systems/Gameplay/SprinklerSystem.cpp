@@ -37,10 +37,21 @@ void SprinklerSystem::stop() {
 
 void SprinklerSystem::update(float dt) {
 
-	m_endGameTimer += dt;
-	// End game is reached, sprinklers starting
-	if (m_endGameTimer > m_endGameStartLimit) {
-		for (auto& e : entities) {
+	for (auto& e : entities) {
+		// End game is reached, sprinklers starting
+		if (!m_enableSprinklers && NWrapperSingleton::getInstance().isHost()) {
+			m_endGameTimer += dt;
+			if (m_endGameTimer > m_endGameStartLimit) {
+				m_enableSprinklers = true;
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::ENABLE_SPRINKLERS,
+					SAIL_NEW Netcode::MessageEnableSprinklers{}
+				);
+			}
+		}
+		if (m_enableSprinklers) {
+			m_endGameTimer += dt;
+
 			CandleComponent* candle = e->getComponent<CandleComponent>();
 			TransformComponent* transform = e->getComponent<TransformComponent>();
 
@@ -62,53 +73,54 @@ void SprinklerSystem::update(float dt) {
 					SAIL_NEW Netcode::MessageHitBySprinkler{
 						e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
 					}
-					);
+				);
 			}
-		}
 
-		if (m_enableNewSprinklers) {
-			// Add rooms to different vector to enable sprinklers and turn off hazard lights
-			// Rotate between sides to activate
-			m_mapSide++;
-			m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
-			switch (m_mapSide) {
-			case 1:
-				for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
-					addToActiveRooms(m_map->getRoomID(x, m_yMinIncrement));
+
+			if (m_enableNewSprinklers) {
+				// Add rooms to different vector to enable sprinklers and turn off hazard lights
+				// Rotate between sides to activate
+				m_mapSide++;
+				m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
+				switch (m_mapSide) {
+				case 1:
+					for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
+						addToActiveRooms(m_map->getRoomID(x, m_yMinIncrement));
+					}
+					m_yMinIncrement++;
+					break;
+				case 2:
+					for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
+						addToActiveRooms(m_map->getRoomID(x, m_map->ysize - 1 - m_yMaxIncrement));
+					}
+					m_yMaxIncrement++;
+					break;
+				case 3:
+					for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
+						addToActiveRooms(m_map->getRoomID(m_xMinIncrement, y));
+					}
+					m_xMinIncrement++;
+					break;
+				case 4:
+					for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
+						addToActiveRooms(m_map->getRoomID(m_map->xsize - 1 - m_xMaxIncrement, y));
+					}
+					m_xMaxIncrement++;
+					break;
+				default:
+					break;
 				}
-				m_yMinIncrement++;
-				break;
-			case 2:
-				for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
-					addToActiveRooms(m_map->getRoomID(x, m_map->ysize - 1 - m_yMaxIncrement));
-				}
-				m_yMaxIncrement++;
-				break;
-			case 3:
-				for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
-					addToActiveRooms(m_map->getRoomID(m_xMinIncrement, y));
-				}
-				m_xMinIncrement++;
-				break;
-			case 4:
-				for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
-					addToActiveRooms(m_map->getRoomID(m_map->xsize - 1 - m_xMaxIncrement, y));
-				}
-				m_xMaxIncrement++;
-				break;
-			default:
-				break;
+				m_enableNewSprinklers = false;
+				m_endGameMapIncrement++;
 			}
-			m_enableNewSprinklers = false;
-			m_endGameMapIncrement++;
+			// New time increment reached, add new rooms
+			else if (((m_endGameTimer) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
+				m_enableNewSprinklers = true;
+			}
+
+
+
 		}
-		// New time increment reached, add new rooms
-		else if (((m_endGameTimer - m_endGameStartLimit) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
-			m_enableNewSprinklers = true;
-		}
-
-
-
 	}
 }
 
@@ -126,3 +138,7 @@ void SprinklerSystem::addToActiveRooms(int room) {
 	}
 }
 
+void SprinklerSystem::enableSprinklers() {
+	m_enableSprinklers = true;
+	m_endGameTimer = 0.f;
+}

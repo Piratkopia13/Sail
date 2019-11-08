@@ -6,6 +6,7 @@
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
+#include "Sail/entities/systems/Gameplay/SprinklerSystem.h"
 #include "../SPLASH/src/game/states/GameState.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -417,6 +418,11 @@ void NetworkReceiverSystem::update(float dt) {
 				hitBySprinkler(candleOwnerID);
 			}
 			break;
+			case Netcode::MessageType::ENABLE_SPRINKLERS:
+			{
+				enableSprinklers();
+			}
+			break;
 			default:
 				SAIL_LOG_ERROR("INVALID NETWORK EVENT RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;
@@ -823,4 +829,9 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 
 void NetworkReceiverSystem::hitBySprinkler(Netcode::ComponentID candleOwnerID) {
 	waterHitPlayer(candleOwnerID, Netcode::MESSAGE_SPRINKLER_ID);
+}
+
+void NetworkReceiverSystem::enableSprinklers() {
+	ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
+
 }
