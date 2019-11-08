@@ -3,6 +3,7 @@
 #include <d3d12.h>
 #include "Sail/api/ComputeShaderDispatcher.h"
 #include "Sail/utils/Timer.h"
+#include "API/DX12/DX12API.h"
 
 class ParticleEmitterComponent;
 class ParticleComputeShader;
@@ -29,7 +30,7 @@ private:
 
 	DX12VertexBuffer* m_outputVertexBuffer;
 	unsigned int m_outputVertexBufferSize;
-	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_physicsBuffer;
+	wComPtr<ID3D12Resource>* m_physicsBufferDefaultHeap;
 
 	std::unique_ptr<Model> m_model;
 
@@ -43,6 +44,8 @@ private:
 	struct NewEmitterInfo {
 		int nrOfNewParticles;
 		ParticleEmitterComponent* emitter;
+		glm::vec3 spread;
+		float spawnTime;
 	};
 
 	struct CPUOutput {
@@ -60,6 +63,8 @@ private:
 		float padding1;
 		glm::vec3 acceleration;
 		int nrOfParticlesToSpawn;
+		float spawnTime;
+		glm::vec3 padding2;
 	};
 
 	struct ComputeInput {

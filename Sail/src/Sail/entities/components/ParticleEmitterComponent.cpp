@@ -2,10 +2,10 @@
 #include "ParticleEmitterComponent.h"
 
 ParticleEmitterComponent::ParticleEmitterComponent() {
-	position = glm::vec3(0.0f);
-	spread = glm::vec3(0.0f);
-	velocity = glm::vec3(0.0f);
-	acceleration = glm::vec3(0.0f);
+	position = { 0.f, 0.f, 0.f };
+	spread = { 0.f, 0.f, 0.f };
+	velocity = { 0.f, 0.f, 0.f };
+	acceleration = { 0.f, 0.f, 0.f };
 	spawnRate = 0.1f;
 	spawnTimer = 0.0f;
 }

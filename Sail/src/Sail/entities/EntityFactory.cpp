@@ -93,7 +93,10 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	//For testing, add particle emitter to player.
 	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
 	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
-	particleEmitterComp->spawnRate = 0.001f;
+	particleEmitterComp->velocity = {0.0f, 4.0f, 0.0f};
+	particleEmitterComp->acceleration = { 0.0f, -9.8f, 0.0f };
+	particleEmitterComp->spread = {2.0f, 0.0f, 0.0f};
+	particleEmitterComp->spawnRate = 0.5f;
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 

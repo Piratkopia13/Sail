@@ -5,6 +5,8 @@ struct Emitter{
 	float padding1;
 	float3 acceleration;
 	int nrOfParticlesToSpawn;
+	float spawnTime;
+	float3 padding2;
 };
 
 struct ParticleInput{
@@ -38,7 +40,7 @@ RWStructuredBuffer<ParticlePhysics> CSPhysicsBuffer: register(u11) : SAIL_IGNORE
 
 void createTriangle(float3 v0, float3 v1, float3 v2, int v0Index) {
 	CSOutputBuffer[v0Index].position = v0;
-	CSOutputBuffer[v0Index].texCoords = 0.f;
+	CSOutputBuffer[v0Index].texCoords = (0.f, 0.f);
 	CSOutputBuffer[v0Index].normal = 0.f;
 	CSOutputBuffer[v0Index].tangent = 0.f;
 	CSOutputBuffer[v0Index].bitangent = 0.f;
@@ -63,13 +65,16 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_Di
 		for (uint j = 0; j < min(inputBuffer.emitters[i].nrOfParticlesToSpawn, inputBuffer.maxOutputVertices - (inputBuffer.numPrevParticles * 6 + counter)); j++) {
 			float3 v0, v1, v2, v3;
 			
-			v0 = inputBuffer.emitters[i].position + float3(-0.1 + 0.3 * (inputBuffer.numPrevParticles + (counter / 6)), 0.1, 0.0);
-			v1 = inputBuffer.emitters[i].position + float3(-0.1 + 0.3 * (inputBuffer.numPrevParticles + (counter / 6)), -0.1, 0.0);
-			v2 = inputBuffer.emitters[i].position + float3(0.1 + 0.3 * (inputBuffer.numPrevParticles + (counter / 6)), 0.1, 0.0);
-			v3 = inputBuffer.emitters[i].position + float3(0.1 + 0.3 * (inputBuffer.numPrevParticles + (counter / 6)), -0.1, 0.0);
+			//Account for how far into the frame the spawn happened
+			float3 newVel = inputBuffer.emitters[i].velocity + inputBuffer.emitters[i].acceleration * inputBuffer.emitters[i].spawnTime;
 			
-			CSPhysicsBuffer[inputBuffer.numPrevParticles + floor(counter / 6)].velocity = inputBuffer.emitters[i].velocity;
+			v0 = inputBuffer.emitters[i].position + float3(-0.1, 0.1, 0.0) + (inputBuffer.emitters[i].velocity + newVel) * 0.5 * inputBuffer.emitters[i].spawnTime;
+			v1 = inputBuffer.emitters[i].position + float3(-0.1, -0.1, 0.0) + (inputBuffer.emitters[i].velocity + newVel) * 0.5 * inputBuffer.emitters[i].spawnTime;
+			v2 = inputBuffer.emitters[i].position + float3(0.1, 0.1, 0.0) + (inputBuffer.emitters[i].velocity + newVel) * 0.5 * inputBuffer.emitters[i].spawnTime;
+			v3 = inputBuffer.emitters[i].position + float3(0.1, -0.1, 0.0) + (inputBuffer.emitters[i].velocity + newVel) * 0.5 * inputBuffer.emitters[i].spawnTime;
+			
 			CSPhysicsBuffer[inputBuffer.numPrevParticles + floor(counter / 6)].acceleration = inputBuffer.emitters[i].acceleration;
+			CSPhysicsBuffer[inputBuffer.numPrevParticles + floor(counter / 6)].velocity = newVel;
 			
 			createTriangle(v0, v1, v2, inputBuffer.numPrevParticles * 6 + counter);
 			counter += 3;
