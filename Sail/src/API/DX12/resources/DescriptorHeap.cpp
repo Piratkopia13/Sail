@@ -59,7 +59,7 @@ unsigned int DescriptorHeap::getDescriptorIncrementSize() const {
 
 void DescriptorHeap::setIndex(unsigned int index) {
 	if (index >= m_numDescriptors) {
-		Logger::Error("Tried to set descriptor heap index to a value larger than max (" + std::to_string(m_numDescriptors) + ")!");
+		SAIL_LOG_ERROR("Tried to set descriptor heap index to a value larger than max (" + std::to_string(m_numDescriptors) + ")!");
 	}
 	m_index = index;
 }
@@ -76,14 +76,14 @@ unsigned int DescriptorHeap::getAndStepIndex(int nSteps) {
 	m_index = (m_index + nSteps) % m_numDescriptors;
 	// The index should never loop by this method since this means that it has looped mid-frame and will cause the GPU to read out of bounds
 	if (m_index < i) {
-		Logger::Error("Descriptor heap index has looped mid-frame - this may cause missing textures or GPU crashes! This can be caused by having too many textured objects being rendered simulateously. In that case, consider reducing the amount of textured objects or increase the descriptor heap size (which is currently " + std::to_string(m_numDescriptors) + ")");
+		SAIL_LOG_ERROR("Descriptor heap index has looped mid-frame - this may cause missing textures or GPU crashes! This can be caused by having too many textured objects being rendered simulateously. In that case, consider reducing the amount of textured objects or increase the descriptor heap size (which is currently " + std::to_string(m_numDescriptors) + ")");
 	}
 	return i;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getGPUDescriptorHandleForIndex(unsigned int index) const {
 	if (index >= m_numDescriptors) {
-		Logger::Error("Tried to get out of bounds descriptor heap gpu handle!");
+		SAIL_LOG_ERROR("Tried to get out of bounds descriptor heap gpu handle!");
 	}
 	auto heapHandle = (m_frameDependant && m_context->getSwapIndex() == 1) ? m_secondHalfGPUHandleStart : m_descHeap->GetGPUDescriptorHandleForHeapStart();
 	heapHandle.ptr += index * m_incrementSize;
@@ -92,7 +92,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getGPUDescriptorHandleForIndex(unsig
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::getCPUDescriptorHandleForIndex(unsigned int index) const {
 	if (index >= m_numDescriptors) {
-		Logger::Error("Tried to get out of bounds descriptor heap cpu handle!");
+		SAIL_LOG_ERROR("Tried to get out of bounds descriptor heap cpu handle!");
 	}
 	auto heapHandle = (m_frameDependant && m_context->getSwapIndex() == 1) ? m_secondHalfCPUHandleStart : m_descHeap->GetCPUDescriptorHandleForHeapStart();
 	heapHandle.ptr += index * m_incrementSize;

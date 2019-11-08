@@ -82,7 +82,7 @@ private:
 template<typename ComponentType, typename... Targs>
 inline ComponentType* Entity::addComponent(Targs... args) {
 	if (m_components[ComponentType::ID]) {
-		Logger::Warning("Tried to add a duplicate component to an entity");
+		SAIL_LOG_WARNING("Tried to add a duplicate component to an entity");
 	} else {
 		m_components[ComponentType::ID] = std::make_unique<ComponentType>(args...);
 
