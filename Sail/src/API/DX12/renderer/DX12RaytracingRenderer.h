@@ -8,6 +8,9 @@
 #include "Sail/graphics/shader/postprocess/BilateralBlurHorizontal.h"
 #include "Sail/graphics/shader/postprocess/BilateralBlurVertical.h"
 #include "API/DX12/DX12ComputeShaderDispatcher.h"
+#include "API/DX12/DX12Mesh.h"
+
+class ShadePassShader;
 
 class DX12RaytracingRenderer : public Renderer {
 public:
@@ -38,8 +41,13 @@ private:
 	DX12API::Command m_commandDirect;
 	DX12API::Command m_commandCompute;
 
+	DX12RenderableTexture** m_gbufferTextures;
+
 	DXRBase::BounceOutput m_outputTextures;
+	std::unique_ptr<DX12RenderableTexture> m_shadedOuput;
 	std::unique_ptr<DX12RenderableTexture> m_shadowsLastFrame;
+	std::unique_ptr<Model> m_fullscreenModel;
+	ShadePassShader* m_shadeShader;
 
 	DX12ComputeShaderDispatcher m_computeShaderDispatcher;
 

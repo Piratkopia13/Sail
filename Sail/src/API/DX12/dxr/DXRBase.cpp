@@ -335,7 +335,7 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* shadowsLastF
 
 	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
 		// Copy output texture uav to heap
-		texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE); // This is done in RaytracingRenderer:runShading()
 		m_context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	};
 	copyDescriptor(output.albedo.get(), m_rtOutputAlbedoUavCPUHandles);

@@ -16,9 +16,6 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
 	: ShaderPipeline(filename) 
-	, m_numRenderTargets(1)
-	, m_enableDepth(true)
-	, m_enableBlending(false)
 {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
@@ -259,18 +256,6 @@ bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const voi
 	return false;
 }
 
-void DX12ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) { 
-	m_numRenderTargets = numRenderTargets;
-}
-
-void DX12ShaderPipeline::enableDepthStencil(bool enable) {
-	m_enableDepth = enable;
-}
-
-void DX12ShaderPipeline::enableAlphaBlending(bool enable) {
-	m_enableBlending = enable;
-}
-
 void DX12ShaderPipeline::compile() {
 	ShaderPipeline::compile();
 }
@@ -312,10 +297,10 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 	}
 
 	// Specify render target and depthstencil usage
-	for (unsigned int i = 0; i < m_numRenderTargets; i++) {
+	for (unsigned int i = 0; i < numRenderTargets; i++) {
 		gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	}
-	gpsd.NumRenderTargets = m_numRenderTargets;
+	gpsd.NumRenderTargets = numRenderTargets;
 
 	gpsd.SampleDesc.Count = 1;
 	gpsd.SampleDesc.Quality = 0;
@@ -341,7 +326,7 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 
 	//Specify blend descriptions.
 	D3D12_RENDER_TARGET_BLEND_DESC defaultRTdesc;
-	if (m_enableBlending) {
+	if (enableAlphaBlending) {
 		defaultRTdesc = {
 			true, false,
 			D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
@@ -370,7 +355,7 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 
 	// Specify depth stencil state descriptor.
 	D3D12_DEPTH_STENCIL_DESC dsDesc{};
-	dsDesc.DepthEnable = m_enableDepth;
+	dsDesc.DepthEnable = enableDepthStencil;
 	dsDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 	dsDesc.StencilEnable = FALSE;

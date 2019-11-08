@@ -6,11 +6,16 @@
 #include "API/DX12/DX12VertexBuffer.h"
 #include "Sail/KeyBinds.h"
 #include "Sail/entities/components/MapComponent.h"
+#include "Sail/graphics/geometry/factory/ScreenQuadModel.h"
+#include "Sail/graphics/shader/dxr/ShadePassShader.h"
+#include "API/DX12/shader/DX12ShaderPipeline.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
 DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
-	: m_dxr("Basic", inputs) {
+	: m_dxr("Basic", inputs)
+	, m_gbufferTextures(inputs)
+{
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 	m_context->initCommand(m_commandDirect, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Raytracing Renderer DIRECT command list or allocator");
@@ -26,8 +31,13 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_outputTextures.metalnessRoughnessAO = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	m_outputTextures.normal = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	m_outputTextures.shadows = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "CurrentFrameShadowTexture", Texture::R8G8)));
+	// init shaded output texture - this is written to in a rasterisation pass
+	m_shadedOuput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	// Init raytracing input texture
 	m_shadowsLastFrame = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "LastFrameShadowTexture", Texture::R8G8)));
+
+	m_shadeShader = &app->getResourceManager().getShaderSet<ShadePassShader>();
+	m_fullscreenModel = ModelFactory::ScreenQuadModel::Create(m_shadeShader);
 
 	m_currNumDecals = 0;
 	memset(m_decals, 0, sizeof DXRShaderCommon::DecalData * MAX_DECALS);
@@ -142,7 +152,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	auto filteredShadows = runDenoising(cmdListCompute.Get());
 
-	auto shadedOutput = runShading(cmdListCompute.Get());
+	auto shadedOutput = runShading(cmdListDirect.Get());
 
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
 
@@ -220,23 +230,44 @@ RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandLis
 }
 
 RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4* cmdList) {
+	auto shaderPipeline = static_cast<DX12ShaderPipeline*>(m_shadeShader->getPipeline());
 
-	Application* app = Application::getInstance();
-	const auto windowWidth = app->getWindow()->getWindowWidth();
-	const auto windowHeight = app->getWindow()->getWindowHeight();
+	// Make sure model has been initialized
+	static_cast<DX12VertexBuffer&>(m_fullscreenModel->getMesh(0)->getVertexBuffer()).init(cmdList);
 
-	//auto& blurShaderHorizontal = app->getResourceManager().getShaderSet<BilateralBlurHorizontal>();
+	m_shadedOuput->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	cmdList->OMSetRenderTargets(1, &m_shadedOuput->getRtvCDH(), false, nullptr);
+	cmdList->RSSetViewports(1, m_context->getViewport());
+	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
 
-	//// Use all the outputs and perform PBR shading with shadows and niceness
-	//PostProcessPipeline::PostProcessInput input;
-	//auto* settings = blurShaderHorizontal.getComputeSettings();
-	//input.inputRenderableTexture = m_outputShadowTexture.get();
-	//input.outputWidth = static_cast<unsigned int>(windowWidth);
-	//input.outputHeight = static_cast<unsigned int>(windowHeight);
-	//input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
-	//input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
-	//auto output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderHorizontal, input, 0, cmdList));
-	return m_outputTextures.albedo.get();
+	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// Bind the descriptor heap that will contain all SRVs, DSVs and RTVs for this frame
+	m_context->getMainGPUDescriptorHeap()->bind(cmdList);
+
+	shaderPipeline->bind_new(cmdList, 0);
+	shaderPipeline->setTexture2D("albedoBounceOne", m_gbufferTextures[1], cmdList);
+	shaderPipeline->setTexture2D("albedoBounceTwo", m_outputTextures.albedo.get(), cmdList);
+
+	shaderPipeline->setTexture2D("normalsBounceOne", m_gbufferTextures[0], cmdList);
+	shaderPipeline->setTexture2D("normalsBounceTwo", m_outputTextures.normal.get(), cmdList);
+
+	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceOne", m_gbufferTextures[2], cmdList);
+	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceTwo", m_outputTextures.metalnessRoughnessAO.get(), cmdList);
+
+	shaderPipeline->setTexture2D("shadows", m_outputTextures.shadows.get(), cmdList);
+
+	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, 0, -7);
+
+	// setTexture2D transitions texture to pixel shader resource
+	// We need to transition them back to a state that is usable on a compute queue before the next frame
+	// TODO: batch transitions
+	m_outputTextures.albedo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_outputTextures.normal->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_outputTextures.metalnessRoughnessAO->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_outputTextures.shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+	return m_shadedOuput.get();
 }
 
 void DX12RaytracingRenderer::begin(Camera* camera) {

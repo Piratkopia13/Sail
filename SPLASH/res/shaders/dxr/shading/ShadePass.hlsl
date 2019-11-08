@@ -26,16 +26,26 @@ Texture2D<float4> albedoBounceTwo : register(t1);
 Texture2D<float4> normalsBounceOne : register(t2);
 Texture2D<float4> normalsBounceTwo : register(t3);
 
-Texture2D<float4> metalnesRoughnessAoBounceOne : register(t4);
-Texture2D<float4> metalnesRoughnessAoBounceTwo : register(t5);
+Texture2D<float4> metalnessRoughnessAoBounceOne : register(t4);
+Texture2D<float4> metalnessRoughnessAoBounceTwo : register(t5);
 
 Texture2D<float2> shadows : register(t6);
 
-StructuredBuffer<uint> waterData : register(t6, space0);
+// StructuredBuffer<uint> PSwaterData : register(t7);
 
-SamplerState ss : register(s0);
+SamplerState PSss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0 {
-	return colorTex.Sample(ss, input.texCoord) + blendTex.Sample(ss, input.texCoord) * blendFactor;
+    float4 testColor = albedoBounceOne.Sample(PSss, input.texCoord) * 0.8f;
+    testColor += albedoBounceTwo.Sample(PSss, input.texCoord) * 0.2f;
+    
+    // Just making sure the texture are bound
+    testColor += normalsBounceOne.Sample(PSss, input.texCoord) * 0.0001f;
+    testColor += normalsBounceTwo.Sample(PSss, input.texCoord) * 0.0001f;
+    testColor += metalnessRoughnessAoBounceOne.Sample(PSss, input.texCoord) * 0.0001f;
+    testColor += metalnessRoughnessAoBounceTwo.Sample(PSss, input.texCoord) * 0.0001f;
+    testColor.xy += shadows.Sample(PSss, input.texCoord) * 0.0001f;
+
+	return testColor;
 }
 

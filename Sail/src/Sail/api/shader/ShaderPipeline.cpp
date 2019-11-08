@@ -18,6 +18,9 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, filename(filename)
 	, wireframe(false)
 	, cullMode(GraphicsAPI::Culling::NO_CULLING)
+	, enableAlphaBlending(false)
+	, enableDepthStencil(true)
+	, numRenderTargets(1)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 }
@@ -320,6 +323,18 @@ void ShaderPipeline::setWireframe(bool wireframeState) {
 
 void ShaderPipeline::setCullMode(GraphicsAPI::Culling newCullMode) {
 	cullMode = newCullMode;
+}
+
+void ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) {
+	this->numRenderTargets = numRenderTargets;
+}
+
+void ShaderPipeline::useDepthStencil(bool enable) {
+	this->enableDepthStencil = enable;
+}
+
+void ShaderPipeline::useAlphaBlending(bool enable) {
+	this->enableAlphaBlending = enable;
 }
 
 InputLayout& ShaderPipeline::getInputLayout() {
