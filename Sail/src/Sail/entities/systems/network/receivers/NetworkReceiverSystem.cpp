@@ -534,7 +534,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 				// Damage the candle
 				// Save the Shooter of the Candle if its lethal
 				// TODO: Replace 10.0f with game settings damage
-				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+				child->getComponent<CandleComponent>()->hitWithWater(10.0f, CandleComponent::DamageSource::PLAYER, senderId);
 
 				// Play relevant sound
 				if (child->getComponent<CandleComponent>()->isLit) {
@@ -566,8 +566,7 @@ void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Net
 
 void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
 
-	Entity* self = nullptr;
-	
+	Entity* self = nullptr;	
 	// If we are the shooter than we find our entity
 	if (m_playerID == playerIdOfShooter) {
 		for (auto& e : entities) {
@@ -583,13 +582,23 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			continue;
 		}
 
+		std::string deathMessage = "";
 		// Print who killed who
 		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
 		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
-		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
-		std::string deathType = "sprayed down";
-		SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
+		std::string ShooterPlayer;
+		std::string deathType;
 
+		//Insanity
+		if (playerIdOfShooter == 255) {
+			ShooterPlayer = "Insanity";
+			deathType = "devoured";
+		} else {
+			ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
+			deathType = "sprayed down";
+		}
+
+		SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
 		m_gameDataTracker->logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
 
 		//This should remove the candle entity from game

@@ -24,8 +24,11 @@ InsanitySystem::~InsanitySystem() {
 
 void InsanitySystem::update(float dt) {
 	bool isHost = NWrapperSingleton::getInstance().isHost();
-	if (!isHost)
+	
+	//Only let host controll insanity for all players.
+	if (!isHost) {
 		return;
+	}
 
 	for (auto& e : entities) {
 		InsanityComponent* ic = e->getComponent<InsanityComponent>();
@@ -52,6 +55,9 @@ void InsanitySystem::update(float dt) {
 
 			ic->insanityValue -= (dist - 1) * dt * 0.5;
 			ic->insanityValue = std::clamp(ic->insanityValue, m_minInsanity, m_maxInsanity);
+			if (ic->insanityValue <= 0) {
+				cc->kill(CandleComponent::DamageSource::INSANE);
+			}
 		}
 	}
 }

@@ -37,7 +37,10 @@ void CandleHealthSystem::update(float dt) {
 				candle->health = 0.f;
 				candle->invincibleTimer = 0.f;
 				candle->isLit = false;
-				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+
+				if (candle->lastDamageSource == CandleComponent::DamageSource::PLAYER) {
+					GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+				}
 
 				// No respawns left - die!
 				if (candle->respawns == m_maxNumRespawns) {
