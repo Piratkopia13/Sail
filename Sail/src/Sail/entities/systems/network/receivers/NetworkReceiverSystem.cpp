@@ -525,9 +525,11 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 }
 
 void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StartShootingEvent(id));
 }
 void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+	// Only called when another player shoots
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
@@ -537,6 +539,7 @@ void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netc
 	Logger::Warning("shootLoop called but no matching entity found");
 }
 void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StopShootingEvent(id));
 }
 
