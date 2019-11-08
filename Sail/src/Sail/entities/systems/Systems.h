@@ -11,13 +11,15 @@
 #include "Gameplay/candles/CandlePlacementSystem.h"
 #include "Gameplay/candles/CandleReignitionSystem.h"
 #include "Gameplay/GunSystem.h"
-#include "Gameplay/LevelGeneratorSystem/LevelGeneratorSystem.h"
+#include "Gameplay/LevelSystem/LevelSystem.h"
 #include "Gameplay/lifetime/LifeTimeSystem.h"
 #include "Gameplay/PlayerSystem.h"
 #include "Gameplay/ProjectileSystem.h"
+#include "Gameplay/SprinklerSystem.h"
 
 #include "Graphics/AnimationSystem.h"
 #include "Graphics/AnimationChangerSystem.h"
+#include "Graphics/ParticleSystem.h"
 
 #include "input/GameInputSystem.h"
 

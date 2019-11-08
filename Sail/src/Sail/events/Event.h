@@ -28,6 +28,7 @@ struct Event {
 		STOP_SHOOTING,
 		CHANGE_WALKING_SOUND,
 		STOP_WALKING,
+		SETTINGS_UPDATED,
 
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};

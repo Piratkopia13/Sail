@@ -31,7 +31,6 @@ public:
 #endif
 
 protected:
-
 	NetworkSenderSystem* m_netSendSysPtr;
 	GameDataTracker* m_gameDataTracker;
 

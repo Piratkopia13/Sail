@@ -35,11 +35,12 @@ bool PlayerSystem::onEvent(const Event& event) {
 			e.killed->removeComponent<ModelComponent>();
 
 			// Move entity above the level and make it look down
-			const auto& transform = e.killed->getComponent<TransformComponent>();
+			auto transform = e.killed->getComponent<TransformComponent>();
 			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
 			pos.y = 20.f;
 			transform->setStartTranslation(pos);
-			const auto& middleOfLevel = glm::vec3(MapComponent::tileSize * MapComponent::xsize / 2.f, 0.f, MapComponent::tileSize * MapComponent::ysize / 2.f);
+			auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+			const auto& middleOfLevel = glm::vec3(mapSettings["tileSize"].value * mapSettings["sizeX"].value / 2.f, 0.f, mapSettings["tileSize"].value * mapSettings["sizeY"].value / 2.f);
 			const auto& dir = glm::normalize(middleOfLevel - pos);
 			const auto& rots = Utils::getRotations(dir);
 			transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));

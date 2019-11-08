@@ -49,32 +49,37 @@ FBXLoader::~FBXLoader() {
 
 #pragma region sceneAndDataImporting
 bool FBXLoader::importScene(const std::string& filePath, Shader* shader) {
+	m_sceneMutex.lock();
 	if (m_sceneData.find(filePath) != m_sceneData.end()) {
+		m_sceneMutex.unlock();
 		return true;
 	}
 	if (!initScene(filePath)) {
+		m_sceneMutex.unlock();
 		return false;
 	}
 
 	if (m_scenes.find(filePath) == m_scenes.end()) {
+		m_sceneMutex.unlock();
 		return false;
 	}
+	m_sceneMutex.unlock();
 	const FbxScene* scene = m_scenes[filePath];
 	assert(scene);
 
 
 	Model* model = importStaticModel(filePath, shader);
+	m_sceneDataMutex.lock();
 	if (model) {
 		m_sceneData[filePath].hasModel = true;
 		m_sceneData[filePath].model = model;
 		//here would getMaterial for model be
 	}
-
 	m_sceneData[filePath].stack = importAnimationStack(filePath);
 	if (m_sceneData[filePath].stack) {
 		m_sceneData[filePath].hasAnimation = true;
 	}
-
+	m_sceneDataMutex.unlock();
 	return true;
 }
 bool FBXLoader::initScene(const std::string& filePath) {
@@ -106,9 +111,10 @@ FbxScene* FBXLoader::makeScene(std::string filePath, std::string sceneName) {
 		return nullptr;
 	}
 	FbxScene* lScene = FbxScene::Create(s_manager, sceneName.c_str());
-
-
+	static int counter = 0;
+	//Logger::Log("Trying to import scene "+ sceneName +" : " + std::to_string(counter));
 	importer->Import(lScene);
+	//Logger::Log("imported scene : " + std::to_string(counter++));
 	importer->Destroy();
 
 	return lScene;

@@ -4,7 +4,7 @@
 class Camera;
 class CameraController;
 class GameDataTracker;
-class MapComponent;
+class LevelSystem;
 
 struct Movement {
 	float speedModifier = 1.f;
@@ -26,7 +26,7 @@ public:
 	void updateCameraPosition(float alpha);
 	CameraController* getCamera() const;
 
-	MapComponent* m_mapPointer = nullptr;
+	LevelSystem* m_mapPointer;
 
 private:
 	void processKeyboardInput(const float& dt);
