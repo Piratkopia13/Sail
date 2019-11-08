@@ -19,6 +19,7 @@ struct Event {
 		PLAYER_CANDLE_DEATH,
 		GAME_OVER,
 		RESET_WATER,
+		SETTINGS_UPDATED,
 
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};

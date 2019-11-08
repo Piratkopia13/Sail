@@ -48,7 +48,7 @@ public:
 
 	// Models
 	void addModel(const std::string& modelName, Model* model);
-	void loadModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
+	bool loadModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModelCopy(const std::string& filename, Shader* shader = nullptr);
 	bool hasModel(const std::string& filename);
@@ -105,11 +105,14 @@ private:
 	// Audio files/data mapped to their filenames
 	std::map<std::string, std::unique_ptr<AudioData>> m_audioDataAll;
 	// Textures mapped to their filenames
+	
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
 	//std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
+	std::mutex m_modelMutex;
 	std::map < std::string, std::unique_ptr<Model>> m_models;
+	std::mutex m_animationMutex;
 	std::map < std::string, std::unique_ptr<AnimationStack>> m_animationStacks;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;
