@@ -52,8 +52,8 @@ protected:
 	void addMessageToChat(const Message& message);
 
 private:
-	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
-
+	ImGuiHandler* m_imGuiHandler;
+	
 	// LobbyAudio
 	Entity* m_lobbyAudio = nullptr;
 
@@ -69,6 +69,10 @@ private:
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	bool m_settingsChanged;
 	float m_timeSinceLastUpdate;
+
+	ImGuiWindowFlags m_standaloneButtonflags;
+
+
 
 	unsigned int m_outerPadding;
 	unsigned int m_screenWidth;

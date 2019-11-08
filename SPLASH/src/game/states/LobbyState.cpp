@@ -1,6 +1,5 @@
 #include "LobbyState.h"
 
-
 //#include "../imgui-sfml-master/imgui-SFML.h"
 #include "../libraries/imgui/imgui.h"
 #include "../Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
@@ -26,6 +25,9 @@ LobbyState::LobbyState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_input = Input::GetInstance();
 	m_network = NWrapperSingleton::getInstance().getNetworkWrapper();
+	m_imGuiHandler = m_app->getImGuiHandler();
+
+
 	m_textHeight = 52;
 	m_outerPadding = 15;
 
@@ -38,6 +40,20 @@ LobbyState::LobbyState(StateStack& stack)
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
 
+
+
+	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoBackground;
+
+
+
 	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
@@ -48,7 +64,6 @@ LobbyState::LobbyState(StateStack& stack)
 LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
 	delete m_settingBotCount;
-
 }
 
 bool LobbyState::processInput(float dt) {
@@ -97,6 +112,27 @@ bool LobbyState::render(float dt, float alpha) {
 }
 
 bool LobbyState::renderImgui(float dt) {
+
+	static std::string font = "Beb20";
+	ImGui::PushFont(m_imGuiHandler->getFont(font));
+
+	if (ImGui::Begin("IMGUISETTINGS")) {
+		//ImGui::BeginCombo("##FONTS", &font.front());
+		for (auto const& [key, val] : m_imGuiHandler->getFontMap()) {
+			ImGui::PushFont(val);
+
+			if (ImGui::Selectable(key.c_str(), font == key)) {
+				font = key;
+			}
+			ImGui::PopFont();
+		}
+		//ImGui::EndCombo();
+	}
+	ImGui::End();
+
+	ImGui::PopFont();
+
+	ImGui::PushFont(m_imGuiHandler->getFont(font));
 	// ------- player LIST ------- 
 	renderPlayerList();
 
@@ -111,6 +147,7 @@ bool LobbyState::renderImgui(float dt) {
 
 	// ------- Return BUTTON ------- 
 	renderQuitButton();
+	ImGui::PopFont();
 
 	return false;
 }
@@ -170,7 +207,7 @@ void LobbyState::renderPlayerList() {
 	flags |= ImGuiWindowFlags_NoSavedSettings;
 
 	ImGui::SetNextWindowPos(ImVec2(
-		m_outerPadding,
+		m_outerPadding + 300,
 		m_outerPadding
 	));
 	ImGui::Begin("players in lobby:", NULL, flags);
@@ -190,52 +227,58 @@ void LobbyState::renderPlayerList() {
 	ImGui::End();
 }
 
-void LobbyState::renderStartButton() {
+void LobbyState::renderStartButton() {	
+
 	if (NWrapperSingleton::getInstance().isHost()) {
-		ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-		flags |= ImGuiWindowFlags_NoResize;
-		flags |= ImGuiWindowFlags_NoMove;
-		flags |= ImGuiWindowFlags_NoNav;
-		flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
-		flags |= ImGuiWindowFlags_NoSavedSettings;
 		ImGui::SetNextWindowPos(ImVec2(
 			m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
 			m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
 		));
-		ImGui::Begin("Start Game");
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.7f, 0.3f, 1));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
+		
 
-		if (ImGui::Button("S.P.L.A.S.H")) {
-			// Queue a removal of LobbyState, then a push of gamestate
-			NWrapperSingleton::getInstance().stopUDP();
-			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
-			auto& stat = m_app->getSettings().gameSettingsStatic;
-			auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-			m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic)});
-			m_network->sendMsgAllClients({ std::string("t0")});
-			
-			this->requestStackClear();
-			this->requestStackPush(States::Game);
+		if (ImGui::Begin("Start Game", nullptr, m_standaloneButtonflags)) {
+			if (ImGui::Button("S.P.L.A.S.H")) {
+				// Queue a removal of LobbyState, then a push of gamestate
+				NWrapperSingleton::getInstance().stopUDP();
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
+				auto& stat = m_app->getSettings().gameSettingsStatic;
+				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+				m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic) });
+				m_network->sendMsgAllClients({ std::string("t0") });
+
+				this->requestStackClear();
+				this->requestStackPush(States::Game);
+			}
 		}
+		ImGui::PopStyleColor(2);
+
+
 		ImGui::End();
 	}
 }
 
 void LobbyState::renderQuitButton() {
-	ImGui::Begin("Return");
-	if (ImGui::Button("Quit to Main Menu")) {
+	ImGui::SetNextWindowPos({ (float)m_outerPadding, (float)m_outerPadding});
+	if (ImGui::Begin("##Return", nullptr, m_standaloneButtonflags)) {
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f,0.3f,0.3f,1));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f,0.3f,0.3f,1));
+		
+		if (ImGui::Button("Leave Lobby")) {
 	
-		// Set temp window pos
-		ImGui::SetWindowPos({ 424,641 });
-		ImGui::SetWindowSize({ 137,63 });
 
-		// Reset the network
-		NWrapperSingleton::getInstance().resetNetwork();
-		NWrapperSingleton::getInstance().resetWrapper();
+			// Reset the network
+			NWrapperSingleton::getInstance().resetNetwork();
+			NWrapperSingleton::getInstance().resetWrapper();
 
-		// Schedule new state change
-		this->requestStackPop();
-		this->requestStackPush(States::MainMenu);
+			// Schedule new state change
+			this->requestStackPop();
+			this->requestStackPush(States::MainMenu);
+		}
+		ImGui::PopStyleColor(2);
 	}
+	
 	ImGui::End();
 }
 
@@ -320,7 +363,7 @@ void LobbyState::renderChat() {
 	// ------- message BOX ------- 
 	ImGui::SetNextWindowPos(ImVec2(
 		m_outerPadding,
-		m_screenHeight - (m_outerPadding + m_textHeight)
+		m_screenHeight - (m_outerPadding + m_textHeight) - 70
 	));
 	ImGui::Begin(
 		"Write Here",
@@ -345,7 +388,7 @@ void LobbyState::renderChat() {
 	));
 	ImGui::SetNextWindowPos(ImVec2(
 		m_outerPadding,
-		m_screenHeight - (300 + m_outerPadding)
+		m_screenHeight - (300 + m_outerPadding) - 70
 	));
 
 	// Render message history
