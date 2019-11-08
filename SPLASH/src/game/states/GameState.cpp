@@ -27,6 +27,9 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_NAME, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_WELCOME, this);
 
 
 	initConsole();
@@ -210,6 +213,9 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_NAME, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_WELCOME, this);
 }
 
 // Process input for the state
@@ -628,6 +634,8 @@ bool GameState::onNameRequest(const NetworkNameEvent& event) {
 		}
 		network->getNetworkWrapper()->sendMsgAllClients(welcomePackage);
 		printf("Done sending welcome package\n");
+
+
 		return true;
 	} 
 	else {	// Client
