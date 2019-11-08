@@ -17,6 +17,7 @@ ipch/
 # SPLASH Files
 **/LogFiles/*
 *.settings
+*.saildata
 
 # Visual Studio profiler
 *.psess

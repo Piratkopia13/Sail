@@ -17,6 +17,7 @@ LobbyClientState::LobbyClientState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_NAME, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_START_GAME, this);
+	EventDispatcher::Instance().subscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
 LobbyClientState::~LobbyClientState() {
@@ -33,6 +34,7 @@ LobbyClientState::~LobbyClientState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_NAME, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_START_GAME, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
 bool LobbyClientState::onEvent(const Event& event) {
@@ -45,6 +47,7 @@ bool LobbyClientState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_NAME:			onNameRequest((const NetworkNameEvent&)event); break;
 	case Event::Type::NETWORK_DROPPED:		onDropped((const NetworkDroppedEvent&)event); break;
 	case Event::Type::NETWORK_START_GAME:	onStartGame((const NetworkStartGameEvent&)event); break;
+	case Event::Type::SETTINGS_UPDATED:		onSettingsChanged((const SettingsUpdatedEvent&)event); break;
 	default: break;
 	}
 	return true;
@@ -149,9 +152,15 @@ bool LobbyClientState::onStartGame(const NetworkStartGameEvent& event) {
 		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, false));
 	}
 
-	
-	this->requestStackPop();
+	this->requestStackClear();
 	this->requestStackPush(States::Game);
 
 	return true;
+}
+
+bool LobbyClientState::onSettingsChanged(const SettingsUpdatedEvent& event) {
+	auto& stat = m_app->getSettings().gameSettingsStatic;
+	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+	m_app->getSettings().deSerialize(event.settings, stat, dynamic);
+	return false;
 }

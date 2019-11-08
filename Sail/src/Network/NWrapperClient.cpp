@@ -14,6 +14,7 @@
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 #include "../../SPLASH/src/game/events/NetworkBackToLobby.h"
+#include "../../SPLASH/src/game/events/SettingsEvent.h"
 
 bool NWrapperClient::host(int port) {
 	// A client does not host, do nothing.
@@ -176,7 +177,10 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case 'z':
 		EventDispatcher::Instance().emit(NetworkBackToLobby());
 		break;
+	case 'i': 
 
+		EventDispatcher::Instance().emit(SettingsUpdatedEvent(std::string(nEvent.data->Message.rawMsg).substr(1,std::string::npos)));
+		break;
 	default:
 		break;
 	}

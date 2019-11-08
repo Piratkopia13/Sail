@@ -145,7 +145,12 @@ void ShaderPipeline::parse(const std::string& source) {
 	// Process all structured buffers (used in some compute shaders)
 	src = cleanSource.c_str();
 	while (src = findToken("StructuredBuffer", src)) {
-		parseStructuredBuffer(src);
+		char* rwCheck = (char*)(src - 18);
+		bool isRW = false;
+		if (rwCheck >= cleanSource.c_str() && rwCheck[0] == 'R' && rwCheck[1] == 'W') {
+			isRW = true;
+		}
+		parseStructuredBuffer(src, isRW);
 	}
 
 }
@@ -244,7 +249,7 @@ void ShaderPipeline::parseRWTexture(const char* source) {
 	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot));
 }
 
-void ShaderPipeline::parseStructuredBuffer(const char* source) {
+void ShaderPipeline::parseStructuredBuffer(const char* source, bool isRW) {
 	// TODO: use type for something (or remove it)
 	UINT tokenSize = 0;
 	std::string type = nextTokenAsType(source, tokenSize);
@@ -266,7 +271,7 @@ void ShaderPipeline::parseStructuredBuffer(const char* source) {
 
 	void* initData = malloc(size);
 	memset(initData, 0, size);
-	parsedData.structuredBuffers.emplace_back(name, initData, size, numElements, stride, bindShader, slot);
+	parsedData.structuredBuffers.emplace_back(name, initData, size, numElements, stride, bindShader, slot, isRW);
 	free(initData);
 }
 
@@ -402,6 +407,7 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "DeferredDirLightData") { return 32; }
 	if (typeName == "Vertex") { return 4 * 14; }
 	if (typeName == "VertConnections") { return 4 + 4*5 + 4*5; }
+	if (typeName == "ParticleInput") { return 4*14 * 100 + 4; }
 
 	Logger::Error("Found shader variable type with unknown size (" + typeName + ")");
 	return 0;

@@ -18,7 +18,9 @@
 #include <list>
 
 LobbyState::LobbyState(StateStack& stack)
-	: State(stack)
+	: State(stack),
+	m_settingsChanged(false),
+	m_timeSinceLastUpdate(0.0f)
 {
 	// ImGui is already initiated and set up, thanks alex!
 	m_app = Application::getInstance();
@@ -77,6 +79,14 @@ bool LobbyState::update(float dt, float alpha) {
 	this->m_screenHeight = m_app->getWindow()->getWindowHeight();
 
 	m_network->checkForPackages();
+	if (NWrapperSingleton::getInstance().isHost() && m_settingsChanged && m_timeSinceLastUpdate > 0.2f) {
+		auto& stat = m_app->getSettings().gameSettingsStatic;
+		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+		m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic) });
+		m_settingsChanged = false;
+		m_timeSinceLastUpdate = 0.0f;
+	}
+	m_timeSinceLastUpdate += dt;
 
 	return false;
 }
@@ -201,19 +211,18 @@ void LobbyState::renderStartButton() {
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
 			NWrapperSingleton::getInstance().stopUDP();
-			char seed = (char)(Utils::rnd() * 255);
-			NWrapperSingleton::getInstance().setSeed(seed);
-
 			if (m_spectator) {
 				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, true));
 			}
 			else {
 				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, false));
 			}
-
-			// t for start the game, p for start as a player. s would be spectator
-			m_network->sendMsgAllClients({ std::string("tp") + seed });
-			this->requestStackPop();
+			auto& stat = m_app->getSettings().gameSettingsStatic;
+			auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+			m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic)});
+			m_network->sendMsgAllClients({ std::string("tp0")});
+			
+			this->requestStackClear();
 			this->requestStackPush(States::Game);
 		}
 		ImGui::End();
@@ -258,6 +267,8 @@ void LobbyState::renderSettings() {
 
 	ImGui::SetNextWindowSize(ImVec2(300,300));
 	if (ImGui::Begin("Settings", NULL, settingsFlags)) {
+		static auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+		static auto& stat = m_app->getSettings().gameSettingsStatic;
 		ImGui::Text("Map Settings (not doing anything yet..)");
 		ImGui::Separator();
 		ImGui::Columns(2);
@@ -265,23 +276,36 @@ void LobbyState::renderSettings() {
 		ImGui::Text("Value"); ImGui::NextColumn();
 		ImGui::Separator();
 
-		ImGui::Text("MapSize"); ImGui::NextColumn();
-		static unsigned int mapSize[2] = {5, 5};
-		ImGui::SliderInt2("##ASDASD", (int*)mapSize, 1, 12); ImGui::NextColumn();
+		SettingStorage::DynamicSetting* mapSizeX = &m_app->getSettings().gameSettingsDynamic["map"]["sizeX"];
+		SettingStorage::DynamicSetting* mapSizeY = &m_app->getSettings().gameSettingsDynamic["map"]["sizeY"];
 
-		static int seed = 0;
-		ImGui::Text("Seed"); ImGui::NextColumn();
-		if (ImGui::InputInt("##SEED", &seed)) {
-			if (seed < 0) {
-				seed = 0;
-			}
+		static int size[] = { 0,0 };
+		size[0] = (int)mapSizeX->value;
+		size[1] = (int)mapSizeY->value;
+		ImGui::Text("MapSize"); ImGui::NextColumn();
+		if (ImGui::SliderInt2("##MapSizeXY", size, (int)mapSizeX->minVal, (int)mapSizeX->maxVal)){
+			mapSizeX->value = size[0];
+			mapSizeY->value = size[1];
+			m_settingsChanged = true;
 		}
 		ImGui::NextColumn();
 
-		static float clutter = 0.85f;
+		int seed = dynamic["map"]["seed"].value;
+		ImGui::Text("Seed"); ImGui::NextColumn();
+		if (ImGui::InputInt("##SEED", &seed)) {
+			dynamic["map"]["seed"].setValue(seed);
+			m_settingsChanged = true;
+		}
+		ImGui::NextColumn();
 		ImGui::Text("Clutter"); ImGui::NextColumn();
-		if (ImGui::SliderFloat("##Clutter", &clutter, 0.0f, 1.0f)) {
-			
+		float val = m_app->getSettings().gameSettingsDynamic["map"]["clutter"].value;
+		if (ImGui::SliderFloat("##Clutter", 
+			&val,
+			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].minVal,
+			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].maxVal
+		)) {
+			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].setValue(val);
+			m_settingsChanged = true;
 		}
 		ImGui::NextColumn();
 
