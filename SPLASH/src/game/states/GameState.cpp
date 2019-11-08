@@ -5,6 +5,7 @@
 #include "Sail/entities/systems/Systems.h"
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
+#include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Sail/events/EventDispatcher.h"
@@ -15,6 +16,7 @@
 #include <iomanip>
 #include "InGameMenuState.h"
 #include "../SPLASH/src/game/events/ResetWaterEvent.h"
+#include "API/DX12/DX12API.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -300,7 +302,9 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
+		m_app->getAPI<DX12API>()->waitForGPU();
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
+		m_app->getResourceManager().reloadShader<ParticleComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
 		m_app->getResourceManager().reloadShader<GuiShader>();
 	}
@@ -426,6 +430,9 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+
+	//Create particle system
+	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
 
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
 }
@@ -626,6 +633,7 @@ bool GameState::render(float dt, float alpha) {
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
+	m_componentSystems.particleSystem->submitAll();
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
 	m_componentSystems.guiSubmitSystem->submitAll();
@@ -750,6 +758,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
+	runSystem(dt, m_componentSystems.particleSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
