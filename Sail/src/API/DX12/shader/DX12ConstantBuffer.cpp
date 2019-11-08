@@ -80,7 +80,7 @@ namespace ShaderComponent {
 			// Size must be a multiple of 64KB for single-textures and constant buffers
 			m_resourceHeapSize = (unsigned int)((glm::floor(size / (1024.0 * 64.0)) + 1) * (1024.0 * 64.0));
 
-			Logger::Log("Expanding constantbuffer from " + std::to_string(oldSize) + " to " + std::to_string(m_resourceHeapSize) + " Bytes.");
+			SAIL_LOG("Expanding constantbuffer from " + std::to_string(oldSize) + " to " + std::to_string(m_resourceHeapSize) + " Bytes.");
 
 			// Copy gpu memory to ram before recreating buffers
 			void* data = malloc(oldSize);

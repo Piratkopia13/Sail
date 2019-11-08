@@ -11,7 +11,7 @@ std::pair<std::string, void*> GenerateMipsComputeShader::getComputeInputForIndex
 	case 0:
 		return { "input", thisInput.inputTexture };
 	}
-	Logger::Error("Tried to get compute input from unknown index - " + std::to_string(index));
+	SAIL_LOG_ERROR("Tried to get compute input from unknown index - " + std::to_string(index));
 	return { "", nullptr };
 }
 
@@ -21,7 +21,7 @@ RenderableTexture* GenerateMipsComputeShader::getComputeOutputForIndex(Shader::C
 	case 0:
 		return thisOutput.outputTexture;
 	}
-	Logger::Error("Tried to get compute output from unknown index - " + std::to_string(index));
+	SAIL_LOG_ERROR("Tried to get compute output from unknown index - " + std::to_string(index));
 	return nullptr;
 }
 

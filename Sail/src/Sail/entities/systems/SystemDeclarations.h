@@ -29,6 +29,7 @@ class MovementSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
 class OctreeAddRemoverSystem;
+class ParticleSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
@@ -36,6 +37,8 @@ class SpeedLimitSystem;
 class SprinklerSystem;
 class UpdateBoundingBoxSystem;
 class SpotLightSystem;
+class SprintingSystem;
+class TeamColorSystem;
 
 struct Systems {
 	AiSystem* aiSystem = nullptr;
@@ -65,11 +68,14 @@ struct Systems {
 	NetworkReceiverSystem* networkReceiverSystem = nullptr;
 	NetworkSenderSystem* networkSenderSystem = nullptr;
 	OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
+	ParticleSystem* particleSystem = nullptr;
 	PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 	ProjectileSystem* projectileSystem = nullptr;
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
 	SpotLightSystem* spotLightSystem = nullptr;
+	TeamColorSystem* teamColorSystem = nullptr;
 	SprinklerSystem* sprinklerSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
+	SprintingSystem* sprintingSystem = nullptr;
 };

@@ -38,7 +38,7 @@ public:
 
 		for (auto& c : collisions) {
 			if (ImGui::Selectable(std::string(c.entity->getName() + "(" + std::to_string(c.entity->getID()) + ")").c_str(), (*selected) == c.entity)) {
-				Logger::Log("Tried to switch");
+				SAIL_LOG("Tried to switch");
 				*selected = c.entity;
 				return;
 			}

@@ -39,7 +39,7 @@ void DX12ShaderPipeline::bind(void* cmdList) {
 
 void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 	if (!m_pipelineState)
-		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
+		SAIL_LOG_ERROR("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
 	for (auto& it : parsedData.cBuffers) {
@@ -129,16 +129,16 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 	HRESULT hr;
 	switch (shaderType) {
 	case ShaderComponent::VS:
-		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", flags, 0, &pShaders, &errorBlob);
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_1", flags, 0, &pShaders, &errorBlob);
 		break;
 	case ShaderComponent::GS:
-		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GSMain", "gs_5_0", flags, 0, &pShaders, &errorBlob);
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GSMain", "gs_5_1", flags, 0, &pShaders, &errorBlob);
 		break;
 	case ShaderComponent::PS:
-		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", flags, 0, &pShaders, &errorBlob);
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_1", flags, 0, &pShaders, &errorBlob);
 		break;
 	case ShaderComponent::CS:
-		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_0", flags, 0, &pShaders, &errorBlob);
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_1", flags, 0, &pShaders, &errorBlob);
 		break;
 	}
 
@@ -243,7 +243,7 @@ void DX12ShaderPipeline::checkBufferSizes(unsigned int nMeshes) {
 void DX12ShaderPipeline::setCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {
 	bool success = trySetCBufferVar_new(name, data, size, meshIndex);
 	if (!success)
-		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+		SAIL_LOG_WARNING("Tried to set CBuffer variable that did not exist (" + name + ")");
 }
 
 bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {

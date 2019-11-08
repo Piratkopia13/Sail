@@ -7,6 +7,11 @@ Model::Model(Mesh::Data& buildData, Shader* shader)
 	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shader)));
 }
 
+Model::Model(unsigned int numVertices, Shader* shader) 
+	: m_isAnimated(false)
+{
+	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(numVertices, shader)));
+}
 Model::Model() 
 	: m_isAnimated(false) 
 { }

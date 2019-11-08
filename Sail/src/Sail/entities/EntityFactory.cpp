@@ -89,12 +89,16 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
+	myPlayer->addComponent<SprintingComponent>();
 
+	//For testing, add particle emitter to player.
+	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
+	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
+	particleEmitterComp->spawnRate = 0.001f;
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
 	AddCandleComponentsToPlayer(myPlayer, lightIndex, playerID);
-
 
 	Netcode::ComponentID candleNetID;
 	Netcode::ComponentID gunNetID;
@@ -116,7 +120,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	}
 
 	// For debugging
-	Logger::Log("My netcompID: " + std::to_string(netComponentID));
+	SAIL_LOG("My netcompID: " + std::to_string(netComponentID));
 
 	// Tell other players to create my character
 	NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -305,6 +309,12 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
+
+	//===REMOVE THIS. THIS IS ONLY TO DEMONSTRATE TEAM COLORS. TEAM COLORS SHOULD NOT BE ON ALL MAP OBJECTS===
+	SAIL_LOG_WARNING("Dont Forget to remove TeamComponent from StaticMapObjects @EntityFactory when the walls no longer need it to demonstrate the feature!");
+	static int t = 0;
+	e->addComponent<TeamComponent>()->team = (t++) % 12;
+	//=====================
 
 	return e;
 }
