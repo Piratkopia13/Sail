@@ -116,6 +116,8 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 			candleNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, playerID)->m_id;
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
+			c->addComponent<ThrowingComponent>();
+			c->addComponent<MovementComponent>();
 		}
 	}
 

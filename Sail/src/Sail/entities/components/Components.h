@@ -34,5 +34,6 @@
 #include "TransformComponent.h"
 #include "VerticalCylinderComponent.h"
 #include "SprintingComponent.h"
+#include "ThrowingComponent.h"
 
 #include "GUIComponent.h"

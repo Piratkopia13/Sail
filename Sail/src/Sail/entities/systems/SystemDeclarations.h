@@ -39,6 +39,7 @@ class UpdateBoundingBoxSystem;
 class SpotLightSystem;
 class SprintingSystem;
 class TeamColorSystem;
+class CandleThrowingSystem;
 
 struct Systems {
 	AiSystem* aiSystem = nullptr;
@@ -78,4 +79,5 @@ struct Systems {
 	SprinklerSystem* sprinklerSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 	SprintingSystem* sprintingSystem = nullptr;
+	CandleThrowingSystem* candleThrowingSystem = nullptr;
 };

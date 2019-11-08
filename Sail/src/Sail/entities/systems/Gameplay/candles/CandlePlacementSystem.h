@@ -14,7 +14,7 @@ public:
 	void update(float dt) override;
 
 private:
-	void putDownCandle(Entity* e);
+	void toggleCandlePlacement(Entity* e);
 
 private:
 	Octree* m_octree;

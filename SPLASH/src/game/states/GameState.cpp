@@ -442,6 +442,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
 
 	m_componentSystems.sprintingSystem = ECS::Instance()->createSystem<SprintingSystem>();
+
+	m_componentSystems.candleThrowingSystem = ECS::Instance()->createSystem<CandleThrowingSystem>();
 }
 
 void GameState::initConsole() {
@@ -759,6 +761,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
+	runSystem(dt, m_componentSystems.candleThrowingSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
 	runSystem(dt, m_componentSystems.candlePlacementSystem);
 	runSystem(dt, m_componentSystems.candleReignitionSystem);
