@@ -477,7 +477,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 			} else {
 #ifdef DEVELOPMENT
 				if (blasIndex >= 1 << 10) {
-					Logger::Warning("BlasIndex is to high and will interfere with team color index.");
+					SAIL_LOG_WARNING("BlasIndex is to high and will interfere with team color index.");
 				}
 #endif
 				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
