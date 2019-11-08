@@ -7,7 +7,7 @@
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "../renderer/DX12GBufferRenderer.h"
-#include "Sail/entities/components/MapComponent.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 #include "../SPLASH/src/game/events/ResetWaterEvent.h"
 
 #include "Sail/events/EventDispatcher.h"
@@ -116,7 +116,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 	// Clear old instance lists
 	for (auto& it : m_bottomBuffers[frameIndex]) {
-		it.second.instanceTransforms.clear();
+		it.second.instanceList.clear();
 	}
 
 	// Iterate all static meshes
@@ -147,7 +147,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flagFastTrace, cmdList);
 				} else {
 					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+					searchResult->second.instanceList.emplace_back(PerInstance{(glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID });
 				}
 			}
 
@@ -179,7 +179,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
 				}
 				// Add transform to instance list
-				searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+				searchResult->second.instanceList.emplace_back(PerInstance{ (glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID });
 			}
 
 			totalNumInstances++;
@@ -213,7 +213,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs, m_next_metaball_aabb);
 
@@ -229,6 +229,11 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.nDecals = m_decalsToRender;
 	newData.mapSize = mapSize;
 	newData.mapStart = mapStart;
+
+	int nTeams = teamColors.size();
+	for (int i = 0; i < nTeams && i < NUM_TEAM_COLORS; i++) {
+		newData.teamColors[i] = glm::vec4(teamColors[i], 1.0f);
+	}
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
@@ -248,8 +253,9 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 }
 
 void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
-	static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
-	static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 1.0f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f);
 	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
 
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
@@ -464,19 +470,24 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 	unsigned int instanceID_metaballs = 0;
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
-		for (auto& transform : instanceList.instanceTransforms) {
+		for (auto& instance : instanceList.instanceList) {
 			if (it.first == nullptr) {
 				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
 				pInstanceDesc->InstanceMask = 0x01;
 			} else {
-				pInstanceDesc->InstanceID = blasIndex;
+#ifdef DEVELOPMENT
+				if (blasIndex >= 1 << 10) {
+					Logger::Warning("BlasIndex is to high and will interfere with team color index.");
+				}
+#endif
+				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
 				pInstanceDesc->InstanceMask = 0xFF &~ 0x01;
 			}
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
-			memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
+			memcpy(pInstanceDesc->Transform, &instance.transform, sizeof(pInstanceDesc->Transform));
 
 			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
 
@@ -513,7 +524,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
 
 	InstanceList instance;
-	instance.instanceTransforms.emplace_back(renderCommand.transform);
+	instance.instanceList.emplace_back(PerInstance{ renderCommand.transform , (char)renderCommand.teamColorID});
 	AccelerationStructureBuffers& bottomBuffer = instance.blas;
 	if (performInplaceUpdate) {
 		bottomBuffer = *sourceBufferForUpdate;

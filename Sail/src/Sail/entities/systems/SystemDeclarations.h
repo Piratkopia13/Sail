@@ -18,7 +18,7 @@ class EntityRemovalSystem;
 class GameInputSystem;
 class GUISubmitSystem;
 class GunSystem;
-class LevelGeneratorSystem;
+class LevelSystem;
 class LifeTimeSystem;
 class LightSystem;
 class LightListSystem;
@@ -29,12 +29,15 @@ class MovementSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
 class OctreeAddRemoverSystem;
+class ParticleSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
 class SpeedLimitSystem;
+class SprinklerSystem;
 class UpdateBoundingBoxSystem;
 class SpotLightSystem;
+class TeamColorSystem;
 
 struct Systems {
 	AiSystem* aiSystem = nullptr;
@@ -53,7 +56,7 @@ struct Systems {
 	GameInputSystem* gameInputSystem = nullptr;
 	GUISubmitSystem* guiSubmitSystem = nullptr;
 	GunSystem* gunSystem = nullptr;
-	LevelGeneratorSystem* levelGeneratorSystem = nullptr;
+	LevelSystem* levelSystem = nullptr;
 	LifeTimeSystem* lifeTimeSystem = nullptr;
 	LightSystem* lightSystem = nullptr;
 	LightListSystem* lightListSystem = nullptr;
@@ -64,10 +67,13 @@ struct Systems {
 	NetworkReceiverSystem* networkReceiverSystem = nullptr;
 	NetworkSenderSystem* networkSenderSystem = nullptr;
 	OctreeAddRemoverSystem* octreeAddRemoverSystem = nullptr;
+	ParticleSystem* particleSystem = nullptr;
 	PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 	ProjectileSystem* projectileSystem = nullptr;
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
 	SpotLightSystem* spotLightSystem = nullptr;
+	TeamColorSystem* teamColorSystem = nullptr;
+	SprinklerSystem* sprinklerSystem = nullptr;
 	UpdateBoundingBoxSystem* updateBoundingBoxSystem = nullptr;
 };

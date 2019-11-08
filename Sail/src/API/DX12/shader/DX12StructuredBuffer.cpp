@@ -5,8 +5,8 @@
 
 namespace ShaderComponent {
 
-	StructuredBuffer* StructuredBuffer::Create(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot) {
-		return SAIL_NEW DX12StructuredBuffer(initData, size, numElements, stride, bindShader, slot);
+	StructuredBuffer* StructuredBuffer::Create(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot, bool isRW) {
+		return SAIL_NEW DX12StructuredBuffer(initData, size, numElements, stride, bindShader, slot, isRW);
 	}
 
 	// This constructor is not used by ShaderPipeline
@@ -38,11 +38,12 @@ namespace ShaderComponent {
 		}
 	}
 
-	DX12StructuredBuffer::DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot)
+	DX12StructuredBuffer::DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot, bool isRW)
 		: m_register(slot)
 		, m_stride(stride)
 		, m_numElements(numElements)
 		, m_elementByteSize(size)
+		, m_isRW(isRW)
 	{
 		m_context = Application::getInstance()->getAPI<DX12API>();
 		auto numSwapBuffers = m_context->getNumGPUBuffers();
@@ -86,7 +87,8 @@ namespace ShaderComponent {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getSwapIndex();
 
-		UINT rootIndex = m_context->getRootIndexFromRegister("t" + std::to_string(m_register));
+		char prefix = (m_isRW) ? 'u' : 't';
+		UINT rootIndex = m_context->getRootIndexFromRegister(prefix + std::to_string(m_register));
 
 		// Copy SRV and bind
 		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), m_srvCDHs[frameIndex], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -96,7 +98,8 @@ namespace ShaderComponent {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getSwapIndex();
 
-		UINT rootIndex = m_context->getRootIndexFromRegister("t" + std::to_string(m_register));
+		char prefix = (m_isRW) ? 'u' : 't';
+		UINT rootIndex = m_context->getRootIndexFromRegister(prefix + std::to_string(m_register));
 
 		// Create SRV with correct starting index
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

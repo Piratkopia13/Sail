@@ -25,7 +25,6 @@ MenuState::MenuState(StateStack& stack)
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 
-	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 	
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
@@ -34,7 +33,6 @@ MenuState::~MenuState() {
 	delete[] m_ipBuffer;
 	
 	Utils::writeFileTrunc("res/data/localplayer.settings", NWrapperSingleton::getInstance().getMyPlayerName());
-	m_modelThread.get();
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
@@ -96,7 +94,16 @@ bool MenuState::renderImgui(float dt) {
 					NWrapperSingleton::getInstance().stopUDP();
 					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
-					this->requestStackPop();
+					auto& map = m_app->getSettings().gameSettingsDynamic["map"];
+
+#ifdef _PERFORMANCE_TEST
+					map["sizeX"].value = 20;
+					map["sizeY"].value = 20;
+					map["seed"].value = 2.0f;
+#endif
+
+
+					this->requestStackClear();
 					this->requestStackPush(States::Game);
 				}
 			}
@@ -235,7 +242,7 @@ bool MenuState::renderImgui(float dt) {
 		std::string progress = "Models:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/14.0f, ImVec2(0.0f, 0.0f));
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/21.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(21)).c_str());
 
 		progress = "Textures:";
 		ImGui::Text(progress.c_str());
@@ -265,129 +272,6 @@ const std::string MenuState::loadPlayerName(const std::string& file) {
 	return name;
 }
 
-bool MenuState::loadModels(Application* app) {
-	ResourceManager* rm = &app->getResourceManager();
-
-
-	rm->setDefaultShader(&app->getResourceManager().getShaderSet<GBufferOutShader>());
-	rm->loadModel("Doc.fbx");
-	rm->loadModel("candleExported.fbx");
-	rm->loadModel("Tiles/tileFlat.fbx");
-	rm->loadModel("Tiles/RoomWall.fbx");
-	rm->loadModel("Tiles/tileDoor.fbx");
-	rm->loadModel("Tiles/RoomDoor.fbx");
-	rm->loadModel("Tiles/CorridorDoor.fbx");
-	rm->loadModel("Tiles/CorridorWall.fbx");
-	rm->loadModel("Tiles/RoomCeiling.fbx");
-	rm->loadModel("Tiles/CorridorFloor.fbx");
-	rm->loadModel("Tiles/RoomFloor.fbx");
-	rm->loadModel("Tiles/CorridorCeiling.fbx");
-	rm->loadModel("Tiles/CorridorCorner.fbx");
-	rm->loadModel("Tiles/RoomCorner.fbx");
-	rm->loadModel("Clutter/SmallObject.fbx");
-	rm->loadModel("Clutter/MediumObject.fbx");
-	rm->loadModel("Clutter/LargeObject.fbx");
-	rm->loadModel("Torch.fbx");
-	rm->loadModel("Clutter/Table.fbx");
-	rm->loadModel("Clutter/Boxes.fbx");
-	rm->loadModel("Clutter/MediumBox.fbx");
-	rm->loadModel("Clutter/SquareBox.fbx");
-	rm->loadModel("Clutter/Books1.fbx");
-	rm->loadModel("Clutter/Books2.fbx");
-	rm->loadModel("Clutter/Screen.fbx");
-	rm->loadModel("Clutter/Notepad.fbx");
-
-	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
-	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
-	rm->loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
-
-	rm->loadTexture("pbr/Tiles/RD_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/RD_NM.tga");
-	rm->loadTexture("pbr/Tiles/RD_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/CD_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/CD_NM.tga");
-	rm->loadTexture("pbr/Tiles/CD_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/CW_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/CW_NM.tga");
-	rm->loadTexture("pbr/Tiles/CW_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/F_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/F_NM.tga");
-	rm->loadTexture("pbr/Tiles/F_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/CF_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/CF_NM.tga");
-	rm->loadTexture("pbr/Tiles/CF_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/CC_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/CC_NM.tga");
-	rm->loadTexture("pbr/Tiles/CC_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/RC_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/RC_NM.tga");
-	rm->loadTexture("pbr/Tiles/RC_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/Corner_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/Corner_NM.tga");
-	rm->loadTexture("pbr/Tiles/Corner_Albedo.tga");
-
-	rm->loadTexture("pbr/metal/metalnessRoughnessAO.tga");
-	rm->loadTexture("pbr/metal/normal.tga");
-	rm->loadTexture("pbr/metal/albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/LO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/LO_NM.tga");
-	rm->loadTexture("pbr/Clutter/LO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/MO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/MO_NM.tga");
-	rm->loadTexture("pbr/Clutter/MO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/SO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/SO_NM.tga");
-	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/Saftblandare_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");
-	rm->loadTexture("pbr/Clutter/Saftblandare_Albedo.tga");
-
-	rm->loadTexture("pbr/Torch/Torch_MRAO.tga");
-	rm->loadTexture("pbr/Torch/Torch_NM.tga");
-	rm->loadTexture("pbr/Torch/Torch_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/Boxes_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/Boxes_NM.tga");
-	rm->loadTexture("pbr/Clutter/Boxes_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/Table_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/Table_NM.tga");
-	rm->loadTexture("pbr/Clutter/Table_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/Book_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/Book_NM.tga");
-	rm->loadTexture("pbr/Clutter/Book1_Albedo.tga");
-	rm->loadTexture("pbr/Clutter/Book2_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/SquareBox_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/SquareBox_NM.tga");
-	rm->loadTexture("pbr/Clutter/SquareBox_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/MediumBox_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/MediumBox_NM.tga");
-	rm->loadTexture("pbr/Clutter/MediumBox_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/Screen_Albedo.tga");
-	rm->loadTexture("pbr/Clutter/Screen_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/Screen_NM.tga");
-
-	rm->loadTexture("pbr/Clutter/Notepad_Albedo.tga");
-	rm->loadTexture("pbr/Clutter/Notepad_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/Notepad_NM.tga");
-
-	return false;
-}
 
 bool MenuState::onLanHostFound(const NetworkLanHostFoundEvent& event) {
 	// Get IP (as int) then convert into char*

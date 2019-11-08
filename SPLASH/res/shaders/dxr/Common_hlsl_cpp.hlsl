@@ -29,6 +29,7 @@ namespace DXRShaderCommon {
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
+#define NUM_TEAM_COLORS 12
 #define MAX_NUM_METABALLS 500
 #define METABALL_RADIUS 0.12f
 #define MAX_DECALS 100
@@ -99,6 +100,7 @@ struct SceneCBuffer {
 	float padding2;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
     SpotlightInput spotLights[NUM_POINT_LIGHTS];
+	float4 teamColors[NUM_TEAM_COLORS];
 
 	// Water voxel data
 	float3 mapSize;
