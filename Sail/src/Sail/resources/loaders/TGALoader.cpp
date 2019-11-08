@@ -10,7 +10,7 @@ namespace FileLoader {
 		// Load the targa image data into memory.
 		result = loadTarga(filename, textureData);
 		if (!result) {
-			Logger::Warning("Texture file \"" + filename + "\" could not be read!");
+			SAIL_LOG_WARNING("Texture file \"" + filename + "\" could not be read!");
 			result = loadTarga("res/textures/missing.tga", textureData); // TODO: make this more general, dont load it every time
 		}
 
@@ -50,7 +50,7 @@ namespace FileLoader {
 
 		// Check that it is 32 bit and not 24 bit.
 		if (bpp != 32) {
-			Logger::Warning("Tried to load texture with " + std::to_string(bpp) + " bpp, requires 32 bpp");
+			SAIL_LOG_WARNING("Tried to load texture with " + std::to_string(bpp) + " bpp, requires 32 bpp");
 			return false;
 		}
 

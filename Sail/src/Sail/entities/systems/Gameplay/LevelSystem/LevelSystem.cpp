@@ -1363,7 +1363,7 @@ glm::vec3 LevelSystem::getSpawnPoint() {
 		spawnPoints.erase(spawnPoints.begin());
 	}
 	else {
-		Logger::Error("No more spawn locations available.");
+		SAIL_LOG_ERROR("No more spawn locations available.");
 	}
 
 	return spawnLocation;

@@ -48,7 +48,7 @@ void LightListSystem::addPointLightToDebugEntity(LightSetup* lightSetup, Perspec
 		}
 	}
 	else {
-		Logger::Warning("m_debugLightListEntity not setup, point light could not be added.");
+		SAIL_LOG_WARNING("m_debugLightListEntity not setup, point light could not be added.");
 	}
 }
 
