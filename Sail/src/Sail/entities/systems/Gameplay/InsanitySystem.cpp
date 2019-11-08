@@ -56,7 +56,7 @@ void InsanitySystem::update(float dt) {
 			ic->insanityValue -= (dist - 1) * dt * 0.5;
 			ic->insanityValue = std::clamp(ic->insanityValue, m_minInsanity, m_maxInsanity);
 			if (ic->insanityValue <= 0) {
-				cc->kill(CandleComponent::DamageSource::INSANE);
+				cc->kill(CandleComponent::DamageSource::INSANE, 255);
 			}
 		}
 	}

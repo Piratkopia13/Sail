@@ -60,6 +60,7 @@ namespace Netcode {
 		PLAYER_LANDED,
 		WATER_HIT_PLAYER,
 		SET_CANDLE_HEALTH,
+		EXTINGUISH_CANDLE,
 		PLAYER_DIED,
 		PLAYER_DISCONNECT,
 		MATCH_ENDED,
@@ -77,33 +78,34 @@ namespace Netcode {
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_PLAYER		  "
-		"CHANGE_LOCAL_POSITION,			  "
-		"CHANGE_LOCAL_ROTATION,			  "
-		"CHANGE_ABSOLUTE_POS_AND_ROT,	  "
-		"SPAWN_PROJECTILE,				  "
-		"ANIMATION,						  "
-		"SHOOT_START,					  "
-		"SHOOT_LOOP,					  "
-		"SHOOT_END,						  "
-		"PLAYER_JUMPED,					  "
-		"PLAYER_LANDED,					  "
-		"WATER_HIT_PLAYER,				  "
-		"SET_CANDLE_HEALTH,				  "
-		"PLAYER_DIED,					  "
-		"PLAYER_DISCONNECT,				  "
-		"MATCH_ENDED,					  "
-		"PREPARE_ENDSCREEN,				  "
-		"ENDGAME_STATS,					  "
-		"CANDLE_HELD_STATE,				  "
-		"SEND_ALL_BACK_TO_LOBBY,		  "
-		"RUNNING_METAL_START,			  "
-		"RUNNING_TILE_START,			  "
-		"RUNNING_STOP_SOUND,			  "
-		"IGNITE_CANDLE,					  "
-		"UPDATE_INSANITY,				  "
-		"EMPTY,							  "
-		"COUNT							  "
+		"CREATE_NETWORKED_PLAYER,	 "
+		"CHANGE_LOCAL_POSITION,		 "
+		"CHANGE_LOCAL_ROTATION,		 "
+		"CHANGE_ABSOLUTE_POS_AND_ROT,"
+		"SPAWN_PROJECTILE,			 "
+		"ANIMATION,					 "
+		"SHOOT_START,				 "
+		"SHOOT_LOOP,				 "
+		"SHOOT_END,					 "
+		"PLAYER_JUMPED,				 "
+		"PLAYER_LANDED,				 "
+		"WATER_HIT_PLAYER,			 "
+		"SET_CANDLE_HEALTH,			 "
+		"EXTINGUISH_CANDLE,			 "
+		"PLAYER_DIED,				 "
+		"PLAYER_DISCONNECT,			 "
+		"MATCH_ENDED,				 "
+		"PREPARE_ENDSCREEN,			 "
+		"ENDGAME_STATS,				 "
+		"CANDLE_HELD_STATE,			 "
+		"SEND_ALL_BACK_TO_LOBBY,	 "
+		"RUNNING_METAL_START,		 "
+		"RUNNING_TILE_START,		 "
+		"RUNNING_STOP_SOUND,		 "
+		"IGNITE_CANDLE,				 "
+		"UPDATE_INSANITY,			 "
+		"EMPTY,						 "
+		"COUNT						 "
 	};
 
 	/*
@@ -195,6 +197,28 @@ namespace Netcode {
 		Netcode::ComponentID playerWhoWasHitID;
 	};
 
+	class MessageSetCandleHealth : public MessageData {
+	public:
+		MessageSetCandleHealth(Netcode::ComponentID candleID, float candleHealth)
+			: candleThatWasHit(candleID), health(candleHealth) {
+		}
+		~MessageSetCandleHealth() {}
+
+		Netcode::ComponentID candleThatWasHit;
+		float health;
+	};
+
+	class MessageExtinguishCandle : public MessageData {
+	public:
+		MessageExtinguishCandle(Netcode::ComponentID candleID, Netcode::PlayerID extinguishedBy)
+			: candleThatWasHit(candleID), playerWhoExtinguishedCandle(extinguishedBy) {
+		}
+		~MessageExtinguishCandle() {}
+
+		Netcode::ComponentID candleThatWasHit;
+		Netcode::PlayerID playerWhoExtinguishedCandle;
+	};
+
 	class MessagePlayerJumped : public MessageData {
 	public:
 		MessagePlayerJumped(Netcode::ComponentID id) : playerWhoJumped(id) {}
@@ -271,9 +295,9 @@ namespace Netcode {
 	};
 	class MessageIgniteCandle : public MessageData {
 	public:
-		MessageIgniteCandle(Netcode::ComponentID id) : candleOwnerID(id) {}
+		MessageIgniteCandle(Netcode::ComponentID candleId) : candleCompId(candleId) {}
 		~MessageIgniteCandle() {}
-		Netcode::ComponentID candleOwnerID;
+		Netcode::ComponentID candleCompId;
 	};
 
 }
