@@ -13,6 +13,7 @@
 #include "../DX12Mesh.h"
 #include "../DX12Utils.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
+#include "Sail/entities/systems/Graphics/ParticleSystem.h"
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
@@ -53,21 +54,26 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	auto frameIndex = m_context->getFrameIndex();
 	int count = static_cast<int>(commandQueue.size());
 
-	// Run animation updates on the gpu first
 	auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem>();
-	if (animationSystem) {
+	auto* particleSystem = ECS::Instance()->getSystem<ParticleSystem>();
+	if (animationSystem || particleSystem) {
 		m_computeCommand.allocators[frameIndex]->Reset();
 		m_computeCommand.list->Reset(m_computeCommand.allocators[frameIndex].Get(), nullptr);
 
-		// Update animations on compute shader
-		animationSystem->updateMeshGPU(m_computeCommand.list.Get());
+		if (animationSystem) {
+			// Run animation updates on the gpu first
+			animationSystem->updateMeshGPU(m_computeCommand.list.Get());
+		}
+		if (particleSystem) {
+			// Update particles on compute shader
+			particleSystem->updateOnGPU(m_computeCommand.list.Get());
+		}
 
 		m_computeCommand.list->Close();
 		m_context->executeCommandLists({ m_computeCommand.list.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
 		// Force direct queue to wait until the compute queue has finished animations
 		m_context->getDirectQueue()->wait(m_context->getComputeQueue()->signal());
 	}
-
 
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 

@@ -90,11 +90,14 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 
+	//For testing, add particle emitter to player.
+	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
+	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
+	particleEmitterComp->spawnRate = 0.001f;
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
 	AddCandleComponentsToPlayer(myPlayer, lightIndex, playerID);
-
 
 	Netcode::ComponentID candleNetID;
 	Netcode::ComponentID gunNetID;
