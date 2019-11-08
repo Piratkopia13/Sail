@@ -139,7 +139,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 				createBLAS(renderCommand, flagFastTrace, cmdList);
 			} else {
 				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-					Logger::Warning("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
+					SAIL_LOG_WARNING("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
 					// Destroy old blas
 					searchResult->second.blas.release();
 					m_bottomBuffers[frameIndex].erase(searchResult);
@@ -477,7 +477,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 			} else {
 #ifdef DEVELOPMENT
 				if (blasIndex >= 1 << 10) {
-					Logger::Warning("BlasIndex is to high and will interfere with team color index.");
+					SAIL_LOG_WARNING("BlasIndex is to high and will interfere with team color index.");
 				}
 #endif
 				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
@@ -899,7 +899,7 @@ void DXRBase::updateShaderTables() {
 					else if (parameterName == "sys_brdfLUT") {
 						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
-						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
 					}
 					});
 			} else {
@@ -921,7 +921,7 @@ void DXRBase::updateShaderTables() {
 					} else if (parameterName == "sys_brdfLUT") {
 						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
-						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
 					}
 
 					});
