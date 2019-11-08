@@ -440,6 +440,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
 
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
+
+	m_componentSystems.sprintingSystem = ECS::Instance()->createSystem<SprintingSystem>();
 }
 
 void GameState::initConsole() {
@@ -784,6 +786,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
 
+	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 

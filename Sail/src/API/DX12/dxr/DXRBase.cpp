@@ -259,33 +259,33 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
 
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
-	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	int quarterIndex = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
 	glm::i32vec3 ind = floor(floatInd);
-	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
+	int arrIndex = Utils::to1D(ind, arrSize.x, arrSize.y);
 
 	// Ignore water points that are outside the map
-	if (i >= 0 && i <= WATER_ARR_SIZE - 1) {
-		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
-		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
-		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
-		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
+		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
+		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
+		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
+		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
 
-		switch (index) {
+		switch (quarterIndex) {
 		case 0:
-			m_waterDeltas[i] = Utils::packQuarterFloat(0, up1, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(0, up1, up2, up3);
 			break;
 		case 1:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, 0, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, 0, up2, up3);
 			break;
 		case 2:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, 0, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, 0, up3);
 			break;
 		case 3:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, up2, 0);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, 0);
 			break;
 		}
 
-		m_waterDataCPU[i] = m_waterDeltas[i];
+		m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
 		m_waterChanged = true;
 	}
 }

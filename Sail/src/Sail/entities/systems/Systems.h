@@ -16,6 +16,7 @@
 #include "Graphics/AnimationChangerSystem.h"
 #include "Graphics/ParticleSystem.h"
 #include "input/GameInputSystem.h"
+#include "input/SprintingSystem.h"
 #include "Gameplay/SprinklerSystem.h"
 #include "Gameplay/LevelSystem/LevelSystem.h"
 #include "Gameplay/lifetime/LifeTimeSystem.h"

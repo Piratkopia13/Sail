@@ -140,7 +140,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 			const float w1 = (animationC->transitions.front().transpiredTime - frame10Time) / (frame11Time - frame10Time);
 			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
 			animationC->animationW = wt;
-			Logger::Log(std::to_string(wt));
+
 			glm::mat4 m0 = glm::identity<glm::mat4>();
 			glm::mat4 m1 = glm::identity<glm::mat4>();
 
