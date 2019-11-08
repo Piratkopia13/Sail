@@ -33,6 +33,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_outputTextures.metalnessRoughnessAO = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	m_outputTextures.normal = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	m_outputTextures.shadows = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "CurrentFrameShadowTexture", Texture::R8G8)));
+	m_outputTextures.depthPositions = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "DepthPositionTexture", Texture::R16G16B16A16_FLOAT)));
 	// init shaded output texture - this is written to in a rasterisation pass
 	m_shadedOuput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	// Init raytracing input texture
@@ -251,6 +252,7 @@ RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4
 
 	shaderPipeline->bind_new(cmdList, 0);
 
+	// The following order must match the t-register order in shader
 	int numCustomSRVs = 0;
 	shaderPipeline->setTexture2D("albedoBounceOne", m_gbufferTextures[1], cmdList); numCustomSRVs++;
 	shaderPipeline->setTexture2D("albedoBounceTwo", m_outputTextures.albedo.get(), cmdList); numCustomSRVs++;
@@ -261,12 +263,14 @@ RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4
 	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceOne", m_gbufferTextures[2], cmdList); numCustomSRVs++;
 	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceTwo", m_outputTextures.metalnessRoughnessAO.get(), cmdList); numCustomSRVs++;
 
+	shaderPipeline->setTexture2D("shadows", m_outputTextures.shadows.get(), cmdList); numCustomSRVs++;
+	shaderPipeline->setTexture2D("depthPositions", m_outputTextures.depthPositions.get(), cmdList); numCustomSRVs++;
+
 	shaderPipeline->setTexture2D("brdfLUT", m_brdfTexture, cmdList); numCustomSRVs++;
 
-	shaderPipeline->setTexture2D("shadows", m_outputTextures.shadows.get(), cmdList); numCustomSRVs++;
-
 	if (camera) {
-		shaderPipeline->setCBufferVar("projectionToWorld", &glm::inverse(camera->getViewProjection()), sizeof(glm::mat4));
+		shaderPipeline->setCBufferVar("clipToView", &glm::inverse(camera->getProjMatrix()), sizeof(glm::mat4));
+		shaderPipeline->setCBufferVar("viewToWorld", &glm::inverse(camera->getViewMatrix()), sizeof(glm::mat4));
 		shaderPipeline->setCBufferVar("cameraPosition", &camera->getPosition(), sizeof(glm::vec3));
 	}
 	if (lightSetup) {

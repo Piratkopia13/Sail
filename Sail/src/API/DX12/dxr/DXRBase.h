@@ -22,6 +22,7 @@ public:
 		std::unique_ptr<DX12RenderableTexture> normal; // RGB
 		std::unique_ptr<DX12RenderableTexture> metalnessRoughnessAO; // RGB
 		std::unique_ptr<DX12RenderableTexture> shadows; // RG - first and second bounce shadows
+		std::unique_ptr<DX12RenderableTexture> depthPositions; // RGBA - first bounce depth and second bounce world positions
 	};
 
 	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
@@ -133,6 +134,8 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputMetalnessRoughnessAoUavGPUHandles[2];
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputShadowsUavCPUHandles[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputShadowsUavGPUHandles[2];
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputDepthPositionsUavCPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputDepthPositionsUavGPUHandles[2];
 	// DXR shader inputs
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtInputShadowsLastFrameUavCPUHandles[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtInputShadowsLastFrameUavGPUHandles[2];

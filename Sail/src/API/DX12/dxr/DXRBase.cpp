@@ -17,9 +17,6 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	, m_waterChanged(false)
 	, m_frameCount(0)
 {
-	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
-	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
-	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
 	m_decalTexPaths[0] = "pbr/splash/PuddleAlbedo.tga";
 	m_decalTexPaths[1] = "pbr/splash/PuddleNM.tga";
 	m_decalTexPaths[2] = "pbr/splash/puddleMRAo.tga";
@@ -342,6 +339,7 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* shadowsLastF
 	copyDescriptor(output.normal.get(), m_rtOutputNormalsUavCPUHandles);
 	copyDescriptor(output.metalnessRoughnessAO.get(), m_rtOutputMetalnessRoughnessAoUavCPUHandles);
 	copyDescriptor(output.shadows.get(), m_rtOutputShadowsUavCPUHandles);
+	copyDescriptor(output.depthPositions.get(), m_rtOutputDepthPositionsUavCPUHandles);
 
 	if (shadowsLastFrameInput) { // Doesnt exist first frame
 		// Copy history input texture srv
@@ -638,6 +636,8 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		storeHandle(m_rtOutputMetalnessRoughnessAoUavCPUHandles, m_rtOutputMetalnessRoughnessAoUavGPUHandles);
 		// Shadows UAV output
 		storeHandle(m_rtOutputShadowsUavCPUHandles, m_rtOutputShadowsUavGPUHandles);
+		// Depth and world positions output
+		storeHandle(m_rtOutputDepthPositionsUavCPUHandles, m_rtOutputDepthPositionsUavGPUHandles);
 		// Shadows last frame SRV input
 		storeHandle(m_rtInputShadowsLastFrameUavCPUHandles, m_rtInputShadowsLastFrameUavGPUHandles);
 
@@ -844,6 +844,7 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtOutputNormalsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputMetalnessRoughnessAoUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputShadowsUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputDepthPositionsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtInputShadowsLastFrameUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
@@ -970,6 +971,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("OutputNormalsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1);
 	m_localSignatureRayGen->addDescriptorTable("OutputMetalnessRoughnessAOUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 2);
 	m_localSignatureRayGen->addDescriptorTable("OutputShadowsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 3);
+	m_localSignatureRayGen->addDescriptorTable("OutputDepthPositionsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4);
 	m_localSignatureRayGen->addDescriptorTable("InputShadowsLastFrameSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 20);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
 	m_localSignatureRayGen->addDescriptorTable("decalTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 17, 0U, 3U);

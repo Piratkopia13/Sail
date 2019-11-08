@@ -48,6 +48,7 @@ struct RayPayload {
 	float4 albedo;
 	float3 normal;
 	float3 metalnessRoughnessAO;
+	float3 worldPosition;
 	float2 shadow;
 	uint recursionDepth;
 	float closestTvalue;

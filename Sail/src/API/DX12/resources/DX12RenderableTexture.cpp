@@ -28,6 +28,15 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 	case Texture::R8G8B8A8:
 		m_format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		break;
+	case Texture::R16_FLOAT:
+		m_format = DXGI_FORMAT_R16_FLOAT;
+		break;
+	case Texture::R16G16_FLOAT:
+		m_format = DXGI_FORMAT_R16G16_FLOAT;
+		break;
+	case Texture::R16G16B16A16_FLOAT:
+		m_format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		break;
 	}
 
 	const auto& numSwapBuffers = context->getNumGPUBuffers();

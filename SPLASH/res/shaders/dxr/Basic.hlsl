@@ -20,6 +20,7 @@ RWTexture2D<float4> lOutputAlbedo		 		: register(u0);		// RGB
 RWTexture2D<float4> lOutputNormals 				: register(u1); 	// XYZ
 RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u2); 	// Metalness/Roughness/AO
 RWTexture2D<float2> lOutputShadows 				: register(u3); 	// Shadows first bounce/shadows second bounce
+RWTexture2D<float4> lOutputDepthPositions		: register(u4);		// Fist hit depth (x) and world space positions for second bounce (y,z,w)
 Texture2D<float2> 	lInputShadowsLastFrame 		: register(t20); 	// last frame Shadows first bounce/last frame shadows second bounce
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
@@ -154,6 +155,8 @@ void rayGen() {
 	lOutputNormals[launchIndex] = float4(finalPayload.normal.rgb, 1.0f);
 	lOutputMetalnessRoughnessAO[launchIndex] = float4(finalPayload.metalnessRoughnessAO.rgb, 1.0f);
 	lOutputShadows[launchIndex] = finalPayload.shadow;
+	lOutputDepthPositions[launchIndex].x = linearDepth;
+	lOutputDepthPositions[launchIndex].yzw = payload.worldPosition;
 
 }
 
@@ -230,6 +233,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	payload.normal = normalInWorldSpace;
 	payload.metalnessRoughnessAO = metalnessRoughnessAO;
 	payload.shadow = 0.f;
+	payload.worldPosition = Utils::HitWorldPosition();
 }
 
 
@@ -268,7 +272,8 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	payload.albedo = finaldiffusecolor;
 	payload.normal = normalInWorldSpace;
 	payload.metalnessRoughnessAO = float3(1.f, 1.f, 1.f);
-
+	payload.worldPosition = Utils::HitWorldPosition();
+	
 	return;
 }
 

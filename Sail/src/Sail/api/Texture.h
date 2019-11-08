@@ -27,7 +27,10 @@ public:
 	enum FORMAT {
 		R8,
 		R8G8,
-		R8G8B8A8
+		R8G8B8A8,
+		R16_FLOAT,
+		R16G16_FLOAT,
+		R16G16B16A16_FLOAT
 	};
 public:
 	static Texture* Create(const std::string& filename);
