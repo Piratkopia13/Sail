@@ -31,6 +31,8 @@ Texture2D<float4> metalnesRoughnessAoBounceTwo : register(t5);
 
 Texture2D<float2> shadows : register(t6);
 
+StructuredBuffer<uint> waterData : register(t6, space0);
+
 SamplerState ss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0 {
