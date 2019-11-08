@@ -31,7 +31,6 @@
 #include "SpectatorComponent.h"
 #include "SpeedLimitComponent.h"
 #include "TeamComponent.h"
-//#include "TextComponent.h"
 #include "TransformComponent.h"
 #include "VerticalCylinderComponent.h"
 

@@ -15,7 +15,7 @@ public:
 #ifdef DEVELOPMENT
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
-		if (ImGui::DragInt("##TEAM", &team, 1)) {
+		if (ImGui::DragInt("##TEAM", &team, 0.1, 0 , 11)) {
 		
 		}
 		ImGui::NextColumn();
@@ -28,9 +28,7 @@ public:
 		col.y = c.y;
 		col.z = c.z;
 		col.w = c.a;
-		ImGui::PushStyleColor(1, col);
-		ImGui::Text((std::string("(") + std::to_string(col.x) + ", " + std::to_string(col.y) + ", " + std::to_string(col.z)).c_str());
-		ImGui::PopStyleColor(1);
+		ImGui::Text((std::string("(") + std::to_string(col.x) + ", " + std::to_string(col.y) + ", " + std::to_string(col.z) + ")").c_str());
 
 		ImGui::NextColumn();
 		ImGui::Text(std::string("Team Color").c_str());

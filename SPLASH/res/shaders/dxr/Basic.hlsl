@@ -64,15 +64,8 @@ void rayGen() {
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
 	float4 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgba;
 	
-	//if (albedoColor.a < 1.0f) {
-	//	float f = 1 - albedoColor.a;
-	//	albedoColor = albedoColor * (1 - f) + float4(1, 0, 0, 0) * f;
-	//}
-	
 	albedoColor = pow(albedoColor, 2.2f);
 
-
-	//albedoColor = pow(albedoColor, 2.2f);
 	float4 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0);
 	float metalness = metalnessRoughnessAO.r;
 	float roughness = metalnessRoughnessAO.g;
@@ -265,9 +258,6 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	float ao = metalnessRoughnessAO.b;
 	float emissivness = pow(1 - metalnessRoughnessAO.a, 2);
 
-	//payload.color = float4(normalInWorldSpace * 0.5f + 0.5f, 1.0f);
-	//return;
-
 	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor.rgb, emissivness, metalness, roughness, ao, payload, true);
 }
 
@@ -299,16 +289,10 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	}
 
 	float4 reflect_color = reflect_payload.color;
-	//reflect_color.r *= 0.8;
-	//reflect_color.g *= 0.8;
-	//reflect_color.b += 0.2;
 	reflect_color.b += 0.05f;
 	reflect_color =  saturate(reflect_color);
 
 	float4 refract_color = refract_payload.color;
-	//refract_color.r *= 0.8;
-	//refract_color.g *= 0.8;
-	//refract_color.b *= 0.2;
 	refract_color.b += 0.05f;
 	refract_color = saturate(refract_color);
 
