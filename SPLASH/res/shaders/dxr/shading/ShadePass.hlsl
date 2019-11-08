@@ -31,7 +31,7 @@ Texture2D<float4> metalnessRoughnessAoBounceTwo : register(t5);
 
 Texture2D<float2> shadows : register(t6);
 
-// StructuredBuffer<uint> PSwaterData : register(t7);
+StructuredBuffer<uint> PSwaterData : register(t7);
 
 SamplerState PSss : register(s0);
 
