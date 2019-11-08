@@ -157,7 +157,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	auto filteredShadows = runDenoising(cmdListCompute.Get());
 
-	auto shadedOutput = runShading(cmdListDirect.Get());
+	auto shadedOutput = runShading(cmdListDirect.Get(), filteredShadows);
 
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
 
@@ -201,7 +201,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_context->executeCommandLists({ cmdListDirect.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
-RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandList4* cmdList) {
+DX12RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandList4* cmdList) {
 	Application* app = Application::getInstance();
 	const auto windowWidth = app->getWindow()->getWindowWidth();
 	const auto windowHeight = app->getWindow()->getWindowHeight();
@@ -231,10 +231,10 @@ RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandLis
 	input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
 	output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderVertical, input, 1, cmdList));
 
-	return output.outputTexture;
+	return static_cast<DX12RenderableTexture*>(output.outputTexture);
 }
 
-RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4* cmdList) {
+DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4* cmdList, DX12RenderableTexture* shadows) {
 	auto shaderPipeline = static_cast<DX12ShaderPipeline*>(m_shadeShader->getPipeline());
 
 	// Make sure model has been initialized
@@ -263,7 +263,7 @@ RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4
 	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceOne", m_gbufferTextures[2], cmdList); numCustomSRVs++;
 	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceTwo", m_outputTextures.metalnessRoughnessAO.get(), cmdList); numCustomSRVs++;
 
-	shaderPipeline->setTexture2D("shadows", m_outputTextures.shadows.get(), cmdList); numCustomSRVs++;
+	shaderPipeline->setTexture2D("shadows", shadows, cmdList); numCustomSRVs++;
 	shaderPipeline->setTexture2D("depthPositions", m_outputTextures.depthPositions.get(), cmdList); numCustomSRVs++;
 
 	shaderPipeline->setTexture2D("brdfLUT", m_brdfTexture, cmdList); numCustomSRVs++;
@@ -286,7 +286,7 @@ RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4
 	m_outputTextures.albedo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	m_outputTextures.normal->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	m_outputTextures.metalnessRoughnessAO->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
-	m_outputTextures.shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 	return m_shadedOuput.get();
 }

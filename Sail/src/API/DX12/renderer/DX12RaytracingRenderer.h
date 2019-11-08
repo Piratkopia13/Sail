@@ -31,8 +31,8 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 private:
-	RenderableTexture* runDenoising(ID3D12GraphicsCommandList4* cmdList);
-	RenderableTexture* runShading(ID3D12GraphicsCommandList4* cmdList);
+	DX12RenderableTexture* runDenoising(ID3D12GraphicsCommandList4* cmdList);
+	DX12RenderableTexture* runShading(ID3D12GraphicsCommandList4* cmdList, DX12RenderableTexture* shadows);
 	bool onResize(WindowResizeEvent& event);
 
 private:

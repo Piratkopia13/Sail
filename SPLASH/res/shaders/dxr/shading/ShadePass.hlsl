@@ -53,25 +53,24 @@ SamplerState PSss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
-    float3 worldNormal[2];
-    worldNormal[0] = normalsBounceOne.Sample(PSss, input.texCoord).xyz * 2.f - 1.f;
-    worldNormal[1] = normalsBounceTwo.Sample(PSss, input.texCoord).xyz * 2.f - 1.f;
+    float3 worldNormalOne = normalsBounceOne.Sample(PSss, input.texCoord).xyz * 2.f - 1.f;
+    float3 worldNormalTwo = normalsBounceTwo.Sample(PSss, input.texCoord).xyz * 2.f - 1.f;
 
-    float3 albedo[2];
-    albedo[0] = albedoBounceOne.Sample(PSss, input.texCoord).rgb;
-    albedo[1] = albedoBounceTwo.Sample(PSss, input.texCoord).rgb;
+    float3 albedoOne = albedoBounceOne.Sample(PSss, input.texCoord).rgb;
+    float3 albedoTwo = albedoBounceTwo.Sample(PSss, input.texCoord).rgb;
 
     float3 metalnessRoughnessAoOne = metalnessRoughnessAoBounceOne.Sample(PSss, input.texCoord).xyz;
     float3 metalnessRoughnessAoTwo = metalnessRoughnessAoBounceTwo.Sample(PSss, input.texCoord).xyz;
-    float metalness[2];
-    metalness[0] = metalnessRoughnessAoOne.x;
-    metalness[1] = metalnessRoughnessAoTwo.x;
-    float roughness[2];
-    roughness[0] = metalnessRoughnessAoOne.y;
-    roughness[1] = metalnessRoughnessAoTwo.y;
-    float ao[2];
-    ao[0] = metalnessRoughnessAoOne.z;
-    ao[1] = metalnessRoughnessAoTwo.z;
+    float metalnessOne = metalnessRoughnessAoOne.x;
+    float metalnessTwo = metalnessRoughnessAoTwo.x;
+    float roughnessOne = metalnessRoughnessAoOne.y;
+    float roughnessTwo = metalnessRoughnessAoTwo.y;
+    float aoOne = metalnessRoughnessAoOne.z;
+    float aoTwo = metalnessRoughnessAoTwo.z;
+
+    float2 shadowAmount = shadows.Sample(PSss, input.texCoord).rg;
+    float shadowOne = shadowAmount.r;
+    float shadowTwo = shadowAmount.g;
 
     // Calculate world position for first bounce (stored a depth)
     float4 depthPosition = depthAndWorldPositions.Sample(PSss, input.texCoord);
@@ -82,16 +81,14 @@ float4 PSMain(PSIn input) : SV_Target0 {
     float3 screenVS = mul(clipToView, float4(screenPos, 0.f, 1.0f)).xyz;
 	float3 viewRay = float3(screenVS.xy / screenVS.z, 1.f);
 	float4 vsPosition = float4(viewRay * linearDepth, 1.0f);
-	float3 worldPosition[2];
-    worldPosition[0] = mul(viewToWorld, vsPosition).xyz;
-    worldPosition[1] = depthPosition.yzw;
+    float3 worldPositionOne = mul(viewToWorld, vsPosition).xyz;
+    float3 worldPositionTwo = depthPosition.yzw;
     
-    float3 invViewDir[2];
-    invViewDir[0] = cameraPosition - worldPosition[0];
-    invViewDir[1] = worldPosition[0] - worldPosition[1];
+    float3 invViewDirOne = cameraPosition - worldPositionOne;
+    float3 invViewDirTwo = worldPositionOne - worldPositionTwo;
 
-	float4 secondBounceColor = pbrShade(worldPosition[1], worldNormal[1], invViewDir[1], albedo[1], metalness[1], roughness[1], ao[1], -1.f);
-    return pbrShade(worldPosition[0], worldNormal[0], invViewDir[0], albedo[0], metalness[0], roughness[0], ao[0], secondBounceColor);
-    // return 1.f;
+	float4 secondBounceColor = pbrShade(worldPositionTwo, worldNormalTwo, invViewDirTwo, albedoTwo, metalnessTwo, roughnessTwo, aoTwo, shadowTwo, -1.f);
+    return pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor);
+    // return float4(shadowAmount, 0.f, 1.0f);
 }
 

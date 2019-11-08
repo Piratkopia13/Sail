@@ -6,7 +6,7 @@ static const int blurRadius = 10;
 
 #define N 256
 #define cacheSize (N + 2 * blurRadius)
-groupshared float4 cache[cacheSize];
+groupshared float2 cache[cacheSize];
 
 #define BSIGMA 0.3
 

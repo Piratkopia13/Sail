@@ -38,7 +38,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao, float4 reflectionColor) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao, float shadow, float4 reflectionColor) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
 
@@ -47,59 +47,44 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
     // Reflectance equation
     float3 Lo = 0.0f;
-    for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLightInput p = pointLights[i];
+    // Dont add light to pixels that are in complete shadow
+    if (shadow != 0.f) {
+        for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
+            PointLightInput p = pointLights[i];
 
-        // Ignore point light if color is black
-		if (all(p.color == 0.0f)) {
-			continue;
-		}
+            // Ignore point light if color is black
+            if (all(p.color == 0.0f)) {
+                continue;
+            }
+            float3 L = normalize(p.position - worldPosition);
+            float3 H = normalize(V + L);
+            float distance = length(p.position - worldPosition);
 
-        float3 toLight = normalize(p.position - worldPosition);
-        float lightRadius = 0.08f;
-        // Calculate a vector perpendicular to L
-        float3 perpL = cross(toLight, float3(0.f, 1.0f, 0.f));
-        // Handle case where L = up -> perpL should then be (1,0,0)
-        if (all(perpL == 0.0f)) {
-            perpL.x = 1.0;
+            float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
+            float3 radiance   = p.color * attenuation;
+
+            float3 F  = fresnelSchlick(max(dot(H, V), 0.0f), F0);
+
+            float NDF = DistributionGGX(N, H, roughness);
+            float G   = GeometrySmith(N, V, L, roughness);
+
+            // Calculate the Cook-Torrance BDRF
+            float3 numerator    = NDF * G * F;
+            float  denominator  = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+            float3 specular     = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
+            specular *= attenuation;
+
+            // The fresnel value directly corresponds to the specular contribution
+            float3 kS = F;
+            // The rest is the diffuse contribution (energy conserving)
+            float3 kD = 1.0f - kS;
+            // Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
+            kD *= 1.0f - metalness;
+
+            // Calculate the light's outgoing reflectance value
+            float NdotL = max(dot(N, L), 0.0f);
+            Lo += (kD * albedo / PI + specular) * radiance * NdotL * shadow;
         }
-        // Use perpL to get a vector from worldPosition to the edge of the light sphere
-        float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
-        // Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
-        float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
-        float3 H = normalize(V + toLight);
-        float distance = length(p.position - worldPosition);
-
-        float lightShadowAmount = 1.f;
-        // Dont do any shading if in shadow
-        if (lightShadowAmount == 0.f) {
-            continue;
-        }
-
-        float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
-        float3 radiance   = p.color * attenuation;
-
-        float3 F  = fresnelSchlick(max(dot(H, V), 0.0f), F0);
-
-        float NDF = DistributionGGX(N, H, roughness);
-        float G   = GeometrySmith(N, V, toLight, roughness);
-
-        // Calculate the Cook-Torrance BDRF
-        float3 numerator    = NDF * G * F;
-        float  denominator  = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, toLight), 0.0f);
-        float3 specular     = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
-        specular *= attenuation;
-
-        // The fresnel value directly corresponds to the specular contribution
-        float3 kS = F;
-        // The rest is the diffuse contribution (energy conserving)
-        float3 kD = 1.0f - kS;
-        // Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
-        kD *= 1.0f - metalness;
-
-        // Calculate the light's outgoing reflectance value
-        float NdotL = max(dot(N, toLight), 0.0f);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL * lightShadowAmount;
     }
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT

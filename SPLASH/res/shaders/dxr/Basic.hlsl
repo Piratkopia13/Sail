@@ -59,6 +59,43 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 	direction = normalize(world.xyz - origin);
 }
 
+float getShadowAmount(inout uint seed, float3 worldPosition) {
+	const uint numSamples = 1;
+    const float lightRadius = 0.05f;
+	float shadow = 0.f;
+	// Shoot a ray towards a random point on each light
+	for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
+		PointLightInput p = CB_SceneData.pointLights[i];
+
+        // Ignore point light if color is black
+		if (all(p.color == 0.0f)) {
+			continue;
+		}
+
+        float3 toLight = normalize(p.position - worldPosition);
+        // Calculate a vector perpendicular to L
+        float3 perpL = cross(toLight, float3(0.f, 1.0f, 0.f));
+        // Handle case where L = up -> perpL should then be (1,0,0)
+        if (all(perpL == 0.0f)) {
+            perpL.x = 1.0;
+        }
+        // Use perpL to get a vector from worldPosition to the edge of the light sphere
+        float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
+        // Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
+        float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
+        float distance = length(p.position - worldPosition);
+
+		float lightShadowAmount = 0.f;
+		for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
+			float3 L = Utils::getConeSample(seed, toLight, coneAngle);
+			lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, L, distance);
+		}
+		lightShadowAmount /= numSamples;
+		shadow += lightShadowAmount;
+	}
+	return shadow;
+}
+
 [shader("raygeneration")]
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
@@ -135,6 +172,14 @@ void rayGen() {
 
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payloadMetaball.closestTvalue);
 
+	RayPayload finalPayload = payload;
+	if (metaballDepth <= linearDepth) { finalPayload = payloadMetaball; };
+
+	// Get shadow from this "bounce"
+	// Initialize a random seed
+	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
+	float firstBounceShadow = getShadowAmount(randSeed, worldPosition);
+
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.2f; // Temporal fade, trading temporal stability for lag
 	// Reproject screenTexCoord to where it was last frame
@@ -149,18 +194,15 @@ void rayGen() {
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 	// float2 reprojectedTexCoord = screenTexCoord;
 	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
-	float cLast = lInputShadowsLastFrame.SampleLevel(motionSS, reprojectedTexCoord, 0).r;
+	float2 cLast = lInputShadowsLastFrame.SampleLevel(motionSS, reprojectedTexCoord, 0).rg;
 	// float cLast = 0.0f;
-	lOutputShadows[launchIndex] = alpha * (1.0f - payload.shadow) + (1.0f - alpha) * cLast;
+	float2 shadow = float2(firstBounceShadow, finalPayload.shadow);
+	lOutputShadows[launchIndex] = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
 	// lOutputShadows[launchIndex] = 1.0f - payload.shadow;
-
-	RayPayload finalPayload = payload;
-	if (metaballDepth <= linearDepth) { finalPayload = payloadMetaball; };
 
 	lOutputAlbedo[launchIndex] = float4(finalPayload.albedo.rgb, 1.0f);
 	lOutputNormals[launchIndex] = float4(finalPayload.normal.rgb, 1.0f);
 	lOutputMetalnessRoughnessAO[launchIndex] = float4(finalPayload.metalnessRoughnessAO.rgb, 1.0f);
-	lOutputShadows[launchIndex] = finalPayload.shadow;
 	lOutputDepthPositions[launchIndex].x = linearDepth;
 	lOutputDepthPositions[launchIndex].yzw = payload.worldPosition;
 
@@ -234,12 +276,17 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 
 	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
 	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
+
+	float3 worldPosition = Utils::HitWorldPosition();
 	
+	// Initialize a random seed
+	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
+	
+	payload.shadow = getShadowAmount(randSeed, worldPosition);
 	payload.albedo.rgb = albedoColor;
 	payload.normal = normalInWorldSpace;
 	payload.metalnessRoughnessAO = metalnessRoughnessAO;
-	payload.shadow = 0.f;
-	payload.worldPosition = Utils::HitWorldPosition();
+	payload.worldPosition = worldPosition;
 }
 
 
