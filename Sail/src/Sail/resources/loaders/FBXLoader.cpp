@@ -104,7 +104,7 @@ FbxScene* FBXLoader::makeScene(std::string filePath, std::string sceneName) {
 	if (!importer->Initialize(filePath.c_str(), -1, s_manager->GetIOSettings())) {
 		importer->Destroy();
 #if _DEBUG
-		Logger::Error("Could not load (" + filePath + ")");
+		SAIL_LOG_ERROR("Could not load (" + filePath + ")");
 		std::cout << "Could not Load '" + filePath + "'" << std::endl;
 		assert(0);
 #endif
@@ -112,9 +112,9 @@ FbxScene* FBXLoader::makeScene(std::string filePath, std::string sceneName) {
 	}
 	FbxScene* lScene = FbxScene::Create(s_manager, sceneName.c_str());
 	static int counter = 0;
-	//Logger::Log("Trying to import scene "+ sceneName +" : " + std::to_string(counter));
+	//SAIL_LOG("Trying to import scene "+ sceneName +" : " + std::to_string(counter));
 	importer->Import(lScene);
-	//Logger::Log("imported scene : " + std::to_string(counter++));
+	//SAIL_LOG("imported scene : " + std::to_string(counter++));
 	importer->Destroy();
 
 	return lScene;
@@ -174,7 +174,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 	int* indices = mesh->GetPolygonVertices();
 
 	if (int(buildData.numVertices / 3) != mesh->GetPolygonCount()) {
-		Logger::Error("The mesh in '" + name + "' has to be triangulated.");
+		SAIL_LOG_ERROR("The mesh in '" + name + "' has to be triangulated.");
 		return;
 	}
 
@@ -195,7 +195,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 	cpMap.resize(mesh->GetControlPointsCount());
 	if (cp == nullptr) {
 
-		Logger::Error("Couldn't find any vertices in the mesh in the file " + name);
+		SAIL_LOG_ERROR("Couldn't find any vertices in the mesh in the file " + name);
 		return;
 	}
 
@@ -229,7 +229,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			FbxLayerElementNormal* leNormal = mesh->GetLayer(0)->GetNormals();
 			if (leNormal == nullptr && norms) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-				Logger::Warning("Couldn't find any normals in the mesh in the file " + name);
+				SAIL_LOG_WARNING("Couldn't find any normals in the mesh in the file " + name);
 #endif
 				norms = false;
 			}
@@ -266,7 +266,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			FbxGeometryElementTangent* geTang = mesh->GetElementTangent(0);
 			if (geTang == nullptr && tangs) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-				Logger::Warning("Couldn't find any tangents in the mesh in the file " + name);
+				SAIL_LOG_WARNING("Couldn't find any tangents in the mesh in the file " + name);
 #endif
 				tangs = false;
 			}
@@ -309,7 +309,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			FbxGeometryElementBinormal* geBN = mesh->GetElementBinormal(0);
 			if (geBN == nullptr && bitangs) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-				Logger::Warning("Couldn't find any binormals in the mesh in the file " + name);
+				SAIL_LOG_WARNING("Couldn't find any binormals in the mesh in the file " + name);
 #endif
 				bitangs = false;
 			}
@@ -354,7 +354,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData, const std::str
 			FbxGeometryElementUV* geUV = mesh->GetElementUV(0);
 			if (geUV == nullptr && uvs) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-				Logger::Warning("Couldn't find any texture coordinates in the mesh in the file " + name);
+				SAIL_LOG_WARNING("Couldn't find any texture coordinates in the mesh in the file " + name);
 #endif
 				uvs = false;
 			}
@@ -505,7 +505,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 				FbxSkin* skin = reinterpret_cast<FbxSkin*>(mesh->GetDeformer(deformerIndex, FbxDeformer::eSkin));
 				if (!skin) {
 					#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-						Logger::Error("not a skin at deformer " + std::to_string(deformerIndex) + " in " + nodeName);
+						SAIL_LOG_ERROR("not a skin at deformer " + std::to_string(deformerIndex) + " in " + nodeName);
 					#endif
 					continue;
 				}
@@ -518,7 +518,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					limbIndexes[clusterIndex] = getBoneIndex((unsigned int)cluster->GetLink()->GetUniqueID(), name);
 					if (limbIndexes[clusterIndex] == -1) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-						Logger::Warning("Could not find limb at clusterIndex: " + std::to_string(clusterIndex));
+						SAIL_LOG_WARNING("Could not find limb at clusterIndex: " + std::to_string(clusterIndex));
 #endif
 					}
 				}
@@ -627,7 +627,7 @@ void FBXLoader::getAnimations(FbxNode* node, AnimationStack* stack, const std::s
 					}
 					
 					stack->addAnimation(animationName, animation);
-					Logger::Log("Added: " + animationName);
+					SAIL_LOG("Added: " + animationName);
 				}
 			}//deformer end
 		}
@@ -766,7 +766,7 @@ void FBXLoader::printNodeTree(FbxNode * node, const std::string& indent) {
 		attributes += ": "+ PrintAttribute(node->GetNodeAttributeByIndex(i));
 	}
 	
-	Logger::Log(indent + name + ":" + attributes);
+	SAIL_LOG(indent + name + ":" + attributes);
 	for (int i = 0; i < node->GetChildCount(); i++) {
 		printNodeTree(node->GetChild(i), indent + "|");
 	}

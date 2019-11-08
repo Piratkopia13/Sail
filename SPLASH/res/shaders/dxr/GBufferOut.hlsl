@@ -33,6 +33,10 @@ cbuffer PSSystemCBuffer : register(b1) {
     Material sys_material_pbr;
 }
 
+cbuffer PSSystemCBuffer_2 : register(b1, space1) {
+	float3 teamColor;
+}
+
 GSIn VSMain(VSIn input) {
     GSIn output;
 
@@ -105,8 +109,17 @@ GBuffers PSMain(PSIn input) {
     }
 
     gbuffers.albedo = sys_material_pbr.modelColor;
-	if (sys_material_pbr.hasAlbedoTexture)
-		gbuffers.albedo *= sys_texAlbedo.Sample(PSss, input.texCoords);
+	if (sys_material_pbr.hasAlbedoTexture) {
+		float4 albedo = sys_texAlbedo.Sample(PSss, input.texCoords);
+
+		if (albedo.a < 1.0f) {
+			float f = 1 - albedo.a;
+			gbuffers.albedo = float4(gbuffers.albedo.rgb * (1 - f) + teamColor * f, albedo.a);
+		} else {
+			gbuffers.albedo = albedo;
+		}
+
+	}
 
     gbuffers.metalnessRoughnessAO = float4(sys_material_pbr.metalnessScale, sys_material_pbr.roughnessScale, sys_material_pbr.aoScale, 1.0f);
 	if (sys_material_pbr.hasMetalnessRoughnessAOTexture)

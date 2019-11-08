@@ -107,7 +107,7 @@ inline StateType* FiniteStateMachine::createState(Args... args) {
 		}
 		return toEmplace;
 	} else {
-		Logger::Error("Tried to create state type with ID " + std::to_string(StateType::ID) + " but it already existed in the FSM (" + m_name + ").");
+		SAIL_LOG_ERROR("Tried to create state type with ID " + std::to_string(StateType::ID) + " but it already existed in the FSM (" + m_name + ").");
 	}
 
 	return nullptr;
@@ -122,10 +122,10 @@ inline bool FiniteStateMachine::addTransition(FSM::Transition* toAdd) {
 			fromState->second->addTransition(toAdd, toState->second);
 			return true;
 		} else {
-			Logger::Error("The to state state with ID: " + std::to_string(ToStateType::ID) + " was not found in the FSM (" + m_name + ").");
+			SAIL_LOG_ERROR("The to state state with ID: " + std::to_string(ToStateType::ID) + " was not found in the FSM (" + m_name + ").");
 		}
 	} else {
-		Logger::Error("The from state state with ID: " + std::to_string(FromStateType::ID) + " was not found in the FSM (" + m_name + ").");
+		SAIL_LOG_ERROR("The from state state with ID: " + std::to_string(FromStateType::ID) + " was not found in the FSM (" + m_name + ").");
 	}
 	return false;
 }

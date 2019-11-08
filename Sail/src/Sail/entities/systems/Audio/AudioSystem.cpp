@@ -227,7 +227,7 @@ void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC)
 	int streamIndex = m_streamIndex;
 
 	if (m_streamIndex == -1) {
-		Logger::Error("Too many sounds already streaming; failed to stream another one!");
+		SAIL_LOG_ERROR("Too many sounds already streaming; failed to stream another one!");
 	}
 	else {
 

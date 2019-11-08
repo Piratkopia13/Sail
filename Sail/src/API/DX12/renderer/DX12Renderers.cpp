@@ -17,7 +17,7 @@ Renderer* Renderer::Create(Renderer::Type type) {
 	case SCREEN_SPACE:
 		return SAIL_NEW DX12ScreenSpaceRenderer();
 	default:
-		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + std::to_string(type));
+		SAIL_LOG_ERROR("Tried to create a renderer of unknown or unimplemented type: " + std::to_string(type));
 	}
 	return nullptr;
 }
