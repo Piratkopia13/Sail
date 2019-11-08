@@ -277,6 +277,12 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::CBV_DIFFUSE_TINT].Descriptor = rootDesc1_0;
 	rootParam[GlobalRootParam::CBV_DIFFUSE_TINT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].Constants.Num32BitValues = 3;
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].Constants.ShaderRegister = 1;
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].Constants.RegisterSpace = 1;
+
 	rootParam[GlobalRootParam::CBV_CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParam[GlobalRootParam::CBV_CAMERA].Descriptor = rootDesc2_0;
 	rootParam[GlobalRootParam::CBV_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
