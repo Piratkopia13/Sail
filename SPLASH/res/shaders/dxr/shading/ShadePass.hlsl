@@ -39,6 +39,7 @@ Texture2D<float4> metalnessRoughnessAoBounceOne : register(t4);
 Texture2D<float4> metalnessRoughnessAoBounceTwo : register(t5);
 
 Texture2D<float2> shadows : register(t6);
+// Texture2D<float4> depthAndWorldPositions : register(t6);
 
 Texture2D<float4> brdfLUT : register(t7);
 
@@ -66,7 +67,8 @@ float4 PSMain(PSIn input) : SV_Target0 {
     // testColor += metalnessRoughnessAoBounceTwo.Sample(PSss, input.texCoord) * 0.0001f;
     // testColor.xy += shadows.Sample(PSss, input.texCoord) * 0.0001f;
 
-    float3 worldPosition = mul(float4(1.f, 1.f, 1.f, 1.f), projectionToWorld).xyz;
+    // float3 worldPosition = mul(float4(1.f, 1.f, 1.f, 1.f), projectionToWorld).xyz;
+    float3 worldPosition = 1.f;
     
     float3 invViewDir = cameraPosition - worldPosition;
 
