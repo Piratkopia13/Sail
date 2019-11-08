@@ -4,6 +4,10 @@
 #include <string>
 #include "glm/glm.hpp"
 #include <vector>
+#include <xaudio2.h>
+#include <xaudio2fx.h>
+
+class XAUDIO2FX_REVERB_PARAMETERS;
 
 namespace Audio {
 	enum SoundType {
@@ -26,8 +30,16 @@ namespace Audio {
 		COUNT // Keep at the bottom so that COUNT == nr of sound types
 	};
 
+	enum EffectType {
+		NONE,
+		PROJECTILE_LOWPASS,
+		COUNT_
+	};
+
 	// One for every SOUND TYPE
 	struct SoundInfo_General {
+		EffectType effect = EffectType::NONE;
+		float frequency = 0;
 		bool hasStartedPlaying = false;
 		bool isPlaying = false;
 		bool playOnce = true;
