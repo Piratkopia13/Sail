@@ -589,6 +589,7 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 		//This should remove the candle entity from game
 		e->removeDeleteAllChildren();
 
+
 		// (self == nullptr) == true <--> We are the shooter
 		if (self != nullptr) {
 			// If it is me who landed the KILLING BLOW
