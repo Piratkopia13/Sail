@@ -32,6 +32,8 @@ enum ClutterModel {
 	SQUAREBOX,
 	BOOKS1,
 	BOOKS2,
+	SCREEN,
+	NOTEPAD,
 	NUMBOFCLUTTER
 };
 

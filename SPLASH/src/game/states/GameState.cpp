@@ -976,7 +976,6 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
 		roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
 
-
 		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
 		corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
 		corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
@@ -1048,9 +1047,14 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cBooks2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Book2_Albedo.tga");
 
 		Model* cScreen = &m_app->getResourceManager().getModel("Clutter/Screen.fbx", shader);
-		//cScreen->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Book_MRAO.tga");
-		//cScreen->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
+		cScreen->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Screen_MRAO.tga");
+		cScreen->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Screen_NM.tga");
 		cScreen->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Screen_Albedo.tga");
+
+		Model* cNotepad = &m_app->getResourceManager().getModel("Clutter/Notepad.fbx", shader);
+		cNotepad->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Notepad_MRAO.tga");
+		cNotepad->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Notepad_NM.tga");
+		cNotepad->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Notepad_Albedo.tga");
 
 
 		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
@@ -1074,7 +1078,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels.resize(ClutterModel::NUMBOFCLUTTER);
 		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
 		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
-		clutterModels[ClutterModel::CLUTTER_SO] = cScreen;
+		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
 		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
 		clutterModels[ClutterModel::TABLE] = cTable;
 		clutterModels[ClutterModel::BOXES] = cBoxes;
@@ -1082,6 +1086,9 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels[ClutterModel::BOOKS1] = cBooks1;
 		clutterModels[ClutterModel::BOOKS2] = cBooks2;
 		clutterModels[ClutterModel::SQUAREBOX] = cSquareBox;
+		clutterModels[ClutterModel::SCREEN] = cScreen;
+		clutterModels[ClutterModel::NOTEPAD] = cNotepad;
+
 	}
 
 	// Create the level generator system and put it into the datatype.
