@@ -139,6 +139,7 @@ void AllAudioData::init() {
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo = &AllAudioData::m_sounds[Audio::SHOOT_START];
 	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->effect = Audio::EffectType::PROJECTILE_LOWPASS;
 	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
 	//-----------------------------------------------------------------------------
 	{
@@ -155,6 +156,7 @@ void AllAudioData::init() {
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo = &AllAudioData::m_sounds[Audio::SHOOT_LOOP];
 	soundGeneralInfo->playOnce = false;
+	soundGeneralInfo->effect = Audio::EffectType::PROJECTILE_LOWPASS;
 	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
 	//-----------------------------------------------------------------------------
 	{
@@ -171,6 +173,7 @@ void AllAudioData::init() {
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	soundGeneralInfo = &AllAudioData::m_sounds[Audio::SHOOT_END];
 	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->effect = Audio::EffectType::PROJECTILE_LOWPASS;
 	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
 	//-----------------------------------------------------------------------------
 	{
