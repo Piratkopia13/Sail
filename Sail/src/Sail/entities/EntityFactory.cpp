@@ -14,6 +14,7 @@
 #include "Sail/graphics/geometry/factory/StringModel.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
 #include "Sail/entities/components/GUIComponent.h"
+#include "Sail/entities/components/InsanityComponent.h"
 
 void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
@@ -164,6 +165,10 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
 		}
 	}
+
+	//if (NWrapperSingleton::getInstance().isHost()) {
+	//	otherPlayer->addComponent<NetworkSenderComponent>(playerCompID)->addMessageType(Netcode::MessageType::UPDATE_INSANITY);
+	//}
 }
 
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
@@ -199,7 +204,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<ModelComponent>(characterModel);
 	playerEntity->addComponent<CollidableComponent>();
 	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
-
+	playerEntity->addComponent<InsanityComponent>()->insanityValue = 100.0f;
 
 	// Give playerEntity a bounding box
 	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
