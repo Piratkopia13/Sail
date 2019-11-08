@@ -24,12 +24,18 @@
 #include <windows.h>
 #include <wrl/client.h>
 
+
 #include <thread>
 
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid")
 #pragma comment(lib, "hrtfapo.lib")
+//#include <xaudio2.h>
+//#include <x3daudio.h>
+
+#include <xaudio2fx.h>
+#pragma comment(lib,"xaudio2.lib")
 
 
 AudioEngine::AudioEngine() {
@@ -66,93 +72,51 @@ void AudioEngine::loadSound(const std::string& filename) {
 }
 
 // TODO? One submixVoice for sound effects, one for music, etc instead of one for each sound
-int AudioEngine::beginSound(const std::string& filename, float volume) {
-	bool createNewSourceVoice = true;
-
-	if (m_masterVoice == nullptr) {
-		SAIL_LOG_ERROR("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
-		return -1;
-	}
+int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effectType, float frequency, float volume) {
 	if (!Application::getInstance()->getResourceManager().hasAudioData(filename)) {
 		SAIL_LOG_ERROR("That audio file has NOT been loaded yet!");
 		return -1;
 	}
 
-	int indexValue = m_currSoundIndex; // Store early
-	m_currSoundIndex++;
-	m_currSoundIndex %= SOUND_COUNT;
-
+	int indexValue = fetchSoundIndex();
 	m_sound[indexValue].filename = filename;
 
-	if (m_sound[indexValue].sourceVoice != nullptr) {
+	HRESULT hr;
+	// Is this the first time this function was called for this sound...
+	if (m_sound[indexValue].sourceVoice == nullptr) {
+		// ... create a source voice for it,
+		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+		// ... set volume,
+		m_sound[indexValue].sourceVoice->SetVolume(volume);
+		// ... set up hrtf.
+		Microsoft::WRL::ComPtr<IXAPO> xapo;
+		hr = CreateHrtfApo(nullptr, &xapo);
+		hr = xapo.As(&m_sound[indexValue].hrtfParams);
+		hr = m_sound[indexValue].hrtfParams->SetEnvironment(m_sound[indexValue].environment);
+	}
+	else {
+		// ... or reset it,
 		m_sound[indexValue].sourceVoice->Stop();
 		m_sound[indexValue].sourceVoice->FlushSourceBuffers();
 		m_sound[indexValue].sourceVoice->Discontinuity();
-		createNewSourceVoice = false;
-	}
-
-	Microsoft::WRL::ComPtr<IXAPO> xapo;
-	// Passing in nullptr as the first arg for HrtfApoInit initializes the APO with defaults of
-	// omnidirectional sound with natural distance decay behavior.
-	// CreateHrtfApo will fail with E_NOTIMPL on unsupported platforms.
-	HRESULT hr = CreateHrtfApo(nullptr, &xapo);
-
-	if (SUCCEEDED(hr)) {
-		hr = xapo.As(&m_sound[indexValue].hrtfParams);
-	}
-
-	// Set the default environment.
-	if (SUCCEEDED(hr)) {
-		hr = m_sound[indexValue].hrtfParams->SetEnvironment(m_sound[indexValue].environment);
-	}
-
-	// . . . Else submit new data to already-flushed buffer
-	if (SUCCEEDED(hr) && !createNewSourceVoice) {
+		// ... and fill it up
 		hr = m_sound[indexValue].sourceVoice->SubmitSourceBuffer(
-			Application::getInstance()->getResourceManager().getAudioData(m_sound[indexValue].filename).getSoundBuffer());
+			Application::getInstance()->getResourceManager().getAudioData(m_sound[indexValue].filename).getSoundBuffer()
+		);
 	}
 
-	// If we need to, create a 'sourceVoice' for WAV file-type . . .
-	if (FAILED(hr) || createNewSourceVoice) {
-		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-		m_sound[indexValue].sourceVoice->SetVolume(volume);
+	//			   									 xAPO
+	// SourceVoice -----> m_xAPOSubmixVoice_toMaster ---> m_masterVoice
+	sendVoiceTo(m_sound[indexValue].sourceVoice, m_xAPOSubmixVoice_toMaster, true);
+
+	//			   lowpass							 xAPO
+	// SourceVoice ------> m_xAPOSubmixVoice_toMaster ---> m_masterVoice
+	if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
+		addLowPassFilterTo(m_sound[indexValue].sourceVoice, m_xAPOSubmixVoice_toMaster, frequency);
 	}
-
-	if (FAILED(hr)) {
-		SAIL_LOG_ERROR("Failed to create the actual 'SourceVoice' for a sound file!");
-		return -1;
-	}
-
-	// Create a submix voice that will host the xAPO.
-	// This submix voice will be destroyed when XAudio2 instance is destroyed.
-	/*if (m_masterSubmixVoice != nullptr) {
-		m_masterSubmixVoice->DestroyVoice();
-	}*/
-
-	if (SUCCEEDED(hr)) {
-		XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
-		fxDesc.InitialState = TRUE;
-		fxDesc.OutputChannels = 2;          // Stereo output
-		fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
-
-		XAUDIO2_EFFECT_CHAIN fxChain{};
-		fxChain.EffectCount = 1;
-		fxChain.pEffectDescriptors = &fxDesc;
-
-		m_masterSubmixVoice->SetEffectChain(&fxChain);
-	}
-
-	// Route the source voice to the submix voice.
-	// The complete graph pipeline looks like this -
-	// Source Voice -> Submix Voice (HRTF xAPO) -> Mastering Voice
-	if (SUCCEEDED(hr)) {
-		XAUDIO2_VOICE_SENDS sends = {};
-		XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-		sendDesc.pOutputVoice = m_masterSubmixVoice;
-		sends.SendCount = 1;
-		sends.pSends = &sendDesc;
-		hr = m_sound[indexValue].sourceVoice->SetOutputVoices(&sends);
-	}
+	
+	// Apply changes directly
+	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
 
 	return indexValue;
 }
@@ -383,6 +347,18 @@ void AudioEngine::setStreamVolume(int index, float value) {
 	}
 }
 
+void AudioEngine::updateProjectileLowPass(float frequency, int indexToSource) {
+	// Create new lowpass filter with updated frequency
+	XAUDIO2_FILTER_PARAMETERS lowPassFilter = createLowPassFilter(frequency);
+
+	if (FAILED(m_sound[indexToSource].sourceVoice->SetOutputFilterParameters(
+		m_xAPOSubmixVoice_toMaster,
+		&lowPassFilter
+	))) {
+		Logger::Error("Failed to update a projectile's low pass filter");
+	}
+}
+
 void AudioEngine::initialize() {
 	// Init soundObjects
 	for (int i = 0; i < SOUND_COUNT; i++) {
@@ -416,7 +392,8 @@ HRESULT AudioEngine::initXAudio2() {
 	// Mastering voice will be automatically destroyed when XAudio2 instance is destroyed.
 	if (SUCCEEDED(hr)) {
 		hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice, 2, 48000);
-	}
+	}	
+
 	return hr;
 }
 
@@ -433,44 +410,91 @@ HRESULT AudioEngine::initSubmixes() {
 	// CreateHrtfApo will fail with E_NOTIMPL on unsupported platforms.
 	hr = CreateHrtfApo(nullptr, &m_xapo);
 
+	// Initialize the xAPO SubmixVoice
+	XAUDIO2_EFFECT_DESCRIPTOR xAPOeffectDesc{};
+	XAUDIO2_EFFECT_CHAIN xAPOeffectChain{};
+	XAUDIO2_VOICE_SENDS xAPOsends = {};
+	XAUDIO2_SEND_DESCRIPTOR xAPOsendDesc = {};
 	if (SUCCEEDED(hr)) {
-		fxDesc.InitialState = TRUE;
-		fxDesc.OutputChannels = 2;          // Stereo output
-		fxDesc.pEffect = m_xapo.Get();        // HRTF xAPO set as the effect.
-
-		fxChain.EffectCount = 1;
-		fxChain.pEffectDescriptors = &fxDesc;
-
-		sendDesc.pOutputVoice = m_masterVoice;
-		sends.SendCount = 1;
-		sends.pSends = &sendDesc;
+		// Set xAPO Effect
+		xAPOeffectDesc = createXAPPOEffect(m_xapo);
+		// Attach effect to chain
+		xAPOeffectChain.EffectCount = 1;
+		xAPOeffectChain.pEffectDescriptors = &xAPOeffectDesc;
+		// Set destination as MasterVoice
+		xAPOsendDesc.pOutputVoice = m_masterVoice;
+		xAPOsends.SendCount = 1;
+		xAPOsends.pSends = &xAPOsendDesc;
 
 		// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
-		hr = m_xAudio2->CreateSubmixVoice(&m_masterSubmixVoice, 1, 48000, 0, 0, &sends, &fxChain);
+		hr = m_xAudio2->CreateSubmixVoice(&m_xAPOSubmixVoice_toMaster, 1, 48000, 0, 0, &xAPOsends, &xAPOeffectChain);
+		if (FAILED(hr)) {
+			Logger::Error("Failed to create xAPO submix voice");
+		}
+		// Attach effect chain again, as is tradition.
+		m_xAPOSubmixVoice_toMaster->SetEffectChain(&xAPOeffectChain);
+		m_xAPOSubmixVoice_toMaster->SetVolume(1.0f);
 	}
-
-	m_masterSubmixVoice->SetVolume(1.0f);
-
-	// Create a submix voice that will host the xAPO.
-	// This submix voice will be destroyed when XAudio2 instance is destroyed.
-	if (SUCCEEDED(hr)) {
-		fxDesc.InitialState = TRUE;
-		fxDesc.OutputChannels = 2;          // Stereo output
-		fxDesc.pEffect = m_xapo.Get();        // HRTF xAPO set as the effect.
-
-		fxChain.EffectCount = 1;
-		fxChain.pEffectDescriptors = &fxDesc;
-
-		sendDesc.pOutputVoice = m_masterVoice;
-		sends.SendCount = 1;
-		sends.pSends = &sendDesc;
-
-		// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
-		hr = m_xAudio2->CreateSubmixVoice(&m_streamingSubmixVoice, 1, 48000, 0, 0, &sends, &fxChain);
-		m_streamingSubmixVoice->SetVolume(1.0f);
+	else {
+		Logger::Error("Failed to create HRTF-APO submix voice");
 	}
 
 	return hr;
+}
+
+int AudioEngine::fetchSoundIndex() {
+	m_currSoundIndex++;
+	m_currSoundIndex %= SOUND_COUNT;
+	return m_currSoundIndex;
+}
+
+void AudioEngine::sendVoiceTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, bool useFilter) {
+	XAUDIO2_VOICE_SENDS sends = {};
+	XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+	if (useFilter) {
+		sendDesc.Flags = XAUDIO2_SEND_USEFILTER;
+	}
+	sendDesc.pOutputVoice = destination;
+	sends.SendCount = 1;
+	sends.pSends = &sendDesc;
+	if (FAILED(source->SetOutputVoices(&sends))) {
+		Logger::Error("Failed to connect a source voice to xAPO SubmixVoice");
+	}
+}
+
+void AudioEngine::addLowPassFilterTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, float frequency) {
+	HRESULT hr;
+	XAUDIO2_FILTER_PARAMETERS lowPassFilter = createLowPassFilter(frequency);
+	if (FAILED(hr = source->SetOutputFilterParameters(
+		destination,
+		&lowPassFilter
+	))) {
+		Logger::Error("Failed to apply a low-pass filter!");
+	}
+}
+
+XAUDIO2_EFFECT_DESCRIPTOR AudioEngine::createXAPPOEffect(Microsoft::WRL::ComPtr<IXAPO> xapo) {
+	XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
+	fxDesc.InitialState = TRUE;
+	fxDesc.OutputChannels = 2;          // Stereo output
+	fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
+
+	return fxDesc;
+}
+
+XAUDIO2_FILTER_PARAMETERS AudioEngine::createLowPassFilter(float cutoffFrequence) {
+	float sumFrequency = 2.0f * sinf((X3DAUDIO_PI * cutoffFrequence) / /*Samplerate*/48000.0f);
+	if (sumFrequency > XAUDIO2_MAX_FILTER_FREQUENCY) {
+		sumFrequency = XAUDIO2_MAX_FILTER_FREQUENCY;
+	}
+	
+	XAUDIO2_FILTER_PARAMETERS filterParameters = { 
+		LowPassFilter,
+		sumFrequency,
+		XAUDIO2_MAX_FILTER_ONEOVERQ
+	}; // see XAudio2CutoffFrequencyToRadians() in XAudio2.h for more information on the formula used here
+
+	return filterParameters;
 }
 
 void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC) {
