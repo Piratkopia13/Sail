@@ -30,15 +30,6 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt
 		if (!sc->isOn) {
 			continue;
 		}
-		// If the spotlight is a hazard light, it will turn off after some time.
-		// Will look in to this in next task.
-		//if (sc->roomID > 0) {
-		//	sc->activeTimer += dt;
-		//	if (sc->activeTimer > sc->activeLimit) {
-		//		sc->isOn = false;
-		//		continue;
-		//	}
-		//}
 
 		mc->rotation.y = 4.f;
 

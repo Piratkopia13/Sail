@@ -2,6 +2,7 @@
 
 #include "Sail/entities/systems/BaseComponentSystem.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
+#include "Sail/utils/Storage/SettingStorage.h"
 
 class SprinklerSystem final : public BaseComponentSystem {
 public:
@@ -21,6 +22,7 @@ private:
 	float m_endGameStartLimit = 60.f;
 #endif
 
+	SettingStorage* m_settings;
 	LevelSystem* m_map;
 	float m_endGameTimeIncrement = m_endGameStartLimit / 3.0f;
 	float m_sprinklerDelayTime = 10.f;

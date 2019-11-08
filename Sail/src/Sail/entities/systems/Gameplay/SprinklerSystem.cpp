@@ -2,14 +2,18 @@
 
 #include "SprinklerSystem.h"
 
+
 #include "Sail/entities/components/SpotlightComponent.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/utils/Utils.h"
+#include "Sail.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 
 SprinklerSystem::SprinklerSystem() : BaseComponentSystem() {
-	registerComponent<MapComponent>(true, true, false);
 	m_map = ECS::Instance()->getSystem<LevelSystem>();
+	m_settings = &Application::getInstance()->getSettings();
+	m_endGameStartLimit = m_settings->gameSettingsDynamic["map"]["sprinklerTime"].value;
+	m_endGameTimeIncrement = m_settings->gameSettingsDynamic["map"]["sprinklerIncrement"].value;
 }
 
 SprinklerSystem::~SprinklerSystem() {
@@ -68,12 +72,12 @@ void SprinklerSystem::update(float dt) {
 			default:
 				break;
 			}
-			m_activateSprinklers = false;
+			m_enableNewSprinklers = false;
 			m_endGameMapIncrement++;
 		}
 		// New time increment reached, add new rooms
 		else if (((m_endGameTimer - m_endGameStartLimit) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
-			m_activateSprinklers = true;
+			m_enableNewSprinklers = true;
 		}
 
 
