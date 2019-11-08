@@ -3,6 +3,7 @@
 #include "../Regex/Regex.h"
 #include "imgui.h"
 #include <functional>
+#include <mutex>
 
 /*
 	How to create a new type of input parameters:
@@ -94,6 +95,7 @@ private:
 private:
 	std::string m_textField;
 	std::vector<std::string> m_commandHistory;
+	std::mutex m_textlogMutex;
 	std::vector<std::pair<std::string, ImVec4>> m_textLog;
 
 	// Command storage
