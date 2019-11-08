@@ -6,6 +6,8 @@ class CameraController;
 class GameDataTracker;
 class LevelSystem;
 
+#define DETECTION_STEP_SIZE 0.35f
+
 struct Movement {
 	float speedModifier = 1.f;
 	float forwardMovement = 0.0f;
@@ -47,7 +49,7 @@ private:
 	bool m_wasSpacePressed = false;
 	float m_projectileSpawnCounter = 0.f;
 	float m_lookSensitivityMouse = 0.1f;
-	glm::vec3 m_playerPosHolder = { 0, 0 ,0 };
+	glm::vec3 m_playerPosHolder[5];
 	bool m_isOnWaterHolder = false;
 
 	// Sound-related Variables

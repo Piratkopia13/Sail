@@ -38,6 +38,10 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	m_roll = 0.f;
 
 	m_gameDataTracker = &GameDataTracker::getInstance();
+
+	for (int i = 0; i < 5; i++) {
+		m_playerPosHolder[i] = { 0,0,0 };
+	}
 }
 
 GameInputSystem::~GameInputSystem() {
@@ -107,8 +111,18 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			auto audioComp = e->getComponent<AudioComponent>();
 			auto transformComp = e->getComponent<TransformComponent>()->getTranslation();
 
-			m_playerPosHolder = { transformComp.x, 0, transformComp.z };
-			m_isOnWaterHolder = Application::getInstance()->getRenderWrapper()->checkIfOnWater(m_playerPosHolder);
+			m_playerPosHolder[0] = { transformComp.x, 0, transformComp.z};
+			m_playerPosHolder[1] = { transformComp.x + DETECTION_STEP_SIZE, 0, transformComp.z + DETECTION_STEP_SIZE };
+			m_playerPosHolder[2] = { transformComp.x + DETECTION_STEP_SIZE, 0, transformComp.z - DETECTION_STEP_SIZE };
+			m_playerPosHolder[3] = { transformComp.x - DETECTION_STEP_SIZE, 0, transformComp.z + DETECTION_STEP_SIZE };
+			m_playerPosHolder[4] = { transformComp.x - DETECTION_STEP_SIZE, 0, transformComp.z - DETECTION_STEP_SIZE };
+
+			for (int i = 0; i < 5; i++) {
+				if (m_isOnWaterHolder = Application::getInstance()->getRenderWrapper()->checkIfOnWater(m_playerPosHolder[i])) {
+					std::cout << "ON WATER!\n";
+					break;
+				}
+			}
 
 			// Get player movement inputs
 			Movement playerMovement = getPlayerMovementInput(e);
@@ -216,7 +230,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					if (!m_isPlayingRunningSound) {
 						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
 						if (!tempStopAll) {
-							std::cout << "STOPPING!\n";
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_STOP_SOUND,
 								SAIL_NEW Netcode::MessageRunningStopSound{ e->getComponent<NetworkSenderComponent>()->m_id }
@@ -234,13 +247,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				}
 				// AUDIO TESTING (playing a looping running sound)
 				else if (tempStopAll || (m_soundSwitchTimer > m_changeThreshold)) {
-					std::cout << "TIME-PASSED, SWITCHING!\n";
 					m_soundSwitchTimer = 0.0f;
 					// CORRIDOR
 					if (m_mapPointer->getAreaType(e->getComponent<TransformComponent>()->getTranslation().x, e->getComponent<TransformComponent>()->getTranslation().z) == 0) {
 						
 						if (m_isOnWaterHolder && !tempWaterMetal) {
-							std::cout << "WATER, METAL!\n";
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_WATER_METAL_START,
 								SAIL_NEW Netcode::MessageRunningWaterMetalStart{ e->getComponent<NetworkSenderComponent>()->m_id }
@@ -256,7 +267,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
 						else if (!m_isOnWaterHolder && !tempMetal) {
-							std::cout << "METAL!\n";
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_METAL_START,
 								SAIL_NEW Netcode::MessageRunningMetalStart{ e->getComponent<NetworkSenderComponent>()->m_id }
@@ -274,7 +284,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					else /*(AreaType > 0)*/ {
 						// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
 						if (m_isOnWaterHolder && !tempWaterTile) {
-							std::cout << "WATER, TILE!\n";
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_WATER_TILE_START,
 								SAIL_NEW Netcode::MessageRunningWaterTileStart{ e->getComponent<NetworkSenderComponent>()->m_id }
@@ -289,7 +298,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 						}
 
 						else if (!m_isOnWaterHolder && !tempTile) {
-							std::cout << "TILE!\n";
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::RUNNING_TILE_START,
 								SAIL_NEW Netcode::MessageRunningTileStart{ e->getComponent<NetworkSenderComponent>()->m_id }
@@ -316,7 +324,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				// AUDIO TESTING (turn OFF looping running sound)
 				// If-statement and relevant bools are to avoid sending unnecessary amount of messages/data
 				if (!tempStopAll) {
-					std::cout << "STOPPING!\n";
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::RUNNING_STOP_SOUND,
 						SAIL_NEW Netcode::MessageRunningStopSound{ e->getComponent<NetworkSenderComponent>()->m_id }
