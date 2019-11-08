@@ -23,6 +23,7 @@
 #include "network/receivers/NetworkReceiverSystemClient.h"
 #include "network/receivers/NetworkReceiverSystemHost.h"
 #include "network/NetworkSenderSystem.h"
+#include "network/HostSendToSpectatorSystem.h"
 #include "physics/CollisionSystem.h"
 #include "physics/MovementPostCollisionSystem.h"
 #include "physics/MovementSystem.h"

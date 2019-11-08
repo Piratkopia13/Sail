@@ -18,6 +18,7 @@ class EntityRemovalSystem;
 class GameInputSystem;
 class GUISubmitSystem;
 class GunSystem;
+class HostSendToSpectatorSystem;
 class LevelGeneratorSystem;
 class LifeTimeSystem;
 class LightSystem;
@@ -53,6 +54,7 @@ struct Systems {
 	GameInputSystem* gameInputSystem = nullptr;
 	GUISubmitSystem* guiSubmitSystem = nullptr;
 	GunSystem* gunSystem = nullptr;
+	HostSendToSpectatorSystem* hostSendToSpectatorSystem = nullptr;
 	LevelGeneratorSystem* levelGeneratorSystem = nullptr;
 	LifeTimeSystem* lifeTimeSystem = nullptr;
 	LightSystem* lightSystem = nullptr;

@@ -39,12 +39,24 @@ void NWrapperHost::updateServerDescription() {
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
+void NWrapperHost::sendSerializedDataToClient(std::string data, Netcode::PlayerID playerID) {
+	TCP_CONNECTION_ID playerTCP;
+	for (auto const& c : m_connectionsMap) {
+		if (c.second == playerID) {
+			playerTCP = c.first;
+			break;
+		}
+	}
+	
+	data = std::string("s") + data;
+	m_network->send(data.c_str(), data.length(), playerTCP);
+}
+
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID id) {
 	// Generate an ID for the client that joined and send that information.
-	unsigned char test = m_IdDistribution;
 	m_IdDistribution++;
-	unsigned char newId = m_IdDistribution;
-	m_connectionsMap.insert(std::pair<TCP_CONNECTION_ID, unsigned char>(id, newId));
+	Netcode::PlayerID newId = m_IdDistribution;
+	m_connectionsMap.insert(std::pair<TCP_CONNECTION_ID, Netcode::PlayerID>(id, newId));
 
 	// Request a name from the client, which upon retrieval will be sent to all clients.
 	char msgRequest[64];

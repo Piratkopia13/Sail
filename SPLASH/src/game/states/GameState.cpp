@@ -447,6 +447,9 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
 
+	m_componentSystems.hostSendToSpectatorSystem = ECS::Instance()->createSystem<HostSendToSpectatorSystem>();
+	m_componentSystems.hostSendToSpectatorSystem->init(playerID);
+
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 }
@@ -579,6 +582,8 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 		char seed = (char)network->getSeed();
 		// t for start the game, p for start as a player. s would be spectator
 		network->getNetworkWrapper()->sendMsgAllClients({ std::string("ts") + seed });
+
+		m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.player.id);
 	}
 
 	return true;
@@ -590,15 +595,14 @@ bool GameState::onNameRequest(const NetworkNameEvent& event) {
 		// Parse the message | ?12:DANIEL
 		std::string message = event.repliedName;
 		std::string id_string = "";
-		unsigned char id_int = 0;
+		Netcode::PlayerID id_int = 0;
 
 		// Get ID...
 		for (int i = 1; i < 64; i++) {
 			// ... as a string
 			if (message[i] != ':') {
 				id_string += message[i];
-			}
-			else {
+			} else {
 				break;
 			}
 		}
@@ -637,8 +641,7 @@ bool GameState::onNameRequest(const NetworkNameEvent& event) {
 
 
 		return true;
-	} 
-	else {	// Client
+	} else {	// Client
 		// Save the ID which the host has blessed us with
 		std::string temp = event.repliedName;	// And replace our current HOSTID
 		int newId = std::stoi(temp);					//
