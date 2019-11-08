@@ -26,7 +26,7 @@ void HostSendToSpectatorSystem::init(Netcode::PlayerID playerID) {
 
 
 // The messages this function creates must match the format of messages created by and received by NetworkSenderSystem and NetworkReceiverSystem
-void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID toPlayer) const {
+void HostSendToSpectatorSystem::sendEntityCreationPackage(TCP_CONNECTION_ID TCPidPlayer) const {
 	std::ostringstream dataString(std::ios::binary);
 	Netcode::OutArchive ar(dataString);
 
@@ -41,14 +41,19 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID toPl
 
 	// TODO: if a player's candle isn't held also send an event for that
 	size_t nrOfEvents = 0;
+	bool candleHeld = true;
 
 	// Find how many players are alive so that the receiver knows how many messages to receive
 	for (auto e : entities) {
 		if (e->getComponent<NetworkSenderComponent>()->m_entityType == Netcode::EntityType::PLAYER_ENTITY) {
 			nrOfEvents++;
-		}
 
-		// TODO: check if candle is held
+			for (auto c : e->getChildEntities()) {
+				if (c->hasComponent<CandleComponent>() && !c->getComponent<CandleComponent>()->isCarried) {
+					nrOfEvents++;
+				}
+			}
+		}
 	}
 
 	ar(nrOfEvents);
@@ -69,17 +74,41 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID toPl
 				if (c->hasComponent<CandleComponent>()) {
 					candleID = c->getComponent<NetworkSenderComponent>()->m_id;
 				}
-				if (c->hasComponent<GunComponent>()) {
-					gunID = c->getComponent<NetworkSenderComponent>()->m_id;
+				else {
+					if (e->hasComponent<GunComponent>()) {
+						gunID = c->getComponent<NetworkSenderComponent>()->m_id;
+					}
 				}
+
+
+			}
+			if (e->hasComponent<GunComponent>()) {
+				gunID = e->getComponent<NetworkSenderComponent>()->m_id;
 			}
 			glm::vec3 position = e->getComponent<TransformComponent>()->getCurrentTransformState().m_translation;
 
 			ar(Netcode::MessageType::CREATE_NETWORKED_PLAYER);
+#ifdef DEVELOPMENT
+			ar(Netcode::MessageType::CREATE_NETWORKED_PLAYER);
+#endif
 			ar(nsc->m_id); // Send the player's componentID
 			ar(candleID);  // Send the player's candle's componentID
 			ar(gunID);     // Send the player's gun's componentID
 			ArchiveHelpers::saveVec3(ar, position); // Send the player's current position
+
+
+			for (auto c : e->getChildEntities()) {
+				if (c->hasComponent<CandleComponent>() && !c->getComponent<CandleComponent>()->isCarried) {
+					ar(Netcode::MessageType::CANDLE_HELD_STATE);
+#ifdef DEVELOPMENT
+					ar(Netcode::MessageType::CANDLE_HELD_STATE);
+#endif
+					ar(nsc->m_id);
+					ar(false);
+				}
+			}
+
+
 		}
 		break;
 		default:
@@ -94,5 +123,5 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID toPl
 
 	// -+-+-+-+-+-+-+-+ send the serialized archive over the network -+-+-+-+-+-+-+-+ 
 	std::string binaryData = dataString.str();
-	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToClient(binaryData, toPlayer);
+	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToClient(binaryData, TCPidPlayer);
 }

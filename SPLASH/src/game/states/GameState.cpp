@@ -583,9 +583,9 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 		// t for start the game, p for start as a player. s would be spectator
 		network->getNetworkWrapper()->sendMsgAllClients({ std::string("ts") + seed });
 
-		m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.player.id);
+		//m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.player.id);
 	}
-
+	
 	return true;
 }
 
@@ -612,7 +612,7 @@ bool GameState::onNameRequest(const NetworkNameEvent& event) {
 		message.erase(0, id_string.size() + 2);	// Removes ?ID: ___
 		message.erase(message.size() - 1);		// Removes ___ :
 
-
+		
 
 		// Add player
 		//NWrapperSingleton::getInstance().playerJoined(Player{
@@ -638,7 +638,8 @@ bool GameState::onNameRequest(const NetworkNameEvent& event) {
 		}
 		network->getNetworkWrapper()->sendMsgAllClients(welcomePackage);
 		printf("Done sending welcome package\n");
-
+		
+		m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.idOfSender);
 
 		return true;
 	} else {	// Client

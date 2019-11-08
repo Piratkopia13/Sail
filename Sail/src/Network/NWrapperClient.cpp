@@ -131,7 +131,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		id_question = nEvent.data->Message.rawMsg[1];
 
 		// Dispatch ID to lobby where my chosen name will be replied back.
-		EventDispatcher::Instance().emit(NetworkNameEvent(std::to_string(id_question)));
+		EventDispatcher::Instance().emit(NetworkNameEvent(std::to_string(id_question), nEvent.clientID));
 		break;
 
 	case 't':

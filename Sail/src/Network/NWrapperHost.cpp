@@ -39,17 +39,17 @@ void NWrapperHost::updateServerDescription() {
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
-void NWrapperHost::sendSerializedDataToClient(std::string data, Netcode::PlayerID playerID) {
-	TCP_CONNECTION_ID playerTCP;
-	for (auto const& c : m_connectionsMap) {
-		if (c.second == playerID) {
-			playerTCP = c.first;
-			break;
-		}
-	}
-	
+void NWrapperHost::sendSerializedDataToClient(std::string data, TCP_CONNECTION_ID TCPiD) {
+	//TCP_CONNECTION_ID playerTCP;
+	//for (auto const& c : m_connectionsMap) {
+	//	if (c.second == playerID) {
+	//		playerTCP = c.first;
+	//		break;
+	//	}
+	//}
+	//
 	data = std::string("s") + data;
-	m_network->send(data.c_str(), data.length(), playerTCP);
+	m_network->send(data.c_str(), data.length(), TCPiD);
 }
 
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID id) {
@@ -132,9 +132,9 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 
 	case '?':
 		// The host has received an answer to a name request...
-
+		
 		// TODO: move "Parse the ID and name from the message" from Host::onNameRequest to here
-		EventDispatcher::Instance().emit(NetworkNameEvent{ nEvent.data->Message.rawMsg });
+		EventDispatcher::Instance().emit(NetworkNameEvent{ nEvent.data->Message.rawMsg, nEvent.clientID });
 
 		break;
 

@@ -15,7 +15,7 @@ public:
 	void setLobbyName(std::string name);
 	void updateServerDescription();
 
-	void sendSerializedDataToClient(std::string data, Netcode::PlayerID playerID) override;
+	void sendSerializedDataToClient(std::string data, TCP_CONNECTION_ID TCPid) override;
 private:
 	std::map<TCP_CONNECTION_ID, Netcode::PlayerID> m_connectionsMap;
 	Netcode::PlayerID m_IdDistribution = 0;
