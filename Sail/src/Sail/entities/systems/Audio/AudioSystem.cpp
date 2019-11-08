@@ -241,7 +241,7 @@ void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC)
 	int streamIndex = m_streamIndex;
 
 	if (m_streamIndex == -1) {
-		Logger::Error("Too many sounds already streaming; failed to stream another one!");
+		SAIL_LOG_ERROR("Too many sounds already streaming; failed to stream another one!");
 	}
 	else {
 
@@ -335,7 +335,7 @@ bool AudioSystem::onEvent(const Event& event) {
 		}
 
 		if (!candle) {
-			Logger::Warning("AudioSystem::onWaterHitPlayer: no matching entity found");
+			SAIL_LOG_WARNING("AudioSystem::onWaterHitPlayer: no matching entity found");
 			return;
 		}
 		
@@ -370,7 +370,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
 		} else {
-			Logger::Warning("AudioSystem : player jumped but no matching entity found");
+			SAIL_LOG_WARNING("AudioSystem : player jumped but no matching entity found");
 		}
 	};
 
@@ -379,7 +379,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].playOnce = true;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].isPlaying = true;
 		} else {
-			Logger::Warning("AudioSystem : player landed but no matching entity found");
+			SAIL_LOG_WARNING("AudioSystem : player landed but no matching entity found");
 		}
 	};
 
@@ -388,7 +388,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
 		} else {
-			Logger::Warning("AudioSystem : started shooting but no matching entity found");
+			SAIL_LOG_WARNING("AudioSystem : started shooting but no matching entity found");
 		}
 	};
 
@@ -398,7 +398,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
 		} else {
-			Logger::Warning("AudioSystem : stopped shooting but no matching entity found");
+			SAIL_LOG_WARNING("AudioSystem : stopped shooting but no matching entity found");
 		}
 	};
 
@@ -414,7 +414,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			player->getComponent<AudioComponent>()->m_sounds[e.soundType].playOnce = false;
 			player->getComponent<AudioComponent>()->m_sounds[e.soundType].isPlaying = true;
 		} else {
-			Logger::Warning("AudioSystem : changed walking sound but no matching entity found");
+			SAIL_LOG_WARNING("AudioSystem : changed walking sound but no matching entity found");
 		}
 	};
 
@@ -425,7 +425,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
 		} else {
-			Logger::Warning("AudioSystem : stopped walking but no matching entity found");
+			SAIL_LOG_WARNING("AudioSystem : stopped walking but no matching entity found");
 		}
 	};
 

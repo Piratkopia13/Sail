@@ -15,6 +15,6 @@ void GUISubmitSystem::submitAll() {
 	for (auto& e : entities) {
 		Renderer::RenderFlag flags = Renderer::MESH_STATIC;
 		Model* model = e->getComponent<GUIComponent>()->getModel();
-		renderer->submit(model, glm::identity<glm::mat4>(), flags);
+		renderer->submit(model, glm::identity<glm::mat4>(), flags, 0);
 	}
 }

@@ -109,7 +109,7 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		HINSTANCE hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
 		HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(101));
 		if (!hIcon) {
-			Logger::Error("Window icon could not be loaded");
+			SAIL_LOG_ERROR("Window icon could not be loaded");
 		} else
 			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	}

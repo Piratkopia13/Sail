@@ -28,6 +28,8 @@ public:
 	}
 #endif
 
+	int teamColorID;
+
 private:
 	Model* m_model;
 };

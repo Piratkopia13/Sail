@@ -73,7 +73,7 @@ bool KillFeedWindow::onEvent(const Event& event) {
 		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
 		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
 		std::string deathType = "sprayed down";
-		Logger::Log(ShooterPlayer + " " + deathType + " " + deadPlayer);
+		SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
 
 		m_gameDataTracker.logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
 	};
