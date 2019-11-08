@@ -30,7 +30,7 @@
 #include "RealTimeComponent.h"
 #include "SpectatorComponent.h"
 #include "SpeedLimitComponent.h"
-//#include "TextComponent.h"
+#include "TeamComponent.h"
 #include "TransformComponent.h"
 #include "VerticalCylinderComponent.h"
 #include "SprintingComponent.h"

@@ -310,6 +310,12 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
 
+	//===REMOVE THIS. THIS IS ONLY TO DEMONSTRATE TEAM COLORS. TEAM COLORS SHOULD NOT BE ON ALL MAP OBJECTS===
+	Logger::Warning("Dont Forget to remove TeamComponent from StaticMapObjects @EntityFactory when the walls no longer need it to demonstrate the feature!");
+	static int t = 0;
+	e->addComponent<TeamComponent>()->team = (t++) % 12;
+	//=====================
+
 	return e;
 }
 

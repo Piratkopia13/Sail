@@ -37,7 +37,11 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
-	
+	std::vector<glm::vec3> m_teamColors;
+	for (int i = 0; i < 12; i++) {
+		m_teamColors.push_back(TeamColorSystem::getTeamColor(i));
+	}
+	m_app->getRenderWrapper()->getCurrentRenderer()->setTeamColors(m_teamColors);
 
 	//----Octree creation----
 	//Wireframe shader
@@ -356,6 +360,7 @@ bool GameState::processInput(float dt) {
 }
 
 void GameState::initSystems(const unsigned char playerID) {
+	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
 	
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
@@ -760,6 +765,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
+	runSystem(dt, m_componentSystems.teamColorSystem);
 	runSystem(dt, m_componentSystems.particleSystem);
 
 	// Wait for all the systems to finish before starting the removal system
