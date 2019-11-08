@@ -2,19 +2,19 @@
 #include "Common_hlsl_cpp.hlsl"
 
 RaytracingAccelerationStructure gRtScene 			: register(t0);
-Texture2D<float4> sys_brdfLUT 						: register(t5);
+Texture2D<float4> sys_brdfLUT 						: register(t5); // NOT USED
 
 // Gbuffer inputs
 Texture2D<float4> sys_inTex_normals 				: register(t10);
-Texture2D<float4> sys_inTex_albedo 					: register(t11);
-Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12);
-Texture2D<float4> sys_inTex_motionVectors			: register(t13);
+Texture2D<float4> sys_inTex_albedo 					: register(t11); // NOT USED
+Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12); // NOT USED
+Texture2D<float4> sys_inTex_motionVectors			: register(t13); // NOT USED
 Texture2D<float>  sys_inTex_depth 					: register(t14);
 
 // Decal textures
-Texture2D<float4> decal_texAlbedo 					: register(t17);
-Texture2D<float4> decal_texNormal 					: register(t18);
-Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19);
+Texture2D<float4> decal_texAlbedo 					: register(t17); // NOT USED
+Texture2D<float4> decal_texNormal 					: register(t18); // NOT USED
+Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19); // NOT USED
 
 RWTexture2D<float4> lOutputAlbedo		 		: register(u0);		// RGB
 RWTexture2D<float4> lOutputNormals 				: register(u1); 	// XYZ
@@ -24,15 +24,15 @@ Texture2D<float2> 	lInputShadowsLastFrame 		: register(t20); 	// last frame Shad
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
-ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0);
+ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0); // NOT USED
 
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
 
-StructuredBuffer<uint> waterData : register(t6, space0);
+StructuredBuffer<uint> waterData : register(t6, space0); // NOT USED
 
-// Texture2DArray<float4> textures : register(t2, space0);
+// Closest hit textures
 Texture2D<float4> sys_texAlbedo : register(t2);
 Texture2D<float4> sys_texNormal : register(t3);
 Texture2D<float4> sys_texMetalnessRoughnessAO : register(t4);
@@ -41,7 +41,6 @@ SamplerState ss : register(s0);
 SamplerState motionSS : register(s1);
 
 #include "Utils.hlsl"
-#include "Shading.hlsl"
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -68,12 +67,6 @@ void rayGen() {
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	// float3 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb;
-	float3 albedoColor = pow(sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb, 2.2f);
-	float3 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0).rgb;
-	float metalness = metalnessRoughnessAO.r;
-	float roughness = metalnessRoughnessAO.g;
-	float ao = metalnessRoughnessAO.b;
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
