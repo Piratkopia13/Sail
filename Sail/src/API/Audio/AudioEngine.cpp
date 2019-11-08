@@ -70,11 +70,11 @@ int AudioEngine::beginSound(const std::string& filename, float volume) {
 	bool createNewSourceVoice = true;
 
 	if (m_masterVoice == nullptr) {
-		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
+		SAIL_LOG_ERROR("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		return -1;
 	}
 	if (!Application::getInstance()->getResourceManager().hasAudioData(filename)) {
-		Logger::Error("That audio file has NOT been loaded yet!");
+		SAIL_LOG_ERROR("That audio file has NOT been loaded yet!");
 		return -1;
 	}
 
@@ -119,7 +119,7 @@ int AudioEngine::beginSound(const std::string& filename, float volume) {
 	}
 
 	if (FAILED(hr)) {
-		Logger::Error("Failed to create the actual 'SourceVoice' for a sound file!");
+		SAIL_LOG_ERROR("Failed to create the actual 'SourceVoice' for a sound file!");
 		return -1;
 	}
 
@@ -162,7 +162,7 @@ void AudioEngine::streamSound(const std::string& filename, int streamIndex, floa
 	while (!m_streamLocks[streamIndex].compare_exchange_strong(expectedValue, true));
 
 	if (m_masterVoice == nullptr) {
-		Logger::Error("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
+		SAIL_LOG_ERROR("'IXAudio2MasterVoice' has not been correctly initialized; audio is unplayable!");
 		m_streamLocks[streamIndex].store(false);
 	} else {
 		this->streamSoundInternal(filename, streamIndex, volume, isPositionalAudio, loop, pAudioC);
@@ -398,7 +398,7 @@ void AudioEngine::initialize() {
 	}
 
 	if (FAILED(this->initXAudio2())) {
-		Logger::Error("Failed to init XAudio2!");
+		SAIL_LOG_ERROR("Failed to init XAudio2!");
 	}
 }
 
@@ -501,18 +501,18 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 	hr = FindMediaFileCch(wavebank, MAX_PATH, stringToWString(filename).c_str());
 	if (hr != S_OK) {
-		Logger::Error("Failed to find the specified '.xwb' file!");
+		SAIL_LOG_ERROR("Failed to find the specified '.xwb' file!");
 		return;
 	}
 
 	hr = wbr.Open(wavebank);
 	if (hr != S_OK) {
-		Logger::Error("Failed to open wavebank file!");
+		SAIL_LOG_ERROR("Failed to open wavebank file!");
 		return;
 	}
 
 	if (!wbr.IsStreamingBank()) {
-		Logger::Error("Tried to stream a non-streamable '.xwb' file! Contact Oliver if you've gotten this message!");
+		SAIL_LOG_ERROR("Tried to stream a non-streamable '.xwb' file! Contact Oliver if you've gotten this message!");
 		return;
 	}
 
@@ -524,12 +524,12 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			wfx = reinterpret_cast<WAVEFORMATEX*>(&formatBuff);
 			hr = wbr.GetFormat(i, wfx, 64);
 			if (hr != S_OK) {
-				Logger::Error("Failed to get wave format for '.xwb' file!");
+				SAIL_LOG_ERROR("Failed to get wave format for '.xwb' file!");
 			}
 
 			hr = wbr.GetMetadata(i, metadata);
 			if (hr != S_OK) {
-				Logger::Error("Failed to get meta data for '.xwb' file!");
+				SAIL_LOG_ERROR("Failed to get meta data for '.xwb' file!");
 			}
 
 			Microsoft::WRL::ComPtr<IXAPO> xapo;
@@ -556,7 +556,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			//}
 			hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, wfx, 0, 1.0f, &voiceContext);
 			if (hr != S_OK) {
-				Logger::Error("Failed to create source voice!");
+				SAIL_LOG_ERROR("Failed to create source voice!");
 			}
 
 			m_stream[myIndex].sourceVoice->SetVolume(0);
@@ -566,7 +566,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 					//hr = xAudio->CreateSourceVoice(&pSourceVoice, (WAVEFORMATEX*)& adpcwf);
 
 			if (FAILED(hr)) {
-				Logger::Error("Failed to create the actual 'SourceVoice' for a sound file!");
+				SAIL_LOG_ERROR("Failed to create the actual 'SourceVoice' for a sound file!");
 			}
 
 			// Route the source voice to the submix voice.
@@ -819,7 +819,7 @@ HRESULT AudioEngine::FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR s
 
 bool AudioEngine::checkSoundIndex(int index) {
 	if (index < 0 || index > SOUND_COUNT) {
-		Logger::Error("Tried to STOP a sound from playing with an INVALID INDEX!");
+		SAIL_LOG_ERROR("Tried to STOP a sound from playing with an INVALID INDEX!");
 		return false;
 	} else {
 		return true;
@@ -828,7 +828,7 @@ bool AudioEngine::checkSoundIndex(int index) {
 
 bool AudioEngine::checkStreamIndex(int index) {
 	if (index < 0 || index > STREAMED_SOUNDS_COUNT) {
-		Logger::Error("Tried to STOP a sound from being streamed with an INVALID INDEX!");
+		SAIL_LOG_ERROR("Tried to STOP a sound from being streamed with an INVALID INDEX!");
 		return false;
 	} else {
 		return true;

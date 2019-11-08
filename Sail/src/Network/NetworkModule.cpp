@@ -207,7 +207,7 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 	m_sizeOfPacketsSentSinceLast += size;
 
 	if (size > 1000) {
-		Logger::Log("Packet size: " + std::to_string(size));
+		SAIL_LOG("Packet size: " + std::to_string(size));
 	}
 
 

@@ -33,5 +33,6 @@
 #include "TeamComponent.h"
 #include "TransformComponent.h"
 #include "VerticalCylinderComponent.h"
+#include "SprintingComponent.h"
 
 #include "GUIComponent.h"
