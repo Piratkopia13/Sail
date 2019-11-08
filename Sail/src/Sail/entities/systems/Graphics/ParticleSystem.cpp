@@ -127,7 +127,8 @@ void ParticleSystem::submitAll() const {
 	renderer->submit(
 		m_model.get(),
 		glm::identity<glm::mat4>(),
-		flags
+		flags,
+		0
 	);
 
 }

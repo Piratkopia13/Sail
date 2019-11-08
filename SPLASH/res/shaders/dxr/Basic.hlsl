@@ -250,12 +250,14 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	}
 
 	float4 albedoColor = getAlbedo(CB_MeshData.data[blasIndex], texCoords);
+	float a = albedoColor.a;
 	float3 teamColor = CB_SceneData.teamColors[teamColorID].rgb;
 	
-	if (albedoColor.a < 1.0f) {
-		float f = 1 - albedoColor.a;
-		albedoColor = float4(albedoColor.rgb * (1 - f) + teamColor * f, albedoColor.a);
-	}		
+	if (a < 1.0f) {
+		float f = 1 - a;
+		albedoColor = float4(albedoColor.rgb * (1 - f) + teamColor * f, a);
+	}
+	albedoColor = float4(pow(albedoColor.rgb, 2.2), a);
 
 	float4 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[blasIndex], texCoords);
 	float metalness = metalnessRoughnessAO.r;
