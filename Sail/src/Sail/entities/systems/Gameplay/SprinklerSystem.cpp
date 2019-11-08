@@ -8,8 +8,11 @@
 #include "Sail/utils/Utils.h"
 #include "Sail.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
+#include "Network/NWrapperSingleton.h"
 
 SprinklerSystem::SprinklerSystem() : BaseComponentSystem() {
+	registerComponent<CandleComponent>(true, true, true);
+	registerComponent<TransformComponent>(true, true, false);
 	m_map = ECS::Instance()->getSystem<LevelSystem>();
 	m_settings = &Application::getInstance()->getSettings();
 	m_endGameStartLimit = m_settings->gameSettingsDynamic["map"]["sprinklerTime"].value;
@@ -33,14 +36,38 @@ void SprinklerSystem::stop() {
 }
 
 void SprinklerSystem::update(float dt) {
+
 	m_endGameTimer += dt;
 	// End game is reached, sprinklers starting
 	if (m_endGameTimer > m_endGameStartLimit) {
+		for (auto& e : entities) {
+			CandleComponent* candle = e->getComponent<CandleComponent>();
+			TransformComponent* transform = e->getComponent<TransformComponent>();
+
+			float candlePosX;
+			float candlePosZ;
+			if (candle->isCarried && candle->wasCarriedLastUpdate && !e->isAboutToBeDestroyed()) {
+				candlePosX = transform->getParent()->getTranslation().x;
+				candlePosZ = transform->getParent()->getTranslation().z;
+			}
+			else {
+				candlePosX = transform->getTranslation().x;
+				candlePosZ = transform->getTranslation().z;
+			}
+			int candleLocationRoomID = m_map->getRoomIDWorldPos(candlePosX, candlePosZ);
+			std::vector<int>::iterator it = std::find(m_activeRooms.begin(), m_activeRooms.end(), candleLocationRoomID);
+			if (it != m_activeRooms.end()) {
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::HIT_BY_SPRINKLER,
+					SAIL_NEW Netcode::MessageHitBySprinkler{
+						e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
+					}
+					);
+			}
+		}
 
 		if (m_enableNewSprinklers) {
 			// Add rooms to different vector to enable sprinklers and turn off hazard lights
-			m_activeSprinklers.insert(m_activeSprinklers.end(), m_activeRooms.begin(), m_activeRooms.end());
-			m_activeRooms.clear();
 			// Rotate between sides to activate
 			m_mapSide++;
 			m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
@@ -93,8 +120,7 @@ const std::vector<int>& SprinklerSystem::getActiveRooms() const
 void SprinklerSystem::addToActiveRooms(int room) {
 	if (room != 0) {
 		std::vector<int>::iterator itRooms = std::find(m_activeRooms.begin(), m_activeRooms.end(), room);
-		std::vector<int>::iterator itSprinklers = std::find(m_activeSprinklers.begin(), m_activeSprinklers.end(), room);
-		if (itRooms == m_activeRooms.end() && itSprinklers == m_activeSprinklers.end()) {
+		if (itRooms == m_activeRooms.end()) {
 			m_activeRooms.push_back(room);
 		}
 	}

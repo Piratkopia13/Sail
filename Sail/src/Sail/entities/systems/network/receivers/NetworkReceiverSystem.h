@@ -56,6 +56,7 @@ private:
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
 	void igniteCandle(Netcode::ComponentID candleOwnerID);
+	void hitBySprinkler(Netcode::ComponentID candleOwnerID);
 
 	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);

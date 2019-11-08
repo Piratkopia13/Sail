@@ -410,6 +410,13 @@ void NetworkReceiverSystem::update(float dt) {
 				waterHitPlayer(playerwhoWasHit, senderID);
 			}
 			break;
+			case Netcode::MessageType::HIT_BY_SPRINKLER:
+			{
+				Netcode::ComponentID candleOwnerID;
+				ar(candleOwnerID);
+				hitBySprinkler(candleOwnerID);
+			}
+			break;
 			default:
 				Logger::Error("INVALID NETWORK EVENT RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;
@@ -528,7 +535,12 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 				// Damage the candle
 				// Save the Shooter of the Candle if its lethal
 				// TODO: Replace 10.0f with game settings damage
-				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+				if (senderId != Netcode::MESSAGE_SPRINKLER_ID) {
+					child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+				}
+				else {
+					child->getComponent<CandleComponent>()->hitWithWater(1.0f, senderId);
+				}
 
 				// Play relevant sound
 				if (child->getComponent<CandleComponent>()->isLit) {
@@ -580,11 +592,18 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 		// Print who killed who
 		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
 		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
-		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
+		std::string ShooterPlayer;
 		std::string deathType = "sprayed down";
-		Logger::Log(ShooterPlayer + " " + deathType + " " + deadPlayer);
+		if (playerIdOfShooter == Netcode::MESSAGE_SPRINKLER_ID) {
+			ShooterPlayer = "The sprinklers";
+		}
+		else {
+			ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
+		}
 
+		Logger::Log(ShooterPlayer + " " + deathType + " " + deadPlayer);
 		m_gameDataTracker->logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
+			
 
 		//This should remove the candle entity from game
 		e->removeDeleteAllChildren();
@@ -800,4 +819,8 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 		}
 	}
 	Logger::Warning("igniteCandle called but no matching entity found");
+}
+
+void NetworkReceiverSystem::hitBySprinkler(Netcode::ComponentID candleOwnerID) {
+	waterHitPlayer(candleOwnerID, Netcode::MESSAGE_SPRINKLER_ID);
 }

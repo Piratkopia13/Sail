@@ -13,6 +13,9 @@ namespace Netcode {
 
 	// Used to signify NetworkMessages sent Internally
 	static constexpr PlayerID MESSAGE_FROM_SELF_ID = 255;
+	
+	// ID for sprinkler
+	static constexpr PlayerID MESSAGE_SPRINKLER_ID = 254;
 
 	// ComponentID has 32 bits and the first 8 are the PlayerID of the owner which
 	// can be extracted by shifting the ComponentID 18 bits to the right.
@@ -71,6 +74,7 @@ namespace Netcode {
 		RUNNING_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
+		HIT_BY_SPRINKLER,
 		EMPTY,
 		COUNT
 	}; 
@@ -100,6 +104,7 @@ namespace Netcode {
 		"RUNNING_TILE_START,		",
 		"RUNNING_STOP_SOUND,		",
 		"IGNITE_CANDLE,				",
+		"HIT_BY_SPRINKLER,			",
 		"EMPTY						",
 	};
 
@@ -270,6 +275,12 @@ namespace Netcode {
 	public:
 		MessageIgniteCandle(Netcode::ComponentID id) : candleOwnerID(id) {}
 		~MessageIgniteCandle() {}
+		Netcode::ComponentID candleOwnerID;
+	};
+	class MessageHitBySprinkler : public MessageData {
+	public:
+		MessageHitBySprinkler(Netcode::ComponentID id) : candleOwnerID(id) {}
+		~MessageHitBySprinkler() {}
 		Netcode::ComponentID candleOwnerID;
 	};
 
