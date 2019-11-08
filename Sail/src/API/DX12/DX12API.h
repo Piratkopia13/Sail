@@ -31,6 +31,7 @@ namespace GlobalRootParam {
 	enum Slot {
 		CBV_TRANSFORM = 0,
 		CBV_DIFFUSE_TINT,
+		CBV_TEAM_COLOR,
 		CBV_CAMERA,
 		DT_SRV_0TO9_UAV_10TO20,
 		SRV_GENERAL10,

@@ -10,6 +10,8 @@
 #include "Gameplay/ai/AiSystem.h"
 #include "Gameplay/GunSystem.h"
 #include "Gameplay/ProjectileSystem.h"
+#include "Gameplay/TeamColorSystem.h"
+
 #include "Graphics/AnimationSystem.h"
 #include "Graphics/AnimationChangerSystem.h"
 #include "Graphics/ParticleSystem.h"
