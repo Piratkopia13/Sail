@@ -198,7 +198,7 @@ void NetworkReceiverSystem::update(float dt) {
 				}
 				break;
 				default:
-					Logger::Error("INVALID NETWORK MESSAGE RECEIVED FROM " + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
+					SAIL_LOG_ERROR("INVALID NETWORK MESSAGE RECEIVED FROM " + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 					break;
 				}
 			}
@@ -228,8 +228,8 @@ void NetworkReceiverSystem::update(float dt) {
 #ifdef DEVELOPMENT
 			ar(REDUNDANTTYPE);
 			if (eventType != REDUNDANTTYPE) {
-				Logger::Error("CORRUPTED NETWORK EVENT RECEIVED\n");
-				Logger::Warning("Make sure that all players are in either a DEVELOPER branch or the Release branch\n");
+				SAIL_LOG_ERROR("CORRUPTED NETWORK EVENT RECEIVED\n");
+				SAIL_LOG_WARNING("Make sure that all players are in either a DEVELOPER branch or the Release branch\n");
 				m_incomingDataBuffer.pop();
 				return;
 			}
@@ -411,7 +411,7 @@ void NetworkReceiverSystem::update(float dt) {
 			}
 			break;
 			default:
-				Logger::Error("INVALID NETWORK EVENT RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
+				SAIL_LOG_ERROR("INVALID NETWORK EVENT RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;
 			}
 
@@ -439,7 +439,7 @@ void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID
 	instantAddEntity(e.get());
 
 
-	Logger::Log("Created player with id: " + std::to_string(playerCompID));
+	SAIL_LOG("Created player with id: " + std::to_string(playerCompID));
 
 	// lightIndex set to 999, can probably be removed since it no longer seems to be used
 	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, gunCompID, 999, translation);
@@ -454,7 +454,7 @@ void NetworkReceiverSystem::setEntityLocalPosition(Netcode::ComponentID id, cons
 			return;
 		}
 	}
-	Logger::Warning("setEntityTranslation called but no matching entity found");
+	SAIL_LOG_WARNING("setEntityTranslation called but no matching entity found");
 }
 
 void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation) {
@@ -464,7 +464,7 @@ void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, cons
 			return;
 		}
 	}
-	Logger::Warning("setEntityRotation called but no matching entity found");
+	SAIL_LOG_WARNING("setEntityRotation called but no matching entity found");
 }
 
 void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
@@ -474,7 +474,7 @@ void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, cons
 			return;
 		}
 	}
-	Logger::Warning("setEntityRotation called but no matching entity found");
+	SAIL_LOG_WARNING("setEntityRotation called but no matching entity found");
 }
 
 void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime) {
@@ -486,7 +486,7 @@ void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned
 			return;
 		}
 	}
-	Logger::Warning("setEntityAnimation called but no matching entity found");
+	SAIL_LOG_WARNING("setEntityAnimation called but no matching entity found");
 }
 
 void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
@@ -499,7 +499,7 @@ void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 			return;
 		}
 	}
-	Logger::Warning("playerJumped called but no matching entity found");
+	SAIL_LOG_WARNING("playerJumped called but no matching entity found");
 }
 
 void NetworkReceiverSystem::playerLanded(Netcode::ComponentID id) {
@@ -512,7 +512,7 @@ void NetworkReceiverSystem::playerLanded(Netcode::ComponentID id) {
 			return;
 		}
 	}
-	Logger::Warning("playerLanded called but no matching entity found");
+	SAIL_LOG_WARNING("playerLanded called but no matching entity found");
 }
 
 void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) {
@@ -546,7 +546,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 			}
 		}
 	}
-	Logger::Warning("waterHitPlayer called but no matching entity found");
+	SAIL_LOG_WARNING("waterHitPlayer called but no matching entity found");
 }
 
 
@@ -582,7 +582,7 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
 		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
 		std::string deathType = "sprayed down";
-		Logger::Log(ShooterPlayer + " " + deathType + " " + deadPlayer);
+		SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
 
 		m_gameDataTracker->logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
 
@@ -629,7 +629,7 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 
 		return;
 	}
-	Logger::Warning("playerDied called but no matching entity found");
+	SAIL_LOG_WARNING("playerDied called but no matching entity found");
 }
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
@@ -645,7 +645,7 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 			return;
 		}
 	}
-	Logger::Warning("playerDisconnect called but no matching entity found");
+	SAIL_LOG_WARNING("playerDisconnect called but no matching entity found");
 }
 
 
@@ -681,7 +681,7 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 			}
 		}
 	}
-	Logger::Warning("setCandleHeldState called but no matching entity found");
+	SAIL_LOG_WARNING("setCandleHeldState called but no matching entity found");
 }
 
 void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
@@ -694,7 +694,7 @@ void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Net
 			return;
 		}
 	}
-	Logger::Warning("shootStart called but no matching entity found");
+	SAIL_LOG_WARNING("shootStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
@@ -712,7 +712,7 @@ void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netc
 			return;
 		}
 	}
-	Logger::Warning("shootLoop called but no matching entity found");
+	SAIL_LOG_WARNING("shootLoop called but no matching entity found");
 }
 
 void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
@@ -729,7 +729,7 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 			return;
 		}
 	}
-	Logger::Warning("shootEnd called but no matching entity found");
+	SAIL_LOG_WARNING("shootEnd called but no matching entity found");
 }
 
 void NetworkReceiverSystem::backToLobby() {
@@ -748,7 +748,7 @@ void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 			return;
 		}
 	}
-	Logger::Warning("runningMetalStart called but no matching entity found");
+	SAIL_LOG_WARNING("runningMetalStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
@@ -762,7 +762,7 @@ void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
 			return;
 		}
 	}
-	Logger::Warning("runningTileStart called but no matching entity found");
+	SAIL_LOG_WARNING("runningTileStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
@@ -775,7 +775,7 @@ void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 			return;
 		}
 	}
-	Logger::Warning("runningStopSound called but no matching entity found");
+	SAIL_LOG_WARNING("runningStopSound called but no matching entity found");
 }
 
 void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
@@ -799,5 +799,5 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
 			}
 		}
 	}
-	Logger::Warning("igniteCandle called but no matching entity found");
+	SAIL_LOG_WARNING("igniteCandle called but no matching entity found");
 }

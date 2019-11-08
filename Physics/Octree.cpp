@@ -238,7 +238,7 @@ void Octree::getCollisionData(const BoundingBox* entityBoundingBox, Entity* mesh
 		outCollisionData->emplace_back();
 		outCollisionData->back().entity = meshEntity;
 		outCollisionData->back().shape = SAIL_NEW CollisionTriangle(v0, v1, v2, glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2))));
-		//Logger::Log("Collision detected with " + meshEntity->getName());
+		//SAIL_LOG("Collision detected with " + meshEntity->getName());
 	}
 }
 

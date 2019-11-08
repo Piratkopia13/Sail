@@ -106,7 +106,7 @@ void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData, AssimpLoader
 		*/
 		for ( unsigned int vertexIndex = 0; vertexIndex < mesh->mNumVertices; vertexIndex++ ) {
 			if ( meshOffset.vertexOffset + vertexIndex > buildData.numVertices ) {
-				Logger::Error("TOOO BIIIIIG VERTEX");
+				SAIL_LOG_ERROR("TOOO BIIIIIG VERTEX");
 			}
 			/*
 				Positions
@@ -157,14 +157,14 @@ void AssimpLoader::getGeometry(aiMesh* mesh, Mesh::Data& buildData, AssimpLoader
 		for (unsigned int faceIndex = 0; faceIndex < mesh->mNumFaces; faceIndex++ ) {
 			for (unsigned int iIndex = 0; iIndex < mesh->mFaces[faceIndex].mNumIndices; iIndex++ ) {
 				if ( meshOffset.indexOffset + vIndex > buildData.numIndices ) {
-					Logger::Error("TOOO BIIIIIG INDEX");
+					SAIL_LOG_ERROR("TOOO BIIIIIG INDEX");
 				}
 				buildData.indices[meshOffset.indexOffset + vIndex++] = mesh->mFaces[faceIndex].mIndices[iIndex];
 			}
 		}
 
 	} else {
-		Logger::Error("Oh- oh!");
+		SAIL_LOG_ERROR("Oh- oh!");
 	}
 
 }
@@ -175,7 +175,7 @@ Mesh* AssimpLoader::importMesh(const aiScene* scene, aiNode* node) {
 
 bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, AnimationStack* stack) {
 	#ifdef _DEBUG 
-	Logger::Log("1"+std::string(node->mName.C_Str())); 
+	SAIL_LOG("1"+std::string(node->mName.C_Str())); 
 		if (m_nodes.find(node->mName.C_Str()) == m_nodes.end()) {
 			m_nodes[node->mName.C_Str()] = node;
 		}
@@ -184,7 +184,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 		const aiMesh* mesh = scene->mMeshes[node->mMeshes[nodeID]];
 		
 			#ifdef _DEBUG 
-		Logger::Log("2 "+std::string(mesh->mName.C_Str()));
+		SAIL_LOG("2 "+std::string(mesh->mName.C_Str()));
 			#endif
 		if (mesh->HasBones()) {
 			for (unsigned int boneID = 0; boneID < mesh->mNumBones; boneID++) {
@@ -205,7 +205,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 
 
 #ifdef _DEBUG 
-				Logger::Log("3  " + std::string(bone->mName.C_Str()));
+				SAIL_LOG("3  " + std::string(bone->mName.C_Str()));
 #endif
 
 
@@ -220,7 +220,7 @@ bool AssimpLoader::importBonesFromNode(const aiScene* scene, aiNode* node, Anima
 			}
 
 		} else {
-			Logger::Log("3  No Bones");
+			SAIL_LOG("3  No Bones");
 		}
 
 	}
@@ -260,18 +260,18 @@ bool AssimpLoader::importAnimations(const aiScene* scene, AnimationStack* stack)
 			channels.back().emplace_back(animation->mChannels[i]);
 		}
 		std::string temp = std::to_string(animation->mDuration) + ":" + std::to_string(animation->mTicksPerSecond) + " = " + std::to_string(animation->mDuration / animation->mTicksPerSecond);
-		Logger::Log(temp);
+		SAIL_LOG(temp);
 #endif
 
 		unsigned int totalFrames = (unsigned int)animation->mDuration;
-		Logger::Log(std::to_string(totalFrames));
+		SAIL_LOG(std::to_string(totalFrames));
 		float totalDivided = 1.0f / (float)totalFrames;
 		float tickRate = 1.0f/(animation->mTicksPerSecond == 0 ? 24.0f : (float)animation->mTicksPerSecond);
 		float totalTime = totalFrames * (animation->mTicksPerSecond == 0 ? 24.0f : (float)animation->mTicksPerSecond);
 		for (unsigned int frame = 0; frame < totalFrames; frame++) {
 			float time = (float)frame * tickRate;
 			Animation::Frame* currentFrame = SAIL_NEW Animation::Frame((unsigned int)m_boneMap.size());
-			//Logger::Log("Added Frame with ");
+			//SAIL_LOG("Added Frame with ");
 			
 			readNodeHierarchy(animationIndex, frame, frame, scene->mRootNode, glm::identity<glm::mat4>(), currentFrame);
 			anim->addFrame(frame, time, currentFrame);
@@ -428,7 +428,7 @@ void AssimpLoader::calcInterpolatedScale(aiVector3D& out, const float animationT
 
 const bool AssimpLoader::errorCheck(const aiScene* scene) {
 	if ( !scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode ) {
-		Logger::Error("ERROR::ASSIMP::" + std::string(m_importer.GetErrorString()));
+		SAIL_LOG_ERROR("ERROR::ASSIMP::" + std::string(m_importer.GetErrorString()));
 		return true;
 	}
 	return false;
