@@ -38,17 +38,12 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao, float4 reflectionColor) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
 
     float3 F0 = 0.04f;
     F0        = lerp(F0, albedo, metalness);
-
-    // Initialize a random seed
-    // TODO: move this somewhere else and pass it in as a param
-	// uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
-    // float shadowAmount = 0.f;
 
     // Reflectance equation
     float3 Lo = 0.0f;
@@ -122,15 +117,22 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     float3 R = reflect(-V, N);  
 
     // Reflection
-    // float3 prefilteredColor = albedoBounceTwo;
-    float3 prefilteredColor = float3(0.8f, 0.1f, 0.8f);
+    float3 ambient = 0.f;
+    if (all(reflectionColor == -1.f)) {
+        // Parse negative reflection as no color
+        // Use color from only direct light and irradiance
+        ambient = irradiance * albedo * ao;
+    } else {
+        // Use reflectionColor parameter
+        float3 prefilteredColor = reflectionColor;
 
-    // Assume roughness = 0
-    // This is a very rough approximation used because ray traced reflections are always perfect
-    // and blurring them to make accurate PBR calculations is very expensive in real-time
-    float2 envBRDF = brdfLUT.SampleLevel(PSss, float2(max(dot(N, V), 0.0f), roughness), 0).rg;
-    float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-    float3 ambient = (kD * diffuse + specular) * ao;
+        // Assume roughness = 0
+        // This is a very rough approximation used because ray traced reflections are always perfect
+        // and blurring them to make accurate PBR calculations is very expensive in real-time
+        float2 envBRDF = brdfLUT.SampleLevel(PSss, float2(max(dot(N, V), 0.0f), roughness), 0).rg;
+        float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+        ambient = (kD * diffuse + specular) * ao;
+    }
 
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;

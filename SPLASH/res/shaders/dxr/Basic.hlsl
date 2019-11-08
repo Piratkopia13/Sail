@@ -101,7 +101,10 @@ void rayGen() {
 	payload.recursionDepth = 1;
 	payload.closestTvalue = 0;
 	payload.shadow = 0.f;
-	payload.albedo = float4(0,0,0,0);
+	payload.albedo = 0.f;
+	payload.normal = 0.f;
+	payload.metalnessRoughnessAO = 0.f;
+	payload.worldPosition = 0.f;
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 
@@ -122,7 +125,10 @@ void rayGen() {
 	payloadMetaball.recursionDepth = 0;
 	payloadMetaball.closestTvalue = 0;
 	payloadMetaball.shadow = 0.f;
-	payloadMetaball.albedo = float4(0, 0, 0, 0);
+	payloadMetaball.albedo = 0.f;
+	payloadMetaball.normal = 0.f;
+	payloadMetaball.metalnessRoughnessAO = 0.f;
+	payloadMetaball.worldPosition = 0.f;
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
@@ -273,7 +279,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	payload.normal = normalInWorldSpace;
 	payload.metalnessRoughnessAO = float3(1.f, 1.f, 1.f);
 	payload.worldPosition = Utils::HitWorldPosition();
-	
+
 	return;
 }
 
