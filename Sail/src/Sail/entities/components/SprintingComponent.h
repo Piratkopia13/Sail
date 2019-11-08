@@ -15,6 +15,7 @@ public:
 #ifdef DEVELOPMENT
 	void imguiRender(Entity** selected) {
 		SprintingComponent* sprintC = this;
+		ImGui::SliderFloat("speedModifier", &sprintC->sprintSpeedModifier, 0.f, 2.f);
 		ImGui::SliderFloat("sprintTimer", &sprintC->sprintTimer, 0.f, MAX_SPRINT_TIME);
 		ImGui::SliderFloat("downTimer", &sprintC->downTimer, 0.f, MAX_SPRINT_DOWN_TIME);
 		ImGui::Checkbox("Exhausted", &sprintC->exhausted);

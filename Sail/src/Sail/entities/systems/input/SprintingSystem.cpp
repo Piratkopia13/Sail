@@ -4,6 +4,7 @@
 #include "Sail/KeyBinds.h"
 #include "Sail/entities/components/SprintingComponent.h"
 #include "Sail/entities/components/SpeedLimitComponent.h"
+#include "Sail/entities/components/AnimationComponent.h"
 
 SprintingSystem::SprintingSystem() {
 	registerComponent<SprintingComponent>(true, true, true);
@@ -29,9 +30,12 @@ void SprintingSystem::update(float dt, float alpha) {
 				sprintComp->exhausted = false;
 				
 			}
+
+			e->getComponent<AnimationComponent>()->animationSpeed = 1.f;
 		} else {
 			sprintComp->downTimer = 0.f;
 			sprintComp->sprintTimer += dt;
+			e->getComponent<AnimationComponent>()->animationSpeed = sprintComp->sprintSpeedModifier;
 		}
 
 		if (sprintComp->sprintTimer < MAX_SPRINT_TIME) {
@@ -44,7 +48,6 @@ void SprintingSystem::update(float dt, float alpha) {
 		}
 
 		sprintComp->sprintedLastFrame = sprintComp->doSprint && sprintComp->canSprint;
-		sprintComp->doSprint = false;
 	}
 	
 }

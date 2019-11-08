@@ -402,9 +402,12 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 				sprintComp->doSprint = true;
 				playerMovement.speedModifier = sprintComp->sprintSpeedModifier;
 			}
+		// For spectator
 		} else {
 			playerMovement.speedModifier = sprintComp->sprintSpeedModifier;
 		}
+	} else {
+		sprintComp->doSprint = false;
 	}
 
 	if ( Input::IsKeyPressed(KeyBinds::MOVE_FORWARD) ) { playerMovement.forwardMovement += 1.0f; }
