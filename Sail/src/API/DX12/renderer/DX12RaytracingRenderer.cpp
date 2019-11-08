@@ -9,6 +9,7 @@
 #include "Sail/graphics/geometry/factory/ScreenQuadModel.h"
 #include "Sail/graphics/shader/dxr/ShadePassShader.h"
 #include "API/DX12/shader/DX12ShaderPipeline.h"
+#include "Sail/graphics/light/LightSetup.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
@@ -16,6 +17,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	: m_dxr("Basic", inputs)
 	, m_gbufferTextures(inputs)
 {
+	lightSetup = nullptr;
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 	m_context->initCommand(m_commandDirect, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Raytracing Renderer DIRECT command list or allocator");
@@ -35,6 +37,8 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_shadedOuput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	// Init raytracing input texture
 	m_shadowsLastFrame = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "LastFrameShadowTexture", Texture::R8G8)));
+
+	m_brdfTexture = &app->getResourceManager().getTexture("pbr/brdfLUT.tga");
 
 	m_shadeShader = &app->getResourceManager().getShaderSet<ShadePassShader>();
 	m_fullscreenModel = ModelFactory::ScreenQuadModel::Create(m_shadeShader);
@@ -246,18 +250,31 @@ RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList);
 
 	shaderPipeline->bind_new(cmdList, 0);
-	shaderPipeline->setTexture2D("albedoBounceOne", m_gbufferTextures[1], cmdList);
-	shaderPipeline->setTexture2D("albedoBounceTwo", m_outputTextures.albedo.get(), cmdList);
 
-	shaderPipeline->setTexture2D("normalsBounceOne", m_gbufferTextures[0], cmdList);
-	shaderPipeline->setTexture2D("normalsBounceTwo", m_outputTextures.normal.get(), cmdList);
+	int numCustomSRVs = 0;
+	shaderPipeline->setTexture2D("albedoBounceOne", m_gbufferTextures[1], cmdList); numCustomSRVs++;
+	shaderPipeline->setTexture2D("albedoBounceTwo", m_outputTextures.albedo.get(), cmdList); numCustomSRVs++;
 
-	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceOne", m_gbufferTextures[2], cmdList);
-	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceTwo", m_outputTextures.metalnessRoughnessAO.get(), cmdList);
+	shaderPipeline->setTexture2D("normalsBounceOne", m_gbufferTextures[0], cmdList); numCustomSRVs++;
+	shaderPipeline->setTexture2D("normalsBounceTwo", m_outputTextures.normal.get(), cmdList); numCustomSRVs++;
 
-	shaderPipeline->setTexture2D("shadows", m_outputTextures.shadows.get(), cmdList);
+	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceOne", m_gbufferTextures[2], cmdList); numCustomSRVs++;
+	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceTwo", m_outputTextures.metalnessRoughnessAO.get(), cmdList); numCustomSRVs++;
 
-	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, 0, -7);
+	shaderPipeline->setTexture2D("brdfLUT", m_brdfTexture, cmdList); numCustomSRVs++;
+
+	shaderPipeline->setTexture2D("shadows", m_outputTextures.shadows.get(), cmdList); numCustomSRVs++;
+
+	if (camera) {
+		shaderPipeline->setCBufferVar("projectionToWorld", &glm::inverse(camera->getViewProjection()), sizeof(glm::mat4));
+		shaderPipeline->setCBufferVar("cameraPosition", &camera->getPosition(), sizeof(glm::vec3));
+	}
+	if (lightSetup) {
+		auto& plData = lightSetup->getPointLightsData();
+		shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
+	}
+
+	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, 0, -numCustomSRVs);
 
 	// setTexture2D transitions texture to pixel shader resource
 	// We need to transition them back to a state that is usable on a compute queue before the next frame

@@ -411,8 +411,8 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 
 	if (typeName == "Material") { return 48; }
 	if (typeName == "DirectionalLight") { return 32; }
-	if (typeName == "PointLight") { return 32; }
-	if (typeName == "PointLightInput") { return 272; }
+	if (typeName == "PointLight") { return 48; }
+	if (typeName == "PointLightInput") { return 576; }
 	if (typeName == "DeferredPointLightData") { return 48; }
 	if (typeName == "DeferredDirLightData") { return 32; }
 	if (typeName == "Vertex") { return 4 * 14; }

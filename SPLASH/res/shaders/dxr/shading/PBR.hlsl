@@ -38,7 +38,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
 
@@ -47,13 +47,13 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
     // Initialize a random seed
     // TODO: move this somewhere else and pass it in as a param
-	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
-    float shadowAmount = 0.f;
+	// uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
+    // float shadowAmount = 0.f;
 
     // Reflectance equation
     float3 Lo = 0.0f;
     for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLightInput p = CB_SceneData.pointLights[i];
+		PointLightInput p = pointLights[i];
 
         // Ignore point light if color is black
 		if (all(p.color == 0.0f)) {
@@ -75,22 +75,11 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         float3 H = normalize(V + toLight);
         float distance = length(p.position - worldPosition);
 
-        float lightShadowAmount = 0.f;
-        uint numSamples = 1;
-        for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
-            float3 L = Utils::getConeSample(randSeed, toLight, coneAngle);
-            lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, L, distance);
-        }
-#ifdef RENDER_SHADOWS_SEPARATELY
-        lightShadowAmount /= numSamples;
-        shadowAmount += lightShadowAmount;
-#else
-        lightShadowAmount = 1.0f - lightShadowAmount / numSamples;
-        // Dont do any shading if in shadow or light is black
+        float lightShadowAmount = 1.f;
+        // Dont do any shading if in shadow
         if (lightShadowAmount == 0.f) {
             continue;
         }
-#endif
 
         float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
         float3 radiance   = p.color * attenuation;
@@ -115,11 +104,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
         // Calculate the light's outgoing reflectance value
         float NdotL = max(dot(N, toLight), 0.0f);
-#ifdef RENDER_SHADOWS_SEPARATELY
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-#else
         Lo += (kD * albedo / PI + specular) * radiance * NdotL * lightShadowAmount;
-#endif
     }
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
@@ -129,46 +114,23 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     float3 kD = 1.0f - kS;
     kD *= 1.0f - metalness;	  
     
-    // float3 irradiance = texture(irradianceMap, N).rgb;
+    // Assume constant irradiance since game is played indoors with no or few indirect light sources
+    // This could be read from a skymap or irradiance probe
     float3 irradiance = 0.01f;
     float3 diffuse    = irradiance * albedo;
     
     float3 R = reflect(-V, N);  
+
+    // Reflection
+    // float3 prefilteredColor = albedoBounceTwo;
+    float3 prefilteredColor = float3(0.8f, 0.1f, 0.8f);
+
     // Assume roughness = 0
-    // const float MAX_REFLECTION_LOD = 4.0f;
-    // float3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;
-
-    float recursiveShadowAmount = 0.f;
-    float3 ambient = 0.f;
-    if (payload.recursionDepth < 2) {
-		// Ray direction for first ray when cast from GBuffer must be calculated using camera position
-		// float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
-
-		// Trace reflection ray
-        RayDesc ray;
-        ray.Origin = worldPosition;
-        ray.Direction = R;
-        ray.TMin = 0.0001;
-        ray.TMax = 1000;
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, ray, payload);
-        float3 prefilteredColor = payload.albedo.rgb;
-        // float3 prefilteredColor = 0.5f;
-
-        // return float4(prefilteredColor, 1.0f);
-
-        float2 envBRDF = sys_brdfLUT.SampleLevel(ss, float2(max(dot(N, V), 0.0f), roughness), 0).rg;
-        // float2 envBRDF  = IntegrateBRDF(max(dot(N, V), 0.0f), 1.0f - roughness);
-        float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-        ambient = (kD * diffuse + specular) * ao; 
-
-        float shadowSpecular = payload.shadow.x * (F * envBRDF.x + envBRDF.y).x;
-        recursiveShadowAmount = shadowSpecular * ao;
-	} else {
-		// Reflection ray, return color from only direct light and irradiance
-        ambient = irradiance * albedo * ao;
-	}
-
-    payload.shadow.x = shadowAmount + recursiveShadowAmount;
+    // This is a very rough approximation used because ray traced reflections are always perfect
+    // and blurring them to make accurate PBR calculations is very expensive in real-time
+    float2 envBRDF = brdfLUT.SampleLevel(PSss, float2(max(dot(N, V), 0.0f), roughness), 0).rg;
+    float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+    float3 ambient = (kD * diffuse + specular) * ao;
 
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;
