@@ -20,6 +20,7 @@ public:
 		damageTakenLastHit = damage;
 		wasHitByPlayerID = shooterID;
 	}
+	void imguiRender(Entity** e) override;
 	
 public:
 	Entity* ptrToOwner = nullptr;
