@@ -170,7 +170,7 @@ void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 #ifdef DEVELOPMENT
 	// Don't send broken events to others or to yourself
 	if (type->type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || type->type >= Netcode::MessageType::EMPTY) {
-		Logger::Error("Attempted to send invalid message\n");
+		SAIL_LOG_ERROR("Attempted to send invalid message\n");
 		return;
 	}
 #endif
@@ -308,7 +308,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	}
 	break;
 	default:
-		Logger::Error("TRIED TO SEND INVALID NETWORK MESSAGE (" + std::to_string((int)messageType));
+		SAIL_LOG_ERROR("TRIED TO SEND INVALID NETWORK MESSAGE (" + std::to_string((int)messageType));
 		break;
 	}
 }
@@ -368,10 +368,17 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 	}
 	break;
+	case Netcode::MessageType::EXTINGUISH_CANDLE:
+	{
+		Netcode::MessageExtinguishCandle* data = static_cast<Netcode::MessageExtinguishCandle*>(event->data);
+		ar(data->candleThatWasHit);
+		ar(data->playerWhoExtinguishedCandle);
+	}
+	break;
 	case Netcode::MessageType::IGNITE_CANDLE:
 	{
 		Netcode::MessageIgniteCandle* data = static_cast<Netcode::MessageIgniteCandle*>(event->data);
-		ar(data->candleOwnerID);
+		ar(data->candleCompId);
 	}
 	break;
 	case Netcode::MessageType::MATCH_ENDED:
@@ -439,7 +446,15 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	{
 
 	}
-	break; 
+	break;
+	case Netcode::MessageType::SET_CANDLE_HEALTH:
+	{
+		Netcode::MessageSetCandleHealth* data = static_cast<Netcode::MessageSetCandleHealth*>(event->data);
+		
+		ar(data->candleThatWasHit);
+		ar(data->health);
+	}
+	break;
 	case Netcode::MessageType::SPAWN_PROJECTILE:
 	{
 		Netcode::MessageSpawnProjectile* data = static_cast<Netcode::MessageSpawnProjectile*>(event->data);

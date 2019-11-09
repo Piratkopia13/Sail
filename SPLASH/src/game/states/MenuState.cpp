@@ -267,7 +267,7 @@ const std::string MenuState::loadPlayerName(const std::string& file) {
 	if (name == "") {
 		name = "Hans";
 		Utils::writeFileTrunc("res/data/localplayer.settings", name);
-		Logger::Log("Found no player file, created: " + std::string("'res/data/localplayer.settings'"));
+		SAIL_LOG("Found no player file, created: " + std::string("'res/data/localplayer.settings'"));
 	}
 	return name;
 }

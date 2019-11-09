@@ -72,7 +72,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 
 		if (!animationC->currentAnimation) {
 #if defined(_DEBUG)
-			Logger::Warning("AnimationComponent without animation set");
+			SAIL_LOG_WARNING("AnimationComponent without animation set");
 #endif
 			continue;
 		}
@@ -119,7 +119,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 			animationC->transforms = SAIL_NEW glm::mat4[animationC->currentAnimation->getAnimationTransformSize(unsigned int(0))];
 
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-			Logger::Log("AnimationSystem: Rebuilt transformarray");
+			SAIL_LOG("AnimationSystem: Rebuilt transformarray");
 #endif
 		}
 
@@ -140,7 +140,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 			const float w1 = (animationC->transitions.front().transpiredTime - frame10Time) / (frame11Time - frame10Time);
 			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
 			animationC->animationW = wt;
-			Logger::Log(std::to_string(wt));
+
 			glm::mat4 m0 = glm::identity<glm::mat4>();
 			glm::mat4 m1 = glm::identity<glm::mat4>();
 
@@ -250,7 +250,7 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST);
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(-1), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_SOURCE);
 			if (vbuffer.getBuffer() == vbuffer.getBuffer(-1)) {
-				Logger::Error("Well this is awkward");
+				SAIL_LOG_ERROR("Well this is awkward");
 			}
 			cmdList->CopyResource(vbuffer.getBuffer(), vbuffer.getBuffer(-1));
 			//DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());

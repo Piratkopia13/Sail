@@ -30,7 +30,9 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<CandleComponent>(false, true, true);
 	registerComponent<GunComponent>(false, true, true);
+	registerComponent<SprintingComponent>(true, true, false);
 	m_mapPointer = nullptr;
+
 	// cam variables
 	m_yaw = 160.f;
 	m_pitch = 0.f;
@@ -257,7 +259,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				}
 
 				movement->accelerationToAdd =
-					glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement)
+					glm::normalize(right * playerMovement.rightMovement + forward * playerMovement.forwardMovement * playerMovement.speedModifier)
 					* acceleration;
 
 
@@ -333,7 +335,7 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			}
 		}
 
-		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT)) {
+		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT) && !e->getComponent<SprintingComponent>()->sprintedLastFrame) {
 			GunComponent* gc = e->getComponent<GunComponent>();
 			TransformComponent* ptc = e->getComponent<TransformComponent>();
 			if (gc) {
@@ -394,7 +396,20 @@ void GameInputSystem::putDownCandle(Entity* e) {
 Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	Movement playerMovement;
 
-	if ( Input::IsKeyPressed(KeyBinds::SPRINT) ) { playerMovement.speedModifier = m_runSpeed; }
+	auto sprintComp = e->getComponent<SprintingComponent>();
+	if (Input::IsKeyPressed(KeyBinds::SPRINT)) {
+		if (!e->hasComponent<SpectatorComponent>()) {
+			if (sprintComp->canSprint && Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) {
+				sprintComp->doSprint = true;
+				playerMovement.speedModifier = sprintComp->sprintSpeedModifier;
+			}
+		// For spectator
+		} else {
+			playerMovement.speedModifier = sprintComp->sprintSpeedModifier;
+		}
+	} else {
+		sprintComp->doSprint = false;
+	}
 
 	if ( Input::IsKeyPressed(KeyBinds::MOVE_FORWARD) ) { playerMovement.forwardMovement += 1.0f; }
 	if ( Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD) ) { playerMovement.forwardMovement -= 1.0f; }

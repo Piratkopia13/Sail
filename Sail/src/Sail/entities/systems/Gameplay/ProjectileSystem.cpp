@@ -55,7 +55,7 @@ void ProjectileSystem::update(float dt) {
 					cc->wasHitByMeThisTick = true;
 #ifdef DEVELOPMENT
 					if (!collision.entity->getParent() || !collision.entity->getParent()->hasComponent<NetworkReceiverComponent>()) {
-						Logger::Warning("Projectile hit player who doesn't have a NetworkReceiverComponent\n");
+						SAIL_LOG_WARNING("Projectile hit player who doesn't have a NetworkReceiverComponent\n");
 						break;
 					}
 #endif

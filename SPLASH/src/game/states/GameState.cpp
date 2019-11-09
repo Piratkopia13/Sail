@@ -40,7 +40,11 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
-	
+	std::vector<glm::vec3> m_teamColors;
+	for (int i = 0; i < 12; i++) {
+		m_teamColors.push_back(TeamColorSystem::getTeamColor(i));
+	}
+	m_app->getRenderWrapper()->getCurrentRenderer()->setTeamColors(m_teamColors);
 
 	//----Octree creation----
 	//Wireframe shader
@@ -277,7 +281,7 @@ bool GameState::processInput(float dt) {
 		Octree::RayIntersectionInfo tempInfo;
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.closestHitIndex != -1) {
-			Logger::Log("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
+			SAIL_LOG("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
 		}
 	}
 
@@ -294,7 +298,7 @@ bool GameState::processInput(float dt) {
 	//Test frustum culling
 	if (Input::IsKeyPressed(KeyBinds::TEST_FRUSTUMCULLING)) {
 		int nrOfDraws = m_octree->frustumCulledDraw(m_cam);
-		Logger::Log("Number of draws " + std::to_string(nrOfDraws));
+		SAIL_LOG("Number of draws " + std::to_string(nrOfDraws));
 	}
 
 	// TODO: Move this to a system
@@ -383,6 +387,7 @@ bool GameState::processInput(float dt) {
 }
 
 void GameState::initSystems(const unsigned char playerID) {
+	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
 	
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
@@ -465,6 +470,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
 
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
+
+	m_componentSystems.sprintingSystem = ECS::Instance()->createSystem<SprintingSystem>();
 }
 
 void GameState::initConsole() {
@@ -725,7 +732,7 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 	// I was dropped!
 	// Saddest of bois.
 
-	Logger::Warning("CONNECTION TO HOST HAS BEEN LOST");
+	SAIL_LOG_WARNING("CONNECTION TO HOST HAS BEEN LOST");
 	m_wasDropped = true;	// Activates a renderImgui window
 
 	return false;
@@ -904,6 +911,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.updateBoundingBoxSystem);
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
+	runSystem(dt, m_componentSystems.teamColorSystem);
 	runSystem(dt, m_componentSystems.particleSystem);
 
 	// Wait for all the systems to finish before starting the removal system
@@ -924,6 +932,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
 
+	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 
@@ -1010,7 +1019,7 @@ void GameState::logSomeoneDisconnected(unsigned char id) {
 	logMessage += "' has disconnected from the game.";
 
 	// Log it
-	Logger::Log(logMessage);
+	SAIL_LOG(logMessage);
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
@@ -1096,7 +1105,7 @@ void GameState::createBots(Model* boundingBoxModel, const std::string& character
 			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
 		}
 		else {
-			Logger::Error("Bot not spawned because all spawn points are already used for this map.");
+			SAIL_LOG_ERROR("Bot not spawned because all spawn points are already used for this map.");
 		}
 	}
 }
@@ -1223,7 +1232,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 void GameState::populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader) {
 	/* 13 characters that are constantly shooting their guns */
 	for (int i = 0; i < 13; i++) {
-		Logger::Log("Adding performance test player.");
+		SAIL_LOG("Adding performance test player.");
 		float spawnOffsetX = 43.f + float(i) * 2.f;
 		float spawnOffsetZ = 52.f + float(i) * 1.3f;
 

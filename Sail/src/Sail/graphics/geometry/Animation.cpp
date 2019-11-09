@@ -21,7 +21,7 @@ void Animation::Frame::setTransform(const unsigned int index, const glm::mat4& t
 #ifdef _DEBUG
 	if (index >= m_transformSize || index < 0) {
 		#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-		Logger::Error("Tried to add transform to index(" + std::to_string(index) + ") maxSize(" + std::to_string(m_transformSize));
+		SAIL_LOG_ERROR("Tried to add transform to index(" + std::to_string(index) + ") maxSize(" + std::to_string(m_transformSize));
 		#endif
 		return;
 	}
@@ -148,7 +148,7 @@ const std::string Animation::getName() {
 inline const bool Animation::exists(const unsigned int frame) {
 	if (m_frames.find(frame) == m_frames.end()) {
 		#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-			Logger::Warning("Trying to access frame(" + std::to_string(frame) + ") which does not exist, maxFrame(" + std::to_string(m_maxFrame) + ").");
+			SAIL_LOG_WARNING("Trying to access frame(" + std::to_string(frame) + ") which does not exist, maxFrame(" + std::to_string(m_maxFrame) + ").");
 		#endif
 		return false;
 	}
@@ -171,7 +171,7 @@ AnimationStack::VertConnection::VertConnection() :
 void AnimationStack::VertConnection::addConnection(const unsigned int _transform, const float _weight) {
 	if (count >= SAIL_BONES_PER_VERTEX) {
 		#if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-			Logger::Error("AnimationStack:VertConnection: Too many existing connections(" + std::to_string(count) + ")");
+			SAIL_LOG_ERROR("AnimationStack:VertConnection: Too many existing connections(" + std::to_string(count) + ")");
 		#endif
 		return;
 	}
@@ -237,7 +237,7 @@ void AnimationStack::addAnimation(const std::string& animationName, Animation* a
 	}
 	else {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-		Logger::Warning("Replacing animation " + animationName);
+		SAIL_LOG_WARNING("Replacing animation " + animationName);
 #endif
 		m_stack[animationName] = animation;
 	}
@@ -246,14 +246,14 @@ void AnimationStack::setConnectionData(const unsigned int vertexIndex, const uns
 #ifdef _DEBUG
 	if (vertexIndex > m_connectionSize) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-		Logger::Error("AnimationStack::setBoneData: vertexIndex("+ std::to_string(vertexIndex) +") larger than array size("+std::to_string(m_connectionSize) +")." );
+		SAIL_LOG_ERROR("AnimationStack::setBoneData: vertexIndex("+ std::to_string(vertexIndex) +") larger than array size("+std::to_string(m_connectionSize) +")." );
 #endif
 		return;
 	}
 #endif
 	if (m_connections[vertexIndex].count >= SAIL_BONES_PER_VERTEX) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-		Logger::Error("AnimationStack::SetConnectionData: vertexIndex: " + std::to_string(vertexIndex) + "");
+		SAIL_LOG_ERROR("AnimationStack::SetConnectionData: vertexIndex: " + std::to_string(vertexIndex) + "");
 #endif
 	}
 	m_connections[vertexIndex].addConnection(boneIndex, weight);
@@ -343,14 +343,14 @@ void AnimationStack::checkWeights() {
 	for (unsigned int i = 0; i < m_connectionSize; i++) {
 		if (m_connections[i].count == 0) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-			Logger::Warning("count == 0: " + std::to_string(i));
+			SAIL_LOG_WARNING("count == 0: " + std::to_string(i));
 #endif
 		}
 
 		float value = m_connections[i].checkWeights();
 		if (value > 1.001 || value < 0.999) {
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-			Logger::Warning("Weights fucked: " + std::to_string(i) + "(" + std::to_string(value) + ")");
+			SAIL_LOG_WARNING("Weights fucked: " + std::to_string(i) + "(" + std::to_string(value) + ")");
 #endif
 		}
 	}
