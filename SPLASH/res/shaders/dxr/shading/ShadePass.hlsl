@@ -90,5 +90,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	float4 secondBounceColor = pbrShade(worldPositionTwo, worldNormalTwo, invViewDirTwo, albedoTwo, metalnessTwo, roughnessTwo, aoTwo, shadowTwo, -1.f);
     return pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor);
     // return float4(shadowAmount, 0.f, 1.0f);
+    // return float4(shadowAmount.x, 0.f, 0.f, 1.0f);
+    // return float4(shadowAmount.x, 0.f, 0.f, 1.0f) * 0.5 + pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor) * 0.5;
 }
 

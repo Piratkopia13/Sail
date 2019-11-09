@@ -4,11 +4,17 @@ static float weights[21] = {
 
 static const int blurRadius = 10;
 
+// static float weights[11] = {
+// 	0.05f, 0.05f, 0.1f, 0.1f, 0.1f, 0.2f, 0.1f, 0.1f, 0.1f, 0.05f, 0.05f,
+// };
+
+// static const int blurRadius = 5;
+
 #define N 256
 #define cacheSize (N + 2 * blurRadius)
 groupshared float2 cache[cacheSize];
 
-#define BSIGMA 0.3
+#define BSIGMA 0.35
 
 float normpdf(in float x, in float sigma) {
     return 0.39894f * exp(-0.5f * x * x / (sigma * sigma)) / sigma;

@@ -17,16 +17,16 @@ namespace Utils {
         return ray;
     }
 
-    bool rayHitAnything(float3 origin, float3 direction, float tmax = 100000) {
+    bool rayHitAnything(float3 origin, float3 normal, float3 direction, float tmax = 100000) {
         RayDesc rayDesc;
-        rayDesc.Origin = origin;
+        rayDesc.Origin = origin + normal * 0.000001f;
         rayDesc.Direction = direction;
         rayDesc.TMin = 0.001;
         rayDesc.TMax = tmax;
 
         ShadowRayPayload shadowPayload;
 		shadowPayload.isHit = true; // Assume hit, miss shader will set to false
-		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 1 /*NULL hit group*/, 0, 1 /*Shadow miss shader*/, rayDesc, shadowPayload);
+		TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH /*| RAY_FLAG_CULL_BACK_FACING_TRIANGLES*/, 0xFF, 1 /*NULL hit group*/, 0, 1 /*Shadow miss shader*/, rayDesc, shadowPayload);
 
 		return shadowPayload.isHit;
     }

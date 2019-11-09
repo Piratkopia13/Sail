@@ -59,9 +59,9 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 	direction = normalize(world.xyz - origin);
 }
 
-float getShadowAmount(inout uint seed, float3 worldPosition) {
+float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal) {
 	const uint numSamples = 1;
-    const float lightRadius = 0.05f;
+    const float lightRadius = 0.08f;
 	float shadow = 0.f;
 	// Shoot a ray towards a random point on each light
 	for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
@@ -88,7 +88,7 @@ float getShadowAmount(inout uint seed, float3 worldPosition) {
 		float lightShadowAmount = 0.f;
 		for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
 			float3 L = Utils::getConeSample(seed, toLight, coneAngle);
-			lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, L, distance);
+			lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, worldNormal, L, distance);
 		}
 		lightShadowAmount /= numSamples;
 		shadow += lightShadowAmount;
@@ -178,7 +178,7 @@ void rayGen() {
 	// Get shadow from this "bounce"
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
-	float firstBounceShadow = getShadowAmount(randSeed, worldPosition);
+	float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal);
 
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.2f; // Temporal fade, trading temporal stability for lag
@@ -282,7 +282,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
-	payload.shadow = getShadowAmount(randSeed, worldPosition);
+	payload.shadow = getShadowAmount(randSeed, worldPosition, normalInWorldSpace);
 	payload.albedo.rgb = albedoColor;
 	payload.normal = normalInWorldSpace;
 	payload.metalnessRoughnessAO = metalnessRoughnessAO;
