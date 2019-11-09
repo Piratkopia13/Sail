@@ -30,7 +30,8 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
-	m_gbufferStartGPUHandles = m_context->createFrameResource<D3D12_GPU_DESCRIPTOR_HANDLE>();
+	m_gbufferStartUAVGPUHandles = m_context->createFrameResource<D3D12_GPU_DESCRIPTOR_HANDLE>();
+	m_gbufferStartSRVGPUHandles = m_context->createFrameResource<D3D12_GPU_DESCRIPTOR_HANDLE>();
 
 	// Create root signatures
 	createDXRGlobalRootSignature();
@@ -651,27 +652,32 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		if (!Application::getInstance()->getResourceManager().hasTexture(m_brdfLUTPath)) {
 			Application::getInstance()->getResourceManager().loadTexture(m_brdfLUTPath);
 		}
-		auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
+		auto& brdfLutTex = dynamic_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
 		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, brdfLutTex.getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
 		m_usedDescriptors++;
 
-		// Next (5 * numSwapBuffers) slots are used for input gbuffers
+		// Next (5 * numSwapBuffers) slots are used for input/output gbuffers
 		for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++) {
-			m_gbufferStartGPUHandles[i] = gpuHandle;
 			D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[5];
-			srcDescriptors[0] = m_gbufferInputTextures[0]->getSrvCDH(i);
-			srcDescriptors[1] = m_gbufferInputTextures[1]->getSrvCDH(i);
-			srcDescriptors[2] = m_gbufferInputTextures[2]->getSrvCDH(i);
+			srcDescriptors[0] = m_gbufferInputTextures[0]->getUavCDH(i);
+			srcDescriptors[1] = m_gbufferInputTextures[1]->getUavCDH(i);
+			srcDescriptors[2] = m_gbufferInputTextures[2]->getUavCDH(i);
 			srcDescriptors[3] = m_gbufferInputTextures[3]->getSrvCDH(i);
 			srcDescriptors[4] = m_gbufferInputTextures[0]->getDepthSrvCDH(i);
 
 			UINT dstRangeSizes[] = { 5 };
 			UINT srcRangeSizes[] = { 1, 1, 1, 1, 1 };
 			m_context->getDevice()->CopyDescriptors(1, &cpuHandle, dstRangeSizes, 5, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			cpuHandle.ptr += m_heapIncr * 5;
-			gpuHandle.ptr += m_heapIncr * 5;
+			// First three are UAVs, store handle
+			m_gbufferStartUAVGPUHandles[i] = gpuHandle;
+			cpuHandle.ptr += m_heapIncr * 3;
+			gpuHandle.ptr += m_heapIncr * 3;
+			// Last two are SRVs, store handle
+			m_gbufferStartSRVGPUHandles[i] = gpuHandle;
+			cpuHandle.ptr += m_heapIncr * 2;
+			gpuHandle.ptr += m_heapIncr * 2;
 			m_usedDescriptors+=5;
 		}
 
@@ -850,7 +856,8 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtOutputShadowsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputDepthPositionsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtInputShadowsLastFrameUavGPUHandles[frameIndex].ptr);
-		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_gbufferStartUAVGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_gbufferStartSRVGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
 		D3D12_GPU_VIRTUAL_ADDRESS decalCBHandle = m_decalCB->getBuffer()->GetGPUVirtualAddress();
@@ -971,13 +978,14 @@ void DXRBase::createDXRGlobalRootSignature() {
 
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
-	m_localSignatureRayGen->addDescriptorTable("OutputAlbedoUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
-	m_localSignatureRayGen->addDescriptorTable("OutputNormalsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1);
-	m_localSignatureRayGen->addDescriptorTable("OutputMetalnessRoughnessAOUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 2);
-	m_localSignatureRayGen->addDescriptorTable("OutputShadowsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 3);
-	m_localSignatureRayGen->addDescriptorTable("OutputDepthPositionsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4);
+	m_localSignatureRayGen->addDescriptorTable("OutputAlbedoUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 3);
+	m_localSignatureRayGen->addDescriptorTable("OutputNormalsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4);
+	m_localSignatureRayGen->addDescriptorTable("OutputMetalnessRoughnessAOUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 5);
+	m_localSignatureRayGen->addDescriptorTable("OutputShadowsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 6);
+	m_localSignatureRayGen->addDescriptorTable("OutputDepthPositionsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 7);
 	m_localSignatureRayGen->addDescriptorTable("InputShadowsLastFrameSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 20);
-	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
+	m_localSignatureRayGen->addDescriptorTable("gbufferInputOutputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 0U, 3);
+	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 2);
 	m_localSignatureRayGen->addDescriptorTable("decalTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 17, 0U, 3U);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);

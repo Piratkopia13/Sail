@@ -143,7 +143,8 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtInputShadowsLastFrameUavGPUHandles[2];
 
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtBrdfLUTGPUHandle;
-	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartUAVGPUHandles;
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartSRVGPUHandles;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_decalTexGPUHandles;
 	UINT m_heapIncr;
 	UINT m_usedDescriptors;

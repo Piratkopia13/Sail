@@ -4,23 +4,23 @@
 RaytracingAccelerationStructure gRtScene 			: register(t0);
 Texture2D<float4> sys_brdfLUT 						: register(t5); // NOT USED
 
-// Gbuffer inputs
-Texture2D<float4> sys_inTex_normals 				: register(t10);
-Texture2D<float4> sys_inTex_albedo 					: register(t11); // NOT USED
-Texture2D<float4> sys_inTex_texMetalnessRoughnessAO : register(t12); // NOT USED
-Texture2D<float4> sys_inTex_motionVectors			: register(t13); // NOT USED
-Texture2D<float>  sys_inTex_depth 					: register(t14);
+// Gbuffer inputs/outputs
+RWTexture2D<float4> gbuffer_normals 				: register(u0);
+RWTexture2D<float4> gbuffer_albedo 				    : register(u1);
+RWTexture2D<float4> gbuffer_texMetalnessRoughnessAO : register(u2);
+Texture2D<float4>   gbuffer_motionVectors			: register(t10);
+Texture2D<float>    gbuffer_depth 					: register(t11);
 
 // Decal textures
 Texture2D<float4> decal_texAlbedo 					: register(t17); // NOT USED
 Texture2D<float4> decal_texNormal 					: register(t18); // NOT USED
 Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19); // NOT USED
 
-RWTexture2D<float4> lOutputAlbedo		 		: register(u0);		// RGB
-RWTexture2D<float4> lOutputNormals 				: register(u1); 	// XYZ
-RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u2); 	// Metalness/Roughness/AO
-RWTexture2D<float2> lOutputShadows 				: register(u3); 	// Shadows first bounce/shadows second bounce
-RWTexture2D<float4> lOutputDepthPositions		: register(u4);		// Fist hit depth (x) and world space positions for second bounce (y,z,w)
+RWTexture2D<float4> lOutputAlbedo		 		: register(u3);		// RGB
+RWTexture2D<float4> lOutputNormals 				: register(u4); 	// XYZ
+RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u5); 	// Metalness/Roughness/AO
+RWTexture2D<float2> lOutputShadows 				: register(u6); 	// Shadows first bounce/shadows second bounce
+RWTexture2D<float4> lOutputDepthPositions		: register(u7);		// Fist hit depth (x) and world space positions for second bounce (y,z,w)
 Texture2D<float2> 	lInputShadowsLastFrame 		: register(t20); 	// last frame Shadows first bounce/last frame shadows second bounce
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
@@ -105,7 +105,7 @@ void rayGen() {
 
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
-	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
+	float3 worldNormal = gbuffer_normals[launchIndex].rgb * 2.f - 1.f;
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
@@ -114,7 +114,7 @@ void rayGen() {
 	float projectionA = CB_SceneData.farZ / (CB_SceneData.farZ - CB_SceneData.nearZ);
 	float projectionB = (-CB_SceneData.farZ * CB_SceneData.nearZ) / (CB_SceneData.farZ - CB_SceneData.nearZ);
 
-	float depth = sys_inTex_depth.SampleLevel(ss, screenTexCoord, 0);
+	float depth = gbuffer_depth[launchIndex];
 	float linearDepth = projectionB / (depth - projectionA);
 
 	float2 screenPos = screenTexCoord * 2.0f - 1.0f;
@@ -184,7 +184,7 @@ void rayGen() {
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.2f; // Temporal fade, trading temporal stability for lag
 	// Reproject screenTexCoord to where it was last frame
-	float2 motionVector = sys_inTex_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg;
+	float2 motionVector = gbuffer_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg;
 	motionVector.y = 1.f - motionVector.y;
 	motionVector = motionVector * 2.f - 1.0f;
 	
