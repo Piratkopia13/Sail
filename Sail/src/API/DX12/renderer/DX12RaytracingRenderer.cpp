@@ -362,6 +362,8 @@ bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {
 	m_outputTextures.normal->resize(event.getWidth(), event.getHeight());
 	m_outputTextures.metalnessRoughnessAO->resize(event.getWidth(), event.getHeight());
 	m_outputTextures.shadows->resize(event.getWidth(), event.getHeight());
+	m_outputTextures.depthPositions->resize(event.getWidth(), event.getHeight());
 	m_shadowsLastFrame->resize(event.getWidth(), event.getHeight());
+	m_shadedOuput->resize(event.getWidth(), event.getHeight());
 	return true;
 }
