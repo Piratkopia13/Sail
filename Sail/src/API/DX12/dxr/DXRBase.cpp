@@ -988,7 +988,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 	samplerDesc.MipLODBias = 0.f;
 	samplerDesc.MaxAnisotropy = 16;
 	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
 	samplerDesc.MinLOD = 0.f;
 	samplerDesc.MaxLOD = FLT_MAX;
 	samplerDesc.ShaderRegister = 1;
