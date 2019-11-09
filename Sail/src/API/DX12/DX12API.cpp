@@ -265,6 +265,10 @@ void DX12API::createGlobalRootSignature() {
 	m_globalRootSignatureRegisters["b0"] = GlobalRootParam::CBV_TRANSFORM;
 	m_globalRootSignatureRegisters["b1"] = GlobalRootParam::CBV_DIFFUSE_TINT;
 	m_globalRootSignatureRegisters["b2"] = GlobalRootParam::CBV_CAMERA;
+	m_globalRootSignatureRegisters["t10"] = GlobalRootParam::SRV_GENERAL10;
+	m_globalRootSignatureRegisters["t11"] = GlobalRootParam::SRV_GENERAL11;
+	m_globalRootSignatureRegisters["u0"] = GlobalRootParam::UAV_GENERAL0;
+	m_globalRootSignatureRegisters["u1"] = GlobalRootParam::UAV_GENERAL1;
 
 	// Create root parameters
 	D3D12_ROOT_PARAMETER rootParam[GlobalRootParam::SIZE];

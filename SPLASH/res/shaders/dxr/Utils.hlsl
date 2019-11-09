@@ -1,8 +1,6 @@
-#define HLSL
-#include "Common_hlsl_cpp.hlsl"
-
 namespace Utils {
 
+#ifdef RAYTRACING
     // Retrieve hit world position.
     float3 HitWorldPosition() {
         return WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
@@ -30,6 +28,7 @@ namespace Utils {
 
 		return shadowPayload.isHit;
     }
+#endif
 
     // Barycentric interpolation
     float2 barrypolation(float3 barry, float2 in1, float2 in2, float2 in3) {

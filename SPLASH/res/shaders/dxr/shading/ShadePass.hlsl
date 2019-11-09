@@ -1,5 +1,6 @@
 #define HLSL
 #include "../Common_hlsl_cpp.hlsl"
+#include "../Utils.hlsl"
 
 struct VSIn {
 	float4 position : POSITION0;
@@ -26,7 +27,11 @@ cbuffer PSSceneCBuffer : register(b0) {
     float4x4 clipToView;
     float4x4 viewToWorld;
     float3 cameraPosition;
-    float padding;
+    float padding1;
+    float3 mapSize;
+    float padding2;
+    float3 mapStart;
+    float padding3;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 }
 
@@ -45,11 +50,12 @@ Texture2D<float4> depthAndWorldPositions : register(t7);
 
 Texture2D<float4> brdfLUT : register(t8);
 
-StructuredBuffer<uint> PSwaterData : register(t9);
+StructuredBuffer<uint> PSwaterData : register(t10);
 
 SamplerState PSss : register(s0);
 
 #include "PBR.hlsl"
+#include "WaterOnSurface.hlsl"
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
@@ -87,9 +93,13 @@ float4 PSMain(PSIn input) : SV_Target0 {
     float3 invViewDirOne = cameraPosition - worldPositionOne;
     float3 invViewDirTwo = worldPositionOne - worldPositionTwo;
 
+    getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
 	float4 secondBounceColor = pbrShade(worldPositionTwo, worldNormalTwo, invViewDirTwo, albedoTwo, metalnessTwo, roughnessTwo, aoTwo, shadowTwo, -1.f);
-    return pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor);
-    // return float4(shadowAmount, 0.f, 1.0f);
+    getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormalOne, worldPositionOne);
+    return pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor.rgb);
+    
+    // Debug stuff
+    // return float4(metalnessRoughnessAoTwo, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f) * 0.5 + pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor) * 0.5;
 }

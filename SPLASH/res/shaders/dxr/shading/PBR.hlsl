@@ -38,7 +38,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao, float shadow, float4 reflectionColor) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao, float shadow, float3 reflectionColor) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
 

@@ -398,6 +398,10 @@ void DXRBase::resetWater() {
 	m_waterChanged = true;
 }
 
+ShaderComponent::DX12StructuredBuffer* DXRBase::getWaterVoxelSBuffer() {
+	return m_waterStructuredBuffer.get();
+}
+
 void DXRBase::reloadShaders() {
 	m_context->waitForGPU();
 	// Recompile hlsl

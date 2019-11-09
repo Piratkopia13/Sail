@@ -41,6 +41,7 @@ Texture2D<float4> sys_texMetalnessRoughnessAO : register(t4);
 SamplerState ss : register(s0);
 SamplerState motionSS : register(s1);
 
+#define RAYTRACING
 #include "Utils.hlsl"
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
@@ -201,7 +202,7 @@ void rayGen() {
 	// lOutputShadows[launchIndex] = 1.0f - payload.shadow;
 
 	lOutputAlbedo[launchIndex] = float4(finalPayload.albedo.rgb, 1.0f);
-	lOutputNormals[launchIndex] = float4(finalPayload.normal.rgb, 1.0f);
+	lOutputNormals[launchIndex] = float4(finalPayload.normal.rgb * 0.5f + 0.5f, 1.0f);
 	lOutputMetalnessRoughnessAO[launchIndex] = float4(finalPayload.metalnessRoughnessAO.rgb, 1.0f);
 	lOutputDepthPositions[launchIndex].x = linearDepth;
 	lOutputDepthPositions[launchIndex].yzw = payload.worldPosition;

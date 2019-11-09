@@ -277,6 +277,15 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 		auto& plData = lightSetup->getPointLightsData();
 		shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
 	}
+	{
+		// Map settings used for water voxel grid
+		static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * static_cast<float>(MapComponent::tileSize);
+		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
+		shaderPipeline->setCBufferVar("mapSize", &mapSize, sizeof(glm::vec3)); 
+		shaderPipeline->setCBufferVar("mapStart", &mapStart, sizeof(glm::vec3));
+		// Voxel grid itself
+		cmdList->SetGraphicsRootShaderResourceView(m_context->getRootIndexFromRegister("t10"), m_dxr.getWaterVoxelSBuffer()->getBuffer()->GetGPUVirtualAddress());
+	}
 
 	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, 0, -numCustomSRVs);
 

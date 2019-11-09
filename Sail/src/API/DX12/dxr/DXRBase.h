@@ -38,6 +38,8 @@ public:
 	void dispatch(BounceOutput& output, DX12RenderableTexture* shadowsLastFrameInput, ID3D12GraphicsCommandList4* cmdList);
 
 	void resetWater();
+	ShaderComponent::DX12StructuredBuffer* getWaterVoxelSBuffer();
+	
 	void reloadShaders();
 
 	virtual bool onEvent(Event& event) override;
