@@ -305,11 +305,22 @@ void NetworkReceiverSystem::update(float dt) {
 				endMatch();
 			}
 			break;
+			case Netcode::MessageType::EXTINGUISH_CANDLE:
+			{
+				Netcode::ComponentID candleID;
+				Netcode::PlayerID shooterID;
+
+				ar(candleID);
+				ar(playerID);
+
+				extinguishCandle(candleID, playerID);
+			}
+			break;
 			case Netcode::MessageType::IGNITE_CANDLE:
 			{
-				Netcode::ComponentID candleOwnerID;
-				ar(candleOwnerID);
-				igniteCandle(candleOwnerID);
+				Netcode::ComponentID candleID;
+				ar(candleID);
+				igniteCandle(candleID);
 			}
 			break;
 			case Netcode::MessageType::MATCH_ENDED:
@@ -404,6 +415,17 @@ void NetworkReceiverSystem::update(float dt) {
 				backToLobby();
 			}
 			break;
+			case Netcode::MessageType::SET_CANDLE_HEALTH: // Only the host will send these messages
+			{
+				Netcode::ComponentID candleID;
+				float health;
+
+				ar(candleID);
+				ar(health);
+
+				setCandleHealth(candleID, health);
+			}
+			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
 				Netcode::ComponentID projectileOwnerID;
@@ -419,6 +441,10 @@ void NetworkReceiverSystem::update(float dt) {
 			{
 				Netcode::ComponentID playerwhoWasHit;
 				ar(playerwhoWasHit);
+
+				// NOTE!
+				// This function is and should be empty for the NetworkReceiverSystemClient. 
+				// Only the Host has the authority to damage candles.
 				waterHitPlayer(playerwhoWasHit, senderID);
 			}
 			break;
@@ -501,6 +527,29 @@ void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned
 	SAIL_LOG_WARNING("setEntityAnimation called but no matching entity found");
 }
 
+void NetworkReceiverSystem::setCandleHealth(Netcode::ComponentID candleId, float health) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
+			e->getComponent<CandleComponent>()->health = health;
+			return;
+		}
+	}
+	SAIL_LOG_WARNING("setCandleHelath called but no matching candle entity found");
+}
+
+void NetworkReceiverSystem::extinguishCandle(Netcode::ComponentID candleId, Netcode::PlayerID shooterID) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
+
+			e->getComponent<CandleComponent>()->wasJustExtinguished = true;
+			e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
+
+			return;
+		}
+	}
+	SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
+}
+
 void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 	// How do i trigger a jump from here?
 	for (auto& e : entities) {
@@ -525,40 +574,6 @@ void NetworkReceiverSystem::playerLanded(Netcode::ComponentID id) {
 		}
 	}
 	SAIL_LOG_WARNING("playerLanded called but no matching entity found");
-}
-
-void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) {
-	for (auto& e : entities) {
-		//Look for the entity that OWNS the candle (player entity)
-		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
-			continue;
-		}
-		//Look for the entity that IS the candle (candle entity)
-		std::vector<Entity*> childEntities = e->getChildEntities();
-		for (auto& child : childEntities) {
-			if (child->hasComponent<CandleComponent>()) {
-				// Damage the candle
-				// Save the Shooter of the Candle if its lethal
-				// TODO: Replace 10.0f with game settings damage
-				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
-
-				// Play relevant sound
-				if (child->getComponent<CandleComponent>()->isLit) {
-					if (e->hasComponent<LocalOwnerComponent>()) {
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].isPlaying = true;
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].playOnce = true;
-					} else {
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
-					}
-				}
-
-				// Check in Candle System What happens next
-				return;
-			}
-		}
-	}
-	SAIL_LOG_WARNING("waterHitPlayer called but no matching entity found");
 }
 
 
@@ -832,26 +847,22 @@ void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 	SAIL_LOG_WARNING("runningStopSound called but no matching entity found");
 }
 
-void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
+void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleID) {
 	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id != candleOwnerID) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id != candleID) {
 			continue;
 		}
 
-		for (int i = 0; i < e->getChildEntities().size(); i++) {
-			if (auto candleE = e->getChildEntities()[i];  candleE->hasComponent<CandleComponent>()) {
-				auto candleComp = candleE->getComponent<CandleComponent>();
-				if (!candleComp->isLit) {
-					candleComp->health = MAX_HEALTH;
-					candleComp->respawns++;
-					candleComp->downTime = 0.f;
-					candleComp->isLit = true;
-					candleComp->userReignition = false;
-					candleComp->invincibleTimer = 1.5f;
-				}
-				return;
-			}
+		CandleComponent* candle = e->getComponent<CandleComponent>();
+		if (!candle->isLit) {
+			candle->health = MAX_HEALTH;
+			candle->respawns++;
+			candle->downTime = 0.f;
+			candle->isLit = true;
+			candle->userReignition = false;
+			candle->invincibleTimer = 1.5f;
 		}
+		return;
 	}
 	SAIL_LOG_WARNING("igniteCandle called but no matching entity found");
 }
