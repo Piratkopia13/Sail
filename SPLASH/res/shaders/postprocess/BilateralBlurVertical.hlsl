@@ -34,7 +34,6 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
 	// Clamp out of bound samples that occur at image borders.
 	cache[groupThreadID.y+blurRadius] = input[min(dispatchThreadID.xy, input.Length.xy-1)].rg;
 
-
 	// Wait for all threads to finish.
 	GroupMemoryBarrierWithGroupSync();
 	
@@ -42,7 +41,8 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
 	// Now blur each pixel.
 	//
 
-    float bZ = 1.0f / normpdf(0.0f, BSIGMA);
+    // float bZ = 1.0f / normpdf(0.0f, BSIGMA);
+    float bZ = 1.0f;
 	float2 Z = 0.f;
     float2 blurColor = 0.f;
 	
@@ -51,7 +51,8 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
 		int k = groupThreadID.y + blurRadius + i;
 		
         float2 factor;
-        factor.r = normpdf(cache[k].r-cache[k - i].r, BSIGMA) * bZ * weights[i+blurRadius];
+		factor.r = (1.f - abs(cache[k].r-cache[k - i].r)) * weights[i+blurRadius];
+        // factor.r = normpdf(cache[k].r-cache[k - i].r, BSIGMA) * bZ * weights[i+blurRadius];
         factor.g = normpdf(cache[k].g-cache[k - i].g, BSIGMA) * bZ * weights[i+blurRadius];
         Z += factor;
         blurColor += factor*cache[k];

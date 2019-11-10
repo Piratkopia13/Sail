@@ -14,10 +14,13 @@ static const int blurRadius = 10;
 #define cacheSize (N + 2 * blurRadius)
 groupshared float2 cache[cacheSize];
 
-#define BSIGMA 0.35
+#define BSIGMA 1.0
 
 float normpdf(in float x, in float sigma) {
-    return 0.39894f * exp(-0.5f * x * x / (sigma * sigma)) / sigma;
+    // return 0.39894f * exp(-0.5f * x / (sigma * sigma)) / sigma;
+	// stor skillnad -> returnerna lågt
+    // return 1.f / (max(abs(x) * 100.f, 0.0000001f));
+    return 1.f - x;
 }
 
 float normpdf3(in float3 v, in float sigma) {
