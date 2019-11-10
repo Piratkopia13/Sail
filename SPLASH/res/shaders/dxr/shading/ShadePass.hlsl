@@ -24,14 +24,8 @@ PSIn VSMain(VSIn input) {
 }
 
 cbuffer PSSceneCBuffer : register(b0) {
-    float4x4 clipToView; // NOT USED
-    float4x4 viewToWorld; // NOT USED
     float3 cameraPosition;
-    float padding1;
-    float3 mapSize;
-    float padding2;
-    float3 mapStart;
-    float padding3;
+    float padding;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 }
 
@@ -50,8 +44,6 @@ Texture2D<float4> worldPositionsOne : register(t7);
 Texture2D<float4> worldPositionsTwo : register(t8);
 
 Texture2D<float4> brdfLUT : register(t9);
-
-StructuredBuffer<uint> PSwaterData : register(t10); // Not used
 
 SamplerState PSss : register(s0);
 
