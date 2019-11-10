@@ -3,14 +3,11 @@
 #include "Network/NetworkModule.hpp"
 
 #include "Sail/events/EventDispatcher.h"
-
-#include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
-#include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
-#include "../../SPLASH/src/game/events/NetworkChatEvent.h"
-#include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
-#include "../../SPLASH/src/game/events/NetworkNameEvent.h"
-#include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
+#include "NWrapperSingleton.h"
+#include "../../SPLASH/src/game/events/NetworkChatEvent.h"
+#include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+
 
 bool NWrapperHost::host(int port) {
 	bool result = m_network->host(port);
@@ -36,43 +33,39 @@ void NWrapperHost::sendChatMsg(std::string msg) {
 
 void NWrapperHost::updateServerDescription() {
 	m_serverDescription = m_lobbyName + " (" + std::to_string(NWrapperSingleton::getInstance().getPlayers().size()) + "/12)";
+
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
-void NWrapperHost::playerJoined(TCP_CONNECTION_ID id) {
+void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	// Generate an ID for the client that joined and send that information.
-	unsigned char test = m_IdDistribution;
+
 	m_IdDistribution++;
-	unsigned char newId = m_IdDistribution;
-	m_connectionsMap.insert(std::pair<TCP_CONNECTION_ID, unsigned char>(id, newId));
+	unsigned char newPlayerId = m_IdDistribution;
 
-	// Request a name from the client, which upon retrieval will be sent to all clients.
-	char msgRequest[64];
-	msgRequest[0] = '?';
-	msgRequest[1] = newId;
-	msgRequest[2] = '\0';
-
-	unsigned char c = msgRequest[1];
-
-	m_network->send(msgRequest, sizeof(msgRequest), id);
-
-	EventDispatcher::Instance().emit(NetworkJoinedEvent(Player{ newId, "NoName" }));
+	if (NWrapperSingleton::getInstance().playerJoined(Player{ newPlayerId, "NoName" })) {
+		m_connectionsMap.insert(std::pair<TCP_CONNECTION_ID, unsigned char>(tcp_id, newPlayerId));
+		//Send the newPlayerId to the new player and request a name, which upon retrieval will be sent to all clients.
+		char msg[3] = {'?', newPlayerId, '\0'};
+		m_network->send(msg, sizeof(msg), tcp_id);
+	} else {
+		m_IdDistribution--;
+	}
 
 	updateServerDescription();
 }
 
 void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID id) {
-	unsigned char convertedId = m_connectionsMap.at(id);
+	unsigned char playerID = m_connectionsMap.at(id);
 	char compressedMessage[64] = { 0 };
 
-	this->compressDCMessage(convertedId, compressedMessage);
+	this->compressDCMessage(playerID, compressedMessage);
 
 	// Send to all clients that someone disconnected and which id.
 	m_network->send(compressedMessage, sizeof(compressedMessage), -1);
 
 	// Send id to menu / game state
-	EventDispatcher::Instance().emit(NetworkDisconnectEvent(convertedId));
-
+	NWrapperSingleton::getInstance().playerLeft(playerID);
 	updateServerDescription();
 }
 
@@ -93,6 +86,7 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 	std::string remnants_m = "";
 	Message processedMessage;
 	std::string dataString;
+	std::string name;
 
 	switch (nEvent.data->Message.rawMsg[0])
 	{
@@ -119,10 +113,9 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		break;
 
 	case '?':
-		// The host has received an answer to a name request...
 
-		// TODO: move "Parse the ID and name from the message" from Host::onNameRequest to here
-		EventDispatcher::Instance().emit(NetworkNameEvent{ nEvent.data->Message.rawMsg });
+		name = &nEvent.data->Message.rawMsg[1];
+		updateClientName(m_connectionsMap[nEvent.from_tcp_id], name);
 
 		break;
 
@@ -141,6 +134,20 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 	}
 }
 
+void NWrapperHost::updateClientName(Netcode::PlayerID playerId, std::string& name) {
+	NWrapperSingleton::getInstance().getPlayer(playerId)->name = name;
+
+	// Send a welcome package to the new Player, letting them know who's in the party
+	std::string welcomePackage = "w";
+	for (auto currentPlayer : NWrapperSingleton::getInstance().getPlayers()) {
+		welcomePackage.append(std::to_string(currentPlayer.id));
+		welcomePackage.append(":");
+		welcomePackage.append(currentPlayer.name);
+		welcomePackage.append(":");
+	}
+	sendMsgAllClients(welcomePackage);
+}
+
 
 void NWrapperHost::compressDCMessage(unsigned char& convertedId, char pDestination[64]) {
 	char* int_asChar = reinterpret_cast<char*>(&convertedId);
@@ -150,4 +157,3 @@ void NWrapperHost::compressDCMessage(unsigned char& convertedId, char pDestinati
 		pDestination[i + 1] = int_asChar[i];
 	}
 }
-

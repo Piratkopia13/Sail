@@ -77,7 +77,9 @@ bool LobbyState::update(float dt, float alpha) {
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
 	this->m_screenHeight = m_app->getWindow()->getWindowHeight();
 
-	m_network->checkForPackages();
+
+	NWrapperSingleton::getInstance().checkForPackages();
+
 	if (NWrapperSingleton::getInstance().isHost() && m_settingsChanged && m_timeSinceLastUpdate > 0.2f) {
 		auto& stat = m_app->getSettings().gameSettingsStatic;
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;

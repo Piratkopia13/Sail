@@ -40,7 +40,7 @@ public:
 	void resetNetwork();
 	NWrapper* getNetworkWrapper();
 	void searchForLobbies();
-	void checkFoundPackages();
+	void checkForPackages();
 	void stopUDP();
 	void startUDP();
 
@@ -76,7 +76,6 @@ private:
 	bool m_isInitialized = false;
 	bool m_isHost = false;
 
-	unsigned int m_playerCount;
 	unsigned int m_playerLimit;
 	unsigned int m_seed;
 

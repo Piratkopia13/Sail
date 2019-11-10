@@ -13,8 +13,6 @@ LobbyClientState::LobbyClientState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_WELCOME, this);
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_NAME, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_START_GAME, this);
 	EventDispatcher::Instance().subscribe(Event::Type::SETTINGS_UPDATED, this);
@@ -30,8 +28,6 @@ LobbyClientState::~LobbyClientState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_WELCOME, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_NAME, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_START_GAME, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
@@ -43,8 +39,6 @@ bool LobbyClientState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_CHAT:			onRecievedText((const NetworkChatEvent&)event); break;
 	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
-	case Event::Type::NETWORK_WELCOME:		onPlayerWelcomed((const NetworkWelcomeEvent&)event); break;
-	case Event::Type::NETWORK_NAME:			onNameRequest((const NetworkNameEvent&)event); break;
 	case Event::Type::NETWORK_DROPPED:		onDropped((const NetworkDroppedEvent&)event); break;
 	case Event::Type::NETWORK_START_GAME:	onStartGame((const NetworkStartGameEvent&)event); break;
 	case Event::Type::SETTINGS_UPDATED:		onSettingsChanged((const SettingsUpdatedEvent&)event); break;
@@ -74,9 +68,7 @@ bool LobbyClientState::onRecievedText(const NetworkChatEvent& event) {
 }
 
 bool LobbyClientState::onPlayerJoined(const NetworkJoinedEvent& event) {
-	// Add the player to the player list
-	NWrapperSingleton::getInstance().playerJoined(event.player);
-	return false;
+	return true;
 }
 
 bool LobbyClientState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
@@ -84,49 +76,6 @@ bool LobbyClientState::onPlayerDisconnected(const NetworkDisconnectEvent& event)
 	unsigned char id = event.player_id;
 	NWrapperSingleton::getInstance().playerLeft(id);
 
-	return false;
-}
-
-bool LobbyClientState::onPlayerWelcomed(const NetworkWelcomeEvent& event) {
-	// Update local list of players.
-	const std::list<Player> &list = event.playerList;
-	if (list.size() >= 2) {
-		// Clean local list of players.
-		NWrapperSingleton::getInstance().resetPlayerList();
-
-		printf("Received welcome package...\n");
-		for (auto currentPlayer : list) {
-			// TODO: Maybe addPlayerFunction?
-			NWrapperSingleton::getInstance().playerJoined(currentPlayer);
-
-
-			//m_players.push_back(currentPlayer);
-			printf("\t");
-			printf(currentPlayer.name.c_str());
-			printf("\t");
-			printf(std::to_string(currentPlayer.id).c_str());
-			printf("\n");
-		}
-	}
-	
-
-	return false;
-}
-
-bool LobbyClientState::onNameRequest(const NetworkNameEvent& event) {
-	// Save the ID which the host has blessed us with
-	std::string temp = event.repliedName;	// And replace our current HOSTID
-	int newId = std::stoi(temp);					//
-	NWrapperSingleton::getInstance().getMyPlayer().id = newId;
-	NWrapperSingleton::getInstance().playerJoined(Player{ 0, NWrapperSingleton::getInstance().getMyPlayerName().c_str() });
-	
-	// Append :NAME onto ?ID --> ?ID:NAME and answer the host
-	std::string message = "?";
-	message += event.repliedName;
-	message += ":";
-	message += NWrapperSingleton::getInstance().getMyPlayerName().c_str();
-	message += ":";
-	m_network->sendMsg(message);
 	return false;
 }
 

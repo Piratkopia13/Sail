@@ -20,13 +20,13 @@ void NWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 	case NETWORK_EVENT_TYPE::NETWORK_ERROR:
 		break;
 	case NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED:
-		playerJoined(nEvent.clientID);
+		playerJoined(nEvent.from_tcp_id);
 		break;
 	case NETWORK_EVENT_TYPE::CONNECTION_CLOSED:
-		playerDisconnected(nEvent.clientID);
+		playerDisconnected(nEvent.from_tcp_id);
 		break;
 	case NETWORK_EVENT_TYPE::CONNECTION_RE_ESTABLISHED:
-		playerReconnected(nEvent.clientID);
+		playerReconnected(nEvent.from_tcp_id);
 		break;
 	case NETWORK_EVENT_TYPE::MSG_RECEIVED:
 		decodeMessage(nEvent);
@@ -104,14 +104,8 @@ Message NWrapper::processChatMessage(std::string& message) {
 	};
 }
 
-
-
 void NWrapper::sendMsg(std::string msg) {
 	m_network->send(msg.c_str(), msg.length() + 1);
-}
-
-void NWrapper::checkForPackages() {
-	m_network->checkForPackages(*this);
 }
 
 void NWrapper::sendMsgAllClients(std::string msg) {

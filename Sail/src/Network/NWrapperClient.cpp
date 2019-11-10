@@ -7,7 +7,6 @@
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
-#include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkStartGameEvent.h"
@@ -82,12 +81,12 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	unsigned char userID;
 	char charAsInt[4] = { 0 };
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
-	Player currentPlayer{};	// 
-	int charCounter = 0;			//
-	std::string id_string = "";				//
-	std::string remnants = "";				//
-	unsigned int id_number = 0;			//
-	std::string id = "";			// used in 'm'
+	Player currentPlayer{};
+	int charCounter = 0;
+	std::string id_string = "";	
+	std::string remnants = "";
+	unsigned int id_number = 0;	
+	std::string id = "";
 	std::string remnants_m = "";
 	unsigned char id_question;
 	Message processedMessage;
@@ -126,14 +125,20 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		break;
 
 	case '?':
-		// The host is giving us an ID and asking what our name is...
-		// Parse the ID from the message
-		id_question = nEvent.data->Message.rawMsg[1];
+		id_question = (unsigned char)nEvent.data->Message.rawMsg[1]; //My player ID that the host just have given me.
 
-		// Dispatch ID to lobby where my chosen name will be replied back.
-		EventDispatcher::Instance().emit(NetworkNameEvent(std::to_string(id_question)));
+		{
+			char c = 1;
+			unsigned char c2 = c;
+			unsigned char c3 = 1;
+			int i = 1;
+		}
+
+		NWrapperSingleton::getInstance().getMyPlayer().id = id_question;
+		NWrapperSingleton::getInstance().playerJoined(Player{ id_question, NWrapperSingleton::getInstance().getMyPlayerName().c_str() });
+		sendMyNameToHost();
+
 		break;
-
 	case 't':
 	{
 		char seed = nEvent.data->Message.rawMsg[1];
@@ -155,10 +160,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 			}
 		}
 
-		// Dispatch the list up to the lobby.
-		if (playerList.size() > 0) {
-			EventDispatcher::Instance().emit(NetworkWelcomeEvent(playerList));
-		}
+		updatePlayerList(playerList);
 
 		break;
 	case 's': // Serialized data, remove first character and send the rest to be deserialized
@@ -173,11 +175,27 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		EventDispatcher::Instance().emit(NetworkBackToLobby());
 		break;
 	case 'i': 
-
 		EventDispatcher::Instance().emit(SettingsUpdatedEvent(std::string(nEvent.data->Message.rawMsg).substr(1,std::string::npos)));
 		break;
 	default:
 		break;
+	}
+}
+
+void NWrapperClient::sendMyNameToHost() {
+	// Save the ID which the host has blessed us with
+	std::string message = "?";
+	message += NWrapperSingleton::getInstance().getMyPlayerName().c_str();
+	sendMsg(message);
+}
+
+void NWrapperClient::updatePlayerList(std::list<Player>& playerList) {
+	if (playerList.size() >= 2) {
+		NWrapperSingleton::getInstance().resetPlayerList();
+
+		for (auto currentPlayer : playerList) {
+			NWrapperSingleton::getInstance().playerJoined(currentPlayer);
+		}
 	}
 }
 
@@ -192,4 +210,3 @@ unsigned int NWrapperClient::decompressDCMessage(std::string messageData) {
 
 	return userID;
 }
-

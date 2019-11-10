@@ -21,6 +21,5 @@ private:
 	bool onRecievedText(const NetworkChatEvent& event);
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
-	bool onNameRequest(const NetworkNameEvent& event);
 
 };

@@ -47,7 +47,7 @@ bool MenuState::update(float dt, float alpha) {
 		NWrapperSingleton::getInstance().searchForLobbies();
 		udpCounter = udpChill;
 	}
-	NWrapperSingleton::getInstance().checkFoundPackages();
+	NWrapperSingleton::getInstance().checkForPackages();
 	
 	removeDeadLobbies();
 	return false;

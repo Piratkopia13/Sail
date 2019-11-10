@@ -16,7 +16,6 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_NAME, this);
 }
 
 LobbyHostState::~LobbyHostState() {
@@ -24,7 +23,6 @@ LobbyHostState::~LobbyHostState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_NAME, this);
 }
 
 bool LobbyHostState::onEvent(const Event& event) {
@@ -33,7 +31,6 @@ bool LobbyHostState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_CHAT:			onRecievedText((const NetworkChatEvent&)event); break;
 	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
-	case Event::Type::NETWORK_NAME:			onNameRequest((const NetworkNameEvent&)event); break;
 	default: break;
 	}
 
@@ -64,72 +61,13 @@ bool LobbyHostState::onRecievedText(const NetworkChatEvent& event) {
 	// Add received text to chat log
 	this->addTextToChat(event.chatMessage);
 
-	return false;
+	return true;
 }
 
 bool LobbyHostState::onPlayerJoined(const NetworkJoinedEvent& event) {
-	// Add player to player list
-	NWrapperSingleton::getInstance().playerJoined(event.player);
-
 	return true;
 }
 
 bool LobbyHostState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
-	// Remove player from player list.
-	unsigned char id = event.player_id;
-	NWrapperSingleton::getInstance().playerLeft(id);
-
-	
-	return false;
-}
-
-bool LobbyHostState::onNameRequest(const NetworkNameEvent& event) {
-	// Parse the message | ?12:DANIEL
-	std::string message = event.repliedName;
-	std::string id_string = "";
-	unsigned char id_int = 0;
-
-	// Get ID...
-	for (int i = 1; i < 64; i++) {
-		// ... as a string
-		if (message[i] != ':') {
-			id_string += message[i];
-		}
-		else {
-			break;
-		}
-	}
-	// ... as a number
-	id_int = std::stoi(id_string);
-
-	message.erase(0, id_string.size() + 2);	// Removes ?ID: ___
-	message.erase(message.size() - 1);		// Removes ___ :
-
-	
-
-	// Add player
-	//NWrapperSingleton::getInstance().playerJoined(Player{
-	//		id_int,
-	//		message	// Which at this point is only the name
-	//});
-	NWrapperSingleton::getInstance().getPlayer(id_int)->name = message;
-
-	printf("Got name: \"%s\" from %i\n", message.c_str(), id_int);
-
-	// Send a welcome package to all players, letting them know who's joined the party
-	std::string welcomePackage = "w";
-
-	printf("Sending out welcome package...\n");
-	for (auto currentPlayer : NWrapperSingleton::getInstance().getPlayers()) {
-		welcomePackage.append(std::to_string(currentPlayer.id));
-		welcomePackage.append(":");
-		welcomePackage.append(currentPlayer.name);
-		welcomePackage.append(":");
-		printf("\t");
-		printf(currentPlayer.name.c_str());
-		printf("\n");
-	}
-	m_network->sendMsgAllClients(welcomePackage);
-	printf("Done sending welcome package\n");
-	return false;
+	return true;
 }

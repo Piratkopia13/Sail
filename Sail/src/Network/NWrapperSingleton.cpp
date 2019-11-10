@@ -7,6 +7,11 @@
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
 #include "Sail/events/EventDispatcher.h"
 
+#include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
+#include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
+#include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
+#include "../../SPLASH/src/game/events/NetworkNameEvent.h"
+
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
 		delete m_wrapper;
@@ -26,7 +31,6 @@ NWrapperSingleton::NWrapperSingleton() {
 	m_network->initialize();
 
 	m_playerLimit = 12;
-	m_playerCount = 0;
 }
 
 bool NWrapperSingleton::host(int port) {
@@ -69,7 +73,7 @@ void NWrapperSingleton::searchForLobbies() {
 	m_network->searchHostsOnLan();
 }
 
-void NWrapperSingleton::checkFoundPackages() {
+void NWrapperSingleton::checkForPackages() {
 	m_network->checkForPackages(*this);
 }
 
@@ -83,16 +87,18 @@ void NWrapperSingleton::startUDP(){
 
 void NWrapperSingleton::resetPlayerList() {
 	m_players.clear();
-	m_playerCount = 0;
 }
 
 bool NWrapperSingleton::playerJoined(const Player& player) {
 	Player newPlayer(player.id, player.name.c_str());	// This will fix currupt string size.
 	
-	if (m_playerCount < m_playerLimit) {
+	if (m_players.size() < m_playerLimit) {
 		m_players.push_back(newPlayer);
-		m_playerCount++;
+
+		EventDispatcher::Instance().emit(NetworkJoinedEvent(player));
+		return true;
 	}
+
 	return false;
 }
 
@@ -103,7 +109,10 @@ bool NWrapperSingleton::playerLeft(Netcode::PlayerID& id) {
 	for (auto playerIt : m_players) {
 		if (playerIt.id == id) {
 			toBeRemoved = &playerIt;
+
+			EventDispatcher::Instance().emit(NetworkDisconnectEvent(playerIt.id));
 			m_players.remove(*toBeRemoved);
+
 			return true;
 		}
 	}
@@ -121,7 +130,6 @@ Player* NWrapperSingleton::getPlayer(Netcode::PlayerID& id) {
 		if (player.id == id) {
 			foundPlayer = &player;
 			break;
-			//return foundPlayer;
 		}
 	}
 
@@ -225,5 +233,9 @@ void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
 		);
 		
 		EventDispatcher::Instance().emit(event0);
+	}
+
+	if (m_wrapper) {
+		m_wrapper->handleNetworkEvents(nEvent);
 	}
 }
