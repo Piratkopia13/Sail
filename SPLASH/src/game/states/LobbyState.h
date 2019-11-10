@@ -7,15 +7,16 @@
 struct Player;
 class NWrapper;
 class TextInputEvent;
-class NetworkJoinedEvent;
 class AudioComponent;
 
+struct NetworkChatEvent;
+struct NetworkJoinedEvent;
+struct NetworkDisconnectEvent;
+
 struct Message {
-	std::string sender;
+	Netcode::PlayerID senderID;
 	std::string content;
 };
-
-
 #define HOST_ID 0
 
 class LobbyState : public State {
@@ -32,7 +33,7 @@ public:
 	// Renders imgui
 	bool renderImgui(float dt);
 	// Sends events to the state
-	virtual bool onEvent(const Event& event) override = 0;
+	virtual bool onEvent(const Event& event) override;
 
 protected:
 	Application* m_app = nullptr;
@@ -41,11 +42,10 @@ protected:
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
 
-	std::list<Message> m_messages;
+	std::list<std::string> m_messages;
 
 	// Front-End Functions
 	bool inputToChatLog(const MSG& msg);
-	void addTextToChat(const Message& text);
 	void resetCurrentMessage();
 
 	std::string fetchMessage();
@@ -74,9 +74,15 @@ private:
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;
 	unsigned int m_textHeight;
+
+	virtual bool onMyTextInput(const TextInputEvent& event) = 0;
+	bool onRecievedText(const NetworkChatEvent& event);
+	bool onPlayerJoined(const NetworkJoinedEvent& event);
+	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
+
 	void renderPlayerList();
 	void renderStartButton();
 	void renderQuitButton();
-	void renderSettings();		// Currently empty
+	void renderSettings();
 	void renderChat();
 };

@@ -25,8 +25,5 @@ private:
 	void playerDisconnected(TCP_CONNECTION_ID tcp_id);
 	void playerReconnected(TCP_CONNECTION_ID tcp_id);
 	void decodeMessage(NetworkEvent nEvent);
-	void updateClientName(Netcode::PlayerID playerId, std::string& name);
-
-	// Formatting Functions
-	void compressDCMessage(unsigned char& convertedId, char pDestination[64]);
+	void updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID playerId, std::string& name);
 };

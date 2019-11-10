@@ -19,7 +19,4 @@ private:
 	void decodeMessage(NetworkEvent nEvent);
 	void sendMyNameToHost();
 	void updatePlayerList(std::list<Player>& playerList);
-
-	// Deformatting Functions
-	unsigned int decompressDCMessage(std::string messageData);
 };

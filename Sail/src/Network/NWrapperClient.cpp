@@ -4,7 +4,7 @@
 
 #include "Sail/events/EventDispatcher.h"
 
-#include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
+#include "Sail/../Network/NWrapperSingleton.h"
 #include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
@@ -58,8 +58,10 @@ bool NWrapperClient::connectToIP(char* adress) {
 }
 
 void NWrapperClient::sendChatMsg(std::string msg) {
-	msg = std::string("m") + msg;
-	m_network->send(msg.c_str(), msg.length() + 1);
+	std::string data = "m";
+	data += NWrapperSingleton::getInstance().getMyPlayer().id;
+	data += msg;
+	m_network->send(data.c_str(), data.length() + 1);
 }
 
 void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
@@ -67,8 +69,7 @@ void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
 }
 
 void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id_) {
-	// My connection to host was lost :(
-	
+	// My connection to host was lost :(	
 	EventDispatcher::Instance().emit(NetworkDroppedEvent());
 }
 
@@ -79,7 +80,6 @@ void NWrapperClient::playerReconnected(TCP_CONNECTION_ID id) {
 void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	// These will be assigned in the switch case.
 	unsigned char userID;
-	char charAsInt[4] = { 0 };
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
 	Player currentPlayer{};
 	int charCounter = 0;
@@ -96,7 +96,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case 'm':
 		// Client received a chat message from the host...
 		// Parse and process into Message struct
-		processedMessage = processChatMessage((std::string)nEvent.data->Message.rawMsg);
+		processedMessage = processChatMessage(&nEvent.data->Message.rawMsg[1]);
 
 		// Dispatch Message to lobby.
 		EventDispatcher::Instance().emit(NetworkChatEvent(processedMessage));
@@ -106,36 +106,18 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case 'd':
 		// A player disconnected from the host...
 		// Get the user ID from the event data.
-		userID = this->decompressDCMessage(std::string(nEvent.data->Message.rawMsg));
-
-		// Dispatch the ID to lobby
-		EventDispatcher::Instance().emit(NetworkDisconnectEvent(userID));
+		userID = nEvent.data->Message.rawMsg[1];
+		NWrapperSingleton::getInstance().playerLeft(userID);
 		break;
 
 	case 'j':
-		// A player joined the host...
-		// Get the user ID from the event data.
-		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->Message.rawMsg[1 + i];
-		}
-		userID = reinterpret_cast<int&>(charAsInt);
-
-		// Dispatch ID to lobby where the ID will be used to join the player
-		EventDispatcher::Instance().emit(NetworkJoinedEvent(Player{ userID, "who?" }));
+		currentPlayer.id = (unsigned char)nEvent.data->Message.rawMsg[1];
+		currentPlayer.name = &nEvent.data->Message.rawMsg[2];
+		NWrapperSingleton::getInstance().playerJoined(currentPlayer);
 		break;
-
 	case '?':
 		id_question = (unsigned char)nEvent.data->Message.rawMsg[1]; //My player ID that the host just have given me.
-
-		{
-			char c = 1;
-			unsigned char c2 = c;
-			unsigned char c3 = 1;
-			int i = 1;
-		}
-
 		NWrapperSingleton::getInstance().getMyPlayer().id = id_question;
-		NWrapperSingleton::getInstance().playerJoined(Player{ id_question, NWrapperSingleton::getInstance().getMyPlayerName().c_str() });
 		sendMyNameToHost();
 
 		break;
@@ -197,16 +179,4 @@ void NWrapperClient::updatePlayerList(std::list<Player>& playerList) {
 			NWrapperSingleton::getInstance().playerJoined(currentPlayer);
 		}
 	}
-}
-
-unsigned int NWrapperClient::decompressDCMessage(std::string messageData) {
-	unsigned char userID;
-	char charAsInt[4] = { 0 };
-
-	for (int i = 0; i < 4; i++) {
-		charAsInt[i] = messageData[1 + i];
-	}
-	userID = reinterpret_cast<int&>(charAsInt);
-
-	return userID;
 }

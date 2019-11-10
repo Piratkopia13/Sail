@@ -1,14 +1,13 @@
 #pragma once
 
 #include "Sail/events/Event.h"
-#include "../states/LobbyState.h"
-#include "Sail/netcode/NetcodeTypes.h"
+#include "Network/NWrapper.h"
 
 struct NetworkDisconnectEvent : public Event {
-	NetworkDisconnectEvent(const Netcode::PlayerID ID)
+	NetworkDisconnectEvent(const Player _player)
 		: Event(Event::Type::NETWORK_DISCONNECT)
-		, player_id(ID) { }
+		, player(_player) { }
 	~NetworkDisconnectEvent() = default;
 
-	const Netcode::PlayerID player_id;
+	const Player player;
 };

@@ -89,33 +89,37 @@ void NWrapperSingleton::resetPlayerList() {
 	m_players.clear();
 }
 
-bool NWrapperSingleton::playerJoined(const Player& player) {
+bool NWrapperSingleton::playerJoined(const Player& player, bool dispatchEvent) {
 	Player newPlayer(player.id, player.name.c_str());	// This will fix currupt string size.
 	
 	if (m_players.size() < m_playerLimit) {
 		m_players.push_back(newPlayer);
-
-		EventDispatcher::Instance().emit(NetworkJoinedEvent(player));
+		if (dispatchEvent) {
+			EventDispatcher::Instance().emit(NetworkJoinedEvent(player));
+		}
 		return true;
 	}
 
 	return false;
 }
 
-bool NWrapperSingleton::playerLeft(Netcode::PlayerID& id) {
+bool NWrapperSingleton::playerLeft(Netcode::PlayerID& id, bool dispatchEvent) {
 	// Linear search to get target 'player' struct, then erase that from the list
 	Player* toBeRemoved = nullptr;
 	int pos = 0;
 	for (auto playerIt : m_players) {
 		if (playerIt.id == id) {
 			toBeRemoved = &playerIt;
-
-			EventDispatcher::Instance().emit(NetworkDisconnectEvent(playerIt.id));
+			if (dispatchEvent) {
+				EventDispatcher::Instance().emit(NetworkDisconnectEvent(id));
+			}
 			m_players.remove(*toBeRemoved);
 
 			return true;
 		}
 	}
+
+	SAIL_LOG_WARNING("PlayerLeft was called with a none existing playerID");
 
 	return false;
 }
@@ -124,7 +128,7 @@ Player& NWrapperSingleton::getMyPlayer() {
 	return m_me;
 }
 
-Player* NWrapperSingleton::getPlayer(Netcode::PlayerID& id) {
+Player* NWrapperSingleton::getPlayer(const Netcode::PlayerID id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {

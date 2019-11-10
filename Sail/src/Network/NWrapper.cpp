@@ -93,19 +93,18 @@ std::string NWrapper::parseName(std::string& data) {
 	}
 }
 
-Message NWrapper::processChatMessage(std::string& message) {
-	std::string remnants = message;
-	unsigned int id_m = this->parseID(remnants);
-	remnants.erase(0, 1);
+Message NWrapper::processChatMessage(const char* data) {
+	Netcode::PlayerID id_m = data[0];
+	std::string msg = &data[1];
 
 	return Message{
-		std::to_string(id_m),
-		remnants
+		id_m,
+		msg
 	};
 }
 
-void NWrapper::sendMsg(std::string msg) {
-	m_network->send(msg.c_str(), msg.length() + 1);
+void NWrapper::sendMsg(std::string msg, TCP_CONNECTION_ID tcp_id) {
+	m_network->send(msg.c_str(), msg.length() + 1, tcp_id);
 }
 
 void NWrapper::sendMsgAllClients(std::string msg) {

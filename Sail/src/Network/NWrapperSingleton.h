@@ -45,11 +45,11 @@ public:
 	void startUDP();
 
 	void resetPlayerList();
-	bool playerJoined(const Player& player);
-	bool playerLeft(Netcode::PlayerID& id);
+	bool playerJoined(const Player& player, bool dispatchEvent = true);
+	bool playerLeft(Netcode::PlayerID& id, bool dispatchEvent = true);
 
 	Player& getMyPlayer();
-	Player* getPlayer(Netcode::PlayerID& id);
+	Player* getPlayer(const Netcode::PlayerID id);
 	const std::list<Player>& getPlayers() const;
 	void setPlayerName(const char* name);
 	void setPlayerID(const Netcode::PlayerID ID);
