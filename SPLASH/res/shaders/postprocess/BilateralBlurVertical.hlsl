@@ -57,6 +57,6 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
         blurColor += factor*cache[k];
 	}
 	
-	output[dispatchThreadID.xy] = float4(blurColor / Z, 0.f, 1.0f);	
+	output[dispatchThreadID.xy] = float4(blurColor / Z, 0.f, 1.0f);
     // output[dispatchThreadID.xy] = float4(cache[groupThreadID.y + blurRadius], 0.f, 1.0f);
 }

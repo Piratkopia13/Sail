@@ -208,15 +208,11 @@ void rayGen() {
 	float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal);
 
 	// Temporal filtering via an exponential moving average
-	float alpha = 0.2f; // Temporal fade, trading temporal stability for lag
+	float alpha = 0.6f; // Temporal fade, trading temporal stability for lag
 	// Reproject screenTexCoord to where it was last frame
 	float2 motionVector = gbuffer_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg;
 	motionVector.y = 1.f - motionVector.y;
 	motionVector = motionVector * 2.f - 1.0f;
-	
-	// This fixes snowfall, not sure why. Precision issue?
-	motionVector.x += 0.004f;
-	motionVector.y -= 0.004f;
 
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 	// float2 reprojectedTexCoord = screenTexCoord;
