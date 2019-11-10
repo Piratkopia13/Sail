@@ -62,7 +62,6 @@ namespace Netcode {
 		SET_CANDLE_HEALTH,
 		EXTINGUISH_CANDLE,
 		PLAYER_DIED,
-		PLAYER_DISCONNECT,
 		MATCH_ENDED,
 		PREPARE_ENDSCREEN,			// Clients send relevant data for the endgame screen
 		ENDGAME_STATS,
@@ -92,7 +91,6 @@ namespace Netcode {
 		"SET_CANDLE_HEALTH,			",
 		"EXTINGUISH_CANDLE,			",
 		"PLAYER_DIED,				",
-		"PLAYER_DISCONNECT,			",
 		"MATCH_ENDED,				",
 		"PREPARE_ENDSCREEN,			",	// Clients send relevant data for the endgame screen
 		"ENDGAME_STATS,				",
@@ -245,13 +243,6 @@ namespace Netcode {
 		Netcode::ComponentID candleOwnerID;
 		bool isHeld;
 		glm::vec3 candlePos;
-	};
-
-	class MessagePlayerDisconnect : public MessageData {
-	public:
-		MessagePlayerDisconnect(PlayerID id) : playerID(id) {}
-		~MessagePlayerDisconnect() {}
-		PlayerID playerID;
 	};
 
 	class MessageEndGameStats : public MessageData {

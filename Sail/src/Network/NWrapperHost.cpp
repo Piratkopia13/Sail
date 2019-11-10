@@ -57,7 +57,7 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 }
 
 void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID tcp_id) {
-	unsigned char playerID = m_connectionsMap.at(tcp_id);
+	Netcode::PlayerID playerID = m_connectionsMap.at(tcp_id);
 	char msg[] = { 'd', playerID, '\0' };
 
 	// Send to all clients that someone disconnected and which id.

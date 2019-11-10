@@ -38,9 +38,12 @@ static std::ofstream out("LogFiles/NetworkReceiverSystem.cpp.log");
 NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 	registerComponent<NetworkReceiverComponent>(true, true, true);
 	registerComponent<TransformComponent>(false, true, true);
+
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
 NetworkReceiverSystem::~NetworkReceiverSystem() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
 void NetworkReceiverSystem::init(Netcode::PlayerID playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr) {
@@ -348,12 +351,6 @@ void NetworkReceiverSystem::update(float dt) {
 				playerDied(networkIdOfKilled, playerIdOfShooter);
 			}
 			break;
-			case Netcode::MessageType::PLAYER_DISCONNECT:
-			{
-				ar(playerID);
-				playerDisconnect(playerID);
-			}
-			break;
 			case Netcode::MessageType::PLAYER_JUMPED:
 			{
 				ar(componentID);
@@ -649,9 +646,10 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
 void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
+	bool found = false;
 	for (auto& e : entities) {
 		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == playerID) {
-
+			found = true;
 			e->removeDeleteAllChildren();
 			// TODO: Remove all the components that can/should be removed
 
@@ -660,7 +658,10 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 			return;
 		}
 	}
-	SAIL_LOG_WARNING("playerDisconnect called but no matching entity found");
+
+	if (!found) {
+		SAIL_LOG_WARNING("playerDisconnect called but no matching entity found");
+	}
 }
 
 
@@ -791,6 +792,15 @@ void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 		}
 	}
 	SAIL_LOG_WARNING("runningStopSound called but no matching entity found");
+}
+
+bool NetworkReceiverSystem::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::NETWORK_DISCONNECT:		playerDisconnect(((const NetworkDisconnectEvent&)(event)).player.id); break;
+	default: break;
+	}
+
+	return true;
 }
 
 void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleID) {

@@ -2,12 +2,13 @@
 
 #include "../../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
+#include "Sail/events/EventReceiver.h"
 
 class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
 
-class NetworkReceiverSystem : public BaseComponentSystem {
+class NetworkReceiverSystem : public BaseComponentSystem, public EventReceiver {
 public:
 	NetworkReceiverSystem();
 	~NetworkReceiverSystem();
@@ -16,8 +17,6 @@ public:
 	void pushDataToBuffer(std::string);
 
 	void init(Netcode::PlayerID playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
-
-
 	const std::vector<Entity*>& getEntities() const;
 
 	void update(float dt);
@@ -75,4 +74,6 @@ private:
 	void runningStopSound(Netcode::ComponentID id);
 
 	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
+
+	bool onEvent(const Event& event) override;
 };

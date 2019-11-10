@@ -33,7 +33,6 @@ public:
 	// Renders imgui
 	bool renderImgui(float dt);
 	// Sends events to the state
-	virtual bool onEvent(const Event& event) override;
 
 protected:
 	Application* m_app = nullptr;
@@ -50,6 +49,7 @@ protected:
 
 	std::string fetchMessage();
 	void addMessageToChat(const Message& message);
+	virtual bool onEvent(const Event& event) override;
 
 private:
 	std::unique_ptr<ImGuiHandler> m_imGuiHandler;

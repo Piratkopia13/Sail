@@ -14,7 +14,7 @@ public:
 	void updateServerDescription();
 
 private:
-	std::map<TCP_CONNECTION_ID, unsigned char> m_connectionsMap;
+	std::map<TCP_CONNECTION_ID, Netcode::PlayerID> m_connectionsMap;
 	unsigned char m_IdDistribution = 0;
 	std::string m_lobbyName = "";
 	std::string m_serverDescription = "";

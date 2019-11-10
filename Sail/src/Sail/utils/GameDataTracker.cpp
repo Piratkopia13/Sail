@@ -12,10 +12,12 @@ GameDataTracker::GameDataTracker() {
 	m_placement = 13;
 	m_nPlayersCurrentSession = 0;
 	m_trackLocalStats = true;
+
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
 GameDataTracker::~GameDataTracker() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
 GameDataTracker& GameDataTracker::getInstance() {
@@ -25,7 +27,10 @@ GameDataTracker& GameDataTracker::getInstance() {
 }
 
 void GameDataTracker::init() {
+	resetData();
+}
 
+void GameDataTracker::resetData() {
 	m_trackLocalStats = true;
 	m_loggedData = { 0 };
 	m_loggedDataGlobal = { 0 };
@@ -34,31 +39,21 @@ void GameDataTracker::init() {
 	m_loggedDataGlobal.distanceWalkedID = NWrapperSingleton::getInstance().getMyPlayerID();
 	m_loggedDataGlobal.jumpsMadeID = NWrapperSingleton::getInstance().getMyPlayerID();
 
-	if (NWrapperSingleton::getInstance().isHost()) {
-		m_nPlayersCurrentSession = 0;
-		for (auto player : m_network->getPlayers()) {
-			m_hostPlayerTracker[player.id].nKills = 0;
-			m_hostPlayerTracker[player.id].nDeaths = 0;
-			m_hostPlayerTracker[player.id].placement = 1;
-			m_nPlayersCurrentSession++;
-		}
-		m_placement = m_nPlayersCurrentSession + 1;
-	}
-}
-
-void GameDataTracker::resetData() {
-	m_loggedData = { 0 };
-	m_loggedDataGlobal = { 0 };
-	m_hostPlayerTracker.clear();
-	m_placement = 13;
 	m_nPlayersCurrentSession = 0;
+	for (auto player : m_network->getPlayers()) {
+		m_hostPlayerTracker[player.id].nKills = 0;
+		m_hostPlayerTracker[player.id].nDeaths = 0;
+		m_hostPlayerTracker[player.id].placement = 1;
+		m_hostPlayerTracker[player.id].playerName = player.name;
+		m_nPlayersCurrentSession++;
+	}
+	m_placement = m_nPlayersCurrentSession + 1;
 }
 
 void GameDataTracker::logWeaponFired() {
 	if (m_trackLocalStats) {
 		m_loggedData.bulletsFired += 1;
 	}
-	
 }
 
 void GameDataTracker::logEnemyKilled(Netcode::PlayerID playerID) {
@@ -141,7 +136,7 @@ void GameDataTracker::renderImgui() {
 	ImGui::Text("\n Placement------");
 	// Sort rankings
 	for (auto player : m_hostPlayerTracker) {
-		tempPlacementMap[player.second.placement].name = m_network->getPlayer(player.first)->name;
+		tempPlacementMap[player.second.placement].name = player.second.playerName;
 		tempPlacementMap[player.second.placement].nKills = player.second.nKills;
 	}
 
@@ -205,4 +200,19 @@ void GameDataTracker::renderImgui() {
 	ImGui::Text(localStatsString.c_str());
 
 	ImGui::End();
+}
+
+bool GameDataTracker::onEvent(const Event& e) {
+
+	switch (e.type) {
+	case Event::Type::NETWORK_DISCONNECT:		playerDisconnected((const NetworkDisconnectEvent&)e); break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+void GameDataTracker::playerDisconnected(const NetworkDisconnectEvent& e) {
+	logPlacement(e.player.id);
 }

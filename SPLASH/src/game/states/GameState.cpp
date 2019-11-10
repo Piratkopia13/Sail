@@ -564,21 +564,8 @@ bool GameState::onPlayerDisconnect(const NetworkDisconnectEvent& event) {
 		return true;
 	}
 
-	for (auto& e : m_componentSystems.networkReceiverSystem->getEntities()) {
-		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.player.id) {
-			// Upon finding who disconnected...
-			// Log it (Temporary until killfeed is implemented)
-			logSomeoneDisconnected(event.player.id);
+	logSomeoneDisconnected(event.player.id);
 
-			// If I am host notify all other players
-			if (NWrapperSingleton::getInstance().isHost()) {
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::PLAYER_DISCONNECT,
-					SAIL_NEW Netcode::MessagePlayerDisconnect{ event.player.id }
-				);
-			}
-		}
-	}
 	return true;
 }
 
