@@ -2,7 +2,6 @@
 #include "Common_hlsl_cpp.hlsl"
 
 RaytracingAccelerationStructure gRtScene 			: register(t0);
-Texture2D<float4> sys_brdfLUT 						: register(t5); // NOT USED
 
 // Gbuffer inputs/outputs
 RWTexture2D<float4> gbuffer_normals 				: register(u0);

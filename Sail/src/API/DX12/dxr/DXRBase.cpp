@@ -701,10 +701,9 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		// Scene CB
 		{
 			unsigned int size = sizeof(DXRShaderCommon::SceneCBuffer);
-			void* initData = malloc(size);
-			memset(initData, 0, size);
-			m_sceneCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
-			free(initData);
+			DXRShaderCommon::SceneCBuffer initData = {};
+			initData.mapSize = glm::vec3(1000.f); // Needs to be set at start to prevent crash or slowdowns
+			m_sceneCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(&initData, size, ShaderComponent::BIND_SHADER::CS, 0);
 		}
 		// Mesh CB
 		{
@@ -863,7 +862,6 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_gbufferStartUAVGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartSRVGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
-		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
 		D3D12_GPU_VIRTUAL_ADDRESS decalCBHandle = m_decalCB->getBuffer()->GetGPUVirtualAddress();
 		tableBuilder.addDescriptor(decalCBHandle);
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
@@ -992,7 +990,6 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputOutputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 0U, 3);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 2);
 	m_localSignatureRayGen->addDescriptorTable("decalTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 17, 0U, 3U);
-	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
