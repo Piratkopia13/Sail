@@ -20,7 +20,8 @@ RWTexture2D<float4> lOutputAlbedo		 		: register(u3);		// RGB
 RWTexture2D<float4> lOutputNormals 				: register(u4); 	// XYZ
 RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u5); 	// Metalness/Roughness/AO
 RWTexture2D<float2> lOutputShadows 				: register(u6); 	// Shadows first bounce/shadows second bounce
-RWTexture2D<float4> lOutputDepthPositions		: register(u7);		// Fist hit depth (x) and world space positions for second bounce (y,z,w)
+RWTexture2D<float4> lOutputPositionsOne			: register(u7);		// XYZ - world space positions for first bounce
+RWTexture2D<float4> lOutputPositionsTwo			: register(u8);		// XYZ - world space positions for second bounce
 Texture2D<float2> 	lInputShadowsLastFrame 		: register(t20); 	// last frame Shadows first bounce/last frame shadows second bounce
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
@@ -43,6 +44,7 @@ SamplerState motionSS : register(s1);
 
 #define RAYTRACING
 #include "Utils.hlsl"
+#include "WaterOnSurface.hlsl"
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -129,6 +131,16 @@ void rayGen() {
 	float3 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition).xyz;
 	// ---------------------------------------------------
 
+	// Material
+	float3 albedoOne = gbuffer_albedo[launchIndex].rgb;
+	float3 mrao = gbuffer_texMetalnessRoughnessAO[launchIndex].rgb;
+	float metalnessOne = mrao.x;
+	float roughnessOne = mrao.y;
+	float aoOne = mrao.z;
+	float originalAoOne = aoOne;
+	// Change material if first bounce color should be water on a surface
+	getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormal, worldPosition);
+
 	RayDesc ray;
 	ray.Origin = worldPosition;
 	ray.Direction = reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal);
@@ -136,13 +148,17 @@ void rayGen() {
 	ray.TMax = 10000.0;
 	
 	RayPayload payload;
-	payload.recursionDepth = 1;
+	payload.recursionDepth = 0;
 	payload.closestTvalue = 0;
-	payload.shadow = 0.f;
-	payload.albedo = 0.f;
-	payload.normal = 0.f;
-	payload.metalnessRoughnessAO = 0.f;
-	payload.worldPosition = 0.f;
+	payload.shadowTwo = 0.f;
+	payload.albedoOne = 0.f;
+	payload.albedoTwo = 0.f;
+	payload.normalOne = 0.f;
+	payload.normalTwo = 0.f;
+	payload.metalnessRoughnessAOOne = 0.f;
+	payload.metalnessRoughnessAOTwo = 0.f;
+	payload.worldPositionOne = 0.f;
+	payload.worldPositionTwo = 0.f;
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 
@@ -162,21 +178,32 @@ void rayGen() {
 	RayPayload payloadMetaball;
 	payloadMetaball.recursionDepth = 0;
 	payloadMetaball.closestTvalue = 0;
-	payloadMetaball.shadow = 0.f;
-	payloadMetaball.albedo = 0.f;
-	payloadMetaball.normal = 0.f;
-	payloadMetaball.metalnessRoughnessAO = 0.f;
-	payloadMetaball.worldPosition = 0.f;
+	payloadMetaball.shadowTwo = 0.f;
+	payloadMetaball.albedoOne = 0.f;
+	payloadMetaball.albedoTwo = 0.f;
+	payloadMetaball.normalOne = 0.f;
+	payloadMetaball.normalTwo = 0.f;
+	payloadMetaball.metalnessRoughnessAOOne = 0.f;
+	payloadMetaball.metalnessRoughnessAOTwo = 0.f;
+	payloadMetaball.worldPositionOne = 0.f;
+	payloadMetaball.worldPositionTwo = 0.f;
 
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
+	// lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
+	// return;
+
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payloadMetaball.closestTvalue);
-
 	RayPayload finalPayload = payload;
-	if (metaballDepth <= linearDepth) { finalPayload = payloadMetaball; };
+	if (metaballDepth <= linearDepth) { 
+		finalPayload = payloadMetaball;
+		// Overwrite variables used for shadow rays
+		worldPosition = payloadMetaball.worldPositionOne;
+		worldNormal = payloadMetaball.normalOne;
+	}
 
-	// Get shadow from this "bounce"
+	// Get shadow from first bounce
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal);
@@ -197,22 +224,41 @@ void rayGen() {
 	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
 	float2 cLast = lInputShadowsLastFrame.SampleLevel(motionSS, reprojectedTexCoord, 0).rg;
 	// float cLast = 0.0f;
-	float2 shadow = float2(firstBounceShadow, finalPayload.shadow);
-	lOutputShadows[launchIndex] = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
+	float2 shadow = float2(firstBounceShadow, payload.shadowTwo);
+	shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
+	lOutputShadows[launchIndex] = shadow;
 	// lOutputShadows[launchIndex] = 1.0f - payload.shadow;
 
-	lOutputAlbedo[launchIndex] = float4(finalPayload.albedo.rgb, 1.0f);
-	lOutputNormals[launchIndex] = float4(finalPayload.normal.rgb * 0.5f + 0.5f, 1.0f);
-	lOutputMetalnessRoughnessAO[launchIndex] = float4(finalPayload.metalnessRoughnessAO.rgb, 1.0f);
-	lOutputDepthPositions[launchIndex].x = linearDepth;
-	lOutputDepthPositions[launchIndex].yzw = payload.worldPosition;
 
+
+	float3 albedoTwo = finalPayload.albedoTwo.rgb;
+	float3 worldNormalTwo = finalPayload.normalTwo.rgb;
+	mrao = finalPayload.metalnessRoughnessAOTwo.rgb;
+	float metalnessTwo = mrao.x;
+	float roughnessTwo = mrao.y;
+	float aoTwo = mrao.z;
+	float3 worldPositionTwo = finalPayload.worldPositionTwo;
+	// Change material if second bounce color should be water on a surface
+	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
+
+	float interpAoOne = lerp(originalAoOne, aoOne, shadow);
+
+	// Overwrite gbuffers
+	gbuffer_albedo[launchIndex] = float4(albedoOne, 1.0f);
+	gbuffer_normals[launchIndex] = float4(worldNormal * 0.5f + 0.5f, 1.0f);
+	gbuffer_texMetalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, interpAoOne, 1.0f);
+	// Write outputs
+	lOutputAlbedo[launchIndex] = float4(albedoTwo, 1.0f);
+	lOutputNormals[launchIndex] = float4(worldNormalTwo * 0.5f + 0.5f, 1.0f);
+	lOutputMetalnessRoughnessAO[launchIndex] = float4(metalnessTwo, roughnessTwo, aoTwo, 1.0f);
+	lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
+	lOutputPositionsTwo[launchIndex] = float4(worldPositionTwo, 1.0f);
 }
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
-	payload.albedo = float4(0.01f, 0.01f, 0.01f, 1.0f);
-	payload.closestTvalue = 1000;
+	payload.albedoTwo = float4(0.01f, 0.01f, 0.01f, 1.0f);
+	payload.closestTvalue = 100000;
 }
 
 float3 getAlbedo(MeshData data, float2 texCoords) {
@@ -283,11 +329,11 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
-	payload.shadow = getShadowAmount(randSeed, worldPosition, normalInWorldSpace);
-	payload.albedo.rgb = albedoColor;
-	payload.normal = normalInWorldSpace;
-	payload.metalnessRoughnessAO = metalnessRoughnessAO;
-	payload.worldPosition = worldPosition;
+	payload.shadowTwo = getShadowAmount(randSeed, worldPosition, normalInWorldSpace);
+	payload.albedoTwo.rgb = albedoColor;
+	payload.normalTwo = normalInWorldSpace;
+	payload.metalnessRoughnessAOTwo = metalnessRoughnessAO;
+	payload.worldPositionTwo = worldPosition;
 }
 
 
@@ -297,38 +343,50 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	payload.closestTvalue = RayTCurrent();
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(attribs.normal.xyz, 0.f)));
+	float refractIndex = 1.333f;
 	RayPayload reflect_payload = payload;
+	RayPayload refract_payload = payload;
 	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
+	float3 refractVector = refract(WorldRayDirection(), attribs.normal.xyz, refractIndex); //Refract index of water is 1.333, so thats what we will use.
 
 	RayDesc reflectRaydesc = Utils::getRayDesc(reflectVector);
+	RayDesc reftractRaydesc = Utils::getRayDesc(refractVector);
 	reflectRaydesc.Origin += reflectRaydesc.Direction * 0.0001;
+	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
 	if (payload.recursionDepth == 1) {
 		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
+
+		float4 reflect_color = reflect_payload.albedoTwo;
+		reflect_color.b += 0.05f;
+		reflect_color = saturate(reflect_color);
+		float4 refract_color = refract_payload.albedoTwo;
+		refract_color.b += 0.05f;
+		refract_color = saturate(refract_color);
+		
+		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
+		float refconst = pow(abs(dot(normalize(hitToCam), normalInWorldSpace)), 2);
+
+		float4 finaldiffusecolor = saturate((refract_color * refconst + reflect_color * (1- refconst)));
+		// float4 finaldiffusecolor = refract_color;
+		/////////////////////////
+		payload.albedoOne = float4(finaldiffusecolor.rgb, 1.0f);
+		payload.normalOne = normalInWorldSpace;
+		payload.metalnessRoughnessAOOne = float3(1.f, 1.f, 1.f);
+		payload.worldPositionOne = Utils::HitWorldPosition();
+
+		payload.albedoTwo = reflect_payload.albedoTwo;
+		payload.normalTwo = reflect_payload.normalTwo;
+		payload.metalnessRoughnessAOTwo = reflect_payload.metalnessRoughnessAOTwo;
+		payload.worldPositionTwo = reflect_payload.worldPositionTwo;
+
 	} else {
-		reflect_payload.albedo = float4(0.0f, 0.0f, 0.1f,1.0f);
+		payload.albedoTwo = float4(0.0f, 0.0f, .01f, 1.0f);
+		payload.normalTwo = normalInWorldSpace;
+		payload.metalnessRoughnessAOTwo = float3(1.f, 1.f, 1.f);
+		payload.worldPositionTwo = Utils::HitWorldPosition();
 	}
-
-	float4 reflect_color = reflect_payload.albedo;
-	//reflect_color.r *= 0.8;
-	//reflect_color.g *= 0.8;
-	//reflect_color.b += 0.2;
-	reflect_color.b += 0.05f;
-	reflect_color = saturate(reflect_color);
-
-	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
-	float refconst = pow(abs(dot(normalize(hitToCam), normalInWorldSpace)), 2);
-
-	float4 finaldiffusecolor = reflect_color;
-	finaldiffusecolor.a = 1;
-	
-	/////////////////////////
-	payload.albedo = finaldiffusecolor;
-	payload.normal = normalInWorldSpace;
-	payload.metalnessRoughnessAO = float3(1.f, 1.f, 1.f);
-	payload.worldPosition = Utils::HitWorldPosition();
-
-	return;
 }
 
 bool solveQuadratic(in float a, in float b, in float c, inout float x0, inout float x1) {

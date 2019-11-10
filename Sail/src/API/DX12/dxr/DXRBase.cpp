@@ -340,7 +340,8 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* shadowsLastF
 	copyDescriptor(output.normal.get(), m_rtOutputNormalsUavCPUHandles);
 	copyDescriptor(output.metalnessRoughnessAO.get(), m_rtOutputMetalnessRoughnessAoUavCPUHandles);
 	copyDescriptor(output.shadows.get(), m_rtOutputShadowsUavCPUHandles);
-	copyDescriptor(output.depthPositions.get(), m_rtOutputDepthPositionsUavCPUHandles);
+	copyDescriptor(output.positionsOne.get(), m_rtOutputPositionsOneUavCPUHandles);
+	copyDescriptor(output.positionsTwo.get(), m_rtOutputPositionsTwoUavCPUHandles);
 
 	if (shadowsLastFrameInput) { // Doesnt exist first frame
 		// Copy history input texture srv
@@ -641,8 +642,10 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		storeHandle(m_rtOutputMetalnessRoughnessAoUavCPUHandles, m_rtOutputMetalnessRoughnessAoUavGPUHandles);
 		// Shadows UAV output
 		storeHandle(m_rtOutputShadowsUavCPUHandles, m_rtOutputShadowsUavGPUHandles);
-		// Depth and world positions output
-		storeHandle(m_rtOutputDepthPositionsUavCPUHandles, m_rtOutputDepthPositionsUavGPUHandles);
+		// First bounce world positions output
+		storeHandle(m_rtOutputPositionsOneUavCPUHandles, m_rtOutputPositionsOneUavGPUHandles);
+		// Second bounce world positions output
+		storeHandle(m_rtOutputPositionsTwoUavCPUHandles, m_rtOutputPositionsTwoUavGPUHandles);
 		// Shadows last frame SRV input
 		storeHandle(m_rtInputShadowsLastFrameUavCPUHandles, m_rtInputShadowsLastFrameUavGPUHandles);
 
@@ -854,7 +857,8 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtOutputNormalsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputMetalnessRoughnessAoUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputShadowsUavGPUHandles[frameIndex].ptr);
-		tableBuilder.addDescriptor(m_rtOutputDepthPositionsUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputPositionsOneUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputPositionsTwoUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtInputShadowsLastFrameUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartUAVGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartSRVGPUHandles[frameIndex].ptr);
@@ -982,7 +986,8 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("OutputNormalsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4);
 	m_localSignatureRayGen->addDescriptorTable("OutputMetalnessRoughnessAOUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 5);
 	m_localSignatureRayGen->addDescriptorTable("OutputShadowsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 6);
-	m_localSignatureRayGen->addDescriptorTable("OutputDepthPositionsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 7);
+	m_localSignatureRayGen->addDescriptorTable("OutputPositionsOneUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 7);
+	m_localSignatureRayGen->addDescriptorTable("OutputPositionsTwoUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 8);
 	m_localSignatureRayGen->addDescriptorTable("InputShadowsLastFrameSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 20);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputOutputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 0U, 3);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 2);

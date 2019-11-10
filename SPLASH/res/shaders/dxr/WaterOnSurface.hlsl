@@ -6,18 +6,18 @@ void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout
 	static const float3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z) - 1;
 	static const float cutoff = 0.2f;
 
-	float3 cellWorldSize = mapSize / arrSize;
+	float3 cellWorldSize = CB_SceneData.mapSize / arrSize;
 	cellWorldSize.x *= 0.25f;
 
 #ifdef WATER_DEBUG
-	float3 floatIndMin = ((worldPosition - mapStart) / mapSize) * arrSize;
-	float3 floatIndMax = ((worldPosition - mapStart) / mapSize) * arrSize;
-	int3 ind = floor(( (worldPosition - mapStart) / mapSize) * arrSize);
+	float3 floatIndMin = ((worldPosition - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize;
+	float3 floatIndMax = ((worldPosition - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize;
+	int3 ind = floor(( (worldPosition - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize);
 	int3 indMin = ind;
 	int3 indMax = ind;
 #else
-	float3 floatIndMin = ((worldPosition - cutoff - mapStart) / mapSize) * arrSize;
-	float3 floatIndMax = ((worldPosition + cutoff - mapStart) / mapSize) * arrSize;
+	float3 floatIndMin = ((worldPosition - cutoff - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize;
+	float3 floatIndMax = ((worldPosition + cutoff - CB_SceneData.mapStart) / CB_SceneData.mapSize) * arrSize;
 	int3 indMin = floor(floatIndMin);
 	int3 indMax = ceil(floatIndMax);
 #endif
@@ -29,18 +29,18 @@ void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout
 			for (int x = indMin.x; x <= indMax.x; x++) {
 				int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
 				i = clamp(i, 0, floor(WATER_ARR_SIZE) - 1);
-				uint packedR = PSwaterData[i];
+				uint packedR = waterData[i];
 
 				uint start = (x == indMin.x) ? floor(((floatIndMin.x - floor(floatIndMin.x)) * 4.f) % 4) : 0;
 				uint end = (x == indMax.x) ? floor(((floatIndMax.x - floor(floatIndMax.x)) * 4.f) % 4) : 3;
 
-				// [unroll]
+				[unroll]
 				for (uint index = start; index <= end; index++) {
 					uint up = Utils::unpackQuarterFloat(packedR, index);
 					if (up < 255) {
 						half r = (255.h - up) * 0.00392156863h; // That last wierd one is 1 / 255
 						// r = 1.0f;
-						float3 waterPointWorldPos = (float3(x*4+index,y,z) + 0.5f) * cellWorldSize + mapStart;
+						float3 waterPointWorldPos = (float3(x*4+index,y,z) + 0.5f) * cellWorldSize + CB_SceneData.mapStart;
 
 						float3 dstV = waterPointWorldPos - worldPosition;
 						float dstSqrd = dot(dstV, dstV);

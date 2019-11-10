@@ -33,7 +33,8 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_outputTextures.metalnessRoughnessAO = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	m_outputTextures.normal = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	m_outputTextures.shadows = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "CurrentFrameShadowTexture", Texture::R8G8)));
-	m_outputTextures.depthPositions = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "DepthPositionTexture", Texture::R16G16B16A16_FLOAT)));
+	m_outputTextures.positionsOne = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionOneTexture", Texture::R16G16B16A16_FLOAT)));
+	m_outputTextures.positionsTwo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionTwoTexture", Texture::R16G16B16A16_FLOAT)));
 	// init shaded output texture - this is written to in a rasterisation pass
 	m_shadedOuput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	// Init raytracing input texture
@@ -264,7 +265,9 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	shaderPipeline->setTexture2D("metalnessRoughnessAoBounceTwo", m_outputTextures.metalnessRoughnessAO.get(), cmdList); numCustomSRVs++;
 
 	shaderPipeline->setTexture2D("shadows", shadows, cmdList); numCustomSRVs++;
-	shaderPipeline->setTexture2D("depthPositions", m_outputTextures.depthPositions.get(), cmdList); numCustomSRVs++;
+	
+	shaderPipeline->setTexture2D("positionsOne", m_outputTextures.positionsOne.get(), cmdList); numCustomSRVs++;
+	shaderPipeline->setTexture2D("positionsTwo", m_outputTextures.positionsTwo.get(), cmdList); numCustomSRVs++;
 
 	shaderPipeline->setTexture2D("brdfLUT", m_brdfTexture, cmdList); numCustomSRVs++;
 
@@ -362,7 +365,8 @@ bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {
 	m_outputTextures.normal->resize(event.getWidth(), event.getHeight());
 	m_outputTextures.metalnessRoughnessAO->resize(event.getWidth(), event.getHeight());
 	m_outputTextures.shadows->resize(event.getWidth(), event.getHeight());
-	m_outputTextures.depthPositions->resize(event.getWidth(), event.getHeight());
+	m_outputTextures.positionsOne->resize(event.getWidth(), event.getHeight());
+	m_outputTextures.positionsTwo->resize(event.getWidth(), event.getHeight());
 	m_shadowsLastFrame->resize(event.getWidth(), event.getHeight());
 	m_shadedOuput->resize(event.getWidth(), event.getHeight());
 	return true;
