@@ -81,6 +81,17 @@ void CandleHealthSystem::update(float dt) {
 
 					// Only one living candle left and number of players in the game is greater than one
 					if (livingCandles < 2 && entities.size() > 1) {
+
+						for (auto e2 : entities) {
+							NetworkReceiverComponent* cc = e2->getParent()->getComponent<NetworkReceiverComponent>();
+							if (cc->m_id != e->getParent()->getComponent<NetworkReceiverComponent>()->m_id) {
+								// Save the placement for the player who lost
+								GameDataTracker::getInstance().logPlacement(
+									Netcode::getComponentOwner(cc->m_id)
+								);
+							}
+						}
+
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::MATCH_ENDED,
 							nullptr
