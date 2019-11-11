@@ -172,6 +172,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
 	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation);
 	playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION);
+	playerEnt->addComponent<MovementComponent>();
 
 	// Create the player
 	AddCandleComponentsToPlayer(playerEnt, lightIndex, 0);
