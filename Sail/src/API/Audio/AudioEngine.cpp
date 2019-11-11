@@ -37,9 +37,7 @@
 #include <xaudio2fx.h>
 #pragma comment(lib,"xaudio2.lib")
 
-
 AudioEngine::AudioEngine() {
-
 	HRESULT hr;
 	hr = CoInitialize(nullptr);
 
