@@ -105,7 +105,12 @@ void NetworkReceiverSystemHost::waterHitPlayer(Netcode::ComponentID id, Netcode:
 				// Damage the candle
 				// Save the Shooter of the Candle if its lethal
 				// TODO: Replace 10.0f with game settings damage
-				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+				if (senderId != Netcode::MESSAGE_SPRINKLER_ID) {
+					child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+				}
+				else {
+					child->getComponent<CandleComponent>()->hitWithWater(1.0f, senderId);
+				}
 
 				// Play relevant sound
 				if (child->getComponent<CandleComponent>()->isLit) {
