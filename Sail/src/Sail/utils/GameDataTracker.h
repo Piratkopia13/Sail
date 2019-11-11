@@ -45,6 +45,7 @@ public:
 	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
 	void logPlayerDeath(const std::string& killer, const std::string& killed, const std::string& deathType); // used to log when a player is killed
 	void logPlacement(Netcode::PlayerID playerID);// CandleSystem::update
+	void logMessage(const std::string& message);// CandleSystem::update
 
 	void init();								// Gamestate::Gamestate()
 
@@ -54,7 +55,7 @@ public:
 	// Used to track the local player
 	InduvidualStats& getStatisticsLocal();
 
-	const std::vector<std::string>& getPlayerDeaths();
+	const std::vector<std::string>& getKillFeed();
 	const std::map<Netcode::PlayerID, HostStatsPerPlayer> getPlayerDataMap(); // NetworkSenderSystem
 
 	// Used in end game when recieving player data stats
@@ -81,7 +82,7 @@ private:
 
 	int m_placement; // add 1 after ever time a player is placed to give next player a placement
 	int m_nPlayersCurrentSession;
-	std::vector<std::string> m_playerDeaths;
+	std::vector<std::string> m_killFeed;
 
 	// -+-+-+-+-+- Singleton requirements below -+-+-+-+-+-
 public:

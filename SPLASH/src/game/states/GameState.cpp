@@ -564,6 +564,7 @@ bool GameState::onPlayerDisconnect(const NetworkDisconnectEvent& event) {
 		return true;
 	}
 
+	GameDataTracker::getInstance().logMessage(event.player.name + " Left The Game!");
 	logSomeoneDisconnected(event.player.id);
 
 	return true;
