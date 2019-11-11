@@ -21,6 +21,8 @@ private:
 	bool m_isLoopingShootSound = false;
 	bool m_endSound = false;
 
+	void alterProjectileSpeed(GunComponent* gun);
+
 	void fireGun(Entity* e, GunComponent* gun);
 	void overloadGun(Entity* e, GunComponent* gun);
 

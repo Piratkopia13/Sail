@@ -368,10 +368,17 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 	}
 	break;
+	case Netcode::MessageType::EXTINGUISH_CANDLE:
+	{
+		Netcode::MessageExtinguishCandle* data = static_cast<Netcode::MessageExtinguishCandle*>(event->data);
+		ar(data->candleThatWasHit);
+		ar(data->playerWhoExtinguishedCandle);
+	}
+	break;
 	case Netcode::MessageType::IGNITE_CANDLE:
 	{
 		Netcode::MessageIgniteCandle* data = static_cast<Netcode::MessageIgniteCandle*>(event->data);
-		ar(data->candleOwnerID);
+		ar(data->candleCompId);
 	}
 	break;
 	case Netcode::MessageType::MATCH_ENDED:
@@ -433,6 +440,14 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	{
 		Netcode::MessageRunningStopSound* data = static_cast<Netcode::MessageRunningStopSound*>(event->data);
 		ar(data->runningPlayer); // Send
+	}
+	break;
+	case Netcode::MessageType::SET_CANDLE_HEALTH:
+	{
+		Netcode::MessageSetCandleHealth* data = static_cast<Netcode::MessageSetCandleHealth*>(event->data);
+		
+		ar(data->candleThatWasHit);
+		ar(data->health);
 	}
 	break;
 	case Netcode::MessageType::SPAWN_PROJECTILE:

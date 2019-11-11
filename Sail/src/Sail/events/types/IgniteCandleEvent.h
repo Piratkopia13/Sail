@@ -5,7 +5,7 @@
 struct IgniteCandleEvent : public Event {
 	IgniteCandleEvent(Netcode::ComponentID _netCompID)
 		: Event(Event::Type::IGNITE_CANDLE)
-		, netCompID(_netCompID) {}
+		, netCompID(_netCompID)	{}
 
 	const Netcode::ComponentID netCompID;
 };

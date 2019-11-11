@@ -310,11 +310,22 @@ void NetworkReceiverSystem::update(float dt) {
 				endMatch();
 			}
 			break;
+			case Netcode::MessageType::EXTINGUISH_CANDLE:
+			{
+				Netcode::ComponentID candleID;
+				Netcode::PlayerID shooterID;
+
+				ar(candleID);
+				ar(playerID);
+
+				extinguishCandle(candleID, playerID);
+			}
+			break;
 			case Netcode::MessageType::IGNITE_CANDLE:
 			{
-				Netcode::ComponentID candleOwnerID;
-				ar(candleOwnerID);
-				igniteCandle(candleOwnerID);
+				Netcode::ComponentID candleID;
+				ar(candleID);
+				igniteCandle(candleID);
 			}
 			break;
 			case Netcode::MessageType::MATCH_ENDED:
@@ -407,11 +418,24 @@ void NetworkReceiverSystem::update(float dt) {
 			{
 				Netcode::ComponentID playerwhoWasHit;
 				ar(playerwhoWasHit);
+
+				// NOTE!
+				// This function is and should be empty for the NetworkReceiverSystemClient. 
+				// Only the Host has the authority to damage candles.
 				waterHitPlayer(playerwhoWasHit, senderID);
 			}
 			break;
+			case Netcode::MessageType::SET_CANDLE_HEALTH:
+			{
+				Netcode::ComponentID candleID;
+				float health;
+				ar(candleID);
+				ar(health);
+				setCandleHealth(candleID, health);
+			}
+			break;
 			default:
-				SAIL_LOG_ERROR("INVALID NETWORK EVENT RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
+				SAIL_LOG_ERROR("INVALID NETWORK EVENT NR " + std::to_string((int)eventType) + " RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;
 			}
 
@@ -473,6 +497,29 @@ void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned
 		return;
 	}
 	SAIL_LOG_WARNING("setEntityAnimation called but no matching entity found");
+}
+
+void NetworkReceiverSystem::setCandleHealth(Netcode::ComponentID candleId, float health) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
+			e->getComponent<CandleComponent>()->health = health;
+			return;
+		}
+	}
+	SAIL_LOG_WARNING("setCandleHelath called but no matching candle entity found");
+}
+
+void NetworkReceiverSystem::extinguishCandle(Netcode::ComponentID candleId, Netcode::PlayerID shooterID) {
+	for (auto& e : entities) {
+		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
+
+			e->getComponent<CandleComponent>()->wasJustExtinguished = true;
+			e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
+
+			return;
+		}
+	}
+	SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
 }
 
 void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
@@ -551,8 +598,8 @@ void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
 
-void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleOwnerID) {
-	EventDispatcher::Instance().emit(IgniteCandleEvent(candleOwnerID));
+void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleID) {
+	EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
 }
 
 Entity* NetworkReceiverSystem::findFromNetID(Netcode::ComponentID id) const {

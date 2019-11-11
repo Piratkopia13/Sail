@@ -22,19 +22,25 @@ CandleReignitionSystem::~CandleReignitionSystem() {
 
 void CandleReignitionSystem::update(float dt) {
 	for (auto& e : entities) {
-		auto candle = e->getComponent<CandleComponent>();
-		if (!candle->isLit) {
-			if (candle->downTime >= m_candleForceRespawnTimer || candle->userReignition) {
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::IGNITE_CANDLE,
-					SAIL_NEW Netcode::MessageIgniteCandle{
-						e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
-					},
-					true
-				);
-			}
 
-			candle->downTime += dt;
+		// Only reignite if it's my candle
+		// Do not put LocalOwnerComponent as requirement. All the candles are needed in onEvent()
+		if (e->hasComponent<LocalOwnerComponent>()) {
+
+			auto candle = e->getComponent<CandleComponent>();
+			if (!candle->isLit) {
+				candle->downTime += dt;
+
+				if (candle->downTime >= m_candleForceRespawnTimer || candle->userReignition) {
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::IGNITE_CANDLE,
+						SAIL_NEW Netcode::MessageIgniteCandle{
+							e->getComponent<NetworkSenderComponent>()->m_id
+						},
+						true
+					);
+				}
+			}
 		}
 	}
 }
@@ -43,13 +49,11 @@ bool CandleReignitionSystem::onEvent(const Event& event) {
 	auto onIgniteCandle = [&](const IgniteCandleEvent& e) {
 		Entity* candle = nullptr;
 
-		// Find the candle whose parent has the correct ID
+		// Find the candle with the correct ID
 		for (auto candleEntity : entities) {
-			if (auto parentEntity = candleEntity->getParent(); parentEntity) {
-				if (parentEntity->getComponent<NetworkReceiverComponent>()->m_id == e.netCompID) {
-					candle = candleEntity;
-					break;
-				}
+			if (candleEntity->getComponent<NetworkReceiverComponent>()->m_id == e.netCompID) {
+				candle = candleEntity;
+				break;
 			}
 		}
 

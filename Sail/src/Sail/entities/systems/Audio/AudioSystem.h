@@ -7,6 +7,7 @@
 class AudioComponent;
 class AudioEngine;
 class Camera;
+class XAUDIO2FX_REVERB_PARAMETERS;
 
 class AudioSystem final : public BaseComponentSystem, public EventReceiver {
 public:
@@ -44,6 +45,8 @@ private:
 	void startPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void stopPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void updateStreamPosition(Entity* e, Camera& cam, float alpha);
+
+	void updateProjectileLowPass(Audio::SoundInfo_General* general);
 
 	void hotFixAmbiance(Entity* e, AudioComponent* audioC);
 };
