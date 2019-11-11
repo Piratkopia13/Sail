@@ -188,6 +188,8 @@ GameState::GameState(StateStack& stack)
 
 	// Clear all water on the level
 	EventDispatcher::Instance().emit(ResetWaterEvent());
+
+	m_inGameGui.setPlayer(m_player);
 }
 
 GameState::~GameState() {
@@ -651,6 +653,7 @@ bool GameState::render(float dt, float alpha) {
 }
 
 bool GameState::renderImgui(float dt) {
+	m_inGameGui.renderWindow();
 	m_killFeedWindow.renderWindow();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();
