@@ -104,9 +104,9 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 	}
 
 	bool useFilter = false;
-	if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
+	/*if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
 		useFilter = true;
-	}
+	}*/
 
 	//			   										  xAPO
 	// [index].SourceVoice -----> [index].xAPOsubMixVoice ---> m_masterVoice
@@ -118,9 +118,9 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 	
 	//					   lowpass						   xAPO
 	// [index].SourceVoice ------> [index].xAPOsubMixVoice ---> m_masterVoice
-	if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
-		addLowPassFilterTo(m_sound[indexValue].sourceVoice, m_sound[indexValue].xAPOsubMixVoice, frequency);
-	}
+	//if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
+	//	addLowPassFilterTo(m_sound[indexValue].sourceVoice, m_sound[indexValue].xAPOsubMixVoice, frequency);
+	//}
 	
 	// Apply changes directly
 	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
