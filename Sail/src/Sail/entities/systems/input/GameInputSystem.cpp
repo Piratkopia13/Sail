@@ -402,6 +402,7 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 				// We want to throw the torch
 				throwingComp->direction = m_cam->getCameraDirection();
 				throwingComp->isCharging = false;
+				throwingComp->isThrowing = true;
 				candleComp->isCarried = false;
 				m_candleToggleTimer = 0.f;
 			}
@@ -430,12 +431,23 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 		sprintComp->doSprint = false;
 	}
 
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_FORWARD) ) { playerMovement.forwardMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD) ) { playerMovement.forwardMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_LEFT) ) { playerMovement.rightMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_RIGHT) ) { playerMovement.rightMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_UP) ) { playerMovement.upMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_DOWN) ) { playerMovement.upMovement -= 1.0f; }
+	for (auto& child : e->getChildEntities()) {
+		if (child->hasComponent<ThrowingComponent>()) {
+			auto throwC = child->getComponent<ThrowingComponent>();
+			if (throwC->isThrowing || throwC->isCharging) {
+				return playerMovement;
+			}
+
+			continue;
+		}
+	}
+
+	if (Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) { playerMovement.forwardMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD)) { playerMovement.forwardMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_LEFT)) { playerMovement.rightMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_RIGHT)) { playerMovement.rightMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
 
 	return playerMovement;
 }

@@ -391,11 +391,11 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
 
-
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
 	m_componentSystems.candlePlacementSystem = ECS::Instance()->createSystem<CandlePlacementSystem>();
-	m_componentSystems.candlePlacementSystem->setOctree(m_octree);
+	m_componentSystems.candleThrowingSystem = ECS::Instance()->createSystem<CandleThrowingSystem>();
+	m_componentSystems.candleThrowingSystem->setOctree(m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -442,8 +442,6 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
 
 	m_componentSystems.sprintingSystem = ECS::Instance()->createSystem<SprintingSystem>();
-
-	m_componentSystems.candleThrowingSystem = ECS::Instance()->createSystem<CandleThrowingSystem>();
 }
 
 void GameState::initConsole() {

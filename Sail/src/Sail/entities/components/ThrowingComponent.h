@@ -4,8 +4,10 @@
 #include <glm/vec3.hpp>
 
 
+// TODO: Replace with charge animation length
+constexpr auto CHARGING_ANIMATION_LENGTH = 2.5f; // Charge animation length
+constexpr auto THROWING_ANIMATION_LENGTH = 0.1f;
 // TODO: Replace with game settings
-constexpr auto MAX_CHARGE_TIME = 5.f;
 constexpr auto MAX_THROW_CHARGE_MULT = 5.f;
 
 class ThrowingComponent : public Component<ThrowingComponent> {
@@ -14,11 +16,16 @@ public:
 	~ThrowingComponent() {}
 
 public:
-	bool wasChargingLastFrame = false;
 	bool isCharging = false;
+	bool wasChargingLastFrame = false;
+	bool isThrowing = false;
+	bool doThrow = false;
 	float chargeTime = 0.f;
-	float maxChargingTime = MAX_CHARGE_TIME;
-	float throwChargeMultiplier = 2.f;
+	float maxChargingTime = CHARGING_ANIMATION_LENGTH;
+	float throwChargeMultiplier = 4.f;
+	float throwingTimer = 0.f;
+	// Throwing animation length
+	float timeToRelease = THROWING_ANIMATION_LENGTH;
 	glm::vec3 direction = glm::vec3(0.f, 1.f, 0.f);
 
 public:
@@ -26,10 +33,13 @@ public:
 	void imguiRender(Entity** selected) {
 		if (selected) {
 			ThrowingComponent* throwingC = this;
-			ImGui::Checkbox("wasChargingLastFrame", &wasChargingLastFrame);
 			ImGui::Checkbox("isCharging", &isCharging);
-			ImGui::SliderFloat("maxChargingTIme", &throwingC->maxChargingTime, 0.f, MAX_CHARGE_TIME);
+			ImGui::Checkbox("wasChargingLastFrame", &wasChargingLastFrame);
+			ImGui::Checkbox("isThrowing", &isThrowing);
+			ImGui::SliderFloat("maxChargingTime", &throwingC->maxChargingTime, 0.f, CHARGING_ANIMATION_LENGTH);
 			ImGui::SliderFloat("chargeTime", &throwingC->chargeTime, 0.f, throwingC->maxChargingTime);
+			ImGui::SliderFloat("timeToRelease", &throwingC->timeToRelease, 0.f, THROWING_ANIMATION_LENGTH);
+			ImGui::SliderFloat("throwingTimer", &throwingC->throwingTimer, 0.f, throwingC->timeToRelease);
 			ImGui::SliderFloat("throwChargeMultiplier", &throwingC->throwChargeMultiplier, 0.f, MAX_THROW_CHARGE_MULT);
 			ImGui::SliderFloat3("direction", &throwingC->direction.x, 0.f, 1.f);
 		}

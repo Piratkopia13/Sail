@@ -6,20 +6,18 @@
 #include "Sail/utils/GameDataTracker.h"
 
 #include "Sail/entities/ECS.h"
-#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
-#include "glm/gtx/vector_angle.hpp"
 
 CandlePlacementSystem::CandlePlacementSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
+	registerComponent<MovementComponent>(true, true, true);
+
+	registerComponent<AnimationComponent>(false, true, true);
+	registerComponent<CollisionComponent>(false, true, true);
 }
 
 CandlePlacementSystem::~CandlePlacementSystem() {}
-
-void CandlePlacementSystem::setOctree(Octree* octree) {
-	m_octree = octree;
-}
 
 void CandlePlacementSystem::update(float dt) {
 	for (auto e : entities) {
@@ -49,6 +47,7 @@ void CandlePlacementSystem::toggleCandlePlacement(Entity* e) {
 			candleTransComp->setParent(parentTransComp);
 			e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = e;
 			e->removeComponent<CollisionComponent>();
+			e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
 		}
 		else {
 			candleComp->isCarried = false;

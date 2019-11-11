@@ -9,14 +9,9 @@ public:
 	CandlePlacementSystem();
 	~CandlePlacementSystem();
 
-	void setOctree(Octree* octree);
-
 	void update(float dt) override;
 
 private:
 	void toggleCandlePlacement(Entity* e);
-
-private:
-	Octree* m_octree;
 
 };
