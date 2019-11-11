@@ -69,10 +69,18 @@ void KillFeedWindow::updateTiming(float dt) {
 
 bool KillFeedWindow::onEvent(const Event& event) {
 	auto onPlayerDied = [&](const PlayerDiedEvent& e) {
+
 		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(e.netIDofKilled);
 		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
-		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+
+		std::string ShooterPlayer;
+		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
+			ShooterPlayer = "The sprinklers";
+		} else {
+			ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+		}
 		std::string deathType = "sprayed down";
+
 		SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
 
 		m_gameDataTracker.logPlayerDeath(ShooterPlayer, deadPlayer, deathType);

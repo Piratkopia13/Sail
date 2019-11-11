@@ -275,6 +275,11 @@ void NetworkReceiverSystem::update(float dt) {
 				createPlayerEntity(playerCompID, candleCompID, gunCompID, translation);
 			}
 			break;
+			case Netcode::MessageType::ENABLE_SPRINKLERS:
+			{
+				enableSprinklers();
+			}
+			break;
 			case Netcode::MessageType::ENDGAME_STATS:
 			{
 				// Receive player count
@@ -323,6 +328,13 @@ void NetworkReceiverSystem::update(float dt) {
 				ar(playerID);
 
 				extinguishCandle(candleID, playerID);
+			}
+			break;
+			case Netcode::MessageType::HIT_BY_SPRINKLER:
+			{
+				Netcode::ComponentID candleOwnerID;
+				ar(candleOwnerID);
+				hitBySprinkler(candleOwnerID);
 			}
 			break;
 			case Netcode::MessageType::IGNITE_CANDLE:
@@ -401,6 +413,15 @@ void NetworkReceiverSystem::update(float dt) {
 				runningStopSound(componentID);
 			}
 			break;
+			case Netcode::MessageType::SET_CANDLE_HEALTH:
+			{
+				Netcode::ComponentID candleID;
+				float health;
+				ar(candleID);
+				ar(health);
+				setCandleHealth(candleID, health);
+			}
+			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
 				Netcode::ComponentID projectileOwnerID;
@@ -421,27 +442,6 @@ void NetworkReceiverSystem::update(float dt) {
 				// This function is and should be empty for the NetworkReceiverSystemClient. 
 				// Only the Host has the authority to damage candles.
 				waterHitPlayer(playerwhoWasHit, senderID);
-			}
-			break;
-			case Netcode::MessageType::SET_CANDLE_HEALTH:
-			{
-				Netcode::ComponentID candleID;
-				float health;
-				ar(candleID);
-				ar(health);
-				setCandleHealth(candleID, health);
-			}
-			break;
-			case Netcode::MessageType::HIT_BY_SPRINKLER:
-			{
-				Netcode::ComponentID candleOwnerID;
-				ar(candleOwnerID);
-				hitBySprinkler(candleOwnerID);
-			}
-			break;
-			case Netcode::MessageType::ENABLE_SPRINKLERS:
-			{
-				enableSprinklers();
 			}
 			break;
 			default:
@@ -485,6 +485,7 @@ void NetworkReceiverSystem::setEntityLocalPosition(Netcode::ComponentID id, cons
 	}
 	SAIL_LOG_WARNING("setEntityTranslation called but no matching entity found");
 }
+
 void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation) {
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<TransformComponent>()->setRotations(rotation);
@@ -492,6 +493,7 @@ void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, cons
 	}
 	SAIL_LOG_WARNING("setEntityRotation called but no matching entity found");
 }
+
 void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<TransformComponent>()->setRotations(rotation);
@@ -499,6 +501,7 @@ void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, cons
 	}
 	SAIL_LOG_WARNING("setEntityRotation called but no matching entity found");
 }
+
 void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
@@ -535,6 +538,7 @@ void NetworkReceiverSystem::extinguishCandle(Netcode::ComponentID candleId, Netc
 void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 }
+
 void NetworkReceiverSystem::playerLanded(Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(PlayerLandedEvent(id));
 }
@@ -559,37 +563,22 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 			playerIdOfShooter,
 			networkIdOfKilled)
 		);
+		return;
 	}
-	if (e->getComponent<NetworkReceiverComponent>()->m_id != networkIdOfKilled) {
-		continue;
-	}
-
-	//// Print who killed who
-	//Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(networkIdOfKilled);
-	//std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
-	//std::string ShooterPlayer;
-	//std::string deathType = "sprayed down";
-	//if (playerIdOfShooter == Netcode::MESSAGE_SPRINKLER_ID) {
-	//	ShooterPlayer = "The sprinklers";
-	//} else {
-	//	ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(playerIdOfShooter)->name;
-	//}
-
-	//SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
-	//m_gameDataTracker->logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
-
-
+	SAIL_LOG_WARNING("playerDied called but no matching entity found");
 }
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
 void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
-
-	if (auto e = findFromPlayerID(playerID); e) {
-		e->removeDeleteAllChildren();
-		// TODO: Remove all the components that can/should be removed
-		e->queueDestruction();
-		return;
+	for (auto e : entities) {
+		// Find the player entity and delete it
+		if (e->hasComponent<PlayerComponent>() && Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == playerID) {
+			e->removeDeleteAllChildren();
+			e->queueDestruction();
+			return;
+		}
 	}
+	SAIL_LOG_WARNING("playerDisconnect called but no matching entity found");
 }
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
@@ -612,6 +601,7 @@ void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netc
 	}
 	SAIL_LOG_WARNING("shootLoop called but no matching entity found");
 }
+
 void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
 	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StopShootingEvent(id));
@@ -620,9 +610,11 @@ void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netco
 void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
 }
+
 void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
 }
+
 void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
@@ -640,24 +632,6 @@ Entity* NetworkReceiverSystem::findFromNetID(Netcode::ComponentID id) const {
 	return nullptr;
 }
 
-bool NetworkReceiverSystem::onEvent(const Event& event) {
-	switch (event.type) {
-	case Event::Type::NETWORK_DISCONNECT:		playerDisconnect(((const NetworkDisconnectEvent&)(event)).player.id); break;
-	default: break;
-	}
-
-	return true;
-}
-
-Entity* NetworkReceiverSystem::findFromPlayerID(Netcode::PlayerID id) const {
-	for (auto e : entities) {
-		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == id) {
-			return e;
-		}
-	}
-	return nullptr;
-}
-
 void NetworkReceiverSystem::hitBySprinkler(Netcode::ComponentID candleOwnerID) {
 	waterHitPlayer(candleOwnerID, Netcode::MESSAGE_SPRINKLER_ID);
 }
@@ -665,4 +639,13 @@ void NetworkReceiverSystem::hitBySprinkler(Netcode::ComponentID candleOwnerID) {
 void NetworkReceiverSystem::enableSprinklers() {
 	ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
 
+}
+
+bool NetworkReceiverSystem::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::NETWORK_DISCONNECT:		playerDisconnect(((const NetworkDisconnectEvent&)(event)).player.id); break;
+	default: break;
+	}
+
+	return true;
 }
