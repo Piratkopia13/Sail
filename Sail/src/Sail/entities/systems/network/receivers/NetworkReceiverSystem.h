@@ -16,7 +16,10 @@ public:
 	virtual void handleIncomingData(std::string data) = 0;
 	void pushDataToBuffer(std::string);
 
-	void init(Netcode::PlayerID playerID, GameState* gameStatePtr, NetworkSenderSystem* netSendSysPtr);
+	void init(Netcode::PlayerID playerID, NetworkSenderSystem* netSendSysPtr);
+	void setPlayer(Entity* player);
+	void setGameState(GameState* gameState);
+
 	const std::vector<Entity*>& getEntities() const;
 
 	void update(float dt);
@@ -29,9 +32,6 @@ public:
 #endif
 
 protected:
-
-
-	GameState* m_gameStatePtr;
 	NetworkSenderSystem* m_netSendSysPtr;
 	GameDataTracker* m_gameDataTracker;
 
@@ -39,8 +39,11 @@ protected:
 	std::queue<std::string> m_incomingDataBuffer;
 	std::mutex m_bufferLock;
 
-	// The player's ID is used to prevent creation of receiver components for entities controlled by the player
+	// The player entity is used to prevent creation of receiver components for entities controlled by the player
 	Netcode::PlayerID m_playerID;
+	Entity* m_playerEntity;
+
+	GameState* m_gameStatePtr;
 private:
 	void createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation);
 	void setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation);
@@ -57,6 +60,9 @@ private:
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
 	void igniteCandle(Netcode::ComponentID candleID);
 
+	Entity* findFromNetID(Netcode::ComponentID id) const;
+	Entity* findFromPlayerID(Netcode::PlayerID id) const;
+
 	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
@@ -67,13 +73,9 @@ private:
 	virtual void mergeHostsStats() = 0;            // Host adds its data to global statistics before waiting for clients
 	virtual void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) = 0;
 
-	void backToLobby();
-
 	void runningMetalStart(Netcode::ComponentID id);
 	void runningTileStart(Netcode::ComponentID id);
 	void runningStopSound(Netcode::ComponentID id);
-
-	void setGameStatePtr(GameState* ptr) { m_gameStatePtr = ptr; }
-
 	bool onEvent(const Event& event) override;
+
 };

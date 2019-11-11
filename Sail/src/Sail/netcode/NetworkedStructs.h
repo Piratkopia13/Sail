@@ -66,7 +66,6 @@ namespace Netcode {
 		PREPARE_ENDSCREEN,			// Clients send relevant data for the endgame screen
 		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
-		SEND_ALL_BACK_TO_LOBBY,
 		RUNNING_METAL_START,
 		RUNNING_TILE_START,
 		RUNNING_STOP_SOUND,
@@ -95,7 +94,6 @@ namespace Netcode {
 		"PREPARE_ENDSCREEN,			",	// Clients send relevant data for the endgame screen
 		"ENDGAME_STATS,				",
 		"CANDLE_HELD_STATE,			",
-		"SEND_ALL_BACK_TO_LOBBY,	",
 		"RUNNING_METAL_START,		",
 		"RUNNING_TILE_START,		",
 		"RUNNING_STOP_SOUND,		",

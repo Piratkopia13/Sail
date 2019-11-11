@@ -38,6 +38,20 @@ void NWrapperHost::updateServerDescription() {
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
+#ifdef DEVELOPMENT
+const std::map<TCP_CONNECTION_ID, unsigned char>& NWrapperHost::getConnectionMap() {
+	return m_connectionsMap;
+}
+
+const std::string& NWrapperHost::getServerDescription() {
+	return m_serverDescription;
+}
+
+const std::string& NWrapperHost::getLobbyName() {
+	return m_lobbyName;
+}
+#endif //DEVELOPMENT
+
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	// Generate an ID for the client that joined and send that information.
 

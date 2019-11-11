@@ -50,6 +50,7 @@ public:
 
 	Player& getMyPlayer();
 	Player* getPlayer(const Netcode::PlayerID id);
+
 	const std::list<Player>& getPlayers() const;
 
 	void setPlayerName(const char* name);
