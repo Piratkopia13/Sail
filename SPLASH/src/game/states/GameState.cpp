@@ -28,14 +28,13 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
-	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
-
 
 	initConsole();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
+
 
 	std::vector<glm::vec3> m_teamColors;
 	for (int i = 0; i < 12; i++) {
@@ -153,6 +152,9 @@ GameState::GameState(StateStack& stack)
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
+	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
+	m_componentSystems.networkReceiverSystem->setGameState(this);
+
 	// Bots creation
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
@@ -199,7 +201,6 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
 }
 
 // Process input for the state
@@ -430,11 +431,13 @@ void GameState::initSystems(const unsigned char playerID) {
 	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
-	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+
+	m_componentSystems.playerSystem = ECS::Instance()->createSystem<PlayerSystem>();
 
 	//Create particle system
 	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
@@ -514,7 +517,6 @@ bool GameState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
-	case Event::Type::PLAYER_CANDLE_DEATH:				onPlayerCandleDeath((const PlayerCandleDeathEvent&)event); break;
 	default: break;
 	}
 
@@ -528,34 +530,6 @@ bool GameState::onResize(const WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->handleIncomingData(event.serializedData);
-	return true;
-}
-
-bool GameState::onPlayerCandleDeath(const PlayerCandleDeathEvent& event) {
-	if ( !m_isSingleplayer ) {
-		/*NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::PLAYER_DIED,
-			m_player
-		);
-		
-		m_player->addComponent<SpectatorComponent>();
-		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-		m_player->removeComponent<GunComponent>();
-		m_player->removeAllChildren();*/
-		// TODO: Remove all the components that can/should be removed
-
-	} else {
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
-	}
-
-	// Set bot target to null when player is dead
-	auto entities = m_componentSystems.aiSystem->getEntities();
-	for (int i = 0; i < entities.size(); i++) {
-		auto aiComp = entities[i]->getComponent<AiComponent>();
-		aiComp->setTarget(nullptr);
-	}
-
 	return true;
 }
 

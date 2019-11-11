@@ -1,8 +1,7 @@
 #pragma once
 #include "../utils/Utils.h"
 #include "Sail/events/EventReceiver.h"
-#include "Sail/events/WindowResizeEvent.h"
-#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/WindowResizeEvent.h"
 
 class Window;
 
@@ -26,12 +25,8 @@ public:
 
 public:
 	static GraphicsAPI* Create();
-	GraphicsAPI() { 
-		EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
-	}
-	virtual ~GraphicsAPI() {
-		EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
-	}
+	GraphicsAPI();
+	virtual ~GraphicsAPI();
 
 	virtual bool init(Window* window) = 0;
 	virtual void clear(const glm::vec4& color) = 0;
@@ -44,11 +39,5 @@ public:
 	virtual void toggleFullscreen() { /* All APIs might not need to implement this */ };
 
 	virtual bool onResize(const WindowResizeEvent& event) = 0;
-	virtual bool onEvent(const Event& event) override {
-		switch (event.type) {
-		case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
-		default: break;
-		}
-		return true;
-	}
+	virtual bool onEvent(const Event& event) override;
 };
