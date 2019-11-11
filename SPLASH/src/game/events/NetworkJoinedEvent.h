@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Sail/events/Event.h"
-#include "Sail/../Network/NWrapperSingleton.h"
+#include "Network/NWrapper.h"
 
 struct NetworkJoinedEvent : public Event {
 	NetworkJoinedEvent(const Player _player) 
