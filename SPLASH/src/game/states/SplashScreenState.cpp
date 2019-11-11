@@ -53,7 +53,6 @@ bool SplashScreenState::loadModels(Application* app) {
 //#ifndef _DEBUG
 	rm->loadModel("Doc.fbx");
 	rm->loadModel("Torch.fbx");
-
 	rm->loadModel("candleExported.fbx");
 	rm->loadModel("Tiles/tileFlat.fbx");
 	rm->loadModel("Tiles/RoomWall.fbx"); 
@@ -67,14 +66,19 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Tiles/CorridorCeiling.fbx");
 	rm->loadModel("Tiles/CorridorCorner.fbx");
 	rm->loadModel("Tiles/RoomCorner.fbx"); 
-	rm->loadModel("Clutter/SmallObject.fbx");
-	rm->loadModel("Clutter/MediumObject.fbx"); 
-	rm->loadModel("Clutter/LargeObject.fbx");	
-
+	rm->loadModel("Clutter/Table.fbx");
+	rm->loadModel("Clutter/Boxes.fbx");
+	rm->loadModel("Clutter/MediumBox.fbx");
+	rm->loadModel("Clutter/SquareBox.fbx");
+	rm->loadModel("Clutter/Books1.fbx");
+	rm->loadModel("Clutter/Books2.fbx");
+	rm->loadModel("Clutter/Screen.fbx");
+	rm->loadModel("Clutter/Notepad.fbx");
 	rm->loadModel("Clutter/Saftblandare.fbx");
 	rm->loadModel("WaterPistol.fbx");
 	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<WireframeShader>());
 	rm->loadModel("cubeWidth1.fbx");
+	rm->loadModel("Clutter/Microscope.fbx");
 
 
 	//LEAVE THIS FOR A MULTITHREADED FUTURE
@@ -115,11 +119,9 @@ bool SplashScreenState::loadModels(Application* app) {
 bool SplashScreenState::loadTextures(Application* app) {
 	ResourceManager* rm = &app->getResourceManager();
 
-
 	rm->loadTexture("pbr/Torch/Torch_MRAO.tga");
 	rm->loadTexture("pbr/Torch/Torch_NM.tga");
 	rm->loadTexture("pbr/Torch/Torch_Albedo.tga");
-
 
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
@@ -161,21 +163,42 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/metal/normal.tga");
 	rm->loadTexture("pbr/metal/albedo.tga");
 
-	rm->loadTexture("pbr/Clutter/LO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/LO_NM.tga");
-	rm->loadTexture("pbr/Clutter/LO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/MO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/MO_NM.tga");
-	rm->loadTexture("pbr/Clutter/MO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/SO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/SO_NM.tga");
-	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
-
 	rm->loadTexture("pbr/Clutter/Saftblandare_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");
 	rm->loadTexture("pbr/Clutter/Saftblandare_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/Boxes_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Boxes_NM.tga");
+	rm->loadTexture("pbr/Clutter/Boxes_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/Table_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Table_NM.tga");
+	rm->loadTexture("pbr/Clutter/Table_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/Book_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Book_NM.tga");
+	rm->loadTexture("pbr/Clutter/Book1_Albedo.tga");
+	rm->loadTexture("pbr/Clutter/Book2_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/SquareBox_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/SquareBox_NM.tga");
+	rm->loadTexture("pbr/Clutter/SquareBox_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/MediumBox_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/MediumBox_NM.tga");
+	rm->loadTexture("pbr/Clutter/MediumBox_Albedo.tga");
+
+	rm->loadTexture("pbr/Clutter/Screen_Albedo.tga");
+	rm->loadTexture("pbr/Clutter/Screen_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Screen_NM.tga");
+
+	rm->loadTexture("pbr/Clutter/Notepad_Albedo.tga");
+	rm->loadTexture("pbr/Clutter/Notepad_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Notepad_NM.tga");
+
+	rm->loadTexture("pbr/Clutter/Microscope_Albedo.tga");
+	rm->loadTexture("pbr/Clutter/Microscope_MRAO.tga");
+	rm->loadTexture("pbr/Clutter/Microscope_NM.tga");
 
 	return false;
 }
