@@ -4,6 +4,8 @@
 #include "imgui.h"
 #include <functional>
 #include <mutex>
+#include "Sail/utils/Utils.h"
+
 
 /*
 	How to create a new type of input parameters:
@@ -127,6 +129,6 @@ inline void ConsoleCommands::addCommandInternal(std::vector<Command<T>>& vec, co
 		vec.emplace_back(cmd, function, identifier);
 		m_commandNames.emplace_back(cmd, identifier);
 	} else {
-		Logger::Warning("Tried to register duplicate command to console: " + command);
+		SAIL_LOG_WARNING("Tried to register duplicate command to console: " + command);
 	}
 }
