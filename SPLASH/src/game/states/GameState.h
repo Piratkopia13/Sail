@@ -34,7 +34,6 @@ private:
 	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
-	bool onPlayerCandleDeath(const PlayerCandleDeathEvent& event);
 
 	void shutDownGameState();
 
