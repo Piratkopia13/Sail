@@ -53,21 +53,25 @@ ParticleSystem::ParticleSystem() {
 
 ParticleSystem::~ParticleSystem() {
 	delete[] m_cpuOutput;
+	delete[] m_physicsBufferDefaultHeap;
 }
 
 void ParticleSystem::spawnParticles(int particlesToSpawn, ParticleEmitterComponent* particleEmitterComp) {
-	//Get random spread
-	glm::vec3 randVec = { (Utils::rnd() - 0.5f) * 2.0f, (Utils::rnd() - 0.5f) * 2.0f, (Utils::rnd() - 0.5f) * 2.0f };
-
-	float time = m_timer.getTimeSince<float>(m_startTime);
-
 	//Spawn particles for all swap buffers
-	for (unsigned int i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
-		m_cpuOutput[i].newEmitters.emplace_back();
-		m_cpuOutput[i].newEmitters.back().nrOfNewParticles = particlesToSpawn;
-		m_cpuOutput[i].newEmitters.back().emitter = particleEmitterComp;
-		m_cpuOutput[i].newEmitters.back().spread = particleEmitterComp->spread* randVec;
-		m_cpuOutput[i].newEmitters.back().spawnTime = time;
+	for (int j = 0; j < particlesToSpawn; j++) {
+		//Get random spread
+		glm::vec3 randVec = { (Utils::rnd() - 0.5f) * 2.0f, (Utils::rnd() - 0.5f) * 2.0f, (Utils::rnd() - 0.5f) * 2.0f };
+
+		//Get time
+		float time = m_timer.getTimeSince<float>(m_startTime);
+
+		//Add particle to spawn list
+		for (unsigned int i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
+			m_cpuOutput[i].newParticles.emplace_back();
+			m_cpuOutput[i].newParticles.back().emitter = particleEmitterComp;
+			m_cpuOutput[i].newParticles.back().spread = particleEmitterComp->spread * randVec;
+			m_cpuOutput[i].newParticles.back().spawnTime = time;
+		}
 	}
 
 	m_numberOfParticles += particlesToSpawn;
@@ -106,7 +110,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		//----Compute shader constant buffer----
 		ComputeInput inputData;
-		inputData.numEmitters = (unsigned int) m_cpuOutput[context->getSwapIndex()].newEmitters.size();
+		inputData.numParticles = (unsigned int)m_cpuOutput[context->getSwapIndex()].newParticles.size();
 		inputData.previousNrOfParticles = m_cpuOutput[context->getSwapIndex()].previousNrOfParticles;
 		inputData.maxOutputVertices = m_outputVertexBufferSize;
 		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
@@ -115,13 +119,12 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		//Update timer for this buffer
 		m_cpuOutput[context->getSwapIndex()].lastFrameTime += elapsedTime;
 
-		for (unsigned int i = 0; i < m_cpuOutput[context->getSwapIndex()].newEmitters.size(); i++) {
-			const NewEmitterInfo* newEmitter_i = &m_cpuOutput[context->getSwapIndex()].newEmitters[i];
-			inputData.emitters[i].position = newEmitter_i->emitter->position;
-			inputData.emitters[i].velocity = newEmitter_i->emitter->velocity + newEmitter_i->spread;
-			inputData.emitters[i].acceleration = newEmitter_i->emitter->acceleration;
-			inputData.emitters[i].nrOfParticlesToSpawn = newEmitter_i->nrOfNewParticles;
-			inputData.emitters[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newEmitter_i->spawnTime;
+		for (unsigned int i = 0; i < glm::min((int)m_cpuOutput[context->getSwapIndex()].newParticles.size(), 100); i++) {
+			const NewParticleInfo* newEmitter_i = &m_cpuOutput[context->getSwapIndex()].newParticles[i];
+			inputData.particles[i].position = newEmitter_i->emitter->position;
+			inputData.particles[i].velocity = newEmitter_i->emitter->velocity + newEmitter_i->spread;
+			inputData.particles[i].acceleration = newEmitter_i->emitter->acceleration;
+			inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newEmitter_i->spawnTime;
 		}
 
 		m_particleShader->getPipeline()->setCBufferVar("inputBuffer", &inputData, sizeof(ComputeInput));
@@ -160,7 +163,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		// Update nr of particles in this buffer and clear the newEmitters list
 		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_numberOfParticles, (int)(m_outputVertexBufferSize / 6));
-		m_cpuOutput[context->getSwapIndex()].newEmitters.clear();
+		m_cpuOutput[context->getSwapIndex()].newParticles.clear();
 	}
 }
 

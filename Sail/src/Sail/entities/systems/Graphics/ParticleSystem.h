@@ -41,35 +41,32 @@ private:
 
 	int m_numberOfParticles;
 
-	struct NewEmitterInfo {
-		int nrOfNewParticles;
+	struct NewParticleInfo {
 		ParticleEmitterComponent* emitter;
 		glm::vec3 spread;
 		float spawnTime;
 	};
 
 	struct CPUOutput {
-		std::vector<NewEmitterInfo> newEmitters;
+		std::vector<NewParticleInfo> newParticles;
 		unsigned int previousNrOfParticles;
 		float lastFrameTime;
 	};
 
 	CPUOutput* m_cpuOutput;
 
-	struct EmitterData {
+	struct ParticleData {
 		glm::vec3 position;
 		float padding0;
 		glm::vec3 velocity;
 		float padding1;
 		glm::vec3 acceleration;
-		int nrOfParticlesToSpawn;
 		float spawnTime;
-		glm::vec3 padding2;
 	};
 
 	struct ComputeInput {
-		EmitterData emitters[100];
-		unsigned int numEmitters;
+		ParticleData particles[100];
+		unsigned int numParticles;
 		unsigned int previousNrOfParticles;
 		unsigned int maxOutputVertices;
 		float frameTime;

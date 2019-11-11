@@ -1,17 +1,15 @@
-struct Emitter{
+struct Particle{
 	float3 position;
 	float padding0;
 	float3 velocity;
 	float padding1;
 	float3 acceleration;
-	int nrOfParticlesToSpawn;
 	float spawnTime;
-	float3 padding2;
 };
 
 struct ParticleInput{
-	Emitter emitters[100];
-	uint numEmitters;
+	Particle particles[100];
+	uint numParticles;
 	uint numPrevParticles;
 	uint maxOutputVertices;
 	float frameTime;
@@ -41,7 +39,7 @@ RWStructuredBuffer<ParticlePhysics> CSPhysicsBuffer: register(u11) : SAIL_IGNORE
 void createParticle(float3 v0, float3 v1, float3 v2, float3 v3, int particleIndex) {
 	int v0Index = particleIndex * 6;
 	
-	//Triangle 1
+	// Triangle 1
 	CSOutputBuffer[v0Index].position = v0;
 	CSOutputBuffer[v0Index].texCoords = float2(0.f, 0.f);
 	CSOutputBuffer[v0Index].normal = 0.f;
@@ -60,7 +58,7 @@ void createParticle(float3 v0, float3 v1, float3 v2, float3 v3, int particleInde
 	CSOutputBuffer[v0Index + 2].tangent = 0.f;
 	CSOutputBuffer[v0Index + 2].bitangent = 0.f;
 	
-	//Triangle 2
+	// Triangle 2
 	CSOutputBuffer[v0Index + 3].position = v2;
 	CSOutputBuffer[v0Index + 3].texCoords = float2(1.f, 0.f);
 	CSOutputBuffer[v0Index + 3].normal = 0.f;
@@ -88,41 +86,51 @@ void updatePhysics(int particleIndex, float dt) {
 	}
 }
 
-[numthreads(1, 1, 1)]
-void CSMain(int3 groupThreadID : SV_GroupThreadID, int3 dispatchThreadID : SV_DispatchThreadID) {
-	int counter = 0; // New particle counter
-    for (uint i = 0; i < inputBuffer.numEmitters; i++) {
-		int particleBufferSizeLeft = floor(inputBuffer.maxOutputVertices / 6) - (inputBuffer.numPrevParticles + counter);
-		int particlesToSpawn = inputBuffer.emitters[i].nrOfParticlesToSpawn;
-		if (inputBuffer.emitters[i].nrOfParticlesToSpawn > particleBufferSizeLeft) {
-			particlesToSpawn = particleBufferSizeLeft;
-		}
-		for (uint j = 0; j < particlesToSpawn; j++) {
-			float3 v0, v1, v2, v3;
-			
-			v0 = inputBuffer.emitters[i].position + float3(-0.1, 0.1, 0.0);
-			v1 = inputBuffer.emitters[i].position + float3(-0.1, -0.1, 0.0);
-			v2 = inputBuffer.emitters[i].position + float3(0.1, 0.1, 0.0);
-			v3 = inputBuffer.emitters[i].position + float3(0.1, -0.1, 0.0);
-			
-			CSPhysicsBuffer[inputBuffer.numPrevParticles + counter].acceleration = inputBuffer.emitters[i].acceleration;
-			CSPhysicsBuffer[inputBuffer.numPrevParticles + counter].velocity = inputBuffer.emitters[i].velocity;
-			
-			createParticle(v0, v1, v2, v3, inputBuffer.numPrevParticles + counter);
-			
-			//Physics for new particle (accounts for how far into the frame the particle was created)
-			updatePhysics(inputBuffer.numPrevParticles + counter, inputBuffer.emitters[i].spawnTime);
-			
-			counter++;
-		}
-		
-		if (particlesToSpawn == particleBufferSizeLeft) {
-			i = inputBuffer.numEmitters; // Break because there is no more space for particles in the buffers
-		}
+#define X_THREADS 8
+#define Y_THREADS 8
+#define Z_THREADS 1
+
+struct ComputeShaderInput
+{
+    uint3 GroupID           : SV_GroupID;           // 3D index of the thread group in the dispatch.
+    uint3 GroupThreadID     : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+    uint3 DispatchThreadID  : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+    uint  GroupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+[numthreads(X_THREADS, Y_THREADS, Z_THREADS)]
+void CSMain(ComputeShaderInput IN) {
+	uint totalThreads = X_THREADS * Y_THREADS * Z_THREADS;
+	uint thisThread = IN.GroupIndex;
+	
+	//Find how many particles should be spawned
+	int particleBufferSizeLeft = floor(inputBuffer.maxOutputVertices / 6) - (inputBuffer.numPrevParticles);
+	int particlesToSpawn = inputBuffer.numParticles;
+	if (inputBuffer.numParticles > particleBufferSizeLeft) {
+		particlesToSpawn = particleBufferSizeLeft;
 	}
 	
-	//Physics for all prevous particles
-	for (uint i = 0; i < inputBuffer.numPrevParticles; i++) {
+	uint stride = totalThreads;
+	
+    for (uint i = thisThread; i < particlesToSpawn; i += stride) {
+		float3 v0, v1, v2, v3;
+		
+		v0 = inputBuffer.particles[i].position + float3(-0.1, 0.1, 0.0);
+		v1 = inputBuffer.particles[i].position + float3(-0.1, -0.1, 0.0);
+		v2 = inputBuffer.particles[i].position + float3(0.1, 0.1, 0.0);
+		v3 = inputBuffer.particles[i].position + float3(0.1, -0.1, 0.0);
+		
+		CSPhysicsBuffer[inputBuffer.numPrevParticles + i].acceleration = inputBuffer.particles[i].acceleration;
+		CSPhysicsBuffer[inputBuffer.numPrevParticles + i].velocity = inputBuffer.particles[i].velocity;
+		
+		createParticle(v0, v1, v2, v3, inputBuffer.numPrevParticles + i);
+		
+		// Physics for new particle (accounts for how far into the frame the particle was created)
+		updatePhysics(inputBuffer.numPrevParticles + i, inputBuffer.particles[i].spawnTime);
+	}
+	
+	// Physics for all prevous particles
+	for (uint i = thisThread; i < inputBuffer.numPrevParticles; i += stride) {
 		updatePhysics(i, inputBuffer.frameTime);
 	}
 }
