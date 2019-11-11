@@ -4,6 +4,7 @@
 #include "../../components/TransformComponent.h"
 #include "../../components/AnimationComponent.h"
 #include "../../components/MovementComponent.h"
+#include "../../components/ThrowingComponent.h"
 
 AnimationChangerSystem::AnimationChangerSystem() {
 	registerComponent<AnimationComponent>(true, true, true);
@@ -21,7 +22,18 @@ void AnimationChangerSystem::update(float dt) {
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		MovementComponent* moveC = e->getComponent<MovementComponent>();
-		if (animationC && moveC) {
+		auto throwC = e->getComponent<ThrowingComponent>();
+		if (animationC && moveC && throwC) {
+			animationC->updateDT = true;
+
+			if (throwC->isDropping && animationC->animationIndex == IDLE) {
+				animationC->setAnimation(DROP);
+				continue;
+			} else if (throwC->isCharging || throwC->isThrowing) {
+				//animationC->setAnimation(THROW);
+				animationC->updateDT = false;
+				continue;
+			}
 			
 			if (animationC->animationIndex == IDLEJUMP && animationC->animationTime < 0.1f) {
 				animationC->setAnimation(IDLE);
@@ -69,9 +81,6 @@ void AnimationChangerSystem::update(float dt) {
 					}
 				}
 			}
-		}
-		else {
-			int i = 0;
 		}
 	}
 }

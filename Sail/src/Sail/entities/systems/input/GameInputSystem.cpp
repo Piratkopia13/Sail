@@ -17,7 +17,7 @@
 
 
 // Candle can only be picked up and put down once every 0.5 seconds
-constexpr float CANDLE_TIMER = 0.5f;
+constexpr float CANDLE_TIMER = 2.f;
 
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
@@ -383,12 +383,12 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 
 	for (int i = 0; i < entity->getChildEntities().size(); i++) {
 		auto torchE = entity->getChildEntities()[i];
-		if (torchE->hasComponent<ThrowingComponent>() && torchE->hasComponent<CandleComponent>()) {
+		if (torchE->hasComponent<CandleComponent>()) {
 			auto candleComp = torchE->getComponent<CandleComponent>();
 
 			bool chargeHeld = Input::IsKeyPressed(KeyBinds::THROW_CHARGE);
 
-			auto throwingComp = torchE->getComponent<ThrowingComponent>();
+			auto throwingComp = entity->getComponent<ThrowingComponent>();
 			if (chargeHeld) {
 				if (candleComp->isCarried && torchE->getComponent<TransformComponent>()->getParent()) {
 					// Torch is carried, get to charging the throw
