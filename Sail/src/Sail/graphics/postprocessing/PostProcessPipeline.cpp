@@ -12,9 +12,13 @@ PostProcessPipeline::PostProcessPipeline()
 
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 
-	add<GaussianBlurVertical>("BloomBlur1V", 0.5f);
-	add<GaussianBlurHorizontal>("BloomBlur1H", 0.5f);
-	add<BlendShader>("BloomBlend", 1.0f);
+	add<GaussianBlurVertical>("BloomBlur1V", 1.0f);
+	add<GaussianBlurHorizontal>("BloomBlur1H", 1.0f);
+	add<GaussianBlurVertical>("BloomBlur2V", 0.75f, 1.f / 0.75f);
+	add<GaussianBlurHorizontal>("BloomBlur2H", 0.75f);
+	add<GaussianBlurVertical>("BloomBlur3V", 0.5f, 1.5f);
+	add<GaussianBlurHorizontal>("BloomBlur3H", 0.5f);
+	add<BlendShader>("BloomBlend", 1.0f, 1.f / 2.f);
 	//add<RedTintShader>(0.5f);
 
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
@@ -32,9 +36,20 @@ PostProcessPipeline::~PostProcessPipeline() {
 RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void* cmdList) {
 	PostProcessInput input;
 	input.inputRenderableTexture = m_bloomTexture;
-	auto* output = runStage(input, m_stages["BloomBlur1H"], cmdList);
+	// Blur pass one
+	auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
 	input.inputRenderableTexture = output->outputTexture;
-	output = runStage(input, m_stages["BloomBlur1V"], cmdList);
+	output = runStage(input, m_stages["BloomBlur1H"], cmdList);
+	// Blur pass two
+	input.inputRenderableTexture = output->outputTexture;
+	output = runStage(input, m_stages["BloomBlur2V"], cmdList);
+	input.inputRenderableTexture = output->outputTexture;
+	output = runStage(input, m_stages["BloomBlur2H"], cmdList);
+	// Blur pass three
+	input.inputRenderableTexture = output->outputTexture;
+	output = runStage(input, m_stages["BloomBlur3V"], cmdList);
+	input.inputRenderableTexture = output->outputTexture;
+	output = runStage(input, m_stages["BloomBlur3H"], cmdList);
 
 	input.inputRenderableTexture = baseTexture;
 	input.inputRenderableTextureTwo = output->outputTexture;
@@ -62,6 +77,8 @@ PostProcessPipeline::PostProcessOutput* PostProcessPipeline::runStage(PostProces
 	input.threadGroupCountX = (unsigned int)glm::ceil(input.outputWidth * settings->threadGroupXScale);
 	input.threadGroupCountY = (unsigned int)glm::ceil(input.outputHeight * settings->threadGroupYScale);
 
+	stage.shader->getPipeline()->setCBufferVar("textureSizeDifference", &stage.textureSizeDifference, sizeof(float));
+	
 	output = static_cast<PostProcessOutput*>(&m_dispatcher->dispatch(*stage.shader, input, 0, cmdList));
 	return output;
 }

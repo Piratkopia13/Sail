@@ -24,10 +24,9 @@ public:
 	~PostProcessPipeline();
 
 	template <typename T>
-	void add(const std::string& name, float resolutionScale = 1.0f) {
-		auto& resMan = Application::getInstance()->getResourceManager();
+	void add(const std::string& name, float resolutionScale = 1.0f, float textureSizeDifference = 1.f) {
 		// Create a new stage instance with the given scale
-		m_stages.insert({name, StageData(resMan.getShaderSet<T>(), resolutionScale)});
+		m_stages.insert({name, StageData(std::make_unique<T>(), resolutionScale, textureSizeDifference)});
 	}
 
 	RenderableTexture* run(RenderableTexture* baseTexture, void* cmdList = nullptr);
@@ -41,12 +40,14 @@ private:
 		StageData() {
 			resolutionScale = 1.f;
 		}
-		StageData(Shader& shader, float resolutionScale)
-			: shader(&shader)
+		StageData(std::unique_ptr<Shader> shader, float resolutionScale, const float textureSizeDifference)
+			: shader(std::move(shader))
 			, resolutionScale(resolutionScale)
+			, textureSizeDifference(textureSizeDifference)
 		{}
-		Shader* shader;
+		std::unique_ptr<Shader> shader;
 		float resolutionScale;
+		float textureSizeDifference;
 	};
 
 	bool onResize(const WindowResizeEvent& event);
