@@ -1,5 +1,5 @@
 #pragma once
-#include "Event.h"
+#include "../Event.h"
 
 struct WindowResizeEvent : public Event {
 	WindowResizeEvent(const unsigned int _width, const unsigned int _height, const bool _isMinimized = false)
