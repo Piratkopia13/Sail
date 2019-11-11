@@ -1,5 +1,5 @@
 #pragma once
-#include "Event.h"
+#include "../Event.h"
 
 struct WindowFocusChangedEvent : public Event {
 	WindowFocusChangedEvent(const bool _isFocused)
