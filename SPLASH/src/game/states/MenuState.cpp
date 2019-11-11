@@ -79,7 +79,6 @@ bool MenuState::renderImgui(float dt) {
 			}
 			ImGui::EndCombo();
 		}
-		
 	}
 	ImGui::End();
 

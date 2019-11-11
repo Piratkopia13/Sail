@@ -12,6 +12,7 @@
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/components/AudioComponent.h"
 #include "Sail/utils/Utils.h"
+#include "Sail/utils/SailImGui/SailImGui.h"
 
 #include <string>
 #include <list>
@@ -19,6 +20,8 @@
 LobbyState::LobbyState(StateStack& stack)
 	: State(stack),
 	m_settingsChanged(false),
+	m_renderGameSettings(false),
+	m_renderApplicationSettings(false),
 	m_timeSinceLastUpdate(0.0f)
 {
 	// ImGui is already initiated and set up, thanks alex!
@@ -144,13 +147,11 @@ bool LobbyState::renderImgui(float dt) {
 	renderChat();
 
 	// -------- SETTINGS ----------
-	renderSettings();
+	if (m_renderGameSettings) {
+		renderGameSettings();
+	}
 
-	// ------- START BUTTON ------- 
-	renderStartButton();
 
-	// ------- Return BUTTON ------- 
-	renderQuitButton();
 	ImGui::PopFont();
 
 	return false;
@@ -210,26 +211,29 @@ void LobbyState::renderPlayerList() {
 	flags |= ImGuiWindowFlags_NoSavedSettings;
 
 	ImGui::SetNextWindowPos(ImVec2(
-		m_outerPadding + 300,
+		m_screenWidth - m_outerPadding - 330,
 		m_outerPadding
 	));
 	static ImVec2 windowSize(300, 400);
 	ImGui::SetNextWindowSize(windowSize);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
+	
+	static float x[3] = { 0,0,0 };
+
 	if (ImGui::Begin("players in lobby:", NULL, flags)) {
-		ImGui::Columns(3);
+
+		ImGui::DragFloat3("##ASDASD", &x[0], 0.1f);
 		ImGui::Separator();
-		ImGui::Text("Player"); ImGui::NextColumn();
-		ImGui::Text("Team"); ImGui::NextColumn();
-		ImGui::Text("Ready"); ImGui::NextColumn();
+		ImGui::Text("Player"); 
+		ImGui::SameLine(x[0]);
+
+		ImGui::Text("Team"); 
+		ImGui::SameLine(x[1]);
+
+		ImGui::Text("Ready"); 
 		ImGui::Separator();
-		static unsigned short initial_column_spacing = 0;
-		if (initial_column_spacing < 2) {
-			ImGui::SetColumnWidth(0, (windowSize.x)*0.42f);
-			ImGui::SetColumnWidth(1, (windowSize.x)*0.42f);
-			initial_column_spacing++;
-		}
-		
+
+		//(windowSize.x) * 0.42f
 		std::map<std::string, SettingStorage::Setting>& gamemodeSettings = m_settings->gameSettingsStatic["gamemode"];
 
 		SettingStorage::Setting& selectedGameTeams = m_settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
@@ -239,9 +243,10 @@ void LobbyState::renderPlayerList() {
 			/*if (ImGui::Selectable(std::string("##"+currentplayer.name + std::string((currentplayer.id == myID) ? "*" : "") + std::string("##"+std::to_string(currentplayer.id))).c_str(), false, ImGuiSelectableFlags_SpanAllColumns)) {
 				
 			}*/
+			
 			ImGui::BeginGroup();
 			ImGui::Text(std::string(currentplayer.name + std::string((currentplayer.id == myID) ? "*" : "")).c_str());
-			ImGui::NextColumn();
+			ImGui::SameLine(x[0]);
 			// TEAM
 			if (currentplayer.id == myID || myID == HOST_ID) {
 				static unsigned int selectedTeam = 0;
@@ -267,7 +272,7 @@ void LobbyState::renderPlayerList() {
 				//TODO: get team from wrapper
 				ImGui::Text("Alone");
 			}
-			ImGui::NextColumn();
+			ImGui::SameLine(x[1]);
 
 			// READY 
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
@@ -279,6 +284,8 @@ void LobbyState::renderPlayerList() {
 				bool asd = false;
 				ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
 			}
+			ImGui::PopItemFlag();
+			ImGui::PopStyleVar();
 			//if (ImGui::BeginPopupContextItem(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str())) {
 			//	if (ImGui::Button("KICK")) {
 			//		//KICK
@@ -286,15 +293,12 @@ void LobbyState::renderPlayerList() {
 			//	ImGui::EndPopup();
 			//}
 			ImGui::EndGroup();
+			
+			//ImGui::OpenPopupOnItemClick(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str(), 1);
+
 			if (ImGui::IsItemHovered())
 				ImGui::SetTooltip("First group hovered");
-			//ImGui::OpenPopupOnItemClick(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str(), 1);
-			
-			ImGui::NextColumn();
-			ImGui::PopItemFlag();
-			
-			ImGui::PopStyleVar();
-			ImGui::Separator();
+			ImGui::Separator(); 
 		}
 	}
 	ImGui::End();
@@ -302,78 +306,7 @@ void LobbyState::renderPlayerList() {
 
 }
 
-void LobbyState::renderStartButton() {	
-
-	ImGui::SetNextWindowPos(ImVec2(
-		m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
-		m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
-	));
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.7f, 0.3f, 1));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
-
-	if (NWrapperSingleton::getInstance().isHost()) {
-		if (ImGui::Begin("Start Game", nullptr, m_standaloneButtonflags)) {
-			if (ImGui::Button("S.P.L.A.S.H")) {
-				// Queue a removal of LobbyState, then a push of gamestate
-				NWrapperSingleton::getInstance().stopUDP();
-				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
-				auto& stat = m_app->getSettings().gameSettingsStatic;
-				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-				m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic) });
-				m_network->sendMsgAllClients({ std::string("t0") });
-
-				this->requestStackClear();
-				this->requestStackPush(States::Game);
-			}
-		}
-		ImGui::End();
-	}
-	else {
-		
-		if (ImGui::Begin("##READYUP", nullptr, m_standaloneButtonflags)) {
-			if (m_ready) {
-				if (ImGui::Button("unReady")) {
-					// SEND TO HOST THAT PLAYER IS NO LONGER READY
-					m_ready = false;
-				}
-			}
-			else {
-				if (ImGui::Button("Ready")) {
-					// SEND TO HOST THAT PLAYER IS READY
-					m_ready = true;
-				}
-			}
-			
-		}
-		ImGui::End();
-	}
-	ImGui::PopStyleColor(2);
-}
-
-void LobbyState::renderQuitButton() {
-	ImGui::SetNextWindowPos({ (float)m_outerPadding, (float)m_outerPadding});
-	if (ImGui::Begin("##Return", nullptr, m_standaloneButtonflags)) {
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f,0.3f,0.3f,1));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f,0.3f,0.3f,1));
-		
-		if (ImGui::Button("Leave Lobby")) {
-	
-
-			// Reset the network
-			NWrapperSingleton::getInstance().resetNetwork();
-			NWrapperSingleton::getInstance().resetWrapper();
-
-			// Schedule new state change
-			this->requestStackPop();
-			this->requestStackPush(States::MainMenu);
-		}
-		ImGui::PopStyleColor(2);
-	}
-	
-	ImGui::End();
-}
-
-void LobbyState::renderSettings() {
+void LobbyState::renderGameSettings() {
 	ImGuiWindowFlags settingsFlags = ImGuiWindowFlags_NoCollapse;
 	settingsFlags |= ImGuiWindowFlags_NoResize;
 	settingsFlags |= ImGuiWindowFlags_NoMove;
@@ -386,7 +319,7 @@ void LobbyState::renderSettings() {
 
 	// Uncomment when we actually have game settings
 	ImGui::SetNextWindowPos(ImVec2(
-		m_screenWidth - m_outerPadding - 330,
+		m_outerPadding + 300,
 		m_outerPadding
 	));
 
@@ -454,7 +387,7 @@ void LobbyState::renderChat() {
 	// ------- message BOX ------- 
 	ImGui::SetNextWindowPos(ImVec2(
 		m_outerPadding,
-		m_screenHeight - (m_outerPadding + m_textHeight) - 70
+		m_screenHeight - (m_outerPadding + m_textHeight)
 	));
 	ImGui::Begin(
 		"Write Here",
@@ -479,7 +412,7 @@ void LobbyState::renderChat() {
 	));
 	ImGui::SetNextWindowPos(ImVec2(
 		m_outerPadding,
-		m_screenHeight - (300 + m_outerPadding) - 70
+		m_screenHeight - (300 + m_outerPadding)
 	));
 
 	// Render message history
@@ -497,24 +430,72 @@ void LobbyState::renderChat() {
 
 void LobbyState::renderMenu() {
 	static ImVec2 pos(m_outerPadding, m_outerPadding + 100);
-	static ImVec2 size(100, 200);
+	static ImVec2 size(150, 300);
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowSize(size);
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
-	//ImGui::PushStyleVar(ImGuiStyleVar_;
+
+	ImGui::PushFont(m_imGuiHandler->getFont("Beb30"));
 
 	if (ImGui::Begin("##LOBBYMENU", nullptr, m_standaloneButtonflags)) {
+	
+		if (SailImGui::TextButton("Game Options")) {
+			m_renderGameSettings = !m_renderGameSettings;
+		}
+		if(SailImGui::TextButton("Options")) {
+			m_renderApplicationSettings = !m_renderApplicationSettings;
 
-		ImGui::Button("SETTINGS");
-		ImGui::Button("ASD");
-		ImGui::Button("POTATO");
+		}
+		ImGui::Spacing();
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.3f, 0.3f, 1));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1));
+		if(SailImGui::TextButton("Leave")) {
 
+			// Reset the network
+			NWrapperSingleton::getInstance().resetNetwork();
+			NWrapperSingleton::getInstance().resetWrapper();
+
+			// Schedule new state change
+			this->requestStackPop();
+			this->requestStackPush(States::MainMenu);
+		}
+		ImGui::PopStyleColor(2);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.7f, 0.3f, 1));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
+
+		if (NWrapperSingleton::getInstance().isHost()) {
+			if (SailImGui::TextButton("S.P.L.A.S.H")) {
+				// Queue a removal of LobbyState, then a push of gamestate
+				NWrapperSingleton::getInstance().stopUDP();
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
+				auto& stat = m_app->getSettings().gameSettingsStatic;
+				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+				m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic) });
+				m_network->sendMsgAllClients({ std::string("t0") });
+
+				this->requestStackClear();
+				this->requestStackPush(States::Game);
+			}
+		}
+		else {
+			if (m_ready) {
+				if (SailImGui::TextButton("unReady")) {
+					// SEND TO HOST THAT PLAYER IS NO LONGER READY
+					m_ready = false;
+				}
+			}
+			else {
+				if (SailImGui::TextButton("Ready")) {
+					// SEND TO HOST THAT PLAYER IS READY
+					m_ready = true;
+				}
+			}
+
+		}
+		ImGui::PopStyleColor(2);
 
 
 	}
-	ImGui::PopStyleColor(3);
 	ImGui::End();
-
+	ImGui::PopFont();
 }

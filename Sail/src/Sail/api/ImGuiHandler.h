@@ -7,7 +7,7 @@ class ImGuiHandler {
 public:
 	static ImGuiHandler* Create();
 
-	ImGuiHandler() : m_showMetrics(false) {}
+	ImGuiHandler() : m_showMetrics(true) {}
 	virtual ~ImGuiHandler() {}
 
 	virtual void init() = 0;

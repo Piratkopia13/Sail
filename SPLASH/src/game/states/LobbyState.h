@@ -79,10 +79,12 @@ private:
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;
 	unsigned int m_textHeight;
+
+	bool m_renderGameSettings;
+	bool m_renderApplicationSettings;
+
 	void renderPlayerList();
-	void renderStartButton();
-	void renderQuitButton();
-	void renderSettings();		// Currently empty
+	void renderGameSettings();		// Currently empty
 	void renderChat();
 	void renderMenu();
 };
