@@ -2,13 +2,15 @@
 #include "PostProcessPipeline.h"
 #include "Sail/graphics/shader/postprocess/RedTintShader.h"
 #include "Sail/graphics/shader/postprocess/GaussianBlurHorizontal.h"
+#include "Sail/graphics/shader/postprocess/GaussianBlurVertical.h"
 #include "Sail/events/EventDispatcher.h"
 
 PostProcessPipeline::PostProcessPipeline() {
 
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 
-	add<GaussianBlurHorizontal>(1.0f);
+	add<GaussianBlurHorizontal>(0.5f);
+	add<GaussianBlurVertical>(1.0f);
 	//add<RedTintShader>(0.5f);
 
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);

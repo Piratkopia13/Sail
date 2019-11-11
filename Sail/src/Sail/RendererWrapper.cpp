@@ -18,7 +18,7 @@ void RendererWrapper::initialize() {
 
 	m_postProcessPipeline = std::make_shared<PostProcessPipeline>();
 
-	m_doPostProcessing = false;
+	m_doPostProcessing = true;
 }
 
 /*
