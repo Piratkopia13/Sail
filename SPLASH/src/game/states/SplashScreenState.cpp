@@ -53,7 +53,6 @@ bool SplashScreenState::loadModels(Application* app) {
 //#ifndef _DEBUG
 	rm->loadModel("Doc.fbx");
 	rm->loadModel("Torch.fbx");
-
 	rm->loadModel("candleExported.fbx");
 	rm->loadModel("Tiles/tileFlat.fbx");
 	rm->loadModel("Tiles/RoomWall.fbx"); 
@@ -67,9 +66,6 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Tiles/CorridorCeiling.fbx");
 	rm->loadModel("Tiles/CorridorCorner.fbx");
 	rm->loadModel("Tiles/RoomCorner.fbx"); 
-	rm->loadModel("Clutter/SmallObject.fbx");
-	rm->loadModel("Clutter/MediumObject.fbx"); 
-	rm->loadModel("Clutter/LargeObject.fbx");	
 	rm->loadModel("Clutter/Table.fbx");
 	rm->loadModel("Clutter/Boxes.fbx");
 	rm->loadModel("Clutter/MediumBox.fbx");
@@ -166,18 +162,6 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/metal/metalnessRoughnessAO.tga");
 	rm->loadTexture("pbr/metal/normal.tga");
 	rm->loadTexture("pbr/metal/albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/LO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/LO_NM.tga");
-	rm->loadTexture("pbr/Clutter/LO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/MO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/MO_NM.tga");
-	rm->loadTexture("pbr/Clutter/MO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/SO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/SO_NM.tga");
-	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
 
 	rm->loadTexture("pbr/Clutter/Saftblandare_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");

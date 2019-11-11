@@ -36,9 +36,6 @@ enum TileModel {
 };
 
 enum ClutterModel {
-	CLUTTER_LO,
-	CLUTTER_MO,
-	CLUTTER_SO,
 	SAFTBLANDARE,
 	TABLE,
 	BOXES,

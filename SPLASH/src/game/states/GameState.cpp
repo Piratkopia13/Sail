@@ -1027,21 +1027,6 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
 		roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
 
-		Model* cSO = &m_app->getResourceManager().getModel("Clutter/SmallObject.fbx", shader);
-		cSO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/SO_MRAO.tga");
-		cSO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/SO_NM.tga");
-		cSO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/SO_Albedo.tga");
-
-		Model* cMO = &m_app->getResourceManager().getModel("Clutter/MediumObject.fbx", shader);
-		cMO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/MO_MRAO.tga");
-		cMO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/MO_NM.tga");
-		cMO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/MO_Albedo.tga");
-
-		Model* cLO = &m_app->getResourceManager().getModel("Clutter/LargeObject.fbx", shader);
-		cLO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/LO_MRAO.tga");
-		cLO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/LO_NM.tga");
-		cLO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/LO_Albedo.tga");
-
 		Model* cTable = &m_app->getResourceManager().getModel("Clutter/Table.fbx", shader);
 		cTable->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Table_MRAO.tga");
 		cTable->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Table_NM.tga");
@@ -1107,9 +1092,6 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
 
 		clutterModels.resize(ClutterModel::NUMBOFCLUTTER);
-		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
-		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
-		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
 		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
 		clutterModels[ClutterModel::TABLE] = cTable;
 		clutterModels[ClutterModel::BOXES] = cBoxes;
