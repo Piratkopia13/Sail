@@ -23,6 +23,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
 	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_outputBloomTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 
 	m_currNumDecals = 0;
 	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);
@@ -137,7 +138,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
 	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get());
-	m_dxr.dispatch(m_outputTexture.get(), cmdListCompute.Get());
+	m_dxr.dispatch(m_outputTexture.get(), m_outputBloomTexture.get(), cmdListCompute.Get());
 	// AS has now been updated this frame, reset flag
 	for (auto& renderCommand : commandQueue) {
 		renderCommand.hasUpdatedSinceLastRender[frameIndex] = false;
@@ -148,6 +149,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	RenderableTexture* renderOutput = m_outputTexture.get();
 	if (postProcessPipeline) {
 		// Run post processing
+		postProcessPipeline->setBloomInput(m_outputBloomTexture.get());
 		RenderableTexture* ppOutput = postProcessPipeline->run(m_outputTexture.get(), cmdListCompute.Get());
 		if (ppOutput) {
 			renderOutput = ppOutput;

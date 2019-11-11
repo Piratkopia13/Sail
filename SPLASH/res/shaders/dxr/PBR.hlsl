@@ -190,10 +190,18 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;
 
-    // Gamma correction
-    color = color / (color + 1.0f);
-    // Tone mapping using the Reinhard operator
-    color = pow(color, 1.0f / 2.2f);
+    // // Gamma correction
+    // color = color / (color + 1.0f);
+    // // Tone mapping using the Reinhard operator
+    // color = pow(color, 1.0f / 2.2f);
 
     return float4(color, 1.0f);
+}
+
+float3 tonemap(float3 color) {
+	// Gamma correction
+    float3 output = color / (color + 1.0f);
+    // Tone mapping using the Reinhard operator
+    output = pow(output, 1.0f / 2.2f);
+	return output;
 }
