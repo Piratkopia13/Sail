@@ -384,6 +384,7 @@ void AudioEngine::initialize() {
 
 	if (FAILED(this->initXAudio2())) {
 		SAIL_LOG_ERROR("Failed to init XAudio2!");
+		m_initFailed = true;
 	}
 }
 

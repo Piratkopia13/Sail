@@ -97,7 +97,8 @@ private:
 	bool m_isRunning = true;
 
 	// The main audio 'core'
-	IXAudio2* m_xAudio2 = nullptr;	
+	IXAudio2* m_xAudio2 = nullptr;
+	bool m_initFailed = false;
 
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;

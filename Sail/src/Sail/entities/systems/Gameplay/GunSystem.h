@@ -30,5 +30,5 @@ private:
 	void setGunStateLOOP(Entity* e, GunComponent* gun);
 	void setGunStateEND(Entity* e, GunComponent* gun);
 
-	void playShootingSounds(Entity* e);
+	void sendShootingEvents(Entity* e);
 };
