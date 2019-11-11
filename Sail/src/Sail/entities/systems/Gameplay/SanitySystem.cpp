@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "InsanitySystem.h"
-#include "Sail/entities/components/InsanityComponent.h"
+#include "SanitySystem.h"
+#include "Sail/entities/components/SanityComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
 #include "Sail/entities/components/NetworkReceiverComponent.h"
@@ -10,28 +10,28 @@
 #include "Sail/events/Event.h"
 #include "Sail/events/Events.h"
 
-InsanitySystem::InsanitySystem() {
-	registerComponent<InsanityComponent>(true, true, true);
+SanitySystem::SanitySystem() {
+	registerComponent<SanityComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<CandleComponent>(false, true, true);
 
-	EventDispatcher::Instance().subscribe(Event::Type::INSANITY_SYSTEM_UPDATE_INSANITY, this);
+	EventDispatcher::Instance().subscribe(Event::Type::SANITY_SYSTEM_UPDATE_SANITY, this);
 }
 
-InsanitySystem::~InsanitySystem() {
-	EventDispatcher::Instance().unsubscribe(Event::Type::INSANITY_SYSTEM_UPDATE_INSANITY, this);
+SanitySystem::~SanitySystem() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::SANITY_SYSTEM_UPDATE_SANITY, this);
 }
 
-void InsanitySystem::update(float dt) {
+void SanitySystem::update(float dt) {
 	bool isHost = NWrapperSingleton::getInstance().isHost();
 	
-	//Only let host controll insanity for all players.
+	//Only let host controll sanity for all players.
 	if (!isHost) {
 		return;
 	}
 
 	for (auto& e : entities) {
-		InsanityComponent* ic = e->getComponent<InsanityComponent>();
+		SanityComponent* ic = e->getComponent<SanityComponent>();
 		TransformComponent* tc = e->getComponent<TransformComponent>();
 		
 		CandleComponent* cc = nullptr;
@@ -53,30 +53,30 @@ void InsanitySystem::update(float dt) {
 				dist = glm::distance(tc->getTranslation(), c_tc->getTranslation());
 			}
 
-			ic->insanityValue -= (dist - 1) * dt * 0.5;
-			ic->insanityValue = std::clamp(ic->insanityValue, m_minInsanity, m_maxInsanity);
-			if (ic->insanityValue <= 0) {
+			ic->sanity -= (dist - 1) * dt * 0.5;
+			ic->sanity = std::clamp(ic->sanity, m_minSanity, m_maxSanity);
+			if (ic->sanity <= 0) {
 				cc->kill(CandleComponent::DamageSource::INSANE, 255);
 			}
 		}
 	}
 }
 
-void InsanitySystem::updateInsanityNetworked(Netcode::ComponentID id, float insanity) {
+void SanitySystem::updateSanityNetworked(Netcode::ComponentID id, float sanity) {
 	bool found = false;
 
 	for (auto& e : entities) {
 		NetworkReceiverComponent* nc = nullptr;
-		InsanityComponent* ic = nullptr;
+		SanityComponent* ic = nullptr;
 
 		if (nc = e->getComponent<NetworkReceiverComponent>()) {
 			if (nc->m_id == id) {
 				found = true;
 
-				if (ic = e->getComponent<InsanityComponent>()) {
-					ic->insanityValue = insanity;
+				if (ic = e->getComponent<SanityComponent>()) {
+					ic->sanity = sanity;
 				} else {
-					SAIL_LOG_WARNING("Tried to update insanity on an entity without a insanityComponent!\n");
+					SAIL_LOG_WARNING("Tried to update sanity on an entity without a sanityComponent!\n");
 				}
 				break;
 			}
@@ -85,17 +85,17 @@ void InsanitySystem::updateInsanityNetworked(Netcode::ComponentID id, float insa
 
 #ifdef DEVELOPMENT
 	if (!found) {
-		SAIL_LOG_WARNING("Tried to update insanity on an entity that do not exist!\n");
+		SAIL_LOG_WARNING("Tried to update sanity on an entity that do not exist!\n");
 	}
 #endif
 
 }
 
-bool InsanitySystem::onEvent(const Event& event) {
+bool SanitySystem::onEvent(const Event& event) {
     switch(event.type) {                                                                             
-	case Event::Type::INSANITY_SYSTEM_UPDATE_INSANITY:
-		const UpdateInsanityEvent& e = static_cast<const UpdateInsanityEvent&>(event);
-		updateInsanityNetworked(e.id, e.insanityVal);
+	case Event::Type::SANITY_SYSTEM_UPDATE_SANITY:
+		const UpdateSanityEvent& e = static_cast<const UpdateSanityEvent&>(event);
+		updateSanityNetworked(e.id, e.sanityVal);
 		break;
 	 }
 

@@ -72,7 +72,7 @@ namespace Netcode {
 		RUNNING_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
-		UPDATE_INSANITY,
+		UPDATE_SANITY,
 		EMPTY,
 		COUNT
 	}; 
@@ -103,7 +103,7 @@ namespace Netcode {
 		"RUNNING_TILE_START,		 "
 		"RUNNING_STOP_SOUND,		 "
 		"IGNITE_CANDLE,				 "
-		"UPDATE_INSANITY,			 "
+		"UPDATE_SANITY,			 "
 		"EMPTY,						 "
 		"COUNT						 "
 	};

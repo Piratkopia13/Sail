@@ -20,8 +20,7 @@ struct Event {
 		GAME_OVER,
 		RESET_WATER,
 		SETTINGS_UPDATED,
-		INSANITY_SYSTEM_UPDATE_INSANITY,
-
+		SANITY_SYSTEM_UPDATE_SANITY,
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};
 

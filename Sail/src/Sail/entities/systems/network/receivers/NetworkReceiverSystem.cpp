@@ -196,11 +196,11 @@ void NetworkReceiverSystem::update(float dt) {
 
 					shootEnd(gunPosition, gunVelocity, id);
 				}
-				case Netcode::MessageType::UPDATE_INSANITY:
+				case Netcode::MessageType::UPDATE_SANITY:
 				{
-					float insanity;
-					ar(insanity);
-					EventDispatcher::Instance().emit(UpdateInsanityEvent(id, insanity));
+					float sanity;
+					ar(sanity);
+					EventDispatcher::Instance().emit(UpdateSanityEvent(id, sanity));
 				}
 				break;
 				default:

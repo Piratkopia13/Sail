@@ -6,7 +6,7 @@
 #include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
-#include "Sail/entities/components/InsanityComponent.h"
+#include "Sail/entities/components/SanityComponent.h"
 #include "Sail/entities/Entity.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -308,11 +308,11 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 	}
 	break;
-	case Netcode::MessageType::UPDATE_INSANITY:
+	case Netcode::MessageType::UPDATE_SANITY:
 	{
-		InsanityComponent* ic = e->getComponent<InsanityComponent>();
+		SanityComponent* ic = e->getComponent<SanityComponent>();
 		if (ic) {
-			ar(ic->insanityValue);
+			ar(ic->sanity);
 		}
 	}
 	break;
