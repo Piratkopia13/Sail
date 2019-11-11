@@ -170,12 +170,19 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 }
 
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
+	static Netcode::PlayerID perfromancePlayerID = 100;
+
+
 	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation);
-	playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION);
+	Netcode::ComponentID playerCompID = playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION)->m_id;
+	playerEnt->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	playerEnt->addComponent<MovementComponent>();
+
 
 	// Create the player
 	AddCandleComponentsToPlayer(playerEnt, lightIndex, 0);
+
+	perfromancePlayerID++;
 }
 
 // Creates a player enitty without a candle and without a model
