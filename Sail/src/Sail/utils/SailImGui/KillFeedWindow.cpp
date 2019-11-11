@@ -58,10 +58,10 @@ void KillFeedWindow::updateTiming(float dt) {
 		kill.first += dt;
 	}
 
-	auto allDeaths = m_gameDataTracker.getPlayerDeaths();
-	if (m_kills.size() < allDeaths.size()) {
-		for (int i = m_kills.size(); i < allDeaths.size(); i++) {
-			m_kills.emplace_back(0.f, allDeaths[i]);
+	auto messages = m_gameDataTracker.getKillFeed();
+	if (m_kills.size() < messages.size()) {
+		for (int i = m_kills.size(); i < messages.size(); i++) {
+			m_kills.emplace_back(0.f, messages[i]);
 			m_doRender = true;
 		}
 	}
@@ -69,10 +69,18 @@ void KillFeedWindow::updateTiming(float dt) {
 
 bool KillFeedWindow::onEvent(const Event& event) {
 	auto onPlayerDied = [&](const PlayerDiedEvent& e) {
+
 		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(e.netIDofKilled);
 		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
-		std::string ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+
+		std::string ShooterPlayer;
+		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
+			ShooterPlayer = "The sprinklers";
+		} else {
+			ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+		}
 		std::string deathType = "sprayed down";
+
 		SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
 
 		m_gameDataTracker.logPlayerDeath(ShooterPlayer, deadPlayer, deathType);

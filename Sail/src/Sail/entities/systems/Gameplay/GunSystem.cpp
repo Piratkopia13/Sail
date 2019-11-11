@@ -25,6 +25,7 @@ GunSystem::GunSystem() : BaseComponentSystem() {
 	registerComponent<GunComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, false);
 	registerComponent<NetworkSenderComponent>(false, true, true);
+	registerComponent<NetworkReceiverComponent>(true, true, false);
 
 	m_gameDataTracker = &GameDataTracker::getInstance();
 }
@@ -36,18 +37,14 @@ GunSystem::~GunSystem() {
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
+		
+		// Gun is firing and is not overloaded
+		if (gun->firing && gun->gunOverloadTimer <= 0) {
+			// SHOOT
+			if (gun->projectileSpawnTimer <= 0.f) {
 
-		// Gun is firing
-		if (gun->firing) {
-
-			// Gun is not overloaded
-			if (gun->gunOverloadTimer <= 0) {
-
-				// SHOOT
-				if (gun->projectileSpawnTimer <= 0.f) {
-
-					// Determine projectileSpeed based on how long the gun has been firing continuously
-					alterProjectileSpeed(gun);
+				// Determine projectileSpeed based on how long the gun has been firing continuously
+				alterProjectileSpeed(gun);
 
 					Netcode::PlayerID myPlayerID = Netcode::getComponentOwner(e->getComponent<NetworkSenderComponent>()->m_id);
 
@@ -82,14 +79,11 @@ void GunSystem::update(float dt) {
 					gun->firingContinuously = false;
 				}
 
-				// Overload the gun if necessary
-				if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
-					overloadGun(e, gun);
-				}
+			// Overload the gun if necessary
+			if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
+				overloadGun(e, gun);
 			}
-		}
-		// Gun is not firing.
-		else {
+		} else { // Gun is not firing.
 			// Reduce the overload value
 			if (gun->gunOverloadvalue > 0) {
 				gun->gunOverloadvalue -= dt;
@@ -122,8 +116,7 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	// If this is the first shot in this "burst" of projectiles...
 	if (!gun->firingContinuously) {
 		setGunStateSTART(e, gun);
-	}
-	else {
+	} else {
 		setGunStateLOOP(e, gun);
 	}
 

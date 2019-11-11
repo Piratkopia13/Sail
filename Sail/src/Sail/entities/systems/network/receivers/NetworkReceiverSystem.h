@@ -2,12 +2,13 @@
 
 #include "../../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
+#include "Sail/events/EventReceiver.h"
 
 class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
 
-class NetworkReceiverSystem : public BaseComponentSystem {
+class NetworkReceiverSystem : public BaseComponentSystem, public EventReceiver {
 public:
 	NetworkReceiverSystem();
 	~NetworkReceiverSystem();
@@ -58,6 +59,8 @@ private:
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::ComponentID playerCompID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
+	void hitBySprinkler(Netcode::ComponentID candleOwnerID);
+	void enableSprinklers();
 	void igniteCandle(Netcode::ComponentID candleID);
 
 	Entity* findFromNetID(Netcode::ComponentID id) const;
@@ -75,4 +78,6 @@ private:
 	void runningMetalStart(Netcode::ComponentID id);
 	void runningTileStart(Netcode::ComponentID id);
 	void runningStopSound(Netcode::ComponentID id);
+	bool onEvent(const Event& event) override;
+
 };

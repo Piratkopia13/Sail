@@ -81,6 +81,17 @@ void CandleHealthSystem::update(float dt) {
 
 					// Only one living candle left and number of players in the game is greater than one
 					if (livingCandles < 2 && entities.size() > 1) {
+
+						for (auto e2 : entities) {
+							NetworkReceiverComponent* cc = e2->getParent()->getComponent<NetworkReceiverComponent>();
+							if (cc->m_id != e->getParent()->getComponent<NetworkReceiverComponent>()->m_id) {
+								// Save the placement for the player who lost
+								GameDataTracker::getInstance().logPlacement(
+									Netcode::getComponentOwner(cc->m_id)
+								);
+							}
+						}
+
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::MATCH_ENDED,
 							nullptr
@@ -97,7 +108,9 @@ void CandleHealthSystem::update(float dt) {
 			candle->health = 0.0f;
 			candle->isLit = false;
 			candle->wasJustExtinguished = false; // reset for the next tick
-			GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			if (candle->wasHitByPlayerID != Netcode::MESSAGE_SPRINKLER_ID) {
+				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			}
 		
 			// Play the reignition sound if the player has any candles left
 			if (candle->respawns < m_maxNumRespawns) {

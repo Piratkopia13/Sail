@@ -1,7 +1,6 @@
 #pragma once
 #include "Component.h"
 
-class Entity;
 
 // Is currently used as a flag to identify that an entity is a player entity
 // Should only be used on the actual players and not on their candles, weapons, etc.

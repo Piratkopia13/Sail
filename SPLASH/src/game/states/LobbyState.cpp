@@ -1,21 +1,21 @@
 #include "LobbyState.h"
 
 
-//#include "../imgui-sfml-master/imgui-SFML.h"
 #include "../libraries/imgui/imgui.h"
 #include "../Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
+
 #include "../SPLASH/src/game/events/TextInputEvent.h"
+#include "../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
-#include "Network/NWrapperSingleton.h"	// New network
-#include "Network/NWrapper.h"			// 
+#include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
+
+#include "Network/NWrapperSingleton.h"
+#include "Network/NWrapper.h"
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/entities/components/AudioComponent.h"
 #include "Sail/utils/Utils.h"
-
-#include <string>
-#include <list>
 
 LobbyState::LobbyState(StateStack& stack)
 	: State(stack),
@@ -38,10 +38,10 @@ LobbyState::LobbyState(StateStack& stack)
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
 
-	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
-	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
-	//m_lobbyAudio->addComponent<AudioComponent>();
-	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TEXTINPUT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
 
@@ -49,6 +49,10 @@ LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
 	delete m_settingBotCount;
 
+	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTINPUT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
 bool LobbyState::processInput(float dt) {
@@ -77,7 +81,9 @@ bool LobbyState::update(float dt, float alpha) {
 	this->m_screenWidth = m_app->getWindow()->getWindowWidth();
 	this->m_screenHeight = m_app->getWindow()->getWindowHeight();
 
-	m_network->checkForPackages();
+
+	NWrapperSingleton::getInstance().checkForPackages();
+
 	if (NWrapperSingleton::getInstance().isHost() && m_settingsChanged && m_timeSinceLastUpdate > 0.2f) {
 		auto& stat = m_app->getSettings().gameSettingsStatic;
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
@@ -115,8 +121,20 @@ bool LobbyState::renderImgui(float dt) {
 	return false;
 }
 
-void LobbyState::addTextToChat(const Message& message) {
-	this->addMessageToChat(message);
+bool LobbyState::onEvent(const Event& event) {
+
+	switch (event.type) {
+
+	case Event::Type::TEXTINPUT:			onMyTextInput((const TextInputEvent&)event); break;
+	case Event::Type::NETWORK_CHAT:			onRecievedText((const NetworkChatEvent&)event); break;
+	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
+	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
+
+	default:
+		break;
+	}
+
+	return true;
 }
 
 void LobbyState::resetCurrentMessage() {
@@ -142,21 +160,41 @@ std::string LobbyState::fetchMessage()
 void LobbyState::addMessageToChat(const Message& message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
-	unsigned char id = stoi(message.sender);
-	Player* playa = NWrapperSingleton::getInstance().getPlayer(id);
-	std::string msg = playa->name + ": ";
-	
-	// Work around const
-	Message newMessage = message;
-	newMessage.content.insert(0, msg);
 
+	std::string msg;
+	if (message.senderID != 255) {
+		Player* playa = NWrapperSingleton::getInstance().getPlayer(message.senderID);
+		msg = playa->name + ": ";
+	}
+	msg += message.content;
 	// Add message to chatlog
-	m_messages.push_back(newMessage);
+	m_messages.push_back(msg);
 
 	// New messages replace old
 	if (m_messages.size() > m_messageLimit) {
 		m_messages.pop_front();
 	}
+}
+
+bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
+	addMessageToChat(event.chatMessage);
+	return true;
+}
+
+bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
+	Message message;
+	message.content = event.player.name + " joined the game!";
+	message.senderID = 255;
+	addMessageToChat(message);
+	return true;
+}
+
+bool LobbyState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
+	Message message;
+	message.content = event.player.name + " left the game!";
+	message.senderID = 255;
+	addMessageToChat(message);
+	return true;
 }
 
 void LobbyState::renderPlayerList() {
@@ -354,7 +392,7 @@ void LobbyState::renderChat() {
 	ImGui::BeginChild("messages");
 	for (auto currentmessage : m_messages) {
 		ImGui::Text(
-			currentmessage.content.c_str()
+			currentmessage.c_str()
 		);
 	}
 	ImGui::EndChild();
