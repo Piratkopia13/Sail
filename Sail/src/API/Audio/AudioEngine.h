@@ -52,6 +52,7 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback {
 struct soundStruct {
 	std::string          filename = { "" };
 	IXAudio2SourceVoice* sourceVoice = nullptr;
+	IXAudio2SubmixVoice* xAPOsubMixVoice = nullptr;
 	HrtfEnvironment      environment = HrtfEnvironment::Outdoors;
 	Microsoft::WRL::ComPtr<IXAPOHrtfParameters> hrtfParams;
 };
@@ -130,12 +131,14 @@ private:
 	int fetchSoundIndex();
 
 	//
-	void sendVoiceTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, bool useFilter);
+	void sendVoiceTo(IXAudio2SourceVoice* *source, IXAudio2Voice* *destination, bool useFilter);
+	void sendVoiceTosubMixVoice(IXAudio2SourceVoice** source, IXAudio2SubmixVoice** destination, bool useFilter);
 	void addLowPassFilterTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, float frequency);
 
 	//
 	XAUDIO2_EFFECT_DESCRIPTOR createXAPPOEffect(Microsoft::WRL::ComPtr<IXAPO> xapo);
 	XAUDIO2_FILTER_PARAMETERS createLowPassFilter(float cutoffFrequence);
+	void createXAPOsubMixVoice(IXAudio2SubmixVoice* *source); // Automatically points to masterVoice
 
 	void streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC = nullptr);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
