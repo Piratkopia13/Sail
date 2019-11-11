@@ -33,7 +33,6 @@ GunSystem::~GunSystem() {
 
 }
 
-
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
@@ -91,14 +90,13 @@ void GunSystem::update(float dt) {
 			gun->firingContinuously = false;
 		}
 
-		// Play shooting sounds based on the GunState
-		playShootingSounds(e);
+		// Send shooting events based on the GunState
+		sendShootingEvents(e);
 
 		gun->gunOverloadTimer -= dt;
 		gun->projectileSpawnTimer -= dt;
 	}
 }
-
 
 void GunSystem::alterProjectileSpeed(GunComponent* gun) {
 	gun->projectileSpeed = gun->baseProjectileSpeed + (gun->projectileSpeedRange * (gun->gunOverloadvalue/gun->gunOverloadThreshold));
@@ -161,27 +159,23 @@ void GunSystem::setGunStateEND(Entity* e, GunComponent* gun) {
 	gun->state = GunState::ENDING;
 }
 
-void GunSystem::playShootingSounds(Entity* e) {
+void GunSystem::sendShootingEvents(Entity* e) {
 	GunComponent* gun = e->getComponent<GunComponent>();
 
-	// Play sounds depending on which state the gun is in.
-	if (gun->state == GunState::STARTING) {
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
-	}
-	else if (gun->state == GunState::LOOPING) {
+	switch (gun->state) {
+	case GunState::STARTING:
+		EventDispatcher::Instance().emit(StartShootingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
+		break;
+	case GunState::LOOPING:
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
-	}
-	else if (gun->state == GunState::ENDING) {
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
-
+		break;
+	case GunState::ENDING:
+		EventDispatcher::Instance().emit(StopShootingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
 		gun->state = GunState::STANDBY;
-	}
-	else {	/* gun->state == GunState::STANDBY */
-
+		break;
+	default:
+		break;
 	}
 }

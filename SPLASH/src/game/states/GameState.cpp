@@ -28,17 +28,13 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
-	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_NAME, this);
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_WELCOME, this);
-
 
 	initConsole();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
+
 
 	std::vector<glm::vec3> m_teamColors;
 	for (int i = 0; i < 12; i++) {
@@ -168,7 +164,8 @@ GameState::GameState(StateStack& stack)
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 	}
 	
-
+	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
+	m_componentSystems.networkReceiverSystem->setGameState(this);
 	
 
 	// Bots creation
@@ -217,10 +214,6 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_CANDLE_DEATH, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_NAME, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_WELCOME, this);
 }
 
 // Process input for the state
@@ -268,12 +261,6 @@ bool GameState::processInput(float dt) {
 	// Show boudning boxes
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
 		m_componentSystems.boundingboxSubmitSystem->toggleHitboxes();
-		
-		/*std::string h;
-		for (auto a : NWrapperSingleton::getInstance().getPlayers()) {
-			h += a.name;
-		}
-		Logger::Log(h);*/
 	}
 
 	//Test ray intersection
@@ -457,7 +444,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
-	m_componentSystems.networkReceiverSystem->init(playerID, this, m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
 
 	m_componentSystems.hostSendToSpectatorSystem = ECS::Instance()->createSystem<HostSendToSpectatorSystem>();
@@ -465,6 +452,8 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+
+	m_componentSystems.playerSystem = ECS::Instance()->createSystem<PlayerSystem>();
 
 	//Create particle system
 	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
@@ -508,8 +497,6 @@ void GameState::initConsole() {
 			nullptr
 		);
 
-		GameDataTracker::getInstance().randomizePlacement();
-
 		return std::string("Match ended.");
 		}, "GameState");
 #ifdef _DEBUG
@@ -546,10 +533,6 @@ bool GameState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
-	case Event::Type::PLAYER_CANDLE_DEATH:				onPlayerCandleDeath((const PlayerCandleDeathEvent&)event); break;
-	case Event::Type::NETWORK_JOINED:					onPlayerJoined((const NetworkJoinedEvent&)event); break;
-	case Event::Type::NETWORK_NAME:						onNameRequest((const NetworkNameEvent&)event); break;
-	case Event::Type::NETWORK_WELCOME:					onWelcome((const NetworkWelcomeEvent&)event); break;
 	default: break;
 	}
 
@@ -566,165 +549,14 @@ bool GameState::onNetworkSerializedPackageEvent(const NetworkSerializedPackageEv
 	return true;
 }
 
-bool GameState::onPlayerCandleDeath(const PlayerCandleDeathEvent& event) {
-	if ( !m_isSingleplayer ) {
-		/*NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::PLAYER_DIED,
-			m_player
-		);
-		
-		m_player->addComponent<SpectatorComponent>();
-		m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, 0.f);
-		m_player->removeComponent<GunComponent>();
-		m_player->removeAllChildren();*/
-		// TODO: Remove all the components that can/should be removed
-
-	} else {
-		this->requestStackPop();
-		this->requestStackPush(States::EndGame);
-	}
-
-	// Set bot target to null when player is dead
-	auto entities = m_componentSystems.aiSystem->getEntities();
-	for (int i = 0; i < entities.size(); i++) {
-		auto aiComp = entities[i]->getComponent<AiComponent>();
-		aiComp->setTarget(nullptr);
-	}
-
-	return true;
-}
-
-bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
-	NWrapperSingleton* network = &NWrapperSingleton::getInstance();
-	network->playerJoined(event.player);
-
-	if (network->isHost()) {
-		char seed = (char)network->getSeed();
-		// t for start the game, p for start as a player. s would be spectator
-		network->getNetworkWrapper()->sendMsgAllClients({ std::string("ts") + seed });
-
-		//m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.player.id);
-	}
-	
-	return true;
-}
-
-bool GameState::onNameRequest(const NetworkNameEvent& event) {
-	NWrapperSingleton* network = &NWrapperSingleton::getInstance();
-	if (network->isHost()) {	// Host
-		// Parse the message | ?12:DANIEL
-		std::string message = event.repliedName;
-		std::string id_string = "";
-		Netcode::PlayerID id_int = 0;
-
-		// Get ID...
-		for (int i = 1; i < 64; i++) {
-			// ... as a string
-			if (message[i] != ':') {
-				id_string += message[i];
-			} else {
-				break;
-			}
-		}
-		// ... as a number
-		id_int = std::stoi(id_string);
-
-		message.erase(0, id_string.size() + 2);	// Removes ?ID: ___
-		message.erase(message.size() - 1);		// Removes ___ :
-
-		
-
-		// Add player
-		//NWrapperSingleton::getInstance().playerJoined(Player{
-		//		id_int,
-		//		message	// Which at this point is only the name
-		//});
-		NWrapperSingleton::getInstance().getPlayer(id_int)->name = message;
-
-		printf("Got name: \"%s\" from %i\n", message.c_str(), id_int);
-
-		// Send a welcome package to all players, letting them know who's joined the party
-		std::string welcomePackage = "w";
-
-		printf("Sending out welcome package...\n");
-		for (auto currentPlayer : NWrapperSingleton::getInstance().getPlayers()) {
-			welcomePackage.append(std::to_string(currentPlayer.id));
-			welcomePackage.append(":");
-			welcomePackage.append(currentPlayer.name);
-			welcomePackage.append(":");
-			printf("\t");
-			printf(currentPlayer.name.c_str());
-			printf("\n");
-		}
-		network->getNetworkWrapper()->sendMsgAllClients(welcomePackage);
-		printf("Done sending welcome package\n");
-		
-		m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.idOfSender);
-
-		return true;
-	} else {	// Client
-		// Save the ID which the host has blessed us with
-		std::string temp = event.repliedName;	// And replace our current HOSTID
-		int newId = std::stoi(temp);					//
-		NWrapperSingleton::getInstance().getMyPlayer().id = newId;
-		NWrapperSingleton::getInstance().playerJoined(Player{ 0, NWrapperSingleton::getInstance().getMyPlayerName().c_str() });
-
-		// Append :NAME onto ?ID --> ?ID:NAME and answer the host
-		std::string message = "?";
-		message += event.repliedName;
-		message += ":";
-		message += NWrapperSingleton::getInstance().getMyPlayerName().c_str();
-		message += ":";
-		network->getNetworkWrapper()->sendMsg(message);
-	}
-
-	return false;
-}
-
-bool GameState::onWelcome(const NetworkWelcomeEvent& event) {
-	// Update local list of players.
-	const std::list<Player>& list = event.playerList;
-	if (list.size() >= 2) {
-		// Clean local list of players.
-		NWrapperSingleton::getInstance().resetPlayerList();
-
-		printf("Received welcome package...\n");
-		for (auto currentPlayer : list) {
-			// TODO: Maybe addPlayerFunction?
-			NWrapperSingleton::getInstance().playerJoined(currentPlayer);
-
-
-			//m_players.push_back(currentPlayer);
-			printf("\t");
-			printf(currentPlayer.name.c_str());
-			printf("\t");
-			printf(std::to_string(currentPlayer.id).c_str());
-			printf("\n");
-		}
-	}
-	return false;
-}
-
 bool GameState::onPlayerDisconnect(const NetworkDisconnectEvent& event) {
 	if (m_isSingleplayer) {
 		return true;
 	}
 
-	for (auto& e : m_componentSystems.networkReceiverSystem->getEntities()) {
-		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.player_id) {
-			// Upon finding who disconnected...
-			// Log it (Temporary until killfeed is implemented)
-			logSomeoneDisconnected(event.player_id);
+	GameDataTracker::getInstance().logMessage(event.player.name + " Left The Game!");
+	logSomeoneDisconnected(event.player.id);
 
-			// If I am host notify all other players
-			if (NWrapperSingleton::getInstance().isHost()) {
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::PLAYER_DISCONNECT,
-					SAIL_NEW Netcode::MessagePlayerDisconnect{ event.player_id }
-				);
-			}
-		}
-	}
 	return true;
 }
 
@@ -837,29 +669,8 @@ bool GameState::renderImguiDebug(float dt) {
 	m_renderSettingsWindow.renderWindow();
 	m_lightDebugWindow.renderWindow();
 	m_playerInfoWindow.renderWindow();
+	m_networkInfoImGuiWindow.renderWindow();
 	
-	
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInECS(ECS::Instance()->getNumEntities());
-
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("ProjectileSystem", m_componentSystems.projectileSystem->getNumEntities());
-	//m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleSystem", m_componentSystems.candleSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleHealthSystem", m_componentSystems.candleHealthSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandlePlacementSystem", m_componentSystems.candlePlacementSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CandleReignitionSystem", m_componentSystems.candleReignitionSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AnimationSystem", m_componentSystems.animationSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AnimationChangerSystem", m_componentSystems.animationChangerSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkReceiverSystem", m_componentSystems.networkReceiverSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("NetworkSenderSystem", m_componentSystems.networkSenderSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("ModelSubmitSystem", m_componentSystems.modelSubmitSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AudioSystem", m_componentSystems.audioSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("CollisionSystem", m_componentSystems.collisionSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("OctreeAddRemoverSystem", m_componentSystems.octreeAddRemoverSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("AiSystem", m_componentSystems.aiSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("LightSystem", m_componentSystems.lightSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("LightListSystem", m_componentSystems.lightListSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("GunSystem", m_componentSystems.gunSystem->getNumEntities());
-	m_ecsSystemInfoImGuiWindow.updateNumEntitiesInSystems("GameInputSystem", m_componentSystems.gameInputSystem->getNumEntities());
-
 	m_ecsSystemInfoImGuiWindow.renderWindow();
 
 	return false;
@@ -930,7 +741,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
 
 	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
-	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+	NWrapperSingleton::getInstance().checkForPackages();
 
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
@@ -1148,7 +959,6 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
 		roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
 
-
 		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
 		corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
 		corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
@@ -1174,20 +984,51 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/Corner_NM.tga");
 		roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/Corner_Albedo.tga");
 
-		Model* cSO = &m_app->getResourceManager().getModel("Clutter/SmallObject.fbx", shader);
-		cSO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/SO_MRAO.tga");
-		cSO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/SO_NM.tga");
-		cSO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/SO_Albedo.tga");
+		Model* cTable = &m_app->getResourceManager().getModel("Clutter/Table.fbx", shader);
+		cTable->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Table_MRAO.tga");
+		cTable->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Table_NM.tga");
+		cTable->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Table_Albedo.tga");
 
-		Model* cMO = &m_app->getResourceManager().getModel("Clutter/MediumObject.fbx", shader);
-		cMO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/MO_MRAO.tga");
-		cMO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/MO_NM.tga");
-		cMO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/MO_Albedo.tga");
+		Model* cBoxes = &m_app->getResourceManager().getModel("Clutter/Boxes.fbx", shader);
+		cBoxes->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Boxes_MRAO.tga");
+		cBoxes->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Boxes_NM.tga");
+		cBoxes->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Boxes_Albedo.tga");
 
-		Model* cLO = &m_app->getResourceManager().getModel("Clutter/LargeObject.fbx", shader);
-		cLO->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/LO_MRAO.tga");
-		cLO->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/LO_NM.tga");
-		cLO->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/LO_Albedo.tga");
+		Model* cMediumBox = &m_app->getResourceManager().getModel("Clutter/MediumBox.fbx", shader);
+		cMediumBox->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/MediumBox_MRAO.tga");
+		cMediumBox->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/MediumBox_NM.tga");
+		cMediumBox->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/MediumBox_Albedo.tga");
+
+		Model* cSquareBox = &m_app->getResourceManager().getModel("Clutter/SquareBox.fbx", shader);
+		cSquareBox->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/SquareBox_MRAO.tga");
+		cSquareBox->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/SquareBox_NM.tga");
+		cSquareBox->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/SquareBox_Albedo.tga");
+
+		Model* cBooks1 = &m_app->getResourceManager().getModel("Clutter/Books1.fbx", shader);
+		cBooks1->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Book_MRAO.tga");
+		cBooks1->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
+		cBooks1->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Book1_Albedo.tga");
+
+		Model* cBooks2 = &m_app->getResourceManager().getModel("Clutter/Books2.fbx", shader);
+		cBooks2->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Book_MRAO.tga");
+		cBooks2->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
+		cBooks2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Book2_Albedo.tga");
+
+		Model* cScreen = &m_app->getResourceManager().getModel("Clutter/Screen.fbx", shader);
+		cScreen->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Screen_MRAO.tga");
+		cScreen->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Screen_NM.tga");
+		cScreen->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Screen_Albedo.tga");
+
+		Model* cNotepad = &m_app->getResourceManager().getModel("Clutter/Notepad.fbx", shader);
+		cNotepad->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Notepad_MRAO.tga");
+		cNotepad->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Notepad_NM.tga");
+		cNotepad->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Notepad_Albedo.tga");
+
+		Model* cMicroscope= &m_app->getResourceManager().getModel("Clutter/Microscope.fbx", shader);
+		cMicroscope->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Microscope_MRAO.tga");
+		cMicroscope->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Microscope_NM.tga");
+		cMicroscope->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Microscope_Albedo.tga");
+
 
 		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
 		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Saftblandare_MRAO.tga");
@@ -1208,10 +1049,17 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		tileModels[TileModel::CORRIDOR_CORNER] = corridorCorner;
 
 		clutterModels.resize(ClutterModel::NUMBOFCLUTTER);
-		clutterModels[ClutterModel::CLUTTER_LO] = cLO;
-		clutterModels[ClutterModel::CLUTTER_MO] = cMO;
-		clutterModels[ClutterModel::CLUTTER_SO] = cSO;
 		clutterModels[ClutterModel::SAFTBLANDARE] = saftblandare;
+		clutterModels[ClutterModel::TABLE] = cTable;
+		clutterModels[ClutterModel::BOXES] = cBoxes;
+		clutterModels[ClutterModel::MEDIUMBOX] = cMediumBox;
+		clutterModels[ClutterModel::BOOKS1] = cBooks1;
+		clutterModels[ClutterModel::BOOKS2] = cBooks2;
+		clutterModels[ClutterModel::SQUAREBOX] = cSquareBox;
+		clutterModels[ClutterModel::SCREEN] = cScreen;
+		clutterModels[ClutterModel::NOTEPAD] = cNotepad;
+		clutterModels[ClutterModel::MICROSCOPE] = cMicroscope;
+
 	}
 
 	// Create the level generator system and put it into the datatype.

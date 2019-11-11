@@ -18,6 +18,7 @@ class Network;
 struct Player {
 	Netcode::PlayerID id;
 	std::string name;
+	bool justJoined = true;
 
 	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans")
 		: name(setName), id(setID)
@@ -42,9 +43,8 @@ public:
 
 	virtual bool host(int port = 54000) = 0;
 	virtual bool connectToIP(char* = "127.0.0.1:54000") = 0;
-	void checkForPackages();
 
-	void sendMsg(std::string msg);					// Some of these probably only get used
+	void sendMsg(std::string msg, TCP_CONNECTION_ID tcp_id = 0);
 	void sendMsgAllClients(std::string msg);		// by either client or host
 	void sendChatAllClients(std::string msg);		//
 	virtual void sendChatMsg(std::string msg) = 0;
@@ -59,9 +59,10 @@ protected:
 	// Parsing functions | Will alter 'data' upon being used.
 	TCP_CONNECTION_ID parseID(std::string& data);	//
 	std::string parseName(std::string& data);		//
-	Message processChatMessage(std::string& message);
+	Message processChatMessage(const char* data);
 
 private:
+	friend class NWrapperSingleton;
 	void initialize(Network* pNetwork);
 	void handleNetworkEvents(NetworkEvent nEvent);
 

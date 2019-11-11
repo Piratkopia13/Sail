@@ -37,10 +37,6 @@ private:
 	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
-	bool onPlayerCandleDeath(const PlayerCandleDeathEvent& event);
-	bool onPlayerJoined(const NetworkJoinedEvent& event);
-	bool onNameRequest(const NetworkNameEvent& event);
-	bool onWelcome(const NetworkWelcomeEvent& event);
 
 	void shutDownGameState();
 
@@ -77,6 +73,7 @@ private:
 	WasDroppedWindow m_wasDroppedWindow;
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
+	NetworkInfoWindow m_networkInfoImGuiWindow;
 
 	size_t m_currLightIndex;
 
