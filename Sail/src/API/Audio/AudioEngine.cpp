@@ -126,7 +126,7 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 	}*/
 	
 	// Apply changes directly
-	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
+//	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
 
 	return indexValue;
 }
