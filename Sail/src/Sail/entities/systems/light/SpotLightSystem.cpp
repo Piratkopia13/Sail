@@ -56,11 +56,7 @@ void SpotLightSystem::enableHazardLights(std::vector<int> activeRooms) {
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
 		std::vector<int>::iterator it = std::find(activeRooms.begin(), activeRooms.end(), sc->roomID);
-		if (it != activeRooms.end()) {
-			sc->isOn = true;
-		}
-		else {
-			sc->isOn = false;
-		}
+
+		sc->isOn = (it != activeRooms.end());
 	}
 }
