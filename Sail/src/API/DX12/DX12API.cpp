@@ -619,7 +619,7 @@ UINT DX12API::getRootIndexFromRegister(const std::string& reg) const {
 	if (it != m_globalRootSignatureRegisters.end()) {
 		return it->second;
 	}
-	Logger::Error("Tried to get root index from a slot that is not bound in the global root signature!");
+	SAIL_LOG_ERROR("Tried to get root index from a slot that is not bound in the global root signature!");
 	return -1;
 }
 
@@ -714,7 +714,7 @@ void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdL
 	} else if (type == D3D12_COMMAND_LIST_TYPE_COMPUTE) {
 		m_computeCommandQueue->get()->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
 	} else {
-		Logger::Error("Cannot execute CommandLists of type " + std::to_string(type));
+		SAIL_LOG_ERROR("Cannot execute CommandLists of type " + std::to_string(type));
 	}
 }
 
@@ -741,10 +741,10 @@ void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
 
 bool DX12API::onResize(const WindowResizeEvent& event) {
 	if (event.isMinimized) {
-		Logger::Log("minimized!");
+		SAIL_LOG("minimized!");
 	}
 	resizeBuffers(event.width, event.height);
-	Logger::Log("dx12 resize ran");
+	SAIL_LOG("dx12 resize ran");
 	return true;
 }
 

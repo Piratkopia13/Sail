@@ -47,7 +47,7 @@ bool SplashScreenState::onEvent(Event& event) {
 
 bool SplashScreenState::loadModels(Application* app) {
 	ResourceManager* rm = &app->getResourceManager();
-	rm->setDefaultShader(&app->getResourceManager().getShaderSet<GBufferOutShader>());
+	rm->setDefaultShader(&rm->getShaderSet<GBufferOutShader>());
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
 
 //#ifndef _DEBUG
@@ -73,7 +73,7 @@ bool SplashScreenState::loadModels(Application* app) {
 
 	rm->loadModel("Clutter/Saftblandare.fbx");
 	rm->loadModel("WaterPistol.fbx");
-	rm->loadModel("boundingBox.fbx");
+	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<WireframeShader>());
 	rm->loadModel("cubeWidth1.fbx");
 
 
