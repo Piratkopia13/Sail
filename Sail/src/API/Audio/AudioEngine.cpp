@@ -59,7 +59,9 @@ AudioEngine::AudioEngine() {
 
 	this->initialize();
 
-	this->initSubmixes();
+	if (!m_initFailed) {
+		this->initSubmixes();
+	}
 }
 
 AudioEngine::~AudioEngine() {
@@ -375,6 +377,7 @@ void AudioEngine::initialize() {
 
 	if (FAILED(this->initXAudio2())) {
 		SAIL_LOG_ERROR("Failed to init XAudio2!");
+		m_initFailed = true;
 	}
 }
 
