@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Application.h"
-#include "events/WindowResizeEvent.h"
+#include "events/types/WindowResizeEvent.h"
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyBinds.h"
 #include "KeyCodes.h"

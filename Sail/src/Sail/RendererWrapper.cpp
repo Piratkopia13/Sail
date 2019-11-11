@@ -3,7 +3,6 @@
 
 #include "api/Renderer.h"
 #include "graphics/postprocessing/PostProcessPipeline.h"
-#include "Sail/events/WindowResizeEvent.h"
 
 RendererWrapper::RendererWrapper() {
 }

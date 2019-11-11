@@ -118,10 +118,10 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			m_playerPosHolder[2] = { transformComp.x + DETECTION_STEP_SIZE, 0, transformComp.z - DETECTION_STEP_SIZE };
 			m_playerPosHolder[3] = { transformComp.x - DETECTION_STEP_SIZE, 0, transformComp.z + DETECTION_STEP_SIZE };
 			m_playerPosHolder[4] = { transformComp.x - DETECTION_STEP_SIZE, 0, transformComp.z - DETECTION_STEP_SIZE };
-
+			
+			// Check for nearby water
 			for (int i = 0; i < 5; i++) {
 				if (m_isOnWaterHolder = Application::getInstance()->getRenderWrapper()->checkIfOnWater(m_playerPosHolder[i])) {
-					std::cout << "ON WATER!\n";
 					break;
 				}
 			}
@@ -149,7 +149,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			if (collision->onGround) {
-
 				if (m_fallTimer > m_fallThreshold) {
 					// Send event to play the sound for the landing (will be sent to ourself too)
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(

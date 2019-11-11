@@ -27,7 +27,6 @@ NWrapperSingleton::NWrapperSingleton() {
 
 	m_playerLimit = 12;
 	m_playerCount = 0;
-
 }
 
 bool NWrapperSingleton::host(int port) {
@@ -116,7 +115,7 @@ Player& NWrapperSingleton::getMyPlayer() {
 	return m_me;
 }
 
-Player* NWrapperSingleton::getPlayer(Netcode::PlayerID& id) {
+Player* NWrapperSingleton::getPlayer(const Netcode::PlayerID& id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {
