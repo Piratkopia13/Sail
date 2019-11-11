@@ -111,7 +111,7 @@ bool NWrapperSingleton::playerLeft(Netcode::PlayerID& id, bool dispatchEvent) {
 		if (playerIt.id == id) {
 			toBeRemoved = &playerIt;
 			if (dispatchEvent) {
-				EventDispatcher::Instance().emit(NetworkDisconnectEvent(id));
+				EventDispatcher::Instance().emit(NetworkDisconnectEvent(playerIt));
 			}
 			m_players.remove(*toBeRemoved);
 

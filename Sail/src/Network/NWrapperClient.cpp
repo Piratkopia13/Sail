@@ -5,7 +5,6 @@
 #include "Sail/events/EventDispatcher.h"
 
 #include "Sail/../Network/NWrapperSingleton.h"
-#include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDroppedEvent.h"
