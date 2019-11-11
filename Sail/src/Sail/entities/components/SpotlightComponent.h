@@ -10,6 +10,8 @@ public:
 	~SpotlightComponent() {}
 
 	bool isOn;
+	bool alarm = false;
+	float alarmTimer = 0.f;
 	int roomID;
 	SpotLight light; // Describes the light source when not rotated or moved
 

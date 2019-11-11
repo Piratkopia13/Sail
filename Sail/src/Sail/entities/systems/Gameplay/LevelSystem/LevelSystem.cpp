@@ -1582,6 +1582,7 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 
 		MovementComponent* mc = e2->addComponent<MovementComponent>();
 		SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
+		AudioComponent* ac = e2->addComponent<AudioComponent>();
 		sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
 		sc->light.setPosition(glm::vec3(0, tileHeight * 5 - 0.05, 0));
 		sc->light.setAttenuation(1.f, 0.01f, 0.01f);

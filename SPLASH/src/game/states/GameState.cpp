@@ -76,18 +76,6 @@ GameState::GameState(StateStack& stack)
 	initSystems(playerID);
 
 	// Textures needs to be loaded before they can be used
-	// TODO: automatically load textures when needed so the following can be removed
-	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	m_app->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
-	m_app->getResourceManager().loadTexture("sponza/textures/arenaBasicTexture.tga");
-	m_app->getResourceManager().loadTexture("sponza/textures/barrierBasicTexture.tga");
-	m_app->getResourceManager().loadTexture("sponza/textures/containerBasicTexture.tga");
-	m_app->getResourceManager().loadTexture("sponza/textures/rampBasicTexture.tga");
-	m_app->getResourceManager().loadTexture("sponza/textures/candleBasicTexture.tga");
-	m_app->getResourceManager().loadTexture("sponza/textures/character1texture.tga");
-
-
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");

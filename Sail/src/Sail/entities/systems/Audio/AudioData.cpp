@@ -383,5 +383,37 @@ void AllAudioData::init() {
 		AllAudioData::m_soundsUnique[Audio::KILLING_BLOW].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		  Sprinkler sounds   //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::SPRINKLER];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = { 0.0f, 1.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "miscellaneous/sprinkler.wav";
+		soundUniqueInfo.soundEffectLength = 5.038f;
+		soundUniqueInfo.volume = 0.1f;
+		AllAudioData::m_soundsUnique[Audio::SPRINKLER].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		  Alarm sounds		 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::ALARM];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = { 0.0f, 1.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "miscellaneous/alarm.wav";
+		soundUniqueInfo.soundEffectLength = 3.98f;
+		soundUniqueInfo.volume = 0.1f;
+		AllAudioData::m_soundsUnique[Audio::ALARM].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
 #pragma endregion
 }

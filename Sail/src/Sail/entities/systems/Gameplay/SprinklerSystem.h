@@ -36,6 +36,8 @@ private:
 	int m_mapSide = 0;
 	std::vector<int> m_activeRooms;
 	std::vector<int> m_activeSprinklers;
+	std::vector<int> m_roomsToBeActivated;
+
 
 	void addToActiveRooms(int room);
 

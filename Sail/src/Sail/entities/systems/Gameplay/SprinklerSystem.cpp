@@ -17,6 +17,8 @@ SprinklerSystem::SprinklerSystem() : BaseComponentSystem() {
 	m_settings = &Application::getInstance()->getSettings();
 	m_endGameStartLimit = m_settings->gameSettingsDynamic["map"]["sprinklerTime"].value;
 	m_endGameTimeIncrement = m_settings->gameSettingsDynamic["map"]["sprinklerIncrement"].value;
+
+
 }
 
 SprinklerSystem::~SprinklerSystem() {
@@ -25,6 +27,7 @@ SprinklerSystem::~SprinklerSystem() {
 
 void SprinklerSystem::stop() {
 	m_enableNewSprinklers = false;
+	m_enableSprinklers = false;
 	m_endGameTimer = 0.f;
 	m_endGameMapIncrement = 0;
 	m_xMinIncrement = 0;
@@ -33,53 +36,54 @@ void SprinklerSystem::stop() {
 	m_yMaxIncrement = 0;
 	m_mapSide = 0;
 	m_activeRooms.clear();
+	m_activeSprinklers.clear();
+	m_roomsToBeActivated.clear();
 }
 
 void SprinklerSystem::update(float dt) {
-
-	for (auto& e : entities) {
-		// End game is reached, sprinklers starting
-		if (!m_enableSprinklers && NWrapperSingleton::getInstance().isHost()) {
-			m_endGameTimer += dt;
-			if (m_endGameTimer > m_endGameStartLimit) {
-				m_enableSprinklers = true;
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::ENABLE_SPRINKLERS,
-					SAIL_NEW Netcode::MessageEnableSprinklers{}
-				);
-			}
-		}
+	if (m_settings->gameSettingsStatic["map"]["sprinkler"].selected == 0) {
 		if (m_enableSprinklers) {
-			m_endGameTimer += dt;
+			for (auto& e : entities) {
 
-			CandleComponent* candle = e->getComponent<CandleComponent>();
-			TransformComponent* transform = e->getComponent<TransformComponent>();
+				m_endGameTimer += dt;
 
-			float candlePosX;
-			float candlePosZ;
+				CandleComponent* candle = e->getComponent<CandleComponent>();
+				TransformComponent* transform = e->getComponent<TransformComponent>();
 
-			if (candle->isCarried && candle->wasCarriedLastUpdate && !e->isAboutToBeDestroyed()) {
-				candlePosX = transform->getParent()->getTranslation().x;
-				candlePosZ = transform->getParent()->getTranslation().z;
+				float candlePosX;
+				float candlePosZ;
+
+				if (candle->isCarried && candle->wasCarriedLastUpdate && !e->isAboutToBeDestroyed()) {
+					candlePosX = transform->getParent()->getTranslation().x;
+					candlePosZ = transform->getParent()->getTranslation().z;
+				}
+				else {
+					candlePosX = transform->getTranslation().x;
+					candlePosZ = transform->getTranslation().z;
+				}
+
+				int candleLocationRoomID = m_map->getRoomIDWorldPos(candlePosX, candlePosZ);
+				std::vector<int>::iterator it = std::find(m_activeSprinklers.begin(), m_activeSprinklers.end(), candleLocationRoomID);
+				if (it != m_activeSprinklers.end()) {
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::HIT_BY_SPRINKLER,
+						SAIL_NEW Netcode::MessageHitBySprinkler{
+							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
+						}
+					);
+				}
+
+
 			}
-			else {
-				candlePosX = transform->getTranslation().x;
-				candlePosZ = transform->getTranslation().z;
-			}
-
-			int candleLocationRoomID = m_map->getRoomIDWorldPos(candlePosX, candlePosZ);
-			std::vector<int>::iterator it = std::find(m_activeRooms.begin(), m_activeRooms.end(), candleLocationRoomID);
-			if (it != m_activeRooms.end()) {
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::HIT_BY_SPRINKLER,
-					SAIL_NEW Netcode::MessageHitBySprinkler{
-						e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
-					}
-				);
-			}
-
 			// Add more active rooms
 			if (m_enableNewSprinklers) {
+				// Active rooms now start their sprinklers
+				if (!m_activeRooms.empty()) {
+					m_activeSprinklers.insert(m_activeSprinklers.end(), m_roomsToBeActivated.begin(), m_roomsToBeActivated.end());
+					m_roomsToBeActivated.clear();
+				}
+
+
 				// Rotate between sides to activate
 				m_mapSide++;
 				m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
@@ -113,16 +117,30 @@ void SprinklerSystem::update(float dt) {
 				}
 				m_enableNewSprinklers = false;
 				m_endGameMapIncrement++;
+
 			}
 			// New time increment reached, add new rooms next update
 			else if (((m_endGameTimer) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
 				m_enableNewSprinklers = true;
 			}
-
-
-
+		}
+		else {
+			// End game is reached, sprinklers starting
+			if (NWrapperSingleton::getInstance().isHost()) {
+				m_endGameTimer += dt;
+				if (m_endGameTimer > m_endGameStartLimit) {
+					m_enableSprinklers = true;
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::ENABLE_SPRINKLERS,
+						SAIL_NEW Netcode::MessageEnableSprinklers{}
+					);
+				}
+			}
 		}
 	}
+	
+
+	
 }
 
 const std::vector<int>& SprinklerSystem::getActiveRooms() const
@@ -135,6 +153,7 @@ void SprinklerSystem::addToActiveRooms(int room) {
 		std::vector<int>::iterator itRooms = std::find(m_activeRooms.begin(), m_activeRooms.end(), room);
 		if (itRooms == m_activeRooms.end()) {
 			m_activeRooms.push_back(room);
+			m_roomsToBeActivated.push_back(room);
 		}
 	}
 }
