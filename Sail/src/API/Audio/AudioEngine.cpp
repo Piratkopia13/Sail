@@ -99,7 +99,7 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 		m_sound[indexValue].sourceVoice->Stop();
 		m_sound[indexValue].sourceVoice->FlushSourceBuffers();
 		m_sound[indexValue].sourceVoice->Discontinuity();
-		// ... and fill it up
+		// ... and fill it up.
 		hr = m_sound[indexValue].sourceVoice->SubmitSourceBuffer(
 			Application::getInstance()->getResourceManager().getAudioData(m_sound[indexValue].filename).getSoundBuffer()
 		);
