@@ -14,7 +14,10 @@ float3 tonemap(float3 color) {
 void CSMain(int3 groupThreadID : SV_GroupThreadID,
 				int3 dispatchThreadID : SV_DispatchThreadID)
 {
-    static const float blendFactor = 1.0f;
-    float4 finalColor = sourceTexture[dispatchThreadID.xy] + blendTexture[dispatchThreadID.xy] * blendFactor;
+    static const float blendFactor = 10.0f;
+
+	float2 texCoordScale = 0.25f; // TODO: read this from a cbuffer
+
+    float4 finalColor = sourceTexture[dispatchThreadID.xy] + blendTexture[dispatchThreadID.xy * texCoordScale] * blendFactor;
 	output[dispatchThreadID.xy] = float4(tonemap(finalColor.rgb), 1.0f);
 }

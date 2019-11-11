@@ -12,6 +12,7 @@ RWTexture2D<float4> output : register(u10);
 void CSMain(int3 groupThreadID : SV_GroupThreadID,
 				int3 dispatchThreadID : SV_DispatchThreadID)
 {
+	float2 texCoordScale = 1.f / 0.5f;
 	//
 	// Fill local thread storage to reduce bandwidth.  To blur 
 	// N pixels, we will need to load N + 2*BlurRadius pixels
@@ -23,16 +24,16 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
 	if(groupThreadID.y < blurRadius) {
 		// Clamp out of bound samples that occur at image borders.
 		int y = max(dispatchThreadID.y - blurRadius, 0);
-		cache[groupThreadID.y] = input[int2(dispatchThreadID.x, y)];
+		cache[groupThreadID.y] = input[int2(dispatchThreadID.x, y) * texCoordScale];
 	}
 	if(groupThreadID.y >= N-blurRadius) {
 		// Clamp out of bound samples that occur at image borders.
 		int y = min(dispatchThreadID.y + blurRadius, input.Length.y-1);
-		cache[groupThreadID.y+2*blurRadius] = input[int2(dispatchThreadID.x, y)];
+		cache[groupThreadID.y+2*blurRadius] = input[int2(dispatchThreadID.x, y) * texCoordScale];
 	}
 	
 	// Clamp out of bound samples that occur at image borders.
-	cache[groupThreadID.y+blurRadius] = input[min(dispatchThreadID.xy, input.Length.xy-1)];
+	cache[groupThreadID.y+blurRadius] = input[min(dispatchThreadID.xy, input.Length.xy-1) * texCoordScale];
 
 
 	// Wait for all threads to finish.

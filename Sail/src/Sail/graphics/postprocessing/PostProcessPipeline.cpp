@@ -12,8 +12,8 @@ PostProcessPipeline::PostProcessPipeline()
 
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 
-	add<GaussianBlurHorizontal>("BloomBlur1H", 1.0f);
 	add<GaussianBlurVertical>("BloomBlur1V", 0.5f);
+	add<GaussianBlurHorizontal>("BloomBlur1H", 0.5f);
 	add<BlendShader>("BloomBlend", 1.0f);
 	//add<RedTintShader>(0.5f);
 
