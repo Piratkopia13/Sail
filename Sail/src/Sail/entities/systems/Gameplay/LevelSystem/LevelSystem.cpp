@@ -31,6 +31,7 @@ LevelSystem::LevelSystem():BaseComponentSystem() {
 
 LevelSystem::~LevelSystem() {
 	destroyWorld();
+	spawnPoints.clear();
 }
 
 //generates all necessary data for the world
@@ -1343,8 +1344,8 @@ void LevelSystem::addSpawnPoints() {
 		}
 	}
 
-	std::default_random_engine generator;
-		
+	std::default_random_engine generator (seed);
+	
 	// Add the rest of the spawn points in a randomized order
 	while(availableSpawnPoints.size() > 0){
 		std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size() - 1);
