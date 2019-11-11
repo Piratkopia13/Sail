@@ -38,6 +38,7 @@ protected:
 	Application* m_app = nullptr;
 	Input* m_input = nullptr;
 	NWrapper* m_network = nullptr;
+	SettingStorage* m_settings;
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
 
@@ -53,7 +54,7 @@ protected:
 
 private:
 	ImGuiHandler* m_imGuiHandler;
-	
+	bool m_ready;
 	// LobbyAudio
 	Entity* m_lobbyAudio = nullptr;
 
@@ -83,4 +84,5 @@ private:
 	void renderQuitButton();
 	void renderSettings();		// Currently empty
 	void renderChat();
+	void renderMenu();
 };

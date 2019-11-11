@@ -146,6 +146,7 @@ void SettingStorage::createApplicationDefaultMisc() {
 
 void SettingStorage::createGameDefaultStructure() {
 	createGameDefaultMap();
+	createGameModeDefault();
 
 }
 
@@ -156,6 +157,26 @@ void SettingStorage::createGameDefaultMap() {
 	gameSettingsDynamic["map"]["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
 	gameSettingsDynamic["map"]["clutter"] = DynamicSetting(0.85f,	0.0f,	5.0f);
 	gameSettingsDynamic["map"]["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
+}
+
+void SettingStorage::createGameModeDefault() {
+
+	gameSettingsStatic["gamemode"] = std::map<std::string, Setting>();
+	gameSettingsStatic["gamemode"]["types"] = Setting(0, std::vector<Setting::Option>({
+		{ "Deathmatch", 0.0f },
+		{ "Teamdeathmatch", 1.0f },
+	}));
+	gameSettingsStatic["Teams"]["Deathmatch"] = Setting(1, std::vector<Setting::Option>({
+		{ "Alone", 1.0f },
+		{ "Spectator", 0.0f },
+	}));
+	gameSettingsStatic["Teams"]["Teamdeathmatch"] = Setting(2, std::vector<Setting::Option>({
+		{ "Team1", 1.0f },
+		{ "Team2", 2.0f },
+		{ "Spectator", 0.0f },
+	}));
+
+
 }
 
 
@@ -189,6 +210,10 @@ void SettingStorage::Setting::setSelected(const unsigned int selection) {
 	if (selected > options.size()) {
 		selected = options.size();
 	}
+}
+
+const SettingStorage::Setting::Option& SettingStorage::Setting::getSelected() {
+	return options[selected];
 }
 
 #pragma endregion

@@ -62,22 +62,24 @@ bool MenuState::render(float dt, float alpha) {
 bool MenuState::renderImgui(float dt) {
 	
 	//Keep
-	//ImGui::ShowDemoWindow();
+	ImGui::ShowDemoWindow();
 
 	static std::string font = "Beb20";
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
 
 	if (ImGui::Begin("IMGUISETTINGS")) {
-		//ImGui::BeginCombo("##FONTS", &font.front());
-		for (auto const& [key, val] : m_imGuiHandler->getFontMap()) {
-			ImGui::PushFont(val);
+		if (ImGui::BeginCombo("##FONTS", &font.front())) {
+			for (auto const& [key, val] : m_imGuiHandler->getFontMap()) {
+				ImGui::PushFont(val);
 
-			if(ImGui::Selectable(key.c_str(), font == key)) {
-				font = key;
+				if(ImGui::Selectable(key.c_str(), font == key)) {
+					font = key;
+				}
+				ImGui::PopFont();
 			}
-			ImGui::PopFont();
+			ImGui::EndCombo();
 		}
-		//ImGui::EndCombo();
+		
 	}
 	ImGui::End();
 

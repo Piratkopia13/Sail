@@ -20,7 +20,7 @@ public:
 		~Setting();
 
 		void setSelected(const unsigned int selection);
-
+		const Option& getSelected();
 		unsigned int selected;
 		std::vector<Option> options;
 	};
@@ -84,5 +84,6 @@ private:
 
 	void createGameDefaultStructure();
 	void createGameDefaultMap();
+	void createGameModeDefault();
 
 };

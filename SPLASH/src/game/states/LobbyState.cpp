@@ -1,5 +1,5 @@
 #include "LobbyState.h"
-
+#include "imgui_internal.h"
 //#include "../imgui-sfml-master/imgui-SFML.h"
 #include "../libraries/imgui/imgui.h"
 #include "../Sail/src/API/DX12/imgui/DX12ImGuiHandler.h"
@@ -26,7 +26,7 @@ LobbyState::LobbyState(StateStack& stack)
 	m_input = Input::GetInstance();
 	m_network = NWrapperSingleton::getInstance().getNetworkWrapper();
 	m_imGuiHandler = m_app->getImGuiHandler();
-
+	m_settings = &m_app->getSettings();
 
 	m_textHeight = 52;
 	m_outerPadding = 15;
@@ -40,7 +40,7 @@ LobbyState::LobbyState(StateStack& stack)
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
 
-
+	m_ready = false;
 
 	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoResize |
@@ -113,26 +113,30 @@ bool LobbyState::render(float dt, float alpha) {
 
 bool LobbyState::renderImgui(float dt) {
 
+	ImGui::ShowDemoWindow();
 	static std::string font = "Beb20";
+	//ImGui::PushFont(m_imGuiHandler->getFont(font));
+	//
+	//if (ImGui::Begin("IMGUISETTINGS")) {
+	//	//ImGui::BeginCombo("##FONTS", &font.front());
+	//	for (auto const& [key, val] : m_imGuiHandler->getFontMap()) {
+	//		ImGui::PushFont(val);
+	//
+	//		if (ImGui::Selectable(key.c_str(), font == key)) {
+	//			font = key;
+	//		}
+	//		ImGui::PopFont();
+	//	}
+	//	//ImGui::EndCombo();
+	//}
+	//ImGui::End();
+	//
+	//ImGui::PopFont();
+
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
+	// ------- menu ----------------
+	renderMenu();
 
-	if (ImGui::Begin("IMGUISETTINGS")) {
-		//ImGui::BeginCombo("##FONTS", &font.front());
-		for (auto const& [key, val] : m_imGuiHandler->getFontMap()) {
-			ImGui::PushFont(val);
-
-			if (ImGui::Selectable(key.c_str(), font == key)) {
-				font = key;
-			}
-			ImGui::PopFont();
-		}
-		//ImGui::EndCombo();
-	}
-	ImGui::End();
-
-	ImGui::PopFont();
-
-	ImGui::PushFont(m_imGuiHandler->getFont(font));
 	// ------- player LIST ------- 
 	renderPlayerList();
 
@@ -203,41 +207,111 @@ void LobbyState::renderPlayerList() {
 	flags |= ImGuiWindowFlags_NoNav;
 	flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	flags |= ImGuiWindowFlags_NoTitleBar;
-	flags |= ImGuiWindowFlags_AlwaysAutoResize;
 	flags |= ImGuiWindowFlags_NoSavedSettings;
 
 	ImGui::SetNextWindowPos(ImVec2(
 		m_outerPadding + 300,
 		m_outerPadding
 	));
-	ImGui::Begin("players in lobby:", NULL, flags);
-
-	unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
-	for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {
-		std::string temp;
-		temp += " - ";
-		temp += currentplayer.name.c_str();
-
-		if (currentplayer.id == myID) {
-			temp += " (You)";
+	static ImVec2 windowSize(300, 400);
+	ImGui::SetNextWindowSize(windowSize);
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
+	if (ImGui::Begin("players in lobby:", NULL, flags)) {
+		ImGui::Columns(3);
+		ImGui::Separator();
+		ImGui::Text("Player"); ImGui::NextColumn();
+		ImGui::Text("Team"); ImGui::NextColumn();
+		ImGui::Text("Ready"); ImGui::NextColumn();
+		ImGui::Separator();
+		static unsigned short initial_column_spacing = 0;
+		if (initial_column_spacing < 2) {
+			ImGui::SetColumnWidth(0, (windowSize.x)*0.42f);
+			ImGui::SetColumnWidth(1, (windowSize.x)*0.42f);
+			initial_column_spacing++;
 		}
 		
-		ImGui::Text(temp.c_str());
+		std::map<std::string, SettingStorage::Setting>& gamemodeSettings = m_settings->gameSettingsStatic["gamemode"];
+
+		SettingStorage::Setting& selectedGameTeams = m_settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
+		unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
+		for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {
+			//PLAYERNAME
+			/*if (ImGui::Selectable(std::string("##"+currentplayer.name + std::string((currentplayer.id == myID) ? "*" : "") + std::string("##"+std::to_string(currentplayer.id))).c_str(), false, ImGuiSelectableFlags_SpanAllColumns)) {
+				
+			}*/
+			ImGui::BeginGroup();
+			ImGui::Text(std::string(currentplayer.name + std::string((currentplayer.id == myID) ? "*" : "")).c_str());
+			ImGui::NextColumn();
+			// TEAM
+			if (currentplayer.id == myID || myID == HOST_ID) {
+				static unsigned int selectedTeam = 0;
+				if (ImGui::BeginCombo("##LABEL", selectedGameTeams.getSelected().name.c_str())) {
+
+					for (auto const& key : selectedGameTeams.options) {
+						if (ImGui::Selectable(key.name.c_str(), selectedTeam == (unsigned int)(int)key.value)) {
+							// LOCALPLAYER
+							if (currentplayer.id == myID) {
+								selectedTeam = (unsigned int)(int)key.value;
+							}
+							//HOST
+							else {
+								// TODO: SEND NEW SELECTION TO PLAYERS
+							}
+						}
+
+					}
+					ImGui::EndCombo();
+				}
+			} 
+			else {
+				//TODO: get team from wrapper
+				ImGui::Text("Alone");
+			}
+			ImGui::NextColumn();
+
+			// READY 
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+			if (currentplayer.id == myID) {
+				ImGui::Checkbox(std::string("##Player"+std::to_string(currentplayer.id)).c_str(), &m_ready);
+			}
+			else {
+				bool asd = false;
+				ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
+			}
+			//if (ImGui::BeginPopupContextItem(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str())) {
+			//	if (ImGui::Button("KICK")) {
+			//		//KICK
+			//	}
+			//	ImGui::EndPopup();
+			//}
+			ImGui::EndGroup();
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("First group hovered");
+			//ImGui::OpenPopupOnItemClick(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str(), 1);
+			
+			ImGui::NextColumn();
+			ImGui::PopItemFlag();
+			
+			ImGui::PopStyleVar();
+			ImGui::Separator();
+		}
 	}
 	ImGui::End();
+	ImGui::PopStyleVar();
+
 }
 
 void LobbyState::renderStartButton() {	
 
-	if (NWrapperSingleton::getInstance().isHost()) {
-		ImGui::SetNextWindowPos(ImVec2(
-			m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
-			m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
-		));
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.7f, 0.3f, 1));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
-		
+	ImGui::SetNextWindowPos(ImVec2(
+		m_screenWidth - (m_outerPadding + m_screenWidth / 10.0f),
+		m_screenHeight - (m_outerPadding + m_screenHeight / 10.0f)
+	));
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.7f, 0.3f, 1));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
 
+	if (NWrapperSingleton::getInstance().isHost()) {
 		if (ImGui::Begin("Start Game", nullptr, m_standaloneButtonflags)) {
 			if (ImGui::Button("S.P.L.A.S.H")) {
 				// Queue a removal of LobbyState, then a push of gamestate
@@ -252,11 +326,28 @@ void LobbyState::renderStartButton() {
 				this->requestStackPush(States::Game);
 			}
 		}
-		ImGui::PopStyleColor(2);
-
-
 		ImGui::End();
 	}
+	else {
+		
+		if (ImGui::Begin("##READYUP", nullptr, m_standaloneButtonflags)) {
+			if (m_ready) {
+				if (ImGui::Button("unReady")) {
+					// SEND TO HOST THAT PLAYER IS NO LONGER READY
+					m_ready = false;
+				}
+			}
+			else {
+				if (ImGui::Button("Ready")) {
+					// SEND TO HOST THAT PLAYER IS READY
+					m_ready = true;
+				}
+			}
+			
+		}
+		ImGui::End();
+	}
+	ImGui::PopStyleColor(2);
 }
 
 void LobbyState::renderQuitButton() {
@@ -402,4 +493,28 @@ void LobbyState::renderChat() {
 	}
 	ImGui::EndChild();
 	ImGui::End();
+}
+
+void LobbyState::renderMenu() {
+	static ImVec2 pos(m_outerPadding, m_outerPadding + 100);
+	static ImVec2 size(100, 200);
+	ImGui::SetNextWindowPos(pos);
+	ImGui::SetNextWindowSize(size);
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
+	//ImGui::PushStyleVar(ImGuiStyleVar_;
+
+	if (ImGui::Begin("##LOBBYMENU", nullptr, m_standaloneButtonflags)) {
+
+		ImGui::Button("SETTINGS");
+		ImGui::Button("ASD");
+		ImGui::Button("POTATO");
+
+
+
+	}
+	ImGui::PopStyleColor(3);
+	ImGui::End();
+
 }
