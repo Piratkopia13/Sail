@@ -359,7 +359,7 @@ void AudioEngine::updateProjectileLowPass(float frequency, int indexToSource) {
 	XAUDIO2_FILTER_PARAMETERS lowPassFilter = createLowPassFilter(frequency);
 
 	if (FAILED(m_sound[indexToSource].sourceVoice->SetOutputFilterParameters(
-		m_xAPOSubmixVoice_toMaster,
+		m_sound[indexToSource].xAPOsubMixVoice,
 		&lowPassFilter
 	))) {
 		Logger::Error("Failed to update a projectile's low pass filter");
