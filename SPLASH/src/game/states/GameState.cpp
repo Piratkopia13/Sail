@@ -538,21 +538,9 @@ bool GameState::onPlayerDisconnect(const NetworkDisconnectEvent& event) {
 		return true;
 	}
 
-	for (auto& e : m_componentSystems.networkReceiverSystem->getEntities()) {
-		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == event.player_id) {
-			// Upon finding who disconnected...
-			// Log it (Temporary until killfeed is implemented)
-			logSomeoneDisconnected(event.player_id);
+	GameDataTracker::getInstance().logMessage(event.player.name + " Left The Game!");
+	logSomeoneDisconnected(event.player.id);
 
-			// If I am host notify all other players
-			if (NWrapperSingleton::getInstance().isHost()) {
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::PLAYER_DISCONNECT,
-					SAIL_NEW Netcode::MessagePlayerDisconnect{ event.player_id }
-				);
-			}
-		}
-	}
 	return true;
 }
 
@@ -737,7 +725,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
 
 	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
-	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+	NWrapperSingleton::getInstance().checkForPackages();
 
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera

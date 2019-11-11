@@ -45,12 +45,12 @@ static_assert(sizeof(NetworkEventData) == MAX_PACKAGE_SIZE, "sizeof(NetworkEvent
 
 struct NetworkEvent {
 	NETWORK_EVENT_TYPE eventType;
-	TCP_CONNECTION_ID clientID;
+	TCP_CONNECTION_ID from_tcp_id;
 	NetworkEventData* data;
 
 	NetworkEvent() {
 		eventType = NETWORK_EVENT_TYPE::NETWORK_ERROR;
-		clientID = 0;
+		from_tcp_id = 0;
 		data = nullptr;
 	}
 };
