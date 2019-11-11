@@ -13,7 +13,7 @@ PostProcessPipeline::PostProcessPipeline()
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 
 	add<GaussianBlurHorizontal>("BloomBlur1H", 1.0f);
-	add<GaussianBlurVertical>("BloomBlur1V", 1.0f);
+	add<GaussianBlurVertical>("BloomBlur1V", 0.5f);
 	add<BlendShader>("BloomBlend", 1.0f);
 	//add<RedTintShader>(0.5f);
 
@@ -39,7 +39,6 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 	input.inputRenderableTexture = baseTexture;
 	input.inputRenderableTextureTwo = output->outputTexture;
 	output = runStage(input, m_stages["BloomBlend"], cmdList);
-
 
 	return output->outputTexture;
 }

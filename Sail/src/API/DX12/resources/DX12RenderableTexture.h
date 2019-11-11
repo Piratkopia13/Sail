@@ -8,7 +8,7 @@
 class DX12RenderableTexture : public RenderableTexture, public virtual DX12ATexture {
 
 public:
-	DX12RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, bool createDepthStencilView = true, bool createOnlyDSV = false, UINT bindFlags = 0, UINT cpuAccessFlags = 0, const std::string& name = "Renderable Texture");
+	DX12RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, Texture::FORMAT format = Texture::R8G8B8A8, bool createDepthStencilView = true, bool createOnlyDSV = false, UINT bindFlags = 0, UINT cpuAccessFlags = 0, const std::string& name = "Renderable Texture");
 	~DX12RenderableTexture();
 
 	virtual void begin(void* cmdList = nullptr) override;
@@ -36,5 +36,6 @@ private:
 	
 	UINT m_width, m_height;
 	bool m_hasDepthTextures;
+	DXGI_FORMAT m_format;
 
 };

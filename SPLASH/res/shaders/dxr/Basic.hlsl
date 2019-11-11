@@ -148,11 +148,11 @@ void rayGen() {
 		// 	}
 		// }
 	}
-	float3 tonemappedOutputColor = tonemap(outputColor);
+	// float3 tonemappedOutputColor = tonemap(outputColor);
 	// Write outputs
-	lOutput[launchIndex] = float4(tonemappedOutputColor, 1.0f);
+	lOutput[launchIndex] = float4(outputColor, 1.0f);
 	// lOutput[launchIndex] = float4((length(outputColor) > 1.f) ? tonemappedOutputColor : 0.f, 1.0f);
-	lOutputBloom[launchIndex] = float4((length(outputColor) > 1.f) ? tonemappedOutputColor : 0.f, 1.0f);
+	lOutputBloom[launchIndex] = float4((length(outputColor) > 1.f) ? outputColor : 0.f, 1.0f);
 
 #else
 	// Fully RT

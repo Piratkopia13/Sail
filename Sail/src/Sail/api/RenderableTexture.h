@@ -1,10 +1,11 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "Texture.h"
 
 class RenderableTexture {
 public:
-	static RenderableTexture* Create(unsigned int width = 320, unsigned int height = 180, const std::string& name = "Renderable Texture", bool createDepthStencilView = false, bool createOnlyDSV = false);
+	static RenderableTexture* Create(unsigned int width = 320, unsigned int height = 180, const std::string& name = "Renderable Texture", Texture::FORMAT format = Texture::R8G8B8A8, bool createDepthStencilView = false, bool createOnlyDSV = false);
 	virtual ~RenderableTexture() {}
 
 	virtual void begin(void* cmdList = nullptr) = 0;
