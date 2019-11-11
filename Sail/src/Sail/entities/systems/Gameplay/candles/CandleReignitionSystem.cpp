@@ -59,7 +59,7 @@ bool CandleReignitionSystem::onEvent(const Event& event) {
 
 		// candle exists => player exists (only need to check candle)
 		if (!candle) {
-			Logger::Warning("igniteCandle called but no matching entity found");
+			SAIL_LOG_WARNING("igniteCandle called but no matching entity found");
 			return;
 		}
 
