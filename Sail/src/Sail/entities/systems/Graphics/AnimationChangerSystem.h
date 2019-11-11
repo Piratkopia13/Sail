@@ -17,6 +17,8 @@ public:
 	LEFT,
 	RIGHT,
 	IDLEJUMP,
-	FORWARDJUMP
+	FORWARDJUMP,
+	DROP,
+	//THROW
 	};
 };
