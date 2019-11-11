@@ -58,10 +58,11 @@ private:
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
+	void hitBySprinkler(Netcode::ComponentID candleOwnerID);
+	void enableSprinklers();
 	void igniteCandle(Netcode::ComponentID candleID);
 
 	Entity* findFromNetID(Netcode::ComponentID id) const;
-	Entity* findFromPlayerID(Netcode::PlayerID id) const;
 
 	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);

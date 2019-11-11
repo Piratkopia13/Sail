@@ -108,7 +108,9 @@ void CandleHealthSystem::update(float dt) {
 			candle->health = 0.0f;
 			candle->isLit = false;
 			candle->wasJustExtinguished = false; // reset for the next tick
-			GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			if (candle->wasHitByPlayerID != Netcode::MESSAGE_SPRINKLER_ID) {
+				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			}
 		
 			// Play the reignition sound if the player has any candles left
 			if (candle->respawns < m_maxNumRespawns) {
