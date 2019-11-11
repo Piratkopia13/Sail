@@ -196,6 +196,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
 	boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);
 
+	playerEntity->addComponent<PlayerComponent>();
 	playerEntity->addComponent<TransformComponent>(spawnLocation);
 	playerEntity->addComponent<CullingComponent>();
 	playerEntity->addComponent<ModelComponent>(characterModel);

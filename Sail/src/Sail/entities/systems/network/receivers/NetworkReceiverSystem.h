@@ -56,12 +56,11 @@ private:
 	void playerLanded(Netcode::ComponentID id);
 	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
-	void playerDisconnect(Netcode::PlayerID playerID);
+	void playerDisconnect(Netcode::ComponentID playerCompID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
 	void igniteCandle(Netcode::ComponentID candleID);
 
 	Entity* findFromNetID(Netcode::ComponentID id) const;
-	Entity* findFromPlayerID(Netcode::PlayerID id) const;
 
 	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);

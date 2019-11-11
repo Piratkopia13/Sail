@@ -409,7 +409,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	{
 		Netcode::MessagePlayerDisconnect* data = static_cast<Netcode::MessagePlayerDisconnect*>(event->data);
 
-		ar(data->playerID); // Send
+		ar(data->playerCompID); // Send
 	}
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED:

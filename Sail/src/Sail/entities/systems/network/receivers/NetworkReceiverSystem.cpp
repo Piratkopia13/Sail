@@ -360,8 +360,10 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::PLAYER_DISCONNECT:
 			{
-				ar(playerID);
-				playerDisconnect(playerID);
+				Netcode::ComponentID playerCompID;
+
+				ar(playerCompID);
+				playerDisconnect(playerCompID);
 			}
 			break;
 			case Netcode::MessageType::PLAYER_JUMPED:
@@ -473,14 +475,11 @@ void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID
 }
 
 void NetworkReceiverSystem::destroyEntity(Netcode::ComponentID entityID) {
-	for (auto& e : entities) {
-		if (e->getComponent<NetworkReceiverComponent>()->m_id == entityID) {
-			e->queueDestruction();
-			return;
-		}
+	if (auto e = findFromNetID(entityID); e) {
+		e->queueDestruction();
+		return;
 	}
-
-	Logger::Warning("destoryEntity called but no matching entity found");
+	SAIL_LOG_WARNING("destoryEntity called but no matching entity found");
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
@@ -569,8 +568,8 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 }
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
-void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
-	if (auto e = findFromPlayerID(playerID); e) {
+void NetworkReceiverSystem::playerDisconnect(Netcode::ComponentID playerCompID) {
+	if (auto e = findFromNetID(playerCompID); e) {
 		e->removeDeleteAllChildren();
 		// TODO: Remove all the components that can/should be removed
 		e->queueDestruction();
@@ -621,14 +620,6 @@ void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleID) {
 Entity* NetworkReceiverSystem::findFromNetID(Netcode::ComponentID id) const {
 	for (auto e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-			return e;
-		}
-	}
-	return nullptr;
-}
-Entity* NetworkReceiverSystem::findFromPlayerID(Netcode::PlayerID id) const {
-	for (auto e : entities) {
-		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == id) {
 			return e;
 		}
 	}

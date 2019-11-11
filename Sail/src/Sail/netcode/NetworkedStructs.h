@@ -251,9 +251,9 @@ namespace Netcode {
 
 	class MessagePlayerDisconnect : public MessageData {
 	public:
-		MessagePlayerDisconnect(PlayerID id) : playerID(id) {}
+		MessagePlayerDisconnect(Netcode::ComponentID id) : playerCompID(id) {}
 		~MessagePlayerDisconnect() {}
-		PlayerID playerID;
+		Netcode::ComponentID playerCompID;
 	};
 
 	class MessageEndGameStats : public MessageData {
