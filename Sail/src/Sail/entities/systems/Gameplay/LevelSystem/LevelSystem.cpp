@@ -1374,12 +1374,8 @@ const int LevelSystem::getAreaType(float posX, float posY) {
 
 	AreaType returnValue;
 
-	posX += (0.5f * (float)tileSize);
-	posY += (0.5f * (float)tileSize);
-	posX /= (float)tileSize;
-	posY /= (float)tileSize;
 
-	int roomValue = getRoomID(static_cast<int>(posX), static_cast<int>(posY));
+	int roomValue = getRoomIDWorldPos(posX, posY);
 
 	if (roomValue == 0) {
 		returnValue = AreaType::CORRIDOR;
@@ -1389,6 +1385,15 @@ const int LevelSystem::getAreaType(float posX, float posY) {
 	}
 
 	return static_cast<int>(returnValue);
+}
+
+const int LevelSystem::getRoomIDWorldPos(float posX, float posY) {
+	posX += (0.5f * (float)tileSize);
+	posY += (0.5f * (float)tileSize);
+	posX /= (float)tileSize;
+	posY /= (float)tileSize;
+
+	return tileArr[static_cast<int>(posX)][static_cast<int>(posY)][1];
 }
 
 const int LevelSystem::getRoomID(int posX, int posY) {
@@ -1412,10 +1417,10 @@ void LevelSystem::generateClutter() {
 			for (int y = 0; y < room.sizey; y++) {
 				if (tileArr[x + room.posx][y + room.posy][2] < 17) {
 					if (rand() % 100 < clutterModifier) {
-						float xmax = tileSize;
-						float ymax = tileSize;
-						float xmin = 0;
-						float ymin = 0;
+						float xmax = tileSize*0.95f;
+						float ymax = tileSize * 0.95f;
+						float xmin = tileSize * 0.05f;
+						float ymin = tileSize * 0.05f;
 
 						//move spawnpoints further from walls
 						int tile = tileArr[x + room.posx][y + room.posy][0];
@@ -1529,9 +1534,33 @@ void LevelSystem::generateClutter() {
 				}
 			}
 		}
-
 		largeClutter.push(clutterLarge);
 	}
+
+	//stacks up to two medium objects on each other
+	std::queue<Clutter> doubleStackedMediumClutter;
+	amount = mediumClutter.size();
+	for (int i = 0; i < amount; i++) {
+		Clutter clutterMedium = mediumClutter.front();
+		mediumClutter.pop();
+		if (rand() % 100 < clutterModifier) {
+			float clutterPosX = (rand() % 20) / 100.f - 0.1f;
+			float clutterPosY = (rand() % 20) / 100.f - 0.1f;
+			float angleToRotate = glm::radians(clutterMedium.rot);
+			Clutter mediumStacked;
+			mediumStacked.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterMedium.posx;
+			mediumStacked.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterMedium.posy;
+			mediumStacked.size = 2;
+			mediumStacked.height = 0.25f + clutterMedium.height;
+			mediumStacked.rot = (rand() % 360) / 1.f;
+			mediumClutter.push(mediumStacked);
+			doubleStackedMediumClutter.push(clutterMedium);
+		}
+		else {
+			mediumClutter.push(clutterMedium);	
+		}
+	}
+
 
 	//adds small clutter on top of medium clutter
 	amount = mediumClutter.size();
@@ -1539,18 +1568,22 @@ void LevelSystem::generateClutter() {
 		Clutter clutterMedium = mediumClutter.front();
 		mediumClutter.pop();
 		if (rand() % 100 < clutterModifier) {
-			float clutterPosX = (rand() % 50) / 100.f - 0.25f;
-			float clutterPosY = (rand() % 50) / 100.f - 0.25f;
+			float clutterPosX = (rand() % 40) / 100.f - 0.2f;
+			float clutterPosY = (rand() % 40) / 100.f - 0.2f;
 			float angleToRotate = glm::radians(clutterMedium.rot);
 			Clutter clutterSmall;
 			clutterSmall.posx = clutterPosX * cos(angleToRotate) + clutterPosY * sin(angleToRotate) + clutterMedium.posx;
 			clutterSmall.posy = -clutterPosX * sin(angleToRotate) + clutterPosY * cos(angleToRotate) + clutterMedium.posy;
 			clutterSmall.size = 2;
-			clutterSmall.height = 0.5f + clutterMedium.height;
+			clutterSmall.height = 0.25f + clutterMedium.height;
 			clutterSmall.rot = (rand() % 360)/1.f;
 			smallClutter.push(clutterSmall);
 		}
 		mediumClutter.push(clutterMedium);
+	}
+	while (!doubleStackedMediumClutter.empty()) {
+		mediumClutter.push(doubleStackedMediumClutter.front());
+		doubleStackedMediumClutter.pop();
 	}
 }
 
@@ -1558,18 +1591,40 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 	while (largeClutter.size() > 0) {
 		Clutter clut = largeClutter.front();
 		largeClutter.pop();
-		EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::CLUTTER_LO], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+		if (rand() % 2 == 0) {
+			EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::TABLE], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+		}
+		else {
+			EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::BOXES], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+		}
 	}
 	while (mediumClutter.size() > 0) {
 		Clutter clut = mediumClutter.front();
 		mediumClutter.pop();
-		EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::CLUTTER_MO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+		switch (rand() % 4) {
+		case 0:	EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::MEDIUMBOX], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			break;
+		case 1:	EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::BOOKS1], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			break;
+		case 2:	EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::BOOKS2], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			break;
+		case 3:	EntityFactory::CreateStaticMapObject("ClutterMedium", clutterModels[ClutterModel::SQUAREBOX], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+			break;
+		}
 	}
 	while (smallClutter.size() > 0) {
 		Clutter clut = smallClutter.front();
 		smallClutter.pop();
-		EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::CLUTTER_SO], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
+		switch (rand() % 3) {
+		case 0: EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::NOTEPAD], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1.f, 1, 1.f));
+			break;
+		case 1: EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::SCREEN], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1.f, 1, 1.f));
+			break;
+		case 2: EntityFactory::CreateStaticMapObject("ClutterSmall", clutterModels[ClutterModel::MICROSCOPE], bb, glm::vec3(clut.posx, clut.height, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1.f, 1, 1.f));
+			break;
+		}
 	}
+
 	for (int i = 1; i < numberOfRooms; i++) {
 		Rect room = matched.front();
 		matched.pop();

@@ -13,6 +13,9 @@ namespace Netcode {
 
 	// Used to signify NetworkMessages sent Internally
 	static constexpr PlayerID MESSAGE_FROM_SELF_ID = 255;
+	
+	// ID for sprinkler
+	static constexpr PlayerID MESSAGE_SPRINKLER_ID = 254;
 
 	// ComponentID has 32 bits and the first 8 are the PlayerID of the owner which
 	// can be extracted by shifting the ComponentID 18 bits to the right.
@@ -62,7 +65,6 @@ namespace Netcode {
 		SET_CANDLE_HEALTH,
 		EXTINGUISH_CANDLE,
 		PLAYER_DIED,
-		PLAYER_DISCONNECT,
 		MATCH_ENDED,
 		PREPARE_ENDSCREEN,			// Clients send relevant data for the endgame screen
 		ENDGAME_STATS,
@@ -73,6 +75,8 @@ namespace Netcode {
 		RUNNING_WATER_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
+		HIT_BY_SPRINKLER,
+		ENABLE_SPRINKLERS,
 		EMPTY,
 		COUNT
 	}; 
@@ -93,7 +97,6 @@ namespace Netcode {
 		"SET_CANDLE_HEALTH,			",
 		"EXTINGUISH_CANDLE,			",
 		"PLAYER_DIED,				",
-		"PLAYER_DISCONNECT,			",
 		"MATCH_ENDED,				",
 		"PREPARE_ENDSCREEN,			",	// Clients send relevant data for the endgame screen
 		"ENDGAME_STATS,				",
@@ -102,6 +105,8 @@ namespace Netcode {
 		"RUNNING_TILE_START,		",
 		"RUNNING_STOP_SOUND,		",
 		"IGNITE_CANDLE,				",
+		"HIT_BY_SPRINKLER,			",
+		"ENABLE_SPRINKLERS,			",
 		"EMPTY						",
 	};
 
@@ -247,13 +252,6 @@ namespace Netcode {
 		glm::vec3 candlePos;
 	};
 
-	class MessagePlayerDisconnect : public MessageData {
-	public:
-		MessagePlayerDisconnect(PlayerID id) : playerID(id) {}
-		~MessagePlayerDisconnect() {}
-		PlayerID playerID;
-	};
-
 	class MessageEndGameStats : public MessageData {
 	public:
 		MessageEndGameStats() {}
@@ -307,6 +305,17 @@ namespace Netcode {
 		MessageIgniteCandle(Netcode::ComponentID candleId) : candleCompId(candleId) {}
 		~MessageIgniteCandle() {}
 		Netcode::ComponentID candleCompId;
+	};
+	class MessageHitBySprinkler : public MessageData {
+	public:
+		MessageHitBySprinkler(Netcode::ComponentID id) : candleOwnerID(id) {}
+		~MessageHitBySprinkler() {}
+		Netcode::ComponentID candleOwnerID;
+	};
+	class MessageEnableSprinklers : public MessageData {
+	public:
+		MessageEnableSprinklers() {}
+		~MessageEnableSprinklers() {}
 	};
 
 }

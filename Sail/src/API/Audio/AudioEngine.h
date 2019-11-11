@@ -51,7 +51,9 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback {
 
 struct soundStruct {
 	std::string          filename = { "" };
+	Microsoft::WRL::ComPtr<IXAPO> xapo;
 	IXAudio2SourceVoice* sourceVoice = nullptr;
+	IXAudio2SubmixVoice* xAPOsubMixVoice = nullptr;
 	HrtfEnvironment      environment = HrtfEnvironment::Outdoors;
 	Microsoft::WRL::ComPtr<IXAPOHrtfParameters> hrtfParams;
 };
@@ -95,15 +97,14 @@ private:
 	bool m_isRunning = true;
 
 	// The main audio 'core'
-	IXAudio2* m_xAudio2 = nullptr;	
+	IXAudio2* m_xAudio2 = nullptr;
+	bool m_initFailed = false;
 
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
 	IXAudio2SubmixVoice* m_xAPOSubmixVoice_toMaster = nullptr;
 	IXAudio2SubmixVoice* m_masterSubmixVoice = nullptr;
 	IXAudio2SubmixVoice* m_streamingSubmixVoice = nullptr;
-
-	Microsoft::WRL::ComPtr<IXAPO> m_xapo;
 
 	DWORD m_destinationChannelCount;
 	// Represents each loaded sound in the form of an 'object'
@@ -124,18 +125,20 @@ private:
 	// PRIVATE FUNCTIONS
 	//-----------------
 	HRESULT initXAudio2();
-	HRESULT initSubmixes();
 
 	//
 	int fetchSoundIndex();
 
 	//
-	void sendVoiceTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, bool useFilter);
+	void sendVoiceTo(IXAudio2SourceVoice* *source, IXAudio2Voice* *destination, bool useFilter);
+	void sendVoiceTosubMixVoice(IXAudio2SourceVoice** source, IXAudio2SubmixVoice** destination, bool useFilter);
 	void addLowPassFilterTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, float frequency);
+	void setUpxAPO(int indexValue);
 
 	//
 	XAUDIO2_EFFECT_DESCRIPTOR createXAPPOEffect(Microsoft::WRL::ComPtr<IXAPO> xapo);
 	XAUDIO2_FILTER_PARAMETERS createLowPassFilter(float cutoffFrequence);
+	void createXAPOsubMixVoice(IXAudio2SubmixVoice* *source, Microsoft::WRL::ComPtr<IXAPO> xapo); // Automatically points to masterVoice
 
 	void streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC = nullptr);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
