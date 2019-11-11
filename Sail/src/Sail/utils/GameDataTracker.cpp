@@ -38,6 +38,7 @@ void GameDataTracker::resetData() {
 	m_loggedDataGlobal.bulletsFiredID = NWrapperSingleton::getInstance().getMyPlayerID();
 	m_loggedDataGlobal.distanceWalkedID = NWrapperSingleton::getInstance().getMyPlayerID();
 	m_loggedDataGlobal.jumpsMadeID = NWrapperSingleton::getInstance().getMyPlayerID();
+	m_hostPlayerTracker.clear();
 
 	m_nPlayersCurrentSession = 0;
 	for (auto player : m_network->getPlayers()) {

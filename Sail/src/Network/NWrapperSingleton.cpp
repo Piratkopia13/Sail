@@ -221,6 +221,7 @@ void NWrapperSingleton::resetWrapper() {
 	m_isInitialized = false;
 	m_isHost = false;
 	delete this->m_wrapper;
+	this->m_wrapper = nullptr;
 }
 
 void NWrapperSingleton::resetNetwork() {
