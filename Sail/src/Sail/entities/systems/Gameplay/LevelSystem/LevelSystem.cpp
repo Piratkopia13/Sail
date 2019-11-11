@@ -1374,12 +1374,8 @@ const int LevelSystem::getAreaType(float posX, float posY) {
 
 	AreaType returnValue;
 
-	posX += (0.5f * (float)tileSize);
-	posY += (0.5f * (float)tileSize);
-	posX /= (float)tileSize;
-	posY /= (float)tileSize;
 
-	int roomValue = getRoomID(static_cast<int>(posX), static_cast<int>(posY));
+	int roomValue = getRoomIDWorldPos(posX, posY);
 
 	if (roomValue == 0) {
 		returnValue = AreaType::CORRIDOR;
@@ -1389,6 +1385,15 @@ const int LevelSystem::getAreaType(float posX, float posY) {
 	}
 
 	return static_cast<int>(returnValue);
+}
+
+const int LevelSystem::getRoomIDWorldPos(float posX, float posY) {
+	posX += (0.5f * (float)tileSize);
+	posY += (0.5f * (float)tileSize);
+	posX /= (float)tileSize;
+	posY /= (float)tileSize;
+
+	return tileArr[static_cast<int>(posX)][static_cast<int>(posY)][1];
 }
 
 const int LevelSystem::getRoomID(int posX, int posY) {

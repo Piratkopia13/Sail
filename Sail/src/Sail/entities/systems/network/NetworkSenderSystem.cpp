@@ -340,6 +340,11 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ArchiveHelpers::saveVec3(ar, data->position);
 	}
 	break;
+	case Netcode::MessageType::ENABLE_SPRINKLERS:
+	{
+		Netcode::MessageHitBySprinkler* data = static_cast<Netcode::MessageHitBySprinkler*>(event->data);
+	}
+	break;
 	case Netcode::MessageType::ENDGAME_STATS:
 	{
 		GameDataTracker* dgtp = &GameDataTracker::getInstance();
@@ -373,6 +378,13 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		Netcode::MessageExtinguishCandle* data = static_cast<Netcode::MessageExtinguishCandle*>(event->data);
 		ar(data->candleThatWasHit);
 		ar(data->playerWhoExtinguishedCandle);
+	}
+	break;
+	case Netcode::MessageType::HIT_BY_SPRINKLER:
+	{
+		Netcode::MessageHitBySprinkler* data = static_cast<Netcode::MessageHitBySprinkler*>(event->data);
+
+		ar(data->candleOwnerID);
 	}
 	break;
 	case Netcode::MessageType::IGNITE_CANDLE:
