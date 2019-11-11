@@ -57,6 +57,7 @@ void SprinklerSystem::update(float dt) {
 
 			float candlePosX;
 			float candlePosZ;
+
 			if (candle->isCarried && candle->wasCarriedLastUpdate && !e->isAboutToBeDestroyed()) {
 				candlePosX = transform->getParent()->getTranslation().x;
 				candlePosZ = transform->getParent()->getTranslation().z;
@@ -65,6 +66,7 @@ void SprinklerSystem::update(float dt) {
 				candlePosX = transform->getTranslation().x;
 				candlePosZ = transform->getTranslation().z;
 			}
+
 			int candleLocationRoomID = m_map->getRoomIDWorldPos(candlePosX, candlePosZ);
 			std::vector<int>::iterator it = std::find(m_activeRooms.begin(), m_activeRooms.end(), candleLocationRoomID);
 			if (it != m_activeRooms.end()) {
@@ -76,9 +78,8 @@ void SprinklerSystem::update(float dt) {
 				);
 			}
 
-
+			// Add more active rooms
 			if (m_enableNewSprinklers) {
-				// Add rooms to different vector to enable sprinklers and turn off hazard lights
 				// Rotate between sides to activate
 				m_mapSide++;
 				m_mapSide = m_mapSide > 4 ? 1 : m_mapSide;
@@ -113,7 +114,7 @@ void SprinklerSystem::update(float dt) {
 				m_enableNewSprinklers = false;
 				m_endGameMapIncrement++;
 			}
-			// New time increment reached, add new rooms
+			// New time increment reached, add new rooms next update
 			else if (((m_endGameTimer) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
 				m_enableNewSprinklers = true;
 			}
