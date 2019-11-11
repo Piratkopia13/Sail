@@ -218,7 +218,7 @@ void NetworkSenderSystem::stop() {
 
 	while (!m_eventQueue.empty()) {
 		NetworkSenderEvent* pE = m_eventQueue.front();		// Fetch
-		if ((pE->type == Netcode::MessageType::MATCH_ENDED || pE->type == Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY) && ended == false) {
+		if ((pE->type == Netcode::MessageType::MATCH_ENDED) && ended == false) {
 			ended = true;
 			sendToOthers(size_t{1}); // Write nrOfEvents
 			writeEventToArchive(pE, sendToOthers);
@@ -453,11 +453,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->runningPlayer); // Send
 	}
 	break;
-	case Netcode::MessageType::SEND_ALL_BACK_TO_LOBBY:
-	{
-
-	}
-	break;
 	case Netcode::MessageType::SET_CANDLE_HEALTH:
 	{
 		Netcode::MessageSetCandleHealth* data = static_cast<Netcode::MessageSetCandleHealth*>(event->data);
@@ -474,7 +469,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ArchiveHelpers::saveVec3(ar, data->velocity);
 		ar(data->projectileComponentID);
 		ar(data->ownerPlayerComponentID);
-
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:

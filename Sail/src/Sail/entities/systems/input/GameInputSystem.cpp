@@ -84,6 +84,15 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 		// Do flying movement if in spectator mode
 		if ( e->hasComponent<SpectatorComponent>() ) {
+			if (m_killSoundUponDeath) {
+
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::RUNNING_STOP_SOUND,
+					SAIL_NEW Netcode::MessageRunningStopSound{ e->getComponent<NetworkSenderComponent>()->m_id }
+				);
+				m_killSoundUponDeath = false;
+			}
+
 			if ( playerMovement.forwardMovement != 0.f || playerMovement.rightMovement != 0.f || playerMovement.upMovement != 0.f ) {
  				forward = glm::normalize(forward);
 
@@ -130,7 +139,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			}
 
 			if (collision->onGround) {
-
 				if (m_fallTimer > m_fallThreshold) {
 					// Send event to play the sound for the landing (will be sent to ourself too)
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
