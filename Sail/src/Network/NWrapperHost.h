@@ -13,6 +13,13 @@ public:
 	void setLobbyName(std::string name);
 	void updateServerDescription();
 
+#ifdef DEVELOPMENT
+	const std::map<TCP_CONNECTION_ID, unsigned char>& getConnectionMap();
+	const std::string& getServerDescription();
+	const std::string& getLobbyName();
+#endif // DEVELOPMENT
+
+
 private:
 	std::map<TCP_CONNECTION_ID, unsigned char> m_connectionsMap;
 	unsigned char m_IdDistribution = 0;
@@ -20,8 +27,6 @@ private:
 	std::string m_serverDescription = "";
 
 	void sendChatMsg(std::string msg);
-
-
 	 
 	void playerJoined(TCP_CONNECTION_ID id);
 	void playerDisconnected(TCP_CONNECTION_ID id);
