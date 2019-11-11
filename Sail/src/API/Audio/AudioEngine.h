@@ -51,6 +51,7 @@ struct StreamingVoiceContext : public IXAudio2VoiceCallback {
 
 struct soundStruct {
 	std::string          filename = { "" };
+	Microsoft::WRL::ComPtr<IXAPO> xapo;
 	IXAudio2SourceVoice* sourceVoice = nullptr;
 	IXAudio2SubmixVoice* xAPOsubMixVoice = nullptr;
 	HrtfEnvironment      environment = HrtfEnvironment::Outdoors;
@@ -104,8 +105,6 @@ private:
 	IXAudio2SubmixVoice* m_masterSubmixVoice = nullptr;
 	IXAudio2SubmixVoice* m_streamingSubmixVoice = nullptr;
 
-	Microsoft::WRL::ComPtr<IXAPO> m_xapo;
-
 	DWORD m_destinationChannelCount;
 	// Represents each loaded sound in the form of an 'object'
 	soundStruct m_sound[SOUND_COUNT];
@@ -125,7 +124,6 @@ private:
 	// PRIVATE FUNCTIONS
 	//-----------------
 	HRESULT initXAudio2();
-	HRESULT initSubmixes();
 
 	//
 	int fetchSoundIndex();
@@ -134,11 +132,12 @@ private:
 	void sendVoiceTo(IXAudio2SourceVoice* *source, IXAudio2Voice* *destination, bool useFilter);
 	void sendVoiceTosubMixVoice(IXAudio2SourceVoice** source, IXAudio2SubmixVoice** destination, bool useFilter);
 	void addLowPassFilterTo(IXAudio2SourceVoice* source, IXAudio2Voice* destination, float frequency);
+	void setUpxAPO(int indexValue);
 
 	//
 	XAUDIO2_EFFECT_DESCRIPTOR createXAPPOEffect(Microsoft::WRL::ComPtr<IXAPO> xapo);
 	XAUDIO2_FILTER_PARAMETERS createLowPassFilter(float cutoffFrequence);
-	void createXAPOsubMixVoice(IXAudio2SubmixVoice* *source); // Automatically points to masterVoice
+	void createXAPOsubMixVoice(IXAudio2SubmixVoice* *source, Microsoft::WRL::ComPtr<IXAPO> xapo); // Automatically points to masterVoice
 
 	void streamSoundInternal(const std::string& filename, int myIndex, float volume, bool isPositionalAudio, bool loop, AudioComponent* pAudioC = nullptr);
 	HRESULT FindMediaFileCch(WCHAR* strDestPath, int cchDest, LPCWSTR strFilename);
