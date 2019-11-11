@@ -72,18 +72,36 @@ void ParticleSystem::spawnParticles(int particlesToSpawn, ParticleEmitterCompone
 			m_cpuOutput[i].newParticles.back().spread = particleEmitterComp->spread * randVec;
 			m_cpuOutput[i].newParticles.back().spawnTime = time;
 		}
+
+		m_particleLife.emplace_back();
+		m_particleLife.back().first = m_particleLife.size() - 1;
+		m_particleLife.back().second = particleEmitterComp->lifeTime;
 	}
 
 	m_numberOfParticles += particlesToSpawn;
 }
 
 void ParticleSystem::update(float dt) {
+	for (int i = 0; i < m_particleLife.size(); i++) {
+		m_particleLife[i].second -= dt;
+
+		if (m_particleLife[i].second < 0.0f) {
+			for (unsigned int j = 0; j < DX12API::NUM_GPU_BUFFERS; j++) {
+				m_cpuOutput[j].toRemove.emplace_back();
+				m_cpuOutput[j].toRemove.back() = m_particleLife[i].first;
+			}
+			m_particleLife.erase(m_particleLife.begin() + i);
+			m_numberOfParticles--;
+			i--;
+		}
+	}
+
 	for (auto& e : entities) {
 		ParticleEmitterComponent* particleEmitterComp = e->getComponent<ParticleEmitterComponent>();
 
 		if (particleEmitterComp->spawnTimer >= particleEmitterComp->spawnRate) {
 			//Spawn the correct number of particles
-			int particlesToSpawn = (int)glm::floor(particleEmitterComp->spawnTimer / glm::max(particleEmitterComp->spawnRate, 0.0001f));
+			int particlesToSpawn = glm::min((int)glm::floor(particleEmitterComp->spawnTimer / glm::max(particleEmitterComp->spawnRate, 0.0001f)), (int)floor(m_outputVertexBufferSize / 6) - m_numberOfParticles);
 			spawnParticles(particlesToSpawn, particleEmitterComp);
 			//Decrease timer
 			particleEmitterComp->spawnTimer -= particleEmitterComp->spawnRate * particlesToSpawn;
@@ -110,7 +128,6 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		//----Compute shader constant buffer----
 		ComputeInput inputData;
-		inputData.numParticles = (unsigned int)m_cpuOutput[context->getSwapIndex()].newParticles.size();
 		inputData.previousNrOfParticles = m_cpuOutput[context->getSwapIndex()].previousNrOfParticles;
 		inputData.maxOutputVertices = m_outputVertexBufferSize;
 		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
@@ -119,12 +136,22 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		//Update timer for this buffer
 		m_cpuOutput[context->getSwapIndex()].lastFrameTime += elapsedTime;
 
-		for (unsigned int i = 0; i < glm::min((int)m_cpuOutput[context->getSwapIndex()].newParticles.size(), 100); i++) {
+		inputData.numParticles = glm::min((int)m_cpuOutput[context->getSwapIndex()].newParticles.size(), 100);
+		Logger::Log(std::to_string(inputData.previousNrOfParticles));
+		for (unsigned int i = 0; i < inputData.numParticles; i++) {
 			const NewParticleInfo* newEmitter_i = &m_cpuOutput[context->getSwapIndex()].newParticles[i];
 			inputData.particles[i].position = newEmitter_i->emitter->position;
 			inputData.particles[i].velocity = newEmitter_i->emitter->velocity + newEmitter_i->spread;
 			inputData.particles[i].acceleration = newEmitter_i->emitter->acceleration;
 			inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newEmitter_i->spawnTime;
+		}
+
+		//Sort it so that the overlaps when swaping on the gpu can easily be found
+		std::sort(m_cpuOutput[context->getSwapIndex()].toRemove.begin(), m_cpuOutput[context->getSwapIndex()].toRemove.end());
+
+		inputData.numParticlesToRemove = glm::min((int)m_cpuOutput[context->getSwapIndex()].toRemove.size(), 100);
+		for (unsigned int i = 0; i < inputData.numParticlesToRemove; i++) {
+			inputData.particlesToRemove[i] = m_cpuOutput[context->getSwapIndex()].toRemove[i];
 		}
 
 		m_particleShader->getPipeline()->setCBufferVar("inputBuffer", &inputData, sizeof(ComputeInput));
@@ -161,9 +188,11 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		// Transition to Cbuffer usage
 		DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
-		// Update nr of particles in this buffer and clear the newEmitters list
-		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_numberOfParticles, (int)(m_outputVertexBufferSize / 6));
-		m_cpuOutput[context->getSwapIndex()].newParticles.clear();
+		// Update nr of particles in this buffer and erase added and removed emitters from the queues
+		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_cpuOutput[context->getSwapIndex()].previousNrOfParticles + inputData.numParticles - inputData.numParticlesToRemove, m_outputVertexBufferSize / 6);
+
+		m_cpuOutput[context->getSwapIndex()].newParticles.erase(m_cpuOutput[context->getSwapIndex()].newParticles.begin(), m_cpuOutput[context->getSwapIndex()].newParticles.begin() + inputData.numParticles);
+		m_cpuOutput[context->getSwapIndex()].toRemove.erase(m_cpuOutput[context->getSwapIndex()].toRemove.begin(), m_cpuOutput[context->getSwapIndex()].toRemove.begin() + inputData.numParticlesToRemove);
 	}
 }
 

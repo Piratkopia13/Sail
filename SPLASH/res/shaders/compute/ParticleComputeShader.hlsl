@@ -9,7 +9,9 @@ struct Particle{
 
 struct ParticleInput{
 	Particle particles[100];
+	uint toRemove[100];
 	uint numParticles;
+	uint numToRemove;
 	uint numPrevParticles;
 	uint maxOutputVertices;
 	float frameTime;
@@ -86,6 +88,32 @@ void updatePhysics(int particleIndex, float dt) {
 	}
 }
 
+void removeParticle(int particleToRemoveIndex) {
+	uint swapIndex = 0;
+	if (inputBuffer.toRemove[particleToRemoveIndex] < inputBuffer.numPrevParticles - inputBuffer.numToRemove) {
+		swapIndex = inputBuffer.numPrevParticles - particleToRemoveIndex - 1;
+		int counter = 0;
+		while (inputBuffer.toRemove[inputBuffer.numToRemove - 1 - counter] >= swapIndex && swapIndex > 0) {
+			swapIndex--;
+			counter++;
+		}
+		
+		CSPhysicsBuffer[inputBuffer.toRemove[particleToRemoveIndex]] = CSPhysicsBuffer[swapIndex];
+		for (uint j = 0 ; j < 6; j++) {
+			CSOutputBuffer[inputBuffer.toRemove[particleToRemoveIndex] * 6 + j] = CSOutputBuffer[swapIndex * 6 + j];
+		}
+	} else {
+		swapIndex = inputBuffer.toRemove[particleToRemoveIndex];
+	}
+	
+	for (uint j = 0 ; j < 6; j++) {
+		CSPhysicsBuffer[swapIndex].velocity = 0.f;
+		CSPhysicsBuffer[swapIndex].acceleration = 0.f;
+		CSOutputBuffer[swapIndex * 6 + j].position = -999999.0f;
+	}
+	
+}
+
 #define X_THREADS 8
 #define Y_THREADS 8
 #define Z_THREADS 1
@@ -103,14 +131,18 @@ void CSMain(ComputeShaderInput IN) {
 	uint totalThreads = X_THREADS * Y_THREADS * Z_THREADS;
 	uint thisThread = IN.GroupIndex;
 	
+	uint stride = totalThreads;
+	
+	for (uint i = thisThread; i < inputBuffer.numToRemove; i += stride) {
+		removeParticle(i);
+	}
+	
 	//Find how many particles should be spawned
 	int particleBufferSizeLeft = floor(inputBuffer.maxOutputVertices / 6) - (inputBuffer.numPrevParticles);
 	int particlesToSpawn = inputBuffer.numParticles;
 	if (inputBuffer.numParticles > particleBufferSizeLeft) {
 		particlesToSpawn = particleBufferSizeLeft;
 	}
-	
-	uint stride = totalThreads;
 	
     for (uint i = thisThread; i < particlesToSpawn; i += stride) {
 		float3 v0, v1, v2, v3;

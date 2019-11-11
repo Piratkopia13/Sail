@@ -41,6 +41,8 @@ private:
 
 	int m_numberOfParticles;
 
+	std::vector<std::pair<unsigned int, float>> m_particleLife;
+
 	struct NewParticleInfo {
 		ParticleEmitterComponent* emitter;
 		glm::vec3 spread;
@@ -49,6 +51,7 @@ private:
 
 	struct CPUOutput {
 		std::vector<NewParticleInfo> newParticles;
+		std::vector<unsigned int> toRemove;
 		unsigned int previousNrOfParticles;
 		float lastFrameTime;
 	};
@@ -66,7 +69,9 @@ private:
 
 	struct ComputeInput {
 		ParticleData particles[100];
+		unsigned int particlesToRemove[100];
 		unsigned int numParticles;
+		unsigned int numParticlesToRemove;
 		unsigned int previousNrOfParticles;
 		unsigned int maxOutputVertices;
 		float frameTime;
