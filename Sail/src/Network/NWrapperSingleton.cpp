@@ -115,7 +115,7 @@ Player& NWrapperSingleton::getMyPlayer() {
 	return m_me;
 }
 
-Player* NWrapperSingleton::getPlayer(Netcode::PlayerID& id) {
+Player* NWrapperSingleton::getPlayer(const Netcode::PlayerID& id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {

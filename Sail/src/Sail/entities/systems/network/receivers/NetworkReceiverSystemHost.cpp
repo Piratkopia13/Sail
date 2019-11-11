@@ -93,35 +93,37 @@ void NetworkReceiverSystemHost::mergeHostsStats() {
 }
 
 void NetworkReceiverSystemHost::waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) {
-	for (auto& e : entities) {
-		//Look for the entity that OWNS the candle (player entity)
-		if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
-			continue;
-		}
-		//Look for the entity that IS the candle (candle entity)
-		std::vector<Entity*> childEntities = e->getChildEntities();
-		for (auto& child : childEntities) {
-			if (child->hasComponent<CandleComponent>()) {
-				// Damage the candle
-				// Save the Shooter of the Candle if its lethal
-				// TODO: Replace 10.0f with game settings damage
-				child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 
-				// Play relevant sound
-				if (child->getComponent<CandleComponent>()->isLit) {
-					if (e->hasComponent<LocalOwnerComponent>()) {
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].isPlaying = true;
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].playOnce = true;
-					} else {
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
-						e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
-					}
-				}
-
-				// Check in Candle System What happens next
-				return;
-			}
-		}
-	}
-	SAIL_LOG_WARNING("waterHitPlayer called but no matching entity found");
+	//for (auto& e : entities) {
+	//	//Look for the entity that OWNS the candle (player entity)
+	//	if (e->getComponent<NetworkReceiverComponent>()->m_id != id) {
+	//		continue;
+	//	}
+	//	//Look for the entity that IS the candle (candle entity)
+	//	std::vector<Entity*> childEntities = e->getChildEntities();
+	//	for (auto& child : childEntities) {
+	//		if (child->hasComponent<CandleComponent>()) {
+	//			// Damage the candle
+	//			// Save the Shooter of the Candle if its lethal
+	//			// TODO: Replace 10.0f with game settings damage
+	//			child->getComponent<CandleComponent>()->hitWithWater(10.0f, senderId);
+	//
+	//			// Play relevant sound
+	//			if (child->getComponent<CandleComponent>()->isLit) {
+	//				if (e->hasComponent<LocalOwnerComponent>()) {
+	//					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].isPlaying = true;
+	//					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_MY_CANDLE].playOnce = true;
+	//				} else {
+	//					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].isPlaying = true;
+	//					e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE].playOnce = true;
+	//				}
+	//			}
+	//
+	//			// Check in Candle System What happens next
+	//			return;
+	//		}
+	//	}
+	//}
+	//SAIL_LOG_WARNING("waterHitPlayer called but no matching entity found");
 }
