@@ -37,9 +37,12 @@ static std::ofstream out("LogFiles/NetworkReceiverSystem.cpp.log");
 NetworkReceiverSystem::NetworkReceiverSystem() : BaseComponentSystem() {
 	registerComponent<NetworkReceiverComponent>(true, true, true);
 	registerComponent<TransformComponent>(false, true, true);
+
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
 NetworkReceiverSystem::~NetworkReceiverSystem() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
 void NetworkReceiverSystem::init(Netcode::PlayerID playerID, NetworkSenderSystem* netSendSysPtr) {
@@ -353,12 +356,6 @@ void NetworkReceiverSystem::update(float dt) {
 				playerDied(networkIdOfKilled, playerIdOfShooter);
 			}
 			break;
-			case Netcode::MessageType::PLAYER_DISCONNECT:
-			{
-				ar(playerID);
-				playerDisconnect(playerID);
-			}
-			break;
 			case Netcode::MessageType::PLAYER_JUMPED:
 			{
 				ar(componentID);
@@ -554,13 +551,13 @@ void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, N
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
 void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
+
 	if (auto e = findFromPlayerID(playerID); e) {
 		e->removeDeleteAllChildren();
 		// TODO: Remove all the components that can/should be removed
 		e->queueDestruction();
 		return;
 	}
-	SAIL_LOG_WARNING("playerDisconnect called but no matching entity found");
 }
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
@@ -610,6 +607,16 @@ Entity* NetworkReceiverSystem::findFromNetID(Netcode::ComponentID id) const {
 	}
 	return nullptr;
 }
+
+bool NetworkReceiverSystem::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::NETWORK_DISCONNECT:		playerDisconnect(((const NetworkDisconnectEvent&)(event)).player.id); break;
+	default: break;
+	}
+
+	return true;
+}
+
 Entity* NetworkReceiverSystem::findFromPlayerID(Netcode::PlayerID id) const {
 	for (auto e : entities) {
 		if (Netcode::getComponentOwner(e->getComponent<NetworkReceiverComponent>()->m_id) == id) {

@@ -2,12 +2,13 @@
 
 #include "../../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
+#include "Sail/events/EventReceiver.h"
 
 class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
 
-class NetworkReceiverSystem : public BaseComponentSystem {
+class NetworkReceiverSystem : public BaseComponentSystem, public EventReceiver {
 public:
 	NetworkReceiverSystem();
 	~NetworkReceiverSystem();
@@ -75,4 +76,6 @@ private:
 	void runningMetalStart(Netcode::ComponentID id);
 	void runningTileStart(Netcode::ComponentID id);
 	void runningStopSound(Netcode::ComponentID id);
+	bool onEvent(const Event& event) override;
+
 };
