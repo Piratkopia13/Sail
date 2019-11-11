@@ -60,6 +60,7 @@ private:
 	float m_fallThreshold = 0.6f;
 	float m_soundSwitchTimer = 0.0f;
 	float m_changeThreshold = 0.358f; /*(0.756f / 2), 0.756 = all footstep sounds containing 2 steps each*/
+	bool m_killSoundUponDeath = true;
 
 	// TEMP BOOLS
 	bool tempMetal = false;

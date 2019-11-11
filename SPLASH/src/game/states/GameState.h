@@ -70,6 +70,7 @@ private:
 	WasDroppedWindow m_wasDroppedWindow;
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
+	NetworkInfoWindow m_networkInfoImGuiWindow;
 
 	size_t m_currLightIndex;
 
