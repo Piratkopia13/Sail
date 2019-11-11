@@ -57,7 +57,7 @@ private:
 	void playerLanded(Netcode::ComponentID id);
 	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
-	void playerDisconnect(Netcode::ComponentID playerCompID);
+	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
 	void hitBySprinkler(Netcode::ComponentID candleOwnerID);
 	void enableSprinklers();
