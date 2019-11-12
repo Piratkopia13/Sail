@@ -129,7 +129,7 @@ void CandleHealthSystem::update(float dt) {
 }
 
 bool CandleHealthSystem::onEvent(const Event& event) {
-	auto findCandleFromParentID = [=](const Netcode::ComponentID netCompID) {
+	auto findCandleFromParentID = [=](const Netcode::CompID netCompID) {
 		Entity* candle = nullptr;
 		for (auto entity : entities) {
 			if (auto parent = entity->getParent(); parent) {

@@ -2,5 +2,5 @@
 #include "NetworkedStructs.h"
 
 namespace Netcode {
-	std::atomic<ComponentID> gNetworkIDCounter = 0;
+	std::atomic<CompID> gNetworkIDCounter = 0;
 }

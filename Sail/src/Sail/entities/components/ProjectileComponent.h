@@ -10,6 +10,6 @@ public:
 
 	float m_damage = 1.0f;
 	bool ownedbyLocalPlayer = false;	// Used to determine hit-reg with network.
-	Netcode::ComponentID ownedBy;
+	Netcode::CompID ownedBy;
 	float timeSinceLastDecal = 5000.f;
 };

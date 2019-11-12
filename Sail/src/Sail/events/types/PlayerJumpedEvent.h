@@ -3,8 +3,8 @@
 #include "Sail/netcode/NetcodeTypes.h"
 
 struct PlayerJumpedEvent : public Event {
-	PlayerJumpedEvent(const Netcode::ComponentID _netCompID)
+	PlayerJumpedEvent(const Netcode::CompID _netCompID)
 		: Event(Event::Type::PLAYER_JUMPED)
 		, netCompID(_netCompID) {}
-	const Netcode::ComponentID netCompID;
+	const Netcode::CompID netCompID;
 };

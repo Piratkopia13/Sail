@@ -92,7 +92,7 @@ void NetworkReceiverSystemHost::mergeHostsStats() {
 	}
 }
 
-void NetworkReceiverSystemHost::waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) {
+void NetworkReceiverSystemHost::waterHitPlayer(Netcode::CompID id, Netcode::PlayerID senderId) {
 	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 
 	//for (auto& e : entities) {

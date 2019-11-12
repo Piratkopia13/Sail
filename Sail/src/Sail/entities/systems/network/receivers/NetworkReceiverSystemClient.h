@@ -18,6 +18,6 @@ public:
 	void mergeHostsStats();
 
 private:
-	void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) override {}
+	void waterHitPlayer(Netcode::CompID id, Netcode::PlayerID senderId) override {}
 
 };

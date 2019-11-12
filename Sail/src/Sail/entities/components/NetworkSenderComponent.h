@@ -24,7 +24,7 @@ public:
 	  Currently this is only used for the creation of projectiles since their component ID are sent over the network
 	  before they are created by the local player.
 	*/
-	NetworkSenderComponent(Netcode::EntityType entityType, Netcode::ComponentID objectID) :
+	NetworkSenderComponent(Netcode::EntityType entityType, Netcode::CompID objectID) :
 		m_id(objectID), m_entityType(entityType)
 	{}
 
@@ -62,7 +62,7 @@ public:
 		return false;
 	}
 
-	Netcode::ComponentID m_id;
+	Netcode::CompID m_id;
 	Netcode::EntityType m_entityType;
 
 	std::vector<Netcode::MessageType> m_dataTypes;

@@ -6,9 +6,9 @@
 
 namespace Netcode {
 	// Global counter
-	extern std::atomic<ComponentID> gNetworkIDCounter;
-	static ComponentID createNetworkID()    { return ++gNetworkIDCounter; }
-	static ComponentID nrOfNetworkObjects() { return gNetworkIDCounter; }
+	extern std::atomic<CompID> gNetworkIDCounter;
+	static CompID createNetworkID()    { return ++gNetworkIDCounter; }
+	static CompID nrOfNetworkObjects() { return gNetworkIDCounter; }
 
 
 	// Used to signify NetworkMessages sent Internally
@@ -19,15 +19,15 @@ namespace Netcode {
 
 	// ComponentID has 32 bits and the first 8 are the PlayerID of the owner which
 	// can be extracted by shifting the ComponentID 18 bits to the right.
-	static constexpr ComponentID SHIFT_AMOUNT = 18;
+	static constexpr CompID SHIFT_AMOUNT = 18;
 
 
 	// Generates a unique ID for a NetworkSenderComponent based on the player's PlayerID
-	static ComponentID generateUniqueComponentID(PlayerID ownerID) {
-		return (createNetworkID() | (static_cast<ComponentID>(ownerID) << SHIFT_AMOUNT));
+	static CompID generateUniqueComponentID(PlayerID ownerID) {
+		return (createNetworkID() | (static_cast<CompID>(ownerID) << SHIFT_AMOUNT));
 	}
 	// Extract the PlayerID of the owner of a NetworkComponent from the component's ID
-	static constexpr PlayerID getComponentOwner(ComponentID componentID) {
+	static constexpr PlayerID getComponentOwner(CompID componentID) {
 		return static_cast<PlayerID>(componentID >> SHIFT_AMOUNT);
 	}
 
@@ -44,7 +44,8 @@ namespace Netcode {
 		CANDLE_ENTITY,
 		GUN_ENTITY,
 		PROJECTILE_ENTITY,
-		MECHA_ENTITY // RIP Mecha-Jörgen (2019-2019)
+		MECHA_ENTITY, // RIP Mecha-Jörgen (2019-2019)
+		INVALID_ENTITY,
 	};
 
 	// TODO: should be one message type for tracked entities and one for events
@@ -166,90 +167,90 @@ namespace Netcode {
 
 	class MessageCreatePlayer : public MessageData {
 	public:
-		MessageCreatePlayer(Netcode::ComponentID playerNetID, Netcode::ComponentID candleNetID, Netcode::ComponentID gunNetID, glm::vec3 pos)
+		MessageCreatePlayer(Netcode::CompID playerNetID, Netcode::CompID candleNetID, Netcode::CompID gunNetID, glm::vec3 pos)
 			: playerCompID(playerNetID), candleCompID(candleNetID), gunCompID(gunNetID), position(pos) {
 		}
 		virtual ~MessageCreatePlayer() {}
 
-		Netcode::ComponentID playerCompID;
-		Netcode::ComponentID candleCompID;
-		Netcode::ComponentID gunCompID;
+		Netcode::CompID playerCompID;
+		Netcode::CompID candleCompID;
+		Netcode::CompID gunCompID;
 		glm::vec3 position;
 	};
 
 	class MessageSpawnProjectile : public MessageData {
 	public:
 		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, 
-			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID)
+			Netcode::CompID projectileCompID, Netcode::CompID ownerComponentID)
 			: translation(translation_), velocity(velocity_), projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID)
 		{}
 		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
-		Netcode::ComponentID projectileComponentID;
-		Netcode::ComponentID ownerPlayerComponentID;
+		Netcode::CompID projectileComponentID;
+		Netcode::CompID ownerPlayerComponentID;
 	};
 
 	class MessageWaterHitPlayer : public MessageData {
 	public:
-		MessageWaterHitPlayer(Netcode::ComponentID whoWasHit)
+		MessageWaterHitPlayer(Netcode::CompID whoWasHit)
 			: playerWhoWasHitID(whoWasHit)
 		{}
 		~MessageWaterHitPlayer() {}
 
-		Netcode::ComponentID playerWhoWasHitID;
+		Netcode::CompID playerWhoWasHitID;
 	};
 
 	class MessageSetCandleHealth : public MessageData {
 	public:
-		MessageSetCandleHealth(Netcode::ComponentID candleID, float candleHealth)
+		MessageSetCandleHealth(Netcode::CompID candleID, float candleHealth)
 			: candleThatWasHit(candleID), health(candleHealth) {
 		}
 		~MessageSetCandleHealth() {}
 
-		Netcode::ComponentID candleThatWasHit;
+		Netcode::CompID candleThatWasHit;
 		float health;
 	};
 
 	class MessageExtinguishCandle : public MessageData {
 	public:
-		MessageExtinguishCandle(Netcode::ComponentID candleID, Netcode::PlayerID extinguishedBy)
+		MessageExtinguishCandle(Netcode::CompID candleID, Netcode::PlayerID extinguishedBy)
 			: candleThatWasHit(candleID), playerWhoExtinguishedCandle(extinguishedBy) {
 		}
 		~MessageExtinguishCandle() {}
 
-		Netcode::ComponentID candleThatWasHit;
+		Netcode::CompID candleThatWasHit;
 		Netcode::PlayerID playerWhoExtinguishedCandle;
 	};
 
 	class MessagePlayerJumped : public MessageData {
 	public:
-		MessagePlayerJumped(Netcode::ComponentID id) : playerWhoJumped(id) {}
+		MessagePlayerJumped(Netcode::CompID id) : playerWhoJumped(id) {}
 		~MessagePlayerJumped() {}
-		Netcode::ComponentID playerWhoJumped;
+		Netcode::CompID playerWhoJumped;
 	};
 
 	class MessagePlayerLanded : public MessageData {
 	public:
-		MessagePlayerLanded(Netcode::ComponentID id) : playerWhoLanded(id) {}
+		MessagePlayerLanded(Netcode::CompID id) : playerWhoLanded(id) {}
 		~MessagePlayerLanded() {}
-		Netcode::ComponentID playerWhoLanded;
+		Netcode::CompID playerWhoLanded;
 	};
 
 	class MessagePlayerDied : public MessageData {
 	public:
-		MessagePlayerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID) : playerWhoDied(id), playerWhoFired(shooterID) {}
+		MessagePlayerDied(Netcode::CompID id, Netcode::PlayerID shooterID) : playerWhoDied(id), playerWhoFired(shooterID) {}
 		~MessagePlayerDied() {}
-		Netcode::ComponentID playerWhoDied;
+		Netcode::CompID playerWhoDied;
 		Netcode::PlayerID playerWhoFired;
 	};
 
 	class MessageCandleHeldState : public MessageData {
 	public:
-		MessageCandleHeldState(Netcode::ComponentID id, bool held, glm::vec3 pos) : candleOwnerID(id), isHeld(held), candlePos(pos) {}
+		MessageCandleHeldState(Netcode::CompID id, bool held, glm::vec3 pos) : candleOwnerID(id), isHeld(held), candlePos(pos) {}
 		~MessageCandleHeldState() {}
-		Netcode::ComponentID candleOwnerID;
+		Netcode::CompID candleOwnerID;
 		bool isHeld;
 		glm::vec3 candlePos;
 	};
@@ -272,35 +273,35 @@ namespace Netcode {
 
 	class MessageRunningMetalStart : public MessageData {
 	public:
-		MessageRunningMetalStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		MessageRunningMetalStart(Netcode::CompID id) : runningPlayer(id) {}
 		~MessageRunningMetalStart() {}
-		Netcode::ComponentID runningPlayer;
+		Netcode::CompID runningPlayer;
 	};
 
 	class MessageRunningTileStart : public MessageData {
 	public:
-		MessageRunningTileStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		MessageRunningTileStart(Netcode::CompID id) : runningPlayer(id) {}
 		~MessageRunningTileStart() {}
-		Netcode::ComponentID runningPlayer;
+		Netcode::CompID runningPlayer;
 	};
 
 	class MessageRunningStopSound : public MessageData {
 	public:
-		MessageRunningStopSound(Netcode::ComponentID id) : runningPlayer(id) {}
+		MessageRunningStopSound(Netcode::CompID id) : runningPlayer(id) {}
 		~MessageRunningStopSound() {}
-		Netcode::ComponentID runningPlayer;
+		Netcode::CompID runningPlayer;
 	};
 	class MessageIgniteCandle : public MessageData {
 	public:
-		MessageIgniteCandle(Netcode::ComponentID candleId) : candleCompId(candleId) {}
+		MessageIgniteCandle(Netcode::CompID candleId) : candleCompId(candleId) {}
 		~MessageIgniteCandle() {}
-		Netcode::ComponentID candleCompId;
+		Netcode::CompID candleCompId;
 	};
 	class MessageHitBySprinkler : public MessageData {
 	public:
-		MessageHitBySprinkler(Netcode::ComponentID id) : candleOwnerID(id) {}
+		MessageHitBySprinkler(Netcode::CompID id) : candleOwnerID(id) {}
 		~MessageHitBySprinkler() {}
-		Netcode::ComponentID candleOwnerID;
+		Netcode::CompID candleOwnerID;
 	};
 	class MessageEnableSprinklers : public MessageData {
 	public:

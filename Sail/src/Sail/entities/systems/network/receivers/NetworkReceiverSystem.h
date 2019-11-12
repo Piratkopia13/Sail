@@ -45,39 +45,39 @@ protected:
 
 	GameState* m_gameStatePtr;
 private:
-	void createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation);
-	void destroyEntity(Netcode::ComponentID entityID);
-	void setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation);
-	void setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation);
-	void setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation);
-	void setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime);
-	void setCandleHealth(Netcode::ComponentID candleId, float health);
-	void extinguishCandle(Netcode::ComponentID candleId, Netcode::PlayerID shooterID);
-	void playerJumped(Netcode::ComponentID id);
-	void playerLanded(Netcode::ComponentID id);
-	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID);
-	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
+	void createPlayerEntity(Netcode::CompID playerCompID, Netcode::CompID candleCompID, Netcode::CompID gunCompID, const glm::vec3& translation);
+	void destroyEntity(Netcode::CompID entityID);
+	void setEntityLocalPosition(Netcode::CompID id, const glm::vec3& translation);
+	void setEntityLocalRotation(Netcode::CompID id, const glm::vec3& rotation);
+	void setEntityLocalRotation(Netcode::CompID id, const glm::quat& rotation);
+	void setEntityAnimation(Netcode::CompID id, unsigned int animationIndex, float animationTime);
+	void setCandleHealth(Netcode::CompID candleId, float health);
+	void extinguishCandle(Netcode::CompID candleId, Netcode::PlayerID shooterID);
+	void playerJumped(Netcode::CompID id);
+	void playerLanded(Netcode::CompID id);
+	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::CompID projectileID, Netcode::CompID ownerID);
+	void playerDied(Netcode::CompID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
-	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
-	void hitBySprinkler(Netcode::ComponentID candleOwnerID);
+	void setCandleHeldState(Netcode::CompID id, bool isHeld);
+	void hitBySprinkler(Netcode::CompID candleOwnerID);
 	void enableSprinklers();
-	void igniteCandle(Netcode::ComponentID candleID);
+	void igniteCandle(Netcode::CompID candleID);
 
-	Entity* findFromNetID(Netcode::ComponentID id) const;
+	Entity* findFromNetID(Netcode::CompID id) const;
 
-	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
-	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
-	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
+	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id);
+	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id);
+	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id);
 
-	virtual void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId) = 0;
+	virtual void waterHitPlayer(Netcode::CompID id, Netcode::PlayerID SenderId) = 0;
 	virtual void endMatch() = 0;                   // Start end timer for host
 	virtual void endMatchAfterTimer(float dt) = 0; // Made for the host to quit the game after a set time
 	virtual void mergeHostsStats() = 0;            // Host adds its data to global statistics before waiting for clients
 	virtual void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) = 0;
 
-	void runningMetalStart(Netcode::ComponentID id);
-	void runningTileStart(Netcode::ComponentID id);
-	void runningStopSound(Netcode::ComponentID id);
+	void runningMetalStart(Netcode::CompID id);
+	void runningTileStart(Netcode::CompID id);
+	void runningStopSound(Netcode::CompID id);
 	bool onEvent(const Event& event) override;
 
 };

@@ -17,9 +17,9 @@ namespace EntityFactory {
 	Entity::SPtr CreateMyPlayer(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation);
 
 	void CreateOtherPlayer(Entity::SPtr otherPlayer, 
-		Netcode::ComponentID playerCompID, 
-		Netcode::ComponentID candleCompID, 
-		Netcode::ComponentID gunCompID, 
+		Netcode::CompID playerCompID, 
+		Netcode::CompID candleCompID, 
+		Netcode::CompID gunCompID, 
 		size_t lightIndex, glm::vec3 spawnLocation);
 	
 	void CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation);
@@ -30,8 +30,8 @@ namespace EntityFactory {
 	Entity::SPtr CreateStaticMapObject(const std::string& name, Model * model, Model* boundingBoxModel, const glm::vec3& pos = glm::vec3(0,0,0), const glm::vec3& rot = glm::vec3(0,0,0), const glm::vec3& scale = glm::vec3(1,1,1));
 	Entity::SPtr CreateProjectile(
 		const glm::vec3& pos, const glm::vec3& velosity,
-		bool hasLocalOwner = false, Netcode::ComponentID ownersNetId = 0,
-		Netcode::ComponentID netCompId = 99999, float lifetime = 4);
+		bool hasLocalOwner = false, Netcode::CompID ownersNetId = 0,
+		Netcode::CompID netCompId = 99999, float lifetime = 4);
 
 	Entity::SPtr CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size);
 

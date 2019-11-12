@@ -110,7 +110,7 @@ void NetworkReceiverSystem::update(float dt) {
 
 	size_t nrOfSenderComponents = 0;
 	Netcode::PlayerID senderID = 0;
-	Netcode::ComponentID id = 0;
+	Netcode::CompID id = 0;
 	Netcode::MessageType messageType;
 	Netcode::EntityType entityType;
 	size_t nrOfMessagesInComponent = 0;
@@ -228,7 +228,7 @@ void NetworkReceiverSystem::update(float dt) {
 #ifdef DEVELOPMENT
 		Netcode::MessageType REDUNDANTTYPE;
 #endif
-		Netcode::ComponentID componentID;
+		Netcode::CompID componentID;
 		Netcode::PlayerID playerID;
 
 
@@ -268,9 +268,9 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
 			{
-				Netcode::ComponentID playerCompID;
-				Netcode::ComponentID candleCompID;
-				Netcode::ComponentID gunCompID;
+				Netcode::CompID playerCompID;
+				Netcode::CompID candleCompID;
+				Netcode::CompID gunCompID;
 
 				ar(playerCompID); // Read what Netcode::ComponentID the player entity should have
 				ar(candleCompID); // Read what Netcode::ComponentID the candle entity should have
@@ -326,7 +326,7 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::EXTINGUISH_CANDLE:
 			{
-				Netcode::ComponentID candleID;
+				Netcode::CompID candleID;
 				Netcode::PlayerID shooterID;
 
 				ar(candleID);
@@ -337,14 +337,14 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::HIT_BY_SPRINKLER:
 			{
-				Netcode::ComponentID candleOwnerID;
+				Netcode::CompID candleOwnerID;
 				ar(candleOwnerID);
 				hitBySprinkler(candleOwnerID);
 			}
 			break;
 			case Netcode::MessageType::IGNITE_CANDLE:
 			{
-				Netcode::ComponentID candleID;
+				Netcode::CompID candleID;
 				ar(candleID);
 				igniteCandle(candleID);
 			}
@@ -367,7 +367,7 @@ void NetworkReceiverSystem::update(float dt) {
 			case Netcode::MessageType::PLAYER_DIED:
 			{
 				Netcode::PlayerID playerIdOfShooter;
-				Netcode::ComponentID networkIdOfKilled;
+				Netcode::CompID networkIdOfKilled;
 
 				ar(networkIdOfKilled); // Receive
 				ar(playerIdOfShooter);
@@ -420,7 +420,7 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::SET_CANDLE_HEALTH:
 			{
-				Netcode::ComponentID candleID;
+				Netcode::CompID candleID;
 				float health;
 				ar(candleID);
 				ar(health);
@@ -429,8 +429,8 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
-				Netcode::ComponentID projectileOwnerID;
-				Netcode::ComponentID projectileComponentID;
+				Netcode::CompID projectileOwnerID;
+				Netcode::CompID projectileComponentID;
 
 				ArchiveHelpers::loadVec3(ar, gunPosition);
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
@@ -442,7 +442,7 @@ void NetworkReceiverSystem::update(float dt) {
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
 			{
-				Netcode::ComponentID playerwhoWasHit;
+				Netcode::CompID playerwhoWasHit;
 				ar(playerwhoWasHit);
 
 				// NOTE!
@@ -466,7 +466,7 @@ void NetworkReceiverSystem::update(float dt) {
 }
 
 
-void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation) {
+void NetworkReceiverSystem::createPlayerEntity(Netcode::CompID playerCompID, Netcode::CompID candleCompID, Netcode::CompID gunCompID, const glm::vec3& translation) {
 	// Early exit if the entity already exists
 	if (findFromNetID(playerCompID)) {
 		return;
@@ -482,7 +482,7 @@ void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID
 
 }
 
-void NetworkReceiverSystem::destroyEntity(Netcode::ComponentID entityID) {
+void NetworkReceiverSystem::destroyEntity(Netcode::CompID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
 		e->queueDestruction();
 		return;
@@ -491,7 +491,7 @@ void NetworkReceiverSystem::destroyEntity(Netcode::ComponentID entityID) {
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
-void NetworkReceiverSystem::setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation) {
+void NetworkReceiverSystem::setEntityLocalPosition(Netcode::CompID id, const glm::vec3& translation) {
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<TransformComponent>()->setTranslation(translation);
 		return;
@@ -499,7 +499,7 @@ void NetworkReceiverSystem::setEntityLocalPosition(Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setEntityTranslation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation) {
+void NetworkReceiverSystem::setEntityLocalRotation(Netcode::CompID id, const glm::quat& rotation) {
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
@@ -507,7 +507,7 @@ void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setEntityRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation) {
+void NetworkReceiverSystem::setEntityLocalRotation(Netcode::CompID id, const glm::vec3& rotation) {
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
@@ -515,7 +515,7 @@ void NetworkReceiverSystem::setEntityLocalRotation(Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setEntityRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned int animationIndex, float animationTime) {
+void NetworkReceiverSystem::setEntityAnimation(Netcode::CompID id, unsigned int animationIndex, float animationTime) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
 		animation->setAnimation(animationIndex);
@@ -525,7 +525,7 @@ void NetworkReceiverSystem::setEntityAnimation(Netcode::ComponentID id, unsigned
 	SAIL_LOG_WARNING("setEntityAnimation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setCandleHealth(Netcode::ComponentID candleId, float health) {
+void NetworkReceiverSystem::setCandleHealth(Netcode::CompID candleId, float health) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
 			e->getComponent<CandleComponent>()->health = health;
@@ -535,7 +535,7 @@ void NetworkReceiverSystem::setCandleHealth(Netcode::ComponentID candleId, float
 	SAIL_LOG_WARNING("setCandleHelath called but no matching candle entity found");
 }
 
-void NetworkReceiverSystem::extinguishCandle(Netcode::ComponentID candleId, Netcode::PlayerID shooterID) {
+void NetworkReceiverSystem::extinguishCandle(Netcode::CompID candleId, Netcode::PlayerID shooterID) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
 
@@ -548,27 +548,27 @@ void NetworkReceiverSystem::extinguishCandle(Netcode::ComponentID candleId, Netc
 	SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
 }
 
-void NetworkReceiverSystem::playerJumped(Netcode::ComponentID id) {
+void NetworkReceiverSystem::playerJumped(Netcode::CompID id) {
 	EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 }
 
-void NetworkReceiverSystem::playerLanded(Netcode::ComponentID id) {
+void NetworkReceiverSystem::playerLanded(Netcode::CompID id) {
 	EventDispatcher::Instance().emit(PlayerLandedEvent(id));
 }
 
-void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID senderId) {
+void NetworkReceiverSystem::waterHitPlayer(Netcode::CompID id, Netcode::PlayerID senderId) {
 	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 }
 
 // If I requested the projectile it has a local owner
-void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID) {
+void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Netcode::CompID projectileID, Netcode::CompID ownerID) {
 	const bool wasRequestedByMe = (Netcode::getComponentOwner(ownerID) == m_playerID);
 
 	// Also play the sound
 	EntityFactory::CreateProjectile(pos, dir, wasRequestedByMe, ownerID, projectileID);
 }
 
-void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
+void NetworkReceiverSystem::playerDied(Netcode::CompID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
 	if (auto e = findFromNetID(networkIdOfKilled); e) {
 		EventDispatcher::Instance().emit(PlayerDiedEvent(
 			e,
@@ -596,15 +596,15 @@ void NetworkReceiverSystem::playerDisconnect(Netcode::PlayerID playerID) {
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
-void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isHeld) {
+void NetworkReceiverSystem::setCandleHeldState(Netcode::CompID id, bool isHeld) {
 	EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
 }
 
-void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id) {
 	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StartShootingEvent(id));
 }
-void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id) {
 	// Only called when another player shoots
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
@@ -615,28 +615,28 @@ void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netc
 	SAIL_LOG_WARNING("shootLoop called but no matching entity found");
 }
 
-void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id) {
 	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StopShootingEvent(id));
 }
 
-void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
+void NetworkReceiverSystem::runningMetalStart(Netcode::CompID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
 }
 
-void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
+void NetworkReceiverSystem::runningTileStart(Netcode::CompID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
 }
 
-void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
+void NetworkReceiverSystem::runningStopSound(Netcode::CompID id) {
 	EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
 
-void NetworkReceiverSystem::igniteCandle(Netcode::ComponentID candleID) {
+void NetworkReceiverSystem::igniteCandle(Netcode::CompID candleID) {
 	EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
 }
 
-Entity* NetworkReceiverSystem::findFromNetID(Netcode::ComponentID id) const {
+Entity* NetworkReceiverSystem::findFromNetID(Netcode::CompID id) const {
 	for (auto e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			return e;
@@ -645,7 +645,7 @@ Entity* NetworkReceiverSystem::findFromNetID(Netcode::ComponentID id) const {
 	return nullptr;
 }
 
-void NetworkReceiverSystem::hitBySprinkler(Netcode::ComponentID candleOwnerID) {
+void NetworkReceiverSystem::hitBySprinkler(Netcode::CompID candleOwnerID) {
 	waterHitPlayer(candleOwnerID, Netcode::MESSAGE_SPRINKLER_ID);
 }
 

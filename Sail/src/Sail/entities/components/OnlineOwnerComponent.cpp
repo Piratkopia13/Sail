@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "OnlineOwnerComponent.h"
 
-OnlineOwnerComponent::OnlineOwnerComponent(Netcode::ComponentID netEntityID)
+OnlineOwnerComponent::OnlineOwnerComponent(Netcode::CompID netEntityID)
 	: netEntityID(netEntityID)
 {
 
