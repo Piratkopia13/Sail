@@ -26,12 +26,27 @@ void AnimationChangerSystem::update(float dt) {
 		if (animationC && moveC && throwC) {
 			animationC->updateDT = true;
 
-			if (throwC->isDropping && animationC->animationIndex == IDLE) {
-				animationC->setAnimation(DROP);
+			float velMag2 = glm::length2(moveC->velocity);
+			if (throwC->isDropping) {
+				if (velMag2 < 0.01f) {
+					animationC->setAnimation(IDLE_DROP);
+				} else {
+					// Replace the animation indices once they are implemented
+					animationC->setAnimation(IDLE_DROP);
+					//animationC->setAnimation(RUNNING_DROP);
+				}
 				continue;
 			} else if (throwC->isCharging || throwC->isThrowing) {
-				//animationC->setAnimation(THROW);
-				animationC->updateDT = false;
+				//animationC->updateDT = false;
+				if (velMag2 < 0.01f) {
+					// Replace the animation indices once they are implemented
+					animationC->setAnimation(IDLEJUMP);
+					//animationC->setAnimation(IDLE_THROW);
+				} else {
+					// Replace the animation indices once they are implemented
+					animationC->setAnimation(FORWARDJUMP);
+					//animationC->setAnimation(RUNNING_THROW);
+				}
 				continue;
 			}
 			
@@ -39,7 +54,7 @@ void AnimationChangerSystem::update(float dt) {
 				animationC->setAnimation(IDLE);
 			}
 
-			if (glm::length(moveC->velocity) < 0.1f && animationC->animationIndex != IDLEJUMP) {
+			if (velMag2 < 0.01f && animationC->animationIndex != IDLEJUMP) {
 				animationC->setAnimation(IDLE);
 			} 
 			else if (moveC->relVel.y > 0.1f && fabsf(moveC->relVel.x) < 0.1f && fabsf(moveC->relVel.z) < 0.1f) {
