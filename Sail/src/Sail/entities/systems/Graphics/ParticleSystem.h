@@ -25,6 +25,9 @@ public:
 	void submitAll() const;
 
 private:
+	void syncWithGPUUpdate(unsigned int swapIndex);
+
+private:
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
 	ParticleComputeShader* m_particleShader;
 
@@ -40,9 +43,7 @@ private:
 
 	int m_gpuUpdates;
 
-	int m_numberOfParticles;
-
-	std::vector<std::pair<unsigned int, float>> m_particleLife;
+	std::vector<float>* m_particleLife;
 
 	struct NewParticleInfo {
 		ParticleEmitterComponent* emitter;
