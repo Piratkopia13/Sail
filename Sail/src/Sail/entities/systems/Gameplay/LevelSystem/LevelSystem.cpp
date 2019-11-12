@@ -31,7 +31,6 @@ LevelSystem::LevelSystem():BaseComponentSystem() {
 
 LevelSystem::~LevelSystem() {
 	destroyWorld();
-	spawnPoints.clear();
 }
 
 //generates all necessary data for the world
@@ -1403,9 +1402,7 @@ const int LevelSystem::getRoomID(int posX, int posY) {
 
 void LevelSystem::stop() {
 	destroyWorld();
-
-
-
+	spawnPoints.clear();
 }
 
 void LevelSystem::generateClutter() {

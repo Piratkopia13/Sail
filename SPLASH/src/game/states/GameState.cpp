@@ -150,9 +150,11 @@ GameState::GameState(StateStack& stack)
 	for (int i = -1; i < id; i++) {
 
 		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
-
-		std::cout << i << " " << spawnLocation.x << " " << spawnLocation.y << " " << spawnLocation.z << "\n";
 	}
+
+	SAIL_LOG(std::to_string(spawnLocation.x));
+	SAIL_LOG(std::to_string(spawnLocation.y));
+	SAIL_LOG(std::to_string(spawnLocation.z));
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
@@ -667,7 +669,6 @@ bool GameState::renderImguiDebug(float dt) {
 void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
-
 	ECS::Instance()->stopAllSystems();
 	ECS::Instance()->destroyAllEntities();
 }
