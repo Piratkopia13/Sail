@@ -63,7 +63,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	auto fenceVal = m_context->getDirectQueue()->signal();
 	m_context->getComputeQueue()->wait(fenceVal);
 
-
 	std::sort(m_metaballs.begin(), m_metaballs.end(),
 		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
 		{
