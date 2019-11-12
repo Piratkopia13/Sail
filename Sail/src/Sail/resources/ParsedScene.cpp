@@ -8,7 +8,7 @@ const std::string ParsedScene::DEFAULT_MODEL_LOCATION = "res/models/";
 ParsedScene::ParsedScene(const std::string& filename, Shader* shader) {
 
 	if (filename.substr(filename.size() - 3) != "fbx") {
-		Logger::Error("Only FBX models are currently supported! Tried to load \"" + filename + "\"");
+		SAIL_LOG_ERROR("Only FBX models are currently supported! Tried to load \"" + filename + "\"");
 	}
 
 	//FBXLoader loader(DEFAULT_MODEL_LOCATION + filename, shader);

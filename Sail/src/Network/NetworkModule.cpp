@@ -192,9 +192,9 @@ bool Network::join(const char* IP_adress, unsigned short hostport)
 	conn->socket = m_soc;
 	conn->ip = "";
 	conn->port = ntohs(m_myAddr.sin_port);
-	conn->id = 0;
+	conn->tcp_id = 0;
 	conn->thread = SAIL_NEW std::thread(&Network::listen, this, conn); //Create new listening thread listening for the host
-	m_connections[conn->id] = conn;
+	m_connections[conn->tcp_id] = conn;
 
 	m_initializedStatus = INITIALIZED_STATUS::IS_CLIENT;
 
@@ -207,7 +207,7 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 	m_sizeOfPacketsSentSinceLast += size;
 
 	if (size > 1000) {
-		Logger::Log("Packet size: " + std::to_string(size));
+		SAIL_LOG("Packet size: " + std::to_string(size));
 	}
 
 
@@ -423,7 +423,7 @@ void Network::listenForUDP()
 
 					NetworkEvent nEvent;
 					nEvent.eventType = NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND;
-					nEvent.clientID = 0;
+					nEvent.from_tcp_id = 0;
 					NetworkEventData data = NetworkEventData();
 					// Memcpy description before the other shit, as it writes over rawMsg.
 					memcpy(data.HostFoundOnLanData.description, udpdata.package.packageData.hostdata.hostdescription, sizeof(m_serverMetaDesc));
@@ -623,7 +623,7 @@ void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 
 
 	m_awaitingEvents[m_pend].eventType = n.eventType;
-	m_awaitingEvents[m_pend].clientID = n.clientID;
+	m_awaitingEvents[m_pend].from_tcp_id = n.from_tcp_id;
 	m_awaitingEvents[m_pend].data = &m_awaitingMessages[m_pend];
 
 	m_pend = (m_pend + 1) % MAX_AWAITING_PACKAGES;
@@ -658,14 +658,14 @@ void Network::waitForNewConnections()
 
 			bool ok = false;
 			do {
-				conn->id = generateID();
-				if (m_connections.find(conn->id) == m_connections.end()) {
+				conn->tcp_id = generateID();
+				if (m_connections.find(conn->tcp_id) == m_connections.end()) {
 					ok = true;
 				}
 			} while (!ok);
 
 			conn->thread = SAIL_NEW std::thread(&Network::listen, this, conn); //Create new listening thread for the new connection
-			m_connections[conn->id] = conn;
+			m_connections[conn->tcp_id] = conn;
 		}
 	}
 }
@@ -673,7 +673,7 @@ void Network::waitForNewConnections()
 void Network::listen(Connection* conn)
 {
 	NetworkEvent nEvent;
-	nEvent.clientID = conn->id;
+	nEvent.from_tcp_id = conn->tcp_id;
 	nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED;
 	addNetworkEvent(nEvent, 0);
 

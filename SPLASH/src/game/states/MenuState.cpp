@@ -47,7 +47,7 @@ bool MenuState::update(float dt, float alpha) {
 		NWrapperSingleton::getInstance().searchForLobbies();
 		udpCounter = udpChill;
 	}
-	NWrapperSingleton::getInstance().checkFoundPackages();
+	NWrapperSingleton::getInstance().checkForPackages();
 	
 	removeDeadLobbies();
 	return false;
@@ -265,12 +265,12 @@ bool MenuState::renderImgui(float dt) {
 		std::string progress = "Models:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/21.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(21)).c_str());
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/28.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(28)).c_str());
 
 		progress = "Textures:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfTextures()/44.0f, ImVec2(0.0f, 0.0f));
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfTextures()/64.0f, ImVec2(0.0f, 0.0f));
 	}
 	ImGui::End();
 
@@ -294,7 +294,7 @@ const std::string MenuState::loadPlayerName(const std::string& file) {
 	if (name == "") {
 		name = "Hans";
 		Utils::writeFileTrunc("res/data/localplayer.settings", name);
-		Logger::Log("Found no player file, created: " + std::string("'res/data/localplayer.settings'"));
+		SAIL_LOG("Found no player file, created: " + std::string("'res/data/localplayer.settings'"));
 	}
 	return name;
 }

@@ -96,10 +96,10 @@ protected:
 		std::unique_ptr<ShaderComponent::ConstantBuffer> cBuffer;
 	};
 	struct ShaderStructuredBuffer {
-		ShaderStructuredBuffer(const std::string& name, void* initData, UINT size, UINT numElements, UINT stride, ShaderComponent::BIND_SHADER bindShader, UINT slot) 
+		ShaderStructuredBuffer(const std::string& name, void* initData, UINT size, UINT numElements, UINT stride, ShaderComponent::BIND_SHADER bindShader, UINT slot, bool isRW) 
 			: name(name)
 		{
-			sBuffer = std::unique_ptr<ShaderComponent::StructuredBuffer>(ShaderComponent::StructuredBuffer::Create(initData, size, numElements, stride, bindShader, slot));
+			sBuffer = std::unique_ptr<ShaderComponent::StructuredBuffer>(ShaderComponent::StructuredBuffer::Create(initData, size, numElements, stride, bindShader, slot, isRW));
 		}
 		std::unique_ptr<ShaderComponent::StructuredBuffer> sBuffer;
 		std::string name;
@@ -152,7 +152,7 @@ private:
 	void parseSampler(const char* source);
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);
-	void parseStructuredBuffer(const char* source);
+	void parseStructuredBuffer(const char* source, bool isRW);
 	std::string nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray = false) const;
 	std::string nextTokenAsType(const char* source, UINT& outTokenSize) const;
 	ShaderComponent::BIND_SHADER getBindShaderFromName(const std::string& name) const;

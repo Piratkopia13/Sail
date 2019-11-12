@@ -36,7 +36,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, bool isEmissive, float metalness, float roughness, float ao, inout RayPayload payload) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float emissivness, float metalness, float roughness, float ao, inout RayPayload payload) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
 
@@ -46,10 +46,8 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     // Reflectance equation
     float3 Lo = 0.0f;
 
-	if (isEmissive) {
-		Lo += albedo * 2.2;
-	}
-	else
+	Lo += albedo * 2.2 * emissivness;
+		
 	{
 
 		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
@@ -192,10 +190,17 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;
 
-    // Gamma correction
-    color = color / (color + 1.0f);
-    // Tone mapping using the Reinhard operator
-    color = pow(color, 1.0f / 2.2f);
-
     return float4(color, 1.0f);
+}
+
+float3 tonemap(float3 color) {
+	// Gamma correction
+    float3 output = color / (color + 1.0f);
+    // Tone mapping using the Reinhard operator
+    output = pow(output, 1.0f / 2.2f);
+	return output;
+}
+
+float getBrightness(float3 color) {
+    return dot(color, float3(0.2126f, 0.7152f, 0.0722f));
 }

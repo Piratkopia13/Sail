@@ -2,15 +2,15 @@
 #include "VertexBuffer.h"
 #include "Sail/utils/Utils.h"
 
-VertexBuffer::VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData)
+VertexBuffer::VertexBuffer(const InputLayout& inputLayout, unsigned int numVertices)
 	: inputLayout(inputLayout) 
 {
 	m_stride = inputLayout.getVertexSize();
 	if (m_stride == 0) {
-		Logger::Error("Input layout not set up properly in shader");
+		SAIL_LOG_ERROR("Input layout not set up properly in shader");
 		__debugbreak();
 	}
-	m_byteSize = modelData.numVertices * m_stride;
+	m_byteSize = numVertices * m_stride;
 }
 
 void* VertexBuffer::getVertexData(const Mesh::Data& modelData) {

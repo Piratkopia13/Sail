@@ -17,7 +17,7 @@ NodeSystem::~NodeSystem() {
 void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
 #ifdef _DEBUG_NODESYSTEM
 	if ( m_nodeModel == nullptr ) {
-		Logger::Error("Node model and scene need to be set in the node system during debug.");
+		SAIL_LOG_ERROR("Node model and scene need to be set in the node system during debug.");
 	}
 #endif
 
@@ -118,7 +118,7 @@ std::vector<unsigned int> NodeSystem::BFS(const unsigned int from, const unsigne
 			currNode = traceBack[currNode];
 		}
 		else {
-			Logger::Warning("No path was found");
+			SAIL_LOG_WARNING("No path was found");
 			return std::vector<unsigned int>(0);
 		}
 	}

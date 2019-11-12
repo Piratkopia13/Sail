@@ -27,6 +27,9 @@ public:
 	float m_gunOverloadCooldown;
 
 	float projectileSpeed;
+	float baseProjectileSpeed;
+	float finalProjectileSpeed;
+	float projectileSpeedRange;
 
 	float gunOverloadvalue;
 	float gunOverloadThreshold;
