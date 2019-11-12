@@ -3,6 +3,8 @@
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
 #include "../events/NetworkDroppedEvent.h"
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
+
 #include "../events/NetworkSerializedPackageEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
@@ -34,6 +36,7 @@ private:
 	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
+	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
 
 	void shutDownGameState();
 
@@ -51,6 +54,8 @@ private:
 	const std::string toggleProfiler();
 
 	void logSomeoneDisconnected(unsigned char id);
+
+	void waitForOtherPlayers();
 
 private:
 	Application* m_app;
@@ -77,7 +82,8 @@ private:
 
 	bool m_paused = false;
 	bool m_isSingleplayer = true;
-	
+	bool m_gameStarted = false;
+
 	Octree* m_octree;
 	bool m_showcaseProcGen;
 

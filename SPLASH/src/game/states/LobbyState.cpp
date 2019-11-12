@@ -87,7 +87,7 @@ bool LobbyState::update(float dt, float alpha) {
 	if (NWrapperSingleton::getInstance().isHost() && m_settingsChanged && m_timeSinceLastUpdate > 0.2f) {
 		auto& stat = m_app->getSettings().gameSettingsStatic;
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-		m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic) });
+		m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
 		m_settingsChanged = false;
 		m_timeSinceLastUpdate = 0.0f;
 	}
@@ -122,6 +122,7 @@ bool LobbyState::renderImgui(float dt) {
 }
 
 bool LobbyState::onEvent(const Event& event) {
+	State::onEvent(event);
 
 	switch (event.type) {
 
@@ -249,8 +250,8 @@ void LobbyState::renderStartButton() {
 			auto& stat = m_app->getSettings().gameSettingsStatic;
 			auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 
-			m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic)});
-			
+			m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
+
 			m_network->setClientState(States::Game);
 			this->requestStackClear();
 			this->requestStackPush(States::Game);

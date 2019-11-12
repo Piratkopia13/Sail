@@ -8,10 +8,11 @@
 State::State(StateStack& stack) 
 :  m_stack(&stack)
 {
-
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHANGE_STATE, this);
 }
 
 State::~State() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHANGE_STATE, this);
 }
 
 bool State::fixedUpdate(float dt) {

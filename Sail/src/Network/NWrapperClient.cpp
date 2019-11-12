@@ -11,6 +11,7 @@
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 #include "../../SPLASH/src/game/events/SettingsEvent.h"
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
 
 bool NWrapperClient::host(int port) {
 	// A client does not host, do nothing.
@@ -55,7 +56,8 @@ bool NWrapperClient::connectToIP(char* adress) {
 }
 
 void NWrapperClient::sendChatMsg(std::string msg) {
-	std::string data = "m";
+	std::string data;
+	data += ML_CHAT;
 	data += NWrapperSingleton::getInstance().getMyPlayer().id;
 	data += msg;
 	m_network->send(data.c_str(), data.length() + 1);
@@ -90,7 +92,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	std::string dataString;
 
 	switch (nEvent.data->Message.rawMsg[0]) {
-	case 'm':
+	case ML_CHAT:
 		// Client received a chat message from the host...
 		// Parse and process into Message struct
 		processedMessage = processChatMessage(&nEvent.data->Message.rawMsg[1]);
@@ -100,31 +102,48 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 
 		break;
 
-	case 'd':
+	case ML_DISCONNECT:
 		// A player disconnected from the host...
 		// Get the user ID from the event data.
 		userID = nEvent.data->Message.rawMsg[1];
 		NWrapperSingleton::getInstance().playerLeft(userID);
 		break;
 
-	case 'j':
+	case ML_JOIN:
 		currentPlayer.id = (unsigned char)nEvent.data->Message.rawMsg[1];
 		currentPlayer.name = &nEvent.data->Message.rawMsg[2];
 		NWrapperSingleton::getInstance().playerJoined(currentPlayer);
 		break;
-	case '?':
+	case ML_NAME_REQUEST:
 		id_question = (unsigned char)nEvent.data->Message.rawMsg[1]; //My player ID that the host just have given me.
 		NWrapperSingleton::getInstance().getMyPlayer().id = id_question;
 		sendMyNameToHost();
 
 		break;
-	case 't':
+	case ML_UPDATE_STATE_LOAD_STATUS:
+	{
+		Netcode::PlayerID playerID = (Netcode::PlayerID)nEvent.data->Message.rawMsg[1];
+		States::ID state = (States::ID)nEvent.data->Message.rawMsg[2];
+		char status = nEvent.data->Message.rawMsg[3];
+
+		if (playerID == NWrapperSingleton::getInstance().getMyPlayerID()) {
+			break;
+		}
+
+		Player* player = NWrapperSingleton::getInstance().getPlayer(playerID);
+		player->lastStateStatus.state = state;
+		player->lastStateStatus.status = status;
+
+		EventDispatcher::Instance().emit(NetworkUpdateStateLoadStatus(state, playerID, status));
+	}
+		break;
+	case ML_CHANGE_STATE:
 	{
 		States::ID stateID = (States::ID)(nEvent.data->Message.rawMsg[1]);
 		EventDispatcher::Instance().emit(NetworkChangeStateEvent(stateID));
 	}
 	break;
-	case 'w':
+	case ML_WELCOME:
 		// The host has sent us a welcome-package with a list of the players in the game...
 		// Parse the welcome-package into a list of players
 		remnants = nEvent.data->Message.rawMsg;
@@ -141,7 +160,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		updatePlayerList(playerList);
 
 		break;
-	case 's': // Serialized data, remove first character and send the rest to be deserialized
+	case ML_SERIALIZED: // Serialized data, remove first character and send the rest to be deserialized
 		dataString = std::string(nEvent.data->Message.rawMsg, nEvent.data->Message.sizeOfMsg);
 		dataString.erase(0, 1); // remove the s
 
@@ -149,7 +168,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		EventDispatcher::Instance().emit(NetworkSerializedPackageEvent(dataString));
 		break;
 
-	case 'i': 
+	case ML_UPDATE_SETTINGS: 
 		EventDispatcher::Instance().emit(SettingsUpdatedEvent(std::string(nEvent.data->Message.rawMsg).substr(1,std::string::npos)));
 		break;
 	default:
@@ -159,9 +178,10 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 
 void NWrapperClient::sendMyNameToHost() {
 	// Save the ID which the host has blessed us with
-	std::string message = "?";
+	std::string message;
+	message += ML_NAME_REQUEST;
 	message += NWrapperSingleton::getInstance().getMyPlayerName().c_str();
-	sendMsg(message);
+	sendMsg(message.c_str(), message.length() + 1);
 }
 
 void NWrapperClient::updatePlayerList(std::list<Player>& playerList) {

@@ -259,7 +259,7 @@ bool MenuState::onEvent(const Event& event) {
 	default: break;
 	}
 
-	return false;
+	return true;
 }
 
 const std::string MenuState::loadPlayerName(const std::string& file) {

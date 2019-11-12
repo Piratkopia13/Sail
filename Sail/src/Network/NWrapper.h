@@ -15,11 +15,21 @@
 
 class Network;
 
+struct StateStatus {
+	StateStatus() {
+		state = (States::ID)0;
+		status = 0;
+	}
+	States::ID state;
+	char status;
+};
+
 // Move elsewhere?
 struct Player {
 	Netcode::PlayerID id;
 	std::string name;
 	bool justJoined = true;
+	StateStatus lastStateStatus;
 
 	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans")
 		: name(setName), id(setID)
@@ -45,10 +55,8 @@ public:
 	virtual bool host(int port = 54000) = 0;
 	virtual bool connectToIP(char* = "127.0.0.1:54000") = 0;
 
-	void sendMsg(std::string msg, TCP_CONNECTION_ID tcp_id = 0);
-	void sendMsgAllClients(std::string msg);		// by either client or host
-	void sendChatAllClients(std::string msg);		//
 	virtual void sendChatMsg(std::string msg) = 0;
+
 	void sendSerializedDataAllClients(std::string data);
 	void sendSerializedDataToHost(std::string data);
 
@@ -58,9 +66,27 @@ public:
 		This will request a clients to enter a new state. GameState, EndGameState etc.
 		playerId == 255 will send to all
 	*/
-	virtual void setClientState(States::ID state, Netcode::PlayerID playerId = 255) = 0;
+	virtual void setClientState(States::ID state, Netcode::PlayerID playerId = 255) {};
+	virtual void updateGameSettings(std::string s) {};
+	virtual void updateStateLoadStatus(States::ID state, char status);
+protected:
+	enum MessageLetter : char {
+		ML_NULL = 0,
+		ML_CHAT,
+		ML_DISCONNECT,
+		ML_JOIN,
+		ML_NAME_REQUEST,
+		ML_WELCOME,
+		ML_SERIALIZED,
+		ML_CHANGE_STATE,
+		ML_UPDATE_STATE_LOAD_STATUS,
+		ML_UPDATE_SETTINGS,
+	};
 
 protected:
+	void sendMsg(const char* msg, size_t size, TCP_CONNECTION_ID tcp_id = 0);
+	void sendMsgAllClients(const char* msg, size_t size);
+		
 	Network* m_network = nullptr;
 	Application* m_app = nullptr;	
 

@@ -17,7 +17,7 @@ public:
 	LobbyClientState(StateStack& stack);
 	~LobbyClientState();
 
-	bool onEvent(const Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
 

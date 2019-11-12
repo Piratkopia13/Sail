@@ -8,6 +8,7 @@
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
 
 
 bool NWrapperHost::host(int port) {
@@ -26,7 +27,8 @@ void NWrapperHost::setLobbyName(std::string name) {
 }
 
 void NWrapperHost::sendChatMsg(std::string msg) {
-	std::string data = "m";
+	std::string data;
+	data += ML_CHAT;
 	data += NWrapperSingleton::getInstance().getMyPlayer().id;
 	data += msg;
 	m_network->send(data.c_str(), data.length() + 1, -1);
@@ -61,7 +63,7 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	if (NWrapperSingleton::getInstance().playerJoined(Player{ newPlayerId, "NoName" }, false)) {
 		m_connectionsMap.insert(std::pair<TCP_CONNECTION_ID, unsigned char>(tcp_id, newPlayerId));
 		//Send the newPlayerId to the new player and request a name, which upon retrieval will be sent to all clients.
-		char msg[3] = {'?', newPlayerId, '\0'};
+		char msg[3] = {ML_NAME_REQUEST, newPlayerId, ML_NULL};
 		m_network->send(msg, sizeof(msg), tcp_id);
 	} else {
 		m_IdDistribution--;
@@ -72,7 +74,7 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 
 void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID tcp_id) {
 	Netcode::PlayerID playerID = m_connectionsMap.at(tcp_id);
-	char msg[] = { 'd', playerID, '\0' };
+	char msg[] = { ML_DISCONNECT, playerID, ML_NULL};
 
 	// Send to all clients that someone disconnected and which id.
 	m_network->send(msg, sizeof(msg), -1);
@@ -103,9 +105,9 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 
 	switch (nEvent.data->Message.rawMsg[0])
 	{
-	case 'm':
+	case ML_CHAT:
 		// Send out the already formatted message to clients so that they can process the message.
-		sendMsgAllClients(nEvent.data->Message.rawMsg);	
+		sendMsgAllClients(nEvent.data->Message.rawMsg, nEvent.data->Message.sizeOfMsg);
 
 		// Process the chat message
 		processedMessage = processChatMessage(&nEvent.data->Message.rawMsg[1]);
@@ -115,25 +117,41 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 
 		break;
 
-	case 'd':
+	case ML_DISCONNECT:
 		// Only clients will get this message. Host handles this in playerDisconnected()
 		break;
 
-	case 'j':
+	case ML_JOIN:
 		// Only clients will get this message. Host handles this in playerJoined()
 		break;
 
-	case '?':
+	case ML_NAME_REQUEST:
 
 		name = &nEvent.data->Message.rawMsg[1];
 		updateClientName(nEvent.from_tcp_id, m_connectionsMap[nEvent.from_tcp_id], name);
 
 		break;
+	case ML_UPDATE_STATE_LOAD_STATUS:
+		{		
+			sendMsgAllClients(nEvent.data->Message.rawMsg, nEvent.data->Message.sizeOfMsg);
+			
+			Netcode::PlayerID playerID = (Netcode::PlayerID)nEvent.data->Message.rawMsg[1];
+			States::ID state = (States::ID)nEvent.data->Message.rawMsg[2];
+			char status = nEvent.data->Message.rawMsg[3];
 
-	case 'w':
+			Player* player = NWrapperSingleton::getInstance().getPlayer(playerID);
+			player->lastStateStatus.state = state;
+			player->lastStateStatus.status = status;
+			EventDispatcher::Instance().emit(NetworkUpdateStateLoadStatus(state, playerID, status));
+		
+		}
+
+		
+		break;
+	case ML_WELCOME:
 		// Only clients receive welcome packages.
 		break;
-	case 's': // Serialized data, remove first character and send the rest to be deserialized
+	case ML_SERIALIZED: // Serialized data, remove first character and send the rest to be deserialized
 		dataString = std::string(nEvent.data->Message.rawMsg, nEvent.data->Message.sizeOfMsg);
 		dataString.erase(0, 1); // remove the s
 
@@ -151,26 +169,34 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 	p->name = name;
 
 	// Send a welcome package to the new Player, letting them know who's in the party
-	std::string welcomePackage = "w";
+	std::string welcomePackage;
+	welcomePackage += ML_WELCOME;
 	for (auto currentPlayer : NWrapperSingleton::getInstance().getPlayers()) {
 		welcomePackage.append(std::to_string(currentPlayer.id));
 		welcomePackage.append(":");
 		welcomePackage.append(currentPlayer.name);
 		welcomePackage.append(":");
 	}
-	sendMsg(welcomePackage, tcp_id);
+	sendMsg(welcomePackage.c_str(), welcomePackage.length() + 1, tcp_id);
 
 	if (p->justJoined) {
 		p->justJoined = false;
 
-		std::string joinedPackage = "j";
-		joinedPackage += playerId;
+#ifdef DEVELOPMENT
+		if (playerId == 0) {
+			SAIL_LOG_ERROR("Critical Error: Playerid equal to 0 and will be interpreted as a null terminator when appended to a string.");
+		}
+#endif // DEVELOPMENT
+
+		std::string joinedPackage;
+		joinedPackage += ML_JOIN;
+		joinedPackage += playerId; //This will break if playerId == 0
 		joinedPackage += name;
 
 		// Send a PlayerJoined message to all other players
 		for (auto player : m_connectionsMap) {
 			if (player.first != tcp_id) {
-				sendMsg(joinedPackage, player.first);
+				sendMsg(joinedPackage.c_str(), joinedPackage.length(), player.first);
 			}
 		}
 
@@ -182,10 +208,10 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 }
 
 void NWrapperHost::setClientState(States::ID state, Netcode::PlayerID id) {
-	char msg[] = {'t', (char)state, '\0'};
+	char msg[] = {ML_CHANGE_STATE, (char)state, ML_NULL};
 	
 	if (id == 255) {
-		sendMsgAllClients(msg);
+		sendMsgAllClients(msg, sizeof(msg));
 	} else {
 		for (auto p : m_connectionsMap) {
 			if (p.second == id) {
@@ -194,4 +220,11 @@ void NWrapperHost::setClientState(States::ID state, Netcode::PlayerID id) {
 			}
 		}
 	}
+}
+
+void NWrapperHost::updateGameSettings(std::string s) {
+	std::string msg;
+	msg += ML_UPDATE_SETTINGS;
+	msg += s;
+	sendMsgAllClients(msg.c_str(), msg.length() + 1);
 }
