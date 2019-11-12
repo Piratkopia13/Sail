@@ -48,16 +48,16 @@ void SprinklerSystem::update(float dt) {
 				// Randomize a water spot with a ray for each active sprinkler
 				for (int i = 0; i < m_sprinklers.size(); i++) {
 					if (m_sprinklers[i].active) {
-					Octree::RayIntersectionInfo tempInfo;
+						Octree::RayIntersectionInfo tempInfo;
 
-					float sprinklerXspread = (m_sprinklers[i].size.x * 0.5f) * m_map->tileSize;
-					float sprinklerZspread = (m_sprinklers[i].size.y * 0.5f) * m_map->tileSize;
+						float sprinklerXspread = (m_sprinklers[i].size.x * 0.5f) * m_map->tileSize;
+						float sprinklerZspread = (m_sprinklers[i].size.y * 0.5f) * m_map->tileSize;
 
-					glm::vec3 waterDir = glm::vec3(((2.f * Utils::rnd()) - 1.0f) *sprinklerXspread, -m_sprinklers[i].pos.y, ((2.f * Utils::rnd()) - 1.0f)*sprinklerZspread) + m_sprinklers[i].pos;
-					waterDir = glm::normalize(waterDir - m_sprinklers[i].pos);
-					m_octree->getRayIntersection(m_sprinklers[i].pos, waterDir, &tempInfo);
-					glm::vec3 hitPos = m_sprinklers[i].pos + waterDir * tempInfo.closestHit;
-					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(hitPos);
+						glm::vec3 waterDir = glm::vec3(((2.f * Utils::rnd()) - 1.0f) *sprinklerXspread, -m_sprinklers[i].pos.y, ((2.f * Utils::rnd()) - 1.0f)*sprinklerZspread) + m_sprinklers[i].pos;
+						waterDir = glm::normalize(waterDir - m_sprinklers[i].pos);
+						m_octree->getRayIntersection(m_sprinklers[i].pos, waterDir, &tempInfo);
+						glm::vec3 hitPos = m_sprinklers[i].pos + waterDir * tempInfo.closestHit;
+						Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(hitPos);
 					}
 
 				}
