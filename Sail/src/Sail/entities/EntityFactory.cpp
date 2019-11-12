@@ -39,7 +39,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	candle->addComponent<CullingComponent>();
 
 	PointLight pl;
-	pl.setColor(glm::vec3(1.0f, 0.7f, 0.4f));
+	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .5f, lightPos.z));
 	pl.setAttenuation(0.f, 0.f, 0.2f);
 	pl.setIndex(lightIndex);
@@ -85,7 +85,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
-	myPlayer->removeComponent<CollidableComponent>();
 	myPlayer->addComponent<CollisionComponent>();
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
@@ -207,6 +206,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
 	boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);
 
+	playerEntity->addComponent<PlayerComponent>();
 	playerEntity->addComponent<TransformComponent>(spawnLocation);
 	playerEntity->addComponent<CullingComponent>();
 	playerEntity->addComponent<ModelComponent>(characterModel);
@@ -327,28 +327,26 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(const glm::vec3& pos, const glm::vec3& velocity, bool hasLocalOwner, Netcode::ComponentID ownersNetId, float lifetime, float randomSpread) {
+Entity::SPtr EntityFactory::CreateProjectile(
+		const glm::vec3& pos, const glm::vec3& velocity, 
+		bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
+		Netcode::ComponentID netCompId, float lifetime) 
+{
 	auto e = ECS::Instance()->createEntity("projectile");
-	glm::vec3 randPos;
-
-	randomSpread = 0.05;
-
-	randPos.r = Utils::rnd() * randomSpread * 2 - randomSpread;
-	randPos.g = Utils::rnd() * randomSpread * 2 - randomSpread;
-	randPos.b = Utils::rnd() * randomSpread * 2 - randomSpread;
-
-	randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
 
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
 	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
-	e->addComponent<TransformComponent>(pos + randPos);
+	e->addComponent<TransformComponent>(pos);
+	
 	if (hasLocalOwner == true) {
 		e->addComponent<LocalOwnerComponent>(ownersNetId);
+		e->addComponent<NetworkSenderComponent>(Netcode::EntityType::PROJECTILE_ENTITY, netCompId);
 	} else {
 		e->addComponent<OnlineOwnerComponent>(ownersNetId);
+		e->addComponent<NetworkReceiverComponent>(netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 	}
 	
 

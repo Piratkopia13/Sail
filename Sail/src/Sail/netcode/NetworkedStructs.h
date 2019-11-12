@@ -51,6 +51,7 @@ namespace Netcode {
 	// The message type decides how the subsequent data will be parsed and used
 	enum class MessageType : __int8 {
 		CREATE_NETWORKED_PLAYER = 1,
+		DESTROY_ENTITY,
 		CHANGE_LOCAL_POSITION,
 		CHANGE_LOCAL_ROTATION,
 		CHANGE_ABSOLUTE_POS_AND_ROT,
@@ -81,6 +82,7 @@ namespace Netcode {
 	
 	static const std::string MessageNames[] = {
 		"CREATE_NETWORKED_PLAYER	",
+		"DESTROY_ENTITY				",
 		"CHANGE_LOCAL_POSITION,		",
 		"CHANGE_LOCAL_ROTATION,		",
 		"CHANGE_ABSOLUTE_POS_AND_ROT,",
@@ -177,13 +179,15 @@ namespace Netcode {
 
 	class MessageSpawnProjectile : public MessageData {
 	public:
-		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, Netcode::ComponentID ownerComponentID)
-			: translation(translation_), velocity(velocity_), ownerPlayerComponentID(ownerComponentID)
+		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, 
+			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID)
+			: translation(translation_), velocity(velocity_), projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID)
 		{}
 		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
+		Netcode::ComponentID projectileComponentID;
 		Netcode::ComponentID ownerPlayerComponentID;
 	};
 
