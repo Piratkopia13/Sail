@@ -55,7 +55,8 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Torch.fbx");
 	rm->loadModel("candleExported.fbx");
 	rm->loadModel("Tiles/tileFlat.fbx");
-	rm->loadModel("Tiles/RoomWall.fbx"); 
+	rm->loadModel("Tiles/RoomWall.fbx");
+	rm->loadModel("Tiles/RoomWallServer.fbx");
 	rm->loadModel("Tiles/tileDoor.fbx"); 
 	rm->loadModel("Tiles/RoomDoor.fbx");
 	rm->loadModel("Tiles/CorridorDoor.fbx");
@@ -126,6 +127,10 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
 	rm->loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
+
+	rm->loadTexture("pbr/Tiles/RS_MRAo.tga");
+	rm->loadTexture("pbr/Tiles/RS_NM.tga");
+	rm->loadTexture("pbr/Tiles/RS_Albedo.tga");
 
 	rm->loadTexture("pbr/Tiles/RD_MRAo.tga");
 	rm->loadTexture("pbr/Tiles/RD_NM.tga");
