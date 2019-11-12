@@ -192,8 +192,8 @@ Entity::SPtr EntityFactory::CreateMySpectator(Netcode::PlayerID playerID, size_t
 	//mySpectator->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	//mySpectator->addComponent<LocalOwnerComponent>(netComponentID);
 	//mySpectator->addComponent<CollisionComponent>();
-	mySpectator->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f);
-	mySpectator->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
+	//mySpectator->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f);
+	//mySpectator->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 	mySpectator->addComponent<SpectatorComponent>();
 
 	auto transform = mySpectator->getComponent<TransformComponent>();

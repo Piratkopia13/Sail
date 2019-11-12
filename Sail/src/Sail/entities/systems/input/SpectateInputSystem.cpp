@@ -4,6 +4,7 @@
 #include "Sail/entities/components/TransformComponent.h"
 
 #include "Sail/graphics/camera/CameraController.h"
+#include "Sail/utils/Utils.h"
 
 #include "../../../api/Input.h"
 #include "Sail/KeyBinds.h"
@@ -21,6 +22,7 @@ SpectateInputSystem::SpectateInputSystem() : BaseComponentSystem(){
 }
 
 SpectateInputSystem::~SpectateInputSystem() {
+	clean();
 }
 
 void SpectateInputSystem::fixedUpdate(float dt) {
@@ -29,6 +31,7 @@ void SpectateInputSystem::fixedUpdate(float dt) {
 
 void SpectateInputSystem::update(float dt, float alpha) {
 	processMouseInput(dt);
+	updateCameraPosition(alpha);
 }
 
 void SpectateInputSystem::initialize(Camera* cam) {
@@ -40,6 +43,10 @@ void SpectateInputSystem::initialize(Camera* cam) {
 		Memory::SafeDelete(tempCam);
 		m_cam = SAIL_NEW CameraController(cam);
 	}
+}
+
+void SpectateInputSystem::clean() {
+	Memory::SafeDelete(m_cam);
 }
 
 void SpectateInputSystem::processKeyboardInput(const float& dt) {
@@ -59,10 +66,10 @@ void SpectateInputSystem::processKeyboardInput(const float& dt) {
 			glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
 
 			auto transComp = e->getComponent<TransformComponent>();
-			float speed = 5.f;
+			float speed = 10.f;
 			glm::vec3 moveDir = (playerMovement.forwardMovement * forward + playerMovement.rightMovement * right + playerMovement.upMovement * up);
 			moveDir = glm::normalize(moveDir);
-			transComp->translate(moveDir * dt * playerMovement.speedModifier * 10.f);
+			transComp->translate(moveDir * dt * playerMovement.speedModifier * speed);
 		}
 
 	}
@@ -71,9 +78,13 @@ void SpectateInputSystem::processKeyboardInput(const float& dt) {
 
 void SpectateInputSystem::processMouseInput(const float& dt) {
 
-	// Toggle cursor capture on right click
-	for (auto e : entities) {
+	
 
+	// Toggle cursor capture on right click
+	for (auto e : entities) {	
+		if (Input::WasMouseButtonJustPressed(KeyBinds::DISABLE_CURSOR)) {
+			Input::HideCursor(!Input::IsCursorHidden());
+		}
 		auto trans = e->getComponent<TransformComponent>();
 		auto rots = trans->getRotations();
 		m_pitch = (rots.z != 0.f) ? glm::degrees(-rots.z) : m_pitch;
@@ -108,15 +119,46 @@ void SpectateInputSystem::processMouseInput(const float& dt) {
 
 }
 
+void SpectateInputSystem::updateCameraPosition(float alpha) {
+	for (auto e : entities) {
+		TransformComponent* playerTrans = e->getComponent<TransformComponent>();
+		//BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
+
+		glm::vec3 forwards(
+			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw + 90)),
+			std::sin(glm::radians(m_pitch)),
+			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw + 90))
+		);
+		forwards = glm::normalize(forwards);
+
+		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
+
+		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, 0.0f * 1.8f, 0.f)));
+		m_cam->setCameraDirection(forwards);
+	}
+}
+
 SpectateMovement SpectateInputSystem::getPlayerMovementInput(Entity* e) {
 	SpectateMovement playerMovement;
 
-	if (Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) { playerMovement.forwardMovement += 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD)) { playerMovement.forwardMovement -= 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_LEFT)) { playerMovement.rightMovement -= 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_RIGHT)) { playerMovement.rightMovement += 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) { 
+		playerMovement.forwardMovement += 1.0f; 
+	}
+	if (Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD)) {
+		playerMovement.forwardMovement -= 1.0f; 
+	}
+	if (Input::IsKeyPressed(KeyBinds::MOVE_LEFT)) {
+		playerMovement.rightMovement -= 1.0f; 
+	}
+	if (Input::IsKeyPressed(KeyBinds::MOVE_RIGHT)) {
+		playerMovement.rightMovement += 1.0f; 
+	}
+	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { 
+		playerMovement.upMovement += 1.0f; 
+	}
+	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) {
+		playerMovement.upMovement -= 1.0f; 
+	}
 
 	return playerMovement;
 }

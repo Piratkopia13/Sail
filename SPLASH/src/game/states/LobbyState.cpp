@@ -410,7 +410,7 @@ void LobbyState::renderChat() {
 
 void LobbyState::renderSpectatorButton() {
 	ImGui::Begin("Spectator");
-	ImGui::SetWindowPos({ 1018, 633 });
+	//ImGui::SetWindowPos({ 1018, 633 });
 	ImGui::SetWindowSize({ 112, 57 });
 	ImGui::Checkbox("", &m_spectator);
 	ImGui::End();

@@ -22,10 +22,12 @@ public:
 	void fixedUpdate(float dt);
 	void update(float dt, float alpha);
 	void initialize(Camera* cam);
+	void clean();
 
 private:
 	void processKeyboardInput(const float& dt);
 	void processMouseInput(const float& dt);
+	void updateCameraPosition(float alpha);
 	SpectateMovement getPlayerMovementInput(Entity* e);
 
 	CameraController* m_cam = nullptr;
