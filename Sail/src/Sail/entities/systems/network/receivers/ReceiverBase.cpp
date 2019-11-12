@@ -195,9 +195,6 @@ void ReceiverBase::update(float dt) {
 
 
 		// Receive 'one-time' events
-
-
-
 		// -+-+-+-+-+-+-+-+ Process events -+-+-+-+-+-+-+-+ 
 		ar(nrOfEventsInPacket);
 
@@ -408,10 +405,9 @@ void ReceiverBase::update(float dt) {
 			}
 			break;
 			default:
-				SAIL_LOG_ERROR("INVALID NETWORK EVENT NR " + std::to_string((int)eventType) + " RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
+				SAIL_LOG_ERROR("INVALID NETWORK EVENT NR " + std::to_string((int)messageType) + " RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;
 			}
-
 		}
 
 		m_incomingDataBuffer.pop();

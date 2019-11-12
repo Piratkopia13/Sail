@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ReceiverBase.h"
 #include "../../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
 #include "Sail/events/EventReceiver.h"
@@ -8,21 +9,16 @@ class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
 
-class NetworkReceiverSystem : public BaseComponentSystem, public EventReceiver {
+class NetworkReceiverSystem : public ReceiverBase, public EventReceiver {
 public:
 	NetworkReceiverSystem();
-	~NetworkReceiverSystem();
+	virtual ~NetworkReceiverSystem();
 
-	virtual void handleIncomingData(std::string data) = 0;
-	void pushDataToBuffer(std::string);
+	//void init(Netcode::PlayerID playerID, NetworkSenderSystem* netSendSysPtr);
+	//void setPlayer(Entity* player);
+	//void setGameState(GameState* gameState);
 
-	void init(Netcode::PlayerID playerID, NetworkSenderSystem* netSendSysPtr);
-	void setPlayer(Entity* player);
-	void setGameState(GameState* gameState);
-
-	const std::vector<Entity*>& getEntities() const;
-
-	void update(float dt);
+	//const std::vector<Entity*>& getEntities() const;
 
 #ifdef DEVELOPMENT
 	void imguiPrint(Entity** selectedEntity = nullptr) {
@@ -32,52 +28,60 @@ public:
 #endif
 
 protected:
-	NetworkSenderSystem* m_netSendSysPtr;
-	GameDataTracker* m_gameDataTracker;
+	//NetworkSenderSystem* m_netSendSysPtr;
+	//GameDataTracker* m_gameDataTracker;
 
-	// FIFO container of serialized data-strings to decode
-	std::queue<std::string> m_incomingDataBuffer;
-	std::mutex m_bufferLock;
+	//// FIFO container of serialized data-strings to decode
+	//std::queue<std::string> m_incomingDataBuffer;
+	//std::mutex m_bufferLock;
 
-	// The player entity is used to prevent creation of receiver components for entities controlled by the player
-	Netcode::PlayerID m_playerID;
-	Entity* m_playerEntity;
+	//// The player entity is used to prevent creation of receiver components for entities controlled by the player
+	//Netcode::PlayerID m_playerID;
+	//Entity* m_playerEntity;
 
-	GameState* m_gameStatePtr;
+	//GameState* m_gameStatePtr;
 private:
-	void createPlayerEntity(Netcode::CompID playerCompID, Netcode::CompID candleCompID, Netcode::CompID gunCompID, const glm::vec3& translation);
-	void destroyEntity(Netcode::CompID entityID);
-	void setEntityLocalPosition(Netcode::CompID id, const glm::vec3& translation);
-	void setEntityLocalRotation(Netcode::CompID id, const glm::vec3& rotation);
-	void setEntityLocalRotation(Netcode::CompID id, const glm::quat& rotation);
-	void setEntityAnimation(Netcode::CompID id, unsigned int animationIndex, float animationTime);
-	void setCandleHealth(Netcode::CompID candleId, float health);
-	void extinguishCandle(Netcode::CompID candleId, Netcode::PlayerID shooterID);
-	void playerJumped(Netcode::CompID id);
-	void playerLanded(Netcode::CompID id);
-	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::CompID projectileID, Netcode::CompID ownerID);
-	void playerDied(Netcode::CompID id, Netcode::PlayerID shooterID);
-	void playerDisconnect(Netcode::PlayerID playerID);
-	void setCandleHeldState(Netcode::CompID id, bool isHeld);
-	void hitBySprinkler(Netcode::CompID candleOwnerID);
-	void enableSprinklers();
-	void igniteCandle(Netcode::CompID candleID);
+	void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)             override;
+	void destroyEntity   (const Netcode::CompID entityID)                                    override;
+	void enableSprinklers()                                                                  override;
+	void extinguishCandle(const Netcode::CompID candleID, const Netcode::PlayerID shooterID) override;
+	void hitBySprinkler  (const Netcode::CompID candleOwnerID)                               override;
+	void igniteCandle    (const Netcode::CompID candleID)                                    override;
+	void playerDied      (const Netcode::CompID id, const Netcode::PlayerID shooterID)       override;
+	void setAnimation    (const Netcode::CompID id, const AnimationInfo& info)               override;
+	void setCandleHealth (const Netcode::CompID candleID, const float health)                override;
+	void setCandleState  (const Netcode::CompID id, const bool isHeld)                       override;
+	void setLocalPosition(const Netcode::CompID id, const glm::vec3& pos)                    override;
+	void setLocalRotation(const Netcode::CompID id, const glm::vec3& rot)                    override;
+	void setLocalRotation(const Netcode::CompID id, const glm::quat& rot)                    override;
+	void spawnProjectile (const ProjectileInfo& info)                                        override;
+	void waterHitPlayer  (const Netcode::CompID id, const Netcode::PlayerID SenderId)        override;
 
-	Entity* findFromNetID(Netcode::CompID id) const;
+	// AUDIO
+	void playerJumped     (const Netcode::CompID id) override;
+	void playerLanded     (const Netcode::CompID id) override;
+	void shootStart       (const Netcode::CompID id, const ShotFiredInfo& info) override;
+	void shootLoop        (const Netcode::CompID id, const ShotFiredInfo& info) override;
+	void shootEnd         (const Netcode::CompID id, const ShotFiredInfo& info) override;
+	void runningMetalStart(const Netcode::CompID id) override;
+	void runningTileStart (const Netcode::CompID id) override;
+	void runningStopSound (const Netcode::CompID id) override;
 
-	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id);
-	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id);
-	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::CompID id);
+	// HOST ONLY
+	//void endMatch()                   override; // Start end timer for host
+	//void endMatchAfterTimer(float dt) override; // Made for the host to quit the game after a set time
+	//void mergeHostsStats()            override; // Host adds its data to global statistics before waiting for clients
+	//void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) override;
 
-	virtual void waterHitPlayer(Netcode::CompID id, Netcode::PlayerID SenderId) = 0;
-	virtual void endMatch() = 0;                   // Start end timer for host
-	virtual void endMatchAfterTimer(float dt) = 0; // Made for the host to quit the game after a set time
-	virtual void mergeHostsStats() = 0;            // Host adds its data to global statistics before waiting for clients
-	virtual void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) = 0;
+	//bool onEvent(const Event& event) override;
 
-	void runningMetalStart(Netcode::CompID id);
-	void runningTileStart(Netcode::CompID id);
-	void runningStopSound(Netcode::CompID id);
+
+	// NOT FROM SERIALIZED MESSAGES
+	void playerDisconnect(const Netcode::PlayerID playerID) override;
+	
+	// Helper function
+	Entity* findFromNetID(Netcode::CompID id) const override;
+
 	bool onEvent(const Event& event) override;
 
 };
