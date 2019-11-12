@@ -393,7 +393,7 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "uint") { return 4; }
 	if (typeName == "bool") { return 4; }
 	if (typeName == "float") { return 4; }
-	if (typeName == "float2") { return 4 * 2; }
+	if (typeName == "float2" || typeName == "int2" || typeName == "uint2") { return 4 * 2; }
 	if (typeName == "float3") { return 4 * 3; }
 	if (typeName == "float4") { return 4 * 4; }
 	if (typeName == "float3x3") { return 4 * 3 * 3; }
