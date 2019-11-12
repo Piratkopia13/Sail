@@ -108,7 +108,9 @@ void CandleHealthSystem::update(float dt) {
 			candle->health = 0.0f;
 			candle->isLit = false;
 			candle->wasJustExtinguished = false; // reset for the next tick
-			GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			if (candle->wasHitByPlayerID != Netcode::MESSAGE_SPRINKLER_ID) {
+				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			}
 		
 			// Play the reignition sound if the player has any candles left
 			if (candle->respawns < m_maxNumRespawns) {
@@ -118,9 +120,11 @@ void CandleHealthSystem::update(float dt) {
 		}
 
 		// COLOR/INTENSITY
-		float cHealth = std::fmaxf(candle->health, 0.f);
-		float tempHealthRatio = (cHealth / MAX_HEALTH);
-		e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
+		float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
+
+		LightComponent* lc = e->getComponent<LightComponent>();
+
+		lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
 	}
 }
 

@@ -237,6 +237,11 @@ void DX12RaytracingRenderer::setTeamColors(const std::vector<glm::vec3>& teamCol
 	Renderer::setTeamColors(teamColors);
 }
 
+bool DX12RaytracingRenderer::checkIfOnWater(const glm::vec3& pos) {
+
+	return m_dxr.checkWaterAtWorldPosition(pos);
+}
+
 void DX12RaytracingRenderer::updateMetaballAABB() {
 	
 }
