@@ -239,6 +239,18 @@ void ReceiverBase::update(float dt) {
 				enableSprinklers();
 			}
 			break;
+			case Netcode::MessageType::START_THROWING:
+			{
+				ar(compID);
+				throwingStartSound(compID);
+			}
+			break;
+			case Netcode::MessageType::STOP_THROWING:
+			{
+				ar(compID);
+				throwingEndSound(compID);
+			}
+			break;
 			case Netcode::MessageType::ENDGAME_STATS:
 			{
 				// Receive player count

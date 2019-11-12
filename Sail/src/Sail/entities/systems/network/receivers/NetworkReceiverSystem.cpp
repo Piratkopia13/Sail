@@ -219,6 +219,13 @@ void NetworkReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
 
+void NetworkReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(StartThrowingEvent(id));
+}
+
+void NetworkReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(StopThrowingEvent(id));
+}
 
 
 // NOT FROM SERIALIZED MESSAGES

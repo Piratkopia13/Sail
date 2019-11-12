@@ -58,6 +58,15 @@ void CandleThrowingSystem::update(float dt) {
 					if (throwC->throwingTimer == 0.f && throwC->chargeTime >= throwC->chargeToThrowThreshold) {
 						// Send start throw event
 						EventDispatcher::Instance().emit(StartThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
+						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+							Netcode::MessageType::START_THROWING,
+							SAIL_NEW Netcode::MessageWaterHitPlayer{
+								e->getComponent<NetworkReceiverComponent>()->m_id
+							}
+						);
+						/*e->getComponent<NetworkSenderComponent>()->addMessageType(
+							Netcode::MessageType::START_THROWING
+						);*/
 					}
 
 					throwC->throwingTimer += dt;
@@ -133,9 +142,15 @@ void CandleThrowingSystem::update(float dt) {
 				torchE->addComponent<CollisionComponent>(true);
 				ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 
-				// Send end throw event
+				// Send stop throw event
 				if (throwC->throwingTimer >= CHARGE_AND_THROW_ANIM_LENGTH) {
 					EventDispatcher::Instance().emit(StopThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::STOP_THROWING,
+						SAIL_NEW Netcode::MessageWaterHitPlayer{
+							e->getComponent<NetworkReceiverComponent>()->m_id
+						}
+					);
 				}
 
 				// Reset values
