@@ -1343,8 +1343,8 @@ void LevelSystem::addSpawnPoints() {
 		}
 	}
 
-	std::default_random_engine generator;
-		
+	std::default_random_engine generator (seed);
+	
 	// Add the rest of the spawn points in a randomized order
 	while(availableSpawnPoints.size() > 0){
 		std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size() - 1);
@@ -1402,9 +1402,7 @@ const int LevelSystem::getRoomID(int posX, int posY) {
 
 void LevelSystem::stop() {
 	destroyWorld();
-
-
-
+	spawnPoints.clear();
 }
 
 void LevelSystem::generateClutter() {
