@@ -118,6 +118,11 @@ void CandleHealthSystem::update(float dt) {
 				auto playerEntity = e->getParent();
 				playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
 			}
+
+			if (candle->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
+				auto playerEntity = e->getParent();
+				playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
+			}
 		}
 
 		// COLOR/INTENSITY

@@ -368,9 +368,12 @@ bool AudioSystem::onEvent(const Event& event) {
 	auto onPlayerDied = [](const PlayerDiedEvent& e) {
 		// Play kill sound if the player was the one who shot
 		if (e.shooterID == NWrapperSingleton::getInstance().getMyPlayerID()) {
-			auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
-			killSound.isPlaying = true;
-			killSound.playOnce = true;
+			
+			if (!e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+				auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
+				killSound.isPlaying = true;
+				killSound.playOnce = true;
+			}
 		}
 
 		// Play death sound
