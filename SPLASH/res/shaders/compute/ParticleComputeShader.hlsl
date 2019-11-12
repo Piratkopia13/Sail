@@ -9,9 +9,9 @@ struct Particle{
 
 struct ParticleInput{
 	Particle particles[100];
-	uint removeParticles[100];
+	uint toRemove[100];
 	uint numParticles;
-	uint removalCounter; // How many particles is being removed this frame
+	uint numToRemove;
 	uint numPrevParticles;
 	uint maxOutputVertices;
 	float frameTime;
@@ -80,20 +80,38 @@ void createParticle(float3 v0, float3 v1, float3 v2, float3 v3, int particleInde
 	CSOutputBuffer[v0Index + 5].bitangent = 0.f;
 }
 
-void overwriteParticle(int particle1Index, int particle2Index) {
-	CSPhysicsBuffer[particle1Index] = CSPhysicsBuffer[particle2Index];
-	
-	for (uint j = 0 ; j < 6; j++) {
-		CSOutputBuffer[particle1Index * 6 + j] = CSOutputBuffer[particle2Index * 6 + j];
-	}
-}
-
 void updatePhysics(int particleIndex, float dt) {
 	float3 oldVelocity = CSPhysicsBuffer[particleIndex].velocity;
 	CSPhysicsBuffer[particleIndex].velocity += CSPhysicsBuffer[particleIndex].acceleration * dt;
 	for (uint j = 0 ; j < 6; j++) {
 		CSOutputBuffer[particleIndex * 6 + j].position += (oldVelocity + CSPhysicsBuffer[particleIndex].velocity) * 0.5 * dt;
 	}
+}
+
+void removeParticle(int particleToRemoveIndex) {
+	uint swapIndex = 0;
+	if (inputBuffer.toRemove[particleToRemoveIndex] < inputBuffer.numPrevParticles - inputBuffer.numToRemove) {
+		swapIndex = inputBuffer.numPrevParticles - particleToRemoveIndex - 1;
+		int counter = 0;
+		while (inputBuffer.toRemove[inputBuffer.numToRemove - 1 - counter] >= swapIndex && swapIndex > 0) {
+			swapIndex--;
+			counter++;
+		}
+		
+		CSPhysicsBuffer[inputBuffer.toRemove[particleToRemoveIndex]] = CSPhysicsBuffer[swapIndex];
+		for (uint j = 0 ; j < 6; j++) {
+			CSOutputBuffer[inputBuffer.toRemove[particleToRemoveIndex] * 6 + j] = CSOutputBuffer[swapIndex * 6 + j];
+		}
+	} else {
+		swapIndex = inputBuffer.toRemove[particleToRemoveIndex];
+	}
+	
+	for (uint j = 0 ; j < 6; j++) {
+		CSPhysicsBuffer[swapIndex].velocity = 0.f;
+		CSPhysicsBuffer[swapIndex].acceleration = 0.f;
+		CSOutputBuffer[swapIndex * 6 + j].position = -999999.0f;
+	}
+	
 }
 
 #define X_THREADS 8
@@ -116,12 +134,11 @@ void CSMain(ComputeShaderInput IN) {
 	
 	uint stride = totalThreads;
 	
-	// Reorder particles that is being removed
-	for (uint i = thisThread; i < removalCounter; i += stride) {
-		overwriteParticle(inputBuffer.removeParticles[i], numPrevParticles - i); // Overwrite particle to be removed with one that is still 
+	for (uint i = thisThread; i < inputBuffer.numToRemove; i += stride) {
+		removeParticle(i);
 	}
 	
-	// Find how many particles should be spawned
+	//Find how many particles should be spawned
 	int particleBufferSizeLeft = floor(inputBuffer.maxOutputVertices / 6) - (inputBuffer.numPrevParticles);
 	int particlesToSpawn = inputBuffer.numParticles;
 	if (inputBuffer.numParticles > particleBufferSizeLeft) {

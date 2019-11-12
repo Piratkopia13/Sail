@@ -96,7 +96,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	particleEmitterComp->velocity = {0.0f, 4.0f, 0.0f};
 	particleEmitterComp->acceleration = { 0.0f, -9.8f, 0.0f };
 	particleEmitterComp->spread = {2.0f, 0.0f, 0.0f};
-	particleEmitterComp->spawnRate = 0.05f;
+	particleEmitterComp->spawnRate = 0.1f;
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
