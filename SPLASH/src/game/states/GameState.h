@@ -43,6 +43,7 @@ private:
 	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
+	void updateKillCamComponentSystems(float dt);
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
@@ -92,6 +93,8 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_wasDropped = false;
+
+	bool m_isInKillCamMode = false;
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
