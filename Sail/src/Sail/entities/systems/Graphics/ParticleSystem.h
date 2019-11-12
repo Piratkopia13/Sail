@@ -69,13 +69,17 @@ private:
 		float spawnTime;
 	};
 
+	static const unsigned int m_maxParticlesSpawnPerFrame = 100;
+
 	struct ComputeInput {
-		ParticleData particles[100];
-		unsigned int particlesToRemove[100];
+		ParticleData particles[m_maxParticlesSpawnPerFrame];
+		unsigned int particlesToRemove[m_maxParticlesSpawnPerFrame];
 		unsigned int numParticles;
 		unsigned int numParticlesToRemove;
 		unsigned int previousNrOfParticles;
 		unsigned int maxOutputVertices;
 		float frameTime;
 	};
+
+	ComputeInput m_inputData;
 };

@@ -9,7 +9,7 @@ struct Particle{
 
 struct ParticleInput{
 	Particle particles[100];
-	uint4 toRemove[25];
+	uint4 toRemove[100/4];
 	uint numParticles;
 	uint numToRemove;
 	uint numPrevParticles;
@@ -88,13 +88,13 @@ void updatePhysics(int particleIndex, float dt) {
 	}
 }
 
-void removeParticle(int particleToRemoveIndex) {
-	int bigIndex = floor(particleToRemoveIndex / 4);
-	int smallIndex = particleToRemoveIndex % 4;
+void removeParticle(uint particleToRemoveIndex) {
+	uint bigIndex = floor(particleToRemoveIndex / 4);
+	uint smallIndex = particleToRemoveIndex % 4;
 	uint swapIndex = 0;
 	if (inputBuffer.toRemove[bigIndex][smallIndex] < inputBuffer.numPrevParticles - inputBuffer.numToRemove) {
 		swapIndex = inputBuffer.numPrevParticles - particleToRemoveIndex - 1;
-		int counter = 0;
+		uint counter = 0;
 		while (inputBuffer.toRemove[floor((inputBuffer.numToRemove - 1 - counter)/4)][(inputBuffer.numToRemove - 1 - counter)%4] >= swapIndex && counter < inputBuffer.numToRemove - 1) {
 			swapIndex--;
 			counter++;
@@ -153,7 +153,7 @@ void CSMain(ComputeShaderInput IN) {
 		particlesToSpawn = particleBufferSizeLeft;
 	}
 	
-    for (uint i = thisThread; i < particlesToSpawn; i += stride) {
+    for (i = thisThread; i < particlesToSpawn; i += stride) {
 		float3 v0, v1, v2, v3;
 		
 		v0 = inputBuffer.particles[i].position + float3(-0.1, 0.1, 0.0);
@@ -171,7 +171,7 @@ void CSMain(ComputeShaderInput IN) {
 	}
 	
 	// Physics for all prevous particles
-	for (uint i = thisThread; i < inputBuffer.numPrevParticles - inputBuffer.numToRemove; i += stride) {
+	for (i = thisThread; i < inputBuffer.numPrevParticles - inputBuffer.numToRemove; i += stride) {
 		updatePhysics(i, inputBuffer.frameTime);
 	}
 }
