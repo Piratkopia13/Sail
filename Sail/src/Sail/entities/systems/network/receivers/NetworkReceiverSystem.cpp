@@ -56,7 +56,7 @@ void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const 
 
 }
 
-void NetworkReceiverSystem::destroyEntity(const Netcode::CompID entityID) {
+void NetworkReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
 		e->queueDestruction();
 		return;
@@ -68,7 +68,7 @@ void NetworkReceiverSystem::enableSprinklers() {
 	ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
 }
 
-void NetworkReceiverSystem::extinguishCandle(const Netcode::CompID candleId, const Netcode::PlayerID shooterID) {
+void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
 
@@ -81,15 +81,15 @@ void NetworkReceiverSystem::extinguishCandle(const Netcode::CompID candleId, con
 	SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
 }
 
-void NetworkReceiverSystem::hitBySprinkler(const Netcode::CompID candleOwnerID) {
+void NetworkReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwnerID) {
 	waterHitPlayer(candleOwnerID, Netcode::MESSAGE_SPRINKLER_ID);
 }
 
-void NetworkReceiverSystem::igniteCandle(const Netcode::CompID candleID) {
+void NetworkReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
 }
 
-void NetworkReceiverSystem::playerDied(const Netcode::CompID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
+void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
 	if (auto e = findFromNetID(networkIdOfKilled); e) {
 		EventDispatcher::Instance().emit(PlayerDiedEvent(
 			e,
@@ -102,7 +102,7 @@ void NetworkReceiverSystem::playerDied(const Netcode::CompID networkIdOfKilled, 
 	SAIL_LOG_WARNING("playerDied called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setAnimation(const Netcode::CompID id, const AnimationInfo& info) {
+void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
 		animation->setAnimation(info.index);
@@ -112,7 +112,7 @@ void NetworkReceiverSystem::setAnimation(const Netcode::CompID id, const Animati
 	SAIL_LOG_WARNING("setAnimation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setCandleHealth(const Netcode::CompID candleId, const float health) {
+void NetworkReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId, const float health) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
 			e->getComponent<CandleComponent>()->health = health;
@@ -124,12 +124,12 @@ void NetworkReceiverSystem::setCandleHealth(const Netcode::CompID candleId, cons
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
-void NetworkReceiverSystem::setCandleState(const Netcode::CompID id, const bool isHeld) {
+void NetworkReceiverSystem::setCandleState(const Netcode::ComponentID id, const bool isHeld) {
 	EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
-void NetworkReceiverSystem::setLocalPosition(const Netcode::CompID id, const glm::vec3& translation) {
+void NetworkReceiverSystem::setLocalPosition(const Netcode::ComponentID id, const glm::vec3& translation) {
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<TransformComponent>()->setTranslation(translation);
 		return;
@@ -137,7 +137,7 @@ void NetworkReceiverSystem::setLocalPosition(const Netcode::CompID id, const glm
 	SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setLocalRotation(const Netcode::CompID id, const glm::vec3& rotation) {
+void NetworkReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rotation) {
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
@@ -145,7 +145,7 @@ void NetworkReceiverSystem::setLocalRotation(const Netcode::CompID id, const glm
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setLocalRotation(const Netcode::CompID id, const glm::quat& rotation) {
+void NetworkReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::quat& rotation) {
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
@@ -161,7 +161,7 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	EntityFactory::CreateProjectile(info.position, info.velocity, wasRequestedByMe, info.ownerID, info.projectileID);
 }
 
-void NetworkReceiverSystem::waterHitPlayer(const Netcode::CompID id, const Netcode::PlayerID senderId) {
+void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {
 	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 }
 
@@ -169,22 +169,22 @@ void NetworkReceiverSystem::waterHitPlayer(const Netcode::CompID id, const Netco
 
 // AUDIO
 
-void NetworkReceiverSystem::playerJumped(const Netcode::CompID id) {
+void NetworkReceiverSystem::playerJumped(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 }
 
-void NetworkReceiverSystem::playerLanded(const Netcode::CompID id) {
+void NetworkReceiverSystem::playerLanded(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(PlayerLandedEvent(id));
 }
 
 
 // TODO: Remove info since it's unused or are these functions not finished?
-void NetworkReceiverSystem::shootStart(const Netcode::CompID id, const ShotFiredInfo& info) {
+void NetworkReceiverSystem::shootStart(const Netcode::ComponentID id, const ShotFiredInfo& info) {
 	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StartShootingEvent(id));
 }
 
-void NetworkReceiverSystem::shootLoop(const Netcode::CompID id, const ShotFiredInfo& info) {
+void NetworkReceiverSystem::shootLoop(const Netcode::ComponentID id, const ShotFiredInfo& info) {
 	// Only called when another player shoots
 	if (auto e = findFromNetID(id); e) {
 		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
@@ -195,20 +195,20 @@ void NetworkReceiverSystem::shootLoop(const Netcode::CompID id, const ShotFiredI
 	SAIL_LOG_WARNING("shootLoop called but no matching entity found");
 }
 
-void NetworkReceiverSystem::shootEnd(const Netcode::CompID id, const ShotFiredInfo& info) {
+void NetworkReceiverSystem::shootEnd(const Netcode::ComponentID id, const ShotFiredInfo& info) {
 	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StopShootingEvent(id));
 }
 
-void NetworkReceiverSystem::runningMetalStart(const Netcode::CompID id) {
+void NetworkReceiverSystem::runningMetalStart(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
 }
 
-void NetworkReceiverSystem::runningTileStart(const Netcode::CompID id) {
+void NetworkReceiverSystem::runningTileStart(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
 }
 
-void NetworkReceiverSystem::runningStopSound(const Netcode::CompID id) {
+void NetworkReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
 
@@ -233,7 +233,7 @@ void NetworkReceiverSystem::playerDisconnect(const Netcode::PlayerID playerID) {
 
 
 // Helper function
-Entity* NetworkReceiverSystem::findFromNetID(const Netcode::CompID id) const {
+Entity* NetworkReceiverSystem::findFromNetID(const Netcode::ComponentID id) const {
 	for (auto e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 			return e;

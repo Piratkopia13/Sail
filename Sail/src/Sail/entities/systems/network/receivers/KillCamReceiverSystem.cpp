@@ -65,7 +65,7 @@ void KillCamReceiverSystem::createPlayer(const PlayerComponentInfo& info, const 
 
 }
 
-void KillCamReceiverSystem::destroyEntity(const Netcode::CompID entityID) {
+void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	//if (auto e = findFromNetID(entityID); e) {
 	//	e->queueDestruction();
 	//	return;
@@ -77,7 +77,7 @@ void KillCamReceiverSystem::enableSprinklers() {
 	//ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
 }
 
-void KillCamReceiverSystem::extinguishCandle(const Netcode::CompID candleId, const Netcode::PlayerID shooterID) {
+void KillCamReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
 	//for (auto& e : entities) {
 	//	if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
 
@@ -90,15 +90,15 @@ void KillCamReceiverSystem::extinguishCandle(const Netcode::CompID candleId, con
 	//SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
 }
 
-void KillCamReceiverSystem::hitBySprinkler(const Netcode::CompID candleOwnerID) {
+void KillCamReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwnerID) {
 	//waterHitPlayer(candleOwnerID, Netcode::MESSAGE_SPRINKLER_ID);
 }
 
-void KillCamReceiverSystem::igniteCandle(const Netcode::CompID candleID) {
+void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	//EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
 }
 
-void KillCamReceiverSystem::playerDied(const Netcode::CompID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
+void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
 	//if (auto e = findFromNetID(networkIdOfKilled); e) {
 	//	EventDispatcher::Instance().emit(PlayerDiedEvent(
 	//		e,
@@ -111,7 +111,7 @@ void KillCamReceiverSystem::playerDied(const Netcode::CompID networkIdOfKilled, 
 	//SAIL_LOG_WARNING("playerDied called but no matching entity found");
 }
 
-void KillCamReceiverSystem::setAnimation(const Netcode::CompID id, const AnimationInfo& info) {
+void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
 	//if (auto e = findFromNetID(id); e) {
 	//	auto animation = e->getComponent<AnimationComponent>();
 	//	animation->setAnimation(info.index);
@@ -121,7 +121,7 @@ void KillCamReceiverSystem::setAnimation(const Netcode::CompID id, const Animati
 	//SAIL_LOG_WARNING("setAnimation called but no matching entity found");
 }
 
-void KillCamReceiverSystem::setCandleHealth(const Netcode::CompID candleId, const float health) {
+void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId, const float health) {
 	//for (auto& e : entities) {
 	//	if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
 	//		e->getComponent<CandleComponent>()->health = health;
@@ -133,12 +133,12 @@ void KillCamReceiverSystem::setCandleHealth(const Netcode::CompID candleId, cons
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
-void KillCamReceiverSystem::setCandleState(const Netcode::CompID id, const bool isHeld) {
+void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const bool isHeld) {
 	//EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
-void KillCamReceiverSystem::setLocalPosition(const Netcode::CompID id, const glm::vec3& translation) {
+void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, const glm::vec3& translation) {
 	//if (auto e = findFromNetID(id); e) {
 	//	e->getComponent<TransformComponent>()->setTranslation(translation);
 	//	return;
@@ -146,7 +146,7 @@ void KillCamReceiverSystem::setLocalPosition(const Netcode::CompID id, const glm
 	//SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
 }
 
-void KillCamReceiverSystem::setLocalRotation(const Netcode::CompID id, const glm::vec3& rotation) {
+void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rotation) {
 	//if (auto e = findFromNetID(id); e) {
 	//	e->getComponent<TransformComponent>()->setRotations(rotation);
 	//	return;
@@ -154,7 +154,7 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::CompID id, const glm
 	//SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
-void KillCamReceiverSystem::setLocalRotation(const Netcode::CompID id, const glm::quat& rotation) {
+void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::quat& rotation) {
 	//if (auto e = findFromNetID(id); e) {
 	//	e->getComponent<TransformComponent>()->setRotations(rotation);
 	//	return;
@@ -170,7 +170,7 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	//EntityFactory::CreateProjectile(info.position, info.velocity, wasRequestedByMe, info.ownerID, info.projectileID);
 }
 
-void KillCamReceiverSystem::waterHitPlayer(const Netcode::CompID id, const Netcode::PlayerID senderId) {
+void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {
 	//EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 }
 
@@ -178,22 +178,22 @@ void KillCamReceiverSystem::waterHitPlayer(const Netcode::CompID id, const Netco
 
 // AUDIO
 
-void KillCamReceiverSystem::playerJumped(const Netcode::CompID id) {
+void KillCamReceiverSystem::playerJumped(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 }
 
-void KillCamReceiverSystem::playerLanded(const Netcode::CompID id) {
+void KillCamReceiverSystem::playerLanded(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(PlayerLandedEvent(id));
 }
 
 
 // TODO: Remove info since it's unused or are these functions not finished?
-void KillCamReceiverSystem::shootStart(const Netcode::CompID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, const ShotFiredInfo& info) {
 	// Only called when another player shoots
 	//EventDispatcher::Instance().emit(StartShootingEvent(id));
 }
 
-void KillCamReceiverSystem::shootLoop(const Netcode::CompID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, const ShotFiredInfo& info) {
 	// Only called when another player shoots
 	//if (auto e = findFromNetID(id); e) {
 	//	e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
@@ -204,20 +204,20 @@ void KillCamReceiverSystem::shootLoop(const Netcode::CompID id, const ShotFiredI
 	//SAIL_LOG_WARNING("shootLoop called but no matching entity found");
 }
 
-void KillCamReceiverSystem::shootEnd(const Netcode::CompID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootEnd(const Netcode::ComponentID id, const ShotFiredInfo& info) {
 	// Only called when another player shoots
 	//EventDispatcher::Instance().emit(StopShootingEvent(id));
 }
 
-void KillCamReceiverSystem::runningMetalStart(const Netcode::CompID id) {
+void KillCamReceiverSystem::runningMetalStart(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
 }
 
-void KillCamReceiverSystem::runningTileStart(const Netcode::CompID id) {
+void KillCamReceiverSystem::runningTileStart(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
 }
 
-void KillCamReceiverSystem::runningStopSound(const Netcode::CompID id) {
+void KillCamReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
 
@@ -241,7 +241,7 @@ void KillCamReceiverSystem::playerDisconnect(const Netcode::PlayerID playerID)
 // Helper function
 
 // TODO: use something other than networkReceiverComponent ?
-Entity* KillCamReceiverSystem::findFromNetID(const Netcode::CompID id) const {
+Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) const {
 	//for (auto e : entities) {
 	//	if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
 	//		return e;

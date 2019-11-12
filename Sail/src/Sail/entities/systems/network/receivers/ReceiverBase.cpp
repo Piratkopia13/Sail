@@ -81,7 +81,7 @@ void ReceiverBase::update(float dt) {
 	Netcode::PlayerID    senderID    = 0; // The playerID of the person who sent the message
 	Netcode::EntityType  entityType  = Netcode::EntityType::INVALID_ENTITY; // Entity that sent a message
 	Netcode::MessageType messageType = Netcode::MessageType::EMPTY;
-	Netcode::CompID compID = 0;
+	Netcode::ComponentID compID = 0;
 
 	// Commonly used types within messages/events:
 	glm::vec3 vector;
@@ -394,7 +394,7 @@ void ReceiverBase::update(float dt) {
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
 			{
-				Netcode::CompID playerwhoWasHit;
+				Netcode::ComponentID playerwhoWasHit;
 				ar(playerwhoWasHit);
 
 				// NOTE!

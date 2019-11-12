@@ -5,10 +5,10 @@
 
 class OnlineOwnerComponent : public Component<OnlineOwnerComponent> {
 public:
-	OnlineOwnerComponent(Netcode::CompID netEntityID);
+	OnlineOwnerComponent(Netcode::ComponentID netEntityID);
 	~OnlineOwnerComponent();
 
-	Netcode::CompID netEntityID;
+	Netcode::ComponentID netEntityID;
 
 #ifdef DEVELOPMENT
 	void imguiRender(Entity** selected) {

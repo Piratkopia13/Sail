@@ -319,7 +319,7 @@ AudioEngine* AudioSystem::getAudioEngine() {
 }
 
 bool AudioSystem::onEvent(const Event& event) {
-	auto findFromID = [=](const Netcode::CompID netCompID) {
+	auto findFromID = [=](const Netcode::ComponentID netCompID) {
 		Entity* source = nullptr;
 		for (auto entity : entities) {
 			if (auto recComp = entity->getComponent<NetworkReceiverComponent>(); recComp) {

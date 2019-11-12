@@ -81,7 +81,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
 	senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
 
-	Netcode::CompID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
+	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
 	myPlayer->addComponent<CollisionComponent>();
@@ -99,8 +99,8 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 
 	AddCandleComponentsToPlayer(myPlayer, lightIndex, playerID);
 
-	Netcode::CompID candleNetID;
-	Netcode::CompID gunNetID;
+	Netcode::ComponentID candleNetID;
+	Netcode::ComponentID gunNetID;
 
 	for (Entity* c : myPlayer->getChildEntities()) {
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
@@ -141,9 +141,9 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 // otherPlayer is an entity that doesn't have any components added to it yet.
 // Needed so that NetworkReceiverSystem can add the entity to itself before 
 void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer, 
-	Netcode::CompID playerCompID, 
-	Netcode::CompID candleCompID, 
-	Netcode::CompID gunCompID, 
+	Netcode::ComponentID playerCompID, 
+	Netcode::ComponentID candleCompID, 
+	Netcode::ComponentID gunCompID, 
 	size_t lightIndex, glm::vec3 spawnLocation) 
 {
 	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation);
@@ -173,7 +173,7 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 
 
 	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation);
-	Netcode::CompID playerCompID = playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION)->m_id;
+	Netcode::ComponentID playerCompID = playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION)->m_id;
 	playerEnt->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	playerEnt->addComponent<MovementComponent>();
 
@@ -331,8 +331,8 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 
 Entity::SPtr EntityFactory::CreateProjectile(
 		const glm::vec3& pos, const glm::vec3& velocity, 
-		bool hasLocalOwner, Netcode::CompID ownersNetId, 
-		Netcode::CompID netCompId, float lifetime) 
+		bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
+		Netcode::ComponentID netCompId, float lifetime) 
 {
 	auto e = ECS::Instance()->createEntity("projectile");
 
