@@ -20,9 +20,10 @@ public: // Functions
 
 	void update(float dt);
 
+	void pushDataToBuffer(const std::string& data);
 
-	virtual void handleIncomingData(std::string data) = 0;
 
+	virtual void handleIncomingData(const std::string& data) = 0;
 protected: // Variables
 	NetworkSenderSystem* m_netSendSysPtr;
 	GameDataTracker* m_gameDataTracker; // needed?
@@ -38,6 +39,8 @@ protected: // Variables
 	GameState* m_gameStatePtr;
 
 protected: // Input parameters
+
+#pragma region INPUT_PARAMS
 	struct PlayerComponentInfo {
 		Netcode::CompID playerCompID;
 		Netcode::CompID candleID;
@@ -61,9 +64,14 @@ protected: // Input parameters
 		glm::vec3 gunVelocity;
 	};
 
-protected: // Functions
-	void pushDataToBuffer(const std::string& data);
+	struct EndScreenInfo {
+		int bulletsFired;
+		int jumpsMade;
+		float distanceWalked;
+	};
+#pragma endregion
 
+protected: // Functions
 	virtual void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)             = 0;
 	virtual void destroyEntity   (const Netcode::CompID entityID)                                    = 0;
 	virtual void enableSprinklers()                                                                  = 0;
@@ -90,11 +98,13 @@ protected: // Functions
 	virtual void runningTileStart (const Netcode::CompID id)  = 0;
 	virtual void runningStopSound (const Netcode::CompID id)  = 0;
 
-	// HOST ONLY
-	virtual void endMatch()                   = 0; // Start end timer for host
-	virtual void endMatchAfterTimer(float dt) = 0; // Made for the host to quit the game after a set time
-	virtual void mergeHostsStats()            = 0; // Host adds its data to global statistics before waiting for clients
-	virtual void prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) = 0;
+	// FUNCTIONS THAT DIFFER BETWEEN HOST AND CLIENT
+	virtual void endMatch() = 0;
+	
+	// HOST ONLY FUNCTIONS
+	virtual void endMatchAfterTimer(const float dt) = 0; // Made for the host to quit the game after a set time
+	virtual void mergeHostsStats()                  = 0; // Host adds its data to global statistics before waiting for clients
+	virtual void prepareEndScreen(const Netcode::PlayerID sender, const EndScreenInfo& info) = 0;
 
 	//bool onEvent(const Event& event) override;
 

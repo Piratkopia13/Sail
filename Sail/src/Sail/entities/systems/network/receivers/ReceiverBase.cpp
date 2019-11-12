@@ -342,15 +342,17 @@ void ReceiverBase::update(float dt) {
 			case Netcode::MessageType::PREPARE_ENDSCREEN:
 			{
 				GameDataTracker* dgtp = &GameDataTracker::getInstance();
-				// create temporary variables to hold data when reading netmessage
-				int bulletsFired, jumpsMade;
-				float distanceWalked;
-				// Get the data
-				ar(bulletsFired);
-				ar(distanceWalked);
-				ar(jumpsMade);
+				EndScreenInfo info;
 
-				prepareEndScreen(bulletsFired, distanceWalked, jumpsMade, senderID);
+				// create temporary variables to hold data when reading netmessage
+				/*int bulletsFired, jumpsMade;
+				float distanceWalked;*/
+				// Get the data
+				ar(info.bulletsFired);
+				ar(info.distanceWalked);
+				ar(info.jumpsMade);
+
+				prepareEndScreen(senderID, info);
 			}
 			break;
 			case Netcode::MessageType::RUNNING_METAL_START:

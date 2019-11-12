@@ -9,7 +9,7 @@ class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
 
-class NetworkReceiverSystem : public ReceiverBase, public EventReceiver {
+class NetworkReceiverSystem : public ReceiverBase {
 public:
 	NetworkReceiverSystem();
 	virtual ~NetworkReceiverSystem();
