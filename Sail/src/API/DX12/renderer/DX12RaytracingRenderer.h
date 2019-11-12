@@ -35,6 +35,7 @@ private:
 	DX12API::Command m_commandDirect;
 	DX12API::Command m_commandCompute;
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
+	std::unique_ptr<DX12RenderableTexture> m_outputBloomTexture;
 
 	std::vector<DXRBase::Metaball> m_metaballs;
 	D3D12_RAYTRACING_AABB m_nextMetaballAabb;
