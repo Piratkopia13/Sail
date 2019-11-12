@@ -75,7 +75,10 @@ private:
 	void renderSingleplayer();
 	void renderLobbyCreator();
 	void renderServerBrowser();
+	void renderProfile();
 
-
+#ifdef DEVELOPMENT
+	void startSinglePlayer();
+#endif
 };
 
