@@ -292,6 +292,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		GunComponent* g = e->getComponent<GunComponent>();
 		ArchiveHelpers::saveVec3(ar, g->position);
 		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ar(e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_START].frequency);
 
 		// Transition into loop
 		e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::SHOOT_LOOP);
@@ -303,6 +304,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		GunComponent* g = e->getComponent<GunComponent>();
 		ArchiveHelpers::saveVec3(ar, g->position);
 		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ar(e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_LOOP].frequency);
 	}
 	break;
 	case Netcode::MessageType::SHOOT_END:
@@ -316,6 +318,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		GunComponent* g = e->getComponent<GunComponent>();
 		ArchiveHelpers::saveVec3(ar, g->position);
 		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
+		ar(e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_END].frequency);
 	}
 	break;
 	default:

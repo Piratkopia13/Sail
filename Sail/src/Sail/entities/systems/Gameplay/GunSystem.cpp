@@ -172,15 +172,22 @@ void GunSystem::sendShootingEvents(Entity* e) {
 
 	switch (gun->state) {
 	case GunState::STARTING:
-		EventDispatcher::Instance().emit(StartShootingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
+		EventDispatcher::Instance().emit(StartShootingEvent(
+			e->getComponent<NetworkReceiverComponent>()->m_id,
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].frequency
+		));
 		break;
 	case GunState::LOOPING:
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
+		EventDispatcher::Instance().emit(StopShootingEvent(
+			e->getComponent<NetworkReceiverComponent>()->m_id,
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].frequency
+		));
 		break;
 	case GunState::ENDING:
-		EventDispatcher::Instance().emit(StopShootingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
+		EventDispatcher::Instance().emit(StopShootingEvent(
+			e->getComponent<NetworkReceiverComponent>()->m_id,
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].frequency
+		));
 		gun->state = GunState::STANDBY;
 		break;
 	default:

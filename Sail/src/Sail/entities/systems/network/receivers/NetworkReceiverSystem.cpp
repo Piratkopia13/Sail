@@ -10,6 +10,7 @@
 
 #include "Network/NWrapperSingleton.h"
 #include "Sail/netcode/ArchiveTypes.h"
+#include "../Sail/src/Sail/events/types/LoopShootingEvent.h"
 
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
@@ -121,6 +122,7 @@ void NetworkReceiverSystem::update(float dt) {
 	glm::vec3 gunVelocity;
 	unsigned int animationIndex;
 	float animationTime;
+	float lowPassFrequency;
 
 	// Process all messages in the buffer
 	while (!m_incomingDataBuffer.empty()) {
@@ -192,24 +194,27 @@ void NetworkReceiverSystem::update(float dt) {
 				{
 					ArchiveHelpers::loadVec3(ar, gunPosition);
 					ArchiveHelpers::loadVec3(ar, gunVelocity);
+					ar(lowPassFrequency);
 
-					shootStart(gunPosition, gunVelocity, id);
+					shootStart(gunPosition, gunVelocity, id, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_LOOP:
 				{
 					ArchiveHelpers::loadVec3(ar, gunPosition);
 					ArchiveHelpers::loadVec3(ar, gunVelocity);
+					ar(lowPassFrequency);
 
-					shootLoop(gunPosition, gunVelocity, id);
+					shootLoop(gunPosition, gunVelocity, id, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_END:
 				{
 					ArchiveHelpers::loadVec3(ar, gunPosition);
 					ArchiveHelpers::loadVec3(ar, gunVelocity);
+					ar(lowPassFrequency);
 
-					shootEnd(gunPosition, gunVelocity, id);
+					shootEnd(gunPosition, gunVelocity, id, lowPassFrequency);
 				}
 				break;
 				default:
@@ -614,24 +619,18 @@ void NetworkReceiverSystem::setCandleHeldState(Netcode::ComponentID id, bool isH
 	EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
 }
 
-void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+void NetworkReceiverSystem::shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	EventDispatcher::Instance().emit(StartShootingEvent(id));
+	EventDispatcher::Instance().emit(StartShootingEvent(id, frequency));
 }
-void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
-	// Only called when another player shoots
-	if (auto e = findFromNetID(id); e) {
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
-		return;
-	}
-	SAIL_LOG_WARNING("shootLoop called but no matching entity found");
+void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id, float frequency) {
+	// Do this instead of what's below
+	EventDispatcher::Instance().emit(LoopShootingEvent(id, frequency));
 }
 
-void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id) {
+void NetworkReceiverSystem::shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	EventDispatcher::Instance().emit(StopShootingEvent(id));
+	EventDispatcher::Instance().emit(StopShootingEvent(id, frequency));
 }
 
 void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {

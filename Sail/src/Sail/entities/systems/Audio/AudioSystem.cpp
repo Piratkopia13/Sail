@@ -406,6 +406,17 @@ bool AudioSystem::onEvent(const Event& event) {
 		}
 	};
 
+	auto onLoopShooting = [=](const LoopShootingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
+		}
+		else {
+			SAIL_LOG_WARNING("AudioSystem : looped shooting but no matching entity found");
+		}
+	};
+
 	auto onStopShooting = [=](const StopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
@@ -449,6 +460,7 @@ bool AudioSystem::onEvent(const Event& event) {
 	case Event::Type::PLAYER_JUMPED: onPlayerJumped((const PlayerJumpedEvent&)event); break;
 	case Event::Type::PLAYER_LANDED: onPlayerLanded((const PlayerLandedEvent&)event); break;
 	case Event::Type::START_SHOOTING: onStartShooting((const StartShootingEvent&)event); break;
+	case Event::Type::LOOP_SHOOTING: onLoopShooting((const LoopShootingEvent&)event); break;
 	case Event::Type::STOP_SHOOTING: onStopShooting((const StopShootingEvent&)event); break;
 	case Event::Type::CHANGE_WALKING_SOUND: onChangeWalkingSound((const ChangeWalkingSoundEvent&)event); break;
 	case Event::Type::STOP_WALKING: onStopWalking((const StopWalkingEvent&)event); break;

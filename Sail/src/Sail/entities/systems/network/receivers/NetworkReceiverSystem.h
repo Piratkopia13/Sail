@@ -65,9 +65,9 @@ private:
 
 	Entity* findFromNetID(Netcode::ComponentID id) const;
 
-	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
-	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
-	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
+	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id, float frequency);
+	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id, float frequency);
+	void shootEnd(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id, float frequency);
 
 	virtual void waterHitPlayer(Netcode::ComponentID id, Netcode::PlayerID SenderId) = 0;
 	virtual void endMatch() = 0;                   // Start end timer for host
