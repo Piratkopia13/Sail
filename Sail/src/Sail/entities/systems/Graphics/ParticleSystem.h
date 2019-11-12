@@ -20,7 +20,7 @@ public:
 	void spawnParticles(int particlesToSpawn, ParticleEmitterComponent* particleEmitterComp);
 
 	void update(float dt);
-	void updateOnGPU(ID3D12GraphicsCommandList4* cmdList);
+	void updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos);
 
 	void submitAll() const;
 
@@ -74,6 +74,7 @@ private:
 	struct ComputeInput {
 		ParticleData particles[m_maxParticlesSpawnPerFrame];
 		unsigned int particlesToRemove[m_maxParticlesSpawnPerFrame];
+		glm::vec3 cameraPos;
 		unsigned int numParticles;
 		unsigned int numParticlesToRemove;
 		unsigned int previousNrOfParticles;

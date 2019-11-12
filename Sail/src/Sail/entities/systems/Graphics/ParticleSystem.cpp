@@ -33,7 +33,7 @@ ParticleSystem::ParticleSystem() {
 
 	auto* context = Application::getInstance()->getAPI<DX12API>();
 
-	m_particlePhysicsSize = 6 * 4; // 6 floats times 4 bytes
+	m_particlePhysicsSize = 9 * 4; // 6 floats times 4 bytes
 
 	m_physicsBufferDefaultHeap = SAIL_NEW wComPtr<ID3D12Resource>[DX12API::NUM_GPU_BUFFERS];
 	for (UINT i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
@@ -99,7 +99,7 @@ void ParticleSystem::update(float dt) {
 	}
 }
 
-void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
+void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos) {
 	auto* context = Application::getInstance()->getAPI<DX12API>();
 
 	if (m_gpuUpdates < (int)(DX12API::NUM_GPU_BUFFERS * 2)) {
@@ -116,6 +116,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		auto* settings = m_particleShader->getComputeSettings();
 
 		//----Compute shader constant buffer----
+		m_inputData.cameraPos = cameraPos;
 		m_inputData.previousNrOfParticles = m_cpuOutput[context->getSwapIndex()].previousNrOfParticles;
 		m_inputData.maxOutputVertices = m_outputVertexBufferSize;
 		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
