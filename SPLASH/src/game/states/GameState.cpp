@@ -579,6 +579,10 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	// t -> start the game event, s -> start as spectator
 	NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(std::string("ts0"));
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.player.id);
+	}
 	
 	return true;
 }
