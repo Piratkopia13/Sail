@@ -68,10 +68,10 @@ bool LobbyClientState::onStartGame(const NetworkStartGameEvent& event) {
 	// Queue changes to the stack while maintaining the connection
 
 	if (event.isSpectator || m_spectator) {
-		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, true));
+		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, 0));
 	}
 	else {
-		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, false));
+		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, 1));
 	}
 
 	this->requestStackClear();

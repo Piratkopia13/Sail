@@ -150,7 +150,10 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation);
 	// Other players have a character model and animations
 
-	otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
+	auto rec = otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID)->m_id = rec->m_id;
+	}
 	otherPlayer->addComponent<OnlineOwnerComponent>(playerCompID);
 
 	// Create the player
@@ -158,12 +161,18 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 
 	for (Entity* c : otherPlayer->getChildEntities()) {
 		if (c->getName() == otherPlayer->getName() + "WaterGun") {
-			c->addComponent<NetworkReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
+			auto rec = c->addComponent<NetworkReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
+			if ( NWrapperSingleton::getInstance().isHost()) {
+				c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, gunCompID)->m_id = rec->m_id;
+			}
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
 		}
 
 		if (c->hasComponent<CandleComponent>()) {
-			c->addComponent<NetworkReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
+			auto rec = c->addComponent<NetworkReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
+			if (NWrapperSingleton::getInstance().isHost()) {
+				c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, candleCompID)->m_id = rec->m_id;
+			}
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
 		}
 	}

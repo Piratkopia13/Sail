@@ -250,10 +250,10 @@ void LobbyState::renderStartButton() {
 			// Queue a removal of LobbyState, then a push of gamestate
 			NWrapperSingleton::getInstance().stopUDP();
 			if (m_spectator) {
-				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, true));
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, 0));
 			}
 			else {
-				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, false));
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, 1));
 			}
 			auto& stat = m_app->getSettings().gameSettingsStatic;
 			auto& dynamic = m_app->getSettings().gameSettingsDynamic;

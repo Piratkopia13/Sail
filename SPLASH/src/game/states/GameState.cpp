@@ -29,6 +29,7 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_WELCOME, this);
 
 	initConsole();
 
@@ -144,7 +145,9 @@ GameState::GameState(StateStack& stack)
 	createLevel(shader, boundingBoxModel);
 
 	// Player creation
-	if (m_app->getStateStorage().getLobbyToGameData()->enterAsSpectator) {
+
+	// team 0 = spectator
+	if (m_app->getStateStorage().getLobbyToGameData()->team == 0) {
 		//m_player = EntityFactory::CreateMySpectator(playerID).get();
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
@@ -216,6 +219,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_WELCOME, this);
 }
 
 // Process input for the state
@@ -539,6 +543,7 @@ bool GameState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
 	case Event::Type::NETWORK_JOINED:					onPlayerJoined((const NetworkJoinedEvent&)event); break;
+	case Event::Type::NETWORK_WELCOME:					onWelcome((const NetworkWelcomeEvent&)event); break;
 	default: break;
 	}
 
@@ -577,13 +582,20 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 }
 
 bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
-	// t -> start the game event, s -> start as spectator
-	NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(std::string("ts0"));
 
 	if (NWrapperSingleton::getInstance().isHost()) {
+		//std::this_thread::sleep_for(std::chrono::seconds(4));
 		m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.player.id);
 	}
 	
+	return true;
+}
+
+bool GameState::onWelcome(const NetworkWelcomeEvent& event) {
+
+	// t -> start the game event, s -> start as spectator
+	NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(std::string("ts0"));
+
 	return true;
 }
 

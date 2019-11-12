@@ -26,7 +26,7 @@ void HostSendToSpectatorSystem::init(Netcode::PlayerID playerID) {
 
 
 // The messages this function creates must match the format of messages created by and received by NetworkSenderSystem and NetworkReceiverSystem
-void HostSendToSpectatorSystem::sendEntityCreationPackage(TCP_CONNECTION_ID TCPidPlayer) const {
+void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID PlayerId) const {
 	std::ostringstream dataString(std::ios::binary);
 	Netcode::OutArchive ar(dataString);
 
@@ -82,9 +82,9 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(TCP_CONNECTION_ID TCPi
 
 
 			}
-			if (e->hasComponent<GunComponent>()) {
-				gunID = e->getComponent<NetworkSenderComponent>()->m_id;
-			}
+			//if (e->hasComponent<GunComponent>()) {
+			//	gunID = e->getComponent<NetworkSenderComponent>()->m_id;
+			//}
 			glm::vec3 position = e->getComponent<TransformComponent>()->getCurrentTransformState().m_translation;
 
 			ar(Netcode::MessageType::CREATE_NETWORKED_PLAYER);
@@ -123,5 +123,5 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(TCP_CONNECTION_ID TCPi
 
 	// -+-+-+-+-+-+-+-+ send the serialized archive over the network -+-+-+-+-+-+-+-+ 
 	std::string binaryData = dataString.str();
-	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToClient(binaryData, TCPidPlayer);
+	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToClient(binaryData, PlayerId);
 }

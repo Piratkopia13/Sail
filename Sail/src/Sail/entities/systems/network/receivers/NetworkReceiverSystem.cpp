@@ -461,7 +461,7 @@ void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID
 
 	// lightIndex set to 999, can probably be removed since it no longer seems to be used
 	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, gunCompID, 999, translation);
-
+	ECS::Instance()->addAllQueuedEntities();
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities

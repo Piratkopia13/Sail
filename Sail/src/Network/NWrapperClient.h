@@ -11,7 +11,7 @@ public:
 	bool connectToIP(char* = "127.0.0.1:54000");
 
 	// Client can't send these messages
-	void sendSerializedDataToClient(std::string data, TCP_CONNECTION_ID TCPiD) override {}
+	void sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayerId) override {}
 private:
 	void sendChatMsg(std::string msg);
 

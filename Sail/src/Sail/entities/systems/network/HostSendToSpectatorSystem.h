@@ -21,7 +21,7 @@ public:
 
 	void init(Netcode::PlayerID playerID);
 
-	void sendEntityCreationPackage(TCP_CONNECTION_ID TCPidPlayer) const;
+	void sendEntityCreationPackage(Netcode::PlayerID PlayerId) const;
 private:
 	Netcode::PlayerID m_playerID;
 };

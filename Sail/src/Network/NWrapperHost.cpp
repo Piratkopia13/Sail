@@ -8,6 +8,7 @@
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 
 
 bool NWrapperHost::host(int port) {
@@ -38,10 +39,15 @@ void NWrapperHost::updateServerDescription() {
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
-void NWrapperHost::sendSerializedDataToClient(std::string data, TCP_CONNECTION_ID TCPiD) {
+void NWrapperHost::sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayeriD) {
 	
-	data = std::string("s") + data;
-	m_network->send(data.c_str(), data.length(), TCPiD);
+	for (auto p : m_connectionsMap) {
+		if (p.second == PlayeriD) {
+			data = std::string("s") + data;
+			m_network->send(data.c_str(), data.length(), p.first);
+			break;
+		}
+	}
 }
 
 #ifdef DEVELOPMENT
@@ -71,10 +77,11 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 		//Send the newPlayerId to the new player and request a name, which upon retrieval will be sent to all clients.
 		char msg[3] = {'?', newPlayerId, '\0'};
 		m_network->send(msg, sizeof(msg), tcp_id);
+		EventDispatcher::Instance().emit(NetworkWelcomeEvent(m_connectionsMap[tcp_id]));
 	} else {
 		m_IdDistribution--;
 	}
-
+	
 	updateServerDescription();
 }
 
