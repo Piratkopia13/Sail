@@ -124,19 +124,9 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		//Update timer for this buffer
 		m_cpuOutput[context->getSwapIndex()].lastFrameTime += elapsedTime;
 
-		int numPart = glm::min((int)m_cpuOutput[context->getSwapIndex()].newParticles.size(), 100);
-		inputData.numParticles = numPart;
-		for (unsigned int i = 0; i < numPart; i++) {
-			const NewParticleInfo* newEmitter_i = &m_cpuOutput[context->getSwapIndex()].newParticles[i];
-			inputData.particles[i].position = newEmitter_i->emitter->position;
-			inputData.particles[i].velocity = newEmitter_i->emitter->velocity + newEmitter_i->spread;
-			inputData.particles[i].acceleration = newEmitter_i->emitter->acceleration;
-			inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newEmitter_i->spawnTime;
-		}
-
 		//Gather particles to remove
 		for (unsigned int i = 0; i < m_particleLife[context->getSwapIndex()].size(); i++) {
-			if (m_particleLife[context->getSwapIndex()][i] < 0.0f) {
+			if (m_particleLife[context->getSwapIndex()][i] < 0.0f && m_cpuOutput[context->getSwapIndex()].toRemove.size() < 99) {
 				m_cpuOutput[context->getSwapIndex()].toRemove.emplace_back();
 				m_cpuOutput[context->getSwapIndex()].toRemove.back() = i;
 			}
@@ -145,10 +135,22 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		//Sort it so that the overlaps when swaping on the gpu can easily be found
 		std::sort(m_cpuOutput[context->getSwapIndex()].toRemove.begin(), m_cpuOutput[context->getSwapIndex()].toRemove.end());
 
-		unsigned int numPartRem = glm::min((unsigned int)m_cpuOutput[context->getSwapIndex()].toRemove.size(), (unsigned int)100);
+		// Particles to remove
+		unsigned int numPartRem = (unsigned int)m_cpuOutput[context->getSwapIndex()].toRemove.size();
 		inputData.numParticlesToRemove = numPartRem;
 		for (unsigned int i = 0; i < numPartRem; i++) {
 			inputData.particlesToRemove[i] = m_cpuOutput[context->getSwapIndex()].toRemove[i];
+		}
+
+		// Particles to add
+		unsigned int numPart = glm::min(glm::min((unsigned int)m_cpuOutput[context->getSwapIndex()].newParticles.size(), (unsigned int)100), (unsigned int) (floor(m_outputVertexBufferSize/6) -  (m_cpuOutput[context->getSwapIndex()].previousNrOfParticles - numPartRem)));
+		inputData.numParticles = numPart;
+		for (unsigned int i = 0; i < numPart; i++) {
+			const NewParticleInfo* newParticle_i = &m_cpuOutput[context->getSwapIndex()].newParticles[i];
+			inputData.particles[i].position = newParticle_i->emitter->position;
+			inputData.particles[i].velocity = newParticle_i->emitter->velocity + newParticle_i->spread;
+			inputData.particles[i].acceleration = newParticle_i->emitter->acceleration;
+			inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newParticle_i->spawnTime;
 		}
 
 		m_particleShader->getPipeline()->setCBufferVar("inputBuffer", &inputData, sizeof(ComputeInput));
@@ -192,7 +194,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_cpuOutput[context->getSwapIndex()].previousNrOfParticles + numPart - numPartRem, m_outputVertexBufferSize / 6);
 
 		m_cpuOutput[context->getSwapIndex()].newParticles.erase(m_cpuOutput[context->getSwapIndex()].newParticles.begin(), m_cpuOutput[context->getSwapIndex()].newParticles.begin() + numPart);
-		m_cpuOutput[context->getSwapIndex()].toRemove.erase(m_cpuOutput[context->getSwapIndex()].toRemove.begin(), m_cpuOutput[context->getSwapIndex()].toRemove.begin() + numPartRem);
+		m_cpuOutput[context->getSwapIndex()].toRemove.clear();
 	}
 }
 
@@ -211,7 +213,7 @@ void ParticleSystem::submitAll() const {
 
 void ParticleSystem::syncWithGPUUpdate(unsigned int swapBufferIndex) {
 	// Remove
-	unsigned int numToRemove = glm::min((unsigned int)m_cpuOutput[swapBufferIndex].toRemove.size(), (unsigned int)100);
+	unsigned int numToRemove = (unsigned int)m_cpuOutput[swapBufferIndex].toRemove.size();
 
 	for (unsigned int i = 0; i < numToRemove; i++) {
 		unsigned int swapIndex = 0;
@@ -231,11 +233,11 @@ void ParticleSystem::syncWithGPUUpdate(unsigned int swapBufferIndex) {
 	}
 
 	m_particleLife[swapBufferIndex].erase(m_particleLife[swapBufferIndex].begin() + m_cpuOutput[swapBufferIndex].previousNrOfParticles - numToRemove, m_particleLife[swapBufferIndex].end());
-		
+		 
 	// Add
-	unsigned int numToAdd = glm::min((unsigned int)m_cpuOutput[swapBufferIndex].newParticles.size(), (unsigned int)100);
+	unsigned int numToAdd = glm::min(glm::min((unsigned int)m_cpuOutput[swapBufferIndex].newParticles.size(), (unsigned int)100), (unsigned int)(floor(m_outputVertexBufferSize / 6) - (m_cpuOutput[swapBufferIndex].previousNrOfParticles - numToRemove)));
 	for (unsigned int i = 0; i < numToAdd; i++) {
 		m_particleLife[swapBufferIndex].emplace_back();
-		m_particleLife[swapBufferIndex].back() = m_cpuOutput[swapBufferIndex].newParticles[i].emitter->lifeTime;
+		m_particleLife[swapBufferIndex].back() = m_cpuOutput[swapBufferIndex].newParticles[i].emitter->lifeTime - (m_cpuOutput[swapBufferIndex].lastFrameTime - m_cpuOutput[swapBufferIndex].newParticles[i].spawnTime);
 	}
 }
