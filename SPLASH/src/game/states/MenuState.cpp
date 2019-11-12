@@ -12,6 +12,7 @@
 
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include <string>
+#include "Sail/utils/SailImGui/SailImGui.h"
 
 MenuState::MenuState(StateStack& stack) 
 	: State(stack),
@@ -20,12 +21,24 @@ MenuState::MenuState(StateStack& stack)
 	m_network = &NWrapperSingleton::getInstance();
 	m_app = Application::getInstance();
 	m_imGuiHandler = m_app->getImGuiHandler();
+	m_settings = &m_app->getSettings();
 	std::string name = loadPlayerName("res/data/localplayer.settings");
 	m_network->setPlayerName(name.c_str());
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 
-	
+	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoBackground;
+
+	m_optionsWindow.setPosition({ 300, 300 });
+
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
 
@@ -64,6 +77,19 @@ bool MenuState::renderImgui(float dt) {
 	//Keep
 	//ImGui::ShowDemoWindow();
 
+
+	renderMenu();
+	if (m_optionsWindow.isWindowOpen()) {
+		m_optionsWindow.renderWindow();
+	}
+	renderSingleplayer();
+	renderLobbyCreator();
+	renderServerBrowser();
+	
+
+
+
+
 	static std::string font = "Beb20";
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
 
@@ -85,6 +111,7 @@ bool MenuState::renderImgui(float dt) {
 	ImGui::PopFont();
 	
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
+
 
 
 	static char buf[101] = "";
@@ -357,4 +384,41 @@ void MenuState::removeDeadLobbies() {
 			index++;
 		}
 	}
+}
+
+void MenuState::renderDebug() {
+}
+
+void MenuState::renderMenu() {
+	ImGui::PushFont(m_imGuiHandler->getFont("Beb30"));
+
+	if (ImGui::Begin("##MAINMENU", nullptr, m_standaloneButtonflags)) {
+		if (SailImGui::TextButton("Singleplayer")) {
+
+		}
+		if (SailImGui::TextButton("Create lobby")) {
+
+		}
+		if (SailImGui::TextButton("Server browser")) {
+
+		}
+		if (SailImGui::TextButton("Options")) {
+			m_optionsWindow.toggleWindow();
+		}
+		if (SailImGui::TextButton("Quit")) {
+			PostQuitMessage(0);
+		}
+	}
+	ImGui::End();
+
+	ImGui::PopFont();
+}
+
+void MenuState::renderSingleplayer() {
+}
+
+void MenuState::renderLobbyCreator() {
+}
+
+void MenuState::renderServerBrowser() {
 }

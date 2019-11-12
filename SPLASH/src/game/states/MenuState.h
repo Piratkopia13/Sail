@@ -6,6 +6,7 @@
 #include <string>
 #include <list>
 #include <ctime>
+#include "Sail/utils/SailImGui/OptionsWindow.h"
 
 class NetworkLanHostFoundEvent;
 
@@ -38,7 +39,10 @@ private:
 	// NetworkWrapper | NWrapperSingleton | NWrapperHost
 	NWrapperSingleton* m_network = nullptr;
 	Application* m_app = nullptr;
+	SettingStorage* m_settings;
 	ImGuiHandler* m_imGuiHandler;
+	ImGuiWindowFlags m_standaloneButtonflags;
+	OptionsWindow m_optionsWindow;
 	// For ImGui Input
 	std::string inputIP;
 	
@@ -64,5 +68,14 @@ private:
 	double udpCounter = 0;
 	std::vector<FoundLobby> m_foundLobbies;
 	std::vector<std::string> m_newfoundLobbies;
+
+	void renderDebug();
+
+	void renderMenu();
+	void renderSingleplayer();
+	void renderLobbyCreator();
+	void renderServerBrowser();
+
+
 };
 
