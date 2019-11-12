@@ -38,9 +38,11 @@ PostProcessPipeline::~PostProcessPipeline() {
 }
 
 RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void* cmdList) {
-	// TODO: change the following the read from game settings
-	bool enableFXAA = true;
-	float bloomAmount = 0.2f;
+	auto& settings = Application::getInstance()->getSettings();
+
+	// Read from game settings
+	bool enableFXAA = settings.applicationSettingsStatic["graphics"]["fxaa"].getSelected().value > 0.f;
+	float bloomAmount = settings.applicationSettingsStatic["graphics"]["bloom"].getSelected().value;
 
 	PostProcessInput input;
 
