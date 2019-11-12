@@ -39,7 +39,7 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt
 			ac->m_sounds[Audio::SoundType::ALARM].isPlaying = true;
 		}
 		else {
-			ac->m_sounds[Audio::SoundType::SPRINKLER].isPlaying = true;
+			ac->m_sounds[Audio::SoundType::SPRINKLER_WATER].isPlaying = true;
 		}
 
 
