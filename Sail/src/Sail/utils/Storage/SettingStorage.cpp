@@ -122,11 +122,11 @@ void SettingStorage::createApplicationDefaultGraphics() {
 		{ "on", 1.0f }, 
 		{ "off",0.0f } 
 	}));
-	applicationSettingsStatic["graphics"]["fxaa"] = Setting(0, std::vector<Setting::Option>({
+	applicationSettingsStatic["graphics"]["fxaa"] = Setting(1, std::vector<Setting::Option>({
 		{ "off", 0.0f },
 		{ "on", 1.0f },
 		}));
-	applicationSettingsStatic["graphics"]["bloom"] = Setting(0, std::vector<Setting::Option>({
+	applicationSettingsStatic["graphics"]["bloom"] = Setting(1, std::vector<Setting::Option>({
 		{ "off", 0.0f },
 		{ "on", 0.2f },
 		{ "all the bloom", 1.0f },
