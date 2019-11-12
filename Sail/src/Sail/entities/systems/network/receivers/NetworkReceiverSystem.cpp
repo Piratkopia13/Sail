@@ -183,6 +183,11 @@ void NetworkReceiverSystem::update(float dt) {
 					setEntityLocalRotation(id, rotation);
 				}
 				break;
+				case Netcode::MessageType::DESTROY_ENTITY:
+				{
+					destroyEntity(id);
+				}
+				break;
 				case Netcode::MessageType::SHOOT_START:
 				{
 					ArchiveHelpers::loadVec3(ar, gunPosition);
@@ -407,6 +412,18 @@ void NetworkReceiverSystem::update(float dt) {
 				runningTileStart(componentID);
 			}
 			break;
+			case Netcode::MessageType::RUNNING_WATER_METAL_START:
+			{
+				ar(componentID);
+				runningWaterMetalStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_WATER_TILE_START:
+			{
+				ar(componentID);
+				runningWaterTileStart(componentID);
+			}
+			break;
 			case Netcode::MessageType::RUNNING_STOP_SOUND:
 			{
 				ar(componentID);
@@ -425,12 +442,14 @@ void NetworkReceiverSystem::update(float dt) {
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
 				Netcode::ComponentID projectileOwnerID;
+				Netcode::ComponentID projectileComponentID;
 
 				ArchiveHelpers::loadVec3(ar, gunPosition);
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
+				ar(projectileComponentID);
 				ar(projectileOwnerID);
 
-				projectileSpawned(gunPosition, gunVelocity, projectileOwnerID);
+				projectileSpawned(gunPosition, gunVelocity, projectileComponentID, projectileOwnerID);
 			}
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
@@ -458,9 +477,7 @@ void NetworkReceiverSystem::update(float dt) {
 	endMatchAfterTimer(dt);
 }
 
-/*
-  Creates a new entity of the specified entity type and with a NetworkReceiverComponent attached to it
-*/
+
 void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation) {
 	// Early exit if the entity already exists
 	if (findFromNetID(playerCompID)) {
@@ -475,6 +492,14 @@ void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID
 	// lightIndex set to 999, can probably be removed since it no longer seems to be used
 	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, gunCompID, 999, translation);
 
+}
+
+void NetworkReceiverSystem::destroyEntity(Netcode::ComponentID entityID) {
+	if (auto e = findFromNetID(entityID); e) {
+		e->queueDestruction();
+		return;
+	}
+	SAIL_LOG_WARNING("destoryEntity called but no matching entity found");
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
@@ -548,11 +573,11 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 }
 
 // If I requested the projectile it has a local owner
-void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Netcode::ComponentID ownerID) {
-	bool wasRequestedByMe = (Netcode::getComponentOwner(ownerID) == m_playerID);
+void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID) {
+	const bool wasRequestedByMe = (Netcode::getComponentOwner(ownerID) == m_playerID);
 
 	// Also play the sound
-	EntityFactory::CreateProjectile(pos, dir, wasRequestedByMe, ownerID);
+	EntityFactory::CreateProjectile(pos, dir, wasRequestedByMe, ownerID, projectileID);
 }
 
 void NetworkReceiverSystem::playerDied(Netcode::ComponentID networkIdOfKilled, Netcode::PlayerID playerIdOfShooter) {
@@ -613,6 +638,13 @@ void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 
 void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
+}
+void NetworkReceiverSystem::runningWaterMetalStart(Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_METAL));
+}
+
+void NetworkReceiverSystem::runningWaterTileStart(Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_TILE));
 }
 
 void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {
