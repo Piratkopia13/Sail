@@ -16,6 +16,7 @@ public:
 	enum class DamageSource{
 		NO_CLUE = 0,
 		PLAYER,
+		SPRINKLER,
 		INSANE,
 	};
 

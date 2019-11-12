@@ -4,13 +4,21 @@
 #include "Sail/Application.h"
 #include "Sail/utils/GameDataTracker.h"
 
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/PlayerDiedEvent.h"
+#include "Sail/netcode/NetworkedStructs.h"
+#include "Sail/../Network/NWrapperSingleton.h"
+
 KillFeedWindow::KillFeedWindow(bool showWindow)
 	: m_gameDataTracker(GameDataTracker::getInstance())
 	, m_maxTimeShowed(6.f)
-	, m_doRender(false)
-{}
+	, m_doRender(false) {
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
+}
 
-KillFeedWindow::~KillFeedWindow() {}
+KillFeedWindow::~KillFeedWindow() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
+}
 
 void KillFeedWindow::renderWindow() {
 	if (m_doRender) {
@@ -50,11 +58,43 @@ void KillFeedWindow::updateTiming(float dt) {
 		kill.first += dt;
 	}
 
-	auto allDeaths = m_gameDataTracker.getPlayerDeaths();
-	if (m_kills.size() < allDeaths.size()) {
-		for (int i = m_kills.size(); i < allDeaths.size(); i++) {
-			m_kills.emplace_back(0.f, allDeaths[i]);
+	auto messages = m_gameDataTracker.getKillFeed();
+	if (m_kills.size() < messages.size()) {
+		for (int i = m_kills.size(); i < messages.size(); i++) {
+			m_kills.emplace_back(0.f, messages[i]);
 			m_doRender = true;
 		}
 	}
+}
+
+bool KillFeedWindow::onEvent(const Event& event) {
+	auto onPlayerDied = [&](const PlayerDiedEvent& e) {
+
+		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(e.netIDofKilled);
+		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
+
+		std::string ShooterPlayer;
+		std::string deathType;
+		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
+			ShooterPlayer = "The sprinklers";
+			deathType = "sprayed down";
+		} else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+			ShooterPlayer = "Insanity";
+			deathType = "devoured";
+		} else {
+			ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+			deathType = "sprayed down";
+		}
+
+		SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
+
+		m_gameDataTracker.logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
+	};
+
+	switch (event.type) {
+	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
+	default: break;
+	}
+
+	return true;
 }

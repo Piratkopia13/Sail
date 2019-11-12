@@ -13,6 +13,11 @@ namespace Netcode {
 
 	// Used to signify NetworkMessages sent Internally
 	static constexpr PlayerID MESSAGE_FROM_SELF_ID = 255;
+	
+	// ID for sprinkler
+	static constexpr PlayerID MESSAGE_SPRINKLER_ID = 254;
+	static constexpr PlayerID MESSAGE_INSANITY_ID = 253;
+	static constexpr PlayerID NONE_PLAYER_ID_START = 200;
 
 	// ComponentID has 32 bits and the first 8 are the PlayerID of the owner which
 	// can be extracted by shifting the ComponentID 18 bits to the right.
@@ -62,49 +67,49 @@ namespace Netcode {
 		SET_CANDLE_HEALTH,
 		EXTINGUISH_CANDLE,
 		PLAYER_DIED,
-		PLAYER_DISCONNECT,
 		MATCH_ENDED,
 		PREPARE_ENDSCREEN,			// Clients send relevant data for the endgame screen
 		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
-		SEND_ALL_BACK_TO_LOBBY,
 		RUNNING_METAL_START,
 		RUNNING_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
 		UPDATE_SANITY,
+		HIT_BY_SPRINKLER,
+		ENABLE_SPRINKLERS,
 		EMPTY,
 		COUNT
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_PLAYER,	 "
-		"CHANGE_LOCAL_POSITION,		 "
-		"CHANGE_LOCAL_ROTATION,		 "
-		"CHANGE_ABSOLUTE_POS_AND_ROT,"
-		"SPAWN_PROJECTILE,			 "
-		"ANIMATION,					 "
-		"SHOOT_START,				 "
-		"SHOOT_LOOP,				 "
-		"SHOOT_END,					 "
-		"PLAYER_JUMPED,				 "
-		"PLAYER_LANDED,				 "
-		"WATER_HIT_PLAYER,			 "
-		"SET_CANDLE_HEALTH,			 "
-		"EXTINGUISH_CANDLE,			 "
-		"PLAYER_DIED,				 "
-		"PLAYER_DISCONNECT,			 "
-		"MATCH_ENDED,				 "
-		"PREPARE_ENDSCREEN,			 "
-		"ENDGAME_STATS,				 "
-		"CANDLE_HELD_STATE,			 "
-		"SEND_ALL_BACK_TO_LOBBY,	 "
-		"RUNNING_METAL_START,		 "
-		"RUNNING_TILE_START,		 "
-		"RUNNING_STOP_SOUND,		 "
-		"IGNITE_CANDLE,				 "
-		"UPDATE_SANITY,			 "
-		"EMPTY,						 "
+		"CREATE_NETWORKED_PLAYER,	 ",
+		"CHANGE_LOCAL_POSITION,		 ",
+		"CHANGE_LOCAL_ROTATION,		 ",
+		"CHANGE_ABSOLUTE_POS_AND_ROT,",
+		"SPAWN_PROJECTILE,			 ",
+		"ANIMATION,					 ",
+		"SHOOT_START,				 ",
+		"SHOOT_LOOP,				 ",
+		"SHOOT_END,					 ",
+		"PLAYER_JUMPED,				 ",
+		"PLAYER_LANDED,				 ",
+		"WATER_HIT_PLAYER,			 ",
+		"SET_CANDLE_HEALTH,			 ",
+		"EXTINGUISH_CANDLE,			 ",
+		"PLAYER_DIED,				 ",
+		"MATCH_ENDED,				 ",
+		"PREPARE_ENDSCREEN,			 ",
+		"ENDGAME_STATS,				 ",
+		"CANDLE_HELD_STATE,			 ",
+		"RUNNING_METAL_START,		 ",
+		"RUNNING_TILE_START,		 ",
+		"RUNNING_STOP_SOUND,		 ",
+		"IGNITE_CANDLE,				 ",
+		"UPDATE_SANITY,				 ",
+		"HIT_BY_SPRINKLER,			 ",
+		"ENABLE_SPRINKLERS,			 ",
+		"EMPTY,						 ",
 		"COUNT						 "
 	};
 
@@ -250,13 +255,6 @@ namespace Netcode {
 		glm::vec3 candlePos;
 	};
 
-	class MessagePlayerDisconnect : public MessageData {
-	public:
-		MessagePlayerDisconnect(PlayerID id) : playerID(id) {}
-		~MessagePlayerDisconnect() {}
-		PlayerID playerID;
-	};
-
 	class MessageEndGameStats : public MessageData {
 	public:
 		MessageEndGameStats() {}
@@ -298,6 +296,17 @@ namespace Netcode {
 		MessageIgniteCandle(Netcode::ComponentID candleId) : candleCompId(candleId) {}
 		~MessageIgniteCandle() {}
 		Netcode::ComponentID candleCompId;
+	};
+	class MessageHitBySprinkler : public MessageData {
+	public:
+		MessageHitBySprinkler(Netcode::ComponentID id) : candleOwnerID(id) {}
+		~MessageHitBySprinkler() {}
+		Netcode::ComponentID candleOwnerID;
+	};
+	class MessageEnableSprinklers : public MessageData {
+	public:
+		MessageEnableSprinklers() {}
+		~MessageEnableSprinklers() {}
 	};
 
 }

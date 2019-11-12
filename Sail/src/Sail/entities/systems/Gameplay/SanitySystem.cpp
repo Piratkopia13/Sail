@@ -56,7 +56,7 @@ void SanitySystem::update(float dt) {
 			ic->sanity -= (dist - 1) * dt * 0.5;
 			ic->sanity = std::clamp(ic->sanity, m_minSanity, m_maxSanity);
 			if (ic->sanity <= 0) {
-				cc->kill(CandleComponent::DamageSource::INSANE, 255);
+				cc->kill(CandleComponent::DamageSource::INSANE, Netcode::MESSAGE_INSANITY_ID);
 			}
 		}
 	}
