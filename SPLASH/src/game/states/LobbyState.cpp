@@ -255,19 +255,20 @@ void LobbyState::renderPlayerList() {
 			if (currentplayer.id == myID || myID == HOST_ID) {
 				static unsigned int selectedTeam = 0;
 				if (ImGui::BeginCombo("##LABEL", selectedGameTeams.getSelected().name.c_str())) {
-
+					int i = 0;
 					for (auto const& key : selectedGameTeams.options) {
 						if (ImGui::Selectable(key.name.c_str(), selectedTeam == (unsigned int)(int)key.value)) {
 							// LOCALPLAYER
 							if (currentplayer.id == myID) {
-								selectedTeam = (unsigned int)(int)key.value;
+								selectedTeam = (unsigned int)i;
+								selectedGameTeams.setSelected(selectedTeam);
 							}
 							//HOST
 							else {
 								// TODO: SEND NEW SELECTION TO PLAYERS
 							}
 						}
-
+						i++;
 					}
 					ImGui::EndCombo();
 				}
@@ -331,7 +332,7 @@ void LobbyState::renderGameSettings() {
 	if (ImGui::Begin("Settings", NULL, settingsFlags)) {
 		static auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 		static auto& stat = m_app->getSettings().gameSettingsStatic;
-		ImGui::Text("Map Settings (not doing anything yet..)");
+		ImGui::Text("Map Settings");
 		ImGui::Separator();
 		ImGui::Columns(2);
 		ImGui::Text("Setting"); ImGui::NextColumn();
@@ -370,6 +371,36 @@ void LobbyState::renderGameSettings() {
 			m_settingsChanged = true;
 		}
 		ImGui::NextColumn();
+
+		ImGui::Columns(1);
+		ImGui::Text("Gamemode Settings");
+		ImGui::Separator();
+		ImGui::Columns(2);
+
+		SettingStorage::Setting* sopt = nullptr;
+		SettingStorage::DynamicSetting* dopt = nullptr;
+		unsigned int selected = 0;
+		std::string valueName = "";
+
+		sopt = &stat["gamemode"]["types"];
+		selected = sopt->selected;
+		if (SailImGui::TextButton(std::string("<##gamemode").c_str())) {
+			sopt->setSelected(selected - 1);
+			m_settingsChanged = true;
+		}
+		ImGui::SameLine();
+		valueName = sopt->getSelected().name;
+		ImGui::Text(valueName.c_str());
+		ImGui::SameLine();
+		if (SailImGui::TextButton(std::string(">##gamemode").c_str())) {
+			sopt->setSelected(selected + 1);
+			m_settingsChanged = true;
+		}
+		//ImGui::SameLine();
+		ImGui::NextColumn();
+		ImGui::Text("gamemode");
+
+
 
 		ImGui::Columns(1);
 	}
@@ -433,7 +464,7 @@ void LobbyState::renderChat() {
 }
 
 void LobbyState::renderMenu() {
-	static ImVec2 pos(m_outerPadding, m_outerPadding + 100);
+	static ImVec2 pos(m_outerPadding, m_outerPadding );
 	static ImVec2 size(150, 300);
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowSize(size);
@@ -441,18 +472,9 @@ void LobbyState::renderMenu() {
 	ImGui::PushFont(m_imGuiHandler->getFont("Beb30"));
 
 	if (ImGui::Begin("##LOBBYMENU", nullptr, m_standaloneButtonflags)) {
-	
-		if (SailImGui::TextButton("Game Options")) {
-			m_renderGameSettings = !m_renderGameSettings;
-		}
-		if(SailImGui::TextButton("Options")) {
-			m_optionsWindow.toggleWindow();
-
-		}
-		ImGui::Spacing();
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.3f, 0.3f, 1));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1));
-		if(SailImGui::TextButton("Leave")) {
+		if (SailImGui::TextButton("Leave")) {
 
 			// Reset the network
 			NWrapperSingleton::getInstance().resetNetwork();
@@ -463,12 +485,28 @@ void LobbyState::renderMenu() {
 			this->requestStackPush(States::MainMenu);
 		}
 		ImGui::PopStyleColor(2);
+		if (SailImGui::TextButton("Game Options")) {
+			m_renderGameSettings = !m_renderGameSettings;
+		}
+		if(SailImGui::TextButton("Options")) {
+			m_optionsWindow.toggleWindow();
+
+		}
+		ImGui::Spacing();
+		
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.7f, 0.3f, 1));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
 
+		
 		if (NWrapperSingleton::getInstance().isHost()) {
-			if (SailImGui::TextButton("S.P.L.A.S.H")) {
+			static bool allReady = false;
+			ImGui::PushFont(m_imGuiHandler->getFont("Beb20"));
+			ImGui::Checkbox("##allready", &allReady);
+			ImGui::SameLine();
+			ImGui::PopFont();
+
+			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
 				// Queue a removal of LobbyState, then a push of gamestate
 				NWrapperSingleton::getInstance().stopUDP();
 				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
