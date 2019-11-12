@@ -59,7 +59,7 @@ void AnimationChangerSystem::update(float dt) {
 				}
 				continue;
 			// To make sure the animation isn't swapped before the animation is done
-			} else if ((animationC->animationIndex == IDLE_DROP/*IDLE_JUMP*/ ||
+			} else if ((animationC->animationIndex == 255/*IDLE_JUMP*/ ||
 					   animationC->animationIndex == IDLE_THROW) &&
 					   animationC->animationTime < (animationC->currentAnimation->getMaxAnimationTime() - dt)) {
 				continue;
