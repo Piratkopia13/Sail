@@ -45,9 +45,21 @@ void InGameGui::renderWindow() {
 		}
 
 		if (c2) {
-			float val = 1 - (c2->sprintTimer / MAX_SPRINT_TIME);
-			float val_inv = 1 - val;
-			ImVec4 color = (c2->canSprint && !c2->exhausted) ? ImVec4(1 - val_inv * 0.3, 0.6 - val_inv * 0.6, 0, 1) : ImVec4(0.5, 0.5, 0.5, 1);
+			float val;
+			float val_inv;
+			ImVec4 color;
+
+			if (c2->exhausted) {
+				val = (c2->downTimer / MAX_SPRINT_DOWN_TIME);
+				val_inv = 1 - val;
+				color = ImVec4(0.5, 0.5, 0.5, 1);
+			} else {
+				val = 1 - (c2->sprintTimer / MAX_SPRINT_TIME);
+				val_inv = 1 - val;
+				color = ImVec4(1 - val_inv * 0.3, 0.6 - val_inv * 0.6, 0, 1);
+			}
+
+
 			CustomImGui::CustomProgressBar(val, ImVec2(-1, 0), "Stamina", color);
 		}
 	}
