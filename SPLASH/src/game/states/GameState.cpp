@@ -432,6 +432,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
 
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
+	m_componentSystems.sprinklerSystem->setOctree(m_octree);
 
 	m_componentSystems.sprintingSystem = ECS::Instance()->createSystem<SprintingSystem>();
 }

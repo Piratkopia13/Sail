@@ -4,6 +4,7 @@
 
 class SpotLightSystem;
 
+
 class SpotlightComponent final : public Component<SpotlightComponent> {
 public:
 	SpotlightComponent(){}

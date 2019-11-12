@@ -107,6 +107,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				glm::vec3 moveDir = ( playerMovement.forwardMovement * forward + playerMovement.rightMovement * right + playerMovement.upMovement * up );
 				moveDir = glm::normalize(moveDir);
 				transComp->translate(moveDir * dt * playerMovement.speedModifier * 10.f);
+
 			}
 
 			// Else do normal movement

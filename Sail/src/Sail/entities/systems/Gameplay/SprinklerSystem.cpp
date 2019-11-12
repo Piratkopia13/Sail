@@ -17,8 +17,6 @@ SprinklerSystem::SprinklerSystem() : BaseComponentSystem() {
 	m_settings = &Application::getInstance()->getSettings();
 	m_endGameStartLimit = m_settings->gameSettingsDynamic["map"]["sprinklerTime"].value;
 	m_endGameTimeIncrement = m_settings->gameSettingsDynamic["map"]["sprinklerIncrement"].value;
-
-
 }
 
 SprinklerSystem::~SprinklerSystem() {
@@ -43,9 +41,31 @@ void SprinklerSystem::stop() {
 void SprinklerSystem::update(float dt) {
 	if (m_settings->gameSettingsStatic["map"]["sprinkler"].selected == 0) {
 		if (m_enableSprinklers) {
+
+			//
+			m_endGameTimer += dt;
 			for (auto& e : entities) {
 
-				m_endGameTimer += dt;
+				for (int i = 0; i < m_sprinklers.size(); i++) {
+					if (m_sprinklers[i].active)
+					{
+					Octree::RayIntersectionInfo tempInfo;
+
+					float sprinklerXspread = (m_sprinklers[i].size.x * 0.5f) * m_map->tileSize;
+					float sprinklerZspread = (m_sprinklers[i].size.y * 0.5f) * m_map->tileSize;
+					glm::vec3 waterDir = glm::vec3(((2.f * Utils::rnd()) - 1.0f) *sprinklerXspread, -m_sprinklers[i].pos.y, ((2.f * Utils::rnd()) - 1.0f)*sprinklerZspread) + m_sprinklers[i].pos;
+					waterDir = glm::normalize(waterDir - m_sprinklers[i].pos);
+					//SAIL_LOG("WaterDir:");
+					//SAIL_LOG("x: " + std::to_string(waterDir.x));
+					//SAIL_LOG("y: " + std::to_string(waterDir.y));
+					//SAIL_LOG("z: " + std::to_string(waterDir.z));
+
+					m_octree->getRayIntersection(m_sprinklers[i].pos, waterDir, &tempInfo);
+					glm::vec3 hitPos = m_sprinklers[i].pos + waterDir * tempInfo.closestHit;
+					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(hitPos);
+					}
+
+				}
 
 				CandleComponent* candle = e->getComponent<CandleComponent>();
 				TransformComponent* transform = e->getComponent<TransformComponent>();
@@ -62,7 +82,7 @@ void SprinklerSystem::update(float dt) {
 					candlePosZ = transform->getTranslation().z;
 				}
 
-				int candleLocationRoomID = m_map->getRoomIDWorldPos(candlePosX, candlePosZ);
+				int candleLocationRoomID = m_map->getRoomIDFromWorldPos(candlePosX, candlePosZ);
 				std::vector<int>::iterator it = std::find(m_activeSprinklers.begin(), m_activeSprinklers.end(), candleLocationRoomID);
 				if (it != m_activeSprinklers.end()) {
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -79,7 +99,11 @@ void SprinklerSystem::update(float dt) {
 			if (m_enableNewSprinklers) {
 				// Active rooms now start their sprinklers
 				if (!m_activeRooms.empty()) {
+					for (int i = m_activeSprinklers.size(); i < m_activeSprinklers.size() + m_roomsToBeActivated.size(); i++) {
+						m_sprinklers[i].active = true;
+					}
 					m_activeSprinklers.insert(m_activeSprinklers.end(), m_roomsToBeActivated.begin(), m_roomsToBeActivated.end());
+					
 					m_roomsToBeActivated.clear();
 				}
 
@@ -123,6 +147,7 @@ void SprinklerSystem::update(float dt) {
 			else if (((m_endGameTimer) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
 				m_enableNewSprinklers = true;
 			}
+
 		}
 		else {
 			// End game is reached, sprinklers starting
@@ -155,11 +180,15 @@ void SprinklerSystem::addToActiveRooms(int x, int y) {
 		if (itRooms == m_activeRooms.end()) {
 			m_activeRooms.push_back(room);
 			m_roomsToBeActivated.push_back(room);
-			Room roomPos;
-			roomPos.ID = room;
-			roomPos.posX = x;
-			roomPos.posY = y;
-			m_roomPositions.push_back(roomPos);
+			
+			// Save sprinkler worldPos and ID
+			Sprinkler sprinkler;
+			sprinkler.roomID = room;
+			sprinkler.pos = m_map->getRoomInfo(room).center;
+			sprinkler.pos.y = (m_map->tileSize * m_map->tileHeight) - 0.2f;
+			sprinkler.size = m_map->getRoomInfo(room).size;
+			
+			m_sprinklers.push_back(sprinkler);
 		}
 	}
 }
@@ -169,13 +198,17 @@ void SprinklerSystem::enableSprinklers() {
 	m_endGameTimer = 0.f;
 }
 
+void SprinklerSystem::setOctree(Octree* octree) {
+	m_octree = octree;
+}
+
 void SprinklerSystem::addWaterToActiveRooms() {
-	for (auto sprinkler : m_activeSprinklers) {
-		for (auto roomID : m_roomPositions) {
-			if (sprinkler == roomID.ID) {
+	//for (auto sprinkler : m_activeSprinklers) {
+	//	for (auto roomID : m_roomPositions) {
+	//		if (sprinkler == roomID.ID) {
 
-			}
-		}
+	//		}
+	//	}
 
-	}
+	//}
 }
