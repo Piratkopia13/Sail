@@ -224,6 +224,4 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
 	finalColor = input.SampleLevel(CSss, finalTexCoord, 0).rgba;
 
     output[dispatchThreadID.xy] = finalColor;
-    // output[dispatchThreadID.xy] = float4(colorCenter, 1.0f);
-
 }
