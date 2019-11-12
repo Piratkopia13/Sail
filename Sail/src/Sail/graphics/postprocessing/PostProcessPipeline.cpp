@@ -4,6 +4,7 @@
 #include "Sail/graphics/shader/postprocess/GaussianBlurHorizontal.h"
 #include "Sail/graphics/shader/postprocess/GaussianBlurVertical.h"
 #include "Sail/graphics/shader/postprocess/BlendShader.h"
+#include "Sail/graphics/shader/postprocess/FXAAShader.h"
 #include "Sail/events/EventDispatcher.h"
 
 PostProcessPipeline::PostProcessPipeline() 
@@ -12,6 +13,7 @@ PostProcessPipeline::PostProcessPipeline()
 
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 
+	add<FXAAShader>("FXAA", 1.0f);
 	add<GaussianBlurVertical>("BloomBlur1V", 1.0f);
 	add<GaussianBlurHorizontal>("BloomBlur1H", 1.0f);
 	add<GaussianBlurVertical>("BloomBlur2V", 0.75f, 1.f / 0.75f);
@@ -35,7 +37,7 @@ PostProcessPipeline::~PostProcessPipeline() {
 
 RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void* cmdList) {
 	PostProcessInput input;
-	input.inputRenderableTexture = m_bloomTexture;
+	/*input.inputRenderableTexture = m_bloomTexture;
 	// Blur pass one
 	auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
 	input.inputRenderableTexture = output->outputTexture;
@@ -49,11 +51,15 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 	input.inputRenderableTexture = output->outputTexture;
 	output = runStage(input, m_stages["BloomBlur3V"], cmdList);
 	input.inputRenderableTexture = output->outputTexture;
-	output = runStage(input, m_stages["BloomBlur3H"], cmdList);
+	auto* bloomOutput = runStage(input, m_stages["BloomBlur3H"], cmdList);*/
 
+	// FXAA
 	input.inputRenderableTexture = baseTexture;
-	input.inputRenderableTextureTwo = output->outputTexture;
-	output = runStage(input, m_stages["BloomBlend"], cmdList);
+	auto* output = runStage(input, m_stages["FXAA"], cmdList);
+
+	/*input.inputRenderableTexture = output->outputTexture;
+	input.inputRenderableTextureTwo = bloomOutput->outputTexture;
+	output = runStage(input, m_stages["BloomBlend"], cmdList);*/
 
 	return output->outputTexture;
 }
@@ -79,7 +85,7 @@ PostProcessPipeline::PostProcessOutput* PostProcessPipeline::runStage(PostProces
 
 	stage.shader->getPipeline()->setCBufferVar("textureSizeDifference", &stage.textureSizeDifference, sizeof(float));
 	glm::u32vec2 textureSize = glm::u32vec2(input.outputWidth, input.outputHeight);
-	stage.shader->getPipeline()->trySetCBufferVar("textureSize", &textureSize, sizeof(float));
+	stage.shader->getPipeline()->trySetCBufferVar("textureSize", &textureSize, sizeof(glm::u32vec2));
 	
 	output = static_cast<PostProcessOutput*>(&m_dispatcher->dispatch(*stage.shader, input, 0, cmdList));
 	return output;
