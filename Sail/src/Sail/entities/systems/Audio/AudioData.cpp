@@ -201,6 +201,152 @@ void AllAudioData::init() {
 	}
 	//-----------------------------------------------------------------------------
 
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Heart Beat, First	 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::HEART_BEAT_FIRST];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "sanity/heart_firstbeat1.wav";
+		soundUniqueInfo.soundEffectLength = 0.198f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_FIRST].push_back(soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "sanity/heart_firstbeat2.wav";
+		soundUniqueInfo.soundEffectLength = 0.201f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_FIRST].push_back(soundUniqueInfo);
+		//	• Sample #3
+		soundUniqueInfo.fileName = "sanity/heart_firstbeat3.wav";
+		soundUniqueInfo.soundEffectLength = 0.182f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_FIRST].push_back(soundUniqueInfo);
+		//	• Sample #4
+		soundUniqueInfo.fileName = "sanity/heart_firstbeat4.wav";
+		soundUniqueInfo.soundEffectLength = 0.182f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_FIRST].push_back(soundUniqueInfo);
+		//	• Sample #5
+		soundUniqueInfo.fileName = "sanity/heart_firstbeat5.wav";
+		soundUniqueInfo.soundEffectLength = 0.202f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_FIRST].push_back(soundUniqueInfo);
+		//	• Sample #6
+		soundUniqueInfo.fileName = "sanity/heart_firstbeat6.wav";
+		soundUniqueInfo.soundEffectLength = 0.169f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_FIRST].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Heart Beat, Second	 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::HEART_BEAT_SECOND];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "sanity/heart_secondbeat1.wav";
+		soundUniqueInfo.soundEffectLength = 0.179f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_SECOND].push_back(soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "sanity/heart_secondbeat2.wav";
+		soundUniqueInfo.soundEffectLength = 0.119f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_SECOND].push_back(soundUniqueInfo);
+		//	• Sample #3
+		soundUniqueInfo.fileName = "sanity/heart_secondbeat3.wav";
+		soundUniqueInfo.soundEffectLength = 0.202f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_SECOND].push_back(soundUniqueInfo);
+		//	• Sample #4
+		soundUniqueInfo.fileName = "sanity/heart_secondbeat4.wav";
+		soundUniqueInfo.soundEffectLength = 0.184f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_SECOND].push_back(soundUniqueInfo);
+		//	• Sample #5
+		soundUniqueInfo.fileName = "sanity/heart_secondbeat5.wav";
+		soundUniqueInfo.soundEffectLength = 0.140f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_SECOND].push_back(soundUniqueInfo);
+		//	• Sample #6
+		soundUniqueInfo.fileName = "sanity/heart_secondbeat6.wav";
+		soundUniqueInfo.soundEffectLength = 0.170f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::HEART_BEAT_SECOND].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		Insanity, Ambiance	     //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::INSANITY_AMBIANCE];
+	soundGeneralInfo->playOnce = false;
+	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "sanity/insanity_ambiance.wav";
+		soundUniqueInfo.soundEffectLength = 27.161f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::INSANITY_AMBIANCE].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		Insanity, Breathing	     //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::INSANITY_BREATHING];
+	soundGeneralInfo->playOnce = false;
+	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "sanity/insanity_breathing.wav";
+		soundUniqueInfo.soundEffectLength = 32.291f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::INSANITY_BREATHING].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//    Insanity, Violin Intense	 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::INSANITY_VIOLIN];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "sanity/insanity_violin_intense.wav";
+		soundUniqueInfo.soundEffectLength = 2.07f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::INSANITY_VIOLIN].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		Insanity, Scream		 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::INSANITY_SCREAM];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = { 0.0f, 0.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "sanity/insanity_scream.wav";
+		soundUniqueInfo.soundEffectLength = 1.488f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::INSANITY_SCREAM].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//
 	//		   Water Impact, Environment	     //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+//

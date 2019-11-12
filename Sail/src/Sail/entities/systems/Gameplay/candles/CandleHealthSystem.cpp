@@ -121,7 +121,7 @@ void CandleHealthSystem::update(float dt) {
 
 			if (candle->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
 				auto playerEntity = e->getParent();
-				playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
+				//playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
 			}
 		}
 
