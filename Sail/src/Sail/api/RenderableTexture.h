@@ -11,6 +11,7 @@ public:
 	virtual void begin(void* cmdList = nullptr) = 0;
 	virtual void end(void* cmdList = nullptr) = 0;
 	virtual void clear(const glm::vec4& color, void* cmdList = nullptr) = 0;
+	virtual void changeFormat(Texture::FORMAT newFormat) = 0;
 	virtual void resize(int width, int height) = 0;
 
 protected:

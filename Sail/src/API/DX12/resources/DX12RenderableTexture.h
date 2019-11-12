@@ -14,6 +14,7 @@ public:
 	virtual void begin(void* cmdList = nullptr) override;
 	virtual void end(void* cmdList = nullptr) override;
 	virtual void clear(const glm::vec4& color, void* cmdList = nullptr) override;
+	virtual void changeFormat(Texture::FORMAT newFormat) override;
 	virtual void resize(int width, int height) override;
 
 	ID3D12Resource1* getResource() const;
@@ -24,6 +25,7 @@ public:
 
 
 private:
+	DXGI_FORMAT convertFormat(Texture::FORMAT format) const;
 	void createTextures();
 	void createDepthTextures();
 

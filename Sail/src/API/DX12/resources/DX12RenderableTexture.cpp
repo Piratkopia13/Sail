@@ -18,26 +18,7 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 	isRenderableTex = true;
 	context = Application::getInstance()->getAPI<DX12API>();
 
-	switch (format) {
-	case Texture::R8:
-		m_format = DXGI_FORMAT_R8_UNORM;
-		break;
-	case Texture::R8G8:
-		m_format = DXGI_FORMAT_R8G8_UNORM;
-		break;
-	case Texture::R8G8B8A8:
-		m_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case Texture::R16_FLOAT:
-		m_format = DXGI_FORMAT_R16_FLOAT;
-		break;
-	case Texture::R16G16_FLOAT:
-		m_format = DXGI_FORMAT_R16G16_FLOAT;
-		break;
-	case Texture::R16G16B16A16_FLOAT:
-		m_format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		break;
-	}
+	m_format = convertFormat(format);
 
 	const auto& numSwapBuffers = context->getNumGPUBuffers();
 	m_rtvHeapCDHs.resize(numSwapBuffers);
@@ -90,11 +71,18 @@ void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 	}
 }
 
+void DX12RenderableTexture::changeFormat(Texture::FORMAT newFormat) {
+	if (m_format == newFormat) {
+		return;
+	}
+	m_format = convertFormat(newFormat);
+	createTextures();
+}
+
 void DX12RenderableTexture::resize(int width, int height) {
 	if (width == m_width && height == m_height) {
 		return;
 	}
-
 	m_width = width;
 	m_height = height;
 	createTextures();
@@ -124,8 +112,36 @@ D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH(int frameIndex) con
 	return m_dsvHeapCDHs[i];
 }
 
-void DX12RenderableTexture::createTextures() {
+DXGI_FORMAT DX12RenderableTexture::convertFormat(Texture::FORMAT format) const {
+	DXGI_FORMAT dxgiFormat;
+	switch (format) {
+	case Texture::R8:
+		dxgiFormat = DXGI_FORMAT_R8_UNORM;
+		break;
+	case Texture::R8G8:
+		dxgiFormat = DXGI_FORMAT_R8G8_UNORM;
+		break;
+	case Texture::R8G8B8A8:
+		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case Texture::R16_FLOAT:
+		dxgiFormat = DXGI_FORMAT_R16_FLOAT;
+		break;
+	case Texture::R16G16_FLOAT:
+		dxgiFormat = DXGI_FORMAT_R16G16_FLOAT;
+		break;
+	case Texture::R16G16B16A16_FLOAT:
+		dxgiFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		break;
+	default:
+		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		break;
+	}
+	return dxgiFormat;
+}
 
+void DX12RenderableTexture::createTextures() {
+	context->waitForGPU();
 	for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
 		D3D12_RESOURCE_DESC textureDesc = {};
 		textureDesc.Format = m_format;
