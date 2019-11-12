@@ -1400,6 +1400,16 @@ const int LevelSystem::getRoomID(int posX, int posY) {
 	return tileArr[posX][posY][1];
 }
 
+const float LevelSystem::getWorldPosFromID(int ID) {
+	for (int x = 0; x < xsize; x++) {
+		for(int y = 0; y < ysize; y++)
+		if (matched == ID) {
+
+		}
+	}
+
+}
+
 void LevelSystem::stop() {
 	destroyWorld();
 

@@ -395,7 +395,7 @@ void AllAudioData::init() {
 		//	• Sample #1
 		soundUniqueInfo.fileName = "miscellaneous/sprinkler.wav";
 		soundUniqueInfo.soundEffectLength = 5.038f;
-		soundUniqueInfo.volume = 0.1f;
+		soundUniqueInfo.volume = 2.0f;
 		AllAudioData::m_soundsUnique[Audio::SPRINKLER].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------

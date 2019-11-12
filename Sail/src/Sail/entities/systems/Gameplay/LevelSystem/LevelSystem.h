@@ -73,7 +73,8 @@ public:
 	const int getAreaType(float posX, float posY);
 	const int getRoomIDWorldPos(float posX, float posY);
 	const int getRoomID(int posX, int posY);
-
+	const float getWorldPosFromID(int ID);
+		
 	int xsize;
 	int ysize;
 	int*** tileArr; //0 is tileID, 1 is typeID, 2 is door

@@ -90,25 +90,25 @@ void SprinklerSystem::update(float dt) {
 				switch (m_mapSide) {
 				case 1:
 					for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
-						addToActiveRooms(m_map->getRoomID(x, m_yMinIncrement));
+						addToActiveRooms(x, m_yMinIncrement);
 					}
 					m_yMinIncrement++;
 					break;
 				case 2:
 					for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
-						addToActiveRooms(m_map->getRoomID(x, m_map->ysize - 1 - m_yMaxIncrement));
+						addToActiveRooms(x, m_map->ysize - 1 - m_yMaxIncrement);
 					}
 					m_yMaxIncrement++;
 					break;
 				case 3:
 					for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
-						addToActiveRooms(m_map->getRoomID(m_xMinIncrement, y));
+						addToActiveRooms(m_xMinIncrement, y);
 					}
 					m_xMinIncrement++;
 					break;
 				case 4:
 					for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
-						addToActiveRooms(m_map->getRoomID(m_map->xsize - 1 - m_xMaxIncrement, y));
+						addToActiveRooms(m_map->xsize - 1 - m_xMaxIncrement, y);
 					}
 					m_xMaxIncrement++;
 					break;
@@ -148,12 +148,18 @@ const std::vector<int>& SprinklerSystem::getActiveRooms() const
 	return m_activeRooms;
 }
 
-void SprinklerSystem::addToActiveRooms(int room) {
+void SprinklerSystem::addToActiveRooms(int x, int y) {
+	int room = m_map->getRoomID(x, y);
 	if (room != 0) {
 		std::vector<int>::iterator itRooms = std::find(m_activeRooms.begin(), m_activeRooms.end(), room);
 		if (itRooms == m_activeRooms.end()) {
 			m_activeRooms.push_back(room);
 			m_roomsToBeActivated.push_back(room);
+			Room roomPos;
+			roomPos.ID = room;
+			roomPos.posX = x;
+			roomPos.posY = y;
+			m_roomPositions.push_back(roomPos);
 		}
 	}
 }
@@ -161,4 +167,15 @@ void SprinklerSystem::addToActiveRooms(int room) {
 void SprinklerSystem::enableSprinklers() {
 	m_enableSprinklers = true;
 	m_endGameTimer = 0.f;
+}
+
+void SprinklerSystem::addWaterToActiveRooms() {
+	for (auto sprinkler : m_activeSprinklers) {
+		for (auto roomID : m_roomPositions) {
+			if (sprinkler == roomID.ID) {
+
+			}
+		}
+
+	}
 }
