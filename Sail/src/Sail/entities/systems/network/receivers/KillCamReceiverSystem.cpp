@@ -213,7 +213,15 @@ void KillCamReceiverSystem::runningMetalStart(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
 }
 
+void KillCamReceiverSystem::runningWaterMetalStart(const Netcode::ComponentID id) {
+	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
+}
+
 void KillCamReceiverSystem::runningTileStart(const Netcode::ComponentID id) {
+	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
+}
+
+void KillCamReceiverSystem::runningWaterTileStart(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
 }
 

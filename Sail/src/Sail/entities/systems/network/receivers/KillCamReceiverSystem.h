@@ -26,9 +26,9 @@ public:
 
 
 private:
-	void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)             override;
+	void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)                  override;
 	void destroyEntity   (const Netcode::ComponentID entityID)                                    override;
-	void enableSprinklers()                                                                  override;
+	void enableSprinklers()                                                                       override;
 	void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID) override;
 	void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                               override;
 	void igniteCandle    (const Netcode::ComponentID candleID)                                    override;
@@ -39,18 +39,20 @@ private:
 	void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                    override;
 	void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                    override;
 	void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                    override;
-	void spawnProjectile (const ProjectileInfo& info)                                        override;
+	void spawnProjectile (const ProjectileInfo& info)                                             override;
 	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::PlayerID SenderId)        override;
 
 	// AUDIO
-	void playerJumped     (const Netcode::ComponentID id) override;
-	void playerLanded     (const Netcode::ComponentID id) override;
-	void shootStart       (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
-	void shootLoop        (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
-	void shootEnd         (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
-	void runningMetalStart(const Netcode::ComponentID id) override;
-	void runningTileStart (const Netcode::ComponentID id) override;
-	void runningStopSound (const Netcode::ComponentID id) override;
+	void playerJumped (const Netcode::ComponentID id)                            override;
+	void playerLanded (const Netcode::ComponentID id)                            override;
+	void shootStart   (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
+	void shootLoop    (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
+	void shootEnd     (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
+	void runningMetalStart     (const Netcode::ComponentID id)                   override;
+	void runningWaterMetalStart(const Netcode::ComponentID id)                   override;
+	void runningTileStart      (const Netcode::ComponentID id)                   override;
+	void runningWaterTileStart (const Netcode::ComponentID id)                   override;
+	void runningStopSound      (const Netcode::ComponentID id)                   override;
 
 	// HOST ONLY
 	void endMatch()                         override; // Start end timer for host

@@ -79,12 +79,14 @@ protected: // Functions
 	virtual void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::PlayerID SenderId)        = 0;
 
 	// AUDIO
-	virtual void shootStart       (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
-	virtual void shootLoop        (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
-	virtual void shootEnd         (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
-	virtual void runningMetalStart(const Netcode::ComponentID id)  = 0;
-	virtual void runningTileStart (const Netcode::ComponentID id)  = 0;
-	virtual void runningStopSound (const Netcode::ComponentID id)  = 0;
+	virtual void shootStart (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
+	virtual void shootLoop  (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
+	virtual void shootEnd   (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
+	virtual void runningMetalStart     (const Netcode::ComponentID id)                 = 0;
+	virtual void runningWaterMetalStart(const Netcode::ComponentID id)                 = 0;
+	virtual void runningTileStart      (const Netcode::ComponentID id)                 = 0;
+	virtual void runningWaterTileStart (const Netcode::ComponentID id)                 = 0;
+	virtual void runningStopSound      (const Netcode::ComponentID id)                 = 0;
 
 	// FUNCTIONS THAT DIFFER BETWEEN HOST AND CLIENT
 	virtual void endMatch() = 0;

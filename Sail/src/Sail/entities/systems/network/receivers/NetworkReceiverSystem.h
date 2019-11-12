@@ -39,14 +39,16 @@ private:
 	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::PlayerID SenderId)        override;
 
 	// AUDIO
-	void playerJumped     (const Netcode::ComponentID id) override;
-	void playerLanded     (const Netcode::ComponentID id) override;
-	void shootStart       (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
-	void shootLoop        (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
-	void shootEnd         (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
-	void runningMetalStart(const Netcode::ComponentID id) override;
-	void runningTileStart (const Netcode::ComponentID id) override;
-	void runningStopSound (const Netcode::ComponentID id) override;
+	void playerJumped (const Netcode::ComponentID id)                            override;
+	void playerLanded (const Netcode::ComponentID id)                            override;
+	void shootStart   (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
+	void shootLoop    (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
+	void shootEnd     (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
+	void runningMetalStart     (const Netcode::ComponentID id)                   override;
+	void runningWaterMetalStart(const Netcode::ComponentID id)                   override;
+	void runningTileStart      (const Netcode::ComponentID id)                   override;
+	void runningWaterTileStart (const Netcode::ComponentID id)                   override;
+	void runningStopSound      (const Netcode::ComponentID id)                   override;
 
 	// NOT FROM SERIALIZED MESSAGES
 	void playerDisconnect(const Netcode::PlayerID playerID) override;
@@ -54,9 +56,6 @@ private:
 	// Helper function
 	Entity* findFromNetID(const Netcode::ComponentID id) const override;
 
-	void runningWaterMetalStart(Netcode::ComponentID id);
-	void runningWaterTileStart(Netcode::ComponentID id);
-	void runningStopSound(Netcode::ComponentID id);
 	bool onEvent(const Event& event) override;
 
 };

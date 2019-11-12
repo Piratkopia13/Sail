@@ -358,10 +358,22 @@ void ReceiverBase::update(float dt) {
 				runningMetalStart(compID);
 			}
 			break;
+			case Netcode::MessageType::RUNNING_WATER_METAL_START:
+			{
+				ar(compID);
+				runningWaterMetalStart(compID);
+			}
+			break;
 			case Netcode::MessageType::RUNNING_TILE_START:
 			{
 				ar(compID);
 				runningTileStart(compID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_WATER_TILE_START:
+			{
+				ar(compID);
+				runningWaterTileStart(compID);
 			}
 			break;
 			case Netcode::MessageType::RUNNING_STOP_SOUND:
