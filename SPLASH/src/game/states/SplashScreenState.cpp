@@ -56,15 +56,12 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("candleExported.fbx");
 	rm->loadModel("Tiles/tileFlat.fbx");
 	rm->loadModel("Tiles/RoomWall.fbx");
-	rm->loadModel("Tiles/RoomWallServer.fbx");
 	rm->loadModel("Tiles/tileDoor.fbx"); 
 	rm->loadModel("Tiles/RoomDoor.fbx");
 	rm->loadModel("Tiles/CorridorDoor.fbx");
 	rm->loadModel("Tiles/CorridorWall.fbx"); 
 	rm->loadModel("Tiles/RoomCeiling.fbx");
-	rm->loadModel("Tiles/CorridorFloor.fbx");
 	rm->loadModel("Tiles/RoomFloor.fbx");
-	rm->loadModel("Tiles/CorridorCeiling.fbx");
 	rm->loadModel("Tiles/CorridorCorner.fbx");
 	rm->loadModel("Tiles/RoomCorner.fbx"); 
 	rm->loadModel("Clutter/Table.fbx");
@@ -72,7 +69,6 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/MediumBox.fbx");
 	rm->loadModel("Clutter/SquareBox.fbx");
 	rm->loadModel("Clutter/Books1.fbx");
-	rm->loadModel("Clutter/Books2.fbx");
 	rm->loadModel("Clutter/Screen.fbx");
 	rm->loadModel("Clutter/Notepad.fbx");
 	rm->loadModel("Clutter/Saftblandare.fbx");
