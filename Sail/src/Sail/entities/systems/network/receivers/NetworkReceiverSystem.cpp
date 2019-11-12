@@ -412,6 +412,18 @@ void NetworkReceiverSystem::update(float dt) {
 				runningTileStart(componentID);
 			}
 			break;
+			case Netcode::MessageType::RUNNING_WATER_METAL_START:
+			{
+				ar(componentID);
+				runningWaterMetalStart(componentID);
+			}
+			break;
+			case Netcode::MessageType::RUNNING_WATER_TILE_START:
+			{
+				ar(componentID);
+				runningWaterTileStart(componentID);
+			}
+			break;
 			case Netcode::MessageType::RUNNING_STOP_SOUND:
 			{
 				ar(componentID);
@@ -626,6 +638,13 @@ void NetworkReceiverSystem::runningMetalStart(Netcode::ComponentID id) {
 
 void NetworkReceiverSystem::runningTileStart(Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
+}
+void NetworkReceiverSystem::runningWaterMetalStart(Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_METAL));
+}
+
+void NetworkReceiverSystem::runningWaterTileStart(Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_TILE));
 }
 
 void NetworkReceiverSystem::runningStopSound(Netcode::ComponentID id) {

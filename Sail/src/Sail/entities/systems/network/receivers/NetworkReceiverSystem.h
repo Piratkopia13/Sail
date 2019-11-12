@@ -77,6 +77,8 @@ private:
 
 	void runningMetalStart(Netcode::ComponentID id);
 	void runningTileStart(Netcode::ComponentID id);
+	void runningWaterMetalStart(Netcode::ComponentID id);
+	void runningWaterTileStart(Netcode::ComponentID id);
 	void runningStopSound(Netcode::ComponentID id);
 	bool onEvent(const Event& event) override;
 
