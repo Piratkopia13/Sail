@@ -443,13 +443,15 @@ void NetworkReceiverSystem::update(float dt) {
 			{
 				Netcode::ComponentID projectileOwnerID;
 				Netcode::ComponentID projectileComponentID;
+				float lowPassFrequency = -1;
 
 				ArchiveHelpers::loadVec3(ar, gunPosition);
 				ArchiveHelpers::loadVec3(ar, gunVelocity);
 				ar(projectileComponentID);
 				ar(projectileOwnerID);
+				ar(lowPassFrequency);
 
-				projectileSpawned(gunPosition, gunVelocity, projectileComponentID, projectileOwnerID);
+				projectileSpawned(gunPosition, gunVelocity, projectileComponentID, projectileOwnerID, lowPassFrequency);
 			}
 			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
@@ -573,7 +575,7 @@ void NetworkReceiverSystem::waterHitPlayer(Netcode::ComponentID id, Netcode::Pla
 }
 
 // If I requested the projectile it has a local owner
-void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID) {
+void NetworkReceiverSystem::projectileSpawned(glm::vec3& pos, glm::vec3 dir, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID, float frequency) {
 	const bool wasRequestedByMe = (Netcode::getComponentOwner(ownerID) == m_playerID);
 
 	// Also play the sound

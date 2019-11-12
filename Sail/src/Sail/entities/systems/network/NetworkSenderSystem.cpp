@@ -485,6 +485,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ArchiveHelpers::saveVec3(ar, data->velocity);
 		ar(data->projectileComponentID);
 		ar(data->ownerPlayerComponentID);
+		ar(data->lowPassFrequency);
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:

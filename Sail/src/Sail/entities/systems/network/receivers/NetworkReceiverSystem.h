@@ -55,7 +55,7 @@ private:
 	void extinguishCandle(Netcode::ComponentID candleId, Netcode::PlayerID shooterID);
 	void playerJumped(Netcode::ComponentID id);
 	void playerLanded(Netcode::ComponentID id);
-	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID);
+	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID, float frequency);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
