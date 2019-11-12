@@ -68,6 +68,7 @@ void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size
 		if (c->getName() == player->getName() + "Candle") {
 			c->addComponent<CandleComponent>()->playerEntityID = playerID;
 			c->addComponent<CollidableComponent>();
+			c->addComponent<TeamComponent>()->team = (playerID) % 12;
 		}
 	}
 }
@@ -75,7 +76,7 @@ void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size
 Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
 	// Create my player
 	auto myPlayer = ECS::Instance()->createEntity("MyPlayer");
-	EntityFactory::CreateGenericPlayer(myPlayer, lightIndex, spawnLocation);
+	EntityFactory::CreateGenericPlayer(myPlayer, lightIndex, spawnLocation,playerID);
 
 	auto senderC = myPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerID, Netcode::MessageType::ANIMATION);
 	senderC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
@@ -146,7 +147,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	Netcode::ComponentID gunCompID, 
 	size_t lightIndex, glm::vec3 spawnLocation) 
 {
-	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation);
+	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation, Netcode::getComponentOwner(playerCompID));
 	// Other players have a character model and animations
 
 	otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
@@ -169,10 +170,11 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 }
 
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
+
 	static Netcode::PlayerID perfromancePlayerID = 100;
 
 
-	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation);
+	CreateGenericPlayer(playerEnt, lightIndex, spawnLocation,0);
 	Netcode::ComponentID playerCompID = playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION)->m_id;
 	playerEnt->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	playerEnt->addComponent<MovementComponent>();
@@ -185,7 +187,7 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 }
 
 // Creates a player enitty without a candle and without a model
-void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation) {
+void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID) {
 	
 	std::string modelName = "Doc.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
@@ -222,6 +224,8 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<GunComponent>();
 	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
 
+	//give players teams
+	playerEntity->addComponent<TeamComponent>()->team = (playerID) % 12;
 
 	AnimationComponent* ac = playerEntity->addComponent<AnimationComponent>(stack);
 	ac->currentAnimation = stack->getAnimation(1);
@@ -319,12 +323,6 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
-
-	//===REMOVE THIS. THIS IS ONLY TO DEMONSTRATE TEAM COLORS. TEAM COLORS SHOULD NOT BE ON ALL MAP OBJECTS===
-	SAIL_LOG_WARNING("Dont Forget to remove TeamComponent from StaticMapObjects @EntityFactory when the walls no longer need it to demonstrate the feature!");
-	static int t = 0;
-	e->addComponent<TeamComponent>()->team = (t++) % 12;
-	//=====================
 
 	return e;
 }
