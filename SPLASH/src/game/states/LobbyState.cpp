@@ -129,7 +129,7 @@ bool LobbyState::render(float dt, float alpha) {
 
 bool LobbyState::renderImgui(float dt) {
 
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 	static std::string font = "Beb20";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
 	//

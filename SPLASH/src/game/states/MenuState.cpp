@@ -62,7 +62,7 @@ bool MenuState::render(float dt, float alpha) {
 bool MenuState::renderImgui(float dt) {
 	
 	//Keep
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 
 	static std::string font = "Beb20";
 	ImGui::PushFont(m_imGuiHandler->getFont(font));

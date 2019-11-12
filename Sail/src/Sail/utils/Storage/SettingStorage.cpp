@@ -160,7 +160,7 @@ void SettingStorage::createGameDefaultMap() {
 	gameSettingsDynamic["map"]["sprinklerTime"] = DynamicSetting(60.0f, 0.0f, 600.0f);
 	gameSettingsDynamic["map"]["sprinklerIncrement"] = DynamicSetting(10.0f, 5.0f, 300.0f);
 
-	gameSettingsStatic["map"] = std::map<std::string, Setting>();
+	gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();
 	gameSettingsStatic["map"]["sprinkler"] = Setting(0, std::vector<Setting::Option>({
 	{ "on", 0.0f },
 	{ "off",1.0f }
