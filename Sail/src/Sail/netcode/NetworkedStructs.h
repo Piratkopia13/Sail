@@ -73,6 +73,8 @@ namespace Netcode {
 		CANDLE_HELD_STATE,
 		RUNNING_METAL_START,
 		RUNNING_TILE_START,
+		RUNNING_WATER_METAL_START,
+		RUNNING_WATER_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
 		HIT_BY_SPRINKLER,
@@ -270,7 +272,6 @@ namespace Netcode {
 
 	};
 
-
 	class MessageRunningMetalStart : public MessageData {
 	public:
 		MessageRunningMetalStart(Netcode::ComponentID id) : runningPlayer(id) {}
@@ -285,6 +286,19 @@ namespace Netcode {
 		Netcode::ComponentID runningPlayer;
 	};
 
+	class MessageRunningWaterMetalStart : public MessageData {
+	public:
+		MessageRunningWaterMetalStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningWaterMetalStart() {}
+		Netcode::ComponentID runningPlayer;
+	};
+
+	class MessageRunningWaterTileStart : public MessageData {
+	public:
+		MessageRunningWaterTileStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningWaterTileStart() {}
+		Netcode::ComponentID runningPlayer;
+	};
 	class MessageRunningStopSound : public MessageData {
 	public:
 		MessageRunningStopSound(Netcode::ComponentID id) : runningPlayer(id) {}

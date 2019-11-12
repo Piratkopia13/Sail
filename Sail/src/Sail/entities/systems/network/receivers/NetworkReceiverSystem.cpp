@@ -207,6 +207,13 @@ void NetworkReceiverSystem::runningMetalStart(const Netcode::ComponentID id) {
 void NetworkReceiverSystem::runningTileStart(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
 }
+void NetworkReceiverSystem::runningWaterMetalStart(Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_METAL));
+}
+
+void NetworkReceiverSystem::runningWaterTileStart(Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_TILE));
+}
 
 void NetworkReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(StopWalkingEvent(id));

@@ -447,6 +447,18 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->runningPlayer); // Send
 	}
 	break;
+	case Netcode::MessageType::RUNNING_WATER_METAL_START:
+	{
+		Netcode::MessageRunningWaterMetalStart* data = static_cast<Netcode::MessageRunningWaterMetalStart*>(event->data);
+		ar(data->runningPlayer);
+	}
+	break;
+	case Netcode::MessageType::RUNNING_WATER_TILE_START:
+	{
+		Netcode::MessageRunningWaterTileStart* data = static_cast<Netcode::MessageRunningWaterTileStart*>(event->data);
+		ar(data->runningPlayer);
+	}
+	break;
 	case Netcode::MessageType::RUNNING_STOP_SOUND:
 	{
 		Netcode::MessageRunningStopSound* data = static_cast<Netcode::MessageRunningStopSound*>(event->data);

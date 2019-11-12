@@ -54,6 +54,9 @@ private:
 	// Helper function
 	Entity* findFromNetID(const Netcode::ComponentID id) const override;
 
+	void runningWaterMetalStart(Netcode::ComponentID id);
+	void runningWaterTileStart(Netcode::ComponentID id);
+	void runningStopSound(Netcode::ComponentID id);
 	bool onEvent(const Event& event) override;
 
 };
