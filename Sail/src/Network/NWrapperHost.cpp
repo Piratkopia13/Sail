@@ -180,3 +180,18 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 		//If they should, the host network related code to inform other players can be implemented here.
 	}
 }
+
+void NWrapperHost::setClientState(States::ID state, Netcode::PlayerID id) {
+	char msg[] = {'t', (char)state, '\0'};
+	
+	if (id == 255) {
+		sendMsgAllClients(msg);
+	} else {
+		for (auto p : m_connectionsMap) {
+			if (p.second == id) {
+				sendMsg(msg, p.first);
+				break;
+			}
+		}
+	}
+}

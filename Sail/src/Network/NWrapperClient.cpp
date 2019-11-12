@@ -8,10 +8,8 @@
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDroppedEvent.h"
-#include "../../SPLASH/src/game/events/NetworkStartGameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
-#include "../../SPLASH/src/game/events/NetworkBackToLobby.h"
 #include "../../SPLASH/src/game/events/SettingsEvent.h"
 
 bool NWrapperClient::host(int port) {
@@ -122,9 +120,8 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		break;
 	case 't':
 	{
-		char seed = nEvent.data->Message.rawMsg[1];
-		NWrapperSingleton::getInstance().setSeed(seed);
-		EventDispatcher::Instance().emit(NetworkStartGameEvent());
+		States::ID stateID = (States::ID)(nEvent.data->Message.rawMsg[1]);
+		EventDispatcher::Instance().emit(NetworkChangeStateEvent(stateID));
 	}
 	break;
 	case 'w':
@@ -152,9 +149,6 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		EventDispatcher::Instance().emit(NetworkSerializedPackageEvent(dataString));
 		break;
 
-	case 'z':
-		EventDispatcher::Instance().emit(NetworkBackToLobby());
-		break;
 	case 'i': 
 		EventDispatcher::Instance().emit(SettingsUpdatedEvent(std::string(nEvent.data->Message.rawMsg).substr(1,std::string::npos)));
 		break;

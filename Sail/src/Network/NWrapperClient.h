@@ -19,4 +19,9 @@ private:
 	void decodeMessage(NetworkEvent nEvent);
 	void sendMyNameToHost();
 	void updatePlayerList(std::list<Player>& playerList);
+
+	/*
+		Host Only
+	*/
+	void setClientState(States::ID state, Netcode::PlayerID id = 0) {};
 };

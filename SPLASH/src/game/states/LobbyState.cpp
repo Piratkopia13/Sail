@@ -248,9 +248,10 @@ void LobbyState::renderStartButton() {
 			m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
 			auto& stat = m_app->getSettings().gameSettingsStatic;
 			auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+
 			m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic)});
-			m_network->sendMsgAllClients({ std::string("t0")});
 			
+			m_network->setClientState(States::Game);
 			this->requestStackClear();
 			this->requestStackPush(States::Game);
 		}

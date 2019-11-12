@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "Sail/states/StateIdentifiers.h"
 
 
 #define MAX_NAME_LENGTH 100
@@ -50,6 +51,14 @@ public:
 	virtual void sendChatMsg(std::string msg) = 0;
 	void sendSerializedDataAllClients(std::string data);
 	void sendSerializedDataToHost(std::string data);
+
+	/*
+		Host Only
+			
+		This will request a clients to enter a new state. GameState, EndGameState etc.
+		playerId == 255 will send to all
+	*/
+	virtual void setClientState(States::ID state, Netcode::PlayerID playerId = 255) = 0;
 
 protected:
 	Network* m_network = nullptr;

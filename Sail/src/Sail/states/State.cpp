@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "State.h"
 #include "StateStack.h"
+#include "Sail/events/Events.h"
 
 #include "imgui.h"
 
@@ -24,6 +25,21 @@ bool State::renderImgui(float dt) {
 
 bool State::renderImguiDebug(float dt) {
 	return false;
+}
+
+bool State::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::NETWORK_CHANGE_STATE: onHostStateChangeRequest((const NetworkChangeStateEvent&)event); break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+void State::onHostStateChangeRequest(const NetworkChangeStateEvent& event) {	
+	requestStackClear();
+	requestStackPush(event.stateID);
 }
 
 void State::requestStackPush(States::ID stateID) {
