@@ -6,6 +6,9 @@
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
+#include "Sail/graphics/shader/postprocess/BlendShader.h"
+#include "Sail/graphics/shader/postprocess/GaussianBlurHorizontal.h"
+#include "Sail/graphics/shader/postprocess/GaussianBlurVertical.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Sail/events/EventDispatcher.h"
@@ -309,6 +312,9 @@ bool GameState::processInput(float dt) {
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
 		m_app->getAPI<DX12API>()->waitForGPU();
+		m_app->getResourceManager().reloadShader<BlendShader>();
+		m_app->getResourceManager().reloadShader<GaussianBlurHorizontal>();
+		m_app->getResourceManager().reloadShader<GaussianBlurVertical>();
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<ParticleComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
@@ -434,6 +440,10 @@ void GameState::initSystems(const unsigned char playerID) {
 	}
 	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
+
+	m_componentSystems.killCamReceiverSystem = ECS::Instance()->createSystem<KillCamReceiverSystem>();
+	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
+
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -589,7 +599,12 @@ bool GameState::fixedUpdate(float dt) {
 	}
 #endif
 
+	
 	updatePerTickComponentSystems(dt);
+
+	if (m_isInKillCamMode) {
+		updateKillCamComponentSystems(dt);
+	}
 
 	return true;
 }
@@ -667,6 +682,24 @@ void GameState::shutDownGameState() {
 
 	ECS::Instance()->stopAllSystems();
 	ECS::Instance()->destroyAllEntities();
+}
+
+
+// TODO: Add more systems here that only deal with replay entities/components
+void GameState::updateKillCamComponentSystems(float dt) {
+	
+	// TODO: Prepare update for interpolation etc.
+
+	m_componentSystems.killCamReceiverSystem->update(dt);
+
+	// TODO: run relevant systems in parallel
+	//runSystem(dt, m_componentSystems.killCamReceiverSystem);
+
+
+	// Wait for all systems to finish executing
+	for (auto& fut : m_runningSystemJobs) {
+		fut.get();
+	}
 }
 
 // HERE BE DRAGONS
@@ -778,7 +811,7 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 
 					int toRemoveIndex = -1;
 					for (int j = 0; j < m_runningSystems.size(); j++) {
-						// Currently just compares memory adresses (if they point to the same location they're the same object)
+						// Currently just compares memory addresses (if they point to the same location they're the same object)
 						if (m_runningSystems[j] == doneSys)
 							toRemoveIndex = j;
 					}
