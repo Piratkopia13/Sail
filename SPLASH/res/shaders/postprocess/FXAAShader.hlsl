@@ -1,3 +1,9 @@
+/*
+ * Written by Emil Wahl 2017
+ * Inspiration from http://blog.simonrodriguez.fr/articles/30-07-2016_implementing_fxaa.html
+ * Ported to compute shader by Pirat 2019 ⛵
+ */
+
 Texture2D input : register(t0);
 RWTexture2D<float4> output : register(u10) : SAIL_RGBA16_FLOAT;
 
@@ -18,11 +24,15 @@ cbuffer CSData : register(b0) {
     uint2 textureSize;
 }
 
-#define BLOCK_SIZE 1
+#define BLOCK_SIZE 256
 [numthreads(BLOCK_SIZE, 1, 1)]
 void CSMain(int3 groupThreadID : SV_GroupThreadID,
 				int3 dispatchThreadID : SV_DispatchThreadID)
 {
+	if (dispatchThreadID.x > textureSize.x) {
+        return;
+    }
+
     float2 invTextureSize = 1.f / textureSize;
 
     float4 finalColor;

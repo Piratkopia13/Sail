@@ -47,7 +47,7 @@ FXAAShader::FXAAShader()
 	m_settings.numOutputTextures = 1;
 
 	// Compute shader runs 256 x and y threads, therefore divide resolution by that when dispatching
-	m_settings.threadGroupXScale = 1.f / 1.f;
+	m_settings.threadGroupXScale = 1.f / 256.f;
 
 	m_output = std::make_unique<PostProcessPipeline::PostProcessOutput>();
 	m_output->outputTexture = getPipeline()->getRenderableTexture("output");
