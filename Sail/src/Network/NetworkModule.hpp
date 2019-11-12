@@ -13,13 +13,13 @@ struct Connection
 {
 	std::string ip;
 	std::string port;
-	TCP_CONNECTION_ID id;
+	TCP_CONNECTION_ID tcp_id;
 	bool isConnected;
 	SOCKET socket;
 	std::thread* thread;//The thread used to listen for messages
 
 	Connection() {
-		id = 0;
+		tcp_id = 0;
 		isConnected = false;
 		socket = NULL;
 		ip = port = "";

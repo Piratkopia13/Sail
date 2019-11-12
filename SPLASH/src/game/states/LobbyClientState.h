@@ -25,10 +25,6 @@ private:
 	bool m_wasDropped;
 	bool onMyTextInput(const TextInputEvent& event);
 	bool onRecievedText(const NetworkChatEvent& event);
-	bool onPlayerJoined(const NetworkJoinedEvent& event);
-	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
-	bool onPlayerWelcomed(const NetworkWelcomeEvent& event);
-	bool onNameRequest(const NetworkNameEvent& event);
 	bool onDropped(const NetworkDroppedEvent& event);
 	bool onStartGame(const NetworkStartGameEvent& event);
 	bool onSettingsChanged(const SettingsUpdatedEvent& event);

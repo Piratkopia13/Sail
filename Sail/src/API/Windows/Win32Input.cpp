@@ -3,8 +3,8 @@
 #include <windowsx.h>
 #include "sail/Application.h"
 #include "Win32Window.h"
-#include "Sail/events/WindowFocusChangedEvent.h"
 #include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/WindowFocusChangedEvent.h"
 
 Input* Input::m_Instance = SAIL_NEW Win32Input();
 
@@ -154,8 +154,8 @@ void Win32Input::processMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 }
 
 bool Win32Input::onEvent(const Event& event) {
-	auto handleFocusChange = [&](const WindowFocusChangedEvent& event) {
-		if (event.isFocused) {
+	auto handleFocusChange = [&](const WindowFocusChangedEvent& e) {
+		if (e.isFocused) {
 			m_stopInput = false;
 		} else {
 			// show hidden cursor and remove any keys or buttons marked as pressed

@@ -4,83 +4,161 @@
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GameDataTracker.h"
 
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/WaterHitPlayerEvent.h"
+
 CandleHealthSystem::CandleHealthSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
 	registerComponent<LightComponent>(true, true, true);
 	registerComponent<AudioComponent>(false, true, true);
+
+	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
 }
 
-CandleHealthSystem::~CandleHealthSystem() {}
+CandleHealthSystem::~CandleHealthSystem() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
+}
 
 void CandleHealthSystem::update(float dt) {
+	const bool isHost = NWrapperSingleton::getInstance().isHost();
+
 	// The number of living candles, representing living players
-	int livingCandles = entities.size();
+	size_t livingCandles = entities.size();
+
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
-
 		candle->wasHitByMeThisTick = false;
 
-		if (candle->isLit) {
-			// Decrease invincibility time
-			candle->invincibleTimer -= dt;
 
-			// If candle is alive
-			if (candle->health > 0.f) {
-				if (candle->damageTakenLastHit != 0.f && candle->invincibleTimer <= 0.f) {
-					candle->health -= candle->damageTakenLastHit;
-					// TODO: Replace 0.4f with game settings
-					candle->invincibleTimer = 0.4f;
+#pragma region HOST_ONLY_STUFF
+		if (isHost && candle->isLit) {
+			if (candle->health > 0.0f) {
+				candle->invincibleTimer -= dt;
+
+				// If someone hit the candle this tick tell all players to update the candle's health
+				if (candle->wasHitThisTick) {
+					// Candle has lost all its health so extinguish it
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::SET_CANDLE_HEALTH,
+						SAIL_NEW Netcode::MessageSetCandleHealth{
+							e->getComponent<NetworkReceiverComponent>()->m_id,
+							candle->health
+						},
+						false // Host already knows the candle's health so don't send to ourselves
+					);
+					candle->wasHitThisTick = false;
 				}
-			// Candle has been extinguished
-			} else {
-				candle->health = 0.f;
-				candle->invincibleTimer = 0.f;
-				candle->isLit = false;
-				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			} else { // If candle used to be lit but has lost all its health
+				candle->wasJustExtinguished = true;
 
-				// No respawns left - die!
-				if (candle->respawns == m_maxNumRespawns) {
+				// Candle has lost all its health so extinguish it
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::EXTINGUISH_CANDLE,
+					SAIL_NEW Netcode::MessageExtinguishCandle{
+						e->getComponent<NetworkReceiverComponent>()->m_id,
+						candle->wasHitByPlayerID
+					},
+					false // Host extinguishes candle later in this function so don't send to ourself
+				);
+
+				// If the player has no more respawns kill them
+				if (candle->respawns >= m_maxNumRespawns) {
 					livingCandles--;
 
-					//Only let the host send PLAYER_DIED message
-					if (NWrapperSingleton::getInstance().isHost()) {
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::PLAYER_DIED,
-							SAIL_NEW Netcode::MessagePlayerDied{
-								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
-								candle->wasHitByPlayerID
-							}
-						);
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::PLAYER_DIED,
+						SAIL_NEW Netcode::MessagePlayerDied{
+							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
+							candle->wasHitByPlayerID
+						}
+					);
 
-						// Save the placement for the player who lost
-						GameDataTracker::getInstance().logPlacement(
-							Netcode::getComponentOwner(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id)
+					// Save the placement for the player who lost
+					GameDataTracker::getInstance().logPlacement(
+						Netcode::getComponentOwner(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id)
+					);
+
+					// Only one living candle left and number of players in the game is greater than one
+					if (livingCandles < 2 && entities.size() > 1) {
+
+						for (auto e2 : entities) {
+							NetworkReceiverComponent* cc = e2->getParent()->getComponent<NetworkReceiverComponent>();
+							if (cc->m_id != e->getParent()->getComponent<NetworkReceiverComponent>()->m_id) {
+								// Save the placement for the player who lost
+								GameDataTracker::getInstance().logPlacement(
+									Netcode::getComponentOwner(cc->m_id)
+								);
+							}
+						}
+
+						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+							Netcode::MessageType::MATCH_ENDED,
+							nullptr
 						);
 					}
-				} else {
-					auto playerEntity = e->getParent();
-					playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
 				}
+			}
+		}
+#pragma endregion
+
+
+		// Everyone does this
+		if (candle->wasJustExtinguished) {
+			candle->health = 0.0f;
+			candle->isLit = false;
+			candle->wasJustExtinguished = false; // reset for the next tick
+			if (candle->wasHitByPlayerID != Netcode::MESSAGE_SPRINKLER_ID) {
+				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			}
+		
+			// Play the reignition sound if the player has any candles left
+			if (candle->respawns < m_maxNumRespawns) {
+				auto playerEntity = e->getParent();
+				playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
 			}
 		}
 
 		// COLOR/INTENSITY
-		float cHealth = std::fmaxf(candle->health, 0.f);
-		float tempHealthRatio = (cHealth / MAX_HEALTH);
-		e->getComponent<LightComponent>()->getPointLight().setColor(glm::vec3(tempHealthRatio, tempHealthRatio * 0.7f, tempHealthRatio * 0.4f));
+		float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
 
-		// Reset candle's damage taken
-		candle->damageTakenLastHit = 0.f;
+		LightComponent* lc = e->getComponent<LightComponent>();
+
+		lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
 	}
+}
 
-	// Only one living candle left and number of players in the game is greater than one
-	if (NWrapperSingleton::getInstance().isHost()) {
-		if (livingCandles < 2 && entities.size() > 1) {
-			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-				Netcode::MessageType::MATCH_ENDED,
-				nullptr
-			);
+bool CandleHealthSystem::onEvent(const Event& event) {
+	auto findCandleFromParentID = [=](const Netcode::ComponentID netCompID) {
+		Entity* candle = nullptr;
+		for (auto entity : entities) {
+			if (auto parent = entity->getParent(); parent) {
+				if (parent->getComponent<NetworkReceiverComponent>()->m_id == netCompID) {
+					candle = entity;
+					break;
+				}
+			}
 		}
+		return candle;
+	};
+
+	auto onWaterHitPlayer = [=](const WaterHitPlayerEvent& e) {
+		Entity* candle = findCandleFromParentID(e.netCompID);
+
+		if (!candle) {
+			Logger::Warning("CandleHealthSystem::onWaterHitPlayer: no matching entity found");
+			return;
+		}
+
+		// Damage the candle
+		// TODO: Replace 10.0f with game settings damage
+		candle->getComponent<CandleComponent>()->hitWithWater(10.0f, e.senderID);
+	};
+
+	switch (event.type) {
+	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
+	default: break;
 	}
+
+	return true;
 }

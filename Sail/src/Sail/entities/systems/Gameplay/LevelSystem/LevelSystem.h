@@ -36,10 +36,16 @@ enum TileModel {
 };
 
 enum ClutterModel {
-	CLUTTER_LO,
-	CLUTTER_MO,
-	CLUTTER_SO,
 	SAFTBLANDARE,
+	TABLE,
+	BOXES,
+	MEDIUMBOX,
+	SQUAREBOX,
+	BOOKS1,
+	BOOKS2,
+	SCREEN,
+	NOTEPAD,
+	MICROSCOPE,
 	NUMBOFCLUTTER
 };
 
@@ -65,6 +71,7 @@ public:
 
 	void stop();
 	const int getAreaType(float posX, float posY);
+	const int getRoomIDWorldPos(float posX, float posY);
 	const int getRoomID(int posX, int posY);
 
 	int xsize;

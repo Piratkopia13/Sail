@@ -13,6 +13,9 @@ namespace Netcode {
 
 	// Used to signify NetworkMessages sent Internally
 	static constexpr PlayerID MESSAGE_FROM_SELF_ID = 255;
+	
+	// ID for sprinkler
+	static constexpr PlayerID MESSAGE_SPRINKLER_ID = 254;
 
 	// ComponentID has 32 bits and the first 8 are the PlayerID of the owner which
 	// can be extracted by shifting the ComponentID 18 bits to the right.
@@ -48,6 +51,7 @@ namespace Netcode {
 	// The message type decides how the subsequent data will be parsed and used
 	enum class MessageType : __int8 {
 		CREATE_NETWORKED_PLAYER = 1,
+		DESTROY_ENTITY,
 		CHANGE_LOCAL_POSITION,
 		CHANGE_LOCAL_ROTATION,
 		CHANGE_ABSOLUTE_POS_AND_ROT,
@@ -60,23 +64,25 @@ namespace Netcode {
 		PLAYER_LANDED,
 		WATER_HIT_PLAYER,
 		SET_CANDLE_HEALTH,
+		EXTINGUISH_CANDLE,
 		PLAYER_DIED,
-		PLAYER_DISCONNECT,
 		MATCH_ENDED,
 		PREPARE_ENDSCREEN,			// Clients send relevant data for the endgame screen
 		ENDGAME_STATS,
 		CANDLE_HELD_STATE,
-		SEND_ALL_BACK_TO_LOBBY,
 		RUNNING_METAL_START,
 		RUNNING_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
+		HIT_BY_SPRINKLER,
+		ENABLE_SPRINKLERS,
 		EMPTY,
 		COUNT
 	}; 
 	
 	static const std::string MessageNames[] = {
 		"CREATE_NETWORKED_PLAYER	",
+		"DESTROY_ENTITY				",
 		"CHANGE_LOCAL_POSITION,		",
 		"CHANGE_LOCAL_ROTATION,		",
 		"CHANGE_ABSOLUTE_POS_AND_ROT,",
@@ -89,17 +95,18 @@ namespace Netcode {
 		"PLAYER_LANDED,				",
 		"WATER_HIT_PLAYER,			",
 		"SET_CANDLE_HEALTH,			",
+		"EXTINGUISH_CANDLE,			",
 		"PLAYER_DIED,				",
-		"PLAYER_DISCONNECT,			",
 		"MATCH_ENDED,				",
 		"PREPARE_ENDSCREEN,			",	// Clients send relevant data for the endgame screen
 		"ENDGAME_STATS,				",
 		"CANDLE_HELD_STATE,			",
-		"SEND_ALL_BACK_TO_LOBBY,	",
 		"RUNNING_METAL_START,		",
 		"RUNNING_TILE_START,		",
 		"RUNNING_STOP_SOUND,		",
 		"IGNITE_CANDLE,				",
+		"HIT_BY_SPRINKLER,			",
+		"ENABLE_SPRINKLERS,			",
 		"EMPTY						",
 	};
 
@@ -172,13 +179,15 @@ namespace Netcode {
 
 	class MessageSpawnProjectile : public MessageData {
 	public:
-		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, Netcode::ComponentID ownerComponentID)
-			: translation(translation_), velocity(velocity_), ownerPlayerComponentID(ownerComponentID)
+		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, 
+			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID)
+			: translation(translation_), velocity(velocity_), projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID)
 		{}
 		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
+		Netcode::ComponentID projectileComponentID;
 		Netcode::ComponentID ownerPlayerComponentID;
 	};
 
@@ -190,6 +199,28 @@ namespace Netcode {
 		~MessageWaterHitPlayer() {}
 
 		Netcode::ComponentID playerWhoWasHitID;
+	};
+
+	class MessageSetCandleHealth : public MessageData {
+	public:
+		MessageSetCandleHealth(Netcode::ComponentID candleID, float candleHealth)
+			: candleThatWasHit(candleID), health(candleHealth) {
+		}
+		~MessageSetCandleHealth() {}
+
+		Netcode::ComponentID candleThatWasHit;
+		float health;
+	};
+
+	class MessageExtinguishCandle : public MessageData {
+	public:
+		MessageExtinguishCandle(Netcode::ComponentID candleID, Netcode::PlayerID extinguishedBy)
+			: candleThatWasHit(candleID), playerWhoExtinguishedCandle(extinguishedBy) {
+		}
+		~MessageExtinguishCandle() {}
+
+		Netcode::ComponentID candleThatWasHit;
+		Netcode::PlayerID playerWhoExtinguishedCandle;
 	};
 
 	class MessagePlayerJumped : public MessageData {
@@ -221,13 +252,6 @@ namespace Netcode {
 		Netcode::ComponentID candleOwnerID;
 		bool isHeld;
 		glm::vec3 candlePos;
-	};
-
-	class MessagePlayerDisconnect : public MessageData {
-	public:
-		MessagePlayerDisconnect(PlayerID id) : playerID(id) {}
-		~MessagePlayerDisconnect() {}
-		PlayerID playerID;
 	};
 
 	class MessageEndGameStats : public MessageData {
@@ -268,9 +292,20 @@ namespace Netcode {
 	};
 	class MessageIgniteCandle : public MessageData {
 	public:
-		MessageIgniteCandle(Netcode::ComponentID id) : candleOwnerID(id) {}
+		MessageIgniteCandle(Netcode::ComponentID candleId) : candleCompId(candleId) {}
 		~MessageIgniteCandle() {}
+		Netcode::ComponentID candleCompId;
+	};
+	class MessageHitBySprinkler : public MessageData {
+	public:
+		MessageHitBySprinkler(Netcode::ComponentID id) : candleOwnerID(id) {}
+		~MessageHitBySprinkler() {}
 		Netcode::ComponentID candleOwnerID;
+	};
+	class MessageEnableSprinklers : public MessageData {
+	public:
+		MessageEnableSprinklers() {}
+		~MessageEnableSprinklers() {}
 	};
 
 }

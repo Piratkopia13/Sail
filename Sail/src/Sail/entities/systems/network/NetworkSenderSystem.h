@@ -26,11 +26,6 @@ public:
 	
 	void queueEvent(NetworkSenderEvent* event);
 	void pushDataToBuffer(std::string data);
-	
-	// TODO: Is this used?
-	const std::vector<Entity*>& getEntities() const;
-
-	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
 
 #ifdef DEVELOPMENT
 	void imguiPrint(Entity** selectedEntity = nullptr) {

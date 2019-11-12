@@ -43,7 +43,7 @@ void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudi
 AudioData& ResourceManager::getAudioData(const std::string& filename) {
 	auto pos = m_audioDataAll.find(filename);
 	if (pos == m_audioDataAll.end()) {
-		Logger::Error("Tried to access an audio resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadAudioData(\"filename\") before accessing it.");
+		SAIL_LOG_ERROR("Tried to access an audio resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadAudioData(\"filename\") before accessing it.");
 	}
 
 	return *pos->second;
@@ -63,7 +63,7 @@ void ResourceManager::loadTextureData(const std::string& filename) {
 TextureData& ResourceManager::getTextureData(const std::string& filename) {
 	auto pos = m_textureDatas.find(filename);
 	if (pos == m_textureDatas.end())
-		Logger::Error("Tried to access a resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadTextureData(\"filename\") before accessing it.");
+		SAIL_LOG_ERROR("Tried to access a resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadTextureData(\"filename\") before accessing it.");
 
 	return *pos->second;
 }
@@ -81,7 +81,7 @@ void ResourceManager::loadTexture(const std::string& filename) {
 Texture& ResourceManager::getTexture(const std::string& filename) {
 	auto pos = m_textures.find(filename);
 	if (pos == m_textures.end())
-		Logger::Error("Tried to access a resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().loadTexture(\"" + filename + "\") before accessing it.");
+		SAIL_LOG_ERROR("Tried to access a resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().loadTexture(\"" + filename + "\") before accessing it.");
 
 	return *pos->second;
 }
@@ -97,10 +97,10 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 // Used to add a model created from the application
 void ResourceManager::addModel(const std::string& modelName, Model* model) {
 	if (m_models.find(modelName) != m_models.end()) {
-		Logger::Error("The model name is already in use");
+		SAIL_LOG_ERROR("The model name is already in use");
 		return;
 	}
-	Logger::Log("Added model: " + modelName);
+	SAIL_LOG("Added model: " + modelName);
 	model->setName(modelName);
 	m_models.insert({modelName, std::unique_ptr<Model>(model)});
 }
@@ -128,7 +128,7 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 		for (int i = 0; i < temp->getNumberOfMeshes(); i++) {
 			size += temp->getMesh(i)->getSize();
 		}
-		Logger::Log("Loaded model: " + filename + " (" + std::to_string(size / (1024 * 1024)) + "MB)");
+		SAIL_LOG("Loaded model: " + filename + " (" + std::to_string(size / (1024 * 1024)) + "MB)");
 		temp->setName(filename);
 		m_modelMutex.lock();
 		m_models.insert({ filename, std::unique_ptr<Model>(temp) });
@@ -137,7 +137,7 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	}
 	else {
 #ifdef _DEBUG
-		Logger::Error("Could not Load model: (" + filename + ")");
+		SAIL_LOG_ERROR("Could not Load model: (" + filename + ")");
 		//assert(temp);
 #endif
 		return false;
@@ -146,7 +146,7 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 Model& ResourceManager::getModel(const std::string& filename, Shader* shader, const ImporterType type) {
 	auto pos = m_models.find(filename);
 	if (pos == m_models.end()) {
-		Logger::Warning("Tried to get model (" + filename + ") but it was not previously loaded.");
+		SAIL_LOG_WARNING("Tried to get model (" + filename + ") but it was not previously loaded.");
 		// Model was not yet loaded, load it and return
 		Shader* shaderToUse = shader ? shader : m_defaultShader;
 		loadModel(filename, shaderToUse, type);
@@ -166,7 +166,7 @@ Model& ResourceManager::getModelCopy(const std::string& filename, Shader* shader
 	Model* tempModel = new Model(data, shaderToUse);
 	std::string nameCopy = getSuitableName(filename);
 	tempModel->setName(nameCopy);
-	Logger::Log("copied model: " + filename + ", using name: " + nameCopy);
+	SAIL_LOG("copied model: " + filename + ", using name: " + nameCopy);
 	m_models.insert({ nameCopy, std::unique_ptr<Model>(tempModel) });
 
 	return *m_models.find(nameCopy)->second;
@@ -200,7 +200,7 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 	}
 	else {
 #ifdef _DEBUG
-		Logger::Error("Could not Load model: (" + fileName + ")");
+		SAIL_LOG_ERROR("Could not Load model: (" + fileName + ")");
 #endif
 	}
 }

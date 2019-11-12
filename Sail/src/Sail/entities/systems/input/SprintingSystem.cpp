@@ -8,6 +8,7 @@
 
 SprintingSystem::SprintingSystem() {
 	registerComponent<SprintingComponent>(true, true, true);
+	registerComponent<AnimationComponent>(false, true, true);
 }
 
 SprintingSystem::~SprintingSystem() {}
@@ -31,11 +32,15 @@ void SprintingSystem::update(float dt, float alpha) {
 				
 			}
 
-			e->getComponent<AnimationComponent>()->animationSpeed = 1.f;
+			if (e->hasComponent<AnimationComponent>()) {
+				e->getComponent<AnimationComponent>()->animationSpeed = 1.f;
+			}
 		} else {
 			sprintComp->downTimer = 0.f;
 			sprintComp->sprintTimer += dt;
-			e->getComponent<AnimationComponent>()->animationSpeed = sprintComp->sprintSpeedModifier;
+			if (e->hasComponent<AnimationComponent>()) {
+				e->getComponent<AnimationComponent>()->animationSpeed = sprintComp->sprintSpeedModifier;
+			}
 		}
 
 		if (sprintComp->sprintTimer < MAX_SPRINT_TIME) {
