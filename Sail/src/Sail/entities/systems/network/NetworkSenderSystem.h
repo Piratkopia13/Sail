@@ -25,7 +25,7 @@ public:
 	void init(Netcode::PlayerID playerID, NetworkReceiverSystem* receiverSystem);
 	
 	void queueEvent(NetworkSenderEvent* event);
-	void pushDataToBuffer(std::string data);
+	void pushDataToBuffer(const std::string& data);
 
 #ifdef DEVELOPMENT
 	void imguiPrint(Entity** selectedEntity = nullptr) {
