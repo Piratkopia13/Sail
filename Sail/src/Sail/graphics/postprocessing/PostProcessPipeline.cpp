@@ -5,6 +5,7 @@
 #include "Sail/graphics/shader/postprocess/GaussianBlurVertical.h"
 #include "Sail/graphics/shader/postprocess/BlendShader.h"
 #include "Sail/graphics/shader/postprocess/FXAAShader.h"
+#include "Sail/graphics/shader/postprocess/TonemapShader.h"
 #include "Sail/events/EventDispatcher.h"
 
 PostProcessPipeline::PostProcessPipeline() 
@@ -21,6 +22,7 @@ PostProcessPipeline::PostProcessPipeline()
 	add<GaussianBlurVertical>("BloomBlur3V", 0.5f, 1.5f);
 	add<GaussianBlurHorizontal>("BloomBlur3H", 0.5f);
 	add<BlendShader>("BloomBlend", 1.0f, 1.f / 2.f);
+	add<TonemapShader>("Tonemapper", 1.0f);
 	//add<RedTintShader>(0.5f);
 
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
@@ -36,32 +38,56 @@ PostProcessPipeline::~PostProcessPipeline() {
 }
 
 RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void* cmdList) {
+	// TODO: change the following the read from game settings
+	bool enableFXAA = true;
+	float bloomAmount = 0.2f;
+
 	PostProcessInput input;
-	/*input.inputRenderableTexture = m_bloomTexture;
-	// Blur pass one
-	auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
-	input.inputRenderableTexture = output->outputTexture;
-	output = runStage(input, m_stages["BloomBlur1H"], cmdList);
-	// Blur pass two
-	input.inputRenderableTexture = output->outputTexture;
-	output = runStage(input, m_stages["BloomBlur2V"], cmdList);
-	input.inputRenderableTexture = output->outputTexture;
-	output = runStage(input, m_stages["BloomBlur2H"], cmdList);
-	// Blur pass three
-	input.inputRenderableTexture = output->outputTexture;
-	output = runStage(input, m_stages["BloomBlur3V"], cmdList);
-	input.inputRenderableTexture = output->outputTexture;
-	auto* bloomOutput = runStage(input, m_stages["BloomBlur3H"], cmdList);*/
 
-	// FXAA
-	input.inputRenderableTexture = baseTexture;
-	auto* output = runStage(input, m_stages["FXAA"], cmdList);
+	// Stage one - fxaa if enabled
+	RenderableTexture* stageOneOutput = baseTexture;
+	if (enableFXAA) {
+		// FXAA
+		input.inputRenderableTexture = baseTexture;
+		auto* output = runStage(input, m_stages["FXAA"], cmdList);
+		stageOneOutput = output->outputTexture;
+	}
 
-	/*input.inputRenderableTexture = output->outputTexture;
-	input.inputRenderableTextureTwo = bloomOutput->outputTexture;
-	output = runStage(input, m_stages["BloomBlend"], cmdList);*/
+	// Stage two - bloom if enabled
+	RenderableTexture* stageTwoOutput = stageOneOutput;
+	if (bloomAmount > 0.f) {
+		input.inputRenderableTexture = m_bloomTexture;
+		// Blur pass one
+		auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
+		input.inputRenderableTexture = output->outputTexture;
+		output = runStage(input, m_stages["BloomBlur1H"], cmdList);
+		// Blur pass two
+		input.inputRenderableTexture = output->outputTexture;
+		output = runStage(input, m_stages["BloomBlur2V"], cmdList);
+		input.inputRenderableTexture = output->outputTexture;
+		output = runStage(input, m_stages["BloomBlur2H"], cmdList);
+		// Blur pass three
+		input.inputRenderableTexture = output->outputTexture;
+		output = runStage(input, m_stages["BloomBlur3V"], cmdList);
+		input.inputRenderableTexture = output->outputTexture;
+		auto* bloomOutput = runStage(input, m_stages["BloomBlur3H"], cmdList);
 
-	return output->outputTexture;
+		input.inputRenderableTexture = stageOneOutput;
+		input.inputRenderableTextureTwo = bloomOutput->outputTexture;
+
+		auto& blendStage = m_stages["BloomBlend"];
+		// Set blend amount in shader
+		blendStage.shader->getPipeline()->trySetCBufferVar("blendFactor", &bloomAmount, sizeof(float));
+		output = runStage(input, blendStage, cmdList);
+		// Set final stage output
+		stageTwoOutput = output->outputTexture;
+	}
+
+	// Last stage - tonemapping, always runs
+	input.inputRenderableTexture = stageTwoOutput;
+	auto* tonemapOutput = runStage(input, m_stages["Tonemapper"], cmdList);
+
+	return tonemapOutput->outputTexture;
 }
 
 void PostProcessPipeline::setBloomInput(RenderableTexture* bloomTexture) {
@@ -72,6 +98,8 @@ PostProcessPipeline::PostProcessOutput* PostProcessPipeline::runStage(PostProces
 	Application* app = Application::getInstance();
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
+
+	//app->getSettings().applicationSettingsStatic["graphics"]["bloom"].getSelected().value;
 
 	m_dispatcher->begin(cmdList);
 
