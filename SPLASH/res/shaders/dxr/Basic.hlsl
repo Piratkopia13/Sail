@@ -148,10 +148,11 @@ void rayGen() {
 		// 	}
 		// }
 	}
-	// float3 tonemappedOutputColor = tonemap(outputColor);
+	// Perform tonemapping if requested
+	// Tonemapping is otherwise done in post processing
+	outputColor = (CB_SceneData.doTonemapping) ? tonemap(outputColor) : outputColor;
 	// Write outputs
 	lOutput[launchIndex] = float4(outputColor, 1.0f);
-	// lOutput[launchIndex] = float4((length(outputColor) > 1.f) ? tonemappedOutputColor : 0.f, 1.0f);
 	lOutputBloom[launchIndex] = float4((length(outputColor) > 1.0f) ? outputColor : 0.f, 1.0f);
 
 #else

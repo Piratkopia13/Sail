@@ -36,6 +36,17 @@ DX12RaytracingRenderer::~DX12RaytracingRenderer() {
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	auto frameIndex = m_context->getSwapIndex();
 
+	if (postProcessPipeline) {
+		// Make sure output textures are in a higher precision format to accomodate values > 1
+		m_outputTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
+		m_outputBloomTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
+	} else {
+		// Make sure output textures are in a format that can be directly copied to the back buffer
+		// Please note that no tone mapping is applied when post process is turned off.
+		m_outputTexture->changeFormat(Texture::R8G8B8A8);
+		m_outputBloomTexture->changeFormat(Texture::R8G8B8A8);
+	}
+
 	// There is one allocator per swap buffer
 	auto& allocatorCompute = m_commandCompute.allocators[m_context->getFrameIndex()];
 	auto& allocatorDirect = m_commandDirect.allocators[m_context->getFrameIndex()];
@@ -52,16 +63,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	auto fenceVal = m_context->getDirectQueue()->signal();
 	m_context->getComputeQueue()->wait(fenceVal);
 
-	if (postProcessPipeline) {
-		// Make sure output textures are in a higher precision format to accomodate values > 1
-		m_outputTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
-		m_outputBloomTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
-	} else {
-		// Make sure output textures are in a format that can be directly copied to the back buffer
-		// Please note that no tone mapping is applied when post process is turned off.
-		m_outputTexture->changeFormat(Texture::R8G8B8A8);
-		m_outputBloomTexture->changeFormat(Texture::R8G8B8A8);
-	}
 
 	std::sort(m_metaballs.begin(), m_metaballs.end(),
 		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
@@ -133,7 +134,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 		auto mapSize = glm::vec3(mapSettings["sizeX"].value, 1.0f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
 		auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f);
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart, teamColors);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart, teamColors, (postProcessPipeline) ? false : true);
 	}
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);

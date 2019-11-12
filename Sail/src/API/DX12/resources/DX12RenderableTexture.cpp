@@ -72,10 +72,11 @@ void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 }
 
 void DX12RenderableTexture::changeFormat(Texture::FORMAT newFormat) {
-	if (m_format == newFormat) {
+	auto newDxgiFormat = convertFormat(newFormat);
+	if (m_format == newDxgiFormat) {
 		return;
 	}
-	m_format = convertFormat(newFormat);
+	m_format = newDxgiFormat;
 	createTextures();
 }
 
@@ -140,7 +141,7 @@ DXGI_FORMAT DX12RenderableTexture::convertFormat(Texture::FORMAT format) const {
 	return dxgiFormat;
 }
 
-void DX12RenderableTexture::createTextures() {
+void DX12RenderableTexture::createTextures() {	
 	context->waitForGPU();
 	for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
 		D3D12_RESOURCE_DESC textureDesc = {};
