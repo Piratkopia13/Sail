@@ -40,7 +40,7 @@ protected:
 	NWrapper* m_network = nullptr;
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
-	bool m_spectator;
+	int m_teamSelection;
 	std::list<std::string> m_messages;
 
 	// Front-End Functions

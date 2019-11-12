@@ -37,7 +37,8 @@ LobbyState::LobbyState(StateStack& stack)
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
-	m_spectator = false;
+	//m_spectator = false;
+	m_teamSelection = 1;
 
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::TEXTINPUT, this);
@@ -249,7 +250,7 @@ void LobbyState::renderStartButton() {
 		if (ImGui::Button("S.P.L.A.S.H")) {
 			// Queue a removal of LobbyState, then a push of gamestate
 			NWrapperSingleton::getInstance().stopUDP();
-			if (m_spectator) {
+			if (m_teamSelection) {
 				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, 0));
 			}
 			else {
@@ -412,7 +413,8 @@ void LobbyState::renderSpectatorButton() {
 	ImGui::Begin("Spectator");
 	//ImGui::SetWindowPos({ 1018, 633 });
 	ImGui::SetWindowSize({ 112, 57 });
-	ImGui::Checkbox("", &m_spectator);
+	ImGui::SliderInt("Team", &m_teamSelection,0, 12);
+	//ImGui::Checkbox("", &m_spectator);
 	ImGui::End();
 }
 
