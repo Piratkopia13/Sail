@@ -44,7 +44,8 @@ namespace Netcode {
 		CANDLE_ENTITY,
 		GUN_ENTITY,
 		PROJECTILE_ENTITY,
-		MECHA_ENTITY // RIP Mecha-Jörgen (2019-2019)
+		MECHA_ENTITY, // RIP Mecha-Jörgen (2019-2019)
+		INVALID_ENTITY,
 	};
 
 	// TODO: should be one message type for tracked entities and one for events
