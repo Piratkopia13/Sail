@@ -46,6 +46,7 @@ protected:
 	GameState* m_gameStatePtr;
 private:
 	void createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation);
+	void destroyEntity(Netcode::ComponentID entityID);
 	void setEntityLocalPosition(Netcode::ComponentID id, const glm::vec3& translation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::vec3& rotation);
 	void setEntityLocalRotation(Netcode::ComponentID id, const glm::quat& rotation);
@@ -54,14 +55,15 @@ private:
 	void extinguishCandle(Netcode::ComponentID candleId, Netcode::PlayerID shooterID);
 	void playerJumped(Netcode::ComponentID id);
 	void playerLanded(Netcode::ComponentID id);
-	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID ownerID);
+	void projectileSpawned(glm::vec3& pos, glm::vec3 vel, Netcode::ComponentID projectileID, Netcode::ComponentID ownerID);
 	void playerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID);
 	void playerDisconnect(Netcode::PlayerID playerID);
 	void setCandleHeldState(Netcode::ComponentID id, bool isHeld);
+	void hitBySprinkler(Netcode::ComponentID candleOwnerID);
+	void enableSprinklers();
 	void igniteCandle(Netcode::ComponentID candleID);
 
 	Entity* findFromNetID(Netcode::ComponentID id) const;
-	Entity* findFromPlayerID(Netcode::PlayerID id) const;
 
 	void shootStart(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);
 	void shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id);

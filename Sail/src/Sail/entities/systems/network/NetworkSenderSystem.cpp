@@ -92,12 +92,27 @@ void NetworkSenderSystem::update() {
 	sendToOthers(m_playerID);
 	sendToSelf(Netcode::MESSAGE_FROM_SELF_ID);
 
+
+	// See how many SenderComponents have information to send
+	size_t nonEmptySenderComponents = 0;
+	for (auto e : entities) {
+		if (!e->getComponent<NetworkSenderComponent>()->m_dataTypes.empty()) {
+			nonEmptySenderComponents++;
+		}
+	}
+
 	// Write nrOfEntities
-	sendToOthers(entities.size());
+	sendToOthers(nonEmptySenderComponents);
 	sendToSelf(size_t{0}); // SenderComponent messages should not be sent to ourself
 
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
+		
+		// If a SenderComponent doesn't have any active messages don't send any of its information
+		if (nsc->m_dataTypes.empty()) {
+			continue;
+		}
+
 		sendToOthers(nsc->m_id);                // ComponentID    
 		sendToOthers(nsc->m_entityType);        // Entity type
 		sendToOthers(nsc->m_dataTypes.size());  // NrOfMessages
@@ -189,10 +204,6 @@ void NetworkSenderSystem::pushDataToBuffer(std::string data) {
 	m_HOSTONLY_dataToForward.push(data);
 }
 
-const std::vector<Entity*>& NetworkSenderSystem::getEntities() const {
-	return entities;
-}
-
 // TODO: Test this to see if it's actually needed or not
 void NetworkSenderSystem::stop() {
 	// Loop through networked entities and serialize their data.
@@ -226,11 +237,6 @@ void NetworkSenderSystem::stop() {
 			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryData);
 		}
 	}
-}
-
-// No longer used, remove?
-void NetworkSenderSystem::addEntityToListONLYFORNETWORKRECIEVER(Entity* e) {
-	instantAddEntity(e);
 }
 
 void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar) {
@@ -270,6 +276,11 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	{
 		TransformComponent* t = e->getComponent<TransformComponent>();
 		ArchiveHelpers::saveVec3(ar, t->getRotations());
+	}
+	break;
+	case Netcode::MessageType::DESTROY_ENTITY:
+	{
+		e->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
 	}
 	break;
 	case Netcode::MessageType::SHOOT_START:
@@ -340,6 +351,11 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ArchiveHelpers::saveVec3(ar, data->position);
 	}
 	break;
+	case Netcode::MessageType::ENABLE_SPRINKLERS:
+	{
+		Netcode::MessageHitBySprinkler* data = static_cast<Netcode::MessageHitBySprinkler*>(event->data);
+	}
+	break;
 	case Netcode::MessageType::ENDGAME_STATS:
 	{
 		GameDataTracker* dgtp = &GameDataTracker::getInstance();
@@ -373,6 +389,13 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		Netcode::MessageExtinguishCandle* data = static_cast<Netcode::MessageExtinguishCandle*>(event->data);
 		ar(data->candleThatWasHit);
 		ar(data->playerWhoExtinguishedCandle);
+	}
+	break;
+	case Netcode::MessageType::HIT_BY_SPRINKLER:
+	{
+		Netcode::MessageHitBySprinkler* data = static_cast<Netcode::MessageHitBySprinkler*>(event->data);
+
+		ar(data->candleOwnerID);
 	}
 	break;
 	case Netcode::MessageType::IGNITE_CANDLE:
@@ -448,6 +471,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 		ArchiveHelpers::saveVec3(ar, data->translation);
 		ArchiveHelpers::saveVec3(ar, data->velocity);
+		ar(data->projectileComponentID);
 		ar(data->ownerPlayerComponentID);
 	}
 	break;
