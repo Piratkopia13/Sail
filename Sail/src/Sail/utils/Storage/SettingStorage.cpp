@@ -31,7 +31,7 @@ bool SettingStorage::saveToFile(const std::string& filename) {
  	return true;
 }
 
-std::string SettingStorage::serialize(const std::map<std::string, std::map<std::string, Setting>>& stat, const std::map<std::string, std::map<std::string, DynamicSetting>>& dynamic) {
+std::string SettingStorage::serialize(const std::unordered_map<std::string, std::unordered_map<std::string, Setting>>& stat, const std::unordered_map<std::string, std::unordered_map<std::string, DynamicSetting>>& dynamic) {
 	std::string output = "";
 	//print content of static settings map
 	for (auto const& [areaKey, setting] : stat) {
@@ -52,7 +52,7 @@ std::string SettingStorage::serialize(const std::map<std::string, std::map<std::
 	return output;
 }
 
-bool SettingStorage::deSerialize(const std::string& content, std::map<std::string, std::map<std::string, Setting>>& stat, std::map<std::string, std::map<std::string, DynamicSetting>>& dynamic) {
+bool SettingStorage::deSerialize(const std::string& content, std::unordered_map<std::string, std::unordered_map<std::string, Setting>>& stat, std::unordered_map<std::string, std::unordered_map<std::string, DynamicSetting>>& dynamic) {
 	std::string file = content;
 	std::string currentArea = "";
 	while (file != "") {
@@ -117,31 +117,31 @@ void SettingStorage::createApplicationDefaultStructure() {
 }
 
 void SettingStorage::createApplicationDefaultGraphics() {
-	applicationSettingsStatic["graphics"] = std::map<std::string, Setting>();
+	applicationSettingsStatic["graphics"] = std::unordered_map<std::string, Setting>();
 	applicationSettingsStatic["graphics"]["fullscreen"] = Setting(1, std::vector<Setting::Option>({
 		{ "on", 1.0f }, 
 		{ "off",0.0f } 
 	}));
 
 	applicationSettingsStatic["graphics"]["bloom"] = Setting(0, std::vector<Setting::Option>({
-		{ "on", 0.0f },
-		{ "off",1.0f }
+		{ "off", 0.0f },
+		{ "on", 1.0f },
+		{ "all the bloom", 2.0f },
 	}));
 	applicationSettingsStatic["graphics"]["shadows"] = Setting(0, std::vector<Setting::Option>({
-		{ "off", 0.0f },
-		{ "hard",1.0f },
-		{ "soft",2.0f }
+		{ "hard",0.0f },
+		{ "soft",1.0f }
 	}));
 }
 void SettingStorage::createApplicationDefaultSound() {
-	applicationSettingsDynamic["sound"] = std::map<std::string, DynamicSetting>();
+	applicationSettingsDynamic["sound"] = std::unordered_map<std::string, DynamicSetting>();
 	applicationSettingsDynamic["sound"]["global"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
 	applicationSettingsDynamic["sound"]["music"]   = DynamicSetting(1.0f, 0.0f, 1.0f);
 	applicationSettingsDynamic["sound"]["effects"] = DynamicSetting(1.0f, 0.0f, 1.0f);
 	applicationSettingsDynamic["sound"]["voices"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
 }
 void SettingStorage::createApplicationDefaultMisc() {
-	applicationSettingsStatic["misc"] = std::map<std::string, Setting>();
+	applicationSettingsStatic["misc"] = std::unordered_map<std::string, Setting>();
 }
 
 void SettingStorage::createGameDefaultStructure() {
@@ -151,7 +151,7 @@ void SettingStorage::createGameDefaultStructure() {
 }
 
 void SettingStorage::createGameDefaultMap() {	
-	gameSettingsDynamic["map"] = std::map<std::string, DynamicSetting>();
+	gameSettingsDynamic["map"] = std::unordered_map<std::string, DynamicSetting>();
 	gameSettingsDynamic["map"]["sizeX"] =   DynamicSetting(6.0f,	1.0f,	30.0f);
 	gameSettingsDynamic["map"]["sizeY"] =   DynamicSetting(6.0f,	1.0f,	30.0f);
 	gameSettingsDynamic["map"]["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
@@ -161,7 +161,7 @@ void SettingStorage::createGameDefaultMap() {
 
 void SettingStorage::createGameModeDefault() {
 
-	gameSettingsStatic["gamemode"] = std::map<std::string, Setting>();
+	gameSettingsStatic["gamemode"] = std::unordered_map<std::string, Setting>();
 	gameSettingsStatic["gamemode"]["types"] = Setting(0, std::vector<Setting::Option>({
 		{ "Deathmatch", 0.0f },
 		{ "Teamdeathmatch", 1.0f },
@@ -207,8 +207,14 @@ SettingStorage::Setting::~Setting() {
 
 void SettingStorage::Setting::setSelected(const unsigned int selection) {
 	selected = selection;
+	if (selected == options.size()) {
+		selected = 0;
+	}
+	if (selected == -1) {
+		selected = options.size() - 1;
+	}
 	if (selected > options.size()) {
-		selected = options.size();
+		selected = options.size() - 1;
 	}
 }
 

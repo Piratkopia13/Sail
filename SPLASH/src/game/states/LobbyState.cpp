@@ -30,6 +30,7 @@ LobbyState::LobbyState(StateStack& stack)
 	m_network = NWrapperSingleton::getInstance().getNetworkWrapper();
 	m_imGuiHandler = m_app->getImGuiHandler();
 	m_settings = &m_app->getSettings();
+	m_optionsWindow.setPosition({ 300, 300 });
 
 	m_textHeight = 52;
 	m_outerPadding = 15;
@@ -150,7 +151,10 @@ bool LobbyState::renderImgui(float dt) {
 	if (m_renderGameSettings) {
 		renderGameSettings();
 	}
-
+	
+	if (m_optionsWindow.isWindowOpen()) {
+		m_optionsWindow.renderWindow();
+	}
 
 	ImGui::PopFont();
 
@@ -234,7 +238,7 @@ void LobbyState::renderPlayerList() {
 		ImGui::Separator();
 
 		//(windowSize.x) * 0.42f
-		std::map<std::string, SettingStorage::Setting>& gamemodeSettings = m_settings->gameSettingsStatic["gamemode"];
+		std::unordered_map<std::string, SettingStorage::Setting>& gamemodeSettings = m_settings->gameSettingsStatic["gamemode"];
 
 		SettingStorage::Setting& selectedGameTeams = m_settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
 		unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
@@ -442,7 +446,7 @@ void LobbyState::renderMenu() {
 			m_renderGameSettings = !m_renderGameSettings;
 		}
 		if(SailImGui::TextButton("Options")) {
-			m_renderApplicationSettings = !m_renderApplicationSettings;
+			m_optionsWindow.toggleWindow();
 
 		}
 		ImGui::Spacing();
