@@ -24,7 +24,7 @@ SprinklerSystem::~SprinklerSystem() {
 }
 
 void SprinklerSystem::stop() {
-	m_enableNewSprinklers = false;
+	m_addNewSprinklers = false;
 	m_enableSprinklers = false;
 	m_endGameTimer = 0.f;
 	m_endGameMapIncrement = 0;
@@ -36,30 +36,25 @@ void SprinklerSystem::stop() {
 	m_activeRooms.clear();
 	m_activeSprinklers.clear();
 	m_roomsToBeActivated.clear();
+	m_sprinklers.clear();
 }
 
 void SprinklerSystem::update(float dt) {
 	if (m_settings->gameSettingsStatic["map"]["sprinkler"].selected == 0) {
 		if (m_enableSprinklers) {
-
-			//
 			m_endGameTimer += dt;
-			for (auto& e : entities) {
 
+			for (auto& e : entities) {
+				// Randomize a water spot with a ray for each active sprinkler
 				for (int i = 0; i < m_sprinklers.size(); i++) {
-					if (m_sprinklers[i].active)
-					{
+					if (m_sprinklers[i].active) {
 					Octree::RayIntersectionInfo tempInfo;
 
 					float sprinklerXspread = (m_sprinklers[i].size.x * 0.5f) * m_map->tileSize;
 					float sprinklerZspread = (m_sprinklers[i].size.y * 0.5f) * m_map->tileSize;
+
 					glm::vec3 waterDir = glm::vec3(((2.f * Utils::rnd()) - 1.0f) *sprinklerXspread, -m_sprinklers[i].pos.y, ((2.f * Utils::rnd()) - 1.0f)*sprinklerZspread) + m_sprinklers[i].pos;
 					waterDir = glm::normalize(waterDir - m_sprinklers[i].pos);
-					//SAIL_LOG("WaterDir:");
-					//SAIL_LOG("x: " + std::to_string(waterDir.x));
-					//SAIL_LOG("y: " + std::to_string(waterDir.y));
-					//SAIL_LOG("z: " + std::to_string(waterDir.z));
-
 					m_octree->getRayIntersection(m_sprinklers[i].pos, waterDir, &tempInfo);
 					glm::vec3 hitPos = m_sprinklers[i].pos + waterDir * tempInfo.closestHit;
 					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(hitPos);
@@ -67,6 +62,7 @@ void SprinklerSystem::update(float dt) {
 
 				}
 
+				// Locate player candle
 				CandleComponent* candle = e->getComponent<CandleComponent>();
 				TransformComponent* transform = e->getComponent<TransformComponent>();
 
@@ -82,6 +78,7 @@ void SprinklerSystem::update(float dt) {
 					candlePosZ = transform->getTranslation().z;
 				}
 
+				// Check if the candle is in a room with an active sprinkler, and damage it
 				int candleLocationRoomID = m_map->getRoomIDFromWorldPos(candlePosX, candlePosZ);
 				std::vector<int>::iterator it = std::find(m_activeSprinklers.begin(), m_activeSprinklers.end(), candleLocationRoomID);
 				if (it != m_activeSprinklers.end()) {
@@ -92,11 +89,10 @@ void SprinklerSystem::update(float dt) {
 						}
 					);
 				}
-
-
 			}
+
 			// Add more active rooms
-			if (m_enableNewSprinklers) {
+			if (m_addNewSprinklers) {
 				// Active rooms now start their sprinklers
 				if (!m_activeRooms.empty()) {
 					for (int i = m_activeSprinklers.size(); i < m_activeSprinklers.size() + m_roomsToBeActivated.size(); i++) {
@@ -114,38 +110,38 @@ void SprinklerSystem::update(float dt) {
 				switch (m_mapSide) {
 				case 1:
 					for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
-						addToActiveRooms(x, m_yMinIncrement);
+						addSprinkler(x, m_yMinIncrement);
 					}
 					m_yMinIncrement++;
 					break;
 				case 2:
 					for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
-						addToActiveRooms(x, m_map->ysize - 1 - m_yMaxIncrement);
+						addSprinkler(x, m_map->ysize - 1 - m_yMaxIncrement);
 					}
 					m_yMaxIncrement++;
 					break;
 				case 3:
 					for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
-						addToActiveRooms(m_xMinIncrement, y);
+						addSprinkler(m_xMinIncrement, y);
 					}
 					m_xMinIncrement++;
 					break;
 				case 4:
 					for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
-						addToActiveRooms(m_map->xsize - 1 - m_xMaxIncrement, y);
+						addSprinkler(m_map->xsize - 1 - m_xMaxIncrement, y);
 					}
 					m_xMaxIncrement++;
 					break;
 				default:
 					break;
 				}
-				m_enableNewSprinklers = false;
+				m_addNewSprinklers = false;
 				m_endGameMapIncrement++;
 
 			}
 			// New time increment reached, add new rooms next update
 			else if (((m_endGameTimer) / m_endGameTimeIncrement) > static_cast<float>(m_endGameMapIncrement)) {
-				m_enableNewSprinklers = true;
+				m_addNewSprinklers = true;
 			}
 
 		}
@@ -173,7 +169,7 @@ const std::vector<int>& SprinklerSystem::getActiveRooms() const
 	return m_activeRooms;
 }
 
-void SprinklerSystem::addToActiveRooms(int x, int y) {
+void SprinklerSystem::addSprinkler(int x, int y) {
 	int room = m_map->getRoomID(x, y);
 	if (room != 0) {
 		std::vector<int>::iterator itRooms = std::find(m_activeRooms.begin(), m_activeRooms.end(), room);
@@ -181,7 +177,7 @@ void SprinklerSystem::addToActiveRooms(int x, int y) {
 			m_activeRooms.push_back(room);
 			m_roomsToBeActivated.push_back(room);
 			
-			// Save sprinkler worldPos and ID
+			// Save sprinkler worldPos, room size, and room ID
 			Sprinkler sprinkler;
 			sprinkler.roomID = room;
 			sprinkler.pos = m_map->getRoomInfo(room).center;
@@ -200,15 +196,4 @@ void SprinklerSystem::enableSprinklers() {
 
 void SprinklerSystem::setOctree(Octree* octree) {
 	m_octree = octree;
-}
-
-void SprinklerSystem::addWaterToActiveRooms() {
-	//for (auto sprinkler : m_activeSprinklers) {
-	//	for (auto roomID : m_roomPositions) {
-	//		if (sprinkler == roomID.ID) {
-
-	//		}
-	//	}
-
-	//}
 }

@@ -37,6 +37,10 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt
 		if (sc->alarmTimer <= Application::getInstance()->getSettings().gameSettingsDynamic["map"]["sprinklerIncrement"].value){
 			sc->alarmTimer += dt;
 			ac->m_sounds[Audio::SoundType::ALARM].isPlaying = true;
+			if (sc->alarmTimer > Application::getInstance()->getSettings().gameSettingsDynamic["map"]["sprinklerIncrement"].value) {
+				ac->m_sounds[Audio::SoundType::ALARM].isPlaying = false;
+				ac->m_sounds[Audio::SoundType::SPRINKLER_START].isPlaying = true;
+			}
 		}
 		else {
 			ac->m_sounds[Audio::SoundType::SPRINKLER_WATER].isPlaying = true;

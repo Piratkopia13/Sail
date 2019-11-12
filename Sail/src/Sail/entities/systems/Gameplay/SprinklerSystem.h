@@ -25,7 +25,7 @@ public:
 	void setOctree(Octree* octree);
 
 private:
-	bool m_enableNewSprinklers = true;
+	bool m_addNewSprinklers = true;
 	bool m_enableSprinklers = false;
 	float m_endGameTimer = 0.f;
 	float m_endGameStartLimit;
@@ -45,7 +45,5 @@ private:
 	std::vector<int> m_roomsToBeActivated;
 	std::vector<Sprinkler> m_sprinklers;
 
-	void addToActiveRooms(int x, int y);
-	void addWaterToActiveRooms();
-
+	void addSprinkler(int x, int y);
 };
