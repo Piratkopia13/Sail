@@ -23,7 +23,7 @@ bool EndGameState::processInput(float dt) {
 }
 
 bool EndGameState::update(float dt, float alpha) {
-	NWrapperSingleton::getInstance().getNetworkWrapper()->checkForPackages();
+	NWrapperSingleton::getInstance().checkForPackages();
 
 	return true;
 }
