@@ -33,6 +33,14 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt
 			continue;
 		}
 
+		AudioComponent* ac = e->getComponent<AudioComponent>();
+		if (sc->alarmTimer <= Application::getInstance()->getSettings().gameSettingsDynamic["map"]["sprinklerIncrement"].value){
+			sc->alarmTimer += dt;
+			ac->m_sounds[Audio::SoundType::ALARM].isPlaying = true;
+		}
+		else {
+			ac->m_sounds[Audio::SoundType::SPRINKLER_WATER].isPlaying = true;
+		}
 
 
 
@@ -47,18 +55,6 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt
 		sc->m_lightEntityRotated.setPosition(sc->light.getPosition() + t->getInterpolatedTranslation(alpha));
 		
 		lightSetup->addSpotLight(sc->m_lightEntityRotated);
-
-		AudioComponent* ac = e->getComponent<AudioComponent>();
-		if (sc->alarmTimer <= Application::getInstance()->getSettings().gameSettingsDynamic["map"]["sprinklerIncrement"].value) {
-			sc->alarmTimer += dt;
-			if (!ac->m_sounds[Audio::SoundType::ALARM].hasStartedPlaying) {
-				ac->m_sounds[Audio::SoundType::ALARM].isPlaying = true;
-			}
-		}
-		else {
-			ac->m_sounds[Audio::SoundType::ALARM].isPlaying = false;
-			ac->m_sounds[Audio::SoundType::SPRINKLER].isPlaying = true;
-		}
 	}
 }
 

@@ -385,18 +385,39 @@ void AllAudioData::init() {
 	//-----------------------------------------------------------------------------
 
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
-	//		  Sprinkler sounds   //   FIN_1.0
+	//		  Sprinkler Start    //   FIN_1.0
 	// +-+-+-+-+-+-+-+-+-+-+-+-+//
-	soundGeneralInfo = &AllAudioData::m_sounds[Audio::SPRINKLER];
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::SPRINKLER_START];
 	soundGeneralInfo->playOnce = true;
 	soundGeneralInfo->positionalOffset = { 0.0f, 1.0f, 0.0f };
 	//-----------------------------------------------------------------------------
 	{
 		//	• Sample #1
+		soundUniqueInfo.fileName = "miscellaneous/sprinkler_start1.wav";
+		soundUniqueInfo.soundEffectLength = 1.109f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::SPRINKLER_START].push_back(soundUniqueInfo);
+		//	• Sample #2
+		soundUniqueInfo.fileName = "miscellaneous/sprinkler_start2.wav";
+		soundUniqueInfo.soundEffectLength = 1.109f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::SPRINKLER_START].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		  Sprinkler water    //   FIN_2.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::SPRINKLER_WATER];
+	soundGeneralInfo->playOnce = false;
+	soundGeneralInfo->positionalOffset = { 0.0f, 1.0f, 0.0f };
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
 		soundUniqueInfo.fileName = "miscellaneous/sprinkler.wav";
-		soundUniqueInfo.soundEffectLength = 5.038f;
-		soundUniqueInfo.volume = 2.0f;
-		AllAudioData::m_soundsUnique[Audio::SPRINKLER].push_back(soundUniqueInfo);
+		soundUniqueInfo.soundEffectLength = 12.356f;
+		soundUniqueInfo.volume = 1.0f;
+		AllAudioData::m_soundsUnique[Audio::SPRINKLER_WATER].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
 
