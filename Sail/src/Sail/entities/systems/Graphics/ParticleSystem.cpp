@@ -154,6 +154,11 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm:
 			m_inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newParticle_i->spawnTime;
 		}
 
+		// Delay spawn untill next frame for remaing particles
+		/*for (unsigned int i = numPart; i < m_cpuOutput[context->getSwapIndex()].newParticles.size(); i++) {
+			m_cpuOutput[context->getSwapIndex()].newParticles[i].spawnTime += elapsedTime;
+		}*/
+
 		m_particleShader->getPipeline()->setCBufferVar("inputBuffer", &m_inputData, sizeof(ComputeInput));
 		//--------------------------------------
 
@@ -197,6 +202,7 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm:
 		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_cpuOutput[context->getSwapIndex()].previousNrOfParticles + numPart - numPartRem, m_outputVertexBufferSize / 6);
 
 		m_cpuOutput[context->getSwapIndex()].newParticles.erase(m_cpuOutput[context->getSwapIndex()].newParticles.begin(), m_cpuOutput[context->getSwapIndex()].newParticles.begin() + numPart);
+		//m_cpuOutput[context->getSwapIndex()].newParticles.clear();
 		m_cpuOutput[context->getSwapIndex()].toRemove.clear();
 	}
 }
