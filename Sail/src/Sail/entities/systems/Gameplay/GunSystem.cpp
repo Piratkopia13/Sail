@@ -141,7 +141,7 @@ void GunSystem::overloadGun(Entity* e, GunComponent* gun) {
 	gun->gunOverloadvalue = 0;
 	gun->gunOverloadTimer = 0;
 
-	// If we have some sort of cooldown, behave statewise as usual
+	// If we have some sort of cooldown, behave statewise as usual.
 	setGunStateEND(e, gun);
 	gun->firingContinuously = false;	
 }
