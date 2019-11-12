@@ -27,6 +27,8 @@ namespace Audio {
 		LANDING_GROUND,
 		DEATH,
 		KILLING_BLOW,
+		START_THROWING,
+		STOP_THROWING,
 		COUNT // Keep at the bottom so that COUNT == nr of sound types
 	};
 

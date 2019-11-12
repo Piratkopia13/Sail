@@ -4,6 +4,7 @@
 #include "Sail/entities/components/Components.h"
 #include "Network/NWrapperSingleton.h"
 #include "Sail/utils/GameDataTracker.h"
+#include "Sail/netcode/NetworkedStructs.h"
 
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
@@ -46,6 +47,11 @@ void CandleThrowingSystem::update(float dt) {
 				throwC->chargeTime += dt;
 			
 			} else if (throwC->isThrowing) {
+				if (throwC->throwingTimer == 0.f && throwC->chargeTime >= throwC->chargeToThrowThreshold) {
+					// Send start throw event
+					EventDispatcher::Instance().emit(StartThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
+				}
+
 				throwC->throwingTimer += dt;
 				// Just drop it
 				if (throwC->chargeTime < throwC->chargeToThrowThreshold) {
@@ -92,7 +98,7 @@ void CandleThrowingSystem::update(float dt) {
 					//transC->setTranslation(throwPos);
 
 					// Set velocity and things
-					throwC->direction = glm::normalize(-e->getComponent<TransformComponent>()->getForward()/*throwC->direction*/);
+					throwC->direction = Application::getInstance()->getCurrentCamera()->getDirection();//glm::normalize(-e->getComponent<TransformComponent>()->getForward()/*throwC->direction*/);
 
 					// Making sure the torch isn't dropped inside an object
 					auto rayFrom = parTranslation;
@@ -114,12 +120,17 @@ void CandleThrowingSystem::update(float dt) {
 					// Throw the torch
 					moveC->velocity = throwC->direction * throwC->throwingTimer * throwC->throwChargeMultiplier + e->getComponent<MovementComponent>()->velocity;
 					moveC->constantAcceleration = glm::vec3(0.f, -9.82f, 0.f);
-					throwC->direction.y = 0.f;
 					// Can be used once the torch light can be set inside the torch instead of on the top of it, LEAVE THIS CODE HERE!
+					//throwC->direction.y = 0.f;
 					//auto rotationAxis = glm::cross(glm::normalize(throwC->direction), glm::vec3(0.f, 1.f, 0.f));
 					//transC->setRotations(glm::angleAxis(glm::radians(-89.5f), rotationAxis));
-					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 					child->addComponent<CollisionComponent>(true);
+					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+
+					// Send end throw event
+					if (throwC->throwingTimer >= CHARGE_AND_THROW_ANIM_LENGTH) {
+						EventDispatcher::Instance().emit(StopThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
+					}
 
 					// Reset values
 					throwC->chargeTime = 0.f;

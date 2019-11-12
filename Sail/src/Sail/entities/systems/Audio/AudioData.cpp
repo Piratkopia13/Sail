@@ -383,5 +383,41 @@ void AllAudioData::init() {
 		AllAudioData::m_soundsUnique[Audio::KILLING_BLOW].push_back(soundUniqueInfo);
 	}
 	//-----------------------------------------------------------------------------
+
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Start Throwing	 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::START_THROWING];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = {0.0f, 1.0f, 0.0f};
+	//-----------------------------------------------------------------------------
+	{
+		//	• Sample #1
+		soundUniqueInfo.fileName = "miscellaneous/throwing/start_throw.wav";
+		soundUniqueInfo.soundEffectLength = 1.284f;
+		soundUniqueInfo.volume = 0.5f;
+		AllAudioData::m_soundsUnique[Audio::START_THROWING].push_back(soundUniqueInfo);
+	}
+	//-----------------------------------------------------------------------------
+
+
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+//
+	//		   Stop throwing	 //   FIN_1.0
+	// +-+-+-+-+-+-+-+-+-+-+-+-+//
+	soundGeneralInfo = &AllAudioData::m_sounds[Audio::STOP_THROWING];
+	soundGeneralInfo->playOnce = true;
+	soundGeneralInfo->positionalOffset = {0.0f, 1.0f, 0.0f};
+	//-----------------------------------------------------------------------------
+	{
+		for (int i = 1; i < 8; i++) {
+			//	• Sample #i
+			soundUniqueInfo.fileName = "miscellaneous/throwing/throw" + std::to_string(i) + ".wav";
+			soundUniqueInfo.soundEffectLength = 0.97f;
+			soundUniqueInfo.volume = 0.5f;
+			AllAudioData::m_soundsUnique[Audio::STOP_THROWING].push_back(soundUniqueInfo);
+		}
+	}
+	//-----------------------------------------------------------------------------
 #pragma endregion
 }

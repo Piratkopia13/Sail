@@ -5,7 +5,7 @@
 
 
 // TODO: Replace with charge animation length
-constexpr auto CHARGE_AND_THROW_ANIM_LENGTH = 0.8f; // Charge animation length
+constexpr auto CHARGE_AND_THROW_ANIM_LENGTH = 0.79f; // Charge animation length
 constexpr auto DROP_ANIMATION_LENGTH = 0.33f;
 // TODO: Replace with game settings
 constexpr auto MAX_THROW_CHARGE_MULT = 20.f;
@@ -26,7 +26,7 @@ public:
 	float throwChargeMultiplier		= 12.f;
 	float throwingTimer				= 0.f;
 	float dropTimer					= 0.f;
-	float chargeToThrowThreshold	= 0.2f;
+	float chargeToThrowThreshold	= 0.05f;
 
 	glm::vec3 direction				= glm::vec3(0.f, 1.f, 0.f);
 

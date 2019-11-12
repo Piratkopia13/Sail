@@ -27,6 +27,10 @@ void AnimationChangerSystem::update(float dt) {
 		if (animationC && moveC && throwC) {
 			animationC->updateDT = true;
 
+			/*
+				THROWING ANIMATIONS
+			*/
+			auto animIndexBefore = animationC->animationIndex;
 			float velMag2 = glm::length2(moveC->velocity);
 			if (throwC->isDropping) {
 				if (velMag2 < 0.01f) {
@@ -36,20 +40,33 @@ void AnimationChangerSystem::update(float dt) {
 					animationC->setAnimation(IDLE_DROP);
 					//animationC->setAnimation(RUNNING_DROP);
 				}
+				if (animIndexBefore != animationC->animationIndex) {
+					animationC->animationTime = 0.f;
+				}
 				continue;
 			} else if (throwC->isCharging || throwC->isThrowing) {
 				//animationC->updateDT = false;
 				if (velMag2 < 0.01f) {
 					// Replace the animation indices once they are implemented
-					animationC->setAnimation(IDLE_DROP);
-					//animationC->setAnimation(IDLE_THROW);
+					animationC->setAnimation(IDLE_THROW);
 				} else {
 					// Replace the animation indices once they are implemented
 					animationC->setAnimation(IDLE_DROP);
 					//animationC->setAnimation(RUNNING_THROW);
 				}
+				if (animIndexBefore != animationC->animationIndex) {
+					animationC->animationTime = 0.f;
+				}
+				continue;
+			// To make sure the animation isn't swapped before the animation is done
+			} else if ((animationC->animationIndex == IDLE_DROP/*IDLE_JUMP*/ ||
+					   animationC->animationIndex == IDLE_THROW) &&
+					   animationC->animationTime < (animationC->currentAnimation->getMaxAnimationTime() - dt)) {
 				continue;
 			}
+
+
+
 			
 			if (animationC->animationIndex == IDLEJUMP && animationC->animationTime < 0.1f) {
 				animationC->setAnimation(IDLE);
