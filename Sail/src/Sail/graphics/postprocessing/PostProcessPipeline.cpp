@@ -78,6 +78,8 @@ PostProcessPipeline::PostProcessOutput* PostProcessPipeline::runStage(PostProces
 	input.threadGroupCountY = (unsigned int)glm::ceil(input.outputHeight * settings->threadGroupYScale);
 
 	stage.shader->getPipeline()->setCBufferVar("textureSizeDifference", &stage.textureSizeDifference, sizeof(float));
+	glm::u32vec2 textureSize = glm::u32vec2(input.outputWidth, input.outputHeight);
+	stage.shader->getPipeline()->trySetCBufferVar("textureSize", &textureSize, sizeof(float));
 	
 	output = static_cast<PostProcessOutput*>(&m_dispatcher->dispatch(*stage.shader, input, 0, cmdList));
 	return output;

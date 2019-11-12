@@ -246,5 +246,6 @@ void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
 
 bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {
 	m_outputTexture->resize(event.width, event.height);
+	m_outputBloomTexture->resize(event.width, event.height);
 	return true;
 }
