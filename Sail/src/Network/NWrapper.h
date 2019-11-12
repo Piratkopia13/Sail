@@ -67,6 +67,7 @@ public:
 		playerId == 255 will send to all
 	*/
 	virtual void setClientState(States::ID state, Netcode::PlayerID playerId = 255) {};
+	virtual void kickPlayer(Netcode::PlayerID playerId) {};
 	virtual void updateGameSettings(std::string s) {};
 	virtual void updateStateLoadStatus(States::ID state, char status);
 protected:

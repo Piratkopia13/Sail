@@ -222,6 +222,17 @@ void NWrapperHost::setClientState(States::ID state, Netcode::PlayerID id) {
 	}
 }
 
+void NWrapperHost::kickPlayer(Netcode::PlayerID playerId) {
+	if (playerId != 0) {
+		for (auto p : m_connectionsMap) {
+			if (p.second == playerId) {
+				m_network->dropConnection(p.second);
+			}
+		}
+	}
+	
+}
+
 void NWrapperHost::updateGameSettings(std::string s) {
 	std::string msg;
 	msg += ML_UPDATE_SETTINGS;

@@ -40,5 +40,6 @@ private:
 		id == 0 will send to all
 	*/
 	void setClientState(States::ID state, Netcode::PlayerID id = 0);
+	virtual void kickPlayer(Netcode::PlayerID playerId);
 	virtual void updateGameSettings(std::string s);
 };

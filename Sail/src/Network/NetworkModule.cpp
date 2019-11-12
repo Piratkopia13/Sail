@@ -589,6 +589,25 @@ void Network::startUDP() {
 	startUDPSocket(m_udp_localbroadcastport);
 }
 
+void Network::dropConnection(TCP_CONNECTION_ID tcp_id) {
+	if (m_connections.find(tcp_id) != m_connections.end()) {
+		//TODO: Send Kicked Message to be nice.
+		
+		Connection* conn = m_connections[tcp_id];
+		
+		::shutdown(conn->socket, 2);
+		if (closesocket(conn->socket) == SOCKET_ERROR) {
+#ifdef DEBUG_NETWORK
+			printf((std::string("Error closing socket") + std::to_string(conn->id) + "\n").c_str());
+#endif
+		} else if (conn->thread) {
+			conn->thread->join();
+			delete conn->thread;
+			delete conn;
+		}
+	}
+}
+
 size_t Network::averagePacketSizeSinceLastCheck() {
 	size_t averageSize = 0;
 	if (m_nrOfPacketsSentSinceLast > 0) {

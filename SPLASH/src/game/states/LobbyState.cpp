@@ -183,6 +183,12 @@ bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
 }
 
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
+	static int i = 1;
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().getPlayers().size() >= 3;
+		NWrapperSingleton::getInstance().getNetworkWrapper()->kickPlayer(i++);
+	}
+	
 	Message message;
 	message.content = event.player.name + " joined the game!";
 	message.senderID = 255;

@@ -137,6 +137,7 @@ public:
 	*/
 	void startUDP();
 
+	void dropConnection(TCP_CONNECTION_ID tcp_id);
 
 	size_t averagePacketSizeSinceLastCheck();
 private:
