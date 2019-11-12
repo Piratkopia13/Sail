@@ -5,14 +5,17 @@
 #include "Sail/netcode/NetworkedStructs.h"
 #include "Sail/events/EventReceiver.h"
 
+
 class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
 
-class NetworkReceiverSystem : public ReceiverBase {
+class KillCamReceiverSystem : public ReceiverBase {
 public:
-	NetworkReceiverSystem();
-	virtual ~NetworkReceiverSystem();
+	KillCamReceiverSystem();
+	virtual ~KillCamReceiverSystem();
+
+	void handleIncomingData(const std::string& data) override;
 
 #ifdef DEVELOPMENT
 	void imguiPrint(Entity** selectedEntity = nullptr) {
@@ -20,6 +23,7 @@ public:
 		ImGui::Text(std::string("ID: " + std::to_string((int)m_playerID)).c_str());
 	}
 #endif
+
 
 private:
 	void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)             override;
@@ -48,12 +52,18 @@ private:
 	void runningTileStart (const Netcode::CompID id) override;
 	void runningStopSound (const Netcode::CompID id) override;
 
+	// HOST ONLY
+	void endMatch()                         override; // Start end timer for host
+	void endMatchAfterTimer(const float dt) override; // Made for the host to quit the game after a set time
+	void mergeHostsStats()                  override; // Host adds its data to global statistics before waiting for clients
+	void prepareEndScreen(const Netcode::PlayerID sender, const EndScreenInfo& info) override;
+
 	// NOT FROM SERIALIZED MESSAGES
 	void playerDisconnect(const Netcode::PlayerID playerID) override;
 	
 	// Helper function
 	Entity* findFromNetID(const Netcode::CompID id) const override;
 
-	bool onEvent(const Event& event) override;
 
+	bool onEvent(const Event& event) override;
 };

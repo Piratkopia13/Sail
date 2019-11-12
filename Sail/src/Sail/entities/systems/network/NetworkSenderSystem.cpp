@@ -199,8 +199,8 @@ void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
 
 // ONLY DO FOR THE HOST
 // Push incoming data strings to the back of a FIFO list which will be forwarded to all other players
-void NetworkSenderSystem::pushDataToBuffer(std::string data) {
-	std::scoped_lock lock(m_forwardBufferLock);
+void NetworkSenderSystem::pushDataToBuffer(const std::string& data) {
+	std::lock_guard<std::mutex> lock(m_forwardBufferLock);
 	m_HOSTONLY_dataToForward.push(data);
 }
 

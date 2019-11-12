@@ -227,8 +227,8 @@ void ReceiverBase::update(float dt) {
 				PlayerComponentInfo info;
 
 				ar(info.playerCompID); // Read what Netcode::ComponentID the player entity should have
-				ar(info.candleID); // Read what Netcode::ComponentID the candle entity should have
-				ar(info.gunID);    // Read what Netcode::ComponentID the gun entity should have
+				ar(info.candleID);     // Read what Netcode::ComponentID the candle entity should have
+				ar(info.gunID);        // Read what Netcode::ComponentID the gun entity should have
 				ArchiveHelpers::loadVec3(ar, vector); // Read the player's position
 
 				createPlayer(info, vector);
@@ -245,7 +245,7 @@ void ReceiverBase::update(float dt) {
 				size_t nrOfPlayers;
 				ar(nrOfPlayers);
 
-				// create temporary variables to hold data when reading netmessage
+				// create temporary variables to hold data when reading message
 				Netcode::PlayerID pID;
 				int nKills;
 				int placement;
@@ -344,9 +344,6 @@ void ReceiverBase::update(float dt) {
 				GameDataTracker* dgtp = &GameDataTracker::getInstance();
 				EndScreenInfo info;
 
-				// create temporary variables to hold data when reading netmessage
-				/*int bulletsFired, jumpsMade;
-				float distanceWalked;*/
 				// Get the data
 				ar(info.bulletsFired);
 				ar(info.distanceWalked);

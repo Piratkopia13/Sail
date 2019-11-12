@@ -4,6 +4,8 @@
 #include "Sail/netcode/NetworkedStructs.h"
 #include "Sail/events/EventReceiver.h"
 
+#include "glm/gtc/quaternion.hpp"
+
 class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
@@ -13,34 +15,20 @@ public: // Functions
 	ReceiverBase();
 	virtual ~ReceiverBase();
 
-	void init(Netcode::PlayerID playerID, NetworkSenderSystem* netSendSysPtr); // needed?
+	// TODO: See which of these functions need to be in base and which ones are only used
+	//       by the network receiver systems and not by the killcam receiver system
+	void init(Netcode::PlayerID playerID, NetworkSenderSystem* netSendSysPtr);
 	void setPlayer(Entity* player);
 	void setGameState(GameState* gameState);
 	const std::vector<Entity*>& getEntities() const;
+	void pushDataToBuffer(const std::string& data);
 
 	void update(float dt);
 
-	void pushDataToBuffer(const std::string& data);
-
-
 	virtual void handleIncomingData(const std::string& data) = 0;
-protected: // Variables
-	NetworkSenderSystem* m_netSendSysPtr;
-	GameDataTracker* m_gameDataTracker; // needed?
-
-	// FIFO container of serialized data-strings to decode
-	std::queue<std::string> m_incomingDataBuffer;
-	std::mutex m_bufferLock;
-
-	// The player entity is used to prevent creation of receiver components for entities controlled by the player
-	Netcode::PlayerID m_playerID; // TODO? move to NRS
-	Entity* m_playerEntity;
-
-	GameState* m_gameStatePtr;
-
-protected: // Input parameters
 
 #pragma region INPUT_PARAMS
+protected:
 	struct PlayerComponentInfo {
 		Netcode::CompID playerCompID;
 		Netcode::CompID candleID;
@@ -113,5 +101,19 @@ protected: // Functions
 	virtual void playerDisconnect(const Netcode::PlayerID playerID) = 0;
 	
 	// Helper function
-	virtual Entity* findFromNetID(Netcode::CompID id) const = 0;
+	virtual Entity* findFromNetID(const Netcode::CompID id) const = 0;
+
+protected:
+	NetworkSenderSystem* m_netSendSysPtr;
+	GameDataTracker* m_gameDataTracker; // needed?
+
+	// FIFO container of serialized data-strings to decode
+	std::queue<std::string> m_incomingDataBuffer;
+	std::mutex m_bufferLock;
+
+	// The player entity is used to prevent creation of receiver components for entities controlled by the player
+	Netcode::PlayerID m_playerID; // TODO? move to NRS
+	Entity* m_playerEntity;
+
+	GameState* m_gameStatePtr;
 };
