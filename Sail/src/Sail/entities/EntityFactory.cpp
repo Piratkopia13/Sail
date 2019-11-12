@@ -182,22 +182,19 @@ Entity::SPtr EntityFactory::CreateMySpectator(Netcode::PlayerID playerID, size_t
 	auto mySpectator = ECS::Instance()->createEntity("MyPlayer");
 
 	mySpectator->addComponent<TransformComponent>(spawnLocation);
-	mySpectator->addComponent<SpeedLimitComponent>();
-	mySpectator->addComponent<BoundingBoxComponent>(nullptr);
-	mySpectator->addComponent<AudioComponent>();
-	mySpectator->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerID, Netcode::MessageType::CREATE_NETWORKED_PLAYER);
-	mySpectator->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::ANIMATION);
-	Netcode::ComponentID netComponentID = mySpectator->getComponent<NetworkSenderComponent>()->m_id;
-	mySpectator->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
-	mySpectator->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
-	mySpectator->addComponent<LocalOwnerComponent>(netComponentID);
-	mySpectator->addComponent<CollisionComponent>();
+	//mySpectator->addComponent<SpeedLimitComponent>();
+	//mySpectator->addComponent<BoundingBoxComponent>(nullptr);
+	//mySpectator->addComponent<AudioComponent>();
+	//mySpectator->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerID, Netcode::MessageType::CREATE_NETWORKED_PLAYER);
+	//mySpectator->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::ANIMATION);
+	//Netcode::ComponentID netComponentID = mySpectator->getComponent<NetworkSenderComponent>()->m_id;
+	//mySpectator->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
+	//mySpectator->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
+	//mySpectator->addComponent<LocalOwnerComponent>(netComponentID);
+	//mySpectator->addComponent<CollisionComponent>();
 	mySpectator->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f);
 	mySpectator->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 	mySpectator->addComponent<SpectatorComponent>();
-	
-	// For noclip
-	mySpectator->addComponent<CollisionSpheresComponent>();
 
 	auto transform = mySpectator->getComponent<TransformComponent>();
 	auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);

@@ -36,4 +36,5 @@ private:
 
 	void decodeMessage(NetworkEvent nEvent);
 	void updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID playerId, std::string& name);
+	void sendSerializedDataToClient(std::string data, TCP_CONNECTION_ID TCPiD);
 };

@@ -39,16 +39,13 @@ void NWrapperHost::updateServerDescription() {
 }
 
 void NWrapperHost::sendSerializedDataToClient(std::string data, TCP_CONNECTION_ID TCPiD) {
-	//TCP_CONNECTION_ID playerTCP;
-	//for (auto const& c : m_connectionsMap) {
-	//	if (c.second == playerID) {
-	//		playerTCP = c.first;
-	//		break;
-	//	}
-	//}
-	//
+	
 	data = std::string("s") + data;
 	m_network->send(data.c_str(), data.length(), TCPiD);
+}
+
+const std::map<TCP_CONNECTION_ID, unsigned char>& NWrapperHost::getConnectionMap() {
+	return m_connectionsMap;
 }
 
 const std::string& NWrapperHost::getServerDescription() {
@@ -58,7 +55,6 @@ const std::string& NWrapperHost::getServerDescription() {
 const std::string& NWrapperHost::getLobbyName() {
 	return m_lobbyName;
 }
-#endif //DEVELOPMENT
 
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	// Generate an ID for the client that joined and send that information.

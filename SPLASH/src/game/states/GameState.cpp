@@ -28,6 +28,7 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 
 	initConsole();
 
@@ -214,6 +215,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 }
 
 // Process input for the state
@@ -434,6 +436,9 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
+	m_componentSystems.spectateInputSystem = ECS::Instance()->createSystem<SpectateInputSystem>();
+	m_componentSystems.spectateInputSystem->initialize(&m_cam);
+
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 
@@ -533,6 +538,7 @@ bool GameState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
+	case Event::Type::NETWORK_JOINED:					onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	default: break;
 	}
 
@@ -568,6 +574,13 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 	m_wasDropped = true;	// Activates a renderImgui window
 
 	return false;
+}
+
+bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
+	// t -> start the game event, s -> start as spectator
+	NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(std::string("ts0"));
+	
+	return true;
 }
 
 bool GameState::update(float dt, float alpha) {
@@ -693,6 +706,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystems.clear();
 
 	m_componentSystems.gameInputSystem->fixedUpdate(dt);
+	m_componentSystems.spectateInputSystem->fixedUpdate(dt);
 
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
@@ -746,6 +760,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
+	m_componentSystems.spectateInputSystem->update(dt, alpha);
 
 	// There is an imgui debug toggle to override lights
 	if (!m_lightDebugWindow.isManualOverrideOn()) {

@@ -36,6 +36,7 @@ class PlayerSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
+class SpectateInputSystem;
 class SpeedLimitSystem;
 class SprinklerSystem;
 class UpdateBoundingBoxSystem;
@@ -78,6 +79,7 @@ struct Systems {
 	PrepareUpdateSystem* prepareUpdateSystem = nullptr;
 	ProjectileSystem* projectileSystem = nullptr;
 	RenderImGuiSystem* renderImGuiSystem = nullptr;
+	SpectateInputSystem* spectateInputSystem = nullptr;
 	SpeedLimitSystem* speedLimitSystem = nullptr;
 	SpotLightSystem* spotLightSystem = nullptr;
 	TeamColorSystem* teamColorSystem = nullptr;

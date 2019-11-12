@@ -24,6 +24,7 @@
 
 #include "input/GameInputSystem.h"
 #include "input/SprintingSystem.h"
+#include "input/SpectateInputSystem.h"
 
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"
