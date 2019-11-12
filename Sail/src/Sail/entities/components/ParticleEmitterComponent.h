@@ -13,6 +13,7 @@ public:
 	glm::vec3 spread;
 	glm::vec3 velocity;
 	glm::vec3 acceleration;
+	float lifeTime;
 	float spawnRate;
 	float spawnTimer;
 };

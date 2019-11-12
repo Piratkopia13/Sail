@@ -9,7 +9,9 @@ struct Particle{
 
 struct ParticleInput{
 	Particle particles[100];
+	uint removeParticles[100];
 	uint numParticles;
+	uint removalCounter; // How many particles is being removed this frame
 	uint numPrevParticles;
 	uint maxOutputVertices;
 	float frameTime;
@@ -78,6 +80,14 @@ void createParticle(float3 v0, float3 v1, float3 v2, float3 v3, int particleInde
 	CSOutputBuffer[v0Index + 5].bitangent = 0.f;
 }
 
+void overwriteParticle(int particle1Index, int particle2Index) {
+	CSPhysicsBuffer[particle1Index] = CSPhysicsBuffer[particle2Index];
+	
+	for (uint j = 0 ; j < 6; j++) {
+		CSOutputBuffer[particle1Index * 6 + j] = CSOutputBuffer[particle2Index * 6 + j];
+	}
+}
+
 void updatePhysics(int particleIndex, float dt) {
 	float3 oldVelocity = CSPhysicsBuffer[particleIndex].velocity;
 	CSPhysicsBuffer[particleIndex].velocity += CSPhysicsBuffer[particleIndex].acceleration * dt;
@@ -100,17 +110,23 @@ struct ComputeShaderInput
 
 [numthreads(X_THREADS, Y_THREADS, Z_THREADS)]
 void CSMain(ComputeShaderInput IN) {
+	// Change these if multiple thread groups are added
 	uint totalThreads = X_THREADS * Y_THREADS * Z_THREADS;
 	uint thisThread = IN.GroupIndex;
 	
-	//Find how many particles should be spawned
+	uint stride = totalThreads;
+	
+	// Reorder particles that is being removed
+	for (uint i = thisThread; i < removalCounter; i += stride) {
+		overwriteParticle(inputBuffer.removeParticles[i], numPrevParticles - i); // Overwrite particle to be removed with one that is still 
+	}
+	
+	// Find how many particles should be spawned
 	int particleBufferSizeLeft = floor(inputBuffer.maxOutputVertices / 6) - (inputBuffer.numPrevParticles);
 	int particlesToSpawn = inputBuffer.numParticles;
 	if (inputBuffer.numParticles > particleBufferSizeLeft) {
 		particlesToSpawn = particleBufferSizeLeft;
 	}
-	
-	uint stride = totalThreads;
 	
     for (uint i = thisThread; i < particlesToSpawn; i += stride) {
 		float3 v0, v1, v2, v3;
@@ -122,6 +138,7 @@ void CSMain(ComputeShaderInput IN) {
 		
 		CSPhysicsBuffer[inputBuffer.numPrevParticles + i].acceleration = inputBuffer.particles[i].acceleration;
 		CSPhysicsBuffer[inputBuffer.numPrevParticles + i].velocity = inputBuffer.particles[i].velocity;
+		CSPhysicsBuffer[inputBuffer.numPrevParticles + i].remainingLifeTime = inputBuffer.particles[i].lifeTime;
 		
 		createParticle(v0, v1, v2, v3, inputBuffer.numPrevParticles + i);
 		
@@ -133,4 +150,6 @@ void CSMain(ComputeShaderInput IN) {
 	for (uint i = thisThread; i < inputBuffer.numPrevParticles; i += stride) {
 		updatePhysics(i, inputBuffer.frameTime);
 	}
+	
+	
 }

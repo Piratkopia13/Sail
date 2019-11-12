@@ -31,6 +31,7 @@ private:
 	DX12VertexBuffer* m_outputVertexBuffer;
 	unsigned int m_outputVertexBufferSize;
 	wComPtr<ID3D12Resource>* m_physicsBufferDefaultHeap;
+	int m_particlePhysicsSize;
 
 	std::unique_ptr<Model> m_model;
 
