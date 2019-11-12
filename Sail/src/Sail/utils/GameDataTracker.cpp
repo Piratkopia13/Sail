@@ -151,7 +151,7 @@ void GameDataTracker::renderImgui() {
 		ImGui::Separator();
 		ImGui::Text("Placement"); ImGui::NextColumn();
 		ImGui::Text("Player"); ImGui::NextColumn();
-		ImGui::Text("Kills"); ImGui::NextColumn();	
+		ImGui::Text("Kills"); ImGui::NextColumn();
 		ImGui::Separator();
 
 
