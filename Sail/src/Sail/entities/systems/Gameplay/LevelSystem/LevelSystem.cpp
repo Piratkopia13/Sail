@@ -119,9 +119,6 @@ void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) 
 }
 
 void LevelSystem::destroyWorld() {
-
-
-
 	if (tileArr) {
 		for (int i = 0; i < xsize; i++) {
 			for (int j = 0; j < ysize; j++) {
@@ -131,7 +128,6 @@ void LevelSystem::destroyWorld() {
 		}
 		Memory::SafeDeleteArr(tileArr);
 	}
-
 
 	while(chunks.size()>0){
 		chunks.pop();
@@ -278,7 +274,7 @@ void LevelSystem::splitChunk() {
 		Rect rekt,a,b,hall;
 		rekt = chunks.front();
 		chunks.pop();
-		if (ns) {
+		if (rekt.sizex>=rekt.sizey) {
 			if (rekt.sizex > minSplitSize) {
 				int newSize = rand() % (rekt.sizex - minSplitSize) + minSplitSize/2;
 				a.posx = rekt.posx;
@@ -1422,9 +1418,6 @@ const int LevelSystem::getRoomID(int posX, int posY) {
 
 void LevelSystem::stop() {
 	destroyWorld();
-
-
-
 }
 
 void LevelSystem::generateClutter() {
@@ -1474,7 +1467,7 @@ void LevelSystem::generateClutter() {
 
 						float clutterPosX = ((rand() % 100) / 100.f) * (xmax - xmin) + xmin + (x + room.posx) * tileSize + tileOffset - tileSize / 2.f;
 						float clutterPosY = ((rand() % 100) / 100.f) * (ymax - ymin) + ymin + (y + room.posy) * tileSize + tileOffset - tileSize / 2.f;
-						int rot = rand() %360;
+						int rot = (rand() %4)*90;
 						Clutter clutterLarge;
 						clutterLarge.posx = clutterPosX;
 						clutterLarge.posy = clutterPosY;
