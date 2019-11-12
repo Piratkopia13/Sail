@@ -384,6 +384,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
 
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
+	m_componentSystems.sanitySoundSystem = ECS::Instance()->createSystem<SanitySoundSystem>();
 	m_componentSystems.sanitySystem = ECS::Instance()->createSystem<SanitySystem>();
 
 	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
@@ -447,7 +448,6 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
 
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
-
 	m_componentSystems.sprintingSystem = ECS::Instance()->createSystem<SprintingSystem>();
 }
 
@@ -710,6 +710,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.teamColorSystem);
 	runSystem(dt, m_componentSystems.particleSystem);
 	runSystem(dt, m_componentSystems.sanitySystem);
+	runSystem(dt, m_componentSystems.sanitySoundSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {

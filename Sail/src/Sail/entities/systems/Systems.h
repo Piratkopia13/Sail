@@ -15,16 +15,16 @@
 #include "Gameplay/lifetime/LifeTimeSystem.h"
 #include "Gameplay/PlayerSystem.h"
 #include "Gameplay/ProjectileSystem.h"
+#include "Gameplay/sanitySoundSystem.h"
+#include "Gameplay/SanitySystem.h"
 #include "Gameplay/SprinklerSystem.h"
 #include "Gameplay/TeamColorSystem.h"
-#include "Gameplay/SanitySystem.h"
 #include "Gameplay/SprinklerSystem.h"
 #include "Graphics/AnimationSystem.h"
 #include "Graphics/AnimationChangerSystem.h"
 #include "Graphics/ParticleSystem.h"
 
 #include "input/GameInputSystem.h"
-
 #include "input/SprintingSystem.h"
 
 #include "light/LightSystem.h"
