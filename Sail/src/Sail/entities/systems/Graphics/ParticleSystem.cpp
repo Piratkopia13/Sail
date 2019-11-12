@@ -27,6 +27,7 @@ ParticleSystem::ParticleSystem() {
 	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
 	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
 	m_model->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/WaterGun/Watergun_Albedo.tga");
+	m_model->setIsAnimated(true);
 
 	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
 
@@ -180,6 +181,8 @@ void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList) {
 		//-------------------------------------
 
 		m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), 0, cmdList);
+
+		m_outputVertexBuffer->setAsUpdated();
 
 		context->getComputeGPUDescriptorHeap()->getAndStepIndex(11);
 

@@ -69,7 +69,7 @@ private:
 		float spawnTime;
 	};
 
-	static const unsigned int m_maxParticlesSpawnPerFrame = 100;
+	static const unsigned int m_maxParticlesSpawnPerFrame = 312;
 
 	struct ComputeInput {
 		ParticleData particles[m_maxParticlesSpawnPerFrame];

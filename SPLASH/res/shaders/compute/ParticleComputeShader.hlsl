@@ -8,8 +8,8 @@ struct Particle{
 };
 
 struct ParticleInput{
-	Particle particles[100];
-	uint4 toRemove[100/4];
+	Particle particles[312];
+	uint4 toRemove[312/4];
 	uint numParticles;
 	uint numToRemove;
 	uint numPrevParticles;
