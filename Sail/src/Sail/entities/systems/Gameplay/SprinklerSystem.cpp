@@ -66,28 +66,31 @@ void SprinklerSystem::update(float dt) {
 				CandleComponent* candle = e->getComponent<CandleComponent>();
 				TransformComponent* transform = e->getComponent<TransformComponent>();
 
-				float candlePosX;
+				float candlePosX = -1.f;
 				float candlePosZ;
 
 				if (candle->isCarried && candle->wasCarriedLastUpdate && !e->isAboutToBeDestroyed()) {
 					candlePosX = transform->getParent()->getTranslation().x;
 					candlePosZ = transform->getParent()->getTranslation().z;
 				}
-				else {
+				else if(!candle->wasCarriedLastUpdate){
 					candlePosX = transform->getTranslation().x;
 					candlePosZ = transform->getTranslation().z;
 				}
 
+				int candleLocationRoomID = 0;
 				// Check if the candle is in a room with an active sprinkler, and damage it
-				int candleLocationRoomID = m_map->getRoomIDFromWorldPos(candlePosX, candlePosZ);
-				std::vector<int>::iterator it = std::find(m_activeSprinklers.begin(), m_activeSprinklers.end(), candleLocationRoomID);
-				if (it != m_activeSprinklers.end()) {
-					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-						Netcode::MessageType::HIT_BY_SPRINKLER,
-						SAIL_NEW Netcode::MessageHitBySprinkler{
-							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
-						}
-					);
+				if (candlePosX != -1.f) {
+					m_map->getRoomIDFromWorldPos(candlePosX, candlePosZ);
+					std::vector<int>::iterator it = std::find(m_activeSprinklers.begin(), m_activeSprinklers.end(), candleLocationRoomID);
+					if (it != m_activeSprinklers.end()) {
+						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+							Netcode::MessageType::HIT_BY_SPRINKLER,
+							SAIL_NEW Netcode::MessageHitBySprinkler{
+								e->getParent()->getComponent<NetworkReceiverComponent>()->m_id
+							}
+						);
+					}
 				}
 			}
 
