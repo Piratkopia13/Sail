@@ -9,6 +9,7 @@
 AnimationChangerSystem::AnimationChangerSystem() {
 	registerComponent<AnimationComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, false);
+	registerComponent<ThrowingComponent>(true, true, false);
 }
 
 
@@ -40,11 +41,11 @@ void AnimationChangerSystem::update(float dt) {
 				//animationC->updateDT = false;
 				if (velMag2 < 0.01f) {
 					// Replace the animation indices once they are implemented
-					animationC->setAnimation(IDLEJUMP);
+					animationC->setAnimation(IDLE_DROP);
 					//animationC->setAnimation(IDLE_THROW);
 				} else {
 					// Replace the animation indices once they are implemented
-					animationC->setAnimation(FORWARDJUMP);
+					animationC->setAnimation(IDLE_DROP);
 					//animationC->setAnimation(RUNNING_THROW);
 				}
 				continue;

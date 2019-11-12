@@ -6,6 +6,7 @@
 #include "Sail/utils/GameDataTracker.h"
 
 #include "Sail/entities/ECS.h"
+#include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
 
 #include "Sail/events/EventDispatcher.h"
 #include "Sail/events/types/HoldingCandleToggleEvent.h"
@@ -58,6 +59,7 @@ void CandlePlacementSystem::toggleCandlePlacement(Entity* e) {
 		if (glm::length(parentTransComp->getTranslation() - candleTransComp->getTranslation()) < 2.0f || !candleComp->isLit) {
 			candleTransComp->setParent(parentTransComp);
 			e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = e;
+			e->removeComponent<CollisionComponent>();
 		} else {
 			candleComp->isCarried = false;
 		}
