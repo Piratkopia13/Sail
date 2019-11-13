@@ -113,8 +113,9 @@ GBuffers PSMain(PSIn input) {
 		float4 albedo = sys_texAlbedo.Sample(PSss, input.texCoords);
 
 		if (albedo.a < 1.0f) {
-			float f = 1 - albedo.a;
-			gbuffers.albedo = float4(gbuffers.albedo.rgb * (1 - f) + teamColor * f, albedo.a);
+		 	// float f = 1 - albedo.a;
+		 	// gbuffers.albedo = float4(gbuffers.albedo.rgb * (1 - f) + teamColor * f, albedo.a);
+             gbuffers.albedo *= albedo;
 		} else {
 			gbuffers.albedo = albedo;
 		}

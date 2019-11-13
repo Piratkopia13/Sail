@@ -199,31 +199,37 @@ void DX12ShaderPipeline::setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsC
 
 unsigned int DX12ShaderPipeline::setMaterial(PBRMaterial* material, void* cmdList) {
 	const PBRMaterial::PBRSettings& ps = material->getPBRSettings();
-	int nTextures = 0;
-	DX12Texture* textures[3];
+	int nTextures = 3;
+	DX12Texture* textures[3] = {nullptr};
 	if (ps.hasAlbedoTexture) {
-		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
-		nTextures++;
+		textures[0] = static_cast<DX12Texture*>(material->getTexture(0));
 	}
 	if (ps.hasNormalTexture) {
-		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
-		nTextures++;
+		textures[1] = static_cast<DX12Texture*>(material->getTexture(1));
 	}
 	if (ps.hasMetalnessRoughnessAOTexture) {
-		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
-		nTextures++;
+		textures[2] = static_cast<DX12Texture*>(material->getTexture(2));
+	}
+
+	// Quick fix to reduce heap usage
+	if (!ps.hasMetalnessRoughnessAOTexture && !ps.hasNormalTexture) {
+		nTextures = 1;
+	} else if (!ps.hasMetalnessRoughnessAOTexture) {
+		nTextures = 2;
 	}
 
 	unsigned int indexStart = m_context->getMainGPUDescriptorHeap()->getAndStepIndex(nTextures);
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_context->getMainGPUDescriptorHeap()->getCPUDescriptorHandleForIndex(indexStart);
 
 	for (int i = 0; i < nTextures; i++) {
-		if (!textures[i]->hasBeenInitialized()) {
-			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList), i);
-		}
+		if (textures[i]) {
+			if (!textures[i]->hasBeenInitialized()) {
+				textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList), i);
+			}
 
-		textures[i]->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		m_context->getDevice()->CopyDescriptorsSimple(1, handle, textures[i]->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			textures[i]->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			m_context->getDevice()->CopyDescriptorsSimple(1, handle, textures[i]->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
 		handle.ptr += m_context->getMainGPUDescriptorHeap()->getDescriptorIncrementSize();
 	}
 

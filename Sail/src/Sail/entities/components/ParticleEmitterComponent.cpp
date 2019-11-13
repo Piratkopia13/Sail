@@ -3,6 +3,7 @@
 
 #include "Sail/Application.h"
 #include "Sail/graphics/shader/dxr/GBufferOutShader.h"
+#include "Sail/graphics/shader/dxr/GBufferOutShaderNoDepth.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/DX12Utils.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
@@ -34,6 +35,7 @@ void ParticleEmitterComponent::init() {
 
 	m_outputVertexBufferSize = 6 * 1700;
 
+	//auto& noDepthShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShaderNoDepth>()
 	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
 
 	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
@@ -240,6 +242,9 @@ void ParticleEmitterComponent::submit() const {
 }
 
 void ParticleEmitterComponent::setTexture(std::string textureName) {
+	std::string mraoTextureName("particles/prtcle_mrao.tga");
 	Application::getInstance()->getResourceManager().loadTexture(textureName);
+	Application::getInstance()->getResourceManager().loadTexture(mraoTextureName);
 	m_model->getMesh(0)->getMaterial()->setAlbedoTexture(textureName);
+	m_model->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture(mraoTextureName);
 }
