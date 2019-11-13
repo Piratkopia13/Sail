@@ -5,6 +5,11 @@
 #include "Sail/netcode/NetworkedStructs.h"
 #include "Sail/events/EventReceiver.h"
 
+#include <array>
+#include "Sail/TimeSettings.h"
+
+// Packets from the past five seconds are saved so that they can be replayed in the killcam.
+constexpr size_t REPLAY_BUFFER_SIZE = TICKRATE * 5;
 
 class GameState;
 class NetworkSenderSystem;
@@ -16,6 +21,10 @@ public:
 	virtual ~KillCamReceiverSystem();
 
 	void handleIncomingData(const std::string& data) override;
+	void update            (float dt)          override;
+
+	void processReplayData(float dt);
+
 
 #ifdef DEVELOPMENT
 	void imguiPrint(Entity** selectedEntity = nullptr) {
@@ -68,4 +77,13 @@ private:
 
 
 	bool onEvent(const Event& event) override;
+
+private:
+	// All the messages that have been sent/received over the network in the past few seconds
+	// Will be used like a ring buffer
+	std::array<std::queue<std::string>, REPLAY_BUFFER_SIZE> m_replayData;
+	size_t m_currentWriteInd = 0;
+	size_t m_currentReadInd = 1;
+
+	std::mutex m_replayDataLock;
 };
