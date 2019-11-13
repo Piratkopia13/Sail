@@ -517,7 +517,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 #endif
 				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
 				UINT shadowMask = (instance.castShadows) ? INSTACE_MASK_CAST_SHADOWS : 0;
-				pInstanceDesc->InstanceMask = INSTACE_MASK_DEFAULT & shadowMask;
+				pInstanceDesc->InstanceMask = INSTACE_MASK_DEFAULT | shadowMask;
 			}
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
