@@ -86,6 +86,7 @@ void ReceiverBase::update(float dt) {
 	// Commonly used types within messages/events:
 	glm::vec3 vector;
 	glm::quat quaternion;
+	float lowPassFrequency = -1;
 
 
 	// Process all messages in the buffer
@@ -158,32 +159,25 @@ void ReceiverBase::update(float dt) {
 				break;
 				case Netcode::MessageType::SHOOT_START:
 				{
-					ShotFiredInfo info;
+					ar(lowPassFrequency);
 
-					ArchiveHelpers::loadVec3(ar, info.gunPosition);
-					ArchiveHelpers::loadVec3(ar, info.gunVelocity);
 
-					shootStart(compID, info);
+					shootStart(compID, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_LOOP:
 				{
-					ShotFiredInfo info;
+					ar(lowPassFrequency);
 
-					ArchiveHelpers::loadVec3(ar, info.gunPosition);
-					ArchiveHelpers::loadVec3(ar, info.gunVelocity);
 
-					shootLoop(compID, info);
+					shootStart(compID, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_END:
 				{
-					ShotFiredInfo info;
+					ar(lowPassFrequency);
 
-					ArchiveHelpers::loadVec3(ar, info.gunPosition);
-					ArchiveHelpers::loadVec3(ar, info.gunVelocity);
-
-					shootEnd(compID, info);
+					shootEnd(compID, lowPassFrequency);
 				}
 				break;
 				default:

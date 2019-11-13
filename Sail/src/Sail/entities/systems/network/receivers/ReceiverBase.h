@@ -47,11 +47,6 @@ protected:
 		float time;
 	};
 
-	struct ShotFiredInfo {
-		glm::vec3 gunPosition;
-		glm::vec3 gunVelocity;
-	};
-
 	struct EndScreenInfo {
 		int bulletsFired;
 		int jumpsMade;
@@ -79,9 +74,9 @@ protected: // Functions
 	virtual void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::PlayerID SenderId)        = 0;
 
 	// AUDIO
-	virtual void shootStart (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
-	virtual void shootLoop  (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
-	virtual void shootEnd   (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
+	virtual void shootStart (const Netcode::ComponentID id, float frequency)		   = 0;
+	virtual void shootLoop  (const Netcode::ComponentID id, float frequency)		   = 0;
+	virtual void shootEnd   (const Netcode::ComponentID id, float frequency)		   = 0;
 	virtual void runningMetalStart     (const Netcode::ComponentID id)                 = 0;
 	virtual void runningWaterMetalStart(const Netcode::ComponentID id)                 = 0;
 	virtual void runningTileStart      (const Netcode::ComponentID id)                 = 0;

@@ -45,9 +45,9 @@ private:
 	// AUDIO
 	void playerJumped (const Netcode::ComponentID id)                            override;
 	void playerLanded (const Netcode::ComponentID id)                            override;
-	void shootStart   (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
-	void shootLoop    (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
-	void shootEnd     (const Netcode::ComponentID id, const ShotFiredInfo& info) override;
+	void shootStart   (const Netcode::ComponentID id, float frequency)			 override;
+	void shootLoop    (const Netcode::ComponentID id, float frequency)			 override;
+	void shootEnd     (const Netcode::ComponentID id, float frequency)			 override;
 	void runningMetalStart     (const Netcode::ComponentID id)                   override;
 	void runningWaterMetalStart(const Netcode::ComponentID id)                   override;
 	void runningTileStart      (const Netcode::ComponentID id)                   override;

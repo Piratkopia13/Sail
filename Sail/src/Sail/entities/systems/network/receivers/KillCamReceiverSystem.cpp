@@ -188,12 +188,12 @@ void KillCamReceiverSystem::playerLanded(const Netcode::ComponentID id) {
 
 
 // TODO: Remove info since it's unused or are these functions not finished?
-void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	//EventDispatcher::Instance().emit(StartShootingEvent(id));
 }
 
-void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	//if (auto e = findFromNetID(id); e) {
 	//	e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
@@ -204,7 +204,7 @@ void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, const ShotF
 	//SAIL_LOG_WARNING("shootLoop called but no matching entity found");
 }
 
-void KillCamReceiverSystem::shootEnd(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootEnd(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	//EventDispatcher::Instance().emit(StopShootingEvent(id));
 }

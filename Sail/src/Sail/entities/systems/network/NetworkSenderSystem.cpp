@@ -285,13 +285,11 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	break;
 	case Netcode::MessageType::SHOOT_START:
 	{
+		std::cout << "SHOOT_SEND\n";
 		// Only do this once
 		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::SHOOT_START);
 
 		// Send data to others
-		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::saveVec3(ar, g->position);
-		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 		ar(e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_START].frequency);
 
 		// Transition into loop
@@ -301,9 +299,6 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	case Netcode::MessageType::SHOOT_LOOP:
 	{
 		// Send data to others
-		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::saveVec3(ar, g->position);
-		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 		ar(e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_LOOP].frequency);
 	}
 	break;
@@ -315,9 +310,6 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::SHOOT_LOOP);
 
 		// Send data to others
-		GunComponent* g = e->getComponent<GunComponent>();
-		ArchiveHelpers::saveVec3(ar, g->position);
-		ArchiveHelpers::saveVec3(ar, g->projectileSpeed * g->direction); // Velocity
 		ar(e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_END].frequency);
 	}
 	break;

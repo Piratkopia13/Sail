@@ -180,21 +180,17 @@ void NetworkReceiverSystem::playerLanded(const Netcode::ComponentID id) {
 
 
 // TODO: Remove info since it's unused or are these functions not finished?
-void NetworkReceiverSystem::shootStart(const Netcode::ComponentID id, const ShotFiredInfo& info) {
-	// Only called when another player shoots
-	EventDispatcher::Instance().emit(StartShootingEvent(id));
-}
-
-void NetworkReceiverSystem::shootLoop(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void NetworkReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StartShootingEvent(id, frequency));
 }
-void NetworkReceiverSystem::shootLoop(glm::vec3& gunPos, glm::vec3& gunVel, Netcode::ComponentID id, float frequency) {
-	// Do this instead of what's below
-	EventDispatcher::Instance().emit(LoopShootingEvent(id, frequency));
+
+void NetworkReceiverSystem::shootLoop(const Netcode::ComponentID id, float frequency) {
+	// Only called when another player shoots
+	EventDispatcher::Instance().emit(StartShootingEvent(id, frequency));
 }
 
-void NetworkReceiverSystem::shootEnd(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void NetworkReceiverSystem::shootEnd(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	EventDispatcher::Instance().emit(StopShootingEvent(id, frequency));
 }
