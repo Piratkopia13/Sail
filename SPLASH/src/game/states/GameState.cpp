@@ -151,8 +151,13 @@ GameState::GameState(StateStack& stack)
 	int id = static_cast<int>(playerID);
 	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
+
 		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 	}
+
+	SAIL_LOG(std::to_string(spawnLocation.x));
+	SAIL_LOG(std::to_string(spawnLocation.y));
+	SAIL_LOG(std::to_string(spawnLocation.z));
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
@@ -441,6 +446,10 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
 
+	m_componentSystems.killCamReceiverSystem = ECS::Instance()->createSystem<KillCamReceiverSystem>();
+	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
+
+
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
@@ -595,7 +604,12 @@ bool GameState::fixedUpdate(float dt) {
 	}
 #endif
 
+	
 	updatePerTickComponentSystems(dt);
+
+	if (m_isInKillCamMode) {
+		updateKillCamComponentSystems(dt);
+	}
 
 	return true;
 }
@@ -670,9 +684,26 @@ bool GameState::renderImguiDebug(float dt) {
 void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
-
 	ECS::Instance()->stopAllSystems();
 	ECS::Instance()->destroyAllEntities();
+}
+
+
+// TODO: Add more systems here that only deal with replay entities/components
+void GameState::updateKillCamComponentSystems(float dt) {
+	
+	// TODO: Prepare update for interpolation etc.
+
+	m_componentSystems.killCamReceiverSystem->update(dt);
+
+	// TODO: run relevant systems in parallel
+	//runSystem(dt, m_componentSystems.killCamReceiverSystem);
+
+
+	// Wait for all systems to finish executing
+	for (auto& fut : m_runningSystemJobs) {
+		fut.get();
+	}
 }
 
 // HERE BE DRAGONS
@@ -783,7 +814,7 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 
 					int toRemoveIndex = -1;
 					for (int j = 0; j < m_runningSystems.size(); j++) {
-						// Currently just compares memory adresses (if they point to the same location they're the same object)
+						// Currently just compares memory addresses (if they point to the same location they're the same object)
 						if (m_runningSystems[j] == doneSys)
 							toRemoveIndex = j;
 					}
