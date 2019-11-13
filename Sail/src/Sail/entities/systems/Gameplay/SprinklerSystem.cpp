@@ -82,7 +82,6 @@ void SprinklerSystem::update(float dt) {
 				// Check if the candle is in a room with an active sprinkler, and damage it
 				if (candlePosX != -1.f) {
 					candleLocationRoomID = m_map->getRoomIDFromWorldPos(candlePosX, candlePosZ);
-					SAIL_LOG(std::to_string(candleLocationRoomID));
 					std::vector<int>::iterator it = std::find(m_activeSprinklers.begin(), m_activeSprinklers.end(), candleLocationRoomID);
 					if (it != m_activeSprinklers.end()) {
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
