@@ -182,7 +182,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         ray.Direction = R;
         ray.TMin = 0.0001;
         ray.TMax = 1000;
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, ray, payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x00, 0, 0, 0, ray, payload);
         float3 prefilteredColor = payload.color.rgb;
         // float3 prefilteredColor = 0.5f;
 
