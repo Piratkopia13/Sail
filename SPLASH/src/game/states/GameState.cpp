@@ -823,7 +823,6 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 			}
 		}
 	}
-	toRun->update(dt);
 }
 
 const std::string GameState::teleportToMap() {
