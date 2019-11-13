@@ -333,13 +333,11 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(
+Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e,
 		const glm::vec3& pos, const glm::vec3& velocity, 
 		bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
 		Netcode::ComponentID netCompId, float lifetime) 
 {
-	auto e = ECS::Instance()->createEntity("projectile");
-
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(lifetime);
@@ -352,8 +350,8 @@ Entity::SPtr EntityFactory::CreateProjectile(
 		e->addComponent<NetworkSenderComponent>(Netcode::EntityType::PROJECTILE_ENTITY, netCompId);
 	} else {
 		e->addComponent<OnlineOwnerComponent>(ownersNetId);
-		e->addComponent<NetworkReceiverComponent>(netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 	}
+	e->addComponent<NetworkReceiverComponent>(netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 	
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();
