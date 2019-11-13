@@ -3,6 +3,8 @@
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
 #include "../events/NetworkDroppedEvent.h"
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
+
 #include "../events/NetworkSerializedPackageEvent.h"
 #include "../events/NetworkJoinedEvent.h"
 #include "../events/NetworkNameEvent.h"
@@ -37,8 +39,11 @@ private:
 	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
+
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
 	bool onWelcome(const NetworkWelcomeEvent& event);
+
+	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
 
 	void shutDownGameState();
 
@@ -57,6 +62,8 @@ private:
 
 	void logSomeoneDisconnected(unsigned char id);
 
+	void waitForOtherPlayers();
+
 private:
 	Application* m_app;
 	// Camera
@@ -74,6 +81,7 @@ private:
 	LightDebugWindow m_lightDebugWindow;
 	PlayerInfoWindow m_playerInfoWindow;
 	WasDroppedWindow m_wasDroppedWindow;
+	WaitingForPlayersWindow m_waitingForPlayersWindow;
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 	NetworkInfoWindow m_networkInfoImGuiWindow;
@@ -82,7 +90,8 @@ private:
 
 	bool m_paused = false;
 	bool m_isSingleplayer = true;
-	
+	bool m_gameStarted = false;
+
 	Octree* m_octree;
 	bool m_showcaseProcGen;
 

@@ -42,7 +42,6 @@ protected:
 	SettingStorage* m_settings;
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
-	int m_teamSelection;
 	std::list<std::string> m_messages;
 
 	// Front-End Functions

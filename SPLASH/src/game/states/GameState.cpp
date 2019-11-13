@@ -27,20 +27,26 @@ GameState::GameState(StateStack& stack)
 	, m_profiler(true)
 	, m_showcaseProcGen(false) 
 {
+
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_WELCOME, this);
 
-
-	initConsole();
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
+	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
 
+	if (!m_isSingleplayer) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
+		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
+	}
+
+	initConsole();
 
 	std::vector<glm::vec3> m_teamColors;
 	for (int i = 0; i < 12; i++) {
@@ -139,7 +145,6 @@ GameState::GameState(StateStack& stack)
 	// Player creation
 
 	// team -1 = spectator
-	NWrapperSingleton::getInstance().getMyPlayer().team = m_app->getStateStorage().getLobbyToGameData()->team;
 	if (NWrapperSingleton::getInstance().getMyPlayer().team == -1) {
 		
 		int id = static_cast<int>(playerID);
@@ -206,6 +211,10 @@ GameState::GameState(StateStack& stack)
 
 	// Clear all water on the level
 	EventDispatcher::Instance().emit(ResetWaterEvent());
+
+	if (!m_isSingleplayer) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
+	}
 }
 
 GameState::~GameState() {
@@ -218,7 +227,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_WELCOME, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 }
 
 // Process input for the state
@@ -548,14 +557,16 @@ void GameState::initConsole() {
 }
 
 bool GameState::onEvent(const Event& event) {
+	State::onEvent(event);
+
 	switch (event.type) {
-	case Event::Type::WINDOW_RESIZE:					onResize((const WindowResizeEvent&)event); break;
-	case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
-	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
-	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
-	case Event::Type::NETWORK_JOINED:					onPlayerJoined((const NetworkJoinedEvent&)event); break;
-	case Event::Type::NETWORK_WELCOME:					onWelcome((const NetworkWelcomeEvent&)event); break;
-	default: break;
+		case Event::Type::WINDOW_RESIZE:					onResize((const WindowResizeEvent&)event); break;
+		case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
+		case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
+		case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
+		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS:	onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
+		case Event::Type::NETWORK_JOINED:	onPlayerJoined((const NetworkJoinedEvent&)event); break;
+		default: break;
 	}
 
 	return true;
@@ -595,27 +606,39 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 
 bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
-	if (NWrapperSingleton::getInstance().isHost()) {
-		//std::this_thread::sleep_for(std::chrono::seconds(4));
-		m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.player.id);
+	if (NWrapperSingleton::getInstance().isHost()) {	
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::Game, event.player.id);	
 	}
 	
 	return true;
 }
 
-bool GameState::onWelcome(const NetworkWelcomeEvent& event) {
+void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
+	
+	if (NWrapperSingleton::getInstance().isHost() && m_gameStarted) {
 
-	// t -> start the game event, s -> start as spectator
-	NWrapperSingleton::getInstance().getNetworkWrapper()->sendMsgAllClients(std::string("ts0"));
+		if (event.stateID == States::Game && event.status > 0) {
+			m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.playerID);
+		}
 
-	return true;
+	}
+
 }
 
 bool GameState::update(float dt, float alpha) {
+	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
+	NWrapperSingleton::getInstance().checkForPackages();
+
+	m_killFeedWindow.updateTiming(dt);	
+	waitForOtherPlayers();
+
+	//Dont update game if game have not started. This is to sync all players to start at the same time
+	if (!m_gameStarted)
+		return true;
+
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
-	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -632,6 +655,10 @@ bool GameState::fixedUpdate(float dt) {
 	static float change = 0.4f;
 
 	counter += dt * 2.0f;
+
+	//Dont update game if game have not started. This is to sync all players to start at the same time
+	if (!m_gameStarted)
+		return true;
 
 #ifdef _PERFORMANCE_TEST
 	/* here we shoot the guns */
@@ -677,6 +704,10 @@ bool GameState::renderImgui(float dt) {
 	m_killFeedWindow.renderWindow();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();
+	}
+
+	if (!m_gameStarted) {
+		m_waitingForPlayersWindow.renderWindow();
 	}
 
 	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
@@ -801,10 +832,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
-
-	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
-	NWrapperSingleton::getInstance().checkForPackages();
-
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
@@ -894,6 +921,38 @@ void GameState::logSomeoneDisconnected(unsigned char id) {
 
 	// Log it
 	SAIL_LOG(logMessage);
+}
+
+void GameState::waitForOtherPlayers() {
+	if (NWrapperSingleton::getInstance().isHost()) {
+		if (!m_gameStarted) {
+			bool allReady = true;
+
+			//See if anyone is not ready
+			//TODO: maybe dont count in spectators here.
+			//TODO: what will happen if new players joins in gamestate but before gamestart?
+			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+				if (p.lastStateStatus.status != 1 || p.lastStateStatus.state != States::Game) {
+					allReady = false;
+					break;
+				}
+			}
+
+			//If all players are ready, host can give approval to start game and set m_gameStarted = true
+			if (allReady) {
+				m_gameStarted = true;
+				NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 2);
+			}
+		}
+	} else {
+		if (!m_gameStarted) {
+			//If Host have given approval to start game, set m_gameStarted = true
+			auto p = NWrapperSingleton::getInstance().getPlayer(0);
+			if (p->lastStateStatus.status == 2 && p->lastStateStatus.state == States::Game) {
+				m_gameStarted = true;
+			}
+		}
+	}
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

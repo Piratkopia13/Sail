@@ -25,6 +25,8 @@ LobbyState::LobbyState(StateStack& stack)
 	m_renderApplicationSettings(false),
 	m_timeSinceLastUpdate(0.0f)
 {
+	NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 0);
+
 	// ImGui is already initiated and set up, thanks alex!
 	m_app = Application::getInstance();
 	m_input = Input::GetInstance();
@@ -44,8 +46,6 @@ LobbyState::LobbyState(StateStack& stack)
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
-	//m_spectator = false;
-	m_teamSelection = 1;
 
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::TEXTINPUT, this);
@@ -69,6 +69,11 @@ LobbyState::LobbyState(StateStack& stack)
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
 	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
+	}
+
 }
 
 
@@ -114,7 +119,7 @@ bool LobbyState::update(float dt, float alpha) {
 	if (NWrapperSingleton::getInstance().isHost() && m_settingsChanged && m_timeSinceLastUpdate > 0.2f) {
 		auto& stat = m_app->getSettings().gameSettingsStatic;
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-		m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic) });
+		m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
 		m_settingsChanged = false;
 		m_timeSinceLastUpdate = 0.0f;
 	}
@@ -179,6 +184,7 @@ bool LobbyState::renderImgui(float dt) {
 }
 
 bool LobbyState::onEvent(const Event& event) {
+	State::onEvent(event);
 
 	switch (event.type) {
 
@@ -239,6 +245,11 @@ bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
 }
 
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
+	
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
+	}
+	
 	Message message;
 	message.content = event.player.name + " joined the game!";
 	message.senderID = 255;
@@ -248,7 +259,8 @@ bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
 bool LobbyState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
 	Message message;
-	message.content = event.player.name + " left the game!";
+	message.content = event.player.name;
+	message.content += (event.reason == PlayerLeftReason::KICKED) ? " was kicked!" : " left the game!";
 	message.senderID = 255;
 	addMessageToChat(message);
 	return true;
@@ -331,22 +343,24 @@ void LobbyState::renderPlayerList() {
 			// READY 
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-			if (currentplayer.id == myID) {
-				ImGui::Checkbox(std::string("##Player"+std::to_string(currentplayer.id)).c_str(), &m_ready);
-			}
-			else {
-				bool asd = false;
-				ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
-			}
+			bool asd = currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0;
+			ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
+			//if (currentplayer.id == myID) {
+			//	ImGui::Checkbox(std::string("##Player"+std::to_string(currentplayer.id)).c_str(), &m_ready);
+			//}
+			//else {
+			//}
 			ImGui::PopItemFlag();
 			ImGui::PopStyleVar();
-			//if (ImGui::BeginPopupContextItem(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str())) {
-			//	if (ImGui::Button("KICK")) {
-			//		//KICK
-			//	}
-			//	ImGui::EndPopup();
-			//}
 			ImGui::EndGroup();
+			if (ImGui::BeginPopupContextItem(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str())) {
+				if (NWrapperSingleton::getInstance().isHost()) {
+					if (ImGui::Button("KICK")) {
+						NWrapperSingleton::getInstance().getNetworkWrapper()->kickPlayer(currentplayer.id);
+					}
+				}
+				ImGui::EndPopup();
+			}
 			
 			//ImGui::OpenPopupOnItemClick(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str(), 1);
 
@@ -549,20 +563,23 @@ void LobbyState::renderMenu() {
 
 		
 		if (NWrapperSingleton::getInstance().isHost()) {
-			static bool allReady = false;
-			ImGui::PushFont(m_imGuiHandler->getFont("Beb20"));
-			ImGui::Checkbox("##allready", &allReady);
-			ImGui::SameLine();
-			ImGui::PopFont();
+			bool allReady = true;
+			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+				if (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) {
+					allReady = false;
+				}
+			}
 
 			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
 				// Queue a removal of LobbyState, then a push of gamestate
 				NWrapperSingleton::getInstance().stopUDP();
-				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, m_teamSelection));
+				//m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, m_teamSelection));
+				
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-				m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic) });
-				m_network->sendMsgAllClients({ std::string("tp0") });
+
+				m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
+				m_network->setClientState(States::Game);
 
 				this->requestStackClear();
 				this->requestStackPush(States::Game);
@@ -571,13 +588,13 @@ void LobbyState::renderMenu() {
 		else {
 			if (m_ready) {
 				if (SailImGui::TextButton("unReady")) {
-					// SEND TO HOST THAT PLAYER IS NO LONGER READY
+					NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 0);
 					m_ready = false;
 				}
 			}
 			else {
 				if (SailImGui::TextButton("Ready")) {
-					// SEND TO HOST THAT PLAYER IS READY
+					NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
 					m_ready = true;
 				}
 			}
@@ -595,7 +612,7 @@ void LobbyState::renderSpectatorButton() {
 	ImGui::Begin("Spectator");
 	//ImGui::SetWindowPos({ 1018, 633 });
 	ImGui::SetWindowSize({ 112, 57 });
-	ImGui::SliderInt("Team", &m_teamSelection,-1, 12);
+	ImGui::SliderInt("Team", &NWrapperSingleton::getInstance().getMyPlayer().team,-1, 12);
 	//ImGui::Checkbox("", &m_spectator);
 	ImGui::End();
 }
