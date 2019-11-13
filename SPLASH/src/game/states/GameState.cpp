@@ -781,7 +781,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
-	/*bool started = false;
+	bool started = false;
 	while (!started) {
 		// First check if the system can be run
 		if (!(m_currentlyReadingMask & toRun->getWriteBitMask()).any() &&
@@ -822,7 +822,7 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 				}
 			}
 		}
-	}*/
+	}
 	toRun->update(dt);
 }
 
