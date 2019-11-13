@@ -1394,10 +1394,12 @@ const int LevelSystem::getRoomIDFromWorldPos(float posX, float posY) {
 }
 
 const int LevelSystem::getRoomID(int posX, int posY) {
-	if (posX <= xsize && posX >= 0 && posY <= ysize && posY >= 0) {
-		return tileArr[posX][posY][1];
-	}
-	return -1;
+	posX = posX >= xsize ? xsize - 1 : posX;
+	posX = posX < 0 ? 0 : posX;
+	posY = posY >= ysize ? ysize - 1 : posY;
+	posY = posY < 0 ? 0 : posY;
+	return tileArr[posX][posY][1];
+	
 }
 
 const RoomInfo LevelSystem::getRoomInfo(int ID) {
