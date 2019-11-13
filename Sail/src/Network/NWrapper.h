@@ -24,6 +24,12 @@ struct StateStatus {
 	char status;
 };
 
+
+enum class PlayerLeftReason : char {
+		CONNECTION_LOST = 0,
+		KICKED
+};
+
 // Move elsewhere?
 struct Player {
 	Netcode::PlayerID id;

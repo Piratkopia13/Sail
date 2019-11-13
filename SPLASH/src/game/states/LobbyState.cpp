@@ -183,12 +183,6 @@ bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
 }
 
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
-	static int i = 1;
-	if (NWrapperSingleton::getInstance().isHost()) {
-		NWrapperSingleton::getInstance().getPlayers().size() >= 3;
-		NWrapperSingleton::getInstance().getNetworkWrapper()->kickPlayer(i++);
-	}
-	
 	Message message;
 	message.content = event.player.name + " joined the game!";
 	message.senderID = 255;
@@ -198,7 +192,8 @@ bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
 bool LobbyState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
 	Message message;
-	message.content = event.player.name + " left the game!";
+	message.content = event.player.name;
+	message.content += (event.reason == PlayerLeftReason::KICKED) ? " was kicked!" : " left the game!";
 	message.senderID = 255;
 	addMessageToChat(message);
 	return true;

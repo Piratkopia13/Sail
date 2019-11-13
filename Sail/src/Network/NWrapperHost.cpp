@@ -74,13 +74,15 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 
 void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID tcp_id) {
 	Netcode::PlayerID playerID = m_connectionsMap.at(tcp_id);
-	char msg[] = { ML_DISCONNECT, playerID, ML_NULL};
+	PlayerLeftReason reason = m_network->wasKicked(tcp_id) ? PlayerLeftReason::KICKED : PlayerLeftReason::CONNECTION_LOST;
+	
+	char msg[] = { ML_DISCONNECT, playerID, (char)reason, ML_NULL};
 
 	// Send to all clients that someone disconnected and which id.
 	m_network->send(msg, sizeof(msg), -1);
 
 	// Send id to menu / game state
-	NWrapperSingleton::getInstance().playerLeft(playerID);
+	NWrapperSingleton::getInstance().playerLeft(playerID, true, reason);
 	updateServerDescription();
 }
 
@@ -226,9 +228,11 @@ void NWrapperHost::kickPlayer(Netcode::PlayerID playerId) {
 	if (playerId != 0) {
 		for (auto p : m_connectionsMap) {
 			if (p.second == playerId) {
-				m_network->dropConnection(p.second);
+				m_network->kickConnection(p.first);
 			}
 		}
+	} else {
+		SAIL_LOG("You Cant Kick The Host");
 	}
 	
 }

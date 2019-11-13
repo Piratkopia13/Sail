@@ -104,11 +104,13 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 
 	case ML_DISCONNECT:
 		// A player disconnected from the host...
-		// Get the user ID from the event data.
+		// Get the user ID from the event data.		
+	{
 		userID = nEvent.data->Message.rawMsg[1];
-		NWrapperSingleton::getInstance().playerLeft(userID);
+		PlayerLeftReason reason = (PlayerLeftReason)nEvent.data->Message.rawMsg[2];
+		NWrapperSingleton::getInstance().playerLeft(userID, true, reason);
+	}
 		break;
-
 	case ML_JOIN:
 		currentPlayer.id = (unsigned char)nEvent.data->Message.rawMsg[1];
 		currentPlayer.name = &nEvent.data->Message.rawMsg[2];
