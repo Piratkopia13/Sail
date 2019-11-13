@@ -42,6 +42,7 @@ private:
 	SettingStorage* m_settings;
 	ImGuiHandler* m_imGuiHandler;
 	ImGuiWindowFlags m_standaloneButtonflags;
+	ImGuiWindowFlags m_backgroundOnlyflags;
 	OptionsWindow m_optionsWindow;
 	// For ImGui Input
 	std::string inputIP;
@@ -71,11 +72,21 @@ private:
 
 	void renderDebug();
 
+	int m_windowToRender;
+	bool m_joiningLobby;
+	float m_joinTimer;
+	float m_joinThreshold;
+	float m_outerPadding;
+
+
+	void joinLobby(std::string& ip); 
+
 	void renderMenu();
 	void renderSingleplayer();
 	void renderLobbyCreator();
 	void renderServerBrowser();
 	void renderProfile();
+	void renderJoiningLobby();
 
 #ifdef DEVELOPMENT
 	void startSinglePlayer();
