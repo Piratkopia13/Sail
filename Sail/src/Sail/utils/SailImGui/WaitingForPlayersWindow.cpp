@@ -11,14 +11,19 @@ WaitingForPlayersWindow::~WaitingForPlayersWindow() {
 
 void WaitingForPlayersWindow::renderWindow() {
 
-	ImGui::Begin("Waiting For Players");
-	ImGui::Columns(2);
+	ImGui::SetNextWindowSize(ImVec2(400,400));
+	ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
+	ImGui::Begin("Waiting For Players", NULL, ImGuiWindowFlags_NoCollapse);
 	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-		if (p.lastStateStatus.status < 1) {
+		if (p.lastStateStatus.state != state || p.lastStateStatus.status < minStatus) {
 			ImGui::Text(p.name.c_str());
 		}
-	}
-	
+	}	
 	ImGui::End();
 
+}
+
+void WaitingForPlayersWindow::setStateStatus(States::ID state, char status) {
+	this->state = state;
+	this->minStatus = status;
 }

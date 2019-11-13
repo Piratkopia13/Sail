@@ -46,4 +46,4 @@
 #include "Sail/utils/SailImGui/KillFeedWindow.h"
 #include "Sail/utils/SailImGui/ECS_SystemInfoImGuiWindow.h"
 #include "Sail/utils/SailImGui/NetworkInfoWindow.h"
-
+#include "Sail/utils/SailImGui/WaitingForPlayersWindow.h"

@@ -41,6 +41,7 @@ GameState::GameState(StateStack& stack)
 
 	if (!m_isSingleplayer) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
+		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
 	}
 
 	initConsole();
@@ -666,6 +667,10 @@ bool GameState::renderImgui(float dt) {
 	m_killFeedWindow.renderWindow();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();
+	}
+
+	if (!m_gameStarted) {
+		m_waitingForPlayersWindow.renderWindow();
 	}
 
 	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS

@@ -25,6 +25,8 @@ LobbyState::LobbyState(StateStack& stack)
 	m_renderApplicationSettings(false),
 	m_timeSinceLastUpdate(0.0f)
 {
+	NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 0);
+
 	// ImGui is already initiated and set up, thanks alex!
 	m_app = Application::getInstance();
 	m_input = Input::GetInstance();
@@ -67,6 +69,11 @@ LobbyState::LobbyState(StateStack& stack)
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
 	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
+	}
+
 }
 
 
@@ -235,6 +242,11 @@ bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
 }
 
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
+	
+	if (NWrapperSingleton::getInstance().isHost()) {
+
+	}
+	
 	Message message;
 	message.content = event.player.name + " joined the game!";
 	message.senderID = 255;
@@ -328,13 +340,13 @@ void LobbyState::renderPlayerList() {
 			// READY 
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-			if (currentplayer.id == myID) {
-				ImGui::Checkbox(std::string("##Player"+std::to_string(currentplayer.id)).c_str(), &m_ready);
-			}
-			else {
-				bool asd = false;
-				ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
-			}
+			bool asd = currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0;
+			ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
+			//if (currentplayer.id == myID) {
+			//	ImGui::Checkbox(std::string("##Player"+std::to_string(currentplayer.id)).c_str(), &m_ready);
+			//}
+			//else {
+			//}
 			ImGui::PopItemFlag();
 			ImGui::PopStyleVar();
 			ImGui::EndGroup();
@@ -548,7 +560,13 @@ void LobbyState::renderMenu() {
 
 		
 		if (NWrapperSingleton::getInstance().isHost()) {
-			static bool allReady = false;
+			static bool allReady = true;
+			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+				if (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) {
+					allReady = false;
+				}
+			}
+
 			ImGui::PushFont(m_imGuiHandler->getFont("Beb20"));
 			ImGui::Checkbox("##allready", &allReady);
 			ImGui::SameLine();
@@ -572,13 +590,13 @@ void LobbyState::renderMenu() {
 		else {
 			if (m_ready) {
 				if (SailImGui::TextButton("unReady")) {
-					// SEND TO HOST THAT PLAYER IS NO LONGER READY
+					NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 0);
 					m_ready = false;
 				}
 			}
 			else {
 				if (SailImGui::TextButton("Ready")) {
-					// SEND TO HOST THAT PLAYER IS READY
+					NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
 					m_ready = true;
 				}
 			}

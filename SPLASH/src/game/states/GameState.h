@@ -74,6 +74,7 @@ private:
 	LightDebugWindow m_lightDebugWindow;
 	PlayerInfoWindow m_playerInfoWindow;
 	WasDroppedWindow m_wasDroppedWindow;
+	WaitingForPlayersWindow m_waitingForPlayersWindow;
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 	NetworkInfoWindow m_networkInfoImGuiWindow;
