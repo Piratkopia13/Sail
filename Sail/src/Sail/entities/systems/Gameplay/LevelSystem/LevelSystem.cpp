@@ -1390,11 +1390,14 @@ const int LevelSystem::getRoomIDFromWorldPos(float posX, float posY) {
 	posX /= (float)tileSize;
 	posY /= (float)tileSize;
 
-	return tileArr[static_cast<int>(posX)][static_cast<int>(posY)][1];
+	return getRoomID(static_cast<int>(posX), static_cast<int>(posY));
 }
 
 const int LevelSystem::getRoomID(int posX, int posY) {
-	return tileArr[posX][posY][1];
+	if (posX <= xsize && posX >= 0 && posY <= ysize && posY >= 0) {
+		return tileArr[posX][posY][1];
+	}
+	return -1;
 }
 
 const RoomInfo LevelSystem::getRoomInfo(int ID) {
