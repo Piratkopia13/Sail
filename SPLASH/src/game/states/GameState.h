@@ -34,11 +34,11 @@ private:
 	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
-	bool onPlayerCandleDeath(const PlayerCandleDeathEvent& event);
 
 	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
+	void updateKillCamComponentSystems(float dt);
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
@@ -71,6 +71,7 @@ private:
 	WasDroppedWindow m_wasDroppedWindow;
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
+	NetworkInfoWindow m_networkInfoImGuiWindow;
 
 	size_t m_currLightIndex;
 
@@ -87,6 +88,8 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_wasDropped = false;
+
+	bool m_isInKillCamMode = false;
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);

@@ -31,7 +31,6 @@ public:
 
 private:
 	const std::string loadPlayerName(const std::string& file);
-	bool loadModels(Application* app);
 
 
 private:
@@ -39,10 +38,10 @@ private:
 	// NetworkWrapper | NWrapperSingleton | NWrapperHost
 	NWrapperSingleton* m_network = nullptr;
 	Application* m_app = nullptr;
+	ImGuiHandler* m_imGuiHandler;
 	// For ImGui Input
 	std::string inputIP;
-	std::future<bool> m_modelThread;
-
+	
 	// Other lobbies
 	bool onLanHostFound(const NetworkLanHostFoundEvent& event);
 	//void sortFoundLobbies();

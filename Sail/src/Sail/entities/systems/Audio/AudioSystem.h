@@ -1,13 +1,15 @@
 #pragma once
 
 #include "..//BaseComponentSystem.h"
+#include "Sail/events/EventReceiver.h"
 #include "AudioData.h"
 
 class AudioComponent;
 class AudioEngine;
 class Camera;
+class XAUDIO2FX_REVERB_PARAMETERS;
 
-class AudioSystem final : public BaseComponentSystem {
+class AudioSystem final : public BaseComponentSystem, public EventReceiver {
 public:
 	AudioSystem();
 	~AudioSystem();
@@ -19,6 +21,8 @@ public:
 	void stop() override;
 
 	bool hasUpdated = false;
+
+	bool onEvent(const Event& event) override;
 
 private:
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_i;
@@ -41,6 +45,8 @@ private:
 	void startPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void stopPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void updateStreamPosition(Entity* e, Camera& cam, float alpha);
+
+	void updateProjectileLowPass(Audio::SoundInfo_General* general);
 
 	void hotFixAmbiance(Entity* e, AudioComponent* audioC);
 };

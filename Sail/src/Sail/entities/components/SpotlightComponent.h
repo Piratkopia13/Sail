@@ -4,12 +4,15 @@
 
 class SpotLightSystem;
 
+
 class SpotlightComponent final : public Component<SpotlightComponent> {
 public:
 	SpotlightComponent(){}
 	~SpotlightComponent() {}
 
 	bool isOn;
+	float alarmTimer = 0.f;
+	int roomID;
 	SpotLight light; // Describes the light source when not rotated or moved
 
 #ifdef DEVELOPMENT
@@ -43,7 +46,7 @@ public:
 		ImGui::NextColumn();
 		ImGui::Text(std::string("Relative Direction").c_str()); ImGui::NextColumn();
 
-		glm::vec abs_dir = light_entityRotated.getDirection();
+		glm::vec abs_dir = m_lightEntityRotated.getDirection();
 		if (ImGui::DragFloat3("##ABSDIRECTION", &abs_dir.x, 0.1f)) {
 			light.setDirection(abs_dir);
 		}
@@ -86,8 +89,7 @@ public:
 	}
 #endif
 private:
-	SpotLight light_entityRotated; //This one will be updated with entity transformations and submited to the renderer
-	bool wasOn = false;
+	SpotLight m_lightEntityRotated; //This one will be updated with entity transformations and submited to the renderer
 
 	friend class SpotLightSystem;
 	

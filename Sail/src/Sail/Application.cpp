@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Application.h"
-#include "events/WindowResizeEvent.h"
+#include "events/types/WindowResizeEvent.h"
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyBinds.h"
 #include "KeyCodes.h"
@@ -19,17 +19,19 @@
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
-Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
+Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) : 
+	m_settingStorage("res/data/settings.saildata")
+	{
 	// Set up instance if not set
 	if (s_instance) {
-		Logger::Error("Only one application can exist!");
+		SAIL_LOG_ERROR("Only one application can exist!");
 		return;
 	}
 	s_instance = this;
 
 	// Set up console
 	m_consoleCommands = std::make_unique<ConsoleCommands>(false);
-
+	
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
 	unsigned int poolSize = std::max<unsigned int>(4, (10 * std::thread::hardware_concurrency()));
@@ -51,14 +53,14 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Initialize the window
 	if (!m_window->initialize()) {
 		OutputDebugString(L"\nFailed to initialize Win32Window\n");
-		Logger::Error("Failed to initialize Win32Window!");
+		SAIL_LOG_ERROR("Failed to initialize Win32Window!");
 		return;
 	}
 
 	// Initialize the graphics API
 	if (!m_api->init(m_window.get())) {
 		OutputDebugString(L"\nFailed to initialize the graphics API\n");
-		Logger::Error("Failed to initialize the graphics API!");
+		SAIL_LOG_ERROR("Failed to initialize the graphics API!");
 		return;
 	}
 
@@ -157,7 +159,7 @@ int Application::startGameLoop() {
 				PostQuitMessage(0);
 			}*/
 			//if(m_delta > 0.0166)
-			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(m_delta));
+			//	SAIL_LOG_WARNING(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(m_delta));
 #endif
 			// Process state specific input
 			processInput(m_delta);
@@ -219,7 +221,7 @@ std::string Application::getPlatformName() {
 
 Application* Application::getInstance() {
 	if (!s_instance)
-		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
+		SAIL_LOG_ERROR("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
 	return s_instance;
 }
 
@@ -238,6 +240,10 @@ ResourceManager& Application::getResourceManager() {
 
 ConsoleCommands& Application::getConsole() {
 	return *m_consoleCommands;
+}
+
+SettingStorage& Application::getSettings() {
+	return m_settingStorage;
 }
 
 MemoryManager& Application::getMemoryManager() {

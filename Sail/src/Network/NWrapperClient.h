@@ -17,7 +17,6 @@ private:
 	void playerDisconnected(TCP_CONNECTION_ID id);
 	void playerReconnected(TCP_CONNECTION_ID id);
 	void decodeMessage(NetworkEvent nEvent);
-
-	// Deformatting Functions
-	unsigned int decompressDCMessage(std::string messageData);
+	void sendMyNameToHost();
+	void updatePlayerList(std::list<Player>& playerList);
 };
