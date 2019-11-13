@@ -32,6 +32,7 @@ AudioSystem::AudioSystem() : BaseComponentSystem() {
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_JUMPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_LANDED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::START_SHOOTING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::LOOP_SHOOTING, this);
 	EventDispatcher::Instance().subscribe(Event::Type::STOP_SHOOTING, this);
 	EventDispatcher::Instance().subscribe(Event::Type::CHANGE_WALKING_SOUND, this);
 	EventDispatcher::Instance().subscribe(Event::Type::STOP_WALKING, this);
@@ -413,6 +414,7 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onLoopShooting = [=](const LoopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
+			std::cout << "AUDIOSYSTEM::LOOP.TRUE\n";
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;

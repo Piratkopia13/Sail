@@ -203,7 +203,7 @@ void NetworkReceiverSystem::shootStart(const Netcode::ComponentID id, float freq
 
 void NetworkReceiverSystem::shootLoop(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	EventDispatcher::Instance().emit(StartShootingEvent(id, frequency));
+	EventDispatcher::Instance().emit(LoopShootingEvent(id, frequency));
 }
 
 void NetworkReceiverSystem::shootEnd(const Netcode::ComponentID id, float frequency) {

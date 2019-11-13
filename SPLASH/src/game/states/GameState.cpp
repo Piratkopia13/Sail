@@ -143,10 +143,6 @@ GameState::GameState(StateStack& stack)
 		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 	}
 
-	SAIL_LOG(std::to_string(spawnLocation.x));
-	SAIL_LOG(std::to_string(spawnLocation.y));
-	SAIL_LOG(std::to_string(spawnLocation.z));
-
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);

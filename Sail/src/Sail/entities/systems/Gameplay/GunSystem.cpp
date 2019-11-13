@@ -178,9 +178,10 @@ void GunSystem::sendShootingEvents(Entity* e) {
 		));
 		break;
 	case GunState::LOOPING:
-		EventDispatcher::Instance().emit(StopShootingEvent(
+		std::cout << "EMITTING LOOP SHOOT EVENT\n";
+		EventDispatcher::Instance().emit(LoopShootingEvent(
 			e->getComponent<NetworkReceiverComponent>()->m_id,
-			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].frequency
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].frequency
 		));
 		break;
 	case GunState::ENDING:

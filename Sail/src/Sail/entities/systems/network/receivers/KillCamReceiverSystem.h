@@ -21,7 +21,7 @@ public:
 	virtual ~KillCamReceiverSystem();
 
 	void handleIncomingData(const std::string& data) override;
-	void update            (float dt)          override;
+	void update            (float dt)				 override;
 
 	void processReplayData(float dt);
 

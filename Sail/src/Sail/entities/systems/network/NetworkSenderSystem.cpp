@@ -104,11 +104,11 @@ void NetworkSenderSystem::update() {
 
 	// Write nrOfEntities
 	sendToOthers(nonEmptySenderComponents);
-	sendToSelf(size_t{0}); // SenderComponent messages should not be sent to ourself
+	sendToSelf(size_t{ 0 }); // SenderComponent messages should not be sent to ourself
 
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
-		
+
 		// If a SenderComponent doesn't have any active messages don't send any of its information
 		if (nsc->m_dataTypes.empty()) {
 			continue;
@@ -137,6 +137,11 @@ void NetworkSenderSystem::update() {
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 		out << "Event: " << Netcode::MessageNames[(int)(pE->type)-1] << "\n";
 #endif
+
+		if ((int)pE->type == 85) {
+			int asdf = 3;
+		}
+
 		writeEventToArchive(pE, sendToOthers);
 		if (pE->alsoSendToSelf) {
 			writeEventToArchive(pE, sendToSelf);
@@ -178,21 +183,25 @@ void NetworkSenderSystem::update() {
 	}
 }
 
-void NetworkSenderSystem::queueEvent(NetworkSenderEvent* type) {
+void NetworkSenderSystem::queueEvent(NetworkSenderEvent* event) {
 	std::lock_guard<std::mutex> lock(m_queueMutex);
 
-	m_eventQueue.push(type);
+	if ((int)event->type == 85) {
+		int asdf = 3;
+	}
+
+	m_eventQueue.push(event);
 
 #ifdef DEVELOPMENT
 	// Don't send broken events to others or to yourself
-	if (type->type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || type->type >= Netcode::MessageType::EMPTY) {
+	if (event->type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || event->type >= Netcode::MessageType::EMPTY) {
 		SAIL_LOG_ERROR("Attempted to send invalid message\n");
 		return;
 	}
 #endif
 
 	// if the event will be sent to ourself then increment the size counter
-	if (type->alsoSendToSelf) {
+	if (event->alsoSendToSelf) {
 		m_nrOfEventsToSendToSelf++;
 	}
 }
@@ -286,7 +295,6 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	break;
 	case Netcode::MessageType::SHOOT_START:
 	{
-		std::cout << "SHOOT_SEND\n";
 		// Only do this once
 		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::SHOOT_START);
 
@@ -322,6 +330,10 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar) {
 	ar(event->type); // Send the event-type
+
+	if ((int)event->type == 85) {
+		int asdf = 3;
+	}
 
 	// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 	switch (event->type) {
@@ -428,7 +440,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(GameDataTracker::getInstance().getStatisticsLocal().bulletsFired);
 		ar(GameDataTracker::getInstance().getStatisticsLocal().distanceWalked);
 		ar(GameDataTracker::getInstance().getStatisticsLocal().jumpsMade);
-
 	}
 	break;
 	case Netcode::MessageType::RUNNING_METAL_START:
@@ -477,7 +488,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ArchiveHelpers::saveVec3(ar, data->velocity);
 		ar(data->projectileComponentID);
 		ar(data->ownerPlayerComponentID);
-		ar(data->lowPassFrequency);
 	}
 	break;
 	case Netcode::MessageType::WATER_HIT_PLAYER:
@@ -488,6 +498,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	}
 	break;
 	default:
+		SAIL_LOG_ERROR("TRIED TO SEND INVALID NETWORK EVENT (" + std::to_string((int)event->type));
 		break;
 	}
 }

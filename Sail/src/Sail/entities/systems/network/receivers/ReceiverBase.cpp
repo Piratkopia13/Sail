@@ -192,7 +192,9 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data) {
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "Event: " << Netcode::MessageNames[(int)(eventType)-1] << "\n";
 #endif
-
+			if ((int)messageType == 85) {
+				int asdf = 3;
+			}
 
 			// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 			switch (messageType) {
