@@ -567,11 +567,6 @@ void LobbyState::renderMenu() {
 				}
 			}
 
-			ImGui::PushFont(m_imGuiHandler->getFont("Beb20"));
-			ImGui::Checkbox("##allready", &allReady);
-			ImGui::SameLine();
-			ImGui::PopFont();
-
 			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
 				// Queue a removal of LobbyState, then a push of gamestate
 				NWrapperSingleton::getInstance().stopUDP();

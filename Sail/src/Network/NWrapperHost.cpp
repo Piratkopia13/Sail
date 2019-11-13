@@ -181,6 +181,11 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 	}
 	sendMsg(welcomePackage.c_str(), welcomePackage.length() + 1, tcp_id);
 
+	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+		char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, p.id, p.lastStateStatus.state, p.lastStateStatus.status, ML_NULL };
+		sendMsg(msg, sizeof(msg), tcp_id);
+	}
+
 	if (p->justJoined) {
 		p->justJoined = false;
 

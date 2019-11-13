@@ -39,7 +39,11 @@ bool State::onEvent(const Event& event) {
 }
 
 void State::onHostStateChangeRequest(const NetworkChangeStateEvent& event) {	
-	requestStackClear();
+	if (event.stateID == States::JoinLobby) {
+		requestStackPop();
+	} else {
+		requestStackClear();
+	}
 	requestStackPush(event.stateID);
 }
 
