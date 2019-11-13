@@ -595,7 +595,7 @@ void LobbyState::renderSpectatorButton() {
 	ImGui::Begin("Spectator");
 	//ImGui::SetWindowPos({ 1018, 633 });
 	ImGui::SetWindowSize({ 112, 57 });
-	ImGui::SliderInt("Team", &m_teamSelection,0, 12);
+	ImGui::SliderInt("Team", &m_teamSelection,-1, 12);
 	//ImGui::Checkbox("", &m_spectator);
 	ImGui::End();
 }

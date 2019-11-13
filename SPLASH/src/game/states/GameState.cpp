@@ -150,9 +150,10 @@ GameState::GameState(StateStack& stack)
 
 	// Player creation
 
-	// team 0 = spectator
-	if (m_app->getStateStorage().getLobbyToGameData()->team == 0) {
-		//m_player = EntityFactory::CreateMySpectator(playerID).get();
+	// team -1 = spectator
+	NWrapperSingleton::getInstance().getMyPlayer().team = m_app->getStateStorage().getLobbyToGameData()->team;
+	if (NWrapperSingleton::getInstance().getMyPlayer().team == -1) {
+		
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
 		for (int i = -1; i < id; i++) {
@@ -357,21 +358,21 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(KeyBinds::SPECTATOR_DEBUG)) {
 		// Get position and rotation to look at middle of the map from above
 		{
-			auto parTrans = m_player->getComponent<TransformComponent>();
-			auto pos = glm::vec3(parTrans->getMatrixWithUpdate()[3]);
-			pos.y = 20.f;
-			parTrans->setTranslation(pos);
-			
+		
+			auto transform = m_player->getComponent<TransformComponent>();
+			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
+			pos.y += 2.0f;
 
-			auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+			for (auto e : m_player->getChildEntities()) {
+				e->removeAllComponents();
+				e->queueDestruction();
+			}
 
-			auto middleOfLevel = glm::vec3(mapSettings["tileSize"].value * mapSettings["sizeX"].value / 2.f, 0.f, mapSettings["tileSize"].value * mapSettings["sizeY"].value / 2.f);
-			auto dir = glm::normalize(middleOfLevel - pos);
-			auto rots = Utils::getRotations(dir);
-			parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+			m_player->removeAllChildren();
+			m_player->removeAllComponents();
+
+			m_player->addComponent<TransformComponent>()->setStartTranslation(pos);
 			m_player->addComponent<SpectatorComponent>();
-			m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
-			m_player->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 		}
 	}
 

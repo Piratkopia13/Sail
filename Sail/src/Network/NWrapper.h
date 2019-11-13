@@ -19,6 +19,7 @@ struct Player {
 	Netcode::PlayerID id;
 	std::string name;
 	bool justJoined = true;
+	int team = 1;
 
 	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans")
 		: name(setName), id(setID)
