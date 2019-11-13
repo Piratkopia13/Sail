@@ -17,7 +17,7 @@
 #include "Sail/TimeSettings.h"
 
 
-// Candle can only be picked up and put down once every 0.5 seconds
+// Candle can only be picked up and put down once every 2 seconds
 constexpr float CANDLE_TIMER = 2.f;
 
 
@@ -515,8 +515,6 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 			playerMovement.speedModifier = sprintComp->sprintSpeedModifier;
 		}
 	}
-
-	Logger::Log(std::to_string(throwC->isThrowing) + std::to_string(throwC->isCharging));
 
 	return playerMovement;
 }
