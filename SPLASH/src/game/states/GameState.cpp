@@ -431,11 +431,12 @@ void GameState::initSystems(const unsigned char playerID) {
 	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
-	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
-	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem);
-
 	m_componentSystems.killCamReceiverSystem = ECS::Instance()->createSystem<KillCamReceiverSystem>();
+
 	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
+	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem, m_componentSystems.killCamReceiverSystem);
+
 
 
 	// Create system for handling and updating sounds
@@ -535,6 +536,7 @@ bool GameState::onResize(const WindowResizeEvent& event) {
 
 bool GameState::onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event) {
 	m_componentSystems.networkReceiverSystem->handleIncomingData(event.serializedData);
+	m_componentSystems.killCamReceiverSystem->handleIncomingData(event.serializedData);
 	return true;
 }
 
@@ -681,9 +683,10 @@ void GameState::shutDownGameState() {
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updateKillCamComponentSystems(float dt) {
 	
-	// TODO: Prepare update for interpolation etc.
+	// TODO: Prepare transform update for interpolation etc.
 
-	m_componentSystems.killCamReceiverSystem->update(dt);
+	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
+	
 
 	// TODO: run relevant systems in parallel
 	//runSystem(dt, m_componentSystems.killCamReceiverSystem);
@@ -710,7 +713,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Update entities with info from the network and from ourself
 	// DON'T MOVE, should happen at the start of each tick
 	m_componentSystems.networkReceiverSystem->update(dt);
-	
+	m_componentSystems.killCamReceiverSystem->update(dt); // This just increments the killcam's ringbuffer.
+
 	m_componentSystems.movementSystem->update(dt);
 	m_componentSystems.speedLimitSystem->update();
 	m_componentSystems.collisionSystem->update(dt);
