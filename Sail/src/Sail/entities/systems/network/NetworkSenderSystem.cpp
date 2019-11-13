@@ -2,6 +2,7 @@
 #include "NetworkSenderSystem.h"
 
 #include "receivers/NetworkReceiverSystem.h"
+#include "receivers/KillCamReceiverSystem.h"
 
 #include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
@@ -36,9 +37,10 @@ NetworkSenderSystem::~NetworkSenderSystem() {
 	}
 }
 
-void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem* receiverSystem) {
+void NetworkSenderSystem::init(Netcode::PlayerID playerID, NetworkReceiverSystem* receiverSystem, KillCamReceiverSystem* killCamSystem) {
 	m_playerID = playerID;
 	m_receiverSystem = receiverSystem;
+	m_killCamSystem = killCamSystem;
 }
 
 /*
@@ -151,6 +153,10 @@ void NetworkSenderSystem::update() {
 	std::string binaryDataToSendToOthers = osToOthers.str();
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryDataToSendToOthers);
+
+		// Clients get their packets sent back to them since the host just forwards them to all clients.
+		// So only the host needs to send this to themselves here since it's the only way the host's packets can be saved from.
+		m_killCamSystem->handleIncomingData(binaryDataToSendToOthers);
 	} else {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryDataToSendToOthers);
 	}

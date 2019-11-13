@@ -41,6 +41,22 @@ NetworkReceiverSystem::~NetworkReceiverSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
+
+void NetworkReceiverSystem::pushDataToBuffer(const std::string& data) {
+	std::lock_guard<std::mutex> lock(m_bufferLock);
+	m_incomingDataBuffer.push(data);
+}
+
+
+void NetworkReceiverSystem::update(float dt) {
+	std::lock_guard<std::mutex> lock(m_bufferLock);
+
+	processData(dt, m_incomingDataBuffer);
+}
+
+
+
+
 void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
 	// Early exit if the entity already exists
 	if (findFromNetID(info.playerCompID)) {
