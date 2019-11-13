@@ -1,8 +1,15 @@
 Texture2D sourceTexture : register(t0);
-Texture2D blendTexture : register(t1);
-RWTexture2D<float4> output : register(u10) : SAIL_RGBA16_FLOAT;
+RWTexture2D<float4> output : register(u10);
 
 SamplerState CSss : register(s2);
+
+float3 tonemap(float3 color) {
+	// Gamma correction
+    float3 output = color / (color + 1.0f);
+    // Tone mapping using the Reinhard operator
+    output = pow(output, 1.0f / 2.2f);
+	return output;
+}
 
 cbuffer CSData : register(b0) {
     float textureSizeDifference;
@@ -18,9 +25,7 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
     if (dispatchThreadID.x > textureSize.x) {
         return;
     }
-    float2 invTextureSize = 1.f / textureSize;
 
-    float2 blendTexCoord = dispatchThreadID.xy * invTextureSize;
-    float3 finalColor = sourceTexture[dispatchThreadID.xy].rgb + blendTexture.SampleLevel(CSss, blendTexCoord, 0).rgb * blendFactor;
-	output[dispatchThreadID.xy] = float4(finalColor, 1.0f);
+    float3 finalColor = sourceTexture[dispatchThreadID.xy * textureSizeDifference].rgb;
+	output[dispatchThreadID.xy] = float4(tonemap(finalColor), 1.0f);
 }

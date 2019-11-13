@@ -43,10 +43,28 @@ KillCamReceiverSystem::~KillCamReceiverSystem() {
 }
 
 void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
-	pushDataToBuffer(data);
+	std::lock_guard<std::mutex> lock(m_replayDataLock);
+
+	m_replayData[m_currentWriteInd].push(data);
 }
 
 
+// Increments the indexes in the ring buffer once per tick and clears the next write-index
+void KillCamReceiverSystem::update(float dt) {
+	std::lock_guard<std::mutex> lock(m_replayDataLock);
+
+	m_currentWriteInd = ++m_currentWriteInd % REPLAY_BUFFER_SIZE;
+	m_currentReadInd  = ++m_currentReadInd  % REPLAY_BUFFER_SIZE;
+
+	m_replayData[m_currentWriteInd] = std::queue<std::string>(); // Clear the current write-position's queue in the ring buffer
+}
+
+// Should only be called when the killcam is active
+void KillCamReceiverSystem::processReplayData(float dt) {
+	std::lock_guard<std::mutex> lock(m_replayDataLock);
+
+	processData(dt, m_replayData[m_currentReadInd]);
+}
 
 
 void KillCamReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {

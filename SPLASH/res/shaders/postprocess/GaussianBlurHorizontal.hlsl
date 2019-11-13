@@ -6,7 +6,7 @@
 #include "GaussianBlurCommon.hlsl"
 
 Texture2D input : register(t0);
-RWTexture2D<float4> output : register(u10);
+RWTexture2D<float4> output : register(u10) : SAIL_RGBA16_FLOAT;
 
 cbuffer CSData : register(b0) {
     float textureSizeDifference;
