@@ -40,7 +40,7 @@ public:
 
 private:
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
-	ParticleComputeShader* m_particleShader;
+	std::unique_ptr < ParticleComputeShader> m_particleShader;
 
 	DX12VertexBuffer* m_outputVertexBuffer;
 	unsigned int m_outputVertexBufferSize;

@@ -27,7 +27,7 @@ ParticleEmitterComponent::~ParticleEmitterComponent() {
 }
 
 void ParticleEmitterComponent::init() {
-	m_particleShader = &Application::getInstance()->getResourceManager().getShaderSet<ParticleComputeShader>();
+	m_particleShader = std::make_unique<ParticleComputeShader>();
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 	auto& gbufferShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	auto& inputLayout = gbufferShader.getPipeline()->getInputLayout();
@@ -38,7 +38,7 @@ void ParticleEmitterComponent::init() {
 	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
 	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
 	m_model->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/WaterGun/Watergun_Albedo.tga");
-	m_model->setIsAnimated(true);
+	//m_model->setIsAnimated(true);
 
 	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
 
@@ -214,7 +214,7 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 
 		m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), 0, cmdList);
 
-		m_outputVertexBuffer->setAsUpdated();
+		//m_outputVertexBuffer->setAsUpdated();
 
 		context->getComputeGPUDescriptorHeap()->getAndStepIndex(11);
 
