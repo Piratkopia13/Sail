@@ -51,7 +51,7 @@ bool Entity::hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes)
 	return (m_componentTypes & componentTypes) == componentTypes;
 }
 #ifdef DEVELOPMENT
-BaseComponent::Ptr* Entity::getComponents() const {
+const BaseComponent::Ptr* Entity::getComponents() const {
 	return m_components;
 }
 #endif

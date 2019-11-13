@@ -38,7 +38,7 @@ public:
 
 	bool hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const;
 #ifdef DEVELOPMENT
-	BaseComponent::Ptr* getComponents() const;
+	const BaseComponent::Ptr* getComponents() const;
 #endif
 
 	Entity* getParent();
