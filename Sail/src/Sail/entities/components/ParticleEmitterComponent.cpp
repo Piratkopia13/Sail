@@ -33,18 +33,16 @@ void ParticleEmitterComponent::init() {
 	auto& inputLayout = gbufferShader.getPipeline()->getInputLayout();
 
 	m_outputVertexBufferSize = 6 * 1700;
-	//m_outputVertexBufferSize = 36;
 
 	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
 	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
 	m_model->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/WaterGun/Watergun_Albedo.tga");
-	//m_model->setIsAnimated(true);
 
 	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
 
 	auto* context = Application::getInstance()->getAPI<DX12API>();
 
-	m_particlePhysicsSize = 9 * 4; // 6 floats times 4 bytes
+	m_particlePhysicsSize = 9 * 4; // 9 floats times 4 bytes
 
 	m_physicsBufferDefaultHeap = SAIL_NEW wComPtr<ID3D12Resource>[DX12API::NUM_GPU_BUFFERS];
 	for (UINT i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
@@ -214,8 +212,6 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 
 		m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), 0, cmdList);
 
-		//m_outputVertexBuffer->setAsUpdated();
-
 		context->getComputeGPUDescriptorHeap()->getAndStepIndex(11);
 
 		// Transition to Cbuffer usage
@@ -228,7 +224,6 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_cpuOutput[context->getSwapIndex()].previousNrOfParticles + numPart - numPartRem, m_outputVertexBufferSize / 6);
 
 		m_cpuOutput[context->getSwapIndex()].newParticles.erase(m_cpuOutput[context->getSwapIndex()].newParticles.begin(), m_cpuOutput[context->getSwapIndex()].newParticles.begin() + numPart);
-		//m_cpuOutput[context->getSwapIndex()].newParticles.clear();
 		m_cpuOutput[context->getSwapIndex()].toRemove.clear();
 	}
 }
