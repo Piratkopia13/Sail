@@ -19,6 +19,7 @@ class GameInputSystem;
 class GUISubmitSystem;
 class GunSystem;
 class KillCamReceiverSystem;
+class KillCamModelSubmitSystem;
 class LevelSystem;
 class LifeTimeSystem;
 class LightSystem;
@@ -60,6 +61,7 @@ struct Systems {
 	GUISubmitSystem*             guiSubmitSystem             = nullptr;
 	GunSystem*                   gunSystem                   = nullptr;
 	KillCamReceiverSystem*       killCamReceiverSystem       = nullptr;
+	KillCamModelSubmitSystem*    killCamModelSubmitSystem    = nullptr;
 	LevelSystem*                 levelSystem                 = nullptr;
 	LifeTimeSystem*              lifeTimeSystem              = nullptr;
 	LightSystem*                 lightSystem                 = nullptr;
