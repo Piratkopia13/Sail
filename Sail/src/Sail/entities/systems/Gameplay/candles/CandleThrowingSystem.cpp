@@ -110,7 +110,6 @@ void CandleThrowingSystem::update(float dt) {
 				transC->removeParent();
 				transC->setRotations(glm::vec3{0.f,0.f,0.f});
 				e->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
-				//transC->setTranslation(throwPos);
 
 				// Set velocity and things
 				throwC->direction = Application::getInstance()->getCurrentCamera()->getDirection();//glm::normalize(-e->getComponent<TransformComponent>()->getForward()/*throwC->direction*/);
