@@ -51,7 +51,7 @@ void AnimationChangerSystem::update(float dt) {
 					animationC->setAnimation(IDLE_THROW);
 				} else {
 					// Replace the animation indices once they are implemented
-					animationC->setAnimation(IDLE_DROP);
+					animationC->setAnimation(IDLE_THROW);
 					//animationC->setAnimation(RUNNING_THROW);
 				}
 				if (animIndexBefore != animationC->animationIndex) {

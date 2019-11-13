@@ -490,6 +490,20 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	Movement playerMovement;
 
 	auto sprintComp = e->getComponent<SprintingComponent>();
+	sprintComp->doSprint = false;
+
+	if (Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) { playerMovement.forwardMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD)) { playerMovement.forwardMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_LEFT)) { playerMovement.rightMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_RIGHT)) { playerMovement.rightMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
+
+	auto throwC = e->getComponent<ThrowingComponent>();
+	if (throwC->isThrowing || throwC->isCharging) {
+		return playerMovement;
+	}
+
 	if (Input::IsKeyPressed(KeyBinds::SPRINT)) {
 		if (!e->hasComponent<SpectatorComponent>()) {
 			if (sprintComp->canSprint && Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) {
@@ -500,27 +514,9 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 		} else {
 			playerMovement.speedModifier = sprintComp->sprintSpeedModifier;
 		}
-	} else {
-		sprintComp->doSprint = false;
 	}
 
-	for (auto& child : e->getChildEntities()) {
-		if (child->hasComponent<ThrowingComponent>()) {
-			auto throwC = child->getComponent<ThrowingComponent>();
-			if (throwC->isThrowing || throwC->isCharging) {
-				return playerMovement;
-			}
-
-			continue;
-		}
-	}
-
-	if (Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) { playerMovement.forwardMovement += 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD)) { playerMovement.forwardMovement -= 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_LEFT)) { playerMovement.rightMovement -= 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_RIGHT)) { playerMovement.rightMovement += 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
-	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
+	Logger::Log(std::to_string(throwC->isThrowing) + std::to_string(throwC->isCharging));
 
 	return playerMovement;
 }
