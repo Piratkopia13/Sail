@@ -95,6 +95,11 @@ void updateVertices(int particleIndex) {
 	CSOutputBuffer[v0Index + 3].position = CSPhysicsBuffer[particleIndex].position + 0.1f * billboardRight + 0.1f * billboardUp;
 	CSOutputBuffer[v0Index + 4].position = CSPhysicsBuffer[particleIndex].position - 0.1f * billboardRight - 0.1f * billboardUp;
 	CSOutputBuffer[v0Index + 5].position = CSPhysicsBuffer[particleIndex].position + 0.1f * billboardRight - 0.1f * billboardUp;
+	
+	for (uint i = 0; i < 6; i++) {
+		CSOutputBuffer[v0Index + i].normal = normalize(-particleCam);
+	}
+	
 }
 
 void updatePhysics(int particleIndex, float dt) {
