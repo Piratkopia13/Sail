@@ -558,7 +558,7 @@ void LobbyState::renderMenu() {
 			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
 				// Queue a removal of LobbyState, then a push of gamestate
 				NWrapperSingleton::getInstance().stopUDP();
-				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
+				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, m_teamSelection));
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 				m_network->sendMsgAllClients({ std::string("i") + m_app->getSettings().serialize(stat, dynamic) });

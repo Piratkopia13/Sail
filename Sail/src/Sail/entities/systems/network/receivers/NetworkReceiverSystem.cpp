@@ -53,7 +53,7 @@ void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const 
 
 	// lightIndex set to 999, can probably be removed since it no longer seems to be used
 	EntityFactory::CreateOtherPlayer(e, info.playerCompID, info.candleID, info.gunID, 999, pos);
-
+	ECS::Instance()->addAllQueuedEntities();
 }
 
 void NetworkReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
@@ -112,22 +112,6 @@ void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const An
 	SAIL_LOG_WARNING("setAnimation called but no matching entity found");
 }
 
-
-void NetworkReceiverSystem::createPlayerEntity(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, Netcode::ComponentID gunCompID, const glm::vec3& translation) {
-	// Early exit if the entity already exists
-	if (findFromNetID(playerCompID)) {
-		return;
-	}
-
-	auto e = ECS::Instance()->createEntity("networkedEntity");
-	instantAddEntity(e.get());
-
-	SAIL_LOG("Created player with id: " + std::to_string(playerCompID));
-
-	// lightIndex set to 999, can probably be removed since it no longer seems to be used
-	EntityFactory::CreateOtherPlayer(e, playerCompID, candleCompID, gunCompID, 999, translation);
-	ECS::Instance()->addAllQueuedEntities();
-}
 void NetworkReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId, const float health) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
