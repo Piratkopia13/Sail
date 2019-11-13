@@ -4,6 +4,7 @@
 #include "Sail/Application.h"
 #include "Network/NWrapperSingleton.h"
 #include "../events/GameOverEvent.h"
+#include "Sail/events/EventDispatcher.h"
 
 bool InGameMenuState::sIsOpen = false;
 
@@ -28,7 +29,7 @@ bool InGameMenuState::processInput(float dt) {
 		NWrapperSingleton::getInstance().resetNetwork();
 		NWrapperSingleton::getInstance().resetWrapper();
 		// Dispatch game over event
-		Application::getInstance()->dispatchEvent(GameOverEvent());
+		EventDispatcher::Instance().emit(GameOverEvent());
 
 		this->requestStackPop();
 		this->requestStackPop();
@@ -55,7 +56,10 @@ bool InGameMenuState::render(float dt, float alpha) {
 bool InGameMenuState::renderImgui(float dt) {
 	m_inGameMenuWindow.renderWindow();
 	if (m_inGameMenuWindow.showOptions()) {
-		// Render options here
+		
+
+
+
 	}
 
 	return false;

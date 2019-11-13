@@ -5,12 +5,16 @@
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "Sail/KeyBinds.h"
-#include "Sail/entities/components/MapComponent.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
+#include "Sail/events/EventDispatcher.h"
 
 // Current goal is to make this render a fully raytraced image of all geometry (without materials) within a scene
 
 DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	: m_dxr("Basic", inputs) {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 	m_context->initCommand(m_commandDirect, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Raytracing Renderer DIRECT command list or allocator");
@@ -18,18 +22,30 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
-	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Raytracing renderer output texture", Texture::R16G16B16A16_FLOAT)));
+	m_outputBloomTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Raytracing renderer bloom output texture", Texture::R16G16B16A16_FLOAT)));
 
 	m_currNumDecals = 0;
 	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
 	auto frameIndex = m_context->getSwapIndex();
+
+	if (postProcessPipeline) {
+		// Make sure output textures are in a higher precision format to accomodate values > 1
+		m_outputTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
+		m_outputBloomTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
+	} else {
+		// Make sure output textures are in a format that can be directly copied to the back buffer
+		// Please note that no tone mapping is applied when post process is turned off.
+		m_outputTexture->changeFormat(Texture::R8G8B8A8);
+		m_outputBloomTexture->changeFormat(Texture::R8G8B8A8);
+	}
 
 	// There is one allocator per swap buffer
 	auto& allocatorCompute = m_commandCompute.allocators[m_context->getFrameIndex()];
@@ -46,9 +62,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	// Wait for the G-Buffer pass to finish execution on the direct queue
 	auto fenceVal = m_context->getDirectQueue()->signal();
 	m_context->getComputeQueue()->wait(fenceVal);
-
-	// Clear output texture
-	//m_outputTexture.get()->clear({ 0.01f, 0.01f, 0.01f, 1.0f }, cmdListDirect.Get());
 
 	std::sort(m_metaballs.begin(), m_metaballs.end(),
 		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
@@ -115,24 +128,18 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 
-	// Decrease water radius over time
-	/*for (auto& r : m_waterData) {
-		if (r > 0.f) {
-			r -= Application::getInstance()->getDelta() * 0.01f;
-		}
-	}*/
-
 	if (camera && lightSetup) {
-		static auto mapSize = glm::vec3(MapComponent::mapSizeX, MapComponent::mapSizeY, MapComponent::mapSizeZ);
-		static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f, 0.f, MapComponent::tileSize / 2.0f);
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart);
+		auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
 
+		auto mapSize = glm::vec3(mapSettings["sizeX"].value, 1.0f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+		auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart, teamColors, (postProcessPipeline) ? false : true);
 	}
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
 	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get());
-	m_dxr.dispatch(m_outputTexture.get(), cmdListCompute.Get());
+	m_dxr.dispatch(m_outputTexture.get(), m_outputBloomTexture.get(), cmdListCompute.Get());
 	// AS has now been updated this frame, reset flag
 	for (auto& renderCommand : commandQueue) {
 		renderCommand.hasUpdatedSinceLastRender[frameIndex] = false;
@@ -143,6 +150,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	RenderableTexture* renderOutput = m_outputTexture.get();
 	if (postProcessPipeline) {
 		// Run post processing
+		postProcessPipeline->setBloomInput(m_outputBloomTexture.get());
 		RenderableTexture* ppOutput = postProcessPipeline->run(m_outputTexture.get(), cmdListCompute.Get());
 		if (ppOutput) {
 			renderOutput = ppOutput;
@@ -177,20 +185,24 @@ void DX12RaytracingRenderer::begin(Camera* camera) {
 	m_metaballs.clear();
 }
 
-bool DX12RaytracingRenderer::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12RaytracingRenderer::onResize));
+bool DX12RaytracingRenderer::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 
 	// Pass along events
 	m_dxr.onEvent(event);
 	return true;
 }
 
-void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) {
+void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID) {
 	RenderCommand cmd;
 	cmd.type = RENDER_COMMAND_TYPE_MODEL;
 	cmd.model.mesh = mesh;
 	cmd.transform = glm::transpose(modelMatrix);
 	cmd.flags = flags;
+	cmd.teamColorID = teamColorID;
 	// Resize to match numSwapBuffers (specific to dx12)
 	cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), false);
 	commandQueue.push_back(cmd);
@@ -221,6 +233,15 @@ void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {
 	m_dxr.addWaterAtWorldPosition(pos);
 }
 
+void DX12RaytracingRenderer::setTeamColors(const std::vector<glm::vec3>& teamColors) {
+	Renderer::setTeamColors(teamColors);
+}
+
+bool DX12RaytracingRenderer::checkIfOnWater(const glm::vec3& pos) {
+
+	return m_dxr.checkWaterAtWorldPosition(pos);
+}
+
 void DX12RaytracingRenderer::updateMetaballAABB() {
 	
 }
@@ -229,7 +250,8 @@ void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
 	m_dxr.setGBufferInputs(inputs);
 }
 
-bool DX12RaytracingRenderer::onResize(WindowResizeEvent& event) {
-	m_outputTexture->resize(event.getWidth(), event.getHeight());
+bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {
+	m_outputTexture->resize(event.width, event.height);
+	m_outputBloomTexture->resize(event.width, event.height);
 	return true;
 }

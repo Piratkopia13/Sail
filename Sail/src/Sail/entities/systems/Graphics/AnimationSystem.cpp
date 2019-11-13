@@ -72,7 +72,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 
 		if (!animationC->currentAnimation) {
 #if defined(_DEBUG)
-			Logger::Warning("AnimationComponent without animation set");
+			SAIL_LOG_WARNING("AnimationComponent without animation set");
 #endif
 			continue;
 		}
@@ -119,7 +119,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 			animationC->transforms = SAIL_NEW glm::mat4[animationC->currentAnimation->getAnimationTransformSize(unsigned int(0))];
 
 #if defined(_DEBUG) && defined(SAIL_VERBOSELOGGING)
-			Logger::Log("AnimationSystem: Rebuilt transformarray");
+			SAIL_LOG("AnimationSystem: Rebuilt transformarray");
 #endif
 		}
 
@@ -140,7 +140,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 			const float w1 = (animationC->transitions.front().transpiredTime - frame10Time) / (frame11Time - frame10Time);
 			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
 			animationC->animationW = wt;
-			Logger::Log(std::to_string(wt));
+
 			glm::mat4 m0 = glm::identity<glm::mat4>();
 			glm::mat4 m1 = glm::identity<glm::mat4>();
 
@@ -250,7 +250,7 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST);
 			DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(-1), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_SOURCE);
 			if (vbuffer.getBuffer() == vbuffer.getBuffer(-1)) {
-				Logger::Error("Well this is awkward");
+				SAIL_LOG_ERROR("Well this is awkward");
 			}
 			cmdList->CopyResource(vbuffer.getBuffer(), vbuffer.getBuffer(-1));
 			//DX12Utils::SetResourceUAVBarrier(cmdList, vbuffer.getBuffer());
@@ -372,8 +372,10 @@ void AnimationSystem::initDebugAnimations() {
 	std::string name = "Doc.fbx";
 
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<WireframeShader>();
-	Model* lightModel = &Application::getInstance()->getResourceManager().getModel("candleExported.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
+	Model* lightModel = &app->getResourceManager().getModel("Torch.fbx", shader);
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
+	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
+	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
 	//Wireframe bounding box model
 	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -384,7 +386,7 @@ void AnimationSystem::initDebugAnimations() {
 	unsigned int animationCount = stack->getAnimationCount();
 	for (unsigned int i = 0; i < animationCount; i++) {
 		auto animationEntity2 = ECS::Instance()->createEntity("Doc" + std::to_string(i));
-		EntityFactory::CreateGenericPlayer(animationEntity2, i, glm::vec3(-2.0f + i * 1.2f, 0, -2));
+		EntityFactory::CreateGenericPlayer(animationEntity2, i, glm::vec3(-2.0f + i * 1.2f, 0, -2),0);
 
 		AnimationComponent* ac = animationEntity2->getComponent<AnimationComponent>();
 		ac->setAnimation(i);

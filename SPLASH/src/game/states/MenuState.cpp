@@ -1,4 +1,3 @@
-
 #include "Sail/../../Sail/src/Network/NetworkModule.hpp"
 #include "MenuState.h"
 
@@ -8,34 +7,34 @@
 #include "Network/NWrapperSingleton.h"
 #include "Network/NWrapper.h"
 
+#include "Sail/events/EventDispatcher.h"
 #include "Sail/../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
 
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include <string>
 
-
-
 MenuState::MenuState(StateStack& stack) 
 	: State(stack),
-	inputIP("")
-{
+	inputIP("") {
 	m_input = Input::GetInstance();
 	m_network = &NWrapperSingleton::getInstance();
 	m_app = Application::getInstance();
-
+	m_imGuiHandler = m_app->getImGuiHandler();
 	std::string name = loadPlayerName("res/data/localplayer.settings");
 	m_network->setPlayerName(name.c_str());
 	
 	m_ipBuffer = SAIL_NEW char[m_ipBufferSize];
 
-	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
+	
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
 
 MenuState::~MenuState() {
 	delete[] m_ipBuffer;
 	
 	Utils::writeFileTrunc("res/data/localplayer.settings", NWrapperSingleton::getInstance().getMyPlayerName());
-	m_modelThread.get();
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
 
 bool MenuState::processInput(float dt) {
@@ -48,7 +47,7 @@ bool MenuState::update(float dt, float alpha) {
 		NWrapperSingleton::getInstance().searchForLobbies();
 		udpCounter = udpChill;
 	}
-	NWrapperSingleton::getInstance().checkFoundPackages();
+	NWrapperSingleton::getInstance().checkForPackages();
 	
 	removeDeadLobbies();
 	return false;
@@ -64,6 +63,29 @@ bool MenuState::renderImgui(float dt) {
 	
 	//Keep
 	//ImGui::ShowDemoWindow();
+
+	static std::string font = "Beb20";
+	ImGui::PushFont(m_imGuiHandler->getFont(font));
+
+	if (ImGui::Begin("IMGUISETTINGS")) {
+		if (ImGui::BeginCombo("##FONTS", &font.front())) {
+			for (auto const& [key, val] : m_imGuiHandler->getFontMap()) {
+				ImGui::PushFont(val);
+
+				if(ImGui::Selectable(key.c_str(), font == key)) {
+					font = key;
+				}
+				ImGui::PopFont();
+			}
+			ImGui::EndCombo();
+		}
+	}
+	ImGui::End();
+
+	ImGui::PopFont();
+	
+	ImGui::PushFont(m_imGuiHandler->getFont(font));
+
 
 	static char buf[101] = "";
 	// Host
@@ -95,7 +117,16 @@ bool MenuState::renderImgui(float dt) {
 					NWrapperSingleton::getInstance().stopUDP();
 					m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
-					this->requestStackPop();
+					auto& map = m_app->getSettings().gameSettingsDynamic["map"];
+
+#ifdef _PERFORMANCE_TEST
+					map["sizeX"].value = 20;
+					map["sizeY"].value = 20;
+					map["seed"].value = 2.0f;
+#endif
+
+
+					this->requestStackClear();
 					this->requestStackPush(States::Game);
 				}
 			}
@@ -234,19 +265,26 @@ bool MenuState::renderImgui(float dt) {
 		std::string progress = "Models:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/14.0f, ImVec2(0.0f, 0.0f));
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/28.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(28)).c_str());
 
 		progress = "Textures:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfTextures()/44.0f, ImVec2(0.0f, 0.0f));
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfTextures()/64.0f, ImVec2(0.0f, 0.0f));
 	}
 	ImGui::End();
+
+	ImGui::PopFont();
+
+
 	return false;
 }
 
-bool MenuState::onEvent(Event& event) {
-	EventHandler::dispatch<NetworkLanHostFoundEvent>(event, SAIL_BIND_EVENT(&MenuState::onLanHostFound));
+bool MenuState::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
+	default: break;
+	}
 
 	return false;
 }
@@ -256,98 +294,20 @@ const std::string MenuState::loadPlayerName(const std::string& file) {
 	if (name == "") {
 		name = "Hans";
 		Utils::writeFileTrunc("res/data/localplayer.settings", name);
-		Logger::Log("Found no player file, created: " + std::string("'res/data/localplayer.settings'"));
+		SAIL_LOG("Found no player file, created: " + std::string("'res/data/localplayer.settings'"));
 	}
 	return name;
 }
 
-bool MenuState::loadModels(Application* app) {
-	ResourceManager* rm = &app->getResourceManager();
 
-
-	rm->setDefaultShader(&app->getResourceManager().getShaderSet<GBufferOutShader>());
-	rm->loadModel("Doc.fbx");
-	rm->loadModel("candleExported.fbx");
-	rm->loadModel("Tiles/tileFlat.fbx");
-	rm->loadModel("Tiles/RoomWall.fbx");
-	rm->loadModel("Tiles/tileDoor.fbx");
-	rm->loadModel("Tiles/RoomDoor.fbx");
-	rm->loadModel("Tiles/CorridorDoor.fbx");
-	rm->loadModel("Tiles/CorridorWall.fbx");
-	rm->loadModel("Tiles/RoomCeiling.fbx");
-	rm->loadModel("Tiles/CorridorFloor.fbx");
-	rm->loadModel("Tiles/RoomFloor.fbx");
-	rm->loadModel("Tiles/CorridorCeiling.fbx");
-	rm->loadModel("Tiles/CorridorCorner.fbx");
-	rm->loadModel("Tiles/RoomCorner.fbx");
-	rm->loadModel("Clutter/SmallObject.fbx");
-	rm->loadModel("Clutter/MediumObject.fbx");
-	rm->loadModel("Clutter/LargeObject.fbx");
-
-	rm->loadTexture("pbr/Tiles/RoomWallMRAO.tga");
-	rm->loadTexture("pbr/Tiles/RoomWallNM.tga");
-	rm->loadTexture("pbr/Tiles/RoomWallAlbedo.tga");
-
-	rm->loadTexture("pbr/Tiles/RD_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/RD_NM.tga");
-	rm->loadTexture("pbr/Tiles/RD_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/CD_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/CD_NM.tga");
-	rm->loadTexture("pbr/Tiles/CD_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/CW_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/CW_NM.tga");
-	rm->loadTexture("pbr/Tiles/CW_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/F_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/F_NM.tga");
-	rm->loadTexture("pbr/Tiles/F_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/CF_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/CF_NM.tga");
-	rm->loadTexture("pbr/Tiles/CF_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/CC_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/CC_NM.tga");
-	rm->loadTexture("pbr/Tiles/CC_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/RC_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/RC_NM.tga");
-	rm->loadTexture("pbr/Tiles/RC_Albedo.tga");
-
-	rm->loadTexture("pbr/Tiles/Corner_MRAo.tga");
-	rm->loadTexture("pbr/Tiles/Corner_NM.tga");
-	rm->loadTexture("pbr/Tiles/Corner_Albedo.tga");
-
-	rm->loadTexture("pbr/metal/metalnessRoughnessAO.tga");
-	rm->loadTexture("pbr/metal/normal.tga");
-	rm->loadTexture("pbr/metal/albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/LO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/LO_NM.tga");
-	rm->loadTexture("pbr/Clutter/LO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/MO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/MO_NM.tga");
-	rm->loadTexture("pbr/Clutter/MO_Albedo.tga");
-
-	rm->loadTexture("pbr/Clutter/SO_MRAO.tga");
-	rm->loadTexture("pbr/Clutter/SO_NM.tga");
-	rm->loadTexture("pbr/Clutter/SO_Albedo.tga");
-
-
-	return false;
-}
-
-bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
+bool MenuState::onLanHostFound(const NetworkLanHostFoundEvent& event) {
 	// Get IP (as int) then convert into char*
-	ULONG ip_as_int = event.getIp();
+	ULONG ip_as_int = event.ip;
 	Network::ip_int_to_ip_string(ip_as_int, m_ipBuffer, m_ipBufferSize);
 	std::string ip_as_string(m_ipBuffer);
 
 	// Get Port as well
-	USHORT hostPort = event.getHostPort();
+	USHORT hostPort = event.hostPort;
 	ip_as_string += ":";
 	ip_as_string.append(std::to_string(hostPort));
 
@@ -356,14 +316,14 @@ bool MenuState::onLanHostFound(NetworkLanHostFoundEvent& event) {
 	for (auto& lobby : m_foundLobbies) {
 		if (lobby.ip == ip_as_string) {
 			alreadyExists = true;
-			lobby.description = event.getDesc();
+			lobby.description = event.desc;
 			lobby.resetDuration();
 		}
 	}
 	// If not...
 	if (alreadyExists == false) {
 		// ...log it.
-		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.getDesc() });
+		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.desc });
 	}
 
 	return false;

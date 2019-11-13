@@ -9,7 +9,7 @@ namespace ShaderComponent {
 	class DX12StructuredBuffer : public StructuredBuffer {
 	public:
 		DX12StructuredBuffer(void* initData, unsigned int numElements, unsigned int stride);
-		DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot = 0);
+		DX12StructuredBuffer(void* initData, unsigned int size, unsigned int numElements, unsigned int stride, BIND_SHADER bindShader, unsigned int slot = 0, bool isRW = false);
 		~DX12StructuredBuffer();
 
 		virtual void updateData(const void* newData, unsigned int numElements, int meshIndex = 0, unsigned int offset = 0, int frameIndex = -1) override;
@@ -31,6 +31,7 @@ namespace ShaderComponent {
 		unsigned int m_numElements;
 		unsigned int m_stride;
 		unsigned int m_elementByteSize;
+		bool m_isRW;
 
 		unsigned int m_register;
 		std::vector<wComPtr<ID3D12Resource1>> m_bufferUploadHeap;

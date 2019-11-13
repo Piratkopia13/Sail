@@ -1,22 +1,13 @@
 #pragma once
 
-#include "../../../../Sail/src/Sail/events/Event.h"
-#include "Sail/../Network/NWrapperSingleton.h"
+#include "Sail/events/Event.h"
+#include "Network/NWrapper.h"
 
-class NetworkJoinedEvent : public Event {
-public:
-	NetworkJoinedEvent(Player player) : Event(Event::NETWORK_JOINED) {
-		m_player = player;
-	}
-	~NetworkJoinedEvent() {}
+struct NetworkJoinedEvent : public Event {
+	NetworkJoinedEvent(const Player _player) 
+		: Event(Event::Type::NETWORK_JOINED)
+		, player(_player) { }
+	~NetworkJoinedEvent() = default;
 
-	inline Player getPlayer() const { return m_player; };
-
-	static Type GetStaticType() {
-		return Event::NETWORK_JOINED;
-	}
-
-private:
-	Player m_player;
-
+	const Player player;
 };

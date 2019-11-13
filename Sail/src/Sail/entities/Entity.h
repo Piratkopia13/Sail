@@ -40,12 +40,12 @@ public:
 	void queueDestruction();
 	void removeAllComponents();
 
-	void addChildEntity(Entity::SPtr child);
-	void removeChildEntity(Entity::SPtr toRemove);
+	void addChildEntity(Entity* child);
+	void removeChildEntity(Entity* toRemove);
 	void removeAllChildren();
 	void removeDeleteAllChildren();
 	/* Currently dangerous, will probably be altered in future */
-	std::vector<Entity::SPtr>& getChildEntities();
+	std::vector<Entity*>& getChildEntities();
 
 	void setName(const std::string& name);
 	const std::string& getName() const;
@@ -76,13 +76,13 @@ private:
 	ECS* m_ecs;
 	Entity* m_parent;
 
-	std::vector<Entity::SPtr> m_children;
+	std::vector<Entity*> m_children;
 };
 
 template<typename ComponentType, typename... Targs>
 inline ComponentType* Entity::addComponent(Targs... args) {
 	if (m_components[ComponentType::ID]) {
-		Logger::Warning("Tried to add a duplicate component to an entity");
+		SAIL_LOG_WARNING("Tried to add a duplicate component to an entity");
 	} else {
 		m_components[ComponentType::ID] = std::make_unique<ComponentType>(args...);
 

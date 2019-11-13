@@ -26,7 +26,7 @@ void SearchingState::update(float dt, Entity* entity) {
 	if (clock > 5) {
 		findRandomNodeIndex();
 		// Save this comment to later track how to fine the way.
-		//Logger::Log("node: " + std::to_string(m_targetNode) + " clock: " + std::to_string(clock));
+		//SAIL_LOG("node: " + std::to_string(m_targetNode) + " clock: " + std::to_string(clock));
 		clock = 0;
 	}
 	if (aiComp->entityTarget != nullptr) {

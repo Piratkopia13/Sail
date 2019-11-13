@@ -78,10 +78,14 @@ public:
 
 class Logger {
 public:
-	static void Log(const std::string& msg);
-	static void Warning(const std::string& msg);
-	static void Error(const std::string& msg);
+	static void Log(const std::string& msg, const std::string& file = "", const std::string& line = "");
+	static void Warning(const std::string& msg, const std::string& file = "", const std::string& line = "");
+	static void Error(const std::string& msg, const std::string& file = "", const std::string& line = "");
 };
+
+#define SAIL_LOG( message ) Logger::Log(message, __FILE__, std::to_string(__LINE__))
+#define SAIL_LOG_WARNING( message ) Logger::Warning(message, __FILE__, std::to_string(__LINE__))
+#define SAIL_LOG_ERROR( message ) Logger::Error(message, __FILE__, std::to_string(__LINE__))
 
 namespace Utils {
 	std::string readFile(const std::string& filepath);

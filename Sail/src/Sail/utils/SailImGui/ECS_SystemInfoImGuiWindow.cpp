@@ -6,6 +6,8 @@
 #include "../../entities/components/Components.h"
 
 ECS_SystemInfoImGuiWindow::ECS_SystemInfoImGuiWindow(bool showWindow) {
+	selectedEntity = nullptr;
+	oldSelected = nullptr;
 }
 
 ECS_SystemInfoImGuiWindow::~ECS_SystemInfoImGuiWindow() {
@@ -28,10 +30,10 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 	const ECS::SystemMap* systemMap = &ecs->getSystems();
 	static float windowWeight = 1.0f;
 	
+	
+
 	if (ImGui::Begin("ECS System Entities")) {
 
-		static Entity* selectedEntity = nullptr;
-		static Entity* oldSelected = nullptr;
 		oldSelected = selectedEntity;
 		if(ImGui::BeginChild("SYSTEMS", ImVec2(260, 0), false)) {
 			for (auto const& [key, val] : *systemMap) {
@@ -46,6 +48,14 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 						return;
 					}
 					for (const auto& e : val->getEntities()) {
+						if (name == "EntityRemovalSystem") {
+							if (e == selectedEntity) {
+								selectedEntity = nullptr;
+								ImGui::EndChild();
+								ImGui::End();
+								return;
+							}
+						}
 						if (ImGui::Selectable(std::string(e->getName()+"("+ std::to_string(e->getID())+")").c_str(), selectedEntity == e)) {
 							
 							selectedEntity = (selectedEntity == e ? nullptr : e);
@@ -69,8 +79,8 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 					}
 				}
 				for (const auto& child : selectedEntity->getChildEntities()) {
-					if (ImGui::Selectable(std::string("Child: " + child->getName()).c_str(), selectedEntity == child.get())) {
-						selectedEntity = child.get();
+					if (ImGui::Selectable(std::string("Child: " + child->getName()).c_str(), selectedEntity == child)) {
+						selectedEntity = child;
 						ImGui::EndChild();
 						ImGui::End();
 						return;
@@ -87,7 +97,7 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 							ImGui::Indent(16.0f);
 							ptr->imguiRender(&selectedEntity);
 							if (selectedEntity != oldSelected) {
-								Logger::Log("switched");
+								SAIL_LOG("switched");
 								ImGui::Unindent(16.0f);
 								ImGui::EndGroup();
 								ImGui::EndChild();
@@ -106,4 +116,13 @@ void ECS_SystemInfoImGuiWindow::renderWindow() {
 	ImGui::End();
 #endif
 	return;
+}
+
+void ECS_SystemInfoImGuiWindow::removeEntity(Entity* e) {
+	if (e == selectedEntity) {
+		selectedEntity = nullptr;
+	}
+	if (e == oldSelected) {
+		oldSelected = nullptr;
+	}
 }

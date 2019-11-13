@@ -8,11 +8,11 @@
 
 #include "utils/Timer.h"
 #include "utils/SailImGui/ConsoleCommands.h"
+#include "utils/Storage/SettingStorage.h"
 #include "utils/StateStorage.h"
 #include "resources/ResourceManager.h"
 #include "resources/loaders/AssimpLoader.h"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
-#include "events/IEventDispatcher.h"
 #include "RendererWrapper.h"
 
 #include <ctpl/ctpl_stl.h>
@@ -24,7 +24,7 @@ namespace ctpl {
 	class thread_pool;
 }
 
-class Application : public IEventDispatcher {
+class Application {
 
 public:
 	enum API {
@@ -43,7 +43,6 @@ public:
 	virtual void update(float dt, float alpha) = 0;
 	virtual void fixedUpdate(float dt) = 0;
 	virtual void render(float dt, float alpha) = 0;
-	virtual void dispatchEvent(Event& event) override;
 	virtual void applyPendingStateChanges() = 0;
 
 	template<typename T>
@@ -82,6 +81,7 @@ public:
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
 	ConsoleCommands& getConsole();
+	SettingStorage& getSettings();
 
 	MemoryManager& getMemoryManager();
 	RendererWrapper* getRenderWrapper();
@@ -103,6 +103,7 @@ private:
 
 	MemoryManager m_memoryManager;
 	StateStorage m_stateStorage;
+	SettingStorage m_settingStorage;
 
 	// Timer
 	Timer m_timer;

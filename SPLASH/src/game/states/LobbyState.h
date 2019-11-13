@@ -3,19 +3,21 @@
 #include "Sail.h"
 #include <string>
 #include <list>
+#include "Sail/utils/SailImGui/OptionsWindow.h"
 
 struct Player;
 class NWrapper;
 class TextInputEvent;
-class NetworkJoinedEvent;
 class AudioComponent;
 
+struct NetworkChatEvent;
+struct NetworkJoinedEvent;
+struct NetworkDisconnectEvent;
+
 struct Message {
-	std::string sender;
+	Netcode::PlayerID senderID;
 	std::string content;
 };
-
-
 #define HOST_ID 0
 
 class LobbyState : public State {
@@ -32,28 +34,29 @@ public:
 	// Renders imgui
 	bool renderImgui(float dt);
 	// Sends events to the state
-	virtual bool onEvent(Event& event) = 0;
 
 protected:
 	Application* m_app = nullptr;
 	Input* m_input = nullptr;
 	NWrapper* m_network = nullptr;
+	SettingStorage* m_settings;
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
 
-	std::list<Message> m_messages;
+	std::list<std::string> m_messages;
 
 	// Front-End Functions
-	bool inputToChatLog(MSG& msg);
-	void addTextToChat(Message* text);
+	bool inputToChatLog(const MSG& msg);
 	void resetCurrentMessage();
 
 	std::string fetchMessage();
-	void addMessageToChat(Message& message);
+	void addMessageToChat(const Message& message);
+	virtual bool onEvent(const Event& event) override;
 
 private:
-	std::unique_ptr<ImGuiHandler> m_imGuiHandler;
-
+	ImGuiHandler* m_imGuiHandler;
+	OptionsWindow m_optionsWindow;
+	bool m_ready;
 	// LobbyAudio
 	Entity* m_lobbyAudio = nullptr;
 
@@ -67,13 +70,29 @@ private:
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
+	bool m_settingsChanged;
+	float m_timeSinceLastUpdate;
+
+	ImGuiWindowFlags m_standaloneButtonflags;
+
+
+
 	unsigned int m_outerPadding;
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;
 	unsigned int m_textHeight;
+
+	bool m_renderGameSettings;
+	bool m_renderApplicationSettings;
+
+
+	virtual bool onMyTextInput(const TextInputEvent& event) = 0;
+	bool onRecievedText(const NetworkChatEvent& event);
+	bool onPlayerJoined(const NetworkJoinedEvent& event);
+	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
+
 	void renderPlayerList();
-	void renderStartButton();
-	void renderQuitButton();
-	void renderSettings();		// Currently empty
+	void renderGameSettings();		// Currently empty
 	void renderChat();
+	void renderMenu();
 };

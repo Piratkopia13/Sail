@@ -3,11 +3,10 @@
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
 #include "../events/NetworkDroppedEvent.h"
+#include "../events/NetworkSerializedPackageEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
-class NetworkSerializedPackageEvent;
-
-class GameState : public State {
+class GameState final : public State {
 public:
 	GameState(StateStack& stack);
 	~GameState();
@@ -15,7 +14,7 @@ public:
 	// Process input for the state ||
 	virtual bool processInput(float dt) override;
 	// Sends events to the state
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 	// Updates the state - Runs every frame
 	virtual bool update(float dt, float alpha = 1.0f) override;
 	// Updates the state - Runs every tick
@@ -31,15 +30,15 @@ private:
 	void initSystems(const unsigned char playerID);
 	void initConsole();
 
-	bool onResize(WindowResizeEvent& event);
-	bool onNetworkSerializedPackageEvent(NetworkSerializedPackageEvent& event);
-	bool onPlayerDisconnect(NetworkDisconnectEvent& event);
-	bool onPlayerDropped(NetworkDroppedEvent& event);
-	bool onPlayerCandleDeath(PlayerCandleDeathEvent& event);
+	bool onResize(const WindowResizeEvent& event);
+	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
+	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
+	bool onPlayerDropped(const NetworkDroppedEvent& event);
 
 	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
+	void updateKillCamComponentSystems(float dt);
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
@@ -72,6 +71,7 @@ private:
 	WasDroppedWindow m_wasDroppedWindow;
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
+	NetworkInfoWindow m_networkInfoImGuiWindow;
 
 	size_t m_currLightIndex;
 
@@ -88,6 +88,8 @@ private:
 	std::vector<BaseComponentSystem*> m_runningSystems;
 
 	bool m_wasDropped = false;
+
+	bool m_isInKillCamMode = false;
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
