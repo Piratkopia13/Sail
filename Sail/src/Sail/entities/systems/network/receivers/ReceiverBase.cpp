@@ -1,3 +1,4 @@
+
 #include "pch.h"
 #include "ReceiverBase.h"
 #include "Sail/entities/Entity.h"
@@ -25,14 +26,6 @@ void ReceiverBase::setPlayer   (Entity* player)       { m_playerEntity = player;
 void ReceiverBase::setGameState(GameState* gameState) { m_gameStatePtr = gameState; }
 
 const std::vector<Entity*>& ReceiverBase::getEntities() const { return entities; }
-
-// TODO? check what the best argument is
-void ReceiverBase::pushDataToBuffer(const std::string& data) {
-	std::lock_guard<std::mutex> lock(m_bufferLock);
-	m_incomingDataBuffer.push(data);
-
-}
-
 
 
 /*
@@ -70,9 +63,7 @@ void ReceiverBase::pushDataToBuffer(const std::string& data) {
 	--------------------------------------------------
 
 */
-void ReceiverBase::update(float dt) {
-	std::lock_guard<std::mutex> lock(m_bufferLock); // Don't push more data to the buffer while this function is running
-
+void ReceiverBase::processData(float dt, std::queue<std::string>& data) {
 	// TODO: Remove a bunch of stuff from here
 	size_t nrOfSenderComponents    = 0;
 	size_t nrOfMessagesInComponent = 0;
@@ -89,15 +80,15 @@ void ReceiverBase::update(float dt) {
 
 
 	// Process all messages in the buffer
-	while (!m_incomingDataBuffer.empty()) {
-		std::istringstream is(m_incomingDataBuffer.front());
+	while (!data.empty()) {
+		std::istringstream is(data.front());
 		Netcode::InArchive ar(is);
 
 		ar(senderID);
 
 		// If the packet was originally sent over the network from ourself 
 		// then don't process it and go to the next packet
-		if (senderID == m_playerID) { m_incomingDataBuffer.pop(); continue; }
+		if (senderID == m_playerID) { data.pop(); continue; }
 
 		// If the message was sent internally to ourself then correct the senderID
 		if (senderID == Netcode::MESSAGE_FROM_SELF_ID) { senderID = m_playerID; }
@@ -433,7 +424,7 @@ void ReceiverBase::update(float dt) {
 			}
 		}
 
-		m_incomingDataBuffer.pop();
+		data.pop();
 	}
 
 	// End game timer 

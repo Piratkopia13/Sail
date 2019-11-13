@@ -29,6 +29,9 @@ namespace Audio {
 		KILLING_BLOW,
 		START_THROWING,
 		STOP_THROWING,
+		SPRINKLER_START,
+		SPRINKLER_WATER,
+		ALARM,
 		COUNT // Keep at the bottom so that COUNT == nr of sound types
 	};
 

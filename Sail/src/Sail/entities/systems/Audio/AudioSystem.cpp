@@ -115,6 +115,11 @@ void AudioSystem::initialize() {
 	for (int i = 1; i < 8; i++) {
 		m_audioEngine->loadSound("miscellaneous/throwing/throw" + std::to_string(i) + ".wav");
 	}
+  // Sprinkler
+	m_audioEngine->loadSound("miscellaneous/sprinkler_start1.wav");
+	m_audioEngine->loadSound("miscellaneous/sprinkler_start2.wav");
+	m_audioEngine->loadSound("miscellaneous/sprinkler.wav");
+	m_audioEngine->loadSound("miscellaneous/alarm.wav");
 #pragma endregion
 }
 

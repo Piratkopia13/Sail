@@ -14,6 +14,10 @@ public:
 	NetworkReceiverSystem();
 	virtual ~NetworkReceiverSystem();
 
+	void pushDataToBuffer(const std::string& data);
+
+	void update(float dt) override;
+
 #ifdef DEVELOPMENT
 	void imguiPrint(Entity** selectedEntity = nullptr) {
 
@@ -21,7 +25,7 @@ public:
 	}
 #endif
 
-private:
+protected:
 	void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)                  override;
 	void destroyEntity   (const Netcode::ComponentID entityID)                                    override;
 	void enableSprinklers()                                                                       override;
@@ -60,4 +64,8 @@ private:
 
 	bool onEvent(const Event& event) override;
 
+protected:
+	// FIFO container of serialized data-strings to decode
+	std::queue<std::string> m_incomingDataBuffer;
+	std::mutex m_bufferLock;
 };
