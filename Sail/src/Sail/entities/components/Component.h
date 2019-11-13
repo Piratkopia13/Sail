@@ -78,7 +78,6 @@ public:
 
 	static const ComponentTypeID ID;
 	static const ComponentTypeBitID& getBID() {
-		//static ComponentTypeBitID BID = static_cast<ComponentTypeBitID>(1ULL << ComponentType::ID);
 		static ComponentTypeBitID BID = GetBIDofID(ComponentType::ID);
 		return BID;
 	}
