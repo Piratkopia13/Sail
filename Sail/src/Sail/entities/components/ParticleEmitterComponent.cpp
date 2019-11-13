@@ -35,9 +35,7 @@ void ParticleEmitterComponent::init() {
 	m_outputVertexBufferSize = 6 * 1700;
 	//m_outputVertexBufferSize = 36;
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
 	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
-	m_model->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/WaterGun/Watergun_Albedo.tga");
 	//m_model->setIsAnimated(true);
 
 	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
@@ -246,4 +244,7 @@ void ParticleEmitterComponent::submit() const {
 	);
 }
 
-
+void ParticleEmitterComponent::setTexture(std::string textureName) {
+	Application::getInstance()->getResourceManager().loadTexture(textureName);
+	m_model->getMesh(0)->getMaterial()->setAlbedoTexture(textureName);
+}

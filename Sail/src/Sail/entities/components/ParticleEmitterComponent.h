@@ -38,6 +38,8 @@ public:
 
 	void submit() const;
 
+	void setTexture(std::string textureName);
+
 private:
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
 	std::unique_ptr < ParticleComputeShader> m_particleShader;
