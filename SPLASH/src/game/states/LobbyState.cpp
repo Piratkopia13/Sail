@@ -244,7 +244,7 @@ bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	
 	if (NWrapperSingleton::getInstance().isHost()) {
-
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
 	
 	Message message;
@@ -560,7 +560,7 @@ void LobbyState::renderMenu() {
 
 		
 		if (NWrapperSingleton::getInstance().isHost()) {
-			static bool allReady = true;
+			bool allReady = true;
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
 				if (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) {
 					allReady = false;

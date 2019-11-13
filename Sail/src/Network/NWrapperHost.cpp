@@ -217,7 +217,7 @@ void NWrapperHost::setClientState(States::ID state, Netcode::PlayerID id) {
 	} else {
 		for (auto p : m_connectionsMap) {
 			if (p.second == id) {
-				sendMsg(msg, p.first);
+				sendMsg(msg, sizeof(msg), p.first);
 				break;
 			}
 		}

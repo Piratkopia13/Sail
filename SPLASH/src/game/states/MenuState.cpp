@@ -275,6 +275,8 @@ bool MenuState::renderImgui(float dt) {
 }
 
 bool MenuState::onEvent(const Event& event) {
+	State::onEvent(event);
+
 	switch (event.type) {
 	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
 	default: break;
