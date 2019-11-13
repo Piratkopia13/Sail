@@ -156,8 +156,13 @@ GameState::GameState(StateStack& stack)
 	int id = static_cast<int>(playerID);
 	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
+
 		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 	}
+
+	SAIL_LOG(std::to_string(spawnLocation.x));
+	SAIL_LOG(std::to_string(spawnLocation.y));
+	SAIL_LOG(std::to_string(spawnLocation.z));
 
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
@@ -709,7 +714,6 @@ bool GameState::renderImguiDebug(float dt) {
 void GameState::shutDownGameState() {
 	// Show mouse cursor if hidden
 	Input::HideCursor(false);
-
 	ECS::Instance()->stopAllSystems();
 	ECS::Instance()->destroyAllEntities();
 }
