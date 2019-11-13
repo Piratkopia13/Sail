@@ -25,12 +25,7 @@ public:
 	void init(Netcode::PlayerID playerID, NetworkReceiverSystem* receiverSystem);
 	
 	void queueEvent(NetworkSenderEvent* event);
-	void pushDataToBuffer(std::string data);
-	
-	// TODO: Is this used?
-	const std::vector<Entity*>& getEntities() const;
-
-	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
+	void pushDataToBuffer(const std::string& data);
 
 #ifdef DEVELOPMENT
 	void imguiPrint(Entity** selectedEntity = nullptr) {

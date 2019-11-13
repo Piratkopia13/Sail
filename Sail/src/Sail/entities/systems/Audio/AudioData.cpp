@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "AudioData.h"
 
+#define RUNNING_SOUND_SPEED 0.756f
+
 void AllAudioData::init() {
 #pragma region DEFINING playerEntity SOUNDS
 
@@ -17,25 +19,25 @@ void AllAudioData::init() {
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "footsteps/footsteps_metal_1.wav";
-		soundUniqueInfo.soundEffectLength = 0.919f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 0.7f;
 		AllAudioData::m_soundsUnique[Audio::RUN_METAL].push_back(soundUniqueInfo);
 
 		//	• Sample #2
 		soundUniqueInfo.fileName = "footsteps/footsteps_metal_2.wav";
-		soundUniqueInfo.soundEffectLength = 0.941f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 0.7f;
 		AllAudioData::m_soundsUnique[Audio::RUN_METAL].push_back(soundUniqueInfo);
 
 		//	• Sample #3
 		soundUniqueInfo.fileName = "footsteps/footsteps_metal_3.wav";
-		soundUniqueInfo.soundEffectLength = 0.921f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 0.7f;
 		AllAudioData::m_soundsUnique[Audio::RUN_METAL].push_back(soundUniqueInfo);
 
 		//	• Sample #4
 		soundUniqueInfo.fileName = "footsteps/footsteps_metal_4.wav";
-		soundUniqueInfo.soundEffectLength = 0.936f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 0.7f;
 		AllAudioData::m_soundsUnique[Audio::RUN_METAL].push_back(soundUniqueInfo);
 	}
@@ -51,22 +53,22 @@ void AllAudioData::init() {
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "footsteps/footsteps_tile_1.wav";
-		soundUniqueInfo.soundEffectLength = 0.919f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_TILE].push_back(soundUniqueInfo);
 		//	• Sample #2
 		soundUniqueInfo.fileName = "footsteps/footsteps_tile_2.wav";
-		soundUniqueInfo.soundEffectLength = 0.941f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_TILE].push_back(soundUniqueInfo);
 		//	• Sample #3
 		soundUniqueInfo.fileName = "footsteps/footsteps_tile_3.wav";
-		soundUniqueInfo.soundEffectLength = 0.921f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_TILE].push_back(soundUniqueInfo);
 		//	• Sample #4
 		soundUniqueInfo.fileName = "footsteps/footsteps_tile_4.wav";
-		soundUniqueInfo.soundEffectLength = 0.936f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_TILE].push_back(soundUniqueInfo);
 	}
@@ -82,22 +84,22 @@ void AllAudioData::init() {
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "footsteps/footsteps_water_metal_1.wav";
-		soundUniqueInfo.soundEffectLength = 0.919f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_WATER_METAL].push_back(soundUniqueInfo);
 		//	• Sample #2
 		soundUniqueInfo.fileName = "footsteps/footsteps_water_metal_2.wav";
-		soundUniqueInfo.soundEffectLength = 0.941f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_WATER_METAL].push_back(soundUniqueInfo);
 		//	• Sample #3
 		soundUniqueInfo.fileName = "footsteps/footsteps_water_metal_3.wav";
-		soundUniqueInfo.soundEffectLength = 0.921f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_WATER_METAL].push_back(soundUniqueInfo);
 		//	• Sample #4
 		soundUniqueInfo.fileName = "footsteps/footsteps_water_metal_4.wav";
-		soundUniqueInfo.soundEffectLength = 0.936f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_WATER_METAL].push_back(soundUniqueInfo);
 	}
@@ -113,22 +115,22 @@ void AllAudioData::init() {
 	{
 		//	• Sample #1
 		soundUniqueInfo.fileName = "footsteps/footsteps_water_tile_1.wav";
-		soundUniqueInfo.soundEffectLength = 0.919f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_WATER_TILE].push_back(soundUniqueInfo);
 		//	• Sample #2
 		soundUniqueInfo.fileName = "footsteps/footsteps_water_tile_2.wav";
-		soundUniqueInfo.soundEffectLength = 0.941f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_WATER_TILE].push_back(soundUniqueInfo);
 		//	• Sample #3
 		soundUniqueInfo.fileName = "footsteps/footsteps_water_tile_3.wav";
-		soundUniqueInfo.soundEffectLength = 0.921f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_WATER_TILE].push_back(soundUniqueInfo);
 		//	• Sample #4
 		soundUniqueInfo.fileName = "footsteps/footsteps_water_tile_4.wav";
-		soundUniqueInfo.soundEffectLength = 0.936f;
+		soundUniqueInfo.soundEffectLength = RUNNING_SOUND_SPEED;
 		soundUniqueInfo.volume = 1.0f;
 		AllAudioData::m_soundsUnique[Audio::RUN_WATER_TILE].push_back(soundUniqueInfo);
 	}
