@@ -258,9 +258,9 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 
 void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
-	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 1.0f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
-	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f);
-	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
 
 	// Convert position to index, stored as floats
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
@@ -302,9 +302,9 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 	bool returnValue = false;
 
 	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
-	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 1.0f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
-	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f);
-	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
 
 	// Convert position to index, stored as floats
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
@@ -327,6 +327,8 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 void DXRBase::updateWaterData() {
+	simulateWater(Application::getInstance()->getDelta());
+
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
 		unsigned int& data = pair.second;

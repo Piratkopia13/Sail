@@ -150,7 +150,6 @@ void SettingStorage::createApplicationDefaultMisc() {
 void SettingStorage::createGameDefaultStructure() {
 	createGameDefaultMap();
 	createGameModeDefault();
-
 }
 
 void SettingStorage::createGameDefaultMap() {	
