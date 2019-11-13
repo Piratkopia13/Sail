@@ -18,10 +18,6 @@ PlayerSystem::~PlayerSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
 }
 
-
-// TODO: remove all components that aren't needed by the replay systems
-//       add a lifetime component so that the entity eventually gets removed
-//       add relevant replay components
 bool PlayerSystem::onEvent(const Event& event) {
 
 	auto onPlayerDied = [](const PlayerDiedEvent& e) {
@@ -55,14 +51,11 @@ bool PlayerSystem::onEvent(const Event& event) {
 			c->addComponent<LifeTimeComponent>(LIFETIME_AFTER_DEATH);
 		}
 
-		// Remove candle entity
-		//e.killed->removeDeleteAllChildren();
-		
+
 		// Check if the player was the one who died
 		if (Netcode::getComponentOwner(e.netIDofKilled) == myPlayerID) {
 			// If my player died, I become a spectator
 			e.killed->addComponent<SpectatorComponent>();
-			e.killed->addComponent<MovementComponent>();
 			e.killed->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
 			e.killed->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 			e.killed->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
@@ -84,14 +77,12 @@ bool PlayerSystem::onEvent(const Event& event) {
 			// if it wasn't our player then remove all components that aren't needed for replay and 
 			// add lifetime component so that it eventually gets destroyed
 			for (ComponentTypeID c_ID = 0; c_ID < BaseComponent::nrOfComponentTypes(); c_ID++) {
-				// If the current index is a component that we want to keep leave it be and go to the next one
-				if ((GetBIDofID(c_ID) & componentsToKeep).any()) { continue; }
-
-				e.killed->removeComponent(c_ID);
+				// If the current index is not one of the components that we want to keep then remove it
+				if ((GetBIDofID(c_ID) & componentsToKeep).none()) {
+					e.killed->removeComponent(c_ID);
+				}
 			}
 			e.killed->addComponent<LifeTimeComponent>(LIFETIME_AFTER_DEATH);
-
-			//e.killed->queueDestruction();
 		}
 	};
 
