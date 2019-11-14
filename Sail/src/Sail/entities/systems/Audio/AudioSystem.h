@@ -27,11 +27,8 @@ public:
 private:
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_i;
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_toBeDeleted;
-	//std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_j;
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_j;
-	//std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_k;
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_k;
-	//std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_streamToBeDeleted;
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_streamToBeDeleted;
 
 	bool m_hasOutputDevices = true;

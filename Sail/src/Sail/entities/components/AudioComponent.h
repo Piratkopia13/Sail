@@ -24,7 +24,6 @@ public:
 	// VARIABLE DEFINITIONS/CLARIFICATIONS
 		// • string = filename
 		// • int = ID of playing streaming; needed for STOPPING the streamed sound
-	//std::list<std::pair<std::string, std::pair<int, bool>>> m_currentlyStreaming;
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>> m_currentlyStreaming;
 
 #ifdef DEVELOPMENT

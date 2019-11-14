@@ -103,7 +103,6 @@ private:
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
 	IXAudio2SubmixVoice* m_masterSubmixVoice = nullptr;
-	//IXAudio2SubmixVoice* m_streamingSubmixVoice = nullptr;
 
 	DWORD m_destinationChannelCount;
 	// Represents each loaded sound in the form of an 'object'
