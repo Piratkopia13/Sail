@@ -71,6 +71,7 @@ private:
 	struct PerInstance {
 		glm::mat3x4 transform;
 		char teamColorIndex;
+		bool castShadows;
 	};
 
 	struct InstanceList {

@@ -151,7 +151,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flagFastTrace, cmdList);
 				} else {
 					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceList.emplace_back(PerInstance{(glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID });
+					searchResult->second.instanceList.emplace_back(PerInstance{(glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
 				}
 			}
 
@@ -183,7 +183,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
 				}
 				// Add transform to instance list
-				searchResult->second.instanceList.emplace_back(PerInstance{ (glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID });
+				searchResult->second.instanceList.emplace_back(PerInstance{ (glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
 			}
 
 			totalNumInstances++;
@@ -563,7 +563,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 		for (auto& instance : instanceList.instanceList) {
 			if (it.first == nullptr) {
 				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
-				pInstanceDesc->InstanceMask = 0x01;
+				pInstanceDesc->InstanceMask = INSTACE_MASK_METABALLS;
 			} else {
 #ifdef DEVELOPMENT
 				if (blasIndex >= 1 << 10) {
@@ -571,7 +571,8 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 				}
 #endif
 				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
-				pInstanceDesc->InstanceMask = 0xFF &~ 0x01;
+				UINT shadowMask = (instance.castShadows) ? INSTACE_MASK_CAST_SHADOWS : 0;
+				pInstanceDesc->InstanceMask = INSTACE_MASK_DEFAULT | shadowMask;
 			}
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
@@ -614,7 +615,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
 
 	InstanceList instance;
-	instance.instanceList.emplace_back(PerInstance{ renderCommand.transform , (char)renderCommand.teamColorID});
+	instance.instanceList.emplace_back(PerInstance{ renderCommand.transform , (char)renderCommand.teamColorID, renderCommand.castShadows});
 	AccelerationStructureBuffers& bottomBuffer = instance.blas;
 	if (performInplaceUpdate) {
 		bottomBuffer = *sourceBufferForUpdate;
