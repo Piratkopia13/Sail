@@ -12,6 +12,8 @@
 #include "Sail/events/types/NetworkPlayerRequestedTeamChange.h"
 #include "Sail/events/types/NetworkPlayerChangedTeam.h"
 
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
+
 
 bool NWrapperHost::host(int port) {
 	bool result = m_network->host(port);
@@ -42,7 +44,21 @@ void NWrapperHost::updateServerDescription() {
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
+void NWrapperHost::sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayeriD) {
+	std::string msg;
+	msg += ML_SERIALIZED;
+	msg += data;
+
+	for (auto p : m_connectionsMap) {
+		if (p.second == PlayeriD) {
+			m_network->send(msg.c_str(), msg.length() + 1, p.first);
+			break;
+		}
+	}
+}
+
 #ifdef DEVELOPMENT
+
 const std::map<TCP_CONNECTION_ID, unsigned char>& NWrapperHost::getConnectionMap() {
 	return m_connectionsMap;
 }
@@ -54,7 +70,8 @@ const std::string& NWrapperHost::getServerDescription() {
 const std::string& NWrapperHost::getLobbyName() {
 	return m_lobbyName;
 }
-#endif //DEVELOPMENT
+
+#endif // DEVELOPMENT
 
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	// Generate an ID for the client that joined and send that information.
@@ -70,7 +87,7 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	} else {
 		m_IdDistribution--;
 	}
-
+	
 	updateServerDescription();
 }
 
@@ -195,6 +212,7 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 
 		char msgTeam[] = { ML_TEAM_REQUEST, NWrapperSingleton::getInstance().getPlayer(p.id)->team, p.id, ML_NULL };
 		sendMsg(msgTeam, sizeof(msgTeam), tcp_id);
+
 	}
 
 	if (p->justJoined) {
@@ -278,3 +296,4 @@ void NWrapperHost::setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool d
 		}
 	}
 }
+
