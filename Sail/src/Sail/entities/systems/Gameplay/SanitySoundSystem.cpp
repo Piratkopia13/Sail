@@ -104,7 +104,7 @@ void SanitySoundSystem::update(float dt) {
 			}
 		}
 
-		if (!cc->isCarried) {
+		if (!cc->isCarried && cc != nullptr) {
 			if (!m_switch_violin) {
 				if (sanity < TIMEPOINT_VIOLIN) {
 					m_switch_violin = true;
