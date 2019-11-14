@@ -27,18 +27,26 @@ GameState::GameState(StateStack& stack)
 	, m_profiler(true)
 	, m_showcaseProcGen(false) 
 {
+
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 
-
-	initConsole();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
+	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
 
+	if (!m_isSingleplayer) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
+		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
+	}
+
+	initConsole();
+	m_app->setCurrentCamera(&m_cam);
 
 	std::vector<glm::vec3> m_teamColors;
 	for (int i = 0; i < 12; i++) {
@@ -143,10 +151,6 @@ GameState::GameState(StateStack& stack)
 		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 	}
 
-	SAIL_LOG(std::to_string(spawnLocation.x));
-	SAIL_LOG(std::to_string(spawnLocation.y));
-	SAIL_LOG(std::to_string(spawnLocation.z));
-
 	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
@@ -189,6 +193,10 @@ GameState::GameState(StateStack& stack)
 
 	// Clear all water on the level
 	EventDispatcher::Instance().emit(ResetWaterEvent());
+
+	if (!m_isSingleplayer) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
+	}
 }
 
 GameState::~GameState() {
@@ -200,11 +208,27 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 }
 
 // Process input for the state
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
+
+
+#ifdef DEVELOPMENT
+	constexpr float TOGGLE_TIMER = 0.2f;
+	static float cooldown = 0.0f;
+	cooldown += dt;
+
+	// Manually toggle killcam
+	if (Input::IsKeyPressed(KeyBinds::START_KILLCAM) & cooldown > TOGGLE_TIMER) {
+		m_isInKillCamMode = !m_isInKillCamMode;
+		cooldown = 0.0f;
+	}
+#endif
+
+
 
 #ifndef DEVELOPMENT
 	//Capture mouse
@@ -364,12 +388,12 @@ bool GameState::processInput(float dt) {
 
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
-	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<TransformComponent>>();
 	
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
 
-	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<TransformComponent>>();
 
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 
@@ -394,11 +418,11 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
 
-
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
 	m_componentSystems.candlePlacementSystem = ECS::Instance()->createSystem<CandlePlacementSystem>();
-	m_componentSystems.candlePlacementSystem->setOctree(m_octree);
+	m_componentSystems.candleThrowingSystem = ECS::Instance()->createSystem<CandleThrowingSystem>();
+	m_componentSystems.candleThrowingSystem->setOctree(m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -412,12 +436,12 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.levelSystem = ECS::Instance()->createSystem<LevelSystem>();
 
 	// Create systems for rendering
-	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.beginEndFrameSystem     = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
-	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
-	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
+	m_componentSystems.metaballSubmitSystem    = ECS::Instance()->createSystem<MetaballSubmitSystem<TransformComponent>>();
+	m_componentSystems.modelSubmitSystem       = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
+	m_componentSystems.renderImGuiSystem       = ECS::Instance()->createSystem<RenderImGuiSystem>();
+	m_componentSystems.guiSubmitSystem         = ECS::Instance()->createSystem<GUISubmitSystem>();
 
 	// Create system for player input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -435,11 +459,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	}
 	m_componentSystems.killCamReceiverSystem = ECS::Instance()->createSystem<KillCamReceiverSystem>();
 
-	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem, m_componentSystems.killCamReceiverSystem);
-
-
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -453,6 +474,15 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.sprinklerSystem->setOctree(m_octree);
 
 	m_componentSystems.sprintingSystem = ECS::Instance()->createSystem<SprintingSystem>();
+
+
+	// Create systems needed for the killcam
+	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
+	m_componentSystems.killCamModelSubmitSystem    = ECS::Instance()->createSystem<ModelSubmitSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamMetaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamMovementSystem       = ECS::Instance()->createSystem<MovementSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<ReplayTransformComponent>>();
+
 }
 
 void GameState::initConsole() {
@@ -520,12 +550,15 @@ void GameState::initConsole() {
 }
 
 bool GameState::onEvent(const Event& event) {
+	State::onEvent(event);
+
 	switch (event.type) {
-	case Event::Type::WINDOW_RESIZE:					onResize((const WindowResizeEvent&)event); break;
-	case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
-	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
-	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
-	default: break;
+		case Event::Type::WINDOW_RESIZE:					onResize((const WindowResizeEvent&)event); break;
+		case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
+		case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
+		case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
+		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS:	onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
+		default: break;
 	}
 
 	return true;
@@ -563,11 +596,25 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 	return false;
 }
 
+void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
+	
+}
+
 bool GameState::update(float dt, float alpha) {
+	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
+	NWrapperSingleton::getInstance().checkForPackages();
+
+	m_killFeedWindow.updateTiming(dt);	
+	waitForOtherPlayers();
+
+	//Dont update game if game have not started. This is to sync all players to start at the same time
+	if (!m_gameStarted) {
+		return true;
+	}
+
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
-	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -585,6 +632,11 @@ bool GameState::fixedUpdate(float dt) {
 
 	counter += dt * 2.0f;
 
+	//Dont update game if game have not started. This is to sync all players to start at the same time
+	if (!m_gameStarted) {
+		return true;
+	}
+
 #ifdef _PERFORMANCE_TEST
 	/* here we shoot the guns */
 	for (auto e : m_performanceEntities) {
@@ -601,7 +653,7 @@ bool GameState::fixedUpdate(float dt) {
 	updatePerTickComponentSystems(dt);
 
 	if (m_isInKillCamMode) {
-		updateKillCamComponentSystems(dt);
+		updatePerTickKillCamComponentSystems(dt);
 	}
 
 	return true;
@@ -615,10 +667,19 @@ bool GameState::render(float dt, float alpha) {
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
-	m_componentSystems.modelSubmitSystem->submitAll(alpha);
-	m_componentSystems.particleSystem->submitAll();
-	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
-	m_componentSystems.boundingboxSubmitSystem->submitAll();
+
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamModelSubmitSystem->submitAll(alpha);
+		m_componentSystems.killCamMetaballSubmitSystem->submitAll(alpha);
+	} else {
+		m_componentSystems.modelSubmitSystem->submitAll(alpha);
+		m_componentSystems.particleSystem->submitAll();
+		m_componentSystems.metaballSubmitSystem->submitAll(alpha);
+		m_componentSystems.boundingboxSubmitSystem->submitAll();
+	}
+
+
+
 	m_componentSystems.guiSubmitSystem->submitAll();
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
@@ -629,6 +690,10 @@ bool GameState::renderImgui(float dt) {
 	m_killFeedWindow.renderWindow();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();
+	}
+
+	if (!m_gameStarted) {
+		m_waitingForPlayersWindow.renderWindow();
 	}
 
 	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
@@ -683,21 +748,14 @@ void GameState::shutDownGameState() {
 
 
 // TODO: Add more systems here that only deal with replay entities/components
-void GameState::updateKillCamComponentSystems(float dt) {
+void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	
-	// TODO: Prepare transform update for interpolation etc.
+	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
-	
+	m_componentSystems.killCamMovementSystem->update(dt);
+	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
 
-	// TODO: run relevant systems in parallel
-	//runSystem(dt, m_componentSystems.killCamReceiverSystem);
-
-
-	// Wait for all systems to finish executing
-	for (auto& fut : m_runningSystemJobs) {
-		fut.get();
-	}
 }
 
 // HERE BE DRAGONS
@@ -729,6 +787,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
+	runSystem(dt, m_componentSystems.candleThrowingSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
 	runSystem(dt, m_componentSystems.candlePlacementSystem);
 	runSystem(dt, m_componentSystems.candleReignitionSystem);
@@ -752,10 +811,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
-
-	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
-	NWrapperSingleton::getInstance().checkForPackages();
-
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
@@ -781,7 +836,11 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.entityRemovalSystem->update();
 }
 
+#define DISABLE_RUNSYSTEM_MT
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
+#ifdef DISABLE_RUNSYSTEM_MT
+	toRun->update(dt);
+#else
 	bool started = false;
 	while (!started) {
 		// First check if the system can be run
@@ -824,6 +883,7 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 			}
 		}
 	}
+#endif
 }
 
 const std::string GameState::teleportToMap() {
@@ -844,6 +904,38 @@ void GameState::logSomeoneDisconnected(unsigned char id) {
 
 	// Log it
 	SAIL_LOG(logMessage);
+}
+
+void GameState::waitForOtherPlayers() {
+	if (NWrapperSingleton::getInstance().isHost()) {
+		if (!m_gameStarted) {
+			bool allReady = true;
+
+			//See if anyone is not ready
+			//TODO: maybe dont count in spectators here.
+			//TODO: what will happen if new players joins in gamestate but before gamestart?
+			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+				if (p.lastStateStatus.status != 1 || p.lastStateStatus.state != States::Game) {
+					allReady = false;
+					break;
+				}
+			}
+
+			//If all players are ready, host can give approval to start game and set m_gameStarted = true
+			if (allReady) {
+				m_gameStarted = true;
+				NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 2);
+			}
+		}
+	} else {
+		if (!m_gameStarted) {
+			//If Host have given approval to start game, set m_gameStarted = true
+			auto p = NWrapperSingleton::getInstance().getPlayer(0);
+			if (p->lastStateStatus.status == 2 && p->lastStateStatus.state == States::Game) {
+				m_gameStarted = true;
+			}
+		}
+	}
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {
@@ -956,7 +1048,6 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		roomDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RD_NM.tga");
 		roomDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RD_Albedo.tga");
 
-
 		Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor.fbx", shader);
 		corridorDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CD_MRAo.tga");
 		corridorDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CD_NM.tga");
@@ -972,17 +1063,22 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RC_NM.tga");
 		roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RC_Albedo.tga");
 
-		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/CorridorFloor.fbx", shader);
+		Model* roomServer = &m_app->getResourceManager().getModelCopy("Tiles/RoomWall.fbx", shader);
+		roomServer->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/RS_MRAo.tga");
+		roomServer->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/RS_NM.tga");
+		roomServer->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RS_Albedo.tga");
+
+		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
 		corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
 		corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
 		corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
 
-		Model* roomFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
+		Model* roomFloor = &m_app->getResourceManager().getModelCopy("Tiles/RoomFloor.fbx", shader);
 		roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
 		roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/F_NM.tga");
 		roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/F_Albedo.tga");
 
-		Model* corridorCeiling = &m_app->getResourceManager().getModel("Tiles/CorridorCeiling.fbx", shader);
+		Model* corridorCeiling = &m_app->getResourceManager().getModelCopy("Tiles/RoomCeiling.fbx", shader);
 		corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CC_MRAo.tga");
 		corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CC_NM.tga");
 		corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CC_Albedo.tga");
@@ -1022,7 +1118,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cBooks1->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
 		cBooks1->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Book1_Albedo.tga");
 
-		Model* cBooks2 = &m_app->getResourceManager().getModel("Clutter/Books2.fbx", shader);
+		Model* cBooks2 = &m_app->getResourceManager().getModelCopy("Clutter/Books1.fbx", shader);
 		cBooks2->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Book_MRAO.tga");
 		cBooks2->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Book_NM.tga");
 		cBooks2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Book2_Albedo.tga");
@@ -1042,7 +1138,6 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		cMicroscope->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Microscope_NM.tga");
 		cMicroscope->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Microscope_Albedo.tga");
 
-
 		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
 		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/Saftblandare_MRAO.tga");
 		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Saftblandare_NM.tga");
@@ -1054,6 +1149,8 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		tileModels[TileModel::ROOM_DOOR] = roomDoor;
 		tileModels[TileModel::ROOM_CEILING] = roomCeiling;
 		tileModels[TileModel::ROOM_CORNER] = roomCorner;
+		tileModels[TileModel::ROOM_SERVER] = roomServer;
+
 
 		tileModels[TileModel::CORRIDOR_FLOOR] = corridorFloor;
 		tileModels[TileModel::CORRIDOR_WALL] = corridorWall;

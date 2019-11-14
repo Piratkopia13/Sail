@@ -68,7 +68,9 @@ void AnimationSystem::update(float dt) {
 void AnimationSystem::updateTransforms(const float dt) { 
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
-		addTime(animationC, dt);
+		if (animationC->updateDT) {
+			addTime(animationC, dt);
+		}
 
 		if (!animationC->currentAnimation) {
 #if defined(_DEBUG)

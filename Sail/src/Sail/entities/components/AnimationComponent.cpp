@@ -15,6 +15,7 @@ AnimationComponent::AnimationComponent(AnimationStack* animationStack) :
 	hasUpdated(false),
 	animationW(0.0f), //TODO: REMOVE
 	is_camFollowingHead(false),
+	updateDT(true),
 	rightHandEntity(nullptr),
 	leftHandEntity(nullptr),
 	headPositionLocalDefault(glm::vec3(0.0f, 1.81f, 0.0f)),

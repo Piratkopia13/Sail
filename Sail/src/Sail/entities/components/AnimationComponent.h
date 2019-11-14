@@ -96,6 +96,7 @@ public:
 	bool hasUpdated;
 	float animationW;	
 	bool is_camFollowingHead;
+	bool updateDT;
 
 	Entity* rightHandEntity;
 	Entity* leftHandEntity;

@@ -13,6 +13,8 @@ class AudioComponent;
 struct NetworkChatEvent;
 struct NetworkJoinedEvent;
 struct NetworkDisconnectEvent;
+struct NetworkPlayerChangedTeam;
+struct NetworkPlayerRequestedTeamChange;
 
 struct Message {
 	Netcode::PlayerID senderID;
@@ -90,6 +92,8 @@ private:
 	bool onRecievedText(const NetworkChatEvent& event);
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
+	bool onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& event);
+	bool onPlayerTeamChanged(const NetworkPlayerChangedTeam& event);
 
 	void renderPlayerList();
 	void renderGameSettings();		// Currently empty
