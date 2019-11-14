@@ -25,25 +25,24 @@ SplashScreenState::~SplashScreenState() {
 
 
 bool SplashScreenState::processInput(float dt) {
-	return false;
+	return true;
 }
 
 bool SplashScreenState::update(float dt, float alpha) {
-	return false;
+	return true;
 }
 
 bool SplashScreenState::render(float dt, float alpha) {
-	return false;
+	return true;
 }
 
 bool SplashScreenState::renderImgui(float dt) {
-	return false;
+	return true;
 }
 
-bool SplashScreenState::onEvent(Event& event) {
-	return false;
+bool SplashScreenState::onEvent(const Event& event) {
+	return true;
 }
-
 
 bool SplashScreenState::loadModels(Application* app) {
 	ResourceManager* rm = &app->getResourceManager();
@@ -199,5 +198,5 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Clutter/Microscope_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/Microscope_NM.tga");
 
-	return false;
+	return true;
 }
