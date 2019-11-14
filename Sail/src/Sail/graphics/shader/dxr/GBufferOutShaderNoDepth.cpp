@@ -4,7 +4,7 @@
 #include "API/DX12/shader/DX12ShaderPipeline.h"
 
 GBufferOutShaderNoDepth::GBufferOutShaderNoDepth()
-	: Shader("dxr/GBufferOut.hlsl")
+	: Shader("dxr/GBufferParticles.hlsl")
 	, m_clippingPlaneHasChanged(false) {
 	// Create the input layout
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::POSITION, "POSITION", 0);
