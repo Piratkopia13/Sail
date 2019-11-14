@@ -330,17 +330,8 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 void DXRBase::updateWaterData() {
-	auto start = std::chrono::high_resolution_clock::now();
+	//auto start = std::chrono::high_resolution_clock::now();
 	simulateWater(Application::getInstance()->getDelta());
-	/*auto vec = glm::i32vec3(std::rand() % (WATER_GRID_X - 1) + 1, 8, std::rand() % (WATER_GRID_Z - 1) + 1);
-	auto ind = Utils::to1D(vec, WATER_GRID_X, WATER_GRID_Y);
-	auto after = Utils::to3D(ind, WATER_GRID_X, WATER_GRID_Y);
-	if (vec != after) {
-		SAIL_LOG("Something fishy here...");
-	}
-	//static unsigned int counter = 0;
-	//SAIL_LOG(std::to_string(counter) + " " + Utils::toStr(glm::vec3(Utils::to3D(counter++, WATER_GRID_X, WATER_GRID_Y))));*/
-	//SAIL_LOG("updateWaterData avg: " + std::to_string((std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()) / 1000.f) + "ms");
 
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
