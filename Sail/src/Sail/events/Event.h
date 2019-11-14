@@ -35,6 +35,7 @@ struct Event {
 		START_THROWING,
 		STOP_THROWING,
 
+		SANITY_SYSTEM_UPDATE_SANITY,
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};
 

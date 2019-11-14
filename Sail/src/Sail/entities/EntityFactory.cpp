@@ -14,6 +14,7 @@
 #include "Sail/graphics/geometry/factory/StringModel.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
 #include "Sail/entities/components/GUIComponent.h"
+#include "Sail/entities/components/SanityComponent.h"
 
 void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
@@ -181,7 +182,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation, Netcode::getComponentOwner(playerCompID));
 	// Other players have a character model and animations
 
-	otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
+	auto rec = otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<ReplayComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<OnlineOwnerComponent>(playerCompID);
 
@@ -200,6 +201,10 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 			c->addComponent<ReplayComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
 		}
+	}
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID, Netcode::MessageType::UPDATE_SANITY)->m_id = rec->m_id;
 	}
 }
 
@@ -246,7 +251,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<ModelComponent>(characterModel);
 	playerEntity->addComponent<CollidableComponent>();
 	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
-
+	playerEntity->addComponent<SanityComponent>()->sanity = 100.0f;
 
 	// Give playerEntity a bounding box
 	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
