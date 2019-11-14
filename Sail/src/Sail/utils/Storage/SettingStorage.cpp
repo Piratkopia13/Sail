@@ -135,6 +135,10 @@ void SettingStorage::createApplicationDefaultGraphics() {
 		{ "hard",0.0f },
 		{ "soft",1.0f }
 	}));
+	applicationSettingsStatic["graphics"]["water simulation"] = Setting(1, std::vector<Setting::Option>({
+		{ "off", 0.0f },
+		{ "on", 1.0f }
+	}));
 }
 void SettingStorage::createApplicationDefaultSound() {
 	applicationSettingsDynamic["sound"] = std::unordered_map<std::string, DynamicSetting>();
@@ -150,7 +154,6 @@ void SettingStorage::createApplicationDefaultMisc() {
 void SettingStorage::createGameDefaultStructure() {
 	createGameDefaultMap();
 	createGameModeDefault();
-
 }
 
 void SettingStorage::createGameDefaultMap() {	
@@ -178,14 +181,14 @@ void SettingStorage::createGameModeDefault() {
 		{ "Deathmatch", 0.0f },
 		{ "Teamdeathmatch", 1.0f },
 	}));
-	gameSettingsStatic["Teams"]["Deathmatch"] = Setting(1, std::vector<Setting::Option>({
-		{ "Alone", 1.0f },
-		{ "Spectator", 0.0f },
+	gameSettingsStatic["Teams"]["Deathmatch"] = Setting(0, std::vector<Setting::Option>({
+		{ "Alone", 0.0f },
+		{ "Spectator", -1.0f },
 	}));
-	gameSettingsStatic["Teams"]["Teamdeathmatch"] = Setting(2, std::vector<Setting::Option>({
-		{ "Team1", 1.0f },
-		{ "Team2", 2.0f },
-		{ "Spectator", 0.0f },
+	gameSettingsStatic["Teams"]["Teamdeathmatch"] = Setting(0, std::vector<Setting::Option>({
+		{ "Team1", 0.0f },
+		{ "Team2", 1.0f },
+		{ "Spectator", -1.0f },
 	}));
 
 
