@@ -1,10 +1,8 @@
 -- premake5.lua
 workspace "Sail"
-	configurations { "Debug", "Release" }
-	platforms { "DX11 x64", "DX11 x86",
-				"DX12 x64", "DX12 x86"
-				-- "Vulkan x64", "Vulkan x86",
-			  }
+	configurations { "Debug", "PerformanceTest", "Dev-Release", "Release"  }
+	startproject "SPLASH"
+	platforms { "DX12 x64", "DX12 x86" }
 
 	filter "platforms:*86"
 		architecture "x86"
@@ -19,14 +17,23 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["ImGui"] = "libraries/imgui"
+IncludeDir["MiniMM"] = "libraries/MemoryManager"
+IncludeDir["Assimp"] = "libraries/assimp/include"
+
+buildcfg = "release"
 
 group "Libraries"
 include "libraries/glfw"
 include "libraries/imgui"
+include "libraries/MemoryManager"
 
 group ""
-project "Demo"
-	location "Demo"
+
+-----------------------------------
+-------------  SPLASH -------------
+-----------------------------------
+project "SPLASH"
+	location "SPLASH"
 	kind "WindowedApp"
 	language "C++"
 	cppdialect "C++17"
@@ -35,53 +42,69 @@ project "Demo"
 	targetdir (binDir)
 	objdir (intermediatesDir)
 
-	files { 
-		"%{prj.name}/Demo.rc",    -- For icon
-		"%{prj.name}/resource.h", -- For icon
+	files {
+		"%{prj.name}/SPLASH.rc",    -- For icon
+		"%{prj.name}/resource.h", 	-- For icon
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
-	}
-
-	-- include and fix these as soon as new cross-platform architecture is finished
-	removefiles { 
-		"**/ParticleHandler.*",
-		"**/PlayerCameraController.*",
-		"**/Scene.*"
 	}
 
 	includedirs {
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.Assimp}",
+		"Physics"
 	}
 
 	links {
-		"Sail"
+		"Sail",
+		"Physics"
 	}
+
+	defines { "NOMINMAX",				-- Removes min max macros which cause issues
+			  "WIN32_LEAN_AND_MEAN" }	-- Exclude some less used APIs to speed up the build process on windows
+
+	flags { "MultiProcessorCompile" }
 
 	filter "system:windows"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
+		buildCfg = "debug"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
 		optimize "On"
 
-	-- Copy fbxsdk dll to executable path
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
+		optimize "On"
+
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
+		optimize "On"
+
+	-- Copy dlls to executable path
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{buildCfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/assimp/lib/x64/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{buildCfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
+			"{COPY} \"../libraries/assimp/lib/x86/assimp-vc140-mt.dll\" \"%{cfg.targetdir}\""
 		}
 
 
+-----------------------------------
+--------------  Sail --------------
+-----------------------------------
 project "Sail"
 	location "Sail"
 	kind "StaticLib"
@@ -94,31 +117,16 @@ project "Sail"
 	pchheader "pch.h"
 	pchsource "Sail/src/pch.cpp"
 
-	files { 
+	files {
 		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.hpp",
 		"%{prj.name}/src/**.cpp"
 	}
 
 	-- include and fix these as soon as new cross-platform architecture is finished
-	removefiles { 
-		"%{prj.name}/src/API/DX11/**",
+	removefiles {
 		"%{prj.name}/src/API/DX12/**",
 		"%{prj.name}/src/API/VULKAN/**",
-
-		"**/DXCubeMap.*",
-		"%{prj.name}/src/Sail/resources/audio/**",
-		"**/Skybox.*",
-		"**/ParticleEmitter.*",
-		"%{prj.name}/src/Sail/graphics/shadows/**",
-		"%{prj.name}/src/Sail/graphics/shader/postprocess/**",
-		"%{prj.name}/src/Sail/graphics/shader/instanced/**",
-		"%{prj.name}/src/Sail/graphics/shader/deferred/**",
-		"%{prj.name}/src/Sail/graphics/shader/component/ConstantBuffer**",
-		"%{prj.name}/src/Sail/graphics/shader/component/Sampler**",
-		"%{prj.name}/src/Sail/graphics/shader/basic/**",
-		"%{prj.name}/src/Sail/graphics/renderer/**",
-		"%{prj.name}/src/Sail/graphics/postprocessing/**",
-		"**/Quadtree.*"
 	}
 
 	includedirs {
@@ -126,27 +134,26 @@ project "Sail"
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.MiniMM}",
+		"%{IncludeDir.Assimp}"
 	}
 
 	links {
 		"libfbxsdk",
 		"GLFW",
-		"ImGui"
+		"ImGui",
+		"MemoryManager",
+		"assimp-vc140-mt",
+		"WinMMx"
 	}
+
+	flags { "MultiProcessorCompile" }
 
 	defines {
 		"SAIL_PLATFORM=\"%{cfg.platform}\""
 	}
 
-	filter { "platforms:DX11*" }
-		defines {
-			"_SAIL_DX11"
-		}
-		files {
-			"%{prj.name}/src/API/DX11/**",
-			"%{prj.name}/src/API/Windows/**"
-		}
 	filter { "platforms:DX12*" }
 		defines {
 			"_SAIL_DX12"
@@ -156,13 +163,33 @@ project "Sail"
 			"%{prj.name}/src/API/Windows/**"
 		}
 
+	filter "configurations:Debug"
+		defines { "DEBUG", "DEVELOPMENT" }
+		symbols "On"
+
+	filter "configurations:Release"
+		defines { "NDEBUG" }
+		optimize "On"
+
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
+		optimize "On"
+
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
+		optimize "On"
+
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x64/%{buildCfg}",
+			"libraries/assimp/lib/x64",
+			"libraries/WinMM/x64"
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x86/%{buildCfg}",
+			"libraries/assimp/lib/x86",
+			"libraries/WinMM/x86"
 		}
 
 	filter "system:windows"
@@ -173,10 +200,52 @@ project "Sail"
 			"GLFW_INCLUDE_NONE"
 		}
 
+-----------------------------------
+-------------  Physics ------------
+-----------------------------------
+project "Physics"
+	location "Physics"
+	kind "StaticLib"
+	language "C++"
+	targetdir "bin/%{cfg.platform}-%{cfg.buildcfg}"
+	objdir (intermediatesDir)
+	cppdialect "C++17"
+	staticruntime "on"
+
+	pchheader "PhysicsPCH.h"
+	pchsource "Physics/PhysicsPCH.cpp"
+
+	files {
+		"%{prj.name}/**.h",
+		"%{prj.name}/**.cpp"
+	}
+
+	includedirs {
+		"libraries",
+		"Sail/src"
+	}
+
+	links {
+		"Sail"
+	}
+
+	flags { "MultiProcessorCompile" }
+
+	filter "system:windows"
+		systemversion "latest"
+
 	filter "configurations:Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "DEVELOPMENT" }
 		symbols "On"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
+		optimize "On"
+
+	filter "configurations:PerformanceTest"
+		defines { "NDEBUG", "_PERFORMANCE_TEST", "DEVELOPMENT" }
+		optimize "On"
+		
+	filter "configurations:Dev-Release"
+		defines { "NDEBUG", "DEVELOPMENT" }
 		optimize "On"

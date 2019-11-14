@@ -16,10 +16,18 @@ ShaderPipeline* Shader::getPipeline() {
 	return shaderPipeline;
 }
 
+void Shader::setWireframe(bool wireframe) {
+	 shaderPipeline->setWireframe(wireframe);
+}
+
+void Shader::setCullMode(GraphicsAPI::Culling cullMode) {
+	shaderPipeline->setCullMode(cullMode);
+}
+
 void Shader::bind() {
-	Logger::Warning("Is shader::bind() used?"); // TODO: check if this method should exist, or if all binding is done directly through shaderPipeline
+	SAIL_LOG_WARNING("Is shader::bind() used?"); // TODO: check if this method should exist, or if all binding is done directly through shaderPipeline
 	if (!m_finished) {
-		Logger::Error("A shader is trying to bind before it has finished its creation. Make sure to call shader::finish() at the end of the shader constructor.");
+		SAIL_LOG_ERROR("A shader is trying to bind before it has finished its creation. Make sure to call shader::finish() at the end of the shader constructor.");
 	}
 	shaderPipeline->bind(nullptr);
 }

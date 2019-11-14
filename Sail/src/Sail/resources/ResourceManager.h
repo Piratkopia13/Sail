@@ -3,8 +3,11 @@
 #include <Map>
 #include <memory>
 #include "TextureData.h"
+#include "AudioData.h"
 #include "Sail/api/Texture.h"
-#include "ParsedScene.h"
+//#include "ParsedScene.h"
+#include "loaders/AssimpLoader.h"
+#include "loaders/FBXLoader.h"
 
 //class DeferredGeometryShader;
 class ShaderPipeline;
@@ -15,6 +18,23 @@ class ResourceManager {
 public:
 	ResourceManager();
 	~ResourceManager();
+
+	enum ImporterType {
+		SAIL_FBXSDK,
+		SAIL_ASSIMP
+	};
+	bool setDefaultShader(Shader* shader);
+
+
+	// AudioData
+	void loadAudioData(const std::string& filename, IXAudio2* xAudio2);
+	AudioData& getAudioData(const std::string& filename);
+	bool hasAudioData(const std::string& filename);
+
+	static const std::string SAIL_DEFAULT_MODEL_LOCATION;
+	static const std::string SAIL_DEFAULT_SOUND_LOCATION;
+
+	
 
 	// TextureData
 	void loadTextureData(const std::string& filename);
@@ -27,9 +47,16 @@ public:
 	bool hasTexture(const std::string& filename);
 
 	// Models
-	void loadModel(const std::string& filename, Shader* shader);
-	Model& getModel(const std::string& filename, Shader* shader);
+	void addModel(const std::string& modelName, Model* model);
+	bool loadModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
+	Model& getModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
+	Model& getModelCopy(const std::string& filename, Shader* shader = nullptr);
 	bool hasModel(const std::string& filename);
+
+	// Animations
+	void loadAnimationStack(const std::string& fileName, const ImporterType type = SAIL_FBXSDK);
+	AnimationStack& getAnimationStack(const std::string& fileName);
+	bool hasAnimationStack(const std::string& fileName);
 
 	// ShaderSets
 	template <typename T>
@@ -56,29 +83,46 @@ public:
 		std::string name = typeid(T).name();
 		auto it = m_shaderSets.find(name);
 		if (it == m_shaderSets.end()) {
-			Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
+			SAIL_LOG("Cannot reload shader " + name + " since it is not loaded in the first place.");
 			return;
 		}
 		T* shader = dynamic_cast<T*>(it->second);
 		shader->~T();
 		shader = new (shader) T();
-		Logger::Log("Reloaded shader " + name);
+		SAIL_LOG("Reloaded shader " + name);
 	}
 
+
+	const unsigned int numberOfModels() const;
+	const unsigned int numberOfTextures() const;
 	// SoundManager
 	//SoundManager* getSoundManager();
 
 private:
+	const std::string getSuitableName(const std::string& name);
+
+private:
+	// Audio files/data mapped to their filenames
+	std::map<std::string, std::unique_ptr<AudioData>> m_audioDataAll;
 	// Textures mapped to their filenames
+	
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
-	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
+	//std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
+	std::mutex m_modelMutex;
+	std::map < std::string, std::unique_ptr<Model>> m_models;
+	std::mutex m_animationMutex;
+	std::map < std::string, std::unique_ptr<AnimationStack>> m_animationStacks;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;
 	// SoundManager containing all sounds
 	//std::unique_ptr<SoundManager> m_soundManager;
 
+
+	std::unique_ptr<AssimpLoader> m_assimpLoader;
+	std::unique_ptr<FBXLoader> m_fbxLoader;
+	Shader* m_defaultShader;
 };
 
 template <typename T>

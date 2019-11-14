@@ -1,49 +1,45 @@
 #include "pch.h"
 #include "PostProcessStage.h"
+#include "Sail/events/EventDispatcher.h"
 
-PostProcessStage::PostProcessStage(const Renderer& renderer, const std::string& filename, UINT width, UINT height, Mesh* fullscreenQuad, UINT outputTexBindFlags)
-	: ShaderSet(filename)
-	, OutputTexture(1, width, height, false, false, outputTexBindFlags)
-	, FullscreenQuad(fullscreenQuad)
+PostProcessStage::PostProcessStage(const std::string& filename, UINT width, UINT height)
+	: ShaderPipeline(filename)
 	, Width(width)
-	, Height(height)
-	, RendererRef(renderer)
-{
-	// Set up the input layout
-	// Will be the same for all pp stages
-	inputLayout.push<glm::vec3>(InputLayout::POSITION, "POSITION", 0);
-	inputLayout.create(VSBlob);
+	, Height(height) {
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 PostProcessStage::~PostProcessStage() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
-void PostProcessStage::run(DX11RenderableTexture& inputTexture) {
-	ShaderSet::bind();
+void PostProcessStage::run(RenderableTexture& inputTexture) {
+	ShaderPipeline::bind();
 
-	OutputTexture.begin();
-
-	FullscreenQuad->getMaterial()->setDiffuseTexture(*inputTexture.getColorSRV());
-	FullscreenQuad->draw(RendererRef);
+	// TODO: Dispatch n stuff
 }
 
-bool PostProcessStage::onResize(WindowResizeEvent& event) {
+RenderableTexture& PostProcessStage::getOutput() {
+	return *OutputTexture;
+}
 
-	unsigned int width = event.getWidth();
-	unsigned int height = event.getHeight();
+bool PostProcessStage::onResize(const WindowResizeEvent& event) {
 
-	OutputTexture.resize(width, height);
+	// TODO: fix this. should be set to width*resScale instead of full width - same with height
+	unsigned int width = event.width;
+	unsigned int height = event.height;
+
+	OutputTexture->resize(width, height);
 	Width = width;
 	Height = height;
 
 	return false;
 }
 
-DX11RenderableTexture& PostProcessStage::getOutput() {
-	return OutputTexture;
-}
-
-void PostProcessStage::onEvent(Event & event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, FUNC(&PostProcessStage::onResize));
+bool PostProcessStage::onEvent(const Event & event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
+	return true;
 }

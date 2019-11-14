@@ -15,7 +15,7 @@
 
 
 ImGuiHandler* ImGuiHandler::Create() {
-	return new DX12ImGuiHandler();
+	return SAIL_NEW DX12ImGuiHandler();
 }
 
 DX12ImGuiHandler::DX12ImGuiHandler() {
@@ -35,8 +35,7 @@ void DX12ImGuiHandler::init() {
 	// Set up a GPU visible srv descriptor heap
 	m_descHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, true);
 
-	m_context->initCommand(m_command);
-	m_command.list->SetName(L"imgui command list");
+	m_context->initCommand(m_command, D3D12_COMMAND_LIST_TYPE_DIRECT, L"imgui command list");
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -53,8 +52,10 @@ void DX12ImGuiHandler::init() {
 	//io.ConfigDockingTransparentPayload = true;
 
 	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
+	applySailStyle();
+	addFonts();
 
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -65,7 +66,7 @@ void DX12ImGuiHandler::init() {
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplWin32_Init((void*)*window->getHwnd());
-	ImGui_ImplDX12_Init(m_context->getDevice(), m_context->getNumSwapBuffers(),
+	ImGui_ImplDX12_Init(m_context->getDevice(), DX12API::NUM_SWAP_BUFFERS,
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		m_descHeap->getCPUDescriptorHandleForIndex(0),
 		m_descHeap->getGPUDescriptorHandleForIndex(0));
@@ -73,9 +74,15 @@ void DX12ImGuiHandler::init() {
 
 void DX12ImGuiHandler::begin() {
 	// Start the Dear ImGui frame
+	
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+
+	if (m_showMetrics) {
+		ImGui::ShowMetricsWindow();
+	}
+
 }
 
 void DX12ImGuiHandler::end() {

@@ -3,7 +3,7 @@
 #include "Sail/utils/Utils.h"
 
 InputLayout* InputLayout::Create() {
-	return new DX12InputLayout();
+	return SAIL_NEW DX12InputLayout();
 }
 
 DX12InputLayout::DX12InputLayout() {
@@ -35,9 +35,9 @@ void DX12InputLayout::pushVec4(InputType inputType, LPCSTR semanticName, UINT se
 }
 
 void DX12InputLayout::create(void* vertexShaderBlob) {
-	
+
 	m_inputLayoutDesc.pInputElementDescs = m_inputElementDescs.data();
-	m_inputLayoutDesc.NumElements = m_inputElementDescs.size();
+	m_inputLayoutDesc.NumElements = static_cast<UINT>(m_inputElementDescs.size());
 
 }
 
@@ -59,7 +59,7 @@ int DX12InputLayout::convertInputClassification(InputClassification inputSlotCla
 		return D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
 		break;
 	default:
-		Logger::Error("Invalid input classifier specified");
+		SAIL_LOG_ERROR("Invalid input classifier specified");
 		return 0;
 		break;
 	}

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "FlyingCameraController.h"
 #include "Sail/Application.h"
-#include "../../KeyCodes.h"
+#include "../../KeyBinds.h"
 #include "../../MouseButtonCodes.h"
 
 FlyingCameraController::FlyingCameraController(Camera* cam)
@@ -32,7 +32,7 @@ void FlyingCameraController::update(float dt) {
 	float lookSensitivityController = 90.0f * 0.016f;
 
 	// Increase speed if shift or right trigger is pressed
-	if (Input::IsKeyPressed(SAIL_KEY_SHIFT))
+	if (Input::IsKeyPressed(KeyBinds::SPRINT))
 		movementSpeed *= 5.f;
 
 	//
@@ -43,24 +43,24 @@ void FlyingCameraController::update(float dt) {
 	//setCameraPosition(getCameraPosition() + getCameraDirection() * gpState.thumbSticks.leftY * movementSpeed);
 
 	// Keyboard
-	if (Input::IsKeyPressed(SAIL_KEY_W))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_FORWARD))
 		setCameraPosition(getCameraPosition() + getCameraDirection() * movementSpeed);
-	if (Input::IsKeyPressed(SAIL_KEY_S))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD))
 		setCameraPosition(getCameraPosition() - getCameraDirection() * movementSpeed);
 
 	//
 	// Side to side motion
 	//
 
-	glm::vec3 right = glm::cross(getCameraDirection(), glm::vec3(0.f, 1.f, 0.f));
+	glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), getCameraDirection());
 	right = glm::normalize(right);
 	// Gamepad
 	//setCameraPosition(getCameraPosition() - right * gpState.thumbSticks.leftX * movementSpeed);
 
 	// Keyboard
-	if (Input::IsKeyPressed(SAIL_KEY_A))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_RIGHT))
 		setCameraPosition(getCameraPosition() + right * movementSpeed);
-	if (Input::IsKeyPressed(SAIL_KEY_D))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_LEFT))
 		setCameraPosition(getCameraPosition() - right * movementSpeed);
 
 	//
@@ -72,9 +72,9 @@ void FlyingCameraController::update(float dt) {
 	//setCameraPosition(getCameraPosition() + glm::vec3::Down * gpState.buttons.x * movementSpeed);
 
 	// Keyboard
-	if (Input::IsKeyPressed(SAIL_KEY_SPACE))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_UP))
 		setCameraPosition(getCameraPosition() + glm::vec3(0.f, 1.f, 0.f) * movementSpeed);
-	if (Input::IsKeyPressed(SAIL_KEY_CONTROL))
+	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN))
 		setCameraPosition(getCameraPosition() + glm::vec3(0.f, -1.f, 0.f) * movementSpeed);
 
 	//

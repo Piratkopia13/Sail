@@ -3,20 +3,20 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <functional>
-#include "Sail/events/Events.h"
+#include "Sail/events/EventReceiver.h"
 
-class Input : public IEventListener {
+class Input : public EventReceiver {
 	friend class Application;
 public:
 	template <typename T>
 	static T* GetInstance() { return static_cast<T*>(m_Instance); }
 	static Input* GetInstance() { return m_Instance; }
 
-	inline static bool IsKeyPressed(int keycode) { return m_Instance->isKeyPressedImpl(keycode); }
-	inline static bool WasKeyJustPressed(int keycode) { return m_Instance->wasKeyJustPressedImpl(keycode); }
+	inline static bool IsKeyPressed(int keycode) { return (m_HandleKeyInput) ? m_Instance->isKeyPressedImpl(keycode) : false; }
+	inline static bool WasKeyJustPressed(int keycode) { return (m_HandleKeyInput) ? m_Instance->wasKeyJustPressedImpl(keycode) : false; }
 
-	inline static bool IsMouseButtonPressed(int button) { return m_Instance->isMouseButtonPressedImpl(button); }
-	inline static bool WasMouseButtonJustPressed(int button) { return m_Instance->wasMouseButtonJustPressedImpl(button); }
+	inline static bool IsMouseButtonPressed(int button) { return (m_HandleMouseInput) ? m_Instance->isMouseButtonPressedImpl(button) : false; }
+	inline static bool WasMouseButtonJustPressed(int button) { return (m_HandleMouseInput) ? m_Instance->wasMouseButtonJustPressedImpl(button) : false; }
 
 	inline static glm::ivec2 GetMousePosition() { return m_Instance->getMousePositionImpl(); }
 	inline static glm::ivec2 GetMouseDelta() { return m_Instance->getMouseDeltaImpl(); }
@@ -24,7 +24,10 @@ public:
 	static void HideCursor(bool hide) { m_Instance->hideCursorImpl(hide); };
 	static bool IsCursorHidden() { return m_Instance->isCursorHiddenImpl(); };
 
-	virtual bool onEvent(Event& event) { return true; }
+	inline static void SetMouseInput(bool takeInput) { m_HandleMouseInput = takeInput; }
+	inline static void SetKeyInput(bool takeInput) { m_HandleKeyInput = takeInput; }
+
+	virtual bool onEvent(const Event& event) override { return true; }
 
 protected:
 	virtual bool isKeyPressedImpl(int keycode) = 0;
@@ -44,6 +47,7 @@ protected:
 
 private:
 	static Input* m_Instance;
-
+	static bool m_HandleMouseInput;
+	static bool m_HandleKeyInput;
 
 };

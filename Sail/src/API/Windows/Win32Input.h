@@ -4,7 +4,8 @@
 #include "../../Sail/MouseButtonCodes.h"
 #include "../../Sail/KeyCodes.h"
 
-class Win32Input : public Input {
+
+class Win32Input final : public Input {
 public:
 	Win32Input();
 	~Win32Input();
@@ -12,7 +13,7 @@ public:
 	void registerRawDevices(HWND hwnd);
 	void processMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
 	bool m_cursorHidden;
@@ -42,5 +43,4 @@ protected:
 
 	virtual void beginFrame() override;
 	virtual void endFrame() override;
-
 };
