@@ -779,7 +779,11 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.entityRemovalSystem->update();
 }
 
+#define DISABLE_RUNSYSTEM_MT
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
+#ifdef DISABLE_RUNSYSTEM_MT
+	toRun->update(dt);
+#else
 	bool started = false;
 	while (!started) {
 		// First check if the system can be run
@@ -822,6 +826,7 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 			}
 		}
 	}
+#endif
 }
 
 const std::string GameState::teleportToMap() {
