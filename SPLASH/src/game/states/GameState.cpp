@@ -200,6 +200,21 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
+
+#ifdef DEVELOPMENT
+	constexpr float TOGGLE_TIMER = 0.2f;
+	static float cooldown = 0.0f;
+	cooldown += dt;
+
+	// Manually toggle killcam
+	if (Input::IsKeyPressed(KeyBinds::START_KILLCAM) & cooldown > TOGGLE_TIMER) {
+		m_isInKillCamMode = !m_isInKillCamMode;
+		cooldown = 0.0f;
+	}
+#endif
+
+
+
 #ifndef DEVELOPMENT
 	//Capture mouse
 	Input::HideCursor(true);		//Shreks multiple applications on the same computer
@@ -409,7 +424,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
 	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
 	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
 	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
 
@@ -429,11 +444,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	}
 	m_componentSystems.killCamReceiverSystem = ECS::Instance()->createSystem<KillCamReceiverSystem>();
 
-	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem, m_componentSystems.killCamReceiverSystem);
-
-
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -447,6 +459,12 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.sprinklerSystem->setOctree(m_octree);
 
 	m_componentSystems.sprintingSystem = ECS::Instance()->createSystem<SprintingSystem>();
+
+
+	// Create systems needed for the killcam
+	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
+	//m_componentSystems.killCamModelSubmitSystem = ECS::Instance()->createSystem<KillCamModelSubmitSystem>();
+	m_componentSystems.killCamModelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<ReplayTransformComponent>>();
 }
 
 void GameState::initConsole() {
@@ -595,7 +613,7 @@ bool GameState::fixedUpdate(float dt) {
 	updatePerTickComponentSystems(dt);
 
 	if (m_isInKillCamMode) {
-		updateKillCamComponentSystems(dt);
+		updatePerTickKillCamComponentSystems(dt);
 	}
 
 	return true;
@@ -609,10 +627,18 @@ bool GameState::render(float dt, float alpha) {
 
 	// Draw the scene. Entities with model and trans component will be rendered.
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
-	m_componentSystems.modelSubmitSystem->submitAll(alpha);
-	m_componentSystems.particleSystem->submitAll();
-	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
-	m_componentSystems.boundingboxSubmitSystem->submitAll();
+
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamModelSubmitSystem->submitAll(alpha);
+	} else {
+		m_componentSystems.modelSubmitSystem->submitAll(alpha);
+		m_componentSystems.particleSystem->submitAll();
+		m_componentSystems.metaballSubmitSystem->submitAll(alpha);
+		m_componentSystems.boundingboxSubmitSystem->submitAll();
+	}
+
+
+
 	m_componentSystems.guiSubmitSystem->submitAll();
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
 
@@ -677,21 +703,14 @@ void GameState::shutDownGameState() {
 
 
 // TODO: Add more systems here that only deal with replay entities/components
-void GameState::updateKillCamComponentSystems(float dt) {
+void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	
-	// TODO: Prepare transform update for interpolation etc.
+	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
 	
 
-	// TODO: run relevant systems in parallel
-	//runSystem(dt, m_componentSystems.killCamReceiverSystem);
 
-
-	// Wait for all systems to finish executing
-	for (auto& fut : m_runningSystemJobs) {
-		fut.get();
-	}
 }
 
 // HERE BE DRAGONS
