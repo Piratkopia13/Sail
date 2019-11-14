@@ -28,13 +28,13 @@ void SanitySoundSystem::update(float dt) {
 		float volume = (1.0f - (sc->sanity / 100.0f)); //gives value between 0-1. Volume = 1 when sanity = 0
 		
 		if (!m_switch_ambiance) {
-			if (volume > 0.0f) {
+			if (volume > TIMEPOINT_AMBIANCE) {
 				m_switch_ambiance = true;
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", true, 1.0f, false, true);
 			}
 		}
 		else if (m_switch_ambiance) {
-			if (volume == 0.0f) {
+			if (volume == TIMEPOINT_AMBIANCE) {
 				m_switch_ambiance = false;
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", false, 1.0f, false, true);
 			}
@@ -47,7 +47,7 @@ void SanitySoundSystem::update(float dt) {
 
 		if (!m_switch_heartBegin) {
 			// Start when insanity isn't full
-			if (volume > 0.1f) {
+			if (volume > TIMEPOINT_HEART) {
 				m_switch_heartBegin = true;
 				m_heartBeatTimer = 0.0f;
 			}
@@ -59,7 +59,7 @@ void SanitySoundSystem::update(float dt) {
 				m_switch_secondBeat = false;
 			}
 			// Play first heart beat
-			if (m_heartBeatTimer < 0.1f) {
+			if (m_heartBeatTimer < TIMEPOINT_HEART) {
 				
 				ac->m_sounds[Audio::HEART_BEAT_FIRST].isPlaying = true;
 				m_switch_secondBeat = true;
@@ -77,21 +77,21 @@ void SanitySoundSystem::update(float dt) {
 		}
 
 		if (!m_switch_breathing) {
-			if (volume > 0.65f) {
+			if (volume > TIMEPOINT_BREATHING) {
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", true, 1.0f, false, true);
 				m_switch_breathing = true;
 			}
 		}
 
 		else if (m_switch_breathing) {
-			if (volume < 0.65f) {
+			if (volume < TIMEPOINT_BREATHING) {
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", false, 1.0f, false, true);
 				m_switch_breathing = false;
 			}
 		}
 
 		if (!m_switch_violin) {
-			if (volume > 0.80f) {
+			if (volume > TIMEPOINT_VIOLIN) {
 				m_switch_violin = true;
 			}
 		}
@@ -99,7 +99,7 @@ void SanitySoundSystem::update(float dt) {
 		else if (m_switch_violin) {
 			m_violinTimer += dt;
 
-			if (volume < 0.80f) {
+			if (volume < TIMEPOINT_VIOLIN) {
 				m_switch_violin = false;
 				m_violinTimer == 0.0f;
 			}
