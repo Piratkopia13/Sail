@@ -275,9 +275,9 @@ void LevelSystem::splitChunk() {
 		rekt = chunks.front();
 		chunks.pop();
 #ifdef _PERFORMANCE_TEST
-		if(ns){
+		if (ns) { 
 #else
-		if (rekt.sizex>=rekt.sizey) {
+		if(rekt.sizex >= rekt.sizey){
 #endif
 			if (rekt.sizex > minSplitSize) {
 				int newSize = rand() % (rekt.sizex - minSplitSize) + minSplitSize/2;
