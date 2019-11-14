@@ -77,6 +77,13 @@ private:
 	float m_joinTimer;
 	float m_joinThreshold;
 	float m_outerPadding;
+	float m_menuWidth;
+	ImVec2 m_minSize;
+	ImVec2 m_maxSize;
+	ImVec2 m_size;
+	ImVec2 m_pos;
+	float m_percentage;
+	bool m_usePercentage;
 
 
 	void joinLobby(std::string& ip); 
@@ -87,6 +94,7 @@ private:
 	void renderServerBrowser();
 	void renderProfile();
 	void renderJoiningLobby();
+	void renderOptions();
 
 #ifdef DEVELOPMENT
 	void startSinglePlayer();

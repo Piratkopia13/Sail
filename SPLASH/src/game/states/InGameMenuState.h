@@ -2,6 +2,7 @@
 #include "Sail.h"
 
 #include "Sail/utils/SailImGui/InGameMenuWindow.h"
+#include "Sail/utils/SailImGui/OptionsWindow.h"
 
 class InGameMenuState final : public State {
 public:
@@ -20,12 +21,27 @@ public:
 	bool renderImgui(float dt);
 	// Sends events to the state
 	bool onEvent(Event& event) { return true; }
+	
 
 	static bool IsOpen();
 
 private:
+	Application* m_app;
+	ImGuiHandler* m_imguiHandler;
 	static bool sIsOpen;
-
+	float m_outerPadding;
 	InGameMenuWindow m_inGameMenuWindow;
+	OptionsWindow m_optionsWindow;
 	bool m_isSinglePlayer;
+	bool m_openedThisFrame;
+
+	ImGuiWindowFlags m_standaloneButtonflags;
+	ImGuiWindowFlags m_backgroundOnlyflags;
+
+
+
+	void renderMenu();
+	void renderOptions();
+
+
 };

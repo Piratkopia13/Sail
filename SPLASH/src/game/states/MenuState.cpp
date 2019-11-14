@@ -49,7 +49,15 @@ MenuState::MenuState(StateStack& stack)
 	m_joiningLobby = false;
 	m_joinTimer = 0.0f;
 	m_joinThreshold = 10.0f;
-	m_outerPadding = 15;
+	m_outerPadding = 35;
+	m_menuWidth = 700.0f;
+	m_usePercentage = true;
+	m_percentage = 0.35f;
+
+	m_pos = ImVec2(0, 0);
+	m_size = ImVec2(0, 0);
+	m_minSize = ImVec2(435, 500);
+	m_maxSize = ImVec2(1000, 1000);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
 }
 
@@ -73,6 +81,8 @@ bool MenuState::update(float dt, float alpha) {
 	}
 	NWrapperSingleton::getInstance().checkForPackages();
 	
+
+
 	if (m_joiningLobby) {
 		m_joinTimer += dt;
 		if (m_joinTimer > m_joinThreshold) {
@@ -95,12 +105,20 @@ bool MenuState::renderImgui(float dt) {
 	
 	//Keep
 	ImGui::ShowDemoWindow();
+if (m_usePercentage) {
+		m_menuWidth = m_percentage * m_app->getWindow()->getWindowWidth();
+	}
 
+	m_size.x = m_menuWidth;
+	m_size.y = m_app->getWindow()->getWindowHeight() - m_outerPadding * 2;
+	m_pos.x = m_app->getWindow()->getWindowWidth() - m_outerPadding - ((m_size.x < m_minSize.x) ? m_minSize.x : m_size.x);
+	m_pos.y = m_outerPadding;
 
+	
 
-
-	static std::string font = "Beb40";
+	static std::string font = "Beb30";
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
+
 
 	if (ImGui::Begin("IMGUISETTINGS")) {
 		if (ImGui::BeginCombo("##FONTS", &font.front())) {
@@ -114,6 +132,12 @@ bool MenuState::renderImgui(float dt) {
 			}
 			ImGui::EndCombo();
 		}
+		ImGui::SliderFloat("Width##rightwindow", &m_menuWidth, 0, 1920);
+		ImGui::Checkbox("percentage", &m_usePercentage);
+		if (m_usePercentage) {
+			ImGui::SameLine();
+			ImGui::SliderFloat("percentage##rightwindow", &m_percentage, 0, 1);
+		}
 	}
 	ImGui::End();
 
@@ -123,15 +147,19 @@ bool MenuState::renderImgui(float dt) {
 
 
 	renderMenu();
-	if (m_optionsWindow.isWindowOpen()) {
-		m_optionsWindow.renderWindow();
-	}
+
 	renderSingleplayer();
 	if (m_windowToRender == 1) {
 		renderLobbyCreator();
 	}
 	if (m_windowToRender == 2) {
 		renderServerBrowser();
+	}
+	if (m_windowToRender == 3) {
+		renderOptions();
+	}
+	if (m_windowToRender == 4) {
+		renderProfile();
 	}
 	renderDebug();
 
@@ -240,6 +268,9 @@ void MenuState::renderDebug() {
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
 		ImGui::ProgressBar(m_app->getResourceManager().numberOfTextures() / 64.0f, ImVec2(0.0f, 0.0f));
+
+	
+
 	}
 	ImGui::End();
 
@@ -265,7 +296,7 @@ void MenuState::renderMenu() {
 
 	if (ImGui::Begin("##MAINMENU", nullptr, m_standaloneButtonflags)) {
 #ifdef DEVELOPMENT
-		if (SailImGui::TextButton("Singleplayer")) {
+		if (SailImGui::TextButton("Singleplayer  #dev")) {
 			startSinglePlayer();
 		}
 #endif
@@ -305,9 +336,45 @@ void MenuState::renderMenu() {
 		if (m_windowToRender == 2) {
 			ImGui::PopStyleColor();
 		}
-		if (SailImGui::TextButton("Options")) {
-			m_optionsWindow.toggleWindow();
+		if (m_windowToRender == 3) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 		}
+		if (SailImGui::TextButton((m_windowToRender == 3) ? ">Options" : "Options")) {
+			if (m_windowToRender != 3) {
+				m_windowToRender = 3;
+				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			}
+			else {
+				m_windowToRender = 0;
+				ImGui::PopStyleColor();
+			}
+		}
+		if (m_windowToRender == 3) {
+			ImGui::PopStyleColor();
+		}
+
+		if (m_windowToRender == 4) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+		}
+		if (SailImGui::TextButton((m_windowToRender == 4) ? ">Profile" : "Profile")) {
+			if (m_windowToRender != 4) {
+				m_windowToRender = 4;
+				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			}
+			else {
+				m_windowToRender = 0;
+				ImGui::PopStyleColor();
+			}
+		}
+		if (m_windowToRender == 4) {
+			ImGui::PopStyleColor();
+		}
+#ifdef DEVELOPMENT
+		if (SailImGui::TextButton("Pause  #dev")) {
+			this->requestStackPush(States::InGameMenu);
+		}
+#endif
+
 		if (SailImGui::TextButton("Quit")) {
 			PostQuitMessage(0);
 		}
@@ -322,29 +389,34 @@ void MenuState::renderSingleplayer() {
 
 void MenuState::renderLobbyCreator() {
 
+
 	static char buf[101] = "";
 	static std::string lobbyName = "";
 	std::string name = NWrapperSingleton::getInstance().getMyPlayerName();
-	ImVec2 size(500, m_app->getWindow()->getWindowHeight() - m_outerPadding * 2);
-	ImGui::SetNextWindowPos(ImVec2(
-		m_app->getWindow()->getWindowWidth() - m_outerPadding - size.x,
-		m_outerPadding
-	));
-	ImGui::SetNextWindowSize(size);
+
+	ImGui::SetNextWindowPos(m_pos);
+	ImGui::SetNextWindowSize(m_size);
+	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##HOSTLOBBY", nullptr, m_backgroundOnlyflags)) {
+		SailImGui::HeaderText("Lobby Creator");
+		ImGui::Separator();
+
+
+
 		strncpy_s(buf, lobbyName.c_str(), lobbyName.size());
 		ImGui::Text("name: ");
 		ImGui::SameLine();
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX());
 		ImGui::InputTextWithHint("##lobbyName", std::string(name + "'s lobby").c_str(), buf, 40);
 		lobbyName = buf;
-		if (ImGui::BeginChild("##LOBBYOPTIONS", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
+		if (ImGui::BeginChild("##LOBBYOPTIONS", ImVec2(0, -ImGui::GetFrameHeightWithSpacing() - 3))) {
 			// TODO: options
 			ImGui::EndChild();
 		}
 
 
 
-
+		ImGui::Separator();
 		if (ImGui::Button("Host Game")) {
 			if (m_network->host()) {
 				// Update server description after host added himself to the player list.
@@ -360,7 +432,6 @@ void MenuState::renderLobbyCreator() {
 				this->requestStackPush(States::HostLobby);
 			}
 		}
-		ImGui::Separator();
 
 	}
 	ImGui::End();
@@ -374,14 +445,14 @@ void MenuState::renderServerBrowser() {
 	static std::string lobbyName = "";
 	std::string name = NWrapperSingleton::getInstance().getMyPlayerName();
 
-	ImVec2 size(500, m_app->getWindow()->getWindowHeight() - m_outerPadding*2);
-	ImGui::SetNextWindowPos(ImVec2(
-		m_app->getWindow()->getWindowWidth() - m_outerPadding - size.x,
-		m_outerPadding
-	));
-	ImGui::SetNextWindowSize(size);
 
+	ImGui::SetNextWindowPos(m_pos);
+	ImGui::SetNextWindowSize(m_size);
+	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##Hosted Lobbies on LAN", nullptr, m_backgroundOnlyflags)) {
+		SailImGui::HeaderText("Server browser");
+		ImGui::Separator();
+
 		strncpy_s(buf, inputIP.c_str(), inputIP.size());
 		ImGui::InputTextWithHint("##IP:", "127.0.0.1:54000", buf, 100);
 		inputIP = buf;
@@ -476,11 +547,50 @@ void MenuState::renderServerBrowser() {
 void MenuState::renderProfile() {
 	std::string name = &NWrapperSingleton::getInstance().getMyPlayerName().front();
 
-	static char buf[101] = "";
-	strncpy_s(buf, name.c_str(), name.size());
-	ImGui::InputText("##name", buf, MAX_NAME_LENGTH);
-	name = buf;
-	NWrapperSingleton::getInstance().setPlayerName(name.c_str());
+	ImGui::SetNextWindowPos(m_pos);
+	ImGui::SetNextWindowSize(m_size);
+	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
+
+	if (ImGui::Begin("##Pause Menu", NULL, m_backgroundOnlyflags)) {
+		SailImGui::HeaderText("Profile");
+		ImGui::Separator();
+
+		float innerWidth = ImGui::GetWindowContentRegionWidth();
+		
+		ImGui::Text("Name: ");
+		ImGui::SameLine();
+		static char buf[101] = "";
+		strncpy_s(buf, name.c_str(), name.size());
+		ImGui::InputText("##name", buf, MAX_NAME_LENGTH);
+		name = buf;
+		NWrapperSingleton::getInstance().setPlayerName(name.c_str());
+		
+
+
+		ImGui::Separator();
+		float x[3] = { 0.4f, 0.6f, 0.9};
+		ImGui::Text(std::string("Extinguishes: ").c_str());
+		ImGui::SameLine(innerWidth * x[0]);
+		ImGui::Text(std::to_string(0).c_str());
+		ImGui::SameLine(innerWidth * x[1]);
+		ImGui::Text(std::string("lunacies: ").c_str());
+		ImGui::SameLine(innerWidth * x[2]);
+		ImGui::Text(std::to_string(0).c_str());
+
+		ImGui::Text(std::string("Wins: ").c_str());
+		ImGui::SameLine(innerWidth * x[0]);
+		ImGui::Text(std::to_string(0).c_str());
+		ImGui::SameLine(innerWidth * x[1]);
+		ImGui::Text(std::string("Losses: ").c_str());
+		ImGui::SameLine(innerWidth * x[2]);
+		ImGui::Text(std::to_string(0).c_str());
+
+
+
+
+
+	}
+	ImGui::End();
 }
 void MenuState::renderJoiningLobby() {
 	ImVec2 screenMiddle(
@@ -521,6 +631,20 @@ void MenuState::renderJoiningLobby() {
 
 
 
+}
+void MenuState::renderOptions() {
+
+
+	ImGui::SetNextWindowPos(m_pos);
+	ImGui::SetNextWindowSize(m_size);
+	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
+
+	if (ImGui::Begin("##Pause Menu", NULL, m_backgroundOnlyflags)) {
+		SailImGui::HeaderText("Options");
+		ImGui::Separator();
+		m_optionsWindow.renderWindow();
+	}
+	ImGui::End();
 }
 #ifdef DEVELOPMENT
 void MenuState::startSinglePlayer() {

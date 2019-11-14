@@ -9,6 +9,7 @@ void ImGuiHandler::applySailStyle() {
 	style.WindowRounding = 0.0f;
 	style.ChildRounding = 0.0f;
 	style.FrameRounding = 3.0f;
+	style.FramePadding.y = 0.0f;
 	style.PopupRounding = 1.0f;
 	style.ScrollbarRounding = 3.0f;
 	style.GrabRounding = 3.0f;
