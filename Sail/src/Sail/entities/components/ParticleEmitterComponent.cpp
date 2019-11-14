@@ -10,9 +10,11 @@
 #include "API/DX12/resources/DescriptorHeap.h"
 
 ParticleEmitterComponent::ParticleEmitterComponent() {
+	size = 0.2f;
 	offset = { 0.f, 0.f, 0.f };
 	position = { 0.f, 0.f, 0.f };
 	spread = { 0.f, 0.f, 0.f };
+	constantVelocity = { 0.f, 0.f, 0.f };
 	velocity = { 0.f, 0.f, 0.f };
 	acceleration = { 0.f, 0.f, 0.f };
 	lifeTime = 1.0f;
@@ -106,7 +108,7 @@ void ParticleEmitterComponent::spawnParticles(int particlesToSpawn) {
 		//Add particle to spawn list
 		for (unsigned int i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
 			m_cpuOutput[i].newParticles.emplace_back();
-			m_cpuOutput[i].newParticles.back().pos = position + (randVec + glm::vec3(0.0f, 1.0f, 0.0f)) * 0.01f ;
+			m_cpuOutput[i].newParticles.back().pos = position + (randVec + glm::vec3(0.0f, 1.0f, 0.0f)) * 0.02f ;
 			m_cpuOutput[i].newParticles.back().spread = spread * randVec;
 			m_cpuOutput[i].newParticles.back().spawnTime = time;
 		}
@@ -152,6 +154,7 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		m_inputData.maxOutputVertices = m_outputVertexBufferSize;
 		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
 		m_inputData.frameTime = elapsedTime;
+		m_inputData.size = size;
 
 		//Update timer for this buffer
 		m_cpuOutput[context->getSwapIndex()].lastFrameTime += elapsedTime;

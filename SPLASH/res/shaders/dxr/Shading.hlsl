@@ -96,12 +96,14 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float emissi
 	// Ray direction for first ray when cast from GBuffer must be calculated using camera position
 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
 
+	float originalAo = ao;
+
 #ifdef WATER_ON_WALLS
 	// =================================================
 	//  Render pixel as water if close to a water point
 	// =================================================
 
-	static const float3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z) - 1;
+	static const float3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
 	static const float cutoff = 0.2f;
 
 	float3 cellWorldSize = CB_SceneData.mapSize / arrSize;
@@ -135,8 +137,8 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float emissi
 				[unroll]
 				for (uint index = start; index <= end; index++) {
 					uint up = Utils::unpackQuarterFloat(packedR, index);
-					if (up < 255) {
-						half r = (255.h - up) * 0.00392156863h; // That last wierd one is 1 / 255
+					if (up > 0) {
+						half r = up * 0.00392156863h; // That last wierd one is 1 / 255
 						// r = 1.0f;
 						float3 waterPointWorldPos = (float3(x*4+index,y,z) + 0.5f) * cellWorldSize + CB_SceneData.mapStart;
 
@@ -165,7 +167,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float emissi
 		// Shade as water
 
 		metalness = lerp(metalness, 1.0f, 			waterOpacity);
-		roughness = lerp(roughness, 0.01f, 			waterOpacity);
+		roughness = lerp(roughness, 0.0f, 			waterOpacity);
 		ao 		  = lerp(ao, 		0.5f, 			waterOpacity);
 		albedo 	  = lerp(albedo, 	albedo * 0.8f,  waterOpacity);
 
@@ -177,7 +179,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float emissi
 		// ao = 0.5f;
 	}
 #endif
-	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, emissivness, metalness, roughness, ao, payload);
+	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, emissivness, metalness, roughness, ao, originalAo, payload);
 	// payload.color = float4(worldNormal * 0.5f + 0.5f, 1.0f);
 	// payload.color = phongShade(worldPosition, worldNormal, albedo);
 }
