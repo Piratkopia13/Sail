@@ -1054,6 +1054,17 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Saftblandare_NM.tga");
 		saftblandare->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Saftblandare_Albedo.tga");
 
+		Model* cloningVats = &m_app->getResourceManager().getModel("Clutter/CloningVats.fbx", shader);
+		cloningVats->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/CloningVats_MRAO.tga");
+		cloningVats->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/CloningVats_NM.tga");
+		cloningVats->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/CloningVats_Albedo.tga");
+
+		Model* controlStation = &m_app->getResourceManager().getModel("Clutter/ControlStation.fbx", shader);
+		controlStation->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/ControlStation_MRAO.tga");
+		controlStation->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/ControlStation_NM.tga");
+		controlStation->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/ControlStation_Albedo.tga");
+
+
 		tileModels.resize(TileModel::NUMBOFMODELS);
 		tileModels[TileModel::ROOM_FLOOR] = roomFloor;
 		tileModels[TileModel::ROOM_WALL] = roomWall;
@@ -1080,7 +1091,8 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels[ClutterModel::SCREEN] = cScreen;
 		clutterModels[ClutterModel::NOTEPAD] = cNotepad;
 		clutterModels[ClutterModel::MICROSCOPE] = cMicroscope;
-
+		clutterModels[ClutterModel::CLONINGVATS] = cloningVats;
+		clutterModels[ClutterModel::CONTROLSTATION] = controlStation;
 	}
 
 	// Create the level generator system and put it into the datatype.
