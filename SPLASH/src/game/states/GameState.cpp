@@ -169,10 +169,6 @@ GameState::GameState(StateStack& stack)
 		}
 
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
-
-		SAIL_LOG(std::to_string(spawnLocation.x));
-		SAIL_LOG(std::to_string(spawnLocation.y));
-		SAIL_LOG(std::to_string(spawnLocation.z));
 	}
 
 	

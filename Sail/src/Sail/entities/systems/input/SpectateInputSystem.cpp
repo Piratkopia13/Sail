@@ -122,7 +122,6 @@ void SpectateInputSystem::processMouseInput(const float& dt) {
 void SpectateInputSystem::updateCameraPosition(float alpha) {
 	for (auto e : entities) {
 		TransformComponent* playerTrans = e->getComponent<TransformComponent>();
-		//BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
 
 		glm::vec3 forwards(
 			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw + 90)),
