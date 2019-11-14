@@ -3,6 +3,8 @@
 #include "Sail.h"
 #include "../events/NetworkDisconnectEvent.h"
 #include "../events/NetworkDroppedEvent.h"
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
+
 #include "../events/NetworkSerializedPackageEvent.h"
 #include "Sail/entities/systems/SystemDeclarations.h"
 
@@ -34,11 +36,12 @@ private:
 	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
+	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
 
 	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
-	void updateKillCamComponentSystems(float dt);
+	void updatePerTickKillCamComponentSystems(float dt);
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
@@ -51,6 +54,8 @@ private:
 	const std::string toggleProfiler();
 
 	void logSomeoneDisconnected(unsigned char id);
+
+	void waitForOtherPlayers();
 
 private:
 	Application* m_app;
@@ -69,6 +74,7 @@ private:
 	LightDebugWindow m_lightDebugWindow;
 	PlayerInfoWindow m_playerInfoWindow;
 	WasDroppedWindow m_wasDroppedWindow;
+	WaitingForPlayersWindow m_waitingForPlayersWindow;
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 	InGameGui m_inGameGui;
@@ -78,7 +84,8 @@ private:
 
 	bool m_paused = false;
 	bool m_isSingleplayer = true;
-	
+	bool m_gameStarted = false;
+
 	Octree* m_octree;
 	bool m_showcaseProcGen;
 

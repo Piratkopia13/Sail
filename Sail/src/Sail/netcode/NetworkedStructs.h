@@ -83,40 +83,49 @@ namespace Netcode {
 		INSANITY_SCREAM,
 		HIT_BY_SPRINKLER,
 		ENABLE_SPRINKLERS,
+		START_THROWING,
+		STOP_THROWING,
 		EMPTY,
 		COUNT
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_PLAYER	",
-		"DESTROY_ENTITY				",
-		"CHANGE_LOCAL_POSITION,		",
-		"CHANGE_LOCAL_ROTATION,		",
-		"CHANGE_ABSOLUTE_POS_AND_ROT,",
-		"SPAWN_PROJECTILE,			 ",
-		"ANIMATION,					 ",
-		"SHOOT_START,				 ",
-		"SHOOT_LOOP,				 ",
-		"SHOOT_END,					 ",
-		"PLAYER_JUMPED,				 ",
-		"PLAYER_LANDED,				 ",
-		"WATER_HIT_PLAYER,			 ",
-		"SET_CANDLE_HEALTH,			 ",
-		"EXTINGUISH_CANDLE,			 ",
-		"PLAYER_DIED,				 ",
-		"MATCH_ENDED,				 ",
-		"PREPARE_ENDSCREEN,			 ",
-		"ENDGAME_STATS,				 ",
-		"CANDLE_HELD_STATE,			 ",
-		"RUNNING_METAL_START,		 ",
-		"RUNNING_TILE_START,		 ",
-		"RUNNING_STOP_SOUND,		 ",
-		"IGNITE_CANDLE,				 ",
-		"UPDATE_SANITY,				 ",
-		"HIT_BY_SPRINKLER,			 ",
-		"ENABLE_SPRINKLERS,			 ",
-		"EMPTY,						 ",
-		"COUNT						 "
+		"CREATE_NETWORKED_PLAYER",
+		"DESTROY_ENTITY",
+		"CHANGE_LOCAL_POSITION",
+		"CHANGE_LOCAL_ROTATION",
+		"CHANGE_ABSOLUTE_POS_AND_ROT",
+		"SPAWN_PROJECTILE",
+		"ANIMATION",
+		"SHOOT_START",
+		"SHOOT_LOOP",
+		"SHOOT_END",
+		"PLAYER_JUMPED",
+		"PLAYER_LANDED",
+		"WATER_HIT_PLAYER",
+		"SET_CANDLE_HEALTH",
+		"EXTINGUISH_CANDLE",
+		"PLAYER_DIED",
+		"MATCH_ENDED",
+		"PREPARE_ENDSCREEN",
+		"ENDGAME_STATS",
+		"CANDLE_HELD_STATE",
+		"RUNNING_METAL_START",
+		"RUNNING_TILE_START",
+		"RUNNING_WATER_METAL_START",
+		"RUNNING_WATER_TILE_START",
+		"RUNNING_STOP_SOUND",
+		"IGNITE_CANDLE",
+		"UPDATE_SANITY",
+		"INSANITY_SCREAM",
+		"HIT_BY_SPRINKLER",
+		"ENABLE_SPRINKLERS",
+		"START_THROWING",
+		"STOP_THROWING",
+		"EMPTY",
+		"COUNT",
+
+
 	};
 
 	/*
@@ -189,13 +198,16 @@ namespace Netcode {
 	class MessageSpawnProjectile : public MessageData {
 	public:
 		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, 
-			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID)
-			: translation(translation_), velocity(velocity_), projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID)
+			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID, float frequency)
+			: translation(translation_), velocity(velocity_),
+			projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID),
+			lowPassFrequency(frequency)
 		{}
 		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
+		float lowPassFrequency;
 		Netcode::ComponentID projectileComponentID;
 		Netcode::ComponentID ownerPlayerComponentID;
 	};
@@ -333,6 +345,18 @@ namespace Netcode {
 	public:
 		MessageEnableSprinklers() {}
 		~MessageEnableSprinklers() {}
+	};
+	class MessageStartThrowing : public MessageData {
+	public:
+		MessageStartThrowing(Netcode::ComponentID id) : playerCompID(id) {}
+		~MessageStartThrowing() {}
+		Netcode::ComponentID playerCompID;
+	};
+	class MessageStopThrowing : public MessageData {
+	public:
+		MessageStopThrowing(Netcode::ComponentID id) : playerCompID(id) {}
+		~MessageStopThrowing() {}
+		Netcode::ComponentID playerCompID;
 	};
 
 }

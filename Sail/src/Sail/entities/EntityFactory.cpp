@@ -20,6 +20,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	// Candle has a model and a bounding box
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("Torch.fbx", shader);
+	candleModel->setCastShadows(false);
 	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
 	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
 	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
@@ -55,6 +56,10 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	pl.setAttenuation(0.f, 0.f, 0.2f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
+
+
+	// Components needed for killcam
+	candle->addComponent<ReplayTransformComponent>();
 }
 
 Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
@@ -70,6 +75,11 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<ModelComponent>(candleModel);
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
+
+
+	// Components needed for killcam
+	gun->addComponent<ReplayTransformComponent>();
+
 	return gun;
 }
 
@@ -102,6 +112,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<SprintingComponent>();
+	myPlayer->addComponent<ThrowingComponent>();
 
 #ifdef DEVELOPMENT
 	//For testing, add particle emitter to player.
@@ -138,6 +149,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 			c->addComponent<ReplayComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
+			c->addComponent<MovementComponent>();
 		}
 	}
 
@@ -213,7 +225,7 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 	perfromancePlayerID++;
 }
 
-// Creates a player enitty without a candle and without a model
+// Creates a player entity without a candle and without a model
 void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID) {
 	
 	std::string modelName = "Doc.fbx";
@@ -278,6 +290,9 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
 
+
+	// Components needed for killcam
+	playerEntity->addComponent<ReplayTransformComponent>();
 }
 
 
@@ -351,32 +366,33 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
 
+
+	// Components needed to be rendered in the killcam
+	e->addComponent<ReplayTransformComponent>(pos, rot, scale);
+
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e,
-		const glm::vec3& pos, const glm::vec3& velocity, 
-		bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
-		Netcode::ComponentID netCompId, float lifetime) 
-{
+
+Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory::ProjectileArguments& info) {
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
-	e->addComponent<LifeTimeComponent>(lifetime);
-	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
-	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
-	e->addComponent<TransformComponent>(pos);
+	e->addComponent<LifeTimeComponent>(info.lifetime);
+	e->addComponent<ProjectileComponent>(10.0f, info.hasLocalOwner); // TO DO should not be manually set to true
+	e->getComponent<ProjectileComponent>()->ownedBy = info.ownersNetId;
+	e->addComponent<TransformComponent>(info.pos);
 	
-	if (hasLocalOwner == true) {
-		e->addComponent<LocalOwnerComponent>(ownersNetId);
-		e->addComponent<NetworkSenderComponent>(Netcode::EntityType::PROJECTILE_ENTITY, netCompId);
+	if (info.hasLocalOwner == true) {
+		e->addComponent<LocalOwnerComponent>(info.ownersNetId);
+		e->addComponent<NetworkSenderComponent>(Netcode::EntityType::PROJECTILE_ENTITY, info.netCompId);
 	} else {
-		e->addComponent<OnlineOwnerComponent>(ownersNetId);
+		e->addComponent<OnlineOwnerComponent>(info.ownersNetId);
 	}
-	e->addComponent<NetworkReceiverComponent>(netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
+	e->addComponent<NetworkReceiverComponent>(info.netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 	
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();
-	movement->velocity = velocity;
+	movement->velocity = info.velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 	CollisionComponent* collision = e->addComponent<CollisionComponent>();
@@ -387,6 +403,22 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e,
 
 	return e;
 }
+
+Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const ProjectileArguments& info) {
+	e->addComponent<MetaballComponent>();
+	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
+	e->addComponent<LifeTimeComponent>(info.lifetime);
+
+	e->addComponent<ReplayTransformComponent>(info.pos);
+	e->addComponent<ReplayComponent>(info.netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
+
+	MovementComponent* movement = e->addComponent<MovementComponent>();
+	movement->velocity = info.velocity;
+	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+
+	return e;
+}
+
 
 Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size) {
 	static int num = 0;
