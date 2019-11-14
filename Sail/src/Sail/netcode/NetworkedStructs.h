@@ -80,6 +80,7 @@ namespace Netcode {
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
 		UPDATE_SANITY,
+		INSANITY_SCREAM,
 		HIT_BY_SPRINKLER,
 		ENABLE_SPRINKLERS,
 		EMPTY,
@@ -315,6 +316,12 @@ namespace Netcode {
 		MessageIgniteCandle(Netcode::ComponentID candleId) : candleCompId(candleId) {}
 		~MessageIgniteCandle() {}
 		Netcode::ComponentID candleCompId;
+	};
+	class MessageInsanityScream : public MessageData {
+	public:
+		MessageInsanityScream(Netcode::ComponentID id) : screamingPlayer(id) {}
+		~MessageInsanityScream() {}
+		Netcode::ComponentID screamingPlayer;
 	};
 	class MessageHitBySprinkler : public MessageData {
 	public:

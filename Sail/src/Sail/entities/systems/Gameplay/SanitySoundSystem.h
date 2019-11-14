@@ -4,10 +4,10 @@
 #include "Sail/events/EventReceiver.h"
 
 // 0.0 <= X <= 1.0f
-#define TIMEPOINT_AMBIANCE 0.0f
-#define TIMEPOINT_HEART 0.1f
-#define TIMEPOINT_BREATHING 0.5f
-#define TIMEPOINT_VIOLIN 0.75f
+#define TIMEPOINT_AMBIANCE 100.0f
+#define TIMEPOINT_HEART 90.f
+#define TIMEPOINT_BREATHING 60.0f
+#define TIMEPOINT_VIOLIN 25.0f
 
 class SanitySoundSystem final : public BaseComponentSystem, public EventReceiver {
 public:
@@ -19,7 +19,9 @@ private:
 	bool onEvent(const Event& event) override;
 
 	bool m_switch_heartBegin = false;
+	bool m_switch_firstBeat = false;
 	bool m_switch_secondBeat = false;
+	bool m_switch_Beat = false;
 	bool m_switch_ambiance = false;
 	bool m_switch_breathing = false;
 	bool m_switch_violin = false;

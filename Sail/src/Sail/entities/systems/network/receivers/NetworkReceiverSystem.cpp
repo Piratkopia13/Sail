@@ -239,7 +239,6 @@ void NetworkReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
 }
 
 
-
 // NOT FROM SERIALIZED MESSAGES
 
 // TODO: Save a message to KillCamReceiverSystem so that disconnected players disappear at the correct time in the replay

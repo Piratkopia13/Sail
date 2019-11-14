@@ -35,5 +35,6 @@ void AudioComponent::streamSetVolume_HELPERFUNC(std::string filename, float volu
 			i->second.volume = volume;
 			break;
 		}
+		i++;
 	}
 }

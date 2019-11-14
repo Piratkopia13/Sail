@@ -113,6 +113,10 @@ void CandleHealthSystem::update(float dt) {
 			if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START) {
 				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
 			}
+
+			else if (candle->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
+				e->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
+			}
 		
 			// Play the reignition sound if the player has any candles left
 			if (candle->respawns < m_maxNumRespawns) {
