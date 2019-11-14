@@ -9,6 +9,7 @@
 #include "Sail/graphics/shader/postprocess/BlendShader.h"
 #include "Sail/graphics/shader/postprocess/GaussianBlurHorizontal.h"
 #include "Sail/graphics/shader/postprocess/GaussianBlurVertical.h"
+#include "Sail/graphics/shader/dxr/GBufferOutShaderNoDepth.h"
 #include "Sail/TimeSettings.h"
 #include "Sail/utils/GameDataTracker.h"
 #include "Sail/events/EventDispatcher.h"
@@ -362,6 +363,7 @@ bool GameState::processInput(float dt) {
 		m_app->getResourceManager().reloadShader<AnimationUpdateComputeShader>();
 		m_app->getResourceManager().reloadShader<ParticleComputeShader>();
 		m_app->getResourceManager().reloadShader<GBufferOutShader>();
+		m_app->getResourceManager().reloadShader<GBufferOutShaderNoDepth>();
 		m_app->getResourceManager().reloadShader<GuiShader>();
 	}
 

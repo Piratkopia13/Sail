@@ -40,15 +40,15 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	candle->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	candle->addComponent<CullingComponent>();
 
-#ifdef DEVELOPMENT
 	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
-	particleEmitterComp->position = { 4.0f, 1.0f, 0.0f };
-	particleEmitterComp->velocity = { 0.0f, 0.2f, 0.0f };
-	particleEmitterComp->acceleration = { 0.0f, 0.2f, 0.0f };
-	particleEmitterComp->spread = { 0.3f, 0.5f, 0.3f };
-	particleEmitterComp->spawnRate = 0.01f;
-	particleEmitterComp->lifeTime = 1.0f;
-#endif
+	particleEmitterComp->size = 0.1f;
+	particleEmitterComp->offset = { 0.0f, 0.44f, 0.0f };
+	particleEmitterComp->constantVelocity = { 0.0f, 0.2f, 0.0f };
+	particleEmitterComp->acceleration = { 0.0f, 1.0f, 0.0f };
+	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
+	particleEmitterComp->spawnRate = 0.001f;
+	particleEmitterComp->lifeTime = 0.13f;
+	particleEmitterComp->setTexture("particles/fire.tga");
 
 	PointLight pl;
 	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
@@ -113,17 +113,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<SprintingComponent>();
 	myPlayer->addComponent<ThrowingComponent>();
-
-#ifdef DEVELOPMENT
-	//For testing, add particle emitter to player.
-	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
-	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
-	particleEmitterComp->velocity = {0.0f, 4.0f, 0.0f};
-	particleEmitterComp->acceleration = { 0.0f, -9.8f, 0.0f };
-	particleEmitterComp->spread = {2.0f, 2.0f, 1.0f};
-	particleEmitterComp->spawnRate = 0.001f;
-	particleEmitterComp->lifeTime = 1.0f;
-#endif
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 

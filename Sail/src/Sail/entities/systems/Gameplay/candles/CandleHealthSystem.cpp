@@ -30,6 +30,9 @@ void CandleHealthSystem::update(float dt) {
 		auto candle = e->getComponent<CandleComponent>();
 		candle->wasHitByMeThisTick = false;
 
+		// Scale fire particles with health
+		auto particles = e->getComponent<ParticleEmitterComponent>();
+		particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
 
 #pragma region HOST_ONLY_STUFF
 		if (isHost && candle->isLit) {

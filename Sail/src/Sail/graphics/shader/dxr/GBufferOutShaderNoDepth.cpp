@@ -1,11 +1,11 @@
 #include "pch.h"
-#include "GBufferOutShader.h"
+#include "GBufferOutShaderNoDepth.h"
 #include "Sail/Application.h"
 #include "API/DX12/shader/DX12ShaderPipeline.h"
 
-GBufferOutShader::GBufferOutShader()
-	: Shader("dxr/GBufferOut.hlsl")
-	, m_clippingPlaneHasChanged(false) {
+GBufferOutShaderNoDepth::GBufferOutShaderNoDepth()
+	: Shader("dxr/ParticleShader.hlsl")
+{
 	// Create the input layout
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::POSITION, "POSITION", 0);
 	shaderPipeline->getInputLayout().pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
@@ -14,20 +14,16 @@ GBufferOutShader::GBufferOutShader()
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
-	shaderPipeline->setNumRenderTargets(3);
-	//getPipeline()->setBlending(GraphicsAPI::ADDITIVE);
+	// Disable depth writing
+	getPipeline()->enableDepthWriting(false);
+	getPipeline()->setBlending(GraphicsAPI::ADDITIVE);
 
 	// Finish the shader creation
 	finish();
 }
-GBufferOutShader::~GBufferOutShader() { }
+GBufferOutShaderNoDepth::~GBufferOutShaderNoDepth() { }
 
-void GBufferOutShader::setClippingPlane(const glm::vec4& clippingPlane) {
-	m_clippingPlane = clippingPlane;
-	m_clippingPlaneHasChanged = true;
-}
-
-void GBufferOutShader::bind() {
+void GBufferOutShaderNoDepth::bind() {
 
 	// Call parent to bind shaders
 	Shader::bind();

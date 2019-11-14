@@ -19,7 +19,8 @@ public:
 		RAYTRACED,
 		GBUFFER,
 		HYBRID,
-		SCREEN_SPACE
+		SCREEN_SPACE,
+		PARTICLES
 	};
 
 	enum RenderFlag {
