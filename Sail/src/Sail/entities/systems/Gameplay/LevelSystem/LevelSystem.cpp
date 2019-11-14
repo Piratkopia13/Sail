@@ -119,9 +119,6 @@ void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) 
 }
 
 void LevelSystem::destroyWorld() {
-
-
-
 	if (tileArr) {
 		for (int i = 0; i < xsize; i++) {
 			for (int j = 0; j < ysize; j++) {
@@ -131,7 +128,6 @@ void LevelSystem::destroyWorld() {
 		}
 		Memory::SafeDeleteArr(tileArr);
 	}
-
 
 	while(chunks.size()>0){
 		chunks.pop();
@@ -278,7 +274,11 @@ void LevelSystem::splitChunk() {
 		Rect rekt,a,b,hall;
 		rekt = chunks.front();
 		chunks.pop();
-		if (ns) {
+#ifdef _PERFORMANCE_TEST
+		if (ns) { 
+#else
+		if(rekt.sizex >= rekt.sizey){
+#endif
 			if (rekt.sizex > minSplitSize) {
 				int newSize = rand() % (rekt.sizex - minSplitSize) + minSplitSize/2;
 				a.posx = rekt.posx;
@@ -878,7 +878,12 @@ void LevelSystem::addMapModel(Direction dir, int typeID, int doors, const std::v
 				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::CORRIDOR_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
 			}
 			else {
-				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				if (rand() % 4 == 0) {
+					EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_SERVER], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				}
+				else {
+					EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				}
 			}
 		}
 	}
@@ -896,8 +901,13 @@ void LevelSystem::addMapModel(Direction dir, int typeID, int doors, const std::v
 				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::CORRIDOR_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
 			}
 			else {
-				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				if (rand() % 4 == 0) {
+					EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_SERVER], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
 				}
+				else {
+					EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(270.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				}
+			}
 		}
 	}
 	else if (dir == Direction::DOWN) {
@@ -914,7 +924,12 @@ void LevelSystem::addMapModel(Direction dir, int typeID, int doors, const std::v
 				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::CORRIDOR_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
 			}
 			else {
-				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				if (rand() % 4 == 0) {
+					EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_SERVER], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				}
+				else {
+					EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(90.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				}
 			}
 		}
 	}
@@ -932,7 +947,12 @@ void LevelSystem::addMapModel(Direction dir, int typeID, int doors, const std::v
 				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::CORRIDOR_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
 			}
 			else {
-				EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize* i + tileOffset, 0.f, tileSize* j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				if (rand() % 4 == 0) {
+					EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_SERVER], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				}
+				else {
+					EntityFactory::CreateStaticMapObject("Map_tile", tileModels[TileModel::ROOM_WALL], bb, glm::vec3(tileSize * i + tileOffset, 0.f, tileSize * j + tileOffset), glm::vec3(0.f, glm::radians(180.f), 0.f), glm::vec3(tileSize / 10.f, tileHeight, tileSize / 10.f));
+				}
 			}
 		}
 	}
@@ -1427,7 +1447,7 @@ void LevelSystem::stop() {
 void LevelSystem::generateClutter() {
 
 	//adds clutter for each tile in each room if rand() is over threshold value
-	for (int i = 0; i < numberOfRooms - 1; i++) {
+	for (int i = 0; i < numberOfRooms; i++) {
 		Rect room = matched.at(i);
 		for (int x = 0; x < room.sizex; x++) {
 			for (int y = 0; y < room.sizey; y++) {
@@ -1470,7 +1490,7 @@ void LevelSystem::generateClutter() {
 
 						float clutterPosX = ((rand() % 100) / 100.f) * (xmax - xmin) + xmin + (x + room.posx) * tileSize + tileOffset - tileSize / 2.f;
 						float clutterPosY = ((rand() % 100) / 100.f) * (ymax - ymin) + ymin + (y + room.posy) * tileSize + tileOffset - tileSize / 2.f;
-						int rot = rand() %360;
+						int rot = (rand() %4)*90;
 						Clutter clutterLarge;
 						clutterLarge.posx = clutterPosX;
 						clutterLarge.posy = clutterPosY;
@@ -1640,7 +1660,7 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		}
 	}
 
-	for (int i = 0; i < numberOfRooms - 1; i++) {
+	for (int i = 0; i < numberOfRooms; i++) {
 		Rect room = matched.at(i);
 		auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*tileSize),glm::vec3(0.f),glm::vec3(1.f,tileHeight,1.f));
 
