@@ -169,11 +169,7 @@ bool MenuState::renderImgui(float dt) {
 					inputIP = "127.0.0.1:54000";
 				}
 				if (m_network->connectToIP(&inputIP.front())) {
-					// Wait until welcome-package is received,
-					// Save the package info,
-					// Pop and push into JoinLobbyState.
-					this->requestStackPop();
-					this->requestStackPush(States::JoinLobby);
+
 				}
 			}
 			if (ImGui::IsItemHovered()) {
@@ -227,8 +223,7 @@ bool MenuState::renderImgui(float dt) {
 					if (ImGui::IsMouseDoubleClicked(0)) {
 						// If pressed then join
 						if (m_network->connectToIP(&lobby.ip.front())) {
-							this->requestStackPop();
-							this->requestStackPush(States::JoinLobby);
+
 						}
 					}
 				}
@@ -248,8 +243,7 @@ bool MenuState::renderImgui(float dt) {
 		if (ImGui::Button("Join") && selected != -1) {
 			// If pressed then join
 			if (m_network->connectToIP(&m_foundLobbies[selected].ip.front())) {
-				this->requestStackPop();
-				this->requestStackPush(States::JoinLobby);
+
 			}
 		}
 		if (selected == -1) {
@@ -281,12 +275,14 @@ bool MenuState::renderImgui(float dt) {
 }
 
 bool MenuState::onEvent(const Event& event) {
+	State::onEvent(event);
+
 	switch (event.type) {
 	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
 	default: break;
 	}
 
-	return false;
+	return true;
 }
 
 const std::string MenuState::loadPlayerName(const std::string& file) {
