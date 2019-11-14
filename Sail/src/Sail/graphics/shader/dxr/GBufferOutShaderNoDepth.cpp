@@ -14,9 +14,11 @@ GBufferOutShaderNoDepth::GBufferOutShaderNoDepth()
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
-	static_cast<DX12ShaderPipeline*>(shaderPipeline)->setNumRenderTargets(3);
+	shaderPipeline->setNumRenderTargets(3);
 
-	//getPipeline()->setDepthWrite(false); // TODO: fix this
+	// Disable depth writing
+	getPipeline()->enableDepthWriting(false);
+	getPipeline()->setBlending(GraphicsAPI::ADDITIVE);
 
 	// Finish the shader creation
 	finish();

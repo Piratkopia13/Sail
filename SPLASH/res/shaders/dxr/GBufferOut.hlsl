@@ -108,14 +108,21 @@ GBuffers PSMain(PSIn input) {
         gbuffers.normal = float4(mul(normalize(normalSample * 2.f - 1.f), input.tbn) / 2.f + .5f, 1.0f);
     }
 
+
     gbuffers.albedo = sys_material_pbr.modelColor;
 	if (sys_material_pbr.hasAlbedoTexture) {
-		float4 albedo = sys_texAlbedo.Sample(PSss, input.texCoords);
+		float4 albedo = sys_texAlbedo.SampleLevel(PSss, input.texCoords, 0); // TODO: change back to sample when mip maps are working
+        // albedo.a = 1.f;
 
 		if (albedo.a < 1.0f) {
 		 	// float f = 1 - albedo.a;
 		 	// gbuffers.albedo = float4(gbuffers.albedo.rgb * (1 - f) + teamColor * f, albedo.a);
-             gbuffers.albedo *= albedo;
+            // if (albedo.a > 0.0f) {
+                gbuffers.albedo = albedo;
+                gbuffers.normal = 0;
+            // }
+            // gbuffers.albedo = float4(0.f, 0.f, 0.f, 0.f);
+            // gbuffers.albedo = float4(1.f, 0.f, 0.f, 1.f);
 		} else {
 			gbuffers.albedo = albedo;
 		}

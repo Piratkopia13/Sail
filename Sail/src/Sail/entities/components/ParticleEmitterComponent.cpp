@@ -35,8 +35,8 @@ void ParticleEmitterComponent::init() {
 
 	m_outputVertexBufferSize = 6 * 1700;
 
-	//auto& noDepthShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShaderNoDepth>()
-	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &gbufferShader);
+	auto& noDepthShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShaderNoDepth>();
+	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &noDepthShader);
 
 	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
 
