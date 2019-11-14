@@ -2,6 +2,7 @@
 #include "NetworkSenderSystem.h"
 
 #include "receivers/NetworkReceiverSystem.h"
+#include "receivers/KillCamReceiverSystem.h"
 
 #include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
@@ -153,6 +154,9 @@ void NetworkSenderSystem::update() {
 	std::string binaryDataToSendToOthers = osToOthers.str();
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryDataToSendToOthers);
+
+		// Host doesn't get their messages sent back to them so we need to send them to the killCamReceiverSystem from here
+		m_killCamSystem->handleIncomingData(binaryDataToSendToOthers);
 	} else {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryDataToSendToOthers);
 	}
