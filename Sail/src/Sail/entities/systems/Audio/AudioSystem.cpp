@@ -453,7 +453,6 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onLoopShooting = [=](const LoopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
-			std::cout << "AUDIOSYSTEM::LOOP.TRUE\n";
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;

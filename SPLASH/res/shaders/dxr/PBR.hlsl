@@ -151,7 +151,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
 	// Lerp AO depending on shadow
 	// This fixes water being visible in darkness
-	shadowAmount /= numLights;
+	shadowAmount /= max(numLights, 1);
 	shadowAmount = 1 - (shadowAmount * shadowAmount);
 	ao = lerp(originalAo, ao, shadowAmount);
 
