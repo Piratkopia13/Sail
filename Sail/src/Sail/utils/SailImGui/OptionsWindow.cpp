@@ -104,6 +104,20 @@ void OptionsWindow::renderWindow() {
 		ImGui::SameLine(x[2]);
 		ImGui::Text("shadows");
 
+		sopt = &stat["graphics"]["water simulation"];
+		selected = sopt->selected;
+		if (SailImGui::TextButton(std::string("<##water simulation").c_str())) {
+			sopt->setSelected(selected - 1);
+		}
+		ImGui::SameLine(x[0]);
+		valueName = sopt->getSelected().name;
+		ImGui::Text(valueName.c_str());
+		ImGui::SameLine(x[1]);
+		if (SailImGui::TextButton(std::string(">##water simulation").c_str())) {
+			sopt->setSelected(selected + 1);
+		}
+		ImGui::SameLine(x[2]);
+		ImGui::Text("water simulation");
 
 
 

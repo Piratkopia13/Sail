@@ -135,6 +135,10 @@ void SettingStorage::createApplicationDefaultGraphics() {
 		{ "hard",0.0f },
 		{ "soft",1.0f }
 	}));
+	applicationSettingsStatic["graphics"]["water simulation"] = Setting(1, std::vector<Setting::Option>({
+		{ "off", 0.0f },
+		{ "on", 1.0f }
+	}));
 }
 void SettingStorage::createApplicationDefaultSound() {
 	applicationSettingsDynamic["sound"] = std::unordered_map<std::string, DynamicSetting>();
@@ -150,7 +154,6 @@ void SettingStorage::createApplicationDefaultMisc() {
 void SettingStorage::createGameDefaultStructure() {
 	createGameDefaultMap();
 	createGameModeDefault();
-
 }
 
 void SettingStorage::createGameDefaultMap() {	
