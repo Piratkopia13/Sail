@@ -156,7 +156,6 @@ void GunSystem::setGunStateSTART(Entity* e, GunComponent* gun) {
 }
 
 void GunSystem::setGunStateLOOP(Entity* e, GunComponent* gun) {
-	//std::cout << "GUNSTATE:LOOP\n";
 	// Network automatically handles transition from starting-->looping
 	gun->state = GunState::LOOPING;
 }

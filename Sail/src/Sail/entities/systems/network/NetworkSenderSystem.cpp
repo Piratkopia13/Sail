@@ -138,10 +138,6 @@ void NetworkSenderSystem::update() {
 		out << "Event: " << Netcode::MessageNames[(int)(pE->type)-1] << "\n";
 #endif
 
-		if ((int)pE->type == 85) {
-			int asdf = 3;
-		}
-
 		writeEventToArchive(pE, sendToOthers);
 		if (pE->alsoSendToSelf) {
 			writeEventToArchive(pE, sendToSelf);
@@ -185,10 +181,6 @@ void NetworkSenderSystem::update() {
 
 void NetworkSenderSystem::queueEvent(NetworkSenderEvent* event) {
 	std::lock_guard<std::mutex> lock(m_queueMutex);
-
-	if ((int)event->type == 85) {
-		int asdf = 3;
-	}
 
 	m_eventQueue.push(event);
 
