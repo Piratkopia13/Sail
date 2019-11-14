@@ -3,6 +3,9 @@
 #include "../components/TransformComponent.h"
 #include "../components/ReplayTransformComponent.h"
 
+#include "../components/MetaballComponent.h"
+#include "../components/ReplayMetaballComponent.h"
+
 // Ordered by name
 
 class AiSystem;
@@ -26,7 +29,6 @@ class LevelSystem;
 class LifeTimeSystem;
 class LightSystem;
 class LightListSystem;
-class MetaballSubmitSystem;
 class MovementPostCollisionSystem;
 class MovementSystem;
 class NetworkReceiverSystem;
@@ -46,6 +48,8 @@ class TeamColorSystem;
 
 
 // Systems that need duplicate versions for the killcam
+template <typename T>
+class MetaballSubmitSystem;
 template <typename T>
 class ModelSubmitSystem;
 
@@ -71,7 +75,6 @@ struct Systems {
 	LifeTimeSystem*              lifeTimeSystem              = nullptr;
 	LightSystem*                 lightSystem                 = nullptr;
 	LightListSystem*             lightListSystem             = nullptr;
-	MetaballSubmitSystem*        metaballSubmitSystem        = nullptr;
 	MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
 	MovementSystem*              movementSystem              = nullptr;
 	NetworkReceiverSystem*       networkReceiverSystem       = nullptr;
@@ -91,6 +94,8 @@ struct Systems {
 
 
 	// Systems that need duplicate versions for the killcam
-	ModelSubmitSystem<TransformComponent>*       modelSubmitSystem        = nullptr;
-	ModelSubmitSystem<ReplayTransformComponent>* killCamModelSubmitSystem = nullptr;
+	MetaballSubmitSystem<MetaballComponent>*       metaballSubmitSystem        = nullptr;
+	MetaballSubmitSystem<ReplayMetaballComponent>* killCamMetaballSubmitSystem = nullptr;
+	ModelSubmitSystem<TransformComponent>*         modelSubmitSystem           = nullptr;
+	ModelSubmitSystem<ReplayTransformComponent>*   killCamModelSubmitSystem    = nullptr;
 };

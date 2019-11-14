@@ -53,6 +53,7 @@ void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
 // Prepare transform components for the next frame
 void KillCamReceiverSystem::prepareUpdate() {
 	for (auto e : entities) {
+
 		e->getComponent<ReplayTransformComponent>()->prepareUpdate();
 	}
 }
@@ -92,11 +93,11 @@ void KillCamReceiverSystem::createPlayer(const PlayerComponentInfo& info, const 
 }
 
 void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
-	//if (auto e = findFromNetID(entityID); e) {
-	//	e->queueDestruction();
-	//	return;
-	//}
-	//SAIL_LOG_WARNING("destoryEntity called but no matching entity found");
+	if (auto e = findFromNetID(entityID); e) {
+		e->queueDestruction();
+		return;
+	}
+	SAIL_LOG_WARNING("destoryEntity called but no matching entity found");
 }
 
 void KillCamReceiverSystem::enableSprinklers() {
@@ -190,10 +191,16 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 
 // If I requested the projectile it has a local owner
 void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
-	//const bool wasRequestedByMe = (Netcode::getComponentOwner(info.ownerID) == m_playerID);
+	auto e = ECS::Instance()->createEntity("projectile");
+	instantAddEntity(e.get());
 
-	//// Also play the sound
-	//EntityFactory::CreateProjectile(info.position, info.velocity, wasRequestedByMe, info.ownerID, info.projectileID);
+	EntityFactory::ProjectileArguments args{};
+	args.pos = info.position;
+	args.velocity = info.velocity;
+	args.ownersNetId = info.ownerID;
+	args.netCompId = info.projectileID;
+
+	EntityFactory::CreateReplayProjectile(e, args);
 }
 
 void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {

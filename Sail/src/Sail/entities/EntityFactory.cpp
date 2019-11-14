@@ -365,29 +365,26 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e,
-		const glm::vec3& pos, const glm::vec3& velocity, 
-		bool hasLocalOwner, Netcode::ComponentID ownersNetId, 
-		Netcode::ComponentID netCompId, float lifetime) 
-{
+
+Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory::ProjectileArguments& info) {
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
-	e->addComponent<LifeTimeComponent>(lifetime);
-	e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
-	e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
-	e->addComponent<TransformComponent>(pos);
+	e->addComponent<LifeTimeComponent>(info.lifetime);
+	e->addComponent<ProjectileComponent>(10.0f, info.hasLocalOwner); // TO DO should not be manually set to true
+	e->getComponent<ProjectileComponent>()->ownedBy = info.ownersNetId;
+	e->addComponent<TransformComponent>(info.pos);
 	
-	if (hasLocalOwner == true) {
-		e->addComponent<LocalOwnerComponent>(ownersNetId);
-		e->addComponent<NetworkSenderComponent>(Netcode::EntityType::PROJECTILE_ENTITY, netCompId);
+	if (info.hasLocalOwner == true) {
+		e->addComponent<LocalOwnerComponent>(info.ownersNetId);
+		e->addComponent<NetworkSenderComponent>(Netcode::EntityType::PROJECTILE_ENTITY, info.netCompId);
 	} else {
-		e->addComponent<OnlineOwnerComponent>(ownersNetId);
+		e->addComponent<OnlineOwnerComponent>(info.ownersNetId);
 	}
-	e->addComponent<NetworkReceiverComponent>(netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
+	e->addComponent<NetworkReceiverComponent>(info.netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 	
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();
-	movement->velocity = velocity;
+	movement->velocity = info.velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
 	CollisionComponent* collision = e->addComponent<CollisionComponent>();
@@ -398,6 +395,25 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e,
 
 	return e;
 }
+
+Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const ProjectileArguments& info) {
+	e->addComponent<ReplayMetaballComponent>();
+	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
+	e->addComponent<LifeTimeComponent>(info.lifetime);
+	//e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
+	//e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
+
+	e->addComponent<ReplayTransformComponent>(info.pos);
+
+	e->addComponent<ReplayComponent>(info.netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
+
+	MovementComponent* movement = e->addComponent<MovementComponent>();
+	movement->velocity = info.velocity;
+	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+
+	return e;
+}
+
 
 Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size) {
 	static int num = 0;
