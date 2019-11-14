@@ -63,7 +63,7 @@ const std::vector<Entity*>& ReceiverBase::getEntities() const { return entities;
 	--------------------------------------------------
 
 */
-void ReceiverBase::processData(float dt, std::queue<std::string>& data) {
+void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bool ignoreFromSelf) {
 	// TODO: Remove a bunch of stuff from here
 	size_t nrOfSenderComponents    = 0;
 	size_t nrOfMessagesInComponent = 0;
@@ -89,7 +89,7 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data) {
 
 		// If the packet was originally sent over the network from ourself 
 		// then don't process it and go to the next packet
-		if (senderID == m_playerID) { data.pop(); continue; }
+		if (ignoreFromSelf && senderID == m_playerID) { data.pop(); continue; }
 
 		// If the message was sent internally to ourself then correct the senderID
 		if (senderID == Netcode::MESSAGE_FROM_SELF_ID) { senderID = m_playerID; }

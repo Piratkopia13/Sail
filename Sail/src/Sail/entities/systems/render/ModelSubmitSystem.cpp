@@ -20,7 +20,6 @@ void ModelSubmitSystem<T>::submitAll(const float alpha) {
 	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
 	for (auto& e : entities) {
 		ModelComponent* model = e->getComponent<ModelComponent>();
-		//TransformComponent* transform = e->getComponent<TransformComponent>();
 		T* transform = e->getComponent<T>();
 		CullingComponent* culling = e->getComponent<CullingComponent>();
 
