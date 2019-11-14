@@ -156,6 +156,7 @@ void GunSystem::setGunStateSTART(Entity* e, GunComponent* gun) {
 }
 
 void GunSystem::setGunStateLOOP(Entity* e, GunComponent* gun) {
+	//std::cout << "GUNSTATE:LOOP\n";
 	// Network automatically handles transition from starting-->looping
 	gun->state = GunState::LOOPING;
 }
@@ -178,7 +179,6 @@ void GunSystem::sendShootingEvents(Entity* e) {
 		));
 		break;
 	case GunState::LOOPING:
-		std::cout << "EMITTING LOOP SHOOT EVENT\n";
 		EventDispatcher::Instance().emit(LoopShootingEvent(
 			e->getComponent<NetworkReceiverComponent>()->m_id,
 			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].frequency
