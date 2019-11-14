@@ -497,6 +497,18 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->playerWhoWasHitID);
 	}
 	break;
+	case Netcode::MessageType::START_THROWING:
+	{
+		Netcode::MessageStartThrowing* data = static_cast<Netcode::MessageStartThrowing*>(event->data);
+		ar(data->playerCompID); // Send
+	}
+	break;
+	case Netcode::MessageType::STOP_THROWING:
+	{
+		Netcode::MessageStopThrowing* data = static_cast<Netcode::MessageStopThrowing*>(event->data);
+		ar(data->playerCompID); // Send
+	}
+	break;
 	default:
 		SAIL_LOG_ERROR("TRIED TO SEND INVALID NETWORK EVENT (" + std::to_string((int)event->type));
 		break;

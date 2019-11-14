@@ -32,13 +32,13 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 
-
 	initConsole();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 
+	m_app->setCurrentCamera(&m_cam);
 
 	std::vector<glm::vec3> m_teamColors;
 	for (int i = 0; i < 12; i++) {
@@ -388,11 +388,11 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
 
-
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
 	m_componentSystems.candlePlacementSystem = ECS::Instance()->createSystem<CandlePlacementSystem>();
-	m_componentSystems.candlePlacementSystem->setOctree(m_octree);
+	m_componentSystems.candleThrowingSystem = ECS::Instance()->createSystem<CandleThrowingSystem>();
+	m_componentSystems.candleThrowingSystem->setOctree(m_octree);
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -723,6 +723,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
+	runSystem(dt, m_componentSystems.candleThrowingSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
 	runSystem(dt, m_componentSystems.candlePlacementSystem);
 	runSystem(dt, m_componentSystems.candleReignitionSystem);

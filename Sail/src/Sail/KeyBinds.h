@@ -13,7 +13,7 @@ namespace KeyBinds {
 	extern int MOVE_DOWN;
 	extern int SPRINT;
 	extern int SHOOT;
-	extern int TOGGLE_CANDLE_HELD;
+	extern int THROW_CHARGE;
 	extern int SPRAY;
 	extern int LIGHT_CANDLE;
 	extern int SHOW_IN_GAME_MENU;

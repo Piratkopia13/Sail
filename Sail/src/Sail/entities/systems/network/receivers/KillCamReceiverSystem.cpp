@@ -247,6 +247,14 @@ void KillCamReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
 
+void KillCamReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {
+	//EventDispatcher::Instance().emit(StartThrowingEvent(id));
+}
+
+void KillCamReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
+	//EventDispatcher::Instance().emit(StopThrowingEvent(id));
+}
+
 
 
 // These functions are only used by NetworkReceiverSystemHost so their implementations are empty here

@@ -79,6 +79,8 @@ namespace Netcode {
 		IGNITE_CANDLE,
 		HIT_BY_SPRINKLER,
 		ENABLE_SPRINKLERS,
+		START_THROWING,
+		STOP_THROWING,
 		EMPTY,
 		COUNT
 	}; 
@@ -110,6 +112,8 @@ namespace Netcode {
 		"IGNITE_CANDLE,				",
 		"HIT_BY_SPRINKLER,			",
 		"ENABLE_SPRINKLERS,			",
+		"START_THROWING,			",
+		"STOP_THROWING,				",
 		"EMPTY						",
 	};
 
@@ -324,6 +328,18 @@ namespace Netcode {
 	public:
 		MessageEnableSprinklers() {}
 		~MessageEnableSprinklers() {}
+	};
+	class MessageStartThrowing : public MessageData {
+	public:
+		MessageStartThrowing(Netcode::ComponentID id) : playerCompID(id) {}
+		~MessageStartThrowing() {}
+		Netcode::ComponentID playerCompID;
+	};
+	class MessageStopThrowing : public MessageData {
+	public:
+		MessageStopThrowing(Netcode::ComponentID id) : playerCompID(id) {}
+		~MessageStopThrowing() {}
+		Netcode::ComponentID playerCompID;
 	};
 
 }

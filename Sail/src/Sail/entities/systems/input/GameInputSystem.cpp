@@ -17,8 +17,8 @@
 #include "Sail/TimeSettings.h"
 
 
-// Candle can only be picked up and put down once every 0.2 seconds
-constexpr float CANDLE_TIMER = 0.2f;
+// Candle can only be picked up and put down once every 2 seconds
+constexpr float CANDLE_TIMER = 2.f;
 
 
 GameInputSystem::GameInputSystem() : BaseComponentSystem() {
@@ -139,12 +139,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			Movement playerMovement = getPlayerMovementInput(e);
 
 			// Player puts down candle
-			if (Input::IsKeyPressed(KeyBinds::TOGGLE_CANDLE_HELD) ) {
-				if (m_candleToggleTimer > CANDLE_TIMER) {
-					putDownCandle(e);
-					m_candleToggleTimer = 0.0f;
-				}
-			}
+			toggleCandleCarry(e);
 
 			if ( Input::IsKeyPressed(KeyBinds::LIGHT_CANDLE) ) {
 				for ( auto child : e->getChildEntities() ) {
@@ -449,21 +444,66 @@ CameraController* GameInputSystem::getCamera() const {
 	return m_cam;
 }
 
-void GameInputSystem::putDownCandle(Entity* e) {
-	for ( int i = 0; i < e->getChildEntities().size(); i++ ) {
-		auto candleE = e->getChildEntities()[i];
-		if ( candleE->hasComponent<CandleComponent>() ) {
-			auto candleComp = candleE->getComponent<CandleComponent>();
-			candleComp->isCarried = !candleComp->isCarried;
+void GameInputSystem::toggleCandleCarry(Entity* entity) {
+	// No need to do anything since it's to soon since last action
+	if (m_candleToggleTimer < CANDLE_TIMER) { return; }
+
+	for (int i = 0; i < entity->getChildEntities().size(); i++) {
+		auto torchE = entity->getChildEntities()[i];
+		if (torchE->hasComponent<CandleComponent>()) {
+			auto candleComp = torchE->getComponent<CandleComponent>();
+
+			bool chargeHeld = Input::IsKeyPressed(KeyBinds::THROW_CHARGE);
+
+			auto throwingComp = entity->getComponent<ThrowingComponent>();
+			if (!throwingComp->isThrowing) {
+				if (chargeHeld) {
+					if (candleComp->isCarried && torchE->getComponent<TransformComponent>()->getParent()) {
+						// Torch is carried, get to charging the throw
+						throwingComp->isCharging = true;
+						if (throwingComp->chargeTime >= throwingComp->chargeToThrowThreshold) {
+							// We want to throw the torch
+							throwingComp->isThrowing = true;
+							throwingComp->isCharging = false;
+							m_candleToggleTimer = 0.f;
+						}
+					} else {
+						// Torch isn't carried so try to pick it up
+						candleComp->isCarried = true;
+						m_candleToggleTimer = 0.f;
+					}
+				} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
+					// We want to throw the torch
+					throwingComp->isCharging = false;
+					throwingComp->isThrowing = true;
+					m_candleToggleTimer = 0.f;
+				}
+			}
+
+
 			return;
 		}
-	}
+	}	
 }
 
 Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	Movement playerMovement;
 
 	auto sprintComp = e->getComponent<SprintingComponent>();
+	sprintComp->doSprint = false;
+
+	if (Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) { playerMovement.forwardMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD)) { playerMovement.forwardMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_LEFT)) { playerMovement.rightMovement -= 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_RIGHT)) { playerMovement.rightMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
+	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
+
+	auto throwC = e->getComponent<ThrowingComponent>();
+	if (throwC->isThrowing || throwC->isCharging) {
+		return playerMovement;
+	}
+
 	if (Input::IsKeyPressed(KeyBinds::SPRINT)) {
 		if (!e->hasComponent<SpectatorComponent>()) {
 			if (sprintComp->canSprint && Input::IsKeyPressed(KeyBinds::MOVE_FORWARD)) {
@@ -474,16 +514,7 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 		} else {
 			playerMovement.speedModifier = sprintComp->sprintSpeedModifier;
 		}
-	} else {
-		sprintComp->doSprint = false;
 	}
-
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_FORWARD) ) { playerMovement.forwardMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_BACKWARD) ) { playerMovement.forwardMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_LEFT) ) { playerMovement.rightMovement -= 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_RIGHT) ) { playerMovement.rightMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_UP) ) { playerMovement.upMovement += 1.0f; }
-	if ( Input::IsKeyPressed(KeyBinds::MOVE_DOWN) ) { playerMovement.upMovement -= 1.0f; }
 
 	return playerMovement;
 }
