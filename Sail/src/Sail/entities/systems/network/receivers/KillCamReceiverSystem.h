@@ -20,8 +20,9 @@ public:
 	KillCamReceiverSystem();
 	virtual ~KillCamReceiverSystem();
 
+	void prepareUpdate();
 	void handleIncomingData(const std::string& data) override;
-	void update            (float dt)          override;
+	void update            (float dt)                override;
 
 	void processReplayData(float dt);
 
@@ -62,6 +63,8 @@ private:
 	void runningTileStart      (const Netcode::ComponentID id)                   override;
 	void runningWaterTileStart (const Netcode::ComponentID id)                   override;
 	void runningStopSound      (const Netcode::ComponentID id)                   override;
+	void throwingStartSound	   (const Netcode::ComponentID id)					 override;
+	void throwingEndSound	   (const Netcode::ComponentID id)					 override;
 
 	// HOST ONLY
 	void endMatch()                         override; // Start end timer for host

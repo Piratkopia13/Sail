@@ -35,6 +35,8 @@ AudioSystem::AudioSystem() : BaseComponentSystem() {
 	EventDispatcher::Instance().subscribe(Event::Type::STOP_SHOOTING, this);
 	EventDispatcher::Instance().subscribe(Event::Type::CHANGE_WALKING_SOUND, this);
 	EventDispatcher::Instance().subscribe(Event::Type::STOP_WALKING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::START_THROWING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_THROWING, this);
 
 	initialize();
 }
@@ -51,6 +53,8 @@ AudioSystem::~AudioSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_SHOOTING, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::CHANGE_WALKING_SOUND, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_WALKING, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::START_THROWING, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_THROWING, this);
 }
 
 // TO DO: move to constructor?
@@ -106,6 +110,12 @@ void AudioSystem::initialize() {
 #pragma region MISCELLANEOUS
 	m_audioEngine->loadSound("miscellaneous/re_ignition_candle.wav");
 	m_audioEngine->loadSound("miscellaneous/guitar.wav");
+	// Throwing
+	m_audioEngine->loadSound("miscellaneous/throwing/start_throw.wav");
+	for (int i = 1; i < 8; i++) {
+		m_audioEngine->loadSound("miscellaneous/throwing/throw" + std::to_string(i) + ".wav");
+	}
+  // Sprinkler
 	m_audioEngine->loadSound("miscellaneous/sprinkler_start1.wav");
 	m_audioEngine->loadSound("miscellaneous/sprinkler_start2.wav");
 	m_audioEngine->loadSound("miscellaneous/sprinkler.wav");
@@ -447,6 +457,24 @@ bool AudioSystem::onEvent(const Event& event) {
 		}
 	};
 
+	auto onStartThrowing = [=] (const StartThrowingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::START_THROWING].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::START_THROWING].isPlaying = true;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : started throwing but no matching entity found");
+		}
+	};
+
+	auto onStopThrowing = [=] (const StopThrowingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::STOP_THROWING].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::STOP_THROWING].isPlaying = true;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : stopped throwing but no matching entity found");
+		}
+	};
+
 	switch (event.type) {
 	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
 	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
@@ -456,6 +484,8 @@ bool AudioSystem::onEvent(const Event& event) {
 	case Event::Type::STOP_SHOOTING: onStopShooting((const StopShootingEvent&)event); break;
 	case Event::Type::CHANGE_WALKING_SOUND: onChangeWalkingSound((const ChangeWalkingSoundEvent&)event); break;
 	case Event::Type::STOP_WALKING: onStopWalking((const StopWalkingEvent&)event); break;
+	case Event::Type::START_THROWING: onStartThrowing((const StartThrowingEvent&)event); break;
+	case Event::Type::STOP_THROWING: onStopThrowing((const StopThrowingEvent&)event); break;
 	default: break;
 	}
 

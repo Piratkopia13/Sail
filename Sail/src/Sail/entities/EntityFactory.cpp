@@ -55,6 +55,10 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	pl.setAttenuation(0.f, 0.f, 0.2f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
+
+
+	// Components needed for killcam
+	candle->addComponent<ReplayTransformComponent>();
 }
 
 Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
@@ -70,6 +74,11 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<ModelComponent>(candleModel);
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
+
+
+	// Components needed for killcam
+	gun->addComponent<ReplayTransformComponent>();
+
 	return gun;
 }
 
@@ -102,6 +111,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<SprintingComponent>();
+	myPlayer->addComponent<ThrowingComponent>();
 
 #ifdef DEVELOPMENT
 	//For testing, add particle emitter to player.
@@ -138,6 +148,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 			c->addComponent<ReplayComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
+			c->addComponent<MovementComponent>();
 		}
 	}
 
@@ -209,7 +220,7 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 	perfromancePlayerID++;
 }
 
-// Creates a player enitty without a candle and without a model
+// Creates a player entity without a candle and without a model
 void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID) {
 	
 	std::string modelName = "Doc.fbx";
@@ -274,6 +285,9 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
 
+
+	// Components needed for killcam
+	playerEntity->addComponent<ReplayTransformComponent>();
 }
 
 
@@ -346,6 +360,10 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
+
+
+	// Components needed to be rendered in the killcam
+	e->addComponent<ReplayTransformComponent>(pos, rot, scale);
 
 	return e;
 }
