@@ -19,6 +19,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	// Candle has a model and a bounding box
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("Torch.fbx", shader);
+	candleModel->setCastShadows(false);
 	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
 	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
 	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
@@ -38,12 +39,26 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	candle->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	candle->addComponent<CullingComponent>();
 
+#ifdef DEVELOPMENT
+	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
+	particleEmitterComp->position = { 4.0f, 1.0f, 0.0f };
+	particleEmitterComp->velocity = { 0.0f, 0.2f, 0.0f };
+	particleEmitterComp->acceleration = { 0.0f, 0.2f, 0.0f };
+	particleEmitterComp->spread = { 0.3f, 0.5f, 0.3f };
+	particleEmitterComp->spawnRate = 0.01f;
+	particleEmitterComp->lifeTime = 1.0f;
+#endif
+
 	PointLight pl;
 	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .5f, lightPos.z));
 	pl.setAttenuation(0.f, 0.f, 0.2f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
+
+
+	// Components needed for killcam
+	candle->addComponent<ReplayTransformComponent>();
 }
 
 Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
@@ -59,6 +74,11 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<ModelComponent>(candleModel);
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
+
+
+	// Components needed for killcam
+	gun->addComponent<ReplayTransformComponent>();
+
 	return gun;
 }
 
@@ -91,11 +111,18 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<SprintingComponent>();
+	myPlayer->addComponent<ThrowingComponent>();
 
+#ifdef DEVELOPMENT
 	//For testing, add particle emitter to player.
 	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
 	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
+	particleEmitterComp->velocity = {0.0f, 4.0f, 0.0f};
+	particleEmitterComp->acceleration = { 0.0f, -9.8f, 0.0f };
+	particleEmitterComp->spread = {2.0f, 2.0f, 1.0f};
 	particleEmitterComp->spawnRate = 0.001f;
+	particleEmitterComp->lifeTime = 1.0f;
+#endif
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
@@ -121,6 +148,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 			c->addComponent<ReplayComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
+			c->addComponent<MovementComponent>();
 		}
 	}
 
@@ -213,18 +241,6 @@ Entity::SPtr EntityFactory::CreateMySpectator(Netcode::PlayerID playerID, size_t
 	auto mySpectator = ECS::Instance()->createEntity("MyPlayer");
 
 	mySpectator->addComponent<TransformComponent>(spawnLocation);
-	//mySpectator->addComponent<SpeedLimitComponent>();
-	//mySpectator->addComponent<BoundingBoxComponent>(nullptr);
-	//mySpectator->addComponent<AudioComponent>();
-	//mySpectator->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerID, Netcode::MessageType::CREATE_NETWORKED_PLAYER);
-	//mySpectator->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::ANIMATION);
-	//Netcode::ComponentID netComponentID = mySpectator->getComponent<NetworkSenderComponent>()->m_id;
-	//mySpectator->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
-	//mySpectator->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
-	//mySpectator->addComponent<LocalOwnerComponent>(netComponentID);
-	//mySpectator->addComponent<CollisionComponent>();
-	//mySpectator->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f);
-	//mySpectator->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 	mySpectator->addComponent<SpectatorComponent>();
 
 	auto transform = mySpectator->getComponent<TransformComponent>();
@@ -300,6 +316,9 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
 
+
+	// Components needed for killcam
+	playerEntity->addComponent<ReplayTransformComponent>();
 }
 
 
@@ -372,6 +391,10 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
+
+
+	// Components needed to be rendered in the killcam
+	e->addComponent<ReplayTransformComponent>(pos, rot, scale);
 
 	return e;
 }

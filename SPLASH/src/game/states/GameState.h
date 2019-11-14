@@ -46,7 +46,7 @@ private:
 	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
-	void updateKillCamComponentSystems(float dt);
+	void updatePerTickKillCamComponentSystems(float dt);
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
 	void runSystem(float dt, BaseComponentSystem* toRun);
