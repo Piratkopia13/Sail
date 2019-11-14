@@ -19,7 +19,10 @@ struct Clutter {
 	float rot;
 	int size;
 };
-
+struct RoomInfo {
+	glm::vec3 center;
+	glm::vec2 size;
+};
 
 enum TileModel {
 	ROOM_FLOOR,
@@ -27,7 +30,6 @@ enum TileModel {
 	ROOM_DOOR,
 	ROOM_CEILING,
 	ROOM_CORNER,
-	ROOM_SERVER,
 	CORRIDOR_FLOOR,
 	CORRIDOR_WALL,
 	CORRIDOR_DOOR,
@@ -72,8 +74,9 @@ public:
 
 	void stop();
 	const int getAreaType(float posX, float posY);
-	const int getRoomIDWorldPos(float posX, float posY);
+	const int getRoomIDFromWorldPos(float posX, float posY);
 	const int getRoomID(int posX, int posY);
+	const RoomInfo getRoomInfo(int ID);
 
 	int xsize;
 	int ysize;
@@ -99,7 +102,7 @@ private:
 	std::queue<Rect> blocks;
 	std::queue<Rect> hallways;
 	std::queue<Rect> rooms;
-	std::queue<Rect> matched;
+	std::vector<Rect> matched;
 	std::queue<Clutter>largeClutter;
 	std::queue<Clutter>mediumClutter;
 	std::queue<Clutter>smallClutter;
