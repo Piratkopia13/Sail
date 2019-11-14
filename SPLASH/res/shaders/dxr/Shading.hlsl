@@ -167,7 +167,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float emissi
 		// Shade as water
 
 		metalness = lerp(metalness, 1.0f, 			waterOpacity);
-		roughness = lerp(roughness, 0.01f, 			waterOpacity);
+		roughness = lerp(roughness, 0.0f, 			waterOpacity);
 		ao 		  = lerp(ao, 		0.5f, 			waterOpacity);
 		albedo 	  = lerp(albedo, 	albedo * 0.8f,  waterOpacity);
 
