@@ -63,6 +63,8 @@ private:
 	void runningTileStart      (const Netcode::ComponentID id)                   override;
 	void runningWaterTileStart (const Netcode::ComponentID id)                   override;
 	void runningStopSound      (const Netcode::ComponentID id)                   override;
+	void throwingStartSound	   (const Netcode::ComponentID id)					 override;
+	void throwingEndSound	   (const Netcode::ComponentID id)					 override;
 
 	// HOST ONLY
 	void endMatch()                         override; // Start end timer for host

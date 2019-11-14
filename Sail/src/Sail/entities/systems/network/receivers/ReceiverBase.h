@@ -90,6 +90,8 @@ protected: // Functions
 	virtual void runningTileStart      (const Netcode::ComponentID id)                 = 0;
 	virtual void runningWaterTileStart (const Netcode::ComponentID id)                 = 0;
 	virtual void runningStopSound      (const Netcode::ComponentID id)                 = 0;
+	virtual void throwingStartSound    (const Netcode::ComponentID id)				   = 0;
+	virtual void throwingEndSound	   (const Netcode::ComponentID id)				   = 0;
 
 	// FUNCTIONS THAT DIFFER BETWEEN HOST AND CLIENT
 	virtual void endMatch() = 0;
