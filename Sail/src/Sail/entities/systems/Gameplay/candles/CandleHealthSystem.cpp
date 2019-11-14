@@ -104,7 +104,6 @@ void CandleHealthSystem::update(float dt) {
 			}
 		}
 #pragma endregion
-		candle->wasHitByPlayerID;// , ownerID
 
 		// COLOR/INTENSITY
 		float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
