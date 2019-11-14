@@ -72,3 +72,7 @@ void DX12HybridRaytracerRenderer::setTeamColors(const std::vector<glm::vec3>& te
 bool DX12HybridRaytracerRenderer::checkIfOnWater(const glm::vec3& pos) {
 	return m_rendererRaytrace->checkIfOnWater(pos);
 }
+
+DX12GBufferRenderer* DX12HybridRaytracerRenderer::getGBufferRenderer() const {
+	return m_rendererGbuffer.get();
+}

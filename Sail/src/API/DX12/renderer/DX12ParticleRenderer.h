@@ -18,7 +18,5 @@ public:
 private:
 	DX12API* m_context;
 	DX12API::Command m_command;
-	DX12RenderableTexture* m_outputTexture;
-
 	DX12RenderableTexture* m_depthTexture;
 };

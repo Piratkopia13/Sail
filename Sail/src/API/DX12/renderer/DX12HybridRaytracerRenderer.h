@@ -23,6 +23,8 @@ public:
 	virtual void setTeamColors(const std::vector<glm::vec3>& teamColors) override;
 	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
+	DX12GBufferRenderer* getGBufferRenderer() const;
+
 private:
 	std::unique_ptr<DX12GBufferRenderer> m_rendererGbuffer;
 	std::unique_ptr<DX12RaytracingRenderer> m_rendererRaytrace;

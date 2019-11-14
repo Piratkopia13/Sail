@@ -8,6 +8,8 @@
 #include "Sail/graphics/shader/Shader.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
+#include "DX12GBufferRenderer.h";
+#include "DX12HybridRaytracerRenderer.h"
 
 DX12ParticleRenderer::DX12ParticleRenderer() {
 	Application* app = Application::getInstance();
@@ -18,7 +20,9 @@ DX12ParticleRenderer::DX12ParticleRenderer() {
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
 
-	m_outputTexture = static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Particle renderer output ", Texture::R8G8B8A8));
+	// Tell particle renderer to use depth output from gbuffer renderer
+	auto* gbuffers = static_cast<DX12HybridRaytracerRenderer*>(app->getRenderWrapper()->getCurrentRenderer())->getGBufferRenderer()->getGBufferOutputs();
+	m_depthTexture = gbuffers[0];
 }
 
 DX12ParticleRenderer::~DX12ParticleRenderer() {}
@@ -35,10 +39,7 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
 
-	m_context->renderToBackBuffer(cmdList.Get());
-	
-	//cmdList->OMSetRenderTargets(1, &m_context->getCurrentRenderTargetCDH(), true, &m_depthTexture->getDsvCDH());
-		//cmdList->OMSetRenderTargets(1, &m_outputTexture->getRtvCDH(), true, &m_depthTexture->getDsvCDH());
+	cmdList->OMSetRenderTargets(1, &m_context->getCurrentRenderTargetCDH(), true, &m_depthTexture->getDsvCDH());
 
 	cmdList->RSSetViewports(1, m_context->getViewport());
 	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
@@ -58,8 +59,6 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 			meshIndex++;
 		}
 	}
-
-	m_outputTexture->clear({ 0.0f, 0.0f, 0.0f, 1.0f }, cmdList.Get());
 
 	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
