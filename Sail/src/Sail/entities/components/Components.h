@@ -30,7 +30,6 @@
 #include "ProjectileComponent.h"
 #include "RealTimeComponent.h"
 #include "ReplayComponent.h"
-#include "ReplayMetaballComponent.h"
 #include "ReplayTransformComponent.h"
 #include "SpectatorComponent.h"
 #include "SpeedLimitComponent.h"

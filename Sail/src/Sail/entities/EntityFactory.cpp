@@ -400,15 +400,11 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 }
 
 Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const ProjectileArguments& info) {
-	//e->addComponent<ReplayMetaballComponent>();
 	e->addComponent<MetaballComponent>();
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
-	//e->addComponent<ProjectileComponent>(10.0f, hasLocalOwner); // TO DO should not be manually set to true
-	//e->getComponent<ProjectileComponent>()->ownedBy = ownersNetId;
 
 	e->addComponent<ReplayTransformComponent>(info.pos);
-
 	e->addComponent<ReplayComponent>(info.netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();

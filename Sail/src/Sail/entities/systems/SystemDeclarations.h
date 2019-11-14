@@ -3,9 +3,6 @@
 #include "../components/TransformComponent.h"
 #include "../components/ReplayTransformComponent.h"
 
-#include "../components/MetaballComponent.h"
-#include "../components/ReplayMetaballComponent.h"
-
 // Ordered by name
 
 class AiSystem;
