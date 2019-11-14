@@ -45,8 +45,9 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
 	m_context->prepareToRender(cmdList.Get());
 
+	int meshIndex = 100; // TODO: shoule be able to set this to zero without breaking stuff right??
+
 	// TODO: optimize!
-	int meshIndex = 0;
 	for (auto& renderCommand : commandQueue) {
 		auto& vbuffer = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
 		vbuffer.init(cmdList.Get());
@@ -66,7 +67,7 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 	// Bind the descriptor heap that will contain all SRVs for this frame
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 	
-	meshIndex = 0;
+	//meshIndex = 0;
 	for (auto& command : commandQueue) {
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.model.mesh->getMaterial()->getShader()->getPipeline());
 		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
