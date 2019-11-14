@@ -108,6 +108,9 @@ GBuffers PSMain(PSIn input) {
         gbuffers.normal = float4(mul(normalize(normalSample * 2.f - 1.f), input.tbn) / 2.f + .5f, 1.0f);
     }
 
+    gbuffers.metalnessRoughnessAO = float4(sys_material_pbr.metalnessScale, sys_material_pbr.roughnessScale, sys_material_pbr.aoScale, 1.0f);
+	if (sys_material_pbr.hasMetalnessRoughnessAOTexture)
+		gbuffers.metalnessRoughnessAO *= sys_texMetalnessRoughnessAO.Sample(PSss, input.texCoords);
 
     gbuffers.albedo = sys_material_pbr.modelColor;
 	if (sys_material_pbr.hasAlbedoTexture) {
@@ -118,8 +121,9 @@ GBuffers PSMain(PSIn input) {
 		 	// float f = 1 - albedo.a;
 		 	// gbuffers.albedo = float4(gbuffers.albedo.rgb * (1 - f) + teamColor * f, albedo.a);
             // if (albedo.a > 0.0f) {
-                gbuffers.albedo = albedo;
-                gbuffers.normal = 0;
+                // gbuffers.albedo = albedo * albedo.a;
+                gbuffers.normal = 0.f;
+                gbuffers.metalnessRoughnessAO.a = 1.f - albedo.a;
             // }
             // gbuffers.albedo = float4(0.f, 0.f, 0.f, 0.f);
             // gbuffers.albedo = float4(1.f, 0.f, 0.f, 1.f);
@@ -129,9 +133,6 @@ GBuffers PSMain(PSIn input) {
 
 	}
 
-    gbuffers.metalnessRoughnessAO = float4(sys_material_pbr.metalnessScale, sys_material_pbr.roughnessScale, sys_material_pbr.aoScale, 1.0f);
-	if (sys_material_pbr.hasMetalnessRoughnessAOTexture)
-		gbuffers.metalnessRoughnessAO *= sys_texMetalnessRoughnessAO.Sample(PSss, input.texCoords);
 
     return gbuffers;
 }

@@ -15,8 +15,7 @@
 
 ParticleSystem::ParticleSystem() {
 	registerComponent<ParticleEmitterComponent>(true, true, true);
-
-	
+	registerComponent<TransformComponent>(false, true, false);
 }
 
 ParticleSystem::~ParticleSystem() {
@@ -24,7 +23,14 @@ ParticleSystem::~ParticleSystem() {
 
 void ParticleSystem::update(float dt) {
 	for (auto& e : entities) {
-		e->getComponent<ParticleEmitterComponent>()->updateTimers(dt);
+		auto* partComponent = e->getComponent<ParticleEmitterComponent>();
+
+		// Place emitter at entities transform
+		if (e->hasComponent<TransformComponent>()) {
+			partComponent->position = e->getComponent<TransformComponent>()->getMatrixWithoutUpdate()[3];
+			partComponent->position += partComponent->offset;
+		}
+		partComponent->updateTimers(dt);
 	}
 }
 

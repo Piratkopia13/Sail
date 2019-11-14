@@ -40,12 +40,12 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 
 #ifdef DEVELOPMENT
 	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
-	particleEmitterComp->position = { 4.0f, 1.0f, 0.0f };
-	particleEmitterComp->velocity = { 0.0f, 0.2f, 0.0f };
-	particleEmitterComp->acceleration = { 0.0f, 0.2f, 0.0f };
-	particleEmitterComp->spread = { 0.3f, 0.5f, 0.3f };
-	particleEmitterComp->spawnRate = 0.01f;
-	particleEmitterComp->lifeTime = 1.0f;
+	particleEmitterComp->offset = { 0.05f, 0.37f, 0.05f };
+	particleEmitterComp->velocity = { 0.0f, 2.f, 0.0f };
+	particleEmitterComp->acceleration = { 0.0f, 5.2f, 0.0f };
+	particleEmitterComp->spread = { 1.0f, 3.5f, 1.0f };
+	particleEmitterComp->spawnRate = 0.005f;
+	particleEmitterComp->lifeTime = 0.05f;
 	particleEmitterComp->setTexture("particles/prtcle.tga");
 #endif
 
@@ -101,17 +101,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<SprintingComponent>();
-
-#ifdef DEVELOPMENT
-	//For testing, add particle emitter to player.
-	auto* particleEmitterComp = myPlayer->addComponent<ParticleEmitterComponent>();
-	particleEmitterComp->position = { 0.0f, 2.0f, 0.0f };
-	particleEmitterComp->velocity = {0.0f, 4.0f, 0.0f};
-	particleEmitterComp->acceleration = { 0.0f, -9.8f, 0.0f };
-	particleEmitterComp->spread = {2.0f, 2.0f, 1.0f};
-	particleEmitterComp->spawnRate = 0.005f;
-	particleEmitterComp->lifeTime = 1.0f;
-#endif
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 

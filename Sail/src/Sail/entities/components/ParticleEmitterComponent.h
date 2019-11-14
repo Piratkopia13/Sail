@@ -17,6 +17,7 @@ public:
 	ParticleEmitterComponent();
 	~ParticleEmitterComponent();
 
+	glm::vec3 offset;
 	glm::vec3 position;
 	glm::vec3 spread;
 	glm::vec3 velocity;
@@ -61,6 +62,7 @@ private:
 
 
 	struct NewParticleInfo {
+		glm::vec3 pos;
 		glm::vec3 spread;
 		float spawnTime;
 	};
