@@ -50,6 +50,8 @@ enum ClutterModel {
 	SCREEN,
 	NOTEPAD,
 	MICROSCOPE,
+	CLONINGVATS,
+	CONTROLSTATION,
 	NUMBOFCLUTTER
 };
 
@@ -107,6 +109,7 @@ private:
 	std::queue<Clutter>largeClutter;
 	std::queue<Clutter>mediumClutter;
 	std::queue<Clutter>smallClutter;
+	std::queue<Clutter>specialClutter;
 	int randomizeTileId(std::vector<int>* tiles);
 	void findPossibleTiles(std::vector<int>* mapPointer,int posx, int posy);
 	void splitChunk();
