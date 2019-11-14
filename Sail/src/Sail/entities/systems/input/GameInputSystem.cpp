@@ -8,8 +8,6 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../../ECS.h"
 #include "../physics/UpdateBoundingBoxSystem.h"
-#include "Sail/entities/components/LocalOwnerComponent.h"
-#include "Sail/entities/components/AudioComponent.h"
 #include "../src/Network/NWrapperSingleton.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 #include "../Sail/src/API/DX12/renderer/DX12RaytracingRenderer.h"
@@ -32,6 +30,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<CandleComponent>(false, true, true);
 	registerComponent<GunComponent>(false, true, true);
 	registerComponent<SprintingComponent>(true, true, false);
+	registerComponent<AnimationComponent>(true, true, false);
 	m_mapPointer = nullptr;
 
 	// cam variables
@@ -425,19 +424,27 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 	for ( auto e : entities ) {
 		TransformComponent* playerTrans = e->getComponent<TransformComponent>();
 		BoundingBoxComponent* playerBB = e->getComponent<BoundingBoxComponent>();
-
-		glm::vec3 forwards(
-			std::cos(glm::radians(m_pitch)) * std::cos(glm::radians(m_yaw + 90)),
-			std::sin(glm::radians(m_pitch)),
-			std::cos(glm::radians(m_pitch)) * std::sin(glm::radians(m_yaw + 90))
-		);
-		forwards = glm::normalize(forwards);
+		AnimationComponent* animation = e->getComponent<AnimationComponent>();
 
 		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 
-		m_cam->setCameraPosition(glm::vec3(playerTrans->getInterpolatedTranslation(alpha) + glm::vec3(0.f, playerBB->getBoundingBox()->getHalfSize().y * 1.8f, 0.f)));
-		m_cam->setCameraDirection(forwards);
+		const glm::vec3 finalPos = playerTrans->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
+		const glm::vec3 camPos = glm::vec3(finalPos);
+
+		m_cam->setCameraPosition(camPos);
 	}
+
+	const float cosRadPitch = std::cosf(glm::radians(m_pitch));
+	const float sinRadPitch = std::sinf(glm::radians(m_pitch));
+	const float cosRadYaw = std::cosf(glm::radians(m_yaw + 90));
+	const float sinRadYaw = std::sinf(glm::radians(m_yaw + 90));
+	
+	const glm::vec3 forwards = glm::normalize(glm::vec3(
+		cosRadPitch * cosRadYaw,
+		sinRadPitch,
+		cosRadPitch * sinRadYaw));
+	
+	m_cam->setCameraDirection(forwards);
 }
 
 CameraController* GameInputSystem::getCamera() const {
