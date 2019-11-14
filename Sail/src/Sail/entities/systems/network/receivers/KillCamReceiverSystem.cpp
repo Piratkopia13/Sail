@@ -161,9 +161,9 @@ void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId,
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
 void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const bool isHeld) {
-	SAIL_LOG("setCandleState called");
 
 	//EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
+
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
