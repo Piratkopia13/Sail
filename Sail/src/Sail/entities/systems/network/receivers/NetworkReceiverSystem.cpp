@@ -53,9 +53,6 @@ void NetworkReceiverSystem::update(float dt) {
 	processData(dt, m_incomingDataBuffer);
 }
 
-
-
-
 void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
 	// Early exit if the entity already exists
 	if (findFromNetID(info.playerCompID)) {

@@ -88,9 +88,6 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 			glm::vec3 position = e->getComponent<TransformComponent>()->getCurrentTransformState().m_translation;
 
 			ar(Netcode::MessageType::CREATE_NETWORKED_PLAYER);
-#ifdef DEVELOPMENT
-			ar(Netcode::MessageType::CREATE_NETWORKED_PLAYER);
-#endif
 			ar(nsc->m_id); // Send the player's componentID
 			ar(candleID);  // Send the player's candle's componentID
 			ar(gunID);     // Send the player's gun's componentID
@@ -100,9 +97,6 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 			for (auto c : e->getChildEntities()) {
 				if (c->hasComponent<CandleComponent>() && !c->getComponent<CandleComponent>()->isCarried) {
 					ar(Netcode::MessageType::CANDLE_HELD_STATE);
-#ifdef DEVELOPMENT
-					ar(Netcode::MessageType::CANDLE_HELD_STATE);
-#endif
 					ar(nsc->m_id);
 					ar(false);
 				}

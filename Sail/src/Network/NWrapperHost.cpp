@@ -42,11 +42,13 @@ void NWrapperHost::updateServerDescription() {
 }
 
 void NWrapperHost::sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayeriD) {
-	
+	std::string msg;
+	msg += ML_SERIALIZED;
+	msg += data;
+
 	for (auto p : m_connectionsMap) {
 		if (p.second == PlayeriD) {
-			data = std::string("s") + data;
-			m_network->send(data.c_str(), data.length() + 1, p.first);
+			m_network->send(msg.c_str(), msg.length() + 1, p.first);
 			break;
 		}
 	}
