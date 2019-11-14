@@ -25,8 +25,8 @@ public:
 		animationW(0.0f), //TODO: REMOVE
 		m_stack(animationStack),
 		rightHandEntity(nullptr),
-		leftHandEntity(nullptr)
-
+		leftHandEntity(nullptr),
+		updateDT(true)
 	{
 		transformSize = m_stack->getAnimation(0)->getAnimationTransformSize(unsigned int(0));
 		transforms = SAIL_NEW glm::mat4[transformSize];
@@ -60,7 +60,8 @@ public:
 	bool blending;
 	unsigned int transformSize;
 	bool hasUpdated;
-	float animationW;	
+	float animationW;
+	bool updateDT;
 	
 	// -0.55, 1.03, 0.11
 	glm::mat4 rightHandPosition;

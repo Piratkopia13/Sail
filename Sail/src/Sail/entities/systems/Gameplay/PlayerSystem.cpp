@@ -29,9 +29,10 @@ bool PlayerSystem::onEvent(const Event& event) {
 		// if it's a component we want to keep the bit is set to 1
 		const ComponentTypeBitID componentsToKeep = (
 			ModelComponent::getBID()
-			| ReplayComponent::getBID()
 			| CullingComponent::getBID() // needed ??
 			| BoundingBoxComponent::getBID()
+			| ReplayComponent::getBID()
+			| ReplayTransformComponent::getBID()
 			);
 
 
