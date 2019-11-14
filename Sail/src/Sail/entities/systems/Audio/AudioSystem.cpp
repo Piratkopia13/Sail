@@ -412,16 +412,16 @@ bool AudioSystem::onEvent(const Event& event) {
 		}
 
 		//TODO: Find out why death sound is high as fuck!
-		else if (!e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+		else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
 			auto& insanitySound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::INSANITY_SCREAM];
 			insanitySound.isPlaying = true;
 			insanitySound.playOnce = true;
+		} else {
+			// Play death sound
+			//auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
+			//deathSound.isPlaying = true;
+			//deathSound.playOnce = true;
 		}
-
-		// Play death sound
-		//auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
-		//deathSound.isPlaying = true;
-		//deathSound.playOnce = true;
 	};
 
 	auto onPlayerJumped = [=](const PlayerJumpedEvent& e) {
