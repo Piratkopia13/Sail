@@ -18,7 +18,7 @@ AnimationComponent::AnimationComponent(AnimationStack* animationStack) :
 	updateDT(true),
 	rightHandEntity(nullptr),
 	leftHandEntity(nullptr),
-	headPositionLocalDefault(glm::vec3(0.0f, 1.81f, 0.0f)),
+	headPositionLocalDefault(glm::vec3(0.02f, 1.81f, -0.01f)),
 	currentTransition(nullptr),
 	m_stack(animationStack)
 {
