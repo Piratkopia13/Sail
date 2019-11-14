@@ -67,7 +67,6 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 	// Bind the descriptor heap that will contain all SRVs for this frame
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 	
-	//meshIndex = 0;
 	for (auto& command : commandQueue) {
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.model.mesh->getMaterial()->getShader()->getPipeline());
 		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
