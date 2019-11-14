@@ -55,7 +55,6 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Torch.fbx");
 	rm->loadModel("candleExported.fbx");
 	rm->loadModel("Tiles/RoomWall.fbx");
-	rm->loadModel("Tiles/tileDoor.fbx"); 
 	rm->loadModel("Tiles/RoomDoor.fbx");
 	rm->loadModel("Tiles/CorridorDoor.fbx");
 	rm->loadModel("Tiles/CorridorWall.fbx"); 
