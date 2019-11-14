@@ -1,5 +1,8 @@
 #pragma once
 
+#include "../components/TransformComponent.h"
+#include "../components/ReplayTransformComponent.h"
+
 // Ordered by name
 
 class AiSystem;
@@ -24,7 +27,6 @@ class LifeTimeSystem;
 class LightSystem;
 class LightListSystem;
 class MetaballSubmitSystem;
-class ModelSubmitSystem;
 class MovementPostCollisionSystem;
 class MovementSystem;
 class NetworkReceiverSystem;
@@ -42,6 +44,11 @@ class SpotLightSystem;
 class SprintingSystem;
 class TeamColorSystem;
 class CandleThrowingSystem;
+
+
+// Systems that need duplicate versions for the killcam
+template <typename T>
+class ModelSubmitSystem;
 
 struct Systems {
 	AiSystem*                    aiSystem                    = nullptr;
@@ -67,7 +74,6 @@ struct Systems {
 	LightSystem*                 lightSystem                 = nullptr;
 	LightListSystem*             lightListSystem             = nullptr;
 	MetaballSubmitSystem*        metaballSubmitSystem        = nullptr;
-	ModelSubmitSystem*           modelSubmitSystem           = nullptr;
 	MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
 	MovementSystem*              movementSystem              = nullptr;
 	NetworkReceiverSystem*       networkReceiverSystem       = nullptr;
@@ -84,4 +90,9 @@ struct Systems {
 	SprinklerSystem*             sprinklerSystem             = nullptr;
 	UpdateBoundingBoxSystem*     updateBoundingBoxSystem     = nullptr;
 	SprintingSystem*             sprintingSystem             = nullptr;
+
+
+	// Systems that need duplicate versions for the killcam
+	ModelSubmitSystem<TransformComponent>*       modelSubmitSystem        = nullptr;
+	ModelSubmitSystem<ReplayTransformComponent>* killCamModelSubmitSystem = nullptr;
 };
