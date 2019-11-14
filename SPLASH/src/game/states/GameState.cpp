@@ -147,7 +147,6 @@ GameState::GameState(StateStack& stack)
 	int id = static_cast<int>(playerID);
 	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
-
 		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 	}
 
