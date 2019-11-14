@@ -182,7 +182,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation, Netcode::getComponentOwner(playerCompID));
 	// Other players have a character model and animations
 
-	otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
+	auto rec = otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<ReplayComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	otherPlayer->addComponent<OnlineOwnerComponent>(playerCompID);
 
@@ -204,7 +204,7 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	}
 
 	if (NWrapperSingleton::getInstance().isHost()) {
-		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID, Netcode::MessageType::UPDATE_SANITY);
+		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID, Netcode::MessageType::UPDATE_SANITY)->m_id = rec->m_id;
 	}
 }
 

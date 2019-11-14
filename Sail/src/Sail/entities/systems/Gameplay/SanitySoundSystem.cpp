@@ -89,7 +89,6 @@ void SanitySoundSystem::update(float dt) {
 
 		if (!m_switch_breathing) {
 			if (sanity < TIMEPOINT_BREATHING) {
-				std::cout << "STARTING\n";
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", true, 0.0f, false, true);
 				m_switch_breathing = true;
 			}
@@ -97,12 +96,10 @@ void SanitySoundSystem::update(float dt) {
 
 		else if (m_switch_breathing) {
 			if (sanity > TIMEPOINT_BREATHING) {
-				std::cout << "ENDING\n";
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", false, 1.0f, false, true);
 				m_switch_breathing = false;
 			}
 			else {
-				std::cout << "VOLUME\n";
 				ac->streamSetVolume_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", ((volume - 0.4f) * 1.6666f));
 			}
 		}
