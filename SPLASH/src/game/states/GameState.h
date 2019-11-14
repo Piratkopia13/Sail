@@ -42,10 +42,7 @@ private:
 	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
 
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
-	bool onWelcome(const NetworkWelcomeEvent& event);
-
-	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
-
+	
 	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places

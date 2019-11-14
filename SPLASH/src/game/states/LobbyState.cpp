@@ -382,14 +382,16 @@ void LobbyState::renderPlayerList() {
 				}
 			} 
 			else {
-
+				std::string s = selectedGameTeams.options.back().name;
+				
 				for (auto t : selectedGameTeams.options) {
 					if ((int)(t.value) == (int)(currentplayer.team)) {
-						ImGui::Text(t.name.c_str());
+						s = t.name;
 						break;
 					}
 				}
 
+				ImGui::Text(s.c_str());
 			}
 			ImGui::SameLine(x[1]);
 

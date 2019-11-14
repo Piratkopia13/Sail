@@ -144,7 +144,7 @@ GameState::GameState(StateStack& stack)
 	// Player creation
 
 	// team -1 = spectator
-	if (NWrapperSingleton::getInstance().getMyPlayer().team == -1) {
+	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == -1) {
 		
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
@@ -611,6 +611,7 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
 	if (NWrapperSingleton::getInstance().isHost()) {	
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(-1, event.player.id, false);	
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::Game, event.player.id);	
 	}
 	
@@ -626,10 +627,6 @@ void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& e
 		}
 
 	}
-}
-
-void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
-	
 }
 
 bool GameState::update(float dt, float alpha) {

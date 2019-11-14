@@ -79,17 +79,6 @@ public:
 	virtual void updateGameSettings(std::string s) {};
 	virtual void updateStateLoadStatus(States::ID state, char status);
 
-	/*
-		Host Only
-			
-		This will request a clients to enter a new state. GameState, EndGameState etc.
-		playerId == 255 will send to all
-	*/
-	virtual void setClientState(States::ID state, Netcode::PlayerID playerId = 255) {};
-	virtual void kickPlayer(Netcode::PlayerID playerId) {};
-	virtual void updateGameSettings(std::string s) {};
-	virtual void updateStateLoadStatus(States::ID state, char status);
-
 	virtual void requestTeam(char team) {};
 	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true) {};
 

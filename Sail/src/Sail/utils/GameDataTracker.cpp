@@ -43,12 +43,15 @@ void GameDataTracker::resetData() {
 
 	m_nPlayersCurrentSession = 0;
 	for (auto player : m_network->getPlayers()) {
-		Logger::Log(std::to_string(player.team).c_str());
-		m_hostPlayerTracker[player.id].nKills = 0;
-		m_hostPlayerTracker[player.id].nDeaths = 0;
-		m_hostPlayerTracker[player.id].placement = 13;
-		m_hostPlayerTracker[player.id].playerName = player.name;
-		m_nPlayersCurrentSession++;
+
+		if (player.team != -1) {
+			m_hostPlayerTracker[player.id].nKills = 0;
+			m_hostPlayerTracker[player.id].nDeaths = 0;
+			m_hostPlayerTracker[player.id].placement = 13;
+			m_hostPlayerTracker[player.id].playerName = player.name;
+			m_nPlayersCurrentSession++;
+		}
+		
 	}
 	m_placement = m_nPlayersCurrentSession + 1;
 }
