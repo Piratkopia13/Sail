@@ -428,7 +428,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
 	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
 	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
 	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
 
@@ -467,7 +467,8 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create systems needed for the killcam
 	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
-	m_componentSystems.killCamModelSubmitSystem = ECS::Instance()->createSystem<KillCamModelSubmitSystem>();
+	//m_componentSystems.killCamModelSubmitSystem = ECS::Instance()->createSystem<KillCamModelSubmitSystem>();
+	m_componentSystems.killCamModelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<ReplayTransformComponent>>();
 }
 
 void GameState::initConsole() {

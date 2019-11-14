@@ -1,5 +1,8 @@
 #pragma once
 
+#include "../components/TransformComponent.h"
+#include "../components/ReplayTransformComponent.h"
+
 // Ordered by name
 
 class AiSystem;
@@ -19,13 +22,11 @@ class GameInputSystem;
 class GUISubmitSystem;
 class GunSystem;
 class KillCamReceiverSystem;
-class KillCamModelSubmitSystem;
 class LevelSystem;
 class LifeTimeSystem;
 class LightSystem;
 class LightListSystem;
 class MetaballSubmitSystem;
-class ModelSubmitSystem;
 class MovementPostCollisionSystem;
 class MovementSystem;
 class NetworkReceiverSystem;
@@ -42,6 +43,11 @@ class UpdateBoundingBoxSystem;
 class SpotLightSystem;
 class SprintingSystem;
 class TeamColorSystem;
+
+
+// Systems that need duplicate versions for the killcam
+template <typename T>
+class ModelSubmitSystem;
 
 struct Systems {
 	AiSystem*                    aiSystem                    = nullptr;
@@ -61,13 +67,11 @@ struct Systems {
 	GUISubmitSystem*             guiSubmitSystem             = nullptr;
 	GunSystem*                   gunSystem                   = nullptr;
 	KillCamReceiverSystem*       killCamReceiverSystem       = nullptr;
-	KillCamModelSubmitSystem*    killCamModelSubmitSystem    = nullptr;
 	LevelSystem*                 levelSystem                 = nullptr;
 	LifeTimeSystem*              lifeTimeSystem              = nullptr;
 	LightSystem*                 lightSystem                 = nullptr;
 	LightListSystem*             lightListSystem             = nullptr;
 	MetaballSubmitSystem*        metaballSubmitSystem        = nullptr;
-	ModelSubmitSystem*           modelSubmitSystem           = nullptr;
 	MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
 	MovementSystem*              movementSystem              = nullptr;
 	NetworkReceiverSystem*       networkReceiverSystem       = nullptr;
@@ -84,4 +88,9 @@ struct Systems {
 	SprinklerSystem*             sprinklerSystem             = nullptr;
 	UpdateBoundingBoxSystem*     updateBoundingBoxSystem     = nullptr;
 	SprintingSystem*             sprintingSystem             = nullptr;
+
+
+	// Systems that need duplicate versions for the killcam
+	ModelSubmitSystem<TransformComponent>*       modelSubmitSystem        = nullptr;
+	ModelSubmitSystem<ReplayTransformComponent>* killCamModelSubmitSystem = nullptr;
 };
