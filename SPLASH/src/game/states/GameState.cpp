@@ -33,7 +33,6 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
-
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 
 	// Get the Application instance
@@ -570,6 +569,7 @@ bool GameState::onEvent(const Event& event) {
 		case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
 		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS:	onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
 		case Event::Type::NETWORK_JOINED:	onPlayerJoined((const NetworkJoinedEvent&)event); break;
+
 		default: break;
 	}
 
@@ -618,7 +618,7 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 }
 
 void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
-	
+
 	if (NWrapperSingleton::getInstance().isHost() && m_gameStarted) {
 
 		if (event.stateID == States::Game && event.status > 0) {
@@ -626,7 +626,10 @@ void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& e
 		}
 
 	}
+}
 
+void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
+	
 }
 
 bool GameState::update(float dt, float alpha) {
@@ -862,7 +865,11 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.entityRemovalSystem->update();
 }
 
+#define DISABLE_RUNSYSTEM_MT
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
+#ifdef DISABLE_RUNSYSTEM_MT
+	toRun->update(dt);
+#else
 	bool started = false;
 	while (!started) {
 		// First check if the system can be run
@@ -905,6 +912,7 @@ void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
 			}
 		}
 	}
+#endif
 }
 
 const std::string GameState::teleportToMap() {

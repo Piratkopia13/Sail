@@ -8,6 +8,9 @@
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
 #include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
+#include "Sail/events/types/NetworkPlayerRequestedTeamChange.h"
+#include "Sail/events/types/NetworkPlayerChangedTeam.h"
 
 #include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
 
@@ -176,6 +179,12 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 		// Send the serialized stringData as an event to the networkSystem which parses it.
 		EventDispatcher::Instance().emit(NetworkSerializedPackageEvent(dataString));
 		break;
+	case ML_TEAM_REQUEST:
+	{
+		char team = nEvent.data->Message.rawMsg[1];
+		Netcode::PlayerID playerID = m_connectionsMap[nEvent.from_tcp_id];
+		EventDispatcher::Instance().emit(NetworkPlayerRequestedTeamChange(playerID, team));
+	}
 	default:
 		break;
 	}
@@ -200,6 +209,10 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
 		char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, p.id, p.lastStateStatus.state, p.lastStateStatus.status, ML_NULL };
 		sendMsg(msg, sizeof(msg), tcp_id);
+
+		char msgTeam[] = { ML_TEAM_REQUEST, NWrapperSingleton::getInstance().getPlayer(p.id)->team, p.id, ML_NULL };
+		sendMsg(msgTeam, sizeof(msgTeam), tcp_id);
+
 	}
 
 	if (p->justJoined) {
@@ -215,6 +228,7 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 		joinedPackage += ML_JOIN;
 		joinedPackage += playerId; //This will break if playerId == 0
 		joinedPackage += name;
+
 
 		// Send a PlayerJoined message to all other players
 		for (auto player : m_connectionsMap) {
@@ -264,3 +278,22 @@ void NWrapperHost::updateGameSettings(std::string s) {
 	msg += s;
 	sendMsgAllClients(msg.c_str(), msg.length() + 1);
 }
+
+void NWrapperHost::requestTeam(char team) {
+	setTeamOfPlayer(team, NWrapperSingleton::getInstance().getMyPlayerID());
+}
+
+void NWrapperHost::setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch) {
+	if (team == NWrapperSingleton::getInstance().getPlayer(playerID)->team) {
+		return;
+	} else {
+		char msg[] = {ML_TEAM_REQUEST, team, playerID, (char)dispatch, ML_NULL};
+
+		sendMsgAllClients(msg, sizeof(msg));
+		NWrapperSingleton::getInstance().getPlayer(playerID)->team = team;
+		if (dispatch) {
+			EventDispatcher::Instance().emit(NetworkPlayerChangedTeam(playerID));
+		}
+	}
+}
+

@@ -12,6 +12,8 @@
 #include "../../SPLASH/src/game/states/LobbyState.h"
 #include "../../SPLASH/src/game/events/SettingsEvent.h"
 #include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
+#include "Sail/events/types/NetworkPlayerChangedTeam.h"
+
 
 bool NWrapperClient::host(int port) {
 	// A client does not host, do nothing.
@@ -143,10 +145,9 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case ML_CHANGE_STATE:
 	{
 		States::ID stateID = (States::ID)(nEvent.data->Message.rawMsg[1]);
-		if (nEvent.data->Message.rawMsg[2] == 's') {
-			isSpectator = true;
-		}
-		EventDispatcher::Instance().emit(NetworkChangeStateEvent(stateID, isSpectator));
+
+		EventDispatcher::Instance().emit(NetworkChangeStateEvent(stateID));
+
 	}
 	break;
 	case ML_WELCOME:
@@ -177,6 +178,21 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case ML_UPDATE_SETTINGS: 
 		EventDispatcher::Instance().emit(SettingsUpdatedEvent(std::string(nEvent.data->Message.rawMsg).substr(1,std::string::npos)));
 		break;
+	case ML_TEAM_REQUEST:
+	{
+		char team = nEvent.data->Message.rawMsg[1];
+		Netcode::PlayerID playerID = nEvent.data->Message.rawMsg[2];
+		bool dispatch = nEvent.data->Message.rawMsg[3];
+
+		Player* p = NWrapperSingleton::getInstance().getPlayer(playerID);
+		if(p){
+			p->team = team;
+			if (dispatch) {
+				EventDispatcher::Instance().emit(NetworkPlayerChangedTeam(p->id));
+			}
+		}
+	}
+		break;
 	default:
 		break;
 	}
@@ -198,4 +214,9 @@ void NWrapperClient::updatePlayerList(std::list<Player>& playerList) {
 			NWrapperSingleton::getInstance().playerJoined(currentPlayer);
 		}
 	}
+}
+
+void NWrapperClient::requestTeam(char team) {
+	char msg[] = { ML_TEAM_REQUEST, team, ML_NULL };
+	sendMsg(msg, sizeof(msg));
 }

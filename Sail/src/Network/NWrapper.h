@@ -34,8 +34,8 @@ enum class PlayerLeftReason : char {
 struct Player {
 	Netcode::PlayerID id;
 	std::string name;
+	char team = 0;
 	bool justJoined = true;
-	int team = -1;
 	StateStatus lastStateStatus;
 
 	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans")
@@ -78,6 +78,21 @@ public:
 	virtual void kickPlayer(Netcode::PlayerID playerId) {};
 	virtual void updateGameSettings(std::string s) {};
 	virtual void updateStateLoadStatus(States::ID state, char status);
+
+	/*
+		Host Only
+			
+		This will request a clients to enter a new state. GameState, EndGameState etc.
+		playerId == 255 will send to all
+	*/
+	virtual void setClientState(States::ID state, Netcode::PlayerID playerId = 255) {};
+	virtual void kickPlayer(Netcode::PlayerID playerId) {};
+	virtual void updateGameSettings(std::string s) {};
+	virtual void updateStateLoadStatus(States::ID state, char status);
+
+	virtual void requestTeam(char team) {};
+	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true) {};
+
 protected:
 	enum MessageLetter : char {
 		ML_NULL = 0,
@@ -90,6 +105,7 @@ protected:
 		ML_CHANGE_STATE,
 		ML_UPDATE_STATE_LOAD_STATUS,
 		ML_UPDATE_SETTINGS,
+		ML_TEAM_REQUEST,
 	};
 
 protected:

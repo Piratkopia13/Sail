@@ -2,7 +2,7 @@
 #include "State.h"
 #include "StateStack.h"
 #include "Sail/events/Events.h"
-#include "Sail/Application.h"
+
 #include "imgui.h"
 
 State::State(StateStack& stack) 

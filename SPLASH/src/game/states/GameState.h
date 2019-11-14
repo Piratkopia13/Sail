@@ -39,6 +39,7 @@ private:
 	bool onNetworkSerializedPackageEvent(const NetworkSerializedPackageEvent& event);
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
+	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
 
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
 	bool onWelcome(const NetworkWelcomeEvent& event);
