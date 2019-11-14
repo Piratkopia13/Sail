@@ -18,6 +18,10 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, filename(filename)
 	, wireframe(false)
 	, cullMode(GraphicsAPI::Culling::NO_CULLING)
+	, numRenderTargets(1)
+	, enableDepth(true)
+	, enableDepthWrite(true)
+	, blendMode(GraphicsAPI::NO_BLENDING)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 }
@@ -246,7 +250,19 @@ void ShaderPipeline::parseRWTexture(const char* source) {
 		slot = 0; // No slot specified, use 0 as default
 	}
 
-	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot));
+	// Get texture format from source, if specified
+	Texture::FORMAT format = Texture::R8G8B8A8;
+	const char* newLine = strchr(source, '\n');
+	size_t lineLength = newLine - source;
+	char* lineCopy = (char*)malloc(lineLength + 1);
+	memset(lineCopy, '\0', lineLength + 1);
+	strncpy_s(lineCopy, lineLength + 1, source, lineLength);
+	if (strstr(lineCopy, "SAIL_RGBA16_FLOAT")) {
+		format = Texture::R16G16B16A16_FLOAT;
+	}
+	free(lineCopy);
+
+	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot), format);
 }
 
 void ShaderPipeline::parseStructuredBuffer(const char* source, bool isRW) {
@@ -325,6 +341,22 @@ void ShaderPipeline::setWireframe(bool wireframeState) {
 
 void ShaderPipeline::setCullMode(GraphicsAPI::Culling newCullMode) {
 	cullMode = newCullMode;
+}
+
+void ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) {
+	this->numRenderTargets = numRenderTargets;
+}
+
+void ShaderPipeline::enableDepthStencil(bool enable) {
+	this->enableDepth = enable;
+}
+
+void ShaderPipeline::enableDepthWriting(bool enable) {
+	this->enableDepthWrite = enable;
+}
+
+void ShaderPipeline::setBlending(GraphicsAPI::Blending blendMode) {
+	this->blendMode = blendMode;
 }
 
 InputLayout& ShaderPipeline::getInputLayout() {
@@ -407,7 +439,7 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "DeferredDirLightData") { return 32; }
 	if (typeName == "Vertex") { return 4 * 14; }
 	if (typeName == "VertConnections") { return 4 + 4*5 + 4*5; }
-	if (typeName == "ParticleInput") { return 4*14 * 100 + 4; }
+	if (typeName == "ParticleInput") { return (12 * 312 + 312 + 9) * 4; }
 
 	SAIL_LOG_ERROR("Found shader variable type with unknown size (" + typeName + ")");
 	return 0;

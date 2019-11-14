@@ -30,6 +30,9 @@ void CandleHealthSystem::update(float dt) {
 		auto candle = e->getComponent<CandleComponent>();
 		candle->wasHitByMeThisTick = false;
 
+		// Scale fire particles with health
+		auto particles = e->getComponent<ParticleEmitterComponent>();
+		particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
 
 #pragma region HOST_ONLY_STUFF
 		if (isHost && candle->isLit) {
@@ -71,7 +74,8 @@ void CandleHealthSystem::update(float dt) {
 						SAIL_NEW Netcode::MessagePlayerDied{
 							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
 							candle->wasHitByPlayerID
-						}
+						},
+						true
 					);
 
 					// Save the placement for the player who lost
@@ -108,8 +112,13 @@ void CandleHealthSystem::update(float dt) {
 			candle->health = 0.0f;
 			candle->isLit = false;
 			candle->wasJustExtinguished = false; // reset for the next tick
-			if (candle->wasHitByPlayerID != Netcode::MESSAGE_SPRINKLER_ID) {
+
+			if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START) {
 				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+			}
+
+			else if (candle->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
+				e->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
 			}
 		
 			// Play the reignition sound if the player has any candles left
@@ -152,7 +161,13 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 
 		// Damage the candle
 		// TODO: Replace 10.0f with game settings damage
-		candle->getComponent<CandleComponent>()->hitWithWater(10.0f, e.senderID);
+		if (e.senderID == Netcode::MESSAGE_SPRINKLER_ID) {
+			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::PLAYER, e.senderID);
+		}
+		else {
+			candle->getComponent<CandleComponent>()->hitWithWater(10.0f, CandleComponent::DamageSource::PLAYER, e.senderID);
+
+		}
 	};
 
 	switch (event.type) {

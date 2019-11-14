@@ -1,6 +1,8 @@
+
 #include "pch.h"
 #include "ReceiverBase.h"
 #include "Sail/entities/Entity.h"
+#include "Sail/entities/components/SanityComponent.h"
 
 #include "Sail/utils/GameDataTracker.h"
 #include "Sail/utils/Utils.h"
@@ -25,14 +27,6 @@ void ReceiverBase::setPlayer   (Entity* player)       { m_playerEntity = player;
 void ReceiverBase::setGameState(GameState* gameState) { m_gameStatePtr = gameState; }
 
 const std::vector<Entity*>& ReceiverBase::getEntities() const { return entities; }
-
-// TODO? check what the best argument is
-void ReceiverBase::pushDataToBuffer(const std::string& data) {
-	std::lock_guard<std::mutex> lock(m_bufferLock);
-	m_incomingDataBuffer.push(data);
-
-}
-
 
 
 /*
@@ -70,9 +64,7 @@ void ReceiverBase::pushDataToBuffer(const std::string& data) {
 	--------------------------------------------------
 
 */
-void ReceiverBase::update(float dt) {
-	std::lock_guard<std::mutex> lock(m_bufferLock); // Don't push more data to the buffer while this function is running
-
+void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bool ignoreFromSelf) {
 	// TODO: Remove a bunch of stuff from here
 	size_t nrOfSenderComponents    = 0;
 	size_t nrOfMessagesInComponent = 0;
@@ -86,18 +78,19 @@ void ReceiverBase::update(float dt) {
 	// Commonly used types within messages/events:
 	glm::vec3 vector;
 	glm::quat quaternion;
+	float lowPassFrequency = -1;
 
 
 	// Process all messages in the buffer
-	while (!m_incomingDataBuffer.empty()) {
-		std::istringstream is(m_incomingDataBuffer.front());
+	while (!data.empty()) {
+		std::istringstream is(data.front());
 		Netcode::InArchive ar(is);
 
 		ar(senderID);
 
 		// If the packet was originally sent over the network from ourself 
 		// then don't process it and go to the next packet
-		if (senderID == m_playerID) { m_incomingDataBuffer.pop(); continue; }
+		if (ignoreFromSelf && senderID == m_playerID) { data.pop(); continue; }
 
 		// If the message was sent internally to ourself then correct the senderID
 		if (senderID == Netcode::MESSAGE_FROM_SELF_ID) { senderID = m_playerID; }
@@ -158,32 +151,32 @@ void ReceiverBase::update(float dt) {
 				break;
 				case Netcode::MessageType::SHOOT_START:
 				{
-					ShotFiredInfo info;
+					ar(lowPassFrequency);
 
-					ArchiveHelpers::loadVec3(ar, info.gunPosition);
-					ArchiveHelpers::loadVec3(ar, info.gunVelocity);
 
-					shootStart(compID, info);
+					shootStart(compID, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_LOOP:
 				{
-					ShotFiredInfo info;
+					ar(lowPassFrequency);
 
-					ArchiveHelpers::loadVec3(ar, info.gunPosition);
-					ArchiveHelpers::loadVec3(ar, info.gunVelocity);
 
-					shootLoop(compID, info);
+					shootStart(compID, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_END:
 				{
-					ShotFiredInfo info;
+					ar(lowPassFrequency);
 
-					ArchiveHelpers::loadVec3(ar, info.gunPosition);
-					ArchiveHelpers::loadVec3(ar, info.gunVelocity);
-
-					shootEnd(compID, info);
+					shootEnd(compID, lowPassFrequency);
+				}
+				break;
+				case Netcode::MessageType::UPDATE_SANITY:
+				{
+					float sanity;
+					ar(sanity);
+					EventDispatcher::Instance().emit(UpdateSanityEvent(compID, sanity));
 				}
 				break;
 				default:
@@ -207,7 +200,6 @@ void ReceiverBase::update(float dt) {
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "Event: " << Netcode::MessageNames[(int)(eventType)-1] << "\n";
 #endif
-
 
 			// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 			switch (messageType) {
@@ -237,6 +229,18 @@ void ReceiverBase::update(float dt) {
 			case Netcode::MessageType::ENABLE_SPRINKLERS:
 			{
 				enableSprinklers();
+			}
+			break;
+			case Netcode::MessageType::START_THROWING:
+			{
+				ar(compID);
+				throwingStartSound(compID);
+			}
+			break;
+			case Netcode::MessageType::STOP_THROWING:
+			{
+				ar(compID);
+				throwingEndSound(compID);
 			}
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
@@ -421,7 +425,7 @@ void ReceiverBase::update(float dt) {
 			}
 		}
 
-		m_incomingDataBuffer.pop();
+		data.pop();
 	}
 
 	// End game timer 

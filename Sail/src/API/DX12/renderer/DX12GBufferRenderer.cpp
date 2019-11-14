@@ -66,7 +66,7 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 		}
 		if (particleSystem) {
 			// Update particles on compute shader
-			particleSystem->updateOnGPU(m_computeCommand.list.Get());
+			particleSystem->updateOnGPU(m_computeCommand.list.Get(), camera->getPosition());
 		}
 
 		m_computeCommand.list->Close();

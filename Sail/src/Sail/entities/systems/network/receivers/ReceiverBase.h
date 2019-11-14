@@ -21,10 +21,13 @@ public: // Functions
 	void setPlayer(Entity* player);
 	void setGameState(GameState* gameState);
 	const std::vector<Entity*>& getEntities() const;
-	void pushDataToBuffer(const std::string& data);
+	
+	// TODO: MOVE TO NRS
+	//void pushDataToBuffer(const std::string& data);
 
-	void update(float dt);
+	void processData(float dt, std::queue<std::string>& data, const bool ignoreFromSelf = true);
 
+	virtual void update(float dt) = 0;
 	virtual void handleIncomingData(const std::string& data) = 0;
 
 #pragma region INPUT_PARAMS
@@ -45,11 +48,6 @@ protected:
 	struct AnimationInfo {
 		unsigned int index;
 		float time;
-	};
-
-	struct ShotFiredInfo {
-		glm::vec3 gunPosition;
-		glm::vec3 gunVelocity;
 	};
 
 	struct EndScreenInfo {
@@ -79,14 +77,16 @@ protected: // Functions
 	virtual void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::PlayerID SenderId)        = 0;
 
 	// AUDIO
-	virtual void shootStart (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
-	virtual void shootLoop  (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
-	virtual void shootEnd   (const Netcode::ComponentID id, const ShotFiredInfo& info) = 0;
+	virtual void shootStart (const Netcode::ComponentID id, float frequency)		   = 0;
+	virtual void shootLoop  (const Netcode::ComponentID id, float frequency)		   = 0;
+	virtual void shootEnd   (const Netcode::ComponentID id, float frequency)		   = 0;
 	virtual void runningMetalStart     (const Netcode::ComponentID id)                 = 0;
 	virtual void runningWaterMetalStart(const Netcode::ComponentID id)                 = 0;
 	virtual void runningTileStart      (const Netcode::ComponentID id)                 = 0;
 	virtual void runningWaterTileStart (const Netcode::ComponentID id)                 = 0;
 	virtual void runningStopSound      (const Netcode::ComponentID id)                 = 0;
+	virtual void throwingStartSound    (const Netcode::ComponentID id)				   = 0;
+	virtual void throwingEndSound	   (const Netcode::ComponentID id)				   = 0;
 
 	// FUNCTIONS THAT DIFFER BETWEEN HOST AND CLIENT
 	virtual void endMatch() = 0;
@@ -108,10 +108,6 @@ protected: // Functions
 protected:
 	NetworkSenderSystem* m_netSendSysPtr;
 	GameDataTracker* m_gameDataTracker; // needed?
-
-	// FIFO container of serialized data-strings to decode
-	std::queue<std::string> m_incomingDataBuffer;
-	std::mutex m_bufferLock;
 
 	// The player entity is used to prevent creation of receiver components for entities controlled by the player
 	Netcode::PlayerID m_playerID; // TODO? move to NRS

@@ -605,9 +605,17 @@ void MenuState::renderProfile() {
 
 
 
-	}
+	return true;
 	ImGui::End();
 }
+bool MenuState::onEvent(const Event& event) {
+	State::onEvent(event);
+
+	switch (event.type) {
+	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
+	default: break;
+	}
+
 void MenuState::renderJoiningLobby() {
 	ImVec2 screenMiddle(
 		m_app->getWindow()->getWindowWidth() * 0.5f, 
