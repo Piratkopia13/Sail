@@ -1373,13 +1373,14 @@ void LevelSystem::addSpawnPoints() {
 
 glm::vec3 LevelSystem::getSpawnPoint() {
 	// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
-	glm::vec3 spawnLocation = glm::vec3(-1000.f);
+	glm::vec3 spawnLocation;
 		
 	if (spawnPoints.size() > 0) {
 		spawnLocation = spawnPoints.front();
 		spawnPoints.erase(spawnPoints.begin());
 	}
 	else {
+		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
 		SAIL_LOG_ERROR("No more spawn locations available.");
 	}
 
