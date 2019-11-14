@@ -106,7 +106,7 @@ void ParticleEmitterComponent::spawnParticles(int particlesToSpawn) {
 		//Add particle to spawn list
 		for (unsigned int i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
 			m_cpuOutput[i].newParticles.emplace_back();
-			m_cpuOutput[i].newParticles.back().pos = position;
+			m_cpuOutput[i].newParticles.back().pos = position + (randVec + glm::vec3(0.0f, 1.0f, 0.0f)) * 0.01f ;
 			m_cpuOutput[i].newParticles.back().spread = spread * randVec;
 			m_cpuOutput[i].newParticles.back().spawnTime = time;
 		}
@@ -231,7 +231,7 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 }
 
 void ParticleEmitterComponent::submit() const {
-	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
+	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getParticleRenderer();
 	Renderer::RenderFlag flags = Renderer::MESH_DYNAMIC;
 	flags |= Renderer::IS_VISIBLE_ON_SCREEN;
 
@@ -244,9 +244,6 @@ void ParticleEmitterComponent::submit() const {
 }
 
 void ParticleEmitterComponent::setTexture(std::string textureName) {
-	std::string mraoTextureName("particles/prtcle_mrao.tga");
 	Application::getInstance()->getResourceManager().loadTexture(textureName);
-	Application::getInstance()->getResourceManager().loadTexture(mraoTextureName);
 	m_model->getMesh(0)->getMaterial()->setAlbedoTexture(textureName);
-	m_model->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture(mraoTextureName);
 }

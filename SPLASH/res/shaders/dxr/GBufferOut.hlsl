@@ -116,7 +116,7 @@ GBuffers PSMain(PSIn input) {
 		 	float f = 1 - albedo.a;
 		 	gbuffers.albedo = float4(gbuffers.albedo.rgb * (1 - f) + teamColor * f, albedo.a);
 		} else {
-			gbuffers.albedo = albedo;
+			gbuffers.albedo *= albedo;
 		}
 
 	}

@@ -3,6 +3,8 @@
 
 #include "api/Renderer.h"
 #include "graphics/postprocessing/PostProcessPipeline.h"
+#include "API/DX12/renderer/DX12ParticleRenderer.h"
+#include "API/DX12/renderer/DX12GBufferRenderer.h"
 
 RendererWrapper::RendererWrapper() {
 }
@@ -14,7 +16,13 @@ void RendererWrapper::initialize() {
 	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::HYBRID));
 	m_rendererScreenSpace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::SCREEN_SPACE));
+	m_rendererParticles = std::unique_ptr<Renderer>(Renderer::Create(Renderer::PARTICLES));
 	m_currentRenderer = m_rendererRaytrace.get();
+
+	// TODO: somehow make this not dx12 specific
+	// Tell particle renderer to use depth output from gbuffer renderer
+	auto* gbuffers = static_cast<DX12GBufferRenderer*>(m_rendererRaster.get())->getGBufferOutputs();
+	static_cast<DX12ParticleRenderer*>(m_rendererParticles.get())->setDepthTexture(gbuffers[0]);
 
 	m_postProcessPipeline = std::make_shared<PostProcessPipeline>();
 
@@ -49,6 +57,10 @@ bool& RendererWrapper::getDoPostProcessing() {
 
 Renderer* RendererWrapper::getCurrentRenderer() {
 	return m_currentRenderer;
+}
+
+Renderer* RendererWrapper::getParticleRenderer() {
+	return m_rendererParticles.get();
 }
 
 PostProcessPipeline* RendererWrapper::getPostProcessPipeline() {

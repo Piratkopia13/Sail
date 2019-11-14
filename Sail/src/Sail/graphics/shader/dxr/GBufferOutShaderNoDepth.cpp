@@ -4,8 +4,8 @@
 #include "API/DX12/shader/DX12ShaderPipeline.h"
 
 GBufferOutShaderNoDepth::GBufferOutShaderNoDepth()
-	: Shader("dxr/GBufferParticles.hlsl")
-	, m_clippingPlaneHasChanged(false) {
+	: Shader("dxr/ParticleShader.hlsl")
+{
 	// Create the input layout
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::POSITION, "POSITION", 0);
 	shaderPipeline->getInputLayout().pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
@@ -14,21 +14,17 @@ GBufferOutShaderNoDepth::GBufferOutShaderNoDepth()
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::BITANGENT, "BINORMAL", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
-	shaderPipeline->setNumRenderTargets(3);
+	//shaderPipeline->setNumRenderTargets(3);
 
 	// Disable depth writing
-	getPipeline()->enableDepthWriting(false);
+	getPipeline()->enableDepthStencil(false);
+	//getPipeline()->enableDepthWriting(false);
 	getPipeline()->setBlending(GraphicsAPI::ADDITIVE);
 
 	// Finish the shader creation
 	finish();
 }
 GBufferOutShaderNoDepth::~GBufferOutShaderNoDepth() { }
-
-void GBufferOutShaderNoDepth::setClippingPlane(const glm::vec4& clippingPlane) {
-	m_clippingPlane = clippingPlane;
-	m_clippingPlaneHasChanged = true;
-}
 
 void GBufferOutShaderNoDepth::bind() {
 

@@ -375,7 +375,7 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) { // TODO: change 1 to variable
 		gpsd.BlendState.RenderTarget[i] = defaultRTdesc;
 	}
-	gpsd.BlendState.AlphaToCoverageEnable = true;
+	//gpsd.BlendState.AlphaToCoverageEnable = true;
 	gpsd.BlendState.IndependentBlendEnable = true;
 	gpsd.BlendState.RenderTarget[0] = customRTBlendDesc;
 	//gpsd.BlendState.RenderTarget[1] = customRTBlendDesc;
