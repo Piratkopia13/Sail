@@ -59,14 +59,6 @@ void KillFeedWindow::updateTiming(float dt) {
 	for (auto& kill : m_kills) {
 		kill.first += dt;
 	}
-
-	/*auto messages = m_gameDataTracker.getKillFeed();
-	if (m_kills.size() < messages.size()) {
-		for (int i = m_kills.size(); i < messages.size(); i++) {
-			m_kills.emplace_back(0.f, messages[i]);
-			m_doRender = true;
-		}
-	}*/
 }
 
 bool KillFeedWindow::onEvent(const Event& event) {
@@ -89,7 +81,7 @@ bool KillFeedWindow::onEvent(const Event& event) {
 	};
 
 	auto onTorchExtinguished = [&] (const TorchExtinguishedEvent& e) {
-		std::string extinguishedOwner = NWrapperSingleton::getInstance().getPlayer(e.netIDextinguished)->name;
+		std::string extinguishedOwner = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.netIDextinguished))->name;
 
 		std::string ShooterPlayer;
 		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
@@ -101,6 +93,10 @@ bool KillFeedWindow::onEvent(const Event& event) {
 
 		std::string message = ShooterPlayer + " " + extinguishType + " " + extinguishedOwner;
 		SAIL_LOG(message);
+
+		if (e.shooterID != Netcode::MESSAGE_SPRINKLER_ID) {
+			GameDataTracker::getInstance().logEnemyKilled(e.shooterID);
+		}
 
 		m_kills.emplace_back(0.f, message);
 		m_doRender = true;

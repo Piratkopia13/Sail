@@ -90,6 +90,8 @@ void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId
 			e->getComponent<CandleComponent>()->wasJustExtinguished = true;
 			e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
 
+			EventDispatcher::Instance().emit(TorchExtinguishedEvent(shooterID, candleId));
+
 			return;
 		}
 	}

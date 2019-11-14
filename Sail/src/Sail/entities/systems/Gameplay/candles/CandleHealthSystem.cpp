@@ -14,10 +14,12 @@ CandleHealthSystem::CandleHealthSystem() {
 	registerComponent<AudioComponent>(false, true, true);
 
 	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TORCH_EXTINGUISHED, this);
 }
 
 CandleHealthSystem::~CandleHealthSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::TORCH_EXTINGUISHED, this);
 }
 
 void CandleHealthSystem::update(float dt) {
@@ -59,7 +61,7 @@ void CandleHealthSystem::update(float dt) {
 						e->getComponent<NetworkReceiverComponent>()->m_id,
 						candle->wasHitByPlayerID
 					},
-					false // Host extinguishes candle later in this function so don't send to ourself
+					true // Host extinguishes candle later in this function so don't send to ourself
 				);
 
 				// If the player has no more respawns kill them
@@ -102,28 +104,7 @@ void CandleHealthSystem::update(float dt) {
 			}
 		}
 #pragma endregion
-
-
-		// Everyone does this
-		if (candle->wasJustExtinguished) {
-			candle->health = 0.0f;
-			candle->isLit = false;
-			candle->wasJustExtinguished = false; // reset for the next tick
-			if (candle->wasHitByPlayerID != Netcode::MESSAGE_SPRINKLER_ID) {
-				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
-			}
-
-			// Log the extinguish in the kill feed
-			auto ownerID = Netcode::getComponentOwner(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id);
-			//SAIL_LOG(std::to_string(candle->wasHitByPlayerID) + " " + std::to_string(ownerID));
-			EventDispatcher::Instance().emit(TorchExtinguishedEvent(candle->wasHitByPlayerID, ownerID));
-		
-			// Play the reignition sound if the player has any candles left
-			if (candle->respawns < m_maxNumRespawns) {
-				auto playerEntity = e->getParent();
-				playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
-			}
-		}
+		candle->wasHitByPlayerID;// , ownerID
 
 		// COLOR/INTENSITY
 		float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
@@ -167,8 +148,29 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		}
 	};
 
+	auto onTorchExtinguished = [=] (const TorchExtinguishedEvent& e) {
+		for (auto torchE : entities) {
+			if (torchE->getComponent<NetworkReceiverComponent>()->m_id == e.netIDextinguished) {
+				auto candleC = torchE->getComponent<CandleComponent>();
+				candleC->health = 0.0f;
+				candleC->isLit = false;
+				candleC->wasJustExtinguished = false; // reset for the next tick
+
+				// Log the extinguish in the kill feed
+				auto ownerID = Netcode::getComponentOwner(torchE->getParent()->getComponent<NetworkReceiverComponent>()->m_id);
+
+				// Play the reignition sound if the player has any candles left
+				if (candleC->respawns < m_maxNumRespawns) {
+					auto playerEntity = torchE->getParent();
+					playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
+				}
+			}
+		}
+	};
+
 	switch (event.type) {
 	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
+	case Event::Type::TORCH_EXTINGUISHED: onTorchExtinguished((const TorchExtinguishedEvent&)event); break;	
 	default: break;
 	}
 
