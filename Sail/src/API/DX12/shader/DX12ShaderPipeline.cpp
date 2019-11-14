@@ -7,6 +7,7 @@
 #include "DX12StructuredBuffer.h"
 #include "../resources/DX12Texture.h"
 #include "../resources/DX12RenderableTexture.h"
+#include "Sail/events/EventDispatcher.h"
 
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
@@ -15,9 +16,13 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 }
 
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
-	: ShaderPipeline(filename) 
+	: ShaderPipeline(filename)
 {
+	EventDispatcher::Instance().subscribe(Event::Type::NEW_FRAME, this);
 	m_context = Application::getInstance()->getAPI<DX12API>();
+
+	m_meshIndex[0].store(0);
+	m_meshIndex[1].store(0);
 
 	if (!m_dxilCompiler) {
 		m_dxilCompiler = std::make_unique<DXILShaderCompiler>();
@@ -26,26 +31,32 @@ DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
 }
 
 DX12ShaderPipeline::~DX12ShaderPipeline() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::NEW_FRAME, this);
 	m_context->waitForGPU();
 }
 
-/*[deprecated]*/
-void DX12ShaderPipeline::bind(void* cmdList) {
-	assert(false);/*[deprecated]*/
+bool DX12ShaderPipeline::onEvent(const Event& e) {
+	switch (e.type) {
+	case Event::Type::NEW_FRAME: newFrame();
+		break;
+	default:
+		break;
+	}
+	return true;
 }
 
-void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
+void DX12ShaderPipeline::bind(void* cmdList) {
 	if (!m_pipelineState)
 		SAIL_LOG_ERROR("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
 	for (auto& it : parsedData.cBuffers) {
 		auto* dxCBuffer = static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get());
-		dxCBuffer->bind_new(cmdList, meshIndex, csBlob != nullptr);
+		dxCBuffer->bind_new(cmdList, getMeshIndex(), csBlob != nullptr);
 	}
 	for (auto& it : parsedData.structuredBuffers) {
 		auto* dxSBuffer = static_cast<ShaderComponent::DX12StructuredBuffer*>(it.sBuffer.get());
-		dxSBuffer->bind_new(cmdList, meshIndex);
+		dxSBuffer->bind_new(cmdList, getMeshIndex());
 	}
 	for (auto& it : parsedData.samplers) {
 		it.sampler->bind();
@@ -67,6 +78,11 @@ void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 void DX12ShaderPipeline::dispatch(unsigned int threadGroupCountX, unsigned int threadGroupCountY, unsigned int threadGroupCountZ, void* cmdList) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	dxCmdList->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+}
+
+void DX12ShaderPipeline::instanceFinished() {
+	const auto swapIndex = m_context->getSwapIndex();
+	m_meshIndex[swapIndex].fetch_add(1, std::memory_order_relaxed);
 }
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
@@ -221,7 +237,7 @@ unsigned int DX12ShaderPipeline::setMaterial(PBRMaterial* material, void* cmdLis
 	for (int i = 0; i < nTextures; i++) {
 		if (textures[i]) {
 			if (!textures[i]->hasBeenInitialized()) {
-				textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList), i);
+				textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
 			}
 
 			textures[i]->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -243,20 +259,25 @@ void DX12ShaderPipeline::checkBufferSizes(unsigned int nMeshes) {
 }
 
 // TODO: size isnt really needed, can be read from the byteOffset of the next var
-void DX12ShaderPipeline::setCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {
-	bool success = trySetCBufferVar_new(name, data, size, meshIndex);
-	if (!success)
-		SAIL_LOG_WARNING("Tried to set CBuffer variable that did not exist (" + name + ")");
-}
-
-bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {
+bool DX12ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data, UINT size) {
 	for (auto& it : parsedData.cBuffers) {
 		for (auto& var : it.vars) {
 			if (var.name == name) {
 				ShaderComponent::DX12ConstantBuffer& cbuffer = static_cast<ShaderComponent::DX12ConstantBuffer&>(*it.cBuffer.get());
-				cbuffer.updateData_new(data, size, meshIndex, var.byteOffset);
+				cbuffer.updateData_new(data, size, getMeshIndex(), var.byteOffset);
 				return true;
 			}
+		}
+	}
+	return false;
+}
+
+bool DX12ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT numElements) {
+	for (auto& it : parsedData.structuredBuffers) {
+		if (it.name == name) {
+			auto* sbuffer = static_cast<ShaderComponent::DX12StructuredBuffer*>(it.sBuffer.get());
+			sbuffer->updateData_new(data, numElements, getMeshIndex());
+			return true;
 		}
 	}
 	return false;
@@ -410,6 +431,17 @@ void DX12ShaderPipeline::createComputePipelineState() {
 	cpsd.CS.BytecodeLength = csD3DBlob->GetBufferSize();
 
 	ThrowIfFailed(m_context->getDevice()->CreateComputePipelineState(&cpsd, IID_PPV_ARGS(&m_pipelineState)));
+}
+
+unsigned DX12ShaderPipeline::getMeshIndex() {
+	const auto swapIndex = m_context->getSwapIndex();
+	return m_meshIndex[swapIndex];
+}
+
+void DX12ShaderPipeline::newFrame() {
+	// TODO: call this method form newFrame event
+	const auto swapIndex = m_context->getSwapIndex();
+	m_meshIndex[swapIndex].store(0);
 }
 
 void DX12ShaderPipeline::finish() {

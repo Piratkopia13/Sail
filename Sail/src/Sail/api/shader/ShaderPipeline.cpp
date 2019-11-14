@@ -402,18 +402,18 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 	return false;
 }
 
-void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex) {
-	bool success = trySetStructBufferVar(name, data, numElements, meshIndex);
+void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT numElements) {
+	bool success = trySetStructBufferVar(name, data, numElements);
 	if (!success) {
 		SAIL_LOG_WARNING("Tried to set StructuredBuffer variable that did not exist (" + name + ")");
 	}
 }
 
-bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex) {
+bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT numElements) {
 	for (auto& it : parsedData.structuredBuffers) {
 		if (it.name == name) {
 			ShaderComponent::StructuredBuffer& sbuffer = *it.sBuffer.get();
-			sbuffer.updateData(data, numElements, meshIndex);
+			sbuffer.updateData(data, numElements);
 			return true;
 		}
 	}

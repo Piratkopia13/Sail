@@ -2,10 +2,13 @@
 
 struct Event {
 	enum class Type {
+		// Engine events
+		NEW_FRAME,
 		WINDOW_RESIZE,
 		WINDOW_FOCUS_CHANGED,
 		POTATO,
 		TEXTINPUT,
+		// Network events
 		NETWORK_LAN_HOST_FOUND,
 		NETWORK_JOINED,
 		NETWORK_DISCONNECT,
@@ -16,6 +19,7 @@ struct Event {
 		NETWORK_START_GAME,
 		NETWORK_BACK_TO_LOBBY,
 		NETWORK_SERIALIZED_DATA_RECIEVED,
+		// Game events
 		GAME_OVER,
 		RESET_WATER,
 		WATER_HIT_PLAYER,

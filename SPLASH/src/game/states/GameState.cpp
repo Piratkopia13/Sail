@@ -782,48 +782,49 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 }
 
 void GameState::runSystem(float dt, BaseComponentSystem* toRun) {
-	bool started = false;
-	while (!started) {
-		// First check if the system can be run
-		if (!(m_currentlyReadingMask & toRun->getWriteBitMask()).any() &&
-			!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
-			!(m_currentlyWritingMask & toRun->getWriteBitMask()).any()) {
+	toRun->update(dt);
+	//bool started = false;
+	//while (!started) {
+	//	// First check if the system can be run
+	//	if (!(m_currentlyReadingMask & toRun->getWriteBitMask()).any() &&
+	//		!(m_currentlyWritingMask & toRun->getReadBitMask()).any() &&
+	//		!(m_currentlyWritingMask & toRun->getWriteBitMask()).any()) {
 
-			m_currentlyWritingMask |= toRun->getWriteBitMask();
-			m_currentlyReadingMask |= toRun->getReadBitMask();
-			started = true;
-			m_runningSystems.push_back(toRun);
-			m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun](int id) {toRun->update(dt); return toRun; }));
+	//		m_currentlyWritingMask |= toRun->getWriteBitMask();
+	//		m_currentlyReadingMask |= toRun->getReadBitMask();
+	//		started = true;
+	//		m_runningSystems.push_back(toRun);
+	//		m_runningSystemJobs.push_back(m_app->pushJobToThreadPool([this, dt, toRun](int id) {toRun->update(dt); return toRun; }));
 
-		} else {
-			// Then loop through all futures and see if any of them are done
-			for (int i = 0; i < m_runningSystemJobs.size(); i++) {
-				if (m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-					auto doneSys = m_runningSystemJobs[i].get();
+	//	} else {
+	//		// Then loop through all futures and see if any of them are done
+	//		for (int i = 0; i < m_runningSystemJobs.size(); i++) {
+	//			if (m_runningSystemJobs[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+	//				auto doneSys = m_runningSystemJobs[i].get();
 
-					m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
-					i--;
+	//				m_runningSystemJobs.erase(m_runningSystemJobs.begin() + i);
+	//				i--;
 
-					m_currentlyWritingMask ^= doneSys->getWriteBitMask();
-					m_currentlyReadingMask ^= doneSys->getReadBitMask();
+	//				m_currentlyWritingMask ^= doneSys->getWriteBitMask();
+	//				m_currentlyReadingMask ^= doneSys->getReadBitMask();
 
-					int toRemoveIndex = -1;
-					for (int j = 0; j < m_runningSystems.size(); j++) {
-						// Currently just compares memory addresses (if they point to the same location they're the same object)
-						if (m_runningSystems[j] == doneSys)
-							toRemoveIndex = j;
-					}
+	//				int toRemoveIndex = -1;
+	//				for (int j = 0; j < m_runningSystems.size(); j++) {
+	//					// Currently just compares memory addresses (if they point to the same location they're the same object)
+	//					if (m_runningSystems[j] == doneSys)
+	//						toRemoveIndex = j;
+	//				}
 
-					m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
+	//				m_runningSystems.erase(m_runningSystems.begin() + toRemoveIndex);
 
-					// Since multiple systems can read from components concurrently, currently best solution I came up with
-					for (auto _sys : m_runningSystems) {
-						m_currentlyReadingMask |= _sys->getReadBitMask();
-					}
-				}
-			}
-		}
-	}
+	//				// Since multiple systems can read from components concurrently, currently best solution I came up with
+	//				for (auto _sys : m_runningSystems) {
+	//					m_currentlyReadingMask |= _sys->getReadBitMask();
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 const std::string GameState::teleportToMap() {
