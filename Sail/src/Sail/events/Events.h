@@ -16,3 +16,4 @@
 #include "types/StopWalkingEvent.h"
 #include "types/StartThrowingEvent.h"
 #include "types/StopThrowingEvent.h"
+#include "types/UpdateSanityEvent.h"

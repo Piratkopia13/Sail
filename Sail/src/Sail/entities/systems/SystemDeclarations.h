@@ -26,9 +26,6 @@ class LevelSystem;
 class LifeTimeSystem;
 class LightSystem;
 class LightListSystem;
-class MetaballSubmitSystem;
-class MovementPostCollisionSystem;
-class MovementSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
 class OctreeAddRemoverSystem;
@@ -37,6 +34,8 @@ class PlayerSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
+class SanitySoundSystem;
+class SanitySystem;
 class SpeedLimitSystem;
 class SprinklerSystem;
 class UpdateBoundingBoxSystem;
@@ -48,7 +47,13 @@ class CandleThrowingSystem;
 
 // Systems that need duplicate versions for the killcam
 template <typename T>
+class MetaballSubmitSystem;
+template <typename T>
 class ModelSubmitSystem;
+template <typename T>
+class MovementSystem;
+template <typename T>
+class MovementPostCollisionSystem;
 
 struct Systems {
 	AiSystem*                    aiSystem                    = nullptr;
@@ -73,9 +78,6 @@ struct Systems {
 	LifeTimeSystem*              lifeTimeSystem              = nullptr;
 	LightSystem*                 lightSystem                 = nullptr;
 	LightListSystem*             lightListSystem             = nullptr;
-	MetaballSubmitSystem*        metaballSubmitSystem        = nullptr;
-	MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
-	MovementSystem*              movementSystem              = nullptr;
 	NetworkReceiverSystem*       networkReceiverSystem       = nullptr;
 	NetworkSenderSystem*         networkSenderSystem         = nullptr;
 	OctreeAddRemoverSystem*      octreeAddRemoverSystem      = nullptr;
@@ -84,6 +86,8 @@ struct Systems {
 	PrepareUpdateSystem*         prepareUpdateSystem         = nullptr;
 	ProjectileSystem*            projectileSystem            = nullptr;
 	RenderImGuiSystem*           renderImGuiSystem           = nullptr;
+	SanitySoundSystem*           sanitySoundSystem           = nullptr;
+	SanitySystem*                sanitySystem                = nullptr;
 	SpeedLimitSystem*            speedLimitSystem            = nullptr;
 	SpotLightSystem*             spotLightSystem             = nullptr;
 	TeamColorSystem*             teamColorSystem             = nullptr;
@@ -93,6 +97,12 @@ struct Systems {
 
 
 	// Systems that need duplicate versions for the killcam
-	ModelSubmitSystem<TransformComponent>*       modelSubmitSystem        = nullptr;
-	ModelSubmitSystem<ReplayTransformComponent>* killCamModelSubmitSystem = nullptr;
+	MetaballSubmitSystem<TransformComponent>*              metaballSubmitSystem               = nullptr;
+	MetaballSubmitSystem<ReplayTransformComponent>*        killCamMetaballSubmitSystem        = nullptr;
+	MovementSystem<TransformComponent>*                    movementSystem                     = nullptr;
+	MovementSystem<ReplayTransformComponent>*              killCamMovementSystem              = nullptr;
+	MovementPostCollisionSystem<TransformComponent>*       movementPostCollisionSystem        = nullptr;
+	MovementPostCollisionSystem<ReplayTransformComponent>* killCamMovementPostCollisionSystem = nullptr;
+	ModelSubmitSystem<TransformComponent>*                 modelSubmitSystem                  = nullptr;
+	ModelSubmitSystem<ReplayTransformComponent>*           killCamModelSubmitSystem           = nullptr;
 };

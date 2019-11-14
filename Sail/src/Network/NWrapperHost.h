@@ -34,4 +34,15 @@ private:
 
 	void decodeMessage(NetworkEvent nEvent);
 	void updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID playerId, std::string& name);
+
+	/*
+		This will request clients to enter a new state. GameState, EndGameState etc.
+		id == 0 will send to all
+	*/
+	void setClientState(States::ID state, Netcode::PlayerID id = 0);
+	virtual void kickPlayer(Netcode::PlayerID playerId);
+	virtual void updateGameSettings(std::string s);
+
+	virtual void requestTeam(char team);
+	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true);
 };

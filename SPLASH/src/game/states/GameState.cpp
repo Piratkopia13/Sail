@@ -27,17 +27,25 @@ GameState::GameState(StateStack& stack)
 	, m_profiler(true)
 	, m_showcaseProcGen(false) 
 {
+
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 
-	initConsole();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
+	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
 
+	if (!m_isSingleplayer) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
+		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
+	}
+
+	initConsole();
 	m_app->setCurrentCamera(&m_cam);
 
 	std::vector<glm::vec3> m_teamColors;
@@ -139,7 +147,6 @@ GameState::GameState(StateStack& stack)
 	int id = static_cast<int>(playerID);
 	glm::vec3 spawnLocation = glm::vec3(0.f);
 	for (int i = -1; i < id; i++) {
-
 		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 	}
 
@@ -147,6 +154,8 @@ GameState::GameState(StateStack& stack)
 
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
 	m_componentSystems.networkReceiverSystem->setGameState(this);
+
+
 
 	// Bots creation
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
@@ -183,6 +192,13 @@ GameState::GameState(StateStack& stack)
 
 	// Clear all water on the level
 	EventDispatcher::Instance().emit(ResetWaterEvent());
+
+	if (!m_isSingleplayer) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
+	}
+
+
+	m_inGameGui.setPlayer(m_player);
 }
 
 GameState::~GameState() {
@@ -194,6 +210,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 }
 
 // Process input for the state
@@ -373,12 +390,12 @@ bool GameState::processInput(float dt) {
 
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
-	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<TransformComponent>>();
 	
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
 
-	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<TransformComponent>>();
 
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 
@@ -392,6 +409,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
 
 	m_componentSystems.lifeTimeSystem = ECS::Instance()->createSystem<LifeTimeSystem>();
+	m_componentSystems.sanitySoundSystem = ECS::Instance()->createSystem<SanitySoundSystem>();
+	m_componentSystems.sanitySystem = ECS::Instance()->createSystem<SanitySystem>();
 
 	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
 
@@ -421,12 +440,12 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.levelSystem = ECS::Instance()->createSystem<LevelSystem>();
 
 	// Create systems for rendering
-	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.beginEndFrameSystem     = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
-	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
-	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
+	m_componentSystems.metaballSubmitSystem    = ECS::Instance()->createSystem<MetaballSubmitSystem<TransformComponent>>();
+	m_componentSystems.modelSubmitSystem       = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
+	m_componentSystems.renderImGuiSystem       = ECS::Instance()->createSystem<RenderImGuiSystem>();
+	m_componentSystems.guiSubmitSystem         = ECS::Instance()->createSystem<GUISubmitSystem>();
 
 	// Create system for player input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -463,8 +482,11 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create systems needed for the killcam
 	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
-	//m_componentSystems.killCamModelSubmitSystem = ECS::Instance()->createSystem<KillCamModelSubmitSystem>();
-	m_componentSystems.killCamModelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamModelSubmitSystem    = ECS::Instance()->createSystem<ModelSubmitSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamMetaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamMovementSystem       = ECS::Instance()->createSystem<MovementSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<ReplayTransformComponent>>();
+
 }
 
 void GameState::initConsole() {
@@ -532,12 +554,15 @@ void GameState::initConsole() {
 }
 
 bool GameState::onEvent(const Event& event) {
+	State::onEvent(event);
+
 	switch (event.type) {
-	case Event::Type::WINDOW_RESIZE:					onResize((const WindowResizeEvent&)event); break;
-	case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
-	case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
-	case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
-	default: break;
+		case Event::Type::WINDOW_RESIZE:					onResize((const WindowResizeEvent&)event); break;
+		case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
+		case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
+		case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
+		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS:	onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
+		default: break;
 	}
 
 	return true;
@@ -575,11 +600,25 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 	return false;
 }
 
+void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
+	
+}
+
 bool GameState::update(float dt, float alpha) {
+	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
+	NWrapperSingleton::getInstance().checkForPackages();
+
+	m_killFeedWindow.updateTiming(dt);	
+	waitForOtherPlayers();
+
+	//Dont update game if game have not started. This is to sync all players to start at the same time
+	if (!m_gameStarted) {
+		return true;
+	}
+
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
 
-	m_killFeedWindow.updateTiming(dt);
 	m_lights.updateBufferData();
 
 	return true;
@@ -596,6 +635,11 @@ bool GameState::fixedUpdate(float dt) {
 	static float change = 0.4f;
 
 	counter += dt * 2.0f;
+
+	//Dont update game if game have not started. This is to sync all players to start at the same time
+	if (!m_gameStarted) {
+		return true;
+	}
 
 #ifdef _PERFORMANCE_TEST
 	/* here we shoot the guns */
@@ -630,6 +674,7 @@ bool GameState::render(float dt, float alpha) {
 
 	if (m_isInKillCamMode) {
 		m_componentSystems.killCamModelSubmitSystem->submitAll(alpha);
+		m_componentSystems.killCamMetaballSubmitSystem->submitAll(alpha);
 	} else {
 		m_componentSystems.modelSubmitSystem->submitAll(alpha);
 		m_componentSystems.particleSystem->submitAll();
@@ -646,9 +691,14 @@ bool GameState::render(float dt, float alpha) {
 }
 
 bool GameState::renderImgui(float dt) {
+	m_inGameGui.renderWindow();
 	m_killFeedWindow.renderWindow();
 	if (m_wasDropped) {
 		m_wasDroppedWindow.renderWindow();
+	}
+
+	if (!m_gameStarted) {
+		m_waitingForPlayersWindow.renderWindow();
 	}
 
 	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
@@ -708,8 +758,8 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
-	
-
+	m_componentSystems.killCamMovementSystem->update(dt);
+	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
 
 }
 
@@ -751,6 +801,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 	runSystem(dt, m_componentSystems.teamColorSystem);
 	runSystem(dt, m_componentSystems.particleSystem);
+	runSystem(dt, m_componentSystems.sanitySystem);
+	runSystem(dt, m_componentSystems.sanitySoundSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
@@ -766,10 +818,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
-
-	NWrapperSingleton* ptr = &NWrapperSingleton::getInstance();
-	NWrapperSingleton::getInstance().checkForPackages();
-
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
@@ -863,6 +911,38 @@ void GameState::logSomeoneDisconnected(unsigned char id) {
 
 	// Log it
 	SAIL_LOG(logMessage);
+}
+
+void GameState::waitForOtherPlayers() {
+	if (NWrapperSingleton::getInstance().isHost()) {
+		if (!m_gameStarted) {
+			bool allReady = true;
+
+			//See if anyone is not ready
+			//TODO: maybe dont count in spectators here.
+			//TODO: what will happen if new players joins in gamestate but before gamestart?
+			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+				if (p.lastStateStatus.status != 1 || p.lastStateStatus.state != States::Game) {
+					allReady = false;
+					break;
+				}
+			}
+
+			//If all players are ready, host can give approval to start game and set m_gameStarted = true
+			if (allReady) {
+				m_gameStarted = true;
+				NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 2);
+			}
+		}
+	} else {
+		if (!m_gameStarted) {
+			//If Host have given approval to start game, set m_gameStarted = true
+			auto p = NWrapperSingleton::getInstance().getPlayer(0);
+			if (p->lastStateStatus.status == 2 && p->lastStateStatus.state == States::Game) {
+				m_gameStarted = true;
+			}
+		}
+	}
 }
 
 const std::string GameState::createCube(const glm::vec3& position) {

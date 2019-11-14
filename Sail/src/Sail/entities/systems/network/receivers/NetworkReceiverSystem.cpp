@@ -177,8 +177,14 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	auto e = ECS::Instance()->createEntity("projectile");
 	instantAddEntity(e.get());
 
-	// Also play the sound
-	EntityFactory::CreateProjectile(e, info.position, info.velocity, wasRequestedByMe, info.ownerID, info.projectileID);
+	EntityFactory::ProjectileArguments args{};
+	args.pos           = info.position;
+	args.velocity      = info.velocity;
+	args.hasLocalOwner = wasRequestedByMe;
+	args.ownersNetId   = info.ownerID;
+	args.netCompId     = info.projectileID;
+
+	EntityFactory::CreateProjectile(e, args);
 }
 
 void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {
@@ -240,7 +246,6 @@ void NetworkReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {
 void NetworkReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(StopThrowingEvent(id));
 }
-
 
 // NOT FROM SERIALIZED MESSAGES
 

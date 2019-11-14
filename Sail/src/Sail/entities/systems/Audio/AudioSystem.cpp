@@ -88,6 +88,27 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("watergun/watergun_end.wav");
 	m_audioEngine->loadSound("watergun/watergun_reload.wav");
 #pragma endregion
+#pragma region SANITY
+	m_audioEngine->loadSound("sanity/heart_firstbeat1.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat2.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat3.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat4.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat5.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat6.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat1.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat2.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat3.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat4.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat5.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat6.wav");
+	m_audioEngine->loadSound("sanity/insanity_ambiance.wav");
+	m_audioEngine->loadSound("sanity/insanity_breathing.wav");
+	m_audioEngine->loadSound("sanity/insanity_scream.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin1.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin2.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin3.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin4.wav");
+#pragma endregion
 #pragma region IMPACTS
 	m_audioEngine->loadSound("impacts/water_impact_enemy_candle.wav");
 	m_audioEngine->loadSound("impacts/water_impact_my_candle.wav");
@@ -166,12 +187,13 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 							// To make the code easier to read
 							soundUnique = &audioData.m_soundsUnique[soundTypeIndex].at(randomSoundIndex);
+							soundGeneral->volume = soundUnique->volume;
 
 							soundGeneral->soundID = m_audioEngine->beginSound(
 								soundUnique->fileName,
 								soundGeneral->effect,
 								soundGeneral->frequency,
-								soundUnique->volume
+								soundGeneral->volume
 							);
 							soundGeneral->hasStartedPlaying = true;
 							soundGeneral->durationElapsed = 0.0f;
@@ -185,6 +207,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
 								soundGeneral->positionalOffset, alpha
 							);
+
+							m_audioEngine->setSoundVolume(soundGeneral->soundID, soundGeneral->volume);
 
 							if (soundGeneral->effect == Audio::EffectType::PROJECTILE_LOWPASS) {
 								updateProjectileLowPass(soundGeneral);
@@ -212,10 +236,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 		// - - - S T R E A M I N G  --------------------------------------------------------------------
 		{
-			m_filename = "";
-			m_volume = 1.0f;
-			m_streamIndex = 0;
-
 			// Deal with requests
 			for (m_i = audioC->m_streamingRequests.begin(); m_i != audioC->m_streamingRequests.end();) {
 
@@ -238,6 +258,13 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
 				// Update its position in the world
 				updateStreamPosition(e, cam, alpha);
+				// Update volume if it has changed
+				if (m_k->second.prevVolume != m_k->second.volume) {
+					m_k->second.prevVolume = m_k->second.volume;
+					updateStreamVolume();
+				}
+
+				m_k++;
 			}
 		}
 	}
@@ -248,41 +275,34 @@ void AudioSystem::stop() {
 }
 
 void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
-	// Fetch found stream-request's filename
-	m_filename = m_i->first;
-	m_volume = m_i->second.volume;
-	m_isPositionalAudio = m_i->second.isPositionalAudio;
-	m_isLooping = m_i->second.isLooping;
+
+	std::string filename = m_i->first;
+	float volume = m_i->second.volume;
+	bool isPositionalAudio = m_i->second.isPositionalAudio;
+	bool isLooping = m_i->second.isLooping;
+	int streamIndex = m_audioEngine->getAvailableStreamIndex();
+	// Storing this for later use
+	m_i->second.streamIndex = streamIndex;
 
 	m_toBeDeleted = m_i;
 	m_i++;
 
-	m_streamIndex = m_audioEngine->getAvailableStreamIndex();
-
-	std::string filename = m_filename;
-	float volume = m_volume;
-	bool isPositionalAudio = m_isPositionalAudio;
-	bool isLooping = m_isLooping;
-	int streamIndex = m_streamIndex;
-
-	if (m_streamIndex == -1) {
+	if (streamIndex == -1) {
 		SAIL_LOG_ERROR("Too many sounds already streaming; failed to stream another one!");
 	}
 	else {
-
-
 		Application::getInstance()->pushJobToThreadPool(
 			[this, filename, streamIndex, volume, isPositionalAudio, isLooping, audioC](int id) {
-			return m_audioEngine->streamSound(m_filename, m_streamIndex, m_volume, m_isPositionalAudio, m_isLooping, audioC);
-		});
+				return m_audioEngine->streamSound(filename, streamIndex, volume, isPositionalAudio, isLooping, audioC);
+			});
 
-		audioC->m_currentlyStreaming.emplace_back(m_filename, std::pair(m_streamIndex, m_isPositionalAudio));
+		audioC->m_currentlyStreaming.emplace_back(filename, m_toBeDeleted->second);
 		audioC->m_streamingRequests.erase(m_toBeDeleted);
 	}
 }
 
 void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
-	m_filename = m_i->first;
+	std::string filename = m_i->first;
 	m_toBeDeleted = m_i;
 	m_i++;
 
@@ -291,12 +311,12 @@ void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) 
 		m_streamToBeDeleted = m_j;
 		m_j++;
 
-		if (m_streamToBeDeleted->first == m_filename) {
+		if (m_streamToBeDeleted->first == filename) {
 
 			bool expectedValue = false;
-			while (!m_audioEngine->m_streamLocks[m_streamToBeDeleted->second.first].compare_exchange_strong(expectedValue, true));
+			while (!m_audioEngine->m_streamLocks[m_streamToBeDeleted->second.streamIndex].compare_exchange_strong(expectedValue, true));
 
-			m_audioEngine->stopSpecificStream(m_streamToBeDeleted->second.first);
+			m_audioEngine->stopSpecificStream(m_streamToBeDeleted->second.streamIndex);
 			audioC->m_currentlyStreaming.erase(m_streamToBeDeleted);
 
 			break;
@@ -306,13 +326,16 @@ void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) 
 }
 
 void AudioSystem::updateStreamPosition(Entity* e, Camera& cam, float alpha) {
-	if (m_k->second.second) {
+	if (m_k->second.isPositionalAudio) {
 		m_audioEngine->updateStreamWithCurrentPosition(
-			m_k->second.first, cam, *e->getComponent<TransformComponent>(),
+			m_k->second.streamIndex, cam, *e->getComponent<TransformComponent>(),
 			glm::vec3{ 0.0f, 0.0f, 0.0f }, alpha);
 	}
+}
 
-	m_k++;
+void AudioSystem::updateStreamVolume() {
+
+	m_audioEngine->setStreamVolume(m_k->second.streamIndex, m_k->second.volume);
 }
 
 void AudioSystem::updateProjectileLowPass(Audio::SoundInfo_General* general) {
@@ -388,6 +411,12 @@ bool AudioSystem::onEvent(const Event& event) {
 			killSound.playOnce = true;
 		}
 
+		else if (!e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+			auto& insanitySound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::INSANITY_SCREAM];
+			insanitySound.isPlaying = true;
+			insanitySound.playOnce = true;
+		}
+
 		// Play death sound
 		auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
 		deathSound.isPlaying = true;
@@ -424,7 +453,6 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onLoopShooting = [=](const LoopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
-			std::cout << "AUDIOSYSTEM::LOOP.TRUE\n";
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
