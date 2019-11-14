@@ -664,7 +664,7 @@ void MenuState::startSinglePlayer() {
 			NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 		}
 		NWrapperSingleton::getInstance().stopUDP();
-		m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
+		//m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
 		auto& map = m_app->getSettings().gameSettingsDynamic["map"];
 

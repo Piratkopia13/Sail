@@ -27,17 +27,26 @@ public:
 
 private:
 	Application* m_app;
-	ImGuiHandler* m_imguiHandler;
+	ImGuiHandler* m_imGuiHandler;
 	static bool sIsOpen;
 	float m_outerPadding;
 	InGameMenuWindow m_inGameMenuWindow;
 	OptionsWindow m_optionsWindow;
 	bool m_isSinglePlayer;
 	bool m_openedThisFrame;
+	int m_windowToRender;
 
 	ImGuiWindowFlags m_standaloneButtonflags;
+	ImGuiWindowFlags m_backdrop;
 	ImGuiWindowFlags m_backgroundOnlyflags;
 
+	float m_menuWidth;
+	ImVec2 m_minSize;
+	ImVec2 m_maxSize;
+	ImVec2 m_size;
+	ImVec2 m_pos;
+	float m_percentage;
+	bool m_usePercentage;
 
 
 	void renderMenu();
