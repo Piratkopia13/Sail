@@ -325,8 +325,9 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 void DXRBase::updateWaterData() {
-	//auto start = std::chrono::high_resolution_clock::now();
-	simulateWater(Application::getInstance()->getDelta());
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["water simulation"].getSelected().value) {
+		simulateWater(Application::getInstance()->getDelta());
+	}
 
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
