@@ -103,7 +103,9 @@ bool MenuState::render(float dt, float alpha) {
 bool MenuState::renderImgui(float dt) {
 	
 	//Keep
+#ifdef DEVELOPMENT
 	ImGui::ShowDemoWindow();
+#endif
 if (m_usePercentage) {
 		m_menuWidth = m_percentage * m_app->getWindow()->getWindowWidth();
 	}
@@ -160,9 +162,9 @@ if (m_usePercentage) {
 	if (m_windowToRender == 4) {
 		renderProfile();
 	}
+#ifdef DEVELOPMENT
 	renderDebug();
-
-	
+#endif
 	if (m_joiningLobby) {
 		renderJoiningLobby();
 	}
@@ -176,12 +178,13 @@ if (m_usePercentage) {
 }
 
 bool MenuState::onEvent(const Event& event) {
+	State::onEvent(event);
 	switch (event.type) {
 	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
 	default: break;
 	}
 
-	return false;
+	return true;
 }
 
 const std::string MenuState::loadPlayerName(const std::string& file) {
@@ -275,17 +278,11 @@ void MenuState::renderDebug() {
 }
 
 void MenuState::joinLobby(std::string& ip) {
+	//KEEP
 	//m_joinTimer = 0.0f;
 	//m_joiningLobby = true;
 
 	if (m_network->connectToIP(&ip.front())) {
-		// Wait until welcome-package is received,
-		// Save the package info,
-		// Pop and push into JoinLobbyState.
-		//this->requestStackPop();
-		//this->requestStackPush(States::JoinLobby);
-
-
 	}
 }
 

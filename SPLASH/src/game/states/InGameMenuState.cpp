@@ -118,7 +118,6 @@ bool InGameMenuState::renderImgui(float dt) {
 
 void InGameMenuState::renderMenu() {
 	ImVec2 size = ImVec2(400.f, 0.f);
-	//ImVec2 pos = ImVec2((Application::getInstance()->getWindow()->getWindowWidth() / 2.f) - (size.x / 2.f), (Application::getInstance()->getWindow()->getWindowHeight() / 2.f) - (size.y / 2.f));
 	ImVec2 pos = ImVec2(
 		m_outerPadding,
 		m_outerPadding

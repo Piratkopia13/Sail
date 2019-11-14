@@ -40,7 +40,6 @@ void OptionsWindow::renderWindow() {
 	ImGui::Separator();
 
 
-
 	static std::vector<std::string> options = { "fullscreen","bloom","shadows","fxaa","water simulation" };
 	for (auto & optionName : options) {
 		sopt = &stat["graphics"][optionName];
@@ -58,57 +57,6 @@ void OptionsWindow::renderWindow() {
 			sopt->setSelected(selected + 1);
 		}
 	}
-	
-
-
-		//sopt = &stat["graphics"]["fxaa"];
-		//selected = sopt->selected;
-		//if (SailImGui::TextButton(std::string("<##fxaa").c_str())) {
-		//	sopt->setSelected(selected - 1);
-		//}
-		//ImGui::SameLine(x[0]);
-		//valueName = sopt->getSelected().name;
-		//ImGui::Text(valueName.c_str());
-		//ImGui::SameLine(x[1]);
-		//if (SailImGui::TextButton(std::string(">##fxaa").c_str())) {
-		//	sopt->setSelected(selected + 1);
-		//}
-		//ImGui::SameLine(x[2]);
-		//ImGui::Text("FXAA");
-
-
-
-		//sopt = &stat["graphics"]["shadows"];
-		//selected = sopt->selected;
-		//if (SailImGui::TextButton(std::string("<##shadows").c_str())) {
-		//	sopt->setSelected(selected - 1);
-		//}
-		//ImGui::SameLine(x[0]);
-		//valueName = sopt->getSelected().name;
-		//ImGui::Text(valueName.c_str());
-		//ImGui::SameLine(x[1]);
-		//if (SailImGui::TextButton(std::string(">##shadows").c_str())) {
-		//	sopt->setSelected(selected + 1);
-		//}
-		//ImGui::SameLine(x[2]);
-		//ImGui::Text("shadows");
-
-		//sopt = &stat["graphics"]["water simulation"];
-		//selected = sopt->selected;
-		//if (SailImGui::TextButton(std::string("<##water simulation").c_str())) {
-		//	sopt->setSelected(selected - 1);
-		//}
-		//ImGui::SameLine(x[0]);
-		//valueName = sopt->getSelected().name;
-		//ImGui::Text(valueName.c_str());
-		//ImGui::SameLine(x[1]);
-		//if (SailImGui::TextButton(std::string(">##water simulation").c_str())) {
-		//	sopt->setSelected(selected + 1);
-		//}
-		//ImGui::SameLine(x[2]);
-		//ImGui::Text("water simulation");
-
-
 
 	ImGui::Spacing();
 	ImGui::Spacing();
@@ -129,13 +77,7 @@ void OptionsWindow::renderWindow() {
 		if (ImGui::SliderFloat(std::string("##"+settingName).c_str(), &val, dopt->minVal, dopt->maxVal * 100.0f, "%.1f%%")) {
 			dopt->setValue(val * 0.01f);
 		}
-
-
-	}
-
-
-		
-
+	}	
 }
 
 bool OptionsWindow::renderGameOptions() {
@@ -146,8 +88,9 @@ bool OptionsWindow::renderGameOptions() {
 	ImGui::GetWindowContentRegionWidth() * 0.95f,
 	0
 	};
-	//ImGui::DragFloat4("##POS", &x[0], 1.0f);
-
+#ifdef DEVELOPMENT
+	ImGui::DragFloat4("##POS", &x[0], 1.0f);
+#endif
 	bool settingsChanged = false;
 	static auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	static auto& stat = m_app->getSettings().gameSettingsStatic;
@@ -218,9 +161,6 @@ bool OptionsWindow::renderGameOptions() {
 			sopt->setSelected(selected + 1);
 		}
 	}
-
-
-
 
 	return settingsChanged;
 }
