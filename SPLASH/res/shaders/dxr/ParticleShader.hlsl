@@ -47,7 +47,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
     float4 color = sys_material_pbr.modelColor;
 	if (sys_material_pbr.hasAlbedoTexture) {
 		float4 albedo = sys_texAlbedo.SampleLevel(PSss, input.texCoords, 0);
-        color *= albedo * 0.5;
+        color *= albedo;
 	}
 
     return color;

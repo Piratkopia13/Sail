@@ -27,9 +27,17 @@ void ParticleSystem::update(float dt) {
 
 		// Place emitter at entities transform
 		if (e->hasComponent<TransformComponent>()) {
-			//partComponent->position = e->getComponent<TransformComponent>()->getMatrixWithoutUpdate()[3];
-			partComponent->position = e->getComponent<TransformComponent>()->getMatrixWithoutUpdate() * glm::vec4(partComponent->offset, 1.f);
+			TransformComponent* trans = e->getComponent<TransformComponent>();
+			partComponent->position = trans->getMatrixWithoutUpdate() * glm::vec4(partComponent->offset, 1.f);
 		}
+
+		glm::vec3 velocityToAdd(0.f);
+		if (e->getParent() && e->getParent()->hasComponent<MovementComponent>()) {
+			velocityToAdd = e->getParent()->getComponent<MovementComponent>()->oldVelocity;
+		}
+
+		partComponent->velocity = partComponent->constantVelocity + velocityToAdd;
+
 		partComponent->updateTimers(dt);
 	}
 }

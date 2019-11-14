@@ -40,11 +40,12 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 
 #ifdef DEVELOPMENT
 	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
-	particleEmitterComp->offset = { 0.0f, 0.37f, 0.0f };
-	particleEmitterComp->velocity = { 0.0f, 0.4f, 0.0f };
-	particleEmitterComp->acceleration = { 0.0f, 1.2f, 0.0f };
-	particleEmitterComp->spread = { 0.3f, 0.4f, 0.3f };
-	particleEmitterComp->spawnRate = 0.01f;
+	particleEmitterComp->size = 0.12f;
+	particleEmitterComp->offset = { 0.0f, 0.44f, 0.0f };
+	particleEmitterComp->constantVelocity = { 0.0f, 0.4f, 0.0f };
+	particleEmitterComp->acceleration = { 0.0f, 1.0f, 0.0f };
+	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
+	particleEmitterComp->spawnRate = 0.006f;
 	particleEmitterComp->lifeTime = 0.1f;
 	particleEmitterComp->setTexture("particles/fire.tga");
 #endif

@@ -17,9 +17,11 @@ public:
 	ParticleEmitterComponent();
 	~ParticleEmitterComponent();
 
+	float size;
 	glm::vec3 offset;
 	glm::vec3 position;
 	glm::vec3 spread;
+	glm::vec3 constantVelocity;
 	glm::vec3 velocity;
 	glm::vec3 acceleration;
 	float lifeTime;
@@ -96,6 +98,7 @@ private:
 		unsigned int previousNrOfParticles;
 		unsigned int maxOutputVertices;
 		float frameTime;
+		float size;
 	};
 
 	ComputeInput m_inputData;
