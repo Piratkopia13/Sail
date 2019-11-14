@@ -44,7 +44,6 @@ protected:
 	SettingStorage* m_settings;
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
-
 	std::list<std::string> m_messages;
 
 	// Front-End Functions

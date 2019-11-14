@@ -254,7 +254,9 @@ bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	
 	if (NWrapperSingleton::getInstance().isHost()) {
+
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
 	
@@ -269,6 +271,7 @@ bool LobbyState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
 	Message message;
 	message.content = event.player.name;
 	message.content += (event.reason == PlayerLeftReason::KICKED) ? " was kicked!" : " left the game!";
+
 	message.senderID = 255;
 	addMessageToChat(message);
 	return true;
@@ -379,14 +382,16 @@ void LobbyState::renderPlayerList() {
 				}
 			} 
 			else {
-
+				std::string s = selectedGameTeams.options.back().name;
+				
 				for (auto t : selectedGameTeams.options) {
 					if ((int)(t.value) == (int)(currentplayer.team)) {
-						ImGui::Text(t.name.c_str());
+						s = t.name;
 						break;
 					}
 				}
 
+				ImGui::Text(s.c_str());
 			}
 			ImGui::SameLine(x[1]);
 
@@ -618,7 +623,8 @@ void LobbyState::renderMenu() {
 			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
 				// Queue a removal of LobbyState, then a push of gamestate
 				NWrapperSingleton::getInstance().stopUDP();
-				m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount));
+				//m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, m_teamSelection));
+				
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 
@@ -660,3 +666,4 @@ void LobbyState::renderMenu() {
 	ImGui::End();
 	ImGui::PopFont();
 }
+
