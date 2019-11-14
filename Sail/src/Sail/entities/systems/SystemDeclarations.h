@@ -41,6 +41,7 @@ class UpdateBoundingBoxSystem;
 class SpotLightSystem;
 class SprintingSystem;
 class TeamColorSystem;
+class CandleThrowingSystem;
 
 struct Systems {
 	AiSystem*                    aiSystem                    = nullptr;
@@ -52,6 +53,7 @@ struct Systems {
 	CandleHealthSystem*          candleHealthSystem          = nullptr;
 	CandlePlacementSystem*       candlePlacementSystem       = nullptr;
 	CandleReignitionSystem*      candleReignitionSystem      = nullptr;
+	CandleThrowingSystem*		 candleThrowingSystem		 = nullptr;
 	CollisionSystem*             collisionSystem             = nullptr;
 	EndFrameSystem*              endFrameSystem              = nullptr;
 	EntityAdderSystem*           entityAdderSystem           = nullptr;

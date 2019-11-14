@@ -101,6 +101,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<SprintingComponent>();
+	myPlayer->addComponent<ThrowingComponent>();
 
 #ifdef DEVELOPMENT
 	//For testing, add particle emitter to player.
@@ -137,6 +138,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 			c->addComponent<ReplayComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
+			c->addComponent<MovementComponent>();
 		}
 	}
 
