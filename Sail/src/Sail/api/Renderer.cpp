@@ -2,6 +2,8 @@
 #include "Renderer.h"
 #include "Sail/graphics/geometry/Model.h"
 
+unsigned int Renderer::meshIndex = 0;
+
 void Renderer::begin(Camera* camera) {
 	this->camera = camera;
 	commandQueue.clear();

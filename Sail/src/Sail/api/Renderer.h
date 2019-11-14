@@ -57,6 +57,7 @@ public:
 
 public:
 	static Renderer* Create(Renderer::Type type);
+	static void NewFrame();
 	virtual ~Renderer() {}
 
 	virtual void begin(Camera* camera);
@@ -77,6 +78,7 @@ public:
 	virtual void setTeamColors(const std::vector<glm::vec3>& teamColors);
 
 protected:
+	static unsigned int meshIndex;
 	std::vector<RenderCommand> commandQueue;
 	std::vector<glm::vec3> teamColors;
 

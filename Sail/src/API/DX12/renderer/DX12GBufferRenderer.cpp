@@ -155,7 +155,7 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 		// Init all vbuffers and textures - this needs to be done on ONE thread
 		// TODO: optimize!
-		int meshIndex = 0;
+		int meshIndex = meshI;
 		for (auto& renderCommand : commandQueue) {
 			auto& vbuffer = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
 			vbuffer.init(cmdList.Get());

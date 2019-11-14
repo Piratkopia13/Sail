@@ -450,6 +450,7 @@ void DX12API::nextFrame() {
 		getMainGPUDescriptorHeap()->setIndex(0);
 		getComputeGPUDescriptorHeap()->setIndex(0);
 	}
+	Renderer::NewFrame();
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {

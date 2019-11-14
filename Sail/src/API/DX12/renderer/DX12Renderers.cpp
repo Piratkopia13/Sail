@@ -24,3 +24,7 @@ Renderer* Renderer::Create(Renderer::Type type) {
 	}
 	return nullptr;
 }
+
+void Renderer::NewFrame() {
+	meshIndex = 0;
+}
