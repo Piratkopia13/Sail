@@ -32,8 +32,10 @@ void ParticleSystem::update(float dt) {
 		}
 
 		glm::vec3 velocityToAdd(0.f);
-		if (e->getParent() && e->getParent()->hasComponent<MovementComponent>()) {
-			velocityToAdd = e->getParent()->getComponent<MovementComponent>()->oldVelocity;
+		if (e->getParent() && e->getParent()->hasComponent<MovementComponent>() && e->hasComponent<CandleComponent>()) {
+			if (e->getComponent<CandleComponent>()->isCarried) {
+				velocityToAdd = e->getParent()->getComponent<MovementComponent>()->oldVelocity;
+			}
 		}
 
 		partComponent->velocity = partComponent->constantVelocity + velocityToAdd;
