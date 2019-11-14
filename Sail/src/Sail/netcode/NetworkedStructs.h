@@ -79,6 +79,8 @@ namespace Netcode {
 		IGNITE_CANDLE,
 		HIT_BY_SPRINKLER,
 		ENABLE_SPRINKLERS,
+		START_THROWING,
+		STOP_THROWING,
 		EMPTY,
 		COUNT
 	}; 
@@ -110,6 +112,8 @@ namespace Netcode {
 		"IGNITE_CANDLE,				",
 		"HIT_BY_SPRINKLER,			",
 		"ENABLE_SPRINKLERS,			",
+		"START_THROWING,			",
+		"STOP_THROWING,				",
 		"EMPTY						",
 	};
 
@@ -183,13 +187,16 @@ namespace Netcode {
 	class MessageSpawnProjectile : public MessageData {
 	public:
 		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, 
-			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID)
-			: translation(translation_), velocity(velocity_), projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID)
+			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID, float frequency)
+			: translation(translation_), velocity(velocity_),
+			projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID),
+			lowPassFrequency(frequency)
 		{}
 		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
+		float lowPassFrequency;
 		Netcode::ComponentID projectileComponentID;
 		Netcode::ComponentID ownerPlayerComponentID;
 	};
@@ -321,6 +328,18 @@ namespace Netcode {
 	public:
 		MessageEnableSprinklers() {}
 		~MessageEnableSprinklers() {}
+	};
+	class MessageStartThrowing : public MessageData {
+	public:
+		MessageStartThrowing(Netcode::ComponentID id) : playerCompID(id) {}
+		~MessageStartThrowing() {}
+		Netcode::ComponentID playerCompID;
+	};
+	class MessageStopThrowing : public MessageData {
+	public:
+		MessageStopThrowing(Netcode::ComponentID id) : playerCompID(id) {}
+		~MessageStopThrowing() {}
+		Netcode::ComponentID playerCompID;
 	};
 
 }
