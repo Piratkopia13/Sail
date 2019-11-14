@@ -1430,7 +1430,7 @@ void LevelSystem::stop() {
 void LevelSystem::generateClutter() {
 
 	//adds clutter for each tile in each room if rand() is over threshold value
-	for (int i = 0; i < numberOfRooms - 1; i++) {
+	for (int i = 0; i < numberOfRooms; i++) {
 		Rect room = matched.at(i);
 		for (int x = 0; x < room.sizex; x++) {
 			for (int y = 0; y < room.sizey; y++) {
@@ -1643,7 +1643,7 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		}
 	}
 
-	for (int i = 0; i < numberOfRooms - 1; i++) {
+	for (int i = 0; i < numberOfRooms; i++) {
 		Rect room = matched.at(i);
 		auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*tileSize),glm::vec3(0.f),glm::vec3(1.f,tileHeight,1.f));
 
