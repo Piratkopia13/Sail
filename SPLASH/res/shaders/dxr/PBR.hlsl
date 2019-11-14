@@ -36,7 +36,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float emissivness, float metalness, float roughness, float ao, inout RayPayload payload) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float emissivness, float metalness, float roughness, float ao, float originalAo, inout RayPayload payload) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
 
@@ -45,9 +45,11 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
     // Reflectance equation
     float3 Lo = 0.0f;
-
+	// Add emissive materials
 	Lo += albedo * 2.2 * emissivness;
-		
+	
+	float shadowAmount = 0.f;
+	uint numLights = 0;
 	{
 
 		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
@@ -62,8 +64,10 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 			float3 H = normalize(V + L);
 			float distance = length(p.position - worldPosition);
 
+			numLights++;
 			// Dont do any shading if in shadow
 			if (Utils::rayHitAnything(worldPosition, L, distance)) {
+				shadowAmount++;
 				continue;
 			}
 
@@ -111,8 +115,10 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 				continue;
 			}
 
+			numLights++;
 			// Dont do any shading if in shadow
 			if (Utils::rayHitAnything(worldPosition, L, distance)) {
+				shadowAmount++;
 				continue;
 			}
 
@@ -143,6 +149,11 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 		}
 	}
 
+	// Lerp AO depending on shadow
+	// This fixes water being visible in darkness
+	shadowAmount /= numLights;
+	shadowAmount = 1 - (shadowAmount * shadowAmount);
+	ao = lerp(originalAo, ao, shadowAmount);
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
     float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
@@ -162,16 +173,13 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
     float3 ambient = 0.f;
     if (payload.recursionDepth < 2) {
-		// Ray direction for first ray when cast from GBuffer must be calculated using camera position
-		// float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
-
 		// Trace reflection ray
         RayDesc ray;
         ray.Origin = worldPosition;
         ray.Direction = R;
         ray.TMin = 0.0001;
         ray.TMax = 1000;
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, ray, payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT | INSTACE_MASK_METABALLS, 0, 0, 0, ray, payload);
         float3 prefilteredColor = payload.color.rgb;
         // float3 prefilteredColor = 0.5f;
 
