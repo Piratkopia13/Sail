@@ -44,6 +44,7 @@ public:
 		RenderFlag flags = MESH_STATIC;
 		std::vector<bool> hasUpdatedSinceLastRender;
 		int teamColorID;
+		bool castShadows;
 
 		union {
 			struct {
@@ -69,7 +70,7 @@ public:
 	virtual bool checkIfOnWater(const glm::vec3& pos) { return false; }
 	virtual void end() { };
 
-	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID);
+	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID, bool castShadows);
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) = 0;
 	virtual bool onEvent(const Event& event) override { return true; }

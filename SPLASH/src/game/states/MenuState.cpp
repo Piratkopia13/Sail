@@ -169,11 +169,7 @@ bool MenuState::renderImgui(float dt) {
 					inputIP = "127.0.0.1:54000";
 				}
 				if (m_network->connectToIP(&inputIP.front())) {
-					// Wait until welcome-package is received,
-					// Save the package info,
-					// Pop and push into JoinLobbyState.
-					this->requestStackPop();
-					this->requestStackPush(States::JoinLobby);
+
 				}
 			}
 			if (ImGui::IsItemHovered()) {
@@ -227,8 +223,7 @@ bool MenuState::renderImgui(float dt) {
 					if (ImGui::IsMouseDoubleClicked(0)) {
 						// If pressed then join
 						if (m_network->connectToIP(&lobby.ip.front())) {
-							this->requestStackPop();
-							this->requestStackPush(States::JoinLobby);
+
 						}
 					}
 				}
@@ -248,8 +243,7 @@ bool MenuState::renderImgui(float dt) {
 		if (ImGui::Button("Join") && selected != -1) {
 			// If pressed then join
 			if (m_network->connectToIP(&m_foundLobbies[selected].ip.front())) {
-				this->requestStackPop();
-				this->requestStackPush(States::JoinLobby);
+
 			}
 		}
 		if (selected == -1) {
@@ -265,7 +259,7 @@ bool MenuState::renderImgui(float dt) {
 		std::string progress = "Models:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/28.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(28)).c_str());
+		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels()/25.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(25)).c_str());
 
 		progress = "Textures:";
 		ImGui::Text(progress.c_str());
@@ -281,12 +275,14 @@ bool MenuState::renderImgui(float dt) {
 }
 
 bool MenuState::onEvent(const Event& event) {
+	State::onEvent(event);
+
 	switch (event.type) {
 	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
 	default: break;
 	}
 
-	return false;
+	return true;
 }
 
 const std::string MenuState::loadPlayerName(const std::string& file) {
