@@ -194,7 +194,6 @@ const std::string MenuState::loadPlayerName(const std::string& file) {
 	return name;
 }
 
-
 bool MenuState::onLanHostFound(const NetworkLanHostFoundEvent& event) {
 	// Get IP (as int) then convert into char*
 	ULONG ip_as_int = event.ip;
@@ -283,8 +282,8 @@ void MenuState::joinLobby(std::string& ip) {
 		// Wait until welcome-package is received,
 		// Save the package info,
 		// Pop and push into JoinLobbyState.
-		this->requestStackPop();
-		this->requestStackPush(States::JoinLobby);
+		//this->requestStackPop();
+		//this->requestStackPush(States::JoinLobby);
 
 
 	}
@@ -572,7 +571,7 @@ void MenuState::renderProfile() {
 		ImGui::Separator();
 
 		float innerWidth = ImGui::GetWindowContentRegionWidth();
-		
+
 		ImGui::Text("Name: ");
 		ImGui::SameLine();
 		static char buf[101] = "";
@@ -580,11 +579,11 @@ void MenuState::renderProfile() {
 		ImGui::InputText("##name", buf, MAX_NAME_LENGTH);
 		name = buf;
 		NWrapperSingleton::getInstance().setPlayerName(name.c_str());
-		
+
 
 
 		ImGui::Separator();
-		float x[3] = { 0.4f, 0.6f, 0.9};
+		float x[3] = { 0.4f, 0.6f, 0.9 };
 		ImGui::Text(std::string("Extinguishes: ").c_str());
 		ImGui::SameLine(innerWidth * x[0]);
 		ImGui::Text(std::to_string(0).c_str());
@@ -605,16 +604,9 @@ void MenuState::renderProfile() {
 
 
 
-	return true;
-	ImGui::End();
-}
-bool MenuState::onEvent(const Event& event) {
-	State::onEvent(event);
-
-	switch (event.type) {
-	case Event::Type::NETWORK_LAN_HOST_FOUND: onLanHostFound((const NetworkLanHostFoundEvent&)event); break;
-	default: break;
+		ImGui::End();
 	}
+}
 
 void MenuState::renderJoiningLobby() {
 	ImVec2 screenMiddle(
@@ -645,16 +637,6 @@ void MenuState::renderJoiningLobby() {
 		ImGui::End();
 	}
 	ImGui::End();
-
-
-
-
-
-
-
-
-
-
 }
 void MenuState::renderOptions() {
 
