@@ -112,6 +112,11 @@ void CandleHealthSystem::update(float dt) {
 			if (candle->wasHitByPlayerID != Netcode::MESSAGE_SPRINKLER_ID) {
 				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
 			}
+
+			// Log the extinguish in the kill feed
+			auto ownerID = Netcode::getComponentOwner(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id);
+			//SAIL_LOG(std::to_string(candle->wasHitByPlayerID) + " " + std::to_string(ownerID));
+			EventDispatcher::Instance().emit(TorchExtinguishedEvent(candle->wasHitByPlayerID, ownerID));
 		
 			// Play the reignition sound if the player has any candles left
 			if (candle->respawns < m_maxNumRespawns) {

@@ -29,6 +29,7 @@ struct Event {
 		CHANGE_WALKING_SOUND,
 		STOP_WALKING,
 		SETTINGS_UPDATED,
+		TORCH_EXTINGUISHED,
 
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};

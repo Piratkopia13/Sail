@@ -87,7 +87,6 @@ void NetworkReceiverSystem::enableSprinklers() {
 void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
-
 			e->getComponent<CandleComponent>()->wasJustExtinguished = true;
 			e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
 

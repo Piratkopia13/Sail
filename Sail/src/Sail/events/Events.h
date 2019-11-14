@@ -13,3 +13,4 @@
 #include "types/StopShootingEvent.h"
 #include "types/ChangeWalkingSoundEvent.h"
 #include "types/StopWalkingEvent.h"
+#include "types/TorchExtinguishedEvent.h"
