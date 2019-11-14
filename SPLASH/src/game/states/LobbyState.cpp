@@ -9,6 +9,9 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 
+#include "Sail/events/types/NetworkPlayerChangedTeam.h"
+#include "Sail/events/types/NetworkPlayerRequestedTeamChange.h"
+
 #include "Network/NWrapperSingleton.h"
 #include "Network/NWrapper.h"
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
@@ -51,6 +54,9 @@ LobbyState::LobbyState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::TEXTINPUT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+
 	m_ready = false;
 
 	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
@@ -76,7 +82,6 @@ LobbyState::LobbyState(StateStack& stack)
 
 }
 
-
 LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
 	delete m_settingBotCount;
@@ -85,6 +90,9 @@ LobbyState::~LobbyState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
 }
 
 bool LobbyState::processInput(float dt) {
@@ -189,6 +197,8 @@ bool LobbyState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_CHAT:			onRecievedText((const NetworkChatEvent&)event); break;
 	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
+	case Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE:	onPlayerTeamRequest((const NetworkPlayerRequestedTeamChange&)event); break;
+	case Event::Type::NETWORK_PLAYER_CHANGED_TEAM:	onPlayerTeamChanged((const NetworkPlayerChangedTeam&)event); break;
 
 	default:
 		break;
@@ -244,6 +254,7 @@ bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	
 	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
 	
@@ -260,6 +271,39 @@ bool LobbyState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
 	message.content += (event.reason == PlayerLeftReason::KICKED) ? " was kicked!" : " left the game!";
 	message.senderID = 255;
 	addMessageToChat(message);
+	return true;
+}
+
+bool LobbyState::onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& event) {
+	
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(event.team, event.playerID);
+	}
+
+	return true;
+}
+
+bool LobbyState::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {	
+	///PRINT MESSAGE
+	std::unordered_map<std::string, SettingStorage::Setting>& gamemodeSettings = m_settings->gameSettingsStatic["gamemode"];
+	SettingStorage::Setting& selectedGameTeams = m_settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
+
+	Player* p = NWrapperSingleton::getInstance().getPlayer(event.playerID);
+
+	int currentlySelected = 0;
+	for (auto t : selectedGameTeams.options) {
+		if ((int)(t.value) == (int)(p->team)) {
+			break;
+		}
+		currentlySelected++;
+	}
+
+	Message message;
+	message.senderID = 255;
+	message.content = NWrapperSingleton::getInstance().getMyPlayerID() == event.playerID ? "You" : NWrapperSingleton::getInstance().getPlayer(event.playerID)->name;
+	message.content += " changed team to " + selectedGameTeams.options[currentlySelected].name;
+	addMessageToChat(message);
+
 	return true;
 }
 
@@ -300,40 +344,49 @@ void LobbyState::renderPlayerList() {
 
 		SettingStorage::Setting& selectedGameTeams = m_settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
 		unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
-		for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {
-			//PLAYERNAME
-			/*if (ImGui::Selectable(std::string("##"+currentplayer.name + std::string((currentplayer.id == myID) ? "*" : "") + std::string("##"+std::to_string(currentplayer.id))).c_str(), false, ImGuiSelectableFlags_SpanAllColumns)) {
-				
-			}*/
-			
+		for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {			
 			ImGui::BeginGroup();
 			ImGui::Text(std::string(currentplayer.name + std::string((currentplayer.id == myID) ? "*" : "")).c_str());
 			ImGui::SameLine(x[0]);
 			// TEAM
 			if (currentplayer.id == myID || myID == HOST_ID) {
-				static unsigned int selectedTeam = 0;
-				if (ImGui::BeginCombo("##LABEL", selectedGameTeams.getSelected().name.c_str())) {
-					int i = 0;
+				char selectedTeam = NWrapperSingleton::getInstance().getPlayer(currentplayer.id)->team;
+				std::string unique = "##LABEL" + std::to_string(currentplayer.id);
+
+				int currentlySelected = 0;
+				for (auto t : selectedGameTeams.options) {
+					if ((int)(t.value) == (int)(currentplayer.team)) {
+						break;
+					}
+					currentlySelected++;
+				}
+
+				currentlySelected = std::clamp(currentlySelected, 0, (int)(selectedGameTeams.options.size()) - 1);
+
+				if (ImGui::BeginCombo(unique.c_str(), selectedGameTeams.options[currentlySelected].name.c_str())) {
 					for (auto const& key : selectedGameTeams.options) {
-						if (ImGui::Selectable(key.name.c_str(), selectedTeam == (unsigned int)(int)key.value)) {
-							// LOCALPLAYER
+						std::string name = key.name + unique;
+
+						if (ImGui::Selectable(name.c_str(), selectedTeam == (char)key.value)) {
 							if (currentplayer.id == myID) {
-								selectedTeam = (unsigned int)i;
-								selectedGameTeams.setSelected(selectedTeam);
-							}
-							//HOST
-							else {
-								// TODO: SEND NEW SELECTION TO PLAYERS
+								NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam(key.value);
+							} else {
+								NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(key.value, currentplayer.id);						
 							}
 						}
-						i++;
 					}
 					ImGui::EndCombo();
 				}
 			} 
 			else {
-				//TODO: get team from wrapper
-				ImGui::Text("Alone");
+
+				for (auto t : selectedGameTeams.options) {
+					if ((int)(t.value) == (int)(currentplayer.team)) {
+						ImGui::Text(t.name.c_str());
+						break;
+					}
+				}
+
 			}
 			ImGui::SameLine(x[1]);
 
@@ -574,6 +627,14 @@ void LobbyState::renderMenu() {
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 
+				//TODO: ONLY DO THIS IF GAMEMODE IS FFA
+				int teamID = 0;
+				for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+					if (p.team != -1) {
+						NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(teamID % 12, p.id, false);
+						teamID++;
+					}
+				}
 
 				m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
 				m_network->setClientState(States::Game);

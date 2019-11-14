@@ -20,4 +20,6 @@ private:
 	void sendMyNameToHost();
 	void updatePlayerList(std::list<Player>& playerList);
 
+	virtual void requestTeam(char team);
+
 };

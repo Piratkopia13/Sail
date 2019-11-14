@@ -42,4 +42,7 @@ private:
 	void setClientState(States::ID state, Netcode::PlayerID id = 0);
 	virtual void kickPlayer(Netcode::PlayerID playerId);
 	virtual void updateGameSettings(std::string s);
+
+	virtual void requestTeam(char team);
+	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true);
 };
