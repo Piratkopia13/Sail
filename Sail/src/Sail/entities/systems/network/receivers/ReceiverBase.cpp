@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "ReceiverBase.h"
 #include "Sail/entities/Entity.h"
+#include "Sail/entities/components/SanityComponent.h"
 
 #include "Sail/utils/GameDataTracker.h"
 #include "Sail/utils/Utils.h"
@@ -169,6 +170,13 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 					ar(lowPassFrequency);
 
 					shootEnd(compID, lowPassFrequency);
+				}
+				break;
+				case Netcode::MessageType::UPDATE_SANITY:
+				{
+					float sanity;
+					ar(sanity);
+					EventDispatcher::Instance().emit(UpdateSanityEvent(compID, sanity));
 				}
 				break;
 				default:

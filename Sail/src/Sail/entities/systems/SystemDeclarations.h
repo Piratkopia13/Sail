@@ -34,6 +34,8 @@ class PlayerSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
+class SanitySoundSystem;
+class SanitySystem;
 class SpeedLimitSystem;
 class SprinklerSystem;
 class UpdateBoundingBoxSystem;
@@ -84,6 +86,8 @@ struct Systems {
 	PrepareUpdateSystem*         prepareUpdateSystem         = nullptr;
 	ProjectileSystem*            projectileSystem            = nullptr;
 	RenderImGuiSystem*           renderImGuiSystem           = nullptr;
+	SanitySoundSystem*           sanitySoundSystem           = nullptr;
+	SanitySystem*                sanitySystem                = nullptr;
 	SpeedLimitSystem*            speedLimitSystem            = nullptr;
 	SpotLightSystem*             spotLightSystem             = nullptr;
 	TeamColorSystem*             teamColorSystem             = nullptr;
