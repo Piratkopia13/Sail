@@ -19,6 +19,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	// Candle has a model and a bounding box
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("Torch.fbx", shader);
+	candleModel->setCastShadows(false);
 	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
 	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
 	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
