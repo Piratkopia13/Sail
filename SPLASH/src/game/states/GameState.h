@@ -77,6 +77,7 @@ private:
 	WaitingForPlayersWindow m_waitingForPlayersWindow;
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
+	InGameGui m_inGameGui;
 	NetworkInfoWindow m_networkInfoImGuiWindow;
 
 	size_t m_currLightIndex;

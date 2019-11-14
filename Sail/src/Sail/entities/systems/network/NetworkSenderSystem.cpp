@@ -7,6 +7,7 @@
 #include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Sail/entities/components/SanityComponent.h"
 #include "Sail/entities/Entity.h"
 
 #include "Network/NWrapperSingleton.h"
@@ -316,6 +317,14 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 		// Send data to others
 		ar(e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_END].frequency);
+	}
+	break;
+	case Netcode::MessageType::UPDATE_SANITY:
+	{
+		SanityComponent* ic = e->getComponent<SanityComponent>();
+		if (ic) {
+			ar(ic->sanity);
+		}
 	}
 	break;
 	default:

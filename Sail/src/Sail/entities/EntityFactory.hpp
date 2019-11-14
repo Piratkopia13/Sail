@@ -6,6 +6,7 @@
 class Model;
 class NodeSystem;
 class Shader;
+class Camera;
 
 namespace EntityFactory {
 	struct ProjectileArguments {
