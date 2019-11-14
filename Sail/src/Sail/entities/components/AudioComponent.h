@@ -30,7 +30,7 @@ public:
 		ImGui::Text("Streams");
 		ImGui::Indent(10.0f);
 		for (const auto& sound : m_currentlyStreaming) {
-			ImGui::Text(std::string(sound.first + "(" +std::to_string(sound.second.first)+":"+ std::to_string(sound.second.second) + ")").c_str());
+			ImGui::Text(std::string(sound.first + "(" + std::to_string(sound.second.first) + ":" + std::to_string(sound.second.second) + ")").c_str());
 		}
 		ImGui::Unindent(10.0f);
 	}

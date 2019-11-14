@@ -51,6 +51,7 @@ namespace Audio {
 		bool playOnce = true;
 		float durationElapsed = 0.0f;
 		float currentSoundsLength = 0.0f;
+		float volume = 0.0f;
 		// Cam HEIGHT (y-pos) is 1.6f; useful info for incorporating positonalOffset
 		glm::vec3 positionalOffset = { 0.f, 0.f, 0.f };
 		int soundID = -1;
@@ -69,6 +70,7 @@ namespace Audio {
 		float volume;
 		bool isPositionalAudio;
 		bool isLooping;
+		int streamIndex;
 	};
 }
 
