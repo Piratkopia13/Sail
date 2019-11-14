@@ -196,6 +196,14 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 	playerEnt->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	playerEnt->addComponent<MovementComponent>();
 
+	//For testing, add particle emitter to player.
+	auto* particleEmitterComp = playerEnt->addComponent<ParticleEmitterComponent>();
+	particleEmitterComp->position = spawnLocation + glm::vec3(0.f, 2.f, 0.f);
+	particleEmitterComp->velocity = { 0.0f, 4.0f, 0.0f };
+	particleEmitterComp->acceleration = { 0.0f, -9.8f, 0.0f };
+	particleEmitterComp->spread = { 2.0f, 2.0f, 1.0f };
+	particleEmitterComp->spawnRate = 0.01f;
+	particleEmitterComp->lifeTime = 1.0f;
 
 	// Create the player
 	AddCandleComponentsToPlayer(playerEnt, lightIndex, 0);
