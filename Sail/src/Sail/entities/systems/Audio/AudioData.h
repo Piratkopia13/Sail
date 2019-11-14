@@ -7,7 +7,7 @@
 #include <xaudio2.h>
 #include <xaudio2fx.h>
 
-class XAUDIO2FX_REVERB_PARAMETERS;
+struct XAUDIO2FX_REVERB_PARAMETERS;
 
 namespace Audio {
 	enum SoundType {

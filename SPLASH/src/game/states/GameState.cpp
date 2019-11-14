@@ -155,6 +155,8 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
 	m_componentSystems.networkReceiverSystem->setGameState(this);
 
+
+
 	// Bots creation
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
