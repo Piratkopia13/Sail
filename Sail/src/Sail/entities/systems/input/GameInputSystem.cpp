@@ -459,31 +459,32 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 		auto torchE = entity->getChildEntities()[i];
 		if (torchE->hasComponent<CandleComponent>()) {
 			auto candleComp = torchE->getComponent<CandleComponent>();
+			if (candleComp->isLit) {
+				bool chargeHeld = Input::IsKeyPressed(KeyBinds::THROW_CHARGE);
 
-			bool chargeHeld = Input::IsKeyPressed(KeyBinds::THROW_CHARGE);
-
-			auto throwingComp = entity->getComponent<ThrowingComponent>();
-			if (!throwingComp->isThrowing) {
-				if (chargeHeld) {
-					if (candleComp->isCarried && torchE->getComponent<TransformComponent>()->getParent()) {
-						// Torch is carried, get to charging the throw
-						throwingComp->isCharging = true;
-						if (throwingComp->chargeTime >= throwingComp->chargeToThrowThreshold) {
-							// We want to throw the torch
-							throwingComp->isThrowing = true;
-							throwingComp->isCharging = false;
+				auto throwingComp = entity->getComponent<ThrowingComponent>();
+				if (!throwingComp->isThrowing) {
+					if (chargeHeld) {
+						if (candleComp->isCarried && torchE->getComponent<TransformComponent>()->getParent()) {
+							// Torch is carried, get to charging the throw
+							throwingComp->isCharging = true;
+							if (throwingComp->chargeTime >= throwingComp->chargeToThrowThreshold) {
+								// We want to throw the torch
+								throwingComp->isThrowing = true;
+								throwingComp->isCharging = false;
+								m_candleToggleTimer = 0.f;
+							}
+						} else {
+							// Torch isn't carried so try to pick it up
+							candleComp->isCarried = true;
 							m_candleToggleTimer = 0.f;
 						}
-					} else {
-						// Torch isn't carried so try to pick it up
-						candleComp->isCarried = true;
+					} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
+						// We want to throw the torch
+						throwingComp->isCharging = false;
+						throwingComp->isThrowing = true;
 						m_candleToggleTimer = 0.f;
 					}
-				} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
-					// We want to throw the torch
-					throwingComp->isCharging = false;
-					throwingComp->isThrowing = true;
-					m_candleToggleTimer = 0.f;
 				}
 			}
 
