@@ -26,7 +26,7 @@ public:
 	float throwChargeMultiplier		= 12.f;
 	float throwingTimer				= 0.f;
 	float dropTimer					= 0.f;
-	float chargeToThrowThreshold	= 0.05f;
+	float chargeToThrowThreshold	= 0.15f;
 
 	glm::vec3 direction				= glm::vec3(0.f, 1.f, 0.f);
 
